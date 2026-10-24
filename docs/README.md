@@ -13,4 +13,4 @@
 工作区约定见 [AGENTS.md](../AGENTS.md)。
 原始实验源码、日志与数据见 [evidence](evidence/README.md)。
 当前引擎实现范围与后续顺序见[推理工程计划](implementation/inference-roadmap.md)。
-MTP 当前任务进度与正在做事项见[进度看板](developer/mtp-progress.md)。
+当前基础普通推理、多会话与多任务的进度和正在做事项见[推理看板](developer/inference-progress.md)。

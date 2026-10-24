@@ -3590,7 +3590,8 @@ public:
       for (auto id : request.ids) if (id < 0 || id >= vocabulary)
         throw std::runtime_error("token ID outside vocabulary");
     }
-    if (is_mtp_prefill(role) && !find_family(requests.size(), tokens, role))
+    if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
+        !find_family(requests.size(), tokens, role))
       admit_exact_shape(tokens, requests.size(), role);
     const auto step_start = Clock::now();
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);

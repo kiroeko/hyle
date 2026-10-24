@@ -4,7 +4,7 @@ HYLE 正在由真实模型路径形成完整推理引擎，入口位于 `engine/
 当前主要用这条路径检验底层支持，应用入口随测试推进，server 与应用 API 留待后续。
 当前完整文本模型为 Qwen3.5-2B，包含普通生成、有界多草稿 MTP、多轮、多会话、
 共享前缀和有界缓存恢复。CUDA、Apple 和 Vulkan 已有列明范围的真实模型执行；
-CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；长旅程和新增策略的覆盖继续在 [MTP 看板](../developer/mtp-progress.md)列明。
+CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
 官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
 量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
 

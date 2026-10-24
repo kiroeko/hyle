@@ -3,7 +3,7 @@
   "status": "agreed_local_MTP_functional_scope_complete_architecture_active",
   "completion_boundary": "Complete all discovered MTP functionality implementable on the current machines, then converge architecture and optimize performance. Re-audit before completion; previous optional/deferred labels do not waive locally feasible work. Keep hardware-limited complete models distinct from their executable components.",
   "reviewed_on": "2026-10-24",
-  "purpose": "MTP source identities, local cache facts and investigation scope for the current goal; not a runtime support whitelist. Progress is maintained only in docs/developer/mtp-progress.md. Exact missing ranges must still be established before any acquisition.",
+  "purpose": "Completed MTP source identities, local cache facts and investigation scope; not a runtime support whitelist. Current ordinary inference foundation work is tracked in docs/developer/inference-progress.md. Exact missing ranges must still be established before any acquisition.",
   "review": {
     "mode": "Initial census used local source, JSON, headers and file lengths only. Selected cache facts below were subsequently updated after explicitly bounded original-range acquisition, SHA-checked preparation and actual full-model short journeys.",
     "supersedes_no_historical_evidence": true,

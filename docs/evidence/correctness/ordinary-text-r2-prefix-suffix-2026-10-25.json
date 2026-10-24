@@ -1,0 +1,846 @@
+{
+  "date": "2026-10-25",
+  "status": "PASS_actual_ordinary_regression_with_preserved_before_failure",
+  "scope": "Qwen ordinary model validation consumer cold-shape wiring. This is one finite N2/R2 generated-prefix suffix regression, not completion of the new whole ordinary-inference-system goal.",
+  "problem": {
+    "trigger": "Two same-wave ordinary requests partially hit an actual generated checkpoint; their equal suffix T3 is absent from the original Text R2 family.",
+    "original_prompt_rows": 154,
+    "consumed_generated_key_rows": 156,
+    "new_prompt_rows": 159,
+    "actual_suffix_rows": 3,
+    "original_cold_shapes": [
+      1,
+      154,
+      159,
+      5
+    ],
+    "old_failure": "text finite family has not been prepared",
+    "reason": "create_session admits actual suffix R1 but prepare_evaluations admitted missing R>1 only for MTP prefill."
+  },
+  "change": {
+    "main": {
+      "path": "engine\\models\\qwen35\\main.cc",
+      "bytes": 429940,
+      "sha256": "e630c27255b7dba5edff50673ba581815a4b175656781901777001bd57f06e4a"
+    },
+    "patch": {
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\main.patch",
+      "bytes": 612,
+      "sha256": "74b6601fac92531846c1b85b8a2c54c177667a3ba993e4e91155f9d99c5f25c2"
+    },
+    "description": "After the original complete request validation, missing Text and MTP-prefill families use the same existing idle bounded admit_exact_shape. Existing max-query, N*R finite family ownership and atomic/retirement guards remain unchanged.",
+    "math_graph_dtype_state_MTP_changes": false,
+    "hot_decode_graph_build_added": false,
+    "cold_actual_new_shape_only": true,
+    "not_new_graph_or_provider_capability": true
+  },
+  "source_before": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 429902,
+    "sha256": "9b73fe9afe325d139072a94632e26d739e2b3cb48b411320c0c5bed320e9b9e9"
+  },
+  "regression": {
+    "test": {
+      "path": "tests\\tooling\\qwen_text_prefix_batch_test.py",
+      "bytes": 9250,
+      "sha256": "f66fda8db47af81130896d4f3c4eede3a970d60efac806e17116085f8c7eaa14"
+    },
+    "executed_test": {
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\executed-test.py",
+      "bytes": 8900,
+      "sha256": "2794f3aa548cfc9c6de31ce38aaf9d9bfd20a93e7cdd502bfedbd3694d15e30f"
+    },
+    "post_run_change": "Docstring/help only: prepare accepts any current local image; optional --expect-missing-family checks an available old image. AST excluding module docstring exactly unchanged.",
+    "case": {
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\case.json",
+      "bytes": 2254,
+      "sha256": "b5978205d68597185c98043ae87f99d37b5f98455ea199e60199dccc879d0055"
+    },
+    "weights": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "prepared_physical_roles": 335,
+    "actual_selected_text_roles": 320,
+    "actual_selected_MTP_roles": 0,
+    "backend": "cuda",
+    "CPU_FFN_layers": 0,
+    "capacity": 170,
+    "N": 2,
+    "R": 2,
+    "sampler": "greedy",
+    "replay": "commands"
+  },
+  "processes": [
+    {
+      "stage": "calibration_existing_original_R2",
+      "image_sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1",
+      "native_process": {
+        "exit": 0,
+        "timeout": false,
+        "wall_seconds": 2.0940000000118744
+      },
+      "command": {
+        "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\command.json",
+        "bytes": 1294,
+        "sha256": "154e90bbab00e6dcabc19215c437fc4ae90c15bc0e48011e1c9ab9538cf2ecf7"
+      },
+      "generated_ids_A_D": [
+        71093,
+        12305,
+        198
+      ]
+    },
+    {
+      "stage": "original_failure_same_four_request_case",
+      "image_sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1",
+      "native_process": {
+        "exit": 1,
+        "timeout": false,
+        "wall_seconds": 2.25
+      },
+      "command": {
+        "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\command.json",
+        "bytes": 1293,
+        "sha256": "f8cf0dfb69be6c20fb0d03aa77281fa0678321b7001869320fbb0795e71df348"
+      },
+      "assertions": {
+        "status": "EXPECTED_FAILURE",
+        "failure": "missing actual Text R2 suffix family",
+        "retry": false
+      }
+    },
+    {
+      "stage": "fixed_same_four_request_case",
+      "image_sha256": "01e0a1b0ded07d20b7c20dfe3ba94c37ccd9af486ee75fa55a9654feedae8ab3",
+      "native_process": {
+        "exit": 0,
+        "timeout": false,
+        "wall_seconds": 2.7810000000172295
+      },
+      "command": {
+        "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\command.json",
+        "bytes": 1297,
+        "sha256": "bdba89bb25e1f9fa45dc005f7feff31a019beeda57704b0a26174bc6e2e9873b"
+      },
+      "assertions": {
+        "status": "PASS",
+        "actual_suffix_batch": {
+          "index": 3,
+          "requests": 2,
+          "tokens": 3,
+          "role": 0,
+          "generation": false,
+          "session_ids": [
+            "B",
+            "C"
+          ]
+        },
+        "partial_hits": 2,
+        "key_rows": 156,
+        "generated_ids": {
+          "A": [
+            71093,
+            12305,
+            198
+          ],
+          "D": [
+            71093,
+            12305,
+            198
+          ],
+          "B": [
+            464,
+            19298
+          ],
+          "C": [
+            464,
+            19298
+          ]
+        },
+        "retired_requests": 4,
+        "draft_resources": false,
+        "cache_budget_passed": true,
+        "throughput_claim": false
+      }
+    }
+  ],
+  "actual_result": {
+    "text_tensors": 320,
+    "mtp_tensors": 0,
+    "cold_exact_admissions": 2,
+    "cold_exact_evictions": 0,
+    "prefix_hits": 2,
+    "prefix_full_hits": 0,
+    "reused_tokens": 312,
+    "retired_requests": 4,
+    "peak_resident_requests": 2,
+    "peak_committed_versions": 2,
+    "live_committed_versions": 1,
+    "actual_graph_calls": 5,
+    "prefill_graph_calls": 2,
+    "decode_graph_calls": 3,
+    "actual_target_rows": 320,
+    "generated_tokens": 10,
+    "cache_live_requested_bytes": 82870320,
+    "cache_peak_requested_bytes": 82870320,
+    "cache_requested_byte_limit": 536870912
+  },
+  "complete_state_boundary_facts": {
+    "status": "PASS_offline_inspection_of_actual_reports",
+    "sessions": [
+      {
+        "session": "A",
+        "visible_tokens": 156,
+        "generated_ids": [
+          71093,
+          12305,
+          198
+        ],
+        "cursor": 0,
+        "ledger_records": 3,
+        "imported_rows": 0,
+        "actual_records": [
+          {
+            "index": 0,
+            "role": 0,
+            "requests": 2,
+            "member_index": 0,
+            "generation": false,
+            "input_rows": 154,
+            "before_length": 0,
+            "accepted": 154,
+            "after_length": 154,
+            "next_id": 71093,
+            "draft_rows": 0
+          },
+          {
+            "index": 1,
+            "role": 0,
+            "requests": 2,
+            "member_index": 0,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 154,
+            "accepted": 1,
+            "after_length": 155,
+            "next_id": 12305,
+            "draft_rows": 0
+          },
+          {
+            "index": 2,
+            "role": 0,
+            "requests": 2,
+            "member_index": 0,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 155,
+            "accepted": 1,
+            "after_length": 156,
+            "next_id": 198,
+            "draft_rows": 0
+          }
+        ]
+      },
+      {
+        "session": "D",
+        "visible_tokens": 156,
+        "generated_ids": [
+          71093,
+          12305,
+          198
+        ],
+        "cursor": 0,
+        "ledger_records": 3,
+        "imported_rows": 0,
+        "actual_records": [
+          {
+            "index": 0,
+            "role": 0,
+            "requests": 2,
+            "member_index": 1,
+            "generation": false,
+            "input_rows": 154,
+            "before_length": 0,
+            "accepted": 154,
+            "after_length": 154,
+            "next_id": 71093,
+            "draft_rows": 0
+          },
+          {
+            "index": 1,
+            "role": 0,
+            "requests": 2,
+            "member_index": 1,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 154,
+            "accepted": 1,
+            "after_length": 155,
+            "next_id": 12305,
+            "draft_rows": 0
+          },
+          {
+            "index": 2,
+            "role": 0,
+            "requests": 2,
+            "member_index": 1,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 155,
+            "accepted": 1,
+            "after_length": 156,
+            "next_id": 198,
+            "draft_rows": 0
+          }
+        ]
+      },
+      {
+        "session": "B",
+        "visible_tokens": 160,
+        "generated_ids": [
+          464,
+          19298
+        ],
+        "cursor": 0,
+        "ledger_records": 5,
+        "imported_rows": 156,
+        "actual_records": [
+          {
+            "index": 3,
+            "role": 0,
+            "requests": 2,
+            "member_index": 0,
+            "generation": false,
+            "input_rows": 3,
+            "before_length": 156,
+            "accepted": 3,
+            "after_length": 159,
+            "next_id": 464,
+            "draft_rows": 0
+          },
+          {
+            "index": 4,
+            "role": 0,
+            "requests": 2,
+            "member_index": 0,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 159,
+            "accepted": 1,
+            "after_length": 160,
+            "next_id": 19298,
+            "draft_rows": 0
+          }
+        ]
+      },
+      {
+        "session": "C",
+        "visible_tokens": 160,
+        "generated_ids": [
+          464,
+          19298
+        ],
+        "cursor": 0,
+        "ledger_records": 5,
+        "imported_rows": 156,
+        "actual_records": [
+          {
+            "index": 3,
+            "role": 0,
+            "requests": 2,
+            "member_index": 1,
+            "generation": false,
+            "input_rows": 3,
+            "before_length": 156,
+            "accepted": 3,
+            "after_length": 159,
+            "next_id": 464,
+            "draft_rows": 0
+          },
+          {
+            "index": 4,
+            "role": 0,
+            "requests": 2,
+            "member_index": 1,
+            "generation": true,
+            "input_rows": 1,
+            "before_length": 159,
+            "accepted": 1,
+            "after_length": 160,
+            "next_id": 19298,
+            "draft_rows": 0
+          }
+        ]
+      }
+    ],
+    "consumed_key_rows": 156,
+    "pending_excluded_from_key": 198,
+    "prefix_input_is_key_plus_suffix": true,
+    "scope": "Complete ordinary committed-head/ledger boundaries, not bytewise tensor equivalence."
+  },
+  "build": {
+    "app_TUs_compiled": 1,
+    "backend_or_SDK_TUs_compiled": 0,
+    "reused_original_closure": ".scratch/mtp-performance-convergence-20261025/baseline/link/command.json",
+    "compile": {
+      "exit": 0,
+      "seconds": 17.09299999999348
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.7190000000118744
+    },
+    "image_retained_as_current_cache": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\hyle.exe",
+      "bytes": 141401600,
+      "sha256": "01e0a1b0ded07d20b7c20dfe3ba94c37ccd9af486ee75fa55a9654feedae8ab3"
+    },
+    "actual_dependency_pins": {
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\actual-source-pins.json",
+      "bytes": 27552,
+      "sha256": "8c896ea5b9808822e85c002b7e0332c9fe4b864346bde0510c02f3d5e0f30a2a"
+    },
+    "baseline_image_unchanged": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle.exe",
+      "bytes": 141401600,
+      "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+    },
+    "native_DLL": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    }
+  },
+  "bounds": {
+    "actual_model_processes": 3,
+    "maximum_authorized_model_processes": 4,
+    "unused_process_allowance": 1,
+    "automatic_retries": 0,
+    "HTTP": 0,
+    "downloads": 0,
+    "new_weight_copies": 0,
+    "profiling": false,
+    "performance_or_quality_claim": false,
+    "GPU_released": true,
+    "new_context_matrix": false
+  },
+  "limits": [
+    "One CUDA/BF16/greedy real ordinary case; no new platform, format, cancellation, task-quality or MTP validation matrix.",
+    "The first native exit1 is the expected reproduced product failure, not a passing inference run.",
+    "Complete head/ledger metadata and continued outputs were checked; no new tensor-byte oracle.",
+    "Existing cache limit is requested-byte admission, not a bound on total physical GPU memory or opaque native private allocations.",
+    "Dynamic ingress, backpressure, request isolation and broader ordinary foundation work remain separately reviewed new-goal items."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\correctness\\ordinary-text-r2-prefix-suffix-2026-10-25.zip",
+    "bytes": 242915,
+    "sha256": "0f2bd7fd28f0d9a5acf51c0913beb952ecb6c6a81f9f3763968e00cf61d34af2"
+  },
+  "archive_entries": 67,
+  "payload_manifest": [
+    {
+      "archive_path": "drivers/after-driver-command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-driver-command.json",
+      "bytes": 745,
+      "sha256": "d8b95ee8907f5a6aeebd27f6a559852f0c483dbbad8588ba6b656f3d7c278cce"
+    },
+    {
+      "archive_path": "drivers/after-driver-process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-driver-process.json",
+      "bytes": 52,
+      "sha256": "be0b3012fbcc1009e529dfc6eeb7eeb11d8081d5136fa6b4364da00f183ce695"
+    },
+    {
+      "archive_path": "drivers/after-driver-stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-driver-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "drivers/after-driver-stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-driver-stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "drivers/before-driver-command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-driver-command.json",
+      "bytes": 776,
+      "sha256": "96df93f569047ea96c556187b75840fa0443a37ef932f24e4a3dfdaa2d8bc445"
+    },
+    {
+      "archive_path": "drivers/before-driver-process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-driver-process.json",
+      "bytes": 52,
+      "sha256": "e4e7b15fdf6083ff70af4ca33eb7ffe262189ff9a99a03e6e8fda26fb11ecefc"
+    },
+    {
+      "archive_path": "drivers/before-driver-stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-driver-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "drivers/before-driver-stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-driver-stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "drivers/calibration-driver-command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\calibration-driver-command.json",
+      "bytes": 648,
+      "sha256": "e79ebff5b0dcfbeb286c81bc7ea98068e7cbaf075d992164112b30ca20bc8eea"
+    },
+    {
+      "archive_path": "drivers/calibration-driver-live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\calibration-driver-live.json",
+      "bytes": 14,
+      "sha256": "544e0d495ef854a5001418f40161d563949ad2c9bf69f2f28459d4839d6433b6"
+    },
+    {
+      "archive_path": "drivers/calibration-driver-process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\calibration-driver-process.json",
+      "bytes": 53,
+      "sha256": "73bc6cfa8780734cb821acac9a6be26b75ac01ffd9319399be159a16f5a06281"
+    },
+    {
+      "archive_path": "drivers/calibration-driver-stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\calibration-driver-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "drivers/calibration-driver-stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\calibration-driver-stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "implementation/after-pins.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-pins.json",
+      "bytes": 946,
+      "sha256": "678c9bebda6675acf0550dfa53b722bd7bc4f695bc685b74ca71a8d5cf55c6fb"
+    },
+    {
+      "archive_path": "implementation/before-pins.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-pins.json",
+      "bytes": 1937,
+      "sha256": "df7c9e1544bcd86eb4307bb21b51a7c56a3edfad9e6aca4c9fe2d07590cbcaec"
+    },
+    {
+      "archive_path": "implementation/final-source-pins.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\final-source-pins.json",
+      "bytes": 886,
+      "sha256": "b5cd85cb2b7ea7dfb9e630794c036e41d2527a2fc654ffbaa7692530d758229b"
+    },
+    {
+      "archive_path": "implementation/main.patch",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\main.patch",
+      "bytes": 612,
+      "sha256": "74b6601fac92531846c1b85b8a2c54c177667a3ba993e4e91155f9d99c5f25c2"
+    },
+    {
+      "archive_path": "implementation/probe.cc",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\probe.cc",
+      "bytes": 104,
+      "sha256": "616d7fee11989302c39de227713446b709908005f0ea1943c21c9be574db93da"
+    },
+    {
+      "archive_path": "implementation/state-facts.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\state-facts.json",
+      "bytes": 4410,
+      "sha256": "95a25637cd66e2bea1b8b99cad1f29ce32584b32a41587ae68a0b545b1ac700c"
+    },
+    {
+      "archive_path": "implementation/summary.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\summary.json",
+      "bytes": 13754,
+      "sha256": "61da45dc5e43b99cf77a2a8cb6b057982f97df1653162ad244dddf337da55117"
+    },
+    {
+      "archive_path": "implementation/test-help.patch",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\test-help.patch",
+      "bytes": 969,
+      "sha256": "b282a1b8ee0e614533d9e729d8b4e54d2272a5b6733b07112912505359ea79f5"
+    },
+    {
+      "archive_path": "inputs/A.ids",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\A.ids",
+      "bytes": 734,
+      "sha256": "19ad8480aa41a260be8c1d6a3c36d1efeab7e7a75b65c83ed519d50f2ef84c6b"
+    },
+    {
+      "archive_path": "inputs/A.schedule",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\A.schedule",
+      "bytes": 26,
+      "sha256": "8490005dfc319d5d565c7f6bac1dc51ed22733b1b54a911d84e3c384a1d9be63"
+    },
+    {
+      "archive_path": "inputs/B.ids",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\B.ids",
+      "bytes": 761,
+      "sha256": "f23ddb543bf06cccfdb7c1cecf607b4f6a7caf11da1019d49b2c48f0f7650eb2"
+    },
+    {
+      "archive_path": "inputs/B.schedule",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\B.schedule",
+      "bytes": 26,
+      "sha256": "6787a4f2222f998ec48fe0a1fa41dfc1ac2643c7512615de137ce3c53b665bda"
+    },
+    {
+      "archive_path": "inputs/C.ids",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\C.ids",
+      "bytes": 761,
+      "sha256": "f23ddb543bf06cccfdb7c1cecf607b4f6a7caf11da1019d49b2c48f0f7650eb2"
+    },
+    {
+      "archive_path": "inputs/C.schedule",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\C.schedule",
+      "bytes": 26,
+      "sha256": "28b0adb76c18098af8d09ce7375387f85ead0e6b57de962182a81005cd1f37d4"
+    },
+    {
+      "archive_path": "inputs/D.ids",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\D.ids",
+      "bytes": 734,
+      "sha256": "19ad8480aa41a260be8c1d6a3c36d1efeab7e7a75b65c83ed519d50f2ef84c6b"
+    },
+    {
+      "archive_path": "inputs/D.schedule",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\D.schedule",
+      "bytes": 26,
+      "sha256": "75fc090b5d5df4298ebe55203408b54e9bcb65c88e33a8cec71163620ca966a8"
+    },
+    {
+      "archive_path": "inputs/calibration.sessions",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration.sessions",
+      "bytes": 28,
+      "sha256": "6f60bf5b86624baf7d356304f6be063a0b1d96236aa566d10d78bc035d97c96e"
+    },
+    {
+      "archive_path": "inputs/case.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\case.json",
+      "bytes": 2254,
+      "sha256": "b5978205d68597185c98043ae87f99d37b5f98455ea199e60199dccc879d0055"
+    },
+    {
+      "archive_path": "inputs/regression.sessions",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\regression.sessions",
+      "bytes": 56,
+      "sha256": "57b3a6e51d8a25d5894c1dbf5f6d0dacc05f4e6db470c8b656a309c794e4875f"
+    },
+    {
+      "archive_path": "raw/after-run/assertions.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\assertions.json",
+      "bytes": 603,
+      "sha256": "9ea1d17cc363c5511a78d3de9b62a4d227a2aec16fc4cec047e25b82a4f6f480"
+    },
+    {
+      "archive_path": "raw/after-run/command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\command.json",
+      "bytes": 1297,
+      "sha256": "bdba89bb25e1f9fa45dc005f7feff31a019beeda57704b0a26174bc6e2e9873b"
+    },
+    {
+      "archive_path": "raw/after-run/consumer-result.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\consumer-result.json",
+      "bytes": 53126,
+      "sha256": "032b7001bfc6643fca99c82caef89898fc34f2501871bb4e19b25dbc3f5884ac"
+    },
+    {
+      "archive_path": "raw/after-run/live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\live.json",
+      "bytes": 22,
+      "sha256": "0b93ddb393a17f566f3e23fad6e1d2fc889d09a2175de37dea0208d7670aeec9"
+    },
+    {
+      "archive_path": "raw/after-run/process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\process.json",
+      "bytes": 79,
+      "sha256": "baaf130f7d6a2ac178f5c4c040b440fd76ea69a781739ceae362e06bf75c2333"
+    },
+    {
+      "archive_path": "raw/after-run/stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\stderr.log",
+      "bytes": 31493,
+      "sha256": "97805d881d9867a175663ef98b270deafbfa5675600e27a3220b4fecf07455dc"
+    },
+    {
+      "archive_path": "raw/after-run/stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\after-run\\stdout.log",
+      "bytes": 28871,
+      "sha256": "c51efde1e750f2d2fcce3cd18bfd12d0cd37ce8bb345fb5db17c15e0d6d1b299"
+    },
+    {
+      "archive_path": "raw/before-run/assertions.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\assertions.json",
+      "bytes": 111,
+      "sha256": "758e40cf453b407c03ad0aea2e6bb1eca053503c4f4c45d8bd06a096a21d7b02"
+    },
+    {
+      "archive_path": "raw/before-run/command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\command.json",
+      "bytes": 1293,
+      "sha256": "f8cf0dfb69be6c20fb0d03aa77281fa0678321b7001869320fbb0795e71df348"
+    },
+    {
+      "archive_path": "raw/before-run/live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\live.json",
+      "bytes": 22,
+      "sha256": "1edc1bc7a366384daf6a53e4b9bc5b29272c12bf527670d6ff3cb3c5224bf161"
+    },
+    {
+      "archive_path": "raw/before-run/process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\process.json",
+      "bytes": 65,
+      "sha256": "3d8940f3841f8a3fa1f9c0c2532fe2870589c3b39766eecf0d64beb46924d81b"
+    },
+    {
+      "archive_path": "raw/before-run/stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\stderr.log",
+      "bytes": 24082,
+      "sha256": "5cc23f9f9de255b41512c8e68d13181ebdd4b3d93af99e98c0c52c7946fcb1f7"
+    },
+    {
+      "archive_path": "raw/before-run/stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before-run\\stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "raw/case/calibration/command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\command.json",
+      "bytes": 1294,
+      "sha256": "154e90bbab00e6dcabc19215c437fc4ae90c15bc0e48011e1c9ab9538cf2ecf7"
+    },
+    {
+      "archive_path": "raw/case/calibration/consumer-result.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\consumer-result.json",
+      "bytes": 26074,
+      "sha256": "382cb06d3eceea228c211ff10555532ec2e1c50c0aa0ee14441f61d2c5cc9da7"
+    },
+    {
+      "archive_path": "raw/case/calibration/live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\live.json",
+      "bytes": 21,
+      "sha256": "6b0f7690d912bec22857aa742dae45d3acc975c463f8b52a8927db4383872d90"
+    },
+    {
+      "archive_path": "raw/case/calibration/process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\process.json",
+      "bytes": 79,
+      "sha256": "578f314e9c3bd95306a75ce93a2c5520aad93c7b64e2a1455ad8646fbe8a5ea5"
+    },
+    {
+      "archive_path": "raw/case/calibration/stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\stderr.log",
+      "bytes": 23369,
+      "sha256": "663da58c3d0a1ab1fab9b20241e85009c149104f12e69360e51c907e876b3707"
+    },
+    {
+      "archive_path": "raw/case/calibration/stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\case\\calibration\\stdout.log",
+      "bytes": 14611,
+      "sha256": "a87eb8cd68ec0e1f5e8bc07b0a3d3b7bc72892e7e1ea0ad14cd0b9b8c133c49a"
+    },
+    {
+      "archive_path": "raw/compile/actual-source-pins.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\actual-source-pins.json",
+      "bytes": 27552,
+      "sha256": "8c896ea5b9808822e85c002b7e0332c9fe4b864346bde0510c02f3d5e0f30a2a"
+    },
+    {
+      "archive_path": "raw/compile/command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\command.json",
+      "bytes": 2206,
+      "sha256": "41c535e113a9e55536200ba7a480bc70c0ca6725c2d41c8296fdf6e1208d16f8"
+    },
+    {
+      "archive_path": "raw/compile/dependencies.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\dependencies.json",
+      "bytes": 36249,
+      "sha256": "876fc6d6144e010f9f4556578a263075d4e38cfadfcbe72d9a19d6f84ecdbeea"
+    },
+    {
+      "archive_path": "raw/compile/live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\live.json",
+      "bytes": 14,
+      "sha256": "7daea9b1d45b2b879f41f9e4a0fcbfc8f628bd35fc79dc0035de85c9c3a68ad5"
+    },
+    {
+      "archive_path": "raw/compile/process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\process.json",
+      "bytes": 52,
+      "sha256": "e76f8201aa51aaef58c8637ec5a87e04db64d42937862e7ad4e6e57e5aab1a4f"
+    },
+    {
+      "archive_path": "raw/compile/stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "raw/compile/stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\compile\\stdout.log",
+      "bytes": 10,
+      "sha256": "686b82818f387f67fc052a4eb4a5a49a5f45adbd3f3529c4790b719527476327"
+    },
+    {
+      "archive_path": "raw/link/command.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\command.json",
+      "bytes": 32459,
+      "sha256": "5a8273f05c0f4f43464ce82cedf1967f17cf849dbb51cfaa4998877e8c819e54"
+    },
+    {
+      "archive_path": "raw/link/live.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\live.json",
+      "bytes": 14,
+      "sha256": "517c7ff05e3363b09220fb5538a5bd7821ae45bdcd0c20a9583c61d14dd19a8f"
+    },
+    {
+      "archive_path": "raw/link/process.json",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\process.json",
+      "bytes": 53,
+      "sha256": "b5c49bdca1201fc299b0f4f0afe5163cce59baa7d9c2f47b527f1272fea066cd"
+    },
+    {
+      "archive_path": "raw/link/stderr.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "archive_path": "raw/link/stdout.log",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\link\\stdout.log",
+      "bytes": 230,
+      "sha256": "d3bace9b683337c616a848b96d8a354c07a27a51eb3c05329d079fe8e3a58dcb"
+    },
+    {
+      "archive_path": "source/before-main.cc",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\before\\main.cc",
+      "bytes": 429902,
+      "sha256": "9b73fe9afe325d139072a94632e26d739e2b3cb48b411320c0c5bed320e9b9e9"
+    },
+    {
+      "archive_path": "source/executed-test.py",
+      "path": ".scratch\\inference-system-review-20261025\\text-r2-suffix\\executed-test.py",
+      "bytes": 8900,
+      "sha256": "2794f3aa548cfc9c6de31ce38aaf9d9bfd20a93e7cdd502bfedbd3694d15e30f"
+    },
+    {
+      "archive_path": "source/main.cc",
+      "path": "engine\\models\\qwen35\\main.cc",
+      "bytes": 429940,
+      "sha256": "e630c27255b7dba5edff50673ba581815a4b175656781901777001bd57f06e4a"
+    },
+    {
+      "archive_path": "source/qwen_text_prefix_batch_test.py",
+      "path": "tests\\tooling\\qwen_text_prefix_batch_test.py",
+      "bytes": 9250,
+      "sha256": "f66fda8db47af81130896d4f3c4eede3a970d60efac806e17116085f8c7eaa14"
+    }
+  ]
+}
