@@ -1,0 +1,72 @@
+{
+  "status": "HOST_COMPONENT_ONLY_PASS",
+  "date": "2026-10-25",
+  "API": "OutputDelivery: bounded credit and idempotent absolute delivery-prefix acknowledgements over the original output record",
+  "source_pins": {
+    "engine/inference/output_delivery.h": {
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    "engine/inference/request_progress.h": {
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    "engine/inference/sampling_cursor.h": {
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    "tests/tools/inference_output_delivery_test.cc": {
+      "bytes": 4885,
+      "sha256": "ba1da86f9409a6aa1ec3995291a57b6d97dc044f3fbca95b3939f1d2612b3d03"
+    },
+    "tests/CMakeLists.txt": {
+      "bytes": 16000,
+      "sha256": "86efdab337de56380e39793c6d24cf28be68c63ac329c085befa18f8a08ac1b1"
+    }
+  },
+  "checks": [
+    "PASS partial delivery, one-token fallback credit, duplicate commit and pending-once continuation",
+    "PASS bounded credit, idempotent prefix acknowledgement and atomic invalid-extent rejection"
+  ],
+  "actual_processes": {
+    "host1/compile": {
+      "exit": 0,
+      "seconds": 0.5413503000163473
+    },
+    "host1/run": {
+      "exit": 0,
+      "seconds": 0.03303689998574555
+    },
+    "host2/compile": {
+      "exit": 0,
+      "seconds": 0.5337333000206854
+    },
+    "host2/run": {
+      "exit": 0,
+      "seconds": 0.03864799998700619
+    }
+  },
+  "review": "Independent read-only review found no material defect under the single-owner contract; model integration remains unimplemented.",
+  "first_revision": "Count-based acknowledgement compiled and passed its checks. Review improved it to an absolute prefix so duplicate/older acknowledgements cannot consume another pending token. Both revisions and both actual host runs are retained.",
+  "contracts": [
+    "Owner validates RequestKey before routing delayed events and always passes current actual generated.size(), never a stale event extent.",
+    "Credit preflight does not reserve another episode: the original model permits only one in-flight episode per request.",
+    "Model commit observation and successful output delivery are separate cursors; output completion does not reset turn progress or RNG.",
+    "Partial delivery exposes only actual freed credit; a narrower supported MTP/ordinary episode must be chosen when needed.",
+    "Completed requests retain undelivered final output until drain or an explicit discard policy; model completion alone is not slot release.",
+    "The existing bounded output record is borrowed, never copied into a second queue."
+  ],
+  "limits": [
+    "No Model/GPU/online entry/backpressure scheduling integration run.",
+    "No throughput or memory performance claim.",
+    "CMake registration is added but this check invokes the retained compiler directly, not a CMake configure/build."
+  ],
+  "GPU_runs": 0,
+  "HTTP_requests": 0,
+  "SDK_builds": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/output-delivery-credit-2026-10-25.zip",
+    "bytes": 24054,
+    "sha256": "28db5bf739e1ff0fee4094c68035c7a057113957a9cb143e4c77f9de5f9da379"
+  }
+}

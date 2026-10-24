@@ -7,6 +7,7 @@ HYLE 正在由真实模型路径形成完整推理引擎，入口位于 `engine/
 CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
 官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
 量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
+NF4 已接冷 metadata 校验，原权重小组件的 F16 解码及 CPU／CUDA 投影通过；完整 F16 推理仍待接线。
 
 目前使用准备后的本地权重清单和 token IDs，输出 JSON 中的生成 IDs 与计时。
 尚无通用模型目录加载、C++ tokenizer、聊天服务或图片输入；其它模型的有限组件检查也不表示已有完整引擎。
@@ -82,6 +83,7 @@ Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/c
 多轮 schedule、会话数量、同时活动数、缓存预算、trace 与数值限制见[模型运行说明](../../engine/models/qwen35/README.md)。
 当前多会话以共享模型、计划和有界执行资源组织，不按用户复制模型；缓存数量和实际批次宽度是独立配置。
 普通与 MTP 共用 `prompt/generate` 自然请求文件和多轮／多会话生命周期，用 `--mtp off|on` 切换。
+每轮 `prompt` 文件只提供新增用户 token；后续轮可使用空文件继续生成，消费者会恰好消费一次上一轮的末尾 pending。首轮 prompt 必须非空。
 普通模式也保留显式 `prompt/decode` 固定输入重放；同一会话清单不能混用两种语法。
 自然生成统一输出 `sessions[].result`，单请求为 `sessions[0].result`；其中 `generated_ids` 是实际生成 IDs。
 自然续文可能随合法计算形状发生差异，不能把 ID 一致当完整任务质量保证。

@@ -1,0 +1,427 @@
+{
+  "status": "PASS_ORIGINAL_NF4_F16_COMPONENT",
+  "scope": {
+    "artifact": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit",
+    "revision": "8aa5f05d26b7205477066e1449e0af13f762a299",
+    "role": "model.language_model.layers.3.self_attn.k_proj.weight",
+    "original_shape": [
+      1024,
+      5120
+    ],
+    "component_view": [
+      3,
+      5120
+    ],
+    "original_input_bytes": 9183,
+    "components_not_whole_model": true,
+    "no_graph_or_generation_claim": true,
+    "no_other_formats_or_activation_claim": true
+  },
+  "actual_accounting": {
+    "reference_processes": 1,
+    "consumer_workspace_failure_processes": 1,
+    "corrected_consumer_processes": 1,
+    "total_component_processes": 3,
+    "consumer_TUs_compiled": 2,
+    "links": 2,
+    "private_runner_prelink_guard_failure": 1,
+    "SDK_builds": 0,
+    "HTTP": 0,
+    "all_processes_terminal": true,
+    "GPU_released": true
+  },
+  "independent_reference": {
+    "status": "original_fixed_reader_reference_passed",
+    "torch_version": "2.8.0+cu129",
+    "original_reader": {
+      "path": ".scratch\\validation\\cpu-quant-mtp-c1\\non-gguf\\bnb-default-ops.py",
+      "bytes": 19802,
+      "sha256": "e39afd16dca6e6f34a14305ade0ba4acbb49dc2c7a9baf937341d7e33b682819"
+    },
+    "extracted_functions": {
+      "path": ".scratch\\nf4-original-component\\original-reader-functions.py",
+      "bytes": 1537,
+      "sha256": "a2e9d62fbdeeec7035a58ed478c367d0a32699ee6054ef1a6179c5ec1a5af796"
+    },
+    "extraction": "Original function text without external decorators; no function body change or Hyle decoder.",
+    "metadata": {
+      "path": ".scratch\\inference-system-review-20261025\\nf4-quant-state\\quant-state.bin",
+      "bytes": 171,
+      "sha256": "9210c25c0ca8632c7166cc3a92dc0cc43ffe528a45a11e3b8dde08941ed9d6c1"
+    },
+    "inputs": [
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-component-values\\weight.bin",
+        "bytes": 7680,
+        "sha256": "cbe6e709c20b76eef516b2e8bf2893c319e2621d7b5dc0f3ddf4f8d0bb00fa0a"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-component-values\\absmax.bin",
+        "bytes": 240,
+        "sha256": "214115a8d7b2f306d036502a1bece2440c314d6e024a47099124670e71646a3f"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-component-values\\nested_absmax.bin",
+        "bytes": 4,
+        "sha256": "5399407b8dc0c00401a5b15f2bf8f6bc0f60b93ef32c1e81e907344525c02d12"
+      },
+      {
+        "path": ".scratch\\inference-system-review-20261025\\nf4-component-values\\codebooks.bin",
+        "bytes": 1088,
+        "sha256": "9bec262dd7ad4b9a4a3a8ffb16eb4769b7f69ec89c45eae4383ffee97b888385"
+      }
+    ],
+    "original_shape": [
+      1024,
+      5120
+    ],
+    "component_view_shape": [
+      3,
+      5120
+    ],
+    "decode_dtype": "F16",
+    "offset_f32_bits": "3d2fd550",
+    "decoded_values": 15360,
+    "wrong_bf16_intermediate_changed_values": 12361,
+    "projection_f16": [
+      [
+        0.012542724609375,
+        -0.0017404556274414062,
+        -0.0006885528564453125
+      ],
+      [
+        -0.004177093505859375,
+        -0.0061798095703125,
+        0.01224517822265625
+      ]
+    ],
+    "wrong_bf16_projection_f16": [
+      [
+        0.0125732421875,
+        -0.001739501953125,
+        -0.000701904296875
+      ],
+      [
+        -0.004180908203125,
+        -0.00617218017578125,
+        0.012237548828125
+      ]
+    ],
+    "projection_fp32_equals_f64_exact": true,
+    "outputs": [
+      {
+        "path": ".scratch\\nf4-original-component\\expected-f16.bin",
+        "bytes": 30720,
+        "sha256": "f487f1f42956d22a35ad76510c729d25c7031b764e188e871ded8cf2ee5cba9c"
+      },
+      {
+        "path": ".scratch\\nf4-original-component\\activations-f16.bin",
+        "bytes": 20480,
+        "sha256": "bdf17bc0f53a4e44fe2f79241cfb2bf15c1e75206de4a4a750efe64298455c0e"
+      },
+      {
+        "path": ".scratch\\nf4-original-component\\expected-projection-f16.bin",
+        "bytes": 12,
+        "sha256": "f84823e6149fa57fa35d386ca4178489467cbc96b196c2ffb7c19f40560c436b"
+      },
+      {
+        "path": ".scratch\\nf4-original-component\\wrong-bf16-projection-f16.bin",
+        "bytes": 12,
+        "sha256": "e766da0a948bdcfffdb6a2ea7e4e3a7294809551489966b86f4708036a305b5b"
+      }
+    ]
+  },
+  "consumer": {
+    "status": "PASS",
+    "decode_invocations": 1,
+    "decoded_values": 15360,
+    "decode_provider": {
+      "name": "hyle-native",
+      "version": "2+torchao-a701b6a60587+libtorch-2.8.0-cpu",
+      "namespace_id": 5213281902894514177,
+      "provider_id": 5638880882401280001,
+      "replay_class": 2,
+      "capture_compatible": false
+    },
+    "decoded_fnv64": 2774929863249153265,
+    "original_shape": [
+      1024,
+      5120
+    ],
+    "component_view": [
+      3,
+      5120
+    ],
+    "decode_dtype": "F16",
+    "projections": [
+      {
+        "backend": "cpu",
+        "rows": 1,
+        "provider": {
+          "name": "ggml-cpu",
+          "version": "hadamard-unary-overlay",
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5136147912341848065,
+          "replay_class": 1,
+          "capture_compatible": false
+        },
+        "A_W_Y_dtype": "F16",
+        "accumulation": "F32",
+        "workspace_bytes": 0,
+        "workspace_alignment": 1,
+        "weight_generation": 1,
+        "weight_fnv64": 2774929863249153265,
+        "output_f16_bits": [
+          8812,
+          38689,
+          37284
+        ],
+        "rounding_witnesses": 3
+      },
+      {
+        "backend": "cpu",
+        "rows": 2,
+        "provider": {
+          "name": "ggml-cpu",
+          "version": "hadamard-unary-overlay",
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5136147912341848065,
+          "replay_class": 1,
+          "capture_compatible": false
+        },
+        "A_W_Y_dtype": "F16",
+        "accumulation": "F32",
+        "workspace_bytes": 0,
+        "workspace_alignment": 1,
+        "weight_generation": 1,
+        "weight_fnv64": 2774929863249153265,
+        "output_f16_bits": [
+          8812,
+          38689,
+          37284,
+          40007,
+          40532,
+          8773
+        ],
+        "rounding_witnesses": 6
+      },
+      {
+        "backend": "cuda",
+        "rows": 1,
+        "provider": {
+          "name": "cublasLt",
+          "version": "13.6.0",
+          "namespace_id": 5213281902894514177,
+          "provider_id": 4851857068842483713,
+          "replay_class": 1,
+          "capture_compatible": true
+        },
+        "A_W_Y_dtype": "F16",
+        "accumulation": "F32",
+        "workspace_bytes": 171,
+        "workspace_alignment": 256,
+        "weight_generation": 1,
+        "weight_fnv64": 2774929863249153265,
+        "output_f16_bits": [
+          8812,
+          38689,
+          37284
+        ],
+        "rounding_witnesses": 3
+      },
+      {
+        "backend": "cuda",
+        "rows": 2,
+        "provider": {
+          "name": "cublasLt",
+          "version": "13.6.0",
+          "namespace_id": 5213281902894514177,
+          "provider_id": 4851857068842483713,
+          "replay_class": 1,
+          "capture_compatible": true
+        },
+        "A_W_Y_dtype": "F16",
+        "accumulation": "F32",
+        "workspace_bytes": 480,
+        "workspace_alignment": 256,
+        "weight_generation": 1,
+        "weight_fnv64": 2774929863249153265,
+        "output_f16_bits": [
+          8812,
+          38689,
+          37284,
+          40007,
+          40532,
+          8773
+        ],
+        "rounding_witnesses": 6
+      }
+    ],
+    "scope": "Original cold-decode and ordinary Direct Compute component; not whole model/Graph/generation or all formats."
+  },
+  "processes": {
+    "reference": {
+      "exit": 0,
+      "seconds": 7.73399999999674,
+      "timeout": false
+    },
+    "first_consumer": {
+      "exit": 1,
+      "seconds": 1.1410000000032596,
+      "timeout": false
+    },
+    "corrected_consumer": {
+      "exit": 0,
+      "seconds": 1.062999999994645,
+      "timeout": false
+    }
+  },
+  "decode": {
+    "explicit_output_dtype": "F16",
+    "all_15360_f16_bytes_equal_original_reader": true,
+    "cold_decode_invocations_in_successful_consumer": 1,
+    "freeze_after_decode": true,
+    "ordinary_reuses_same_W_per_backend": true,
+    "CPU_W_final_unchanged": true,
+    "forbidden_BF16_intermediate_changed_values": 12361
+  },
+  "projection": {
+    "ordinary_M": [
+      1,
+      2
+    ],
+    "A_W_Y_dtype": "F16",
+    "accumulation": "F32",
+    "independent_FP64_and_FP32_exact_for_fixed_sparse_A": true,
+    "FP16_rounding_witnesses_per_backend": [
+      3,
+      6
+    ],
+    "CUDA_selected_provider": "cublasLt13.6.0",
+    "CPU_selected_provider": "ggml-cpu",
+    "non_bitwise_broad_quality_claim": false
+  },
+  "closure": {
+    "original_recipe": {
+      "path": ".scratch/inference-system-review-20261025/text-r2-suffix/link/command.json",
+      "bytes": 32459,
+      "sha256": "5a8273f05c0f4f43464ce82cedf1967f17cf849dbb51cfaa4998877e8c819e54"
+    },
+    "retained_inputs_equal_after_only_entry_and_output_redirection": true,
+    "retained_reporting_object": "Original command contains existing reporting OBJ; unused by this consumer, retained unchanged.",
+    "standard_libraries": "Bare bcrypt.lib and other standard LIB-search names remain unchanged and are resolved using original MSVC LIB environment.",
+    "native_DLL": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "canonical_metadata_header_unchanged": true,
+    "consumer_image": {
+      "path": ".scratch/nf4-original-component/attempt2-workspace/link/component.exe",
+      "bytes": 139251200,
+      "sha256": "08412b594bd3b1de3046421979ada855ffb9b78cb7ae3cc530dfabdd03aa0fee"
+    }
+  },
+  "first_failures": {
+    "runner": "attempt1-runner-failure/failure.json",
+    "component": "attempt1-component-failure.json",
+    "both_preserved": true
+  },
+  "limitations": [
+    "Finite real first3 rows, not all1024 rows or full27B.",
+    "Direct Compute cold decode plus ordinary CPU/CUDA projection only; no Graph capture, model generation, other encodings, or throughput claim.",
+    "No per-token decode: successful component decodes once; each backend shares its immutable decoded W across M1/M2.",
+    "Whole-model NF4 F16 weight import, typed activation and cache/state routes remain unimplemented; the six-port component does not certify them."
+  ],
+  "cleanup": {
+    "performed": true,
+    "files": [
+      {
+        "path": ".scratch/nf4-original-component/attempt2-workspace/compile/component.obj",
+        "bytes": 1389644,
+        "sha256": "f2d6e3e01d0d1869ae6aacdddfa375e679eed51743e3037004bc617ee717e07c"
+      },
+      {
+        "path": ".scratch/nf4-original-component/attempt2-workspace/link/component.exe",
+        "bytes": 139251200,
+        "sha256": "08412b594bd3b1de3046421979ada855ffb9b78cb7ae3cc530dfabdd03aa0fee"
+      },
+      {
+        "path": ".scratch/nf4-original-component/attempt2-workspace/link/component.exp",
+        "bytes": 24993,
+        "sha256": "996bbd46cf7cb218306fed7f19a36cfd92507bdd2f1cad3d30109f4df9bb81f3"
+      },
+      {
+        "path": ".scratch/nf4-original-component/attempt2-workspace/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-original-component/attempt2-workspace/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/nf4-original-component/compile/component.obj",
+        "bytes": 1388218,
+        "sha256": "45220af23b275cba63d950eac707cdca7efe2df859af5a80f65870c0264ee2e5"
+      },
+      {
+        "path": ".scratch/nf4-original-component/link/component.exe",
+        "bytes": 139250688,
+        "sha256": "825d3d7e04380246988c0df01a36b433464c0f00760d0fc6b8735a9eff7400d7"
+      },
+      {
+        "path": ".scratch/nf4-original-component/link/component.exp",
+        "bytes": 24974,
+        "sha256": "fde017ed8f64ddbbdfe65a17151ea4e34734dbad7b86e6fd3211f2678827b558"
+      },
+      {
+        "path": ".scratch/nf4-original-component/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/nf4-original-component/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 283826937,
+    "scope": "Only new private component artifacts, including two own-directory hardlinks of the retained original DLL; no original SDK/backend/app object/library.",
+    "removed_exact_files": 10,
+    "logical_bytes_removed": 283826937,
+    "retained_images_and_original_DLL_SHA256_rechecked": [
+      {
+        "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1",
+        "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle.exe"
+      },
+      {
+        "sha256": "62f309775771c6c97bdec9600025ed6a730f0b3f7c03476d1c75e9b11b3d6d08",
+        "path": ".scratch/inference-system-review-20261025/schedule-inputs/link/hyle.exe"
+      },
+      {
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f",
+        "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle_ggml_cpu_gdn_scale_v3.dll"
+      }
+    ],
+    "method": "Exact nonrecursive branch written to root test.ps1, previewed then applied; all paths, lengths, SHA256, inactivity and original retained inputs verified before removal.",
+    "archive_note": "Frozen archive retains the pre-cleanup sources, commands, raw results and inventory. Its performed=false is historical; this wrapper records the later cleanup. Logical removed bytes are not a physical free-space measurement; two DLL entries were own-directory hardlinks."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/nf4-original-f16-component-2026-10-25.zip",
+    "bytes": 101259,
+    "sha256": "db000725e880fe632747017d9e86caa64f78339cc8ff5aa0d47d355517c73b26",
+    "entries": 66,
+    "contains_native_binaries": false,
+    "entry_root": "nf4-original-component/"
+  },
+  "source_payload_map": {
+    "original_reader": "nf4-original-component/provenance/bnb-default-ops.py",
+    "original_ranges_receipt": "nf4-original-component/provenance/original-ranges-complete.json",
+    "original_quant_state": "nf4-original-component/provenance/quant-state.bin",
+    "original_weight_scales_codebooks": "nf4-original-component/provenance/{weight,absmax,nested_absmax,codebooks}.bin",
+    "frozen_metadata_parser": "nf4-original-component/source/engine/models/qwen35/nf4_state.h",
+    "all_commands_oracle_raw_sources": "See nf4-original-component/proof-inventory.json; cached SDK/image command operands are external identity/reference paths, deliberately not archive payload."
+  }
+}

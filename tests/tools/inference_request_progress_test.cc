@@ -71,7 +71,7 @@ std::vector<std::int32_t> delivered_journey(bool batched) {
   require(third_input.size() == 1 && third_input[0] == 18, "empty user suffix lost pending-only continuation");
   observe(end, true, true);
   require(progress.turn_done && progress.remaining_outputs() == 0 &&
-      progress.output_limit() - progress.generated.size() == 1 && !progress.more_turns(),
+      progress.output_limit() - progress.generated.size() == 1 && !progress.more_turns() && progress.request_done(),
       "explicit stop was incorrectly reduced to quota exhaustion");
   require(progress.generated == std::vector<std::int32_t>({7, 8, 9, 17, 18, 19}),
       "delivered journey changed with batching");
@@ -161,6 +161,132 @@ void finite_fifo_hot_transitions_allocate_nothing() {
       inputs[0][1][0] == 10 && inputs[1][1][0] == 110,
       "mixed cache/ordinary turns lost actual pending or commit counts");
 }
+
+void open_input_appends_without_restarting_progress_or_allocating() {
+  const std::array turns{GenerationTurn{{1},2},GenerationTurn{{2,3},1},GenerationTurn{{},1}};
+  RequestProgress progress(4);
+  const auto *storage=progress.generated.data();
+  std::array<std::int32_t,1> first{1},third{-1};
+  std::array<std::int32_t,3> second{-1,2,3};
+  const std::array<std::int32_t,1> seven{7},eight{8},nine{9},ten{10};
+  allocation_count=0;track_allocations=true;
+  progress.bind_open_turns(std::span(turns).first(1),3,3);
+  require(progress.input_open() && !progress.waiting_for_input() && !progress.request_done(),
+      "an admitted known turn was mistaken for waiting or completion");
+  progress.begin_turn(first);
+  progress.observe_commit(0,seven,true,true,false);
+  progress.extend_turns(std::span(turns).first(2)); // Actual first turn is active.
+  require(progress.turns().data()==turns.data() && progress.turns().size()==2 &&
+      progress.turn_started() && progress.generated.back()==7 && progress.observed_commits()==1,
+      "active extension restarted the turn or fabricated a commit");
+  progress.observe_commit(1,eight,true,false,false);
+  progress.advance_turn();progress.begin_turn(second,8);
+  require(second[0]==8 && second[1]==2 && second[2]==3,"appended turn lost its real pending or suffix");
+  progress.observe_commit(2,nine,true,true,false);
+  require(progress.waiting_for_input() && !progress.request_done() && !progress.more_turns(),
+      "open final-known turn was called a completed request");
+  track_allocations=false;
+  rejects([&]{progress.advance_turn();});
+  track_allocations=true;
+  progress.extend_turns(turns); // Arrival after the last known turn completed.
+  require(!progress.waiting_for_input() && progress.more_turns(),"new known work remained in waiting state");
+  progress.advance_turn();progress.begin_turn(third,9);
+  progress.close_input();progress.close_input(); // Idempotent while the last turn is active.
+  require(!progress.input_open() && !progress.request_done() && third[0]==9,
+      "input close stopped an active pending-only turn");
+  progress.observe_commit(3,ten,true,true,false);
+  track_allocations=false;
+  require(allocation_count==0 && progress.generated.data()==storage,
+      "prepared open-turn extension allocated or moved delivered-token storage");
+  require(progress.request_done() && !progress.waiting_for_input() && progress.generated.size()==4 &&
+      progress.observed_commits()==4 && progress.turns().data()==turns.data(),
+      "closed request lost finite completion or authoritative observations");
+}
+
+void invalid_extensions_preserve_known_input_and_progress() {
+  std::array turns{GenerationTurn{{1},1},GenerationTurn{{2},1},GenerationTurn{{3},1},GenerationTurn{{},1}};
+  const auto other=turns;
+  RequestProgress progress(4);progress.bind_open_turns(std::span(turns).first(1),3,2);
+  std::array<std::int32_t,1> input{1};const std::array<std::int32_t,1> seven{7};
+  progress.begin_turn(input);progress.observe_commit(0,seven,true,true,false);
+  const auto unchanged=[&]{
+    require(progress.turns().data()==turns.data() && progress.turns().size()==1 && progress.turn_index==0 &&
+        progress.turn_output_begin==0 && progress.generated.size()==1 && progress.generated.back()==7 &&
+        progress.observed_commits()==1 && progress.waiting_for_input() && !progress.request_done(),
+        "failed extension changed known input, output progress or commit ordinal");
+  };
+  rejects([&]{progress.extend_turns(std::span(other).first(2));});unchanged();
+  rejects([&]{progress.extend_turns(std::span(turns).first(0));});unchanged();
+  rejects([&]{progress.extend_turns(turns);});unchanged();
+  rejects([&]{progress.extend_turns(std::span(turns).first(3));});unchanged(); // Partial tail fit, then prompt budget fails.
+  turns[1].max_outputs=4;
+  rejects([&]{progress.extend_turns(std::span(turns).first(2));});unchanged();
+  turns[1].max_outputs=0;
+  rejects([&]{progress.extend_turns(std::span(turns).first(2));});unchanged();
+  turns[1].max_outputs=1;progress.extend_turns(std::span(turns).first(2));
+  progress.extend_turns(std::span(turns).first(2)); // Same known extent is a harmless no-op, not a second reservation.
+  require(progress.more_turns() && !progress.waiting_for_input(),"valid retry retained a failed cumulative reservation");
+  progress.advance_turn();
+  rejects([&]{progress.advance_turn();});
+  input[0]=-1;
+  rejects([&]{progress.begin_turn(input,7);});
+  require(input[0]==-1 && !progress.turn_started(),"bad appended input wrote pending before full extent validation");
+  std::array<std::int32_t,2> second{-1,2};progress.begin_turn(second,7);progress.close_input();
+  const std::array<std::int32_t,1> eight{8};progress.observe_commit(1,eight,true,true,false);
+  require(second[0]==7 && progress.request_done() && progress.observed_commits()==2,
+      "valid extension retry failed to continue the original pending and ledger");
+}
+
+void cold_open_bounds_and_closed_input_are_explicit() {
+  const std::array turns{GenerationTurn{{1},1},GenerationTurn{{},1}};
+  RequestProgress progress(2);
+  rejects([&]{progress.bind_open_turns({},2,1);});
+  rejects([&]{progress.bind_open_turns(std::span(turns).first(1),0,1);});
+  rejects([&]{progress.bind_open_turns(turns,1,1);});
+  rejects([&]{progress.bind_open_turns(std::span(turns).first(1),2,0);});
+  require(progress.turns().empty() && !progress.input_open() && !progress.turn_started(),
+      "failed cold bounds partially bound the request");
+  progress.bind_open_turns(std::span(turns).first(1),2,1);
+  std::array<std::int32_t,1> input{1};progress.begin_turn(input);
+  const std::array<std::int32_t,1> seven{7};progress.apply_outputs(seven,true,true,false);
+  progress.close_input();progress.close_input();
+  require(progress.request_done(),"closing a completed final-known turn failed to finish the request");
+  rejects([&]{progress.extend_turns(turns);});
+  require(progress.turns().size()==1 && progress.generated.back()==7 && progress.observed_commits()==0,
+      "closed input accepted new work or fabricated a ledger observation");
+  const std::array empty_suffix{GenerationTurn{{},1}};
+  RequestProgress pending_only(1);pending_only.bind_open_turns(empty_suffix,1,0);
+  pending_only.begin_turn();pending_only.apply_outputs(seven,true,true,false);pending_only.close_input();
+  require(pending_only.request_done(),"zero user-token budget rejected a real empty suffix");
+  RequestProgress fixed(2);fixed.bind_turns(turns);
+  require(!fixed.input_open(),"legacy finite binding unexpectedly opened request input");
+  rejects([&]{fixed.extend_turns(turns);});
+}
+
+void real_early_stop_releases_only_unused_open_quota_once() {
+  const std::array turns{GenerationTurn{{1},4},GenerationTurn{{},4},GenerationTurn{{},1}};
+  RequestProgress progress(5);
+  std::array<std::int32_t,1> first{1},pending{-1};
+  const std::array<std::int32_t,1> seven{7};
+  const std::array<std::int32_t,4> tail{8,9,10,11};
+  allocation_count=0;track_allocations=true;
+  progress.bind_open_turns(std::span(turns).first(1),3,1);progress.begin_turn(first);
+  progress.observe_commit(0,seven,true,true,true); // Original quota4, actual EOS/stop after one.
+  require(progress.waiting_for_input() && !progress.request_done(),"early EOS closed the request input stream");
+  require(!progress.observe_commit(0,tail,true,true,true),"duplicate early stop was not idempotent");
+  progress.extend_turns(std::span(turns).first(2)); // One actual output plus quota4 exactly fits cap5.
+  track_allocations=false;
+  rejects([&]{progress.extend_turns(turns);}); // A duplicate refund would incorrectly admit quota1.
+  require(progress.turns().size()==2 && progress.observed_commits()==1 && progress.generated.size()==1,
+      "failed extra quota or duplicate EOS changed the published schedule");
+  track_allocations=true;
+  progress.advance_turn();progress.begin_turn(pending,7);progress.close_input();
+  progress.observe_commit(1,tail,true,true,false);
+  track_allocations=false;
+  require(allocation_count==0 && progress.request_done() && progress.generated.size()==5 &&
+      progress.observed_commits()==2 && pending[0]==7,
+      "early-stop quota reuse allocated, consumed pending twice or changed commit authority");
+}
 } // namespace
 
 int main() {
@@ -173,6 +299,14 @@ int main() {
     std::puts("PASS imported history, no-Graph output and authoritative commit counts");
     finite_fifo_hot_transitions_allocate_nothing();
     std::puts("PASS mixed two-user FIFO turns and allocation-free prepared transitions");
+    open_input_appends_without_restarting_progress_or_allocating();
+    std::puts("PASS active/waiting open-input append, pending-once continuation and allocation-free transitions");
+    invalid_extensions_preserve_known_input_and_progress();
+    std::puts("PASS extension pointer/count/token/output rejection atomicity and valid retry");
+    cold_open_bounds_and_closed_input_are_explicit();
+    std::puts("PASS cold open bounds, closed/finite input and idempotent close");
+    real_early_stop_releases_only_unused_open_quota_once();
+    std::puts("PASS actual EOS quota refund, duplicate no-op and allocation-free remaining-capacity admission");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false; std::fprintf(stderr, "%s\n", error.what()); return 1;

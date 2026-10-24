@@ -87,37 +87,51 @@ public:
   // its returned order belongs to the caller's existing idle-request record.
   // A terminal turn becomes Retiring; it does not make its payload slot reusable.
   std::size_t release_turn(RequestKey key, bool more) {
-    if (!matches(key)) throw std::out_of_range("turn release key is stale or foreign");
-    const auto found = std::find(active_.begin(), active_.end(), key);
-    if (slots_[key.slot].state != State::kActive || found == active_.end())
-      throw std::logic_error("turn release requires an active request");
-    if (more && (waiting_count_ == waiting_.size() || idle_clock_ == (std::numeric_limits<std::size_t>::max)()))
-      throw std::out_of_range("turn release exceeds FIFO or idle-order capacity");
-    active_.erase(found);
-    if (!more) { slots_[key.slot].state = State::kRetiring; return 0; }
-    push_waiting(key); slots_[key.slot].state = State::kQueued;
-    return ++idle_clock_;
+    return leave_active(key, more ? State::kQueued : State::kRetiring);
   }
 
-  // Withdraw only a queued request. No device work is cancelled here and no
-  // payload is destroyed. An active key returns false unchanged: its owner must
-  // abort/retire the actual shared batch before releasing any participant.
-  bool cancel_queued(RequestKey key) noexcept {
-    if (!matches(key) || slots_[key.slot].state != State::kQueued) return false;
-    std::size_t offset = 0;
-    while (offset < waiting_count_ && waiting_[waiting_index(offset)] != key) ++offset;
-    if (offset == waiting_count_) return false;
-    for (auto at = offset; at + 1 < waiting_count_; ++at)
-      waiting_[waiting_index(at)] = waiting_[waiting_index(at + 1)];
-    waiting_tail_ = waiting_tail_ ? waiting_tail_ - 1 : waiting_.size() - 1;
-    waiting_[waiting_tail_] = {}; --waiting_count_;
+  // The owner has retired and observed this actual episode. Paused keeps its
+  // occupied identity/payload but uses no active slot and is absent from FIFO.
+  std::size_t pause(RequestKey key) { return leave_active(key, State::kPaused); }
+
+  // New input/work is ready; resume through the same FIFO after existing peers.
+  void wake(RequestKey key) {
+    if (!matches(key)) throw std::out_of_range("request wake key is stale or foreign");
+    if (slots_[key.slot].state != State::kPaused)
+      throw std::logic_error("request wake requires a paused request");
+    if (waiting_count_ == waiting_.size()) throw std::out_of_range("request FIFO capacity exhausted");
+    push_waiting(key); slots_[key.slot].state = State::kQueued;
+  }
+
+  // Yield an unfinished turn's surviving request only after its episode is
+  // actually retired/observed. This is deliberately not release_turn(more).
+  std::size_t requeue(RequestKey key) { return leave_active(key, State::kQueued); }
+
+  // The owner proved the whole shared batch exited. This retires one active
+  // identity, not device work; release still requires payload retirement proof.
+  void retire_active(RequestKey key) { (void)leave_active(key, State::kRetiring); }
+
+  // Withdraw queued or paused input waiters, without destroying a payload or
+  // cancelling device work. Active/retiring/stale keys return false unchanged.
+  bool cancel_waiting(RequestKey key) noexcept {
+    if (!matches(key)) return false;
+    const auto state = slots_[key.slot].state;
+    if (state == State::kQueued) {
+      std::size_t offset = 0;
+      while (offset < waiting_count_ && waiting_[waiting_index(offset)] != key) ++offset;
+      if (offset == waiting_count_) return false;
+      for (auto at = offset; at + 1 < waiting_count_; ++at)
+        waiting_[waiting_index(at)] = waiting_[waiting_index(at + 1)];
+      waiting_tail_ = waiting_tail_ ? waiting_tail_ - 1 : waiting_.size() - 1;
+      waiting_[waiting_tail_] = {}; --waiting_count_;
+    } else if (state != State::kPaused) return false;
     slots_[key.slot].state = State::kRetiring;
     return true;
   }
 
   // The caller has proved actual retirement/withdrawal and released the old
   // request payload's device uses. Retiring alone is not that proof. Active,
-  // queued and stale keys reject; native cancellation is never retirement.
+  // queued, paused and stale keys reject; native cancellation is never retirement.
   void release(RequestKey key) {
     if (!matches(key)) throw std::out_of_range("request release key is stale or foreign");
     if (slots_[key.slot].state != State::kRetiring)
@@ -135,13 +149,13 @@ public:
   std::optional<std::size_t> idle_victim(Resident resident, IdleOrder idle_order) const {
     std::optional<std::size_t> victim;
     for (std::size_t index = 0; index < slots_.size(); ++index)
-      if (slots_[index].state == State::kQueued && resident(index) &&
+      if ((slots_[index].state == State::kQueued || slots_[index].state == State::kPaused) && resident(index) &&
           (!victim || idle_order(index) < idle_order(*victim))) victim = index;
     return victim;
   }
 
 private:
-  enum class State : std::uint8_t { kFree, kQueued, kActive, kRetiring };
+  enum class State : std::uint8_t { kFree, kQueued, kActive, kPaused, kRetiring };
   struct Slot final { std::uint64_t generation = 0; State state = State::kFree; };
   std::size_t next(std::size_t index) const noexcept { return index + 1 == waiting_.size() ? 0 : index + 1; }
   std::size_t waiting_index(std::size_t offset) const noexcept {
@@ -150,6 +164,20 @@ private:
   }
   void push_waiting(RequestKey key) noexcept {
     waiting_[waiting_tail_] = key; waiting_tail_ = next(waiting_tail_); ++waiting_count_;
+  }
+  std::size_t leave_active(RequestKey key, State destination) {
+    if (!matches(key)) throw std::out_of_range("request transition key is stale or foreign");
+    const auto found = std::find(active_.begin(), active_.end(), key);
+    if (slots_[key.slot].state != State::kActive || found == active_.end())
+      throw std::logic_error("request transition requires an active request");
+    const bool idle = destination != State::kRetiring;
+    if ((destination == State::kQueued && waiting_count_ == waiting_.size()) ||
+        (idle && idle_clock_ == (std::numeric_limits<std::size_t>::max)()))
+      throw std::out_of_range("request transition exceeds FIFO or idle-order capacity");
+    active_.erase(found);
+    if (destination == State::kQueued) push_waiting(key);
+    slots_[key.slot].state = destination;
+    return idle ? ++idle_clock_ : 0;
   }
   std::vector<Slot> slots_;
   std::vector<RequestKey> waiting_, active_;

@@ -25,6 +25,9 @@ struct GenerationSessionSchedule final {
 };
 
 // Host progress only. The schedule owner outlives this borrowed turn span.
+// For open input it reserves stable turn storage before binding, only appends
+// complete turns, and never changes any already exposed turn/quota/prompt.
+// Mutations are serialized by that owner; this is not a concurrent ingress API.
 // The model's committed head/ledger remains authoritative for its next cursor;
 // initial_sampling identifies a new request, not a second mutable RNG state.
 struct RequestProgress final {
@@ -54,6 +57,47 @@ struct RequestProgress final {
       outputs += turn.max_outputs;
     }
     turns_ = turns; turns_bound_ = true;
+  }
+
+  // Cold bounds for one stable borrowed schedule, not a second turn store.
+  // The prompt budget counts user suffix tokens only, not pending tokens or
+  // model KV/context capacity. The model owner still admits actual input rows.
+  void bind_open_turns(std::span<const GenerationTurn> turns, std::size_t max_turns,
+                       std::size_t max_total_prompt_tokens) {
+    if (turns_bound_ || started_ || observed_commits_ || !generated.empty() || turns.empty())
+      throw std::logic_error("open request turns must be bound once before progress starts");
+    if (!max_turns || turns.size() > max_turns)
+      throw std::out_of_range("request turns exceed the prepared turn limit");
+    std::size_t outputs = 0, prompts = 0;
+    validate_turn_tail(turns, max_total_prompt_tokens, outputs, prompts);
+    turns_ = turns; turns_bound_ = true;
+    maximum_turns_ = max_turns; maximum_prompt_tokens_ = max_total_prompt_tokens;
+    scheduled_outputs_ = outputs; scheduled_prompt_tokens_ = prompts;
+    input_open_ = true;
+  }
+
+  // Only new suffix metadata is read. Old span contents and prompts are an
+  // immutable owner contract, not copied or rehashed here. All rejection
+  // precedes publication of the expanded span and cumulative reservations.
+  void extend_turns(std::span<const GenerationTurn> expanded) {
+    if (!input_open_) throw std::logic_error("request input is closed");
+    if (expanded.data() != turns_.data() || expanded.size() < turns_.size())
+      throw std::invalid_argument("request extension requires the same stable turn prefix");
+    if (expanded.size() > maximum_turns_)
+      throw std::out_of_range("request turns exceed the prepared turn limit");
+    auto outputs = scheduled_outputs_, prompts = scheduled_prompt_tokens_;
+    validate_turn_tail(expanded.subspan(turns_.size()), maximum_prompt_tokens_, outputs, prompts);
+    turns_ = expanded; scheduled_outputs_ = outputs; scheduled_prompt_tokens_ = prompts;
+  }
+
+  // Idempotent; closing input does not stop or change an active known turn.
+  void close_input() noexcept { input_open_ = false; }
+  bool input_open() const noexcept { return input_open_; }
+  bool waiting_for_input() const noexcept {
+    return input_open_ && started_ && turn_done && !more_turns();
+  }
+  bool request_done() const noexcept {
+    return !input_open_ && started_ && turn_done && !more_turns();
   }
 
   std::span<const GenerationTurn> turns() const noexcept { return turns_; }
@@ -143,7 +187,14 @@ struct RequestProgress final {
     preflight_outputs(emitted, user_output, prefill_complete, stopped);
     if (user_output) generated.insert(generated.end(), emitted.begin(), emitted.end());
     prefilled = prefilled || prefill_complete;
-    if (user_output) turn_done = generated.size() == output_limit() || stopped;
+    if (user_output) {
+      const auto limit = output_limit();
+      turn_done = generated.size() == limit || stopped;
+      // Only a newly finished, actually observed turn releases its unused
+      // open-input quota. Duplicate commits return before this point; a second
+      // user output after turn_done is rejected by preflight_outputs.
+      if (turn_done && input_open_) scheduled_outputs_ -= limit - generated.size();
+    }
   }
 
   // A duplicate is a no-op, including its payload. Gaps and bounds fail before
@@ -166,9 +217,25 @@ struct RequestProgress final {
   }
 
 private:
+  void validate_turn_tail(std::span<const GenerationTurn> tail, std::size_t maximum_prompt_tokens,
+                          std::size_t &outputs, std::size_t &prompts) const {
+    for (const auto &turn : tail) {
+      if (!turn.max_outputs || turn.max_outputs > maximum_outputs_ - outputs)
+        throw std::out_of_range("request turn quotas exceed the prepared output limit");
+      if (turn.prompt.size() > maximum_prompt_tokens - prompts)
+        throw std::out_of_range("request user suffixes exceed the prepared prompt token limit");
+      outputs += turn.max_outputs; prompts += turn.prompt.size();
+    }
+  }
   std::span<const GenerationTurn> turns_{};
   std::size_t maximum_outputs_ = 0, observed_commits_ = 0;
+  std::size_t maximum_turns_ = 0, maximum_prompt_tokens_ = 0;
+  // Outputs are delivered tokens plus remaining known-turn quota; a real early
+  // stop releases only that turn's unused reservation. User prompt budget is
+  // cumulative across all exposed turns and is never refunded as KV capacity.
+  std::size_t scheduled_outputs_ = 0, scheduled_prompt_tokens_ = 0;
   bool started_ = false, turns_bound_ = false, history_adopted_ = false;
+  bool input_open_ = false;
 };
 
 } // namespace hyle::inference

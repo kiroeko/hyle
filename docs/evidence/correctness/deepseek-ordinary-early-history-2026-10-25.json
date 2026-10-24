@@ -1,0 +1,271 @@
+{
+  "schema": "hyle.correctness.deepseek-ordinary-early-history.v1",
+  "date": "2026-10-25",
+  "status": "PASS_BOUNDED_ORIGINAL_FLASH_ORDINARY_EARLY_HISTORY_COMPONENT",
+  "scope": "Three genuine GA Flash target layers40/41/42, ordinary Q1 cold phases at short and wrapping histories, complete21-cache state plus real pending/frontier; no MTP draft/acceptance path.",
+  "source_identity": {
+    "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+    "target_layers": [
+      40,
+      41,
+      42
+    ],
+    "ratios": [
+      4,
+      128,
+      4
+    ],
+    "target_original_roles": 4725,
+    "target_original_bytes": 10748569116,
+    "all_experts_per_layer": 256,
+    "typed_catalog_sha256": "891133bf24c829c51b7c4819df2104e4ce0616c1b5682dbf8025c42fa447aa8a",
+    "retained_body_sha256": "05f9bdc3ab78be7040fc484d19ce7b5010c9b3dc037d2715060d3de5606adc52",
+    "original_head_shape": [
+      129280,
+      4096
+    ],
+    "original_head_dtype": "BF16",
+    "original_head_sha256": "029e3c5293b29cc426e21d87795e15efa4d363f27b2bc4a9e3aef7d79f047919",
+    "authentication": "Original source loader verifies the pinned typed catalog/body, and the independent BF16 head is mapped and SHA-verified. Existing cached payloads only; no reacquisition/copy.",
+    "existing_source_evidence": "docs/evidence/correctness/mtp-dspark-target-verifier-2026-10-23.json"
+  },
+  "implementation": {
+    "sources": [
+      {
+        "path": "tests/compute_models/dspark_original_target_fragment.h",
+        "bytes": 23296,
+        "sha256": "be026c13e31930faa1a2d768c679434074c555445060c802aebf9fe4a083d727"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_reference.h",
+        "bytes": 46582,
+        "sha256": "0ee11d61df085c2e2fbe41728a8fc41a2d4c6e8dd905494cb5c9bcec5542d069"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_target_program.h",
+        "bytes": 9663,
+        "sha256": "b706b958548194a2f931c0c88489cd814c9b15f242c8064dd6d19364957675cf"
+      },
+      {
+        "path": "tests/compute_models/dspark_original_early_history_test.cc",
+        "bytes": 22362,
+        "sha256": "20b95ee3937fa77693c4a94122b21ee1a499d5f4b3e016a9a85815f89b20293f"
+      }
+    ],
+    "changes": [
+      "Cold Plan accepts position0..capacity-1 while physical carrier capacity stays>=128.",
+      "SWA gathers only actual causal rows min(position+1,128) in chronological ring order.",
+      "Before the first compression row, update real main/index compressor state and omit compressed reader/index selection, with typed optional observation ports. No default Value, zero-count TopK, fake ID or unwritten key is published.",
+      "Absent initial overlap scores use -inf; after first compression preserve the original complete overlap shift, typed BF16/QAT/RoPE/encoded stores.",
+      "Warm compressed branch creates the original operations in the original order. Program/LayerState first21-state output order is unchanged; target_program.h itself is byte-identical to before.",
+      "Ordinary StateSchema retains21 target resources plus real pending-ID lease and frontier/epoch metadata; expected-base publication is atomic. No fictitious NextN members.",
+      "New ordinary consumer uses existing source bindings, six-expert working set, native Graph Run/RoutedRun, LeasePool and StateStore. No executor, provider or schema registry added."
+    ],
+    "registration": {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "existing_target": "hyle_graph_route_cuda_dspark_original_state_consumer_test",
+      "source_added": "../compute_models/dspark_original_early_history_test.cc",
+      "fresh_CMake_configure": false
+    },
+    "source_format_bridge": {
+      "path": ".scratch/inference-system-review-20261025/deepseek-early-history/line-ending-normalization.json",
+      "bytes": 1628,
+      "sha256": "f1943bd6b7367c38db9884ea5afd34bd0234186358a914fab16e51ba6fa7cb64"
+    }
+  },
+  "validation": {
+    "strict_new_consumer": {
+      "failed_first_attempt": {
+        "exit": 2,
+        "seconds": 2.9839999999967404,
+        "timeout": false
+      },
+      "failure": "New consumer local-name shadow under /WX and LM oracle predecessor dtype mismatch. Corrected locally; no native execution or source-role failure in this attempt.",
+      "successful_second_compile": {
+        "exit": 0,
+        "seconds": 6.6560000000172295,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7190000000118744,
+        "timeout": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\deepseek-early-history\\attempt2\\checks.exe",
+        "bytes": 140673024,
+        "sha256": "8b8509db1912da9761a8e4d182625b83f182f2a460952d70f0818517169777d4"
+      },
+      "consumer_translation_units": 1,
+      "compile_attempts": 2,
+      "native_or_SDK_translation_units": 0,
+      "native": {
+        "path": ".scratch/inference-system-review-20261025/deepseek-early-history/attempt2/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    },
+    "cold_host_plan": {
+      "process": {
+        "exit": 0,
+        "seconds": 0.4370000000053551,
+        "timeout": false
+      },
+      "tests": 1,
+      "skips": 0,
+      "checks": [
+        "Invalid negative/out-of-capacity frontiers fail; physical compressed carrier capacity<128 remains explicit unsupported.",
+        "Cold graphs at0/2/3/127/128 have exactly the real SWA plus optional compressed reader and zero/one genuine TopK as appropriate."
+      ],
+      "scope": "No model roles loaded or CUDA Context created by the selected host case."
+    },
+    "old_direct_warm_consumers": {
+      "status": "PASS_strict_syntax_only",
+      "consumers": [
+        {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_original_state_consumer_test.cc",
+            "bytes": 195890,
+            "sha256": "965d9ea3d2236c9fd0ab018c5214da8095b114215a66bef48a099aadeb8087b8"
+          },
+          "process": {
+            "exit": 0,
+            "seconds": 6.203000000008615,
+            "timeout": false
+          }
+        },
+        {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\dspark_pro_mtp_state_consumer_test.cc",
+            "bytes": 84597,
+            "sha256": "c900340d1c86996d6fbf3ab10f15fc56336d914fab9875c7656be42dc40f00e2"
+          },
+          "process": {
+            "exit": 0,
+            "seconds": 5.452999999979511,
+            "timeout": false
+          }
+        }
+      ],
+      "SDK_builds": 0,
+      "model_runs": 0
+    },
+    "actual_cuda": {
+      "process": {
+        "exit": 0,
+        "seconds": 43.20299999997951,
+        "timeout": false
+      },
+      "tests": 1,
+      "skips": 0,
+      "actual_native_target_rows": 8,
+      "rows": [
+        {
+          "position": 0,
+          "next_id": 204,
+          "window": 1,
+          "compressed4": 0,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 1,
+          "next_id": 107938,
+          "window": 2,
+          "compressed4": 0,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 2,
+          "next_id": 117844,
+          "window": 3,
+          "compressed4": 0,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 3,
+          "next_id": 21677,
+          "window": 4,
+          "compressed4": 1,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 4,
+          "next_id": 99228,
+          "window": 5,
+          "compressed4": 1,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 126,
+          "next_id": 31066,
+          "window": 127,
+          "compressed4": 31,
+          "compressed128": 0,
+          "target_members": 21
+        },
+        {
+          "position": 127,
+          "next_id": 36397,
+          "window": 128,
+          "compressed4": 32,
+          "compressed128": 1,
+          "target_members": 21
+        },
+        {
+          "position": 128,
+          "next_id": 6526,
+          "window": 128,
+          "compressed4": 32,
+          "compressed128": 1,
+          "target_members": 21
+        }
+      ],
+      "three_distinguishing_checks": [
+        "Empty start0->1 with only real SWA rows, zero logical compressed rows, unchanged pools and old-reader preservation.",
+        "Actual continuation2->3->4; first ratio4 main+index compression at3, no-publication neighbors, typed exact packed row/state checks.",
+        "Explicit given126-prefix fixture then native126->127->128: first ratio128 compression at127, ratio4 compression and SWA wrap at128."
+      ],
+      "final_frontiers": [
+        5,
+        129
+      ],
+      "complete_target_members": 21,
+      "atomic_total_members": 23,
+      "stale_publish_rejected": true,
+      "old_readers_unchanged": true,
+      "final_StateStore_versions": 0,
+      "final_StateStore_backing_bytes": 0,
+      "native_result_retirement": "Existing ordinary Graph lifecycle waits for completion and resets Invocation before reusing working-set/result generations."
+    },
+    "numeric_scope": "Existing independent actual-predecessor FP64/dot-bound references cover sampled source projection/LM rows, full local nonlinear/sink computations and exact BF16 stores/packed cache/physical state writes/TopK. This is not an exhaustive all-matrix double oracle."
+  },
+  "limits": [
+    "Layer39 hidden input is an explicitly finite BF16 upstream fixture depending on the actual current-ID; layers0..39 and a complete43-layer model were not run.",
+    "The126-prefix initial cache/raw/score contents are explicitly given valid upstream fixture state. They do not certify126 previous trained forwards. Only eight target-tail row executions are claimed.",
+    "The warm>=128 source branch and first21-port contract are preserved by source review; old Flash/Pro consumers received strict syntax checks only, no new warm/MTP runtime claim.",
+    "Final canonical reference/new-test files differ from the compiled frozen source only by CRLF/LF normalization; exact bridge and both forms are retained. No extra build/model rerun for formatting.",
+    "Capacity<128 remains outside this component carrier contract. One CUDA route is represented; no new CPU/Apple/Vulkan, quality, acceptance-rate, server or performance claim."
+  ],
+  "acquisition": {
+    "HTTP": 0,
+    "weight_payload_copies": 0,
+    "whole_bank_downloads": 0,
+    "SDK_builds": 0
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/deepseek-ordinary-early-history-2026-10-25.zip",
+    "bytes": 365281,
+    "sha256": "74a6d2725c007c8db658e92af633707d356a71495cfe4b845e92c9cf24fa164f",
+    "members": 111,
+    "all_payload_sha256_verified": true,
+    "CRC_verified": true,
+    "weights_or_binaries_included": false
+  },
+  "retention": "New consumer object/image are retained as reusable local validation cache. No cleanup performed."
+}

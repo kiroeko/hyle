@@ -1,0 +1,200 @@
+{
+  "status": "HOST_COMPONENT_ONLY_PASS",
+  "date": "2026-10-25",
+  "scope": "Bounded incremental turn input over one stable borrowed schedule; host progress only.",
+  "implementation": {
+    "API": [
+      "bind_open_turns(nonempty_initial,max_turns,max_total_prompt_tokens)",
+      "extend_turns(expanded_same_data_span)",
+      "close_input() noexcept (idempotent)",
+      "input_open()",
+      "waiting_for_input()",
+      "request_done()"
+    ],
+    "source_bound": true,
+    "source_pins": {
+      "engine/inference/request_progress.h": {
+        "bytes": 12440,
+        "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+      },
+      "tests/tools/inference_request_progress_test.cc": {
+        "bytes": 18677,
+        "sha256": "9d3298362612c807a3a15c8e6925b87fde834c57abfebfeb67ddc3cf7f25e66e"
+      },
+      "engine/inference/request_window.h": {
+        "bytes": 7929,
+        "sha256": "651407bcca12f91c02027129644731bb1b9c37dbb27940a3a3307621be92f828"
+      },
+      "engine/inference/sampling_cursor.h": {
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      }
+    },
+    "contract": [
+      "The stable owner serializes mutations and never changes an already exposed turn, quota or user prompt.",
+      "Cold maximum turn count, cumulative user-suffix token budget and constructor maximum output storage remain explicit.",
+      "Extension validates only the new tail; pointer changes, shrinking, bounds or closed input fail before publication.",
+      "Open input waits after the final known completed turn; request completion requires closed input and no known successor.",
+      "Close is idempotent and preserves a known active turn. A later admitted turn consumes its actual pending once.",
+      "A first real early stop refunds only its unused output reservation; duplicate commit observation cannot refund twice.",
+      "User prompt-token budget is not KV/context capacity; actual model admission remains the owner responsibility."
+    ]
+  },
+  "verification": {
+    "actual_compile_TUs": 1,
+    "actual_run_processes": 1,
+    "actual_groups": 8,
+    "prior_finite_groups": 4,
+    "new_open_input_groups": 4,
+    "strict_compile_exit": 0,
+    "actual_run_exit": 0,
+    "failures": 0,
+    "skips": 0,
+    "compile_started_utc": "2026-10-24T22:17:09.260822+00:00",
+    "compile_finished_utc": "2026-10-24T22:17:09.931434+00:00",
+    "run_started_utc": "2026-10-24T22:17:09.932434+00:00",
+    "run_finished_utc": "2026-10-24T22:17:09.969131+00:00",
+    "cases": [
+      {
+        "index": 1,
+        "status": "PASS",
+        "stdout": "PASS ordinary/batched outputs, quota/stop and pending-only turn continuation"
+      },
+      {
+        "index": 2,
+        "status": "PASS",
+        "stdout": "PASS gap/duplicate/quota/begin failures and side-effect-free retry"
+      },
+      {
+        "index": 3,
+        "status": "PASS",
+        "stdout": "PASS imported history, no-Graph output and authoritative commit counts"
+      },
+      {
+        "index": 4,
+        "status": "PASS",
+        "stdout": "PASS mixed two-user FIFO turns and allocation-free prepared transitions"
+      },
+      {
+        "index": 5,
+        "status": "PASS",
+        "stdout": "PASS active/waiting open-input append, pending-once continuation and allocation-free transitions"
+      },
+      {
+        "index": 6,
+        "status": "PASS",
+        "stdout": "PASS extension pointer/count/token/output rejection atomicity and valid retry"
+      },
+      {
+        "index": 7,
+        "status": "PASS",
+        "stdout": "PASS cold open bounds, closed/finite input and idempotent close"
+      },
+      {
+        "index": 8,
+        "status": "PASS",
+        "stdout": "PASS actual EOS quota refund, duplicate no-op and allocation-free remaining-capacity admission"
+      }
+    ],
+    "prepared_valid_transition_allocation_count": 0,
+    "allocation_assertion_scope": "Existing FIFO journey, valid active/waiting append journey, and early-stop quota-reuse journey; invalid operations outside allocation tracking.",
+    "exact_compile_command": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "/nologo",
+      "/std:c++latest",
+      "/EHsc",
+      "/MD",
+      "/O2",
+      "/W4",
+      "/WX",
+      "/wd4324",
+      "/permissive-",
+      "/Zc:preprocessor",
+      "/Zc:__cplusplus",
+      "/utf-8",
+      "/DHYLE_STATIC",
+      "/DNOMINMAX",
+      "/IC:\\public\\project-hyle\\hyle\\include",
+      "/sourceDependencies",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-incremental-turns-20261025\\host1\\dependencies.json",
+      "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_progress_test.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\inference-incremental-turns-20261025\\host1\\host.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\inference-incremental-turns-20261025\\host1\\checks.exe"
+    ],
+    "exact_run_command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-incremental-turns-20261025\\host1\\checks.exe"
+    ],
+    "working_directory": "C:\\public\\project-hyle\\hyle",
+    "actual_dependency_pins": [
+      {
+        "path": "tests/tools/inference_request_progress_test.cc",
+        "bytes": 18677,
+        "sha256": "9d3298362612c807a3a15c8e6925b87fde834c57abfebfeb67ddc3cf7f25e66e"
+      },
+      {
+        "path": "engine/inference/request_progress.h",
+        "bytes": 12440,
+        "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+      },
+      {
+        "path": "engine/inference/sampling_cursor.h",
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      },
+      {
+        "path": "engine/inference/request_window.h",
+        "bytes": 7929,
+        "sha256": "651407bcca12f91c02027129644731bb1b9c37dbb27940a3a3307621be92f828"
+      }
+    ],
+    "header_and_test_pins_unchanged_from_compile_through_run": true,
+    "private_reproducer": "check.py in the archive uses the retained host-only MSVC recipe; source-bound reproduction uses archived source files.",
+    "original_stdout_archive_path": "host1/run/stdout.log",
+    "original_stderr_archive_path": "host1/run/stderr.log"
+  },
+  "boundaries": {
+    "native_model_execution": false,
+    "GPU_runs": 0,
+    "SDK_builds": 0,
+    "HTTP_requests": 0,
+    "online_entry_or_server_integration": false,
+    "main_or_RequestWindow_changed": false,
+    "new_RNG_or_commit_authority": false,
+    "performance_claim": false
+  },
+  "limitations": [
+    "This verifies the host primitive, not a native Model or an online/CLI multi-request journey.",
+    "Input storage stability and immutability of prior turns/prompts are caller contracts; no copied turn store or history hash was introduced.",
+    "Source pins identify this tested version; later canonical integration changes require their own appropriately bounded verification."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/request-incremental-turns-2026-10-25.zip",
+    "bytes": 30912,
+    "sha256": "252bfca0ac04e12420099337394bf0d89bd3cf01aa9ecbdd529dca1a164ae7e8"
+  },
+  "archive_entries": 22,
+  "archive_CRC_and_all_member_SHA256_verified": true,
+  "archive_contains_binaries": false,
+  "archive_matches_original_private_proof_bytes": true,
+  "private_summary": {
+    "path": ".scratch/inference-incremental-turns-20261025/proof-summary.json",
+    "bytes": 3022,
+    "sha256": "985458c82df13810e8d3f205845a140dde0b81f217a5ca6f9cf775a2b173b9ad"
+  },
+  "cleanup": {
+    "files": [
+      {
+        "path": ".scratch/inference-incremental-turns-20261025/host1/host.obj",
+        "bytes": 440824,
+        "sha256": "242142bdbea7531c5ad4c9069443bc6d9b39b92854ebb32341b918e667d52b96"
+      },
+      {
+        "path": ".scratch/inference-incremental-turns-20261025/host1/checks.exe",
+        "bytes": 63488,
+        "sha256": "f9cbb471895cb98ce805a890518c84eecb064dfc7a56d7a469d755864f312e51"
+      }
+    ],
+    "logical_bytes": 504312,
+    "deleted": false
+  }
+}

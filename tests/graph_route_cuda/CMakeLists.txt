@@ -164,6 +164,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     hyle_stage_runtime(hyle_graph_route_cuda_dspark_main_history_test)
     hyle_add_test(graph_route_cuda NAME dspark_original_state_consumer
       SOURCES ../compute_models/dspark_original_state_consumer_test.cc
+              ../compute_models/dspark_original_early_history_test.cc
               ../compute_models/dspark_pro_mtp_state_consumer_test.cc
       DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda)
     target_compile_definitions(hyle_graph_route_cuda_dspark_original_state_consumer_test PRIVATE HYLE_TEST_DSPARK_STATE_CUDA=1)

@@ -58,10 +58,10 @@ struct Plan final {
   Geometry geometry=::dspark_target_geometry::kFlash;
   static Plan make(std::int64_t position,std::int64_t capacity,Geometry model=::dspark_target_geometry::kFlash) {
     model.validate();
-    // This consumer exercises decode after an explicit complete prefix.
-    // At least one compressed128 block exists; no fabricated empty TopK.
-    if(position<128||capacity<=position||capacity>std::numeric_limits<std::int32_t>::max()-1)
-      throw std::runtime_error("target decode plan needs a bounded nonempty accepted prefix");
+    // A short prefix may have no compressed rows. Its cold graph omits that
+    // reader/selection; the physical state carriers remain positively sized.
+    if(position<0||capacity<128||capacity<=position||capacity>std::numeric_limits<std::int32_t>::max()-1)
+      throw std::runtime_error("target decode plan needs a bounded actual prefix frontier");
     return {position,capacity,model};
   }
   std::int64_t pool_capacity(std::int64_t ratio) const {return capacity/ratio;}
@@ -198,16 +198,26 @@ inline CompressorPorts append_compressor(sem::Fragment &f,Value input,Value old_
   return result;
 }
 
-struct IndexerPorts final {
+struct IndexSelectionPorts final {
   ProjectionPorts query,weights;
   ds::RopePorts rotary;
   Value hadamard_raw,hadamard_stored,query_qat,scaled_weights_raw,scaled_weights_stored,scores,ids;
-  CompressorPorts compressor;
   template<class Visitor> void visit_values(Visitor &&visitor) {
     query.visit_values(visitor);weights.visit_values(visitor);rotary.visit_values(visitor);
     for(auto *port:{&hadamard_raw,&hadamard_stored,&query_qat,&scaled_weights_raw,&scaled_weights_stored,&scores,&ids})visitor(*port);
+  }
+};
+struct IndexerPorts final {
+  CompressorPorts compressor;
+  std::optional<IndexSelectionPorts> selection;
+  template<class Visitor> void visit_values(Visitor &&visitor) {
+    if(selection)selection->visit_values(visitor);
     compressor.visit_values(visitor);
   }
+};
+struct CompressedReadPorts final {
+  Value ids,decoded;
+  template<class Visitor> void visit_values(Visitor &&visitor) {visitor(ids);visitor(decoded);}
 };
 struct AttentionPorts final {
   Value input;
@@ -215,7 +225,8 @@ struct AttentionPorts final {
   NormPorts query_norm,kv_norm;
   ds::QueryNormPorts query_head_norm;
   ds::RopePorts query_rotary,kv_rotary,inverse_rotary;
-  Value window_encoded,window_next,window_rows,window_decoded,compressed_ids,compressed_decoded;
+  Value window_encoded,window_next,window_rows,window_decoded;
+  std::optional<CompressedReadPorts> compressed;
   Value chosen,mask,context_raw,context_stored,output_a_input,output_a_stored;
   CompressorPorts compressor;
   std::optional<IndexerPorts> indexer;
@@ -223,8 +234,9 @@ struct AttentionPorts final {
     visitor(input);query_a.visit_values(visitor);query_b.visit_values(visitor);kv.visit_values(visitor);output_b.visit_values(visitor);
     query_norm.visit_values(visitor);kv_norm.visit_values(visitor);query_head_norm.visit_values(visitor);
     query_rotary.visit_values(visitor);kv_rotary.visit_values(visitor);inverse_rotary.visit_values(visitor);
-    for(auto *port:{&window_encoded,&window_next,&window_rows,&window_decoded,&compressed_ids,&compressed_decoded,
-        &chosen,&mask,&context_raw,&context_stored,&output_a_input,&output_a_stored})visitor(*port);
+    for(auto *port:{&window_encoded,&window_next,&window_rows,&window_decoded})visitor(*port);
+    if(compressed)compressed->visit_values(visitor);
+    for(auto *port:{&chosen,&mask,&context_raw,&context_stored,&output_a_input,&output_a_stored})visitor(*port);
     compressor.visit_values(visitor);if(indexer)indexer->visit_values(visitor);
   }
 };
@@ -250,39 +262,50 @@ inline AttentionResult append_attention(sem::Fragment &f,Value input,LayerState 
   ports.window_encoded=encode(f,reshape(f,rotated_kv,{1,kDepth}),kMainEncoding);
   ports.window_next=scatter(f,state.window,index(f,plan.position%kWindow),ports.window_encoded);
   result.state.window=ports.window_next;
-  std::vector<std::int32_t> chronological(std::size_t(kWindow),0);
-  for(std::int64_t row=0;row<kWindow;++row)chronological[std::size_t(row)]=std::int32_t((plan.position+1+row)%kWindow);
+  const auto window_count=std::min(plan.position+1,kWindow);
+  const auto window_first=plan.position+1-window_count;
+  std::vector<std::int32_t> chronological(std::size_t(window_count),0);
+  for(std::int64_t row=0;row<window_count;++row)chronological[std::size_t(row)]=std::int32_t((window_first+row)%kWindow);
   ports.window_rows=indices(f,chronological);
   ports.window_decoded=decode(f,ports.window_next,ports.window_rows,kMainEncoding);
 
   ports.compressor=append_compressor(f,input,state.raw,state.score,state.pool,parameters.compressor,ratio,false,plan);
   result.state.raw=ports.compressor.raw_next;result.state.score=ports.compressor.score_next;result.state.pool=ports.compressor.pool_next;
   const auto visible_count=plan.visible(ratio);
+  if(visible_count)ports.compressed.emplace();
   if(ratio==4) {
     auto &ip=ports.indexer.emplace();const auto &parameter=*parameters.indexer;const auto old_index=*state.index;
-    ip.query=fp8(f,ports.query_norm.stored,parameter.query,kIndexHeads*kIndexDepth,model.query_rank);
-    const auto rotated=ds::rope(f,reshape(f,visible(f,ip.query.stored),{1,1,kIndexHeads,kIndexDepth}),state.cursor,true,false,&ip.rotary);
-    const auto query_rows=reshape(f,rotated,{kIndexHeads,kIndexDepth});
-    ip.hadamard_raw=f.one(c::Operation(c::Hadamard{}),{query_rows});ip.hadamard_stored=stored(f,ip.hadamard_raw);
-    ip.query_qat=f.one(c::model_ops::block_quantization_roundtrip(c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32),{ip.hadamard_stored});
-    ip.compressor=append_compressor(f,input,old_index.raw,old_index.score,old_index.pool,parameter.compressor,4,true,plan);
-    result.state.index=IndexState{ip.compressor.raw_next,ip.compressor.score_next,ip.compressor.pool_next};
-    require(f,parameter.weights,sem::dense({kIndexHeads,model.hidden},c::DataType::kBFloat16));
-    const auto weight_raw=f.one(c::model_ops::dense_linear_f32(),{input,parameter.weights});
-    ip.weights={input,weight_raw,stored(f,weight_raw)};
-    ip.scaled_weights_raw=binary(f,c::BinaryKind::kMultiply,visible(f,ip.weights.stored),
-        core::filled(f,sem::dense({1}),1.F/std::sqrt(float(kIndexHeads*kIndexDepth))));
-    ip.scaled_weights_stored=stored(f,ip.scaled_weights_raw);
-    const std::array<std::int32_t,2> ends{0,std::int32_t(visible_count)};
-    const auto ranges=reshape(f,indices(f,ends),{1,2});
-    ip.scores=f.one(c::model_ops::row_cache_indexer_scores(),{reshape(f,ip.query_qat,{1,kIndexHeads,kIndexDepth}),
-        ip.compressor.pool_next,ip.scaled_weights_stored,ranges});
-    const auto selected=f.append(c::Operation(c::TopK{.count=std::size_t(std::min(visible_count,model.index_top)),.stable=true}),{ip.scores},2);
-    ip.ids=selected[1];ports.compressed_ids=reshape(f,ip.ids,{std::min(visible_count,model.index_top)});
-  } else ports.compressed_ids=range(f,visible_count);
-  ports.compressed_decoded=decode(f,ports.compressor.pool_next,ports.compressed_ids,kMainEncoding);
-  const auto length=kWindow+(ratio==4?std::min(visible_count,model.index_top):visible_count);
-  ports.chosen=reshape(f,ds::concat(f,visible(f,ports.window_decoded),visible(f,ports.compressed_decoded),0),{1,length,1,kDepth});
+    const auto append_index=[&] {
+      ip.compressor=append_compressor(f,input,old_index.raw,old_index.score,old_index.pool,parameter.compressor,4,true,plan);
+      result.state.index=IndexState{ip.compressor.raw_next,ip.compressor.score_next,ip.compressor.pool_next};
+    };
+    if(visible_count) {
+      auto &selection=ip.selection.emplace();
+      selection.query=fp8(f,ports.query_norm.stored,parameter.query,kIndexHeads*kIndexDepth,model.query_rank);
+      const auto rotated=ds::rope(f,reshape(f,visible(f,selection.query.stored),{1,1,kIndexHeads,kIndexDepth}),state.cursor,true,false,&selection.rotary);
+      const auto query_rows=reshape(f,rotated,{kIndexHeads,kIndexDepth});
+      selection.hadamard_raw=f.one(c::Operation(c::Hadamard{}),{query_rows});selection.hadamard_stored=stored(f,selection.hadamard_raw);
+      selection.query_qat=f.one(c::model_ops::block_quantization_roundtrip(c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32),{selection.hadamard_stored});
+      append_index();
+      require(f,parameter.weights,sem::dense({kIndexHeads,model.hidden},c::DataType::kBFloat16));
+      const auto weight_raw=f.one(c::model_ops::dense_linear_f32(),{input,parameter.weights});
+      selection.weights={input,weight_raw,stored(f,weight_raw)};
+      selection.scaled_weights_raw=binary(f,c::BinaryKind::kMultiply,visible(f,selection.weights.stored),
+          core::filled(f,sem::dense({1}),1.F/std::sqrt(float(kIndexHeads*kIndexDepth))));
+      selection.scaled_weights_stored=stored(f,selection.scaled_weights_raw);
+      const std::array<std::int32_t,2> ends{0,std::int32_t(visible_count)};
+      const auto ranges=reshape(f,indices(f,ends),{1,2});
+      selection.scores=f.one(c::model_ops::row_cache_indexer_scores(),{reshape(f,selection.query_qat,{1,kIndexHeads,kIndexDepth}),
+          ip.compressor.pool_next,selection.scaled_weights_stored,ranges});
+      const auto selected=f.append(c::Operation(c::TopK{.count=std::size_t(std::min(visible_count,model.index_top)),.stable=true}),{selection.scores},2);
+      selection.ids=selected[1];ports.compressed->ids=reshape(f,selection.ids,{std::min(visible_count,model.index_top)});
+    } else append_index();
+  } else if(visible_count)ports.compressed->ids=range(f,visible_count);
+  const auto length=window_count+(ratio==4?std::min(visible_count,model.index_top):visible_count);
+  if(ports.compressed) {
+    ports.compressed->decoded=decode(f,ports.compressor.pool_next,ports.compressed->ids,kMainEncoding);
+    ports.chosen=reshape(f,ds::concat(f,visible(f,ports.window_decoded),visible(f,ports.compressed->decoded),0),{1,length,1,kDepth});
+  } else ports.chosen=reshape(f,visible(f,ports.window_decoded),{1,length,1,kDepth});
   ports.mask=core::filled(f,sem::dense({1,length}),0.F);
   ports.context_raw=f.one(c::model_ops::sink_attention(1.F/std::sqrt(float(kDepth))),
       {rotated_query,ports.chosen,ports.chosen,ports.mask,parameters.sinks});

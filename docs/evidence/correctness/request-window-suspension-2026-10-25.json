@@ -1,0 +1,176 @@
+{
+  "status": "HOST_COMPONENT_ONLY_PASS",
+  "date": "2026-10-25",
+  "scope": "RequestWindow identity/FIFO suspension, wake, survivor requeue and owner-proved retirement transitions only.",
+  "API": [
+    "pause(key)->idle_order",
+    "wake(key)",
+    "requeue(key)->idle_order",
+    "retire_active(key)",
+    "cancel_waiting(key)"
+  ],
+  "changes": [
+    "Paused is occupied but not active or queued. It can be an idle victim only with caller-provided actual-resident facts.",
+    "Wake and unfinished-turn requeue use the existing FIFO tail; no second queue or request store.",
+    "Active retirement is an explicit owner-proof boundary. It never cancels device work itself.",
+    "cancel_waiting covers queued and paused requests; active/retiring/stale/foreign keys stay unchanged.",
+    "Complete-turn release_turn semantics, key generations, cold bounds and stable active storage remain in place."
+  ],
+  "source_pins": {
+    "engine/inference/request_window.h": {
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    "tests/tools/inference_request_window_test.cc": {
+      "bytes": 16091,
+      "sha256": "0d703df618cc52c17a90f68e9f2246621e7b49a6ac1610670bf3d661a30f93b8"
+    },
+    "engine/inference/request_progress.h": {
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    "tests/tools/inference_request_progress_test.cc": {
+      "bytes": 18677,
+      "sha256": "9d3298362612c807a3a15c8e6925b87fde834c57abfebfeb67ddc3cf7f25e66e"
+    },
+    "engine/inference/sampling_cursor.h": {
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    }
+  },
+  "actual_dependency_pins": [
+    {
+      "path": "tests/tools/inference_request_window_test.cc",
+      "bytes": 16091,
+      "sha256": "0d703df618cc52c17a90f68e9f2246621e7b49a6ac1610670bf3d661a30f93b8"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    }
+  ],
+  "verification": {
+    "actual_host_TUs": 1,
+    "strict_compile_exit": 0,
+    "run_exit": 0,
+    "cases": [
+      {
+        "name": "finite_and_later_arrival_share_one_fifo",
+        "status": "PASS"
+      },
+      {
+        "name": "queued_cancel_preserves_order_and_requires_retirement",
+        "status": "PASS"
+      },
+      {
+        "name": "idle_query_excludes_active_retiring_and_free_slots",
+        "status": "PASS"
+      },
+      {
+        "name": "invalid_reset_and_stale_events_are_atomic",
+        "status": "PASS"
+      },
+      {
+        "name": "bounded_ring_reuses_slots_without_hot_allocation",
+        "status": "PASS"
+      },
+      {
+        "name": "paused_occupancy_wake_and_survivor_share_existing_fifo",
+        "status": "PASS"
+      },
+      {
+        "name": "paused_cancellation_and_failed_transitions_preserve_generations",
+        "status": "PASS"
+      },
+      {
+        "name": "open_wait_and_batch_survivor_transitions_allocate_nothing",
+        "status": "PASS"
+      }
+    ],
+    "actual_stdout": "request window: 8 checks passed\n",
+    "strict_flags": [
+      "/W4",
+      "/WX"
+    ],
+    "existing_progress_consumer_syntax_exit": 0,
+    "exact_compile_command": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "/nologo",
+      "/std:c++latest",
+      "/EHsc",
+      "/W4",
+      "/WX",
+      "/utf-8",
+      "/permissive-",
+      "/Zc:__cplusplus",
+      "/O2",
+      "/MD",
+      "/sourceDependencies",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-window-states-20261025\\host1\\dependencies.json",
+      "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_window_test.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\inference-window-states-20261025\\host1\\window.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\inference-window-states-20261025\\host1\\window.exe"
+    ],
+    "exact_run_command": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-window-states-20261025\\host1\\window.exe"
+    ],
+    "exact_progress_syntax_command": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+      "/nologo",
+      "/std:c++latest",
+      "/EHsc",
+      "/MD",
+      "/O2",
+      "/W4",
+      "/WX",
+      "/wd4324",
+      "/permissive-",
+      "/Zc:preprocessor",
+      "/Zc:__cplusplus",
+      "/utf-8",
+      "/DHYLE_STATIC",
+      "/DNOMINMAX",
+      "/IC:\\public\\project-hyle\\hyle\\include",
+      "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_progress_test.cc",
+      "/Zs"
+    ],
+    "prepared_hot_allocations": 0,
+    "hot_new_state_episode_iterations": 64,
+    "failures": 0,
+    "skips": 0,
+    "source_pins_unchanged_from_compile_through_run": true
+  },
+  "limitations": [
+    "No native Model/device cancellation or batch-abort correctness was exercised; retirement facts are supplied by this host fixture.",
+    "No online ingress, credit/backpressure integration, server or CLI behavior is claimed.",
+    "Paused occupancy is not resident byte accounting; dropping a slot/head does not itself prove any byte release."
+  ],
+  "GPU_runs": 0,
+  "SDK_builds": 0,
+  "HTTP_requests": 0,
+  "cleanup": {
+    "files": [
+      {
+        "path": ".scratch/inference-window-states-20261025/host1/window.obj",
+        "bytes": 360482,
+        "sha256": "43ab69defb9c738a30fd0e92c40cd10ea9aee1b6d25c2ef40b2d569ff21681ca"
+      },
+      {
+        "path": ".scratch/inference-window-states-20261025/host1/window.exe",
+        "bytes": 51712,
+        "sha256": "eb73417a3d9431e228e76893ff27f8d19b14aee6dac87dcd502c088ee88a5a54"
+      }
+    ],
+    "deleted": false,
+    "logical_bytes": 412194
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/request-window-suspension-2026-10-25.zip",
+    "bytes": 37074,
+    "sha256": "729e0d8420398d27c6bcb7d9b4b9b657a6171a1b8f6c827ee37c04560a63076a"
+  },
+  "archive_entries": 26,
+  "archive_CRC_and_all_member_SHA256_verified": true,
+  "archive_contains_binaries": false
+}

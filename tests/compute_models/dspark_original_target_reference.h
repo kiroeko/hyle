@@ -392,32 +392,49 @@ template<class Data,class Get,class GetBytes> void attention(const Data &data,st
   const auto entry=get_bytes(p.window_encoded),window=get_bytes(p.window_next),old_window=get_bytes(old.window);
   encoded_equal(entry,encoded(graph::kMainEncoding,get(p.kv_rotary.stored)));
   scatter_bytes(window,old_window,entry,std::size_t(plan.position%128),graph::kMainEncoding.row_bytes());
-  const auto physical=ids(get_bytes(p.window_rows));need(physical.size()==128,"target window actual order extent");
-  for(std::size_t row=0;row<128;++row)EXPECT_EQ(physical[row],std::int32_t((plan.position+1+std::int64_t(row))%128));
+  const auto physical=ids(get_bytes(p.window_rows));
+  const auto window_count=std::size_t(std::min(plan.position+1,std::int64_t{128}));
+  need(physical.size()==window_count,"target window actual order extent");
+  for(std::size_t row=0;row<window_count;++row)
+    EXPECT_EQ(physical[row],std::int32_t((plan.position+1-std::int64_t(window_count)+std::int64_t(row))%128));
   exact(get(p.window_decoded),decoded(graph::kMainEncoding,window,physical),"target chronological main window reader");
   compressor(data,stage,p.compressor,old.raw,old.score,old.pool,ratio,false,plan,get,get_bytes,full);
-  const auto selected=ids(get_bytes(p.compressed_ids));const auto visible=std::size_t(plan.visible(ratio));
+  const auto visible=std::size_t(plan.visible(ratio));
+  need(p.compressed.has_value()==(visible!=0),"target compressed reader must match actual nonempty visibility");
+  std::vector<std::int32_t> selected;
+  if(p.compressed)selected=ids(get_bytes(p.compressed->ids));
   if(ratio==4) {
     need(bool(p.indexer)&&bool(old.index),"target4 actual indexer state");const auto &ip=*p.indexer;
-    fp8_projection(data,stage,Role::kIndexerQuery,get(ip.query.stored),get(ip.query.input),full);
-    rope(ip.rotary,128,plan.position,false,get);const auto hadamard_raw=get(ip.hadamard_raw),hadamard_stored=get(ip.hadamard_stored);
-    hadamard(hadamard_raw,get(ip.rotary.stored));store(hadamard_stored,hadamard_raw,"index query Hadamard BF16");
-    exact(get(ip.query_qat),widen(encoded(graph::kIndexEncoding,hadamard_stored).decoded),"index query actual FP4 QAT");
+    need(ip.selection.has_value()==(visible!=0),"target4 index selection must match actual nonempty visibility");
+    if(ip.selection) {
+      const auto &selection=*ip.selection;
+      fp8_projection(data,stage,Role::kIndexerQuery,get(selection.query.stored),get(selection.query.input),full);
+      rope(selection.rotary,128,plan.position,false,get);const auto hadamard_raw=get(selection.hadamard_raw),hadamard_stored=get(selection.hadamard_stored);
+      hadamard(hadamard_raw,get(selection.rotary.stored));store(hadamard_stored,hadamard_raw,"index query Hadamard BF16");
+      exact(get(selection.query_qat),widen(encoded(graph::kIndexEncoding,hadamard_stored).decoded),"index query actual FP4 QAT");
+    }
     compressor(data,stage,ip.compressor,old.index->raw,old.index->score,old.index->pool,4,true,plan,get,get_bytes,full);
-    need(bool(ip.weights.raw),"actual weights projection F32 port");
-    bf16_projection(get(*ip.weights.raw),get(ip.weights.input),data.raw(stage,roles::RawRole::kIndexerWeights),64,true,"original index weights");
-    const auto weight=get(ip.weights.stored),scaled_raw=get(ip.scaled_weights_raw),scaled=get(ip.scaled_weights_stored);
-    store(weight,get(*ip.weights.raw),"index projection BF16 output");std::vector<float> expected(weight.size());
-    const float scaling=1.F/std::sqrt(float(8192));for(std::size_t i=0;i<expected.size();++i)expected[i]=float(double(weight[i])*double(scaling));
-    exact(scaled_raw,expected,"actual index weights scale");store(scaled,scaled_raw,"scaled index BF16 store");
-    const auto score=get(ip.scores);index_scores(score,get(ip.query_qat),scaled,get_bytes(ip.compressor.pool_next),visible);
-    std::vector<std::int32_t> order(visible);std::iota(order.begin(),order.end(),0);
-    std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return score[std::size_t(a)]>score[std::size_t(b)];});
-    ASSERT_EQ(selected.size(),std::min(std::size_t(model.index_top),visible));for(std::size_t i=0;i<selected.size();++i)ASSERT_EQ(selected[i],order[i]);
-    EXPECT_EQ(ids(get_bytes(ip.ids)),selected);
+    if(ip.selection) {
+      const auto &selection=*ip.selection;
+      need(bool(selection.weights.raw),"actual weights projection F32 port");
+      bf16_projection(get(*selection.weights.raw),get(selection.weights.input),data.raw(stage,roles::RawRole::kIndexerWeights),64,true,"original index weights");
+      const auto weight=get(selection.weights.stored),scaled_raw=get(selection.scaled_weights_raw),scaled=get(selection.scaled_weights_stored);
+      store(weight,get(*selection.weights.raw),"index projection BF16 output");std::vector<float> expected(weight.size());
+      const float scaling=1.F/std::sqrt(float(8192));for(std::size_t i=0;i<expected.size();++i)expected[i]=float(double(weight[i])*double(scaling));
+      exact(scaled_raw,expected,"actual index weights scale");store(scaled,scaled_raw,"scaled index BF16 store");
+      const auto score=get(selection.scores);index_scores(score,get(selection.query_qat),scaled,get_bytes(ip.compressor.pool_next),visible);
+      std::vector<std::int32_t> order(visible);std::iota(order.begin(),order.end(),0);
+      std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return score[std::size_t(a)]>score[std::size_t(b)];});
+      ASSERT_EQ(selected.size(),std::min(std::size_t(model.index_top),visible));for(std::size_t i=0;i<selected.size();++i)ASSERT_EQ(selected[i],order[i]);
+      EXPECT_EQ(ids(get_bytes(selection.ids)),selected);
+    }
   } else {ASSERT_EQ(selected.size(),visible);for(std::size_t i=0;i<visible;++i)ASSERT_EQ(selected[i],std::int32_t(i));}
-  const auto compressed=get(p.compressed_decoded),chosen=get(p.chosen),window_decoded=get(p.window_decoded),mask=get(p.mask);
-  exact(compressed,decoded(graph::kMainEncoding,get_bytes(p.compressor.pool_next),selected),"actual compressed MLA reader");
+  std::vector<float> compressed;
+  if(p.compressed) {
+    compressed=get(p.compressed->decoded);
+    exact(compressed,decoded(graph::kMainEncoding,get_bytes(p.compressor.pool_next),selected),"actual compressed MLA reader");
+  }
+  const auto chosen=get(p.chosen),window_decoded=get(p.window_decoded),mask=get(p.mask);
   std::vector<float> expected_chosen=window_decoded;expected_chosen.insert(expected_chosen.end(),compressed.begin(),compressed.end());
   exact(chosen,expected_chosen,"target main and compressed concatenation");for(const auto value:mask)EXPECT_EQ(std::bit_cast<std::uint32_t>(value),0U);
   const auto context=get(p.context_raw);close(context,ds::old::sink_reference(get(p.query_rotary.stored),chosen,chosen,mask,

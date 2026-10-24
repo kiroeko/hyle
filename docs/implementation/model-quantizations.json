@@ -2380,9 +2380,9 @@
       "config_url": "https://huggingface.co/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/blob/8aa5f05d26b7205477066e1449e0af13f762a299/config.json",
       "notes": "do not equate NF4 to INT4/E2M1; ignored module list is part of artifact",
       "provider_coverage": {
-        "review": "original_header_and_one_group_metadata_review",
+        "review": "original_header_one_group_metadata_and_F16_component_review",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-25: full original header schema and one original QuantState read; cold metadata implementation passed host checks. No original-value arithmetic or full model execution is established by this metadata evidence.",
+        "review_scope": "2026-10-25: full original header schema and one original QuantState read; metadata host checks passed. A separately recorded original N3xK5120 component matches all15360 F16 decoded values and CPU/CUDA ordinary M1/M2 projections against the independent fixed reader. No whole model, Graph generation or full F16 activation/import is established.",
         "mapping_status": "Typed six-role cold metadata is implemented; explicit F16 weight import, full F16 activation execution and packed NF4 GEMM remain unimplemented in the model consumer",
         "required_format_domain": "Original first QuantState declares group64, nested256, F16 decode and nested F32; configured compute is independently F16. Other 351 original QuantStates remain unread.",
         "ordinary_metadata_followup": {
@@ -2398,6 +2398,18 @@
           "component_view_shape": [3, 5120],
           "full_artifact_prepared": false,
           "original_value_arithmetic_verified": false
+        },
+        "ordinary_component_followup": {
+          "evidence": "../evidence/correctness/nf4-original-f16-component-2026-10-25.json",
+          "status": "PASS_ORIGINAL_NF4_F16_COMPONENT",
+          "component_view_shape": [3, 5120],
+          "decoded_F16_values_compared": 15360,
+          "decode_invocations": 1,
+          "projection_M": [1, 2],
+          "projection_providers": ["ggml-cpu", "cublasLt13.6.0"],
+          "A_W_Y_dtype": "F16",
+          "accumulation_dtype": "F32",
+          "whole_model_execution": false
         },
         "reachable_entry_points": [
           {
@@ -2430,7 +2442,7 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "First original QuantState and N3/fullK component bytes are acquired; verify original-value arithmetic and read each additional QuantState when binding those roles, rather than certifying all 352 groups from one state",
+          "First original QuantState and N3/fullK component arithmetic passed; read each additional QuantState when binding those roles, rather than certifying all 352 groups from one state",
           "The nested scale block is exactly 256 in the existing operator; main group size must come from the artifact",
           "Unknown output_type defaults NF4 decode to BF16; do not select this default or infer quant_state output dtype solely from configured compute_dtype=float16",
           "Dense dequantization followed by MatMul is a distinct execution choice; FP16 compute metadata does not prove its accumulation/rounding matches bitsandbytes",

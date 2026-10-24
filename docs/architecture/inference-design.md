@@ -169,6 +169,32 @@ suffix；两请求两轮、采样 fork／历史恢复、真实续算和取消／
 prompt prefill 或完整模型服务。原 StateStore 版本和读者仍按实际预算计费，窗口 N1 不是独占证明。
 R 继续交现有分桶及真实执行容量处理。模型提供容量查询、命中后的 fork／恢复、实际执行和
 检查点构造，不增加大 `ModelOps` 接口、热回调表或第二套调度器。
+
+有界续轮仍由同一 `RequestProgress` 承载：输入 owner 在冷期预留稳定的 turn 存储，
+`bind_open_turns` 固定 turn、用户输入 token 和总输出边界，`extend_turns` 只检查新增后缀，
+不复制或每轮重扫旧输入。已暴露的 prompt／额度不可改写；关闭输入与结束一轮是不同事实。
+最后已知 turn 完成但输入未关闭时保持原 request 身份；后续 turn 仍只消费一次真实 pending。
+实际提前停止只返还未使用的输出预留，重复提交观察不再次返还。模型的上下文、KV 和实际
+输入接纳仍归模型 owner；主机 token 边界不代替设备容量证明。
+上述[开放续轮检查](../evidence/correctness/request-incremental-turns-2026-10-25.json)是 host 原语检查，
+当前真实入口仍预读有限日程，运行中输入和输出背压的完整模型接线尚未完成。
+
+窗口的 `pause` 只释放活动名额，原 request key 和 payload 槽仍占用；可用输入或输出 credit
+到达后，`wake` 将同一 key 放回原 FIFO 尾。未完成 turn 的 survivor 用 `requeue`，不能冒充
+已完成 turn；`retire_active` 只表达 owner 已证明整批退出后的终态，不执行设备取消。
+`cancel_waiting` 覆盖排队与暂停状态；取消请求、真实退休和槽位复用仍分开。
+暂停且确实驻留的 head 可参与原空闲淘汰政策，但 owner 必须重读实际预算，不能假设释放
+活动名额就回收设备字节。上述[状态检查](../evidence/correctness/request-window-suspension-2026-10-25.json)
+已通过主机用例，原生批取消及输出背压的消费者仍在接线。
+
+`OutputDelivery` 只借用原有界输出记录，保存成功交付的绝对前缀游标；重复或较旧的确认
+不重复推进。它既不观察模型 commit，也不拥有第二队列；模型 turn 完成后仍可保留最终
+未交付输出。owner 先核 request key，再用当前记录的实际长度计算 credit，不能采信晚事件
+携带的旧长度。提交前按该 episode 最大真实输出前缀检查 credit；这是单 owner、每请求至多
+一个在途 episode 下的预检，不是另一套并发预留器。credit 不足时等待或选择原来支持的
+较窄 episode，不能把不可写当作 turn_done。输入关闭、模型结束、最终交付和资源退休各有
+自己的完成事实；释放 payload 槽前须满足实际寿命和交付／明确丢弃合同。
+当前[交付游标检查](../evidence/correctness/output-delivery-credit-2026-10-25.json)只覆盖主机合同。
 GLM 同一原角色案例还复用真实 turn 进度：已有单输出 K1、新请求采样 fork 以及两次 ordinary
 续算均交共享算法观察，第二 turn 只消费历史 pending。它不计算任意用户 suffix，也不替代完整模型服务。
 
@@ -227,7 +253,7 @@ Qwen 的整批预检／无抛发布与 StateHead 的单头原子发布保留各�
 
 后端装配、真实资源域、输出读回、退休保活、版本接纳查询和有限分桶暂存已有共同机制。
 不因模块不同就再次包装这些原语；制品注解只属于已加载权重，通用 Tensor、状态和激活
-不承担源 codec 的接线职责。本轮按以下三个交付包收敛，并以一次有限扩展检查核对实际修改范围。
+不承担源 codec 的接线职责。上一轮 MTP 基础架构按以下三个交付包收敛，并以有限扩展检查核对实际修改范围。
 
 | 顺序 | 交付包 | 有限完成条件 |
 |---|---|---|
