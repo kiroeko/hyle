@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "status": "PASS_FINITE_SYNTHETIC_ORIGINAL_GEOMETRY_COMPONENT",
+  "scope": "Ordinary heterogeneous Kimi7168 KDA+absorbed MLA StateStore/StateHead component, generated sparse BF16/F32 weights. No original Kimi artifact, full model or quality claim.",
+  "changes": [
+    {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 19872,
+      "sha256": "8df2676acca28d62ac852db24f193209900a5b1d292b1a86fe347d1f0fb875f4"
+    },
+    {
+      "path": "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 21182,
+      "sha256": "f2e2ae6b3f4579facb30d22d431734d3e30499939c1edf1301ee250e26a7f81f"
+    },
+    {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "bytes": 13797,
+      "sha256": "7988d71f8d74b68fe8511216bea6fa4ad156cabc17b66532a605bc904d106600"
+    }
+  ],
+  "source_review": {
+    "default_warm": {
+      "before_header": {
+        "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+        "bytes": 18043,
+        "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+        "CRLF": 0,
+        "LF": 349
+      },
+      "graph": "Without OrdinaryHistory: same past3 input, Concat to4, rows1/3 next state, visible4 attention, same projection/Cast/output/state-port order. No extra graph node is created by the absent optional branch.",
+      "reference": "Same four-row F64 accumulation order and BF16 reader rounding; array4 becomes vector4 in test-only oracle. No new warm execution claim."
+    },
+    "ordinary": {
+      "cache": "Full fixed-capacity Scatter successor; attention sees only initialized prefix position+1. Unwritten NaN rows copied unchanged and checked by exact bits.",
+      "cursor": "Actual stored I32 lease is bound to existing public Concat/Scan/Gather and produces next cursor, verified on all6 actual commits.",
+      "publication": "StateDraft holds KDA and MLA successor resources plus actual cursor/final feature/Epoch; finalize/publish only after both original Graph invocations retire and all numerical checks pass.",
+      "cancellation": "After retired KDA, cancel unpublished StateDraft before MLA; no Head/epoch commit. Retry uses same original base. No native GPU preemption claim.",
+      "ownership": "Original StorageOwner/Graph bindings/ReadLease/output pools and model_graph_run reset/retirement; no executor, Store implementation, model app or new primitive."
+    },
+    "registration": {
+      "path": "tests/graph_route_cuda/CMakeLists.txt",
+      "target": "hyle_graph_route_cuda_kimi_heterogeneous_state_test",
+      "kind": "Static registration only, no CMake configure/full build; actual manual compile/link commands preserved."
+    }
+  },
+  "validation": {
+    "actual": {
+      "status": "PASS_FINITE_SYNTHETIC_COMPONENT",
+      "rows": [
+        {
+          "session": 0,
+          "position": 0,
+          "visible": 1,
+          "epoch": 1,
+          "resource_members": 5
+        },
+        {
+          "session": 1,
+          "position": 0,
+          "visible": 1,
+          "epoch": 1,
+          "resource_members": 5
+        },
+        {
+          "session": 0,
+          "position": 1,
+          "visible": 2,
+          "epoch": 2,
+          "resource_members": 5
+        },
+        {
+          "session": 2,
+          "position": 1,
+          "visible": 2,
+          "epoch": 2,
+          "resource_members": 5
+        },
+        {
+          "session": 0,
+          "position": 2,
+          "visible": 3,
+          "epoch": 3,
+          "resource_members": 5
+        },
+        {
+          "session": 1,
+          "position": 1,
+          "visible": 2,
+          "epoch": 2,
+          "resource_members": 5
+        }
+      ],
+      "properties": {
+        "weight_scope": "Generated sparse BF16/F32 weights at fixed Kimi7168/96x128 geometry; NOT original artifact payload or quality",
+        "composition_scope": "Actual KDA hidden lease feeds actual absorbed MLA. Intervening full model layers/residuals and LM head are not executed; no generated token or MTP claim.",
+        "state_scope": "One StateStore, two independent Heads and one immutable restored fork; convolution history, recurrent KDA, full finite MLA cache, actual Graph I32 cursor, actual final feature, Epoch metadata. AttnRes is frame-only and absent.",
+        "ordinary_commits": "6",
+        "cancelled_unpublished_candidates": "1",
+        "stale_publish_rejections": "6",
+        "native_cancellation_scope": "Cancellation is of the unpublished StateDraft after KDA has actually retired; no GPU preemption claim",
+        "state_backing_budget": "105969664"
+      },
+      "actual_process": {
+        "exit": 0,
+        "seconds": 1.577999999979511,
+        "timeout": false
+      },
+      "KDA_submissions": 7,
+      "MLA_submissions": 6,
+      "final_state_assertions": {
+        "versions": 0,
+        "drafts": 0,
+        "backing_bytes": 0,
+        "explicit_collect": true
+      },
+      "GPU_processes": 1,
+      "SDK_builds": 0,
+      "backend_TU_builds": 0,
+      "HTTP": 0,
+      "actual_source": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\kimi_heterogeneous_state_consumer_test.cc",
+          "bytes": 18600,
+          "sha256": "257470debd2190b5a4914baa7c50d9314c4a60b1770aab0405472a96136ae896"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kimi_remaining_fragments.h",
+          "bytes": 19872,
+          "sha256": "8df2676acca28d62ac852db24f193209900a5b1d292b1a86fe347d1f0fb875f4"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kda_full_fragments.h",
+          "bytes": 12966,
+          "sha256": "54d1e254c0f7e252c8cdd01944ce1a6a0f372707c05b58d5d3c9a316d6d68f28"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_semantic_fragments.h",
+          "bytes": 17811,
+          "sha256": "75b094320cc81125cfdf7b8ab473be5b51238b66b6403e8f142b14fbe00b5131"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_profile_cases.h",
+          "bytes": 11520,
+          "sha256": "c21f3e73aba1a7ce161b71c9eec135af9b6352e8aba255c3229c9b82f4d93a6d"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen_gguf_vocabulary_cases.h",
+          "bytes": 2928,
+          "sha256": "8db378b333614ddc594a3ae9364fcbfdded76a2c1226d5cb19b44b24968af655"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen35_fixture.h",
+          "bytes": 9558,
+          "sha256": "b80a27f10ce671ab5fa3953a0862dd387fd85bb0aa2cfd31670593303b8ab393"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute\\workload_fixture.h",
+          "bytes": 1211,
+          "sha256": "d451c816f7362313b73758d60fc68c49acbaf0e31735db3039d72e80d39b6a5e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_fixture.h",
+          "bytes": 7313,
+          "sha256": "b5b12c7030e2fbf2f14e8b8d0be9569ef47c64a49d58e98bc7b333b4256e050f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_official_fixture.h",
+          "bytes": 5967,
+          "sha256": "61cacc3d6251c1ef2cfc9a9f724412f9ca4615f4692dcbf777a81e790e7a1ff0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_gdn_fixture.h",
+          "bytes": 8553,
+          "sha256": "9a0fb6af064c85209fa478a7021eb399bf1451fff67d43538a655936343bf2ed"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_native\\half_test_support.h",
+          "bytes": 4399,
+          "sha256": "5f6d8f7b70d07e44600bb6d6d592f66af5dac9970a730695956a1afcfc3cd0b8"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_kda_projection_cases.h",
+          "bytes": 5583,
+          "sha256": "489e42c858140847b89f4932a5519572aa132f515d96cb9927392ce0266c0feb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_semantic_fragments.h",
+          "bytes": 35712,
+          "sha256": "090b13d99fad2f7def7f3a861823033827d70681683989b4ffa4b8b7ceefd320"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen35_gguf_fragment_support.h",
+          "bytes": 6939,
+          "sha256": "24d8ae62cbb2ed362c4e949db02fdce18505e03ff06adb23cdcfe8b358b61cb1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_full_router.h",
+          "bytes": 22958,
+          "sha256": "54be2affac6bcd733d3fb413894432ba40d8e579e91fe7a7bb43eb54207f3a20"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_qwen38_24t_moe_profiles.h",
+          "bytes": 11480,
+          "sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_gguf_test_support.h",
+          "bytes": 13405,
+          "sha256": "4742b35f873bc892213e8721f44a4bde0cfeea9d30da036c454a4d3042bd7898"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_execution_fragments.h",
+          "bytes": 29762,
+          "sha256": "c48ac04cff9254e43b12aa6b21c0992697c5dd40dbeb0fb0471c49d44de67349"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_moe_execution_cases.h",
+          "bytes": 4217,
+          "sha256": "8d3dedc2d98d2ba3cd72c1cec165bc53f6472b274da4215509f623511f4321cf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\d5_official_fp4_storage.h",
+          "bytes": 4623,
+          "sha256": "3f9d8a651e2d79dcf5f9ab2ac09cca4439a0d5ef2d4a2ea948c1768966e38846"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\model_graph_run.h",
+          "bytes": 4263,
+          "sha256": "97f3e6786bea252d8d6bfb33fae545e9fc42d824b072cf16a7eba65a527daed0"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\prepared_output.h",
+          "bytes": 6830,
+          "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+        }
+      ],
+      "epoch_followup": "Later CPU3 host suite reads the same Epoch type through real StateStore/Head; added native-consumer Epoch observation assertions compiled but not GPU rerun."
+    },
+    "GPU_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\kimi-heterogeneous-state\\attempt1\\checks.exe",
+      "bytes": 140440576,
+      "sha256": "f56a210039a6e07128f08c0d4e4f2c2261d5fdd62371e721a380ded21eb71a0f"
+    },
+    "GPU_frozen_source_consumer": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 18600,
+      "sha256": "257470debd2190b5a4914baa7c50d9314c4a60b1770aab0405472a96136ae896"
+    },
+    "initial_host": {
+      "exit": 0,
+      "seconds": 0.6099999999860302,
+      "timeout": false
+    },
+    "initial_host_tests": 2,
+    "epoch_host": {
+      "exit": 0,
+      "seconds": 0.5150000000139698,
+      "timeout": false
+    },
+    "epoch_host_tests": 3,
+    "epoch_host_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\kimi-heterogeneous-state\\attempt2\\checks.exe",
+      "bytes": 140450304,
+      "sha256": "f8b2af91601a1415c1f73dfd49d0ed03cd24515ccc15cb4393155501689b2d7a"
+    },
+    "epoch_host_followup_patch": ".scratch\\inference-system-review-20261025\\kimi-heterogeneous-state\\epoch-observation-only.patch",
+    "initial_compile": {
+      "exit": 0,
+      "seconds": 4.25,
+      "timeout": false
+    },
+    "initial_link": {
+      "exit": 0,
+      "seconds": 1.7030000000086147,
+      "timeout": false
+    },
+    "followup_compile": {
+      "exit": 0,
+      "seconds": 4.312000000005355,
+      "timeout": false
+    },
+    "followup_link": {
+      "exit": 0,
+      "seconds": 1.7190000000118744,
+      "timeout": false
+    },
+    "native_DLL": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "compiler": "MSVC14.50 /W4 /WX, one consumer TU per source snapshot, original GLM/DeepSeek native closure reused",
+    "actual_hardware": "Original native log: NVIDIA GeForce RTX4070, sm89,12281MiB; Windows x64",
+    "retained_failures": [],
+    "summary_note": "The original actual/summary.json inherited weights_loaded=false from the host runner: this denotes no original artifact payload, not absence of generated uploaded parameters. Raw commands/XML/source remain untouched; actual-facts.json is the precise statement."
+  },
+  "original_source_boundary": {
+    "repository": "moonshotai/Kimi-K3",
+    "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+    "authenticated_original_body": false,
+    "original_roles_still_unbound": 23,
+    "original_role_bytes": 1352207360,
+    "role_gap": "Archived exact metadata-only role/range inventory; original headers/strong identity/body acquisition not performed in this task.",
+    "source_downloads": 0,
+    "existing_cache": "Bounded known cache scan found metadata/header samples but no additional original numeric payload."
+  },
+  "limits": [
+    "No original source-bound execution or trained quality/TPS result.",
+    "Actual KDA output feeds actual MLA; omitted intervening full model layers and residual connections are an explicit composite boundary.",
+    "Finite capacity4, actual initialized visibility1/2/3, two initial Heads and one restored fork; no all-context/backend matrix.",
+    "AttnRes remains frame-local and is excluded from persistent session state; no LM pending/token/MTP claim.",
+    "The only GPU process used frozen attempt1. Later Epoch observation assertions are compile+CPU-host followup, not a second GPU pass.",
+    "StateStore budget105969664B is the finite tracked state backing limit, not a total physical VRAM cap.",
+    "No SDK rebuild, backend source change, original weight download/copy or new executor."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-ordinary-heterogeneous-state-2026-10-25.zip",
+    "bytes": 184108,
+    "sha256": "c3cc623d39441cff3ac0dd3cd76462b141a01e561e45f5227e17ebd5c0691958",
+    "members": 96,
+    "CRC": "PASS",
+    "each_member_sha256": "PASS",
+    "excluded": "All weights, executables, objects, DLLs, SDK/dependency trees"
+  }
+}

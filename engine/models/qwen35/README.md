@@ -140,6 +140,7 @@ Session独占自己的尾权，同页续写只写未提交后缀；前缀命中�
 CUDA 测试目标 `hyle_qwen_request_lifecycle_test INPUT_DIR` 使用原 P154 BF16 输入检查普通随机 R2 的取消、存活请求续跑、有界输出及增量续轮；不用于测速。也可设置 `HYLE_QWEN_REQUEST_INPUTS` 后运行同名 CTest；未提供输入时跳过，显式不存在的目录按失败处理。[原生结果](../../../docs/evidence/correctness/qwen-live-request-lifecycle-2026-10-25.json)来自归档消费者。正式入口严格编译、链接及主机错误合并检查已通过；新增 `--retirement-status-only` 仅检查主机状态分类，未注入设备错误，正式入口未重跑 GPU。
 
 同一目标的 `--chunked-prefill [INPUT_DIR]` 检查普通 P154／Q64 的无输出中间块、decode 穿插、部分恢复及取消重试；对应 CTest 为 `hyle_qwen_chunked_prefill_test`，输入规则相同。[已测结果](../../../docs/evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json)来自冻结消费者；正式入口仅完成严格语法检查，未再运行 GPU，也不用于吞吐对比。
+`--dual-model [INPUT_DIR]`／CTest `hyle_qwen_dual_model_test` 检查同卡两实例的独立退休与销毁，[原 CUDA 过程已通过](../../../docs/evidence/correctness/qwen-dual-model-lifetime-2026-10-25.json)；正式入口适配未编跑。它会加载两份原文本权重，运行前须预留约两倍权重空间，不能解释为物理 context 隔离或多请求吞吐测试。
 退休检查独立于默认构建，可显式构建`hyle_qwen35_retirement_probe`，运行时传`--inputs DIR --decode-ids IDSFILE`；使用原P128输入及至少两个decode ID，不复制权重。它检验原执行链的寿命，不用于测速。
 探针当前覆盖同页独占后缀取消：实际退休前保留资源，退休后旧快照仍持页，所有旧读者释放后才可重新取得整页。
 该目标另可用`--inputs MTP_DIR --mtp on [--verify-rows 1|2]`检查真实MTP取消，和`--decode-ids`互斥。默认2行验证；1行分支实际覆盖没有attention读者的草拟KV写effect。两种分支均已实跑：使用自然接受后的lag1前缀，取消并丢弃Completion后保留全部14份KV写事务、状态、候选和执行借用；真实退休后核旧字节及同槽重建。另核成功terminal后的接受策略异常不会发布head，回收后原完整前缀仍可续算。这是有限取消／host异常检查，没有注入GPU设备错误，也不用于测速。

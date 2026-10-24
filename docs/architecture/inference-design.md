@@ -94,6 +94,11 @@ Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生�
 [原 BF16 P154／Q64 检查](../evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json)
 覆盖状态恢复、取消后重试和 pending-only 续轮；目前是有限底层消费者，不宣称 CLI 已提供调度量选项或性能收益。
 
+[两个 Model 的实际寿命检查](../evidence/correctness/qwen-dual-model-lifetime-2026-10-25.json)
+确认同一设备上的独立 Hyle Backend／队列／资源可分别退休：A 销毁后 B 的原已提交工作和新续算继续。
+CUDA 实际共享 primary context；这个合同依赖各自原资源与 Completion，不能把销毁一个 Model 实现为设备 reset。
+这不提供跨 Model 的物理显存总额上限或公平调度；现有 `ResourceBudget` 仍按真实 resource 计量。
+
 ## 从输入到一次完整提交
 
 ```text

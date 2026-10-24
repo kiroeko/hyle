@@ -166,12 +166,24 @@ inline HeadProjection head_projection(Fragment &f, ValueId input, bool key,
 // ggml Metal mul_mv_id_bf16_f32 retains F32 activations; CPU vec-dot
 // converts them to BF16. Match that source-defined boundary in the oracle,
 // while leaving the identical public operation graph and accuracy gate intact.
+struct OrdinaryHistory final {
+  std::int64_t capacity, position;
+};
+using MlaReference = std::function<std::vector<std::vector<float>>(
+    std::span<const float>, std::span<const float>)>;
 inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
-                      bool round_grouped_input_to_bfloat = true) {
+                      bool round_grouped_input_to_bfloat = true,
+                      std::optional<OrdinaryHistory> history = {},
+                      MlaReference *reference = nullptr) {
+  if (history && (history->capacity <= 0 || history->capacity > std::numeric_limits<std::int32_t>::max() || history->position < 0 ||
+                   history->position >= history->capacity))
+    throw std::runtime_error("ordinary Kimi MLA history is outside its cold capacity");
+  const auto past_rows = history ? history->capacity : 3;
+  const auto visible = history ? history->position + 1 : 4;
   Fragment f{.profile = profile, .region = 0x070701,
              .quantized = storage(profile) == Storage::kQ8_0};
   auto x = f.input(dense({1, kHidden}));
-  auto past = f.input(dense({3, 576}));
+  auto past = f.input(dense({past_rows, 576}));
   auto input_scale = sem::oracle::scale(kHidden);
   auto normalized = norm(f, x, input_scale, official(profile));
   auto qa = linear::projection(f, normalized, 1536, kHidden, storage(profile), 173);
@@ -184,18 +196,26 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
   auto kvscale = sem::oracle::scale(512);
   latent = norm(f, latent, kvscale, official(profile));
   auto current = f.one(c::Operation(c::Concat{.axis = 1}), {latent, pe});
-  auto cache = f.one(c::Operation(c::Concat{.axis = 0}), {past, current});
-  auto next_cache = core::rows(f, cache, 1, 3);
+  ValueId cache, next_cache;
+  if (history) {
+    auto position = f.constant(dense({1}, c::DataType::kInt32),
+        bytes(std::vector<std::int32_t>{std::int32_t(history->position)}));
+    next_cache = f.one(c::Operation(c::Scatter{}), {past, position, current});
+    cache = core::rows(f, next_cache, 0, visible);
+  } else {
+    cache = f.one(c::Operation(c::Concat{.axis = 0}), {past, current});
+    next_cache = core::rows(f, cache, 1, 3);
+  }
   auto query_nope = slice_heads(f, qb.output, kHeads, 192, 0, 128);
   auto query_pe = slice_heads(f, qb.output, kHeads, 192, 128, 64);
   auto kb = head_projection(f, query_nope, true, profile);
   auto query = f.one(c::Operation(c::Concat{.axis = 2}), {kb.output, query_pe});
-  auto cached_values = slice_heads(f, cache, 4, 576, 0, 512);
+  auto cached_values = slice_heads(f, cache, visible, 576, 0, 512);
   auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
                           .scale = 1.0F / std::sqrt(192.0F), .causal = true,
                           .accumulation_type = c::DataType::kFloat32}),
-      {reshape(f, query, {1, 1, kHeads, 576}), reshape(f, cache, {1, 4, 1, 576}),
-       reshape(f, cached_values, {1, 4, 1, 512})});
+      {reshape(f, query, {1, 1, kHeads, 576}), reshape(f, cache, {1, visible, 1, 576}),
+       reshape(f, cached_values, {1, visible, 1, 512})});
   auto vb = head_projection(f, reshape(f, attention, {1, kHeads, 512}), false, profile);
   auto gate = linear::projection(f, normalized, 12288, kHidden, storage(profile), 223);
   auto gated = binary(f, c::BinaryKind::kMultiply,
@@ -206,26 +226,32 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
   if (storage(profile) == Storage::kBFloat16)
     f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5, 6, 8};
   f.state_ports = {{1, 0}};
-  auto cache_values = d5_gguf_test::activation(3 * 576, 23);
-  for (int step = 0; step < 4; ++step) {
-    auto values = d5_gguf_test::activation(kHidden, 3 + 14 * step);
-    sem::Replay replay{{bytes(values), bytes(cache_values)}, {}};
+  MlaReference evaluate = [=](std::span<const float> values,
+      std::span<const float> cache_values) -> std::vector<std::vector<float>> {
+    if (values.size() != std::size_t(kHidden) || cache_values.size() != std::size_t(past_rows * 576))
+      throw std::runtime_error("ordinary Kimi MLA reference input extent");
     auto nx = sem::oracle::rms_norm_rows(values, input_scale, kHidden, kEpsilon);
     auto aq = qa.reference(nx);
     aq = sem::oracle::rms_norm_rows(aq, qscale, 1536, kEpsilon);
     auto bq = qb.reference(aq), kv = kva.reference(nx);
     auto l = sem::oracle::rms_norm_rows(std::span(kv).first(512), kvscale, 512, kEpsilon);
     l.insert(l.end(), kv.begin() + 512, kv.end());
-    auto full_cache = cache_values;
-    full_cache.insert(full_cache.end(), l.begin(), l.end());
-    cache_values.assign(full_cache.begin() + 576, full_cache.end());
+    std::vector<float> full_cache(cache_values.begin(), cache_values.end()), next;
+    if (history) {
+      std::copy(l.begin(), l.end(), full_cache.begin() + history->position * 576);
+      next = full_cache;
+      full_cache.resize(std::size_t(visible * 576));
+    } else {
+      full_cache.insert(full_cache.end(), l.begin(), l.end());
+      next.assign(full_cache.begin() + 576, full_cache.end());
+    }
     auto no_pe = slice(bq, kHeads, 192, 0, 128);
     auto absorbed = kb.reference(no_pe, round_grouped_input_to_bfloat);
     std::vector<float> attended(kHeads * 512);
     const float scale = 1.0F / std::sqrt(192.0F);
     for (std::int64_t h = 0; h < kHeads; ++h) {
-      std::array<double, 4> scores{};
-      for (int t = 0; t < 4; ++t) {
+      std::vector<double> scores(std::size_t(visible), 0.0);
+      for (std::int64_t t = 0; t < visible; ++t) {
         for (int d = 0; d < 512; ++d)
           scores[t] += double(absorbed[h * 512 + d]) * full_cache[t * 576 + d];
         for (int d = 0; d < 64; ++d)
@@ -237,7 +263,7 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
       for (auto &score : scores) total += score = std::exp(score - largest);
       for (int d = 0; d < 512; ++d) {
         double sum = 0;
-        for (int t = 0; t < 4; ++t) sum += scores[t] / total * full_cache[t * 576 + d];
+        for (std::int64_t t = 0; t < visible; ++t) sum += scores[t] / total * full_cache[t * 576 + d];
         attended[h * 512 + d] = float(sum);
       }
     }
@@ -245,7 +271,14 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
     auto gv = projected;
     for (std::size_t i = 0; i < gv.size(); ++i) gv[i] *= float(core::sigmoid(gate_values[i]));
     auto result = out.reference(gv);
-    replay.outputs = {cache_values, bq, absorbed, attended, projected, gv, result, nx, gate_values};
+    return {std::move(next), bq, absorbed, attended, projected, gv, result, nx, gate_values};
+  };
+  if (reference) { *reference = std::move(evaluate); return f; }
+  auto cache_values = d5_gguf_test::activation(std::size_t(past_rows * 576), 23);
+  for (int step = 0; step < 4; ++step) {
+    auto values = d5_gguf_test::activation(kHidden, 3 + 14 * step);
+    sem::Replay replay{{bytes(values), bytes(cache_values)}, evaluate(values, cache_values)};
+    cache_values = replay.outputs[0];
     f.replays.push_back(std::move(replay));
   }
   return f;

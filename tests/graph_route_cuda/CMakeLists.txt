@@ -151,6 +151,13 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     target_link_libraries(hyle_graph_route_cuda_glm_mtp_state_consumer_test PRIVATE ggml)
     target_include_directories(hyle_graph_route_cuda_glm_mtp_state_consumer_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
     hyle_stage_runtime(hyle_graph_route_cuda_glm_mtp_state_consumer_test)
+    hyle_add_test(graph_route_cuda NAME kimi_heterogeneous_state
+      SOURCES ../compute_models/kimi_heterogeneous_state_consumer_test.cc
+      DEFINES HYLE_TEST_KIMI_STATE_CUDA=1
+      DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda)
+    target_link_libraries(hyle_graph_route_cuda_kimi_heterogeneous_state_test PRIVATE ggml)
+    target_include_directories(hyle_graph_route_cuda_kimi_heterogeneous_state_test SYSTEM PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
+    hyle_stage_runtime(hyle_graph_route_cuda_kimi_heterogeneous_state_test)
     hyle_add_test(graph_route_cuda NAME glm_official_index_cache
       SOURCES ../compute_models/glm_official_index_cache_test.cc DEPS hyle_compute_state hyle_simd hyle_compute_backend_cuda)
     target_compile_definitions(hyle_graph_route_cuda_glm_official_index_cache_test PRIVATE HYLE_TEST_GLM_CACHE_CUDA=1)

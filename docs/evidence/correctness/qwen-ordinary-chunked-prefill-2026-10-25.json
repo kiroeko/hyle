@@ -830,12 +830,12 @@
     "timeout_seconds": 180
   },
   "scenarios": [
-    "P154 splits into64/64/26, only final chunk emits and advances cursor0\u21921.",
+    "P154 splits into64/64/26, only final chunk emits and advances cursor0→1.",
     "Actual original-token P15 peer has a ready T1 decode between the two long-prefill chunks, exact FIFO and same request keys.",
     "Partial committed64-row state is retired and rebuilt through its actual state_only ledger mode; all GDN state and carry bytes match, length/cursor/offset agree.",
     "One original submitted state-only64-row episode is aborted; original committed head/offset/ledger/cursor remain unchanged, and exact same slice succeeds on retry.",
     "Final full154 state enters existing PrefixCache once with64/64/26 history retaining two state_only markers and one emit marker; partial state was not published.",
-    "A later131-row input contains actual pending once and130 original user suffix tokens;64/64/3, only final chunk emits and advances cursor1\u21922.",
+    "A later131-row input contains actual pending once and130 original user suffix tokens;64/64/3, only final chunk emits and advances cursor1→2.",
     "A following empty user suffix consumes the actual pending once through T1; final length286, ledger7/cursor3/output3.",
     "All original participants retire and the existing Window releases only after actual completion."
   ],
@@ -1061,8 +1061,15 @@
     "sha256": "28875a2240b4e9ea701c8977a14a382166dfd1404d300eb2b7055436b9c3bea5"
   },
   "source_version_ladder": [
-    "Actual successful image: archived actual-main.cc with O(chunks\u00b2) publish_generation_prompt; the executed case uses publish_generation_completed, so that helper was not exercised.",
+    "Actual successful image: archived actual-main.cc with O(chunks²) publish_generation_prompt; the executed case uses publish_generation_completed, so that helper was not exercised.",
     "Strict canonical97322b: forward-scan publisher plus same-exe canonical case adapter; /Zs passed.",
     "Final canonical28875a: completion bucketing equality and first-slice context_before fixes, independently source-reviewed; no further compile/runtime."
-  ]
+  ],
+  "cleanup_followup": {
+    "performed": true,
+    "files": 5,
+    "logical_file_bytes_removed": 156501607,
+    "receipt": ".scratch/inference-chunked-prefill-20261025/cleanup-removed.json",
+    "method": "Repository test.ps1 exact inactive files, preview then apply; frozen public archive unchanged; successful generation, SDK and original model retained. Hard-linked DLL logical bytes are not a physical free-space measurement."
+  }
 }
