@@ -87,6 +87,13 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 排队撤回只将该请求标为 Retiring；终态请求经原资源实际退休、owner 显式 `release` 后，槽才可复用。
 Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生命周期检查及其范围见下文。
 
+普通分块 prefill 沿原 `Text` 图族增加冷输出模式 `TextCompletion`，不增加推理阶段或执行器。
+中间块提交完整状态，pending 为 -1，不构造词表投影、采样或主机 token 读回；最后一块才生成下一 token。
+输入偏移只在真实 ledger 提交被观察后推进。同一请求通过原窗口重新排到队尾，让就绪 decode 有机会执行。
+历史记录保留每块的输出模式，恢复时按原分段重放；只有具有有效 pending 的完整前缀可以发布到缓存目录。
+[原 BF16 P154／Q64 检查](../evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json)
+覆盖状态恢复、取消后重试和 pending-only 续轮；目前是有限底层消费者，不宣称 CLI 已提供调度量选项或性能收益。
+
 ## 从输入到一次完整提交
 
 ```text

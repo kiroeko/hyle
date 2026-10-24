@@ -979,6 +979,8 @@ constexpr std::size_t draft_lag(GraphRole role) noexcept {
   return role == GraphRole::kMtpCatchupRound || role == GraphRole::kMtpCatchupSingle ||
       role == GraphRole::kMtpCatchupPrefill ? 1u : 0u;
 }
+enum class TextCompletion { kEmitNext, kStateOnly };
+
 struct GenerationBoundary final {
   std::size_t length = 0, frontier = 0;
   std::uint32_t lag = 0;
@@ -994,7 +996,9 @@ GenerationBoundary generation_boundary(const cache::Snapshot &head) noexcept {
 struct GenerationCommitRecord final {
   GraphRole role = GraphRole::kMtpPrefill;
   bool generation = false, committed = false, user_output = true;
-  bool imported = false;
+  bool imported = false, prefill_complete = true;
+  TextCompletion completion = TextCompletion::kEmitNext;
+  std::size_t input_begin = 0;
   std::shared_ptr<const void> input_owner; // Immutable host data, never a Snapshot/lease.
   std::span<const std::int32_t> prompt_ids;
   std::int32_t pending_input = -1;
@@ -1021,6 +1025,7 @@ struct GenerationCommitRecord final {
   bool same_result(const GenerationCommitRecord &other) const noexcept {
     return requests == other.requests && member_index == other.member_index &&
         role == other.role && generation == other.generation && quota == other.quota &&
+        completion == other.completion && prefill_complete == other.prefill_complete && input_begin == other.input_begin &&
         before == other.before && after == other.after && accepted == other.accepted &&
         draft_limit == other.draft_limit && verified_rows == other.verified_rows && consumed_drafts == other.consumed_drafts &&
         auxiliary_graph_calls == other.auxiliary_graph_calls &&
@@ -1048,17 +1053,20 @@ struct GenerationLedger final {
 struct FamilyKey final {
   std::size_t requests, verification_rows;
   GraphRole role;
+  TextCompletion completion;
   FamilyKey(std::size_t count, GraphRole selected = GraphRole::kText,
-            std::size_t rows = 0) noexcept
-      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected) {}
-  static FamilyKey exact(std::size_t count, GraphRole selected, std::size_t rows) noexcept {
-    FamilyKey key(count, selected); key.verification_rows = rows; return key;
+            std::size_t rows = 0, TextCompletion mode = TextCompletion::kEmitNext) noexcept
+      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected), completion(mode) {}
+  static FamilyKey exact(std::size_t count, GraphRole selected, std::size_t rows,
+                         TextCompletion mode = TextCompletion::kEmitNext) noexcept {
+    FamilyKey key(count, selected, 0, mode); key.verification_rows = rows; return key;
   }
   auto operator<=>(const FamilyKey &) const = default;
 };
 struct ExecutionShape final {
   std::size_t requests, tokens;
   GraphRole role = GraphRole::kText;
+  TextCompletion completion = TextCompletion::kEmitNext;
   auto operator<=>(const ExecutionShape &) const = default;
 };
 struct StatePorts final {
@@ -1101,6 +1109,7 @@ struct FamilyChild final {
 struct Family final : FamilyPorts {
   std::size_t requests = 1;
   GraphRole role = GraphRole::kText;
+  TextCompletion completion = TextCompletion::kEmitNext;
   bool admitted_exact = false;
   std::vector<Tensor> literals; // Backing survives every child and its slots.
   std::vector<g::TensorSpec> specs;
@@ -2236,7 +2245,10 @@ public:
 
   void prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
                       std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                      bool admitted_exact = false) {
+                      bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext) {
+    if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
+        (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
+      throw std::runtime_error("state-only completion requires an ordinary Text family");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
       throw std::runtime_error("compile finite families before preparing their selected state storage");
@@ -2270,14 +2282,14 @@ public:
       throw std::runtime_error("MTP single-token families require T1");
     if (is_mtp_prefill(role) && std::ranges::any_of(planned_chunks, [](auto t) { return t < 2; }))
       throw std::runtime_error("MTP multi-token prefill requires at least two rows; use its single-token family for T1");
-    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front()) : FamilyKey(requests, role, prefix_rows);
+    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion) : FamilyKey(requests, role, prefix_rows, completion);
     auto &selected = diagnostic ? probe_families[family_key] : families[family_key];
     if (selected) throw std::runtime_error("text finite family was already prepared");
     auto result = std::make_unique<Family>();
     auto &definition = *result;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
-    definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows;
+    definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
     definition.admitted_exact = admitted_exact;
     definition.state_resource_ports.reserve(ports_per_request * requests);
     if (verifies_prefix(role) || has_mtp(role) || sampler.enabled) {
@@ -2315,7 +2327,7 @@ public:
     V target_tokens = definition.token_port;
     std::vector<sampling::Distribution> draft_distributions;
     std::vector<V> proposal_ids;
-    if (sampler.enabled && role != GraphRole::kVerify) definition.sampling_identity_port = r.input(
+    if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) definition.sampling_identity_port = r.input(
         dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
       return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
@@ -2567,40 +2579,43 @@ public:
         r.publish(carry); definition.state_resource_ports.push_back(carry);
       }
     definition.hidden_port = last;
-    definition.logits_port = r.scores(last, std::string(geometry.head_role()));
-    if (!sampler.enabled || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
-        {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
-         r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
-    else {
-      std::vector<V> ids, valid, accepted;
-      for (std::size_t request = 0; request < requests; ++request) {
-        const auto p = sampling::distribution(r, sampling_row(definition.logits_port,
-            verifies_prefix(role) ? request * 2 : request), sampler.policy);
+    if (completion == TextCompletion::kEmitNext) {
+      definition.logits_port = r.scores(last, std::string(geometry.head_role()));
+      if (!sampler.enabled || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
+          {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
+           r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
+      else {
+        std::vector<V> ids, valid, accepted;
+        for (std::size_t request = 0; request < requests; ++request) {
+          const auto p = sampling::distribution(r, sampling_row(definition.logits_port,
+              verifies_prefix(role) ? request * 2 : request), sampler.policy);
+          if (drafts_token(role)) {
+            const auto bonus = sampling::distribution(r, sampling_row(definition.logits_port, request * 2 + 1), sampler.policy);
+            const auto decision = sampling::decision(r, p.log_probabilities,
+                draft_distributions[request].log_probabilities, bonus.log_probabilities,
+                proposal_ids[request], sampling_identity(request, 1), sampling_identity(request, 2));
+            ids.push_back(r.one(c::Select{}, {decision.accepted, proposal_ids[request], decision.final_id}));
+            ids.push_back(decision.final_id); accepted.push_back(decision.accepted);
+            auto ok = r.one(c::Select{}, {p.valid, draft_distributions[request].valid, r.cast(r.scalar(0), Type::kBool)});
+            ok = r.one(c::Select{}, {ok, bonus.valid, r.cast(r.scalar(0), Type::kBool)});
+            valid.push_back(r.one(c::Select{}, {ok, decision.valid, r.cast(r.scalar(0), Type::kBool)}));
+          } else {
+            ids.push_back(r.one(c::sampling_ops::categorical(), {p.log_probabilities, sampling_identity(request, 0)}));
+            valid.push_back(p.valid);
+          }
+        }
+        definition.id_port = r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32,
+            {f(static_cast<std::int64_t>(ids.size()))})), {verifies_prefix(role) ? packed : batch, f(1)});
+        definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
+        r.publish(definition.sampling_valid_port);
         if (drafts_token(role)) {
-          const auto bonus = sampling::distribution(r, sampling_row(definition.logits_port, request * 2 + 1), sampler.policy);
-          const auto decision = sampling::decision(r, p.log_probabilities,
-              draft_distributions[request].log_probabilities, bonus.log_probabilities,
-              proposal_ids[request], sampling_identity(request, 1), sampling_identity(request, 2));
-          ids.push_back(r.one(c::Select{}, {decision.accepted, proposal_ids[request], decision.final_id}));
-          ids.push_back(decision.final_id); accepted.push_back(decision.accepted);
-          auto ok = r.one(c::Select{}, {p.valid, draft_distributions[request].valid, r.cast(r.scalar(0), Type::kBool)});
-          ok = r.one(c::Select{}, {ok, bonus.valid, r.cast(r.scalar(0), Type::kBool)});
-          valid.push_back(r.one(c::Select{}, {ok, decision.valid, r.cast(r.scalar(0), Type::kBool)}));
-        } else {
-          ids.push_back(r.one(c::sampling_ops::categorical(), {p.log_probabilities, sampling_identity(request, 0)}));
-          valid.push_back(p.valid);
+          definition.sampling_accept_port = r.host_predicate(r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch})));
+          r.publish(definition.sampling_accept_port);
         }
       }
-      definition.id_port = r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32,
-          {f(static_cast<std::int64_t>(ids.size()))})), {verifies_prefix(role) ? packed : batch, f(1)});
-      definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
-      r.publish(definition.sampling_valid_port);
-      if (drafts_token(role)) {
-        definition.sampling_accept_port = r.host_predicate(r.concat(accepted, 0, r.dense_spec(Type::kBool, {batch})));
-        r.publish(definition.sampling_accept_port);
-      }
     }
-    for (auto value : {definition.hidden_port, definition.logits_port, definition.id_port}) r.publish(value);
+    r.publish(definition.hidden_port);
+    if (completion == TextCompletion::kEmitNext) { r.publish(definition.logits_port); r.publish(definition.id_port); }
     definition.graph = take(std::move(r.builder).finish());
     definition.literals = std::move(assembly.literals);
     definition.specs = std::move(r.specs);
@@ -2674,12 +2689,12 @@ public:
   }
 
   Family *find_family(std::size_t requests, std::size_t tokens, GraphRole role,
-                      bool diagnostic = false) {
+                      bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext) {
     auto &table = diagnostic ? probe_families : families;
-    const auto primary = table.find({requests, role, tokens});
+    const auto primary = table.find({requests, role, tokens, completion});
     if (primary != table.end() && primary->second &&
         std::ranges::find(primary->second->chunks, tokens) != primary->second->chunks.end()) return primary->second.get();
-    const auto exact = table.find(FamilyKey::exact(requests, role, tokens));
+    const auto exact = table.find(FamilyKey::exact(requests, role, tokens, completion));
     return exact == table.end() ? nullptr : exact->second.get();
   }
 
@@ -2687,8 +2702,9 @@ public:
   // at model setup. Specialize only that actual cold request. The same original
   // Family/Phase owners remain bounded by N*R; decoded hot-loop shapes stay in
   // their original immutable finite families.
-  void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role) {
-    if (find_family(requests, tokens, role)) return;
+  void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
+                         TextCompletion completion = TextCompletion::kEmitNext) {
+    if (find_family(requests, tokens, role, false, completion)) return;
     if (!state_storage_prepared || active_step || carrier_borrowed || !tokens || tokens > capacity ||
         !requests || requests > cache_plan.active_sequences ||
         cache::multiply(tokens, requests) > cache_plan.max_query_rows || verifies_prefix(role))
@@ -2700,7 +2716,7 @@ public:
       auto old = families.find(victim);
       if (old == families.end() || !old->second->admitted_exact || old->second->chunks.size() != 1)
         throw std::runtime_error("exact family inventory is inconsistent");
-      const ExecutionShape shape{victim.requests, old->second->chunks[0], victim.role};
+      const ExecutionShape shape{victim.requests, old->second->chunks[0], victim.role, victim.completion};
       if (auto phase = phases.find(shape); phase != phases.end()) {
         for (auto &run : phase->second->slots) check(run.drain());
         phases.erase(phase);
@@ -2710,15 +2726,15 @@ public:
     }
     const auto before_history = history_writers, before_recurrent = recurrent_writers;
     const auto before_hidden = hidden_writers, before_generated = generated_state_outputs;
-    const auto key = FamilyKey::exact(requests, role, tokens);
+    const auto key = FamilyKey::exact(requests, role, tokens, completion);
     try {
-      const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true);
+      const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion);
       for (std::size_t i = 0; i < state_schema.size(); ++i)
         if ((!before_history[i] && history_writers[i]) || (!before_recurrent[i] && recurrent_writers[i]))
           throw std::runtime_error("new suffix requires caller-written state storage absent from the original cache plan; reconfigure the idle model");
       if (!before_hidden && hidden_writers)
         throw std::runtime_error("new suffix requires caller-written hidden storage absent from the original cache plan; reconfigure the idle model");
-      planned_slot_uses[{requests, tokens, role}].fill(1);
+      planned_slot_uses[{requests, tokens, role, completion}].fill(1);
       admitted_exact_keys.push_back(key); ++exact_admissions;
       std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
                 << " role=" << static_cast<int>(role) << " retained=" << admitted_exact_keys.size()
@@ -3186,13 +3202,13 @@ public:
   // Aggregate ordered call plans before any execution carriers are created.
   // Prefix adoption can skip full-hit calls. Counts describe actual possible
   // uses of the serial slot, not additional execution carriers.
-  void plan_execution(std::span<const std::size_t> calls, std::size_t requests = 1, GraphRole role = GraphRole::kText) {
+  void plan_execution(std::span<const std::size_t> calls, std::size_t requests = 1, GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
     for (const auto tokens : calls) {
-      if (!families.contains({requests, role, tokens}) || std::find(families.at({requests, role, tokens})->chunks.begin(), families.at({requests, role, tokens})->chunks.end(), tokens) == families.at({requests, role, tokens})->chunks.end())
+      if (!families.contains({requests, role, tokens, completion}) || std::find(families.at({requests, role, tokens, completion})->chunks.begin(), families.at({requests, role, tokens, completion})->chunks.end(), tokens) == families.at({requests, role, tokens, completion})->chunks.end())
         throw std::runtime_error("execution plan chunk is outside the shared finite family");
-      auto &uses = planned_slot_uses[{requests, tokens, role}];
+      auto &uses = planned_slot_uses[{requests, tokens, role, completion}];
       uses[slot_index] = cache::add(uses[slot_index], 1);
     }
   }
@@ -3200,29 +3216,30 @@ public:
   // Finite wave/suffix plans can count many possible restores without
   // materializing repeated host call tapes or execution carriers.
   void plan_replay_uses(std::size_t tokens, std::size_t requests, std::size_t count,
-                        GraphRole role = GraphRole::kText) {
+                        GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
-    if (!families.contains({requests, role, tokens}) ||
-        std::find(families.at({requests, role, tokens})->chunks.begin(), families.at({requests, role, tokens})->chunks.end(), tokens) == families.at({requests, role, tokens})->chunks.end())
+    if (!families.contains({requests, role, tokens, completion}) ||
+        std::find(families.at({requests, role, tokens, completion})->chunks.begin(), families.at({requests, role, tokens, completion})->chunks.end(), tokens) == families.at({requests, role, tokens, completion})->chunks.end())
       throw std::runtime_error("execution use shape is outside the shared finite family");
-    for (auto &uses : planned_slot_uses[{requests, tokens, role}]) uses = cache::add(uses, count);
+    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion}]) uses = cache::add(uses, count);
   }
 
   std::shared_ptr<Session> create_session(std::span<const std::size_t> planned_chunks,
                                         cache::SnapshotRef prefix = {},
                                         GraphRole role = GraphRole::kText,
                                         std::optional<cache::SamplingCursor> cursor = {},
-                                        bool resample_frontier = false) {
+                                        bool resample_frontier = false,
+                                         TextCompletion completion = TextCompletion::kEmitNext) {
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     for (const auto rows : planned_chunks)
-      if (!find_family(1, rows, role)) admit_exact_shape(rows, 1, role);
+      if (!find_family(1, rows, role, false, completion)) admit_exact_shape(rows, 1, role, completion);
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("session must use its complete target/draft cache family");
-    if ((planned_chunks.empty() ? !families.contains({1, role}) : !find_family(1, initial_rows, role)) ||
-        (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows})))
+    if ((planned_chunks.empty() ? !families.contains({1, role, 0, completion}) : !find_family(1, initial_rows, role, false, completion)) ||
+        (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion})))
       throw std::runtime_error("session requires the shared text families first");
     if (planned_chunks.empty() && !prefix) throw std::runtime_error("session requires an ordered call plan or a complete prefix");
     if (prefix && (prefix->model != this || prefix->math != math_identity() || prefix->length > capacity ||
@@ -3237,12 +3254,12 @@ public:
     for (const auto tokens : planned_chunks) {
       if (tokens == 0 || tokens > capacity - total)
         throw std::runtime_error("session plan exceeds nonempty context capacity");
-      for (const auto *selected : {find_family(1, tokens, role), layer0_probe.empty() ? nullptr : probe_families.at({1, role, tokens}).get()}) {
+      for (const auto *selected : {find_family(1, tokens, role, false, completion), layer0_probe.empty() ? nullptr : probe_families.at({1, role, tokens, completion}).get()}) {
         if (selected && std::find(selected->chunks.begin(), selected->chunks.end(), tokens) == selected->chunks.end())
           throw std::runtime_error("session chunk is outside the shared finite family");
       }
       total += tokens;
-      if (!planned_slot_uses.contains({1, tokens, role}))
+      if (!planned_slot_uses.contains({1, tokens, role, completion}))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
@@ -3324,14 +3341,14 @@ public:
     if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
     check(run.bind(phase.token_port, phase.tokens.read()));
     check(run.bind(phase.position_port, phase.positions.read()));
-    if (sampler.enabled && definition.role != GraphRole::kVerify) {
+    if (sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
       check(run.bind(phase.sampling_identity_port, phase.sampling_identities.read()));
       check(phase.sampling_valid.bind(run));
       if (drafts_token(definition.role)) check(phase.sampling_accept.bind(run));
     }
     if (definition.requests != 1 && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, phase.last_ids.read()));
     if (phase.logits.buffer) check(run.bind(phase.logits_port, phase.logits.view()));
-    check(phase.next_id.bind(run));
+    if (definition.completion == TextCompletion::kEmitNext) check(phase.next_id.bind(run));
     if (phase.final_hidden.buffer) check(run.bind(phase.hidden_port, phase.final_hidden.view()));
     if (has_mtp(definition.role)) {
       check(run.bind(phase.draft_position_port, phase.draft_positions.read()));
@@ -3348,11 +3365,12 @@ public:
     phase.preparation_uses[slot] = 0;
   }
 
-  Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText) {
+  Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
+                       TextCompletion completion = TextCompletion::kEmitNext) {
     auto &cache = diagnostic ? probe_phases : phases;
-    const auto found = cache.find({requests, tokens, role});
+    const auto found = cache.find({requests, tokens, role, completion});
     if (found != cache.end()) return *found->second;
-    auto *selected = find_family(requests, tokens, role, diagnostic);
+    auto *selected = find_family(requests, tokens, role, diagnostic, completion);
     if (!selected) throw std::runtime_error("text finite family has not been prepared");
     auto &definition = *selected;
     const auto point = std::find(definition.chunks.begin(), definition.chunks.end(), tokens);
@@ -3363,7 +3381,7 @@ public:
     auto &phase = *result;
     phase.query_rows = tokens;
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
-    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role});
+    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion});
     for (std::size_t slot = 0; slot < phase.replay_modes.size(); ++slot) {
       phase.replay_modes[slot] = sampler.enabled || replay_policy == ReplayPolicy::kCommands
           || (replay_policy == ReplayPolicy::kAuto && phase.planned_slot_uses[slot] <= 1)
@@ -3381,7 +3399,7 @@ public:
         {has_mtp(role) && !is_mtp_prefill(role) ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests)}));
     phase.positions = Tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
         : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
-    if (sampler.enabled && role != GraphRole::kVerify) {
+    if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
       phase.sampling_identities = Tensor(execution.device(), dense(Type::kUInt32,
           {static_cast<std::int64_t>(requests), 3, 4}));
       phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution));
@@ -3410,10 +3428,12 @@ public:
       for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
       phase.last_ids.write<std::int32_t>(last_ids);
     }
-    phase.logits_facts = &phase.child->output(phase.logits_port);
-    phase.logits = Tensor(take(execution.resource_for(phase.logits_facts->storage)),
-        phase.logits_facts->description, phase.logits_facts->caller_owned());
-    phase.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution));
+    if (completion == TextCompletion::kEmitNext) {
+      phase.logits_facts = &phase.child->output(phase.logits_port);
+      phase.logits = Tensor(take(execution.resource_for(phase.logits_facts->storage)),
+          phase.logits_facts->description, phase.logits_facts->caller_owned());
+      phase.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution));
+    }
     if (verifies_prefix(role)) phase.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
     phase.hidden_facts = &phase.child->output(phase.hidden_port);
     phase.final_hidden = Tensor(take(execution.resource_for(phase.hidden_facts->storage)),
@@ -3476,19 +3496,20 @@ public:
               << " compiled_unknown_providers=" << storage.unknown_provider_count
               << " child_prepare_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
     input_scratch.prepare(phase);
-    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role}, std::move(result)); return *address;
+    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role, completion}, std::move(result)); return *address;
   }
 
   // An engine with a known ordered request can explicitly prepare its actual
   // carriers before admission/ready, preserving the original cold boundary.
   // Candidate prefix suffixes remain unmaterialized until a hit selects one.
   void prepare_execution(std::span<const std::size_t> calls,
-                         std::size_t requests = 1, GraphRole role = GraphRole::kText) {
+                         std::size_t requests = 1, GraphRole role = GraphRole::kText,
+                          TextCompletion completion = TextCompletion::kEmitNext) {
     if (carrier_borrowed)
       throw std::runtime_error("cannot cold-prepare carriers during an active execution loan");
     for (const auto tokens : calls) {
-      if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role);
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role);
+      if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion);
+      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion);
       initialize_slot(phase, slot_index);
     }
   }
@@ -3625,7 +3646,11 @@ public:
 
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
                            inference::PreparationObservation *preparation = nullptr,
-                           GraphRole role = GraphRole::kText) {
+                           GraphRole role = GraphRole::kText,
+                           TextCompletion completion = TextCompletion::kEmitNext) {
+    if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
+        (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
+      throw std::runtime_error("state-only evaluation requires ordinary Text");
     if (requests.empty() || requests.size() > cache_plan.active_sequences)
       throw std::runtime_error("batch width exceeds the configured active sequence capacity");
     if (carrier_borrowed || active_step)
@@ -3657,8 +3682,8 @@ public:
         throw std::runtime_error("token ID outside vocabulary");
     }
     if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
-        !find_family(requests.size(), tokens, role))
-      admit_exact_shape(tokens, requests.size(), role);
+        !find_family(requests.size(), tokens, role, false, completion))
+      admit_exact_shape(tokens, requests.size(), role, completion);
     const auto step_start = Clock::now();
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
@@ -3675,8 +3700,8 @@ public:
     for (auto &member : step.members) member.session->pending = &step;
     try {
       const auto width = requests.size(), slot = slot_index;
-      if (!layer0_probe.empty()) prepare_child(tokens, false, width, role);
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role);
+      if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion);
+      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion);
       auto &run = phase.slots[slot];
       step.phase = &phase; step.run = &run; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
@@ -3689,7 +3714,7 @@ public:
       }
       phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
       phase.positions.write<std::int32_t>(positions);
-      if (sampler.enabled && role != GraphRole::kVerify) {
+      if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
         for (const auto &member : step.members) {
@@ -3721,7 +3746,7 @@ public:
         member.next = reserve_snapshot();
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
         member.next->length = length + tokens;
-        member.next->sampling = sampler.enabled && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
+        member.next->sampling = sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
         const auto full_prefix_pages = length / cache::Plan::page_rows;
         const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
@@ -3853,9 +3878,9 @@ public:
 
   void prepare_evaluation(Session &session, std::span<const std::int32_t> ids,
                           inference::PreparationObservation *preparation = nullptr,
-                          GraphRole role = GraphRole::kText) {
+                          GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
     const std::array requests{EvaluationRequest{session.shared_from_this(), ids}};
-    prepare_evaluations(requests, preparation, role);
+    prepare_evaluations(requests, preparation, role, completion);
   }
 
   void submit_evaluations() {
@@ -3889,6 +3914,7 @@ public:
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
+    const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto replay_route = step.replay_route;
     const auto capture_recorded = step.capture_recorded, capture_reused = step.capture_reused;
@@ -3906,7 +3932,7 @@ public:
             throw std::runtime_error("batch participants cannot share a mutable generation ledger");
           auto &record = outputs[j].generation_ledger->next();
           step.members[j].commit_ledger = outputs[j].generation_ledger; step.members[j].commit_record = &record;
-          if (record.role != phase.family->role || record.before != generation_boundary(*step.members[j].base) ||
+          if (record.role != phase.family->role || record.completion != phase.family->completion || record.before != generation_boundary(*step.members[j].base) ||
               record.ids().size() != (record.generation ? 1u : tokens) ||
               record.ids().empty() || record.ids().front() != step.members[j].first_input)
             throw std::runtime_error("generation ledger entry differs from its actual episode");
@@ -3919,14 +3945,14 @@ public:
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
-        if (!phase.logits.buffer) generated_logits = take(inference::retain_output(run, *phase.logits_facts));
+        if (!state_only && !phase.logits.buffer) generated_logits = take(inference::retain_output(run, *phase.logits_facts));
         if (!phase.final_hidden.buffer) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts));
       }
       if (drafts_token(phase.family->role)) {
         check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = phase.draft_ids[j];
       }
-      if (sampler.enabled && phase.family->role != GraphRole::kVerify) {
+      if (sampler.enabled && !state_only && phase.family->role != GraphRole::kVerify) {
         check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
         if (std::ranges::any_of(phase.sampling_valid_values, [](auto value) { return value != 1; }))
           throw std::runtime_error("sampling distribution or proposal is invalid; no session or RNG cursor was published");
@@ -3940,6 +3966,9 @@ public:
       if (verifies_prefix(phase.family->role)) {
         check(phase.next_id.read(execution, run, std::as_writable_bytes(std::span(phase.prefix_candidates))));
         select(std::span<const std::int32_t>(phase.prefix_candidates), step, next_ids);
+      } else if (state_only) {
+        std::ranges::fill(next_ids, -1);
+        select(std::span<const std::int32_t>(next_ids), step, next_ids);
       } else {
         check(phase.next_id.read(execution, run, std::as_writable_bytes(next_ids)));
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
@@ -3948,7 +3977,7 @@ public:
         auto &member = step.members[j];
         if (!member.accepted_tokens || member.accepted_tokens > tokens ||
             (member.accepted_tokens != tokens && !verifies_prefix(phase.family->role)) ||
-            next_ids[j] < 0 || next_ids[j] >= vocabulary)
+            (!state_only && (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
           throw std::runtime_error("invalid accepted target boundary");
         member.verified_last_page = member.next->pages.back().page();
         if (member.accepted_tokens != tokens) {
@@ -4071,8 +4100,9 @@ public:
         if (!record->generation || phase.family->role == GraphRole::kText) {
           record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
           record->agreed = false; record->accepted_draft = false;
-          record->stopped = is_end_of_generation(next_ids[j]);
-          record->emitted = {next_ids[j], -1}; record->emitted_count = 1;
+          record->stopped = !state_only && is_end_of_generation(next_ids[j]);
+          if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
+          else { record->emitted = {next_ids[j], -1}; record->emitted_count = 1; }
         }
         if (outputs[j].expected_episode && !record->same_result(*outputs[j].expected_episode))
           throw std::runtime_error("MTP replay natural decision or state boundary diverged from its recorded episode");
@@ -4153,7 +4183,7 @@ public:
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
           .member_index = j, .requests = outputs.size()};
       if (output.capture_tensors) {
-        completed.logits = phase.logits.buffer ? phase.logits.view().as_const()
+        if (!state_only) completed.logits = phase.logits.buffer ? phase.logits.view().as_const()
             : take(generated_logits.tensor(phase.logits.description));
         completed.hidden = phase.final_hidden.buffer ? phase.final_hidden.view().as_const()
             : take(generated_hidden.tensor(phase.final_hidden.description));
@@ -4423,7 +4453,7 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
       const auto bytes = take(tensor.description().required_bytes()) / completed.requests;
       dump_bytes(take(tensor.storage().subview(completed.member_index * bytes, bytes)), directory / file);
     };
-    dump_row(completed.logits, "logits.f32");
+    if (completed.logits.valid()) dump_row(completed.logits, "logits.f32");
     dump_row(completed.hidden, "hidden.bf16");
     if (io.trace_states) {
       for (std::size_t i = 0; i < model.state_schema.size(); ++i) if (model.geometry.is_gdn(i)) {
@@ -4572,6 +4602,7 @@ struct GenerationRequest {
   std::vector<TurnObservation> turn_observations;
   std::vector<std::shared_ptr<std::vector<std::int32_t>>> warm_inputs;
   std::size_t last_idle = 0;
+  std::size_t input_turn = SIZE_MAX, turn_input_consumed = 0;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
   std::size_t restore_count = 0, idle_evictions = 0;
@@ -4586,9 +4617,26 @@ struct GenerationRequest {
   }
 };
 
+// Cold episode count; imported source chunks have their own explicit bound.
+std::size_t generation_record_capacity(std::span<const inference::GenerationTurn> turns,
+    std::size_t max_prefill_rows = SIZE_MAX, std::size_t imported_records = 0) {
+  if (!max_prefill_rows) throw std::runtime_error("prefill quantum must be positive");
+  auto count = imported_records;
+  for (std::size_t turn = 0; turn < turns.size(); ++turn) {
+    const auto rows = cache::add(turns[turn].prompt.size(), turn ? 1u : 0u);
+    if (!rows || !turns[turn].max_outputs) throw std::runtime_error("generation requires nonempty turn input and positive quota");
+    const auto chunks = rows / max_prefill_rows + (rows % max_prefill_rows != 0);
+    count = cache::add(count, cache::add(chunks, turns[turn].max_outputs - 1));
+  }
+  return count;
+}
+
 GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, const Session &session,
     GraphRole role, std::span<const std::int32_t> ids, bool generation,
-    std::size_t quota, std::size_t turn, std::shared_ptr<const void> owner = {}, std::size_t maximum = 0) {
+    std::size_t quota, std::size_t turn, std::shared_ptr<const void> owner = {}, std::size_t maximum = 0,
+    TextCompletion completion = TextCompletion::kEmitNext, std::size_t input_begin = 0, bool prefill_complete = true) {
+  if (completion == TextCompletion::kStateOnly && (role != GraphRole::kText || generation || prefill_complete))
+    throw std::runtime_error("state-only ledger entry requires an incomplete ordinary prefill");
   if (ids.empty() || !session.head || (generation && ids.size() != 1))
     throw std::runtime_error("MTP replay record requires its actual input and complete base");
   auto &record = ledger.next();
@@ -4598,6 +4646,8 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
   record.verification_inputs = std::move(verified); record.verification_inputs.clear();
   record.emitted.assign({-1, -1}); record.accepted_inputs.assign({-1, -1});
   record.role = role; record.generation = generation; record.quota = quota; record.turn = turn;
+  record.completion = completion; record.input_begin = input_begin; record.prefill_complete = prefill_complete;
+  record.user_output = completion == TextCompletion::kEmitNext;
   record.draft_limit = role == GraphRole::kVerify ? maximum : drafts_token(role) ? 1 : 0;
   record.before = generation_boundary(*session.head);
   if (generation) record.pending_input = ids.front();
@@ -4620,7 +4670,10 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.before = {part.first, draft_cache ? part.first : 0, 0, previous, -1};
     record.after = {part.first + part.count, draft_cache ? part.first + part.count : 0, 0, part.next_id, -1};
     record.accepted = part.count; record.draft_rows = draft_cache ? part.count : 0;
-    record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = 1;
+    record.completion = part.state_only ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
+    record.prefill_complete = !part.state_only;
+    record.input_begin = part.first;
+    record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
     record.stopped = is_end_of_generation(part.next_id);
     record.user_output = full_hit && i + 1 == prefix.chunks;
     record.imported = true; record.committed = true; ++ledger.committed_count;
@@ -4639,7 +4692,13 @@ void observe_generation_commits(GenerationRequest &request) {
     if (record.emitted_count > record.emitted.size())
       throw std::runtime_error("committed output count exceeds its original record storage");
     const auto emitted = std::span(record.emitted).first(record.emitted_count);
-    const bool prefill_complete = !record.generation && !record.imported;
+    const bool prefill_complete = !record.generation && !record.imported && record.prefill_complete;
+    if (!record.generation && !record.imported &&
+        (record.turn != request.progress.turn_index || request.turn_input_consumed > request.prompt.size() || record.input_begin != request.turn_input_consumed ||
+         record.ids().size() > request.prompt.size() - request.turn_input_consumed ||
+         record.ids().data() != request.prompt.data() + request.turn_input_consumed ||
+         record.prefill_complete != (record.ids().size() == request.prompt.size() - request.turn_input_consumed)))
+      throw std::runtime_error("committed prefill input is not the next actual turn slice");
     const bool stopped = is_end_of_generation(record.after.next_id);
     if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped))
       continue;
@@ -4667,16 +4726,17 @@ void observe_generation_commits(GenerationRequest &request) {
         request.agreements += record.agreed ? 1 : 0; request.accepts += record.consumed_drafts;
         request.auxiliary_graph_calls += record.auxiliary_graph_calls;
         request.decode_step_sum_seconds += record.step_seconds;
-      } else if (!record.imported) {
-        ++request.prefill_graph_calls; request.prefill_graph_tokens += record.ids().size();
-        request.prefill_draft_rows += record.draft_rows;
-        request.prefill_step_seconds += record.step_seconds;
       }
+    }
+    if (!record.generation && !record.imported) {
+      ++request.prefill_graph_calls; request.prefill_graph_tokens += record.ids().size();
+      request.prefill_draft_rows += record.draft_rows;
+      request.prefill_step_seconds += record.step_seconds;
     }
     request.visible_tokens = record.after.length; request.draft_frontier = record.after.frontier;
     request.draft_lag = record.after.lag;
     if (!record.imported) request.endpoint = record.endpoint;
-    if (!record.generation && !record.imported) {
+    if (prefill_complete) {
       request.prefill_endpoint = record.endpoint;
       if (!request.turn_observations.empty()) {
         auto &turn = request.turn_observations[request.progress.turn_index];
@@ -4690,6 +4750,7 @@ void observe_generation_commits(GenerationRequest &request) {
     }
     // No fallible family bookkeeping follows the one host observation mark.
     (void)request.progress.observe_commit(ordinal, emitted, record.user_output, prefill_complete, stopped);
+    if (!record.generation && !record.imported) request.turn_input_consumed += record.ids().size();
   }
 }
 
@@ -4821,7 +4882,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
         : rows == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
   };
   auto session = model.create_session(calls, {}, role_for(first_ids.size()),
-      ledger.records[0].before.sampling);
+      ledger.records[0].before.sampling, false, ledger.records[0].completion);
   GenerationLedger actual(ledger.committed_count);
   std::size_t observed = 0;
   const auto observe = [&] {
@@ -4841,9 +4902,10 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     for (std::size_t i = 0; i < ledger.committed_count; ++i) {
       const auto &source = ledger.records[i]; const auto ids = source.committed_ids();
       const auto role = role_for(ids.size());
-      prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner);
+      prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner, 0,
+          source.completion, source.input_begin, source.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
-      model.prepare_evaluation(*session, ids, nullptr, role); model.submit_evaluation(*session);
+      model.prepare_evaluation(*session, ids, nullptr, role, source.completion); model.submit_evaluation(*session);
       (void)qwen35::finish_evaluation(model, *session, "episode" + std::to_string(i), trace, trace_states,
           nullptr, nullptr, nullptr, nullptr, {}, &actual);
       observe();
@@ -4875,7 +4937,9 @@ struct PreparedGenerationCall final {
   std::size_t maximum = 0;
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
-  bool generation = false, full_hit = false, initial_prefix = false;
+  bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
+  TextCompletion completion = TextCompletion::kEmitNext;
+  std::size_t input_begin = 0;
   std::string name;
   double step_seconds = 0, proposal_seconds = 0;
   std::span<const std::int32_t> ids() const noexcept {
@@ -4887,7 +4951,11 @@ struct PreparedGenerationCall final {
 
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
     cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
-    std::size_t output_credit = SIZE_MAX) {
+    std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
+  if (!max_prefill_rows || (model.cache_plan.draft_cache && max_prefill_rows != SIZE_MAX))
+    throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
+  if (max_prefill_rows != SIZE_MAX && !request.ledger)
+    throw std::runtime_error("chunked prefill requires the original committed generation ledger");
   // Credit belongs to this episode, not the turn's immutable output quota.
   // Reject before prefix lookup, session creation or any other admission work.
   if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
@@ -4900,11 +4968,19 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   PreparedGenerationCall call; call.request = &request; call.steps = steps;
   call.generation = request.progress.prefilled;
   if (!call.generation) {
+    if (request.input_turn != request.progress.turn_index) {
+      const auto before = request.session ? request.session->length() : 0;
+      if (request.prompt.empty() || request.prompt.size() > model.capacity - before)
+        throw std::runtime_error("complete turn input exceeds the remaining context");
+      for (auto id : request.prompt) if (id < 0 || id >= model.vocabulary)
+        throw std::runtime_error("token ID outside vocabulary");
+      request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
+    }
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_begin\n";
-    request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
+    if (!request.turn_input_consumed) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
         : std::exchange(request.admission_start, Clock::time_point{});
     call.initial_prefix = prefix && request.progress.turn_index == 0;
-    if (call.initial_prefix) {
+    if (call.initial_prefix && !request.session) {
       auto hit = prefix->lookup(*request.input, request.prompt.size(), 1, &model, model.math_identity());
       if (hit) {
         if (hit.payload.snapshot->draft.has_value() != model.cache_plan.draft_cache)
@@ -4918,7 +4994,10 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
           request.progress.adopt_committed_history(request.ledger->committed_count);
         }
         const auto suffix = request.prompt.size() - request.reused_tokens;
-        const std::array chunks{suffix};
+        request.turn_input_consumed = request.reused_tokens;
+        const auto suffix_rows = (std::min)(suffix, max_prefill_rows);
+        const auto suffix_completion = suffix > suffix_rows ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
+        const std::array chunks{suffix_rows};
         const auto prior_sampling_seconds = model.frontier_sampling_seconds;
         const auto suffix_role = !model.cache_plan.draft_cache ? GraphRole::kText : (suffix == 1 || request.prompt.size() == 1)
             ? (cached_lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
@@ -4929,7 +5008,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
         request.session = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
             std::move(hit.payload.snapshot), admission_role,
-            request.progress.initial_sampling, suffix == 0);
+            request.progress.initial_sampling, suffix == 0, suffix_completion);
         if (model.sampler.enabled) {
           request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
           request.prefix_sampling_seconds = model.frontier_sampling_seconds - prior_sampling_seconds;
@@ -4957,19 +5036,27 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         hit.reset();
       } else { request.prefix_misses = 1; request.history = std::make_shared<cache::ReplayHistory>(model.capacity); }
     }
-    call.prompt = request.prompt.subspan(request.progress.turn_index == 0 ? request.reused_tokens : 0);
+    call.input_begin = request.turn_input_consumed;
+    const auto remaining_input = request.prompt.size() - call.input_begin;
+    const auto rows = (std::min)(remaining_input, max_prefill_rows);
+    call.prefill_complete = rows == remaining_input;
+    call.completion = call.prefill_complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
+    call.prompt = request.prompt.subspan(call.input_begin, rows);
     const auto lag = request.session && request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
         : call.prompt.size() == 1 ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
         : (lag ? GraphRole::kMtpCatchupPrefill : GraphRole::kMtpPrefill);
     if (!request.session) {
       make_generation_room(model, prefix, nullptr, requests);
-      const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling);
+      const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling, false, call.completion);
     }
-    if (!request.turn_observations.empty())
+    if (!request.turn_observations.empty() &&
+        call.input_begin == (request.progress.turn_index ? 0 : request.reused_tokens))
       request.turn_observations[request.progress.turn_index].context_before = request.session->length();
     call.full_hit = call.prompt.empty();
     call.name = request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_prefill" : "prefill";
+    if (!call.prefill_complete || call.input_begin > request.reused_tokens)
+      call.name += "_chunk" + std::to_string(call.input_begin);
   } else {
     call.quota = (std::min)(request.progress.remaining_outputs(), output_credit);
     call.pending = request.session->head->next_id;
@@ -5040,7 +5127,7 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
     request.auxiliary_graph_calls += result->auxiliary_graph_calls;
     request.rounds.push_back(std::move(*result));
   }
-  if (!call.generation) {
+  if (!call.generation && call.prefill_complete) {
     request.endpoint = request.prefill_endpoint;
   }
   request.visible_tokens = request.session->length();
@@ -5049,7 +5136,7 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
   request.fresh_next_id = request.session->head->next_id;
   if (!request.turn_observations.empty()) {
     auto &turn = request.turn_observations[request.progress.turn_index];
-    if (!call.generation) { turn.start = request.prefill_start; turn.prefill_endpoint = request.prefill_endpoint; }
+    if (!call.generation && call.prefill_complete) { turn.start = request.prefill_start; turn.prefill_endpoint = request.prefill_endpoint; }
     turn.endpoint = request.endpoint;
     turn.output_end = request.progress.generated.size() + (apply_output && !call.full_hit ? emitted.size() : 0);
     turn.context_after = request.visible_tokens;
@@ -5057,7 +5144,7 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
   // Full hits and legacy callers without a ledger use the same output rules,
   // without manufacturing a model commit ordinal for the cache hit.
   if (apply_output && !call.full_hit) request.progress.apply_outputs(emitted, true, !call.generation, stopped);
-  if (!call.generation)
+  if (!call.generation && call.prefill_complete)
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_end\n"
               << "memory_phase=" << request.memory_name << "_decode_begin\n";
   if (request.progress.turn_done) std::cerr << "memory_phase=" << request.memory_name << "_decode_end\n";
@@ -5105,22 +5192,24 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       return;
     }
   }
+  const auto role = calls[0].role; const auto generation = calls[0].generation;
+  const bool needs_results = generation && (role != GraphRole::kText ||
+      std::ranges::any_of(calls, [](const auto &call) { return !call.request->ledger; }));
   hyle::container::SmallVector<EvaluationRequest, 2> inputs;
   hyle::container::SmallVector<EvaluationOutput, 2> outputs;
   hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
   hyle::container::SmallVector<MtpRoundResult, 2> results;
   hyle::container::SmallVector<std::int32_t, 2> next;
   if (!inputs.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
-      !selections.try_reserve(calls.size()) || !results.try_resize(calls.size()) || !next.try_resize(calls.size()))
+      !selections.try_reserve(calls.size()) || !results.try_resize(needs_results ? calls.size() : 0) || !next.try_resize(calls.size()))
     throw std::bad_alloc{};
-  const auto role = calls[0].role; const auto generation = calls[0].generation;
   for (auto &call : calls) {
     auto &request = *call.request;
-    if (call.full_hit || call.role != role || call.generation != generation || call.ids().size() != calls[0].ids().size())
+    if (call.full_hit || call.role != role || call.completion != calls[0].completion || call.generation != generation || call.ids().size() != calls[0].ids().size())
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
     if (request.ledger) prepare_generation_record(*request.ledger, *request.session, role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
-        call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum);
+        call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
     inputs.push_back({request.session, call.ids()});
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
@@ -5131,7 +5220,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     const auto &call = calls[j];
     observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
   };
-  model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role); model.submit_evaluations();
+  model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion); model.submit_evaluations();
   try {
     if (generation && role == GraphRole::kVerify) model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
@@ -5152,7 +5241,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         auto &ledger = *calls[j].request->ledger;
         ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
       }
-      finish_generation_call(model, calls[j], generation ? &results[j] : nullptr);
+      finish_generation_call(model, calls[j], needs_results ? &results[j] : nullptr);
     }
   } catch (...) {
     for (auto &call : calls) observe_generation_commits(*call.request);
@@ -5161,9 +5250,21 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
-  if (!call.initial_prefix || call.full_hit) return;
+  if (!call.initial_prefix || call.full_hit || !call.prefill_complete) return;
   auto &request = *call.request;
-  request.history->append(request.input, request.reused_tokens, call.ids().size(), request.session->head->next_id);
+  if (!request.ledger) request.history->append(request.input, request.reused_tokens,
+      call.ids().size(), request.session->head->next_id);
+  else {
+    for (const auto &record : std::span(request.ledger->records).first(request.ledger->committed_count)) {
+      if (record.imported || record.generation || record.turn != 0) continue;
+      if (record.input_begin != request.history->length)
+        throw std::runtime_error("complete prompt is missing its actual committed prefill chunk");
+      request.history->append(request.input, record.input_begin, record.accepted, record.after.next_id,
+          record.completion == TextCompletion::kStateOnly);
+    }
+    if (request.history->length != request.prompt.size())
+      throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
+  }
   if (request.session->head->draft && request.session->head->draft->lag)
     throw std::runtime_error("only a complete lag0 MTP prompt may enter the directory");
   prefix->publish(request.input, request.session->head, {request.history, request.history->chunks.size(), request.prompt.size()});
@@ -5178,7 +5279,7 @@ void publish_generation_completed(Model &model, GenerationRequest &request, cach
   for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
     const auto &record = request.ledger->records[i];
     if (!record.committed) throw std::runtime_error("completed checkpoint has a gap in its original committed ledger");
-    chunks.push_back({record.committed_ids(), record.after.next_id});
+    chunks.push_back({record.committed_ids(), record.after.next_id, record.completion == TextCompletion::kStateOnly});
   }
   request.completed_checkpoint = cache::consumed_checkpoint(chunks, *request.session->head, model.capacity);
   prefix->publish(request.completed_checkpoint.input, request.session->head, request.completed_checkpoint.replay);
@@ -5366,7 +5467,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       request.warm_inputs.push_back(std::move(owner));
     }
     request.prompt = *request.warm_inputs[0];
-    const auto ledger_capacity = cache::add(first.size(), outputs);
+    const auto ledger_capacity = generation_record_capacity(schedule.turns, SIZE_MAX, first.size());
     request.ledger = std::make_unique<GenerationLedger>(ledger_capacity, model.cache_plan.candidate_boundaries);
     request.round_emitted.resize(outputs - 1);
     for (auto &emitted : request.round_emitted) emitted.reserve(model.cache_plan.candidate_boundaries);
@@ -5533,6 +5634,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           calls[first].full_hit ? std::size_t{1} : model.cache_plan.active_sequences, [&](std::size_t j) {
         return calls[j].full_hit == calls[first].full_hit &&
             calls[j].generation == calls[first].generation && calls[j].role == calls[first].role &&
+            calls[j].completion == calls[first].completion &&
             calls[j].planned_rows() == calls[first].planned_rows();
       });
       hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;

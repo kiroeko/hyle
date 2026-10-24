@@ -931,5 +931,14 @@
     "sha256": "85d2e0aaa10ac984cbe571b74a03deae30f636056dbab2e29c2be5e5c1f66c65",
     "crc_verified": true,
     "payload_sha256_verified": true
+  },
+  "cleanup_followup": {
+    "performed": true,
+    "files_removed": 15,
+    "logical_bytes_removed": 467845148,
+    "scope": "Published private component objects/images/import libraries and private DLL hard links only; exact test.ps1 branch validated all paths and hashes before deletion.",
+    "physical_free_bytes": "not measured; private DLL links do not imply equivalent physical reclamation",
+    "retained": "Original SDK/native DLL/baselines/model role caches and all source/commands/results are retained.",
+    "archive_scope": "Frozen ZIP retains the original pre-cleanup inventory; this wrapper adds the later deletion fact."
   }
 }

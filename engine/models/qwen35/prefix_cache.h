@@ -24,16 +24,17 @@ struct ReplayChunk final {
   TokenPlanRef input;
   std::size_t first = 0, count = 0;
   std::int32_t next_id = -1;
+  bool state_only = false;
 };
 struct ReplayHistory final {
   std::vector<ReplayChunk> chunks;
   std::size_t length = 0, capacity = 0;
   explicit ReplayHistory(std::size_t limit) : capacity(limit) { chunks.reserve(limit); }
-  void append(TokenPlanRef input, std::size_t first, std::size_t count, std::int32_t next) {
+  void append(TokenPlanRef input, std::size_t first, std::size_t count, std::int32_t next, bool state_only = false) {
     if (!input || !count || length > capacity || first != length || first > input->ids.size() || count > input->ids.size() - first ||
-        count > capacity - length || chunks.size() == chunks.capacity() || next < 0)
+        count > capacity - length || chunks.size() == chunks.capacity() || (state_only ? next != -1 : next < 0))
       throw std::runtime_error("invalid actual prefix rebuild chunk");
-    chunks.push_back({std::move(input), first, count, next}); length += count;
+    chunks.push_back({std::move(input), first, count, next, state_only}); length += count;
   }
 };
 struct ReplayPrefix final {
@@ -46,7 +47,7 @@ inline std::shared_ptr<ReplayHistory> copy_history(const ReplayPrefix &prefix, s
   auto result = std::make_shared<ReplayHistory>(capacity);
   for (std::size_t i = 0; i < prefix.chunks; ++i) {
     const auto &part = prefix.history->chunks[i];
-    result->append(part.input, part.first, part.count, part.next_id);
+    result->append(part.input, part.first, part.count, part.next_id, part.state_only);
   }
   if (result->length != prefix.length) throw std::runtime_error("prefix rebuild length differs from its state");
   return result;
@@ -57,6 +58,7 @@ inline std::shared_ptr<ReplayHistory> copy_history(const ReplayPrefix &prefix, s
 struct ConsumedChunk final {
   std::span<const std::int32_t> ids;
   std::int32_t next_id = -1;
+  bool state_only = false;
 };
 struct Checkpoint final {
   TokenPlanRef input;
@@ -68,7 +70,7 @@ inline Checkpoint consumed_checkpoint(std::span<const ConsumedChunk> chunks,
     throw std::runtime_error("checkpoint requires a complete nonempty consumed boundary within context");
   std::size_t total = 0;
   for (const auto &chunk : chunks) {
-    if (chunk.ids.empty() || chunk.next_id < 0 || chunk.ids.size() > capacity - total ||
+    if (chunk.ids.empty() || (chunk.state_only ? chunk.next_id != -1 : chunk.next_id < 0) || chunk.ids.size() > capacity - total ||
         std::ranges::any_of(chunk.ids, [](auto id) { return id < 0; }))
       throw std::runtime_error("checkpoint contains an invalid or unbounded consumed chunk");
     total += chunk.ids.size();
@@ -88,7 +90,7 @@ inline Checkpoint consumed_checkpoint(std::span<const ConsumedChunk> chunks,
   auto history = std::make_shared<ReplayHistory>(capacity);
   std::size_t first = 0;
   for (const auto &chunk : chunks) {
-    history->append(input, first, chunk.ids.size(), chunk.next_id);
+    history->append(input, first, chunk.ids.size(), chunk.next_id, chunk.state_only);
     first += chunk.ids.size();
   }
   return {std::move(input), {std::move(history), chunks.size(), total}};
@@ -140,7 +142,7 @@ public:
     std::size_t covered = 0;
     for (std::size_t i = 0; i < replay.chunks; ++i) {
       const auto &part = replay.history->chunks[i];
-      if (!part.input || !part.count || part.first != covered || part.first > input->ids.size() ||
+      if (!part.input || !part.count || (part.state_only ? part.next_id != -1 : part.next_id < 0) || part.first != covered || part.first > input->ids.size() ||
           part.count > input->ids.size() - part.first || part.first > part.input->ids.size() ||
           part.count > part.input->ids.size() - part.first ||
           !std::equal(part.input->ids.begin() + static_cast<std::ptrdiff_t>(part.first),
