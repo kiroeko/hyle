@@ -1,0 +1,269 @@
+{
+  "status": "CLOSED_REJECTED_NO_PRODUCT_CHANGE",
+  "date": "2026-10-26",
+  "decision": "One cold-wide Lt projection did not improve the prespecified leaf median; ranges overlap. Close without additional samples, algorithms, SiLU, owner/packer or Model integration.",
+  "scope": "One M2/K2048 gate/up pair, original BF16 A/W/Y and F32 accumulation; old Lt request1 selection for two role-N6144 jobs versus one wide-N12288 job. No SiLU/product/down/Model or layout-owner integration.",
+  "actual_execution": {
+    "compile": {
+      "pid": 52764,
+      "state": "TERMINAL",
+      "exit": 0,
+      "seconds": 1.2249190000002272
+    },
+    "link": {
+      "pid": 52016,
+      "state": "TERMINAL",
+      "exit": 0,
+      "seconds": 0.05237640003906563
+    },
+    "GPU_leaf": {
+      "pid": 40380,
+      "state": "TERMINAL",
+      "exit": 0,
+      "seconds": 0.5127857000334188
+    },
+    "GPU_released": true,
+    "host_TUs": 1,
+    "CUDA_TUs": 0,
+    "SDK_builds": 0,
+    "Model_runs": 0,
+    "HTTP": 0,
+    "additional_variants": 0,
+    "product_changes": 0
+  },
+  "original_inputs": {
+    "roles": [
+      {
+        "role": "model.language_model.layers.0.mlp.gate_proj.weight",
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1084498960,
+          "bytes": 25165824,
+          "sha256": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42"
+        },
+        "cached_range_hash_actual": "MATCH",
+        "copied_to_scratch": false
+      },
+      {
+        "role": "model.language_model.layers.0.mlp.up_proj.weight",
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1109664784,
+          "bytes": 25165824,
+          "sha256": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e"
+        },
+        "cached_range_hash_actual": "MATCH",
+        "copied_to_scratch": false
+      }
+    ],
+    "activation": {
+      "full_trace": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\candidate\\prefill\\07-post-attn-norm.bf16",
+        "bytes": 94208,
+        "sha256": "545902e287c560ae81cac441c679e73effaf13c9dd1b9f03824f803348989a4f"
+      },
+      "trace_shape": [
+        23,
+        2048
+      ],
+      "selected_shape": [
+        2,
+        2048
+      ],
+      "selected_byte_range": [
+        0,
+        8191
+      ],
+      "selected_sha256": "394e94f2aa1eddf2820e132cfb8615de3a1b54fd80f64571207446bd9811df0a",
+      "role": "Actual original BF16 model layer0 post_attention_layernorm output, directly consumed by both gate/up projections.",
+      "limitation": "Retained T23 prefill first2 rows, not freshly captured current T2 verifier activations. Leaf exploration cannot claim current model/decode performance.",
+      "trace_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\01-main.cc",
+        "bytes": 31390,
+        "sha256": "819d99e2cffb5cc54a10c9360f94356be56c6add2545c235d5b7581b0f803fed"
+      },
+      "trace_summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\summary.json",
+        "bytes": 4183,
+        "sha256": "62fd14c5ce68cb6111501902936575714dfd29d3bb0d688959c99ea6310b85bf"
+      }
+    },
+    "actual_bounded_weight_bytes_hashed": 50331648
+  },
+  "math": "M2/K2048: two original BF16 W[N6144,K] and one BF16 A[2,K]; baseline returns independent BF16 Y0/Y1, wide uses original-value W[12288,K] and BF16 Y[2,12288]; F32 accumulation and compute-type reduction. Both original projection final BF16 values are preserved; the later SiLU BF16 boundary is outside this leaf.",
+  "numerical_results": [
+    {
+      "arm": "two_Lt_original_role_views_M2",
+      "direct_and_first_captured_oracle": "PASS",
+      "BF16_values_checked_per_role_per_phase": 12288,
+      "roles": 2,
+      "direct_BF16_bit_differences_from_control": [
+        0,
+        0
+      ],
+      "gate": "Complete independent retained F64 dot / a priori F32 FTZ gamma / final BF16 RNE interval; no sampled columns or baseline-output numerical oracle."
+    },
+    {
+      "arm": "single_wide_Lt_cold_concat_M2",
+      "direct_and_first_captured_oracle": "PASS",
+      "BF16_values_checked_per_role_per_phase": 12288,
+      "roles": 2,
+      "direct_BF16_bit_differences_from_control": [
+        0,
+        0
+      ],
+      "gate": "Complete independent retained F64 dot / a priori F32 FTZ gamma / final BF16 RNE interval; no sampled columns or baseline-output numerical oracle."
+    }
+  ],
+  "protocol": {
+    "warmup": "Direct numeric then same-shape cold warmup; both captures numeric-checked before timings.",
+    "jobs_per_graph": 64,
+    "working_set_rotation": "bank=job%4; same addresses and order in both arms",
+    "timing_trials_per_arm": 5,
+    "order": "control/candidate then candidate/control alternating by trial",
+    "event_boundary": "One captured graph launch; real end-event synchronize; divide by64 original gate/up pairs. Also retain corresponding host duration. No packing/unpacking/upload in timing.",
+    "algorithm_choices": "Exactly one ordinary default Lt heuristic per N shape, original32MiB cap/compute-type reduction/16B alignment. No search, variant grid, runtime tuning or retry-until-win.",
+    "cache_limit": "Working set exceeds2x actual L2 checked at run; not proof of absolute cold DRAM or PMU traffic.",
+    "decision": "One finite screen if separately approved; numerical failure stops; overlapping/no useful leaf improvement closes this route without further samples. A leaf win alone cannot approve Model/FFN integration."
+  },
+  "memory": {
+    "shared_weight_pair_banks": 4,
+    "weight_bytes_each_role": 25165824,
+    "shared_weight_working_set_bytes": 201326592,
+    "candidate_extra_weight_bytes": 0,
+    "why_shared": "Both arms use the same physical original-role bytes in the same packed parent. Control W0=base, W1=base+24MiB. Candidate sees base as [12288,2048]. This isolates operation shape/dispatch without changing cache footprint or duplicating weight banks.",
+    "activation_bytes": 8192,
+    "control_two_output_bytes_total": 49152,
+    "candidate_extra_wide_output_bytes": 49152,
+    "shared_workspace_cap_bytes": 33554432,
+    "host_weight_vectors_total_bytes": 50331648,
+    "product_limit": "Raw private CUDA allocation is not a Hyle shared-parent Tensor/lease implementation. Product current Tensor has independent ownership; hypothetical same-parent readonly subviews and original-copy release remain unimplemented."
+  },
+  "actual_memory": {
+    "workspace_cap": 33554432,
+    "shared_pair_bank_count": 4,
+    "shared_weight_working_set_bytes": 201326592,
+    "candidate_extra_weight_bytes": 0,
+    "candidate_extra_output_bytes": 49152,
+    "actual_L2_bytes": 37748736
+  },
+  "timing_results": [
+    {
+      "arm": "two_Lt_original_role_views_M2",
+      "device_microseconds_per_pair": [
+        113.29600214958191,
+        118.52800101041794,
+        113.91700059175491,
+        114.656001329422,
+        114.3999993801117
+      ],
+      "device_microseconds_median": 114.3999993801117,
+      "device_microseconds_range": [
+        113.29600214958191,
+        118.52800101041794
+      ],
+      "host_microseconds_per_pair": [
+        114.89375,
+        119.075,
+        114.7,
+        114.96875,
+        115.0171875
+      ],
+      "default_request1_algorithm_key": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        19,
+        0,
+        0
+      ],
+      "workspace_bytes": 0,
+      "captured_graph_nodes": 128
+    },
+    {
+      "arm": "single_wide_Lt_cold_concat_M2",
+      "device_microseconds_per_pair": [
+        115.03999680280685,
+        111.56649887561798,
+        115.08800089359283,
+        116.73600226640701,
+        112.2559979557991
+      ],
+      "device_microseconds_median": 115.03999680280685,
+      "device_microseconds_range": [
+        111.56649887561798,
+        116.73600226640701
+      ],
+      "host_microseconds_per_pair": [
+        115.69062500000001,
+        112.121875,
+        115.4140625,
+        124.20625,
+        112.5640625
+      ],
+      "default_request1_algorithm_key": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        20,
+        0,
+        0
+      ],
+      "workspace_bytes": 0,
+      "captured_graph_nodes": 64
+    }
+  ],
+  "median_candidate_change_percent": 0.5594383095830935,
+  "cublasLt_version": 130600,
+  "source": {
+    "path": ".scratch\\mtp-m2-wide-lt-20261026\\wide_leaf.cc",
+    "bytes": 16367,
+    "sha256": "a1e97b2379c0618710ab9b5410f819e6fe06fca55d50293b9d95f95a1a340aa8"
+  },
+  "source_pins": {
+    "path": ".scratch\\mtp-m2-wide-lt-20261026\\source-pins.json",
+    "bytes": 2452,
+    "sha256": "13f30a82132d4c62e7ec8ad1557d0cd5d226db7587d0de5bd45079477c40b666"
+  },
+  "ready": {
+    "path": ".scratch\\mtp-m2-wide-lt-20261026\\ready.json",
+    "bytes": 1683,
+    "sha256": "1338d5c47ceda7bc98bace3cc38dd17f911e7bb61b0ea524dfc846318242fc7d"
+  },
+  "actual_dependencies": {
+    "path": ".scratch\\mtp-m2-wide-lt-20261026\\actual-dependencies.json",
+    "bytes": 42836,
+    "sha256": "f143dc247bc72dc05fba45568619bcf8bf6accbc34e30f98e2ad62e1ea296752"
+  },
+  "actual_result": {
+    "path": ".scratch\\mtp-m2-wide-lt-20261026\\summary.json",
+    "bytes": 5504,
+    "sha256": "2805fbed5c9b4ed54598fb797bde8d10d9056f2f52f312e3c630ce960372d48c"
+  },
+  "limits": [
+    "A is the original retained T23 prefill first2 rows, not freshly captured current verifier input; full task/acceptance/quality is not signed.",
+    "Both original final BF16 projection storepoints remain explicit. No SiLU fusion or removed rounding.",
+    "Wide Y[M,2N] is read back whole and independently separated on host for oracle comparison. No timed device unpack: a result does not include solving non-dense gate/up views or the current dense-only typed SiLU/Mul suffix.",
+    "Weight values and physical bytes are identical across arms; N-dependent Lt algorithm may still change F32 reduction/last BF16 bits, all fixed numeric gates remain mandatory.",
+    "No restored whole-M2 MMVF/pair kernel or Lt algorithm search; this asks only whether larger N shape itself changes the actual default Lt scheduling.",
+    "Five leaf samples are descriptive; no confidence/significance, absolute cold-bandwidth or PMU attribution claim.",
+    "Captured graph nodes128 to64 did not establish latency benefit; no end-to-end prefill/decode/session/VRAM comparison follows.",
+    "Original cached input is retained prefill first2 rows, not a fresh current verifier input.",
+    "Same-parent weight views exist only as raw CUDA pointers in this private leaf; no Hyle Tensor/lease/loader ownership mechanism is signed."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\performance\\mtp-m2-wide-lt-screen-2026-10-26.zip",
+    "bytes": 31871,
+    "sha256": "94e6cbfff2d3e7b2e3eb6643cdb02aea11c39db210514a5298c5c28dd8aa1d34",
+    "entries": 22,
+    "CRC_verified": true,
+    "member_sha256_verified": true,
+    "no_model_SDK_binary_payload": true
+  }
+}

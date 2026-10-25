@@ -1,0 +1,3812 @@
+{
+  "status": "CURRENT_CANONICAL_FULL32_WINDOW_COMPLETE_STABLE_WITHIN_ARM",
+  "date": "2026-10-26",
+  "current_image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+      "bytes": 141459968,
+      "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+    },
+    "instrumented": false,
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\runtime-current.json",
+      "bytes": 8228,
+      "sha256": "50fc0dafff1ad22c7ed85b126a26f1e3a110399fc7471d2f77384092cd5f0b33"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-inputs-current.json",
+      "bytes": 58109,
+      "sha256": "e0e0fb2ed011939a35c6151d2a594b44ead3cf19eb9842cd8873bd89f5924eaa"
+    },
+    "engine_split_sources": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\summary.json",
+        "bytes": 82764,
+        "sha256": "ddf1ab79769fc7b1350586250872ed87534cc97067babe43a42796b4046e736d"
+      },
+      "translation_units": {
+        "entry": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\main.cc",
+            "bytes": 105,
+            "sha256": "1d6bb08fe752d10c69ae9e65e16843470757482117072dba61db92132075f40c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\unit.obj",
+            "bytes": 777,
+            "sha256": "c44d44f90c729b329aeac89e3384e4ce6b1bde5bd4f6c2acb7e59f0c17cc052f"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\command.json",
+            "bytes": 2699,
+            "sha256": "05856c8d9fe9b010de1fe0d15f7cecabf9a07dc19b39cfd9d4c1d0fa702037aa"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\actual-self-dependencies.json",
+            "bytes": 374,
+            "sha256": "cd47a9afe3b4e8e3ebf68f5d0d782a0ef8f0275abaac26cf511c7567355b10fa"
+          }
+        },
+        "model": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468204,
+            "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\unit.obj",
+            "bytes": 12690197,
+            "sha256": "81815fdc9fc1077c47049e34c09d8cda7a5addf40d2b338ad11b52e5e57ddb3b"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\command.json",
+            "bytes": 2715,
+            "sha256": "cd50c8ec15e4367448f77cff78111891c242884179ca7e7754db17c95be0d96a"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\actual-self-dependencies.json",
+            "bytes": 28542,
+            "sha256": "037ead6798d1e421cd4e14d16b5f018af8d1b2c9c0147cd0a489b28df1b587bd"
+          }
+        },
+        "weights": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 47831,
+            "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\unit.obj",
+            "bytes": 3493919,
+            "sha256": "edff2e8c11cc895473f6f52aabb1fa9f450f0608617f7bce098a3adad98a4e12"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\command.json",
+            "bytes": 2724,
+            "sha256": "11a555d4e40a8a94f547d093eb7831451c028b894e8ae22037b11398a550c082"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\actual-self-dependencies.json",
+            "bytes": 23787,
+            "sha256": "5fed90cbc851c4b830ca02d108f38734e3ebe51583f64fc0e964e8f82fab7a69"
+          }
+        },
+        "report": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\reporting\\execution_report.cc",
+            "bytes": 5214,
+            "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\unit.obj",
+            "bytes": 106033,
+            "sha256": "b4f69a5a91157679d04dde49f947076ffecad80ef5e75883af85cc62aa901b33"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\command.json",
+            "bytes": 2076,
+            "sha256": "7ddd692400d7b886192f8ce727a5a87e2097e6c3b9accc27910f582b6cbe6f24"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\actual-self-dependencies.json",
+            "bytes": 8951,
+            "sha256": "9a9e51c9a61543f15deb2395e14ebfa1c7cc27f4bd10d0a2121f15ec8f0fe860"
+          }
+        }
+      }
+    }
+  },
+  "source_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\main.cc",
+      "bytes": 105,
+      "sha256": "1d6bb08fe752d10c69ae9e65e16843470757482117072dba61db92132075f40c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+      "bytes": 47831,
+      "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\reporting\\execution_report.cc",
+      "bytes": 5214,
+      "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+    }
+  ],
+  "binding": {
+    "current_image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+        "bytes": 141459968,
+        "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+      },
+      "instrumented": false,
+      "canonical_main": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 468204,
+        "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\runtime-current.json",
+        "bytes": 8228,
+        "sha256": "50fc0dafff1ad22c7ed85b126a26f1e3a110399fc7471d2f77384092cd5f0b33"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-inputs-current.json",
+        "bytes": 58109,
+        "sha256": "e0e0fb2ed011939a35c6151d2a594b44ead3cf19eb9842cd8873bd89f5924eaa"
+      },
+      "engine_split_sources": {
+        "summary": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\summary.json",
+          "bytes": 82764,
+          "sha256": "ddf1ab79769fc7b1350586250872ed87534cc97067babe43a42796b4046e736d"
+        },
+        "translation_units": {
+          "entry": {
+            "source": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\main.cc",
+              "bytes": 105,
+              "sha256": "1d6bb08fe752d10c69ae9e65e16843470757482117072dba61db92132075f40c"
+            },
+            "object": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\unit.obj",
+              "bytes": 777,
+              "sha256": "c44d44f90c729b329aeac89e3384e4ce6b1bde5bd4f6c2acb7e59f0c17cc052f"
+            },
+            "command": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\command.json",
+              "bytes": 2699,
+              "sha256": "05856c8d9fe9b010de1fe0d15f7cecabf9a07dc19b39cfd9d4c1d0fa702037aa"
+            },
+            "actual_selfdeps": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\actual-self-dependencies.json",
+              "bytes": 374,
+              "sha256": "cd47a9afe3b4e8e3ebf68f5d0d782a0ef8f0275abaac26cf511c7567355b10fa"
+            }
+          },
+          "model": {
+            "source": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+              "bytes": 468204,
+              "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+            },
+            "object": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\unit.obj",
+              "bytes": 12690197,
+              "sha256": "81815fdc9fc1077c47049e34c09d8cda7a5addf40d2b338ad11b52e5e57ddb3b"
+            },
+            "command": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\command.json",
+              "bytes": 2715,
+              "sha256": "cd50c8ec15e4367448f77cff78111891c242884179ca7e7754db17c95be0d96a"
+            },
+            "actual_selfdeps": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\actual-self-dependencies.json",
+              "bytes": 28542,
+              "sha256": "037ead6798d1e421cd4e14d16b5f018af8d1b2c9c0147cd0a489b28df1b587bd"
+            }
+          },
+          "weights": {
+            "source": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+              "bytes": 47831,
+              "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+            },
+            "object": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\unit.obj",
+              "bytes": 3493919,
+              "sha256": "edff2e8c11cc895473f6f52aabb1fa9f450f0608617f7bce098a3adad98a4e12"
+            },
+            "command": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\command.json",
+              "bytes": 2724,
+              "sha256": "11a555d4e40a8a94f547d093eb7831451c028b894e8ae22037b11398a550c082"
+            },
+            "actual_selfdeps": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\actual-self-dependencies.json",
+              "bytes": 23787,
+              "sha256": "5fed90cbc851c4b830ca02d108f38734e3ebe51583f64fc0e964e8f82fab7a69"
+            }
+          },
+          "report": {
+            "source": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\reporting\\execution_report.cc",
+              "bytes": 5214,
+              "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+            },
+            "object": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\unit.obj",
+              "bytes": 106033,
+              "sha256": "b4f69a5a91157679d04dde49f947076ffecad80ef5e75883af85cc62aa901b33"
+            },
+            "command": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\command.json",
+              "bytes": 2076,
+              "sha256": "7ddd692400d7b886192f8ce727a5a87e2097e6c3b9accc27910f582b6cbe6f24"
+            },
+            "actual_selfdeps": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\actual-self-dependencies.json",
+              "bytes": 8951,
+              "sha256": "9a9e51c9a61543f15deb2395e14ebfa1c7cc27f4bd10d0a2121f15ec8f0fe860"
+            }
+          }
+        }
+      }
+    },
+    "root_final_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\ready-current.json",
+      "bytes": 1928,
+      "sha256": "860f2f496a1655cfe4361e2e8c75dda8da137ee438a315e0f2e23475b3bbcc85"
+    },
+    "current_runtime_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-cuda-20261025\\smoke-runtime.json",
+      "bytes": 7507,
+      "sha256": "5676536d451bb5df3107399079433e6e69d59540a603aedd5d983ace33b2fd5d"
+    },
+    "runtime_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\runtime-current.json",
+      "bytes": 8228,
+      "sha256": "50fc0dafff1ad22c7ed85b126a26f1e3a110399fc7471d2f77384092cd5f0b33"
+    },
+    "source_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "engine_split_sources": {
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\summary.json",
+        "bytes": 82764,
+        "sha256": "ddf1ab79769fc7b1350586250872ed87534cc97067babe43a42796b4046e736d"
+      },
+      "translation_units": {
+        "entry": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\main.cc",
+            "bytes": 105,
+            "sha256": "1d6bb08fe752d10c69ae9e65e16843470757482117072dba61db92132075f40c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\unit.obj",
+            "bytes": 777,
+            "sha256": "c44d44f90c729b329aeac89e3384e4ce6b1bde5bd4f6c2acb7e59f0c17cc052f"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\command.json",
+            "bytes": 2699,
+            "sha256": "05856c8d9fe9b010de1fe0d15f7cecabf9a07dc19b39cfd9d4c1d0fa702037aa"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\actual-self-dependencies.json",
+            "bytes": 374,
+            "sha256": "cd47a9afe3b4e8e3ebf68f5d0d782a0ef8f0275abaac26cf511c7567355b10fa"
+          }
+        },
+        "model": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468204,
+            "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\unit.obj",
+            "bytes": 12690197,
+            "sha256": "81815fdc9fc1077c47049e34c09d8cda7a5addf40d2b338ad11b52e5e57ddb3b"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\command.json",
+            "bytes": 2715,
+            "sha256": "cd50c8ec15e4367448f77cff78111891c242884179ca7e7754db17c95be0d96a"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\actual-self-dependencies.json",
+            "bytes": 28542,
+            "sha256": "037ead6798d1e421cd4e14d16b5f018af8d1b2c9c0147cd0a489b28df1b587bd"
+          }
+        },
+        "weights": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 47831,
+            "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\unit.obj",
+            "bytes": 3493919,
+            "sha256": "edff2e8c11cc895473f6f52aabb1fa9f450f0608617f7bce098a3adad98a4e12"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\command.json",
+            "bytes": 2724,
+            "sha256": "11a555d4e40a8a94f547d093eb7831451c028b894e8ae22037b11398a550c082"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\actual-self-dependencies.json",
+            "bytes": 23787,
+            "sha256": "5fed90cbc851c4b830ca02d108f38734e3ebe51583f64fc0e964e8f82fab7a69"
+          }
+        },
+        "report": {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\reporting\\execution_report.cc",
+            "bytes": 5214,
+            "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\unit.obj",
+            "bytes": 106033,
+            "sha256": "b4f69a5a91157679d04dde49f947076ffecad80ef5e75883af85cc62aa901b33"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\command.json",
+            "bytes": 2076,
+            "sha256": "7ddd692400d7b886192f8ce727a5a87e2097e6c3b9accc27910f582b6cbe6f24"
+          },
+          "actual_selfdeps": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\report\\actual-self-dependencies.json",
+            "bytes": 8951,
+            "sha256": "9a9e51c9a61543f15deb2395e14ebfa1c7cc27f4bd10d0a2121f15ec8f0fe860"
+          }
+        }
+      }
+    },
+    "final_link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-inputs-current.json",
+      "bytes": 58109,
+      "sha256": "e0e0fb2ed011939a35c6151d2a594b44ead3cf19eb9842cd8873bd89f5924eaa"
+    },
+    "absolute_link_input_count": 222,
+    "final_object_map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\object-map-current.json",
+      "bytes": 66243,
+      "sha256": "a428e0517c8e51e384263a96420b7b8dbafeebb620847262cd987779f14e69c0"
+    },
+    "root_ready_limits": "Build only. Semantic provenance of retained vendor/native inputs is separate; no model behavior, throughput, memory or other-platform claim.",
+    "adapter": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window.py",
+      "bytes": 11860,
+      "sha256": "721a97126d1f0511068448413d41636470e9151a7f8952258d45f10965b40712"
+    },
+    "input": {
+      "V2_manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "V2_prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "original_protocol_input": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\input.json",
+        "bytes": 8361,
+        "sha256": "e768036a9ea28c234b49fc3510da144d11d099109e753d2a989e49fc87990ea2"
+      },
+      "original_prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "two_turn_schedule": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\natural-inputs\\performance64.txt",
+        "bytes": 136,
+        "sha256": "9967bf511308cd1e77d238dfa229c474ea20c3c62bc6b85f1a98d9faa3479411"
+      },
+      "role_mapping_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\input-adaptation.json",
+        "bytes": 806,
+        "sha256": "22476894c0bb632118dcb9f383d308b40e59f146b23f34286cca18a1acb80cea"
+      }
+    },
+    "retained_peer": {
+      "peer_plain": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\peer-ready.json",
+          "bytes": 1842,
+          "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+          "bytes": 35830272,
+          "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+        }
+      },
+      "peer_mtp": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\peer-ready.json",
+          "bytes": 1842,
+          "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+          "bytes": 35830272,
+          "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+        }
+      }
+    },
+    "protocol_only": {
+      "window_adapter": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\window.py",
+        "bytes": 7079,
+        "sha256": "7a99bf3ccedc3ed958fabc6832cbf9e12d0cb8ee92a0c09090a4f18f262bb361"
+      },
+      "previous_full_adapter": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window.py",
+        "bytes": 7728,
+        "sha256": "bc035ed59157119c8c4599539b469ed1c345803d7cf3f0a5f80359d8163e579e"
+      },
+      "arms": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\arms.json",
+        "bytes": 2584,
+        "sha256": "3f7857b41160257993581e3fab744ce0c06c8140dd6d51bb3a84d7dfb593d285"
+      },
+      "window": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\window.py",
+        "bytes": 28770,
+        "sha256": "04bac7276acf48bf8b68b63f9adbd92bd3381432aee86b6f35059d8877c485dc"
+      },
+      "turns": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\turns.py",
+        "bytes": 9301,
+        "sha256": "a0fbb0250b996b6241e67ac0a065afbb9b1f0efe9c618648cbebc70b7ff93269"
+      },
+      "statistics": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-window\\performance.py",
+        "bytes": 7952,
+        "sha256": "c18106e6dc3b590be000194c3c26220e6579ee955949c5b054d09150d4d42f58"
+      },
+      "runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\multiturn_run.py",
+        "bytes": 26658,
+        "sha256": "aaca35030839ad8a6bb501e776315ab1298e3e52910f8f185140600512cf245d"
+      },
+      "observer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\shared-execution-20261021\\observer.py",
+        "bytes": 5933,
+        "sha256": "a93b569ddaaae32669aac95d056ebeb76887d02108c6b5101d85878e77db7862"
+      }
+    },
+    "scope": "Fresh dependency-refreshed current image with formal entry/model/weights/report split. Retained vendor/native boundaries remain named by root Ready; no all-SDK/format certification. Original plan/parse/normalize/analyze, arm order, flags, clocks, endpoints and independent memory observer unchanged. No old samples pooled, extra warmup or profiler. This new baseline follows real dependency refreshes, not additional samples for the prior report screen.",
+    "process_order": [
+      {
+        "workload": "single",
+        "mode": "timing",
+        "processes": 12
+      },
+      {
+        "workload": "single",
+        "mode": "memory",
+        "processes": 4
+      },
+      {
+        "workload": "two-turn",
+        "mode": "timing",
+        "processes": 12
+      },
+      {
+        "workload": "two-turn",
+        "mode": "memory",
+        "processes": 4
+      }
+    ]
+  },
+  "current_closure": {
+    "status": "CURRENT_PROJECT_OBJECTS_LINKED_VENDOR_BOUNDARIES_EXPLICIT",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+      "bytes": 141459968,
+      "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\runtime-current.json",
+      "bytes": 8228,
+      "sha256": "50fc0dafff1ad22c7ed85b126a26f1e3a110399fc7471d2f77384092cd5f0b33"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-inputs-current.json",
+      "bytes": 58109,
+      "sha256": "e0e0fb2ed011939a35c6151d2a594b44ead3cf19eb9842cd8873bd89f5924eaa"
+    },
+    "object_map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\object-map-current.json",
+      "bytes": 66243,
+      "sha256": "a428e0517c8e51e384263a96420b7b8dbafeebb620847262cd987779f14e69c0"
+    },
+    "replaced_old_objects": 107,
+    "new_objects": 108,
+    "unchanged_absolute_inputs": 114,
+    "link": {
+      "exit": 0,
+      "pid": 39164,
+      "seconds": 1.710480900015682
+    },
+    "command": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\process\\command.json",
+      "bytes": 31791,
+      "sha256": "b84b2b11566f0d79ca654c0fa2b07ba1c8e525b92de2627553003ff734480974"
+    },
+    "limits": "Build only. Semantic provenance of retained vendor/native inputs is separate; no model behavior, throughput, memory or other-platform claim."
+  },
+  "build_proof_scope": "107 old objects replaced by108 current project objects, with explicit retained vendor/native boundaries. Detailed build evidence is published separately by root/architecture; no SDK rebuild or all-format certification.",
+  "build_evidence": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-current-source-build-2026-10-26.json",
+      "bytes": 11063,
+      "sha256": "b9fbb73423dd8ff9c56eb80e881e360fcdd22ca9480e34695ad74fd594dfd74d"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-current-source-build-2026-10-26.zip",
+      "bytes": 1711858,
+      "sha256": "085c27da164f2ca2e019b759777c216d3b9e464f3d1a39aebe2eb1ba30f2398a"
+    }
+  },
+  "two_turn_full_nontime_comparison": {
+    "status": "PASS",
+    "scope": "All8 new two-turn Hyle reports (3timing+1independent memory per ordinary/MTP) versus both original703 report-screen candidate and fa32 intermediate behavior. Only original clock field exclusions; every other key/value/type/list is compared recursively.",
+    "comparison_code": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior.py",
+      "bytes": 4362,
+      "sha256": "697c7afb67027ef9398544f888a1081beedc308ee153052cde6584c22a68cf38"
+    },
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\compare_window_nontime.py",
+      "bytes": 3425,
+      "sha256": "e1363395c273be5df3b77481a972c5b1bcba6f45b4f91d9ecf94f0a430b5bb3e"
+    },
+    "current_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+      "bytes": 141459968,
+      "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+    },
+    "reference_images": {
+      "703": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\link\\hyle.exe",
+        "bytes": 141614592,
+        "sha256": "7030426b20990d8d5dcfcbce35f75ded435696efd16de49fd30aafefebef4b40"
+      },
+      "fa32": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link1\\hyle.exe",
+        "bytes": 141776896,
+        "sha256": "fa32fb471d01c5e385760260dfe0e9fb888a1457969efb8a772fef156b7825ae"
+      }
+    },
+    "comparisons": [
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\ordinary-screen\\timing-02-candidate\\stdout.log",
+          "bytes": 118029,
+          "sha256": "037195c00b58964f5ab6e860bc7cdea5549e13b9fcb6570e928379bd13a89e24"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\01-hyle_plain\\stdout.log",
+          "bytes": 118016,
+          "sha256": "66e30b7a05ba9bfbdf7fdbc12c71f3fabe3ed158afb4b55c35d851b9458cff6d"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\ordinary\\stdout.log",
+          "bytes": 118028,
+          "sha256": "69ca2bc466b07f5bf8da6fac1d3380612cdb1f557c6d30a7b654a072440bc732"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\01-hyle_plain\\stdout.log",
+          "bytes": 118016,
+          "sha256": "66e30b7a05ba9bfbdf7fdbc12c71f3fabe3ed158afb4b55c35d851b9458cff6d"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\ordinary-screen\\timing-02-candidate\\stdout.log",
+          "bytes": 118029,
+          "sha256": "037195c00b58964f5ab6e860bc7cdea5549e13b9fcb6570e928379bd13a89e24"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\08-hyle_plain\\stdout.log",
+          "bytes": 118046,
+          "sha256": "aed0ce791f955b5ab16d58ef456e30e250a05092fa924af51d0e65bb8210c0b8"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\ordinary\\stdout.log",
+          "bytes": 118028,
+          "sha256": "69ca2bc466b07f5bf8da6fac1d3380612cdb1f557c6d30a7b654a072440bc732"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\08-hyle_plain\\stdout.log",
+          "bytes": 118046,
+          "sha256": "aed0ce791f955b5ab16d58ef456e30e250a05092fa924af51d0e65bb8210c0b8"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\ordinary-screen\\timing-02-candidate\\stdout.log",
+          "bytes": 118029,
+          "sha256": "037195c00b58964f5ab6e860bc7cdea5549e13b9fcb6570e928379bd13a89e24"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\11-hyle_plain\\stdout.log",
+          "bytes": 118007,
+          "sha256": "a2dbd6badb9cab48505c6542b28c0042b306372b0f80519039bb01887610831c"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_plain",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\ordinary\\stdout.log",
+          "bytes": 118028,
+          "sha256": "69ca2bc466b07f5bf8da6fac1d3380612cdb1f557c6d30a7b654a072440bc732"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\11-hyle_plain\\stdout.log",
+          "bytes": 118007,
+          "sha256": "a2dbd6badb9cab48505c6542b28c0042b306372b0f80519039bb01887610831c"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "arm": "hyle_plain",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\ordinary-screen\\timing-02-candidate\\stdout.log",
+          "bytes": 118029,
+          "sha256": "037195c00b58964f5ab6e860bc7cdea5549e13b9fcb6570e928379bd13a89e24"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\01-hyle_plain\\stdout.log",
+          "bytes": 118059,
+          "sha256": "de78a0fd3e8ce19db704918a91d66923860653876568ac9849f85e414e7f816c"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "arm": "hyle_plain",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\ordinary\\stdout.log",
+          "bytes": 118028,
+          "sha256": "69ca2bc466b07f5bf8da6fac1d3380612cdb1f557c6d30a7b654a072440bc732"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\01-hyle_plain\\stdout.log",
+          "bytes": 118059,
+          "sha256": "de78a0fd3e8ce19db704918a91d66923860653876568ac9849f85e414e7f816c"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\screen\\timing-02-candidate\\stdout.log",
+          "bytes": 77455,
+          "sha256": "c03235f8a806c189c98d0de5b8ae634e1157f1b5fa4bbe3f0162c5fe9d12ef97"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\stdout.log",
+          "bytes": 77438,
+          "sha256": "7216713189904ffd01676cde469d29f28ac32a15e24acf64130f159eb84c5958"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\mtp\\stdout.log",
+          "bytes": 77502,
+          "sha256": "c0450a864bbc1e71abc79de413bcb9912db5eebc9c7651e9ea4634632d7ab1a7"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\stdout.log",
+          "bytes": 77438,
+          "sha256": "7216713189904ffd01676cde469d29f28ac32a15e24acf64130f159eb84c5958"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\screen\\timing-02-candidate\\stdout.log",
+          "bytes": 77455,
+          "sha256": "c03235f8a806c189c98d0de5b8ae634e1157f1b5fa4bbe3f0162c5fe9d12ef97"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\05-hyle_mtp\\stdout.log",
+          "bytes": 77492,
+          "sha256": "37769895b07f36d9a247c34b86fb7b110f99bf7766db52a48396962e075f9583"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\mtp\\stdout.log",
+          "bytes": 77502,
+          "sha256": "c0450a864bbc1e71abc79de413bcb9912db5eebc9c7651e9ea4634632d7ab1a7"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\05-hyle_mtp\\stdout.log",
+          "bytes": 77492,
+          "sha256": "37769895b07f36d9a247c34b86fb7b110f99bf7766db52a48396962e075f9583"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\screen\\timing-02-candidate\\stdout.log",
+          "bytes": 77455,
+          "sha256": "c03235f8a806c189c98d0de5b8ae634e1157f1b5fa4bbe3f0162c5fe9d12ef97"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\12-hyle_mtp\\stdout.log",
+          "bytes": 77494,
+          "sha256": "36e8f92625e4616cf2f8cce0f57ac02383729dfb2a2e1b52b688ada0b3a1dc4b"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "arm": "hyle_mtp",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\mtp\\stdout.log",
+          "bytes": 77502,
+          "sha256": "c0450a864bbc1e71abc79de413bcb9912db5eebc9c7651e9ea4634632d7ab1a7"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\12-hyle_mtp\\stdout.log",
+          "bytes": 77494,
+          "sha256": "36e8f92625e4616cf2f8cce0f57ac02383729dfb2a2e1b52b688ada0b3a1dc4b"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "arm": "hyle_mtp",
+        "baseline": "703_report_screen",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\screen\\timing-02-candidate\\stdout.log",
+          "bytes": 77455,
+          "sha256": "c03235f8a806c189c98d0de5b8ae634e1157f1b5fa4bbe3f0162c5fe9d12ef97"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\02-hyle_mtp\\stdout.log",
+          "bytes": 77433,
+          "sha256": "26010551c449c78ea4b164ed02b004c0fa00d56ced11a56af77e2641deb80d88"
+        },
+        "differences": [],
+        "difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "arm": "hyle_mtp",
+        "baseline": "fa32_two_journey_behavior",
+        "baseline_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior\\mtp\\stdout.log",
+          "bytes": 77502,
+          "sha256": "c0450a864bbc1e71abc79de413bcb9912db5eebc9c7651e9ea4634632d7ab1a7"
+        },
+        "current_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\02-hyle_mtp\\stdout.log",
+          "bytes": 77433,
+          "sha256": "26010551c449c78ea4b164ed02b004c0fa00d56ced11a56af77e2641deb80d88"
+        },
+        "differences": [],
+        "difference_count": 0
+      }
+    ],
+    "exact_differences_total": 0,
+    "limits": "Behavior/work/metadata comparison only. No timings from older screens or behavior runs enter this window. This does not causally attribute any absolute TPS change across processes/dates."
+  },
+  "old_comparison_only_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-synchronous-step-report-2026-10-26.zip",
+    "bytes": 493088,
+    "sha256": "8ef8d323f00aa66b66faf00271be657a385d2db35f8cc590b82aa77faf91017d"
+  },
+  "protocol": "Unchanged retained plan/parse/normalize/analyze; 12 unmonitored timing +4 independent memory processes per workload. No old performance samples included.",
+  "table": [
+    {
+      "workload": "single",
+      "policy": "plain",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2094.269317594582,
+          "full_decode_tokens_per_second": 98.47371986508787,
+          "session_output_tokens_per_second": 89.72399497209163,
+          "weights_load_seconds": 0.840768,
+          "startup_to_ready_seconds": 1.1981275,
+          "first_token_elapsed_seconds": 1.2717207,
+          "startup_to_endpoint_seconds": 1.9114853
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2094.269317594582,
+            "min": 2047.4639367147508,
+            "max": 2251.751687351589
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 98.47371986508787,
+            "min": 98.0307337242529,
+            "max": 98.56838032750362
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 89.72399497209163,
+            "min": 89.1525575779256,
+            "max": 90.45407095613062
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.840768,
+            "min": 0.837638,
+            "max": 0.844567
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.1981275,
+            "min": 1.1662141,
+            "max": 1.1988757
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.2717207,
+            "min": 1.2346645,
+            "max": 1.2741537
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 1.9114853,
+            "min": 1.8738147,
+            "max": 1.9168093
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1130000384,
+          "observed_os_peak_working_set_bytes": 1130000384,
+          "sampled_max_private_commit_bytes": 5917503488,
+          "observed_os_peak_commit_bytes": 5917503488,
+          "sampled_peak_gpu_dedicated_bytes": 4174458880,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4256247808
+        },
+        "memory_measurement": {
+          "sample_count": 231,
+          "running_sample_count": 213,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 212,
+            "min": 0.1161,
+            "median": 15.2028,
+            "max": 16.2159
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 36,
+            "gpu_shared_bytes": 36,
+            "gpu_total_bytes": 36
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 36,
+            "shared:no_pid_instance": 36
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275377091412200,
+            "unix_time_ns": 1792948687016240800,
+            "elapsed_ns": 73000,
+            "process_running": true,
+            "sample_duration_ns": 184200
+          },
+          "last_sample": {
+            "timestamp_ns": 275379491693100,
+            "unix_time_ns": 1792948689416381000,
+            "elapsed_ns": 2400353900,
+            "process_running": false,
+            "sample_duration_ns": 104000
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275377091412200,
+            "unix_time_ns": 1792948687016240800,
+            "elapsed_ns": 73000,
+            "process_running": true,
+            "sample_duration_ns": 184200
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275379312141600,
+            "unix_time_ns": 1792948689237589300,
+            "elapsed_ns": 2220802400,
+            "process_running": true,
+            "sample_duration_ns": 118100
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275378568121400,
+            "first_prefill_marker_ns": 275378568194600,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 213,
+            "min": 0.0578,
+            "median": 0.1351,
+            "max": 0.3708
+          },
+          "phase_markers": {
+            "window_prefill": {
+              "begin_ns": 275378568194600,
+              "end_ns": 275378634385900,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 6,
+              "exact_phase_boundary_values": false
+            },
+            "window_decode": {
+              "begin_ns": 275378634391900,
+              "end_ns": 275379276630000,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 61,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 1578.9770484407602,
+          "full_decode_tokens_per_second": 102.14065741293928,
+          "session_output_tokens_per_second": 89.68040565810495,
+          "weights_load_seconds": 1.6561472,
+          "startup_to_ready_seconds": 1.6853952,
+          "first_token_elapsed_seconds": 1.7823419,
+          "startup_to_endpoint_seconds": 2.4025646
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1578.9770484407602,
+            "min": 1509.2076365906412,
+            "max": 1590.1074664838388
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 102.14065741293928,
+            "min": 101.4680820873563,
+            "max": 102.82902226737994
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 89.68040565810495,
+            "min": 88.52921436408634,
+            "max": 90.11558732130008
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6561472,
+            "min": 1.6501057,
+            "max": 1.6712349
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6853952,
+            "min": 1.6795422,
+            "max": 1.6994536
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.7823419,
+            "min": 1.7816797,
+            "max": 1.7970852
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.4025646,
+            "min": 2.3991384,
+            "max": 2.4097527
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4371349504,
+          "observed_os_peak_working_set_bytes": 4371472384,
+          "sampled_max_private_commit_bytes": 4992892928,
+          "observed_os_peak_commit_bytes": 4993003520,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "memory_measurement": {
+          "sample_count": 283,
+          "running_sample_count": 276,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 275,
+            "min": 0.1038,
+            "median": 15.1181,
+            "max": 16.6943
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 12,
+            "gpu_shared_bytes": 12,
+            "gpu_total_bytes": 12
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 12,
+            "shared:no_pid_instance": 12
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275382454185400,
+            "unix_time_ns": 1792948692379451500,
+            "elapsed_ns": 89100,
+            "process_running": true,
+            "sample_duration_ns": 156400
+          },
+          "last_sample": {
+            "timestamp_ns": 275385402323400,
+            "unix_time_ns": 1792948695327872200,
+            "elapsed_ns": 2948227100,
+            "process_running": false,
+            "sample_duration_ns": 107000
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275382454185400,
+            "unix_time_ns": 1792948692379451500,
+            "elapsed_ns": 89100,
+            "process_running": true,
+            "sample_duration_ns": 156400
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275385331834200,
+            "unix_time_ns": 1792948695257275200,
+            "elapsed_ns": 2877737900,
+            "process_running": true,
+            "sample_duration_ns": 154000
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275384213556100,
+            "first_prefill_marker_ns": 275384213574400,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 276,
+            "min": 0.0589,
+            "median": 0.13415,
+            "max": 0.5259
+          },
+          "phase_markers": {
+            "generation_prefill": {
+              "begin_ns": 275384213574400,
+              "end_ns": 275384310986100,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 9,
+              "exact_phase_boundary_values": false
+            },
+            "generation_decode": {
+              "begin_ns": 275384311008400,
+              "end_ns": 275384921543300,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 58,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "workload": "single",
+      "policy": "mtp",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2229.802908589664,
+          "full_decode_tokens_per_second": 122.47468856436338,
+          "session_output_tokens_per_second": 109.69114401693083,
+          "weights_load_seconds": 0.861195,
+          "startup_to_ready_seconds": 1.6586622,
+          "first_token_elapsed_seconds": 1.726203,
+          "startup_to_endpoint_seconds": 2.2410531
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2229.802908589664,
+            "min": 2086.9272976866273,
+            "max": 2282.123857085698
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 122.47468856436338,
+            "min": 122.36571382621855,
+            "max": 122.51670311052406
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 109.69114401693083,
+            "min": 108.84200103978124,
+            "max": 109.9031118207494
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.861195,
+            "min": 0.856697,
+            "max": 0.865144
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6586622,
+            "min": 1.6514062,
+            "max": 1.6770641
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.726203,
+            "min": 1.7252549,
+            "max": 1.7461857
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.2410531,
+            "min": 2.2394705,
+            "max": 2.2605777
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1230217216,
+          "observed_os_peak_working_set_bytes": 1230376960,
+          "sampled_max_private_commit_bytes": 6210646016,
+          "observed_os_peak_commit_bytes": 6210781184,
+          "sampled_peak_gpu_dedicated_bytes": 4346429440,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4428218368
+        },
+        "memory_measurement": {
+          "sample_count": 265,
+          "running_sample_count": 246,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 245,
+            "min": 0.1191,
+            "median": 15.0307,
+            "max": 16.369
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 36,
+            "gpu_shared_bytes": 36,
+            "gpu_total_bytes": 36
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 36,
+            "shared:no_pid_instance": 36
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275379624419700,
+            "unix_time_ns": 1792948689549021600,
+            "elapsed_ns": 83300,
+            "process_running": true,
+            "sample_duration_ns": 157600
+          },
+          "last_sample": {
+            "timestamp_ns": 275382389624600,
+            "unix_time_ns": 1792948692315178200,
+            "elapsed_ns": 2765288200,
+            "process_running": false,
+            "sample_duration_ns": 129700
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275379624419700,
+            "unix_time_ns": 1792948689549021600,
+            "elapsed_ns": 83300,
+            "process_running": true,
+            "sample_duration_ns": 157600
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275382190491500,
+            "unix_time_ns": 1792948692115788600,
+            "elapsed_ns": 2566155100,
+            "process_running": true,
+            "sample_duration_ns": 65800
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275381567412300,
+            "first_prefill_marker_ns": 275381567422300,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 246,
+            "min": 0.0579,
+            "median": 0.1347,
+            "max": 0.3107
+          },
+          "phase_markers": {
+            "window_prefill": {
+              "begin_ns": 275381567422300,
+              "end_ns": 275381637190200,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 7,
+              "exact_phase_boundary_values": false
+            },
+            "window_decode": {
+              "begin_ns": 275381637195500,
+              "end_ns": 275382152978100,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 49,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 1462.4117448756238,
+          "full_decode_tokens_per_second": 134.43926343501707,
+          "session_output_tokens_per_second": 111.81384950799284,
+          "weights_load_seconds": 1.6876155,
+          "startup_to_ready_seconds": 1.7217376,
+          "first_token_elapsed_seconds": 1.8289345,
+          "startup_to_endpoint_seconds": 2.2975476
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1462.4117448756238,
+            "min": 1437.9380342079855,
+            "max": 1498.7280275765957
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 134.43926343501707,
+            "min": 134.1492732196954,
+            "max": 135.4696248071977
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 111.81384950799284,
+            "min": 111.16690686245474,
+            "max": 112.21093411394739
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6876155,
+            "min": 1.6872796,
+            "max": 1.7049939
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7217376,
+            "min": 1.7213502,
+            "max": 1.7375419
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8289345,
+            "min": 1.8242028,
+            "max": 1.8429475
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.2975476,
+            "min": 2.2938289,
+            "max": 2.3079964
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4531843072,
+          "observed_os_peak_working_set_bytes": 4531884032,
+          "sampled_max_private_commit_bytes": 5455667200,
+          "observed_os_peak_commit_bytes": 5455704064,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "memory_measurement": {
+          "sample_count": 272,
+          "running_sample_count": 265,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 264,
+            "min": 0.1043,
+            "median": 15.180150000000001,
+            "max": 24.5761
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 9,
+            "gpu_shared_bytes": 9,
+            "gpu_total_bytes": 9
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 9,
+            "shared:no_pid_instance": 9
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275385447273400,
+            "unix_time_ns": 1792948695372545400,
+            "elapsed_ns": 94300,
+            "process_running": true,
+            "sample_duration_ns": 163500
+          },
+          "last_sample": {
+            "timestamp_ns": 275388288929400,
+            "unix_time_ns": 1792948698213706300,
+            "elapsed_ns": 2841750300,
+            "process_running": false,
+            "sample_duration_ns": 136000
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275385447273400,
+            "unix_time_ns": 1792948695372545400,
+            "elapsed_ns": 94300,
+            "process_running": true,
+            "sample_duration_ns": 163500
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275388215357300,
+            "unix_time_ns": 1792948698140628600,
+            "elapsed_ns": 2768178200,
+            "process_running": true,
+            "sample_duration_ns": 179300
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275387242536600,
+            "first_prefill_marker_ns": 275387242556900,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 265,
+            "min": 0.0621,
+            "median": 0.1269,
+            "max": 0.7253
+          },
+          "phase_markers": {
+            "generation_prefill": {
+              "begin_ns": 275387242556900,
+              "end_ns": 275387344434000,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 9,
+              "exact_phase_boundary_values": false
+            },
+            "generation_decode": {
+              "begin_ns": 275387344450900,
+              "end_ns": 275387806461900,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 44,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "plain",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2894.6434108454514,
+          "full_decode_tokens_per_second": 98.6046580057865,
+          "session_output_tokens_per_second": 92.35141937277369,
+          "weights_load_seconds": 0.842765,
+          "startup_to_ready_seconds": 1.2130023,
+          "first_token_elapsed_seconds": 1.281781,
+          "startup_to_endpoint_seconds": 2.5990667
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2894.6434108454514,
+            "min": 2856.350526899612,
+            "max": 2960.4223152610252
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 98.6046580057865,
+            "min": 97.89484136140958,
+            "max": 98.82740499627438
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 92.35141937277369,
+            "min": 91.83235171962895,
+            "max": 92.7988794535306
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.842765,
+            "min": 0.822092,
+            "max": 0.844009
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.2130023,
+            "min": 1.1739255,
+            "max": 1.2155124
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.281781,
+            "min": 1.2397858,
+            "max": 1.2827682
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.5990667,
+            "min": 2.5533099,
+            "max": 2.6094178
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1164431360,
+          "observed_os_peak_working_set_bytes": 1164431360,
+          "sampled_max_private_commit_bytes": 6101729280,
+          "observed_os_peak_commit_bytes": 6101729280,
+          "sampled_peak_gpu_dedicated_bytes": 4319166464,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4400955392
+        },
+        "memory_measurement": {
+          "sample_count": 297,
+          "running_sample_count": 278,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 277,
+            "min": 0.1131,
+            "median": 15.0901,
+            "max": 23.2421
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 35,
+            "gpu_shared_bytes": 35,
+            "gpu_total_bytes": 35
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 35,
+            "shared:no_pid_instance": 35
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275431368298300,
+            "unix_time_ns": 1792948741293156400,
+            "elapsed_ns": 83400,
+            "process_running": true,
+            "sample_duration_ns": 160000
+          },
+          "last_sample": {
+            "timestamp_ns": 275434443844000,
+            "unix_time_ns": 1792948744368941500,
+            "elapsed_ns": 3075629100,
+            "process_running": false,
+            "sample_duration_ns": 107800
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275431368298300,
+            "unix_time_ns": 1792948741293156400,
+            "elapsed_ns": 83400,
+            "process_running": true,
+            "sample_duration_ns": 160000
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275434255217100,
+            "unix_time_ns": 1792948744180740400,
+            "elapsed_ns": 2887002200,
+            "process_running": true,
+            "sample_duration_ns": 185900
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275432839348100,
+            "first_prefill_marker_ns": 275432839361200,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 278,
+            "min": 0.0575,
+            "median": 0.129,
+            "max": 0.4542
+          },
+          "phase_markers": {
+            "round1_prefill": {
+              "begin_ns": 275432839361200,
+              "end_ns": 275432908770200,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 6,
+              "exact_phase_boundary_values": false
+            },
+            "round1_decode": {
+              "begin_ns": 275432908776800,
+              "end_ns": 275433544088300,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 61,
+              "exact_phase_boundary_values": false
+            },
+            "round2_prefill": {
+              "begin_ns": 275433544097000,
+              "end_ns": 275433582415500,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 3,
+              "exact_phase_boundary_values": false
+            },
+            "round2_decode": {
+              "begin_ns": 275433582422000,
+              "end_ns": 275434219170600,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 62,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2453.350610003001,
+          "full_decode_tokens_per_second": 102.12355393858127,
+          "session_output_tokens_per_second": 94.13732591305669,
+          "weights_load_seconds": 1.6489813,
+          "startup_to_ready_seconds": 1.6777799,
+          "first_token_elapsed_seconds": 1.7783169,
+          "startup_to_endpoint_seconds": 3.0375959
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2453.350610003001,
+            "min": 2395.046207339693,
+            "max": 2479.2552926885237
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 102.12355393858127,
+            "min": 102.01755916512391,
+            "max": 102.40030375505978
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 94.13732591305669,
+            "min": 93.92317773809361,
+            "max": 94.36637879268982
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6489813,
+            "min": 1.6466507,
+            "max": 1.6491787
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6777799,
+            "min": 1.6755464,
+            "max": 1.6778162
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.7783169,
+            "min": 1.7772847,
+            "max": 1.7790544
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 3.0375959,
+            "min": 3.0343319,
+            "max": 3.0384647
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4375285760,
+          "observed_os_peak_working_set_bytes": 4375707648,
+          "sampled_max_private_commit_bytes": 5021331456,
+          "observed_os_peak_commit_bytes": 5021765632,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "memory_measurement": {
+          "sample_count": 338,
+          "running_sample_count": 331,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 330,
+            "min": 0.106,
+            "median": 15.12705,
+            "max": 16.7502
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 10,
+            "gpu_shared_bytes": 10,
+            "gpu_total_bytes": 10
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 10,
+            "shared:no_pid_instance": 10
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275438035498900,
+            "unix_time_ns": 1792948747960318400,
+            "elapsed_ns": 117600,
+            "process_running": true,
+            "sample_duration_ns": 198700
+          },
+          "last_sample": {
+            "timestamp_ns": 275441560354300,
+            "unix_time_ns": 1792948751485584500,
+            "elapsed_ns": 3524973000,
+            "process_running": false,
+            "sample_duration_ns": 127200
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275438035498900,
+            "unix_time_ns": 1792948747960318400,
+            "elapsed_ns": 117600,
+            "process_running": true,
+            "sample_duration_ns": 198700
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275441490380700,
+            "unix_time_ns": 1792948751415910200,
+            "elapsed_ns": 3454999400,
+            "process_running": true,
+            "sample_duration_ns": 131400
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275439747245100,
+            "first_prefill_marker_ns": 275439747264300,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 331,
+            "min": 0.0601,
+            "median": 0.1255,
+            "max": 0.2237
+          },
+          "phase_markers": {
+            "round1_prefill": {
+              "begin_ns": 275439747264300,
+              "end_ns": 275439845912300,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 9,
+              "exact_phase_boundary_values": false
+            },
+            "round1_decode": {
+              "begin_ns": 275439845945300,
+              "end_ns": 275440464994000,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 59,
+              "exact_phase_boundary_values": false
+            },
+            "round2_prefill": {
+              "begin_ns": 275440465112100,
+              "end_ns": 275440490001600,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 1,
+              "exact_phase_boundary_values": false
+            },
+            "round2_decode": {
+              "begin_ns": 275440490019600,
+              "end_ns": 275441107316900,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 60,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "mtp",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2797.1926686394872,
+          "full_decode_tokens_per_second": 127.09085896979545,
+          "session_output_tokens_per_second": 116.16461469740116,
+          "weights_load_seconds": 0.849673,
+          "startup_to_ready_seconds": 1.7605316,
+          "first_token_elapsed_seconds": 1.8313444,
+          "startup_to_endpoint_seconds": 2.8624737
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2797.1926686394872,
+            "min": 2581.2207419881915,
+            "max": 2907.397963504158
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 127.09085896979545,
+            "min": 125.99483421179733,
+            "max": 128.3803252872153
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 116.16461469740116,
+            "min": 114.31104643011068,
+            "max": 117.67524464039823
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.849673,
+            "min": 0.847051,
+            "max": 0.867435
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7605316,
+            "min": 1.7387373,
+            "max": 1.7697554
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8313444,
+            "min": 1.8053831,
+            "max": 1.8470146
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.8624737,
+            "min": 2.8265324,
+            "max": 2.8895602
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1271570432,
+          "observed_os_peak_working_set_bytes": 1271570432,
+          "sampled_max_private_commit_bytes": 6452318208,
+          "observed_os_peak_commit_bytes": 6452318208,
+          "sampled_peak_gpu_dedicated_bytes": 4499521536,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4581310464
+        },
+        "memory_measurement": {
+          "sample_count": 325,
+          "running_sample_count": 306,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 305,
+            "min": 0.0972,
+            "median": 15.0963,
+            "max": 16.2875
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 34,
+            "gpu_shared_bytes": 34,
+            "gpu_total_bytes": 34
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 34,
+            "shared:no_pid_instance": 34
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275434584740500,
+            "unix_time_ns": 1792948744510300100,
+            "elapsed_ns": 69300,
+            "process_running": true,
+            "sample_duration_ns": 157900
+          },
+          "last_sample": {
+            "timestamp_ns": 275437957872800,
+            "unix_time_ns": 1792948747883154900,
+            "elapsed_ns": 3373201600,
+            "process_running": false,
+            "sample_duration_ns": 121100
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275434584740500,
+            "unix_time_ns": 1792948744510300100,
+            "elapsed_ns": 69300,
+            "process_running": true,
+            "sample_duration_ns": 157900
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275437768014900,
+            "unix_time_ns": 1792948747693533000,
+            "elapsed_ns": 3183343700,
+            "process_running": true,
+            "sample_duration_ns": 152300
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275436614425600,
+            "first_prefill_marker_ns": 275436614437600,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 306,
+            "min": 0.057,
+            "median": 0.13285,
+            "max": 0.9151
+          },
+          "phase_markers": {
+            "round1_prefill": {
+              "begin_ns": 275436614437600,
+              "end_ns": 275436683910500,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 6,
+              "exact_phase_boundary_values": false
+            },
+            "round1_decode": {
+              "begin_ns": 275436683916300,
+              "end_ns": 275437196392700,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 50,
+              "exact_phase_boundary_values": false
+            },
+            "round2_prefill": {
+              "begin_ns": 275437196401600,
+              "end_ns": 275437237766200,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 4,
+              "exact_phase_boundary_values": false
+            },
+            "round2_decode": {
+              "begin_ns": 275437237773100,
+              "end_ns": 275437714141400,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 46,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2420.4995159000964,
+          "full_decode_tokens_per_second": 140.80546986785296,
+          "session_output_tokens_per_second": 125.08290406932797,
+          "weights_load_seconds": 1.7063103,
+          "startup_to_ready_seconds": 1.7397192,
+          "first_token_elapsed_seconds": 1.8390474,
+          "startup_to_endpoint_seconds": 2.7633694
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2420.4995159000964,
+            "min": 2405.2364098304893,
+            "max": 2434.629412371857
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 140.80546986785296,
+            "min": 140.64210936375073,
+            "max": 140.8201994282253
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 125.08290406932797,
+            "min": 125.05488248455913,
+            "max": 125.28425087897179
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.7063103,
+            "min": 1.6930096,
+            "max": 1.7173306
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7397192,
+            "min": 1.7263772,
+            "max": 1.7503753
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8390474,
+            "min": 1.8264882,
+            "max": 1.8486989
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.7633694,
+            "min": 2.7498022,
+            "max": 2.7721625
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4535336960,
+          "observed_os_peak_working_set_bytes": 4535369728,
+          "sampled_max_private_commit_bytes": 5460672512,
+          "observed_os_peak_commit_bytes": 5460709376,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "memory_measurement": {
+          "sample_count": 314,
+          "running_sample_count": 307,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 306,
+            "min": 0.1035,
+            "median": 15.05325,
+            "max": 22.7756
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 10,
+            "gpu_shared_bytes": 10,
+            "gpu_total_bytes": 10
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 10,
+            "shared:no_pid_instance": 10
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration",
+          "first_sample": {
+            "timestamp_ns": 275441607706100,
+            "unix_time_ns": 1792948751532474800,
+            "elapsed_ns": 71300,
+            "process_running": true,
+            "sample_duration_ns": 158900
+          },
+          "last_sample": {
+            "timestamp_ns": 275444882414800,
+            "unix_time_ns": 1792948754807870200,
+            "elapsed_ns": 3274780000,
+            "process_running": false,
+            "sample_duration_ns": 101300
+          },
+          "first_running_sample": {
+            "timestamp_ns": 275441607706100,
+            "unix_time_ns": 1792948751532474800,
+            "elapsed_ns": 71300,
+            "process_running": true,
+            "sample_duration_ns": 158900
+          },
+          "last_running_sample": {
+            "timestamp_ns": 275444805089000,
+            "unix_time_ns": 1792948754730339500,
+            "elapsed_ns": 3197454200,
+            "process_running": true,
+            "sample_duration_ns": 66400
+          },
+          "ready_baseline": {
+            "ready_marker_ns": 275443369753400,
+            "first_prefill_marker_ns": 275443369779900,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "sample_cost_ms": {
+            "count": 307,
+            "min": 0.0596,
+            "median": 0.127,
+            "max": 0.3478
+          },
+          "phase_markers": {
+            "round1_prefill": {
+              "begin_ns": 275443369779900,
+              "end_ns": 275443470053700,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 9,
+              "exact_phase_boundary_values": false
+            },
+            "round1_decode": {
+              "begin_ns": 275443470072700,
+              "end_ns": 275443930009000,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 45,
+              "exact_phase_boundary_values": false
+            },
+            "round2_prefill": {
+              "begin_ns": 275443930135500,
+              "end_ns": 275443957777600,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 3,
+              "exact_phase_boundary_values": false
+            },
+            "round2_decode": {
+              "begin_ns": 275443957796000,
+              "end_ns": 275444396551300,
+              "received_boundary_counts": {
+                "begin": 1,
+                "end": 1
+              },
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "sample_count": 42,
+              "exact_phase_boundary_values": false
+            }
+          }
+        }
+      }
+    }
+  ],
+  "processes": [
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 44104,
+      "exit": 0,
+      "started_unix_ns": 1792948651813333000,
+      "finished_unix_ns": 1792948654640570300,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\01-hyle_plain\\command.json",
+        "bytes": 1030,
+        "sha256": "49bf5cfb25c263554c12a2ece6a6ba63ade254c7f9134574a0675a08d03735f3"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\01-hyle_plain\\result.json",
+        "bytes": 1244,
+        "sha256": "cfb6d1be375c778a3e6a4765a7cbb088638ee686d079ef23c8d14f61f1d65d8b"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\01-hyle_plain\\observation.json",
+        "bytes": 134582,
+        "sha256": "e81cdb88c6b5bd12c8108dff1b6fde5be3abcfb3baa5675f182e7e3109c81369"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 14176,
+      "exit": 0,
+      "started_unix_ns": 1792948654766404100,
+      "finished_unix_ns": 1792948657550770000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\02-hyle_mtp\\command.json",
+        "bytes": 1062,
+        "sha256": "8d711453f49670b1953c8b8616c5b67f41434ccb5869772a13d871662d8e39e9"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1275,
+        "sha256": "08dcd1bcb86123bf0b362ea693386aaea2d862bcfee3e1c19b37b2a9109ddb3a"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\02-hyle_mtp\\observation.json",
+        "bytes": 102043,
+        "sha256": "b7d26a264e28fc2d5f4ece701b45c07fc7341999e78bc40735b6489364b022a4"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 52588,
+      "exit": 0,
+      "started_unix_ns": 1792948657602771300,
+      "finished_unix_ns": 1792948660561636100,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\03-peer_plain\\command.json",
+        "bytes": 1115,
+        "sha256": "f9d4c5fbbd68c3d3ef38c8bdea968e4c95814e4d606bca71731aa137814d6348"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\03-peer_plain\\result.json",
+        "bytes": 1329,
+        "sha256": "d5ab41c49e15bf9e5eb92ec2804ad23e3e7a21696417cc7eca508e09210e198b"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\03-peer_plain\\observation.json",
+        "bytes": 78719,
+        "sha256": "48d19458ff7e8dcf80fa0cbce9d56f4ce35a30882bc96edba0efb48e0de248a7"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 27692,
+      "exit": 0,
+      "started_unix_ns": 1792948660593159000,
+      "finished_unix_ns": 1792948663431046400,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\04-peer_mtp\\command.json",
+        "bytes": 1114,
+        "sha256": "c8aac138e68b6cc6991319f3d12db618c8f3bc515bb8603b21c223d94c8793c5"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\04-peer_mtp\\result.json",
+        "bytes": 1328,
+        "sha256": "6f6564a4c6bc5a5c8d7353b6c3f119f299935eeec56256d034cca30592a63abe"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\04-peer_mtp\\observation.json",
+        "bytes": 55535,
+        "sha256": "4c1aee3c1975c405dd1440f3fdde5610cd7e620f8d18b0cf00fc8503fe5dafda"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 50216,
+      "exit": 0,
+      "started_unix_ns": 1792948663526729300,
+      "finished_unix_ns": 1792948666327906900,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\05-hyle_mtp\\command.json",
+        "bytes": 1062,
+        "sha256": "5efdfda865bb9417ffe08a0f453d0e16d39f86094e83a7e977c0bd97c879b140"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1276,
+        "sha256": "b8b666332f9cd99f8f94071a9196c5efe32d5a8fe59dcafafcf0b84a6fdeeade"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\05-hyle_mtp\\observation.json",
+        "bytes": 102056,
+        "sha256": "75e0d4b2ee4dc0e10ab27f02bd57c954c70dc4c7e483e3260366f886e49a63a8"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 54212,
+      "exit": 0,
+      "started_unix_ns": 1792948666383859600,
+      "finished_unix_ns": 1792948669341126400,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\06-peer_plain\\command.json",
+        "bytes": 1115,
+        "sha256": "15680a012b278423e33f65ad6800a13d18b509c15ffdf9fc1ccf69358c46566a"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\06-peer_plain\\result.json",
+        "bytes": 1328,
+        "sha256": "ef97fd88a2920f3ea8c56f294fdd4dd1c5b78201f3f0a463dffafedfbeca639a"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\06-peer_plain\\observation.json",
+        "bytes": 78707,
+        "sha256": "bed7587d54656513985c961ea78c9c5ad75aee775f1ee8badd84f8afe954a9a7"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 47752,
+      "exit": 0,
+      "started_unix_ns": 1792948669371132400,
+      "finished_unix_ns": 1792948672218801200,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\07-peer_mtp\\command.json",
+        "bytes": 1114,
+        "sha256": "e4dec168519ddfeea01cad65094a752f5eefcd2db62d8feff89a3c03a50eea7d"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\07-peer_mtp\\result.json",
+        "bytes": 1328,
+        "sha256": "a285c4b5fb29ab5dc28ca3fa5064744291d0c6425326b6ea97fb8628161fac37"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\07-peer_mtp\\observation.json",
+        "bytes": 55523,
+        "sha256": "fe95478a88848d4e824ea9bfcdf3b41371433b033819e3c16d735c65235656f1"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 5040,
+      "exit": 0,
+      "started_unix_ns": 1792948672314800600,
+      "finished_unix_ns": 1792948674744201700,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\08-hyle_plain\\command.json",
+        "bytes": 1030,
+        "sha256": "7f03ccd0e60a47cbc8105f4b3e865bfe258fa3b64be3c0a9d52a6f9b83a15915"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\08-hyle_plain\\result.json",
+        "bytes": 1243,
+        "sha256": "068c2a25a70c062cf4c7b5c0b72ac52b1611c2b0a98fc6b18864c77fbc48b71c"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\08-hyle_plain\\observation.json",
+        "bytes": 134522,
+        "sha256": "29e517d050cb11dd188bfb1e098c1974b1ff813e805fc705be08ad9363d42328"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 46480,
+      "exit": 0,
+      "started_unix_ns": 1792948674801710400,
+      "finished_unix_ns": 1792948677759364600,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\09-peer_plain\\command.json",
+        "bytes": 1115,
+        "sha256": "4d1481a02c3e67422b5e5dce04a1b674a0e661e7c2bf962a8be86b676d444d01"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\09-peer_plain\\result.json",
+        "bytes": 1329,
+        "sha256": "aa78c142e6978bc0200db0d38f9c87e5a564e018b70868530963ec25722225f3"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\09-peer_plain\\observation.json",
+        "bytes": 78718,
+        "sha256": "5ecfa7015252f36f14eb19b188cc0340895aea58e240cdbb5f4038759e9ec31f"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 55368,
+      "exit": 0,
+      "started_unix_ns": 1792948677790391100,
+      "finished_unix_ns": 1792948680631655000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\10-peer_mtp\\command.json",
+        "bytes": 1114,
+        "sha256": "2206d81506fcc2b5372abf456e0f18e2c780d0a8dbad200bf65c40f2266acd75"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\10-peer_mtp\\result.json",
+        "bytes": 1328,
+        "sha256": "5f76758438ea7025cd6f0e8002037afa61a3a16409499632b8d258a3e256b800"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\10-peer_mtp\\observation.json",
+        "bytes": 55526,
+        "sha256": "8988790423785a90c332800561c23ac3b6344ec9ec71cf82af7f36522543e1c5"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 13368,
+      "exit": 0,
+      "started_unix_ns": 1792948680727614600,
+      "finished_unix_ns": 1792948683097164100,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\11-hyle_plain\\command.json",
+        "bytes": 1030,
+        "sha256": "63ed72aa4ff568eb06a83ea1f3756763faaf3c3e6220ac7dc3af66950b4b35ad"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\11-hyle_plain\\result.json",
+        "bytes": 1243,
+        "sha256": "119859572569ecbc9359798d131e8d72558087879c06180e862ad1d2ac0bcba9"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\11-hyle_plain\\observation.json",
+        "bytes": 134568,
+        "sha256": "74f9dca8940f796aa0e44df0dbd57e26b3b4feeaa3222cf2136823a721ab6c72"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 47528,
+      "exit": 0,
+      "started_unix_ns": 1792948683219051200,
+      "finished_unix_ns": 1792948685977059100,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\12-hyle_mtp\\command.json",
+        "bytes": 1062,
+        "sha256": "6b00bf53b0a2c6bf50d858c6b18e60e3a971212f0cfaee67a4fd3f5950fcaedc"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1276,
+        "sha256": "c10c3832ed08fdb3d5ffcf4ec7fa62d874b80a4e83cd4e160b674131f40d2a1d"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\12-hyle_mtp\\observation.json",
+        "bytes": 102057,
+        "sha256": "12614320071b109676ba2defbf2897be2de1dac0da725e30f911b83ba28b570e"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_plain",
+      "pid": 27236,
+      "exit": 0,
+      "started_unix_ns": 1792948686789335600,
+      "finished_unix_ns": 1792948689423179600,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\01-hyle_plain\\command.json",
+        "bytes": 1030,
+        "sha256": "90a07cad1daafea65718a15ed274e5f7214cda132571ac8eee3000c7b9c6686a"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\01-hyle_plain\\result.json",
+        "bytes": 2144,
+        "sha256": "6f57d08650d58a267226d5e0eb749d876edf992f86641b9cb5179eacc194a1cd"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\01-hyle_plain\\observation.json",
+        "bytes": 134576,
+        "sha256": "f74a2cecfbb9c8e1c180abaa69f0dd07f988989f67b82be46f4076fc4033bb5a"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_mtp",
+      "pid": 45276,
+      "exit": 0,
+      "started_unix_ns": 1792948689544021200,
+      "finished_unix_ns": 1792948692321492800,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\02-hyle_mtp\\command.json",
+        "bytes": 1062,
+        "sha256": "bd3050085ff93f5465a302dea370e50a5fc079c5ae1338b088442eb767b5e6bd"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2174,
+        "sha256": "533749c3ebd2cff8c0d95dc61a277ed5293445bb53d7dea73c2007b85d687f91"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\02-hyle_mtp\\observation.json",
+        "bytes": 102070,
+        "sha256": "62ba870770ce1b02492407778215469771385a7724d6967fa0393a4308365a06"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_plain",
+      "pid": 49924,
+      "exit": 0,
+      "started_unix_ns": 1792948692372451100,
+      "finished_unix_ns": 1792948695334872900,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\03-peer_plain\\command.json",
+        "bytes": 1115,
+        "sha256": "7cdc4dad2b52423c12fceac946fe5ac5c9e02c7d81715e78b194b07bc2f30943"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\03-peer_plain\\result.json",
+        "bytes": 2309,
+        "sha256": "0a6d99cae059d1cc0001578179b9ed3b1448a18d236fb3d50b9e289261e2ac64"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\03-peer_plain\\observation.json",
+        "bytes": 78713,
+        "sha256": "bb599f9bf2849b10409d3bd6329649bc6bcf72c4a8197f088165ded65dfffb61"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_mtp",
+      "pid": 45144,
+      "exit": 0,
+      "started_unix_ns": 1792948695364887200,
+      "finished_unix_ns": 1792948698220710600,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\04-peer_mtp\\command.json",
+        "bytes": 1114,
+        "sha256": "51a7def4bb090a2c38b631e5f181d3085c85110d6ea42e057f9761a4bdbb8bb8"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\04-peer_mtp\\result.json",
+        "bytes": 2309,
+        "sha256": "b146e42b791d3ecfa9e7238e40f2009753065ff98b2dfb9420266643661729bc"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\04-peer_mtp\\observation.json",
+        "bytes": 55518,
+        "sha256": "6f42c9681f986d6ce3575140ce7a9c15c50fb846405da32cf0a4e070cc162f7c"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 46544,
+      "exit": 0,
+      "started_unix_ns": 1792948699412703000,
+      "finished_unix_ns": 1792948702524617500,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\01-hyle_plain\\command.json",
+        "bytes": 1138,
+        "sha256": "def2211045478cfa9b87d3365c1ad1df9f9b797487a52e414490ac1cda6b0789"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\01-hyle_plain\\result.json",
+        "bytes": 1352,
+        "sha256": "44cbd4b613cef8206e25d7657af3f70b75e4f160952b14f7e61b3e148c36d6eb"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\01-hyle_plain\\observation.json",
+        "bytes": 522912,
+        "sha256": "4aa0b3cb427ce721b99ae69f828cecfba5378ce066dd67ad52d460b17dd9d2d9"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 11076,
+      "exit": 0,
+      "started_unix_ns": 1792948702645278000,
+      "finished_unix_ns": 1792948706098460600,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\command.json",
+        "bytes": 1170,
+        "sha256": "5257a5cb36c0a5780a17bf970c0c41e48d42ff9cf287cbf06d6fac2694cdcbe0"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1384,
+        "sha256": "b30026f9fce18233bff2ea03ae076ea48f5ed003b981490131c4228004f8254a"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\observation.json",
+        "bytes": 228966,
+        "sha256": "7f9496ac58dbd45a777f28aed0fdff44957594bf5a7736d8bac073da2e51e59a"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 43176,
+      "exit": 0,
+      "started_unix_ns": 1792948706161069500,
+      "finished_unix_ns": 1792948709750199500,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\03-peer_plain\\command.json",
+        "bytes": 1225,
+        "sha256": "dad4769ec4350d83274fb7e1a09f4f4b67edb29f64f921e479ade17f32533b3d"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\03-peer_plain\\result.json",
+        "bytes": 1439,
+        "sha256": "dbfe1c74474cbb87cea5a91c949b8fdff21ae94105cc12d9c18cccae9d78c583"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\03-peer_plain\\observation.json",
+        "bytes": 311486,
+        "sha256": "79b37db4dd1979a8a31c429373a996bfc0f0f788c653dfe4f1ef390f7f0953dc"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 47928,
+      "exit": 0,
+      "started_unix_ns": 1792948709781198300,
+      "finished_unix_ns": 1792948713072236500,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\04-peer_mtp\\command.json",
+        "bytes": 1224,
+        "sha256": "46d8805dc639399e70b87ceb8ffe9523ecbf0ecd807df0d1894a56f97066a757"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\04-peer_mtp\\result.json",
+        "bytes": 1438,
+        "sha256": "fdf88bede957028a32205269beaac7e41dc7356f226307133ba2efb4f522fe4d"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\04-peer_mtp\\observation.json",
+        "bytes": 216163,
+        "sha256": "b9870cab2029c451342c149b12f6b4113c5e818738c53cd65c4c362322738bf7"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 41064,
+      "exit": 0,
+      "started_unix_ns": 1792948713168639600,
+      "finished_unix_ns": 1792948716554453000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\05-hyle_mtp\\command.json",
+        "bytes": 1170,
+        "sha256": "0e73e0853c0bba1033dfbae545538ccd1b09e953b321b47d368a34971b07c9e9"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1384,
+        "sha256": "a6177e9633b7fcb0b3b464ade73d98cf860a001661193d7107bf30b0081e5a24"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\05-hyle_mtp\\observation.json",
+        "bytes": 228945,
+        "sha256": "7ea8b1cbe3a3e94de42ecba77e53c887e2f1172905a143dc9062ae07bc51bf1c"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 45232,
+      "exit": 0,
+      "started_unix_ns": 1792948716607967600,
+      "finished_unix_ns": 1792948720188553000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\06-peer_plain\\command.json",
+        "bytes": 1225,
+        "sha256": "a8dd835d944f141448f985536e89eedcff66c84b78910dcfa01fc2b4cf40652c"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\06-peer_plain\\result.json",
+        "bytes": 1438,
+        "sha256": "4cbf9811cf7eb59c28cf67a4c8379e1758da7a328850e98239a9e061dfc36dd8"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\06-peer_plain\\observation.json",
+        "bytes": 311458,
+        "sha256": "0ff756ab7d66d003bf5698166ad49185ad29049be7bd0711776bc51442ced770"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 52988,
+      "exit": 0,
+      "started_unix_ns": 1792948720219552500,
+      "finished_unix_ns": 1792948723540326000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\07-peer_mtp\\command.json",
+        "bytes": 1224,
+        "sha256": "06e32604e1dfe58b67ea6a81b3473d7fb5657b42b246ecf8801f96e28d9fca82"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\07-peer_mtp\\result.json",
+        "bytes": 1438,
+        "sha256": "7cb74e260f5bdba6e2f52e4b0e0bf53df1263ab64c686dd182fc57c9ae4e6f22"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\07-peer_mtp\\observation.json",
+        "bytes": 216175,
+        "sha256": "1a49064565225d896ef010b7780075af02ac4a1e209125602a8177553eacd63c"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 1568,
+      "exit": 0,
+      "started_unix_ns": 1792948723637985900,
+      "finished_unix_ns": 1792948726728155500,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\08-hyle_plain\\command.json",
+        "bytes": 1138,
+        "sha256": "cf8d1fbee7ad500561ec85c9bd53a3bed6e6dc0e45da4add0ef9241744591e1f"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\08-hyle_plain\\result.json",
+        "bytes": 1351,
+        "sha256": "4c7429449de03e7b7022b6406db8a02dd7f4e592db13385471ec8571b237912a"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\08-hyle_plain\\observation.json",
+        "bytes": 522870,
+        "sha256": "d75f1c7bd9b5043f2ed5d9320312c2e2af5a40618f87a2aa3a70d32d46d9ebd6"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 57120,
+      "exit": 0,
+      "started_unix_ns": 1792948726785154500,
+      "finished_unix_ns": 1792948730383107700,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\09-peer_plain\\command.json",
+        "bytes": 1225,
+        "sha256": "73a61dec08d6dde162ed413ad6bd1aeb27f5b8d34d0071c91f42a1d6fba69868"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\09-peer_plain\\result.json",
+        "bytes": 1439,
+        "sha256": "3082b5bc2eaae4a25e83ea3794a0a10a1a7c7e4d1375e51a8b965e83ad0e2968"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\09-peer_plain\\observation.json",
+        "bytes": 311484,
+        "sha256": "882e6cd02a9e984923565d8770e1b5dd19455d0796e9feb7445232b98737b5e0"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 45872,
+      "exit": 0,
+      "started_unix_ns": 1792948730414110600,
+      "finished_unix_ns": 1792948733725502000,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\10-peer_mtp\\command.json",
+        "bytes": 1224,
+        "sha256": "d1605eee86977e97a329dd801bd3850760578e8cbe6abee8fa2714ee4ac8dc43"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\10-peer_mtp\\result.json",
+        "bytes": 1438,
+        "sha256": "df00262f672b0d669a6f3a267d3cada057897730495684f7e1285be593150064"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\10-peer_mtp\\observation.json",
+        "bytes": 216127,
+        "sha256": "465b59260b6982db00a754e1d93fb0c11deae6ad9bf2845ddd27ec07fe5dc67f"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 48836,
+      "exit": 0,
+      "started_unix_ns": 1792948733823010900,
+      "finished_unix_ns": 1792948736874341300,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\11-hyle_plain\\command.json",
+        "bytes": 1138,
+        "sha256": "0211c8b087afade36ab5d32f3e2a2c0553bcebef27666f5d8fac61a43840937b"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\11-hyle_plain\\result.json",
+        "bytes": 1352,
+        "sha256": "018f8ebe00513a676c3de8222e0f2a5925cc18197965ff209e3a43573c011889"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\11-hyle_plain\\observation.json",
+        "bytes": 522816,
+        "sha256": "ef889d22945bd1ee7bdbcbd011cedad65b1f3696f32c73e16376e2717eaab031"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 48428,
+      "exit": 0,
+      "started_unix_ns": 1792948737000934900,
+      "finished_unix_ns": 1792948740337531900,
+      "memory_only": false,
+      "throughput_evidence": true,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\12-hyle_mtp\\command.json",
+        "bytes": 1170,
+        "sha256": "0ea3052d20fb85b65cf3fb9672dcb5ef80eac6b0d6996c6c191fbbd7469fe274"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1384,
+        "sha256": "26c456b432f892c8be8267e9d65ac1260b7a68b8b09b0998373a601c851474f3"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\12-hyle_mtp\\observation.json",
+        "bytes": 228957,
+        "sha256": "47c75bcdefcb1652fc098dd2a03a95481e16b161d081ab896c36a8ba1d993546"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_plain",
+      "pid": 17560,
+      "exit": 0,
+      "started_unix_ns": 1792948741288156400,
+      "finished_unix_ns": 1792948744376942500,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\01-hyle_plain\\command.json",
+        "bytes": 1138,
+        "sha256": "b6f87900b7fb7bfd659b37f39b004f7c8630885e360689c8853069f70e5ac17b"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\01-hyle_plain\\result.json",
+        "bytes": 2868,
+        "sha256": "aa96da348082ec0a4a9c07eb419322245f9bf8559333e277459b66c4ce0c5ed9"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\01-hyle_plain\\observation.json",
+        "bytes": 522838,
+        "sha256": "b3ead8c4697cbd5739edf50a64aeb196bdd9f50ed6d741c17c2b9b4b56f2b558"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_mtp",
+      "pid": 51984,
+      "exit": 0,
+      "started_unix_ns": 1792948744504298400,
+      "finished_unix_ns": 1792948747891375600,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\02-hyle_mtp\\command.json",
+        "bytes": 1170,
+        "sha256": "5adf22af8eed215397d567b9335b1302ea1ff04f175a35fe2ca0db706fcd9f8a"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2899,
+        "sha256": "f66c96380bc36d7a0ddc5c91cb19a3d81312eca3129373c6dde57b532d84d348"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\02-hyle_mtp\\observation.json",
+        "bytes": 228987,
+        "sha256": "36eb5ebdd4a00c9fabcfbe08697bd93b49e94df2279ee2c30d7f88b9bd40bd96"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_plain",
+      "pid": 45480,
+      "exit": 0,
+      "started_unix_ns": 1792948747952318700,
+      "finished_unix_ns": 1792948751494584500,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\03-peer_plain\\command.json",
+        "bytes": 1225,
+        "sha256": "815300632c977adfd6b26f9bbc228bffd42d2937676cf6c194f5e4ef45e93b6c"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\03-peer_plain\\result.json",
+        "bytes": 3137,
+        "sha256": "4ddfa966ec8af691f2d06249d71e1e3a6e98db95b2056bd287f974581578b774"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\03-peer_plain\\observation.json",
+        "bytes": 311440,
+        "sha256": "8634512be6266319e62c13083992073aa01de347efb7ed2d0622816266a3f8b8"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_mtp",
+      "pid": 2096,
+      "exit": 0,
+      "started_unix_ns": 1792948751525366600,
+      "finished_unix_ns": 1792948754817862700,
+      "memory_only": true,
+      "throughput_evidence": false,
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\04-peer_mtp\\command.json",
+        "bytes": 1224,
+        "sha256": "72031a7eabbe46d711319c04005e825b853891d6631f444d5f46d57eeb9e2724"
+      },
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\04-peer_mtp\\result.json",
+        "bytes": 3138,
+        "sha256": "5745c224c00aa2c66fb577607b23517cbbd39c1a9aadc862a738ec5195d8fe4e"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\04-peer_mtp\\observation.json",
+        "bytes": 216130,
+        "sha256": "0f8042dde35e0d3a900775af537232d5f3e6f2bab3aabf590d58507ec907db1a"
+      }
+    }
+  ],
+  "process_count": 32,
+  "fairness_and_work": {
+    "single": {
+      "within_arm_timing": {
+        "hyle_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        }
+      },
+      "within_arm_memory": {
+        "hyle_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        }
+      },
+      "between_arm_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        }
+      },
+      "actual_first_process_work": {
+        "hyle_plain": {
+          "actual_graph_calls": 64,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 0,
+          "draft_decode_rows": null,
+          "draft_rounds": null,
+          "agreements": null,
+          "accepted_drafts": null,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408,
+          "shared_model_objects": null,
+          "native_contexts": null
+        },
+        "hyle_mtp": {
+          "actual_graph_calls": 35,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 222,
+          "actual_draft_rows": 216,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 68,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 62,
+          "draft_decode_rows": null,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "accepted_drafts": 29,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "shared_model_objects": null,
+          "native_contexts": null
+        },
+        "peer_plain": {
+          "actual_graph_calls": null,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 64,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 63,
+          "draft_decode_calls": 0,
+          "draft_rows": null,
+          "draft_decode_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 1
+        },
+        "peer_mtp": {
+          "actual_graph_calls": null,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 220,
+          "actual_draft_rows": 216,
+          "target_compute_calls": 34,
+          "draft_compute_calls": 34,
+          "committed_target_rows": 217,
+          "verified_target_rows": 66,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 33,
+          "draft_decode_calls": 33,
+          "draft_rows": null,
+          "draft_decode_rows": 62,
+          "draft_rounds": null,
+          "agreements": 30,
+          "accepted_drafts": 30,
+          "proposals": 33,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 2
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    },
+    "two-turn": {
+      "within_arm_timing": {
+        "hyle_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        }
+      },
+      "within_arm_memory": {
+        "hyle_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        }
+      },
+      "between_arm_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        }
+      },
+      "actual_first_process_work": {
+        "hyle_plain": {
+          "actual_graph_calls": 128,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 0,
+          "draft_decode_rows": null,
+          "draft_rounds": null,
+          "agreements": null,
+          "accepted_drafts": null,
+          "proposals": null,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408,
+          "shared_model_objects": null,
+          "native_contexts": null,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "hyle_mtp": {
+          "actual_graph_calls": 68,
+          "actual_target_rows": 441,
+          "actual_draft_rows": 434,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 435,
+          "verified_target_rows": 132,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 124,
+          "draft_decode_rows": null,
+          "draft_rounds": 66,
+          "agreements": 60,
+          "accepted_drafts": 60,
+          "proposals": null,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 434,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "shared_model_objects": null,
+          "native_contexts": null,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "peer_plain": {
+          "actual_graph_calls": null,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 128,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 126,
+          "draft_decode_calls": 0,
+          "draft_rows": null,
+          "draft_decode_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 1,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": null
+        },
+        "peer_mtp": {
+          "actual_graph_calls": null,
+          "actual_target_rows": 438,
+          "actual_draft_rows": 435,
+          "target_compute_calls": 67,
+          "draft_compute_calls": 67,
+          "committed_target_rows": 435,
+          "verified_target_rows": 129,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 65,
+          "draft_decode_calls": 65,
+          "draft_rows": null,
+          "draft_decode_rows": 125,
+          "draft_rounds": null,
+          "agreements": 61,
+          "accepted_drafts": 61,
+          "proposals": 64,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 435,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 2,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": null
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    }
+  },
+  "summary_pins": {
+    "single-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-timing\\summary.json",
+      "bytes": 37056,
+      "sha256": "40f9e9a9bd384b248cf2f21060954d937ae4d43d2bfe4f226e44cc3682fe6718"
+    },
+    "single-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\single-memory\\summary.json",
+      "bytes": 152609,
+      "sha256": "6ee180beb1dc6095c9cbc467c8106da32c535351bf829376a56f8fbc789d0e62"
+    },
+    "two-turn-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\summary.json",
+      "bytes": 61630,
+      "sha256": "4a6a424aca12236c9a2264b44f85c41c89f9020da83e69237de1bb3b02b68dda"
+    },
+    "two-turn-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-memory\\summary.json",
+      "bytes": 258885,
+      "sha256": "01de6ad7b503933e24b8d1dd99b83f746fef8cb3d113f8db9a705156e851ef13"
+    }
+  },
+  "original_timing_and_memory_limits": {
+    "single-timing": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints.",
+      "Current107-dependency-change baseline is separate from the older frozen-be3/report-only screens; no historical samples pooled.",
+      "Actual current formal entry/model/weights/report TUs and root-pinned selected project closure; retained native/vendor boundaries remain explicit.",
+      "No causal speed claim for a particular small source change or blanket current codec/platform certification."
+    ],
+    "single-memory": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints.",
+      "Current107-dependency-change baseline is separate from the older frozen-be3/report-only screens; no historical samples pooled.",
+      "Actual current formal entry/model/weights/report TUs and root-pinned selected project closure; retained native/vendor boundaries remain explicit.",
+      "No causal speed claim for a particular small source change or blanket current codec/platform certification."
+    ],
+    "two-turn-timing": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints.",
+      "Current107-dependency-change baseline is separate from the older frozen-be3/report-only screens; no historical samples pooled.",
+      "Actual current formal entry/model/weights/report TUs and root-pinned selected project closure; retained native/vendor boundaries remain explicit.",
+      "No causal speed claim for a particular small source change or blanket current codec/platform certification."
+    ],
+    "two-turn-memory": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints.",
+      "Current107-dependency-change baseline is separate from the older frozen-be3/report-only screens; no historical samples pooled.",
+      "Actual current formal entry/model/weights/report TUs and root-pinned selected project closure; retained native/vendor boundaries remain explicit.",
+      "No causal speed claim for a particular small source change or blanket current codec/platform certification."
+    ]
+  },
+  "timer": {
+    "parent_clock": "time.perf_counter_ns",
+    "implementation": "QueryPerformanceCounter()",
+    "advertised_resolution_seconds": 1e-07,
+    "monotonic": true,
+    "QueryPerformanceFrequency_Hz": 10000000,
+    "endpoint_scope": "Consumer high-resolution host endpoints determine TPS; parent QPC brackets process/received stderr only."
+  },
+  "limits": [
+    "Timing values are original per-arm medians, not ratios of pooled samples. Memory has one separate process per arm/workload and never enters timing denominators.",
+    "Same source family/prompt/context/output quota does not mean equal generated IDs, accepted-draft work or subsequent attention history. Natural per-arm differences and actual work are preserved; no task-quality conclusion.",
+    "Dedicated GPU/WS/private sampled peaks are lower-bound observations. PDH/PSAPI and actual gaps/nulls are retained; this is not exact physical allocation accounting or allocator peak attribution.",
+    "Loading/ready and complete-session endpoints retain their original producer scopes; OS file caches are not purged. Default reporting/IO remains in its original natural boundaries.",
+    "This is a new dependency-refreshed2a94/peer433e full window, not an isolated before/after candidate experiment. No cross-day absolute TPS attribution, old-sample pooling, causal optimization benefit, multi-user throughput, other model/codec/backend or quality claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-current-window-2026-10-26.zip",
+    "bytes": 1556862,
+    "sha256": "8a7562c5b64b55ad22fe844a1dfb7330a054bb63040910318756cea595ab923b",
+    "members": 275,
+    "CRC_and_member_SHA256_verified": true,
+    "index": "member-sha256.json",
+    "no_binaries_SDK_source_tree_or_model_payload": true
+  }
+}

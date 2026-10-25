@@ -1,0 +1,346 @@
+{
+  "schema": "hyle-performance-evidence-v1",
+  "status": "BOUNDED_ATTRIBUTION_COMPLETE_NO_OPTIMIZATION_OR_TPS_CLAIM",
+  "date": "2026-10-26",
+  "scope": "Old paired logical CUDA traces plus one new capture-only provider CPU-timing diagnostic in a pinned incremental703 closure; residual-address source review and previously pinned TRT inspiration. No new profiler, peer run, full throughput window or product change.",
+  "next_action": "Deprioritize surgery on provider binding/query/safety scopes: their three non-bridge buckets total2.1209ms in this complete run. First make the current host-source closure dependency-consistent. If cold preparation then still needs localization, examine the existing replay/native capture-end preparation outside provider; do not infer Graph CPU or implement broader region fusion from an API-uncovered interval.",
+  "old_paired_profile": {
+    "provenance": "Original32Hyle/7peer capture trace, before seed/hidden-output/report changes; no use as current27-capture timing.",
+    "capture_definition": {
+      "capture": "same globalTid, BeginCapture API.start through EndCapture API.end",
+      "API": "temporal union of all visible runtime-table APIs overlapping that capture, including named cu* entries; no nested addition",
+      "uncovered": "capture wall minus that visible API union, not proof of a particular CPU subsystem",
+      "GPU": "union of kernel/memcpy/memset activities overlapping capture; zero here because capture records instead of executes",
+      "native_action_end": "last associated Instantiate/Update end; wall envelope, not sum of API durations"
+    },
+    "counts": {
+      "hyle": {
+        "capture": 32,
+        "front_draft_signature37or41": 17,
+        "body_signature738": 15,
+        "instantiate": 19,
+        "update": 13
+      },
+      "peer": {
+        "capture": 7,
+        "target": 2,
+        "draft": 5,
+        "instantiate": 2,
+        "update": 7,
+        "note": "The two instantiate-containing captures also Update; seven records, never nine."
+      }
+    },
+    "per_capture_mean_ms": {
+      "Hyle_body15": {
+        "wall": 3.6925999333333333,
+        "visible_API_union": 1.2339578,
+        "API_uncovered": 2.4586421333333335
+      },
+      "Hyle_body_without_first14": {
+        "wall": 3.4890735714285714,
+        "visible_API_union": 1.1646022857142857,
+        "API_uncovered": 2.324471285714286
+      },
+      "peer_target2": {
+        "wall": 2.250114,
+        "visible_API_union": 1.1895575,
+        "API_uncovered": 1.0605565
+      }
+    },
+    "visible_native_surface": {
+      "hyle_per_body_native_bridge_invocations": 406,
+      "evidence": "406 StreamIsCapturing and 812 capture-mode exchanges, consistent with one query and enter/restore per admitted prepared-region invocation; not 406 kernels.",
+      "combined_visible_capture_control_ms_per_body": 0.1950274,
+      "copy_API_calls_per_body": 135.0,
+      "visible_copy_API_ms_per_body": 0.15367013333333332,
+      "allocation_event_or_sync": {
+        "API_calls": 0,
+        "union_ns": 0
+      },
+      "conclusion": "No capture-local allocation, event-create/record or synchronize API storm is present. The visible controls/copy API surface is sub-millisecond per recording and does not identify the larger uncovered remainder."
+    },
+    "interpretation": "Recording frequency and per-record wall both differed, but most per-record difference was outside visible CUDA APIs. No explicit cuBLAS/driver table was present.406 native provider invocations are not406 kernels; no capture-local allocation/event/synchronization storm was observed.",
+    "no_current_recoverable_ms": true
+  },
+  "one_direct_diagnostic": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-capture-per-record-cost-20261026\\diagnostic\\attempt1\\link\\hyle.exe",
+      "bytes": 141617664,
+      "sha256": "edc4e5c03e384bc82e6e5573944b77d1523c33a966d84cf612c552c8a5ce2f82"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-capture-per-record-cost-20261026\\diagnostic\\source\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+      "bytes": 87137,
+      "sha256": "7397d32358f7ba26f64479757ae62f9582aada81f5adfa5774a0cbbbc2dee2fd"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-capture-per-record-cost-20261026\\diagnostic\\source-pins.json",
+      "bytes": 918,
+      "sha256": "77f95f64a2a2f9ff1126649d142738e06cc51dc91833dc1c0910b8dd1cd9f576"
+    },
+    "actual_compile": {
+      "exit": 0,
+      "pid": 44488,
+      "seconds": 4.849386100017
+    },
+    "actual_link": {
+      "exit": 0,
+      "pid": 43456,
+      "seconds": 1.7014093999750912
+    },
+    "actual_run": {
+      "exit": 0,
+      "pid": 49868,
+      "seconds": 3.7969382000155747
+    },
+    "complete": {
+      "attempted": 4446,
+      "stored": 4446,
+      "finished": 4446,
+      "overflow": 0,
+      "process_exit_dump": 1
+    },
+    "actual_Event_bytes": 96,
+    "capacity": 32768,
+    "fixed_event_array_bytes": 3145728,
+    "event_recording": "Capture-only steady_clock, no hot allocation/IO. Five ticks form four disjoint per-invocation intervals; normal-exit fixed scalar dump. All4446 seen31/terminal_ok1, monotonic nonoverlapping events.",
+    "four_buckets": {
+      "bindings": {
+        "total_ms": 1.0781,
+        "median_us": 0.2,
+        "min_us": 0.0,
+        "max_us": 7.6
+      },
+      "admission_and_guards": {
+        "total_ms": 0.5436,
+        "median_us": 0.1,
+        "min_us": 0.0,
+        "max_us": 6.3
+      },
+      "bridge": {
+        "total_ms": 13.1698,
+        "median_us": 2.0,
+        "min_us": 0.8,
+        "max_us": 2022.2
+      },
+      "publication_and_cleanup": {
+        "total_ms": 0.4992,
+        "median_us": 0.1,
+        "min_us": 0.0,
+        "max_us": 3.3
+      }
+    },
+    "provider_total_ms": 15.2907,
+    "prepared_groups": {
+      "all_prepared": {
+        "cold_batch_ms": {
+          "n": 68,
+          "total": 95.4593,
+          "median": 0.55255,
+          "min": 0.3345,
+          "max": 10.353
+        },
+        "capture_recorded": 27,
+        "capture_reused": 105
+      },
+      "prefill_T_gt2": {
+        "cold_batch_ms": {
+          "n": 2,
+          "total": 9.0266,
+          "median": 4.5133,
+          "min": 4.0559,
+          "max": 4.9707
+        },
+        "capture_recorded": 0,
+        "capture_reused": 0
+      },
+      "decode_T_le2": {
+        "cold_batch_ms": {
+          "n": 66,
+          "total": 86.4327,
+          "median": 0.5449999999999999,
+          "min": 0.3345,
+          "max": 10.353
+        },
+        "capture_recorded": 27,
+        "capture_reused": 105
+      },
+      "decode_with_record": {
+        "cold_batch_ms": {
+          "n": 21,
+          "total": 64.3694,
+          "median": 0.7826000000000001,
+          "min": 0.5368999999999999,
+          "max": 10.353
+        },
+        "capture_recorded": 27,
+        "capture_reused": 15
+      },
+      "decode_no_record": {
+        "cold_batch_ms": {
+          "n": 45,
+          "total": 22.0633,
+          "median": 0.4781,
+          "min": 0.3345,
+          "max": 0.6485
+        },
+        "capture_recorded": 0,
+        "capture_reused": 90
+      }
+    },
+    "same_run_nested_scope": {
+      "recording_prepares_ms": 64.3694,
+      "capture_only_provider_event_union_ms": 15.2907,
+      "outside_provider_in_recording_prepares_ms": 49.0787,
+      "basis": "Original cold_batch timer encloses batch/layout/replay prepare. Capture-only provider submits run inside original replay preparation; event intervals do not overlap. This is aggregate nesting, not a recorded per-event-to-episode clock join.",
+      "unknown_outside": "Includes original layout/native-plan preparation, other providers/copies, Graph host dispatch, capture-end/Instantiate/Update and possible native waits. No new API trace or breakdown exists; it is not pure Graph CPU or a recoverable amount."
+    },
+    "node_count_distribution": [
+      {
+        "recipe_nodes": 1,
+        "events": 2191,
+        "bridge_total_ms": 4.4194
+      },
+      {
+        "recipe_nodes": 2,
+        "events": 626,
+        "bridge_total_ms": 1.2719
+      },
+      {
+        "recipe_nodes": 3,
+        "events": 391,
+        "bridge_total_ms": 3.5142
+      },
+      {
+        "recipe_nodes": 4,
+        "events": 688,
+        "bridge_total_ms": 1.8848
+      },
+      {
+        "recipe_nodes": 5,
+        "events": 10,
+        "bridge_total_ms": 0.0382
+      },
+      {
+        "recipe_nodes": 6,
+        "events": 540,
+        "bridge_total_ms": 2.0413
+      }
+    ],
+    "largest_bridge_event": {
+      "ordinal": 38,
+      "bridge_ms": 2.0222,
+      "recipe_nodes": 3,
+      "inputs": 6,
+      "outputs": 2,
+      "operation_or_cause": null
+    },
+    "work_gate": {
+      "full_recursive_non_time_JSON_differences": 0,
+      "stderr_equal_after_only_clock_values_and_appended_diagnostic_removed": true,
+      "prepared": 68,
+      "decode_episodes": 66,
+      "capture_recorded": 27,
+      "capture_reused": 105,
+      "stdout_full_report_retained": true,
+      "raw_stderr_not_truncated": true,
+      "baseline_archive": {
+        "path": "docs/evidence/performance/inference-synchronous-step-report-2026-10-26.zip",
+        "bytes": 493088,
+        "sha256": "8ef8d323f00aa66b66faf00271be657a385d2db35f8cc590b82aa77faf91017d"
+      },
+      "baseline_members": [
+        {
+          "member": "screen/timing-02-candidate/stdout.log",
+          "bytes": 77455,
+          "sha256": "c03235f8a806c189c98d0de5b8ae634e1157f1b5fa4bbe3f0162c5fe9d12ef97"
+        },
+        {
+          "member": "screen/timing-02-candidate/stderr.log",
+          "bytes": 26178,
+          "sha256": "dd94d0f175da74c657bfd77b8971768ec0c21e7bd67580ddac68dfb7fc25a243"
+        },
+        {
+          "member": "screen/timing-02-candidate/command.json",
+          "bytes": 1183,
+          "sha256": "9c7b661d3de9c7bed59e153021c12451cc19d0ed00e4ec8c57c58a367679c43a"
+        }
+      ]
+    },
+    "first_failure": {
+      "kind": "postcompile harness validation, not product/compiler/model failure",
+      "compiler_had_exit0": true,
+      "reason": "Additional chrono/UCRT ctype.h was rejected by an over-narrow MSVC-only standard-header check.",
+      "correction": "Allow only the already-pinned original UCRT directory plus same MSVC includes for extra standard headers; preserve exact original209 dependency subset. Reused same successful OBJ, no repeated compile."
+    },
+    "dependency_contract": {
+      "original_dependencies": 209,
+      "exact_current_original": 204,
+      "exact_restored_original_project_headers": 5,
+      "additional_same_toolchain_standard_headers": 45,
+      "actual_dependencies": 254,
+      "total_link_inputs": 234,
+      "changed_inputs": 1,
+      "unchanged_inputs": 233,
+      "app_core_native_CUDA_SDK_rebuilds": 0,
+      "not_current_whole_image_certification": true,
+      "note": "The five headers have real later semantic/declaration differences; the instrumented provider deliberately uses its original dependency versions. be3/703 incremental cached objects must not be described as every TU compiled against current canonical."
+    }
+  },
+  "residual_state_address_review": {
+    "classification": "Offline historical full-key reconstruction, not fresh current BIND measurement",
+    "after_already_merged_hidden_output": "Old body15->10 interpretation:2first+3native hardclear+5second-address fills. Larger cache adds no hits. Fixing GDN INPUT alone or OUTPUT alone still leaves10; both sides stable yields5 in that old stream.",
+    "cost_of_known_two_way_staging": {
+      "extra_GDN_copy_bytes_per_body": 39075840,
+      "extra_MiB_per_body": 37.265625,
+      "two_roles_two_prefix_fixed_scratch_MiB": 111.796875,
+      "actual_copy_retirement_boundaries": 2
+    },
+    "decision": "No newly justified cheap address-stabilization candidate. Preserve native invalidation and immutable old-reader/accept-prefix/real-retirement contracts; do not extend the small hidden-output copy one-sidedly."
+  },
+  "TRT_reference": {
+    "HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+    "scope": "Previously fixed local source review, no new TRT execution or speed comparison",
+    "conditional_questions": [
+      "device token dependency versus delayed host observation, retaining original unpublished/commit boundaries",
+      "upload fence tied to actual immutable source reuse, without weakening mutable-take/ready/native-plan retirement"
+    ],
+    "limits": "Non-owning reused outputs are not Hyle immutable Snapshots. Inspected deferred decode-output implementation was CSA2-only, not general dense Qwen/K1. No new executor, megakernel or scope removal follows."
+  },
+  "limits": [
+    "No profiler in this new single process; old paired15body/Nsight capture totals cannot be subtracted from this27capture direct process.",
+    "Bridge13.1698ms includes cuBLAS scope/metadata/encode and native host API work; no unique internal attribution.",
+    "The largest bridge event2.0222ms is tagged nodes3/inputs6/outputs2 only; exact operation and cause were not captured.",
+    "No complete graph/capture wall timestamp was added; outside-provider aggregate cannot be assigned per body/front range.",
+    "Frozen703 historical-object closure with five exact old provider headers; no current-canonical whole-image or newer API certification.",
+    "No optimization or throughput gain is demonstrated.",
+    "Old paired15body with Nsight and this new27capture direct process differ in recording count, code closure, profiling overhead and timing clock; do not subtract their totals or multiply old per-record wall by current counts.",
+    "The49.0787ms same-run outside-provider remainder is only a nested aggregate, not pure Graph CPU, Inst/Update attribution, an optimization budget or predicted gain.",
+    "Source/route evidence alone does not authorize merging preferred leaves, skipping permission checks or deleting native retirement/query gates."
+  ],
+  "existing_evidence": [
+    {
+      "path": "docs/evidence/performance/mtp-logical-call-attribution-2026-10-25.json",
+      "bytes": 184324,
+      "sha256": "1b7fc5129fb0b0909ed698f1d46a163c7fa6ae453809c6d5cb6fc44f8b252b48"
+    },
+    {
+      "path": "docs/evidence/performance/mtp-body-recapture-cause-2026-10-25.json",
+      "bytes": 23314,
+      "sha256": "e5c76f6e7eca5c3266e00531a0828d5abc89607e698d07f7c9f17797a01f9534"
+    },
+    {
+      "path": "docs/evidence/performance/inference-synchronous-step-report-2026-10-26.json",
+      "bytes": 43805,
+      "sha256": "74dbc771923e2be03fc6379030d3f131c63fa30e78d055641d362b9700d08747"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/new-hotspots-2026-10-26.zip",
+    "bytes": 331813,
+    "sha256": "58722fdd93c6b75b5ec52e3a887ebf55637a31a9dbd92adac018ccbd8f6cf549",
+    "members": 56,
+    "CRC": "PASS",
+    "all_content_member_SHA256": "PASS"
+  }
+}

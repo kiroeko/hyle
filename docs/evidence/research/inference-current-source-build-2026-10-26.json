@@ -1,0 +1,249 @@
+{
+  "status": "PASS_CURRENT_PROJECT_INCREMENTAL_BUILD_WITH_EXPLICIT_RETAINED_VENDOR_BOUNDARIES",
+  "date": "2026-10-26",
+  "scope": "Windows CUDA consumer source/dependency closure refresh and final link, using the retained original native/vendor/toolchain closure; not all-platform or full-SDK certification.",
+  "build": {
+    "replaced_old_objects": 107,
+    "new_objects": 108,
+    "groups": [
+      {
+        "name": "source_and_header_drift",
+        "old": 79,
+        "new": 79,
+        "earlier_source_compiles": 8,
+        "new_header_compiles": 71
+      },
+      {
+        "name": "missing_adjacent_identity_own_host",
+        "old": 18,
+        "new": 18
+      },
+      {
+        "name": "engine_entry_model_weights_report",
+        "old": 3,
+        "new": 4
+      },
+      {
+        "name": "project_CUDA_leaf_recipe_refresh",
+        "old": 7,
+        "new": 7
+      }
+    ],
+    "compiler_exit_failures": 0,
+    "compiled_translation_units": 108,
+    "source_suffix_counts": {
+      ".cc": 100,
+      ".cu": 8
+    },
+    "default_backend_CRT_architecture_contract": "Original actual per-TU macro, precision, CRT and sm89 flags retained; source/header references use canonical current paths. No old five-header overlay.",
+    "source_review": {
+      "path": ".scratch\\inference-current-closure-20261026\\publication-source-review.json",
+      "bytes": 118466,
+      "sha256": "5aa756b5fe3113d2b3fbf6c3f21310983845933dcf9580893339717916b9f557"
+    },
+    "final_link": {
+      "status": "CURRENT_PROJECT_OBJECTS_LINKED_VENDOR_BOUNDARIES_EXPLICIT",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+        "bytes": 141459968,
+        "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\runtime-current.json",
+        "bytes": 8228,
+        "sha256": "50fc0dafff1ad22c7ed85b126a26f1e3a110399fc7471d2f77384092cd5f0b33"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-inputs-current.json",
+        "bytes": 58109,
+        "sha256": "e0e0fb2ed011939a35c6151d2a594b44ead3cf19eb9842cd8873bd89f5924eaa"
+      },
+      "object_map": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\object-map-current.json",
+        "bytes": 66243,
+        "sha256": "a428e0517c8e51e384263a96420b7b8dbafeebb620847262cd987779f14e69c0"
+      },
+      "replaced_old_objects": 107,
+      "new_objects": 108,
+      "unchanged_absolute_inputs": 114,
+      "link": {
+        "exit": 0,
+        "pid": 39164,
+        "seconds": 1.710480900015682
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\process\\command.json",
+        "bytes": 31791,
+        "sha256": "b84b2b11566f0d79ca654c0fa2b07ba1c8e525b92de2627553003ff734480974"
+      },
+      "limits": "Build only. Semantic provenance of retained vendor/native inputs is separate; no model behavior, throughput, memory or other-platform claim."
+    },
+    "absolute_link_inputs": 222,
+    "additional_system_libraries": 13,
+    "total_link_inputs": 235,
+    "unchanged_absolute_inputs": 114,
+    "product_source_edits": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0
+  },
+  "retained_native": {
+    "objects_reviewed": 33,
+    "review": {
+      "path": ".scratch\\mtp-capture-per-record-cost-20261026\\compatibility\\native-final-review.json",
+      "bytes": 5669,
+      "sha256": "78962334413ba3a25740b2a6d8315a067d8585929dfbd3dc0288048e5a93b582"
+    },
+    "groups": [
+      {
+        "status": "reuse_exact_source_and_retained_dependency_hashes",
+        "count": 6,
+        "objects": [
+          "blockwise-kernel.obj",
+          "binbcast.obj",
+          "unary.obj",
+          "native-main.obj",
+          "mmvf.obj",
+          "nvfp4-kernel.obj"
+        ],
+        "evidence": "native-remaining-facts.json: per-object matching object SHA and source/dependency pins"
+      },
+      {
+        "status": "reuse_actual_CU_dependencies_unchanged",
+        "count": 4,
+        "objects": [
+          "native-getrows.obj",
+          "native-convert.obj",
+          "native-router.obj",
+          "indexer-kernel.obj"
+        ],
+        "evidence": "native-dependency-filter.json; broad manifest changes are not in actual compiler .d"
+      },
+      {
+        "status": "reuse_precisely_additive_private_bridge",
+        "count": 2,
+        "objects": [
+          "native--mmid.obj",
+          "native--ssm-conv.obj"
+        ],
+        "evidence": "native-bridge-additive.diff; exact old9f payload recovered; only cstdint and new function declaration added. NativeFailure/fail and all original signatures identical. mmid has no bridge call; ssm only uses fail."
+      },
+      {
+        "status": "reuse_source_pinned_narrow_native_interface_full_header_history_not_available",
+        "count": 5,
+        "objects": [
+          "norm.obj",
+          "concat_kernel.current.obj",
+          "sampling_kernel.current.obj",
+          "native_highdim.obj",
+          "diagmask-current.obj"
+        ],
+        "evidence": "native-remaining-facts.json: exact original object+source records and recipes. These source-native pointer/scalar/vendor interfaces do not pass ResourceBudget, Graph internals or CacheStorage; no concrete current signature/layout change found.",
+        "limitation": "Not a full original compiler-header identity proof; retained frozen vendor/toolchain contract, not newly compiled current SDK."
+      },
+      {
+        "status": "reuse_grouped_original_source_and_recipe",
+        "count": 9,
+        "objects": [
+          "cpu-baseline.obj",
+          "cuda-gated-delta.obj",
+          "native-batch-portable-llp64-posenc.obj",
+          "native-cache-portable-llp64-posenc.obj",
+          "native-attention-portable-llp64-posenc-decode.obj",
+          "native_cache_encoder.current.obj",
+          "guard.obj",
+          "row-codec.obj",
+          "ggml-alloc.obj"
+        ],
+        "evidence": "native-supplemental-pins.json: source groups, commands/exited records, native header boundary; original object pins remain in native-remaining-facts.json.",
+        "limitation": "Some historical groups pin source+successful output path rather than one joint object/source/compiler-dependency identity record; do not label every old object current-canonical compiled."
+      },
+      {
+        "status": "refreshed_actual_current_source_and_compiler_dependencies",
+        "count": 7,
+        "objects": [
+          "native_kernel",
+          "norm_kernel",
+          "reduction_kernel",
+          "scatter_kernel",
+          "sglang_kernel",
+          "sglang_norm_kernel",
+          "device_status_kernel"
+        ],
+        "evidence": ".scratch\\inference-current-closure-20261026\\native-current\\object-map.json",
+        "SDK_builds": 0,
+        "GPU_runs": 0,
+        "max_parallel": 3
+      }
+    ],
+    "boundaries": "Native source-only/grouped provenance records are identified as such; they are not promoted to complete compiler-header history. Exact old/current bridge changes are additive only. Original pinned GGML patches, FlashInfer portability overrides, Torch/CUDA/oneDNN libraries remain retained rather than newly rebuilt."
+  },
+  "first_failures": [
+    {
+      "record": {
+        "path": ".scratch\\inference-current-closure-20261026\\unresolved-host\\prepare-first-failure.json",
+        "bytes": 382,
+        "sha256": "c178ff47c73f5d42377985e201c8b90b0d2f9c93447e698ebf284fe403dc4c90"
+      },
+      "kind": "runner preparation before compilation",
+      "detail": "Initial harness accepted /I but not existing equivalent -I include spelling; corrected path parsing, no compiler/source change."
+    },
+    {
+      "record": {
+        "path": ".scratch\\inference-current-closure-20261026\\native-current\\runner-first-error.json",
+        "bytes": 289,
+        "sha256": "1241c38130beb3ae58944bc235519bcaee3d0d048d3e6fbf0523f962668526dd"
+      },
+      "kind": "runner recipe selection before compilation",
+      "detail": "norm_kernel suffix also matched sglang_norm_kernel; exact basename separator fixed. Zero compiler processes started before correction."
+    }
+  ],
+  "intermediate_behavior": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link1\\hyle.exe",
+      "bytes": 141776896,
+      "sha256": "fa32fb471d01c5e385760260dfe0e9fb888a1457969efb8a772fef156b7825ae"
+    },
+    "results": [
+      {
+        "kind": "ordinary",
+        "exit": 0,
+        "non_time_differences": 0,
+        "generated_tokens": 128,
+        "actual_graph_calls": 128
+      },
+      {
+        "kind": "mtp",
+        "exit": 0,
+        "non_time_differences": 0,
+        "generated_tokens": 128,
+        "actual_graph_calls": 68
+      }
+    ],
+    "scope": "These two original two-turn ordinary/MTP behavior checks used the intermediate fa32 image before the final seven own CUDA leaves were replaced. They do not certify behavior or performance of final 2a94 image."
+  },
+  "limits": [
+    "Final 2a94 record here proves compilation/link and source/dependency/object mapping only. The subsequent full32 run and its results are outside this build archive.",
+    "No new CPU/Apple/Vulkan Model, other-model, task-quality, concurrency fault-injection, or all-platform test is claimed.",
+    "No throughput, memory, or speed improvement is inferred from compiler times, link success or the intermediate behavior pair.",
+    "Foreign libraries and frozen native patch/template revisions are reused with the documented boundaries; this is not a latest-upstream or whole-SDK rebuild claim.",
+    "Archive contains command/dependency/source-hash metadata, scripts and small logs; no OBJ/EXE/DLL/LIB/SDK/model bodies or duplicate full source tree."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\research\\inference-current-source-build-2026-10-26.zip",
+    "bytes": 1711858,
+    "sha256": "085c27da164f2ca2e019b759777c216d3b9e464f3d1a39aebe2eb1ba30f2398a",
+    "members": 704,
+    "logical_bytes": 13506681,
+    "CRC": "PASS"
+  },
+  "manifest": {
+    "path": ".scratch\\inference-current-closure-20261026\\publication-manifest.json",
+    "bytes": 258570,
+    "sha256": "f624b8914f58e31a5018ba6cf2757f312cbc31adfe8a129e4786ad04c80b59b0"
+  }
+}
