@@ -1,0 +1,94 @@
+{
+  "status": "KNOWN_IMPLEMENTABLE_FUNCTION_GAPS_CLOSED_NO_NEW_GAP_IN_REVERSE_SOURCE_REVIEW",
+  "date": "2026-10-25",
+  "conclusion": "The ordinary inference, multi-session and multi-request functions discovered in this round and implementable on the current machines have been supplied. This independent bounded reverse review found no additional concrete missing primitive or reachable defect. Finish the scattered functional phase and proceed to the shared architecture; the separate performance work remains unfinished.",
+  "reviewed_contracts": [
+    {
+      "domain": "Input, state and output progression",
+      "anchors": [
+        "engine/models/qwen35/main.cc:5005",
+        "engine/models/qwen35/main.cc:3952",
+        "engine/models/qwen35/main.cc:4553",
+        "engine/inference/request_progress.h:110",
+        "engine/inference/request_progress.h:205"
+      ],
+      "fact": "Whole-turn context admission, variable StateOnly prefill chunks, exactly-full final pending, pending-only later turns, whole-head/ledger commit and exactly-once contiguous host observation have actual consumers."
+    },
+    {
+      "domain": "Sampling, stopping and dynamic logits",
+      "anchors": [
+        "engine/models/qwen35/main.cc:2305",
+        "engine/models/qwen35/main.cc:2916",
+        "engine/models/qwen35/main.cc:3763",
+        "tests/tools/qwen_logits_modifier_case.h",
+        "tests/tools/qwen_request_stop_case.h"
+      ],
+      "fact": "Immutable cold per-request policies and ready dynamic bias/allowed inputs feed the shared math. Invalid rows reject before batch publication. New-request frontier selection and same-request historical RNG/pending restoration remain distinct."
+    },
+    {
+      "domain": "Sessions, prefixes and restoration",
+      "anchors": [
+        "engine/models/qwen35/prefix_cache.h:128",
+        "engine/models/qwen35/main.cc:4812",
+        "engine/models/qwen35/main.cc:4878",
+        "tests/tools/qwen_midturn_resume_case.h:126",
+        "tests/compute_models/glm_pro_original_early_history_test.cc:625",
+        "tests/compute_models/glm_flash_ordinary_startup_case.h:125"
+      ],
+      "fact": "Model/math domains, pinned canonical complete states, expected-base publication, independent old readers, actual consumed-history recovery and original retirement mechanisms are implemented. GLM adapters use their genuine heterogeneous tuples and transient index leases rather than a forced Qwen state shape."
+    },
+    {
+      "domain": "Requests, failures, pressure and fairness",
+      "anchors": [
+        "engine/inference/request_window.h:69",
+        "engine/inference/request_window.h:98",
+        "engine/inference/request_window.h:108",
+        "engine/inference/output_delivery.h:23",
+        "engine/inference/output_delivery.h:41",
+        "engine/inference/session_cache.h:143",
+        "engine/models/qwen35/main.cc:5202",
+        "tests/tools/qwen_request_lifecycle_test.cc:193"
+      ],
+      "fact": "Bounded live keys/open turns, queued withdrawal, actual-retired pause/requeue, FIFO wake, ACK credit and final-output retention exist. Retirement and error status are separate facts. Duplicate Session rejection precedes eviction; local invalid distributions preserve heads and permit the surviving request to retry."
+    },
+    {
+      "domain": "Multiple Models and known resource admission",
+      "anchors": [
+        "engine/models/qwen35/main.cc:1665",
+        "engine/models/qwen35/main.cc:1852",
+        "engine/models/qwen35/main.cc:1862",
+        "docs/evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json",
+        "docs/evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json"
+      ],
+      "fact": "The shared known-byte scope coexists with each real local cache cap, cold admission failure is retryable in the same Model, escaped readers retain their original charges/endpoint and A retirement does not destroy B resources. Export retention follows the existing export owner and is not a provider-private physical cap."
+    }
+  ],
+  "remaining_architecture_changes": [
+    {
+      "boundary": "Finish the already assigned cold-weight compilation split",
+      "anchors": [
+        "engine/models/qwen35/weights.h:3",
+        "engine/models/qwen35/weights.cc:1",
+        "engine/models/qwen35/CMakeLists.txt:1"
+      ],
+      "reason": "Source/codec preparation changes should not require recompiling the request/commit implementation or make each consumer carry a second cold implementation. The present independent TU candidate preserves LoadedWeight stable nodes, original Backend/source budgets and target-specific native macros. Complete its assigned finite checks; this review did not execute or certify that candidate."
+    }
+  ],
+  "no_forced_extra_architecture_item": "No second or third concrete change is justified by this reviewed chain. Do not extract short selection assembly, add a universal publisher/state table, or introduce a scheduler/manager merely to fill an architecture list. Model-specific equations/schema/repair and caller error policy remain necessary responsibilities.",
+  "scope_limits": [
+    "Source-only review: no new builds, tests, models, GPU work, network or product edits. Existing retained consumers/evidence keep their own exact frozen-source and platform scope.",
+    "This does not certify unrun artifacts/platform combinations, complete large-model quality, arbitrary native failure injection or future application functions. Generated source-composition fixtures are not original publisher numerical qualification.",
+    "GLM ordinary state components and finite shared-request continuations are not a complete GLM service/78-layer driver. Layer75/76 index forwarding is a same-forward boundary, not execution of those layer bodies.",
+    "Natural CLI whole-turn/fail-fast choices are owner policies. No physical GPU preemption, cross-Model global fairness or transport/server protocol is promised; no new bottom-layer mechanism was found necessary for the current declared contract."
+  ],
+  "source_pins": {
+    "engine/inference/request_progress.h": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6",
+    "engine/inference/request_window.h": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f",
+    "engine/inference/output_delivery.h": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116",
+    "engine/inference/session_cache.h": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891",
+    "engine/inference/prefix_directory.h": "29133f31072a5adc2a326529a0b7e4f39ebbd7354eeb265ca9c3cbe0444ca2a1",
+    "engine/models/qwen35/main.cc": "15d43f87182446fec8696d95142fa41a8c4b367ce8b83f927e6a286d3be64e9f",
+    "engine/models/qwen35/weights.h": "673addac0e87c072b8d9bd42985f349ea16d8c2367d46fad8ace4259f45fc467",
+    "engine/models/qwen35/weights.cc": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+  }
+}

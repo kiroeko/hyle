@@ -1,4 +1,4 @@
-target_sources(hyle_engine PRIVATE main.cc)
+target_sources(hyle_engine PRIVATE main.cc weights.cc)
 
 # Real-weight diagnostics remain explicit targets, separate from the application.
 set(_qwen35_probes mtp_session)
@@ -19,7 +19,7 @@ elseif(_qwen35_cuda)
   list(APPEND _qwen35_probes batch)
 endif()
 foreach(probe IN LISTS _qwen35_probes)
-  add_executable(hyle_qwen35_${probe}_probe EXCLUDE_FROM_ALL ${probe}_probe.cc)
+  add_executable(hyle_qwen35_${probe}_probe EXCLUDE_FROM_ALL ${probe}_probe.cc weights.cc)
   hyle_configure_engine_target(hyle_qwen35_${probe}_probe)
   if(probe STREQUAL "retirement")
     if(_qwen35_apple)

@@ -1,0 +1,79 @@
+{
+  "status": "BOUNDED_SHARED_ARCHITECTURE_REVIEW_NO_NEW_CONCRETE_CHANGE_REQUIRED",
+  "date": "2026-10-25",
+  "scope": "Current canonical ordinary/shared-MTP execution, request/session/cache policies, source codecs, cold Graph assembly and original Backend ownership. Source-only; no edits/build/run/network. The existing cold-weights checks reported by Root are not newly executed here.",
+  "findings": [],
+  "extension_traces": [
+    {
+      "change": "Add a source codec within an existing model family",
+      "anchors": [
+        "engine/models/qwen35/weights.h:92",
+        "engine/models/qwen35/weights.cc:112",
+        "engine/models/qwen35/weights.cc:141",
+        "engine/models/qwen35/projection_binding.h:18",
+        "engine/models/qwen35/main.cc:475"
+      ],
+      "fact": "Original source meaning/codec/group belongs to LoadedWeight; stable Tensor children supply borrowed typed ProjectionBindings. Cold resolver and precision validation choose the explicit reader equation; Recipe emits its actual dtype/storepoint graph. A new codec legitimately changes these cold source/math sites. It does not require changes to turn progress, FIFO, prefix tree, output ACK, observation or retirement algorithms. Exhaustive variant checks prevent an unknown binding silently taking an unrelated fallback.",
+      "decision": "Keep the explicit cold dispatch. Do not add a runtime codec registry, common Tensor codec fields or a second weight owner."
+    },
+    {
+      "change": "Add a model state role or a new family",
+      "anchors": [
+        "engine/models/qwen35/main.cc:929",
+        "engine/models/qwen35/session_state.h:255",
+        "engine/models/qwen35/main.cc:3952",
+        "tests/compute_models/glm_pro_original_early_history_test.cc:533",
+        "tests/compute_models/glm_pro_original_early_history_test.cc:625",
+        "tests/compute_models/glm_pro_mtp_state_consumer_test.cc:2111"
+      ],
+      "fact": "Equations, actual predecessor/successor ports, complete model state and its expected-base publication remain model semantics. Shared Progress/Window/Directory own only host cursors/indices/typed payload references. GLM supplies its original complete StateVersion and true pending/frontier, while its transient same-forward index stays outside persistent state. Adding a schema member naturally travels in that existing version; no common request code or parallel restore inventory must be edited.",
+      "decision": "Keep model adapters distinct. Extract an adapter/helper only after a second real ordinary model exhibits the same implementation and failure/publication contract; do not infer sameness from both using Tensor or StateHead."
+    },
+    {
+      "change": "Add a backend or equivalent cold fusion",
+      "anchors": [
+        "engine/models/qwen35/main.cc:181",
+        "engine/models/qwen35/main.cc:254",
+        "engine/models/qwen35/main.cc:2383",
+        "engine/inference/backend.h:308",
+        "engine/inference/backend.h:344",
+        "engine/inference/execution_resources.h:51",
+        "engine/inference/prepared_output.h:132"
+      ],
+      "fact": "Recipe does not hold queues or inspect platform macros. GraphAssembly borrows Backend for actual resources, constant ownership and explicit placement; Graph/Compute select cold routes/fusions. Exact prepared-output facts determine caller/generated storage, and the original Completion/Backend controls retention and retirement. Source-specific layer placement and calibrated cache-storage support remain legitimate cold admission checks, not per-token Provider selection.",
+      "decision": "Keep the current Backend capability/resource and exact-report boundary. A future backend may need its own real storage/owner/reader support; it should not require codec logic in request scheduling."
+    }
+  ],
+  "owner_and_commit_boundary": {
+    "anchors": [
+      "engine/models/qwen35/main.cc:1302",
+      "engine/models/qwen35/main.cc:1665",
+      "engine/models/qwen35/main.cc:3729",
+      "engine/models/qwen35/main.cc:3956",
+      "engine/models/qwen35/main.cc:3973",
+      "engine/inference/execution_resources.h:18"
+    ],
+    "fact": "ColdResources owns the one physical bank, prepared programs and stable policy addresses. Tensor leases own original backing; bindings borrow them. On Model teardown the original Backend moves into the same cold scope, not a second executor. Accepted native work retains that scope via its original Completion. Complete heads and ledger witnesses publish before synchronous borrowed observation; ReturnReadback and original output leases remain until callbacks return/throw. Directory pins, logical cache entries and output ACK cursors do not become new physical state owners."
+  },
+  "current_boundary_to_keep": "One serialized Model owner and one in-flight atomic batch are explicit contracts. Policy-compatible work is bucketed by immutable Family/ExecutionShape identities; lookup of a prepared family is not hot Provider routing. Platform capability/dtype differences remain explicit rather than flattened into a universal interface.",
+  "next": "No additional architecture implementation is justified by this bounded review after the cold-weights split. Proceed to the remaining performance work and revisit extraction only when a genuine new Model/backend supplies a second concrete reuse case. Main file size and different legal model state layouts are not defects.",
+  "limits": [
+    "No claim of a full GLM engine/service driver or all new-model adapters already existing. The GLM two-request consumer is a finite actual suffix plus ordinary continuations, not arbitrary prompt/full-model execution.",
+    "This is not a new native-fault/concurrency/platform matrix or throughput conclusion. No new executor, registry, callback framework, state container or second port table is proposed."
+  ],
+  "source_pins": {
+    "engine/models/qwen35/main.cc": "15d43f87182446fec8696d95142fa41a8c4b367ce8b83f927e6a286d3be64e9f",
+    "engine/models/qwen35/weights.h": "673addac0e87c072b8d9bd42985f349ea16d8c2367d46fad8ace4259f45fc467",
+    "engine/models/qwen35/weights.cc": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff",
+    "engine/models/qwen35/projection_binding.h": "a30119cfc99ea5d965b9b759920085735ea954c202339728feab26a2edbd96b2",
+    "engine/inference/request_progress.h": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6",
+    "engine/inference/request_window.h": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f",
+    "engine/inference/prefix_directory.h": "29133f31072a5adc2a326529a0b7e4f39ebbd7354eeb265ca9c3cbe0444ca2a1",
+    "engine/inference/session_cache.h": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891",
+    "engine/inference/version_admission.h": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1",
+    "engine/inference/execution_resources.h": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65",
+    "engine/inference/prepared_output.h": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25",
+    "engine/inference/backend.h": "b265f7f7951c57c1210981341df8e8b3ece92b8cc0c4906d537368eec7faaac8",
+    "tests/compute_models/glm_pro_mtp_state_consumer_test.cc": "e5c12183a9bb0fd35468a16ff154548abb76de624e34590690739e09f78cc635"
+  }
+}

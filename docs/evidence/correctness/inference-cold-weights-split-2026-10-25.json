@@ -1,0 +1,160 @@
+{
+  "status": "QWEN_COLD_WEIGHTS_SPLIT_FINITE_CPU_PASS",
+  "date": "2026-10-25",
+  "base_commit": "0ca1ef09ad16877695067c228cb37305ab0dee24",
+  "problem": "Cold weight source parsing, codec binding and imports were compiled inside the same Qwen main TU as request/model execution. Existing ProjectionBinding declarations did not isolate their implementation.",
+  "change": "Qwen-private weights.h/weights.cc hold original Tensor/LoadedWeight and cold projection/source APIs. Recipe keeps the same typed ProjectionBinding and original stable map nodes. Model, Session, request/CLI and numerical Graph paths are unchanged. No new owner, IR, registry, virtual layer or loader policy.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "exists": true,
+        "bytes": 509149,
+        "sha256": "cc3fa78b6e61350c9c1e730d179af006130bf4648dd2bf7b788e381b5d847fda"
+      },
+      "after": {
+        "bytes": 458382,
+        "sha256": "15d43f87182446fec8696d95142fa41a8c4b367ce8b83f927e6a286d3be64e9f"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/weights.h",
+      "before": {
+        "exists": false,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "after": {
+        "bytes": 5994,
+        "sha256": "673addac0e87c072b8d9bd42985f349ea16d8c2367d46fad8ace4259f45fc467"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/weights.cc",
+      "before": {
+        "exists": false,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "after": {
+        "bytes": 47831,
+        "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/CMakeLists.txt",
+      "before": {
+        "exists": true,
+        "bytes": 1234,
+        "sha256": "ce42a336e07d1cfebce6767506034a7468c7a45a77bda3a41a5e306f33ec89ce"
+      },
+      "after": {
+        "bytes": 1256,
+        "sha256": "775c48e763a7835534a7fa387c5647f70b2748e1b4c155e7160227a496ecd5dd"
+      }
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "before": {
+        "exists": true,
+        "bytes": 20457,
+        "sha256": "95191fb1af0a92d8819241ef1aa85693ea8e4256d9d58ae427553c59f49a2391"
+      },
+      "after": {
+        "bytes": 20573,
+        "sha256": "6b6da9d6cb292ae0912997d08d457e4728e42a26fc73174121c2b53af0ec0eae"
+      }
+    }
+  ],
+  "source_equivalence": {
+    "pin": {
+      "path": ".scratch/inference-cold-weights-split-20261025/source-checks.json",
+      "bytes": 1182,
+      "sha256": "19cd7353a8ee395c97f84c94461ccbde6911ffb07db1d0c2db67e903a0d4864e"
+    },
+    "facts": "GraphAssembly/Recipe/sampling/ledger middle and the complete Model/Session/request/CLI suffix are byte-identical. Projection and loader bodies retain original semantics. Tensor storage/move/read/write/view/dump remain inline; only cold Backend-dependent freeze moves out of line."
+  },
+  "build_boundary": "The same weights.cc is compiled by each actual engine/probe/lifecycle/Vulkan-retirement consumer under its own existing HYLE_COMPUTE_* capability definitions. No cross-capability Backend object/static library is shared and no public CMake option is added.",
+  "actual_CPU": {
+    "compile_weights": {
+      "pid": 57200,
+      "exit": 0,
+      "seconds": 5.453
+    },
+    "compile_thin_consumer": {
+      "pid": 12528,
+      "exit": 0,
+      "seconds": 18.0
+    },
+    "link": {
+      "pid": 50764,
+      "exit": 0,
+      "seconds": 1.141
+    },
+    "run": {
+      "pid": 6592,
+      "exit": 0,
+      "seconds": 0.281
+    },
+    "result": {
+      "status": "PASS",
+      "backend": "cpu",
+      "dynamic_inputs": true,
+      "greedy_draws": 0,
+      "fullhit_random_draws": 1,
+      "allmasked_survivor": true,
+      "state_only_without_inputs": true,
+      "same_key_restore": true,
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false,
+      "quality_claim": false
+    },
+    "new_CPP_TUs": 2,
+    "strict": "/W4 /WX",
+    "cached_common_OBJ_LIB_inputs": 129,
+    "frozen_project_files": 169,
+    "fixture": "Original cached untrained A/H64/FFN128/V64 fixture; actual Model/Session logits helper, not a trained Qwen2B model or quality run.",
+    "dependency_separation": "Actual weights dependencies contain no main.cc/helper. Actual thin consumer no longer parses fp8_weight_import.h or nf4_weight_import.h.",
+    "core_provider_SDK_TUs": 0,
+    "formal_lifecycle_TUs": 0,
+    "GPU": false,
+    "HTTP": 0
+  },
+  "engineering": {
+    "test": "tests/tooling/engine_components_test.py",
+    "tests": 8,
+    "failures": 0,
+    "process": {
+      "pid": 53436,
+      "exit": 0,
+      "seconds": 17.235
+    },
+    "raw": "actual/cpu1/engine-components2/stderr.log",
+    "limits": "Existing no-SDK component/target CMake checks; not a complete native build matrix."
+  },
+  "first_environment_failure": "The first engineering-test process inherited the narrow native runtime PATH and could not locate cmake.exe (WinError2). Original command/stdout/stderr/process are retained under engine-components. Adding existing CMake to that test PATH made its eight tests pass under engine-components2. No C++ compile, link or Model inference was repeated for this correction.",
+  "independent_review": {
+    "pin": {
+      "path": ".scratch/inference-cold-weights-split-20261025/independent-review-performance.json",
+      "bytes": 4666,
+      "sha256": "3355f112090df92c59b0f2b79876229e5e031704502f3d8f7aee8f03a2fb7eb1"
+    },
+    "status": "SOURCE_ONLY_FROZEN_FIVE_PATHS_NO_BLOCKER_FOUND",
+    "scope": "Independent source/ownership/numerical/CMake review by mtp_performance_audit; its source-only finding is separate from the actual CPU check."
+  },
+  "limits": [
+    "No GPU, new backend/codec numerical matrix, original publisher payload or trained-model quality qualification.",
+    "Compile durations are recorded process facts, not a performance benchmark or TPS/speedup claim.",
+    "Existing manual non-CMake probes/future thin drivers must link weights.cc using their own original capability macros; historical frozen recipes are retained as historical evidence."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cold-weights-split-2026-10-25.zip",
+    "bytes": 119699,
+    "sha256": "fc04f40b129696ae24b268a4ee134bc08afc3e3c4f3a4456b52547fbeed39fac",
+    "members": 47,
+    "CRC_and_member_SHA256_verified": true,
+    "index": "member-sha256.json",
+    "no_SDK_binary_model_or_full_source_tree_payloads": true
+  }
+}

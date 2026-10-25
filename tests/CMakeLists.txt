@@ -292,7 +292,8 @@ endif()
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   # Actual Model/Session regression, reusing the application's SDK contract.
   # Missing local model input is a skip; an explicitly invalid input is an error.
-  add_executable(hyle_qwen_request_lifecycle_test tools/qwen_request_lifecycle_test.cc)
+  add_executable(hyle_qwen_request_lifecycle_test tools/qwen_request_lifecycle_test.cc
+    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
   hyle_configure_engine_target(hyle_qwen_request_lifecycle_test)
   set_target_properties(hyle_qwen_request_lifecycle_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
@@ -339,6 +340,7 @@ if(_HYLE_COMPUTE_HAVE_VULKAN AND TARGET hyle_graph_route_vulkan
    AND TARGET hyle_compute_stream_vulkan AND TARGET hyle_graph_progress)
   hyle_add_test(graph_route_vulkan NAME qwen_resource_retirement
     SOURCES tools/qwen_resource_retirement_test.cc
+      "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc"
       "${HYLE_SOURCE_DIR}/engine/reporting/execution_report.cc"
     DEPS hyle_compute_stream_vulkan hyle_graph_progress hyle_graph_batch
       hyle_compute_provider_ggml_vulkan hyle_compute_ggml_runtime ggml)
