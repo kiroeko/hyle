@@ -1,0 +1,825 @@
+{
+  "status": "COMPLETE_CAPTURE_KEY_DIAGNOSTIC_WORK_PASS_SMALL_INGRESS_DESIGN_ONLY",
+  "observed_on": "2026-10-25",
+  "scope": "Original real BF16 Qwen3.5-2B greedy K1 two-turn128outputs, private one-Graph-TU metadata diagnostic. No productoptimization, newperformancebaseline, tensorreadback, Nsight or modeldownload.",
+  "decision": {
+    "preferred_next_candidate": "Fixed carry/prior hidden ingress for smallfirstcapture range only; prepared by a separateowner, notimplemented here.",
+    "source_evidence": "Whole original capture_key_matches unchanged; original commands/keyshortcircuit still evaluated once. Only originalfalse triggers extra allportwalk. No authority/resource/key weakening, variantsize or ownerchange.",
+    "observed_projection": "Among17 smallrange records,12 have an existing originalvalidcandidate whose complete differences are hidden-inputoffset only. Five have no comparablevalidcandidate (2first,3same-seq explicitnativeinvalidations). This is a projection of observed comparisons, not actualfuturecachetrajectory17to5 or proof ofspeedup.",
+    "body_range_boundary": "All15 bodyrange records remain unmatched when only hiddeninputs are fixed. GDN input/output and hiddenoutput changes are different heavier work."
+  },
+  "execution": {
+    "unique_refreshed_product_TU": "Graph executable.cc only",
+    "compiler_invocations": 4,
+    "successful_compiles": 2,
+    "failed_private_compiles": 2,
+    "successful_links": 2,
+    "native_processes": 2,
+    "native_process_authorization": "Initialone directprocess hit eventoverflow; parent explicitly authorized onecapacity-onlysecondprocess. No thirdprocess.",
+    "SDK_core_CUDA_app_compiles": 0,
+    "HTTP": 0,
+    "GPU_released": true,
+    "final_process": {
+      "exit": 0,
+      "seconds": 4.10899999999674,
+      "timeout": false
+    },
+    "diagnostic_process_seconds_not_TPS": true
+  },
+  "final_inputs": {
+    "ready": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/ready.json",
+      "bytes": 91532,
+      "sha256": "b1aa0fd211e6e63e7ea7777d16ae44407650e740c50ad97fda52c10c1c202592"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-complete-binding-diff-20261025\\link4\\consumer.exe",
+      "bytes": 141511680,
+      "sha256": "743def647f554645dd07594ae4179fbe55df9b76fd6a9b0b02443ec4a3fbfe3c"
+    },
+    "graph_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-complete-binding-diff-20261025\\graph4\\unit.obj",
+      "bytes": 5228205,
+      "sha256": "f2afa3fb28293e5e162189b71bf3d19cff8e1c1f3d6a14b29a2a6e5f0eb006f0"
+    },
+    "reused_app": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-finish-phase-20261025\\compile\\unit.obj",
+      "bytes": 14099035,
+      "sha256": "35a38e9b82d434102eca6e877dc16a0d7c53e805f0ad7ae77f5144f4a3051ca2"
+    },
+    "baseline_graph_source": {
+      "path": ".scratch/mtp-native-seed-candidate-20261025/source/executable.cc",
+      "bytes": 481504,
+      "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+    },
+    "baseline_graph_object": {
+      "path": ".scratch/mtp-native-seed-candidate-20261025/graph2/unit.obj",
+      "bytes": 5135149,
+      "sha256": "a55d0fa90a071b5fcb27407c60accac02ee5dfd28ed510da57997722c0432cb9"
+    },
+    "private_graph_source": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/source2/src/graph/executable.cc",
+      "bytes": 483278,
+      "sha256": "c91560c05a11864688c2f982d37ab9e0feb480c8c3100c106126f7d3c452bb12"
+    },
+    "final_helper": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/binding_diff.inc",
+      "bytes": 12625,
+      "sha256": "ec1828654c081a1b0e7dcb5ccdb482a51231d97d84fd5101dd9d29c5d37cbc68"
+    },
+    "source_patch": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/source.patch",
+      "bytes": 4506,
+      "sha256": "a98a63b0c47cd03859d3c55a4c9534186258ce864ad9a35dbecd35252e4f7ec3"
+    },
+    "dependency_check": {
+      "status": "PASS",
+      "original_actual_headers_exact": 85,
+      "original_source_and_header_total": 86,
+      "private_instrumentation_files": 2,
+      "unexpected_canonical_or_other_repository_dependencies": [],
+      "actual_sourceDependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-complete-binding-diff-20261025\\graph4\\dependencies.json",
+        "bytes": 50350,
+        "sha256": "f0c3881241c29b88c6dec34c924a6427e6d1b4cbcc6bb248af3d65522bc37531"
+      },
+      "actual_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-complete-binding-diff-20261025\\graph4\\source-pins.json",
+        "bytes": 28537,
+        "sha256": "83138e4b454ded5212a944c39ccb5ebf4320a7894318a38976b8c66758ecac0c"
+      }
+    },
+    "dependency_map": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/dependency-restore.json",
+      "bytes": 48884,
+      "sha256": "37499a2ccb4390411da20a24f6ff9741ee41c89fe6a1d8af1c29c0ab2cc18344"
+    },
+    "merged_core_objects": [
+      {
+        "old": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\budget\\budget.obj",
+          "bytes": 217936,
+          "sha256": "d8fb851403012a5b6be0088d081ba76e407782b08336fbdbfcfa2846315d479b"
+        },
+        "new": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\unit.obj",
+          "bytes": 243196,
+          "sha256": "4c434358cd6807490401d4c38b3cf0912ac93b99f84d4a6396988be16bd227b9"
+        },
+        "compile_command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\command.json",
+          "bytes": 1621,
+          "sha256": "deb602ea94b2ef2cf9b98c0bf86200a40fc9a63ab3dfdbe23bb7a7825aa6ff82"
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\dependencies.json",
+          "bytes": 17257,
+          "sha256": "06c74571963e507971dd84fa44048d8d78f2e3c9677388b2429aed735f57ec27"
+        }
+      },
+      {
+        "old": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\leases\\leases.obj",
+          "bytes": 373802,
+          "sha256": "ed2f02c9e592c7484de342d55308551cccb04b59051a4bb7bd18f1db9a1dc662"
+        },
+        "new": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\unit.obj",
+          "bytes": 446666,
+          "sha256": "97c3079899d4c9cf599bfbaa6693f4e178e568c0a7a8b1e8a9247fee5a94e3fd"
+        },
+        "compile_command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\command.json",
+          "bytes": 1621,
+          "sha256": "673e9e6ee56a9cf3a62849060452f1020ea3acc15d708a4325dde4ef92dcc501"
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\dependencies.json",
+          "bytes": 19551,
+          "sha256": "44e107aab4c4ecbbb87b75a61a19634c34fa5fc7a2c0dcc85c8f422b9bd2328f"
+        }
+      }
+    ],
+    "closure_limit": "Exact originalGraph2selfwrittenheaders restored by originalactualdependencyhash; same frozenfinishapp/report/native-seedregion/otheroldclosure and twoactuallymergedlifetimecores. No newcache/scopesheader or wholeSDKcertification."
+  },
+  "work": {
+    "status": "PASS",
+    "difference_count": 0,
+    "differences": [],
+    "baseline_actual_raw": {
+      "path": ".scratch/mtp-finish-phase-20261025/trace1/native-stdout.log",
+      "bytes": 77478,
+      "sha256": "55631d0015ab52bc25c0610d4bc67c0f7e21ebf48ba3d4a48d1a405d8de04155"
+    },
+    "normalizer": {
+      "path": ".scratch/mtp-logical-call-trace-20261025/analyze.py",
+      "bytes": 14605,
+      "sha256": "ec9a7bbde0154733ab48de6a02e6c30a93ccd9f8a058d65aa9ab8b8b848f7496"
+    },
+    "metadata_exclusions_beyond_original_time_rules": [],
+    "facts": {
+      "generated_tokens": 128,
+      "generated_decode_tokens": 126,
+      "actual_graph_calls": 68,
+      "prefill_graph_calls": 2,
+      "decode_graph_calls": 66,
+      "prefill_target_rows": 309,
+      "verified_target_rows": 132,
+      "prefill_draft_rows": 310,
+      "draft_rows": 124,
+      "agreements": 60,
+      "consumed_drafts": 60,
+      "cache_live_requested_bytes": 73539635,
+      "cache_peak_requested_bytes": 73539635
+    }
+  },
+  "coverage": {
+    "BIND_POD": {
+      "events": 5005,
+      "event_capacity": 8192,
+      "event_overflow": 0,
+      "differences": 2701,
+      "difference_capacity": 32768,
+      "difference_overflow": 0,
+      "concurrent_skips": 0,
+      "event_bytes": 120,
+      "difference_bytes": 488,
+      "store_bytes": 16973856,
+      "logical_sequence": 68
+    },
+    "BIND_END": {
+      "events": 5005,
+      "differences": 2701
+    },
+    "FINISH_meta": 68,
+    "FINISH_phases": 612,
+    "all_FINISH_normal_return": true,
+    "all_FINISH_seen511": true,
+    "valid_key_candidate_misses": 80,
+    "all_misses_full_port_walk": true,
+    "examined_ports_total": 83742,
+    "all_changed_port_flags": {
+      "16": 2701
+    },
+    "all_descriptors_and_tuple_fields_equal_except_offset": true,
+    "events_by_kind": {
+      "0": 122,
+      "1": 29,
+      "8": 32,
+      "9": 32,
+      "7": 4547,
+      "3": 80,
+      "4": 90,
+      "5": 10,
+      "6": 63
+    }
+  },
+  "invalidation_and_seed": {
+    "invalidation_path_observations_by_disposition": {
+      "1": 4490,
+      "2": 36,
+      "3": 21
+    },
+    "invalidation_observations_with_nonzero_saved_keymask": 4236,
+    "discard_calls": 63,
+    "record_begin_seed_valid": {
+      "0": 13,
+      "1": 19
+    },
+    "records_without_comparable_valid_candidate": 10,
+    "records_with_valid_key_candidate_mismatch": 22,
+    "note": "Step-level invalidation observations are not newrecord counts. Commands/key unavailability, original binding mismatch, and source generic rebuildseed are separate facts. Native API return/result not measured in this direct process.",
+    "no_comparable_record_groups_with_same_seq_native_argument_invalidation": 6,
+    "other_no_comparable_initial_record_groups": 4
+  },
+  "shape_classes": {
+    "input/GDN_history/BF16/(1, 3, 6144)": {
+      "port_occurrences": 630,
+      "candidate_miss_events": 35,
+      "required_bytes_per_tensor": 36864,
+      "process_union_new_tensor_bytes_not_transfer_volume": 1990656
+    },
+    "input/GDN_recurrent/F32/(1, 16, 128, 128)": {
+      "port_occurrences": 630,
+      "candidate_miss_events": 35,
+      "required_bytes_per_tensor": 1048576,
+      "process_union_new_tensor_bytes_not_transfer_volume": 56623104
+    },
+    "input/hidden/BF16/(1, 2048)": {
+      "port_occurrences": 76,
+      "candidate_miss_events": 41,
+      "required_bytes_per_tensor": 4096,
+      "process_union_new_tensor_bytes_not_transfer_volume": 16384
+    },
+    "output/GDN_history/BF16/(1, 3, 6144)": {
+      "port_occurrences": 648,
+      "candidate_miss_events": 35,
+      "required_bytes_per_tensor": 36864,
+      "process_union_new_tensor_bytes_not_transfer_volume": 1990656
+    },
+    "output/GDN_recurrent/F32/(1, 16, 128, 128)": {
+      "port_occurrences": 648,
+      "candidate_miss_events": 35,
+      "required_bytes_per_tensor": 1048576,
+      "process_union_new_tensor_bytes_not_transfer_volume": 56623104
+    },
+    "output/hidden/BF16/(1, 2048)": {
+      "port_occurrences": 69,
+      "candidate_miss_events": 36,
+      "required_bytes_per_tensor": 4096,
+      "process_union_new_tensor_bytes_not_transfer_volume": 16384
+    }
+  },
+  "range_decisions": {
+    "(0, 53)": {
+      "logical_calls": 58,
+      "model_lag_counts": {
+        "1": 58
+      },
+      "outcome_counts": {
+        "recorded": 13,
+        "variant_hit": 43,
+        "retained_hit": 2
+      },
+      "recorded_seq": [
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        15,
+        16,
+        38,
+        41,
+        42,
+        44,
+        45
+      ],
+      "record_seed_counts": {
+        "0": 4,
+        "1": 9
+      },
+      "native_invalidation_seq": [
+        38,
+        44
+      ],
+      "recorded_with_actual_valid_key_mismatch": 10,
+      "recorded_without_any_comparable_valid_candidate": 3,
+      "counterfactual_recorded_where_existing_candidate_would_match": {
+        "fixed_hidden_inputs_only": [
+          4,
+          5,
+          9,
+          10,
+          11,
+          15,
+          16,
+          41,
+          42,
+          45
+        ],
+        "fixed_hidden_inputs_and_outputs": [
+          4,
+          5,
+          9,
+          10,
+          11,
+          15,
+          16,
+          41,
+          42,
+          45
+        ],
+        "fixed_all_observed_inputs_only": [
+          4,
+          5,
+          9,
+          10,
+          11,
+          15,
+          16,
+          41,
+          42,
+          45
+        ],
+        "fixed_all_observed_GDN_IO_only": [],
+        "fixed_all_observed_inputs_and_outputs": [
+          4,
+          5,
+          9,
+          10,
+          11,
+          15,
+          16,
+          41,
+          42,
+          45
+        ]
+      }
+    },
+    "(0, 55)": {
+      "logical_calls": 8,
+      "model_lag_counts": {
+        "0": 8
+      },
+      "outcome_counts": {
+        "recorded": 4,
+        "retained_hit": 4
+      },
+      "recorded_seq": [
+        2,
+        13,
+        14,
+        37
+      ],
+      "record_seed_counts": {
+        "0": 2,
+        "1": 2
+      },
+      "native_invalidation_seq": [
+        37
+      ],
+      "recorded_with_actual_valid_key_mismatch": 2,
+      "recorded_without_any_comparable_valid_candidate": 2,
+      "counterfactual_recorded_where_existing_candidate_would_match": {
+        "fixed_hidden_inputs_only": [
+          13,
+          14
+        ],
+        "fixed_hidden_inputs_and_outputs": [
+          13,
+          14
+        ],
+        "fixed_all_observed_inputs_only": [
+          13,
+          14
+        ],
+        "fixed_all_observed_GDN_IO_only": [],
+        "fixed_all_observed_inputs_and_outputs": [
+          13,
+          14
+        ]
+      }
+    },
+    "(55, 1269)": {
+      "logical_calls": 58,
+      "model_lag_counts": {
+        "1": 58
+      },
+      "outcome_counts": {
+        "recorded": 9,
+        "variant_hit": 47,
+        "retained_hit": 2
+      },
+      "recorded_seq": [
+        3,
+        4,
+        15,
+        16,
+        38,
+        40,
+        41,
+        43,
+        44
+      ],
+      "record_seed_counts": {
+        "0": 4,
+        "1": 5
+      },
+      "native_invalidation_seq": [
+        38,
+        43
+      ],
+      "recorded_with_actual_valid_key_mismatch": 6,
+      "recorded_without_any_comparable_valid_candidate": 3,
+      "counterfactual_recorded_where_existing_candidate_would_match": {
+        "fixed_hidden_inputs_only": [],
+        "fixed_hidden_inputs_and_outputs": [
+          15,
+          41
+        ],
+        "fixed_all_observed_inputs_only": [],
+        "fixed_all_observed_GDN_IO_only": [
+          40
+        ],
+        "fixed_all_observed_inputs_and_outputs": [
+          4,
+          15,
+          16,
+          40,
+          41,
+          44
+        ]
+      }
+    },
+    "(57, 1269)": {
+      "logical_calls": 8,
+      "model_lag_counts": {
+        "0": 8
+      },
+      "outcome_counts": {
+        "recorded": 6,
+        "retained_hit": 2
+      },
+      "recorded_seq": [
+        2,
+        8,
+        13,
+        14,
+        37,
+        39
+      ],
+      "record_seed_counts": {
+        "0": 3,
+        "1": 3
+      },
+      "native_invalidation_seq": [
+        37
+      ],
+      "recorded_with_actual_valid_key_mismatch": 4,
+      "recorded_without_any_comparable_valid_candidate": 2,
+      "counterfactual_recorded_where_existing_candidate_would_match": {
+        "fixed_hidden_inputs_only": [],
+        "fixed_hidden_inputs_and_outputs": [
+          13,
+          14
+        ],
+        "fixed_all_observed_inputs_only": [],
+        "fixed_all_observed_GDN_IO_only": [
+          8,
+          39
+        ],
+        "fixed_all_observed_inputs_and_outputs": [
+          8,
+          13,
+          14,
+          39
+        ]
+      }
+    }
+  },
+  "counterfactual_projection": {
+    "fixed_hidden_inputs_only": {
+      "candidate_misses_with_remaining_changed_ports": 39,
+      "candidate_misses_original": 80,
+      "recorded_ranges_with_observed_eligible_candidate_becoming_equal": 12,
+      "scope": "Projection of actual original candidate comparisons only; not a replay simulation or causal futurecache trajectory, no changes to no-command/no-key/invalidation or private argument qualification."
+    },
+    "fixed_hidden_inputs_and_outputs": {
+      "candidate_misses_with_remaining_changed_ports": 35,
+      "candidate_misses_original": 80,
+      "recorded_ranges_with_observed_eligible_candidate_becoming_equal": 16,
+      "scope": "Projection of actual original candidate comparisons only; not a replay simulation or causal futurecache trajectory, no changes to no-command/no-key/invalidation or private argument qualification."
+    },
+    "fixed_all_observed_inputs_only": {
+      "candidate_misses_with_remaining_changed_ports": 39,
+      "candidate_misses_original": 80,
+      "recorded_ranges_with_observed_eligible_candidate_becoming_equal": 12,
+      "scope": "Projection of actual original candidate comparisons only; not a replay simulation or causal futurecache trajectory, no changes to no-command/no-key/invalidation or private argument qualification."
+    },
+    "fixed_all_observed_GDN_IO_only": {
+      "candidate_misses_with_remaining_changed_ports": 77,
+      "candidate_misses_original": 80,
+      "recorded_ranges_with_observed_eligible_candidate_becoming_equal": 3,
+      "scope": "Projection of actual original candidate comparisons only; not a replay simulation or causal futurecache trajectory, no changes to no-command/no-key/invalidation or private argument qualification."
+    },
+    "fixed_all_observed_inputs_and_outputs": {
+      "candidate_misses_with_remaining_changed_ports": 0,
+      "candidate_misses_original": 80,
+      "recorded_ranges_with_observed_eligible_candidate_becoming_equal": 22,
+      "scope": "Projection of actual original candidate comparisons only; not a replay simulation or causal futurecache trajectory, no changes to no-command/no-key/invalidation or private argument qualification."
+    }
+  },
+  "physical_interval_bytes": {
+    "method": "Union of [offset,offset+TensorDesc.required_bytes) grouped by originalresource/nativehandle. Within actual seq/inv/range, combines both candidate comparisons to avoid double-counting aliases. Carrier-size union also separately available. A union over process lifetime is not transferred bytes.",
+    "scope": "Repeated use of same actual logical source, output alias or candidate comparison does not require repeated copies. Per-step/per-range copy footprint is distinct from process-static working set.",
+    "full_schema_example": {
+      "source": "Frozen Model state_schema_for and actuallogged 18GDN history/recurrent output identities",
+      "one_history_bytes": 36864,
+      "one_recurrent_bytes": 1048576,
+      "18_layer_one_boundary_bytes": 19537920,
+      "R1_T2_ingress_plus_selected_boundary_copyout_bytes": 39075840,
+      "R1_T2_ingress_plus_both_prefix_copyout_bytes": 58613760,
+      "limit": "Schema scope only; fixed stage would still require originalpage/lease/acceptance/publication/retirement/finitebudget contracts. Selected-only latecopy adds another actual completion boundary; copying both originalprefixes inside graph costs more bandwidth. No implementation or speedclaim."
+    },
+    "actual_per_seq_range_dedup": "analysis.json:range_decisions.copy_new_changed_unique_bytes_by_record and records.json:range_decision_rows; old/new alternatives andaliases deduped withinactualseq/inv/range."
+  },
+  "small_candidate": {
+    "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "preferred": "Smallrange stable carry/prior hidden ingress, not fullGDN staging",
+    "actual_small_range_recordings": 17,
+    "observed_recorded_groups_with_eligible_key_equal_after_hidden_input_projection": 12,
+    "remaining_no_comparable_key_groups": 5,
+    "scope": "Counterfactual projection of original comparisons, not simulated actualcache trajectory or TPS",
+    "actual66_decode_copy_entries_if_every_input_copied": 124,
+    "actual66_copy_bytes": 507904,
+    "two_actual_prepared_Phases_fixed_buffer_payload_bytes": 12288,
+    "copy_control_metadata_and_permissions": "Additional, charged through original budgets and realretirement; not measured yet",
+    "larger_state_IO_candidate": "Deferred separate route; actualchanged boundary19537920B input/output means tensofMB, immutablelease copyout mandatory",
+    "design": "candidate.md"
+  },
+  "source_candidate_contracts": [
+    "Cold fixedBF16ingress remains in originalPhase/ColdResources andResourceBudget. OriginalimmutableSnapshot/ReadLease survivesbothcopy andGraphretirement; destinationmustnotbeoverwrittenwhileoldGraphreaders exist.",
+    "Use existing boundedCopyBatch/IO resource/Queue/Completion mechanics; demonstrate realwriterhandoff andcopy-before-Graphdependency. No secondexecutor, no rawpermissionbypass, no enlargedvariants.",
+    "Keepcopycostinsideoriginaltimedprepare/submit path; no movedwarmup. Actual66decodecopypayloadwouldbe507904B/124entries, notmeasuredcopycost. Twelveprojectedeligiblematches are not a recoverablems estimate.",
+    "GDN fixedworkoutputs/copyout is a separatedeferredcandidate: originalindependentacceptedprefixleases/Headpublication/actualretirementmustremain; tensofMB/round are materiallydifferent fromhiddeningress."
+  ],
+  "first_failures": [
+    {
+      "stage": "SOURCE_PREPARATION",
+      "artifact": "first-preparation-failure.json",
+      "native_process_started": false,
+      "reason": "Known908leaseaccessheaderdidnotmatchactualGraph2SHA. Assertionrejected; usedknown087dexactoriginalheaderSHA. Firstpartialsourceandpreparefile retainedprivately."
+    },
+    {
+      "stage": "GRAPH_COMPILE1",
+      "artifact": "graph/process.json",
+      "exit": 2,
+      "native_process_started": false,
+      "reason": "C2127 constinitStorecontainsnonconstexprTensorDescdefaultconstruction. Minimalordinarysame-TUstaticStoredefinedbeforePOD-onlyDumper; no ownerorcapacitychange. Originalhelper retainedbinding_diff-first.inc."
+    },
+    {
+      "stage": "GRAPH_COMPILE2",
+      "artifact": "graph2/process.json",
+      "exit": 2,
+      "native_process_started": false,
+      "reason": "C4335 under/WX: privaterewriteproducedCRCRLF. NormalizedonlynewlineencodingtoLF, no warningsuppression. Originalhelper retainedbinding_diff-second.inc."
+    },
+    {
+      "stage": "NATIVE_DIAGNOSTIC1",
+      "artifact": "first-run-summary.json",
+      "exit": 0,
+      "work": "PASS0diff",
+      "diagnostic": "INCOMPLETE eventcapacity2048+2957overflow, seq2to33only; diffcap0overflow/concurrent0. No completejourneyclaim. Actual68finishrecordsand612phasescomplete.",
+      "correction": "Parentexplicitlyauthorizedonlyeventcapacity2048to8192; +737280BactualStore, differencecapacity32768andalltuple/algorithmcodeunchanged. Complete5005eventsretainedinsecondrun; noeventfiltering."
+    }
+  ],
+  "independent_root_review": {
+    "review": {
+      "path": ".scratch/inference-system-review-20261025/binding-run2-review.json",
+      "bytes": 1417,
+      "sha256": "3ab6ddee5129390b30b84a38fed063e0f5293181bf504d28701e54692f23db65"
+    },
+    "parser": {
+      "path": ".scratch/inference-system-review-20261025/review-binding-run2.py",
+      "bytes": 3422,
+      "sha256": "5fd10d10c737e9df37a92385e2c83c71a7a4e6144801747cb18d008d97e68b53"
+    },
+    "status": "PASS_FINITE_RAW_DIAGNOSTIC_REVIEW",
+    "scope": "Independentall5005/2701rawvalidation; portcounts/descriptors/offsetonly/fullfinishcoverage, noextraGPU/build."
+  },
+  "artifacts": {
+    "full_raw_final_stdout": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/run2/stdout.log",
+      "bytes": 77502,
+      "sha256": "e182f0dbaa619cfec44c8f7a9bb22c6f857f78c042e3b84e6e9b49fa0d97b2e7"
+    },
+    "full_raw_final_stderr": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/run2/stderr.log",
+      "bytes": 3722332,
+      "sha256": "5ea15dcb3e78e34083824a705d731b0a044291601aae686f7569f52f82c0b99e"
+    },
+    "first_actual_run_stdout": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/run/stdout.log",
+      "bytes": 77472,
+      "sha256": "861f23a5e0ff7127511598490f650943740dfeb7328a4555144128b6827c5b26"
+    },
+    "first_actual_run_stderr": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/run/stderr.log",
+      "bytes": 1680824,
+      "sha256": "a045ec81cb042a4d029432bda5ceec04158ddf09bf34e3056d73c9b3fe82a095"
+    },
+    "analysis": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/analysis.json",
+      "bytes": 24183,
+      "sha256": "f98ad96cb18109e24fcb5f9f187d4ede6b18d93d043c9e00310103c7352f15fa"
+    },
+    "parsed_complete_records": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/records.json",
+      "bytes": 7191322,
+      "sha256": "40b823e7a1b9490c817785074d0d0ca48559f8b0254d150101a8ce2951317ba8"
+    },
+    "candidate_design": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/candidate.md",
+      "bytes": 3825,
+      "sha256": "b5ade8e40beabb51b8f2f7e92aa867798ae4bc0224e026630fd87452dbe29861"
+    }
+  },
+  "limitations": [
+    "All2701 actual differences are offset-only for these exact original candidate checks. This does not prove later arbitrarymodels/contexts/caches have identical keys.",
+    "A candidate miss followed by another variant hit is already a successful cache hit; it is not a rerecording. Counterfactual counts separate actualrecord groups.",
+    "No CUDA API profile collected here. record_seed_valid is generic source state, not proof of current native Update success; prior finish-phase trace has actual13Instantiate/19Update with this seedclosure.",
+    "POD/metadata-only diagnostic is not TPS; process wall includes normalexit dump and is not compared to a benchmark.",
+    "Firstrun eventoverflow retained as completenessfailure. Secondrun onlyeventcap2048to8192 under separateparentauthorization; diffcapunchanged. No thirdnative process.",
+    "Thisgreedyrealprocessdoesnotaddstochasticnumericalcoverage. IDs/workequalitydoesnotcertifynewmath; no modelmathwaschanged.",
+    "80candidatefalseeventsincludeother-varianthits. Only32actualrecorddecisionscountasrecordings. All2701deltasareoffset-only foractualselectedoriginalkeys, notuniversalmodel/capacityproof.",
+    "4547originalstepinvalidationobservationsarepreserved, not4547newrecordings.36nativeargumentobservationsmaptothesixno-comparablekeyrecordgroups; remaining4suchgroupsareinitialcold.",
+    "DirectdiagnosticdoesnotrecordnativeCUDAAPIreturncodes.19seedvalid/13noseedrecordsfactsaregenericstateonly; earlierfinish-phaseprofileactual13Instantiate/19UpdateisreferencedwithoutclaimingfreshAPImeasurement.",
+    "Staticstagingprojectionsremovecategoriesfromexistingcomparisons; avoidinganearlierrecordwouldchangefuturevariantpopulation. No simulatedexactfuturecountortimingbenefit.",
+    "No extraRAM/VRAMbenchmark.16973856BfixeddiagnosticStore is selfmetadata, notcandidatebufferallocation or enginecacheusage."
+  ],
+  "related_previous_profile": "docs/evidence/performance/mtp-finish-phase-attribution-2026-10-25.json",
+  "reproduction": {
+    "parse_existing": "python .scratch/mtp-complete-binding-diff-20261025/analyze.py",
+    "final_compile": "compile-command4.json",
+    "final_link": "link-command4.json",
+    "final_run": "run2/command.json",
+    "old_actual_dependency_map": "dependency-restore.json",
+    "original_headers": "Known087d04eed/originalactualSHA; notcopiedasfullpublicdependencytree. Retainedprivatefrozenclosureandcurrentrepo are required for rebuild."
+  },
+  "cleanup": {
+    "superseded_first_capacity_run": {
+      "files": [
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/graph3/unit.obj",
+          "bytes": 5228204,
+          "sha256": "558baed29b9ad2dfe8b84301c3956284ef29ea0e9e79300319da3a22e0ca81f9",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/graph3/unit.obj"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.exe",
+          "bytes": 141511680,
+          "sha256": "ceeca9631d911cfd23bcaf44089a2b2e9f340a80ecc5f9087596bca31721527a",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.exe"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.exp",
+          "bytes": 24986,
+          "sha256": "c4c13f3eb82e8b854e04d69c3422d2fdf5828bf64d0492788d2766bdf3445e25",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.exp"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.lib",
+          "bytes": 41736,
+          "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link3/consumer.lib"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link3/hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link3/hyle_ggml_cpu_gdn_scale_v3.dll"
+        }
+      ],
+      "count": 5,
+      "logical_bytes": 148013390,
+      "action": "NOT_DELETED; root owns exact guarded cleanup. DLL is a hardlink; logicalbytes are not claimed freedphysicalbytes."
+    },
+    "final_diagnostic_retain_for_now": {
+      "files": [
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/graph4/unit.obj",
+          "bytes": 5228205,
+          "sha256": "f2afa3fb28293e5e162189b71bf3d19cff8e1c1f3d6a14b29a2a6e5f0eb006f0",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/graph4/unit.obj"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.exe",
+          "bytes": 141511680,
+          "sha256": "743def647f554645dd07594ae4179fbe55df9b76fd6a9b0b02443ec4a3fbfe3c",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.exe"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.exp",
+          "bytes": 24986,
+          "sha256": "b0cb5e9026573ef65d3f7765736c76406f18a6853f766fb23b74b456fe416cb8",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.exp"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.lib",
+          "bytes": 41736,
+          "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link4/consumer.lib"
+        },
+        {
+          "path": ".scratch/mtp-complete-binding-diff-20261025/link4/hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f",
+          "relative_repository_path": ".scratch/mtp-complete-binding-diff-20261025/link4/hyle_ggml_cpu_gdn_scale_v3.dll"
+        }
+      ],
+      "count": 5,
+      "logical_bytes": 148013391,
+      "action": "NOT_DELETED; root owns exact guarded cleanup. DLL is a hardlink; logicalbytes are not claimed freedphysicalbytes."
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.zip",
+    "bytes": 893276,
+    "sha256": "d823dc0de28ca7e3227be7b05a450f76360436983b42332ef3055d064a7c1da3",
+    "members": 123,
+    "scope": "Completebothactualrunlogs, finalall-portrecords/parser, source-delta/finalGraph/privatehelper/failurecopies, precisecommands/dependencyandclosurepins/rootindependentreview. No binaries/SDK/weights/wholedependencytree."
+  },
+  "root_cleanup": {
+    "performed": true,
+    "files": 5,
+    "logical_bytes": 148013390,
+    "physical_bytes_freed_unknown": true,
+    "current_images_and_shared_cores_resources_preserved": true,
+    "evidence": "archive:root-followup/manifest.json",
+    "snapshot_note": "Original candidate list is retained as historical; this field records completed root removal."
+  },
+  "offline_capture_api_join": {
+    "status": "ALL32_SEQ_ROLE_RANGE_ORDER_MATCHED_BY_CAPTURE_API_SIGNATURE",
+    "join_gates": {
+      "all68_seq_role_T_context_frontier_lag_equal": true,
+      "all68_prepared_T_visible_record_reuse_equal": true,
+      "all32_capture_window_count_and_order_equal": true,
+      "perwindow_unique_kernelLaunch_API_signature_matches_actualrecord_geometry": true,
+      "onefollowing_nativeAPI_per_capture_return0": true
+    },
+    "eligible12_summary": {
+      "capture_span": {
+        "count": 12,
+        "total_ms": 3.625647,
+        "median_ms": 0.2738255,
+        "min_ms": 0.247793,
+        "max_ms": 0.512473
+      },
+      "following_native_API": {
+        "count": 12,
+        "total_ms": 0.621545,
+        "median_ms": 0.025253,
+        "min_ms": 0.019243,
+        "max_ms": 0.149162
+      },
+      "capture_through_native_API_end": {
+        "count": 12,
+        "total_ms": 4.259603,
+        "median_ms": 0.33080299999999996,
+        "min_ms": 0.267662,
+        "max_ms": 0.662324
+      },
+      "native_API_counts": {
+        "cudaGraphInstantiateWithFlags_v11040": 4,
+        "cudaGraphExecUpdate_v10020": 8
+      }
+    },
+    "all_small17_summary": {
+      "capture_span": {
+        "count": 17,
+        "total_ms": 5.282555,
+        "median_ms": 0.27287,
+        "min_ms": 0.247499,
+        "max_ms": 0.512473
+      },
+      "capture_through_native_API_end": {
+        "count": 17,
+        "total_ms": 6.308232,
+        "median_ms": 0.338692,
+        "min_ms": 0.267662,
+        "max_ms": 0.701143
+      }
+    },
+    "limits": [
+      "Oldtrace rangegeometry is identified by exactsource/role plus uniqueobservedcapture kernelAPIcount signature and full32record order, not directly by originalgraphID; unsupportedoriginal-node-lineagewarning remains.",
+      "Only BeginCapture.start to EndCapture.end and the immediatelyfollowing nativeAPI are observed here; capture-throughnativeend contains nestedcalls/gaps. Do not add these views, allAPI durations or whole107msreplay.",
+      "These are previousprofile CPU/APIwall windows, not sameprocessTPS, reclaimableCPU, GPUactivitytime or cost saved by a proposedcopy. They do not include all otherprepare/replaymetadata aroundthewindow.",
+      "NewdirectfixedPODdiagnostic made noAPItrace. Logicalwork andrecordgeometry match; deviceaddresses/absoluteclocks differ and are notcrossjoined.",
+      "No stagingimplementation orcopy/waitcost measured. Old12eligiblewindowtimes boundthisdescriptivesubsetonly; no guaranteedperformanceimprovement."
+    ],
+    "evidence": "archive:root-followup/offline-join/eligible-record-api-windows.json",
+    "no_new_profile_or_native_process": true
+  }
+}

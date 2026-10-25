@@ -1,11 +1,11 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 10:47（北京时间）。整体暂估 **45%**。cache 源双限额及 native 结果留存已接线，同一 Model 失败后重试及双 Model CUDA 通过；Kimi 原量化组件62阶段数值检查通过。MTP 等待后的状态与提交约0.20ms／轮，正在查完整绑定变化与重录，主要差距仍未定位。
+更新：2026-10-25 11:16（北京时间）。整体暂估 **46%**。前缀命中提交前拒绝后的重试与 frontier 提前退休门禁已修，有限 CPU 旅程通过。MTP 全端口变化已查清，小段候选尚未测速；107ms replay 的其余成本继续离线归因。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
 
-- 功能盘点与补齐：约 55%
+- 功能盘点与补齐：约 56%
   - 基础普通推理：约 61%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
@@ -21,9 +21,10 @@
     - prefill／decode／上下文与状态：约 20%
     - 采样／停止／预算与错误边界：约 5%
     - 验证消费者输入边界与仅 pending 续轮：100%
-  - 多会话：约 8%
+  - 多会话：约 12%
     - 完整状态／前缀复用／隔离与恢复：约 15%
     - 生成后前缀命中的 Text R2 suffix 接纳：100%
+    - 前缀命中提交前拒绝后的同请求重试：100%
     - 容量／淘汰／驻留与实际退休：约 5%
     - 已确认缺项的实现与有限检查：0%
   - 多请求与多任务：约 62%
@@ -39,13 +40,14 @@
     - cache 源分配的局部／跨 Model 共同门禁：100%
     - cache 准备失败后的同一 Model 重试：100%
     - native 生成状态留存的第二 scope：100%
+    - frontier 未退休时的共享输入提前门禁：100%
     - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
 - 架构复审、设计与调整：约 34%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 30%
   - 新模型／新后端／新请求政策扩展检查：0%
-- 性能设施复用与参考引擎狩猎：约 17%
+- 性能设施复用与参考引擎狩猎：约 18%
   - Hyle 设施实际消费与成本盘点：约 5%
     - 内存／容器／调度与 I/O：约 5%
     - 冷图／融合／重放与缓存：约 5%
@@ -56,7 +58,7 @@
     - TensorRT-LLM／Strata：约 10%
     - ds4／DeepInfer／deepseek-recipe：约 15%
   - 已确认热点实现与完整消费者对照：0%
-  - MTP 对 llama.cpp 差距归因与执行优化：约 45%
+  - MTP 对 llama.cpp 差距归因与执行优化：约 50%
   - prefill／decode／内存显存／多轮多请求综合对照：0%
 - 完成前遗漏复审与记录收尾：0%
 
@@ -64,14 +66,14 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 多会话状态与淘汰审查 | 功能／架构 | 从现有 SessionCache、PrefixDirectory、VersionCount 和真实消费者追查前缀身份、状态恢复、取消及实际退休；只登记可复现的具体缺项 | 约 10% |
-| MTP 全量绑定变化诊断 | 性能／归因 | 分段诊断已完成；正为冷 miss 记录全部变化端口及字节数，再评估原 CopyBatch 固定 I/O 的额外复制、权限与多请求成本。源级复审已完成，正增编一个 Graph TU 并采集原两轮行为，未开 TPS 窗口 | 约 35% |
+| MTP 固定 hidden 入口候选 | 性能／实现 | 私有源码已准备，正复核原 CopyBatch、固定 writer 和真实退休接线；当前两个 Phase 固定12KiB，每轮复制4／8KiB，未编译或测速 | 约 35% |
+| MTP 冷准备余项归因 | 性能／归因 | 全端口与旧 trace 已对齐；12个小段录制窄窗口合计4.26ms，正拆分其余107ms replay成本，不按录制次数分摊 | 约 20% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[cache 双限额与重试](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)、[native 结果双限额](../evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json)、[Kimi 原量化组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)、[MTP 分段诊断](../evidence/performance/mtp-finish-phase-attribution-2026-10-25.json)。其它性能归因及已关闭候选统一见[decode 性能计划](performance/decode.md)。
+最新依据：[cache 双限额与重试](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)、[native 结果双限额](../evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json)、[Kimi 原量化组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)、[MTP 分段诊断](../evidence/performance/mtp-finish-phase-attribution-2026-10-25.json)。另见[前缀接纳重试](../evidence/correctness/inference-prefix-admission-retry-2026-10-25.json)、[frontier 提前门禁](../evidence/correctness/inference-frontier-retirement-gate-2026-10-25.json)、[MTP 全端口变化](../evidence/performance/mtp-complete-binding-diff-2026-10-25.json)。其它性能归因及已关闭候选统一见[decode 性能计划](performance/decode.md)。
 
 ## 最新完整性能对照
 
