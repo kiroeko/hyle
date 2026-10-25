@@ -5,7 +5,7 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。下面保留各独立窗口及边界，不跨窗累加。下一项查CUDA／MTP状态地址与重录成本；单请求／MTP正式CUDA余差尚未刷新。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。下面保留各独立窗口及边界，不跨窗累加。状态索引／重绑调查已结束，尚无可直接实施的安全补丁或净收益量级；下一批先核当前CUDA／MTP真实耗时，正式余差尚未刷新。
 
 [量级排序原记录](../../evidence/research/mtp-next-priorities-2026-10-26.json)中的GDN双向工作IO现已筛选关闭，结果见下文。次级源审确认已有常量安装、alias索引和revision／span复用，实际剩余静态遍历占比未知，尚不支持实施；不同形状N2048／K6144 down也只在旧均值有小差、范围混杂。六层fresh native plan共享包络小且须新增寿命机制，暂不优先。无过滤R>1及随机Hybrid不影响当前greedy N1 MTP窗口。
 
@@ -35,7 +35,7 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 新的九计时＋三独立内存进程全成功，控制／View候选／同版本AVX2参考的prefill43.453／43.953／42.937，decode11.479／11.437／12.027，综合3.299／3.323／3.314 tok/s。候选prefill＋1.15%，三点范围不重叠；decode−0.37%、综合＋0.72%均范围重叠，不签稳定decode收益。工作集采样峰5.320／5.002／3.828GiB，private commit6.065／5.740／0.606GiB；候选相对控制分别下降341282816／348819456B，各臂仅一次独立采样，不能归因于单个已知workspace。Hyle两臂线程峰17、GPU缺测。各臂完整非时间报告固定，Hyle只允许两处预先列明的workspace字段变化；三臂16个ID及工作行数相同，不代表中间精度或完整任务质量等价。加载／ready范围重叠，跨引擎边界不同，不排名冷启动。候选作为资源与prefill优化采用；CPU decode仍比同窗参考慢约4.9%，不与旧窗口拼算收益。
 
-下一项先查CUDA／MTP状态地址变化与重录的可影响范围。参考引擎的persistent pool／state indices要求对应权限与旧状态合同；Hyle的捕获更新也需要真实参数映射，不能直接以减少录制次数预测速度。已关闭的大块固定工作IO不重开。
+[状态与捕获有限源码调查](../../evidence/research/inference-state-capture-next-review-2026-10-26.json)已完成。参考的persistent pool／state indices属于原生kernel与权限合同，Hyle无现成indexed GDN／conv；现有ExecUpdate也仍先重录。实际GDN／history／copy分支不能给出完整参数角色映射，补齐要扩展launch／原生图接口，本轮不开发参数重绑。旧地址变化五次29.174ms只是历史API包络；旧录制60.245ms还含已消除的hidden19.474ms及必须保留失效门的native hardclear11.597ms，不能当当前可回收时间。没有支持这项改造的当前净收益量级，也不重开大块固定工作IO；下一批先核当前GPU执行与主机准备的占比。
 
 加载期[host直接IO候选](../../evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.json)已关闭、不合入、不补样。私有实现复用实际CPU目的映射和原晚期Queue门，IO退休、flush／close及整组发布保持；修复coherent资源缺flush时的原路回退后，五个host TU及原FileStream Windows17项通过，独立真实行为工作不变。627次、3,763,655,360B显式复制降为零，但不能据此预测加载更快。
 

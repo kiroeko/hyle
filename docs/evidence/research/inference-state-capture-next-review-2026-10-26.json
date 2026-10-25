@@ -1,0 +1,215 @@
+{
+  "status": "SOURCE_REVIEW_COMPLETE_PARAMETER_REBIND_CLOSED",
+  "date": "2026-10-26",
+  "scope": "Local source and retained trace evidence only. No build, model, GPU, network, product change, new public API or performance result.",
+  "conclusion": "No existing Hyle GDN/causalconv capability can simply be connected to state_indices. A qualified native-argument rebind is the smaller conditional direction; direct indexed state is a larger missing native capability. Neither is a ready safe patch, and neither authorizes ignoring a changed capture key.",
+  "references": [
+    {
+      "name": "TensorRT-LLM",
+      "local_HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "file": "C:/public/project-hyle/TensorRT-LLM/tensorrt_llm/_torch/modules/mamba/gdn_mixer.py",
+      "bytes": 49555,
+      "sha256": "ff550b1b1ebd061a5c3879f8a7fb974308c928d265eaafa1eb8eb3b92de3b06a",
+      "exact_HEAD_blob_checked": true,
+      "anchors": [
+        "687-715",
+        "1096-1125"
+      ],
+      "fact": "Persistent conv/temporal pools are selected by state_indices. Decode causal_conv1d_update consumes conv_state_indices; fused GDN consumes initial_state_source plus initial_state_indices. Verification uses separately allocated intermediate state. This is a kernel/cache contract, not merely a graph option.",
+      "limits": "Its in-kernel normalization, gates, state promotion and replay options are not a demonstrated substitute for Hyle's BF16/F32 store points or arbitrary immutable old readers. Relevant file is exact HEAD; prior repository index irregularity is not a clean-checkout claim."
+    },
+    {
+      "name": "vLLM",
+      "local_HEAD": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "file": "C:/public/project-hyle/vllm/vllm/model_executor/layers/mamba/gdn/qwen_gdn_linear_attn.py",
+      "bytes": 77728,
+      "sha256": "3fbf257fef7f303b0082fdbedce4394df74b78ad9a594157079c89632b5c221e",
+      "exact_HEAD_blob_checked": true,
+      "anchors": [
+        "1388-1398",
+        "1432-1470",
+        "1540-1584"
+      ],
+      "fact": "Uses persistent self.kv_cache conv/SSM tensors and metadata state indices. Both ordinary and speculative fused updates take ssm_state_indices, with inplace_final_state=True and accepted-token metadata for speculation.",
+      "limits": "This establishes indexed native capability, not identical numerics, stable address evidence for every mode, a measured local model, or Hyle-compatible old Snapshot semantics."
+    },
+    {
+      "name": "Matched llama CUDA peer",
+      "consumer_image_sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e",
+      "recorded_llama_commit": "d9e03f1074dbd2979126d91dce1b5d304ec8394e",
+      "recorded_GGML_pin": "456172ec733a135778adcd32d00e576a58232e45",
+      "source_root": ".scratch/architecture-refactor-2026-10-18/llama-matched-consumer/source",
+      "anchors": [
+        "src/llama-memory-recurrent.cpp:101-107,193-201,590-612",
+        "src/llama-graph.cpp:329-358",
+        "src/models/delta-net-base.cpp:449-603"
+      ],
+      "fact": "Persistent banks plus indexed get_rows and copy-back, with bounded rollback and ownership-dependent cell copy/reassignment. It does real gather/store work; low capture count does not mean free state transfer or arbitrary old-reader retention.",
+      "source_record": ".scratch/mtp-body-recapture-cause-20261025/peer-state-dataflow.json",
+      "limits": "Recorded patched closure, not latest upstream. The image hash is not a source commit. This is distinct from the later CPU AVX2 peer."
+    }
+  ],
+  "Hyle_actual_contracts": [
+    {
+      "anchors": [
+        "include/hyle/compute/operation.h:441-454",
+        "include/hyle/compute/model_ops.h:1078-1189"
+      ],
+      "fact": "GatedDeltaNet takes an explicit contiguous state, leaves inputs unchanged and materializes chronological snapshot outputs. CausalConv1d takes explicit history-prefixed samples and is pure. Neither descriptor has a state bank/index or permission to mutate a persistent cache."
+    },
+    {
+      "anchors": [
+        "engine/models/qwen35/main.cc:2220-2305,3819-3828,4023",
+        "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1135-1215,1655-1675"
+      ],
+      "fact": "The Model binds original per-version history/recurrent ReadLeases and independent output writers. CUDA lowering binds concrete pointers; its snapshot_indices are compile-time chronological reorder metadata, not a dynamic state-slot selector. Recurrent input and both-prefix output addresses remain real capture arguments."
+    },
+    {
+      "anchors": [
+        "include/hyle/compute/state_versions.h:75-170",
+        "include/hyle/compute/resource_leases.h:55-108,125-160",
+        "include/hyle/compute/detail/batch_provider.h:51",
+        "include/hyle/compute/batch_layout.h:12"
+      ],
+      "fact": "StateStore/StateVersion and LeasePool preserve versions, exact ranges and real retirement; clone uses the existing copy mechanism. Typed batch/page metadata is an attention/cache capability, not an indexed GDN executor. No bank-wide read/write authority follows from a stable allocation base. A selected index cannot authorize access outside the original admitted lease ranges."
+    },
+    {
+      "anchors": [
+        "src/graph/executable.cc:1105-1197",
+        "include/hyle/compute/detail/command_capture.h:15-40",
+        "src/compute_backend_cuda/cuda_backend.cc:1283-1351",
+        "src/compute_backend_cuda/cuda_internal.h:126-135"
+      ],
+      "fact": "Graph compares complete physical input/output tuples. Capture backend exposes begin/end/launch/recycle, not parameter rebinding. Existing cudaGraphExecUpdate operates on a newly recorded graph; end then destroys cudaGraph_t. The retained artifact has an executable/status/owner but no native-node argument provenance map. Thus ExecUpdate is already used, but does not eliminate recording."
+    },
+    {
+      "anchors": [
+        "src/compute_provider_ggml_cuda/native_bridge_impl.h:257-280",
+        "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:1330-1346"
+      ],
+      "fact": "Outer recording directly encodes the original GGML graph on the admitted stream. The existing capture-bindings extension only proves preservation of private addresses; it does not authorize changing tensor arguments behind an old capture key."
+    }
+  ],
+  "bounded_directions": [
+    {
+      "priority": 1,
+      "name": "Qualified pointer-argument rebind of an actually retired capture",
+      "feasibility": "Conditionally feasible with CUDA native node parameter updates, but not expressible by the current capture implementation. This would be a narrowly qualified private backend/provider mechanism, not a user option or a generic pointer search.",
+      "minimal_modules": [
+        "src/compute_backend_cuda/cuda_backend.cc and cuda_internal.h",
+        "src/compute_provider_ggml_cuda native recording/binding adapter",
+        "src/graph/executable.cc capture-key miss and publication boundary"
+      ],
+      "required_proof": "Retain native node provenance and exact named tensor-argument mapping for every changed GDN/history/copy port in the range. Topology, kernel identity, strides and all other arguments must be unchanged. Validate new original leases; require actual retirement and exclusive mutable artifact authority; publish the replacement full key/owners only after complete successful update. Unknown node/opaque child argument, topology change, partial update or native error must leave the old artifact nonlaunchable and take the original safe rebuild path. Never scan arbitrary argument words for matching pointer values.",
+      "next_source_cut": "First establish whether original GGML recording can supply that complete mapping for these concrete changed ports. If it cannot, stop this direction before adding a general capture framework.",
+      "ROI_boundary": "Could target address-only misses without adding the closed staging payload/copies. It cannot keep stale native attention plans launchable or remove first capture. Mapping completeness, update cost and current net gain are unknown.",
+      "final_disposition": "CLOSED_BY_FINAL_SOURCE_CUT_NOT_A_MINIMAL_EXISTING_MECHANISM"
+    },
+    {
+      "priority": 2,
+      "name": "Direct indexed native GDN/conv state access, retaining immutable version slots",
+      "feasibility": "A genuine missing native capability, not glue already present. Existing leases, pools, budgets and accepted-prefix publication can remain the owners, but direct read/write indexing and its capture-binding proof would have to exist in the actual native route.",
+      "minimal_modules": [
+        "Original GDN/causalconv CUDA lowering and qualified native kernels",
+        "Original Model state binding/accepted-prefix selection",
+        "Existing lease-use admission plus capture binding qualification"
+      ],
+      "required_proof": "Indices must select only admitted original read ranges and fresh exact output WriteLeases, never overwrite an escaped old Snapshot. Both input and output/history address changes must be covered. Pending/unknown native work retains original Context/leases and blocks reuse; publication still waits for original validation and real retirement. Preserve Q/K normalization, gate math, BF16 stores, F32 state and chronological snapshot meanings. Do not wrap an entire LeasePool backing as one readable/writable tensor or shoehorn GDN into KV batch schema.",
+      "limits": "Plain Gather/Scatter would add copies or need whole-bank authority; it is not this no-staging capability. TRT/vLLM kernels are not automatically numerically qualified replacements. There is no safe minimal implementation candidate ready in this review, and no new public API is proposed."
+    }
+  ],
+  "observed_cost_boundary": {
+    "source": ".scratch/mtp-residual-body-review-20261026/memo.json",
+    "old_nonfirst_13_record_windows_ms": 60.245122,
+    "already_removed_hidden_5_ms": 19.474001,
+    "remaining_GDN_second_address_5_ms": 29.173923,
+    "remaining_native_hardclear_3_ms": 11.597198,
+    "meaning": "Historical capture-begin through API-end envelopes, not current host self time or recoverable savings. Address-only mechanisms could at most address the identified five-address-fill subset under the old reconstruction. They do not explain or recover the whole60ms, nor current throughput. Native hardclears reflect changed attention launch plans and require their original gate.",
+    "closed_staging_reference": "docs/evidence/performance/mtp-fixed-gdn-work-io-screen-2026-10-26.json",
+    "closed_staging_facts": "117227520 fixed payload bytes,39075840 added logical copy bytes per eligible body and1extra host wait; actual27->22 recordings but no net throughput gain. Do not reopen this copy candidate merely under an indices name."
+  },
+  "implementation_readiness": "No recoverable-current-time or net ROI has been established to support development yet. These are conditional source feasibility directions, not ready implementation candidates or promised gains.",
+  "next_action": "No implementation from this review. Parameter rebinding is closed for this round because the complete consumable mapping is absent. Direct indexed state remains a separate unimplemented capability with unproved ROI;do not reopen staging or relax capture keys.",
+  "not_claimed": [
+    "No performance prediction from capture count",
+    "No current27-record timing attribution",
+    "No arbitrary old-reader equivalence with other engines",
+    "No change to numerical, permission, publication or retirement contracts"
+  ],
+  "final_source_cut": {
+    "decision": "CLOSED_PARAMETER_REBIND_DIRECTION_NO_EXISTING_COMPLETE_CONSUMABLE_MAPPING",
+    "answer": "No. Current port-to-GGML-tensor metadata is not a complete tensor-port-to-native-CUDA-node/parameter mapping. Consuming such a mapping would require new launch/native-graph provenance registration or opaque argument inspection, beyond the authorized minimal patch.",
+    "checked_chain": [
+      {
+        "anchor": "src/compute_provider_ggml_cuda/tensor_program.cc:1051-1066,1230-1297",
+        "fact": "GDN lowers to packed scores/state with possible get_rows/reorder/cont nodes; causalconv lowers through typed-source permutation/cont to ggml_ssm_conv. This retains logical tensor identities but does not export final native node handles or parameter slots."
+      },
+      {
+        "anchor": "src/compute_provider_ggml_cuda/native_bridge_impl.h:257-280",
+        "fact": "Outer recording calls ggml_cuda_graph_encode on the admitted stream and returns native status/retirement error. No parameter provenance collector or mapping is returned."
+      },
+      {
+        "anchor": "native gated_delta_net.cu:223-326",
+        "fact": "Launch extracts src_state->data and dst->data; optional fused-cache data/slot_stride redirects state writes. Several typed/template/snapshot branches generate native arguments locally. Fused-cache support is not an exported captured-node binding map."
+      },
+      {
+        "anchor": "native ssm-conv.cu:129-160,174-218",
+        "fact": "Reads tensor data/strides and chooses regular/long-token, kernel-width and fused bias/SILU launch variants. No semantic port-to-captured-node mapping is published."
+      },
+      {
+        "anchor": "native cpy.cu:429-499",
+        "fact": "Copies may become cudaMemcpyAsync, cudaMemcpy2DAsync or typed/strided copy kernels. One logical Copy is not a single universal kernel-parameter schema."
+      },
+      {
+        "anchor": "native common.cuh:1273-1304,1707-1725;ggml-cuda.cu:2684-2711,3502-3512,4332-4400",
+        "fact": "Native graph has logical node-properties and a node-handle vector, but no complete semantic argument-slot relation. Generic kernel launcher forwards argument packs to CUDA without provenance recording. GGML fusion can skip logical nodes; graph update uses a newly captured graph. A node vector or launch order cannot recover the missing relation."
+      },
+      {
+        "anchor": "src/compute_backend_cuda/cuda_internal.h:126-135;cuda_backend.cc:1283-1351",
+        "fact": "Hyle retains the executable/status/owner, not the original graph or argument descriptors. There is no existing backend consumer for a complete native binding map."
+      }
+    ],
+    "native_source_root": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda",
+    "source_pins": [
+      {
+        "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 62683,
+        "sha256": "beaa64011ae8199aecb277aef654b7d439b2f9bcdf74e9c4e6278c67c19ceb4b"
+      },
+      {
+        "path": "src/compute_provider_ggml_cuda/native_bridge_impl.h",
+        "bytes": 13109,
+        "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+      },
+      {
+        "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/gated_delta_net.cu",
+        "bytes": 14031,
+        "sha256": "fe5cfe4a35195fac999e8bd93d3ed18c68830096d4019bafa60e5da91d6ef4bf"
+      },
+      {
+        "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/ssm-conv.cu",
+        "bytes": 9245,
+        "sha256": "684ef5e8180ba88bb1f389310b28f8a694cb107a924492c43682a5c5c1754424"
+      },
+      {
+        "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/cpy.cu",
+        "bytes": 31513,
+        "sha256": "db0520aac5613b26956422e7b10253c564f34cec81cbbe90cdf8b28143ba0984"
+      },
+      {
+        "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/common.cuh",
+        "bytes": 65552,
+        "sha256": "7d8dff005468c2ebbd2da854cb446be69c72a8c2d50ae6241e8fcc4bb84d6093"
+      },
+      {
+        "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/ggml-cuda.cu",
+        "bytes": 238225,
+        "sha256": "766f024a0439fc6f5a28f2ad2930e341bdffea48503ce3b7136c706f7ce85974"
+      }
+    ],
+    "source_boundary": "Retained4e1a native snapshot used for launch-structure inspection;not a new ABI/math certification of every private BF16 native overlay. Regardless of kernel variant, the current Hyle bridge/backend has no consumable map. No new run or capture-node inventory was taken.",
+    "missing_boundary": "Exact per-logical-port native argument occurrence, native node identity/type, fusion/branch provenance and memcpy-versus-kernel handling for every changed history/recurrent input/output. Supplying it requires explicitly instrumenting/recording launch paths or expanding the native graph interface. Blind pointer matching or registering each kernel is rejected in this bounded task.",
+    "ROI": "No current recoverable time established. Historical29.173923ms five-window envelope is not claimed recoverable;counts do not establish update cost or speed.",
+    "actions": "Stop parameter rebinding this round. No implementation/build/model/newframework. Keep original complete capture keys, recapture/update fallback and retirement gates."
+  }
+}

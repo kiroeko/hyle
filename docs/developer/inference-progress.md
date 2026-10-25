@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 06:45（北京时间）。整体粗估 **87%**。CPU常量View透明发现已采用：新同窗prefill＋1.15%，工作集采样峰下降约341MB；decode无稳定收益，仍比同窗参考慢约4.9%。四请求普通随机采样decode约＋10.8%的收益已合入，但单请求／MTP正式CUDA对照未刷新。当前转查CUDA／MTP状态地址变化与图重录，host直接IO保持关闭。
+更新：2026-10-26 06:57（北京时间）。整体粗估 **87%**。CPU常量View透明发现已采用：新同窗prefill＋1.15%，工作集采样峰下降约341MB；decode无稳定收益，仍比同窗参考慢约4.9%。四请求普通随机采样decode约＋10.8%的收益已合入，但单请求／MTP正式CUDA对照未刷新。状态索引／捕获源码调查已完成，未找到可直接接通的安全补丁或当前可回收量级；下一批回到当前CUDA／MTP真实耗时排序。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -25,9 +25,7 @@
 
 ## 正在做
 
-| 任务 | 所属 | 简述 | 进度 |
-|---|---|---|---|
-| CUDA／MTP状态与捕获源码调查 | MTP差距归因 | 对照本地参考的状态索引和图参数更新，核实Hyle权限、旧快照及可节省的真实耗时；尚无新实现或收益 | 约20% |
+本批实现、验证与源码调查均已完成，暂无进行中子任务；下批顺序见下文。
 
 ## 本次完成与剩余顺序
 
@@ -37,6 +35,7 @@
 - 性能取舍：同步报告和hidden输出已合入；宽Lt、typed MMF及K2辅助强制捕获均无稳定完整收益，关闭且不补样。数字、源身份和取舍见[性能资料](performance/decode.md)。
 - 准备归因：[唯一真实诊断](../evidence/performance/inference-model-prepare-attribution-2026-10-26.json)正常结束、非时间字段0差异。66次decode的布局／batch／replay为8.441／16.328／60.361ms；target原生计划366复用／30新建。整个batch桶仅占本次decode约1.64%，不能据此期待大幅收益。
 - GDN取舍：[单行为＋8进程筛选](../evidence/performance/mtp-fixed-gdn-work-io-screen-2026-10-26.json)完整工作相同、录制27→22，但复制成本未换来净收益，关闭、不补样、不合入；未追加字节／故障检查。静态端口已有复用，剩余遍历量级未知；不同down形状也尚无足够收益依据，不盲开小项。
+- 状态／捕获源码：[本地参考与现有合同](../evidence/research/inference-state-capture-next-review-2026-10-26.json)确认TRT／vLLM的索引更新需要原生状态池合同，Hyle尚无可直接接通的GDN／conv路由；已有ExecUpdate仍先重录。实际GDN／history／copy路径不能提供完整原生参数角色映射，需扩展launch／原生图接口；本轮不据此开发参数重绑。旧地址变化五个包络约29.17ms，不是当前可回收收益；旧13次录制的60.25ms还包含已消除的hidden开销，不能全算作剩余空间。大块复制候选保持关闭。
 - 随机采样：[无过滤R2检查](../evidence/research/inference-batched-unfiltered-sampling-2026-10-26.json)CPU／CUDA各7项及小Model通过；[三臂正式对照](../evidence/performance/inference-random-four-request-screen-2026-10-26.json)全程工作与输出相同，批量路径有净收益，已合入。[Hybrid功能检查](../evidence/research/inference-sampling-hybrid-replay-2026-10-26.json)虽通过，完整吞吐却下降，关闭、不合入或补样。均不计作当前greedy MTP收益。
 - CPU：[首对照](../evidence/performance/inference-cpu-initial-pair-2026-10-26.json)ISA偏差已用同版本15个CPU TU修正；[AVX2完整短窗](../evidence/performance/inference-cpu-avx2-window-2026-10-26.json)发现3428个OS线程。[Context共享池修复](../evidence/performance/inference-cpu-context-team-2026-10-26.json)已合入：每槽保私有plan／workspace，共享团队保活、完整native compute独占，9项runtime及真实模型工作一致。最新CPU同窗结果见下表；Mac本轮仅做有限组件检查。
 - CPU归因：等待策略调整前的[唯一真实诊断](../evidence/performance/inference-cpu-native-attribution-2026-10-26.json)9104记录完整、0溢出、非时间工作0差异。decode每输出native84.460ms、其中矩阵图75.305ms（本次墙时77.94%）；wide投影33.032ms、tied head19.409ms为不相交组。锁接纳全15轮仅0.642ms；native外每输出12.162ms仍含其它provider／host／仪器，未归因。未测参考原生耗时，不能据此认定差距主因或可回收收益。
@@ -46,7 +45,7 @@
 - CPU矩阵源码：[有限复核](../evidence/research/inference-cpu-matmul-granularity-review-2026-10-26.json)未发现审查路径大权重重复转型／pack。Hyle中间BF16存储点与参考保留F32结果是实际数值合同差异；187矩阵／569原生小图来自旧诊断，不能由次数预测吞吐或把旧33ms包络当转换成本。
 - CPU常量View：[实现、检查与新三臂对照](../evidence/performance/inference-cpu-constant-view-regions-2026-10-26.json)已完成。仅安全常量View参与冷发现连通性证明，实际View仍由原Graph管理；每图1195→1039步，逐节点BF16舍入保留。Windows四项薄入口检查及正式测试TU编译通过；[Mac五个当前产品TU＋薄消费者](../evidence/correctness/inference-cpu-constant-view-macos-2026-10-26.json)严格编译、7次提交通过，沿用冻结Graph／native／SDK，不代表完整当前Mac构建或吞吐。采用为资源／prefill优化，不计decode收益。
 - 载权取舍：[直接host IO筛选](../evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.json)五个host TU、17项原suite及独立真实行为通过，但新六计时＋两独立内存窗口加载0.895→1.004秒（慢12.12%）、startup到ready1.003→1.117秒（慢11.27%），三样本范围不重叠。prefill43.331→43.359、decode11.416→11.419、综合3.283→3.290 tok/s均范围重叠；工作集各约5.320GiB、线程峰17，GPU缺测。627次／约3.76GB显式复制虽消除，staging与backing预算不变；关闭、不合入、不补样，不猜慢因。合法只读映射导入仍为设计，未计收益。
-- 剩余顺序：先完成CUDA／MTP状态索引与图参数更新的源码调查，再按可影响的真实耗时选择候选；CPU原生矩阵及工作分配、合法只读映射加载、混合FFN放置另列。减少CPU图步数未带来稳定decode提升，不再据次数外推。当前greedy MTP仍未追平。
+- 剩余顺序：先核当前CUDA／MTP闭包的GPU执行与主机准备占比，按真实量级选择候选；CPU原生矩阵及工作分配、合法只读映射加载、混合FFN放置另列。参数重绑缺少完整映射，索引状态需要原生能力，均无当前净收益依据，暂不开发新机制。减少CPU图步数未带来稳定decode提升，不再据次数外推。当前greedy MTP仍未追平。
 
 ## 最新完整性能对照
 
