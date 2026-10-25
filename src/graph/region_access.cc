@@ -132,7 +132,7 @@ Status RegionAccess::invalidate_commands(Invocation &invocation,
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (selected_step >= state->plan->steps.size())
     return Status::InvalidArgument("selected command step is outside this invocation");
-  invalidate_step_recording(*state, selected_step);
+  invalidate_native_step_recording(*state, selected_step);
   return Status::Ok();
 }
 Status RegionAccess::validate_queue(const Executable&executable,ExecutionLaneId lane,const compute::Queue&queue)noexcept{

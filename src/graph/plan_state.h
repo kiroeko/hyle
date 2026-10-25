@@ -1305,6 +1305,10 @@ struct InvocationState final : util::RefCounted<InvocationState> {
 // a selected invocation's configuration or resources, including failed changes.
 HYLE_GRAPH_API void invalidate_step_recording(
     InvocationState &, std::uint32_t selected_step) noexcept;
+// Only the resource-control-gated native argument-change callback may keep
+// one backend-authorized nonlaunchable rebuild seed. All keys/authority die.
+HYLE_GRAPH_API void invalidate_native_step_recording(
+    InvocationState &, std::uint32_t selected_step) noexcept;
 // Ordinary stable TensorView rebinding may recycle one idle native allocation;
 // it never preserves launch authority, permissions or configuration identity.
 HYLE_GRAPH_API void recycle_step_recording(

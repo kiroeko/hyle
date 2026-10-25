@@ -1,0 +1,562 @@
+{
+  "status": "MERGED_COLD_NATIVE_CAPTURE_STORAGE_REUSE_THROUGHPUT_UNPROVEN",
+  "observed_on": "2026-10-25",
+  "scope": "Graph generic cold invalidation/rebuild allocation policy; original c343 consumer object, one original greedy K1 two-turn CUDA workload. Current MLX/NF4 consumer source is not benchmarked by this screen.",
+  "decision": "Retain the bounded existing backend-authorized allocation reuse: six native instantiations are proven unnecessary and become successful updates. Four explicit cold dispositions preserve original authority/retirement boundaries. Close this candidate as an explanation of the roughly ten-percent MTP throughput deficit: all three-pair ranges overlap and no throughput or memory saving is established. No additional repetitions/full comparison are justified by this signal.",
+  "architecture": {
+    "new_public_options": 0,
+    "new_public_type_layouts": 0,
+    "new_backend_vtable_callbacks": 0,
+    "new_execution_paths": 0,
+    "policy": "Only resource-control-gated native argument invalidation may create a retired, permanently nonlaunchable rebuild seed. Stable revalidation may only keep an already accepted seed. Every launch key, binding and qualification is discarded; Queue/config/import/owner changes remain hard clears."
+  },
+  "validation": {
+    "host": {
+      "tests": 1,
+      "skipped": 0,
+      "failures": 0,
+      "process": {
+        "exit": 0,
+        "seconds": 0.42199999999138527,
+        "timeout": false
+      },
+      "xml": {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-run2/results.xml",
+        "bytes": 651,
+        "sha256": "bd233b681c80f53e4e2a29528008b3a064415bcfaae11925dee4ac85012c048a"
+      },
+      "scope": "Existing original host mock with in-flight rejection, duplicate native invalidation, storage valid / all keys and qualification absent, failed-seal no launch, hard configuration and Queue changes."
+    },
+    "original_behavior": {
+      "process": {
+        "exit": 0,
+        "seconds": 3.9059999999881256,
+        "timeout": false
+      },
+      "work": {
+        "generated_tokens": 128,
+        "actual_graph_calls": 68,
+        "prefill_graph_calls": 2,
+        "decode_graph_calls": 66,
+        "prefill_target_rows": 309,
+        "verified_target_rows": 132,
+        "actual_target_rows": 441,
+        "committed_target_rows": 435,
+        "actual_draft_rows": 434,
+        "consumed_drafts": 60
+      },
+      "non_time_differences": [],
+      "capture_records": 32,
+      "capture_reuses": 100
+    },
+    "first_failures": [
+      "Private copied test missing original tests/graph include path; corrected host-only include.",
+      "First actual host candidate retained a seed at native invalidation, then binding revalidation deleted it. Original host expected rebuild1 observed0; fixed explicit keep-existing-only mode. Both old failure and corrected pass retained."
+    ],
+    "strict_source_identity": "Evaluated private graph/region translation units reused; canonical three product files are byte-identical. Formal test differs only in CRLF and the existing relative workload fixture include, resolving to the same pinned header. No post-merge runtime or SDK rebuild."
+  },
+  "API_diagnostic": {
+    "control": {
+      "cudaGraphExecUpdate_v10020": {
+        "calls": 13,
+        "total_ms": 1.474549,
+        "return_codes": {
+          "0": 13
+        }
+      },
+      "cudaGraphInstantiateWithFlags_v11040": {
+        "calls": 19,
+        "total_ms": 18.057234,
+        "return_codes": {
+          "0": 19
+        }
+      },
+      "cudaStreamBeginCapture_v10000": {
+        "calls": 32,
+        "total_ms": 0.295619,
+        "return_codes": {
+          "0": 32
+        }
+      },
+      "cudaStreamEndCapture_v10000": {
+        "calls": 32,
+        "total_ms": 0.757688,
+        "return_codes": {
+          "0": 32
+        }
+      }
+    },
+    "candidate": {
+      "cudaGraphExecUpdate_v10020": {
+        "calls": 19,
+        "total_ms": 2.139634,
+        "return_codes": {
+          "0": 19
+        }
+      },
+      "cudaGraphInstantiateWithFlags_v11040": {
+        "calls": 13,
+        "total_ms": 14.228357,
+        "return_codes": {
+          "0": 13
+        }
+      },
+      "cudaStreamBeginCapture_v10000": {
+        "calls": 32,
+        "total_ms": 0.285255,
+        "return_codes": {
+          "0": 32
+        }
+      },
+      "cudaStreamEndCapture_v10000": {
+        "calls": 32,
+        "total_ms": 0.710692,
+        "return_codes": {
+          "0": 32
+        }
+      }
+    },
+    "non_time_cross_arm_differences": [],
+    "scope": "One serial original clean c343-control and candidate process each. API counts/returns only; no TPS, GPU kernel/body timing or recoverable-time conclusion.",
+    "limitations": [
+      "CUDA API return codes are recorded, not resultInfo.errorNode/errorFromNode. Runtime cudaSuccess is documented as successful update; structural failure code is separately retained.",
+      "API durations are nested within original preparation and not added to GPU work, cold gap or process wall time.",
+      "No original driver API table means driver-only outcomes remain unknown.",
+      "No graph node lineage is used. No cross-process graph ID or variant object is equated."
+    ]
+  },
+  "bounded_screen": {
+    "status": "BOUNDED_SCREEN_COMPLETE_ALL_WORK_EQUAL",
+    "timing_processes": 6,
+    "independent_memory_processes": 2,
+    "all_exit0": true,
+    "source_work_equal": true,
+    "metrics": {
+      "control": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.11253479999999999,
+          "min": 0.1099931,
+          "max": 0.11410619999999999,
+          "samples": [
+            0.11253479999999999,
+            0.11410619999999999,
+            0.1099931
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0153212999999999,
+          "min": 1.0080226,
+          "max": 1.0165244,
+          "samples": [
+            1.0153212999999999,
+            1.0165244,
+            1.0080226
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1278561,
+          "min": 1.1180157,
+          "max": 1.1306306,
+          "samples": [
+            1.1278561,
+            1.1306306,
+            1.1180157
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2745.817293850436,
+          "min": 2708.0035966494374,
+          "max": 2809.267126756133,
+          "samples": [
+            2745.817293850436,
+            2708.0035966494374,
+            2809.267126756133
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 124.09864739368712,
+          "min": 123.95177134951213,
+          "max": 124.99719748346911,
+          "samples": [
+            124.09864739368712,
+            123.95177134951213,
+            124.99719748346911
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 113.48965528492509,
+          "min": 113.21115844556127,
+          "max": 114.48855324661362,
+          "samples": [
+            113.48965528492509,
+            113.21115844556127,
+            114.48855324661362
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1095165,
+          "min": 0.1087548,
+          "max": 0.1137052,
+          "samples": [
+            0.1137052,
+            0.1087548,
+            0.1095165
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0070676,
+          "min": 1.0053613000000001,
+          "max": 1.0104236000000002,
+          "samples": [
+            1.0104236000000002,
+            1.0070676,
+            1.0053613000000001
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1158224,
+          "min": 1.1148778,
+          "max": 1.1241288,
+          "samples": [
+            1.1241288,
+            1.1158224,
+            1.1148778
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2821.492651792196,
+          "min": 2717.553814601267,
+          "max": 2841.2539032759933,
+          "samples": [
+            2717.553814601267,
+            2841.2539032759933,
+            2821.492651792196
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 125.11573205214823,
+          "min": 124.7001752532304,
+          "max": 125.32807857235004,
+          "samples": [
+            124.7001752532304,
+            125.11573205214823,
+            125.32807857235004
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 114.71359599878976,
+          "min": 113.8659555737741,
+          "max": 114.81078912863815,
+          "samples": [
+            113.8659555737741,
+            114.71359599878976,
+            114.81078912863815
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_seconds": {
+        "candidate_relative_percent": -2.682103669264968,
+        "ranges_overlap": true
+      },
+      "decode_seconds": {
+        "candidate_relative_percent": -0.8129150841216237,
+        "ranges_overlap": true
+      },
+      "session_seconds": {
+        "candidate_relative_percent": -1.0669534881267095,
+        "ranges_overlap": true
+      },
+      "prefill_tokens_per_second": {
+        "candidate_relative_percent": 2.7560230650175876,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "candidate_relative_percent": 0.819577553681583,
+        "ranges_overlap": true
+      },
+      "combined_output_tokens_per_second": {
+        "candidate_relative_percent": 1.0784601563832874,
+        "ranges_overlap": true
+      }
+    },
+    "work": {
+      "generated_tokens": 128,
+      "actual_graph_calls": 68,
+      "prefill_target_rows": 309,
+      "verified_target_rows": 132,
+      "actual_target_rows": 441,
+      "actual_draft_rows": 434,
+      "consumed_drafts": 60
+    },
+    "historical_samples_pooled": false,
+    "latest_llama_comparison": false,
+    "profiler": false
+  },
+  "memory": {
+    "control": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1273835520,
+        "observed_os_peak_working_set_bytes": 1273835520,
+        "sampled_max_private_commit_bytes": 6451191808,
+        "observed_os_peak_commit_bytes": 6451191808,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 324,
+      "ready_baseline": {
+        "ready_marker_ns": 215374933780900,
+        "first_prefill_marker_ns": 215374933868000,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 33,
+        "shared:no_pid_instance": 33
+      }
+    },
+    "candidate": {
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1273270272,
+        "observed_os_peak_working_set_bytes": 1273290752,
+        "sampled_max_private_commit_bytes": 6446239744,
+        "observed_os_peak_commit_bytes": 6446239744,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 324,
+      "ready_baseline": {
+        "ready_marker_ns": 215378431834400,
+        "first_prefill_marker_ns": 215378431843900,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 34,
+        "shared:no_pid_instance": 34
+      }
+    }
+  },
+  "limitations": [
+    "Three timed observations and one independent memory process per arm: descriptive, not statistical significance or a physical allocation bound. The archived raw memory records retain actual gaps, nulls and phase brackets.",
+    "Original report endpoints, output work, acceptance and complete non-time fields are unchanged; not a fresh Hyle/llama.cpp comparison, random/K2/model/platform matrix, or whole-model quality result.",
+    "Profiler API durations are diagnostic and not pooled with unprofiled TPS or added as recoverable wall time; driver13.4/tool13.3 warning remains archived.",
+    "The private evaluation summary retains its chronological pre-merge statements; canonical integration below records the later exact-file merge."
+  ],
+  "independent_source_review": "# Independent source review\n\n2026-10-25, read-only; no build, GPU run, trace or performance endorsement.\nReviewed source.patch SHA256 124f905cc15a3f5b45d9b6bed42e19a71c44539d9b1f5ac35065a29880db3ae9 and the three private source files.\n\nNo must-fix correctness/lifetime defect found in this bounded change; suitable to merge as cold native capture-allocation reuse, not as a demonstrated throughput improvement.\n\n- `kDiscard` remains the generic invalidation entry. Configuration mutation, Queue-owner replacement, native import/owner reset and failed capture paths still discard both saved storage and variants. Commands mode still resets the cache. The patch does not turn these into native-argument reuse.\n- `kNativeArguments` is reached through RegionAccess::invalidate_commands after resource_control_ready: running/failed/preparing invocations, retained results and unavailable completion observation are rejected. It removes active captured ranges, launch spans, qualification and all variant keys. It keeps at most one backend-authorized CaptureRebuildStorage for each original immutable range, never the old launchable artifact.\n- `kKeepExistingSeed` is limited to stable ordinary TensorView carriers with neither previous nor current native inputs after revision invalidation. It cannot manufacture a seed from an active command or skip prepare_bindings/seal. This avoids accidentally hard-clearing an already safe seed during the subsequent binding preparation.\n- The existing Compute contract explicitly permits a retired permanently nonlaunchable allocation to outlive old provider arguments (`detail/command_capture.h:29-34`). CUDA requires unique/nonbusy state before setting rebuild_only; launch rejects rebuild_only. A retained state also retains its original context. No old pointer is used as permission or a restored binding key.\n- CUDA end-capture accepts only same-context unique idle rebuild storage, runs actual cudaGraphExecUpdate against the newly captured graph, and transfers only the executable on success. Only structural update incompatibility falls back to instantiate; other native errors propagate. On failure the ordinary nonlaunchable seed owner is destroyed. There is no optimistic success/replay route.\n- Non-CUDA backends that do not authorize recycle simply destroy the moved artifact under the pre-existing callback contract. No new public vtable/layout, cache variants, provider route or mathematical change was introduced.\n\nThe parent's 6 successful native updates and 6+2 process screen are separate actual evidence. I did not independently reproduce them; the reported ~0.82% overlapping interval is insufficient for a speedup claim.\n",
+  "canonical_integration": {
+    "status": "APPLIED_EXACT_EVALUATED_COLD_REUSE_CANDIDATE",
+    "before": [
+      {
+        "path": "src/graph/executable.cc",
+        "bytes": 479069,
+        "sha256": "8652cbd963069623860074e3bf874bb8574a31e27b1f3f6a945f7b37484b95bc"
+      },
+      {
+        "path": "src/graph/region_access.cc",
+        "bytes": 12857,
+        "sha256": "ae4b93cda28f04c3a5aa0bc1dda9d37fc1e83dbffd7224d9c9f8639ad1c60adf"
+      },
+      {
+        "path": "src/graph/plan_state.h",
+        "bytes": 58982,
+        "sha256": "1627134068f7e8c2002a1dc8d7bb722a369a67c70e94dddf3f6b0841d303b9fc"
+      },
+      {
+        "path": "tests/graph/region_provider_test.cc",
+        "bytes": 608452,
+        "sha256": "2be97c32d1082493da1a1fcbc27fa3a6850dfb5c3d4172e8374fa335c5fa6b16"
+      }
+    ],
+    "after": [
+      {
+        "path": "src/graph/executable.cc",
+        "bytes": 481504,
+        "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+      },
+      {
+        "path": "src/graph/region_access.cc",
+        "bytes": 12864,
+        "sha256": "ac4853957e32bd479c37e01e2ce2b366a4632f729dc554869613f85ba9938fbb"
+      },
+      {
+        "path": "src/graph/plan_state.h",
+        "bytes": 59252,
+        "sha256": "48adc18109e716e2cb9d441d9842a76f6957cd54ad4b80b6a39675eb3139a8a7"
+      },
+      {
+        "path": "tests/graph/region_provider_test.cc",
+        "bytes": 609601,
+        "sha256": "16a7ec2f4b9e06b394addb8303b6314db1bcca0bc5e80ce691583cd542e0bb1f"
+      }
+    ],
+    "scope": "Three product files exactly equal evaluated private inputs. Formal test differs only by the existing relative fixture include path and CRLF, resolving to the same pinned workload_fixture.h; no post-merge runtime claim.",
+    "performance_claim": false
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-native-rebuild-seed-2026-10-25.zip",
+    "bytes": 5704939,
+    "sha256": "52ee9f4ef2522df098cbe7a0e13af5ce87dd2a88606389260c2310f4de7ce542",
+    "members": 199
+  },
+  "cleanup": {
+    "superseded_files": [
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/graph/unit.obj",
+        "bytes": 5134915,
+        "sha256": "ab899ae7d7acb417a81bc07e97366974f649b0e43f6f839cd47c608d9ac9fe54"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-compile2/unit.obj",
+        "bytes": 14013367,
+        "sha256": "e192800702d7b3b53894fb842a0254ac57a87238a75f71ada3fc3af56a56b6dc"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link/hyle.exe",
+        "bytes": 141402624,
+        "sha256": "10ff83a8bc087f55bb86fb71ffd0d1a1c2342824b9348d9c1dca156091d4f62d"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link/hyle.exp",
+        "bytes": 24977,
+        "sha256": "75ace3af83351b0d8831020dcbe5cd3bb7dc8141f2aeab23fbe81e2389aaf080"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link/host.exe",
+        "bytes": 142632448,
+        "sha256": "a3819da0cd338b0a78a3d3c76f93fc1ba98b9b5ce3234197a05fc2c6b0c3b927"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link/host.exp",
+        "bytes": 24982,
+        "sha256": "d51c10ba0570a2acdd85a8fbdbb206995e9327a3d5b68c4543ecb6ca2a491fdc"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link/host.lib",
+        "bytes": 41384,
+        "sha256": "c0128bbaeb91af34e1ce23ce9e30fd03dc7abc6cb9c6076c8fafad925cca7ba8"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "superseded_count": 10,
+    "superseded_logical_bytes": 305729649,
+    "retained_current_files": [
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/region/unit.obj",
+        "bytes": 101736,
+        "sha256": "406e33bd500efd5d21ee1e23659e275a894daee1183e17da7fd35d3e39ded187"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/graph2/unit.obj",
+        "bytes": 5135149,
+        "sha256": "a55d0fa90a071b5fcb27407c60accac02ee5dfd28ed510da57997722c0432cb9"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-compile3/unit.obj",
+        "bytes": 14058086,
+        "sha256": "24fb3259d205b419579e854a88e342c7a5d8699248fef1e295f49fe375c6a9db"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link2/hyle.exe",
+        "bytes": 141402624,
+        "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link2/hyle.exp",
+        "bytes": 24978,
+        "sha256": "a94fdb51ddb5b4b56456c11ee9d8e22479292e6310c41f28f586de5603f51e63"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link2/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/link2/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link2/host.exe",
+        "bytes": 142635008,
+        "sha256": "d59cac12977b20aed2aef25b6d8d1cdca39a78067ebb53805d46afa4bab6c847"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link2/host.exp",
+        "bytes": 24983,
+        "sha256": "cc05b621cc4d4aeb0a6174a519d9526db209862decc7543b74829a802b7f0b9e"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link2/host.lib",
+        "bytes": 41384,
+        "sha256": "c0128bbaeb91af34e1ce23ce9e30fd03dc7abc6cb9c6076c8fafad925cca7ba8"
+      },
+      {
+        "path": ".scratch/mtp-native-seed-candidate-20261025/host-link2/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "retained_current_count": 11,
+    "retained_current_logical_bytes": 305878900,
+    "deleted": false,
+    "scope": "Only this private batch rebuildable binaries; root decides guarded cleanup. Preserve original c343 app/image, all shared closures/SDK/models/source/logs."
+  },
+  "next": "Use existing ordinary/MTP traces to separate target/draft GPU activity from replay/submit/host waiting; require a falsifiable, materially sized next candidate before a new measurement window.",
+  "cleanup_followup": {
+    "performed": true,
+    "files": 10,
+    "logical_bytes": 305729649,
+    "physical_bytes_freed_unknown": true,
+    "entry": "test.ps1 -RemoveMtpNativeSupersededBinaries -Apply",
+    "safeguards": "Exact inactive files inside this private candidate directory; all SHA/size, resolved paths, no reparse ancestors and exclusive-open checked before nonrecursive deletion.",
+    "retained": "Current evaluated graph/region objects and candidate/host images, original app baseline, shared SDK, source, traces, commands and all result logs; published archive unchanged."
+  }
+}

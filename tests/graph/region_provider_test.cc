@@ -6105,7 +6105,7 @@ TEST(GraphRegions, RetiredCaptureRebuildsNewBindingsWithoutPublishingFailure) {
   EXPECT_TRUE(retry->wait().ok());
 }
 
-TEST(GraphRegions, NativeInvalidationAndQueueReplacementDiscardCaptureStorage) {
+TEST(GraphRegions, NativeCommandInvalidationKeepsOnlyRebuildSeedAndQueueStillDiscards) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   probe.capture_supported = true;
   probe.capture_preserves_binding_identity = true;
@@ -6126,6 +6126,12 @@ TEST(GraphRegions, NativeInvalidationAndQueueReplacementDiscardCaptureStorage) {
       hyle::graph::ExecutionLaneId{0}, &queue}};
   ASSERT_TRUE(run.prepare_replay(
       queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}).ok());
+  auto initial = run.submit(queues);
+  ASSERT_TRUE(initial);
+  EXPECT_TRUE(hyle::graph::detail::RegionAccess::invalidate_commands(run, 0).IsUnavailable());
+  EXPECT_EQ(probe.capture_recycle_count, 0u);
+  ASSERT_TRUE(initial->wait().ok());
+  *initial = {};
   const std::uint32_t revision = 7;
   auto configured = hyle::graph::detail::RegionAccess::configure_node(
       run, logical.graph.node_id(0).value(), kTestConfiguration, &revision);
@@ -6146,16 +6152,32 @@ TEST(GraphRegions, NativeInvalidationAndQueueReplacementDiscardCaptureStorage) {
   EXPECT_EQ(probe.capture_recycle_count, 1u);
   EXPECT_EQ(probe.capture_end_count, 2u);
   EXPECT_FALSE(run.submit(queues));
-  // The original bridge requires invalidation before a provider changes any
-  // native resource. It must also discard any pending rebuild allocation.
+  // Native argument changes revoke old launch/binding authority before the
+  // provider mutates resources, but may retain its authorized nonlaunchable seed.
   ASSERT_TRUE(hyle::graph::detail::RegionAccess::invalidate_commands(run, 0).ok());
-  EXPECT_EQ(probe.capture_destroy_count, 2u);
+  EXPECT_EQ(probe.capture_destroy_count, 1u);
   EXPECT_EQ(probe.capture_recycle_count, 1u);
+  ASSERT_TRUE(hyle::graph::detail::RegionAccess::invalidate_commands(run, 0).ok());
+  EXPECT_EQ(probe.capture_destroy_count, 1u);
+  EXPECT_EQ(probe.capture_recycle_count, 1u);
+  const auto *native_invalidated = hyle::graph::detail::InvocationAccess::state(run);
+  ASSERT_NE(native_invalidated, nullptr);
+  ASSERT_EQ(native_invalidated->capture_rebuilds.size(), 1u);
+  const auto &invalidated_range = native_invalidated->capture_rebuilds[0];
+  EXPECT_TRUE(invalidated_range.storage.valid());
+  EXPECT_FALSE(invalidated_range.qualification_valid);
+  EXPECT_FALSE(invalidated_range.preserves_private_arguments);
+  EXPECT_TRUE(native_invalidated->captured_ranges.empty());
+  for (const auto &variant : invalidated_range.variants) {
+    EXPECT_FALSE(variant.key_valid);
+    EXPECT_FALSE(variant.commands.valid());
+    EXPECT_TRUE(variant.bindings.empty());
+  }
   EXPECT_FALSE(run.submit(queues));
   probe.binding_seal_failure = Status::Ok();
   ASSERT_TRUE(run.prepare_replay(
       queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}).ok());
-  EXPECT_EQ(probe.capture_rebuild_count, 0u);
+  EXPECT_EQ(probe.capture_rebuild_count, 1u);
 
   ASSERT_TRUE(run.bind(logical.input, third_input.view).ok());
   probe.binding_seal_failure = Status::FailedPrecondition("new slot not sealed");
@@ -6173,7 +6195,7 @@ TEST(GraphRegions, NativeInvalidationAndQueueReplacementDiscardCaptureStorage) {
   EXPECT_EQ(probe.capture_destroy_count, 3u);
   EXPECT_EQ(probe.capture_end_count, 4u);
   EXPECT_EQ(probe.capture_recycle_count, 2u);
-  EXPECT_EQ(probe.capture_rebuild_count, 0u);
+  EXPECT_EQ(probe.capture_rebuild_count, 1u);
   EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 1u);
   auto done = run.submit(next_queues);
   ASSERT_TRUE(done);

@@ -1159,5 +1159,14 @@
     ],
     "logical_bytes": 630603152,
     "scope": "Only newly generated MLX private entry/host binaries and private DLL hardlinks; original baseline, original DLL, five reused backend leaves, SDK, source/oracle/logs and model fragments retained."
+  },
+  "cleanup_followup": {
+    "performed": true,
+    "files": 22,
+    "logical_bytes": 630603152,
+    "physical_bytes_freed_unknown": true,
+    "entry": "test.ps1 -RemovePublishedMlxOrdinaryBinaries -Apply",
+    "safeguards": "All exact targets checked inside the completed consumer directory, SHA/size, no reparse ancestors or active image, exclusive-open check before deletion; no recursion.",
+    "retained": "All source, original model fragments, logs/oracles, shared SDK and five reused backend leaf objects. The published archive is unchanged."
   }
 }

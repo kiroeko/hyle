@@ -1338,6 +1338,16 @@ Status seal_invocation_bindings(detail::InvocationState &invocation) noexcept {
   return Status::Ok();
 }
 
+enum class CaptureInvalidation : std::uint8_t {
+  kDiscard,
+  kStableBindings,
+  kNativeArguments,
+  kKeepExistingSeed,
+};
+void invalidate_recording(detail::InvocationState &invocation,
+                          std::uint32_t selected_step,
+                          CaptureInvalidation mode) noexcept;
+
 Status prepare_command_bindings(detail::InvocationState &invocation,
     std::size_t step_index,
     std::optional<std::span<const std::uint32_t>> &lease_candidates) noexcept {
@@ -1424,6 +1434,9 @@ Status prepare_command_bindings(detail::InvocationState &invocation,
     if (cached.stable_binding_identity && !native_inputs && !cached.native_inputs &&
         cached.prepared_revision == cached.revision)
       detail::recycle_step_recording(invocation, static_cast<std::uint32_t>(step_index));
+    else if (cached.stable_binding_identity && !native_inputs && !cached.native_inputs)
+      invalidate_recording(invocation, static_cast<std::uint32_t>(step_index),
+                           CaptureInvalidation::kKeepExistingSeed);
     else
       detail::invalidate_step_recording(invocation, static_cast<std::uint32_t>(step_index));
   }
@@ -8098,20 +8111,47 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
 
 namespace {
 void invalidate_recording(detail::InvocationState &invocation,
-                          std::uint32_t selected_step, bool recycle) noexcept {
+                          std::uint32_t selected_step,
+                          CaptureInvalidation mode) noexcept {
   HYLE_FATAL_ASSERT(selected_step < invocation.step_bindings.size());
+  const bool recycle = mode == CaptureInvalidation::kStableBindings;
+  const bool retain_rebuild_seed = mode == CaptureInvalidation::kNativeArguments ||
+                                    mode == CaptureInvalidation::kKeepExistingSeed;
   auto &binding = invocation.step_bindings[selected_step];
   // Saturation cannot preserve readiness: every changed binding must be
   // prepared again, even when a retired physical recording can stay dormant.
   if (binding.revision != UINT64_MAX)
     ++binding.revision;
   binding.prepared_revision = 0;
-  // Explicit native/configuration/Queue invalidation also drops dormant
-  // allocations before the original provider releases its mutable resources.
+  // Every explicit invalidation drops launch authority and binding keys before
+  // mutable provider resources change. Only native argument changes can create
+  // a backend-authorized nonlaunchable seed; stable revalidation can keep one.
+  // Queue/configuration/import/owner changes still destroy all old allocations.
   if (!recycle)
     for (auto &saved : invocation.capture_rebuilds)
       if (selected_step >= saved.step_begin && selected_step - saved.step_begin < saved.step_count) {
-        saved.storage.reset();
+        if (!retain_rebuild_seed) {
+          saved.storage.reset();
+        } else if (mode == CaptureInvalidation::kNativeArguments && !saved.storage.valid()) {
+          // The resource-control gate proved actual retirement. The backend
+          // may authorize ONE permanently nonlaunchable allocation to outlive
+          // old provider arguments. All binding keys/authority still die below.
+          for (auto &range : invocation.captured_ranges) {
+            if (range.step_begin != saved.step_begin ||
+                range.step_count != saved.step_count || !range.commands.valid())
+              continue;
+            saved.storage = compute::detail::CommandCaptureAccess::recycle_after_retirement(
+                std::move(range.commands));
+            break;
+          }
+          if (!saved.storage.valid())
+            for (auto &variant : saved.variants) {
+              if (!variant.commands.valid()) continue;
+              saved.storage = compute::detail::CommandCaptureAccess::recycle_after_retirement(
+                  std::move(variant.commands));
+              if (saved.storage.valid()) break;
+            }
+        }
         discard_capture_variants(saved);
       }
   for (std::size_t index = 0; index < invocation.captured_ranges.size();) {
@@ -8142,7 +8182,7 @@ void invalidate_recording(detail::InvocationState &invocation,
             std::move(invocation.captured_ranges[index].commands));
         saved->active_variant = 2;
       } else {
-        saved->storage.reset();
+        if (!retain_rebuild_seed) saved->storage.reset();
         discard_capture_variants(*saved);
       }
     }
@@ -8163,12 +8203,17 @@ void invalidate_recording(detail::InvocationState &invocation,
 
 void detail::invalidate_step_recording(InvocationState &invocation,
                                       std::uint32_t selected_step) noexcept {
-  invalidate_recording(invocation, selected_step, false);
+  invalidate_recording(invocation, selected_step, CaptureInvalidation::kDiscard);
+}
+
+void detail::invalidate_native_step_recording(InvocationState &invocation,
+                                             std::uint32_t selected_step) noexcept {
+  invalidate_recording(invocation, selected_step, CaptureInvalidation::kNativeArguments);
 }
 
 void detail::recycle_step_recording(InvocationState &invocation,
                                    std::uint32_t selected_step) noexcept {
-  invalidate_recording(invocation, selected_step, true);
+  invalidate_recording(invocation, selected_step, CaptureInvalidation::kStableBindings);
 }
 
 Status detail::collect_effect_bindings(
