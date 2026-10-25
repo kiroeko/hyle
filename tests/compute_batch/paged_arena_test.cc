@@ -472,3 +472,72 @@ TEST(PagedAdmission, ReserveLimitsAndOriginalClosedPermissionGateRemainEffective
   EXPECT_TRUE(reads.add(c::ReadLease{}).IsFailedPrecondition());ASSERT_TRUE(pool.close().ok());ASSERT_TRUE(reads.add(ready).ok());
   auto uses=c::LeaseUsePool::create().value();auto use=uses.begin().value();EXPECT_TRUE(reads.admit(use).IsFailedPrecondition());EXPECT_EQ(pool.stats().active_uses,0u);
 }
+
+// Source payload gates and metadata ownership retain their original scopes.
+
+namespace { namespace cache_source_budget {
+namespace c=hyle::compute;
+namespace d=hyle::compute::detail;
+namespace m=hyle::mem;
+std::size_t external(const c::ResourceBudget &b,m::MemoryResourceRef r) {
+  return b.usage(r)->live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+}
+c::ResourceBudget budget(m::MemoryResourceRef resource,std::size_t payload=SIZE_MAX,
+                        m::AllocatorRef allocator=m::system_allocator(),bool shared=false) {
+  const std::array limits{c::ResourceBudgetLimit{resource,payload},c::ResourceBudgetLimit{m::system_resource()}};
+  const auto count=resource==m::system_resource()?1u:2u;
+  const std::array nominated{resource,m::system_resource()};
+  const c::ResourceBudgetOptions options{.limits=std::span(limits).first(count),.allocator=allocator};
+  return shared?c::ResourceBudget::create(options,std::span(nominated).first(count),1u<<20).value()
+               :c::ResourceBudget::create(options).value();
+}
+class Source final:public m::MemoryResource {
+public:
+  std::size_t allocations=0,free_calls=0,roots=0;
+  bool map_failure=false;
+
+
+  const c::ResourceBudget *local=nullptr,*shared=nullptr;
+  std::size_t local_at_free=0,shared_at_free=0;
+  bool local_nested=false,shared_nested=false;
+  m::ResourceAllocation actual{};
+  m::MemoryResourceRef ref() noexcept {return m::MemoryResourceRef(*this);}
+  std::string_view name()const noexcept override{return "cache-source-test";}
+  m::MemoryProperties properties()const noexcept override{return m::system_resource().properties();}
+  hyle::Result<m::ResourceAllocation> allocate(std::size_t n,std::size_t a)noexcept override{
+    auto result=m::system_resource().resource().allocate(n,a);
+    if(result){++allocations;actual=*result;roots=1;}
+    return result;
+  }
+  m::ResourceAllocation alias()noexcept{++roots;return actual;}
+  void deallocate(m::ResourceAllocation value)noexcept override{
+    ++free_calls;
+    if(local){local_at_free=external(*local,ref());local_nested=bool(local->reserve(ref(),value.size));}
+    if(shared){shared_at_free=external(*shared,ref());shared_nested=bool(shared->reserve(ref(),value.size));}
+    if(--roots==0)m::system_resource().resource().deallocate(value);
+  }
+  hyle::Result<m::ResourceHostMapping> map_host(void *h,std::size_t o,std::size_t n,m::HostAccess a)noexcept override{
+    if(map_failure)return std::unexpected(hyle::Status::Unavailable("injected source mapping failure"));
+    return m::system_resource().resource().map_host(h,o,n,a);
+  }
+  hyle::Status unmap_host(void *h,void *t,std::size_t o,std::size_t n,m::HostAccess a)noexcept override{
+    return m::system_resource().resource().unmap_host(h,t,o,n,a);
+  }
+};
+
+TEST(CacheSourceBudget, PagedArenaForwardsBothGatesWithoutPerPageCharge) {
+  Source source;auto shared=budget(source.ref(),SIZE_MAX,m::system_allocator(),true);
+  auto local=budget(source.ref(),4096,shared.metadata_allocator().value());
+  const c::BatchCapacity capacity{.max_requests=1,.max_query_rows=1,.max_kv_rows=8,
+      .max_pages=4,.max_page_refs=4,.query_heads=2,.kv_heads=2,.qk_head_dim=64,.value_head_dim=64,.page_size=2};
+  auto schema=c::BatchSchema::create(capacity,{.resource_budget=local}).value();
+  auto made=c::PagedArena::create(schema,c::BatchCacheRole::kKey,source.ref(),
+      {.max_backing_bytes=4096,.resource_budget=local},shared);ASSERT_TRUE(made);
+  auto arena=std::move(*made);const auto whole=external(local,source.ref());
+  EXPECT_EQ(whole,arena.page_bytes()*4+1);EXPECT_EQ(external(shared,source.ref()),whole);
+  auto page=arena.acquire(0).value();ASSERT_TRUE(page.lease().view()->fill(std::byte{29}).ok());
+  auto ready=page.publish(2).value();page={};ASSERT_TRUE(d::LeaseAccess::retain_budget(ready,source.ref(),shared).ok());
+  EXPECT_EQ(external(shared,source.ref()),whole);arena={};EXPECT_EQ(external(shared,source.ref()),whole);
+  ready.reset();EXPECT_EQ(external(local,source.ref()),0u);EXPECT_EQ(external(shared,source.ref()),0u);
+}
+} } // namespace cache_source_budget

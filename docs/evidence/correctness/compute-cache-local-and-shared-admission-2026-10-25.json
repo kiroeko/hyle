@@ -1,0 +1,667 @@
+{
+  "status": "PASS_CHECKED_CLOSURE_CANONICAL_SOURCE_INTEGRATED",
+  "canonical_modified": true,
+  "source_patch": {
+    "path": ".scratch/inference-cache-shared-source-20261025/final-source.patch",
+    "bytes": 46363,
+    "sha256": "e928855d4884171707e1bd23ede4f6592d8e654280d08e64032d43c60758ad7e"
+  },
+  "current_sources": [
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 9640,
+      "sha256": "9fd35f1e9ec5f10558024f7b856767ab9fe155857a130045555237d27caf297c"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14615,
+      "sha256": "86f429778dcd1a183a8e829b36c91df29adfac886c74bb47aef8cf7b4cbb0d58"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 46499,
+      "sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "bytes": 50852,
+      "sha256": "c6712bee219b176d50a67b798ac95b1a3f1ec69c0655af69b24a7952c45cac60"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 477057,
+      "sha256": "177628b2d6df809f6bd987cd43841f7ff59d27235c77ae0251480d84f7817a57"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 4577,
+      "sha256": "97945d50241d85e895ff2e0cd0e2dc805865f0c1a470ceabf747d5dcae411e7a"
+    },
+    {
+      "path": "src/compute/resource_budget.cc",
+      "bytes": 23784,
+      "sha256": "3047259e2e43032c2017c552b88ca99ba6255f66d7375f939885085738b56e93"
+    },
+    {
+      "path": "tests/compute/retained_lease_budget_test.cc",
+      "bytes": 30324,
+      "sha256": "a56756677ec38d9424cc95532df850f163134ae999171996695a6c88068d68bd"
+    },
+    {
+      "path": "tests/compute/shared_backing_budget_test.cc",
+      "bytes": 21404,
+      "sha256": "2c402ae4f462d9f33d940affe7d22930a899c33f8ad06e7a2ca70eb5569a8f5f"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "bytes": 48455,
+      "sha256": "91fba212f8f892b12ca72b1b6374ffe2394476059044325f26a45411a5b979ce"
+    },
+    {
+      "path": "tests/graph/executable_test.cc",
+      "bytes": 257652,
+      "sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278"
+    }
+  ],
+  "host_core": [
+    {
+      "source": {
+        "path": ".scratch/inference-cache-shared-source-20261025/source/src/compute/resource_budget.cc",
+        "bytes": 23784,
+        "sha256": "3047259e2e43032c2017c552b88ca99ba6255f66d7375f939885085738b56e93"
+      },
+      "object": {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/budget/unit.obj",
+        "bytes": 245205,
+        "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 0.6560000000172295,
+        "timeout": false
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch/inference-cache-shared-source-20261025/source/src/compute/resource_leases.cc",
+        "bytes": 46499,
+        "sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d"
+      },
+      "object": {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/leases/unit.obj",
+        "bytes": 463196,
+        "sha256": "7689336cef6bb036007c41003f39b1ff513dc597f6d9ddd48ebdc688a8b0bd4c"
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 0.8599999999860302,
+        "timeout": false
+      }
+    },
+    {
+      "source": {
+        "path": ".scratch/inference-cache-shared-source-20261025/source/src/compute_batch/paged_arena.cc",
+        "bytes": 50852,
+        "sha256": "c6712bee219b176d50a67b798ac95b1a3f1ec69c0655af69b24a7952c45cac60"
+      },
+      "object": {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/arena/unit.obj",
+        "bytes": 1142006,
+        "sha256": "a4fec250a87cc07472d43fe19d08d5b93cc939633c028d6bf164a291260b11f1"
+      },
+      "process": {
+        "exit": 0,
+        "seconds": 1.5309999999881256,
+        "timeout": false
+      }
+    }
+  ],
+  "host": {
+    "tests": 8,
+    "failures": 0,
+    "skipped": 0,
+    "process": {
+      "exit": 0,
+      "seconds": 0.23499999998603016,
+      "timeout": false
+    },
+    "xml": {
+      "path": ".scratch/inference-cache-shared-source-20261025/attempt3/results.xml",
+      "bytes": 2805,
+      "sha256": "8eb3b7dcc92d28e3ea5c6066e6f49d76977950a2626ea263ecd94ca3a6817064"
+    },
+    "consumer": {
+      "path": ".scratch/inference-cache-shared-source-20261025/cache_source_budget_test.cc",
+      "bytes": 16157,
+      "sha256": "b69eca2a2cb2a50733157cd0ea05d73c9d4f2c8574ecafcd2f2f9b089bed4772"
+    },
+    "ready": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt3\\link\\checks.exe",
+        "bytes": 21598720,
+        "sha256": "bf04834698a5228045e75389000ca94245ab9551a87f16536b2a225e512dd85d"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\cache_source_budget_test.cc",
+        "bytes": 16157,
+        "sha256": "b69eca2a2cb2a50733157cd0ea05d73c9d4f2c8574ecafcd2f2f9b089bed4772"
+      },
+      "reused_core_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+          "bytes": 245205,
+          "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\leases\\unit.obj",
+          "bytes": 463196,
+          "sha256": "7689336cef6bb036007c41003f39b1ff513dc597f6d9ddd48ebdc688a8b0bd4c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\arena\\unit.obj",
+          "bytes": 1142006,
+          "sha256": "a4fec250a87cc07472d43fe19d08d5b93cc939633c028d6bf164a291260b11f1"
+        }
+      ],
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\current1\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      }
+    }
+  },
+  "first_failures": [
+    {
+      "attempt": "attempt1",
+      "result": "6/8 passed",
+      "reason": "Fixture exact-read span size and unsafe overlap between published constant/input"
+    },
+    {
+      "attempt": "attempt2",
+      "result": "7/8 passed",
+      "reason": "Unsafe overlap preserved; actual Status identifies the fixture collision"
+    },
+    {
+      "attempt": "dual-cuda1",
+      "result": "Compile exit2, no GPU",
+      "reason": "Consumer old-page observation lacked detail/paged_arena_access.h include; consumer-only explicit include fixed in dual-cuda2, unchanged product source/geometry/quota/assertions"
+    }
+  ],
+  "corrections": "Subview read uses exact one-byte view; true source-alias Graph output is submitted and exported with storage_lease(local), then retained as the original ready constant for a second preparation. No alias or permission guard changed.",
+  "graph_contract": {
+    "first": "prepare_resources(local), bind, submit/wait, GraphOutput.storage_lease(local)",
+    "second": "same original ready lease as constant, compile/prepare with independent input backing",
+    "nested_system_metadata": true,
+    "unknown_custom_owner_rejected": true,
+    "old_image_negative_run": false
+  },
+  "main_syntax": {
+    "process": {
+      "exit": 0,
+      "seconds": 7.0310000000172295,
+      "timeout": false
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 476479,
+      "sha256": "820b314df96733afbca6e1140fbd06bd75668dbd73b07e92424448f4d9a21de9"
+    },
+    "scope": "Before new atomic prepare_cache edit; not claimed for current main",
+    "current_atomic_main": {
+      "path": ".scratch/inference-cache-shared-source-20261025/source/engine/models/qwen35/main.cc",
+      "bytes": 477057,
+      "sha256": "177628b2d6df809f6bd987cd43841f7ff59d27235c77ae0251480d84f7817a57"
+    },
+    "current_atomic_checked": true,
+    "current_atomic_check": "Strict CUDA consumer compile plus actual one-process ordinary CUDA run, not the earlier CPU /Zs"
+  },
+  "changes": [
+    "three additive public cold source factories, unchanged old signatures/options/layouts",
+    "one detail cold exact-original-allocator helper; only known budget callbacks unwrapped",
+    "ownership query uses existing stable Domain allocator rather than consumed primary charge",
+    "Qwen source pools/arenas get independent local and injected scopes; CPU metadata goes through both original allocators",
+    "prepare_cache publishes locally prepared schema/target/draft inventories and known bytes atomically, with completion sentinel last; actual same-Model failures/retry checked"
+  ],
+  "limits": [
+    "Exactly 3 refreshed core TUs, original private host 8 tests, 4 formal TU strict-only checks, one final CUDA consumer TU and one CUDA process; first consumer missing-include compile preserved",
+    "Local GPU device cache row remains finite and its separate system-metadata row remains unlimited; CPU coalesces the actual system row as before",
+    "Generated-output second-scope retention is an explicit next slice, not included in these checked objects",
+    "Native/private/unattributed allocations and original mappings/std host containers are not a physical VRAM cap"
+  ],
+  "GPU": 1,
+  "HTTP": 0,
+  "SDK_full_build": 0,
+  "before_sources": [
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 9141,
+      "sha256": "4fcab3c18372d363be917f24b6977bb8e0fce84daa129de1efc58281310ab889"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14088,
+      "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 43940,
+      "sha256": "456c075f6fdfa6016a8c1159348224d040bcdccbd69d6ae11eac2a0dbdf70c2e"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "bytes": 50053,
+      "sha256": "95fa8b24e1727d9902778ee34a0a7d3f31d7d8aec053be3c5f10e1ee0b4f0bc6"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 476026,
+      "sha256": "7e810068ce41bfba3dd61ed644fab07d9c033a49deeaec2b085223b997cf0530"
+    },
+    {
+      "path": "include/hyle/compute/detail/resource_budget_access.h",
+      "bytes": 4135,
+      "sha256": "5c85c53454fc8b12eeff264e362a21f7decb8e925c63a654ab155bfee914669e"
+    },
+    {
+      "path": "src/compute/resource_budget.cc",
+      "bytes": 23076,
+      "sha256": "b5d6fdce4703e30a51be3046cd93480cf7e83bb01a654061bb833aa58ee953bd"
+    },
+    {
+      "path": "tests/compute/retained_lease_budget_test.cc",
+      "bytes": 21972,
+      "sha256": "77fa247ede4c3a49288c7b1951974949107b6765dedc9751712c4512c56243f5"
+    },
+    {
+      "path": "tests/compute/shared_backing_budget_test.cc",
+      "bytes": 18003,
+      "sha256": "a543c61576ebe87b2f963ba2ef5539d0bec0fc3c900ae6e068bf5b87464a15d1"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_test.cc",
+      "bytes": 44371,
+      "sha256": "64d5f589ba19230cb910edea44bf0ecb3e729e214b26c6bbea946209f1ea32e4"
+    },
+    {
+      "path": "tests/graph/executable_test.cc",
+      "bytes": 250472,
+      "sha256": "358a99c3e0047ad970f94e66c0c548dd47d5ed231255e7b3025a5e0d0cb37192"
+    }
+  ],
+  "formal_regressions": {
+    "paths": [
+      {
+        "source": {
+          "path": "tests/compute/retained_lease_budget_test.cc",
+          "bytes": 30324,
+          "sha256": "a56756677ec38d9424cc95532df850f163134ae999171996695a6c88068d68bd"
+        },
+        "process": {
+          "exit": 0,
+          "seconds": 1.2179999999934807,
+          "timeout": false
+        }
+      },
+      {
+        "source": {
+          "path": "tests/compute/shared_backing_budget_test.cc",
+          "bytes": 21404,
+          "sha256": "2c402ae4f462d9f33d940affe7d22930a899c33f8ad06e7a2ca70eb5569a8f5f"
+        },
+        "process": {
+          "exit": 0,
+          "seconds": 1.1410000000032596,
+          "timeout": false
+        }
+      },
+      {
+        "source": {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "bytes": 48455,
+          "sha256": "91fba212f8f892b12ca72b1b6374ffe2394476059044325f26a45411a5b979ce"
+        },
+        "process": {
+          "exit": 0,
+          "seconds": 1.5309999999881256,
+          "timeout": false
+        }
+      },
+      {
+        "source": {
+          "path": "tests/graph/executable_test.cc",
+          "bytes": 257652,
+          "sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278"
+        },
+        "process": {
+          "exit": 0,
+          "seconds": 2.9059999999881256,
+          "timeout": false
+        }
+      }
+    ],
+    "strict_compile_only": true,
+    "run": false,
+    "target_build": false,
+    "SDK_build": 0,
+    "HTTP": 0,
+    "GPU": 0
+  },
+  "cuda": {
+    "ready": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\dual-cuda2\\link\\consumer.exe",
+        "bytes": 141239296,
+        "sha256": "46046e561edc2b7089a2efa136da6b03bcbe3040760e51b96b587499143f68ee"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\schedule-inputs\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "core_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+          "bytes": 245205,
+          "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\leases\\unit.obj",
+          "bytes": 463196,
+          "sha256": "7689336cef6bb036007c41003f39b1ff513dc597f6d9ddd48ebdc688a8b0bd4c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\arena\\unit.obj",
+          "bytes": 1142006,
+          "sha256": "a4fec250a87cc07472d43fe19d08d5b93cc939633c028d6bf164a291260b11f1"
+        }
+      ],
+      "consumer_TUs": 1,
+      "SDK_build": 0,
+      "HTTP": 0,
+      "GPU_run": false
+    },
+    "compile": {
+      "exit": 0,
+      "seconds": 18.29700000002049,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.7809999999881256,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 1.0940000000118744,
+      "timeout": false
+    },
+    "actual": {
+      "status": "PASS",
+      "ordinary": true,
+      "models": 2,
+      "P": 2,
+      "C": 16,
+      "N_each": 1,
+      "R_each": 1,
+      "physical_text_roles_each": 13,
+      "physical_mtp_roles_each": 0,
+      "local_cache_limit_each": 65536,
+      "shared_limit": 134217728,
+      "cache_source_bytes_A": 8194,
+      "same_A_local_failure": true,
+      "same_A_aggregate_failure": true,
+      "same_A_retry_success": true,
+      "partial_source_publication": false,
+      "escaped_reader_kept_source_charge": true,
+      "A_last_reader_scope_released": true,
+      "B_continued": true,
+      "A_draw": 1,
+      "B_draw": 3,
+      "B_committed_records": 3,
+      "A_logical_inflight_at_cancel": true,
+      "B_logical_inflight_before_A_teardown": true,
+      "physical_GPU_completion_at_A_teardown": "unknown",
+      "generated_export_second_scope": "not_implemented",
+      "shared_final_baseline": 1184,
+      "B_ids": [
+        33,
+        2,
+        5
+      ]
+    },
+    "stages": [
+      {
+        "stage": "A_cache_retry_success",
+        "live": 4800606,
+        "peak": 134217727,
+        "limit": 134217728
+      },
+      {
+        "stage": "A_last_reader_retired_B_live",
+        "live": 4656140,
+        "peak": 134217727,
+        "limit": 134217728
+      },
+      {
+        "stage": "all_retired",
+        "live": 1184,
+        "peak": 134217727,
+        "limit": 134217728
+      }
+    ],
+    "scope": "Original generated A-only H64/V64/FFN128 BF16 fixture, C16/P2/N1R1 per Model; not original artifact/quality/TPS",
+    "deliberate_pressure": "ResourceBudget::Reservation pressure is accounting/admission credit, not claimed allocated physical memory; the 134217727 peak includes this credit",
+    "local_rejection": "First payload under original local device cap; metadata system row remains locally unlimited on CUDA",
+    "aggregate_rejection": "Shared aggregate leaves one byte; actual failure is batch schema metadata, no claim of a specific bank",
+    "actual_source_delta": 8194,
+    "raw_stdout": {
+      "path": ".scratch/inference-cache-shared-source-20261025/dual-cuda2/run/stdout.log",
+      "bytes": 714,
+      "sha256": "8bb9d93e8f4350a118bf6a2117cddc8178c1699358cce3f13fe7c34d27fa8310"
+    }
+  },
+  "formal_regression_boundary": "Four existing layer TUs strict compiled only. Private 8-case runtime is retained separately; formal ports were not linked/run.",
+  "canonical_integration": {
+    "status": "ROOT_EXACT_INTEGRATION",
+    "paths": 11,
+    "source_map": {
+      "path": ".scratch/inference-cache-shared-source-20261025/integration-source-map.json",
+      "bytes": 6187,
+      "sha256": "7f58e637057a6f6ce7624a83ac7d8b7ee66c2a18095d07ba5d5bd7c393104f12"
+    },
+    "receipt": {
+      "path": ".scratch/inference-cache-shared-source-20261025/root-integration.json",
+      "bytes": 5466,
+      "sha256": "3706699abe22893922bd9d49896a3b2b86a9d9082787cf2a7007334a052313eb"
+    },
+    "actual": {
+      "status": "INTEGRATED_REVIEWED_SOURCE_CACHE_DUAL_CONSTRAINT",
+      "files": [
+        {
+          "path": "include/hyle/compute/resource_leases.h",
+          "bytes": 9640,
+          "before_sha256": "4fcab3c18372d363be917f24b6977bb8e0fce84daa129de1efc58281310ab889",
+          "after_sha256": "9fd35f1e9ec5f10558024f7b856767ab9fe155857a130045555237d27caf297c",
+          "checked_private_raw_sha256": "9fd35f1e9ec5f10558024f7b856767ab9fe155857a130045555237d27caf297c",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "include/hyle/compute/paged_arena.h",
+          "bytes": 14615,
+          "before_sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458",
+          "after_sha256": "86f429778dcd1a183a8e829b36c91df29adfac886c74bb47aef8cf7b4cbb0d58",
+          "checked_private_raw_sha256": "86f429778dcd1a183a8e829b36c91df29adfac886c74bb47aef8cf7b4cbb0d58",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "src/compute/resource_leases.cc",
+          "bytes": 46499,
+          "before_sha256": "456c075f6fdfa6016a8c1159348224d040bcdccbd69d6ae11eac2a0dbdf70c2e",
+          "after_sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d",
+          "checked_private_raw_sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "bytes": 50852,
+          "before_sha256": "95fa8b24e1727d9902778ee34a0a7d3f31d7d8aec053be3c5f10e1ee0b4f0bc6",
+          "after_sha256": "c6712bee219b176d50a67b798ac95b1a3f1ec69c0655af69b24a7952c45cac60",
+          "checked_private_raw_sha256": "c6712bee219b176d50a67b798ac95b1a3f1ec69c0655af69b24a7952c45cac60",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 477057,
+          "before_sha256": "7e810068ce41bfba3dd61ed644fab07d9c033a49deeaec2b085223b997cf0530",
+          "after_sha256": "177628b2d6df809f6bd987cd43841f7ff59d27235c77ae0251480d84f7817a57",
+          "checked_private_raw_sha256": "177628b2d6df809f6bd987cd43841f7ff59d27235c77ae0251480d84f7817a57",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "include/hyle/compute/detail/resource_budget_access.h",
+          "bytes": 4577,
+          "before_sha256": "5c85c53454fc8b12eeff264e362a21f7decb8e925c63a654ab155bfee914669e",
+          "after_sha256": "97945d50241d85e895ff2e0cd0e2dc805865f0c1a470ceabf747d5dcae411e7a",
+          "checked_private_raw_sha256": "97945d50241d85e895ff2e0cd0e2dc805865f0c1a470ceabf747d5dcae411e7a",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "src/compute/resource_budget.cc",
+          "bytes": 23784,
+          "before_sha256": "b5d6fdce4703e30a51be3046cd93480cf7e83bb01a654061bb833aa58ee953bd",
+          "after_sha256": "3047259e2e43032c2017c552b88ca99ba6255f66d7375f939885085738b56e93",
+          "checked_private_raw_sha256": "3047259e2e43032c2017c552b88ca99ba6255f66d7375f939885085738b56e93",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "tests/compute/retained_lease_budget_test.cc",
+          "bytes": 30324,
+          "before_sha256": "77fa247ede4c3a49288c7b1951974949107b6765dedc9751712c4512c56243f5",
+          "after_sha256": "a56756677ec38d9424cc95532df850f163134ae999171996695a6c88068d68bd",
+          "checked_private_raw_sha256": "a56756677ec38d9424cc95532df850f163134ae999171996695a6c88068d68bd",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "tests/compute/shared_backing_budget_test.cc",
+          "bytes": 21404,
+          "before_sha256": "a543c61576ebe87b2f963ba2ef5539d0bec0fc3c900ae6e068bf5b87464a15d1",
+          "after_sha256": "2c402ae4f462d9f33d940affe7d22930a899c33f8ad06e7a2ca70eb5569a8f5f",
+          "checked_private_raw_sha256": "2c402ae4f462d9f33d940affe7d22930a899c33f8ad06e7a2ca70eb5569a8f5f",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "bytes": 48455,
+          "before_sha256": "64d5f589ba19230cb910edea44bf0ecb3e729e214b26c6bbea946209f1ea32e4",
+          "after_sha256": "91fba212f8f892b12ca72b1b6374ffe2394476059044325f26a45411a5b979ce",
+          "checked_private_raw_sha256": "91fba212f8f892b12ca72b1b6374ffe2394476059044325f26a45411a5b979ce",
+          "normalized_source_equal": true
+        },
+        {
+          "path": "tests/graph/executable_test.cc",
+          "bytes": 257652,
+          "before_sha256": "358a99c3e0047ad970f94e66c0c548dd47d5ed231255e7b3025a5e0d0cb37192",
+          "after_sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278",
+          "checked_private_raw_sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278",
+          "normalized_source_equal": true
+        }
+      ],
+      "checked": "Private eight host cases, current atomic main compiled by one CUDA consumer TU, one original C16 dual-Model CUDA process, four formal layer TUs strict compile only.",
+      "root_review": "Both payload gates before actual source allocation; same identity and charge transfer without reservation gap; actual backing release before quota return; known budget allocator unwrapping only; complete cold cache tuple published atomically with schema sentinel last.",
+      "further_build_or_run": false,
+      "remaining": "Generated native output exports still lack the second retention scope. GDN state source call sites compiled but not exercised by this A-only fixture. No whole-model, cross-platform runtime, physical VRAM cap or throughput claim."
+    },
+    "extra_build_or_run": false
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.zip",
+    "bytes": 679591,
+    "sha256": "aca3005899709391d17fc32d19cd8dc6eea3f37fb73e8ecf550f3b4c9b6f719e",
+    "members": 175,
+    "logical_bytes": 3046850,
+    "CRC": true,
+    "member_sha256": true
+  },
+  "cleanup": {
+    "status": "LIST_ONLY_NOT_REMOVED",
+    "files": [
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/tests/unit.obj",
+        "bytes": 1348152,
+        "sha256": "9a9f92304835001b36fcfe2c47fc3d1a98d9cf84682d0ad869a3c1f8586a6594"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/link/checks.exe",
+        "bytes": 21515776,
+        "sha256": "72eb4ab94e4213f18a954ca5a50b21c830c3cd0de8b1dc7cfcfb7ef0ce14e9c4"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/link/checks.exp",
+        "bytes": 24994,
+        "sha256": "2829233b6421ade6109408f633c4505568d57843eb784447b288e22780beaa06"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/link/checks.lib",
+        "bytes": 41560,
+        "sha256": "e3eec625c4d56af921c84bc5bca498fbb2dd363ea9da365d72c9c124867c8b3a"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt1/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt2/tests/unit.obj",
+        "bytes": 1354021,
+        "sha256": "da264bb829c50658ca5dd019cb755491772c203a36ccb865b4707b77a791fc88"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt2/link/checks.exe",
+        "bytes": 21515776,
+        "sha256": "1a15c425badb261a20c82d30d95cd9231f2980bb25afd969ce3da8c5e329e303"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt2/link/checks.exp",
+        "bytes": 24994,
+        "sha256": "48ba3d347d5e07bd6117f82b17f65cf03175834415406c63e70f95f3eb96b40f"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt2/link/checks.lib",
+        "bytes": 41560,
+        "sha256": "e3eec625c4d56af921c84bc5bca498fbb2dd363ea9da365d72c9c124867c8b3a"
+      },
+      {
+        "path": ".scratch/inference-cache-shared-source-20261025/attempt2/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      }
+    ],
+    "logical_bytes": 48585553,
+    "reason": "Superseded failing host fixture objects/images only",
+    "preserve": [
+      "attempt1/{budget,leases,arena}/unit.obj",
+      "attempt3/tests/unit.obj",
+      "attempt3/link/*",
+      "dual-cuda2/compile/unit.obj",
+      "dual-cuda2/link/*"
+    ],
+    "execution": "Root test.ps1 exact preview/Apply required; this script performs no deletion",
+    "snapshot_note": "Original candidate list before root cleanup. See root_cleanup for the actual completed removal."
+  },
+  "root_cleanup": {
+    "performed": true,
+    "files": 10,
+    "logical_bytes": 48585553,
+    "evidence": "archive:root-cleanup/manifest.json",
+    "shared_core_objects_and_original_DLLs_preserved": true,
+    "raw_source_oracle_commands_and_fragments_preserved": true,
+    "physical_bytes_freed_unknown": true
+  },
+  "independent_review": {
+    "status": "NO_ISSUE_FOUND_IN_FINITE_SOURCE_REVIEW",
+    "archive_member": "root-review/independent-review.md",
+    "bytes": 4330,
+    "sha256": "55466c437187c1903924b249c73e2ec0ac3b5238d54533274eb8fe866c95bb48",
+    "new_build_or_run": false
+  }
+}

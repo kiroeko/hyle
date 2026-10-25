@@ -2265,7 +2265,11 @@ public:
     // caller's finite cache limit when they coincide; never replace it with
     // the otherwise independent unlimited metadata-domain entry.
     const auto limit_count = execution.device() == mem::system_resource() ? 1u : 2u;
-    cache_budget = take(c::ResourceBudget::create({.limits = std::span(limits).first(limit_count)}));
+    // This allocator couples only actual CPU metadata. The explicit second
+    // source-factory constraint below separately gates original cache payloads.
+    const auto cache_allocator = allocation_budget ? take(allocation_budget.metadata_allocator()) : mem::system_allocator();
+    cache_budget = take(c::ResourceBudget::create({.limits = std::span(limits).first(limit_count),
+        .allocator = cache_allocator}));
     if (allocation_budget) execution_budget = allocation_budget;
     else if (execution.native_generated_storage() || execution.host_only() || cpu_ffn_layers) {
       // Native checked operations can own staging status/metadata buffers.
@@ -2531,7 +2535,7 @@ public:
       return;
     }
     const auto storage = take(c::CacheStorage::plain(precision.activation_type()));
-    attention_schema = take(c::BatchSchema::create({
+    auto prepared_schema = take(c::BatchSchema::create({
         .storage = c::BatchStorage::kPaged, .query_type = precision.activation_type(),
         .output_type = precision.activation_type(), .key_storage = storage, .value_storage = storage,
         .max_requests = cache_plan.max_requests, .max_query_rows = cache_plan.max_query_rows,
@@ -2539,23 +2543,32 @@ public:
         .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads), .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
         .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth), .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows},
         {.resource_budget = cache_budget}));
-    page_inventory.prepare(cache_plan.max_pages, target_kv_layers);
-    snapshot_versions.capacity = cache_plan.snapshot_slots;
-    for (std::size_t i = 0; i < page_inventory.keys.size(); ++i) {
-      page_inventory.keys[i] = take(c::PagedArena::create(attention_schema, c::BatchCacheRole::kKey,
-          execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}));
-      page_inventory.values[i] = take(c::PagedArena::create(attention_schema, c::BatchCacheRole::kValue,
-          execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}));
+    cache::PageInventory prepared_inventory, prepared_draft;
+    prepared_inventory.prepare(cache_plan.max_pages, target_kv_layers);
+    for (std::size_t i = 0; i < prepared_inventory.keys.size(); ++i) {
+      prepared_inventory.keys[i] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
+          execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
+      prepared_inventory.values[i] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
+          execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
     if (cache_plan.draft_cache) {
-      draft_inventory.prepare(cache_plan.max_pages, 1);
-      draft_inventory.keys[0] = take(c::PagedArena::create(attention_schema, c::BatchCacheRole::kKey,
-          execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}));
-      draft_inventory.values[0] = take(c::PagedArena::create(attention_schema, c::BatchCacheRole::kValue,
-          execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}));
+      prepared_draft.prepare(cache_plan.max_pages, 1);
+      prepared_draft.keys[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
+          execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
+      prepared_draft.values[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
+          execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
-    known_cache_backing_bytes = cache::multiply(cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes),
+    const auto prepared_bytes = cache::multiply(cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes),
         target_kv_layers + (cache_plan.draft_cache ? 1u : 0u));
+    // No PageRef exists until this complete cold source tuple is published.
+    // Leave the schema sentinel invalid on failure so released quota can retry.
+    static_assert(std::is_nothrow_move_assignable_v<cache::PageInventory>);
+    static_assert(std::is_nothrow_move_assignable_v<c::BatchSchema>);
+    page_inventory = std::move(prepared_inventory);
+    draft_inventory = std::move(prepared_draft);
+    known_cache_backing_bytes = prepared_bytes;
+    snapshot_versions.capacity = cache_plan.snapshot_slots;
+    attention_schema = std::move(prepared_schema);
   }
 
   void prepare_state_storage() {
@@ -2578,10 +2591,10 @@ public:
       const auto recurrent_bytes = cache::state_pool_backing_bytes(take(description.recurrent.required_bytes()), recurrent_slots);
       pools.history = take(c::LeasePool::create(execution.device(), history_bytes,
           {.max_blocks = history_slots, .backing_alignment = cache::state_pool_alignment,
-           .resource_budget = cache_budget}));
+           .resource_budget = cache_budget}, allocation_budget));
       pools.recurrent = take(c::LeasePool::create(execution.device(), recurrent_bytes,
           {.max_blocks = recurrent_slots, .backing_alignment = cache::state_pool_alignment,
-           .resource_budget = cache_budget}));
+           .resource_budget = cache_budget}, allocation_budget));
       prepared_bytes = cache::add(prepared_bytes, cache::add(history_bytes, recurrent_bytes));
     }
     if (cache_plan.hidden_bytes) {
@@ -2589,7 +2602,7 @@ public:
       const auto bytes = cache::state_pool_backing_bytes(geometry.hidden_bytes(), slots);
       prepared_hidden = take(c::LeasePool::create(execution.device(), bytes,
           {.max_blocks = slots, .backing_alignment = cache::state_pool_alignment,
-           .resource_budget = cache_budget}));
+           .resource_budget = cache_budget}, allocation_budget));
       prepared_bytes = cache::add(prepared_bytes, bytes);
     }
     const auto usage = take(cache_budget.usage(execution.device()));

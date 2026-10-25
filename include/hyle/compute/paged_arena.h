@@ -39,10 +39,16 @@ public:
   HYLE_COMPUTE_BATCH_API ~PagedArena();
   HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(BatchSchema, BatchCacheRole,
       mem::MemoryResourceRef,PagedArenaOptions) noexcept;
+  // Adds an independent preallocation backing gate to the original pool.
+  // Metadata retains options' explicit allocator/budget contract.
+  HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(BatchSchema, BatchCacheRole,
+      mem::MemoryResourceRef,PagedArenaOptions,const ResourceBudget &additional) noexcept;
   // True U8 [physical_pages,page_rows,encoding.row_bytes()] storage, sharing
   // the original independent page permissions. No attention schema is needed.
   HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(RowCacheBatchSchema,
       mem::MemoryResourceRef,PagedArenaOptions) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<PagedArena> create(RowCacheBatchSchema,
+      mem::MemoryResourceRef,PagedArenaOptions,const ResourceBudget &additional) noexcept;
   bool valid()const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API std::size_t page_bytes()const noexcept;
   // First acquisition is an uninitialized exclusive page. Reuse requires all
@@ -89,7 +95,7 @@ private:
   friend class PagedPageAppender;
   friend struct detail::PagedArenaAccess;
   static Result<PagedArena> create_impl(BatchSchema,BatchCacheRole,
-      mem::MemoryResourceRef,PagedArenaOptions)noexcept;
+      mem::MemoryResourceRef,PagedArenaOptions,const ResourceBudget &additional = {})noexcept;
   Result<PagedArenaRead> read_impl(BatchLayoutVersion,std::span<const ReadLease>)const noexcept;
   Result<PagedArenaRead> reframe_impl(BatchLayoutVersion,
       std::span<const PagedArenaRead>)const noexcept;

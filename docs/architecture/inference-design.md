@@ -110,7 +110,12 @@ CUDA 实际共享 primary context；这个合同依赖各自原资源与 Complet
 沿同一 scope 计量；常量沿原 ready lease 去重。默认不传 scope 时沿原分配路径。
 [两个 Model 的有限检查](../evidence/correctness/inference-shared-known-byte-sources-batch1-2026-10-25.json)
 已覆盖加载拒绝、A 实际退休与 B 继续；FP8／NF4 的新预算路径仅源码接线，不以此代签量化实跑。
-原 `--cache-bytes` 与 cache-only 计量保留为局部约束，cache backing 尚未共同接入跨 Model 总额。
+原 `--cache-bytes` 与 cache-only 计量保留为局部约束。原 `LeasePool`／`PagedArena` 的冷创建可另传共用 scope，
+在实际 backing 分配前同时通过两种限额，并沿原分配身份去重、保留到实际释放；局部 metadata 分配器向共用 scope 计费。
+cache 的 schema、inventory 和完成标记在全部准备成功后一次发布，失败释放额度后可在同一个 Model 重试。
+[有限检查](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)覆盖八项 host、
+原 C16 双 Model CUDA 拒绝／重试及逃逸快照寿命；正式四个原层回归 TU 仅严格编译。
+native 生成状态的结果导出仍只保留局部约束，第二 scope 的留存接线尚未补齐。
 原文件映射、普通 STL 及 opaque 私有存储也仍在此范围外，不能仅设置总额参数便宣称全部受控。
 预算所有权须随 backing 和实际退休延续；raw Buffer 转租约时
 应转移同一实际费用，不能重复计账或先退费再接纳，移动赋值也须先释放旧 backing。

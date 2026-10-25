@@ -57,6 +57,13 @@ struct ResourceBudgetAccess final {
   // storage owner has finished. No new storage or fallible work is introduced.
   static HYLE_COMPUTE_API RetiringBackingReservation
   retire_backing(SharedBackingReservation &) noexcept;
+  // Cold ownership identity only. Unwrap only this implementation's exact
+  // self-retaining metadata allocator callbacks; unknown allocators remain
+  // unchanged and still require their original external owner.
+  static HYLE_COMPUTE_API mem::AllocatorRef
+  original_allocator(mem::AllocatorRef) noexcept;
+  // The actual allocator behind known budget adapters, not the callback that
+  // must be used for freeing the budgeted allocation.
   static HYLE_COMPUTE_API mem::AllocatorRef
   backing_allocator(const ResourceBudget &) noexcept;
   static HYLE_COMPUTE_API mem::AllocatorRef

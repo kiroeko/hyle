@@ -387,3 +387,152 @@ TEST(RetainedLeaseBudget, ConcurrentAliasRetirementUnlinksIdentityButKeepsQuotaT
 }
 
 } // namespace
+
+// Source payload gates and metadata ownership retain their original scopes.
+#include "hyle/mem/buffer.h"
+
+namespace { namespace cache_source_budget {
+namespace c=hyle::compute;
+namespace d=hyle::compute::detail;
+namespace m=hyle::mem;
+std::size_t external(const c::ResourceBudget &b,m::MemoryResourceRef r) {
+  return b.usage(r)->live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+}
+c::ResourceBudget budget(m::MemoryResourceRef resource,std::size_t payload=SIZE_MAX,
+                        m::AllocatorRef allocator=m::system_allocator(),bool shared=false) {
+  const std::array limits{c::ResourceBudgetLimit{resource,payload},c::ResourceBudgetLimit{m::system_resource()}};
+  const auto count=resource==m::system_resource()?1u:2u;
+  const std::array nominated{resource,m::system_resource()};
+  const c::ResourceBudgetOptions options{.limits=std::span(limits).first(count),.allocator=allocator};
+  return shared?c::ResourceBudget::create(options,std::span(nominated).first(count),1u<<20).value()
+               :c::ResourceBudget::create(options).value();
+}
+struct Allocations final {
+  std::size_t calls=0,reallocations=0,frees=0;
+  int remaining=-1;
+  m::AllocatorRef ref() noexcept { return {allocate,free,reallocate,this}; }
+  bool fail() noexcept { if(remaining==0)return true;if(remaining>0)--remaining;return false; }
+  static void *allocate(void *p,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.calls;
+    return s.fail()?nullptr:m::system_allocator().allocate(n,a);
+  }
+  static void free(void *p,void *v,std::size_t n,std::size_t a) noexcept {
+    ++static_cast<Allocations*>(p)->frees;m::system_allocator().deallocate(v,n,a);
+  }
+  static void *reallocate(void *p,void *v,std::size_t old,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.reallocations;
+    return s.fail()?nullptr:m::system_allocator().reallocate(v,old,n,a);
+  }
+};
+class Source final:public m::MemoryResource {
+public:
+  std::size_t allocations=0,free_calls=0,roots=0;
+  bool map_failure=false;
+  Allocations *arm_allocator=nullptr;
+  int fail_after=-1;
+  const c::ResourceBudget *local=nullptr,*shared=nullptr;
+  std::size_t local_at_free=0,shared_at_free=0;
+  bool local_nested=false,shared_nested=false;
+  m::ResourceAllocation actual{};
+  m::MemoryResourceRef ref() noexcept {return m::MemoryResourceRef(*this);}
+  std::string_view name()const noexcept override{return "cache-source-test";}
+  m::MemoryProperties properties()const noexcept override{return m::system_resource().properties();}
+  hyle::Result<m::ResourceAllocation> allocate(std::size_t n,std::size_t a)noexcept override{
+    auto result=m::system_resource().resource().allocate(n,a);
+    if(result){++allocations;actual=*result;roots=1;if(arm_allocator)arm_allocator->remaining=fail_after;}
+    return result;
+  }
+  m::ResourceAllocation alias()noexcept{++roots;return actual;}
+  void deallocate(m::ResourceAllocation value)noexcept override{
+    ++free_calls;
+    if(local){local_at_free=external(*local,ref());local_nested=bool(local->reserve(ref(),value.size));}
+    if(shared){shared_at_free=external(*shared,ref());shared_nested=bool(shared->reserve(ref(),value.size));}
+    if(--roots==0)m::system_resource().resource().deallocate(value);
+  }
+  hyle::Result<m::ResourceHostMapping> map_host(void *h,std::size_t o,std::size_t n,m::HostAccess a)noexcept override{
+    if(map_failure)return std::unexpected(hyle::Status::Unavailable("injected source mapping failure"));
+    return m::system_resource().resource().map_host(h,o,n,a);
+  }
+  hyle::Status unmap_host(void *h,void *t,std::size_t o,std::size_t n,m::HostAccess a)noexcept override{
+    return m::system_resource().resource().unmap_host(h,t,o,n,a);
+  }
+};
+
+TEST(CacheSourceBudget, EitherPayloadGateRejectsBeforeResourceAllocation) {
+  Source source;
+  auto shared=budget(source.ref(),SIZE_MAX,m::system_allocator(),true);
+  auto local=budget(source.ref(),511);
+  const auto shared_base=shared.shared_usage()->live_bytes;
+  EXPECT_FALSE(c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=local},shared));
+  EXPECT_EQ(source.allocations,0u);EXPECT_EQ(external(local,source.ref()),0u);
+  EXPECT_EQ(shared.shared_usage()->live_bytes,shared_base);
+  local=budget(source.ref(),512);
+  const auto available=shared.shared_usage()->limit_bytes-shared.shared_usage()->live_bytes;
+  auto occupied=shared.reserve(source.ref(),available-511);ASSERT_TRUE(occupied);
+  const auto blocked=shared.shared_usage()->live_bytes;
+  EXPECT_FALSE(c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=local},shared));
+  EXPECT_EQ(source.allocations,0u);EXPECT_EQ(external(local,source.ref()),0u);
+  EXPECT_EQ(shared.shared_usage()->live_bytes,blocked);
+}
+
+TEST(CacheSourceBudget, PostAllocationFailuresKeepBothChargesUntilActualFree) {
+  for(const int point:{-1,0,1}){
+    SCOPED_TRACE(point);Allocations allocation;Source source;
+    auto shared=budget(source.ref(),512,allocation.ref(),true);
+    auto local=budget(source.ref(),512,shared.metadata_allocator().value());
+    source.local=&local;source.shared=&shared;
+    const auto local_base=local.usage(m::system_resource())->live_bytes;
+    const auto shared_base=shared.shared_usage()->live_bytes;
+    source.map_failure=point<0;
+    if(point>=0){source.arm_allocator=&allocation;source.fail_after=point;}
+    EXPECT_FALSE(c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=local},shared));
+    EXPECT_EQ(source.allocations,1u);EXPECT_EQ(source.free_calls,1u);
+    EXPECT_EQ(source.local_at_free,512u);EXPECT_EQ(source.shared_at_free,512u);
+    EXPECT_FALSE(source.local_nested);EXPECT_FALSE(source.shared_nested);
+    EXPECT_EQ(external(local,source.ref()),0u);EXPECT_EQ(external(shared,source.ref()),0u);
+    EXPECT_EQ(local.usage(m::system_resource())->live_bytes,local_base);
+    EXPECT_EQ(shared.shared_usage()->live_bytes,shared_base);
+    allocation.remaining=-1;
+  }
+}
+
+TEST(CacheSourceBudget, CanonicalHostAliasAndSubviewsKeepOneChargeAndNoExportAllocation) {
+  Allocations allocation;Source source;
+  auto shared=budget(source.ref(),512,allocation.ref(),true);
+  auto local=budget(source.ref(),512,shared.metadata_allocator().value());
+  auto made=c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=local},shared);ASSERT_TRUE(made);
+  auto pool=std::move(*made);auto writer=pool.allocate(512,16).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{17}).ok());auto ready=writer.publish().value();
+  auto piece=ready.subview(16,32).value();const auto calls=allocation.calls;
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(piece,source.ref(),local).ok());
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(piece,source.ref(),shared).ok());
+  EXPECT_EQ(allocation.calls,calls);EXPECT_EQ(external(local,source.ref()),512u);
+  EXPECT_EQ(external(shared,source.ref()),512u);
+  auto alias_buffer=m::Buffer::adopt(source.ref(),source.alias()).value();
+  auto alias=c::ReadLease::adopt(std::move(alias_buffer)).value();
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(alias,source.ref(),shared).ok());
+  EXPECT_EQ(external(shared,source.ref()),512u);
+  piece.reset();ready.reset();pool={};EXPECT_EQ(external(local,source.ref()),0u);
+  EXPECT_EQ(external(shared,source.ref()),512u); // the other actual wrapper is still live
+  std::array<std::byte,1> byte{};ASSERT_TRUE(alias.view()->subview(0,1)->read(byte).ok());EXPECT_EQ(byte[0],std::byte{17});
+  alias.reset();EXPECT_EQ(external(shared,source.ref()),0u);EXPECT_EQ(source.roots,0u);
+}
+
+TEST(CacheSourceBudget, EmptyAndSameScopesPreserveNaturalSourcePaths) {
+  Source source;auto primary=budget(source.ref(),512);
+  {
+    auto made=c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=primary},primary);
+    ASSERT_TRUE(made);EXPECT_EQ(external(primary,source.ref()),512u);
+  }
+  EXPECT_EQ(external(primary,source.ref()),0u);
+  {
+    auto made=c::LeasePool::create(source.ref(),512,{.max_blocks=1,.resource_budget=primary},{});
+    ASSERT_TRUE(made);EXPECT_EQ(external(primary,source.ref()),512u);
+  }
+  {
+    auto made=c::LeasePool::create(source.ref(),512,{.max_blocks=1},primary);
+    ASSERT_TRUE(made);EXPECT_EQ(external(primary,source.ref()),512u);
+  }
+  EXPECT_EQ(external(primary,source.ref()),0u);EXPECT_EQ(source.roots,0u);
+}
+} } // namespace cache_source_budget

@@ -5292,3 +5292,122 @@ TEST(GraphViewDomain, ColdAllocationFailuresReleaseSharedPlanAndCanRetry) {
 }
 
 } // namespace
+
+// Source payload gates and metadata ownership retain their original scopes.
+#include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/resource_budget_access.h"
+
+namespace { namespace cache_source_budget {
+namespace c=hyle::compute;
+namespace d=hyle::compute::detail;
+namespace m=hyle::mem;
+namespace g=hyle::graph;
+bool same_allocator(m::AllocatorRef a,m::AllocatorRef b) {
+  return a.valid()&&b.valid()&&a.alloc_fn()==b.alloc_fn()&&a.free_fn()==b.free_fn()&&
+      a.realloc_fn()==b.realloc_fn()&&a.state()==b.state();
+}
+std::size_t external(const c::ResourceBudget &b,m::MemoryResourceRef r) {
+  return b.usage(r)->live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+}
+c::ResourceBudget budget(m::MemoryResourceRef resource,std::size_t payload=SIZE_MAX,
+                        m::AllocatorRef allocator=m::system_allocator(),bool shared=false) {
+  const std::array limits{c::ResourceBudgetLimit{resource,payload},c::ResourceBudgetLimit{m::system_resource()}};
+  const auto count=resource==m::system_resource()?1u:2u;
+  const std::array nominated{resource,m::system_resource()};
+  const c::ResourceBudgetOptions options{.limits=std::span(limits).first(count),.allocator=allocator};
+  return shared?c::ResourceBudget::create(options,std::span(nominated).first(count),1u<<20).value()
+               :c::ResourceBudget::create(options).value();
+}
+struct Allocations final {
+  std::size_t calls=0,reallocations=0,frees=0;
+  int remaining=-1;
+  m::AllocatorRef ref() noexcept { return {allocate,free,reallocate,this}; }
+  bool fail() noexcept { if(remaining==0)return true;if(remaining>0)--remaining;return false; }
+  static void *allocate(void *p,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.calls;
+    return s.fail()?nullptr:m::system_allocator().allocate(n,a);
+  }
+  static void free(void *p,void *v,std::size_t n,std::size_t a) noexcept {
+    ++static_cast<Allocations*>(p)->frees;m::system_allocator().deallocate(v,n,a);
+  }
+  static void *reallocate(void *p,void *v,std::size_t old,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.reallocations;
+    return s.fail()?nullptr:m::system_allocator().reallocate(v,old,n,a);
+  }
+};
+struct ConstantGraph final {
+  g::Graph graph;
+  g::ConstantBinding binding;
+  g::ValueId input;
+  c::TensorDesc description;
+};
+ConstantGraph constant_graph(const c::ReadLease &ready) {
+  const auto desc=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{4}).value();
+  auto builder=g::GraphBuilder::create().value();const auto port=builder.constant(desc).value();
+  const auto input=builder.input(desc).value();
+  const auto output=builder.add(c::Unary{c::UnaryKind::kNeg},input).value();
+  EXPECT_TRUE(builder.publish(port).ok());EXPECT_TRUE(builder.publish(output).ok());
+  auto graph=std::move(builder).finish().value();
+  const g::ConstantBinding binding{.value=port,.tensor=ready.tensor(desc).value(),.lease=ready};
+  return {std::move(graph),binding,input,desc};
+}
+
+TEST(CacheSourceBudget, SameReadyLeasePreparesTwiceAcrossChargeAdoptionAndNestedMetadata) {
+  auto context=g::test::cpu_context().value();
+  auto queue=context.create_queue().value();
+  for(const bool nested:{false,true}){
+    SCOPED_TRACE(nested);auto shared=budget(m::system_resource(),1u<<20);
+    auto local=budget(m::system_resource(),1u<<20,nested?shared.metadata_allocator().value():m::system_allocator());
+    auto pool=c::LeasePool::create(m::system_resource(),16,{.max_blocks=1,.resource_budget=local}).value();
+    auto writer=pool.allocate(16,16).value();ASSERT_TRUE(writer.view()->fill(std::byte{}).ok());
+    auto ready=writer.publish().value();auto fixture=constant_graph(ready);
+    // A true input/source-alias output exports this original allocation. It
+    // has no constant/input overlap, extra writer, or unrelated payload.
+    auto builder=g::GraphBuilder::create().value();
+    const auto input=builder.input(fixture.description).value();ASSERT_TRUE(builder.publish(input).ok());
+    auto source_graph=std::move(builder).finish().value();
+    auto first=g::compile(source_graph,context);ASSERT_TRUE(first)<<first.error().message();
+    auto run=first->executable.create_invocation().value();
+    ASSERT_TRUE(run.prepare_resources({.resource_budget=local}).ok());
+    const auto bound=run.bind(input,fixture.description,ready);
+    ASSERT_TRUE(bound.ok())<<bound.message();
+    std::vector<g::QueueBinding> queues;
+    for(std::size_t lane=0;lane<first->report.lane_count();++lane){
+      const auto facts=first->report.lane(lane).value();
+      if(facts.queue_required)queues.push_back({facts.lane,&queue});
+    }
+    ASSERT_TRUE(run.prepare_replay(queues,{.mode=g::ReplayMode::kCommands}).ok());
+    auto done=run.submit(queues).value();ASSERT_TRUE(done.wait().ok());
+    auto output=run.result(input).value();
+    // Bind only borrows/stores the input. This actual Graph result export is
+    // the admission that consumes the initial source reservation.
+    auto exported=output.storage_lease(local);ASSERT_TRUE(exported)<<exported.error().message();
+    EXPECT_EQ(d::LeaseAccess::identity(*exported),d::LeaseAccess::identity(ready));
+    EXPECT_EQ(external(local,m::system_resource()),16u);
+    EXPECT_TRUE(same_allocator(d::LeaseAccess::metadata_backing_allocator(ready),m::system_allocator()));
+    auto second=g::compile(fixture.graph,context,{.constants=std::span(&fixture.binding,1)});ASSERT_TRUE(second)<<second.error().message();
+    auto again=second->executable.create_invocation().value();
+    ASSERT_TRUE(again.prepare_resources({.resource_budget=local}).ok());
+    auto other_pool=c::LeasePool::create(m::system_resource(),16,{.max_blocks=1}).value();
+    auto other_writer=other_pool.allocate(16,16).value();ASSERT_TRUE(other_writer.view()->fill(std::byte{}).ok());
+    auto other=other_writer.publish().value();
+    const auto rebound=again.bind(fixture.input,fixture.description,other);
+    ASSERT_TRUE(rebound.ok())<<rebound.message();
+  }
+}
+
+TEST(CacheSourceBudget, UnknownAllocatorStillRequiresItsActualOwner) {
+  Allocations allocation;auto local=budget(m::system_resource(),1u<<20,allocation.ref());
+  auto pool=c::LeasePool::create(m::system_resource(),16,{.max_blocks=1,.resource_budget=local}).value();
+  auto writer=pool.allocate(16,16).value();ASSERT_TRUE(writer.view()->fill(std::byte{}).ok());
+  auto ready=writer.publish().value();auto fixture=constant_graph(ready);
+  auto context=g::test::cpu_context().value();
+  EXPECT_TRUE(same_allocator(d::ResourceBudgetAccess::original_allocator(allocation.ref()),allocation.ref()));
+  auto first=g::compile(fixture.graph,context,{.constants=std::span(&fixture.binding,1)});ASSERT_FALSE(first);
+  EXPECT_TRUE(first.error().IsInvalidArgument());
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(ready,m::system_resource(),local).ok());
+  EXPECT_TRUE(same_allocator(d::LeaseAccess::metadata_backing_allocator(ready),allocation.ref()));
+  auto second=g::compile(fixture.graph,context,{.constants=std::span(&fixture.binding,1)});ASSERT_FALSE(second);
+  EXPECT_TRUE(second.error().IsInvalidArgument());
+}
+} } // namespace cache_source_budget

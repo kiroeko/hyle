@@ -334,3 +334,60 @@ TEST(SharedBackingBudget, ActiveSiblingsKeepLookupAndRetiredRecordCannotUnlinkNe
 }
 
 } // namespace
+
+// Source payload gates and metadata ownership retain their original scopes.
+
+namespace { namespace cache_source_budget {
+namespace c=hyle::compute;
+namespace d=hyle::compute::detail;
+namespace m=hyle::mem;
+std::size_t external(const c::ResourceBudget &b,m::MemoryResourceRef r) {
+  return b.usage(r)->live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+}
+c::ResourceBudget budget(m::MemoryResourceRef resource,std::size_t payload=SIZE_MAX,
+                        m::AllocatorRef allocator=m::system_allocator(),bool shared=false) {
+  const std::array limits{c::ResourceBudgetLimit{resource,payload},c::ResourceBudgetLimit{m::system_resource()}};
+  const auto count=resource==m::system_resource()?1u:2u;
+  const std::array nominated{resource,m::system_resource()};
+  const c::ResourceBudgetOptions options{.limits=std::span(limits).first(count),.allocator=allocator};
+  return shared?c::ResourceBudget::create(options,std::span(nominated).first(count),1u<<20).value()
+               :c::ResourceBudget::create(options).value();
+}
+struct Allocations final {
+  std::size_t calls=0,reallocations=0,frees=0;
+  int remaining=-1;
+  m::AllocatorRef ref() noexcept { return {allocate,free,reallocate,this}; }
+  bool fail() noexcept { if(remaining==0)return true;if(remaining>0)--remaining;return false; }
+  static void *allocate(void *p,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.calls;
+    return s.fail()?nullptr:m::system_allocator().allocate(n,a);
+  }
+  static void free(void *p,void *v,std::size_t n,std::size_t a) noexcept {
+    ++static_cast<Allocations*>(p)->frees;m::system_allocator().deallocate(v,n,a);
+  }
+  static void *reallocate(void *p,void *v,std::size_t old,std::size_t n,std::size_t a) noexcept {
+    auto &s=*static_cast<Allocations*>(p);++s.reallocations;
+    return s.fail()?nullptr:m::system_allocator().reallocate(v,old,n,a);
+  }
+};
+TEST(CacheSourceBudget, NestedMetadataGrowthRejectsAndRollsBackBothScopes) {
+  Allocations allocation;
+  auto shared=budget(m::system_resource(),SIZE_MAX,allocation.ref(),true);
+  auto local=budget(m::system_resource(),SIZE_MAX,shared.metadata_allocator().value());
+  auto allocator=local.metadata_allocator().value();const auto local_base=local.usage(m::system_resource())->live_bytes;
+  const auto shared_base=shared.shared_usage()->live_bytes;
+  void *p=allocator.allocate(32,16);ASSERT_NE(p,nullptr);
+  EXPECT_EQ(local.usage(m::system_resource())->live_bytes,local_base+32);
+  EXPECT_EQ(shared.shared_usage()->live_bytes,shared_base+32);
+  auto occupied=shared.reserve(m::system_resource(),shared.shared_usage()->limit_bytes-shared.shared_usage()->live_bytes);ASSERT_TRUE(occupied);
+  const auto calls=allocation.reallocations;
+  EXPECT_EQ(allocator.reallocate(p,32,64,16),nullptr);
+  EXPECT_EQ(allocation.reallocations,calls);EXPECT_EQ(local.usage(m::system_resource())->live_bytes,local_base+32);
+  occupied->reset();p=allocator.reallocate(p,32,16,16);ASSERT_NE(p,nullptr);
+  EXPECT_EQ(local.usage(m::system_resource())->live_bytes,local_base+16);
+  EXPECT_EQ(shared.shared_usage()->live_bytes,shared_base+16);
+  allocator.deallocate(p,16,16);
+  EXPECT_EQ(local.usage(m::system_resource())->live_bytes,local_base);
+  EXPECT_EQ(shared.shared_usage()->live_bytes,shared_base);
+}
+} } // namespace cache_source_budget

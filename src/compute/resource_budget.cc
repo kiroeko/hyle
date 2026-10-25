@@ -211,11 +211,11 @@ detail::RetiringBackingReservation detail::ResourceBudgetAccess::retire_backing(
 }
 mem::AllocatorRef detail::ResourceBudgetAccess::backing_allocator(
     const ResourceBudget &budget) noexcept {
-  return budget.state_ ? budget.state_->allocator : mem::AllocatorRef{};
+  return budget.state_ ? original_allocator(budget.state_->allocator) : mem::AllocatorRef{};
 }
 mem::AllocatorRef detail::ResourceBudgetAccess::backing_allocator(
     const ResourceBudget::Reservation &reservation) noexcept {
-  return reservation.state_ ? reservation.state_->allocator : mem::AllocatorRef{};
+  return reservation.state_ ? original_allocator(reservation.state_->allocator) : mem::AllocatorRef{};
 }
 bool detail::ResourceBudgetAccess::same_scope(const ResourceBudget::Reservation &reservation,
                                              const ResourceBudget &budget) noexcept {
@@ -281,6 +281,19 @@ void *reallocate(void *opaque, void *p, std::size_t old_bytes,
   return result;
 }
 } // namespace
+
+mem::AllocatorRef detail::ResourceBudgetAccess::original_allocator(mem::AllocatorRef selected) noexcept {
+  // These callbacks alone prove the private ResourceBudgetRow state type.
+  // Every actual allocation through them retains its own scope until free.
+  // No inference is made about any third-party allocator decorator.
+  while (selected.valid() && selected.alloc_fn() == allocate &&
+         selected.free_fn() == deallocate && selected.realloc_fn() == reallocate) {
+    const auto *row = static_cast<const detail::ResourceBudgetRow *>(selected.state());
+    HYLE_FATAL_ASSERT(row && row->owner);
+    selected = row->owner->allocator;
+  }
+  return selected;
+}
 
 ResourceBudget::Reservation::Reservation(detail::ResourceBudgetState *state,
     mem::QuotaAllocator::Reservation charge, bool unknown, std::size_t row,

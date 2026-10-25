@@ -130,10 +130,21 @@ Result<PagedArena> PagedArena::create(BatchSchema schema,BatchCacheRole role,mem
     return std::unexpected(Status::InvalidArgument("row cache arena requires its typed factory"));
   return create_impl(std::move(schema),role,resource,std::move(options));
 }
+Result<PagedArena> PagedArena::create(BatchSchema schema,BatchCacheRole role,mem::MemoryResourceRef resource,
+    PagedArenaOptions options,const ResourceBudget &additional)noexcept{
+  if(detail::BatchLayoutAccess::is_row_cache(schema) || role==BatchCacheRole::kRow)
+    return std::unexpected(Status::InvalidArgument("row cache arena requires its typed factory"));
+  return create_impl(std::move(schema),role,resource,std::move(options),additional);
+}
 Result<PagedArena> PagedArena::create(RowCacheBatchSchema schema,mem::MemoryResourceRef resource,PagedArenaOptions options)noexcept{
   return create_impl(detail::BatchLayoutAccess::owner(schema),BatchCacheRole::kRow,resource,std::move(options));
 }
-Result<PagedArena> PagedArena::create_impl(BatchSchema schema,BatchCacheRole role,mem::MemoryResourceRef resource,PagedArenaOptions options)noexcept{
+Result<PagedArena> PagedArena::create(RowCacheBatchSchema schema,mem::MemoryResourceRef resource,
+    PagedArenaOptions options,const ResourceBudget &additional)noexcept{
+  return create_impl(detail::BatchLayoutAccess::owner(schema),BatchCacheRole::kRow,resource,std::move(options),additional);
+}
+Result<PagedArena> PagedArena::create_impl(BatchSchema schema,BatchCacheRole role,mem::MemoryResourceRef resource,
+    PagedArenaOptions options,const ResourceBudget &additional)noexcept{
   const auto cap=detail::BatchLayoutAccess::geometry(schema);
   if(!schema.valid() || cap.storage!=BatchStorage::kPaged || !resource.valid() || !options.allocator.valid() || !options.max_backing_bytes)
     return std::unexpected(Status::InvalidArgument("paged arena schema/resource/byte capacity is invalid"));
@@ -159,7 +170,7 @@ Result<PagedArena> PagedArena::create_impl(BatchSchema schema,BatchCacheRole rol
   auto*p=a.construct<detail::PagedArenaData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("paged arena metadata"));PagedArena result(p);p->page_bytes=page_bytes;p->description=description;p->role=role;
   try{p->slots.resize(cap.max_pages);}catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("paged arena fixed page slots"));}
   const auto alignment=std::max<std::size_t>(64,resource.properties().minimum_alignment);
-  HYLE_ASSIGN_OR_RETURN(auto pool,LeasePool::create(resource,bytes+1,{.max_blocks=cap.max_pages+1,.backing_alignment=alignment,.allocator=a,.resource_budget=p->options.resource_budget}));
+  HYLE_ASSIGN_OR_RETURN(auto pool,LeasePool::create(resource,bytes+1,{.max_blocks=cap.max_pages+1,.backing_alignment=alignment,.allocator=a,.resource_budget=p->options.resource_budget},additional));
   HYLE_ASSIGN_OR_RETURN(auto span,detail::LeaseAccess::backing_span(pool));HYLE_ASSIGN_OR_RETURN(p->span,span.subview(0,bytes));
   for(auto&slot:p->slots){HYLE_ASSIGN_OR_RETURN(slot.writer,pool.allocate(page_bytes,1));slot.identity=detail::LeaseAccess::identity(slot.writer);slot.generation=slot.writer.generation();}
   HYLE_ASSIGN_OR_RETURN(p->sentinel,pool.allocate(1,1));

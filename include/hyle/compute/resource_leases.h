@@ -120,6 +120,13 @@ public:
   HYLE_COMPUTE_API static Result<LeasePool>
   create(mem::MemoryResourceRef resource, std::size_t capacity_bytes,
          LeasePoolOptions options = {}) noexcept;
+  // Additional flat backing constraint, admitted before the actual resource
+  // allocation and deduplicated by the original allocation identity. Metadata
+  // keeps options' allocator/budget contract; this adds no allocator ownership.
+  // An empty or identical scope adds no second payload reservation.
+  HYLE_COMPUTE_API static Result<LeasePool>
+  create(mem::MemoryResourceRef resource, std::size_t capacity_bytes,
+         LeasePoolOptions options, const ResourceBudget &additional) noexcept;
   // Owns the existing allocation on success only. Its actual size/alignment
   // are authoritative; options.backing_alignment applies only to create().
   // Existing borrowed aliases must obey this pool's exclusive-write protocol.

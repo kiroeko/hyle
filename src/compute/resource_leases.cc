@@ -126,17 +126,7 @@ Status LeaseAccess::set_retained_backing(ReadLease &lease,
   domain.retained_offset = backing_offset;
   return Status::Ok();
 }
-Status LeaseAccess::retain_budget(ReadLease &lease, mem::MemoryResourceRef nominated,
-                                 const ResourceBudget &budget) noexcept {
-  if (!budget.valid()) return Status::Ok();
-  if (!lease.valid() || !nominated.valid())
-    return Status::InvalidArgument("retained result budget requires an owned lease and admitted resource");
-  auto &domain = *lease.block_->domain;
-  {
-    std::lock_guard guard(domain.lock);
-    for (const auto &retained : domain.retained)
-      if (retained.resource == nominated && retained.charge.same_scope(budget)) return Status::Ok();
-  }
+static Result<BackingIdentity> original_backing_identity(LeaseDomain &domain) noexcept {
   // An opaque provider token is not a cross-wrapper physical identity. Only
   // the explicit stable-host-address contract permits merging independent
   // domains here; mapping grants no new public permission to the full buffer.
@@ -148,8 +138,22 @@ Status LeaseAccess::retain_budget(ReadLease &lease, mem::MemoryResourceRef nomin
     identity = {&retained_host_address_authority, mapped.data};
     HYLE_RETURN_IF_ERROR(actual.resource().unmap_host(domain.backing.native_handle(), mapped.token,
         0, domain.backing.size(), mem::HostAccess::kRead));
-    if (!identity.value) return Status::Internal("retained backing has no promised canonical address");
+    if (!identity.value) return std::unexpected(Status::Internal("retained backing has no promised canonical address"));
   }
+  return identity;
+}
+Status LeaseAccess::retain_budget(ReadLease &lease, mem::MemoryResourceRef nominated,
+                                 const ResourceBudget &budget) noexcept {
+  if (!budget.valid()) return Status::Ok();
+  if (!lease.valid() || !nominated.valid())
+    return Status::InvalidArgument("retained result budget requires an owned lease and admitted resource");
+  auto &domain = *lease.block_->domain;
+  {
+    std::lock_guard guard(domain.lock);
+    for (const auto &retained : domain.retained)
+      if (retained.resource == nominated && retained.charge.same_scope(budget)) return Status::Ok();
+  }
+  HYLE_ASSIGN_OR_RETURN(auto identity, original_backing_identity(domain));
   std::lock_guard guard(domain.lock);
   for (const auto &retained : domain.retained)
     if (retained.resource == nominated && retained.charge.same_scope(budget)) return Status::Ok();
@@ -175,8 +179,10 @@ mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
     const ReadLease &lease) noexcept {
   if (!lease.block_) return {};
   const auto *domain = lease.block_->domain;
-  const auto backing = ResourceBudgetAccess::backing_allocator(domain->charge);
-  return backing.valid() ? backing : domain->allocator;
+  // The allocator is stable and its actual Domain allocation retains every
+  // known budget scope through this cold ownership query. Do not depend on
+  // the primary payload charge, which can already have been adopted.
+  return ResourceBudgetAccess::original_allocator(domain->allocator);
 }
 bool LeaseAccess::unique_read_owner(const ReadLease &lease) noexcept {
   if (!lease.block_) return false;
@@ -795,6 +801,41 @@ Result<LeasePool> LeasePool::create(mem::MemoryResourceRef resource, std::size_t
   LeasePool result(state);
   HYLE_ASSIGN_OR_RETURN(state->backing, mem::Buffer::create(resource, capacity, options.backing_alignment));
   return result;
+}
+Result<LeasePool> LeasePool::create(mem::MemoryResourceRef resource, std::size_t capacity,
+    LeasePoolOptions options, const ResourceBudget &additional) noexcept {
+  if (!additional.valid()) return create(resource, capacity, std::move(options));
+  // This pending charge must outlive root on every failure after allocation.
+  // Successful adoption moves it into root's original retirement chain.
+  ResourceBudget::Reservation secondary;
+  HYLE_ASSIGN_OR_RETURN(auto *state, detail::prepare_lease_domain(resource, capacity,
+      options.backing_alignment, options));
+  LeasePool root(state);
+  if (detail::ResourceBudgetAccess::same_scope(state->charge, additional)) {
+    HYLE_ASSIGN_OR_RETURN(state->backing, mem::Buffer::create(resource, capacity, options.backing_alignment));
+    return root;
+  }
+  HYLE_ASSIGN_OR_RETURN(secondary, additional.reserve(resource, capacity));
+  const auto entries = options.resource_budget.valid() ? 2u : 1u;
+  if (!state->retained.try_reserve(entries))
+    return std::unexpected(Status::ResourceExhausted("additional backing constraint metadata"));
+  HYLE_ASSIGN_OR_RETURN(state->backing, mem::Buffer::create(resource, capacity, options.backing_alignment));
+  // A real host allocation must use the same address identity as independent
+  // readonly wrappers. Do not publish a provisional Domain key then change it.
+  HYLE_ASSIGN_OR_RETURN(auto identity, detail::original_backing_identity(*state));
+  const auto attach = [&](const ResourceBudget &budget,
+                          ResourceBudget::Reservation &pending) noexcept -> Status {
+    HYLE_ASSIGN_OR_RETURN(auto token, detail::ResourceBudgetAccess::adopt_backing(
+        budget, resource, identity, capacity, pending));
+    // Already-reserved storage makes this immediate publication nonfallible;
+    // no local successful token can retire before root's actual Buffer.
+    HYLE_FATAL_ASSERT(state->retained.try_push_back(
+        detail::RetainedBacking{resource, std::move(token), {}}));
+    return Status::Ok();
+  };
+  if (options.resource_budget.valid()) HYLE_RETURN_IF_ERROR(attach(options.resource_budget, state->charge));
+  HYLE_RETURN_IF_ERROR(attach(additional, secondary));
+  return root;
 }
 Result<LeasePool> LeasePool::adopt(mem::Buffer &&backing, LeasePoolOptions options) noexcept {
   if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
