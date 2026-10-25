@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 19:24（北京时间）。整体暂估 **71%**。已补Qwen GGUF NVFP4与BF16冷导入；最新12项Python测试、13,570项C++元数据断言通过，未改变计算路径与精度策略。DeepSeek四组正式版主GGUF已由本地缓存核定角色类型，无需下载。正在复审普通推理／多会话／多请求的实际剩余功能与架构边界；稳定MTP状态IO需额外搬运和存储，离线录制15→5尚无新GPU或测速结论。
+更新：2026-10-25 19:50（北京时间）。整体暂估 **71%**。GGUF NVFP4／BF16冷导入已补，compact E4 MLA编码→单bank追加→reader首次有限CPU组合通过；本批不改性能基线。反向复审仍保留CT BF16 block128原参数连接、选定混合／专家冷组合及可控logits提交前边界，不能宣布功能／架构收口。当前并行推进下表三项；无新下载或GPU测速。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
@@ -16,6 +16,10 @@
     - NF4 原压缩权重驻留投影：100%
     - 选定 MLX affine 普通绑定与有限组件：100%
     - CT asymmetric INT4 原投影角色与零点接线：100%
+    - CT BF16 block128 原参数／冷绑定：约 25%
+    - 选定混合角色／专家bank冷组合：约 25%
+    - 可控logits的自然提交前边界：约 10%
+    - compact E4 MLA编码追加组合：100%
     - 解码／激活／计算／缓存精度合同：约 75%
     - 普通 E4 KV 冷绑定与分页写入：100%
     - Q8 KV 编码到分页追加的公共链路：100%
@@ -100,16 +104,17 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 三块功能／架构剩余项复审 | 功能／架构 | 将实际未实现与原payload、整模型及平台未运行分清，核调度、隔离和恢复的共用机制 | 约 50% |
-| GLM compact cache源边界收敛 | 功能／源解释 | 核精确制品能否定义compact布局与scale，明确显式底层API与引擎政策边界 | 约 50% |
+| CT BF16 block128原参数／冷接线 | 功能／量化 | 正在实现共用冷数学片段，旧fixture和原header／span角色共用；保原BF16中间舍入 | 约 25% |
+| Quark excluded普通角色核定 | 功能／源合同 | 从已有缓存核attention／shared／head的真实类型与reader，不能由忽略配置猜精度 | 约 15% |
+| Kimi CT INT4独立专家冷组合 | 功能／专家bank | 原Q／shape／SF角色与选中bank同代绑定，保BF16 storepoint；原数值资格另列 | 约 15% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-功能阶段的[剩余项分类](../evidence/research/inference-remaining-review-2026-10-25.json)是前一快照，后续独审已发现上述GGUF冷拒绝；不能沿用其“零已确认待实现缺项”代表当前。原制品／整模型、平台组合与真实native故障的未运行范围仍单列。百分比余量不能直接换算为缺失功能数量。
+功能阶段的[剩余项分类](../evidence/research/inference-remaining-review-2026-10-25.json)是前一快照；后续GGUF冷拒绝已修，最新[反向复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)仍确认CT数学入口和混合／专家冷组合未闭，不能沿用旧“零已确认待实现缺项”。原制品／整模型、平台组合与真实native故障的未运行范围仍单列。百分比余量不能直接换算为缺失功能数量。
 
-最新依据：[GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)、[DeepSeek GA主目录](../evidence/research/deepseek-ga-gguf-inventory-2026-10-25.json)、[GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)、[33项量化合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)、[MTP状态IO离线反事实](../evidence/performance/mtp-state-io-offline-2026-10-25.json)、[状态／请求合同后续复审](../evidence/research/inference-contract-followup-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
+最新依据：[compact E4 MLA生产链](../evidence/correctness/compact-mla-e4-producer-2026-10-25.json)、[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)、[GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)、[GLM cache边界](../evidence/research/glm-compact-cache-boundary-2026-10-25.json)、[DeepSeek GA主目录](../evidence/research/deepseek-ga-gguf-inventory-2026-10-25.json)、[GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)、[33项量化合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)、[MTP状态IO离线反事实](../evidence/performance/mtp-state-io-offline-2026-10-25.json)、[状态／请求合同后续复审](../evidence/research/inference-contract-followup-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

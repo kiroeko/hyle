@@ -1,0 +1,265 @@
+{
+  "status": "RESOLVED_LIBRARY_BOUNDARY_EXPLICIT_ENGINE_POLICY_NOT_AN_UNSPECIFIED_COMPACT_PRIMITIVE_GAP",
+  "date": "2026-10-25",
+  "profiles": [
+    28,
+    29
+  ],
+  "execution": {
+    "network": 0,
+    "downloads": 0,
+    "builds": 0,
+    "model_or_GPU_processes": 0,
+    "canonical_edits": 0
+  },
+  "decision": [
+    "Do not retain exact ModelOpt compact cache as one undifferentiated unfinished foundation feature. Three separate questions have different outcomes: raw compact storage/API exists; selecting its dtype/scale/backend is engine policy; exact exporter/runtime equivalence is artifact qualification.",
+    "The weight artifact and static FP8 kv_cache_scheme do not prescribe one compact cache byte ABI. An engine can explicitly select existing plain BF16 compact storage or a declared uniform E4 cache policy without changing weight precision identity. It must not infer that policy from NVFP4/FP8 labels or silently use unrelated checkpoint scalars.",
+    "For an engine-selected uniform E4 raw CKV512(+KPE64) policy, existing MlaBatchCapacity+CacheStorage.float8(shared_scale), CacheEncode and PagedAppend(role=kMla)/MLA reader express the storage/update/read boundary. No new registry, owner, default cache inference or arithmetic operator is justified by catalog28/29 alone.",
+    "Scaled DSA656/528 is a genuinely distinct optional codec/producer-reader adaptation not represented by uniform CacheStorage or the Hyle584B RowCache. It is not required by the pinned catalog29 TRTLLM command; catalog28 does not choose it. Only an explicitly selected scaled-DSA policy would turn it into this engine adapter requirement."
+  ],
+  "source_determination": {
+    "config": {
+      "28": {
+        "source": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/28/config.json",
+          "bytes": 24476,
+          "sha256": "b0b6b9ab922a82e3688bc39a4117bc443e106fcf88969ef48b3627778f4bdf7b"
+        },
+        "kv_cache_scheme": {
+          "dynamic": false,
+          "num_bits": 8,
+          "type": "float"
+        },
+        "producer": {
+          "name": "modelopt",
+          "version": "0.0.0"
+        }
+      },
+      "29": {
+        "source": {
+          "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/config.json",
+          "bytes": 16770,
+          "sha256": "41db2811023b40ba4c8f8bbba88bce7dff377af51ecd18b32469a2a07064ebaf"
+        },
+        "kv_cache_scheme": {
+          "dynamic": false,
+          "num_bits": 8,
+          "type": "float"
+        },
+        "producer": {
+          "name": "modelopt",
+          "version": "0.47.0.dev393+ga4bc45b30.d20260828"
+        }
+      }
+    },
+    "profile28": {
+      "repository": "nvidia/GLM-5.3-NVFP4",
+      "revision": "e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+      "readme": {
+        "archive": "docs/evidence/research/model-quantization-discovery-2026-10-19.zip",
+        "member": "deepseek-glm/nvidia--GLM-5.3-NVFP4/README.md",
+        "bytes": 9713,
+        "sha256": "ad92e9748e5b307e01acf359ec59f9f47d0d2c69f6f3eb77822da32ee571058c",
+        "line": 110
+      },
+      "fact": "README uses lmsysorg/sglang:latest and modelopt_fp4, with no KV dtype or DSA backend selection. There is no unique publisher raw-E4 or scaled-DSA default to implement from this command."
+    },
+    "profile29": {
+      "repository": "nvidia/GLM-5.3-Flash-NVFP4",
+      "revision": "da920bb0b9f4a06727223a349e55468e38352348",
+      "readme": {
+        "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/README.md",
+        "bytes": 10235,
+        "sha256": "b592c5b0a0dc5e3c94f62b743ee6ae7a4205bb4d7c94ccefc211b5a56ca48f17"
+      },
+      "fact": "README explicitly chooses SGLang fp8_e4m3 and both trtllm DSA backends; vLLM example says fp8 but its image/backend choices still affect the layout. These are serving policy declarations, not static tensor packing metadata."
+    },
+    "fixed_runtime_mechanism": {
+      "sglang_commit": "82ac83a8d0ab50ea7c9fe8e5b5934c2fa5a224bf",
+      "vllm_commit": "7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+      "raw": "SGLang calculate_mla_kv_cache_dim returns kv_lora_rank+qk_rope_head_dim for actual TRTLLM selection. The raw writer casts the latent and any nonempty RoPE tail to E4, without embedded token scales. GLM Pro is512+64=576B; Flash NoPE is512B. Hyle shares the same CKV bank as V prefix.",
+      "scaled": "Other DSA paths add four F32 group128 scales to512 E4 CKV and keep optional64 RoPE values BF16:656B or528B NoPE. vLLM canonicalization explicitly rewrites the generic fp8 request to fp8_ds_mla for selected backends, proving the generic dtype label is insufficient.",
+      "age": "These are exact cached source snapshots read now, not a claim about latest upstream or the publisher unpinned Docker image."
+    },
+    "producer_math": "Pinned ModelOpt4956213 hook quantizes already-expanded key_states/value_states at the HF attention interface. The HF reference expands latent with kv_b_proj/expand_kv before cache update. Linear expansion followed by QDQ does not generally commute with quantizing the latent, so expanded K/V calibration may not be attached to raw CKV."
+  },
+  "current_library_boundary": {
+    "supported_explicit": "MlaBatchCapacity independently chooses Q/Y type,512 or576 compact geometry and one CacheStorage. That shared interpretation governs K/QK and V/PV; ordinary independent K/V scalar pairs are deliberately not accepted as the same compact bank.",
+    "writer_connection_source": "Current PagedAppend explicitly accepts kMla only with an MLA schema and uses its canonical single-row carrier. CacheEncode accepts the same explicit E4 CacheStorage. Source permits one encoded latent row -> original append transaction -> original typed MLA reader without a second cache owner; this report does not claim the entire composed native journey was executed.",
+    "existing_numerical_evidence": "Original compact_mla_e4_fixture reader cases use caller-supplied shared scales,512/576 geometry, two slots/epochs and old result/page authority. Earlier four-backend qualification is cited by compact-mla-e4-reference-2026-10-21.json, not rerun here.",
+    "unrepresented_optional_format": "CacheStorage currently describes plain F16/BF16/F32/E4 fixed scalar or Q8_0. RowCacheEncoding.float8_block64_tail64 is584B and explicitly Hyle-specific; neither is a reinterpretation of group128/F32-scale DSA656/528."
+  },
+  "missing_facts_not_missing_primitives": [
+    "Exact ModelOpt29 a4bc45b30 exporter source is absent from retained producer record; current turn did not query for it. Profile28 producer version0.0.0 is insufficient to identify an exporter.",
+    "Sampled header scale-key absence does not prove every original shard has no scalar. No authenticated compact scalar operand or complete publisher container/backend revision has been established.",
+    "Even with shared scale1 explicitly chosen by an engine, Hyle SATFINITE/nonfinite-publication contract and each native cast/query-quantization/accumulation tree are not automatically byte/quality equivalent to publisher serving. Nonunit expanded K/V scales especially cannot be guessed into compact storage.",
+    "Full-artifact cache-policy binding, numeric quality and throughput are unverified. These are distinct from existence of the bottom-level storage/update/read capability."
+  ],
+  "actionable_closure": {
+    "now": "Classify catalog28/29 cache subitem as existing explicit library API + engine-selected policy, exact-artifact equivalence unqualified. Do not leave it phrased as unknown missing primitive and do not add speculative adapter code.",
+    "if_finite_consumer_is_needed": "A future GLM consumer must declare geometry(raw512 NoPE or576 Rope), cache storage/scale provenance and Q/Y policy before Graph cold assembly, then use the existing one-bank schema/append/reader. Explicit BF16 or engine-defined unit E4 is a policy choice, not a recovered ModelOpt scalar.",
+    "if_exact_raw_equivalence_is_required": "Authenticate the chosen serving implementation and scale meaning/operands first, preserve independent old readers and existing lease/retirement/budget. A bounded sameGraph encode->kMla append->reader journey can then qualify composition with existing APIs; no new owner is needed.",
+    "if_scaled_DSA_is_explicitly_required": "Add and qualify its named group128-scale/BF16-tail encoding and reader together; preserve actual byte ABI and source math. This is a separate optional representation task, not a silently selected fallback for28/29."
+  },
+  "source_refs": [
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/README.md",
+      "line": 140,
+      "text": "--dsa-prefill-backend trtllm"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/README.md",
+      "line": 141,
+      "text": "--dsa-decode-backend trtllm"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/README.md",
+      "line": 142,
+      "text": "--kv-cache-dtype fp8_e4m3"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/kv_cache_configurator.py",
+      "line": 3202,
+      "text": "def calculate_mla_kv_cache_dim("
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/kv_cache_configurator.py",
+      "line": 3229,
+      "text": "if uses_trtllm_kv_layout:"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/memory_pool.py",
+      "line": 4793,
+      "text": "self.dsa_kv_cache_store_fp8 = ("
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/memory_pool.py",
+      "line": 5023,
+      "text": "cache_k_nope = cache_k_nope.to(self.dtype)"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/dsa_quant_k_cache.py",
+      "line": 270,
+      "text": "y_s = tl.max(tl.abs(y)) / FP8_MAX"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/vllm/mla_attention.py",
+      "line": 359,
+      "text": "def _canonicalize_sparse_mla_kv_cache_dtype("
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/vllm/flashinfer_mla_sparse.py",
+      "line": 523,
+      "text": "self.bmm2_scale *= layer._k_scale_float"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/huggingface.py",
+      "line": 231,
+      "text": "key_states = self.k_bmm_quantizer(key_states)"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "line": 18,
+      "text": "struct MlaBatchCapacity final"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "line": 177,
+      "text": "Result<BatchCapacity> mla_batch_capacity("
+    },
+    {
+      "path": "src/graph_batch/paged_append.cc",
+      "line": 26,
+      "text": "(op.role!=c::BatchCacheRole::kKey && op.role!=c::BatchCacheRole::kValue && op.role!=c::BatchCacheRole::kMla)"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "line": 215,
+      "text": "struct CacheEncode final"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "line": 94,
+      "text": "static Result<CacheStorage> float8(float scale)"
+    },
+    {
+      "path": "tests/compute_models/compact_mla_e4_fixture.h",
+      "line": 20,
+      "text": "const c::MlaBatchCapacity cap{"
+    }
+  ],
+  "pins": [
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "bytes": 11236,
+      "sha256": "62767107ddcff7c67f09024379f87223e2fed62908ffa5ca2a751bcaa302fb2c"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "bytes": 28192,
+      "sha256": "8f062760b6b190efbcd90fc07daf9baeef7071fe4f373d2e1c9f57e195c430c4"
+    },
+    {
+      "path": "src/graph_batch/paged_append.cc",
+      "bytes": 56454,
+      "sha256": "9cd024bdd45650739d5ae63cc07b6dc11fef383ebb354d8e489a54fa14231e48"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 80480,
+      "sha256": "f8b4c68f1fb3d6a72acbaebacf286981c25c7aac13f75702f450c74fe5cdc99a"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10591,
+      "sha256": "71f17f2b191fe7d00166e29fc84a44cf6ac2211aba5fed42b7df1f08f00f56fd"
+    },
+    {
+      "path": "tests/compute_models/compact_mla_e4_fixture.h",
+      "bytes": 12031,
+      "sha256": "67e2c7b51ddd4eec57fecbc52b7f079ead4c30293d63083e9dddf8de602e9c37"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/kv_cache_configurator.py",
+      "bytes": 146972,
+      "sha256": "6d26861dc762f507014628ba8a98448435a9325239a9e91fa669a7af1670024e"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/memory_pool.py",
+      "bytes": 259001,
+      "sha256": "f3e12b293f3bdce21604ca5e5b473c07dcb6c8e4a34b582c4498d0bd45a10900"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/sglang/dsa_quant_k_cache.py",
+      "bytes": 10525,
+      "sha256": "ccac241747729255164ec635a31f99c1fa937f72f2c07ead0d43d0367c0a3e77"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/vllm/mla_attention.py",
+      "bytes": 133600,
+      "sha256": "650e3d26e7feb7fea5cd826be8680c219dc2892f2af7385f309e303c18e0917a"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/runtime/vllm/flashinfer_mla_sparse.py",
+      "bytes": 25381,
+      "sha256": "8750f5fb8c64b92ed1f59c522b2cba6aa4cf255480cd70b49ca07152a15cc485"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/huggingface.py",
+      "bytes": 85644,
+      "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/fp8-kv/cached-metadata/29/README.md",
+      "bytes": 10235,
+      "sha256": "b592c5b0a0dc5e3c94f62b743ee6ae7a4205bb4d7c94ccefc211b5a56ca48f17"
+    }
+  ],
+  "evidence_reused": [
+    "docs/evidence/research/compact-mla-e4-contract-2026-10-21.json",
+    "docs/evidence/correctness/compact-mla-e4-reference-2026-10-21.json",
+    ".scratch/inference-foundation-inventory-20261025/glm-cache-binding-decision.json"
+  ],
+  "limits": "Read-only bounded source resolution. No new numeric/native qualification, latest-upstream claim, artifact payload/scalar claim, server/loader prerequisite or performance result."
+}

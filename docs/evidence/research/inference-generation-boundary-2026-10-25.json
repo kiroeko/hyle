@@ -137,5 +137,12 @@
       "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
     }
   ],
-  "source_state": "Pinned working tree after the duplicate-Session preflight fix; hyle_head records the underlying Git HEAD, not a claim of an unchanged tree."
+  "source_state": "Pinned working tree after the duplicate-Session preflight fix; hyle_head records the underlying Git HEAD, not a claim of an unchanged tree.",
+  "followup_cold_selection_direction_20261025": {
+    "status": "DESIGN_ONLY_NO_IMPLEMENTATION",
+    "source_main_sha256": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701",
+    "direction": "Use ordinary cold Graph selection over typed logits/optional bounded modifier inputs, shared by ordinary Family and cached-prefix frontier, returning existing ID and validity ports. Keep default identity graph and batched greedy without new runtime dispatch/readback/allocation. Do not add a generic retired-logits callback merely to close the audit.",
+    "required_if_implemented": "Include cold policy identity and full-hit/resume behavior, original0/1 draw contract, raw/modified-row validity and qualified participant failure before original head/ledger publication. Greedy modifiers require actual validity-port facts: current sampler.enabled-only gate is insufficient. No grammar parser, second owner or executor.",
+    "limits": "Current fixed greedy/temperature/top-k/top-p/stop policy has no new demonstrated arithmetic bug. Optional typed-policy binding remains an architecture/function task; postcommit capture does not complete it."
+  }
 }

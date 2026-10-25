@@ -13,6 +13,7 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_models/paged_e4_kv_fixture.h"
+#include "../compute_models/compact_mla_e4_fixture.h"
 #include "../compute_batch/encoded_page_codec_oracle.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/batch_provider.h"
@@ -1399,5 +1400,193 @@ TEST(TypedCapabilityGraph, Float32AppendKeepsProducerPrecisionAndOriginalReaders
   }
 }
 
+
+TEST(TypedCapabilityGraph, EncodedCompactMlaAppendKeepsSingleBankStrideAndOriginalReaders) {
+  namespace f = compact_mla_e4_test;
+  constexpr unsigned depth = 576, rows = 2, heads = 64, page_rows = 16;
+  const auto resource = m::system_resource();
+  auto context = f::take(c::Context::create(c::cpu::device(),
+      c::ggml_cpu::provider({.native_threads = 1})), "original CPU context");
+  auto queue = f::take(context.create_queue(), "original CPU queue");
+  struct Drain { c::Context &context; ~Drain() { context.drain().IgnoreError(); } } drain{context};
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const std::array domains{g::StorageDomain{resource}};
+  const std::array targets{g::ExecutionTarget{
+      f::take(g::ExecutionSource::acquire(context), "original CPU source"), g::StorageDomainId{0}}};
+  const auto compile = [&](const g::Graph &graph, g::CompileOptions options) {
+    return gb::compile(graph, {domains, targets}, options);
+  };
+  const auto write = [](m::BufferView to, std::span<const std::byte> from) { return to.write(from); };
+  const auto read = [](m::ConstBufferView from, std::span<std::byte> to) { return from.read(to); };
+  f::Case shape(depth, true, false);
+  // Reuse the original nonzero BF16 query, physical-bank generator and F64
+  // oracle. This case builds its actual R1/Q2 producer/reader graph below.
+  shape.graph = {};
+  const auto storage = f::take(c::CacheStorage::float8(.5F), "shared E4 interpretation");
+  const c::MlaBatchCapacity capacity{
+      .storage = c::BatchStorage::kPaged,
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .cache_storage = storage, .layout = c::MlaCacheLayout::kCkv512Rope64,
+      .max_requests = 1, .max_query_rows = rows, .max_kv_rows = 32,
+      .max_pages = 5, .max_page_refs = 2, .query_heads = heads, .page_size = page_rows};
+  const auto schema = f::take(c::BatchSchema::create_mla(capacity), "R1 Q2 MLA schema");
+  const std::array<std::int32_t, 2> query_ptr{0, 2}, kv_ptr{0, 2}, old_ids{2, 0}, new_ids{2, 3};
+  const std::array<std::int32_t, 1> old_tail{1}, new_tail{3};
+  shape.layouts[0] = f::take(schema.version({query_ptr, kv_ptr, old_ids, old_tail}), "old17 layout");
+  shape.layouts[1] = f::take(schema.version({query_ptr, kv_ptr, new_ids, new_tail}), "new19 layout");
+  shape.query.resize(rows * heads * depth);
+  const auto cache_desc = f::take(c::batch_cache_description(schema, c::BatchCacheRole::kMla), "single bank");
+  EXPECT_EQ(cache_desc.byte_strides()[1], std::int64_t(depth));
+  EXPECT_EQ(cache_desc.byte_strides().back(), 1);
+  EXPECT_EQ(schema.capacity().key_storage, schema.capacity().value_storage);
+  EXPECT_FALSE(c::batch_cache_description(schema, c::BatchCacheRole::kValue));
+  auto arena = f::take(c::PagedArena::create(schema, c::BatchCacheRole::kMla, resource,
+      {.max_backing_bytes = f::take(cache_desc.required_bytes(), "physical MLA arena bytes") + 1}), "one MLA arena");
+  EXPECT_EQ(arena.page_bytes(), page_rows * depth);
+  EXPECT_FALSE(c::PagedArena::create(schema, c::BatchCacheRole::kValue, resource, {}));
+
+  const auto generated = shape.bank;
+  shape.bank.assign(generated.size(), 0x7f); // Unwritten physical rows remain E4 NaN.
+  std::array<std::vector<std::uint8_t>, 2> old_bytes;
+  std::array<c::ReadLease, 2> old_leases;
+  for (std::size_t index = 0; index < old_ids.size(); ++index) {
+    const auto page = static_cast<std::uint32_t>(old_ids[index]);
+    const auto initialized = index ? 1u : 16u;
+    auto &bytes = old_bytes[index]; bytes.assign(page_rows * depth, 0x7f);
+    std::copy_n(generated.begin() + page * page_rows * depth, initialized * depth, bytes.begin());
+    std::copy(bytes.begin(), bytes.end(), shape.bank.begin() + page * page_rows * depth);
+    auto writer = f::take(arena.acquire(page), "old MLA page");
+    f::check(write(*writer.lease().view(), std::as_bytes(std::span(bytes))), "initialize old compact page");
+    old_leases[index] = f::take(writer.publish(initialized), "old initialized prefix");
+  }
+  const auto previous = f::take(arena.read(shape.layouts[0], old_leases), "old exact compact frame");
+  std::vector<std::uint16_t> incoming(rows * depth);
+  auto cow_expected = old_bytes[1];
+  for (std::size_t row = 0; row < rows; ++row)
+    for (std::size_t lane = 0; lane < depth; ++lane) {
+      // Same source formula as Case: preserve the incoming BF16 boundary,
+      // then use its independent scalar enumeration for exact encoded bytes.
+      const auto source_row = 17 + row;
+      const auto value = lane >= 512 ? float(int(source_row % 5) - 2) * .25F :
+          float(int((source_row * 5 + lane % 11) % 13) - 6) * .0625F;
+      const auto word = f::scalar::bf16(value);
+      incoming[row * depth + lane] = word;
+      cow_expected[(row + 1) * depth + lane] = paged_e4_kv_test::encode(f::scalar::wide(word), shape.scale);
+    }
+  std::copy(cow_expected.begin(), cow_expected.end(), shape.bank.begin() + 3 * page_rows * depth);
+  std::array<c::PagedPageWriter, 1> dirty{f::take(arena.acquire(3), "COW page")};
+  const std::vector<std::uint8_t> poison(page_rows * depth, 0x7f);
+  f::check(write(*dirty[0].lease().view(), std::as_bytes(std::span(poison))), "poison unwritten COW page");
+  auto appended = f::take(gb::PagedAppendPages::create(arena, shape.layouts[1], previous, dirty), "single-bank append transaction");
+
+  auto builder = f::take(g::GraphBuilder::create(), "encode/append/MLA builder");
+  const auto qdesc = f::take(c::batch_query_description(schema.capacity(), rows), "two BF16 queries");
+  const auto source_desc = f::dense(c::DataType::kBFloat16, {rows, 1, depth});
+  const auto query = f::take(builder.input(qdesc), "MLA query input");
+  const auto source = f::take(builder.input(source_desc), "original BF16 latent rows");
+  const auto encoded = f::take(builder.add(c::Operation::custom(c::model_ops::CacheEncode{storage}), source), "encode real compact rows");
+  const auto append_op = f::take(gb::paged_append(schema, c::BatchCacheRole::kMla), "MLA append descriptor");
+  const auto writer = f::take(builder.add_node(c::Operation::custom(append_op), std::array{encoded}), "MLA append node");
+  std::array<g::ValueId, 2> caches, outputs;
+  std::array<g::NodeId, 2> readers;
+  for (std::size_t branch = 0; branch < 2; ++branch) {
+    caches[branch] = f::take(builder.input(cache_desc), "one physical cache input");
+    const auto metadata = f::take(builder.input(f::take(schema.metadata_description(), "MLA metadata")), "typed MLA metadata input");
+    readers[branch] = f::take(builder.add_node(c::Operation::custom(c::PagedMlaAttention{
+        capacity, f::Case::attention_scale}), std::array{query, caches[branch], metadata}), "typed MLA reader");
+    if (branch) f::check(builder.depends_on(readers[branch], writer), "new reader follows its actual writer");
+    outputs[branch] = f::take(builder.result(readers[branch]), "MLA result");
+    f::check(builder.publish(outputs[branch]), "publish both original results");
+  }
+  auto graph = f::take(std::move(builder).finish(), "one encode/append/read graph");
+  // CacheEncode is an original operation on this same CPU target; normal
+  // operation+region composition is permitted, with no fallback device/copy.
+  auto compiled = f::take(compile(graph, {}), "compile CPU compact producer chain");
+  ASSERT_EQ(compiled.report.target_count(), 1u);
+  EXPECT_EQ(compiled.report.target(0)->device_class, c::DeviceClass::kCpu);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0u);
+  for (std::size_t step = 0; step < compiled.report.step_count(); ++step)
+    EXPECT_EQ(f::take(compiled.report.step(step), "original step").target, g::ExecutionTargetId{0});
+  auto invocation = f::take(compiled.executable.create_invocation(), "compact append slot");
+  const std::array versions{gb::NodeLayout{readers[0], shape.layouts[0]},
+                            gb::NodeLayout{readers[1], shape.layouts[1]}};
+  f::check(gb::prepare(invocation, queues, versions,
+      {.host_workspace = resource, .max_float_workspace_bytes = 16u << 20,
+       .max_int_workspace_bytes = 64u << 10}), "prepare both compact readers");
+  f::check(gb::bind(invocation, caches[0], previous), "bind old compact reader");
+  f::check(gb::bind_append(invocation, graph, writer, caches[1], std::move(appended)), "bind exact in-Graph MLA writer");
+  const auto output_desc = f::take(c::batch_output_description(schema.capacity(), rows), "two MLA output rows");
+  const auto output_bytes = f::take(output_desc.required_bytes(), "MLA output extent");
+  auto pool = f::take(c::LeasePool::create(resource,
+      shape.query.size() * 2 + incoming.size() * 2 + 4 * output_bytes + 4096,
+      {.max_blocks = 8}), "original input/result leases");
+  const auto load = [&](std::span<const std::uint16_t> words) {
+    auto result = f::take(pool.allocate(words.size_bytes(), 64), "BF16 source lease");
+    f::check(write(*result.view(), std::as_bytes(words)), "upload actual BF16 source");
+    return f::take(result.publish(), "publish actual BF16 source");
+  };
+  f::check(invocation.bind(query, qdesc, load(shape.query)), "bind nonzero BF16 Q");
+  f::check(invocation.bind(source, source_desc, load(incoming)), "bind real incoming latent rows");
+  if (f::take(compiled.executable.output_ownership(), "output ownership") == g::OutputOwnership::kCaller)
+    for (const auto output : outputs)
+      f::check(invocation.bind(output, output_desc,
+          f::take(pool.allocate(output_bytes, 64), "independent MLA result")), "bind MLA result");
+  f::check(invocation.prepare_replay(queues), "prepare original replay");
+  {
+    auto done = f::take(invocation.submit(queues), "submit compact producer chain");
+    f::check(done.wait(), "compact producer Completion");
+  }
+  std::array<c::ReadLease, 2> held;
+  std::array<std::vector<std::uint16_t>, 2> saved;
+  // Take both results before take_append revokes Graph output observation.
+  for (std::size_t branch = 0; branch < 2; ++branch) {
+    held[branch] = f::take(f::take(invocation.result(outputs[branch]), "original result").storage_lease(), "old-result lease");
+    saved[branch].resize(output_bytes / 2);
+    f::check(read(*held[branch].view(), std::as_writable_bytes(std::span(saved[branch]))), "read MLA result");
+    const auto expected = shape.oracle(static_cast<unsigned>(branch));
+    ASSERT_EQ(expected.size(), saved[branch].size());
+    for (std::size_t lane = 0; lane < expected.size(); ++lane) {
+      EXPECT_TRUE(std::isfinite(f::scalar::wide(saved[branch][lane])));
+      ASSERT_NEAR(f::scalar::wide(saved[branch][lane]), f::scalar::wide(expected[lane]), .008F)
+          << "branch=" << branch << " lane=" << lane;
+    }
+  }
+  // The nonzero KPE contribution must be observable; an all-zero query or
+  // dropping those 64 K lanes must not accidentally validate the append.
+  const auto expected = shape.oracle(1), omitted = shape.oracle(1, false, true);
+  float rope_witness = 0;
+  for (std::size_t lane = 0; lane < expected.size(); ++lane)
+    rope_witness = std::max(rope_witness, std::abs(f::scalar::wide(expected[lane]) - f::scalar::wide(omitted[lane])));
+  EXPECT_GT(rope_witness, .001F);
+  auto returned = f::take(gb::take_append(invocation, writer), "retired compact append");
+  auto written = returned.page(0);
+  ASSERT_TRUE(written) << written.error().message();
+  auto &page = *written;
+  EXPECT_EQ(page.page(), 3u);
+  std::vector<std::uint8_t> actual_page(page_rows * depth);
+  f::check(read(*page.lease().view(), std::as_writable_bytes(std::span(actual_page))), "read whole COW page");
+  EXPECT_EQ(actual_page, cow_expected) << "old row, two appended 576B rows and all 13 unwritten NaN rows";
+  const auto ready = f::take(returned.ready(), "exact published next frame");
+  EXPECT_EQ(ready.layout(), shape.layouts[1]);
+  EXPECT_EQ(ready.page_count(), 2u);
+  EXPECT_EQ(previous.layout(), shape.layouts[0]);
+  for (std::size_t index = 0; index < old_leases.size(); ++index) {
+    std::vector<std::uint8_t> actual(page_rows * depth);
+    f::check(read(*old_leases[index].view(), std::as_writable_bytes(std::span(actual))), "old compact page remains readable");
+    EXPECT_EQ(actual, old_bytes[index]);
+  }
+  EXPECT_FALSE(arena.acquire(0)); // Original partial-page reader still owns page0.
+  EXPECT_FALSE(arena.acquire(2)); // Shared full-prefix page is still live.
+  f::check(invocation.close(), "close original compact invocation");
+  for (std::size_t branch = 0; branch < 2; ++branch) {
+    std::vector<std::uint16_t> old(saved[branch].size());
+    f::check(read(*held[branch].view(), std::as_writable_bytes(std::span(old))), "retained output after writer take/close");
+    EXPECT_EQ(old, saved[branch]);
+  }
+  ::testing::Test::RecordProperty("compact_append_successful_submissions", 1);
+  ::testing::Test::RecordProperty("compact_append_old_rows", 17);
+  ::testing::Test::RecordProperty("compact_append_new_rows", 19);
+  ::testing::Test::RecordProperty("compact_append_physical_row_bytes", 576);
+}
 
 } // namespace

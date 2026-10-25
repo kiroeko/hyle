@@ -1,0 +1,104 @@
+{
+ "status": "FUNCTION_ARCHITECTURE_STAGE_NOT_CLOSABLE_CONFIRMED_COLD_MATH_BINDING_AND_ROLE_COMPOSITION_REMAIN",
+ "HEAD": "b58c6c51ee5fc2883cc4f87c5d6c62164802f097",
+ "scope": "Read-only reverse review of ordinary model journeys and mature local sampler boundaries, not limited to the old task list. No compile/run/GPU/HTTP/product edits. BF16 four-file applied worktree delta included.",
+ "conclusion": "Shared session/request mechanisms have no new confirmed gap in the traced chains. Ordinary selected-role support is not exhausted: CT BF16 block128 has a real parameter-to-math cold connection missing; remaining mixed/expert adapter scopes below cannot all be renamed payload-unrun. Existing operators or a few representative runs do not close those connections.",
+ "reverse_checks": [
+  {
+   "domain": "Logits processing, dynamic masks and selection",
+   "actual": "Local llama.h:1442-1455/1525 separates logits application/chain from drawing; vLLM sampler.py:99,375-407 consumes per-request masks/processors before penalties/draw. Hyle distribution is unique but only receives logits plus fixed temperature/topK/topP. Family/main3046-3095 and frontier3610-3649 have no per-episode mask/bias port.",
+   "boundary": "Postcommit CompletedEvaluationView is too late. finish_selected_evaluations:4507-4518 can override IDs and read original results before commit, so custom host selection is possible; however it already ran the fixed selection graph, exposes StepState and does not supply a typed policy input through normal dispatch/full-prefix resampling. Dynamic policy is not closed merely because Add/Select exist.",
+   "next": "Define one bounded typed precommit mask/bias-or-processed-logits admission contract across ordinary family and new-request frontier, preserving original RNG/invalid-row/full-hit/restore rules. No grammar parser, arbitrary callback chain, registry or new Compute op is required. This is a real natural-policy binding boundary to settle, not a mandate to reproduce every server sampler."
+  },
+  {
+   "domain": "Prompt/chunk/length/complete state",
+   "actual": "main5673-5820 checks whole-turn input+quota-1 before input cursor/Session/prefix publication; state-only chunks commit real offsets without draw/output, final pending remains unconsumed. RequestProgress110-226 supplies real pending once and exact ordinal observation.",
+   "consumer": "qwen_turn_context_case.h; qwen_chunked_prefill_case.h; qwen_midturn_resume_case.h. Non-Qwen complete-state supplied-parameter/early-history consumers are real, with their upstream fixture limits.",
+   "new_gap": null
+  },
+  {
+   "domain": "Allocation/admission failure and same-owner recovery",
+   "actual": "Cache preparation stages schema/inventory until success; prefix hit preflights ledger/progress and creates local Session/frontier before publish. Runtime restore validates weak policy owner and complete historical boundary, restores pending/RNG without observing again. Local+additional actual-resource gates preserve cache limit.",
+   "consumer": "cache-local/shared admission same-A retry+dual-Model; prefix-admission retry; midturn resume; generated-result dual-scope persistent/transient owners. No new concrete failure found; native private allocation is not covered by retention caps."
+  },
+  {
+   "domain": "Fairness, cancellation, local error and output backpressure",
+   "actual": "Window69-140 FIFO/requeue/pause/wake/cancel/release; Delivery23-55 credit/absolute ACK; main4018-4058/5084-5122 keeps proof distinct from error. Qualified participant failure leaves all original heads/ledgers/RNG unchanged before retired survivor requeue.",
+   "consumer": "lifecycle190-214 admits C while B is credit-paused; chunk69-82 yields A for ready B; midturn109-167 evicts/restores same key; participant-failure case preserves original B.",
+   "boundary": "No new primitive gap. Whole-turn CLI policy is not missing fairness. SLA, physical GPU preemption, arbitrary driver retry and cross-Model arbitration remain owner/platform policies, not hidden completed promises."
+  }
+ ],
+ "confirmed_priority_implementation": {
+  "profiles": [
+   18,
+   21
+  ],
+  "gap": "Shared CT BF16 block128/group128 projection math lacks a supplied-parameter/actual-geometry cold entry and exact original-role binding.",
+  "source": "ct_block128_qdq_fixture.h:31-64 hardcodes T2/K256/groups2, constructs generated W/SF and constants;65-135 contains the real BF16 QDQ math. prepare.py123-128 only recognizes channel/token SF[N,1];203-218 block128 importer targets .weight_scale_inv/canonical F32 scale code-dot. Neither is the selected BF16 block-QDQ policy.",
+  "minimum": "Add one small ordinary reusable cold Graph append for supplied A/W/SF/(optional checked expert IDs) with explicit real shape. Original fixture and a finite source-role consumer call that same body. Keep BF16 group max/scale/Divide/+0/E4/Cast/-0/Multiply, zero-only epsilon, original SF axes, Gather-before-weight-decode, F32 accumulation/BF16 output. Do not convert SF to F32 code-dot or channel/token, add an op/registry, decode the full expert bank or keep a second math copy.",
+  "source_qualification": "No new payload acquisition here. Source-span/shape/dtype/owner binding can be prepared from existing headers; absent original numeric bytes remain separately D. Parameterization alone is not the completed source connection: the real lease/Value consumer is part of the cut."
+ },
+ "profile_16_to_22_disposition": [
+  {
+   "i": 16,
+   "class": "EXPERT_CONNECTION_IMPLEMENTED; EXCLUDED_ROLE_SOURCE_CONTRACT_OPEN",
+   "fact": "Original3x2048 W/E8M0 source->GroupedMxfp4(A4) CPU/CUDA tile already exists; old synthetic-only statement stale.977 excluded attention/shared/head actual formats/policy are not established by expert-only headers.",
+   "remaining": "Source-classify one concrete excluded ordinary role before claiming its binding; not a new MXFP4 operator or whole-model task."
+  },
+  {
+   "i": 17,
+   "class": "OPEN_MIXED_ORDINARY_COLD_COMPOSITION",
+   "fact": "NVFP4 quartet and staticFP8 SA/SW leaves exist. qwen_nvfp4_target_fragment.h40-71 is seven NVFP4 projections, not ordinary Q24 mixed506staticFP8/92expert binding. MTP header1553BF16 is a different source scope.",
+   "remaining": "Bind actual mixed role kinds and selected-expert WG/IG to independent original spans in one finite consumer; no shared scalar/codec inference. Not merely more payload values."
+  },
+  {
+   "i": 18,
+   "class": "CONFIRMED_COLD_MATH_BINDING_GAP",
+   "fact": "CT BF16 block128 attention plus local-dynamic NVFP4 MLP are distinct. Shared CT append/source connection above missing; current V2 code-dot cannot substitute.",
+   "remaining": "Do the common append and a real role/owner input; localNVFP4 itself is implemented."
+  },
+  {
+   "i": 19,
+   "class": "SOURCE_SCALE_IMPORT_IMPLEMENTED; FUSED_ORDINARY_BANK_COMPOSITION_OPEN",
+   "fact": "Original F32 SF->encode_e8m0_scales->GroupedMxfp4(BF16) CPU/CUDA tile exists. Earlier SF-value/reader-unknown is stale; source-format-tiles uses MTP expert0 downN3/K2048.",
+   "remaining": "Trace/connect ordinary fused gate_up W and SF dim0 halves plus actual selected-bank map/leases. Keep fixed reader/OAS provenance limits; do not reimplement the importer."
+  },
+  {
+   "i": 20,
+   "class": "OPEN_MIXED_KIMI_ROLE_COMPOSITION; LEAF_IMPORTS_IMPLEMENTED",
+   "fact": "PB_WO F32 scale singleton folding/import+explicit dynamic128 reference and independent ModelOpt NVFP4 bank reference exist. They are not one Kimi original-role bank journey.",
+   "remaining": "Connect supplied independent W/SF/WG/IG spans and preserved roles with the chosen explicit reader/storepoints. Neither QTensor nor native vLLM equivalence may be inferred; no new FP8/NVFP4 op established."
+  },
+  {
+   "i": 21,
+   "class": "CONFIRMED_COLD_MATH_BINDING_GAP",
+   "fact": "Original sampled E4 W/BF16 block128 SF matches root CT FP8 policy, not nested legacy MXFP4. Existing Case is generated/fixed geometry.",
+   "remaining": "Common supplied-parameter append plus bounded original-role/expert lease consumer; retain Gather-before-decode and no fullENK floating bank."
+  },
+  {
+   "i": 22,
+   "class": "PUBLIC_DECODE_IMPLEMENTED; SOURCE_EXPERT_COMPOSITION_OPEN",
+   "fact": "Symmetric128 packed I32+BF16 SF/no zero bank decode and explicit BF16 precision tree exist. Generic asymmetric oddN/F32-A witness is not this Kimi source binding.",
+   "remaining": "Connect independent source Q/I64-shape/SF and real selected-bank ownership with the original BF16 storepoint. No missing decode operator; original numeric shape/scales remain payload qualification, separate from the missing source composition."
+  }
+ ],
+ "closed_deltas_and_scope": [
+  "GGUF14 type40 NVFP4 and Q27 type30 BF16 cold rejections are fixed. Public checks: NVFP4 10Python/13562metadata/CPU strict; BF16 12Python/13570metadata. No new original-body numerical claim.",
+  "DS GA four main inventories are classified, no main-codec-unknown task.25/26 ordinary grouped-FP8 gap was withdrawn; dense original tile evidence already exists.",
+  "Original261-role Kimi working-set evidence supersedes generic original-payload-absent statements for its own23/24 artifacts only; it does not close17/20/21/22.",
+  "GLM28/29 compact physical cache is an explicit serving/reader policy, not automatically selected by expanded-K/V QDQ config. Keep exact artifact numeric qualification unverified rather than guessing a scalar or inventing a missing cache kernel."
+ ],
+ "end_conditions": "Do not close functionality from the old list alone. Close the confirmed CT supplied-math/source connection; give the finite open mixed/expert compositions above an actual source-to-typed-operand path or a precise unresolved source contract (not a blanket payload label); settle the ordinary typed precommit policy boundary. Existing shared state/request ownership needs no new executor/manager. Only then can this function/architecture review phase close with exact artifact/platform limits; performance remains a separate unfinished part of the goal.",
+ "source_pins": {
+  "engine/models/qwen35/main.cc": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701",
+  "engine/models/qwen35/prepare.py": "03d383a6ead36e8b830bcdb59cc14cfa4ab44dfd5580311bdebd2a8e17c01d09",
+  "tests/compute_models/ct_block128_qdq_fixture.h": "fbd56d391645b630f8dd8a9037d8395ab2cfef349d98e31b5ddebfa20170d518",
+  "tests/compute_models/expert_working_set_fixture.h": "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75",
+  "engine/inference/request_progress.h": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6",
+  "engine/inference/request_window.h": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f",
+  "engine/inference/output_delivery.h": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116",
+  "engine/inference/session_cache.h": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891",
+  "docs/evidence/research/inference-selected-profile-contracts-2026-10-25.json": "28bdcf73386603d0dd31ff1fcc8fe3cbae8f8b185954181d3fbd5ff44ec5306f",
+  "docs/implementation/model-quantizations.json": "fa03dc4d08b714c3648c248b58245ed74b5bedc19891520f013de6cadcb9c7aa"
+ }
+}

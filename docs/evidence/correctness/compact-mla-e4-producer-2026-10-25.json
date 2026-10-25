@@ -1,0 +1,83 @@
+{
+  "status": "ONE_CPU_NATIVE_ENCODE_MLA_APPEND_TYPED_READER_COMPOSITION_PASS",
+  "date": "2026-10-25",
+  "base_commit": "b58c6c51ee5fc2883cc4f87c5d6c62164802f097",
+  "reason": "The existing four-backend compact E4 reader evidence starts from a host-encoded uploaded bank. The real CacheEncode -> PagedAppend(kMla) -> typed reader chain was not exercised there.",
+  "product_change": "No runtime, operator, codec, cache owner or policy changed. Add one existing-entry CPU test; the existing independent fixture oracle allocates by actual layout query_rows rather than a fixed1/4-row choice.",
+  "sources": [
+    {
+      "path": "tests/compute_models/compact_mla_e4_fixture.h",
+      "before": {
+        "bytes": 12031,
+        "sha256": "67e2c7b51ddd4eec57fecbc52b7f079ead4c30293d63083e9dddf8de602e9c37"
+      },
+      "after": {
+        "bytes": 12052,
+        "sha256": "ee1d14b421dba5e4284dd09fee064faa0c039d78a6d5c46e278fbc2015a62f58"
+      }
+    },
+    {
+      "path": "tests/graph_batch/typed_capability_graph_test.cc",
+      "before": {
+        "bytes": 85866,
+        "sha256": "2ec7af0c18a26063e7aa5a6dfa3cc65a9458c994dfb90b576cecf6b270f515da"
+      },
+      "after": {
+        "bytes": 98848,
+        "sha256": "b38dcfa14d5a87a4a72aa21d53aab958c82e03541d34bb5bbcb458cff9d7255d"
+      }
+    }
+  ],
+  "geometry": "R1/Q2/H64, CKV512+KPE64, one shared E4 scale0.5, BF16 Q/Y/incoming rows, page16; original17 rows ->19, old causal ends16/17 and new18/19.",
+  "actual_checks": [
+    "One real same-target Graph executes BF16 CacheEncode, kMla append and dependent new typed MLA reader; a separate old reader retains its exact original frame.",
+    "Both65,536-value BF16 outputs are checked against the existing independent E4 enumeration/F64 dot-softmax-value oracle at0.008 absolute tolerance. Nonzero KPE has a separate omitted-tail witness.",
+    "The576-byte row stride and V shared512 prefix are exercised by that same single bank. Compare the entire9,216-byte COW page: original first row, two appended rows and13 unwritten NaN rows.",
+    "Original full/partial pages remain byte-identical and unavailable to acquire while held. Both result leases stay byte-identical after append take and invocation close."
+  ],
+  "execution": {
+    "status": "PASS",
+    "compile": {
+      "exit": 0,
+      "seconds": 5.062,
+      "pid": 46004
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.172,
+      "pid": 55056
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.312,
+      "pid": 57304
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 63,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "CPU_native_Graph_submissions": 1,
+    "whole_model_generation_runs": 0,
+    "scope": "One CPU component test, first attempt. No new core/provider/SDK objects, GPU processes, model acquisition or throughput comparison."
+  },
+  "limits": "Not scaled DSA528/656, publisher compact-scalar/ModelOpt equivalence, new GPU/Linux qualification, full-artifact quality or TPS. Compiler report copy_bytes0 refers to cross-target copies; the original local append/COW and test readbacks still occur.",
+  "archive": {
+    "path": "docs/evidence/correctness/compact-mla-e4-producer-2026-10-25.zip",
+    "bytes": 31701,
+    "sha256": "a1e915e21edebbb50cc105f74b9f3aae68a900de40da9c8cb7f8089b7cddbbd1",
+    "members": 23,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

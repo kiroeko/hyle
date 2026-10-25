@@ -63,7 +63,7 @@ struct Case final {
           float(int((h+t+lane)%7)-3)*.0625F);
   }
   std::vector<std::uint16_t> oracle(unsigned epoch,bool wrong_scale=false,bool omit_kpe=false)const {
-    const auto host=layouts[epoch].host();std::vector<std::uint16_t> result((single?1:4)*heads*dv);
+    const auto host=layouts[epoch].host();std::vector<std::uint16_t> result(layouts[epoch].facts().query_rows*heads*dv);
     const auto value=[&](unsigned row,unsigned lane) {
       return double(scalar::e4m3(bank[row*depth+lane]))*(wrong_scale?1.:double(scale));
     };

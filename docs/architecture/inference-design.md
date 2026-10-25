@@ -395,6 +395,8 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 身份提取和抽样的原构图顺序；完整前缀则直接提供身份。端口形状、批量 greedy
 TopK、读回和发布属于各自调用者，不为合并几行装配增加地址描述或延迟回调。
 
+受控logits政策若需接入，应在冷Graph上显式承载modifier输入及选择／有效性输出，并同时覆盖普通批图和完整前缀重采样。默认identity图保原批量greedy与读回，不增加热策略分派；坏行包括greedy全mask时也必须在head／ledger／RNG发布前拒绝。postcommit logits观察不能代替该边界，不能只为合并已有几行代码引入通用callback框架。当前仍为[设计待实现边界](../evidence/research/inference-generation-boundary-2026-10-25.json)。
+
 投影的逻辑 `[N,K]` 由已验证的 `ProjectionBinding` 解释一次：冷发图复用
 `projection_detail::logical_shape` 的输出宽度，十个格式分支只表达各自数学和原操作链。
 dense／GGUF 权重银行仍为 `[N,K]`，通用 MatMul 的 `[K,N]` 来自原元数据 View；

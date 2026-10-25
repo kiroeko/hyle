@@ -24,7 +24,12 @@
         "tests/compute_models/compact_mla_e4_fixture.h:20",
         "docs/evidence/research/compact-mla-e4-contract-2026-10-21.json"
       ],
-      "minimum_next": "Resolve the already fixed source exporter/serving policy and actual scalar identity from cached metadata first. Keep the independent raw reader usable; do not silently reinterpret expanded K/V or demand a new cache owner."
+      "minimum_next": "Resolve the already fixed source exporter/serving policy and actual scalar identity from cached metadata first. Keep the independent raw reader usable; do not silently reinterpret expanded K/V or demand a new cache owner.",
+      "resolution_after_audit": {
+        "status": "EXPLICIT_LIBRARY_STORAGE_API_PRESENT_ENGINE_POLICY_REQUIRED_EXACT_ARTIFACT_EQUIVALENCE_UNQUALIFIED",
+        "evidence": "docs/evidence/research/glm-compact-cache-boundary-2026-10-25.json",
+        "scope": "Raw512/576 E4 storage, encoding, MLA append and typed reader contracts exist. Weight metadata does not define one compact cache byte ABI or scalar. Publisher28 does not choose a cache backend;29 explicitly chooses TRTLLM raw E4. Scaled DSA528/656 is a separate optional format, not required by those pinned commands. No new native composition or source numerical qualification is claimed."
+      }
     },
     {
       "id": "remaining-role-adapter-scope",
@@ -40,7 +45,11 @@
       ],
       "classification": "ARTIFACT_ROLE_ADAPTER_OR_SOURCE_CONTRACT_PARTIAL; not all equivalent to payload merely unrun",
       "facts": "Concrete readers/ordinary reference consumers are cited, but selected artifact-specific cold source-span/scale conversion/excluded-role or expert resource compositions are not all present. Exact unknowns are per-row. These are not33 new missing operators and not a request for a universal importer.",
-      "minimum_next": "Choose one known source-role discontinuity, distinguish missing cold glue from missing source identity and missing numerical evidence, and implement only the actual glue needed by a finite original-role consumer. No full-artifact or platform matrix is a completion condition."
+      "minimum_next": "Choose one known source-role discontinuity, distinguish missing cold glue from missing source identity and missing numerical evidence, and implement only the actual glue needed by a finite original-role consumer. No full-artifact or platform matrix is a completion condition.",
+      "followup_reverse_review": {
+        "evidence": "docs/evidence/research/inference-reverse-binding-review-2026-10-25.json",
+        "scope": "14 cold mapping is fixed;16 excluded-role identity,17/20 mixed original-role composition,19 fused selected-bank composition,18/21 supplied CT BF16 block128 math/binding, and22 independent expert source/bank precision remain separately classified. Do not relabel all as unrun payload."
+      }
     }
   ],
   "contracts": {
@@ -574,7 +583,12 @@
         "glm_compact_e4"
       ],
       "connection": "REFERENCE_PROJECTION_AND_CACHE_CONSUMERS_PRESENT_SOURCE_CACHE_BINDING_UNKNOWN",
-      "limit": "Mixed projection references exist; exact compact cache scalar/exporter/default interpretation unproven."
+      "limit": "Mixed projection references exist; exact compact cache scalar/exporter/default interpretation unproven.",
+      "resolution_after_audit": {
+        "status": "EXPLICIT_LIBRARY_STORAGE_API_PRESENT_ENGINE_POLICY_REQUIRED_EXACT_ARTIFACT_EQUIVALENCE_UNQUALIFIED",
+        "evidence": "docs/evidence/research/glm-compact-cache-boundary-2026-10-25.json",
+        "scope": "Raw512/576 E4 storage, encoding, MLA append and typed reader contracts exist. Weight metadata does not define one compact cache byte ABI or scalar. Publisher28 does not choose a cache backend;29 explicitly chooses TRTLLM raw E4. Scaled DSA528/656 is a separate optional format, not required by those pinned commands. No new native composition or source numerical qualification is claimed."
+      }
     },
     {
       "i": 29,
@@ -585,7 +599,12 @@
         "glm_compact_e4"
       ],
       "connection": "REFERENCE_PROJECTION_AND_CACHE_CONSUMERS_PRESENT_SOURCE_CACHE_BINDING_UNKNOWN",
-      "limit": "README selects FP8+TRTLLM but exact compact scalar/exporter is not fixed by expanded K/V ModelOpt QDQ."
+      "limit": "README selects FP8+TRTLLM but exact compact scalar/exporter is not fixed by expanded K/V ModelOpt QDQ.",
+      "resolution_after_audit": {
+        "status": "EXPLICIT_LIBRARY_STORAGE_API_PRESENT_ENGINE_POLICY_REQUIRED_EXACT_ARTIFACT_EQUIVALENCE_UNQUALIFIED",
+        "evidence": "docs/evidence/research/glm-compact-cache-boundary-2026-10-25.json",
+        "scope": "Raw512/576 E4 storage, encoding, MLA append and typed reader contracts exist. Weight metadata does not define one compact cache byte ABI or scalar. Publisher28 does not choose a cache backend;29 explicitly chooses TRTLLM raw E4. Scaled DSA528/656 is a separate optional format, not required by those pinned commands. No new native composition or source numerical qualification is claimed."
+      }
     },
     {
       "i": 30,
