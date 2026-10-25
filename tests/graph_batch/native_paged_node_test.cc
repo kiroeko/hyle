@@ -7,7 +7,7 @@ namespace {
 namespace c=hyle::compute;namespace g=hyle::graph;
 template<std::size_t N>hyle::Result<std::array<c::TensorDesc,N>> input_descriptions(
     const c::BatchLayoutVersion&layout){
-  const auto schema=layout.schema();const auto cap=schema.capacity();
+  const auto schema=layout.origin_schema();const auto cap=schema.capacity();
   std::array<c::TensorDesc,N> result;
   HYLE_ASSIGN_OR_RETURN(result[0],c::TensorDesc::dense(cap.query_type,
       std::array<std::int64_t,3>{layout.facts().query_rows,cap.query_heads,cap.qk_head_dim}));
@@ -25,7 +25,7 @@ TEST(NativePagedGraphNode, EncodedUnequalValueOutputKeepsScaleAndWindowRecipe){
   auto layout=schema->version({q,k,ids,tail});ASSERT_TRUE(layout);
   auto descriptor=g::batch::paged_attention(*layout,{.scale=.125F,.window_left=0});ASSERT_TRUE(descriptor);
   EXPECT_EQ(descriptor->options.window_left,0);EXPECT_EQ(descriptor->options.scale,.125F);
-  EXPECT_EQ(descriptor->layout.schema().capacity().key_storage,*c::CacheStorage::q8_0());
+  EXPECT_EQ(descriptor->layout.origin_schema().capacity().key_storage,*c::CacheStorage::q8_0());
   auto descriptions=input_descriptions<3>(*layout);ASSERT_TRUE(descriptions);
   std::array<c::TensorDesc,1> output;
   ASSERT_TRUE(descriptor->infer_output_descriptions(*descriptions,output).ok());
@@ -62,9 +62,9 @@ TEST(NativePagedGraphNode, TruthfulPhysicalRootsAndActivePackedOutput) {
   // Each descriptor owns its actual layout/schema. Equal geometry does not
   // make the independently created schema the same owner.
   auto foreign_descriptor=g::batch::paged_attention(*foreign_layout);ASSERT_TRUE(foreign_descriptor);
-  EXPECT_TRUE(foreign_descriptor->layout.schema().owns(*foreign_layout));
+  EXPECT_TRUE(foreign_descriptor->layout.origin_schema().owns(*foreign_layout));
   EXPECT_FALSE(schema->owns(foreign_descriptor->layout));
-  EXPECT_TRUE(descriptor->layout.schema().owns(*layout));
+  EXPECT_TRUE(descriptor->layout.origin_schema().owns(*layout));
   EXPECT_FALSE(g::batch::paged_attention({}));
   EXPECT_FALSE(g::batch::paged_mla_attention(*layout));
 }
@@ -102,7 +102,7 @@ TEST(NativePagedGraphNode, GraphOwnsLayoutAndSchemaAfterBuilderInputsDie) {
   auto copy=graph;graph={};
   const auto operation=copy.operation(node);ASSERT_TRUE(operation);
   const auto descriptor=operation->custom_as<g::batch::PagedAttention>();
-  ASSERT_TRUE(descriptor);EXPECT_TRUE(descriptor->layout.schema().owns(descriptor->layout));
+  ASSERT_TRUE(descriptor);EXPECT_TRUE(descriptor->layout.origin_schema().owns(descriptor->layout));
   auto descriptions=input_descriptions<3>(descriptor->layout);ASSERT_TRUE(descriptions);
   std::array<c::TensorDesc,1> output;
   ASSERT_TRUE(descriptor->infer_output_descriptions(*descriptions,output).ok());

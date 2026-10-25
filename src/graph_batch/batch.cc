@@ -1,4 +1,5 @@
 #include "hyle/graph/batch.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/compute/detail/batch_graph_access.h"
@@ -98,7 +99,8 @@ const gd::RegionCaptureBindingsVTable capture_bindings{
     // before fresh planning or any private carrier/program replacement.
     return r.graph_capture && s.region==&r && s.program.valid() &&
         s.native.valid() && s.token.valid() && s.layout.valid() &&
-        s.program.schema().owns(s.layout) && s.queue.is_open() &&
+        s.program.schema().owns(s.layout) && s.program.schema().capacity()==r.capacity &&
+        s.program.schema().mla_layout()==r.mla && s.queue.is_open() &&
         s.token.generation()==s.layout.generation() && !s.native.in_flight();
   }};
 const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_region,.alias_support=&alias,.create_invocation=&create_slot,.destroy_invocation=&destroy_slot,.shared_submit=&submit_region,
@@ -128,14 +130,14 @@ Result<BatchGeometry> geometry(const c::Operation&operation)noexcept{
     result.math.window_left=op.window_left;
   };
   if(const auto paged=operation.custom_as<PagedAttention>()){
-    result.initial_layout=paged->layout;result.capacity=paged->layout.schema().capacity();
+    result.initial_layout=paged->layout;result.capacity=paged->layout.origin_schema().capacity();
     set(paged->options);result.math.allow_bf16_partials=paged->options.allow_bf16_partials;
     if(!result.initial_layout.valid() || result.capacity.storage!=c::BatchStorage::kPaged ||
-        paged->layout.schema().mla_layout()!=c::MlaCacheLayout::kNone)
+        paged->layout.origin_schema().mla_layout()!=c::MlaCacheLayout::kNone)
       return std::unexpected(Status::InvalidArgument("owned page Graph needs its GQA layout"));
   }else if(const auto paged_mla=operation.custom_as<PagedMlaAttention>()){
-    result.initial_layout=paged_mla->layout;result.capacity=paged_mla->layout.schema().capacity();
-    result.mla=paged_mla->layout.schema().mla_layout();set(paged_mla->options);
+    result.initial_layout=paged_mla->layout;result.capacity=paged_mla->layout.origin_schema().capacity();
+    result.mla=paged_mla->layout.origin_schema().mla_layout();set(paged_mla->options);
     result.math.allow_bf16_partials=paged_mla->options.allow_bf16_partials;
     if(!result.initial_layout.valid() || result.capacity.storage!=c::BatchStorage::kPaged ||
         result.mla==c::MlaCacheLayout::kNone)
@@ -452,11 +454,11 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
             [](const auto&entry,std::size_t ordinal){return entry.region->node.ordinal()<ordinal;});
         if(found==entries.end() || found->region->node!=binding.node || found->binding || !binding.layout.valid())
           return Status::InvalidArgument("native Graph node/layout is foreign or duplicated");
-        const auto&r=*found->region;const auto schema=binding.layout.schema();
-        if(schema.capacity()!=r.capacity || schema.mla_layout()!=r.mla)
+        const auto&r=*found->region;const auto schema=binding.layout.origin_schema();
+        if(!cd::BatchLayoutAccess::same_topology(schema.capacity(),r.capacity) || schema.mla_layout()!=r.mla)
           return Status::InvalidArgument("native Graph layout capacity differs from its typed node");
         if(r.initial_layout.valid() &&
-            (!r.initial_layout.schema().owns(binding.layout) ||
+            (!r.initial_layout.origin_schema().owns(binding.layout) ||
              binding.layout.facts().query_rows!=r.initial_layout.facts().query_rows))
           return Status::InvalidArgument("owned page Graph layout identity/active shape differs");
         HYLE_RETURN_IF_ERROR(c::validate_batch_attention_layout(binding.layout,r.options.causal,r.options.window_left));
@@ -515,16 +517,20 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
       for(auto&entry:entries){
         auto&r=*entry.region;auto&s=*entry.slot;const auto&layout=entry.binding->layout;
         const auto&prior=s.prepared_options;
-        const bool reuse=s.program.valid() && s.program.schema().owns(layout) && s.queue.same_owner(entry.queue_owner) &&
+        const bool reuse=s.program.valid() && s.program.schema().owns(layout) &&
+            s.program.schema().capacity()==r.capacity && s.program.schema().mla_layout()==r.mla &&
+            s.queue.same_owner(entry.queue_owner) &&
             prior.host_workspace==options.host_workspace &&
             prior.max_float_workspace_bytes==options.max_float_workspace_bytes &&
             prior.max_int_workspace_bytes==options.max_int_workspace_bytes && same_allocator(prior.allocator,options.allocator);
         CommandChange change{&invocation,&s,entries};
         const cd::BeforeCommandChange before_change{&change,&before_command_change};
         if(!reuse){
+          HYLE_ASSIGN_OR_RETURN(auto schema,layout.origin_schema().with_cache_storage(
+              r.capacity.key_storage,r.capacity.value_storage));
           HYLE_RETURN_IF_ERROR(before_command_change(&change));
-          // Explicit cold rebinding only. No schema identity is synthesized
-          // from a capacity or from the metadata tensor's bytes.
+          // The actual operation's immutable storage interpretation is cold-bound
+          // to this explicit topology domain, never inferred from metadata bytes.
           s.native={};s.program={};
           auto native_options=r.options;native_options.resource=r.resource;
           native_options.host_workspace=options.host_workspace;
@@ -532,7 +538,7 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           native_options.max_int_workspace_bytes=options.max_int_workspace_bytes;
           native_options.max_invocations=1;native_options.allocator=options.allocator;
           native_options.resource_budget=options.resource_budget;
-          HYLE_ASSIGN_OR_RETURN(s.program,cd::BatchGraphAccess::prepare(r.context,r.source,layout.schema(),native_options));
+          HYLE_ASSIGN_OR_RETURN(s.program,cd::BatchGraphAccess::prepare(r.context,r.source,std::move(schema),native_options));
           HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue));
           s.prepared_options=options;s.queue=entry.queue_owner;
         }
@@ -846,7 +852,7 @@ Status copy_metadata(const Executable&executable,BatchResources&p,c::TensorDesc 
 }
 Status bind_layout_metadata(graph::Invocation&invocation,BatchResources&p,ValueId value,
     const c::BatchLayoutVersion&layout,c::ReadLease native={})noexcept{
-    HYLE_ASSIGN_OR_RETURN(auto description,layout.schema().metadata_description());
+    HYLE_ASSIGN_OR_RETURN(auto description,layout.origin_schema().metadata_description());
     HYLE_ASSIGN_OR_RETURN(auto resource,gd::RegionAccess::input_resource(invocation.executable(),value));
     auto found=std::find_if(p.metadata.begin(),p.metadata.end(),[&](const auto&entry){return entry.input==value;});
     if(found==p.metadata.end()){
@@ -867,12 +873,12 @@ Status bind_layout_metadata(graph::Invocation&invocation,BatchResources&p,ValueI
     }
     if(!entry.ready.valid() || entry.layout!=layout){
       if(!entry.pool.valid()){
-        const auto bytes=layout.schema().metadata_offsets().bytes;
+        const auto bytes=layout.origin_schema().metadata_offsets().bytes;
         HYLE_ASSIGN_OR_RETURN(entry.pool,c::LeasePool::create(resource,bytes,{.max_blocks=1,.allocator=p.allocator,.resource_budget=p.budget}));
       }
       if(entry.ready.valid()){HYLE_ASSIGN_OR_RETURN(entry.mirror,entry.ready.try_write());}
       if(!entry.mirror.valid()){
-        HYLE_ASSIGN_OR_RETURN(entry.mirror,entry.pool.allocate(layout.schema().metadata_offsets().bytes,8));
+        HYLE_ASSIGN_OR_RETURN(entry.mirror,entry.pool.allocate(layout.origin_schema().metadata_offsets().bytes,8));
       }
       HYLE_ASSIGN_OR_RETURN(auto metadata,layout.metadata());HYLE_ASSIGN_OR_RETURN(auto source,metadata.view());
       HYLE_ASSIGN_OR_RETURN(auto target,entry.mirror.view());
@@ -1107,7 +1113,8 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
     const bool key=r.values[1]==value,is_value=has_value_port(r) && r.values[2]==value;
     if(!key && !is_value)continue;
     const auto expected=key?(r.mla==c::MlaCacheLayout::kNone?c::BatchCacheRole::kKey:c::BatchCacheRole::kMla):c::BatchCacheRole::kValue;
-    if(facts.role!=expected || s.layout!=facts.layout || !s.token.valid() ||
+    if(facts.role!=expected || facts.storage!=(key?r.capacity.key_storage:r.capacity.value_storage) ||
+        s.layout!=facts.layout || !s.token.valid() ||
         r.capacity.storage!=c::BatchStorage::kPaged || (key && s.keys.valid()) || (is_value && s.values.valid()))
       return Status::InvalidArgument("append pages differ from the prepared original cache reader/role/layout");
     if(!s.queue.valid() || (append_owner.valid() && (!append_owner.same_owner(s.queue) || append_host!=s.prepared_options.host_workspace)))
@@ -1135,8 +1142,8 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
       if(reader.inputs[port]!=value)continue;
       const auto expected=port==1?(selected.mla==c::MlaCacheLayout::kNone?
           c::BatchCacheRole::kKey:c::BatchCacheRole::kMla):c::BatchCacheRole::kValue;
-      if(facts.role!=expected)
-        return Status::InvalidArgument("native append cache role differs from its selected reader port");
+      if(facts.role!=expected || facts.storage!=(port==1?selected.capacity.key_storage:selected.capacity.value_storage))
+        return Status::InvalidArgument("native append cache role/storage differs from its selected reader port");
     }
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation,reader.step));
     HYLE_RETURN_IF_ERROR(reader.table->validate_written(reader.prepared,reader.invocation,

@@ -1,4 +1,5 @@
 #include "native_ragged_region.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "native_region.h"
 #include "native_output.h"
 
@@ -111,8 +112,8 @@ Status prepare(void *prepared, void *invocation,
     compute::BatchLayoutVersion layout) noexcept {
   auto &artifact = *static_cast<Artifact *>(prepared);
   auto &slot = *static_cast<Slot *>(invocation);
-  if (!layout.valid() || layout.schema().capacity() != artifact.attention.capacity ||
-      layout.schema().mla_layout() != artifact.mla ||
+  if (!layout.valid() || !cd::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), artifact.attention.capacity) ||
+      layout.origin_schema().mla_layout() != artifact.mla ||
       layout.facts().query_rows > std::uint32_t(artifact.output.dimensions()[0]))
     return Status::InvalidArgument("Apple ragged layout differs from its actual typed Q/output extent");
   HYLE_RETURN_IF_ERROR(compute::validate_batch_attention_layout(layout,
@@ -123,7 +124,7 @@ Status prepare(void *prepared, void *invocation,
     HYLE_RETURN_IF_ERROR(an::InvocationAccess::reuse_gate(slot.native));
   clear_bindings(slot);
   const auto same_queries = [&]() noexcept {
-    if (!slot.layout.valid() || !slot.layout.schema().owns(layout)) return false;
+    if (!slot.layout.valid() || !slot.layout.origin_schema().owns(layout)) return false;
     const auto before = slot.layout.host().query_indptr;
     const auto after = layout.host().query_indptr;
     return std::ranges::equal(before, after);

@@ -16,6 +16,7 @@ struct AppendFacts final {
   compute::BatchLayoutVersion layout;
   compute::BatchCacheRole role=compute::BatchCacheRole::kKey;
   compute::ConstTensorView capacity;
+  compute::CacheStorage storage; // Actual bank interpretation, not layout provenance.
 };
 struct AppendQueueBinding final {
   ExecutionLaneId lane;

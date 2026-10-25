@@ -1,4 +1,5 @@
 #include "native_batch_regions.h"
+#include "hyle/compute/detail/batch_provider.h"
 
 #include <algorithm>
 #include "hyle/compute/detail/paged_arena_access.h"
@@ -31,8 +32,8 @@ Status validate_facts(const NativeBatchRegionFacts &facts) noexcept {
     // Capacity descriptors do not own an initial schema/layout. Once prepared,
     // their original slot reports the actual owned version, not a host table
     // supplied by the caller or a replacement recipe identity.
-    if (facts.layout.valid() && (facts.layout.schema().capacity() != facts.capacity ||
-        facts.layout.schema().mla_layout() != facts.mla ||
+    if (facts.layout.valid() && (!c::detail::BatchLayoutAccess::same_topology(facts.layout.origin_schema().capacity(), facts.capacity) ||
+        facts.layout.origin_schema().mla_layout() != facts.mla ||
         facts.layout.facts().query_rows > facts.output_query_rows))
       return Status::InvalidArgument("native capacity prepared layout differs");
   }
@@ -55,8 +56,8 @@ Status validate_facts(const NativeBatchRegionFacts &facts) noexcept {
 }
 Status validate_layout(const NativeBatchRegionFacts &facts,
     const c::BatchLayoutVersion &layout) noexcept {
-  if (!layout.valid() || layout.schema().capacity() != facts.capacity ||
-      layout.schema().mla_layout() != facts.mla ||
+  if (!layout.valid() || !c::detail::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), facts.capacity) ||
+      layout.origin_schema().mla_layout() != facts.mla ||
       layout.facts().query_rows > facts.output_query_rows)
     return Status::InvalidArgument("native batch layout capacity/output differs");
   if (facts.paged_program && (layout.facts().query_rows != facts.output_query_rows ||

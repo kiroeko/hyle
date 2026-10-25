@@ -1,4 +1,5 @@
 #include "hyle/compute/apple_batch.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/apple_plan.h"
 #include "apple_runtime_internal.h"
@@ -31,10 +32,12 @@ bool detail::PagedBatchAccess::cache_domain(const BatchCapacity& c) noexcept {
 }
 Status detail::PagedBatchAccess::validate_paged(
     const std::shared_ptr<Runtime>& runtime,const BatchLayoutVersion& layout,
-    bool causal,std::int32_t window_left) noexcept {
+    BatchCapacity capacity,bool causal,std::int32_t window_left) noexcept {
   if(!runtime || !layout.valid())
     return Status::InvalidArgument("Apple page validation needs its actual Runtime and owned layout");
-  const auto c=layout.schema().capacity();
+  if(!compute::detail::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(),capacity))
+    return Status::InvalidArgument("Apple page topology differs from its actual cache recipe");
+  const auto c=capacity;
   if(c.storage!=BatchStorage::kPaged || c.page_size!=16 ||
       c.max_pages>std::uint32_t(INT32_MAX/16) || !cache_domain(c))
     return Status::Unimplemented("Apple page dtype/encoding/geometry is unsupported");
@@ -77,7 +80,7 @@ Result<Program> detail::PagedBatchAccess::prepare_paged_graph(std::shared_ptr<Ru
   const bool mla=recipe.schema().mla_layout()!=MlaCacheLayout::kNone;
   if(c.key_storage.data_type()==DataType::kFloat8E4M3FN && c.value_head_dim==512 && !mla)
     return std::unexpected(Status::Unimplemented("Apple high-dimensional E4 needs its single compact MLA cache"));
-  HYLE_RETURN_IF_ERROR(validate_paged(runtime,layout,recipe.causal(),recipe.window_left()));
+  HYLE_RETURN_IF_ERROR(validate_paged(runtime,layout,recipe.schema().capacity(),recipe.causal(),recipe.window_left()));
   try {
     std::array<InputSpec,4> specs;
     for(std::size_t i=0;i<recipe.input_count();++i){
@@ -139,10 +142,10 @@ namespace {
 Result<Program> prepare_ragged(const std::shared_ptr<detail::Runtime>&runtime, BatchLayoutVersion layout,
     RaggedAttention attention,const WorkloadContext&workload,
     std::optional<std::uint32_t> output_query_rows)noexcept{
-  if(!layout.valid()||layout.schema().capacity()!=attention.capacity)
+  if(!layout.valid()||!compute::detail::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(),attention.capacity))
     return std::unexpected(Status::InvalidArgument("Apple ragged context/layout/domain differs"));
   const auto c=attention.capacity;
-  const bool mla=layout.schema().mla_layout()!=MlaCacheLayout::kNone;
+  const bool mla=layout.origin_schema().mla_layout()!=MlaCacheLayout::kNone;
   if(c.key_storage.data_type()==DataType::kFloat8E4M3FN && !mla)
     return std::unexpected(Status::Unimplemented("Apple ragged E4 needs its single compact MLA cache"));
   const auto query_rows=output_query_rows.value_or(c.max_query_rows);

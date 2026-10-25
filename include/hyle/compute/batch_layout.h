@@ -81,6 +81,13 @@ public:
   HYLE_COMPUTE_BATCH_API ~BatchSchema();
   HYLE_COMPUTE_BATCH_API static Result<BatchSchema> create(BatchCapacity, BatchSchemaOptions = {}) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<BatchSchema> create_mla(MlaBatchCapacity, BatchSchemaOptions = {}) noexcept;
+  // Explicit cache interpretation over this same metadata/topology domain.
+  // All geometry, Q/output and MLA layout remain unchanged. Variants retain
+  // the original schema, allocator, budget and generation counter; an
+  // independent create() remains foreign even with identical capacities.
+  // Row caches have their own typed encoding and do not admit this view.
+  HYLE_COMPUTE_BATCH_API Result<BatchSchema> with_cache_storage(
+      CacheStorage key, CacheStorage value) const noexcept;
   bool valid() const noexcept { return data_ != nullptr; }
   HYLE_COMPUTE_BATCH_API BatchCapacity capacity() const noexcept;
   HYLE_COMPUTE_BATCH_API MlaCacheLayout mla_layout() const noexcept;
@@ -89,6 +96,8 @@ public:
   // Validates all borrowed input before allocation/copy. Stores an immutable
   // active-sized snapshot; repeated shape/page values still get a new version.
   HYLE_COMPUTE_BATCH_API Result<BatchLayoutVersion> version(HostBatchLayout) const noexcept;
+  // Ownership proves the explicit root metadata domain, not that a cache
+  // payload has this variant's storage interpretation or page permission.
   HYLE_COMPUTE_BATCH_API bool owns(const BatchLayoutVersion &) const noexcept;
 private:
   friend class BatchLayoutVersion;
@@ -110,7 +119,8 @@ public:
   HYLE_COMPUTE_BATCH_API BatchLayoutVersion &operator=(BatchLayoutVersion &&) noexcept;
   HYLE_COMPUTE_BATCH_API ~BatchLayoutVersion();
   bool valid() const noexcept { return data_ != nullptr; }
-  HYLE_COMPUTE_BATCH_API BatchSchema schema() const noexcept;
+  // The root that minted this immutable topology, not a cache-storage view.
+  HYLE_COMPUTE_BATCH_API BatchSchema origin_schema() const noexcept;
   HYLE_COMPUTE_BATCH_API std::uint64_t generation() const noexcept;
   HYLE_COMPUTE_BATCH_API BatchLayoutFacts facts() const noexcept;
   HYLE_COMPUTE_BATCH_API HostBatchLayout host() const noexcept;

@@ -208,6 +208,9 @@ HYLE_GRAPH_BATCH_API Status bind_append(Invocation&,const Graph&,NodeId append,
 // binding/preparation before returning the real original page reservations.
 HYLE_GRAPH_BATCH_API Result<PagedAppendPages> take_append(Invocation&,NodeId)noexcept;
 // Mathematical policy and an owned initial layout of one ordinary Graph node.
+// This layout-only form uses its origin schema's cache interpretation.
+// Storage variants use the typed compute::PagedAttention/PagedMlaAttention
+// capacity form with the same owned metadata version; page rights stay separate.
 // Implementations derive their own metadata and native plans during cold
 // preparation. Page permissions remain separate from these immutable facts.
 struct PagedAttentionOptions final {

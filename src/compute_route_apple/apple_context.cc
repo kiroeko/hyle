@@ -1424,8 +1424,8 @@ bool detail::PagedBatchAccess::empty_cache_reads(const Invocation&invocation)noe
       state->program->inputs.size()!=1)return false;
   const auto&layout=static_cast<const RuntimeBatchInvocationState*>(state)->layout;
   const auto*function=state->program->compiled.target<RuntimeBatchFunction>();
-  return function && function->initial.schema().owns(layout) &&
-      layout.schema().capacity().storage==BatchStorage::kPaged &&
+  return function && function->initial.origin_schema().owns(layout) &&
+      layout.origin_schema().capacity().storage==BatchStorage::kPaged &&
       !layout.facts().query_rows && !layout.facts().page_refs;
 }
 Status detail::PagedBatchAccess::release_inputs(Invocation&invocation)noexcept{
@@ -1490,8 +1490,8 @@ Status detail::PagedBatchAccess::update_layout(Invocation& invocation,
     return Status::InvalidArgument("Apple runtime page layout requires a paged invocation");
   const auto& initial=state.program->compiled.target<RuntimeBatchFunction>()->initial;
   const auto a=initial.host(),b=layout.host();
-  const auto empty_ports=[](const BatchLayoutVersion& v){return v.schema().capacity().storage==BatchStorage::kPaged && v.facts().query_rows==0 && v.facts().page_refs==0;};
-  if(!initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+  const auto empty_ports=[](const BatchLayoutVersion& v){return v.origin_schema().capacity().storage==BatchStorage::kPaged && v.facts().query_rows==0 && v.facts().page_refs==0;};
+  if(!initial.origin_schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
       !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()) ||
       empty_ports(initial)!=empty_ports(layout))
     return Status::InvalidArgument("Apple runtime page Q topology differs");
@@ -1505,8 +1505,8 @@ Status detail::PagedBatchAccess::update_ragged(Invocation& invocation,
     return Status::InvalidArgument("Apple ragged update requires a ragged Program");
   const auto& fn=*state->program->compiled.target<RuntimeBatchFunction>();
   const auto a=fn.initial.host(),b=layout.host();
-  if(fn.initial.schema().capacity().storage!=BatchStorage::kRagged ||
-      !fn.initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+  if(fn.initial.origin_schema().capacity().storage!=BatchStorage::kRagged ||
+      !fn.initial.origin_schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
       !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()))
     return Status::InvalidArgument("Apple ragged update schema/Q topology differs");
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,fn.causal,fn.window_left));

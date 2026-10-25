@@ -1,4 +1,5 @@
 #include "hyle/compute/vulkan_batch.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/vulkan_plan.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
 #include "vulkan_internal.h"
@@ -152,8 +153,8 @@ namespace {
 Result<Program> prepare_ragged(const std::shared_ptr<detail::Runtime>&runtime,
     BatchLayoutVersion layout,RaggedAttention attention,const WorkloadContext&workload,
     std::optional<std::uint32_t> output_query_rows,bool mla=false)noexcept{
-  if(!runtime||!layout.valid()||layout.schema().capacity()!=attention.capacity||
-     (layout.schema().mla_layout()!=MlaCacheLayout::kNone)!=mla ||
+  if(!runtime||!layout.valid()||!compute::detail::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(),attention.capacity)||
+     (layout.origin_schema().mla_layout()!=MlaCacheLayout::kNone)!=mla ||
      attention.capacity.storage!=BatchStorage::kRagged||!std::isfinite(attention.scale))
     return std::unexpected(Status::InvalidArgument("Vulkan ragged context/layout/domain differs"));
   const auto c=attention.capacity;
@@ -243,7 +244,7 @@ Result<Program> prepare_ragged_batch(const Context&context,BatchLayoutVersion la
 Result<Program> detail::PagedBatchAccess::prepare_ragged_graph(
     const std::shared_ptr<Runtime>&runtime,BatchLayoutVersion layout,RaggedAttention attention,
     std::uint32_t query_rows,const WorkloadContext&workload)noexcept{
-  const bool mla=layout.schema().mla_layout()!=MlaCacheLayout::kNone;
+  const bool mla=layout.origin_schema().mla_layout()!=MlaCacheLayout::kNone;
   return prepare_ragged(runtime,std::move(layout),attention,workload,query_rows,mla);
 }
 Result<Program> prepare_materialized_batch(const Context&context,

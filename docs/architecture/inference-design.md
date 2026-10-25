@@ -386,17 +386,20 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 与 channel／token 差异，以及 dense／GGUF 直接 F32 head 和部分量化 BF16→F32 head 的原数学。
 共享采样规则不表示可改写各家族的 RNG 地址排布。
 
-普通 E4 KV 的下一批先收敛现有缓存接口，以下是设计、尚未实现：
+缓存的拓扑、存储解释与页权限分别表达：
 
 - 每个 bank 的 `CacheStorage`／schema 决定真实 dtype、K/V scale、行大小和 native recipe。
-- 一个不可变 layout 只表达整数页表拓扑；显式从同一 schema 派生存储变体时共享原 metadata 域、generation 与分配预算，独立创建的 schema 仍属于不同域。
+- `BatchSchema.with_cache_storage` 显式派生不可变存储变体，共享原 metadata 域、generation 与分配预算；独立创建的 schema 仍属于不同域。
 - Arena、原页 owner、ready 读者和写入／退休权限仍由原资源机制证明，布局共享不授予页权限。
 
-准备在原 `BatchSchema` 上提供只改变存储解释的显式变体，保留一份实际 layout 和 metadata 输入。
-布局的来源查询改为 `origin_schema()`；构图和 native program 的真实缓存解释从其冷 spec 或实际
-Arena 读取，程序复用同时核对原拓扑域及完整存储解释。这样逐层 scale 不需要逐层复制、分配或上传
-metadata。现有将 `layout.schema()` 同时用于拓扑、缓存 dtype 和程序复用的调用须一起迁移；
-原 E4 编码／读取设施继续复用，普通消费者及分页写入接线随后完成。
+布局以 `origin_schema()` 查询拓扑出处；构图和 native program 从冷 spec 或实际 Arena 取得存储解释，
+复用同时核对原域与完整存储解释。一个 Graph metadata 输入仍须绑定同一个实际 layout，逐层 scale
+共用这份原元数据；后端计划私有的 compact indices／scratch 另计，不能把 CPU follower 的零上传
+报告推广为所有 native 程序没有暂存或搬运。布局单参数 Graph 形式使用其来源的存储解释；存储变体使用既有 typed capacity
+加 owned metadata 接口，不能从 layout 反推实际缓存 scale。旧 `.schema()` 查询已删除，无兼容别名。
+[有限检查](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)覆盖 Windows CPU
+39项及普通消费者、Apple 原 E4 Q1 续算，以及相关原生 host 严格编译；未运行所有后端的双 scale
+共享域案例，不代表 E4 分页写入或普通模型接线已经完成。原 E4 编码／读取设施继续复用。
 
 冷图的有效历史长度不能由固定物理容量推定。GLM Flash 的原2051项选择状态保持不变，
 实际闭合池与尾窗决定参与 attention 的前缀，零池省去评分；参数／codec／排序差异仍由

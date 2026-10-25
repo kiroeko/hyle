@@ -16,7 +16,7 @@ struct PagedBatchAccess final {
   // Native descriptor/layout validation only; no Program tracing or JIT.
   // The original two-pass kernels retain F32 partials for every input dtype.
   HYLE_COMPUTE_ROUTE_APPLE_API static Status validate_paged(
-      const std::shared_ptr<Runtime>&, const BatchLayoutVersion&,
+      const std::shared_ptr<Runtime>&, const BatchLayoutVersion&, BatchCapacity,
       bool causal, std::int32_t window_left) noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API static Status validate_ragged(
       const std::shared_ptr<Runtime>&, const RaggedAttention&) noexcept;

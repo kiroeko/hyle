@@ -146,7 +146,7 @@ BatchPlanReport report(const Slot &slot, bool reused = false) noexcept {
 Result<bool> update(void *value, const BatchLayoutVersion &layout,
                     BatchPlanReport *output) noexcept {
   auto &slot = *static_cast<Slot *>(value);
-  if (!slot.layout.valid() || !slot.layout.schema().owns(layout))
+  if (!slot.layout.valid() || !slot.layout.origin_schema().owns(layout))
     return false;
   const auto old = slot.layout.host(), next = layout.host();
   const auto equal = [](auto a, auto b) {
@@ -214,8 +214,8 @@ detail::EnqueueResult plan(void *value, detail::QueueSequence &, const BatchLayo
                           BatchPlanReport *output) noexcept {
   auto &slot = *static_cast<Slot *>(value);
   slot.clear();
-  if (!layout.valid() || layout.schema().capacity() != slot.capacity ||
-      (layout.schema().mla_layout() != MlaCacheLayout::kNone) != slot.mla)
+  if (!layout.valid() || !detail::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), slot.capacity) ||
+      (layout.origin_schema().mla_layout() != MlaCacheLayout::kNone) != slot.mla)
     return detail::EnqueueResult::rejected(Status::InvalidArgument("ggml CPU ragged layout capacity"));
   try {
     slot.layout=layout;

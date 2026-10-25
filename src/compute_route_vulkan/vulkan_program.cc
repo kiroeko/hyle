@@ -1249,7 +1249,7 @@ Status detail::PagedBatchAccess::update_ragged(Invocation& invocation,
     return Status::InvalidArgument("Vulkan ragged update requires a ragged Program");
   const auto& contract=*state->program->ragged;
   const auto a=contract.initial.host(),b=layout.host();
-  if(!contract.initial.schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
+  if(!contract.initial.origin_schema().owns(layout) || a.query_indptr.size()!=b.query_indptr.size() ||
       !std::equal(a.query_indptr.begin(),a.query_indptr.end(),b.query_indptr.begin()))
     return Status::InvalidArgument("Vulkan ragged update schema/Q topology differs");
   HYLE_RETURN_IF_ERROR(validate_batch_attention_layout(layout,contract.causal,contract.window_left));

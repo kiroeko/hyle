@@ -68,10 +68,17 @@ Result<BatchLayoutFacts> validate_layout(detail::BatchLayoutGeometry c,HostBatch
 } // namespace
 namespace detail {
 struct BatchSchemaData final:util::RefCounted<BatchSchemaData> {
-  BatchSchemaData(BatchCapacity c,BatchSchemaOptions o,mem::AllocatorRef a,BatchMetadataOffsets x)
-      :capacity(c),options(std::move(o)),allocator(a),offsets(x){}
-  void destroy()noexcept{const auto a=allocator;this->~BatchSchemaData();a.deallocate(this,sizeof(*this),alignof(BatchSchemaData));}
+  BatchSchemaData(BatchCapacity c,BatchSchemaOptions o,mem::AllocatorRef a,BatchMetadataOffsets x,BatchSchema root={})
+      :capacity(c),options(std::move(o)),allocator(a),offsets(x),origin(std::move(root)){}
+  void destroy()noexcept{
+    const auto a=allocator;
+    // A storage view borrows the root's allocator. Keep that root until
+    // after the view itself has returned its metadata allocation.
+    [[maybe_unused]] auto root=std::move(origin);
+    this->~BatchSchemaData();a.deallocate(this,sizeof(*this),alignof(BatchSchemaData));
+  }
   BatchCapacity capacity;BatchSchemaOptions options;mem::AllocatorRef allocator;BatchMetadataOffsets offsets;
+  BatchSchema origin; // Empty on roots; views retain the final root directly.
   RowCacheBatchCapacity row_capacity{};bool row_cache=false;
   MlaCacheLayout mla=MlaCacheLayout::kNone;
   std::atomic<std::uint64_t> next_generation{1};
@@ -214,9 +221,9 @@ Status validate_batch_attention_layout(const BatchLayoutVersion &layout,bool cau
                                        std::int32_t window_left) noexcept {
   HYLE_RETURN_IF_ERROR(validate_batch_attention_options(causal,window_left));
   if(!layout.valid())return Status::InvalidArgument("attention layout is empty");
-  if(detail::BatchLayoutAccess::is_row_cache(layout.schema()))return Status::InvalidArgument("row cache is not an attention layout");
+  if(detail::BatchLayoutAccess::is_row_cache(layout.origin_schema()))return Status::InvalidArgument("row cache is not an attention layout");
   if(!causal)return Status::Ok();
-  const auto c=layout.schema().capacity();const auto host=layout.host();
+  const auto c=layout.origin_schema().capacity();const auto host=layout.host();
   for(std::size_t r=0;r<layout.facts().requests;++r){
     const auto q=std::uint32_t(host.query_indptr[r+1]-host.query_indptr[r]);
     const auto count=std::uint32_t(host.kv_indptr[r+1]-host.kv_indptr[r]);
@@ -247,6 +254,22 @@ Result<BatchSchema> BatchSchema::create(BatchCapacity c,BatchSchemaOptions o)noe
   if(!p)return std::unexpected(Status::ResourceExhausted("batch schema metadata"));
   return BatchSchema(p);
 }
+Result<BatchSchema> BatchSchema::with_cache_storage(CacheStorage key,CacheStorage value)const noexcept {
+  if(!data_)return std::unexpected(Status::FailedPrecondition("batch schema is empty"));
+  if(data_->row_cache)return std::unexpected(Status::InvalidArgument("row cache has its own typed storage encoding"));
+  auto capacity=data_->capacity;capacity.key_storage=key;capacity.value_storage=value;
+  HYLE_RETURN_IF_ERROR(validate_batch_capacity(capacity));
+  if(data_->mla!=MlaCacheLayout::kNone){
+    if(key!=value)return std::unexpected(Status::InvalidArgument("MLA requires one shared cache storage interpretation"));
+    if(!key.format().is_plain())return std::unexpected(Status::Unimplemented("compact MLA requires scalar cache storage"));
+  }
+  if(capacity==data_->capacity)return *this;
+  const auto origin=data_->origin.valid()?data_->origin:*this;
+  auto*root=origin.data_;const auto a=root->allocator;
+  auto*p=a.construct<detail::BatchSchemaData>(capacity,BatchSchemaOptions{},a,root->offsets,origin);
+  if(!p)return std::unexpected(Status::ResourceExhausted("batch storage view metadata"));
+  p->mla=root->mla;return BatchSchema(p);
+}
 BatchCapacity BatchSchema::capacity()const noexcept{
   if(data_ && data_->row_cache){BatchCapacity invalid;invalid.query_type=invalid.output_type=DataType::kUnknown;invalid.max_requests=0;return invalid;}
   return data_?data_->capacity:BatchCapacity{};
@@ -264,12 +287,13 @@ Result<TensorDesc> BatchSchema::metadata_description()const noexcept {
 }
 Result<BatchLayoutVersion> BatchSchema::version(HostBatchLayout h)const noexcept {
   if(!data_)return std::unexpected(Status::FailedPrecondition("batch schema is empty"));
-  const auto geometry=detail::BatchLayoutAccess::geometry(*this);
-  HYLE_ASSIGN_OR_RETURN(auto facts,validate_layout(geometry,h,data_->row_cache));
-  auto generation=data_->next_generation.load(std::memory_order_relaxed);
+  auto origin=data_->origin.valid()?data_->origin:*this;auto*root=origin.data_;
+  const auto geometry=detail::BatchLayoutAccess::geometry(origin);
+  HYLE_ASSIGN_OR_RETURN(auto facts,validate_layout(geometry,h,root->row_cache));
+  auto generation=root->next_generation.load(std::memory_order_relaxed);
   do{if(generation==UINT64_MAX)return std::unexpected(Status::OutOfRange("batch layout generation exhausted"));}
-  while(!data_->next_generation.compare_exchange_weak(generation,generation+1,std::memory_order_relaxed));
-  auto*p=data_->allocator.construct<detail::BatchLayoutData>(*this,data_->allocator);
+  while(!root->next_generation.compare_exchange_weak(generation,generation+1,std::memory_order_relaxed));
+  auto*p=root->allocator.construct<detail::BatchLayoutData>(std::move(origin),root->allocator);
   if(!p)return std::unexpected(Status::ResourceExhausted("batch layout metadata"));
   BatchLayoutVersion result(p);p->generation=generation;p->facts=facts;
   const auto offsets=active_offsets(facts,geometry.storage==BatchStorage::kPaged);
@@ -283,11 +307,13 @@ Result<BatchLayoutVersion> BatchSchema::version(HostBatchLayout h)const noexcept
     copy(offsets.page_indices,h.page_indices);copy(offsets.last_page_lengths,h.last_page_lengths);
     HYLE_RETURN_IF_ERROR(mapping.close());
   }
-  HYLE_ASSIGN_OR_RETURN(p->bytes,detail::LeaseAccess::adopt_metadata(std::move(buffer),{.allocator=data_->allocator,.resource_budget=data_->options.resource_budget}));
+  HYLE_ASSIGN_OR_RETURN(p->bytes,detail::LeaseAccess::adopt_metadata(std::move(buffer),{.allocator=root->allocator,.resource_budget=root->options.resource_budget}));
   HYLE_ASSIGN_OR_RETURN(auto view,p->bytes.view());HYLE_ASSIGN_OR_RETURN(p->mapping,view.map_host());
   return result;
 }
-bool BatchSchema::owns(const BatchLayoutVersion&v)const noexcept{return data_ && v.data_ && v.data_->schema.data_==data_;}
+bool BatchSchema::owns(const BatchLayoutVersion&v)const noexcept{
+  return data_ && v.data_ && v.data_->schema.data_==(data_->origin.valid()?data_->origin.data_:data_);
+}
 Result<RowCacheBatchSchema> RowCacheBatchSchema::create(RowCacheBatchCapacity c,BatchSchemaOptions o)noexcept{
   HYLE_RETURN_IF_ERROR(validate_row_cache_batch_capacity(c));
   HYLE_ASSIGN_OR_RETURN(auto offsets,geometry_offsets({BatchStorage::kPaged,c.max_requests,c.max_query_rows,c.max_kv_rows,c.max_pages,c.max_page_refs,c.page_size}));
@@ -302,13 +328,13 @@ Result<RowCacheLayoutVersion> RowCacheBatchSchema::version(HostBatchLayout h)con
   HYLE_ASSIGN_OR_RETURN(auto version,owner_.version(h));return RowCacheLayoutVersion(std::move(version));
 }
 bool RowCacheBatchSchema::owns(const RowCacheLayoutVersion&v)const noexcept{return owner_.owns(v.owner_);}
-RowCacheBatchSchema RowCacheLayoutVersion::schema()const noexcept{return RowCacheBatchSchema(owner_.schema());}
+RowCacheBatchSchema RowCacheLayoutVersion::schema()const noexcept{return RowCacheBatchSchema(owner_.origin_schema());}
 BatchLayoutVersion::BatchLayoutVersion(const BatchLayoutVersion&v)noexcept:data_(v.data_){if(data_)data_->incref();}
 BatchLayoutVersion&BatchLayoutVersion::operator=(const BatchLayoutVersion&v)noexcept{if(this!=&v){BatchLayoutVersion next(v);std::swap(data_,next.data_);}return *this;}
 BatchLayoutVersion::BatchLayoutVersion(BatchLayoutVersion&&v)noexcept:data_(std::exchange(v.data_,nullptr)){}
 BatchLayoutVersion&BatchLayoutVersion::operator=(BatchLayoutVersion&&v)noexcept{if(this!=&v){BatchLayoutVersion next(std::move(v));std::swap(data_,next.data_);}return *this;}
 BatchLayoutVersion::~BatchLayoutVersion(){if(data_)data_->decref();}
-BatchSchema BatchLayoutVersion::schema()const noexcept{return data_?data_->schema:BatchSchema{};}
+BatchSchema BatchLayoutVersion::origin_schema()const noexcept{return data_?data_->schema:BatchSchema{};}
 std::uint64_t BatchLayoutVersion::generation()const noexcept{return data_?data_->generation:0;}
 BatchLayoutFacts BatchLayoutVersion::facts()const noexcept{return data_?data_->facts:BatchLayoutFacts{};}
 HostBatchLayout BatchLayoutVersion::host()const noexcept {
@@ -340,7 +366,7 @@ Result<ReadLease> BatchLayoutVersion::metadata()const noexcept {
 }
 std::array<detail::BatchMetadataSegment,5> detail::BatchLayoutAccess::segments(const BatchLayoutVersion&version)noexcept {
   if(!version.data_)return {};
-  const auto h=version.host();const auto offsets=version.schema().metadata_offsets();
+  const auto h=version.host();const auto offsets=version.origin_schema().metadata_offsets();
   return {{{0,version.data_->mapping.bytes().first(sizeof(MetadataHeader))},
       {offsets.query_indptr,std::as_bytes(h.query_indptr)},
       {offsets.kv_indptr,std::as_bytes(h.kv_indptr)},

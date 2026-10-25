@@ -102,7 +102,7 @@ Status check_output(g::GraphOutput&output,std::span<const double>expected){
 struct GraphData{g::Graph graph;g::ValueId query,key,value,converted,output;g::NodeId page;
   c::TensorDesc query_description,key_description,value_description,output_description;};
 Result<GraphData> build_graph(const c::BatchLayoutVersion&initial){
-  GraphData result;const auto schema=initial.schema();const auto cap=schema.capacity();
+  GraphData result;const auto schema=initial.origin_schema();const auto cap=schema.capacity();
   HYLE_ASSIGN_OR_RETURN(result.query_description,c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t,3>{initial.facts().query_rows,heads,depth}));
   HYLE_ASSIGN_OR_RETURN(result.key_description,c::batch_cache_description(schema,c::BatchCacheRole::kKey));
@@ -166,7 +166,7 @@ Status execute(const GraphData&data,const c::BatchLayoutVersion&initial,const c:
     c::Context&cpu,v::Context&native,v::MemoryResource&device,v::MemoryResource&staging,bool use_vulkan){
   // This function changes actual sources/resources/placement only. The caller
   // passes the same immutable Graph object to both compilations.
-  const auto schema=initial.schema();const bool empty=initial.facts().query_rows==0;
+  const auto schema=initial.origin_schema();const bool empty=initial.facts().query_rows==0;
   const auto page_resource=use_vulkan?device.ref():hyle::mem::system_resource();
   HYLE_ASSIGN_OR_RETURN(auto keys,c::PagedArena::create(schema,c::BatchCacheRole::kKey,page_resource,{.max_backing_bytes=1<<20}));
   HYLE_ASSIGN_OR_RETURN(auto values,c::PagedArena::create(schema,c::BatchCacheRole::kValue,page_resource,{.max_backing_bytes=1<<20}));

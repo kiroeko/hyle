@@ -247,7 +247,7 @@ TEST(GraphBatchCapture, FiniteQueryExtentsUseOneCapacityAndIndependentSlots) {
     ASSERT_EQ(query_desc.required_bytes().value(), std::size_t(extents[shape]) * depth * 2);
     ASSERT_EQ(output_desc.required_bytes().value(), query_desc.required_bytes().value());
     ASSERT_EQ(layouts[shape].facts().query_rows, extents[shape]); // A=R, no padding.
-    EXPECT_EQ(layouts[shape].schema().capacity().max_query_rows, capacity_rows);
+    EXPECT_EQ(layouts[shape].origin_schema().capacity().max_query_rows, capacity_rows);
     queries[shape] = m::Buffer::create(device.ref(), query_desc.required_bytes().value(), 64).value();
     ASSERT_TRUE(queries[shape].view().fill(std::byte{0}).ok());
     for (auto &destination : destinations[shape])

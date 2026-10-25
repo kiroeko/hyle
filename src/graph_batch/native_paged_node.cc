@@ -10,9 +10,9 @@ namespace {
 Status infer(const c::BatchLayoutVersion &layout, const PagedAttentionOptions &options,
     bool mla, std::span<const c::TensorDesc> inputs, std::span<c::TensorDesc> outputs) noexcept {
   if (!layout.valid() ||
-      (layout.schema().mla_layout() != c::MlaCacheLayout::kNone) != mla)
+      (layout.origin_schema().mla_layout() != c::MlaCacheLayout::kNone) != mla)
     return Status::InvalidArgument("paged attention needs its owned layout and matching cache role");
-  const auto schema = layout.schema();
+  const auto schema = layout.origin_schema(); // Layout-only API uses its explicit origin interpretation.
   const auto capacity = schema.capacity();
   HYLE_RETURN_IF_ERROR(c::validate_batch_capacity(capacity));
   if (capacity.storage != c::BatchStorage::kPaged || inputs.size() != (mla ? 2u : 3u) ||
@@ -40,7 +40,7 @@ Result<Descriptor> descriptor(c::BatchLayoutVersion layout, PagedAttentionOption
     bool mla) noexcept {
   if (!layout.valid())
     return std::unexpected(Status::InvalidArgument("paged attention layout is empty"));
-  const auto schema = layout.schema();
+  const auto schema = layout.origin_schema(); // Layout-only API uses its explicit origin interpretation.
   const auto capacity = schema.capacity();
   Descriptor result{std::move(layout), options};
   std::array<c::TensorDesc, 3> inputs;

@@ -1,4 +1,5 @@
 #include "native_paged_region.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "native_paged_pending.h"
 #include "native_region.h"
 #include "vulkan_source.h"
@@ -50,7 +51,7 @@ Result<Recipe> recipe(const compute::Operation &operation) noexcept {
 Status qualify(const Recipe &value) noexcept {
   if ((!value.explicit_metadata && !value.layout.valid()) || !std::isfinite(value.options.scale))
     return Status::InvalidArgument("native Vulkan page layout/scale is invalid");
-  const auto capacity = value.explicit_metadata ? value.capacity : value.layout.schema().capacity();
+  const auto capacity = value.explicit_metadata ? value.capacity : value.layout.origin_schema().capacity();
   if (!vn::PagedBatchAccess::cache_domain(capacity) || capacity.page_size != 16)
     return Status::Unimplemented("native Vulkan page dtype/encoding/geometry is unsupported");
   if (value.explicit_metadata) {
@@ -242,6 +243,13 @@ Status refresh_output(Artifact &a, Slot &s) noexcept {
 }
 Result<compute::NativePagedBatchProgram> make_recipe(const Artifact &a,
     compute::BatchSchema schema, mem::AllocatorRef allocator) noexcept {
+  if (a.recipe.explicit_metadata) {
+    if (!cd::BatchLayoutAccess::same_topology(schema.capacity(),a.recipe.capacity) ||
+        schema.mla_layout()!=compute::MlaCacheLayout::kNone)
+      return std::unexpected(Status::InvalidArgument("native page recipe topology differs"));
+    HYLE_ASSIGN_OR_RETURN(schema,schema.with_cache_storage(
+        a.recipe.capacity.key_storage,a.recipe.capacity.value_storage));
+  }
   const auto refs = std::size_t(schema.capacity().max_page_refs);
   if (refs > SIZE_MAX / sizeof(std::int32_t))
     return std::unexpected(Status::OutOfRange("native page table byte extent overflow"));
@@ -265,7 +273,7 @@ Status qualify_ordered_native(const std::shared_ptr<vn::Runtime> &runtime,
 Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion layout) noexcept {
   auto &a = *static_cast<Artifact *>(prepared); auto &s = *static_cast<Slot *>(invocation);
   if (!layout.valid() || (a.recipe.explicit_metadata ?
-      layout.schema().capacity() != a.recipe.capacity || layout.schema().mla_layout() != compute::MlaCacheLayout::kNone ||
+      !cd::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), a.recipe.capacity) || layout.origin_schema().mla_layout() != compute::MlaCacheLayout::kNone ||
           layout.facts().query_rows > a.output_query_rows :
       !a.native_recipe.schema().owns(layout) || layout.facts().query_rows != a.output_query_rows))
     return Status::InvalidArgument("native page schema/active output shape changed");
@@ -277,10 +285,12 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     HYLE_RETURN_IF_ERROR(vn::CompositionAccess::prepare_bindings(s.controller().native));
   s.controller().prepared = false; s.controller().bound = false;
   s.needs_seal = false;
-  if (a.recipe.explicit_metadata && !s.controller().recipe.schema().owns(layout)) {
+  if (a.recipe.explicit_metadata && (!s.controller().recipe.schema().owns(layout) ||
+      s.controller().recipe.schema().capacity()!=a.recipe.capacity ||
+      s.controller().recipe.schema().mla_layout()!=compute::MlaCacheLayout::kNone)) {
     if (s.controller().uses.active_batches())
       return Status::Unavailable("native page prior permission use is retained");
-    HYLE_ASSIGN_OR_RETURN(auto next_recipe, make_recipe(a, layout.schema(), s.allocator));
+    HYLE_ASSIGN_OR_RETURN(auto next_recipe, make_recipe(a, layout.origin_schema(), s.allocator));
     auto *candidate = s.allocator.construct<Controller>(s.allocator);
     if (!candidate) return Status::ResourceExhausted("native page replacement controller");
     auto destroy = [allocator = s.allocator](Controller *p) noexcept { allocator.destroy(p); };
@@ -361,8 +371,12 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
     return Status::InvalidArgument("Vulkan written bank is not an available exact native KV port");
   HYLE_ASSIGN_OR_RETURN(auto facts, writer.table->inspect(writer.prepared, writer.invocation));
   const auto role = port == 1 ? compute::BatchCacheRole::kKey : compute::BatchCacheRole::kValue;
+  const auto writer_capacity=facts.descriptor.schema.capacity();
+  const auto reader_capacity=page_recipe(a,s).schema().capacity();
   if (facts.node != writer.node || facts.descriptor.role != role ||
-      !facts.descriptor.schema.owns(layout))
+      !facts.descriptor.schema.owns(layout) ||
+      (port==1?writer_capacity.key_storage:writer_capacity.value_storage)!=
+          (port==1?reader_capacity.key_storage:reader_capacity.value_storage))
     return Status::InvalidArgument("Vulkan written bank role/schema differs from its selected writer");
   HYLE_ASSIGN_OR_RETURN(auto description, input_description(a, s, port));
   if (capacity.description() != description)
@@ -736,7 +750,7 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context,
   *out = {.vtable = &prepared_table, .state = a};
   const auto build = [&]() noexcept -> Status {
     a->recipe = std::move(*selected); a->node = request.nodes[0]; a->workload = request.workload;
-    const auto schema = a->recipe.layout.schema();
+    const auto schema = a->recipe.layout.origin_schema();
     const auto capacity = a->recipe.explicit_metadata ? a->recipe.capacity : schema.capacity();
     HYLE_ASSIGN_OR_RETURN(auto query, request.graph->node_input(a->node, 0));
     HYLE_ASSIGN_OR_RETURN(a->query_description, request.graph->value_description(query));

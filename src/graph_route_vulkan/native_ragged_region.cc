@@ -1,4 +1,5 @@
 #include "native_ragged_region.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "native_region.h"
 #include "vulkan_source.h"
 
@@ -101,8 +102,8 @@ Status refresh_output(const Artifact &a, Slot &s) noexcept {
 }
 Status prepare_layout(void *prepared, void *invocation, compute::BatchLayoutVersion layout) noexcept {
   auto &a = *static_cast<Artifact *>(prepared); auto &s = *static_cast<Slot *>(invocation);
-  if (!layout.valid() || layout.schema().capacity() != a.operation.capacity ||
-      layout.schema().mla_layout() != a.mla ||
+  if (!layout.valid() || !cd::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), a.operation.capacity) ||
+      layout.origin_schema().mla_layout() != a.mla ||
       layout.facts().query_rows > std::uint32_t(a.descriptions[0].dimensions()[0]))
     return Status::InvalidArgument("native Vulkan ragged owned layout exceeds concrete Q/output extent");
   HYLE_RETURN_IF_ERROR(compute::validate_batch_attention_layout(layout,
@@ -113,7 +114,7 @@ Status prepare_layout(void *prepared, void *invocation, compute::BatchLayoutVers
   bool reuse = false;
   if (s.native.valid()) {
     const auto &contract = vn::Access::invocation_state(s.native)->program->ragged;
-    if (contract && contract->initial.schema().owns(layout)) {
+    if (contract && contract->initial.origin_schema().owns(layout)) {
       const auto first = contract->initial.host().query_indptr, next = layout.host().query_indptr;
       reuse = first.size() == next.size() && std::equal(first.begin(), first.end(), next.begin());
     }

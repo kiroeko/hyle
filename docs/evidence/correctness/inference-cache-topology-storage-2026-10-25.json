@@ -1,0 +1,285 @@
+{
+  "status": "PASS_FINITE_SHARED_TOPOLOGY_AND_EXPLICIT_CACHE_INTERPRETATIONS",
+  "date": "2026-10-25",
+  "source": {
+    "files": [
+      {
+        "path": "include/hyle/compute/batch_layout.h",
+        "before": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921",
+        "after": "62767107ddcff7c67f09024379f87223e2fed62908ffa5ca2a751bcaa302fb2c",
+        "bytes": 11236
+      },
+      {
+        "path": "src/compute_batch/batch_layout.cc",
+        "before": "2fb60c79fbc95491ac76fac3bb36b18460afb68236ef600aa02a7a11e4efebce",
+        "after": "8f062760b6b190efbcd90fc07daf9baeef7071fe4f373d2e1c9f57e195c430c4",
+        "bytes": 28192
+      },
+      {
+        "path": "tests/compute_batch/batch_layout_test.cc",
+        "before": "717ea79d62db5d273ae0d56a3b96d72cdda42f9c6304055abe82f1e552b715de",
+        "after": "fd0a58487491be4ade68b084eb586ccbbf3fa243bf29f0f1a10ad8f508b0a075",
+        "bytes": 36973
+      },
+      {
+        "path": "include/hyle/compute/detail/apple_batch_access.h",
+        "before": "027b7f331eeb81c513b9b5f5e4469ae143bb30374c368c11e2ef17c09bd67824",
+        "after": "8f155e52d49ab4c21893d8b23de75a7fdf259b6e2b75836440ab056d08279c3b",
+        "bytes": 5468
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "before": "bf2d93357c2db25109086b84a41f6e4c569aa5fe95fcdac28337cc39da0e856e",
+        "after": "772e85be3d76411dcf292105b302d02aca1a5e3dcd1995250fdd505e1f0a9096",
+        "bytes": 5808
+      },
+      {
+        "path": "include/hyle/compute/detail/materialized_native_controller.h",
+        "before": "190948d40d745accfb83d16a7d39f2aba858e789b0ae0690a3b3b540d3a4275d",
+        "after": "13017bd97be4ad4c74fb0e19e6c5b1b98e5a67c85b5f5f718f33c234dd42739a",
+        "bytes": 30221
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "before": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0",
+        "after": "d717687b864f11b61020371b1ccda6f7c657d140c7da0fd5da90c33d80e6fee7",
+        "bytes": 18686
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "before": "7f7d4d036c187fd206955a61f9e9f7a7873d2ab56f4eb8ee6e5476f44f9674e7",
+        "after": "23ae88731ea36a4ad73a288ccd825fe72a4e0f8ef84d484512e2be702b332109",
+        "bytes": 46746
+      },
+      {
+        "path": "src/compute_provider_ggml/native_batch.cc",
+        "before": "54fcd9ee4dbab755c6b1cf56f4dd5688508d968be744b054e6ebdf49069ec1a9",
+        "after": "f9f308ea96ca17eaea968c44baa556f34dc821564c069b126469ce75c2735811",
+        "bytes": 22199
+      },
+      {
+        "path": "src/compute_route_apple/apple_batch.cc",
+        "before": "16cd248b1bd9f4717a09a43bab2db21f5b79e3ee9b1207c71e1d1ada95f1886b",
+        "after": "0ca19239a96125ff6cdd9d8ac4ce2f7ac027d3699b80b27c480c00f4276975f2",
+        "bytes": 19394
+      },
+      {
+        "path": "src/compute_route_apple/apple_context.cc",
+        "before": "92235ad77fec7a233e64b2fb2ccc1857315ca9a1e624c7087830759520439df2",
+        "after": "faefb537bb1d07d0d08a4f116f11e3d2b603e27cdf527942e78e5244a00c2e15",
+        "bytes": 71936
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_batch.cc",
+        "before": "7164c44a498caafa14cf7987c3a4709a2866a6875541d1af6515434bf1c9f170",
+        "after": "231f49c9d00dbfcd8c99035474756ba12a8102a658d79c72ed2f6abbadd8b969",
+        "bytes": 18623
+      },
+      {
+        "path": "src/compute_route_vulkan/vulkan_program.cc",
+        "before": "decf99a01020e2a957eaf63068f0683aec8a02248fd37737f00afc796930d64d",
+        "after": "230436339227813fd8d4569ef54f91cdfd00740905cc59be79f5706e6b19be68",
+        "bytes": 71606
+      },
+      {
+        "path": "src/graph_batch/batch.cc",
+        "before": "7201f3007fd16374206f59304dcd2edcabae6d193776176e18f5f9be997c5816",
+        "after": "5cbdd7fbad88d8f68b9a87414cf7dc462b7d7d3121c7b99e941f57cf3d2f3151",
+        "bytes": 94468
+      },
+      {
+        "path": "src/graph_batch/native_batch_regions.cc",
+        "before": "732bbc158e240a8b478920c58ef33013c7e425211c7b7f1ce2ae2061af131f68",
+        "after": "429c4bd410f4cf79d56b83a4d7a617a98008d17d37da122840895207f6997cdb",
+        "bytes": 15897
+      },
+      {
+        "path": "src/graph_batch/native_paged_node.cc",
+        "before": "b850f845ff7a72142ede9df3097872063dd170804d9354c163a5d9ab9d4cd967",
+        "after": "7399c73c6aeaeb2548f03d50dc684f45da2ed8f263a7d17e835c3a45f454038b",
+        "bytes": 3934
+      },
+      {
+        "path": "src/graph_batch/paged_append.cc",
+        "before": "69ab6e4d9ef108832a3d1bc676d2dc4cc417214e2b6e133932423abe2324cf6a",
+        "after": "e46caf8a559b047a6f0db11b7719dd8c5f18eb3d17699cc9a45f06524c9e471f",
+        "bytes": 55438
+      },
+      {
+        "path": "src/graph_batch/paged_append.h",
+        "before": "4d1851107106162fd0bb4d139848bad81513c350976f334eab1dba0a42407fa4",
+        "after": "49971a20f182733d84291fe96400c1ef20e1edb0272950d2d68cc7d0c7d3d0fb",
+        "bytes": 1859
+      },
+      {
+        "path": "src/graph_route_apple/native_paged_region.cc",
+        "before": "a45d7914fa66044d0c141e3369efa9c88eea5e8176aa1b5e7c504f64670a3405",
+        "after": "dcbaea6e5f8fbd3348b6649aefcaab4256aa2ea7dcd65ea899e7fe7f169dc4db",
+        "bytes": 49611
+      },
+      {
+        "path": "src/graph_route_apple/native_ragged_region.cc",
+        "before": "dbdc968fa07ff5579a01a2a85c672dacf7cdc2ab257ae7374be1963dd374029f",
+        "after": "00409c5522836cb80788594056b4080e3cbe1d66deb8f94a807022df26ae8266",
+        "bytes": 22138
+      },
+      {
+        "path": "src/graph_route_vulkan/native_paged_region.cc",
+        "before": "602200a88bd5be13a400e5fa7147f29a45dc8df52a2c29b96c6184f99d3d8549",
+        "after": "ba21c98cbc5dd53cf689f4a9136a60d4fb32f6a4026eece836f5e94858880c89",
+        "bytes": 49258
+      },
+      {
+        "path": "src/graph_route_vulkan/native_ragged_region.cc",
+        "before": "a4039899e45e805876ec69291bb7454410bb9b75de726b2f544d0ff1ac701648",
+        "after": "047313b59db426732d9db747febdc95854cfe571e27bc29c4187638d12f0bc7f",
+        "bytes": 22299
+      },
+      {
+        "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+        "before": "4ae124056fb9f0ce24f777f600e67fbb6a9a937009fa54c05db709fec75d65f4",
+        "after": "a6acea655651d129980b2f47f5f1ed9f8269118b638f5bb84bade54e4c9e2dcb",
+        "bytes": 16074
+      },
+      {
+        "path": "tests/graph_batch/batch_capture_test.cc",
+        "before": "b411dcb2febb3d949e74dafe868f920c9a57fcdd41f19666c4653c69572b330c",
+        "after": "9eb046dd29dc75ceced295ba99c1818f7062b26901d2967e3ff8c2c61d7f8c68",
+        "bytes": 26607
+      },
+      {
+        "path": "tests/graph_batch/native_paged_node_test.cc",
+        "before": "752c13b40de0d7cb6106a5658e5efe0133750204caa2fc29f9da1c5b8324937e",
+        "after": "422cd8c21f0bcf2fbaf509d7d055b6e3bb9e47b5ed215011d6541af13da67794",
+        "bytes": 7496
+      },
+      {
+        "path": "tests/graph_batch/paged_semantics_consumer.cc",
+        "before": "18207c958695ba3c3736554b594aac6355fa446bab60e810ba9e14ac323cb378",
+        "after": "90e379a4095afbcf6152cdccfa70521c4dbf64177ed3e0401fe8001616e502fd",
+        "bytes": 21377
+      },
+      {
+        "path": "tests/graph_batch/typed_capability_graph_test.cc",
+        "before": "7faaf9f1fade12970824b3b31237fe3a124879fdd0ad7ee19a7c05ef65e97172",
+        "after": "78b0faaca1bdfe99674b1bf05bc9cd988adaf9c5731b94510bd5e4d63c51bd93",
+        "bytes": 36229
+      },
+      {
+        "path": "tests/graph_route_apple/paged_region_consumer.cc",
+        "before": "26d8f238450cf474d3c3fc343b32d8b1c65f4344a6e999771aef89e135b383b1",
+        "after": "b5b744f8d789da63d15fbe3dcbe42fc16855cf2f8d471441e39b2e5c3e3558f4",
+        "bytes": 20584
+      }
+    ]
+  },
+  "design": [
+    "BatchSchema.with_cache_storage changes only K/V CacheStorage and pins the final original root; roots retain one metadata allocator/budget and atomic generation domain.",
+    "BatchLayoutVersion.origin_schema replaces the old getter without a compatibility alias; independent create remains a foreign domain.",
+    "Actual immutable typed capacity/Program/arena carries dtype and scales. Program reuse checks full actual capacity/MLA plus original domain; topology equality alone grants no storage interpretation or page rights.",
+    "Append descriptors use actual arena schema and compare the selected bank CacheStorage to each reader; original page/ready/pending/COW/resource/retirement checks remain.",
+    "One Graph metadata input still requires one exact original LayoutVersion. Storage variants share that owned metadata; provider-private compact indices and planning scratch are separate and are not claimed to have zero allocation/upload.",
+    "Layout-only Graph attention explicitly uses the origin interpretation; variants use the existing typed capacity and owned metadata input."
+  ],
+  "checks": {
+    "Windows_CPU": {
+      "product_TUs": 6,
+      "test_TUs": 2,
+      "tests": 39,
+      "skips": 0,
+      "failures": 0,
+      "new_core_regressions": 5,
+      "new_graph_regressions": 1,
+      "original_ordinary_consumer": "reused unchanged application object, relinked with all six updated product objects; PASS",
+      "unchanged_common_inputs": 123,
+      "old_getter_symbol_inputs_after_replacement": 0,
+      "graph_case": "TypedCapabilityGraph.StorageVariantsShareTopologyButKeepRealCacheInterpretations",
+      "graph_facts": [
+        "BF16 origin; actual E4 K.5/V2 and E4 K1/V1 branches, same original metadata input and two epochs.",
+        "Existing independent E4 oracle and .008 gate unchanged; correct branches pass and wrong K/V scale pages reject.",
+        "Foreign root/layout rejects; retained old outputs and page readers survive invocation/Graph destruction.",
+        "Follower metadata report records zero logical upload and staging bytes; not a measured DMA or throughput result."
+      ],
+      "raw": {
+        "path": ".scratch/inference-layout-storage-validation-20261025/cpu1/test-run/stdout.log",
+        "bytes": 7449,
+        "sha256": "85e21a5efe759c9f3629f98b004e230d32201d84e4461778a62a2bc0b5ebfa99"
+      },
+      "xml": {
+        "path": ".scratch/inference-layout-storage-validation-20261025/cpu1/test-result.xml",
+        "bytes": 11135,
+        "sha256": "010aa2fb6deb2d4007ceaba1e27d2d3774acaee8c640e324e24076855884a202"
+      }
+    },
+    "Windows_native_host": {
+      "product_TUs": 6,
+      "result": "strict compile only, all PASS",
+      "sources": [
+        "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "src/compute_route_vulkan/vulkan_batch.cc",
+        "src/compute_route_vulkan/vulkan_program.cc",
+        "src/graph_route_vulkan/native_paged_region.cc",
+        "src/graph_route_vulkan/native_ragged_region.cc",
+        "src/compute_route_vulkan/vulkan_materialized_invocation.cc"
+      ],
+      "links": 0,
+      "runs": 0
+    },
+    "macOS_Apple": {
+      "product_TUs": 11,
+      "test_TUs": 1,
+      "result": "strict compile/link and one unchanged original reader case PASS",
+      "hardware": "Mac16,12 / Apple M4 / arm64 / 16GiB",
+      "toolchain": "Apple clang21.0.0",
+      "case": "ApplePagedE4Kv.FixedQ1GrowsHistoryThroughOriginalReader",
+      "tests": 1,
+      "skips": 0,
+      "failures": 0,
+      "process_seconds": 0.997149,
+      "old_getter_symbols": 0,
+      "preparation_failures_preserved": [
+        {
+          "kind": "private dependency-generation recipe conflict",
+          "directory": "compile/src--graph_batch--native_batch_regions.cc",
+          "note": "Old -MD plus appended -MMD caused strict unused-command-line-argument; no product syntax reached."
+        },
+        {
+          "kind": "private source-sync omission",
+          "directory": "compile2/src--compute_provider_ggml--native_batch.cc",
+          "note": "provider_internal.h omitted from lexical include sync; only five actual own headers added, no product/SDK change."
+        }
+      ]
+    }
+  },
+  "source_review": [
+    {
+      "path": ".scratch/inference-layout-storage-validation-20261025/root-source-review.json",
+      "bytes": 3245,
+      "sha256": "cd8e126965187d0731946b21b033f717bf75f0659c368fb5238455e2360d7003"
+    },
+    {
+      "path": ".scratch/inference-layout-storage-core-20261025/routes-independent-review.json",
+      "bytes": 3794,
+      "sha256": "ea281465782d8319a4ff6ea1ab3a1134c1ef9d5af4307f385365c0fd839fcac1"
+    }
+  ],
+  "limits": [
+    "No native shared-domain two-scale execution on CUDA/Apple/Vulkan in this batch.",
+    "E4 paged append and ordinary model source/precision binding are not enabled by this change; subsequent feature work retains actual alignment restrictions.",
+    "No full model, quality, throughput, memory peak or MTP speed comparison was run.",
+    "The CPU follower report is not a claim that all native controllers share their provider-private compact indices or eliminate their uploads.",
+    "No full CMake/CTest matrix or third-party SDK build; only relevant cached compile/link closures were used."
+  ],
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "performance": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cache-topology-storage-2026-10-25.zip",
+    "bytes": 512271,
+    "sha256": "55f2cfa5e0d37db4efa9e309b70b1dd4f2d2d05b5302f6ef7a9a94ea9c78fdea",
+    "members": 257,
+    "crc_verified": true,
+    "manifest_verified": true,
+    "binaries_SDK_or_model_payload": false
+  }
+}

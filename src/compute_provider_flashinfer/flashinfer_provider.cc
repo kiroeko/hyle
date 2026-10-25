@@ -255,7 +255,7 @@ void destroy_batch_slot(void*opaque,mem::AllocatorRef allocator)noexcept {
 // A read-only proof about this original prepared plan, not a new schedule
 // cache. Sizing and update must use exactly the same topology qualification.
 bool can_reuse_batch_plan(const BatchSlot&slot,const BatchLayoutVersion&layout)noexcept{
-  if(!slot.generation || !slot.layout.schema().owns(layout))return false;
+  if(!slot.generation || !slot.layout.origin_schema().owns(layout))return false;
   const auto old=slot.layout.host(),next=layout.host();
   const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
   if(!equal(old.query_indptr,next.query_indptr))return false;
@@ -381,7 +381,7 @@ detail::EnqueueResult run_batch_slot(void*opaque,detail::QueueSequence &sequence
   auto&slot=*static_cast<BatchSlot*>(opaque);
   if(!slot.generation || inputs.size()!=(slot.mla?2u:3u))return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer batch slot has no prepared layout"));
   auto stream=cuda::stream(sequence);if(!stream)return detail::EnqueueResult::rejected(stream.error());
-  auto tail=detail::batch_output_tail(slot.layout.schema().capacity(),slot.spec.query_rows,workspace.output);
+  auto tail=detail::batch_output_tail(slot.layout.origin_schema().capacity(),slot.spec.query_rows,workspace.output);
   if(!tail)return detail::EnqueueResult::rejected(tail.error());
   Result<void*> tail_pointer=static_cast<void*>(nullptr);
   if(!tail->empty())tail_pointer=cuda::detail::mutable_pointer(*tail,1,1);

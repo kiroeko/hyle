@@ -138,7 +138,7 @@ template<class T,class Policy=MaterializedMetadataPolicy>struct MaterializedNati
       const auto old=version.layout(),current=next.layout();const auto a=old.host(),b=current.host();
       const auto equal=[](auto x,auto y){return x.size()==y.size()&&std::equal(x.begin(),x.end(),y.begin());};
       const auto empty_ports=[](const BatchLayoutVersion& v){return v.facts().query_rows==0 && v.facts().page_refs==0;};
-      reused_native=native.valid()&&current.schema().owns(old)&&equal(a.query_indptr,b.query_indptr)&&empty_ports(old)==empty_ports(current);
+      reused_native=native.valid()&&current.origin_schema().owns(old)&&equal(a.query_indptr,b.query_indptr)&&empty_ports(old)==empty_ports(current);
       if(!reused_native){
         HYLE_ASSIGN_OR_RETURN(auto program,T::prepare_program(*preparation.context,recipe,current,preparation.workload));
         HYLE_ASSIGN_OR_RETURN(auto prepared_native,T::invocation(program,allocator));

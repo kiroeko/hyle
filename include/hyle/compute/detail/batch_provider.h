@@ -20,6 +20,11 @@ struct BatchLayoutGeometry final {
   std::uint32_t max_pages=0,max_page_refs=0,page_size=0;
 };
 struct BatchLayoutAccess final {
+  // Capacity topology only: this grants neither schema membership nor cache
+  // interpretation. Actual K/V storage and original page rights stay separate.
+  static bool same_topology(BatchCapacity a,BatchCapacity b) noexcept {
+    a.key_storage=b.key_storage;a.value_storage=b.value_storage;return a==b;
+  }
   HYLE_COMPUTE_BATCH_API static bool is_row_cache(const BatchSchema&) noexcept;
   HYLE_COMPUTE_BATCH_API static BatchLayoutGeometry geometry(const BatchSchema&) noexcept;
   static const BatchSchema& owner(const RowCacheBatchSchema&s) noexcept{return s.owner_;}

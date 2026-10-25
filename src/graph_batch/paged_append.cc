@@ -16,13 +16,17 @@
 namespace hyle::graph::batch {
 namespace c=compute;namespace cd=c::detail;namespace gd=graph::detail;
 namespace {
+c::CacheStorage row_storage(const PagedAppend&op)noexcept{
+  const auto cap=op.schema.capacity();
+  return op.role==c::BatchCacheRole::kValue?cap.value_storage:cap.key_storage;
+}
 Result<c::TensorDesc> row_description(const PagedAppend&op,std::int64_t rows)noexcept{
   if(!op.schema.valid() || op.schema.capacity().storage!=c::BatchStorage::kPaged ||
       (op.role!=c::BatchCacheRole::kKey && op.role!=c::BatchCacheRole::kValue && op.role!=c::BatchCacheRole::kMla) ||
       rows<=0 || rows>op.schema.capacity().max_query_rows ||
       ((op.schema.mla_layout()!=c::MlaCacheLayout::kNone)!=(op.role==c::BatchCacheRole::kMla)))
     return std::unexpected(Status::InvalidArgument("paged append needs its paged schema/role/active rows"));
-  const auto cap=op.schema.capacity();const auto storage=op.role==c::BatchCacheRole::kValue?cap.value_storage:cap.key_storage;
+  const auto cap=op.schema.capacity();const auto storage=row_storage(op);
   if(storage.data_type()!=c::DataType::kFloat16 && storage.data_type()!=c::DataType::kBFloat16)
     return std::unexpected(Status::Unimplemented("paged append currently copies plain F16/BF16 rows"));
   return c::TensorDesc::dense(storage.data_type(),std::array<std::int64_t,3>{rows,cap.kv_heads,
@@ -110,10 +114,10 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
   auto allocator=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
   auto*p=allocator.construct<detail::PagedAppendData>(allocator);if(!p)return std::unexpected(Status::ResourceExhausted("paged append owner metadata"));
   PagedAppendPages result(p);p->arena=std::move(arena);p->layout=std::move(next);p->previous=std::move(previous);p->appendable=appendable;
-  HYLE_ASSIGN_OR_RETURN(p->descriptor,paged_append(p->layout.schema(),cd::PagedArenaAccess::role(p->arena)));
+  HYLE_ASSIGN_OR_RETURN(p->descriptor,paged_append(cd::PagedArenaAccess::schema(p->arena),cd::PagedArenaAccess::role(p->arena)));
   HYLE_ASSIGN_OR_RETURN(p->rows,row_description(p->descriptor,p->layout.facts().query_rows));HYLE_ASSIGN_OR_RETURN(auto row_bytes,p->rows.required_bytes());p->row_bytes=row_bytes/p->layout.facts().query_rows;
-  const auto cap=p->layout.schema().capacity();const auto old=p->previous.layout();
-  if(!p->layout.schema().owns(old) || old.facts().requests!=p->layout.facts().requests)
+  const auto cap=p->descriptor.schema.capacity();const auto old=p->previous.layout();
+  if(!p->descriptor.schema.owns(old) || old.facts().requests!=p->layout.facts().requests)
     return std::unexpected(Status::InvalidArgument("paged append old/new request domains differ"));
   try{
     if(dirty.size()>SIZE_MAX-tails.size())return std::unexpected(Status::OutOfRange("paged append target count overflows"));
@@ -566,7 +570,8 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
     return Status::FailedPrecondition("native paged append needs its selected idle slot and original transaction");
   HYLE_ASSIGN_OR_RETURN(auto facts,region.table->inspect(region.prepared,region.invocation));
   if(facts.node!=region.node || !facts.descriptor.schema.owns(p->layout) ||
-      facts.descriptor.role!=p->descriptor.role || facts.rows!=p->rows || p->successful ||
+      facts.descriptor.role!=p->descriptor.role || row_storage(facts.descriptor)!=row_storage(p->descriptor) ||
+      facts.rows!=p->rows || p->successful ||
       p->layout.facts().query_rows!=facts.rows.dimensions()[0])
     return Status::InvalidArgument("native paged append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p->arena));
@@ -636,7 +641,7 @@ Result<NativeAppendRegionRef>PagedAppendAccess::native(Invocation&invocation,Nod
 Result<AppendFacts>PagedAppendAccess::facts(const PagedAppendPages&pages)noexcept{
   if(!pages.data_)return std::unexpected(Status::InvalidArgument("paged append pages are empty"));
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(pages.data_->arena));
-  return AppendFacts{pages.data_->layout,pages.data_->descriptor.role,capacity};
+  return AppendFacts{pages.data_->layout,pages.data_->descriptor.role,capacity,row_storage(pages.data_->descriptor)};
 }
 Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId node,ValueId cache,PagedAppendPages&&pages,
     std::span<const gd::ProjectedReader>readers,const cd::QueueRef&queue,mem::MemoryResourceRef host,ResourceOptions options)noexcept{
@@ -646,7 +651,8 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   Find f{node};HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,node,&find,&f));
   if(!f.slot || !pages.data_ || f.slot->pages.valid())return Status::FailedPrecondition("paged append needs its selected idle slot and untaken transaction");
   auto&p=*pages.data_;const auto&op=f.prepared->descriptor;
-  if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || p.rows!=f.prepared->rows ||
+  if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || row_storage(op)!=row_storage(p.descriptor) ||
+      p.rows!=f.prepared->rows ||
       p.layout.facts().query_rows!=f.prepared->rows.dimensions()[0] || p.successful)
     return Status::InvalidArgument("paged append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));
@@ -671,7 +677,8 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   if(queued==queues.end() || !queued->queue.valid() || !queued->queue.is_open())
     return Status::FailedPrecondition("writer-only append needs its original prepared open Queue");
   auto&p=*pages.data_;const auto&op=f.prepared->descriptor;
-  if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || p.rows!=f.prepared->rows ||
+  if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || row_storage(op)!=row_storage(p.descriptor) ||
+      p.rows!=f.prepared->rows ||
       p.layout.facts().query_rows!=f.prepared->rows.dimensions()[0] || p.successful)
     return Status::InvalidArgument("writer-only append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));

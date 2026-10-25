@@ -1,4 +1,5 @@
 #include "native_paged_region.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "native_paged_pending.h"
 #include "native_output.h"
 #include "native_region.h"
@@ -40,9 +41,9 @@ struct Recipe final {
 };
 Result<Recipe> recipe(const compute::Operation &operation) noexcept {
   if (const auto value = operation.custom_as<batch::PagedAttention>())
-    return Recipe{value->layout, value->options, value->layout.schema().capacity(), value->layout.schema().mla_layout()};
+    return Recipe{value->layout, value->options, value->layout.origin_schema().capacity(), value->layout.origin_schema().mla_layout()};
   if (const auto value = operation.custom_as<batch::PagedMlaAttention>())
-    return Recipe{value->layout, value->options, value->layout.schema().capacity(), value->layout.schema().mla_layout()};
+    return Recipe{value->layout, value->options, value->layout.origin_schema().capacity(), value->layout.origin_schema().mla_layout()};
   if (const auto value = operation.custom_as<compute::PagedAttention>())
     return Recipe{{}, {.scale = value->scale, .causal = value->causal,
         .window_left = value->window_left, .allow_bf16_partials = value->allow_bf16_partials},
@@ -74,11 +75,11 @@ Status qualify(const std::shared_ptr<an::Runtime> &owner, const Recipe &value,
     return Status::Unimplemented("Apple page dtype/encoding/geometry is unsupported");
   if (!layout.valid())
     return value.external_metadata ? Status::Ok() : Status::InvalidArgument("Apple page owned layout is empty");
-  if (layout.schema().capacity() != value.capacity || layout.schema().mla_layout() != value.mla ||
-      (!value.external_metadata && !value.layout.schema().owns(layout)))
+  if (!cd::BatchLayoutAccess::same_topology(layout.origin_schema().capacity(), value.capacity) || layout.origin_schema().mla_layout() != value.mla ||
+      (!value.external_metadata && !value.layout.origin_schema().owns(layout)))
     return Status::InvalidArgument("Apple page layout schema differs");
   return an::PagedBatchAccess::validate_paged(
-      owner, layout, value.options.causal, value.options.window_left);
+      owner, layout, value.capacity, value.options.causal, value.options.window_left);
 }
 Result<Recipe> qualify(void *context, const RegionCompileRequest &request) noexcept {
   if (!request.graph || request.graph->dimension_count() || request.route != kNativePagedRoute ||
@@ -182,6 +183,11 @@ bool empty_program(const Artifact &, const Slot &slot) noexcept {
 }
 Result<compute::NativePagedBatchProgram> page_recipe(const Artifact &artifact,
     compute::BatchSchema schema, mem::AllocatorRef allocator) noexcept {
+  if (!cd::BatchLayoutAccess::same_topology(schema.capacity(),artifact.recipe.capacity) ||
+      schema.mla_layout()!=artifact.recipe.mla)
+    return std::unexpected(Status::InvalidArgument("Apple page recipe topology differs"));
+  HYLE_ASSIGN_OR_RETURN(schema,schema.with_cache_storage(
+      artifact.recipe.capacity.key_storage,artifact.recipe.capacity.value_storage));
   const auto refs = std::size_t(schema.capacity().max_page_refs);
   if (refs > SIZE_MAX / sizeof(std::int32_t))
     return std::unexpected(Status::OutOfRange("Apple page metadata byte extent overflow"));
@@ -215,10 +221,12 @@ Status prepare(void *prepared, void *invocation, compute::BatchLayoutVersion lay
     HYLE_RETURN_IF_ERROR(an::PagedBatchAccess::reuse_gate(slot.controller->native));
     if (slot.controller->uses.active_batches()) return Status::Unavailable("Apple page permissions still in use");
   }
-  if (!slot.controller || !slot.controller->recipe.schema().owns(layout)) {
+  if (!slot.controller || !slot.controller->recipe.schema().owns(layout) ||
+      slot.controller->recipe.schema().capacity()!=artifact.recipe.capacity ||
+      slot.controller->recipe.schema().mla_layout()!=artifact.recipe.mla) {
     // A capacity node has no schema at compile time. Retain this actual owned
     // NodeLayout only after its cold replacement has prepared successfully.
-    HYLE_ASSIGN_OR_RETURN(auto recipe, page_recipe(artifact, layout.schema(), slot.allocator));
+    HYLE_ASSIGN_OR_RETURN(auto recipe, page_recipe(artifact, layout.origin_schema(), slot.allocator));
     HYLE_ASSIGN_OR_RETURN(auto replacement, make_controller(slot, std::move(recipe)));
     const auto status = replacement->prepare(layout);
     if (!status.ok()) { slot.allocator.destroy(replacement); return status; }
@@ -284,7 +292,11 @@ Status validate_written(void *prepared, void *invocation, ValueId input,
     HYLE_ASSIGN_OR_RETURN(auto facts, producer.table->inspect(producer.prepared, producer.invocation));
     const auto role = port == 1 ? (slot.controller->recipe.schema().mla_layout() == compute::MlaCacheLayout::kNone ?
         compute::BatchCacheRole::kKey : compute::BatchCacheRole::kMla) : compute::BatchCacheRole::kValue;
+    const auto writer_capacity=facts.descriptor.schema.capacity();
+    const auto reader_capacity=slot.controller->recipe.schema().capacity();
     if (facts.node != producer.node || facts.descriptor.role != role || !facts.descriptor.schema.owns(layout) ||
+        (port==1?writer_capacity.key_storage:writer_capacity.value_storage)!=
+            (port==1?reader_capacity.key_storage:reader_capacity.value_storage) ||
         facts.resource != capacity.storage().resource())
       return Status::InvalidArgument("Apple same-Graph bank role/schema/selected writer differs");
     HYLE_ASSIGN_OR_RETURN(auto description, slot.controller->recipe.input_description(layout, port));
@@ -732,7 +744,7 @@ compute::ProviderPrepareOutcome compile_native_paged(void *context, const Region
       return Status::InvalidArgument("Apple page concrete Q/output descriptions differ");
     artifact->preparation.query_rows = std::uint32_t(artifact->output.dimensions()[0]);
     if (!artifact->recipe.external_metadata) {
-      HYLE_ASSIGN_OR_RETURN(artifact->native_recipe, page_recipe(*artifact, artifact->recipe.layout.schema(), allocator));
+      HYLE_ASSIGN_OR_RETURN(artifact->native_recipe, page_recipe(*artifact, artifact->recipe.layout.origin_schema(), allocator));
       HYLE_ASSIGN_OR_RETURN(artifact->program, an::PagedBatchAccess::prepare_program(
           artifact->preparation.runtime, artifact->native_recipe, artifact->recipe.layout, artifact->workload));
     }

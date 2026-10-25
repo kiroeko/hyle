@@ -155,6 +155,113 @@ TEST(BatchLayout, ForeignSchemaCannotAdmitAnIdenticalCapacityVersion){
   auto a=c::BatchSchema::create(capacity()).value(),b=c::BatchSchema::create(capacity()).value();Layout input;auto version=a.version(input.host()).value();
   EXPECT_TRUE(a.owns(version));EXPECT_FALSE(b.owns(version));EXPECT_FALSE(a.owns({}));EXPECT_FALSE(c::BatchSchema{}.owns(version));
 }
+TEST(BatchLayout, StorageViewsShareExplicitRootOwnershipAndTheOriginalMetadata){
+  auto cap=capacity();cap.output_type=c::DataType::kBFloat16;cap.value_head_dim=128;
+  auto root=c::BatchSchema::create(cap).value();Layout input;
+  auto layout=root.version(input.host()).value();auto metadata=layout.metadata().value();
+  const auto identity=c::detail::LeaseAccess::identity(metadata);
+  const auto key=c::CacheStorage::float8(.5F).value(),value=c::CacheStorage::float8(.25F).value();
+  auto view=root.with_cache_storage(key,value).value();
+  auto expected=cap;expected.key_storage=key;expected.value_storage=value;
+  EXPECT_EQ(view.capacity(),expected);EXPECT_EQ(root.capacity(),cap);
+  EXPECT_EQ(view.mla_layout(),root.mla_layout());
+  EXPECT_EQ(view.metadata_description().value(),root.metadata_description().value());
+  const auto a=view.metadata_offsets(),b=root.metadata_offsets();
+  EXPECT_EQ(a.query_indptr,b.query_indptr);EXPECT_EQ(a.kv_indptr,b.kv_indptr);
+  EXPECT_EQ(a.page_indices,b.page_indices);EXPECT_EQ(a.last_page_lengths,b.last_page_lengths);EXPECT_EQ(a.bytes,b.bytes);
+  EXPECT_TRUE(view.owns(layout));EXPECT_TRUE(layout.origin_schema().owns(layout));
+  EXPECT_EQ(layout.origin_schema().capacity(),cap);
+  auto another=view.with_cache_storage(c::CacheStorage::float8(2.F).value(),value).value();
+  EXPECT_TRUE(another.owns(layout));EXPECT_EQ(layout.host().page_indices[0],input.pages[0]);
+  EXPECT_EQ(c::detail::LeaseAccess::identity(layout.metadata().value()),identity);
+  auto next=view.version(input.host()).value();auto last=another.version(input.host()).value();
+  EXPECT_EQ(next.generation(),layout.generation()+1);EXPECT_EQ(last.generation(),next.generation()+1);
+  EXPECT_TRUE(root.owns(next));EXPECT_TRUE(view.owns(last));EXPECT_TRUE(another.owns(next));
+  EXPECT_EQ(next.origin_schema().capacity(),cap);EXPECT_EQ(last.origin_schema().capacity(),cap);
+  auto foreign=c::BatchSchema::create(expected).value();
+  EXPECT_FALSE(foreign.owns(layout));EXPECT_FALSE(foreign.owns(next));
+  auto foreign_layout=foreign.version(input.host()).value();
+  EXPECT_FALSE(root.owns(foreign_layout));EXPECT_FALSE(view.owns(foreign_layout));
+}
+TEST(BatchLayout, StorageViewAloneKeepsRootAllocatorAndGenerationDomainAlive){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  c::BatchSchema view;std::uint64_t generation=0;Layout input;
+  {
+    auto root=c::BatchSchema::create(capacity(),{.allocator=quota.get()}).value();
+    auto initial=root.version(input.host()).value();generation=initial.generation();
+    view=root.with_cache_storage(c::CacheStorage::float8(.5F).value(),c::CacheStorage::float8(.25F).value()).value();
+  }
+  EXPECT_GT(quota.used(),0u);
+  auto next=view.version(input.host()).value();EXPECT_EQ(next.generation(),generation+1);
+  auto origin=next.origin_schema();EXPECT_TRUE(origin.owns(next));EXPECT_TRUE(view.owns(next));
+  view={};EXPECT_EQ(next.host().page_indices[0],input.pages[0]);EXPECT_TRUE(next.metadata());
+  next={};origin={};EXPECT_EQ(quota.used(),0u);
+}
+TEST(BatchLayout, StorageViewKeepsOriginalBudgetAfterExternalHandlesDropAndReaderEscapes){
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),1u<<20);
+  c::ReadLease escaped;
+  {
+    const auto resource=hyle::mem::system_resource();const std::array limits{c::ResourceBudgetLimit{resource,1u<<20}};
+    auto budget=c::ResourceBudget::create({.limits=limits,.allocator=quota.get()}).value();
+    auto root=c::BatchSchema::create(capacity(),{.resource_budget=budget}).value();Layout input;
+    auto initial=root.version(input.host()).value();const auto generation=initial.generation();
+    {
+      const auto used=budget.usage(resource).value();auto pressure=budget.reserve(resource,used.limit_bytes-used.live_bytes).value();
+      auto failed=root.with_cache_storage(c::CacheStorage::float8(.5F).value(),c::CacheStorage::float8(.25F).value());
+      ASSERT_FALSE(failed);EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_TRUE(root.owns(initial));
+    }
+    auto view=root.with_cache_storage(c::CacheStorage::float8(.5F).value(),c::CacheStorage::float8(.25F).value()).value();
+    root={};initial={};budget={};
+    auto next=view.version(input.host()).value();EXPECT_EQ(next.generation(),generation+1);
+    escaped=next.metadata().value();EXPECT_TRUE(escaped.valid());
+    view={};next={};
+  }
+  EXPECT_GT(quota.used(),0u);escaped.reset();EXPECT_EQ(quota.used(),0u);
+}
+TEST(BatchLayout, StorageViewsPreserveRaggedAndMlaLayoutsAndRejectInvalidInterpretations){
+  auto ragged=capacity();ragged.storage=c::BatchStorage::kRagged;ragged.max_pages=ragged.max_page_refs=0;ragged.page_size=1;
+  auto root=c::BatchSchema::create(ragged).value();
+  auto view=root.with_cache_storage(c::CacheStorage::float8(.5F).value(),c::CacheStorage::plain(c::DataType::kFloat32).value()).value();
+  auto expected=ragged;expected.key_storage=c::CacheStorage::float8(.5F).value();expected.value_storage=c::CacheStorage::plain(c::DataType::kFloat32).value();
+  EXPECT_EQ(view.capacity(),expected);EXPECT_EQ(view.mla_layout(),c::MlaCacheLayout::kNone);
+  Layout input;const std::array<std::int32_t,3> kv{0,19,29};auto layout=view.version({input.q,kv,{},{}}).value();
+  EXPECT_TRUE(root.owns(layout));EXPECT_EQ(layout.origin_schema().capacity(),ragged);
+  for(const auto kind:{c::MlaCacheLayout::kCkv512,c::MlaCacheLayout::kCkv512Rope64}){
+    c::MlaBatchCapacity mla;mla.layout=kind;auto original=c::BatchSchema::create_mla(mla).value();
+    const auto storage=c::CacheStorage::float8(.125F).value();
+    auto scaled=original.with_cache_storage(storage,storage).value();
+    auto wanted=original.capacity();wanted.key_storage=wanted.value_storage=storage;
+    EXPECT_EQ(scaled.capacity(),wanted);EXPECT_EQ(scaled.mla_layout(),kind);
+    auto mismatch=scaled.with_cache_storage(storage,c::CacheStorage::float8(.25F).value());
+    ASSERT_FALSE(mismatch);EXPECT_TRUE(mismatch.error().IsInvalidArgument());
+    auto blocked=scaled.with_cache_storage(c::CacheStorage::q8_0().value(),c::CacheStorage::q8_0().value());
+    ASSERT_FALSE(blocked);EXPECT_TRUE(blocked.error().IsUnimplemented());
+    EXPECT_EQ(scaled.capacity(),wanted);EXPECT_EQ(original.capacity(),c::mla_batch_capacity(mla).value());
+  }
+  auto incompatible=capacity();incompatible.qk_head_dim=33;
+  auto scalar=c::BatchSchema::create(incompatible).value();auto old=scalar.version(input.host()).value();
+  const auto identity=c::detail::LeaseAccess::identity(old.metadata().value());
+  auto invalid=scalar.with_cache_storage(c::CacheStorage::q8_0().value(),c::CacheStorage{});
+  ASSERT_FALSE(invalid);EXPECT_TRUE(invalid.error().IsInvalidArgument());
+  EXPECT_EQ(scalar.capacity(),incompatible);EXPECT_TRUE(scalar.owns(old));
+  EXPECT_EQ(c::detail::LeaseAccess::identity(old.metadata().value()),identity);
+  EXPECT_EQ(scalar.version(input.host())->generation(),old.generation()+1);
+  EXPECT_TRUE(c::BatchSchema{}.with_cache_storage({},{}).error().IsFailedPrecondition());
+  auto row=c::RowCacheBatchSchema::create({.encoding=c::RowCacheEncoding::float8_block64_tail64()}).value();
+  EXPECT_TRUE(c::detail::BatchLayoutAccess::owner(row).with_cache_storage({},{}).error().IsInvalidArgument());
+}
+TEST(BatchLayout, StorageViewsUseOneConcurrentRootGenerationCounter){
+  auto root=c::BatchSchema::create(capacity()).value();
+  auto a=root.with_cache_storage(c::CacheStorage::float8(.5F).value(),c::CacheStorage::float8(.25F).value()).value();
+  auto b=a.with_cache_storage(c::CacheStorage::float8(2.F).value(),c::CacheStorage::float8(4.F).value()).value();
+  std::array<std::uint64_t,8> ids{};std::array<std::thread,8> threads;
+  for(unsigned i=0;i<threads.size();++i)threads[i]=std::thread([&,i]{
+    Layout input;auto version=(i%3==0?root:i%3==1?a:b).version(input.host()).value();
+    EXPECT_TRUE(root.owns(version));EXPECT_TRUE(a.owns(version));EXPECT_TRUE(b.owns(version));ids[i]=version.generation();
+  });
+  for(auto&thread:threads)thread.join();std::sort(ids.begin(),ids.end());
+  EXPECT_EQ(std::unique(ids.begin(),ids.end()),ids.end());EXPECT_EQ(ids.front(),1u);EXPECT_EQ(ids.back(),ids.size());
+}
 TEST(BatchLayout, WrongIndptrStartMonotonicEndAndRequestCountAreRejected){
   auto schema=c::BatchSchema::create(capacity()).value();Layout input;input.q[0]=1;EXPECT_FALSE(schema.version(input.host()));input.q={0,3,2};EXPECT_FALSE(schema.version(input.host()));
   input.q={0,1,3};input.kv[0]=1;EXPECT_FALSE(schema.version(input.host()));input.kv={0,3,2};EXPECT_FALSE(schema.version(input.host()));input.kv={0,1,2};EXPECT_FALSE(schema.version(input.host()));
