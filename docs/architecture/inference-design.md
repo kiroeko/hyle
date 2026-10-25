@@ -39,7 +39,10 @@ KDA／Kimi NoPE MLA 组件的参数准备与数学追加已分开：调用者提
 仍归调用者，append 不创建另一份 owner 或状态表。普通 BF16 投影与 F32／量化 MatMul 的
 逻辑布局分别检查，不在模型数学内按仓库名选择。
 [host 接线与原 CUDA 状态旅程](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)
-已通过；CUDA 使用原几何的合成权重，原 KDA／MLA 制品参数的绑定及数值检查仍须另做。
+使用原几何的合成权重；随后[原23角色 CUDA 组件](../evidence/correctness/kimi-original-attention-state-2026-10-25.json)
+也已完成两步数值及完整5资源＋Epoch提交、旧读者、分叉、过期拒绝与未发布候选取消。
+它使用显式 llama/config QK epsilon `1e-5` 合同；已查 vLLM reader 为 `1e-6`，不能宣称两者等价。
+输入为标明的上游 fixture，KDA0 到 MLA3 跳过中间层；不代表完整模型、质量或吞吐通过。
 
 ## 模型、会话、请求、批次是不同对象
 
@@ -358,7 +361,7 @@ Provider 的调优策略受完整冷容量和原字节预算约束，查询与�
 
 原参数接入可用现有 GraphConstantBinding 借入同一 ReadLease；冷期重排只保必要的派生布局，
 不为构图复制大矩阵或添加第二权重 owner。Kimi [有限绑定检查](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)
-已核真实租约、零主机常量载荷及旧 reader 寿命；原23角色数值仍待片段齐备后检查。
+已核真实租约、零主机常量载荷及旧 reader 寿命；原23角色数值随后按上述有限组件合同通过。
 
 N1／R1 是共同控制链中的直接路径，继续使用 R1 原图和同一 prepare／submit／finish／commit。
 prefix 关闭且能证明 head 独占时，避免目录和无关请求扫描；N1 本身不能证明没有逃逸读者。

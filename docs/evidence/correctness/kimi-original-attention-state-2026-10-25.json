@@ -1,0 +1,210 @@
+{
+  "status": "PASS_ORIGINAL_PARAMETER_COMPONENT_EXPLICIT_LLAMA_READER_CONTRACT",
+  "canonical_integration": {
+    "status": "EXACT_THREE_PATHS_INTEGRATED",
+    "files": [
+      {
+        "path": "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+        "sha256": "f7667ab67c526756ffa6781de6b03b6fc64b8ceb9dc05f38391fabb5bf2731c4"
+      },
+      {
+        "path": "tests/compute_models/kimi_original_attention_input.h",
+        "sha256": "cb4b1c47913b62e074b0011d0dc10bc140a398d9c25d6c03c4a63b47e88fada2"
+      },
+      {
+        "path": "tests/compute_models/kimi_original_attention_reference.h",
+        "sha256": "e57fbb58fe1e56b53d660fec22f434f1b2a281c83b0ac026e6cc07db75b6589f"
+      }
+    ],
+    "archive_note": "Archived summary records the historical pre-integration candidate; root integrated its exact compiled three source files without another run. Native run preceded the subsequent shared-cache topology change."
+  },
+  "repository": "moonshotai/Kimi-K3",
+  "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+  "source": {
+    "role_count": 23,
+    "KDA0_roles": 14,
+    "MLA3_roles": 9,
+    "payload_bytes": 1352207360,
+    "payload_requests": 325,
+    "metadata_requests": 6,
+    "metadata_bytes": 884076,
+    "total_received_for_own_two_batches": 1353091436,
+    "received_by_final_host": "hf-mirror.net",
+    "automatic_retries": 0,
+    "whole_shard_LFS_body_verified": false,
+    "identity": "Fixed-revision API/tree, original raw headers, strong ETag/If-Range, exact206 and per-part/per-union/per-roleSHA",
+    "complete": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/payload-only/attempt1/complete.json",
+      "bytes": 108117,
+      "sha256": "293f1528f29955f7fddb29e5ef2d823cc3c434f419fcfc0ea2da78ac806b5ca3"
+    },
+    "union_and_role_pin_input": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/payload-only/attempt1/original-role-pins.txt",
+      "bytes": 3165,
+      "sha256": "b7554a3e8a0fd71d6150270012e85a388ac73f73324b04002d3ddafd2bbde68c"
+    },
+    "payload_cached_not_archived": true,
+    "pause": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/payload-only/pause-restoration.json",
+      "bytes": 399,
+      "sha256": "60d29cbae157912d4eb5784dfcf7eecbb39b4fd955e473c35ea3832ea51cef84"
+    },
+    "pause_restored": true
+  },
+  "checks": {
+    "compile_attempt1": {
+      "exit": 2,
+      "seconds": 2.2969999999913853,
+      "timeout": false,
+      "classification": "Fixture C++ inherited Test::Run name shadowed Run in std::array; preserved; only decltype(recurrent) spelling corrected, no math/tolerance change"
+    },
+    "compile_final": {
+      "exit": 0,
+      "seconds": 5.98399999999674,
+      "timeout": false
+    },
+    "link_final": {
+      "exit": 0,
+      "seconds": 1.7660000000032596,
+      "timeout": false
+    },
+    "actual_repository_dependencies": 89,
+    "cached_link_inputs": 232,
+    "SDK_core_provider_rebuilt": false,
+    "original_CUDA_run": {
+      "exit": 0,
+      "seconds": 17.546999999991385,
+      "timeout": false,
+      "tests": 1,
+      "failures": 0,
+      "skipped": 0,
+      "hardware": "NVIDIA GeForce RTX4070 / compute8.9 / 12281MiB observed in actual stderr",
+      "numeric": "Original six KDA/nine MLA float-output gates, plus selected actual-producer raw-row F64 projection certificates; all passed without altering gates",
+      "numeric_row_certificates_source_derived": 72,
+      "maximum_error_statistics": "Not instrumented; no fabricated maximum-error metric"
+    },
+    "new_compilations_at_payload_completion": 0,
+    "new_GPU_processes": 1
+  },
+  "state": {
+    "complete_device_members": [
+      "QKV convolution history",
+      "KDA recurrent state",
+      "NoPE MLA latent+PE cache",
+      "actual I32 cursor",
+      "native output feature"
+    ],
+    "metadata": "Epoch",
+    "positions": [
+      0,
+      1
+    ],
+    "visible_rows": [
+      1,
+      2
+    ],
+    "published_epoch_steps": [
+      1,
+      2
+    ],
+    "complete_Head_commits": 2,
+    "stale_expected_base_rejections": 2,
+    "cancelled_unpublished_candidates": 1,
+    "KDA_submissions": 2,
+    "MLA_submissions": [
+      1,
+      1
+    ],
+    "actual_previous_native_state_feedback": true,
+    "old_initial_and_first_readers_unchanged": true,
+    "old_version_fork": true,
+    "final_store_versions": 0,
+    "final_store_drafts": 0,
+    "final_store_backing_bytes": 0,
+    "native_preemption_tested": false
+  },
+  "math_contract": {
+    "reader": "llama.cpp d9e03f1074dbd2979126d91dce1b5d304ec8394e + original config at supplied-parameter typed BF16 projection/F32 intermediate boundary",
+    "KDA_QK_L2_sum_epsilon": 1e-05,
+    "KDA_output_RMS_mean_epsilon": 1e-05,
+    "known_vLLM_difference": "vLLM276fbcff K3 Q/K L2 uses1e-6; not claimed equivalent",
+    "NoPE": true,
+    "MLA_scale": "1/sqrt192",
+    "gamma": "Original direct gamma, never1+gamma",
+    "publisher_modeling_body": "Not obtained; config auto_map is not execution proof",
+    "source_review": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/source-contract-review/summary.json",
+      "bytes": 10930,
+      "sha256": "0e947d22f05bbcb6d734fe4198cab9e6a090f7fae2358dfa2e8e675f2fd232a5"
+    }
+  },
+  "limits": [
+    "Original KDA0 normalized input is supplied upstream fixture, not execution of its input-norm/residual layer",
+    "Actual KDA0 output supplied as upstream fixture to MLA3; intervening layers, residual/AttnRes, FFN/full model/quality not tested",
+    "No vLLM/PyTorch bitwise equivalence, all backends, whole shard LFS body, performance or native cancellation/preemption claim",
+    "Original batch payload retained in four unions and not copied into evidence",
+    "Candidate permanent case uses original registered CUDA consumer target; full target/default tests not rerun"
+  ],
+  "source_candidate": {
+    "path": ".scratch/inference-kimi-original-binding-20261025/final/canonical-candidate-pins.json",
+    "bytes": 1908,
+    "sha256": "1f2f2e279e2489761b096a2f703251a2a1b59d33436294ddbc6d412351c0fbb5"
+  },
+  "source_patch": {
+    "path": ".scratch/inference-kimi-original-binding-20261025/final/source.patch",
+    "bytes": 27832,
+    "sha256": "a7a96d8d0a9d505134ad18395790c4e7b63cc4ffac1fd5f7177aa8d01f0657f3"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-kimi-original-binding-20261025\\native-case\\compile-check2\\checks.exe",
+    "bytes": 140620288,
+    "sha256": "abb90e75e2e6b9786e9d083d1c1a3fc9c7f768755057093860975ac6734a9c5e"
+  },
+  "actual_source_pins": {
+    "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/actual-repository-dependencies.json",
+    "bytes": 18315,
+    "sha256": "e229a0cafcd9556fd528a5152399cfd85944ebf5dfde86fbd1de2253a3ea67cb"
+  },
+  "actual_object_map": {
+    "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/actual-link-inputs.json",
+    "bytes": 96230,
+    "sha256": "a34ab850bbbfd2a5582bbc0dcc060cacf479fd8edb9e7763f0184a05b20fa348"
+  },
+  "raw": {
+    "process": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/original-run/process.json",
+      "bytes": 74,
+      "sha256": "ab541af7e243c1355138fe1d8e735cc0fdd7b9104de98d936cc31d5e8894b5d4"
+    },
+    "stdout": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/original-run/stdout.log",
+      "bytes": 970,
+      "sha256": "4af0d164651d7d9331045fff168f91430bff4c689c5e239412b4d200996444e2"
+    },
+    "stderr": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/original-run/stderr.log",
+      "bytes": 944,
+      "sha256": "5859e441bcf62ab6a87ef2ec6dc2cf3645d9ca9e3aa1c6045c23e2e65eab9539"
+    },
+    "xml": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/original-result.xml",
+      "bytes": 1625,
+      "sha256": "b785f2c7ef8117be2a3fd92442c0bd6937eeb651441b847b6d80d9355648a358"
+    },
+    "contract": {
+      "path": ".scratch/inference-kimi-original-binding-20261025/native-case/compile-check2/original-run-contract.json",
+      "bytes": 1039,
+      "sha256": "1d06129baa40fcb2b3dc4209e3cf5c545f6c81fe79d2ebb9a7086bb58b88ac33"
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-original-attention-state-2026-10-25.zip",
+    "bytes": 580401,
+    "sha256": "8bde428a965f54d85eb37e4bad32156804dc52456dc606be91972d4afb0a3982",
+    "members": 431,
+    "logical_bytes": 2526134,
+    "crc_verified": true,
+    "all_member_sha_verified": true,
+    "weights_binaries_SDK_full_source_tree_included": false
+  }
+}

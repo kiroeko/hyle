@@ -12,6 +12,8 @@
 
 #include "d5_kimi_remaining_fragments.h"
 #include "kimi_original_attention_roles.h"
+#include "kimi_original_attention_input.h"
+#include "kimi_original_attention_reference.h"
 #include "model_graph_run.h"
 #include "hyle/compute/state_versions.h"
 #if defined(HYLE_TEST_KIMI_STATE_CUDA)
@@ -488,5 +490,147 @@ TEST(KimiHeterogeneousState,CudaOriginalGeometrySyntheticKdaMlaPublishesWholeSta
   ::testing::Test::RecordProperty("native_cancellation_scope","Cancellation is of the unpublished StateDraft after KDA has actually retired; no GPU preemption claim");
   ::testing::Test::RecordProperty("state_backing_budget",std::to_string(budget));
 }
+// Original artifact operands, bounded ordinary state continuation. The KDA0
+// input is a supplied normalized-upstream fixture; KDA0 -> MLA3 skips actual
+// intervening layers and therefore is NOT a full model/quality/token claim.
+TEST(KimiHeterogeneousState,CudaOriginalParametersKdaMlaKeepCompleteStateAcrossContinuation) {
+  namespace original=kimi_original_attention_roles;
+  namespace source_input=kimi_original_attention_input;
+  namespace reference=kimi_original_attention_reference;
+  const auto directory=source_input::environment();
+  if(directory.empty())GTEST_SKIP()<<"Set HYLE_KIMI_ORIGINAL_ATTENTION_DIR to the completed exact 23-role batch; no implicit download";
+  const auto input=source_input::load(directory);
+  const auto source_kda=original::Data::load(input.directory,original::Component::kKda,input.pins());
+  const auto source_mla=original::Data::load(input.directory,original::Component::kMla,input.pins());
+  auto context=take(g::cuda::create_context(),"original-parameter Kimi CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(
+      context,c::cuda::MemoryKind::kDevice),"original-parameter Kimi device"));
+  auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"original-parameter Kimi owner");
+  auto queue=take(context.create_queue(),"original-parameter Kimi queue");
+  const auto kda_operands=original::prepare_kda(source_kda,owner);
+  const auto mla_operands=original::prepare_mla(source_mla,owner);
+  auto recurrent=prepare_original_kda(kda_operands,context,owner);
+  LiteralBank small_literals;
+  std::array<decltype(recurrent),2> attention;
+  for(std::int32_t position=0;position<2;++position)
+    attention[std::size_t(position)]=prepare_original_mla(position,mla_operands,context,owner,small_literals);
+  small_literals.release_host_bytes();
+  std::size_t state_budget=recurrent.pool.stats().capacity_bytes+32u*1024u*1024u;
+  for(const auto &run:attention)state_budget+=run.pool.stats().capacity_bytes;
+  auto state=State::create(owner,state_budget);
+  std::size_t committed=0,stale=0,cancelled=0;
+  const auto expect_dot=[&](float actual,const reference::Dot &expected,std::string_view name,std::size_t row) {
+    const auto error=reference::scalar::distance(double(actual),expected.center);
+    ASSERT_TRUE(std::isfinite(actual))<<name<<" row="<<row;
+    ASSERT_LE(error,expected.bound)<<name<<" row="<<row<<" actual="<<actual
+        <<" original F64="<<expected.center<<" sumabs="<<expected.sumabs;
+  };
+  {
+    auto initial=state.initial(owner,0);
+    auto head=take(c::StateHead::create(state.store,initial),"original-parameter complete Head");
+    const auto old_initial=snapshot(state,initial);
+    c::StateVersion first;
+    for(std::int32_t position=0;position<2;++position) {
+      auto before=take(head.current(),"original-parameter expected base");
+      const auto old=snapshot(state,before);
+      ASSERT_EQ(values<std::int32_t>(state.member(before,kCursor)),std::vector<std::int32_t>{position});
+      const auto old_epoch=state.epoch(before);
+      ASSERT_EQ(old_epoch.step,std::uint64_t(position));ASSERT_EQ(old_epoch.position,position);
+      const auto generated_input=d5_gguf_test::activation(7168,3+26*position);
+      // Explicit upstream fixture with unit norm scale, not an alleged
+      // original layer0 input-norm/residual computation outside this fragment.
+      const auto activation=sem::oracle::rms_norm_rows(generated_input,
+          std::vector<float>(7168,1.F),7168,1.e-5F);
+      const std::array args{upload(owner,sem::bytes(activation)),
+          state.member(before,kHistory),state.member(before,kRecurrent)};
+      auto actual_kda=recurrent.execute(queue,args);
+      const auto prior_history=values<float>(args[1]),prior_state=values<float>(args[2]);
+      compare(recurrent,actual_kda,reference::kda(*source_kda,activation,prior_history,prior_state));verified();
+      // Local raw-row certificates start at ACTUAL native producer values.
+      // Current Q/K/V are also the last row of the actual next history.
+      const auto actual_history=values<float>(actual_kda[0]);
+      const auto current=std::span(actual_history).last(std::size_t(kChannels));
+      constexpr std::array projections{original::Role::kKdaQ,original::Role::kKdaK,original::Role::kKdaV};
+      for(std::size_t part=0;part<projections.size();++part)
+        for(const auto row:std::array<std::size_t,3>{0,reference::width/2,reference::width-1})
+          expect_dot(current[part*reference::width+row],reference::original_row(*source_kda,projections[part],row,activation),
+              original::specs[std::size_t(projections[part])].name,row);
+      const auto actual_gated=values<float>(actual_kda[4]),actual_output=values<float>(actual_kda[5]);
+      for(const auto row:std::array<std::size_t,3>{0,reference::hidden/2,reference::hidden-1})
+        expect_dot(actual_output[row],reference::original_row(*source_kda,original::Role::kKdaOutput,row,actual_gated),"KDA original output",row);
+      verified();
+      auto draft=take(state.store.begin(before),"original-parameter complete draft");
+      check(draft.replace(state.entries[kHistory],actual_kda[0]),"original convolution history");
+      check(draft.replace(state.entries[kRecurrent],actual_kda[2]),"original recurrent state");
+      auto &run=attention[std::size_t(position)];
+      const std::array mla_args{actual_kda[5],state.member(before,kMla),state.member(before,kCursor)};
+      auto actual_mla=run.execute(queue,mla_args);
+      // Actual native KDA output is a labelled upstream fixture for layer3.
+      // Neither a host oracle feature nor an ideal old state feeds the graph.
+      const auto actual_input=values<float>(mla_args[0]),old_cache=values<float>(mla_args[1]);
+      compare(run,actual_mla,reference::mla(*source_mla,actual_input,old_cache,
+          std::size_t(kCapacity),std::size_t(position)),std::size_t(position+1));
+      ASSERT_EQ(values<std::int32_t>(actual_mla[9]),std::vector<std::int32_t>{position+1});
+      const auto query=values<float>(actual_mla[1]),absorbed=values<float>(actual_mla[2]);
+      const auto attended=values<float>(actual_mla[3]),projected=values<float>(actual_mla[4]);
+      for(const auto h:std::array<std::size_t,3>{0,reference::heads/2,reference::heads-1}) {
+        for(const auto row:std::array<std::size_t,3>{0,256,511})
+          expect_dot(absorbed[h*512+row],reference::original_absorbed_row(*source_mla,h,row,
+              std::span(query).subspan(h*192,128),true),"original KV-b absorbed K",h*512+row);
+        for(const auto row:std::array<std::size_t,3>{0,64,127})
+          expect_dot(projected[h*128+row],reference::original_absorbed_row(*source_mla,h,row,
+              std::span(attended).subspan(h*512,512),false),"original KV-b V",h*128+row);
+      }
+      const auto normalized=values<float>(actual_mla[7]),gate=values<float>(actual_mla[8]);
+      const auto gated=values<float>(actual_mla[5]),output=values<float>(actual_mla[6]);
+      for(const auto row:std::array<std::size_t,3>{0,reference::width/2,reference::width-1})
+        expect_dot(gate[row],reference::original_row(*source_mla,original::Role::kMlaGate,row,normalized),"MLA original gate",row);
+      for(const auto row:std::array<std::size_t,3>{0,reference::hidden/2,reference::hidden-1})
+        expect_dot(output[row],reference::original_row(*source_mla,original::Role::kMlaOutput,row,gated),"MLA original output",row);
+      verified();
+      check(draft.replace(state.entries[kMla],actual_mla[0]),"original complete MLA cache");
+      check(draft.replace(state.entries[kCursor],actual_mla[9]),"original actual cursor");
+      check(draft.replace(state.entries[kFeature],actual_mla[6]),"original final feature");
+      const Epoch epoch{std::uint64_t(position+1),position+1,0};
+      check(draft.replace_metadata(state.entries[kEpoch],std::as_bytes(std::span(&epoch,1))),"original complete Epoch");
+      const auto candidate=take(draft.finalize(),"original complete candidate");
+      const auto observed_epoch=state.epoch(candidate);
+      ASSERT_EQ(observed_epoch.step,epoch.step);ASSERT_EQ(observed_epoch.position,epoch.position);ASSERT_EQ(observed_epoch.session,epoch.session);
+      check(head.publish(before.identity(),candidate),"original whole-state publication");++committed;
+      ASSERT_FALSE(head.publish(before.identity(),candidate).ok());++stale;
+      EXPECT_EQ(snapshot(state,before),old);
+      if(position==0)first=candidate;
+      std::printf("Kimi original-role ordinary position=%d visible=%d epoch=%llu completeResources=5\n",
+          position,position+1,static_cast<unsigned long long>(epoch.step));
+    }
+    const auto retained_first=snapshot(state,first);
+    auto fork=take(c::StateHead::create(state.store,first),"original complete old-version fork");
+    const auto fork_base=take(fork.current(),"original old-version fork base");
+    EXPECT_TRUE(fork_base.identity()==first.identity());
+    EXPECT_EQ(values<std::int32_t>(state.member(fork_base,kCursor)),std::vector<std::int32_t>{1});
+    const auto current_head=take(head.current(),"original current Head after continuation");
+    EXPECT_EQ(values<std::int32_t>(state.member(current_head,kCursor)),std::vector<std::int32_t>{2});
+    // No third native forward: cancel an unpublished candidate against a real
+    // retained complete version, and require both current Heads unchanged.
+    auto abandoned=take(state.store.begin(first),"original unpublished old-version candidate");
+    check(abandoned.replace(state.entries[kFeature],state.member(current_head,kFeature)),"original unpublished replacement reader");
+    check(abandoned.cancel(),"original unpublished candidate cancellation");++cancelled;
+    EXPECT_TRUE(take(head.current(),"original Head after cancel").identity()==current_head.identity());
+    EXPECT_TRUE(take(fork.current(),"original fork after cancel").identity()==first.identity());
+    EXPECT_EQ(snapshot(state,first),retained_first);EXPECT_EQ(snapshot(state,initial),old_initial);
+    const auto first_epoch=state.epoch(first),initial_epoch=state.epoch(initial);
+    EXPECT_EQ(first_epoch.step,1u);EXPECT_EQ(first_epoch.position,1);EXPECT_EQ(first_epoch.session,0);
+    EXPECT_EQ(initial_epoch.step,0u);EXPECT_EQ(initial_epoch.position,0);EXPECT_EQ(initial_epoch.session,0);
+  }
+  check(state.store.collect(),"original final state collection");
+  EXPECT_EQ(state.store.stats().versions,0u);EXPECT_EQ(state.store.stats().drafts,0u);EXPECT_EQ(state.store.stats().backing_bytes,0u);
+  EXPECT_EQ(committed,2u);EXPECT_EQ(stale,2u);EXPECT_EQ(cancelled,1u);
+  EXPECT_EQ(recurrent.submissions,2u);EXPECT_EQ(attention[0].submissions,1u);EXPECT_EQ(attention[1].submissions,1u);
+  ::testing::Test::RecordProperty("source_scope","Original fixed-revision KDA0 14 roles + MLA3 9 roles; per-union/per-role SHA checked, original raw KV-b is not uploaded");
+  ::testing::Test::RecordProperty("upstream_scope","Supplied normalized KDA0 input; KDA0 output is an explicit upstream fixture for MLA3, not intervening layers or complete model execution");
+  ::testing::Test::RecordProperty("oracle_scope","Original raw row/tap/KV-b indexing; no prepared K/V or expanded F32 weight bank. Existing six/nine-output accuracy gates plus selected actual-producer F64 projection certificates");
+  ::testing::Test::RecordProperty("state_scope","Two real complete Head commits, actual prior native state feedback, immutable old readers, restored old-version fork, unpublished cancellation, stale expected-base rejection; no native preemption claim");
+}
+
 } // namespace
 #endif
