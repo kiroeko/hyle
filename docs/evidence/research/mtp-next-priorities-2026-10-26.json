@@ -1,0 +1,181 @@
+{
+  "status": "SOURCE_AND_EXISTING_EVIDENCE_ONLY_NO_BUILD_GPU_OR_BENCHMARK",
+  "conclusion": "There is no demonstrated millisecond-scale low-risk leaf replacement. Priority1 is the largest untested structural candidate, not evidence that it explains or recovers the principal gap. Priorities2/3 are smaller bounded options; do not start three blind experiments.",
+  "current_two_turn_tok_s": {
+    "ordinary_H_P": [
+      98.605,
+      102.124
+    ],
+    "MTP_H_P": [
+      127.091,
+      140.805
+    ],
+    "time_per_token_H_over_P_percent": {
+      "ordinary": 3.568784544394288,
+      "MTP": 10.790693282765895
+    },
+    "boundary": "Formal current2a94 window only. Old profiled work/precision and new diagnostic clocks cannot be subtracted from these medians."
+  },
+  "new_same_run_66_decode": {
+    "layout_ms": 8.4414,
+    "batch_ms": 16.3278,
+    "replay_ms": 60.3606,
+    "no_record": 45,
+    "native_reuse_no_record": "270/270",
+    "fresh_target": "30/396nodes in5episodes",
+    "fresh_5_episode_whole_batch_ms": 5.9919
+  },
+  "priorities": [
+    {
+      "rank": 1,
+      "mechanism": "Conditional later test: fixed BOTH GDN ingress and working output, using existing Phase workspace + CopyBatch to/from independently owned canonical state. Preserve selected prefix, old Snapshot readers, quotas and actual copy retirement.",
+      "evidence": "Current Graph diagnostic directly observes27 records=front17+body10. Old complete-key reconstruction after hidden-output normalization leaves2 first+3 native hard-clear+5 address-fill records; only stabilizing both GDN sides changes10→5 in that offline reconstruction.",
+      "envelope": "Separate current Graph diagnostic body10=40.3623ms (dispatch22.6239/end16.7556). These include mandatory first/hard-clear records; current ten windows have NOT been attributed to the old five-key counterfactual within one run. Old profiled five-fill windows total29.173923ms. Neither number is a recoverable saving.",
+      "cost": "About37.265625MiB extra logical copying per eligible body, on all eligible episodes, plus real copy completion/ownership. Net gain unknown. This was previously deferred after source/cost review, not a failed throughput candidate being reopened.",
+      "trigger": "Proceed only with a concrete bounded copy/budget/lifetime plan that predicts exactly which five address fills can disappear while real native invalidations remain.",
+      "stop": "Stop if complete work/readers/retirement differ, the fills remain, or all additional copy+retirement cost is not repaid by removed recording cost.",
+      "anchors": [
+        "executable.cc:1178 capture_key_matches;9779–9890 capture/reuse/finish",
+        "main.cc prepare_evaluations/finish_selected_evaluations existing state pools and CopyBatch",
+        "mtp-residual-body-review memo; mtp-graph-prepare-attribution evidence"
+      ]
+    },
+    {
+      "rank": 2,
+      "mechanism": "Cold-partition proven immutable Plan constant/prepared-artifact ports and fixed alias projections from mutable ports; prefill their existing submission/key slots once. Extend existing Plan metadata, not a new binding cache, dirty-bit owner or cached readiness.",
+      "evidence": "Plan already owns constants/leases/immutable_alias_order; per-step revision+physical span comparison and reusable_configuration_spans already skip unchanged cold hooks. Only residual repeated traversal of proven fixed ports after mutable configuration changes is a possible new saving.",
+      "envelope": "Separate Graph diagnostic: all66 decode cold bindings14.9193ms; no-record45=9.3682ms (208.18us/episode). The constant-only fraction is UNKNOWN and required seal/alignment/permission work remains. All105 reuse-key lookups total2.1382ms, so optimizing only key comparison is too small for the main gap.",
+      "trigger": "First inspect existing Plan facts for the actual static/dynamic visited-port fraction; implement only if substantial immutable traversal is outside the already-used fast path.",
+      "stop": "Stop if the fast path already eliminates the work, static fraction is small, or safe reuse requires weakening owner/import/permissions.",
+      "anchors": [
+        "plan_state.h:827–954 constants/artifacts/alias and input-consumer indices",
+        "executable.cc:1350–1464 revision+span reuse;1468–1607 preparation",
+        "resources.cc:371–425 configuration reuse/reset"
+      ]
+    },
+    {
+      "rank": 3,
+      "mechanism": "Unclosed different shape: original full-M2 BF16 A/W/Y, F32-accumulation N2048/K6144 down projection. Require a genuinely different existing route and preserved store points before any leaf test; do not reuse the rejected N6144/K2048 experiment.",
+      "evidence": "Old eligible warm T2 targets, source-order split of66 narrow projections using24-layer GGGAGGGAGGGAGGGAGGGAGGGA: last narrow projection per layer is24down; remaining42 are K2048. This shape labeling is source/dependency-order inferred, not captured argument/node-lineage certification.",
+      "old_trace_ms": {
+        "all_warm_down_mean_H45_P60": [
+          1.618576,
+          1.447775
+        ],
+        "late_down_mean_H23_P25": [
+          1.655714,
+          1.506166
+        ],
+        "late_down_median_H_P": [
+          1.471346,
+          1.513682
+        ],
+        "late_down_ranges_H_P": [
+          [
+            1.443056,
+            2.145005
+          ],
+          [
+            1.344178,
+            2.293035
+          ]
+        ],
+        "late_other_N2048_K2048_mean_H_P": [
+          0.876159,
+          0.936653
+        ],
+        "late_lm_head_mean_H_P": [
+          2.255624,
+          2.401891
+        ]
+      },
+      "envelope": "Down mean difference only0.15–0.17ms/target, not all1.6ms Hyle work. Medians/ranges do not prove a stable loss. Other narrow projections and head are faster on Hyle in this selection; no new multi-ms unclosed dense leaf is identified. Same-shape BF16/F32-carrier rounding and continuations still differ.",
+      "trigger": "A source-matched alternative primitive with a concrete same-math advantage, rather than kernel/grid-count speculation.",
+      "stop": "No qualified alternative, duplicated closed-wide mechanism, or a leaf result within noise: stop; no whole-MTP speed inference.",
+      "anchors": [
+        "mtp-steady-gpu-attribution facts actual eligible correlations",
+        "old frozen main.cc:2440–2605 GDN/attention/FFN dependency order",
+        "existing body-cost-breakdown matrix grouping/math caveats"
+      ]
+    }
+  ],
+  "six_layer_fresh_plan": "Not a priority. prepare_shared already shares one ready metadata upload, not native plan. BatchSlot privately owns plan/spec/generation/report and integer schedule. A correct immutable plan+int schedule lease would need explicit lifetime/spec/layout/queue/primary qualification and separate per-layer float workspace; raw plan alias is unsafe. Only5fresh decode episodes: their ENTIRE batch bucket5.9919ms makes even ideal5/6 removal<4.99325ms over66, not measured scheduler savings. One remaining actual plan change still invalidates enclosing body capture. No direct immutable-plan sharing API currently exists.",
+  "plan_anchors": [
+    "graph_batch/batch.cc:472–548 shared metadata/per-node creation",
+    "batch_execution.cc:439–535 query/update/fresh-plan/realwait",
+    "flashinfer_provider.cc:123–155 BatchSlot;290–379 sizing/plan;420 update",
+    "native_batch.cu:17–53 immutable schedule offsets versus float run workspace"
+  ],
+  "not_reopened": [
+    "hidden INPUT ingress",
+    "variant capacity/unlimited",
+    "fixed512 chunks",
+    "reverse-hidden/paired-parent pool",
+    "prepared F32 TopK",
+    "N6144/K2048 MMVF/Lt or paired gate/up",
+    "metadata follower reservations/control transfers as main cause"
+  ],
+  "evidence_pins": [
+    {
+      "path": ".scratch/inference-model-batch-clock-20261026/summary.json",
+      "bytes": 19359,
+      "sha256": "d0eecf2f4e71b7d218eb5920e432974e5f8366451af44b5a3736215da6a136f2"
+    },
+    {
+      "path": ".scratch/inference-graph-cold-clock-20261026/memo.json",
+      "bytes": 33290,
+      "sha256": "414958365a8f202911c58958cf01a5b5aae6bd9ed6de4d7c0c02f3620b8b2a11"
+    },
+    {
+      "path": ".scratch/mtp-residual-body-review-20261026/memo.json",
+      "bytes": 8911,
+      "sha256": "262392fd71c19d6fd3f2946a4948223f08c8bd8fd70928342af566e12a68af00"
+    },
+    {
+      "path": ".scratch/mtp-steady-gpu-attribution-20261025/facts.json",
+      "bytes": 1215637,
+      "sha256": "418845f23f5eeadffd3bf9f6b061191bee30e203bb75f558a06a42ba55b901f8"
+    },
+    {
+      "path": ".scratch/mtp-steady-gpu-attribution-20261025/memo.json",
+      "bytes": 14918,
+      "sha256": "fe58d9d243caabde10f4175895fee63df7073e8d400163ce7f4715b5b9c01f7e"
+    }
+  ],
+  "source_pins": [
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "48adc18109e716e2cb9d441d9842a76f6957cd54ad4b80b6a39675eb3139a8a7"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "5cbdd7fbad88d8f68b9a87414cf7dc462b7d7d3121c7b99e941f57cf3d2f3151"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "23ae88731ea36a4ad73a288ccd825fe72a4e0f8ef84d484512e2be702b332109"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "c17e99b53e793e3357b36eec288d2a1e36211081b95a8d2145c4ff3b4234d6da"
+    }
+  ],
+  "limits": "No source mutation outside this scratch memo;0build/GPU/HTTP. No bucket/count is recoverable time. No >15% claim. No new profiler or benchmark framework.",
+  "decode_top_suggestion": [
+    "优先审GDN双向固定工作IO这个最大未实测结构候选；旧少数地址窗口不能代表整段差距，新增37.27MiB/轮及同步退休的净收益未知。",
+    "Graph已有revision/span复用；只在常量端口的残余重复遍历确实占主导时收敛一次性静态部分，不再造cache。六层fresh nativeplan共享现不优先。",
+    "旧轨迹未发现另一个确定多毫秒GPU叶；未关闭的N2048/K6144 down仅均值约0.15–0.17ms差，先证同数学替代，不能重开已关N6144/K2048。"
+  ]
+}
