@@ -3,6 +3,7 @@
 #include "native_region.h"
 #include "../compute_route_apple/apple_copy_internal.h"
 #include "../graph_batch/native_append_regions.h"
+#include "../graph_batch/paged_append.h"
 #include "hyle/core/assert.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/mem/std_allocator.h"
@@ -32,7 +33,7 @@ struct Artifact final {
   batch::PagedAppend descriptor;
   compute::TensorDesc rows;
   mem::MemoryResourceRef resource;
-  std::uint32_t range_capacity = 0;
+  std::uint32_t range_capacity = 0, query_rows = 0;
   std::size_t max_bytes = 0, row_bytes = 0, input_bytes = 0;
 };
 struct Slot final {
@@ -121,7 +122,7 @@ Status configure(void *prepared, void *invocation, const bd::NativeAppendConfigu
   slot.configured = false; slot.bound = false; slot.sealed = false; slot.submitted = false;
   if (!artifact.descriptor.schema.owns(configuration.layout) || !configuration.capacity.valid() ||
       configuration.capacity.storage().resource() != artifact.resource ||
-      configuration.layout.facts().query_rows != artifact.rows.dimensions()[0] ||
+      configuration.layout.facts().query_rows != artifact.query_rows ||
       configuration.ranges.size() > artifact.range_capacity)
     return Status::InvalidArgument("Apple append layout/capacity/range geometry differs");
   std::size_t copied = 0, new_bytes = 0;
@@ -340,7 +341,8 @@ compute::ProviderPrepareOutcome compile_native_paged_append(void *context,
     artifact->descriptor = std::move(*append); artifact->resource = request.input_resources[0];
     HYLE_ASSIGN_OR_RETURN(artifact->rows, request.graph->value_description(request.inputs[0]));
     HYLE_ASSIGN_OR_RETURN(artifact->input_bytes, artifact->rows.required_bytes());
-    const auto query = static_cast<std::size_t>(artifact->rows.dimensions()[0]);
+    HYLE_ASSIGN_OR_RETURN(artifact->query_rows, bd::append_query_rows(artifact->descriptor, artifact->rows));
+    const auto query = static_cast<std::size_t>(artifact->query_rows);
     artifact->row_bytes = artifact->input_bytes / query;
     const auto capacity = artifact->descriptor.schema.capacity();
     const auto active = std::min(query, static_cast<std::size_t>(capacity.max_requests));

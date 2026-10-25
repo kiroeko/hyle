@@ -11,6 +11,7 @@
 
 #include "../compute_route_vulkan/vulkan_copy_internal.h"
 #include "../graph_batch/native_append_regions.h"
+#include "../graph_batch/paged_append.h"
 #include "hyle/core/assert.h"
 
 namespace hyle::graph::vulkan::detail {
@@ -69,9 +70,12 @@ Result<batch::PagedAppend> qualify(const RegionCompileRequest &r) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto rows, r.graph->value_description(r.inputs[0]));
   HYLE_RETURN_IF_ERROR(append->infer_output_descriptions(std::span(&rows, 1), {}));
   const auto type = rows.data_type();
-  if (type != compute::DataType::kFloat16 && type != compute::DataType::kBFloat16 &&
+  const auto capacity = append->schema.capacity();
+  const auto storage = append->role == compute::BatchCacheRole::kValue ? capacity.value_storage : capacity.key_storage;
+  const bool q8 = storage == compute::CacheStorage::q8_0().value();
+  if (!q8 && type != compute::DataType::kFloat16 && type != compute::DataType::kBFloat16 &&
       type != compute::DataType::kFloat8E4M3FN)
-    return std::unexpected(Status::Unimplemented("Vulkan append requires plain F16/BF16/E4 rows"));
+    return std::unexpected(Status::Unimplemented("Vulkan append requires exact F16/BF16/E4 or Q8_0 rows"));
   return *append;
 }
 Status configure(void *prepared, void *invocation,

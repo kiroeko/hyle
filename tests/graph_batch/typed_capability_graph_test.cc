@@ -10,6 +10,7 @@
 
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_models/paged_e4_kv_fixture.h"
+#include "../compute_batch/encoded_page_codec_oracle.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
@@ -871,8 +872,10 @@ TEST(TypedCapabilityGraph, EncodedE4AppendKeepsCpuOddRowsAndFiniteCarrierContrac
   blocked_capacity.qk_head_dim = blocked_capacity.value_head_dim = 32;
   const auto blocked_schema = c::BatchSchema::create(blocked_capacity).value();
   const auto blocked = gb::paged_append(blocked_schema, c::BatchCacheRole::kKey);
-  ASSERT_FALSE(blocked);
-  EXPECT_TRUE(blocked.error().IsUnimplemented());
+  ASSERT_TRUE(blocked);
+  const auto blocked_rows = c::cache_carrier_description(blocked_capacity.key_storage,
+      std::array<std::int64_t, 3>{2, 1, 32}).value();
+  EXPECT_TRUE(blocked->infer_output_descriptions(std::span(&blocked_rows, 1), {}).ok());
 
   const std::array<std::int32_t, 2> q{0, 2}, old_ptr{0, 1}, new_ptr{0, 2}, ids{1, 2};
   const std::array<std::int32_t, 1> old_ids{0}, tail{1};
@@ -954,6 +957,191 @@ TEST(TypedCapabilityGraph, EncodedE4AppendKeepsCpuOddRowsAndFiniteCarrierContrac
   EXPECT_EQ(unchanged, old_bytes);
   ASSERT_TRUE(invocation.close().ok());
   } catch (const std::exception &error) { FAIL() << phase << ": " << error.what(); }
+}
+
+
+// One finite geometry, exercising both original COW writers and exact Q8 suffix authority.
+TEST(TypedCapabilityGraph, EncodedQ8AppendPreservesLogicalRowsAndOldReaders) {
+  using B16 = hyle::simd::bfloat16_t;
+  const encoded_page_test::CodecOracle oracle{encoded_page_test::Codec::kQ8};
+  constexpr std::size_t heads = 2, key_depth = 64, value_depth = 128, query_heads = 4;
+  const auto resource = m::system_resource();
+  auto context = c::Context::create(c::cpu::device(), c::ggml_cpu::provider({.native_threads = 1})).value();
+  auto queue = context.create_queue().value();
+  struct Drain { c::Context &context; ~Drain() { context.drain().IgnoreError(); } } drain{context};
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const auto bf16 = c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const auto q8 = c::CacheStorage::q8_0().value();
+  const c::BatchCapacity capacity{
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .key_storage = bf16, .value_storage = bf16, .max_requests = 1,
+      .max_query_rows = 2, .max_kv_rows = 8, .max_pages = 4, .max_page_refs = 3,
+      .query_heads = query_heads, .kv_heads = heads, .qk_head_dim = key_depth,
+      .value_head_dim = value_depth, .page_size = 2};
+  const auto root = c::BatchSchema::create(capacity).value();
+  const auto schema = root.with_cache_storage(q8, q8).value();
+  const auto foreign = c::BatchSchema::create(schema.capacity()).value();
+  const auto key_op = gb::paged_append(schema, c::BatchCacheRole::kKey).value();
+  const auto exact = c::cache_carrier_description(q8, std::array<std::int64_t, 3>{2, heads, key_depth}).value();
+  ASSERT_EQ(exact.dimensions()[0], 4); ASSERT_EQ(exact.dimensions()[1], 68);
+  EXPECT_TRUE(key_op.infer_output_descriptions(std::span(&exact, 1), {}).ok());
+  for (const auto bad : {
+      c::TensorDesc::dense(c::DataType::kUInt8, std::array<std::int64_t, 2>{3, 68}).value(),
+      c::TensorDesc::dense(c::DataType::kUInt8, std::array<std::int64_t, 2>{4, 67}).value(),
+      c::TensorDesc::dense(c::DataType::kUInt8, std::array<std::int64_t, 3>{2, heads, 68}).value()})
+    EXPECT_FALSE(key_op.infer_output_descriptions(std::span(&bad, 1), {}).ok());
+  const auto plain_op = gb::paged_append(root, c::BatchCacheRole::kKey).value();
+  EXPECT_FALSE(plain_op.infer_output_descriptions(std::span(&exact, 1), {}).ok());
+
+  for (const bool appendable : {false, true}) {
+    SCOPED_TRACE(appendable ? "Q8 original reserved suffix" : "Q8 original COW writers");
+    const std::array<std::int32_t, 2> qp{0, 2}, old_ptr{0, 2}, new_ptr{0, 3}, old_ids{0, 1};
+    const std::array<std::int32_t, 3> new_ids = appendable ? std::array<std::int32_t, 3>{0, 1, 2}
+                                                        : std::array<std::int32_t, 3>{0, 2, 3};
+    const std::array<std::int32_t, 1> tail{1};
+    const std::array layouts{root.version({qp, old_ptr, old_ids, tail}).value(),
+                             root.version({qp, new_ptr, new_ids, tail}).value()};
+    const auto foreign_layout = foreign.version({qp, old_ptr, old_ids, tail}).value();
+    std::array<c::PagedArena, 2> arenas;
+    std::array<std::array<c::ReadLease, 2>, 2> old_leases;
+    std::array<std::array<std::vector<std::uint8_t>, 2>, 2> old_bytes;
+    std::array<c::PagedArenaRead, 2> previous;
+    std::array<gb::PagedAppendPages, 2> pages;
+    std::array<std::vector<std::uint8_t>, 2> expected_rows;
+    std::array<std::vector<std::uint16_t>, 2> incoming;
+    const std::array depths{key_depth, value_depth};
+    for (std::size_t role = 0; role < 2; ++role) {
+      const auto depth = depths[role], row_bytes = heads * depth / 32 * 34;
+      for (std::size_t row = 0; row < 5; ++row) {
+        const auto value = role ? (row < 3 ? .0625F : row == 3 ? .125F : .25F) : .125F;
+        const auto bytes = oracle.bytes(value, heads * depth, role != 0);
+        expected_rows[role].insert(expected_rows[role].end(), bytes.begin(), bytes.end());
+        if (row >= 3) incoming[role].insert(incoming[role].end(), heads * depth, half_test::encode<B16>(value).bits);
+      }
+      const auto cache_role = role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey;
+      arenas[role] = c::PagedArena::create(schema, cache_role, resource, {.max_backing_bytes = 8192}).value();
+      ASSERT_EQ(arenas[role].page_bytes(), 2 * row_bytes);
+      std::array<c::PagedPageAppender, 1> tails;
+      for (std::uint32_t page = 0; page < 2; ++page) {
+        auto &bytes = old_bytes[role][page]; bytes.assign(2 * row_bytes, 0xff);
+        const auto initialized = page ? 1u : 2u;
+        std::copy_n(expected_rows[role].begin() + page * 2 * row_bytes, initialized * row_bytes, bytes.begin());
+        auto writer = arenas[role].acquire(page).value();
+        ASSERT_TRUE(writer.lease().view()->write(std::as_bytes(std::span(bytes))).ok());
+        if (appendable && page == 1) {
+          auto published = writer.publish_appendable(initialized).value();
+          old_leases[role][page] = std::move(published.prefix);
+          tails[0] = std::move(published.appender);
+          ASSERT_TRUE(tails[0].reserve_rows(1).ok());
+          ASSERT_EQ(tails[0].view()->size(), row_bytes);
+          bytes.resize(row_bytes); // Retain only this prefix's actual read authority.
+        } else old_leases[role][page] = writer.publish(initialized).value();
+      }
+      previous[role] = arenas[role].read(layouts[0], old_leases[role]).value();
+      EXPECT_FALSE(arenas[role].read(foreign_layout, old_leases[role]));
+      std::array<c::PagedPageWriter, 2> dirty;
+      const std::size_t count = appendable ? 1u : 2u;
+      for (std::size_t i = 0; i < count; ++i) {
+        dirty[i] = arenas[role].acquire(static_cast<std::uint32_t>(i + 2)).value();
+        const std::vector<std::uint8_t> poison(2 * row_bytes, 0xff);
+        ASSERT_TRUE(dirty[i].lease().view()->write(std::as_bytes(std::span(poison))).ok());
+      }
+      if (appendable) pages[role] = gb::PagedAppendPages::create(arenas[role], layouts[1], previous[role],
+          std::span(dirty).first(count), tails).value();
+      else pages[role] = gb::PagedAppendPages::create(arenas[role], layouts[1], previous[role], dirty).value();
+    }
+    auto builder = g::GraphBuilder::create().value();
+    const auto qdesc = c::batch_query_description(schema.capacity(), 2).value();
+    const auto query = builder.input(qdesc).value();
+    std::array<g::ValueId, 2> row_inputs;
+    std::array<c::TensorDesc, 2> row_desc;
+    std::array<g::NodeId, 2> writers;
+    for (std::size_t role = 0; role < 2; ++role) {
+      row_desc[role] = c::TensorDesc::dense(c::DataType::kBFloat16,
+          std::array<std::int64_t, 3>{2, heads, static_cast<std::int64_t>(depths[role])}).value();
+      row_inputs[role] = builder.input(row_desc[role]).value();
+      const auto encoded = builder.add(c::Operation::custom(c::model_ops::CacheEncode{q8}), row_inputs[role]).value();
+      writers[role] = builder.add_node(c::Operation::custom(gb::paged_append(schema,
+          role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey).value()), std::array{encoded}).value();
+    }
+    ASSERT_TRUE(builder.depends_on(writers[1], writers[0]).ok());
+    std::array<std::array<g::ValueId, 2>, 2> bank_inputs;
+    std::array<g::NodeId, 2> readers;
+    std::array<g::ValueId, 2> outputs;
+    for (std::size_t branch = 0; branch < 2; ++branch) {
+      for (std::size_t role = 0; role < 2; ++role)
+        bank_inputs[branch][role] = builder.input(c::batch_cache_description(schema,
+            role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey).value()).value();
+      const auto metadata = builder.input(root.metadata_description().value()).value();
+      readers[branch] = builder.add_node(c::Operation::custom(c::PagedAttention{
+          .capacity = schema.capacity(), .scale = .125F, .causal = true}),
+          std::array{query, bank_inputs[branch][0], bank_inputs[branch][1], metadata}).value();
+      if (branch == 1) for (const auto writer : writers) ASSERT_TRUE(builder.depends_on(readers[branch], writer).ok());
+      outputs[branch] = builder.result(readers[branch]).value(); ASSERT_TRUE(builder.publish(outputs[branch]).ok());
+    }
+    auto graph = std::move(builder).finish().value();
+    const std::array domains{g::StorageDomain{resource}};
+    const std::array targets{g::ExecutionTarget{g::ExecutionSource::acquire(context).value(), g::StorageDomainId{0}}};
+    auto compiled = gb::compile(graph, {.storage_domains = domains, .targets = targets}).value();
+    auto invocation = compiled.executable.create_invocation().value();
+    ASSERT_TRUE(gb::prepare(invocation, queues,
+        std::array{gb::NodeLayout{readers[0], layouts[0]}, gb::NodeLayout{readers[1], layouts[1]}},
+        {.host_workspace = resource, .max_float_workspace_bytes = 1u << 20, .max_int_workspace_bytes = 64u << 10}).ok());
+    for (std::size_t role = 0; role < 2; ++role) {
+      ASSERT_TRUE(gb::bind(invocation, bank_inputs[0][role], previous[role]).ok());
+      ASSERT_TRUE(gb::bind_append(invocation, graph, writers[role], bank_inputs[1][role], std::move(pages[role])).ok());
+    }
+    auto pool = c::LeasePool::create(resource, 32768, {.max_blocks = 8}).value();
+    const auto load_words = [&](std::span<const std::uint16_t> words) {
+      auto writer = pool.allocate(words.size_bytes(), 64).value();
+      if (!writer.view()->write(std::as_bytes(words)).ok()) throw std::runtime_error("Q8 test input write");
+      return writer.publish().value();
+    };
+    const std::vector<std::uint16_t> zeros(2 * query_heads * key_depth, 0);
+    ASSERT_TRUE(invocation.bind(query, qdesc, load_words(zeros)).ok());
+    for (std::size_t role = 0; role < 2; ++role)
+      ASSERT_TRUE(invocation.bind(row_inputs[role], row_desc[role], load_words(incoming[role])).ok());
+    const auto out_desc = c::batch_output_description(schema.capacity(), 2).value();
+    if (compiled.executable.output_ownership().value() == g::OutputOwnership::kCaller)
+      for (const auto output : outputs)
+        ASSERT_TRUE(invocation.bind(output, out_desc, pool.allocate(out_desc.required_bytes().value(), 64).value()).ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    { auto done = invocation.submit(queues); ASSERT_TRUE(done); ASSERT_TRUE(done->wait().ok()); }
+    for (std::size_t branch = 0; branch < 2; ++branch) {
+      const auto lease = invocation.result(outputs[branch]).value().storage_lease().value();
+      std::vector<std::uint16_t> actual(2 * query_heads * value_depth);
+      ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+      for (std::size_t i = 0; i < actual.size(); ++i) {
+        const auto row = i / (query_heads * value_depth);
+        const double sum = 3 * oracle.decoded(.0625F, true) + oracle.decoded(.125F, true) +
+            (row ? oracle.decoded(.25F, true) : 0.);
+        const double expected = branch ? sum / double(4 + row) : oracle.decoded(.0625F, true);
+        const auto visible = half_test::decode(B16::from_bits(actual[i]));
+        ASSERT_TRUE(std::isfinite(visible)); ASSERT_NEAR(visible, expected, .008);
+      }
+    }
+    for (std::size_t role = 0; role < 2; ++role) {
+      auto returned = gb::take_append(invocation, writers[role]).value();
+      const auto row_bytes = heads * depths[role] / 32 * 34;
+      const std::size_t count = appendable ? 1u : 2u;
+      for (std::size_t i = 0; i < count; ++i) {
+        const auto first = appendable || i ? 4u : 2u;
+        const auto copied = first == 4 ? 1u : 2u;
+        std::vector<std::uint8_t> actual(2 * row_bytes), expected(2 * row_bytes, 0xff);
+        std::copy_n(expected_rows[role].begin() + first * row_bytes, copied * row_bytes, expected.begin());
+        ASSERT_TRUE(returned.page(i)->lease().view()->read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(actual, expected);
+      }
+      const auto ready = returned.ready().value(); EXPECT_EQ(ready.layout(), layouts[1]); EXPECT_EQ(ready.page_count(), 3u);
+      for (std::size_t page = 0; page < 2; ++page) {
+        std::vector<std::uint8_t> actual(old_bytes[role][page].size());
+        ASSERT_TRUE(old_leases[role][page].view()->read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(actual, old_bytes[role][page]);
+      }
+      EXPECT_FALSE(arenas[role].acquire(1));
+    }
+    ASSERT_TRUE(invocation.close().ok());
+  }
 }
 
 

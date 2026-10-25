@@ -121,7 +121,7 @@ public:
   // Declare the initialized prefix in [0, schema.capacity().page_size]. The
   // caller commits actual initialized contents after successful writes.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> publish(std::uint32_t initialized_rows) noexcept;
-  // Opt-in plain F16/BF16/E4 attention storage publication. Bounds use the
+  // Opt-in F16/BF16/E4 or whole-block Q8_0 attention publication. Bounds use the
   // actual physical row bytes; native copy/reader qualification is separate.
   // The returned reader exposes only this committed prefix; the one move-only
   // appender owns the unused suffix.

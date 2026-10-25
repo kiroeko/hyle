@@ -27,10 +27,10 @@ Result<c::TensorDesc> row_description(const PagedAppend&op,std::int64_t rows)noe
       ((op.schema.mla_layout()!=c::MlaCacheLayout::kNone)!=(op.role==c::BatchCacheRole::kMla)))
     return std::unexpected(Status::InvalidArgument("paged append needs its paged schema/role/active rows"));
   const auto cap=op.schema.capacity();const auto storage=row_storage(op);
-  if(!storage.format().is_plain() ||
+  if(storage!=c::CacheStorage::q8_0().value() && (!storage.format().is_plain() ||
       (storage.data_type()!=c::DataType::kFloat16 && storage.data_type()!=c::DataType::kBFloat16 &&
-       storage.data_type()!=c::DataType::kFloat8E4M3FN))
-    return std::unexpected(Status::Unimplemented("paged append copies plain F16/BF16/E4 rows"));
+       storage.data_type()!=c::DataType::kFloat8E4M3FN)))
+    return std::unexpected(Status::Unimplemented("paged append copies exact F16/BF16/E4 or Q8_0 rows"));
   return c::cache_carrier_description(storage,std::array<std::int64_t,3>{rows,cap.kv_heads,
       op.role==c::BatchCacheRole::kValue?cap.value_head_dim:cap.qk_head_dim});
 }
@@ -39,11 +39,23 @@ std::uint32_t history(c::HostBatchLayout h,std::uint32_t request,std::uint32_t p
   return pages?(pages-1)*page_size+std::uint32_t(h.last_page_lengths[request]):0;
 }
 }
+Result<std::uint32_t> detail::append_query_rows(const PagedAppend&op,const c::TensorDesc&carrier)noexcept{
+  if(!op.schema.valid() || !carrier.valid())
+    return std::unexpected(Status::InvalidArgument("paged append needs its schema and exact row carrier"));
+  const auto cap=op.schema.capacity();
+  const bool q8=row_storage(op)==c::CacheStorage::q8_0().value();
+  if(carrier.rank()!=(q8?2u:3u) || (q8 && (!cap.kv_heads || carrier.dimensions()[0]%cap.kv_heads)))
+    return std::unexpected(Status::InvalidArgument("paged append carrier does not contain whole logical head rows"));
+  const auto rows=q8?carrier.dimensions()[0]/cap.kv_heads:carrier.dimensions()[0];
+  HYLE_ASSIGN_OR_RETURN(auto expected,row_description(op,rows));
+  if(carrier!=expected)
+    return std::unexpected(Status::InvalidArgument("paged append needs exact original cache carrier rows"));
+  return static_cast<std::uint32_t>(rows);
+}
 Status PagedAppend::infer_output_descriptions(std::span<const c::TensorDesc>inputs,std::span<c::TensorDesc>outputs)const noexcept{
-  if(inputs.size()!=1 || !inputs[0].valid() || inputs[0].rank()!=3 || !outputs.empty())
+  if(inputs.size()!=1 || !outputs.empty())
     return Status::InvalidArgument("paged append needs packed new rows and no tensor output");
-  HYLE_ASSIGN_OR_RETURN(auto expected,row_description(*this,inputs[0].dimensions()[0]));
-  if(inputs[0]!=expected)return Status::InvalidArgument("paged append needs exact packed new rows");
+  HYLE_ASSIGN_OR_RETURN(auto rows,detail::append_query_rows(*this,inputs[0]));(void)rows;
   return Status::Ok();
 }
 Result<PagedAppend> paged_append(c::BatchSchema schema,c::BatchCacheRole role)noexcept{
@@ -264,6 +276,7 @@ c::ProviderRuntimeProperties runtime(const AppendAdapter&adapter)noexcept{
 }
 struct Prepared final {
   PagedAppend descriptor;c::TensorDesc rows;mem::MemoryResourceRef resource;NodeId node;
+  std::uint32_t query_rows=0;
   cd::PagedAppendProgram native;cd::PagedAppendNativeSpec spec;
 };
 struct MirrorGroup final {
@@ -413,13 +426,13 @@ c::ProviderPrepareOutcome compile(void*opaque,const RegionCompileRequest&r,mem::
   auto operation=r.graph->operation(r.nodes[0]);if(!operation)return c::ProviderPrepareOutcome::error(operation.error());
   const auto append=operation->custom_as<PagedAppend>();if(!append)return c::ProviderPrepareOutcome::unsupported(Status::Unimplemented("not paged append"));
   auto rows=r.graph->value_description(r.inputs[0]);if(!rows)return c::ProviderPrepareOutcome::error(rows.error());
-  const auto validation=append->infer_output_descriptions(std::span(&*rows,1),{});if(!validation.ok())return c::ProviderPrepareOutcome::error(validation);
+  auto query_rows=append_query_rows(*append,*rows);if(!query_rows)return c::ProviderPrepareOutcome::error(query_rows.error());
   const auto&adapter=*static_cast<AppendAdapter*>(opaque);
   if(r.input_resources[0]!=adapter.resource)return c::ProviderPrepareOutcome::unsupported(Status::Unimplemented("paged append needs rows in its original Queue resource"));
   auto*p=a.construct<Prepared>();if(!p)return c::ProviderPrepareOutcome::error(Status::ResourceExhausted("paged append prepared metadata"));
-  p->descriptor=*append;p->rows=*rows;p->resource=adapter.resource;p->node=r.nodes[0];
+  p->descriptor=*append;p->rows=*rows;p->resource=adapter.resource;p->node=r.nodes[0];p->query_rows=*query_rows;
   if(adapter.native_capture){
-    const auto cap=append->schema.capacity();const auto q=std::uint32_t(rows->dimensions()[0]);
+    const auto cap=append->schema.capacity();const auto q=p->query_rows;
     const auto extra=std::min(q,cap.max_requests);
     if(q>UINT32_MAX-extra){a.destroy(p);return c::ProviderPrepareOutcome::error(Status::OutOfRange("paged append instruction capacity overflows"));}
     auto bytes=rows->required_bytes();if(!bytes){a.destroy(p);return c::ProviderPrepareOutcome::error(bytes.error());}
@@ -571,10 +584,11 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
   if(!retained || retained->valid() || !p)
     return Status::FailedPrecondition("native paged append needs its selected idle slot and original transaction");
   HYLE_ASSIGN_OR_RETURN(auto facts,region.table->inspect(region.prepared,region.invocation));
+  HYLE_ASSIGN_OR_RETURN(auto query_rows,append_query_rows(facts.descriptor,facts.rows));
   if(facts.node!=region.node || !facts.descriptor.schema.owns(p->layout) ||
       facts.descriptor.role!=p->descriptor.role || row_storage(facts.descriptor)!=row_storage(p->descriptor) ||
       facts.rows!=p->rows || p->successful ||
-      p->layout.facts().query_rows!=facts.rows.dimensions()[0])
+      p->layout.facts().query_rows!=query_rows)
     return Status::InvalidArgument("native paged append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p->arena));
   if(capacity.storage().resource()!=facts.resource)
@@ -655,7 +669,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   auto&p=*pages.data_;const auto&op=f.prepared->descriptor;
   if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || row_storage(op)!=row_storage(p.descriptor) ||
       p.rows!=f.prepared->rows ||
-      p.layout.facts().query_rows!=f.prepared->rows.dimensions()[0] || p.successful)
+      p.layout.facts().query_rows!=f.prepared->query_rows || p.successful)
     return Status::InvalidArgument("paged append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));
   if(capacity.storage().resource()!=f.prepared->resource)return Status::InvalidArgument("paged append arena belongs to another selected Queue resource");
@@ -681,7 +695,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   auto&p=*pages.data_;const auto&op=f.prepared->descriptor;
   if(!op.schema.owns(p.layout) || op.role!=p.descriptor.role || row_storage(op)!=row_storage(p.descriptor) ||
       p.rows!=f.prepared->rows ||
-      p.layout.facts().query_rows!=f.prepared->rows.dimensions()[0] || p.successful)
+      p.layout.facts().query_rows!=f.prepared->query_rows || p.successful)
     return Status::InvalidArgument("writer-only append transaction differs from its selected operation");
   HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));
   if(capacity.storage().resource()!=f.prepared->resource)return Status::InvalidArgument("writer-only append arena belongs to another selected Queue resource");

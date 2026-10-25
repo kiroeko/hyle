@@ -6,6 +6,9 @@
 #include "native_append_regions.h"
 
 namespace hyle::graph::batch::detail {
+// Exact original carrier -> logical token rows; no storage/content conversion.
+HYLE_GRAPH_BATCH_API Result<std::uint32_t> append_query_rows(
+    const PagedAppend&, const compute::TensorDesc&) noexcept;
 struct AppendAdapter final {
   mem::MemoryResourceRef resource;
   compute::DeviceClass device_class=compute::DeviceClass::kCpu;

@@ -1,0 +1,712 @@
+{
+  "status": "FINITE_Q8_CPU_APPEND_PASS_WITH_DEFAULT_AND_E4_REGRESSIONS",
+  "source": {
+    "base_commit": "aaf51ccd31511353552b2fe93568a09e40f99658",
+    "current_paths": [
+      {
+        "path": "src/graph_batch/paged_append.cc",
+        "bytes": 56401,
+        "sha256": "1c116c2e5cbdf533810d66d00291b72d2a5b65ea4865ea7e7ee52097f11dc29f"
+      },
+      {
+        "path": "src/graph_batch/paged_append.h",
+        "bytes": 2063,
+        "sha256": "d9ef0db1060a1a5d59d8af5a56b1a72ec1f38239478944a01ed071b7d99f2622"
+      },
+      {
+        "path": "src/graph_route_apple/native_paged_append_region.cc",
+        "bytes": 23475,
+        "sha256": "f6a45c9fdbd35edd933eb08af14b3e39b163900c931d8a5ec188a3915d67fe52"
+      },
+      {
+        "path": "src/graph_route_vulkan/native_paged_append.cc",
+        "bytes": 18117,
+        "sha256": "19aa84a9ee5142cc38e4da9da133712dd7e33ee4a2e560d4cb7c549aaa74b692"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "bytes": 51084,
+        "sha256": "1ce81bbb7018be909140e481045ed9e6e415dffae4381ee0aac0c55ceaf7b5d8"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "bytes": 14740,
+        "sha256": "789741274bf3a0a3995cb0fd911a20695a8311141f487264aa94dbd99d445959"
+      },
+      {
+        "path": "include/hyle/graph/batch.h",
+        "bytes": 18768,
+        "sha256": "76a517bfd76a848d12533de58c6e041a23f6e879e42f78b240fddb5f12abc283"
+      },
+      {
+        "path": "tests/graph_batch/typed_capability_graph_test.cc",
+        "bytes": 68478,
+        "sha256": "09caf00881051927623ea8a38333a0d229f7b1454bc6e42526362d801dbd2ce3"
+      }
+    ],
+    "manifest": {
+      "path": ".scratch/inference-q8-append-20261025/integrated.json",
+      "bytes": 3980,
+      "sha256": "76ff5851d34dbbc335f3270d85ed6e488a395b0cc9b8cfeb63a1ad079e3733bf"
+    },
+    "actual_hashes_verified": true
+  },
+  "checks": {
+    "new_Q8_CPU": {
+      "kind": "actual_Q8_component",
+      "receipt": {
+        "path": ".scratch/inference-q8-append-20261025/cpu1/summary.json",
+        "bytes": 8357,
+        "sha256": "8eb423110e4ee109fa083d58c18b07200e3feab805902ecfb0513ebd82d85533"
+      },
+      "tests": 7,
+      "failures": 0,
+      "skips": 0,
+      "new_case": "TypedCapabilityGraph.EncodedQ8AppendPreservesLogicalRowsAndOldReaders",
+      "modes": [
+        "COW writers",
+        "reserved appendable suffix"
+      ],
+      "Graph_episodes": 2,
+      "request_sequences": 1,
+      "query_rows": 2,
+      "kv_heads": 2,
+      "query_heads": 4,
+      "key_depth": 64,
+      "value_depth": 128,
+      "old_KV_rows": 3,
+      "new_KV_rows": 5,
+      "key_carrier": [
+        4,
+        68
+      ],
+      "value_carrier": [
+        4,
+        136
+      ],
+      "oracle": "Existing independent Q8 codec; F64 zero-query causal means; original absolute .008 gate.",
+      "source_review": {
+        "path": ".scratch/inference-q8-append-20261025/final-case-review.json",
+        "bytes": 2747,
+        "sha256": "a5c75cc86becc1d3835b3a8e80df614cc3042942a63eb5c36a78b7e28dc5879f"
+      },
+      "limitations": "Appended V suffix is checked through all numerical output lanes; appended K suffix is not independently read back as a full page because Q=0. Old-reader output/prefix remains checked; no claim of comprehensive arbitrary tensor values.",
+      "owner_lifetime": "close()/RAII only; no explicit ResourceBudget/LeasePool zero-owner assertion. Old aliases and results intentionally remain live during comparisons.",
+      "compile": [
+        {
+          "tag": "cpu-arena",
+          "source": "src/compute_batch/paged_arena.cc",
+          "result": {
+            "exit": 0,
+            "seconds": 1.719,
+            "pid": 55860
+          }
+        },
+        {
+          "tag": "cpu-append",
+          "source": "src/graph_batch/paged_append.cc",
+          "result": {
+            "exit": 0,
+            "seconds": 2.391,
+            "pid": 55152
+          }
+        },
+        {
+          "tag": "cpu-test",
+          "source": "tests/graph_batch/typed_capability_graph_test.cc",
+          "result": {
+            "exit": 0,
+            "seconds": 4.468,
+            "pid": 52724
+          }
+        },
+        {
+          "tag": "vk-append",
+          "source": "src/graph_route_vulkan/native_paged_append.cc",
+          "result": {
+            "exit": 0,
+            "seconds": 1.906,
+            "pid": 48756
+          }
+        }
+      ],
+      "link": {
+        "exit": 0,
+        "seconds": 1.282,
+        "pid": 54668
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.25,
+        "pid": 54980
+      },
+      "raw": {
+        "path": ".scratch/inference-q8-append-20261025/cpu1/run/stdout.log",
+        "bytes": 1805,
+        "sha256": "b7a0311dc2085bba4dba5cbb4c4b1b1eb641547d31a67398de98fade7180e386"
+      },
+      "xml": {
+        "path": ".scratch/inference-q8-append-20261025/cpu1/test-result.xml",
+        "bytes": 3094,
+        "sha256": "a935ae060385aa1212960c368d7f0bee97000c8685691bda2c12bc40ca1cd785"
+      }
+    },
+    "CPU_Model_regression": {
+      "kind": "default_and_E4_only_not_Q8_Model",
+      "receipt": {
+        "path": ".scratch/inference-q8-append-20261025/model-regression1/summary.json",
+        "bytes": 836,
+        "sha256": "e2d84ea65126a331a5227e202edefa5513992ad8adef397e0dda0b553031214d"
+      },
+      "source": "Unchanged cached actual Model application; replace only current Arena and Graph append objects.",
+      "replaced_product_objects": 2,
+      "new_app_compiles": 0,
+      "link": {
+        "pid": 51072,
+        "exit": 0,
+        "seconds": 1.188
+      },
+      "default": {
+        "process": {
+          "pid": 54260,
+          "exit": 0,
+          "seconds": 0.282
+        },
+        "result": {
+          "status": "PASS",
+          "backend": "cpu",
+          "ordinary": true,
+          "initial_rejection_atomic": true,
+          "same_request_cursor_retry": true,
+          "MAX_minus_1_quota_1": true,
+          "full_hit_request_cursor": true,
+          "later_head_budget": true,
+          "evicted_ledger_budget": true,
+          "state_only_no_draw": true,
+          "raw_draw_preflight": true,
+          "greedy_unchanged": true,
+          "pending_only_single_consumption": true,
+          "final_versions": 0,
+          "GPU": false,
+          "HTTP": 0
+        },
+        "raw": {
+          "path": ".scratch/inference-q8-append-20261025/model-regression1/run-default/stdout.log",
+          "bytes": 383,
+          "sha256": "2ffaacadc8a78b5a58d3f82e6c3f3b0e3b6884c608ab421311d0e093aa4cb2ce"
+        }
+      },
+      "E4": {
+        "process": {
+          "pid": 28024,
+          "exit": 0,
+          "seconds": 0.234
+        },
+        "result": {
+          "status": "PASS",
+          "backend": "cpu",
+          "generated_AA_fixture": true,
+          "original_scale_roles": 4,
+          "physical_row_bytes": 64,
+          "activation": "BF16",
+          "prefill_rows": 2,
+          "decode_rows": 1,
+          "fork_equal": true,
+          "old_readers_unchanged": true,
+          "final_versions": 0,
+          "model_quality": false,
+          "HTTP": 0
+        },
+        "raw": {
+          "path": ".scratch/inference-q8-append-20261025/model-regression1/run-e4/stdout.log",
+          "bytes": 262,
+          "sha256": "8366f217480abaf60154574f60a09f295d71c5365b3cc5b9164e0d1d7254b45c"
+        }
+      }
+    },
+    "Apple_native_regression": {
+      "kind": "old_E4_native_component_not_new_Q8_execution",
+      "receipt": {
+        "path": ".scratch/inference-q8-append-20261025/apple-regression/summary.json",
+        "bytes": 4949,
+        "sha256": "a87783f22b5e3cdc53430f061331c970d0c10aa40b293189b1909973dcf51930"
+      },
+      "declared": {
+        "status": "PASS_APPLE_NATIVE_E4_REGRESSION_AFTER_Q8_SOURCE_CHANGES",
+        "compiled": [
+          {
+            "tag": "arena",
+            "source": "src/compute_batch/paged_arena.cc",
+            "result": {
+              "exit": 0,
+              "seconds": 1.050040792
+            },
+            "object": {
+              "path": "/Users/kiro/hyle/.scratch/inference-q8-append-20261025/compile/arena/unit.o",
+              "bytes": 152624,
+              "sha256": "716781a96f1a4c19612389bf68b3e4413b91117483d28c0be357ae05a6d287a2"
+            }
+          },
+          {
+            "tag": "append",
+            "source": "src/graph_batch/paged_append.cc",
+            "result": {
+              "exit": 0,
+              "seconds": 1.230050584
+            },
+            "object": {
+              "path": "/Users/kiro/hyle/.scratch/inference-q8-append-20261025/compile/append/unit.o",
+              "bytes": 180832,
+              "sha256": "7cb552da1956fd2417ddb5ef2fe4d4f07b8ac988117f66fdaf4804c647d3a6d2"
+            }
+          },
+          {
+            "tag": "native-append",
+            "source": "src/graph_route_apple/native_paged_append_region.cc",
+            "result": {
+              "exit": 0,
+              "seconds": 0.9300493750000001
+            },
+            "object": {
+              "path": "/Users/kiro/hyle/.scratch/inference-q8-append-20261025/compile/native-append2/unit.o",
+              "bytes": 93040,
+              "sha256": "6b507910c1a26c6c1b9ec6fe6bd1ebe8ee2acff2a963452015e5f968a02b8463"
+            }
+          }
+        ],
+        "link": {
+          "exit": 0,
+          "seconds": 0.15145158300000006
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 1.2254597079999998
+        },
+        "xml": {
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "properties": {
+          "device": "Apple M4",
+          "target": "original Apple native Context, no CPU lane",
+          "step_count": "4",
+          "encoded_bytes_checked": "256",
+          "bounded_old_bytes_checked": "128",
+          "native_copy_alignment_bytes": "4"
+        },
+        "source_pins": [
+          {
+            "path": "src/graph_batch/paged_append.cc",
+            "bytes": 56401,
+            "sha256": "1c116c2e5cbdf533810d66d00291b72d2a5b65ea4865ea7e7ee52097f11dc29f"
+          },
+          {
+            "path": "src/graph_batch/paged_append.h",
+            "bytes": 2063,
+            "sha256": "d9ef0db1060a1a5d59d8af5a56b1a72ec1f38239478944a01ed071b7d99f2622"
+          },
+          {
+            "path": "src/graph_route_apple/native_paged_append_region.cc",
+            "bytes": 23475,
+            "sha256": "f6a45c9fdbd35edd933eb08af14b3e39b163900c931d8a5ec188a3915d67fe52"
+          },
+          {
+            "path": "src/graph_route_vulkan/native_paged_append.cc",
+            "bytes": 18117,
+            "sha256": "19aa84a9ee5142cc38e4da9da133712dd7e33ee4a2e560d4cb7c549aaa74b692"
+          },
+          {
+            "path": "src/compute_batch/paged_arena.cc",
+            "bytes": 51084,
+            "sha256": "1ce81bbb7018be909140e481045ed9e6e415dffae4381ee0aac0c55ceaf7b5d8"
+          },
+          {
+            "path": "include/hyle/compute/paged_arena.h",
+            "bytes": 14740,
+            "sha256": "789741274bf3a0a3995cb0fd911a20695a8311141f487264aa94dbd99d445959"
+          },
+          {
+            "path": "include/hyle/graph/batch.h",
+            "bytes": 18768,
+            "sha256": "76a517bfd76a848d12533de58c6e041a23f6e879e42f78b240fddb5f12abc283"
+          }
+        ],
+        "source_logical_bytes": 184648,
+        "actual_project_dependency_count": 100,
+        "link_input_count": 108,
+        "image": {
+          "path": "/Users/kiro/hyle/.scratch/inference-q8-append-20261025/e4-regression",
+          "bytes": 15752272,
+          "sha256": "d31db486d1e595840d54eed0cf1675cc8c12b88b173ab93d2fd96680b828a1cb"
+        },
+        "consumer_recompiled": false,
+        "retained_required_objects": [
+          {
+            "path": "/Users/kiro/hyle/.scratch/inference-e4-appendable-20261025/compile/consumer5/unit.o",
+            "bytes": 195368,
+            "sha256": "d9abff6f6eabfb3c487cffd72219208e12b1c8c2c1bb07515bccff9a52f6be81"
+          },
+          {
+            "path": "/Users/kiro/hyle/.scratch/inference-e4-appendable-20261025/compile/budget/unit.o",
+            "bytes": 48968,
+            "sha256": "5941da9465aaf616b5227a1aff47dd96ba2a7282f9fc3e0ebd05ca230e7a80f7"
+          },
+          {
+            "path": "/Users/kiro/hyle/.scratch/inference-e4-appendable-20261025/compile/leases/unit.o",
+            "bytes": 86280,
+            "sha256": "fbe1eeaf5664ac770b5b76adfde3a08e0e2c2ccdc5900f20c0645aa3b9376827"
+          }
+        ],
+        "cached_helper_header": {
+          "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/gdn-graph-bridge-20261024/attempt1/source/src/graph_route_apple/native_paged_append_region.h",
+          "bytes": 760,
+          "sha256": "8967d1147db7c4fc2525817aa8d7fa70c6428b468be6169ea0dd8310b2c478cf"
+        },
+        "first_failure": "compile/native-append lacked unchanged private header in old partial source; corrected by original archive source include, no extra TU or SDK/source sync",
+        "scope": "Three product TUs only. Original cached E4 native case once, no Q8 native numerical execution claim.",
+        "limits": [
+          "No SDK/provider/vendor rebuild, Model, new consumer, download or backend matrix.",
+          "Q8 branches are compile/link-covered; only original E4 journey is executed.",
+          "Public header differences are comments only; original consumer object is hash-identical."
+        ]
+      }
+    }
+  },
+  "reviews": [
+    {
+      "path": ".scratch/inference-q8-append-20261025/review-source.json",
+      "bytes": 4808,
+      "sha256": "20c27a8071bc3ce873d7851358055fc0d4253f218fcd6188a51bc812e282c94e"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/final-case-review.json",
+      "bytes": 2747,
+      "sha256": "a5c75cc86becc1d3835b3a8e80df614cc3042942a63eb5c36a78b7e28dc5879f"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/source-checks.json",
+      "bytes": 1514,
+      "sha256": "1e3a29c1538e6084b391e265f86e7a124f556aef311dda53f08a63c0b678e31b"
+    }
+  ],
+  "boundaries": [
+    "New Q8 execution was checked only on CPU. Vulkan changed host TU compiled; new Apple/Vulkan Q8 native encode/append/read did not run.",
+    "CUDA reader still does not support Q8. Raw16 writer geometry alone is not a CUDA Q8 attention claim.",
+    "Two query rows within one sequence are not two concurrently served requests. The carrier first axis is query_rows*kv_heads.",
+    "No separate R1 Graph continuation, nonuniform-head/nonzero-query oracle, or explicit zero-retained-owner assertion in the new Q8 case.",
+    "COW verifies original complete encoded pages; suffix mode checks bounded old bytes and all output lanes, without independently reading back the appended K suffix.",
+    "Default/E4 CPU Model and old E4 Apple regression do not certify Q8 Model/native execution, task quality or throughput.",
+    "No new model HTTP, SDK/vendor build, full benchmark or server/MTP/multimodal scope."
+  ],
+  "omitted_text_pins": [],
+  "JSON_original_pins_before_public_reserialization": [
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/recipes.json",
+      "bytes": 4302,
+      "sha256": "9a4bc0f43ef1a7ef67f2100238d48811d4b74e8809129fa5fc6ffed3d1e4bd35"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/records/recipes.json",
+      "bytes": 4302,
+      "sha256": "9a4bc0f43ef1a7ef67f2100238d48811d4b74e8809129fa5fc6ffed3d1e4bd35"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/records/retained-required-pins.json",
+      "bytes": 642,
+      "sha256": "3dacadf067d71f89d3a72dba62990a9c3719809389cd8551520e28afb6054710"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/records/source-pins.json",
+      "bytes": 1170,
+      "sha256": "238a1186d0992ce3d87d138a2f252a3c5ce2108c1acc2249c3f2c3f2ecc89eb5"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/retained-required-pins.json",
+      "bytes": 642,
+      "sha256": "3dacadf067d71f89d3a72dba62990a9c3719809389cd8551520e28afb6054710"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/apple-regression/source-pins.json",
+      "bytes": 1170,
+      "sha256": "238a1186d0992ce3d87d138a2f252a3c5ce2108c1acc2249c3f2c3f2ecc89eb5"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-append/actual-dependencies.json",
+      "bytes": 46237,
+      "sha256": "65555988b0c86f49dbb4c48434e2a9a735df8b5eaa07fa0f8823aecffcc67668"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-append/command.json",
+      "bytes": 3996,
+      "sha256": "7013fcef3ac26e94f1ce4c8fe8c33fe6fb01a077c6594e38a240ac2599f18513"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-append/dependencies.json",
+      "bytes": 24764,
+      "sha256": "e6edc66a658929341b7faef4cb52dd1694f4a12f5ffc38a8a5eabfc15553b455"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-append/process.json",
+      "bytes": 57,
+      "sha256": "1adcba2b77e1f4ec099846b9d05916a039a1f43bbf4b637f0b50331ae6a6db1d"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-append/running.json",
+      "bytes": 22,
+      "sha256": "71d950e4b3aa060d26266f7474162b89ab09c915ee2245f26201e07736e474f1"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-arena/actual-dependencies.json",
+      "bytes": 39539,
+      "sha256": "027854d9234cd9ad22df93c5138a3553efb3ac524dbe252adbc0a9893664a1b5"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-arena/command.json",
+      "bytes": 2356,
+      "sha256": "58de2416684160808f5692bf9ed7e78e9652d292819cb7a57fa399cde6349146"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-arena/dependencies.json",
+      "bytes": 21003,
+      "sha256": "aa1fc98375bb5202ca750cfcfb200306ad74cefc7c92cc49ea0c9deb3071c44d"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-arena/process.json",
+      "bytes": 57,
+      "sha256": "3c64edccdb4464299ddd0425fe433857e9d9b28153eaf89b78c2b4ca121bc2fa"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-arena/running.json",
+      "bytes": 22,
+      "sha256": "e705243ef542d27715db2c72aa503435c981bd197eb02f6d6aaf64dd1830249f"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-test/actual-dependencies.json",
+      "bytes": 63692,
+      "sha256": "c6608beb334cfe4be91500df617edc972ff4c322c1263a88c660cd6fa97ab232"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-test/command.json",
+      "bytes": 3433,
+      "sha256": "c24cd1a046c0db70a69ccfd2e7cdec629a2bcc30d625acc634347c0b6005aa88"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-test/dependencies.json",
+      "bytes": 34238,
+      "sha256": "b6b9a28436d7a547cc5d7386ffa5ade3073cd59dd161553dd87f18be64ef412c"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-test/process.json",
+      "bytes": 57,
+      "sha256": "268a439daf7ef45889d0ef70924c77a11dfa276ad7ad3f6e51c436902df7ea62"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/cpu-test/running.json",
+      "bytes": 22,
+      "sha256": "90630f6f0e18fe4656896973833cb83f347db7610c923ee6bb09fc0fe94bab60"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/vk-append/actual-dependencies.json",
+      "bytes": 59413,
+      "sha256": "4396560988b5cd841fded6986edfd569f307b5422917d38321a081f6a9e5fa83"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/vk-append/command.json",
+      "bytes": 5026,
+      "sha256": "248825b06838176b8bde669c597313723957be85221a8cbd5d0549db01a4644a"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/vk-append/dependencies.json",
+      "bytes": 32145,
+      "sha256": "fd44d5cdcf3112bb2a4c1558f13d903a637e14514fc649f3ccbacab4bb1e9875"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/vk-append/process.json",
+      "bytes": 57,
+      "sha256": "cdeae4542082c35b8a61b9996091f4501ab3604f64ae80b3333304e15665767e"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compile/vk-append/running.json",
+      "bytes": 22,
+      "sha256": "f3d15781b85ab3fe4f4d245ac5f9d616d1c2b4daf36fd2a193a492feed8140a4"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/compiled.json",
+      "bytes": 2975,
+      "sha256": "ad115b60c990a67e16cc0e8a1c894025d3f591a794559567ef6a3cbbeb71c760"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/frozen-project.json",
+      "bytes": 72979,
+      "sha256": "9ad66da921420e845ac5295800ddc46e31c64475e5202da4d9748be98aa4dc7c"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/link/command.json",
+      "bytes": 20324,
+      "sha256": "89f3ef2cd5d74aabde43c4c06434f71f8dc487bcc8a14f0f28ec28378a8ab136"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/link/process.json",
+      "bytes": 57,
+      "sha256": "2541eb259479d311b11d0bbeca29079506fff8103e68893c9b99d878cdbece0a"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/link/running.json",
+      "bytes": 22,
+      "sha256": "dd5abb71cb2d27032c6d691c845f02ce68a1f6d7b2b5f4d27c953872872ba4c3"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/link-inputs.json",
+      "bytes": 38076,
+      "sha256": "826a8fe48ba658b70cabfbe95bfd35e79d0cdbd22d95e20096eb3e29ecc82d5a"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/run/command.json",
+      "bytes": 370,
+      "sha256": "a0dd46ea014fd2ef7903d6d04db28b1355416327a244e551791e2d22581712b3"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/run/process.json",
+      "bytes": 56,
+      "sha256": "11f9729205e8888c4ebfc6316d34e1800068fd0c3869ffad43f1c4e39a026506"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/run/running.json",
+      "bytes": 22,
+      "sha256": "9257cf371c37a8de24bee523e5f4a24d9fc652fe976f6bf44f9353fa2ef0d9ba"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/runtime.json",
+      "bytes": 655,
+      "sha256": "22a33c3407eb086e4ce91689562b75909c65d71940e29e434f6a7a5158f1a0ab"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/source-pins.json",
+      "bytes": 4004,
+      "sha256": "d3773c976fdcc17a8fcf108d8731ff664fc634379866e80e82014eec4007426c"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/cpu1/summary.json",
+      "bytes": 8357,
+      "sha256": "8eb423110e4ee109fa083d58c18b07200e3feab805902ecfb0513ebd82d85533"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/design.json",
+      "bytes": 8604,
+      "sha256": "c112ec4b3e0cc905d4fa271a486d11a35efe31f4b9363d79ab71647eb00f6c27"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/final-case-review.json",
+      "bytes": 2747,
+      "sha256": "a5c75cc86becc1d3835b3a8e80df614cc3042942a63eb5c36a78b7e28dc5879f"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/integrated.json",
+      "bytes": 3980,
+      "sha256": "76ff5851d34dbbc335f3270d85ed6e488a395b0cc9b8cfeb63a1ad079e3733bf"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/link/command.json",
+      "bytes": 20132,
+      "sha256": "aa0bebaa7af361877edb6df91240d778937281a01050319c470a0a6abd7c8c93"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/link/process.json",
+      "bytes": 57,
+      "sha256": "7f5fb89560e1af91ca4a5efbd9b7aa539ef75c8d301dc1193c0bd7c7f0a49f3e"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/link/running.json",
+      "bytes": 22,
+      "sha256": "a86f5109d9aa5ca0a8d1f801c7aeffa3eba243b190ecd628f76c0ecfe6d93f5a"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/link-inputs.json",
+      "bytes": 37122,
+      "sha256": "a41d03a80d6eb266703070b6779ea256f0d2944a1712f88732b9848c284851d2"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-default/command.json",
+      "bytes": 346,
+      "sha256": "d445cc6ff3317dac96773dddd994a272c35462fcd360e5d0edbdfa1a43cd0456"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-default/process.json",
+      "bytes": 57,
+      "sha256": "b94b66c70d2dfd883c3a7857b6868787f9c009663b93050ba39f155bacb98f4f"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-default/running.json",
+      "bytes": 22,
+      "sha256": "f8ea6f9e57261d96ea948677c8c25fdc9bf484a0338d532f5337ef2829ec2f60"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-e4/command.json",
+      "bytes": 336,
+      "sha256": "beafbe81f8482d4ec3a2481dbd7b88fac3b696f90d00cdc391ec7c765ecae14f"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-e4/process.json",
+      "bytes": 57,
+      "sha256": "4bed5ad71bfdd9ce2acb8eff1c77de3738028927be37a2959946c5ec65860375"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/run-e4/running.json",
+      "bytes": 22,
+      "sha256": "816246847d2f8a75d040d2a1ff1475100ba52e1f87b4c7e3064013e568598e04"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/model-regression1/summary.json",
+      "bytes": 836,
+      "sha256": "e2d84ea65126a331a5227e202edefa5513992ad8adef397e0dda0b553031214d"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/product-paths.json",
+      "bytes": 358,
+      "sha256": "ba23fe49dc0fc0d4de179cb39b9e8be8cba7837d6342bab505e1811afa39e99d"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/review-source.json",
+      "bytes": 4808,
+      "sha256": "20c27a8071bc3ce873d7851358055fc0d4253f218fcd6188a51bc812e282c94e"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/source-checks.json",
+      "bytes": 1514,
+      "sha256": "1e3a29c1538e6084b391e265f86e7a124f556aef311dda53f08a63c0b678e31b"
+    },
+    {
+      "path": ".scratch/inference-q8-append-20261025/source-pins.json",
+      "bytes": 4004,
+      "sha256": "d3773c976fdcc17a8fcf108d8731ff664fc634379866e80e82014eec4007426c"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ordinary-q8-append-2026-10-25.zip",
+    "bytes": 206177,
+    "sha256": "ffe0b38cbb484b528393f316efe49d03dc0978e97ab1ada6c42954c8be4a9417",
+    "members": 121,
+    "CRC_verified": true,
+    "member_SHA_verified": true,
+    "binary_SDK_payload": false,
+    "credentials_detected": false,
+    "under_1MiB": true
+  },
+  "publication_note": "Archive summary was assembled before publication; outer report updates only the public artifact path.",
+  "cleanup": {
+    "applied": true,
+    "files": 3,
+    "logical_bytes": 67853312,
+    "all_targets_absent": true,
+    "receipt": {
+      "path": ".scratch/inference-q8-append-20261025/cleanup-old-images/removed.json",
+      "bytes": 858,
+      "sha256": "0fe256df3aa235c6769cfd837f1df028ed9271ae3b2fcaf7a36df3aa0168397b"
+    },
+    "scope": "Three superseded E4 executable images only; current cached app/product objects, current Q8 images, source/commands/results, DLL and SDK kept.",
+    "physical_bytes_freed": "Unknown; logical lengths do not establish physical allocation/hardlink accounting.",
+    "archive_boundary": "Verified evidence was archived before deletion. Only this outer report adds the completed removal receipt; archive not repacked."
+  }
+}

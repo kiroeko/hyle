@@ -126,7 +126,8 @@ HYLE_GRAPH_BATCH_API Result<compute::CopyBatchUpdate> take_update(graph::Invocat
 // Append has no tensor output and must explicitly precede every cache reader
 // with GraphBuilder::depends_on(reader, append). External writes are ordered
 // by the ordinary Graph effect rules, including between distinct append nodes.
-// R is inferred from the concrete input of each selected exact Graph child.
+// R is inferred from the exact cache carrier and schema of each selected child.
+// Q8_0 uses U8[R*kv_heads, block_row_bytes], not one carrier row per token.
 struct PagedAppend final {
   compute::BatchSchema schema;
   compute::BatchCacheRole role=compute::BatchCacheRole::kKey;

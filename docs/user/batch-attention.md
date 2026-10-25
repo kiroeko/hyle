@@ -296,6 +296,14 @@ CTA64/split-KV 的路径存储 BF16 中间结果。FP8 KV 不展开，局部累�
 `batch::prepare`之后，用带bank input的`bind_append`连接后继reader，并显式调用`depends_on(reader, writer)`。
 只写缓存时使用不带bank input的重载，整图可以没有公开tensor输出。原生执行源不需要调用方提供Compute Queue。
 
+追加输入支持与该bank解释一致的F16／BF16／E4行及Q8_0真实carrier。
+Q8_0的输入是U8 `[T*kv_heads, D/32*34]`，T是本轮token行数，第一维合并了头数；库从schema／role和完整carrier
+恢复实际query_rows，K/V各用自己的D和行字节。不能传任意U8、把逻辑blocked描述当carrier，或按权重dtype推断缓存表示。
+原可追加页也支持整block的Q8行：旧读者仍只持有原前缀，独占尾权只写实际预留后缀；旧页不重新量化。
+原生复制仍检查每个真实range的对齐，不能把34字节行补成36字节以绕过Metal／Vulkan限制。
+[本批记录](../evidence/correctness/ordinary-q8-append-2026-10-25.json)的新增Q8实际运行是CPU的COW／页尾两模式；
+Apple／Vulkan改动严格编译，Apple另跑原E4回归，未据此签收Q8原生数值。CUDA FlashInfer reader仍不支持Q8。
+
 真实工作退休后先释放公开结果，再用`take_append`取回原事务；只有整图成功才能`ready()`发布新页帧。
 失败不发布，脏页按原writer的退休／`discard()`合同恢复。CPU／CUDA已有普通F16/BF16路径；
 Apple／Vulkan已接原生追加，F16/page16/D64及四输入容量reader的BF16/page16/D256均有本批实际检查。具体reader的dtype／形状仍由所选实现检查。

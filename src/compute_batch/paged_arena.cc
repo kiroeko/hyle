@@ -494,13 +494,15 @@ Result<PagedAppendablePage> PagedPageWriter::publish_appendable(std::uint32_t ro
   if(!arena_ || arena_->closed || !writer_.valid())return std::unexpected(Status::FailedPrecondition("paged page writer is closed/empty/consumed"));
   const auto page_rows=detail::BatchLayoutAccess::geometry(arena_->schema).page_size;
   if(rows>page_rows)return std::unexpected(Status::InvalidArgument("paged appendable initialized prefix exceeds page"));
-  if(arena_->role==BatchCacheRole::kRow)return std::unexpected(Status::Unimplemented("appendable pages require plain F16/BF16/E4 attention storage"));
+  if(arena_->role==BatchCacheRole::kRow)return std::unexpected(Status::Unimplemented("appendable pages require supported whole attention rows"));
   const auto cap=arena_->schema.capacity();
   const auto &storage=arena_->role==BatchCacheRole::kValue?cap.value_storage:cap.key_storage;
   const auto type=storage.data_type();
-  if(!storage.format().is_plain() ||
-      (type!=DataType::kFloat16 && type!=DataType::kBFloat16 && type!=DataType::kFloat8E4M3FN) || arena_->page_bytes%page_rows)
-    return std::unexpected(Status::Unimplemented("appendable pages require whole plain F16/BF16/E4 rows"));
+  const bool q8=storage==CacheStorage::q8_0().value();
+  if((!q8 && (!storage.format().is_plain() ||
+      (type!=DataType::kFloat16 && type!=DataType::kBFloat16 && type!=DataType::kFloat8E4M3FN))) || arena_->page_bytes%page_rows ||
+      (q8 && (arena_->page_bytes/page_rows)%storage.format().bytes_per_block()))
+    return std::unexpected(Status::Unimplemented("appendable pages require whole F16/BF16/E4 or Q8_0 rows"));
   auto&slot=arena_->slots[page_];HYLE_ASSIGN_OR_RETURN(auto view,writer_.view());
   if(!slot.acquired || slot.ready || slot.published || initialized_rows_ || slot.initialized_rows ||
       detail::LeaseAccess::identity(writer_)!=slot.identity || writer_.generation()!=slot.generation ||
