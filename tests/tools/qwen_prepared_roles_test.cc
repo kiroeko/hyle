@@ -1,5 +1,6 @@
 // Standard-library-only metadata regression: no weight body, SDK or device IO.
 #include "../../engine/models/qwen35/prepared_roles.h"
+#include "../../engine/models/qwen35/ffn_placement.h"
 #include "qwen_geometry_fixture.h"
 #include "../../engine/models/qwen35/precision_profile.h"
 
@@ -121,6 +122,7 @@ std::uint64_t metadata_fingerprint(const Inventory &roles) {
   for (const auto ch : text) hash = (hash ^ static_cast<unsigned char>(ch)) * 1099511628211ull;
   return hash;
 }
+void check_placement(const p::Roles &roles);
 void fp8_blocks_and_policy(const fs::path &directory) {
   auto roles = dense();
   const std::array names{"model.language_model.layers.0.mlp.gate_proj.weight", "mtp.layers.0.self_attn.k_proj.weight"};
@@ -136,6 +138,7 @@ void fp8_blocks_and_policy(const fs::path &directory) {
   text.insert(line_end + 1, std::string(p::fp8_policy_line) + '\n');
   write(path, text);
   const auto all = p::read_roles(path, true), selected = p::read_roles(path, false);
+  check_placement(all); check_placement(selected);
   require(all.selected.size() == 337 && selected.selected.size() == 321 && all.float8_policy.enabled,
       "FP8 selected physical inventory or policy differs");
   require(std::ranges::count_if(all.selected, [](const auto &r) { return r.projection_codec == p::ProjectionCodec::kFloat8Block128; }) == 2,
@@ -166,6 +169,7 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
   const std::string cache = "model.language_model.layers.3.self_attn.";
   add(roles, cache + "k_scale", "BF16", {1}); add(roles, cache + "v_scale", "BF16", {1});
   const auto all = p::select_roles(roles, identity, true, geometry, {}, {true}, {true});
+  check_placement(all);
   const auto text = p::select_roles(roles, identity, false, geometry, {}, {true}, {true});
   require(all.selected.size() == 339 && text.selected.size() == 324 && all.omitted_cache_calibration.size() == 2,
       "CT mixed selected roles must exclude only explicit BF16 cache calibration");
@@ -187,7 +191,50 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
   const auto path = directory / "ct-mixed.tsv"; write(path, serialized);
   require(p::read_roles(path, true).omitted_cache_calibration.size() == 2, "explicit CT/cache policy must roundtrip");
 }
+void check_placement(const p::Roles &roles) {
+  const qwen35::FfnPlacement primary(roles, 0), mixed(roles, 2), all_ffn(roles, roles.geometry.layers.size());
+  require(primary.cpu_layers() == 0 && mixed.cpu_layers() == 2 &&
+      mixed.target_layers() == roles.geometry.layers.size(), "cold FFN dimensions differ");
+  for (std::size_t i = 0; i < roles.geometry.layers.size(); ++i)
+    require(!primary.ffn_on_cpu(i) && mixed.ffn_on_cpu(i) == (i < 2) && all_ffn.ffn_on_cpu(i),
+        "ordinary graph FFN placement differs from the requested prefix");
+  for (const auto &role : roles.selected) {
+    bool expected = false;
+    for (const auto *prefix : {"model.language_model.layers.0.", "model.language_model.layers.1."}) {
+      const std::string layer(prefix);
+      expected |= role.name == layer + "post_attention_layernorm.weight";
+      for (const auto *projection : {"mlp.gate_proj.", "mlp.up_proj.", "mlp.down_proj."})
+        expected |= role.name.starts_with(layer + projection);
+    }
+    require(!primary.role_on_cpu(role.name) && mixed.role_on_cpu(role.name) == expected,
+        "physical FFN principal/auxiliary differs from graph placement");
+    if (role.name.starts_with("mtp.")) require(!all_ffn.role_on_cpu(role.name),
+        "NextN roles must retain their independent primary placement");
+  }
+}
+void cold_ffn_placement_comes_from_inventory() {
+  const auto inventory = p::parameter_inventory(true, geometry);
+  require(std::ranges::count_if(inventory, [](const auto &entry) { return entry.second.target_ffn_layer.has_value(); }) ==
+      static_cast<std::ptrdiff_t>(geometry.layers.size() * 4), "target FFN inventory ownership differs");
+  for (const auto &[name, parameter] : inventory) {
+    if (name.starts_with("mtp.")) require(!parameter.target_ffn_layer, "NextN unexpectedly owns a target FFN layer");
+  }
+  const auto selected = p::select_roles(quantized(false), identity, true, geometry);
+  check_placement(selected);
+  auto partial = selected;
+  std::erase_if(partial.selected, [](const auto &role) {
+    return role.name != "model.language_model.layers.0.mlp.gate_proj.qweight" &&
+        role.name != "model.language_model.layers.0.mlp.gate_proj.scales" &&
+        role.name != "model.language_model.layers.2.mlp.up_proj.qzeros" &&
+        role.name != "model.language_model.embed_tokens.weight" &&
+        role.name != "mtp.layers.0.mlp.gate_proj.weight";
+  });
+  require(partial.selected.size() == 5, "selected component fixture differs");
+  check_placement(partial);
+  rejects([&] { (void)qwen35::FfnPlacement(selected, geometry.layers.size() + 1); }, "exceeds");
+}
 void check_selected(const p::Roles &result, std::size_t count, std::size_t bytes, bool mtp) {
+  check_placement(result);
   if (result.identity != identity || result.selected.size() != count || result.bytes != bytes)
     throw std::runtime_error("selected role count/bytes differs: " + std::to_string(result.selected.size()) +
         "/" + std::to_string(result.bytes) + ", expected " + std::to_string(count) + "/" + std::to_string(bytes));
@@ -563,6 +610,7 @@ void nf4_original_state_and_six_role_contract(const fs::path &directory) {
     return p::select_roles(inventory,identity,mtp,geometry,{},{},{},{true},metadata);
   };
   const auto text=select(all,states),full=select(all,states,true);
+  check_placement(text); check_placement(full);
   require(text.nf4_policy.enabled && text.selected.size()==325 && full.selected.size()==345,
       "NF4 ordinary/MTP selection must validate both complete six-role groups");
   const auto codes=std::ranges::find_if(text.selected,[&](const auto &r){return r.name==names[0];});
@@ -608,6 +656,7 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
       std::string(64,'c'),std::string(64,'d'),std::string(64,'e'),cursor,4096};
   const auto complete=p::select_gguf_roles(all,identity,original,true, gguf_geometry);
   const auto text=p::select_gguf_roles(all,identity,original,false, gguf_geometry);
+  check_placement(complete); check_placement(text);
   require(complete.representation==p::SourceRepresentation::kGgufConverted && complete.selected.size()==335 &&
       text.selected.size()==320 && text.original.lfs_sha256==original.lfs_sha256 &&
       text.original.xet_hash==original.xet_hash && text.original.header_sha256==original.header_sha256,
@@ -737,6 +786,7 @@ void mlx_original_affine_names_and_effective_parameters(const fs::path &director
       }
     }
     const auto path=directory/("mlx-"+std::to_string(bits)+".tsv"); write(path,manifest); const auto parsed=p::read_roles(path,false);
+    check_placement(parsed);
     require(parsed.geometry==model && parsed.mlx_policy.bits==bits,"MLX ordinary geometry/policy differs");
     const auto find=[&](std::string_view name)->const p::Role&{const auto it=std::ranges::find(parsed.selected,name,&p::Role::name);if(it==parsed.selected.end())throw std::runtime_error("missing selected MLX role");return *it;};
     require(find("model.language_model.norm.weight").meaning==p::ParameterMeaning::kRmsEffectiveGamma,"MLX already-sanitized gamma must not get another +1");
@@ -765,6 +815,7 @@ void modelopt_static_fp8_preserves_original_scalar_roles(const fs::path &directo
     return p::select_roles(source,identity,mtp,geometry,{}, {}, {}, {}, {}, {}, {}, {true});
   };
   const auto text_roles=select(all),full_roles=select(all,true);
+  check_placement(text_roles); check_placement(full_roles);
   require(text_roles.static_fp8_policy.enabled &&
       text_roles.selected.size()==p::parameter_inventory(false,geometry).size()+5 &&
       full_roles.selected.size()==p::parameter_inventory(true,geometry).size()+5,
@@ -811,6 +862,7 @@ int main(int argc, char **argv) {
     if (argc < 2) throw std::runtime_error("pass the scratch fixture directory");
     const fs::path directory = argv[1];
     fs::create_directories(directory);
+    cold_ffn_placement_comes_from_inventory();
     modelopt_static_fp8_preserves_original_scalar_roles(directory);
     mlx_original_affine_names_and_effective_parameters(directory);
     full_inventory_and_selection(directory);

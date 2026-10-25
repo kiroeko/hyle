@@ -52,6 +52,7 @@
 #include "../../reporting/execution_report.h"
 #include "generation_schedule.h"
 #include "prepared_roles.h"
+#include "ffn_placement.h"
 #include "projection_binding.h"
 #include "fp8_weight_import.h"
 #include "precision_profile.h"
@@ -535,20 +536,6 @@ mem::MemoryResourceRef weight_resource(const Backend &backend, bool host) {
   if (backend.has_cpu_endpoint()) return backend.host_device();
   throw std::runtime_error("CPU FFN placement requires a configured CPU plus GPU endpoint");
 }
-bool cpu_ffn_weight(std::string_view name, std::size_t layers) {
-  if (!layers || !name.starts_with("model.language_model.layers.")) return false;
-  name.remove_prefix(28);
-  const auto dot = name.find('.');
-  if (dot == std::string_view::npos) return false;
-  std::size_t layer = 0;
-  const auto parsed = std::from_chars(name.data(), name.data() + dot, layer);
-  if (parsed.ec != std::errc{} || parsed.ptr != name.data() + dot || layer >= layers) return false;
-  name.remove_prefix(dot + 1);
-  return name == "post_attention_layernorm.weight" || name.starts_with("mlp.");
-}
-void validate_cpu_ffn_layers(std::size_t layers, std::size_t target_layers) {
-  if (layers > target_layers) throw std::runtime_error("--cpu-ffn-layers exceeds the source target layer count");
-}
 void validate_mtp_source(const ModelGeometry &geometry, bool enabled) {
   if (enabled && geometry.mtp_layers != 1)
     throw std::runtime_error("MTP requires one NextN layer in the prepared source geometry");
@@ -568,7 +555,7 @@ Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
     std::size_t cpu_layers, BackendSelection selection) {
   geometry.validate();
   validate_mtp_source(geometry, plan.draft_cache);
-  validate_cpu_ffn_layers(cpu_layers, geometry.layers.size());
+  FfnPlacement::validate(cpu_layers, geometry.layers.size());
   selection = select_execution(selection, cpu_layers);
   if (selection.primary != BackendKind::kCpu && !cpu_layers) return take(Backend::create(selection));
   // Conservative finite admission for this graph's known workspace only.
@@ -1605,10 +1592,11 @@ c::TensorDesc role_description(const prepared::Role &role) {
 // both paths use this one IO/lease/shape-authentication implementation.
 WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     Backend &backend, std::map<std::string, LoadedWeight> &weights,
-    std::vector<c::LeasePool> &weight_pools, std::size_t cpu_ffn_layers = 0,
+    std::vector<c::LeasePool> &weight_pools, const FfnPlacement &placement,
     const c::ResourceBudget &budget = {}) {
   roles.geometry.validate();
-  validate_cpu_ffn_layers(cpu_ffn_layers, roles.geometry.layers.size());
+  if (placement.target_layers() != roles.geometry.layers.size())
+    throw std::runtime_error("weight source differs from the cold FFN placement");
   (void)PrecisionProfile::from_roles(roles);
   if (roles.selected.empty() || roles.selected.size() > UINT32_MAX)
     throw std::runtime_error("invalid prepared physical role count");
@@ -1629,7 +1617,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
   std::size_t physical_mtp_roles = 0;
   for (std::size_t i = 0; i < roles.selected.size(); ++i) {
     const auto &role = roles.selected[i];
-    const bool host = cpu_ffn_weight(role.name, cpu_ffn_layers);
+    const bool host = placement.role_on_cpu(role.name);
     domain_bytes[host] = cache::add(domain_bytes[host], role.bytes);
     physical_mtp_roles += role.name.starts_with("mtp.");
     // FP8 pairs enter one bounded cold import at a time below. Do not first
@@ -1760,7 +1748,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     // upper bound, its exact F32 scale grid, and this one canonical carrier.
     import_peak_bytes = (std::max)(import_peak_bytes, cache::add(cache::add(role.bytes, scale->bytes),
         cache::add(carrier_bytes, imported.temporary_scale_bytes)));
-    const bool host = cpu_ffn_weight(role.name, cpu_ffn_layers);
+    const bool host = placement.role_on_cpu(role.name);
     Tensor tensor; tensor.description = imported.description;
     if (budget) {
       if (weight_resource(backend, host) == mem::system_resource()) {
@@ -1793,7 +1781,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
   }
   std::size_t nf4_groups = 0, nf4_original_bytes = 0, nf4_input_copy_bytes = 0, nf4_known_group_peak_bytes = 0;
   for (const auto &role : roles.selected) if (role.projection_codec == prepared::ProjectionCodec::kNf4DoubleQuant) {
-    const bool host = cpu_ffn_weight(role.name, cpu_ffn_layers);
+    const bool host = placement.role_on_cpu(role.name);
     const auto resource = weight_resource(backend, host);
     const auto domain = g::StorageDomainId{host ? 1u : 0u};
     std::array<mem::FileMapping, 6> original;
@@ -1899,7 +1887,8 @@ WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
     throw std::runtime_error("invalid weight selection");
   const auto roles = read_weight_roles(manifest, selection == WeightSelection::kTextAndMtp);
   if (roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
-  return load_selected_weight_roles(roles, backend, weights, weight_pools, cpu_ffn_layers);
+  const FfnPlacement placement(roles, cpu_ffn_layers);
+  return load_selected_weight_roles(roles, backend, weights, weight_pools, placement);
 }
 
 class Model;
@@ -2166,7 +2155,7 @@ public:
     draft_policy_ = policy;
   }
   bool recursive_mtp() const noexcept { return max_drafts() && (max_drafts() > 1 || min_draft_probability() > 0); }
-  const std::size_t cpu_ffn_layers;
+  const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
   std::size_t ct_channel_groups = 0, ct_local_groups = 0, omitted_cache_roles = 0;
@@ -2266,7 +2255,7 @@ public:
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
       std::span<const SamplingConfiguration> additional_sampling = {})
-       : sampling_seed(sampling_configuration.seed), cpu_ffn_layers(cpu_ffn_layer_count),
+       : sampling_seed(sampling_configuration.seed), ffn_placement(source.roles, cpu_ffn_layer_count),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
@@ -2294,8 +2283,8 @@ public:
          replay_policy(replay), layer0_probe(std::move(probe)) {
     geometry.validate();
     validate_mtp_source(geometry, cache_plan.draft_cache);
-    validate_cpu_ffn_layers(cpu_ffn_layers, geometry.layers.size());
-    if (execution.kind() == BackendKind::kDefault || execution.has_cpu_endpoint() != (cpu_ffn_layers != 0))
+    FfnPlacement::validate(ffn_placement.cpu_layers(), geometry.layers.size());
+    if (execution.kind() == BackendKind::kDefault || execution.has_cpu_endpoint() != (ffn_placement.cpu_layers() != 0))
       throw std::runtime_error("prepared Backend differs from the model CPU placement");
     allocation_budget = std::move(shared_budget);
     if (allocation_budget) {
@@ -2326,7 +2315,7 @@ public:
     cache_budget = take(c::ResourceBudget::create({.limits = std::span(limits).first(limit_count),
         .allocator = cache_allocator}));
     if (allocation_budget) execution_budget = allocation_budget;
-    else if (execution.native_generated_storage() || execution.host_only() || cpu_ffn_layers) {
+    else if (execution.native_generated_storage() || execution.host_only() || ffn_placement.cpu_layers()) {
       // Native checked operations can own staging status/metadata buffers.
       // Register actual resource identities once, including CPU's shared
       // payload/metadata resource. Execution workspace has its own scope,
@@ -2338,7 +2327,7 @@ public:
               return limit.resource == resource;
             }))
           native_limits.push_back({resource});
-      if (cpu_ffn_layers) {
+      if (ffn_placement.cpu_layers()) {
         const auto host = weight_resource(execution, true);
         if (std::ranges::none_of(native_limits, [host](const auto &limit) { return limit.resource == host; }))
           native_limits.push_back({host});
@@ -2354,7 +2343,7 @@ public:
       check(status);
     }
     const auto weight_load_start = Clock::now();
-    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, cpu_ffn_layers, allocation_budget);
+    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, ffn_placement, allocation_budget);
     source_identity = loading.identity;
     weight_meanings = std::move(loading.meanings);
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
@@ -2377,7 +2366,7 @@ public:
         << " known_group_peak_bytes=" << loading.nf4_known_group_peak_bytes
         << " source_operands_resident=true decode_precision=F16 selected_plan_reports_packed_or_decomposed=true\n";
     std::cerr << "weights_load_seconds=" << weight_load_seconds << '\n';
-    if (cpu_ffn_layers) std::cerr << "weight_placement cpu_ffn_layers=" << cpu_ffn_layers
+    if (ffn_placement.cpu_layers()) std::cerr << "weight_placement cpu_ffn_layers=" << ffn_placement.cpu_layers()
         << " original_host_weight_bytes=" << host_weight_bytes
         << " original_device_weight_bytes=" << device_weight_bytes
         << " duplicated_original_weight_bytes=0\n";
@@ -2489,7 +2478,7 @@ public:
         << ",\"cold_exact_evictions\":" << exact_evictions
         << ",\"backend\":\"" << execution.name()
         << "\",\"cache_budget_scope\":\"shared_pools_retained_outputs_and_resource_metadata\""
-        << ",\"cpu_ffn_layers\":" << cpu_ffn_layers
+        << ",\"cpu_ffn_layers\":" << ffn_placement.cpu_layers()
         << ",\"original_host_weight_bytes\":" << host_weight_bytes
         << ",\"original_device_weight_bytes\":" << device_weight_bytes
         << ",\"cache_shared_backing_bytes\":" << known_cache_backing_bytes
@@ -2503,9 +2492,9 @@ public:
     if (usage.limit_bytes == SIZE_MAX) out << "null";
     else out << usage.limit_bytes;
     out << ",\"native_execution_private_bytes_unknown\":" <<
-        ((execution.native_generated_storage() || execution.host_only() || cpu_ffn_layers) ? "true" : "false")
+        ((execution.native_generated_storage() || execution.host_only() || ffn_placement.cpu_layers()) ? "true" : "false")
         << ",\"physical_vram_limit_known\":false";
-    if (execution.host_only() || cpu_ffn_layers) {
+    if (execution.host_only() || ffn_placement.cpu_layers()) {
       out << ",\"execution_shared_requested_byte_limit\":null"
           << ",\"workspace_limit_scope\":\"known_per_invocation_graph_workspace\""
           << ",\"workspace_domains\":[";
@@ -2534,7 +2523,7 @@ public:
           << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_memory_cap=0\n";
       return;
     }
-    if (!cpu_ffn_layers) return;
+    if (!ffn_placement.cpu_layers()) return;
     if (report.storage_domain_count() != 3 || report.target_count() != 2)
       throw std::runtime_error("CPU FFN graph lost its configured CPU/GPU domains");
     for (std::size_t i = 0; i < known_workspace_peak.size(); ++i) {
@@ -2974,7 +2963,7 @@ public:
       }
       const auto ffn_input = r.binary(c::BinaryKind::kAdd, x, mixed);
       {
-        GraphAssembly::Scope scope(assembly, i < cpu_ffn_layers ? assembly.cpu() : assembly.primary());
+        GraphAssembly::Scope scope(assembly, ffn_placement.ffn_on_cpu(i) ? assembly.cpu() : assembly.primary());
         x = r.ffn(ffn_input, prefix, i == 0 ? std::span<V>(definition.probe_ports) : std::span<V>{});
       }
       if (i == 0) definition.probe_ports[4] = x;
@@ -6687,7 +6676,7 @@ int qwen35::run(int argc, char **argv) {
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
     const auto geometry = qwen35::read_weight_geometry(input / "weights.tsv");
     qwen35::validate_mtp_source(geometry, mtp_enabled);
-    qwen35::validate_cpu_ffn_layers(cpu_ffn_layers, geometry.layers.size());
+    qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
     if (sampler.policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
       throw std::runtime_error("--top-k exceeds the source vocabulary");
     if (explicit_mtp_drafts && !mtp_enabled) throw std::runtime_error("--mtp-max-drafts requires --mtp on");

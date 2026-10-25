@@ -1,0 +1,182 @@
+{
+  "status": "FINITE_COLD_FFN_PLACEMENT_METADATA_AND_CPU_CONSUMER_PASS",
+  "date": "2026-10-25",
+  "base_commit": "b70fb3a449a3715738a8a25cbfc4e48b49bf0ccc",
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 37996,
+      "sha256": "c4a7ec3e739c9e986e51173accf0d4d859300e6abdd6b2d33841b3dc2d37eb51"
+    },
+    {
+      "path": "engine/models/qwen35/ffn_placement.h",
+      "bytes": 2086,
+      "sha256": "ecf000bf5f94296f9e8e12e4f736ce84962cce744f31f7d37a60b5c69dc3919f"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 494633,
+      "sha256": "0d87c013574852d8dc6670e0ea98aa39682290c971963662423bf648b5318c48"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 55880,
+      "sha256": "30153d78cafcf03ad86ba542173a7f5a35840eac68e6268807991b7aa847999d"
+    }
+  ],
+  "ownership": [
+    "Parameter.target_ffn_layer is derived solely by the canonical model inventory: four dense target FFN parameters per layer.",
+    "FfnPlacement binds actual selected physical names cold from tagged principal roots. Existing reader retains codec, role, shape and provenance validation.",
+    "Model owns one immutable requested placement. Source streaming/FP8/NF4 loader and target graph FFN Scope consume it. No duplicate count field.",
+    "Non-target and MTP roles stay primary. No role tag in prepared manifests, codec suffix registry, executor, queue rule, or hot string dispatch.",
+    "BackendSelection and GraphAssembly retain actual endpoints, storage domains, crossings and availability checks."
+  ],
+  "modes": {
+    "cpu_only": "cpu_layers=0: all roles and target operations remain on the primary CPU endpoint; same existing loader path.",
+    "gpu_only": "cpu_layers=0: all roles and operations stay primary GPU; constructor returns after bound validation, no inventory/map allocation.",
+    "mixed": "first N target dense FFN groups, including post-attention norm and every selected projection codec component, bind host; target Scope uses same N.",
+    "mtp": "NextN inventory deliberately has no target FFN ownership, preserving current independent primary route.",
+    "expert_shared": "Not present in current Qwen inventory and not claimed implemented. Future explicit target FFN inventory ownership can reuse the policy."
+  },
+  "checks": {
+    "metadata": {
+      "result": "PASS",
+      "assertions": 13543,
+      "compile": {
+        "pid": 53384,
+        "exit": 0,
+        "seconds": 4.687000000005355
+      },
+      "run": {
+        "pid": 54288,
+        "exit": 0,
+        "seconds": 0.8440000000118744
+      },
+      "frozen_project_files": 18
+    },
+    "combined_consumer": {
+      "status": "FINITE_ACTUAL_ORDINARY_CPU_PASS",
+      "source_pins": {
+        "base_commit": "b70fb3a449a3715738a8a25cbfc4e48b49bf0ccc",
+        "files": [
+          {
+            "path": "engine/models/qwen35/prepared_roles.h",
+            "bytes": 37996,
+            "sha256": "c4a7ec3e739c9e986e51173accf0d4d859300e6abdd6b2d33841b3dc2d37eb51"
+          },
+          {
+            "path": "engine/models/qwen35/ffn_placement.h",
+            "bytes": 2086,
+            "sha256": "ecf000bf5f94296f9e8e12e4f736ce84962cce744f31f7d37a60b5c69dc3919f"
+          },
+          {
+            "path": "engine/models/qwen35/main.cc",
+            "bytes": 494633,
+            "sha256": "0d87c013574852d8dc6670e0ea98aa39682290c971963662423bf648b5318c48"
+          },
+          {
+            "path": "tests/tools/qwen_prepared_roles_test.cc",
+            "bytes": 55880,
+            "sha256": "30153d78cafcf03ad86ba542173a7f5a35840eac68e6268807991b7aa847999d"
+          }
+        ]
+      },
+      "compile": {
+        "pid": 51724,
+        "exit": 0,
+        "seconds": 31.14000000001397
+      },
+      "link": {
+        "pid": 21124,
+        "exit": 0,
+        "seconds": 1.2189999999827705
+      },
+      "run": {
+        "pid": 29788,
+        "exit": 0,
+        "seconds": 0.28099999998812564
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "initial_rejection_atomic": true,
+        "same_request_cursor_retry": true,
+        "MAX_minus_1_quota_1": true,
+        "full_hit_request_cursor": true,
+        "later_head_budget": true,
+        "evicted_ledger_budget": true,
+        "state_only_no_draw": true,
+        "raw_draw_preflight": true,
+        "greedy_unchanged": true,
+        "pending_only_single_consumption": true,
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      },
+      "frozen_project_files": 165,
+      "actual_dependencies": 329,
+      "actual_consumer_product_overlays": 3,
+      "metadata_test_note": "Fourth integrated pin qwen_prepared_roles_test.cc was verified unchanged; it passed in prior standard-only roles1 and is not included by this thin consumer.",
+      "cache_fixture": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+          "bytes": 5308,
+          "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "bytes": 206336,
+          "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+        }
+      ],
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "unchanged_link_inputs": 129,
+      "total_absolute_link_inputs": 130,
+      "system_libraries": 23,
+      "SDK_TUs": 0,
+      "core_TUs": 0,
+      "provider_TUs": 0,
+      "GPU": false,
+      "HTTP": 0,
+      "unproven": [
+        "Mixed CPU+GPU actual execution",
+        "GPU-only native execution",
+        "MTP native execution",
+        "Expert/shared FFN implementation",
+        "Performance difference"
+      ]
+    }
+  },
+  "retained_driver_stop": {
+    "reason": "Driver system-library count assertion included the /IMPLIB output switch in its original recipe count; app compile passed and no link/run had begun.",
+    "original_recipe_reported_system_libraries": 24,
+    "actual_relative_system_libraries": 23,
+    "reused_exact_app": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-assembly-placement-20261025\\consumer1\\compile\\unit.obj",
+      "bytes": 14254382,
+      "sha256": "69ed66b3c8c4a2108f841911cdce0a00bc7f86cef7a69564592e5bbce9540829"
+    },
+    "new_app_compiles": 0
+  },
+  "actual_qualification": "One std-only metadata TU/process and one merged real Model CPU TU/process. No SDK/core/provider rebuild or GPU/HTTP. The merged main includes request-ledger unification and actual new ffn_placement.h.",
+  "limits": [
+    "Mixed CPU+GPU actual execution",
+    "GPU-only native execution",
+    "MTP native execution",
+    "Expert/shared FFN implementation",
+    "Performance difference",
+    "No throughput claim from the removal of cold name parsing. Metadata assertions are not independent native test cases."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-ffn-cold-placement-2026-10-25.zip",
+    "bytes": 102623,
+    "sha256": "91f8d0b1ba56167ae6600af018f7f0212d2a3db6b447d6803561f32c1c38d951",
+    "members": 49,
+    "contents": "Exact proposed and merged patches/pins, cold design, finite runners, actual frozen dependencies, raw metadata/CPU pass and retained driver count stop. No model payload, binary, SDK or shared cache."
+  }
+}

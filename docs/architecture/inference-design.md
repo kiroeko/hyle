@@ -373,6 +373,10 @@ q、状态、输出租约及历史报告按各自寿命保留。
 
 Backend 在冷期选择实际编入的端点，编入能力不代表设备可用；失败不暗中回退。
 CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定某平台的搬运、Queue 或执行包装。
+Qwen 的 CPU FFN 放置由参数清单的归属派生一次，加载器、量化辅助角色与目标图共用
+同一不可变事实，已删 loader 的名称解析和第二份层数；默认纯主端点不建立角色表。
+Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及合并 CPU 消费者](../evidence/correctness/inference-ffn-cold-placement-2026-10-25.json)
+已通过；本批未运行新的混合 GPU 或 MTP native 检查。
 原生 FIFO／ExecutionSource 和显式 Queue 可以不同，不为统一接口制造多余 Queue。
 
 物理编码和计算精度分别绑定。保留 GPTQ F16 舍入、CT／NVFP4 的原 scale 约定、FP8 block128

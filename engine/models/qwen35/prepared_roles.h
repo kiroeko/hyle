@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <limits>
 #include <map>
+#include <optional>
 #include <set>
 #include <span>
 #include <sstream>
@@ -101,6 +102,8 @@ struct Role final {
 struct Parameter final {
   std::vector<std::int64_t> shape;
   bool linear = false, allow_f32 = false;
+  // Derived model ownership, never a prepared-manifest placement switch.
+  std::optional<std::size_t> target_ffn_layer{};
 };
 inline std::map<std::string, Parameter> parameter_inventory(bool mtp, const ModelGeometry &model) {
   model.validate();
@@ -108,8 +111,9 @@ inline std::map<std::string, Parameter> parameter_inventory(bool mtp, const Mode
   const auto h = model.hidden, ff = model.intermediate;
   std::map<std::string, Parameter> result;
   const auto add = [&](std::string name, std::initializer_list<std::int64_t> shape,
-                       bool linear = false, bool allow_f32 = false) {
-    result.emplace(std::move(name), Parameter{{shape.begin(), shape.end()}, linear, allow_f32});
+                       bool linear = false, bool allow_f32 = false,
+                       std::optional<std::size_t> target_ffn_layer = {}) {
+    result.emplace(std::move(name), Parameter{{shape.begin(), shape.end()}, linear, allow_f32, target_ffn_layer});
   };
   add("model.language_model.embed_tokens.weight", {model.vocabulary, h});
   if (!model.tied_head) add("lm_head.weight", {model.vocabulary, h}, true);
@@ -122,16 +126,16 @@ inline std::map<std::string, Parameter> parameter_inventory(bool mtp, const Mode
     add(p + "self_attn.q_norm.weight", {model.key_depth}, false, true);
     add(p + "self_attn.k_norm.weight", {model.key_depth}, false, true);
   };
-  const auto common = [&](const std::string &p) {
+  const auto common = [&](const std::string &p, std::optional<std::size_t> target_ffn_layer) {
     add(p + "input_layernorm.weight", {h}, false, true);
-    add(p + "post_attention_layernorm.weight", {h}, false, true);
-    add(p + "mlp.gate_proj.weight", {ff, h}, true);
-    add(p + "mlp.up_proj.weight", {ff, h}, true);
-    add(p + "mlp.down_proj.weight", {h, ff}, true);
+    add(p + "post_attention_layernorm.weight", {h}, false, true, target_ffn_layer);
+    add(p + "mlp.gate_proj.weight", {ff, h}, true, false, target_ffn_layer);
+    add(p + "mlp.up_proj.weight", {ff, h}, true, false, target_ffn_layer);
+    add(p + "mlp.down_proj.weight", {h, ff}, true, false, target_ffn_layer);
   };
   for (std::size_t i = 0; i < model.layers.size(); ++i) {
     const auto p = "model.language_model.layers." + std::to_string(i) + ".";
-    common(p);
+    common(p, i);
     if (!model.is_gdn(i)) full_attention(p);
     else {
       add(p + "linear_attn.A_log", {model.gdn_value_heads}, false, true);
@@ -149,7 +153,7 @@ inline std::map<std::string, Parameter> parameter_inventory(bool mtp, const Mode
     add("mtp.fc.weight", {h, ModelGeometry::multiply(2, h)}, true);
     for (const auto *name : {"mtp.norm.weight", "mtp.pre_fc_norm_embedding.weight",
                              "mtp.pre_fc_norm_hidden.weight"}) add(name, {h}, false, true);
-    common("mtp.layers.0."); full_attention("mtp.layers.0.");
+    common("mtp.layers.0.", {}); full_attention("mtp.layers.0.");
   }
   return result;
 }
