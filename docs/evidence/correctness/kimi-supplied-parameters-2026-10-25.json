@@ -1,0 +1,117 @@
+{
+  "status": "FINITE_WINDOWS_HOST_AND_CUDA_COMPONENT_PASS",
+  "date": "2026-10-25",
+  "integrated_on_commit": "2c4a250123be23b944e5d97a844372a35771ed31",
+  "private_baseline": "7d2628628e",
+  "changes": [
+    "The existing KDA and NoPE MLA components accept caller-supplied parameter Values; deterministic test initialization calls the same math append.",
+    "Each append borrows its operands and returns ports; the caller retains source/storage ownership and complete StateHead publication.",
+    "Cold validation respects BF16 [N,K], original F32/GGUF MatMul [K,N], grouped [H,N,K], plain F32 state and supplied decay encoding."
+  ],
+  "source_pins": [
+    {
+      "path": "tests/compute_models/d5_kda_full_fragments.h",
+      "bytes": 19908,
+      "sha256": "8b5e80da98a33f4dd5b5f9dc3fec3652ff972775981cc4769fa30ca79262bd10"
+    },
+    {
+      "path": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "bytes": 23519,
+      "sha256": "8dab155f855d744c981cd7c6ad89e874bce1e82b89f3afccea7ee4d983118da8"
+    },
+    {
+      "path": "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 26296,
+      "sha256": "fe16fced48f95ff7cf441cedd9aefd485589330409076a66b20bd9220fdbe1b5"
+    }
+  ],
+  "execution": {
+    "strict_compile": {
+      "exit": 0,
+      "seconds": 4.625,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.702999999979511,
+      "timeout": false
+    },
+    "checks": {
+      "host1": {
+        "process": {
+          "exit": 0,
+          "seconds": 0.4539999999979045,
+          "timeout": false
+        },
+        "tests": 1,
+        "skips": 0,
+        "native_context_created": false,
+        "properties": {
+          "supplied_parameter_scope": "Original-geometry BF16, non-square F32 and GGUF parameter inputs are descriptors only; no numeric weight buffers, source payload or native work. Both appends consume these actual Values; no seed factory."
+        },
+        "command": "attempt2/host1/command.json",
+        "xml": "attempt2/host1/results.xml",
+        "stdout": "attempt2/host1/stdout.log",
+        "stderr": "attempt2/host1/stderr.log"
+      },
+      "cuda1": {
+        "process": {
+          "exit": 0,
+          "seconds": 1.8440000000118744,
+          "timeout": false
+        },
+        "tests": 1,
+        "skips": 0,
+        "native_context_created": true,
+        "properties": {
+          "weight_scope": "Generated sparse BF16/F32 weights at fixed Kimi7168/96x128 geometry; NOT original artifact payload or quality",
+          "composition_scope": "Actual KDA hidden lease feeds actual absorbed MLA. Intervening full model layers/residuals and LM head are not executed; no generated token or MTP claim.",
+          "state_scope": "One StateStore, two independent Heads and one immutable restored fork; convolution history, recurrent KDA, full finite MLA cache, actual Graph I32 cursor, actual final feature, Epoch metadata. AttnRes is frame-only and absent.",
+          "ordinary_commits": "6",
+          "cancelled_unpublished_candidates": "1",
+          "stale_publish_rejections": "6",
+          "native_cancellation_scope": "Cancellation is of the unpublished StateDraft after KDA has actually retired; no GPU preemption claim",
+          "state_backing_budget": "105969664"
+        },
+        "command": "attempt2/cuda1/command.json",
+        "xml": "attempt2/cuda1/results.xml",
+        "stdout": "attempt2/cuda1/stdout.log",
+        "stderr": "attempt2/cuda1/stderr.log"
+      }
+    },
+    "new_consumer_TUs": 1,
+    "new_core_provider_SDK_TUs": 0,
+    "HTTP_bytes": 0
+  },
+  "review": "Independent review found the draft layout bug before compiling; it and plain-state validation were corrected before the recorded finite checks. Review record is archived.",
+  "prelaunch_failures": [
+    {
+      "path": "attempt1/readiness-first-failure.json",
+      "kind": "Bare SDK bcrypt.lib was initially resolved as repo-relative; no compiler or executable launched"
+    },
+    {
+      "path": "attempt2/runner-first-failure.json",
+      "kind": "Runner created the output directory twice; no test executable launched"
+    },
+    {
+      "path": "attempt2/GPU-preflight/interpretation.json",
+      "kind": "Initial runner treated WDDM desktop/browser contexts as an idle gate; root removed that invented qualification before the only CUDA invocation"
+    }
+  ],
+  "limits": [
+    "Host input-parameter case is descriptor/topology validation, not numeric qualification of trained parameter payloads",
+    "CUDA weights are generated sparse BF16/F32 at fixed 7168/96x128 geometry",
+    "Original 23-role 1,352,207,360-byte attention payload was not acquired or numerically validated",
+    "No full intervening model layers, LM head, generated token, quality or MTP claim",
+    "Cancellation is unpublished StateDraft cancellation after real KDA retirement, not GPU preemption",
+    "No new full performance or memory comparison; no other backend or complete Kimi model qualification."
+  ],
+  "remaining": "Authenticate and bind the exact selected original KDA/MLA payload roles and perform their finite numerical checks; the external parameter seam alone does not complete that work.",
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-supplied-parameters-2026-10-25.zip",
+    "bytes": 60276,
+    "sha256": "cbc9cb5461477e5027d9b3e997e20d0be8410b91ba498b0ec5fc5a26d88ad263",
+    "members": 44,
+    "contents": "Patch/source pins, independent review, exact commands, raw output/XML, dependency identities and prelaunch failures; no binaries, SDK or weights."
+  }
+}

@@ -116,13 +116,12 @@ inline Fragment dense_ffn(const c::ModelArtifactProfileDescription *profile) {
   return f;
 }
 
-struct HeadProjection final {
+struct HeadProjectionWeight final {
   sem::Weight weight;
   bool bfloat;
   std::int64_t n, k;
-  ValueId output;
-  std::vector<float> reference(std::span<const float> input,
-                                 bool round_input_to_bfloat) const {
+  ValueId value;
+  std::vector<float> reference(std::span<const float> input, bool round_input_to_bfloat) const {
     std::vector<float> x(input.begin(), input.end());
     if (bfloat && round_input_to_bfloat) for (auto &v : x) v = linear::bf16(v);
     std::vector<std::int32_t> ids(kHeads);
@@ -130,9 +129,8 @@ struct HeadProjection final {
     return moe::project(x, weight, ids, n, k);
   }
 };
-
-inline HeadProjection head_projection(Fragment &f, ValueId input, bool key,
-                                       const c::ModelArtifactProfileDescription *profile) {
+inline HeadProjectionWeight prepare_head_projection(Fragment &f, bool key,
+    const c::ModelArtifactProfileDescription *profile) {
   const auto n = key ? 512 : 128;
   const auto k = key ? 128 : 512;
   const bool bfloat = storage(profile) == Storage::kBFloat16;
@@ -155,50 +153,85 @@ inline HeadProjection head_projection(Fragment &f, ValueId input, bool key,
         weight.decoded[row].emplace_back(std::size_t(reduction), float(sem::q::decode(code)));
       }
   }
+  auto stored = f.constant(weight.description, std::move(weight.storage));
+  return {std::move(weight), bfloat, n, k, stored};
+}
+inline ValueId project_heads(Fragment &f, ValueId input, ValueId weight) {
   std::vector<std::int32_t> ids(kHeads);
   std::iota(ids.begin(), ids.end(), 0);
-  auto head_ids = f.constant(dense({1, kHeads}, c::DataType::kInt32), bytes(ids));
-  auto stored = f.constant(weight.description, std::move(weight.storage));
-  auto output = f.one(c::model_ops::grouped_matmul(), {stored, input, head_ids});
-  return {std::move(weight), bfloat, n, k, output};
+  const auto head_ids = f.constant(dense({1, kHeads}, c::DataType::kInt32), bytes(ids));
+  return f.one(c::model_ops::grouped_matmul(), {weight, input, head_ids});
 }
-
 // ggml Metal mul_mv_id_bf16_f32 retains F32 activations; CPU vec-dot
 // converts them to BF16. Match that source-defined boundary in the oracle,
 // while leaving the identical public operation graph and accuracy gate intact.
 struct OrdinaryHistory final {
   std::int64_t capacity, position;
 };
-using MlaReference = std::function<std::vector<std::vector<float>>(
-    std::span<const float>, std::span<const float>)>;
-inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
-                      bool round_grouped_input_to_bfloat = true,
-                      std::optional<OrdinaryHistory> history = {},
-                      MlaReference *reference = nullptr) {
-  if (history && (history->capacity <= 0 || history->capacity > std::numeric_limits<std::int32_t>::max() || history->position < 0 ||
-                   history->position >= history->capacity))
+inline std::pair<std::int64_t, std::int64_t> history_extents(
+    std::optional<OrdinaryHistory> history) {
+  if (history && (history->capacity <= 0 || history->capacity > std::numeric_limits<std::int32_t>::max() ||
+      history->position < 0 || history->position >= history->capacity))
     throw std::runtime_error("ordinary Kimi MLA history is outside its cold capacity");
-  const auto past_rows = history ? history->capacity : 3;
-  const auto visible = history ? history->position + 1 : 4;
-  Fragment f{.profile = profile, .region = 0x070701,
-             .quantized = storage(profile) == Storage::kQ8_0};
-  auto x = f.input(dense({1, kHidden}));
-  auto past = f.input(dense({past_rows, 576}));
-  auto input_scale = sem::oracle::scale(kHidden);
-  auto normalized = norm(f, x, input_scale, official(profile));
-  auto qa = linear::projection(f, normalized, 1536, kHidden, storage(profile), 173);
-  auto qscale = sem::oracle::scale(1536);
-  auto nq = norm(f, qa.output, qscale, official(profile));
-  auto qb = linear::projection(f, nq, 96 * 192, 1536, storage(profile), 179);
-  auto kva = linear::projection(f, normalized, 576, kHidden, storage(profile), 181);
-  auto latent = reshape(f, core::rows(f, reshape(f, kva.output, {576, 1}), 0, 512), {1, 512});
-  auto pe = reshape(f, core::rows(f, reshape(f, kva.output, {576, 1}), 512, 64), {1, 64});
-  auto kvscale = sem::oracle::scale(512);
-  latent = norm(f, latent, kvscale, official(profile));
-  auto current = f.one(c::Operation(c::Concat{.axis = 1}), {latent, pe});
+  return {history ? history->capacity : 3, history ? history->position + 1 : 4};
+}
+struct MlaParameters final {
+  ValueId input_norm, q_a, q_norm, q_b, kv_a, kv_norm;
+  // Prepared original KV-b K/V layouts; they share source identity but are
+  // actual independent grouped operands, not a generated replacement bank.
+  ValueId absorbed_key, absorbed_value, gate, output;
+};
+struct MlaPorts final {
+  ValueId cache, query, absorbed_query, attention, projected, gated, output, normalized, gate;
+  std::array<ValueId, 9> outputs() const {
+    return {cache, query, absorbed_query, attention, projected, gated, output, normalized, gate};
+  }
+};
+inline void require_head_projection(const Fragment &f, ValueId value,
+                                    std::int64_t n, std::int64_t k) {
+  linear::require_value(f, value, {kHeads, n, k});
+  const auto &description = f.description(value);
+  if ((description.data_type() != c::DataType::kFloat32 &&
+       description.data_type() != c::DataType::kBFloat16) ||
+      (description.data_type() == c::DataType::kBFloat16 && !description.is_plain()))
+    throw std::runtime_error("supplied Kimi absorbed weight needs its original F32/GGUF or BF16 storage");
+}
+
+// Fixed Kimi NoPE absorbed-MLA equation. All Values are borrowed from this
+// Fragment; original parameter sources and ReadLeases stay with the caller.
+// Neither state publication nor model/profile-dependent routing lives here.
+inline MlaPorts append_mla(Fragment &f, ValueId input, ValueId past,
+    const MlaParameters &p, std::optional<OrdinaryHistory> history = {}) {
+  const auto [past_rows, visible] = history_extents(history);
+  linear::require_value(f, input, {1, kHidden});
+  linear::require_value(f, past, {past_rows, 576});
+  for (auto value : {input, past})
+    if (f.description(value).data_type() != c::DataType::kFloat32 || !f.description(value).is_plain())
+      throw std::runtime_error("supplied Kimi MLA keeps its original plain F32 input/cache boundary");
+  linear::require_float_parameter(f, p.input_norm, {kHidden});
+  linear::require_float_parameter(f, p.q_norm, {1536});
+  linear::require_float_parameter(f, p.kv_norm, {512});
+  linear::require_projection(f, p.q_a, 1536, kHidden);
+  linear::require_projection(f, p.q_b, kHeads * 192, 1536);
+  linear::require_projection(f, p.kv_a, 576, kHidden);
+  require_head_projection(f, p.absorbed_key, 512, 128);
+  require_head_projection(f, p.absorbed_value, 128, 512);
+  linear::require_projection(f, p.gate, 12288, kHidden);
+  linear::require_projection(f, p.output, kHidden, 12288);
+
+  const c::Operation normalization(c::RmsNorm{.epsilon = kEpsilon});
+  const auto normalized = f.one(normalization, {input, linear::float_parameter(f, p.input_norm)});
+  const auto qa = linear::project_f32(f, normalized, p.q_a);
+  const auto nq = f.one(normalization, {qa, linear::float_parameter(f, p.q_norm)});
+  const auto qb = linear::project_f32(f, nq, p.q_b);
+  const auto kva = linear::project_f32(f, normalized, p.kv_a);
+  auto latent = reshape(f, core::rows(f, reshape(f, kva, {576, 1}), 0, 512), {1, 512});
+  const auto pe = reshape(f, core::rows(f, reshape(f, kva, {576, 1}), 512, 64), {1, 64});
+  latent = f.one(normalization, {latent, linear::float_parameter(f, p.kv_norm)});
+  const auto current = f.one(c::Operation(c::Concat{.axis = 1}), {latent, pe});
   ValueId cache, next_cache;
   if (history) {
-    auto position = f.constant(dense({1}, c::DataType::kInt32),
+    const auto position = f.constant(dense({1}, c::DataType::kInt32),
         bytes(std::vector<std::int32_t>{std::int32_t(history->position)}));
     next_cache = f.one(c::Operation(c::Scatter{}), {past, position, current});
     cache = core::rows(f, next_cache, 0, visible);
@@ -206,23 +239,52 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
     cache = f.one(c::Operation(c::Concat{.axis = 0}), {past, current});
     next_cache = core::rows(f, cache, 1, 3);
   }
-  auto query_nope = slice_heads(f, qb.output, kHeads, 192, 0, 128);
-  auto query_pe = slice_heads(f, qb.output, kHeads, 192, 128, 64);
-  auto kb = head_projection(f, query_nope, true, profile);
-  auto query = f.one(c::Operation(c::Concat{.axis = 2}), {kb.output, query_pe});
-  auto cached_values = slice_heads(f, cache, visible, 576, 0, 512);
-  auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
-                          .scale = 1.0F / std::sqrt(192.0F), .causal = true,
-                          .accumulation_type = c::DataType::kFloat32}),
+  const auto query_nope = slice_heads(f, qb, kHeads, 192, 0, 128);
+  const auto query_pe = slice_heads(f, qb, kHeads, 192, 128, 64);
+  const auto kb = project_heads(f, query_nope, p.absorbed_key);
+  const auto query = f.one(c::Operation(c::Concat{.axis = 2}), {kb, query_pe});
+  const auto cached_values = slice_heads(f, cache, visible, 576, 0, 512);
+  const auto attention = f.one(c::Operation(c::ScaledDotProductAttention{
+      .scale = 1.0F / std::sqrt(192.0F), .causal = true,
+      .accumulation_type = c::DataType::kFloat32}),
       {reshape(f, query, {1, 1, kHeads, 576}), reshape(f, cache, {1, visible, 1, 576}),
        reshape(f, cached_values, {1, visible, 1, 512})});
-  auto vb = head_projection(f, reshape(f, attention, {1, kHeads, 512}), false, profile);
-  auto gate = linear::projection(f, normalized, 12288, kHidden, storage(profile), 223);
-  auto gated = binary(f, c::BinaryKind::kMultiply,
-                       reshape(f, vb.output, {1, 12288}),
-                       unary(f, c::UnaryKind::kSigmoid, gate.output));
-  auto out = linear::projection(f, gated, kHidden, 12288, storage(profile), 227);
-  f.outputs = {next_cache, qb.output, kb.output, attention, vb.output, gated, out.output, normalized, gate.output};
+  const auto vb = project_heads(f, reshape(f, attention, {1, kHeads, 512}), p.absorbed_value);
+  const auto gate = linear::project_f32(f, normalized, p.gate);
+  const auto gated = binary(f, c::BinaryKind::kMultiply, reshape(f, vb, {1, 12288}),
+      unary(f, c::UnaryKind::kSigmoid, gate));
+  const auto output = linear::project_f32(f, gated, p.output);
+  return {next_cache, qb, kb, attention, vb, gated, output, normalized, gate};
+}
+using MlaReference = std::function<std::vector<std::vector<float>>(
+    std::span<const float>, std::span<const float>)>;
+inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
+                      bool round_grouped_input_to_bfloat = true,
+                      std::optional<OrdinaryHistory> history = {},
+                      MlaReference *reference = nullptr) {
+  const auto [past_rows, visible] = history_extents(history);
+  Fragment f{.profile = profile, .region = 0x070701,
+             .quantized = storage(profile) == Storage::kQ8_0};
+  const auto x = f.input(dense({1, kHidden}));
+  const auto past = f.input(dense({past_rows, 576}));
+  auto input_scale = sem::oracle::scale(kHidden);
+  const auto input_norm = linear::parameter(f, dense({kHidden}), input_scale, official(profile));
+  auto qa = linear::prepare_projection(f, 1536, kHidden, storage(profile), 173);
+  auto qscale = sem::oracle::scale(1536);
+  const auto qnorm = linear::parameter(f, dense({1536}), qscale, official(profile));
+  auto qb = linear::prepare_projection(f, 96 * 192, 1536, storage(profile), 179);
+  auto kva = linear::prepare_projection(f, 576, kHidden, storage(profile), 181);
+  auto kvscale = sem::oracle::scale(512);
+  const auto kvnorm = linear::parameter(f, dense({512}), kvscale, official(profile));
+  auto kb = prepare_head_projection(f, true, profile);
+  auto vb = prepare_head_projection(f, false, profile);
+  auto gate = linear::prepare_projection(f, 12288, kHidden, storage(profile), 223);
+  auto out = linear::prepare_projection(f, kHidden, 12288, storage(profile), 227);
+  const MlaParameters parameters{input_norm, qa.value, qnorm, qb.value, kva.value,
+      kvnorm, kb.value, vb.value, gate.value, out.value};
+  const auto ports = append_mla(f, x, past, parameters, history);
+  const auto outputs = ports.outputs();
+  f.outputs.assign(outputs.begin(), outputs.end());
   if (storage(profile) == Storage::kBFloat16)
     f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5, 6, 8};
   f.state_ports = {{1, 0}};

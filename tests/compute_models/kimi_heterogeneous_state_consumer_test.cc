@@ -62,6 +62,73 @@ TEST(KimiHeterogeneousStatePlan,EmptyHistoryUsesRealPositiveVisiblePrefixAndFull
     EXPECT_TRUE(std::all_of(expected[output].begin(),expected[output].end(),[](float v){return std::isfinite(v);}));
 }
 
+TEST(KimiHeterogeneousStatePlan,SuppliedParameterInputsComposeKdaAndNopeMlaWithoutGeneratedWeights) {
+  sem::Fragment f{.profile=kProfile,.region=0x535550504c494544ULL};
+  const auto input=[&](std::initializer_list<std::int64_t> shape,c::DataType type=c::DataType::kFloat32) {
+    return f.input(sem::dense(shape,type));
+  };
+  const auto weight=[&](std::int64_t n,std::int64_t k) {return input({n,k},c::DataType::kBFloat16);};
+  const auto x=input({1,7168}),history=input({3,kChannels}),state=input({1,96,128,128});
+  const kda::KdaParameters recurrent_parameters{
+      weight(12288,7168),weight(12288,7168),weight(12288,7168),weight(128,7168),weight(12288,128),
+      f.input(sem::dense({96,7168}).transposed().value()),weight(12288,7168),weight(7168,12288),input({kChannels,4}),input({128,1}),
+      input({1,1,96,128}),input({128}),{},kda::DecayEncoding::kLog};
+  const auto past=input({kCapacity,576});
+  const kimi::MlaParameters attention_parameters{
+      input({7168}),f.input(c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,c::DataType::kFloat32,7168,1536).value()),
+      input({1536}),weight(18432,1536),weight(576,7168),input({512}),
+      input({96,512,128},c::DataType::kBFloat16),input({96,128,512},c::DataType::kBFloat16),
+      weight(12288,7168),weight(7168,12288)};
+  const auto input_count=f.inputs.size();
+  const auto recurrent=kda::append_kda(f,x,history,state,recurrent_parameters,{7168,96,128,1.e-5F,1.e-5F});
+  const auto attention=kimi::append_mla(f,recurrent.output,past,attention_parameters,
+      kimi::OrdinaryHistory{kCapacity,0});
+  EXPECT_EQ(f.inputs.size(),input_count);EXPECT_TRUE(f.outputs.empty());EXPECT_TRUE(f.state_ports.empty());
+  EXPECT_EQ(f.description(recurrent.history),sem::dense({3,kChannels}));
+  EXPECT_EQ(f.description(recurrent.state),sem::dense({1,96,128,128}));
+  EXPECT_EQ(f.description(attention.cache),sem::dense({kCapacity,576}));
+  EXPECT_EQ(f.description(attention.output),sem::dense({1,7168}));
+  const auto linear_uses=[&](sem::ValueId supplied,bool grouped=false) {
+    return std::count_if(f.nodes.begin(),f.nodes.end(),[&](const auto &node) {
+      const auto operation=grouped?node.operation.template custom_as<c::model_ops::GroupedMatMul>().has_value():
+          (node.operation.template custom_as<c::model_ops::DenseLinearF32>().has_value()||
+           node.operation.template get_if<c::MatMul>()!=nullptr);
+      return operation&&node.inputs[grouped?0:1].ordinal()==supplied.ordinal();
+    });
+  };
+  for(auto supplied:{recurrent_parameters.q,recurrent_parameters.k,recurrent_parameters.v,recurrent_parameters.f_a,
+      recurrent_parameters.f_b,recurrent_parameters.beta,recurrent_parameters.gate,recurrent_parameters.output,
+      attention_parameters.q_a,attention_parameters.q_b,attention_parameters.kv_a,attention_parameters.gate,attention_parameters.output})
+    EXPECT_EQ(linear_uses(supplied),1);
+  EXPECT_EQ(linear_uses(attention_parameters.absorbed_key,true),1);
+  EXPECT_EQ(linear_uses(attention_parameters.absorbed_value,true),1);
+  for(auto constant:f.constants)
+    EXPECT_NE(f.description(constant).data_type(),c::DataType::kBFloat16);
+  std::size_t rotary=0,scatter=0,attentions=0,recurrences=0;
+  for(const auto &node:f.nodes) {
+    rotary+=node.operation.get_if<c::RoPE>()!=nullptr;
+    scatter+=node.operation.get_if<c::Scatter>()!=nullptr;
+    attentions+=node.operation.get_if<c::ScaledDotProductAttention>()!=nullptr;
+    recurrences+=node.operation.get_if<c::GatedDeltaNet>()!=nullptr;
+  }
+  EXPECT_EQ(rotary,0u);EXPECT_EQ(scatter,1u);EXPECT_EQ(attentions,1u);EXPECT_EQ(recurrences,1u);
+  const auto nodes=f.nodes.size(),constants=f.constants.size(),values=f.descriptions.size();
+  auto invalid=attention_parameters;invalid.output=attention_parameters.q_a;
+  EXPECT_THROW(kimi::append_mla(f,recurrent.output,past,invalid,kimi::OrdinaryHistory{kCapacity,0}),std::runtime_error);
+  EXPECT_EQ(f.nodes.size(),nodes);EXPECT_EQ(f.constants.size(),constants);EXPECT_EQ(f.descriptions.size(),values);
+  const auto packed_format=f.description(attention_parameters.q_a).storage_format();
+  const auto blocked_x=f.input(c::TensorDesc::blocked_dense(c::DataType::kFloat32,
+      std::array<std::int64_t,2>{1,7168},packed_format).value());
+  const auto blocked_past=f.input(c::TensorDesc::blocked_dense(c::DataType::kFloat32,
+      std::array<std::int64_t,2>{kCapacity,576},packed_format).value());
+  const auto blocked_values=f.descriptions.size();
+  EXPECT_THROW(kda::append_kda(f,blocked_x,history,state,recurrent_parameters,{7168,96,128,1.e-5F,1.e-5F}),std::runtime_error);
+  EXPECT_THROW(kimi::append_mla(f,recurrent.output,blocked_past,attention_parameters,kimi::OrdinaryHistory{kCapacity,0}),std::runtime_error);
+  EXPECT_EQ(f.nodes.size(),nodes);EXPECT_EQ(f.constants.size(),constants);EXPECT_EQ(f.descriptions.size(),blocked_values);
+  ::testing::Test::RecordProperty("supplied_parameter_scope",
+      "Original-geometry BF16, non-square F32 and GGUF parameter inputs are descriptors only; no numeric weight buffers, source payload or native work. Both appends consume these actual Values; no seed factory.");
+}
+
 TEST(KimiHeterogeneousStatePlan,EpochMetadataRoundTripsThePublishedHeadAndPreservesOldReader) {
   const std::array specs{c::StateEntrySpec{.kind=c::StateEntryKind::kHostMetadata,.metadata_bytes=sizeof(Epoch)}};
   const auto schema=take(c::StateSchema::create(specs),"Kimi host Epoch schema");

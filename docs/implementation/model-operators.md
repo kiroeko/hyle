@@ -96,6 +96,9 @@ Kimi 两个所选混合量化制品的[原 router／bias 组件](../evidence/cor
 随后按实际相同 Top16 接入[原专家／latent／共享 FFN 组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)：A32 MXFP4 与 K512 W4A8 两种原编码、直接 gamma norm，以及独立 FP8 投影，两个输入共62阶段数值检查通过。
 原七 bank／两代供给保留旧读者、忙槽拒绝和失败绑定后执行合同；独立参考逐阶段使用已核对的实际前驱，输入仍为生成 hidden，不代表整模型质量或吞吐通过。
 
+KDA／NoPE MLA 已提供[外部参数构图入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)，与原测试权重共用数学体；BF16、非方阵 F32／GGUF 的参数边及原 CUDA 合成完整状态旅程通过。
+原 layer0 KDA 的14角色、layer3 MLA 的9角色共1,352,207,360B，尚需核对原分片身份、绑定并检查数值；不由参数入口或已有 router／FFN 组件推定完成。
+
 | 模型／状态族 | 同一快照须保留的内容 | 当前边界 |
 | --- | --- | --- |
 | 三个Qwen | 各attention层KV、各线性层conv历史／GDN状态、有效长度与位置 | Qwen3.5-2B已有完整分页状态和四会话淘汰重建；Q27／Q24原完整NextN／词表及六资源接受后续算已CPU／CUDA核，另接原末target63／91、全V verifier及target-conditioned缓存修复，12资源同Head发布；完整上游主干、初始历史及其它原制品仍保边界 |

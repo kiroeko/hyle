@@ -34,6 +34,13 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 模型给出数学，Graph 根据真实能力冷选 Provider 和等价融合。模型驱动无需逐算子指定
 实现；新增后端融合不应要求修改请求循环。共享机制也不能反向依赖 Qwen 的字段或平台宏。
 
+KDA／Kimi NoPE MLA 组件的参数准备与数学追加已分开：调用者提供真实参数 Value，
+同一个 append 返回原端口；测试权重工厂也调用这一个数学体。来源变换、只读租约及完整状态发布
+仍归调用者，append 不创建另一份 owner 或状态表。普通 BF16 投影与 F32／量化 MatMul 的
+逻辑布局分别检查，不在模型数学内按仓库名选择。
+[host 接线与原 CUDA 状态旅程](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)
+已通过；CUDA 使用原几何的合成权重，原 KDA／MLA 制品参数的绑定及数值检查仍须另做。
+
 ## 模型、会话、请求、批次是不同对象
 
 | 对象 | 内容及寿命 |
