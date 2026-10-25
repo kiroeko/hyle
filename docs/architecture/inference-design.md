@@ -163,6 +163,14 @@ lease 和 carrier guard 覆盖整个观察调用。view 不能逃逸或重入准
 pending／游标。缓存键只含已消费输入及稳定的来源／数学／布局身份；采样 wrapper 共享状态，
 不能继承另一请求的独占写尾页权限。
 
+同一 Model 可在冷准备时冻结有限的 greedy／温度／top-k／top-p 配置；种子、stream 和 draw 仍属请求。
+Session 借用一个稳定配置，Family／Phase 的身份包含该选择，兼容策略的请求继续真实合批。
+它们共享原权重和 Backend；不动态修改全局 sampler，也不为不同策略复制 Model。
+新请求完整命中另一策略产生的状态时，从实际 carry hidden 按自己的策略选择 pending；
+同请求恢复按 ledger 的历史 pending／RNG 续算。Ledger 用原资源 owner 的弱身份拒绝跨 Model、
+过期或地址复用，不为一份历史记录保活整份权重。
+纯 greedy 单配置保留原来不保存 hidden、不另执行前沿 head 的快路；本轮多策略仅适用于普通 Text，MTP 沿原默认策略。
+
 完整命中可跳过模型前缀计算；部分命中只执行真实后缀。未命中恢复使用已消费输入重建，
 不重新向用户返回历史输出，也不冒称跨批宽逐位重放。
 显式固定 token tape 有已知未来输入，仍是独立重放载荷；它与自然请求共享状态／预算协议，

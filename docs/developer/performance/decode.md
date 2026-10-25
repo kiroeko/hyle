@@ -59,6 +59,12 @@ metadata 候选已关闭：当前 CUDA 路线实际共享 source，5 个 followe
 
 [整数暂存复用](../../evidence/performance/inference-integer-scratch-reuse-2026-10-25.json)已接原 `InputPreparationScratch`／`SmallVector`，未复用不可变版本或页读者。原 R1／K1 两轮的相关构造／扩容计时累计约 0.1071ms，含计时开销、不含析构，不能解释约 10% 余差；候选的完整输出、ledger、dispatch 及全部非时间字段保持一致。合并新精度后的入口仅做严格语法检查，没有开新的前后测速窗，不报告 TPS 收益。
 
+[按实际逻辑调用标记的两轮诊断](../../evidence/performance/mtp-logical-call-attribution-2026-10-25.json)已补齐每端一个 NVTX／CUDA trace，全部非时间输出和工作与各自基线一致。
+Hyle 的 66 次 decode 在 `prepare_replay` 累计 107.037ms，该范围内实际 GPU 活动并集为零；13 个含实例化的调用占 78.249ms，8 个仅录制的调用占 16.324ms，45 个无录制的调用占 12.463ms。
+同一 trace 的 32 次录制中，19 次直接实例化、没有尝试 Update，另 13 次 Update 返回 0 且没有实例化回退；因此不能称为更新失败重建。
+参考对应 2 次实例化及 7 次成功 Update。原生 API 耗时嵌套在上述范围内，不相加；两个 profiler 进程不是新的 TPS 窗，也不能用 107ms 直接替换历史墙差或承诺可回收收益。
+当前优先查首录身份、旧 artifact 是否可成为合法 rebuild seed，以及显式失效的实际原因；不放宽退休／私有参数合同，不以增加变体数量掩盖问题。
+
 [绑定诊断](../../evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json)进一步分开两种重录：132 次范围决策中录制 32、复用 100；58 个已记录的首不等端口全部只改变同 backing 的 offset，hidden 出现至少三种地址组合，两份变体遇到淘汰后回访。另有两次 prepare 之间明确失效后重新录制，不能据相同指纹删除该边界。首次诊断溢出及一次修正均保留，修正版零溢出、全部非时间工作与基线一致；只细记各 Invocation 前 20 次准备，不把首不等端口当作全部差异，也未观测 native GraphExecUpdate 结果。
 
 [本批候选筛选](../../evidence/performance/mtp-state-and-draft-candidate-screen-2026-10-25.json)已关闭倒序 hidden 分配：仅编译一个私有 app TU，原两轮的一次诊断结果和工作完全一致、零溢出，但重录 32→39，复用 100→93；不做 TPS 重复或合入。配对 hidden 父块现有别名 API 足以表达，但涉及独立请求的持有粒度、prefill／单行初始化及碎片、多 K 预算和诊断寿命，当前没有收益依据支持扩大改动，也不留下挂起的布局任务。原权限、预算、显式失效及两变体政策保持不变。

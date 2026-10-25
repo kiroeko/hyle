@@ -1,0 +1,5165 @@
+{
+  "status": "LOGICAL_CALL_DIAGNOSTIC_COMPLETE_WORK_PRESERVED",
+  "created_at": "2026-10-25T00:03:19.558117+00:00",
+  "scope": "HyleandpeerK1real2turnMTPonly,oneNVTX+CUDAprofilerprocessperarm;notTPS,numericalqualityormemorycertification.",
+  "throughput_evidence": false,
+  "quality_evidence": false,
+  "product_edits": 0,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "actual_processes": 2,
+  "GPU_released": true,
+  "source_pins": [
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\logical_trace.h",
+      "bytes": 1854,
+      "sha256": "b4e41995c0cfae296204351ba9880d66cdd72c53d271f0589aa7daaf1885cbb6"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\peer.patch",
+      "bytes": 5190,
+      "sha256": "ab88ba192a1f36e4a0ecf3e4204b32e2f8d5b23d233a72fd604af38e63f26f8e"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\consumer.cc",
+      "bytes": 245,
+      "sha256": "c43f7f53cf5fdc40fd9444efbaa9c979c4628fa9af02916ee0911123647bec47"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source.patch",
+      "bytes": 3128,
+      "sha256": "aadf89c28dda168c70b8929a8d89b6653f744a46b51e71a46c67504dd412b14c"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\source\\mtp_schedule.h",
+      "bytes": 5486,
+      "sha256": "b4323081d2b8defc71cb40fe5b183411adc993df0172f44aaa80505811b99f5c"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\source\\peer_multiturn.cc",
+      "bytes": 34528,
+      "sha256": "9c69b7e6a5bb4f62b1f65a1849682bd975784089a3ae384ab10cacaf9a57e618"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\source\\schedule.h",
+      "bytes": 4762,
+      "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\source\\session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\backend.h",
+      "bytes": 23020,
+      "sha256": "fe7d3c10c3d4c1a5ac7f9243d5d9a26ca508b91391d6cb2c99707112ac1dcff6"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\batch_indices.h",
+      "bytes": 2562,
+      "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\execution_observation.h",
+      "bytes": 976,
+      "sha256": "d29d5df374d2055fe8f381f8a0b98f33a613526ea294ecccb9e820eb93db9ba3"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\mtp_acceptance.h",
+      "bytes": 6899,
+      "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\prefix_directory.h",
+      "bytes": 14899,
+      "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\prepared_output.h",
+      "bytes": 6830,
+      "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\readback.h",
+      "bytes": 4778,
+      "sha256": "8dc117a67d9915e6dcf1762d3f2701644fe613f8fbfb46949cd7057c1e7fc10c"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\request_progress.h",
+      "bytes": 12440,
+      "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\sampling_cursor.h",
+      "bytes": 1200,
+      "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\sampling_graph.h",
+      "bytes": 17641,
+      "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\token_prefix.h",
+      "bytes": 2068,
+      "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\version_admission.h",
+      "bytes": 3009,
+      "sha256": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\reporting\\execution_report.h",
+      "bytes": 474,
+      "sha256": "50773c0ac5095d711c631f8f842c94d4e506109a89e12d0103113ae838b0bcd3"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\batch_schedule.h",
+      "bytes": 7902,
+      "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\driver.h",
+      "bytes": 166,
+      "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\fp8_weight_import.h",
+      "bytes": 3765,
+      "sha256": "e5669f84d624635c641b06be264ae1889b4aed9760b23fa29b2227be2a91883d"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\generation_schedule.h",
+      "bytes": 9702,
+      "sha256": "ef99737c5e6714e570a269c8d96979de31da86584b7d4d679cb26d3ae721da4f"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 451337,
+      "sha256": "95a69a84c69879371532743c522eefb5e21b8e776a744f266b1f33f099bbdbe9"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\model_geometry.h",
+      "bytes": 6722,
+      "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 17605,
+      "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\nf4_state.h",
+      "bytes": 5375,
+      "sha256": "93d74bbfce17d9dc314fc951536b261d72e9f42d7422ebf56903c67814cc9a5f"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prefix_cache.h",
+      "bytes": 8153,
+      "sha256": "5031a6c6a407f4b197d73b9befebc1c3db38c6e06dbdf4e32091f1c319a7b1de"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+      "bytes": 12730,
+      "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prepared_roles.h",
+      "bytes": 31109,
+      "sha256": "b35b9b42b312d5c2831d6941d698105320be5719081052bd4c7cfa4115962c93"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\projection_binding.h",
+      "bytes": 2595,
+      "sha256": "edb5059ef51ef71f12571c9946982a83528fdea1754255c1f392800181e14d4f"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\schedule.h",
+      "bytes": 3938,
+      "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_cache.h",
+      "bytes": 8963,
+      "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_schedule.h",
+      "bytes": 4134,
+      "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_state.h",
+      "bytes": 14335,
+      "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+    },
+    {
+      "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\token_ids.h",
+      "bytes": 2200,
+      "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+    }
+  ],
+  "plan": {
+    "path": ".scratch/mtp-logical-call-trace-20261025/plan.json",
+    "bytes": 6140,
+    "sha256": "688a52d12276e72fd89b33415e57e3f4ec1e997de6a90694725b9f3e0afa0c67"
+  },
+  "builds": {
+    "hyle": {
+      "compile": {
+        "exit": 0,
+        "seconds": 17.48499999998603,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7030000000086147,
+        "timeout": false
+      },
+      "ready": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\link\\consumer.exe",
+          "bytes": 141425664,
+          "sha256": "39a3a5e440bdf1058db4aa028af4ee2c1f13ca9888b18c5f1b6896504510ad83"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\consumer.cc",
+          "bytes": 245,
+          "sha256": "c43f7f53cf5fdc40fd9444efbaa9c979c4628fa9af02916ee0911123647bec47"
+        },
+        "source_pins": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\consumer.cc",
+            "bytes": 245,
+            "sha256": "c43f7f53cf5fdc40fd9444efbaa9c979c4628fa9af02916ee0911123647bec47"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\logical_trace.h",
+            "bytes": 1854,
+            "sha256": "b4e41995c0cfae296204351ba9880d66cdd72c53d271f0589aa7daaf1885cbb6"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExt.h",
+            "bytes": 60523,
+            "sha256": "2513b9e9795bffab986f6347d6d2f52eeccdba27a94ea51c7002338c7a0a9b08"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxLinkOnce.h",
+            "bytes": 4204,
+            "sha256": "af77fd20d6e7ba46e909e5a7817316c8cabc32c34da384336e8ff823068b286b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxTypes.h",
+            "bytes": 16921,
+            "sha256": "9a605cba6f9e28ca1991aea88b9ffe25b10b848ac0ae0467d95e2f13644d119b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImpl.h",
+            "bytes": 20430,
+            "sha256": "84a528a24e1c44cb867635571eaaa2b500b6f1645eaa72430ea571011c59d44b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDecls.h",
+            "bytes": 10592,
+            "sha256": "edb6fea752ca9025520daaead402fa7fdcf7a280654cbcba32e4e6411c6fccf6"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplCore.h",
+            "bytes": 14452,
+            "sha256": "706bf278f339e8664a737b6c648b459f6e48f46a5c8b170914a7d5b656436de0"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDefs.h",
+            "bytes": 37694,
+            "sha256": "94c947f0615b16e3c452bad6a2185eaec2de0ec37147a3e1ee1f415149c01503"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInit.h",
+            "bytes": 22549,
+            "sha256": "3c39cb41108ec94b5366576d4fe762c16790ba2b5ad39e95023a577dc916f59a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 451337,
+            "sha256": "95a69a84c69879371532743c522eefb5e21b8e776a744f266b1f33f099bbdbe9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\schedule.h",
+            "bytes": 3938,
+            "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\token_ids.h",
+            "bytes": 2200,
+            "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_cache.h",
+            "bytes": 8963,
+            "sha256": "b7385d37ac5461d947ff02b5be6de47f608abd0cea319b8e015ec5201923f8d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\session_state.h",
+            "bytes": 14335,
+            "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+            "bytes": 14088,
+            "sha256": "24d54cdae3a2c46f28126fffbfce06fc28ee6acb44c677324ce4f8fbaf67d458"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_layout.h",
+            "bytes": 10506,
+            "sha256": "db6c552379051f9b8132fc8dce775dd0826c9a8d1d0d7fd10eecd1f10b159921"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\low_precision.h",
+            "bytes": 10591,
+            "sha256": "71f17f2b191fe7d00166e29fc84a44cf6ac2211aba5fed42b7df1f08f00f56fd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor_desc.h",
+            "bytes": 8700,
+            "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\ops_visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\visibility.h",
+            "bytes": 11701,
+            "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\result.h",
+            "bytes": 30856,
+            "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\compiler.h",
+            "bytes": 4287,
+            "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\compiler_attributes.h",
+            "bytes": 1913,
+            "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\environment.h",
+            "bytes": 6712,
+            "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\assert.h",
+            "bytes": 16114,
+            "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\core\\detail\\preprocessor.h",
+            "bytes": 409,
+            "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\error\\status.h",
+            "bytes": 18122,
+            "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_leases.h",
+            "bytes": 8660,
+            "sha256": "4e5681ebfa7c2f2ad51e5788c8316f4b993883f595c04b33fe594d7294dab85b"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\completion.h",
+            "bytes": 1959,
+            "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\resource_budget.h",
+            "bytes": 4622,
+            "sha256": "578d440b6fc3f5b58809837506165de27ac0866ae39b2d132763f5dd1786b1ce"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\quota_allocator.h",
+            "bytes": 7124,
+            "sha256": "a88fe230dc5358ddde6209de96cc61a59e3f6e60d30b9e7534e986fab10224c9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\allocator.h",
+            "bytes": 11090,
+            "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\resource.h",
+            "bytes": 7717,
+            "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\tensor.h",
+            "bytes": 1980,
+            "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\buffer.h",
+            "bytes": 19273,
+            "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_transfer.h",
+            "bytes": 11416,
+            "sha256": "7bec296577c0439b0e0b48639ccff6b3bd95d137dba085c608f650dbb69fcd1b"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\append_lease.h",
+            "bytes": 1944,
+            "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\small_vector.h",
+            "bytes": 30022,
+            "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\system_inline.h",
+            "bytes": 8762,
+            "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\alignment.h",
+            "bytes": 3499,
+            "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\obs\\trace.h",
+            "bytes": 8554,
+            "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\model_geometry.h",
+            "bytes": 6722,
+            "sha256": "344110691d11f4257ad78dfed766138a1b5c2164450c876814420f2c75e67946"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\sampling_cursor.h",
+            "bytes": 1200,
+            "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prefix_cache.h",
+            "bytes": 8153,
+            "sha256": "5031a6c6a407f4b197d73b9befebc1c3db38c6e06dbdf4e32091f1c319a7b1de"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\prefix_directory.h",
+            "bytes": 14899,
+            "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\token_prefix.h",
+            "bytes": 2068,
+            "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\batch_schedule.h",
+            "bytes": 7902,
+            "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\mtp_graph.h",
+            "bytes": 17605,
+            "sha256": "160e447f63d4c92b3890e9c23a19372b4656eae4c594a9e9377e9970ef440c49"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_ops.h",
+            "bytes": 6114,
+            "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\operation.h",
+            "bytes": 28771,
+            "sha256": "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h",
+            "bytes": 18453,
+            "sha256": "1cf89548b6544889419045c54d859153d5fdb21e49cdac8357e0f653dbdf04a0"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\executable.h",
+            "bytes": 50892,
+            "sha256": "7b6c1f5b75d8ba7782b1b4a95cbe32b61b179eed57ac362f54077d44439a645a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\device.h",
+            "bytes": 7702,
+            "sha256": "f966803f2293e03db1cde9b1327f847a92162f21adb53f69ef37f0c19b16a84a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\provider.h",
+            "bytes": 10281,
+            "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\prepared_operation.h",
+            "bytes": 20281,
+            "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\workload.h",
+            "bytes": 5017,
+            "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\storage_owner.h",
+            "bytes": 8058,
+            "sha256": "549d881d8d4f96eedbb03c8ef9bd6892ede776e5da90a39025538bc50a0530d9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\context_ref.h",
+            "bytes": 2563,
+            "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+            "bytes": 7336,
+            "sha256": "e3e411efed89cf4db4d974ed8922ee00caf5a21a8c9d45f15fa06a619d1802ee"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\resource_budget_access.h",
+            "bytes": 2741,
+            "sha256": "f5cfd7955fed71cf08b9a08e0ddacf70191495a61883dac4224e02ef3cba4871"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\compile_report.h",
+            "bytes": 577,
+            "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\execution_source.h",
+            "bytes": 1859,
+            "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\graph.h",
+            "bytes": 19988,
+            "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\resources.h",
+            "bytes": 430,
+            "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\result.h",
+            "bytes": 2146,
+            "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_execution.h",
+            "bytes": 10480,
+            "sha256": "65c6b09036130af1f7c7681e36240e5f8ef2fcdffa1bddaec777bb85eeb67f46"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_materialize.h",
+            "bytes": 7245,
+            "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\batch_paged_native.h",
+            "bytes": 4723,
+            "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\mtp_acceptance.h",
+            "bytes": 6899,
+            "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\sampling_graph.h",
+            "bytes": 17641,
+            "sha256": "2ccd3fb55f4b1d8b1312b2914fe8a400aa36f6bf9cbc776a1cc99eac4e341529"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\sampling_ops.h",
+            "bytes": 3673,
+            "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\execution_resources.h",
+            "bytes": 3312,
+            "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\completion_access.h",
+            "bytes": 4164,
+            "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\prepared_output.h",
+            "bytes": 6830,
+            "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\request_progress.h",
+            "bytes": 12440,
+            "sha256": "384a30a40edc4e0bb93e4efde9a561f6cac3759f6fb250ff656cc8827d6eae5a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\request_window.h",
+            "bytes": 9466,
+            "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\version_admission.h",
+            "bytes": 3009,
+            "sha256": "7983b7652aefa836bb4bf00eab7c5662099ca5f62cc7a2a03e3340623a0205b1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\batch_indices.h",
+            "bytes": 2562,
+            "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\execution_observation.h",
+            "bytes": 976,
+            "sha256": "d29d5df374d2055fe8f381f8a0b98f33a613526ea294ecccb9e820eb93db9ba3"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\reporting\\execution_report.h",
+            "bytes": 474,
+            "sha256": "50773c0ac5095d711c631f8f842c94d4e506109a89e12d0103113ae838b0bcd3"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\generation_schedule.h",
+            "bytes": 9702,
+            "sha256": "ef99737c5e6714e570a269c8d96979de31da86584b7d4d679cb26d3ae721da4f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 31109,
+            "sha256": "b35b9b42b312d5c2831d6941d698105320be5719081052bd4c7cfa4115962c93"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\nf4_state.h",
+            "bytes": 5375,
+            "sha256": "93d74bbfce17d9dc314fc951536b261d72e9f42d7422ebf56903c67814cc9a5f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\prepared_gguf_roles.h",
+            "bytes": 12730,
+            "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\projection_binding.h",
+            "bytes": 2595,
+            "sha256": "edb5059ef51ef71f12571c9946982a83528fdea1754255c1f392800181e14d4f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\model_ops.h",
+            "bytes": 80480,
+            "sha256": "f8b4c68f1fb3d6a72acbaebacf286981c25c7aac13f75702f450c74fe5cdc99a"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\fp8_weight_import.h",
+            "bytes": 3765,
+            "sha256": "e5669f84d624635c641b06be264ae1889b4aed9760b23fa29b2227be2a91883d"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\weight_import.h",
+            "bytes": 3487,
+            "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\mapping.h",
+            "bytes": 7139,
+            "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\fs.h",
+            "bytes": 24891,
+            "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\fs_visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\time\\unix_timestamp.h",
+            "bytes": 11791,
+            "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\virtual_memory.h",
+            "bytes": 10485,
+            "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\numa.h",
+            "bytes": 8400,
+            "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\backend.h",
+            "bytes": 23020,
+            "sha256": "fe7d3c10c3d4c1a5ac7f9243d5d9a26ca508b91391d6cb2c99707112ac1dcff6"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\file_stream.h",
+            "bytes": 9950,
+            "sha256": "a550dbddbd586998656d99372969c06f084967f183519bf846df88221bf2a414"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\file.h",
+            "bytes": 12585,
+            "sha256": "d70b57f52cb4cd9da312c4ac116e69680f9bfcd1a8afe7331144e6744b9d8905"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\buffer.h",
+            "bytes": 10908,
+            "sha256": "a8f184f572e7d7336bbeddbd6fdf0361173f8e0dd5e96e0ab4b028c9c64982cf"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\detail\\net_budget.h",
+            "bytes": 9883,
+            "sha256": "558f0ac110e788bcf845ef9491fe5b0687ecd942913e03a1d68727c9721cb44d"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\detail\\net.h",
+            "bytes": 12231,
+            "sha256": "3b246fdb7db67b571ca2debc85e0f2a15d764dea0937f080f84c71e1c1125956"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\endpoint.h",
+            "bytes": 2885,
+            "sha256": "3396d90bfe96c7a9509faafb6596842f3108bc4333590146a39b603e6e1f79c8"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\detail\\proactor.h",
+            "bytes": 27949,
+            "sha256": "02aa67a112c705effeb1b39b1e35c0336b8a57792b5de82f7aa3b801eb68f133"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\capabilities.h",
+            "bytes": 5227,
+            "sha256": "b0fb030836a297dd16728b6c250c7e44510ef0b7e3e5d7a6f334d2462c6971f9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\coro.h",
+            "bytes": 11737,
+            "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\waker.h",
+            "bytes": 3374,
+            "sha256": "85c40b6f63b1db04ceffc99681d590a59160ddd15cc1988a6161ad73396e61ed"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\detail\\net_timeout.h",
+            "bytes": 19015,
+            "sha256": "be0801ea66173063ec0bf9e7f7e9a24c9d05141284344e3ee6acfd13c34c24e9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\timer.h",
+            "bytes": 3646,
+            "sha256": "2339fc15eae1fcd3401a53bb83d59ffad26fdc4d58e544941aa54906bb7ec2c5"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\time\\clock.h",
+            "bytes": 30458,
+            "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\time\\timer_entry.h",
+            "bytes": 3392,
+            "sha256": "7c4e58dc71513648edeeaf2e3eda9d1b2126356054332ac911c6b2a9743bfa83"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\intrusive_list.h",
+            "bytes": 33222,
+            "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\detail\\intrusive_member.h",
+            "bytes": 1822,
+            "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\operation.h",
+            "bytes": 3463,
+            "sha256": "2441917bd0469c74a65a3f5f22e92e0d42926473398c1a420f86882c9c75669e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\cancel.h",
+            "bytes": 4793,
+            "sha256": "93a50fd56e083cc62938dc9115924f8a1da979ec879b2a8c1ea10e03b43adb43"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\container\\intrusive_hlist.h",
+            "bytes": 15077,
+            "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\fiber.h",
+            "bytes": 12046,
+            "sha256": "64f4dc01aedc6b5a3ae7a481dc8ac70d44dd2f032cf8a8c7dc479245d1eb2a79"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\mem\\fiber_stack.h",
+            "bytes": 5697,
+            "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\spin_lock.h",
+            "bytes": 4270,
+            "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\priority.h",
+            "bytes": 1391,
+            "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\io\\io_context.h",
+            "bytes": 4309,
+            "sha256": "f82cd55aaa3a47536a41026bfc8f8f185eaf9af0a7359c0f00b6053576ad2409"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\blocking.h",
+            "bytes": 11177,
+            "sha256": "6ac68f05f6f1dce2ada469956d823bc52827e11aea781a74cc896877f145db41"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\join.h",
+            "bytes": 33859,
+            "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\scheduler.h",
+            "bytes": 20496,
+            "sha256": "8ab542f46ed961d13f497004579eba81ce6ad62acdb79a26486a8b55b2741829"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\cpu.h",
+            "bytes": 14870,
+            "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\thread.h",
+            "bytes": 8423,
+            "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\wait.h",
+            "bytes": 4708,
+            "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\platform\\thread_visibility.h",
+            "bytes": 43,
+            "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\sched\\sync.h",
+            "bytes": 78133,
+            "sha256": "dea8c4ba498d97223a8039718449e4bcf4a6ec9ee3dd5c26779725e49f73d1dc"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cpu_file_stream.h",
+            "bytes": 590,
+            "sha256": "c385247f920637cc6bbae90c409617d4f89c295957afabdb0d5389dd5c36263f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\backends\\cpu.h",
+            "bytes": 1814,
+            "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_sequence.h",
+            "bytes": 9214,
+            "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\operation_access.h",
+            "bytes": 992,
+            "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\queue_ref.h",
+            "bytes": 1551,
+            "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cpu.h",
+            "bytes": 919,
+            "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cpu.h",
+            "bytes": 3070,
+            "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\backends\\cuda.h",
+            "bytes": 9030,
+            "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda_file_stream.h",
+            "bytes": 635,
+            "sha256": "7c89df9fedf1da81fbf6191b47d3557b2b4de115729b91805864e9f04c7208b9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\cuda.h",
+            "bytes": 2663,
+            "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda.h",
+            "bytes": 1457,
+            "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\cuda_weights.h",
+            "bytes": 5065,
+            "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\weight_assembly.h",
+            "bytes": 2095,
+            "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\weight_binding.h",
+            "bytes": 422,
+            "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\inference\\readback.h",
+            "bytes": 4778,
+            "sha256": "8dc117a67d9915e6dcf1762d3f2701644fe613f8fbfb46949cd7057c1e7fc10c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\hyle\\source\\engine\\models\\qwen35\\driver.h",
+            "bytes": 166,
+            "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\progress.h",
+            "bytes": 901,
+            "sha256": "0d39fc0706f5bfb3706f49e3d6f08d4471c9724cdb9aef13605a392e9f04f6d9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\util\\scope_guard.h",
+            "bytes": 7234,
+            "sha256": "a473ed57ffb45fe1bb27e85626ed886f5c28b67d15ec0c9ac73f88d89bcbca45"
+          }
+        ],
+        "original_compile": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prepare-scratch-20261025\\candidate\\compile\\command.json",
+          "bytes": 2459,
+          "sha256": "4bd145e7024c3ce0eb1025efe14b4c44993d5ab91a7010c63934ef8824cb715f"
+        },
+        "original_link": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prepare-scratch-20261025\\candidate\\link\\command.json",
+          "bytes": 32476,
+          "sha256": "45343662a05e0c31bdeae2e82134e6609028606f72ad7561431434aef3f9fc41"
+        },
+        "new_TUs": 1,
+        "SDK_builds": 0,
+        "GPU_runs": 0,
+        "HTTP": 0
+      }
+    },
+    "peer": {
+      "compile": {
+        "exit": 0,
+        "seconds": 2.5469999999913853,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 0.7190000000118744,
+        "timeout": false
+      },
+      "ready": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\peer\\link\\consumer.exe",
+          "bytes": 35830784,
+          "sha256": "fbb0cb532829b52b112eda86276f1d90e0daa04bf34c29623e19cda9a4ce31e1"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\source\\peer_multiturn.cc",
+          "bytes": 34528,
+          "sha256": "9c69b7e6a5bb4f62b1f65a1849682bd975784089a3ae384ab10cacaf9a57e618"
+        },
+        "source_pins": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\source\\peer_multiturn.cc",
+            "bytes": 34528,
+            "sha256": "9c69b7e6a5bb4f62b1f65a1849682bd975784089a3ae384ab10cacaf9a57e618"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\include\\llama.h",
+            "bytes": 84829,
+            "sha256": "fedb52ea9291c9900e637ed6ffec339919dd27c3dadc2c8cf216c552e0488dda"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml.h",
+            "bytes": 115658,
+            "sha256": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml-cpu.h",
+            "bytes": 7753,
+            "sha256": "316279e004cdeb8e6ef78599acb602bf79a8abdf897fed9fd1914808c1518c6e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml-backend.h",
+            "bytes": 25374,
+            "sha256": "46d84cb998105f871240864fd0f55446939a2fe86c5c281afa63a010fb1f65a2"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml-alloc.h",
+            "bytes": 3753,
+            "sha256": "94e4cd069b9313b2ceb35dacec901981e0bb478d8bb31035b7126be091998c23"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml-opt.h",
+            "bytes": 14040,
+            "sha256": "3586de1bc8a934b5c72339e2b6937b0641e8f149b512231e666f67de0736eea2"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\gguf.h",
+            "bytes": 11355,
+            "sha256": "e56714aab702e5ce62ee587a409643c08f7e93e8fbb77f48ef7cc85075f96fa4"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-ext.h",
+            "bytes": 5291,
+            "sha256": "522eed344e1765506f30da25002d92d354572951153ba67504f05d5cccdea7f6"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-memory.h",
+            "bytes": 4669,
+            "sha256": "c9ed12cafb89336408a700739a0d985daca1de599c7baa9db8ba62ecbedb1bd3"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-graph.h",
+            "bytes": 48770,
+            "sha256": "7fc78de176f3512fb437342785ca1bc67d84c4bfecdaab860b3cd8b16d498142"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-arch.h",
+            "bytes": 23445,
+            "sha256": "c32fc3ab1e7edec8ae7941374e5acf11364386a8f49b736cde78af1b0269a20e"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-batch.h",
+            "bytes": 6580,
+            "sha256": "7000dfd8750e06c544642dd7b84c882191702ad46ced1a4d6ad109462d1a1013"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-cparams.h",
+            "bytes": 2157,
+            "sha256": "167382bd9b9d0d0adffb53f79fcb125a41d076c99f3a0e162add63ba1722e004"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-hparams.h",
+            "bytes": 18001,
+            "sha256": "66e2adbf3bac1c716352f6f6ae83f51a2d6fbecb88fe4ba094e2ff208917bfb9"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-adapter.h",
+            "bytes": 2240,
+            "sha256": "b63d8654358d6141fac1f45b1b56247d7c8360e609a55323d30e7dcb6a6ffc00"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\include\\ggml-cpp.h",
+            "bytes": 1652,
+            "sha256": "bc15ba002c68685df23faae42df0d2b3d58032011f88b649021ab92485862c72"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\vendor\\nlohmann\\json.hpp",
+            "bytes": 953436,
+            "sha256": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\source\\mtp_schedule.h",
+            "bytes": 5486,
+            "sha256": "b4323081d2b8defc71cb40fe5b183411adc993df0172f44aaa80505811b99f5c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\source\\session_schedule.h",
+            "bytes": 4134,
+            "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\source\\schedule.h",
+            "bytes": 4762,
+            "sha256": "093583e30cdce2e55d4a40b3f384715a25928a3583b8171057c0719218145fbe"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-logical-call-trace-20261025\\logical_trace.h",
+            "bytes": 1854,
+            "sha256": "b4e41995c0cfae296204351ba9880d66cdd72c53d271f0589aa7daaf1885cbb6"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvToolsExt.h",
+            "bytes": 60523,
+            "sha256": "2513b9e9795bffab986f6347d6d2f52eeccdba27a94ea51c7002338c7a0a9b08"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxLinkOnce.h",
+            "bytes": 4204,
+            "sha256": "af77fd20d6e7ba46e909e5a7817316c8cabc32c34da384336e8ff823068b286b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxTypes.h",
+            "bytes": 16921,
+            "sha256": "9a605cba6f9e28ca1991aea88b9ffe25b10b848ac0ae0467d95e2f13644d119b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImpl.h",
+            "bytes": 20430,
+            "sha256": "84a528a24e1c44cb867635571eaaa2b500b6f1645eaa72430ea571011c59d44b"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDecls.h",
+            "bytes": 10592,
+            "sha256": "edb6fea752ca9025520daaead402fa7fdcf7a280654cbcba32e4e6411c6fccf6"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxImplCore.h",
+            "bytes": 14452,
+            "sha256": "706bf278f339e8664a737b6c648b459f6e48f46a5c8b170914a7d5b656436de0"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInitDefs.h",
+            "bytes": 37694,
+            "sha256": "94c947f0615b16e3c452bad6a2185eaec2de0ec37147a3e1ee1f415149c01503"
+          },
+          {
+            "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\include\\nvtx3\\nvtxDetail\\nvtxInit.h",
+            "bytes": 22549,
+            "sha256": "3c39cb41108ec94b5366576d4fe762c16790ba2b5ad39e95023a577dc916f59a"
+          }
+        ],
+        "original_compile": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\compile1\\peer\\identity.json",
+          "bytes": 68001,
+          "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+        },
+        "original_link": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\link-plan.json",
+          "bytes": 4801,
+          "sha256": "f175f3c5480d7eec90d15f86bdc7a99a6ab064cb384e8fb57196c607d917d963"
+        },
+        "new_TUs": 1,
+        "SDK_builds": 0,
+        "GPU_runs": 0,
+        "HTTP": 0
+      }
+    }
+  },
+  "analysis": {
+    "status": "OFFLINE_ANALYSIS_COMPLETE",
+    "no_new_run": true,
+    "SQL": {
+      "nvtx": "SELECT n.start,n.end,n.globalTid,n.endGlobalTid,n.rangeId,n.uint64Value,COALESCE(n.text,s.value) AS label FROM NVTX_EVENTS n LEFT JOIN StringIds s ON s.id=n.textId WHERE n.end IS NOT NULL ORDER BY n.start",
+      "runtime": "SELECT r.*,s.value AS api FROM CUPTI_ACTIVITY_KIND_RUNTIME r JOIN StringIds s ON s.id=r.nameId ORDER BY r.start",
+      "streams": "SELECT f.value,c.value FROM ProcessStreams p JOIN StringIds f ON f.id=p.filenameId JOIN StringIds c ON c.id=p.contentId"
+    },
+    "scope": "One privateNVTX+CUDA profile per arm; noTPS. CPU NVTX interval association uses same globalTid and contained original runtime API; GPU kernel/copy uses original CUPTI correlationId when available. Original graph lineage is not used.",
+    "limits": [
+      "NVTXroot spans profile-onlyCPU wall, gpu union is actual tracedkernel/copy/memset interval union; subtraction gives no observedGPUactivity, never pureCPU utilization or recoverable time.",
+      "Hyleactualepisode combinesdraft+target. Per-nativegraph role assignment requires uniqueactualkernel count andcausalorder plusone matchingruntimeGraphLaunch. Unknownnotforced; prefillGPU isnot artificiallysplit.",
+      "PeerNVTXdecode ends aftersynchronize beforeactualsampled/hidden/state-trim hostlogic. Gaps outside it may contain realGPUcopy/readback. Do notcompare nativecallCPUspans directly withwholeHyleepisode.",
+      "The driver table may be absent; uncorrelateddriver-onlyGPUactivity stays explicit, not assumedzero.",
+      "OriginalGraph/originalNode lineage warnings persist; correlationId/runtimeLaunch andrawtimestamps areused, not originalgraphIDs.",
+      "Differentnaturalacceptance/math retained. No cold/warmprofileduration pooled with uninstrumentedformalTPS. No morecapture authorized."
+    ],
+    "arms": {
+      "hyle": {
+        "process": {
+          "exit": 0,
+          "seconds": 6.64100000000326,
+          "timeout": false
+        },
+        "artifacts": [
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\trace1\\trace.sqlite",
+            "bytes": 11698176,
+            "sha256": "5bb26f85efbed79a19ed38419702070ce7ee6d87b2fd90de620a5576e3f40af8"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\trace1\\trace.nsys-rep",
+            "bytes": 4339864,
+            "sha256": "e4de9a57b35527050b38ee1a29be5da97412669983b95e4dcd2afd5691a7c858"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\trace1\\native-stdout.log",
+            "bytes": 77503,
+            "sha256": "ecdb6bacde0fe37c9f22258a61ce17553f92fb31591c6bfc4d168376a2399b5a"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\hyle\\trace1\\native-stderr.log",
+            "bytes": 26284,
+            "sha256": "24cecb4c898195e79ff5b05ea7808a5d29f7f1e67a1bf8f9285434ffabf0380e"
+          }
+        ],
+        "source_work_equal": true,
+        "non_time_differences": [],
+        "work": {
+          "generated_tokens": 128,
+          "target_prefill_rows": 309,
+          "target_decode_rows": 132,
+          "draft_prefill_rows": 310,
+          "draft_total_rows": 434,
+          "accepted": 60,
+          "target_decode_calls": 66
+        },
+        "NVTX": {
+          "actual_rows": 340,
+          "logical_calls": 68,
+          "missing_ends": 0,
+          "one_globalTid": true,
+          "known_nested_semantics": "Hyleprepare_replay lies insideprepare; wait_publish also contains nativeprogress, synchronization andpublication. Parent/children/API cannot be added."
+        },
+        "role_gpu": {
+          "target": {
+            "captured_calls": 66,
+            "gpu_active": {
+              "count": 66,
+              "mean_ms": 10.832813363636363,
+              "median_ms": 10.83011,
+              "min_ms": 10.044436,
+              "max_ms": 11.791553
+            },
+            "kernel_active": {
+              "count": 66,
+              "mean_ms": 10.689397666666666,
+              "median_ms": 10.6745235,
+              "min_ms": 9.907384,
+              "max_ms": 11.654212
+            },
+            "captured_runtime_launch_matching": 66
+          },
+          "draft": {
+            "captured_calls": 66,
+            "gpu_active": {
+              "count": 66,
+              "mean_ms": 2.669881106060606,
+              "median_ms": 2.473495,
+              "min_ms": 2.41572,
+              "max_ms": 3.366942
+            },
+            "kernel_active": {
+              "count": 66,
+              "mean_ms": 2.668163287878788,
+              "median_ms": 2.471991,
+              "min_ms": 2.412584,
+              "max_ms": 3.365406
+            },
+            "captured_runtime_launch_matching": 66
+          }
+        },
+        "by_role_T": {
+          "draft/T1/captured": {
+            "actual_calls": 8,
+            "contexts": [
+              154,
+              375
+            ],
+            "gpu_active": {
+              "count": 8,
+              "mean_ms": 2.517370375,
+              "median_ms": 2.4582465,
+              "min_ms": 2.41572,
+              "max_ms": 2.976226
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 6,
+                "gpu_active": {
+                  "count": 6,
+                  "mean_ms": 2.5375046666666665,
+                  "median_ms": 2.4595105,
+                  "min_ms": 2.41572,
+                  "max_ms": 2.976226
+                }
+              },
+              "256": {
+                "calls": 2,
+                "gpu_active": {
+                  "count": 2,
+                  "mean_ms": 2.4569675,
+                  "median_ms": 2.4569675,
+                  "min_ms": 2.453704,
+                  "max_ms": 2.460231
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "target/T2/captured": {
+            "actual_calls": 66,
+            "contexts": [
+              154,
+              433
+            ],
+            "gpu_active": {
+              "count": 66,
+              "mean_ms": 10.832813363636363,
+              "median_ms": 10.83011,
+              "min_ms": 10.044436,
+              "max_ms": 11.791553
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 34,
+                "gpu_active": {
+                  "count": 34,
+                  "mean_ms": 10.853951294117646,
+                  "median_ms": 10.789773,
+                  "min_ms": 10.210164,
+                  "max_ms": 11.791553
+                }
+              },
+              "256": {
+                "calls": 7,
+                "gpu_active": {
+                  "count": 7,
+                  "mean_ms": 10.917426714285714,
+                  "median_ms": 10.936524,
+                  "min_ms": 10.427086,
+                  "max_ms": 11.477576
+                }
+              },
+              "384": {
+                "calls": 25,
+                "gpu_active": {
+                  "count": 25,
+                  "mean_ms": 10.78037404,
+                  "median_ms": 10.828908,
+                  "min_ms": 10.044436,
+                  "max_ms": 11.395112
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "draft/T2/captured": {
+            "actual_calls": 58,
+            "contexts": [
+              156,
+              433
+            ],
+            "gpu_active": {
+              "count": 58,
+              "mean_ms": 2.6909170689655175,
+              "median_ms": 2.47823,
+              "min_ms": 2.42756,
+              "max_ms": 3.366942
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 28,
+                "gpu_active": {
+                  "count": 28,
+                  "mean_ms": 2.6938026785714286,
+                  "median_ms": 2.476854,
+                  "min_ms": 2.42756,
+                  "max_ms": 3.366942
+                }
+              },
+              "256": {
+                "calls": 5,
+                "gpu_active": {
+                  "count": 5,
+                  "mean_ms": 2.685733,
+                  "median_ms": 2.6921,
+                  "min_ms": 2.449384,
+                  "max_ms": 2.969441
+                }
+              },
+              "384": {
+                "calls": 25,
+                "gpu_active": {
+                  "count": 25,
+                  "mean_ms": 2.688722,
+                  "median_ms": 2.477095,
+                  "min_ms": 2.438856,
+                  "max_ms": 3.366462
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          }
+        },
+        "decode_classification": {
+          "instantiate": {
+            "calls": 13,
+            "cpu_range": {
+              "count": 13,
+              "mean_ms": 21.21510630769231,
+              "median_ms": 21.318987,
+              "min_ms": 14.613405,
+              "max_ms": 27.296799
+            },
+            "gpu_active": {
+              "count": 13,
+              "mean_ms": 13.539327461538463,
+              "median_ms": 13.425299,
+              "min_ms": 12.944632,
+              "max_ms": 14.272713
+            },
+            "no_gpu_activity": {
+              "count": 13,
+              "mean_ms": 7.675778846153846,
+              "median_ms": 8.100689,
+              "min_ms": 1.668773,
+              "max_ms": 13.159861
+            },
+            "total_no_gpu_ms": 99.785125,
+            "phases": {
+              "hyle/prepare": {
+                "total_ms": 90.408052,
+                "stats": {
+                  "count": 13,
+                  "mean_ms": 6.954465538461538,
+                  "median_ms": 7.264707,
+                  "min_ms": 1.096337,
+                  "max_ms": 12.368917
+                },
+                "gpu_inside_phase_union_total_ms": 0.126367
+              },
+              "hyle/prepare_replay": {
+                "total_ms": 78.248896,
+                "stats": {
+                  "count": 13,
+                  "mean_ms": 6.019145846153846,
+                  "median_ms": 5.9597,
+                  "min_ms": 0.680991,
+                  "max_ms": 11.288906
+                },
+                "gpu_inside_phase_union_total_ms": 0.0
+              },
+              "hyle/submit": {
+                "total_ms": 13.372126,
+                "stats": {
+                  "count": 13,
+                  "mean_ms": 1.028625076923077,
+                  "median_ms": 1.015071,
+                  "min_ms": 0.929311,
+                  "max_ms": 1.221289
+                },
+                "gpu_inside_phase_union_total_ms": 10.469086
+              },
+              "hyle/wait_publish": {
+                "total_ms": 171.902223,
+                "stats": {
+                  "count": 13,
+                  "mean_ms": 13.223247923076924,
+                  "median_ms": 13.12009,
+                  "min_ms": 12.455682,
+                  "max_ms": 13.997457
+                },
+                "gpu_inside_phase_union_total_ms": 165.376332
+              }
+            },
+            "contexts": [
+              {
+                "seq": 2,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 154,
+                "frontier": 154,
+                "lag": 0
+              },
+              {
+                "seq": 3,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 156,
+                "frontier": 155,
+                "lag": 1
+              },
+              {
+                "seq": 4,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 158,
+                "frontier": 157,
+                "lag": 1
+              },
+              {
+                "seq": 8,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 165,
+                "frontier": 165,
+                "lag": 0
+              },
+              {
+                "seq": 13,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 173,
+                "frontier": 173,
+                "lag": 0
+              },
+              {
+                "seq": 37,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 372,
+                "frontier": 372,
+                "lag": 0
+              },
+              {
+                "seq": 38,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 374,
+                "frontier": 373,
+                "lag": 1
+              },
+              {
+                "seq": 39,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 375,
+                "frontier": 375,
+                "lag": 0
+              },
+              {
+                "seq": 40,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 377,
+                "frontier": 376,
+                "lag": 1
+              },
+              {
+                "seq": 41,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 379,
+                "frontier": 378,
+                "lag": 1
+              },
+              {
+                "seq": 43,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 383,
+                "frontier": 382,
+                "lag": 1
+              },
+              {
+                "seq": 44,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 385,
+                "frontier": 384,
+                "lag": 1
+              },
+              {
+                "seq": 45,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 387,
+                "frontier": 386,
+                "lag": 1
+              }
+            ],
+            "special_api_counts": {
+              "cudaStreamBeginCapture_v10000": 21,
+              "cudaStreamEndCapture_v10000": 21,
+              "cudaGraphInstantiateWithFlags_v11040": 19,
+              "cudaGraphExecUpdate_v10020": 2
+            }
+          },
+          "no_record_or_instantiate": {
+            "calls": 45,
+            "cpu_range": {
+              "count": 45,
+              "mean_ms": 14.768669288888889,
+              "median_ms": 14.711199,
+              "min_ms": 13.739579,
+              "max_ms": 15.588665
+            },
+            "gpu_active": {
+              "count": 45,
+              "mean_ms": 13.529638977777777,
+              "median_ms": 13.419127,
+              "min_ms": 12.701115,
+              "max_ms": 14.482832
+            },
+            "no_gpu_activity": {
+              "count": 45,
+              "mean_ms": 1.2390303111111112,
+              "median_ms": 1.182059,
+              "min_ms": 0.869105,
+              "max_ms": 1.934675
+            },
+            "total_no_gpu_ms": 55.756364,
+            "phases": {
+              "hyle/prepare": {
+                "total_ms": 29.608813,
+                "stats": {
+                  "count": 45,
+                  "mean_ms": 0.6579736222222222,
+                  "median_ms": 0.637163,
+                  "min_ms": 0.444231,
+                  "max_ms": 1.200582
+                },
+                "gpu_inside_phase_union_total_ms": 0.274621
+              },
+              "hyle/prepare_replay": {
+                "total_ms": 12.463211,
+                "stats": {
+                  "count": 45,
+                  "mean_ms": 0.27696024444444445,
+                  "median_ms": 0.277756,
+                  "min_ms": 0.134316,
+                  "max_ms": 0.5205
+                },
+                "gpu_inside_phase_union_total_ms": 0.0
+              },
+              "hyle/submit": {
+                "total_ms": 48.245982,
+                "stats": {
+                  "count": 45,
+                  "mean_ms": 1.0721329333333334,
+                  "median_ms": 1.016454,
+                  "min_ms": 0.907203,
+                  "max_ms": 2.081787
+                },
+                "gpu_inside_phase_union_total_ms": 40.89592
+              },
+              "hyle/wait_publish": {
+                "total_ms": 586.437652,
+                "stats": {
+                  "count": 45,
+                  "mean_ms": 13.031947822222222,
+                  "median_ms": 13.034343,
+                  "min_ms": 12.021946,
+                  "max_ms": 13.99295
+                },
+                "gpu_inside_phase_union_total_ms": 567.583995
+              }
+            },
+            "contexts": [
+              {
+                "seq": 6,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 162,
+                "frontier": 161,
+                "lag": 1
+              },
+              {
+                "seq": 7,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 164,
+                "frontier": 163,
+                "lag": 1
+              },
+              {
+                "seq": 12,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 172,
+                "frontier": 172,
+                "lag": 0
+              },
+              {
+                "seq": 17,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 180,
+                "frontier": 179,
+                "lag": 1
+              },
+              {
+                "seq": 18,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 182,
+                "frontier": 181,
+                "lag": 1
+              },
+              {
+                "seq": 19,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 184,
+                "frontier": 183,
+                "lag": 1
+              },
+              {
+                "seq": 20,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 186,
+                "frontier": 185,
+                "lag": 1
+              },
+              {
+                "seq": 21,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 188,
+                "frontier": 187,
+                "lag": 1
+              },
+              {
+                "seq": 22,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 190,
+                "frontier": 189,
+                "lag": 1
+              },
+              {
+                "seq": 23,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 192,
+                "frontier": 191,
+                "lag": 1
+              },
+              {
+                "seq": 24,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 194,
+                "frontier": 193,
+                "lag": 1
+              },
+              {
+                "seq": 25,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 196,
+                "frontier": 195,
+                "lag": 1
+              },
+              {
+                "seq": 26,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 198,
+                "frontier": 197,
+                "lag": 1
+              },
+              {
+                "seq": 27,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 200,
+                "frontier": 199,
+                "lag": 1
+              },
+              {
+                "seq": 28,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 201,
+                "frontier": 201,
+                "lag": 0
+              },
+              {
+                "seq": 29,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 203,
+                "frontier": 202,
+                "lag": 1
+              },
+              {
+                "seq": 30,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 205,
+                "frontier": 204,
+                "lag": 1
+              },
+              {
+                "seq": 31,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 207,
+                "frontier": 206,
+                "lag": 1
+              },
+              {
+                "seq": 32,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 209,
+                "frontier": 208,
+                "lag": 1
+              },
+              {
+                "seq": 33,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 211,
+                "frontier": 210,
+                "lag": 1
+              },
+              {
+                "seq": 34,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 213,
+                "frontier": 212,
+                "lag": 1
+              },
+              {
+                "seq": 35,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 215,
+                "frontier": 214,
+                "lag": 1
+              },
+              {
+                "seq": 46,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 389,
+                "frontier": 388,
+                "lag": 1
+              },
+              {
+                "seq": 47,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 391,
+                "frontier": 390,
+                "lag": 1
+              },
+              {
+                "seq": 48,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 393,
+                "frontier": 392,
+                "lag": 1
+              },
+              {
+                "seq": 49,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 395,
+                "frontier": 394,
+                "lag": 1
+              },
+              {
+                "seq": 50,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 397,
+                "frontier": 396,
+                "lag": 1
+              },
+              {
+                "seq": 51,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 399,
+                "frontier": 398,
+                "lag": 1
+              },
+              {
+                "seq": 52,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 401,
+                "frontier": 400,
+                "lag": 1
+              },
+              {
+                "seq": 53,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 403,
+                "frontier": 402,
+                "lag": 1
+              },
+              {
+                "seq": 54,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 405,
+                "frontier": 404,
+                "lag": 1
+              },
+              {
+                "seq": 55,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 407,
+                "frontier": 406,
+                "lag": 1
+              },
+              {
+                "seq": 56,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 409,
+                "frontier": 408,
+                "lag": 1
+              },
+              {
+                "seq": 57,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 411,
+                "frontier": 410,
+                "lag": 1
+              },
+              {
+                "seq": 58,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 413,
+                "frontier": 412,
+                "lag": 1
+              },
+              {
+                "seq": 59,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 415,
+                "frontier": 414,
+                "lag": 1
+              },
+              {
+                "seq": 60,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 417,
+                "frontier": 416,
+                "lag": 1
+              },
+              {
+                "seq": 61,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 419,
+                "frontier": 418,
+                "lag": 1
+              },
+              {
+                "seq": 62,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 421,
+                "frontier": 420,
+                "lag": 1
+              },
+              {
+                "seq": 63,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 423,
+                "frontier": 422,
+                "lag": 1
+              },
+              {
+                "seq": 64,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 425,
+                "frontier": 424,
+                "lag": 1
+              },
+              {
+                "seq": 65,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 427,
+                "frontier": 426,
+                "lag": 1
+              },
+              {
+                "seq": 66,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 429,
+                "frontier": 428,
+                "lag": 1
+              },
+              {
+                "seq": 67,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 431,
+                "frontier": 430,
+                "lag": 1
+              },
+              {
+                "seq": 68,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 433,
+                "frontier": 432,
+                "lag": 1
+              }
+            ],
+            "special_api_counts": {}
+          },
+          "record_without_instantiate": {
+            "calls": 8,
+            "cpu_range": {
+              "count": 8,
+              "mean_ms": 16.439871375,
+              "median_ms": 15.654808,
+              "min_ms": 14.367009,
+              "max_ms": 19.250955
+            },
+            "gpu_active": {
+              "count": 8,
+              "mean_ms": 13.506425125,
+              "median_ms": 13.2995205,
+              "min_ms": 12.895738,
+              "max_ms": 15.178911
+            },
+            "no_gpu_activity": {
+              "count": 8,
+              "mean_ms": 2.93344625,
+              "median_ms": 1.4798985,
+              "min_ms": 1.272384,
+              "max_ms": 5.609373
+            },
+            "total_no_gpu_ms": 23.46757,
+            "phases": {
+              "hyle/prepare": {
+                "total_ms": 19.001437,
+                "stats": {
+                  "count": 8,
+                  "mean_ms": 2.375179625,
+                  "median_ms": 1.0104735,
+                  "min_ms": 0.797326,
+                  "max_ms": 5.003187
+                },
+                "gpu_inside_phase_union_total_ms": 0.048896
+              },
+              "hyle/prepare_replay": {
+                "total_ms": 16.324447,
+                "stats": {
+                  "count": 8,
+                  "mean_ms": 2.040555875,
+                  "median_ms": 0.633112,
+                  "min_ms": 0.46164,
+                  "max_ms": 4.670689
+                },
+                "gpu_inside_phase_union_total_ms": 0.0
+              },
+              "hyle/submit": {
+                "total_ms": 7.947043,
+                "stats": {
+                  "count": 8,
+                  "mean_ms": 0.993380375,
+                  "median_ms": 0.9763055,
+                  "min_ms": 0.919064,
+                  "max_ms": 1.066342
+                },
+                "gpu_inside_phase_union_total_ms": 6.618727
+              },
+              "hyle/wait_publish": {
+                "total_ms": 104.519118,
+                "stats": {
+                  "count": 8,
+                  "mean_ms": 13.06488975,
+                  "median_ms": 12.7882825,
+                  "min_ms": 12.36602,
+                  "max_ms": 14.649982
+                },
+                "gpu_inside_phase_union_total_ms": 101.368638
+              }
+            },
+            "contexts": [
+              {
+                "seq": 5,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 160,
+                "frontier": 159,
+                "lag": 1
+              },
+              {
+                "seq": 9,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 167,
+                "frontier": 166,
+                "lag": 1
+              },
+              {
+                "seq": 10,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 169,
+                "frontier": 168,
+                "lag": 1
+              },
+              {
+                "seq": 11,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 171,
+                "frontier": 170,
+                "lag": 1
+              },
+              {
+                "seq": 14,
+                "role": 3,
+                "target_T": 2,
+                "draft_T": 1,
+                "R": 1,
+                "context": 174,
+                "frontier": 174,
+                "lag": 0
+              },
+              {
+                "seq": 15,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 176,
+                "frontier": 175,
+                "lag": 1
+              },
+              {
+                "seq": 16,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 178,
+                "frontier": 177,
+                "lag": 1
+              },
+              {
+                "seq": 42,
+                "role": 4,
+                "target_T": 2,
+                "draft_T": 2,
+                "R": 1,
+                "context": 381,
+                "frontier": 380,
+                "lag": 1
+              }
+            ],
+            "special_api_counts": {
+              "cudaStreamBeginCapture_v10000": 11,
+              "cudaStreamEndCapture_v10000": 11,
+              "cudaGraphExecUpdate_v10020": 11
+            }
+          }
+        },
+        "decode_phase_totals": {
+          "hyle/prepare": {
+            "total_ms": 139.018302,
+            "stats": {
+              "count": 66,
+              "mean_ms": 2.106337909090909,
+              "median_ms": 0.6590295,
+              "min_ms": 0.444231,
+              "max_ms": 12.368917
+            }
+          },
+          "hyle/prepare_replay": {
+            "total_ms": 107.036554,
+            "stats": {
+              "count": 66,
+              "mean_ms": 1.6217659696969697,
+              "median_ms": 0.289606,
+              "min_ms": 0.134316,
+              "max_ms": 11.288906
+            }
+          },
+          "hyle/submit": {
+            "total_ms": 69.565151,
+            "stats": {
+              "count": 66,
+              "mean_ms": 1.0540174393939394,
+              "median_ms": 1.0141005,
+              "min_ms": 0.907203,
+              "max_ms": 2.081787
+            }
+          },
+          "hyle/wait_publish": {
+            "total_ms": 862.858993,
+            "stats": {
+              "count": 66,
+              "mean_ms": 13.073621106060605,
+              "median_ms": 13.021178,
+              "min_ms": 12.021946,
+              "max_ms": 14.649982
+            }
+          },
+          "runtime_api_summary": {
+            "cudaGraphExecUpdate_v10020": {
+              "calls": 13,
+              "total_ms": 1.69645
+            },
+            "cudaGraphInstantiateWithFlags_v11040": {
+              "calls": 19,
+              "total_ms": 22.150082
+            },
+            "cudaStreamBeginCapture_v10000": {
+              "calls": 32,
+              "total_ms": 0.082998
+            },
+            "cudaStreamEndCapture_v10000": {
+              "calls": 32,
+              "total_ms": 0.607136
+            }
+          }
+        },
+        "first_decode": {
+          "label": "hyle/episode seq=2 role=3 target_T=2 draft_T=1 R=1 context=154 frontier=154 lag=0",
+          "meta": {
+            "seq": 2,
+            "role": 3,
+            "target_T": 2,
+            "draft_T": 1,
+            "R": 1,
+            "context": 154,
+            "frontier": 154,
+            "lag": 0
+          },
+          "payload": 2,
+          "start_ns": 2431659890,
+          "end_ns": 2458956689,
+          "globalTid": 282151970934740,
+          "endGlobalTid": null,
+          "cpu_range_ns": 27296799,
+          "gpu_contained_union_ns": 14136938,
+          "no_gpu_activity_ns": 13159861,
+          "kernels": 779,
+          "captured_kernels": 775,
+          "eager_kernels": 4,
+          "gpu_runtime_correlated": 941,
+          "gpu_runtime_uncorrelated": 0,
+          "uncorrelated_by_kind": {},
+          "special_apis": {
+            "cudaGraphInstantiateWithFlags_v11040": {
+              "calls": 2,
+              "total_ms": 3.108532,
+              "return_values": {
+                "0": 2
+              }
+            },
+            "cudaStreamBeginCapture_v10000": {
+              "calls": 2,
+              "total_ms": 0.007161,
+              "return_values": {
+                "0": 2
+              }
+            },
+            "cudaStreamEndCapture_v10000": {
+              "calls": 2,
+              "total_ms": 0.026114,
+              "return_values": {
+                "0": 2
+              }
+            }
+          },
+          "phases": [
+            {
+              "label": "hyle/prepare",
+              "span_ns": 12368917,
+              "gpu_contained_union_ns": 15872,
+              "special_api_counts": {
+                "cudaStreamBeginCapture_v10000": 2,
+                "cudaStreamEndCapture_v10000": 2,
+                "cudaGraphInstantiateWithFlags_v11040": 2
+              }
+            },
+            {
+              "label": "hyle/prepare_replay",
+              "span_ns": 11288906,
+              "gpu_contained_union_ns": 0,
+              "special_api_counts": {
+                "cudaStreamBeginCapture_v10000": 2,
+                "cudaStreamEndCapture_v10000": 2,
+                "cudaGraphInstantiateWithFlags_v11040": 2
+              }
+            },
+            {
+              "label": "hyle/submit",
+              "span_ns": 1221289,
+              "gpu_contained_union_ns": 861606,
+              "special_api_counts": {}
+            },
+            {
+              "label": "hyle/wait_publish",
+              "span_ns": 13691922,
+              "gpu_contained_union_ns": 13247561,
+              "special_api_counts": {}
+            }
+          ],
+          "captured_launches": [
+            {
+              "role": "draft",
+              "correlationId": 130846,
+              "kernels": 37,
+              "runtime_graph_launch_matches": 1,
+              "start_ns": 2444387761,
+              "end_ns": 2447366196,
+              "kernel_union_ns": 2973090,
+              "all_activity_union_ns": 2976226,
+              "kernel_activity_ns": 2973218
+            },
+            {
+              "role": "target",
+              "correlationId": 130889,
+              "kernels": 738,
+              "runtime_graph_launch_matches": 1,
+              "start_ns": 2447530802,
+              "end_ns": 2458740195,
+              "kernel_union_ns": 10992936,
+              "all_activity_union_ns": 11130984,
+              "kernel_activity_ns": 10995176
+            }
+          ],
+          "first_use_class": "instantiate"
+        },
+        "first6_decode": [
+          {
+            "label": "hyle/episode seq=2 role=3 target_T=2 draft_T=1 R=1 context=154 frontier=154 lag=0",
+            "meta": {
+              "seq": 2,
+              "role": 3,
+              "target_T": 2,
+              "draft_T": 1,
+              "R": 1,
+              "context": 154,
+              "frontier": 154,
+              "lag": 0
+            },
+            "payload": 2,
+            "start_ns": 2431659890,
+            "end_ns": 2458956689,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 27296799,
+            "gpu_contained_union_ns": 14136938,
+            "no_gpu_activity_ns": 13159861,
+            "kernels": 779,
+            "captured_kernels": 775,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 941,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphInstantiateWithFlags_v11040": {
+                "calls": 2,
+                "total_ms": 3.108532,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.007161,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.026114,
+                "return_values": {
+                  "0": 2
+                }
+              }
+            },
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 12368917,
+                "gpu_contained_union_ns": 15872,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 11288906,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 1221289,
+                "gpu_contained_union_ns": 861606,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 13691922,
+                "gpu_contained_union_ns": 13247561,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 130846,
+                "kernels": 37,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2444387761,
+                "end_ns": 2447366196,
+                "kernel_union_ns": 2973090,
+                "all_activity_union_ns": 2976226,
+                "kernel_activity_ns": 2973218
+              },
+              {
+                "role": "target",
+                "correlationId": 130889,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2447530802,
+                "end_ns": 2458740195,
+                "kernel_union_ns": 10992936,
+                "all_activity_union_ns": 11130984,
+                "kernel_activity_ns": 10995176
+              }
+            ],
+            "first_use_class": "instantiate"
+          },
+          {
+            "label": "hyle/episode seq=3 role=4 target_T=2 draft_T=2 R=1 context=156 frontier=155 lag=1",
+            "meta": {
+              "seq": 3,
+              "role": 4,
+              "target_T": 2,
+              "draft_T": 2,
+              "R": 1,
+              "context": 156,
+              "frontier": 155,
+              "lag": 1
+            },
+            "payload": 3,
+            "start_ns": 2459030139,
+            "end_ns": 2482990932,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 23960793,
+            "gpu_contained_union_ns": 13715349,
+            "no_gpu_activity_ns": 10245444,
+            "kernels": 783,
+            "captured_kernels": 779,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 944,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphInstantiateWithFlags_v11040": {
+                "calls": 2,
+                "total_ms": 3.001797,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.004606,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.024236,
+                "return_values": {
+                  "0": 2
+                }
+              }
+            },
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 9609682,
+                "gpu_contained_union_ns": 17503,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 7986083,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 1015071,
+                "gpu_contained_union_ns": 805133,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 13326948,
+                "gpu_contained_union_ns": 12890626,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 139715,
+                "kernels": 41,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2468849375,
+                "end_ns": 2471279111,
+                "kernel_union_ns": 2426024,
+                "all_activity_union_ns": 2427560,
+                "kernel_activity_ns": 2426120
+              },
+              {
+                "role": "target",
+                "correlationId": 139758,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2471443206,
+                "end_ns": 2482776150,
+                "kernel_union_ns": 11117679,
+                "all_activity_union_ns": 11256334,
+                "kernel_activity_ns": 11119631
+              }
+            ],
+            "first_use_class": "instantiate"
+          },
+          {
+            "label": "hyle/episode seq=4 role=4 target_T=2 draft_T=2 R=1 context=158 frontier=157 lag=1",
+            "meta": {
+              "seq": 4,
+              "role": 4,
+              "target_T": 2,
+              "draft_T": 2,
+              "R": 1,
+              "context": 158,
+              "frontier": 157,
+              "lag": 1
+            },
+            "payload": 4,
+            "start_ns": 2483073118,
+            "end_ns": 2505595735,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 22522617,
+            "gpu_contained_union_ns": 14272713,
+            "no_gpu_activity_ns": 8249904,
+            "kernels": 783,
+            "captured_kernels": 779,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 930,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphInstantiateWithFlags_v11040": {
+                "calls": 2,
+                "total_ms": 2.954905,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.004905,
+                "return_values": {
+                  "0": 2
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 2,
+                "total_ms": 0.032721,
+                "return_values": {
+                  "0": 2
+                }
+              }
+            },
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 7526171,
+                "gpu_contained_union_ns": 6208,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 7191143,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 2,
+                  "cudaStreamEndCapture_v10000": 2,
+                  "cudaGraphInstantiateWithFlags_v11040": 2
+                }
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 1100625,
+                "gpu_contained_union_ns": 882814,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 13888953,
+                "gpu_contained_union_ns": 13380979,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 147432,
+                "kernels": 41,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2490817094,
+                "end_ns": 2494186245,
+                "kernel_union_ns": 3365406,
+                "all_activity_union_ns": 3366942,
+                "kernel_activity_ns": 3365502
+              },
+              {
+                "role": "target",
+                "correlationId": 147475,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2494348515,
+                "end_ns": 2505311415,
+                "kernel_union_ns": 10746285,
+                "all_activity_union_ns": 10885355,
+                "kernel_activity_ns": 10748685
+              }
+            ],
+            "first_use_class": "instantiate"
+          },
+          {
+            "label": "hyle/episode seq=5 role=4 target_T=2 draft_T=2 R=1 context=160 frontier=159 lag=1",
+            "meta": {
+              "seq": 5,
+              "role": 4,
+              "target_T": 2,
+              "draft_T": 2,
+              "R": 1,
+              "context": 160,
+              "frontier": 159,
+              "lag": 1
+            },
+            "payload": 5,
+            "start_ns": 2505669864,
+            "end_ns": 2520353234,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 14683370,
+            "gpu_contained_union_ns": 13177428,
+            "no_gpu_activity_ns": 1505942,
+            "kernels": 783,
+            "captured_kernels": 779,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 930,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphExecUpdate_v10020": {
+                "calls": 1,
+                "total_ms": 0.032762,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.003088,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.001739,
+                "return_values": {
+                  "0": 1
+                }
+              }
+            },
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 1039851,
+                "gpu_contained_union_ns": 6048,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 1,
+                  "cudaStreamEndCapture_v10000": 1,
+                  "cudaGraphExecUpdate_v10020": 1
+                }
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 654379,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {
+                  "cudaStreamBeginCapture_v10000": 1,
+                  "cudaStreamEndCapture_v10000": 1,
+                  "cudaGraphExecUpdate_v10020": 1
+                }
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 1066342,
+                "gpu_contained_union_ns": 879033,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 12567975,
+                "gpu_contained_union_ns": 12290052,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 148049,
+                "kernels": 41,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2506896167,
+                "end_ns": 2509342159,
+                "kernel_union_ns": 2442184,
+                "all_activity_union_ns": 2443688,
+                "kernel_activity_ns": 2442280
+              },
+              {
+                "role": "target",
+                "correlationId": 148092,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2509396398,
+                "end_ns": 2520188612,
+                "kernel_union_ns": 10577966,
+                "all_activity_union_ns": 10714508,
+                "kernel_activity_ns": 10580334
+              }
+            ],
+            "first_use_class": "record_without_instantiate"
+          },
+          {
+            "label": "hyle/episode seq=6 role=4 target_T=2 draft_T=2 R=1 context=162 frontier=161 lag=1",
+            "meta": {
+              "seq": 6,
+              "role": 4,
+              "target_T": 2,
+              "draft_T": 2,
+              "R": 1,
+              "context": 162,
+              "frontier": 161,
+              "lag": 1
+            },
+            "payload": 6,
+            "start_ns": 2520430071,
+            "end_ns": 2535203211,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 14773140,
+            "gpu_contained_union_ns": 13727249,
+            "no_gpu_activity_ns": 1045891,
+            "kernels": 783,
+            "captured_kernels": 779,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 930,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 617072,
+                "gpu_contained_union_ns": 6304,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 332067,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 972123,
+                "gpu_contained_union_ns": 849662,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 13178985,
+                "gpu_contained_union_ns": 12869766,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 148298,
+                "kernels": 41,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2521168954,
+                "end_ns": 2523835168,
+                "kernel_union_ns": 2662566,
+                "all_activity_union_ns": 2664038,
+                "kernel_activity_ns": 2662662
+              },
+              {
+                "role": "target",
+                "correlationId": 148341,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2523885215,
+                "end_ns": 2535007665,
+                "kernel_union_ns": 10906507,
+                "all_activity_union_ns": 11043627,
+                "kernel_activity_ns": 10908811
+              }
+            ],
+            "first_use_class": "no_record_or_instantiate"
+          },
+          {
+            "label": "hyle/episode seq=7 role=4 target_T=2 draft_T=2 R=1 context=164 frontier=163 lag=1",
+            "meta": {
+              "seq": 7,
+              "role": 4,
+              "target_T": 2,
+              "draft_T": 2,
+              "R": 1,
+              "context": 164,
+              "frontier": 163,
+              "lag": 1
+            },
+            "payload": 7,
+            "start_ns": 2535298888,
+            "end_ns": 2550473649,
+            "globalTid": 282151970934740,
+            "endGlobalTid": null,
+            "cpu_range_ns": 15174761,
+            "gpu_contained_union_ns": 14052104,
+            "no_gpu_activity_ns": 1122657,
+            "kernels": 783,
+            "captured_kernels": 779,
+            "eager_kernels": 4,
+            "gpu_runtime_correlated": 930,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [
+              {
+                "label": "hyle/prepare",
+                "span_ns": 677657,
+                "gpu_contained_union_ns": 6112,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/prepare_replay",
+                "span_ns": 258035,
+                "gpu_contained_union_ns": 0,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/submit",
+                "span_ns": 1155655,
+                "gpu_contained_union_ns": 1028238,
+                "special_api_counts": {}
+              },
+              {
+                "label": "hyle/wait_publish",
+                "span_ns": 13337796,
+                "gpu_contained_union_ns": 13015925,
+                "special_api_counts": {}
+              }
+            ],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 148547,
+                "kernels": 41,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2536103014,
+                "end_ns": 2539056169,
+                "kernel_union_ns": 2949411,
+                "all_activity_union_ns": 2950915,
+                "kernel_activity_ns": 2949411
+              },
+              {
+                "role": "target",
+                "correlationId": 148590,
+                "kernels": 738,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2539106952,
+                "end_ns": 2550265402,
+                "kernel_union_ns": 10944328,
+                "all_activity_union_ns": 11081318,
+                "kernel_activity_ns": 10946408
+              }
+            ],
+            "first_use_class": "no_record_or_instantiate"
+          }
+        ],
+        "last_decode": {
+          "label": "hyle/episode seq=68 role=4 target_T=2 draft_T=2 R=1 context=433 frontier=432 lag=1",
+          "meta": {
+            "seq": 68,
+            "role": 4,
+            "target_T": 2,
+            "draft_T": 2,
+            "R": 1,
+            "context": 433,
+            "frontier": 432,
+            "lag": 1
+          },
+          "payload": 68,
+          "start_ns": 3536175891,
+          "end_ns": 3550867904,
+          "globalTid": 282151970934740,
+          "endGlobalTid": null,
+          "cpu_range_ns": 14692013,
+          "gpu_contained_union_ns": 12757338,
+          "no_gpu_activity_ns": 1934675,
+          "kernels": 783,
+          "captured_kernels": 779,
+          "eager_kernels": 4,
+          "gpu_runtime_correlated": 930,
+          "gpu_runtime_uncorrelated": 0,
+          "uncorrelated_by_kind": {},
+          "special_apis": {},
+          "phases": [
+            {
+              "label": "hyle/prepare",
+              "span_ns": 1200582,
+              "gpu_contained_union_ns": 6240,
+              "special_api_counts": {}
+            },
+            {
+              "label": "hyle/prepare_replay",
+              "span_ns": 520500,
+              "gpu_contained_union_ns": 0,
+              "special_api_counts": {}
+            },
+            {
+              "label": "hyle/submit",
+              "span_ns": 1463312,
+              "gpu_contained_union_ns": 1242544,
+              "special_api_counts": {}
+            },
+            {
+              "label": "hyle/wait_publish",
+              "span_ns": 12021946,
+              "gpu_contained_union_ns": 11506440,
+              "special_api_counts": {}
+            }
+          ],
+          "captured_launches": [
+            {
+              "role": "draft",
+              "correlationId": 263593,
+              "kernels": 41,
+              "runtime_graph_launch_matches": 1,
+              "start_ns": 3537596725,
+              "end_ns": 3540063133,
+              "kernel_union_ns": 2462600,
+              "all_activity_union_ns": 2464136,
+              "kernel_activity_ns": 2462664
+            },
+            {
+              "role": "target",
+              "correlationId": 263636,
+              "kernels": 738,
+              "runtime_graph_launch_matches": 1,
+              "start_ns": 3540116828,
+              "end_ns": 3550615092,
+              "kernel_union_ns": 10136499,
+              "all_activity_union_ns": 10274162,
+              "kernel_activity_ns": 10138483
+            }
+          ],
+          "first_use_class": "no_record_or_instantiate"
+        },
+        "driver_table_present": false
+      },
+      "peer": {
+        "process": {
+          "exit": 0,
+          "seconds": 6.312000000005355,
+          "timeout": false
+        },
+        "artifacts": [
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\peer\\trace1\\trace.sqlite",
+            "bytes": 6856704,
+            "sha256": "cc0ed2beff1364ca5a1ab178e0b83aac0354db53ba72864b480a6e76ef8cbd00"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\peer\\trace1\\trace.nsys-rep",
+            "bytes": 2156348,
+            "sha256": "adf54b0307198c10435c5adaf3532b9fc58bb551409c03acb9f1131120fc30a0"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\peer\\trace1\\native-stdout.log",
+            "bytes": 10952,
+            "sha256": "8191844212a26a236bb2f05b5e7323ed5fcefcf7f025ac2934c6f190003d4aec"
+          },
+          {
+            "path": ".scratch\\mtp-logical-call-trace-20261025\\peer\\trace1\\native-stderr.log",
+            "bytes": 84111,
+            "sha256": "0f7e97ad4b51d85398a1fc95b77d96fbc6bb621417cc551352e6c0a7fbbdc5fc"
+          }
+        ],
+        "source_work_equal": true,
+        "non_time_differences": [],
+        "work": {
+          "generated_tokens": 128,
+          "target_prefill_rows": 309,
+          "target_decode_rows": 129,
+          "draft_prefill_rows": 310,
+          "draft_total_rows": 435,
+          "accepted": 61,
+          "target_decode_calls": 65
+        },
+        "NVTX": {
+          "actual_rows": 134,
+          "logical_calls": 134,
+          "missing_ends": 0,
+          "one_globalTid": true,
+          "known_nested_semantics": "Hyleprepare_replay lies insideprepare; wait_publish also contains nativeprogress, synchronization andpublication. Parent/children/API cannot be added."
+        },
+        "role_gpu": {
+          "target": {
+            "actual_calls": 65,
+            "gpu_active": {
+              "count": 65,
+              "mean_ms": 10.518949538461538,
+              "median_ms": 10.464425,
+              "min_ms": 9.175527,
+              "max_ms": 11.791161
+            },
+            "cpu_range": {
+              "count": 65,
+              "mean_ms": 11.792871615384616,
+              "median_ms": 11.44188,
+              "min_ms": 10.87903,
+              "max_ms": 21.058631
+            },
+            "eager_only_calls": 3,
+            "captured_calls": 62
+          },
+          "draft": {
+            "actual_calls": 65,
+            "gpu_active": {
+              "count": 65,
+              "mean_ms": 2.722213,
+              "median_ms": 2.541413,
+              "min_ms": 0.332093,
+              "max_ms": 4.540947
+            },
+            "cpu_range": {
+              "count": 65,
+              "mean_ms": 3.1521622000000002,
+              "median_ms": 3.052695,
+              "min_ms": 1.015212,
+              "max_ms": 4.844985
+            },
+            "eager_only_calls": 11,
+            "captured_calls": 54
+          }
+        },
+        "by_role_T": {
+          "draft/T1/eager": {
+            "actual_calls": 5,
+            "contexts": [
+              154,
+              372
+            ],
+            "gpu_active": {
+              "count": 5,
+              "mean_ms": 2.554189,
+              "median_ms": 2.508712,
+              "min_ms": 2.480422,
+              "max_ms": 2.772324
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 4,
+                "gpu_active": {
+                  "count": 4,
+                  "mean_ms": 2.57263075,
+                  "median_ms": 2.5093035,
+                  "min_ms": 2.499592,
+                  "max_ms": 2.772324
+                }
+              },
+              "256": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 2.480422,
+                  "median_ms": 2.480422,
+                  "min_ms": 2.480422,
+                  "max_ms": 2.480422
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "target/T2/eager": {
+            "actual_calls": 2,
+            "contexts": [
+              154,
+              372
+            ],
+            "gpu_active": {
+              "count": 2,
+              "mean_ms": 9.8978715,
+              "median_ms": 9.8978715,
+              "min_ms": 9.885345,
+              "max_ms": 9.910398
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 9.910398,
+                  "median_ms": 9.910398,
+                  "min_ms": 9.910398,
+                  "max_ms": 9.910398
+                }
+              },
+              "256": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 9.885345,
+                  "median_ms": 9.885345,
+                  "min_ms": 9.885345,
+                  "max_ms": 9.885345
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "draft/T2/eager": {
+            "actual_calls": 6,
+            "contexts": [
+              156,
+              434
+            ],
+            "gpu_active": {
+              "count": 6,
+              "mean_ms": 2.3503603333333336,
+              "median_ms": 2.6562925,
+              "min_ms": 0.332093,
+              "max_ms": 3.037825
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 4,
+                "gpu_active": {
+                  "count": 4,
+                  "mean_ms": 2.80405975,
+                  "median_ms": 2.8438435,
+                  "min_ms": 2.490727,
+                  "max_ms": 3.037825
+                }
+              },
+              "256": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 2.55383,
+                  "median_ms": 2.55383,
+                  "min_ms": 2.55383,
+                  "max_ms": 2.55383
+                }
+              },
+              "384": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 0.332093,
+                  "median_ms": 0.332093,
+                  "min_ms": 0.332093,
+                  "max_ms": 0.332093
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "target/T2/captured": {
+            "actual_calls": 62,
+            "contexts": [
+              156,
+              432
+            ],
+            "gpu_active": {
+              "count": 62,
+              "mean_ms": 10.56065241935484,
+              "median_ms": 10.47323,
+              "min_ms": 9.951127,
+              "max_ms": 11.791161
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 32,
+                "gpu_active": {
+                  "count": 32,
+                  "mean_ms": 10.52284825,
+                  "median_ms": 10.420993,
+                  "min_ms": 9.951127,
+                  "max_ms": 11.791161
+                }
+              },
+              "256": {
+                "calls": 5,
+                "gpu_active": {
+                  "count": 5,
+                  "mean_ms": 10.5545902,
+                  "median_ms": 10.664778,
+                  "min_ms": 10.261644,
+                  "max_ms": 10.8139
+                }
+              },
+              "384": {
+                "calls": 25,
+                "gpu_active": {
+                  "count": 25,
+                  "mean_ms": 10.6102542,
+                  "median_ms": 10.495052,
+                  "min_ms": 9.983281,
+                  "max_ms": 11.533697
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "draft/T2/captured": {
+            "actual_calls": 54,
+            "contexts": [
+              158,
+              432
+            ],
+            "gpu_active": {
+              "count": 54,
+              "mean_ms": 2.779087740740741,
+              "median_ms": 2.543829,
+              "min_ms": 2.480102,
+              "max_ms": 4.540947
+            },
+            "context_buckets": {
+              "128": {
+                "calls": 25,
+                "gpu_active": {
+                  "count": 25,
+                  "mean_ms": 2.7948853199999997,
+                  "median_ms": 2.764324,
+                  "min_ms": 2.480102,
+                  "max_ms": 3.540572
+                }
+              },
+              "256": {
+                "calls": 4,
+                "gpu_active": {
+                  "count": 4,
+                  "mean_ms": 2.70474025,
+                  "median_ms": 2.5223255,
+                  "min_ms": 2.491367,
+                  "max_ms": 3.282943
+                }
+              },
+              "384": {
+                "calls": 25,
+                "gpu_active": {
+                  "count": 25,
+                  "mean_ms": 2.77518576,
+                  "median_ms": 2.536134,
+                  "min_ms": 2.485607,
+                  "max_ms": 4.540947
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          },
+          "target/T1/eager": {
+            "actual_calls": 1,
+            "contexts": [
+              434,
+              434
+            ],
+            "gpu_active": {
+              "count": 1,
+              "mean_ms": 9.175527,
+              "median_ms": 9.175527,
+              "min_ms": 9.175527,
+              "max_ms": 9.175527
+            },
+            "context_buckets": {
+              "384": {
+                "calls": 1,
+                "gpu_active": {
+                  "count": 1,
+                  "mean_ms": 9.175527,
+                  "median_ms": 9.175527,
+                  "min_ms": 9.175527,
+                  "max_ms": 9.175527
+                }
+              }
+            },
+            "scope": "Hylecapturedlaunch activity with runtimecorrelation; peer actualdecode GPUcontainment includes inputtransfers. SameT isnecessary butnot sameprecision/work/copycontract."
+          }
+        },
+        "decode_classification": {
+          "instantiate": {
+            "calls": 2,
+            "cpu_range": {
+              "count": 2,
+              "mean_ms": 10.4723795,
+              "median_ms": 10.4723795,
+              "min_ms": 3.876886,
+              "max_ms": 17.067873
+            },
+            "gpu_active": {
+              "count": 2,
+              "mean_ms": 7.163218,
+              "median_ms": 7.163218,
+              "min_ms": 3.270526,
+              "max_ms": 11.05591
+            },
+            "no_gpu_activity": {
+              "count": 2,
+              "mean_ms": 3.3091615,
+              "median_ms": 3.3091615,
+              "min_ms": 0.60636,
+              "max_ms": 6.011963
+            },
+            "total_no_gpu_ms": 6.618323,
+            "phases": {},
+            "contexts": [
+              {
+                "seq": 6,
+                "T": 2,
+                "context": 156,
+                "frontier": 157,
+                "turn": 1
+              },
+              {
+                "seq": 7,
+                "T": 2,
+                "context": 158,
+                "frontier": 157,
+                "turn": 1
+              }
+            ],
+            "special_api_counts": {
+              "cudaStreamBeginCapture_v10000": 2,
+              "cudaStreamEndCapture_v10000": 2,
+              "cudaGraphExecUpdate_v10020": 2,
+              "cudaGraphInstantiate_v12000": 2
+            }
+          },
+          "no_record_or_instantiate": {
+            "calls": 123,
+            "cpu_range": {
+              "count": 123,
+              "mean_ms": 7.495383715447155,
+              "median_ms": 10.898308,
+              "min_ms": 1.015212,
+              "max_ms": 21.058631
+            },
+            "gpu_active": {
+              "count": 123,
+              "mean_ms": 6.703538065040651,
+              "median_ms": 9.885345,
+              "min_ms": 0.332093,
+              "max_ms": 11.791161
+            },
+            "no_gpu_activity": {
+              "count": 123,
+              "mean_ms": 0.791845650406504,
+              "median_ms": 0.853365,
+              "min_ms": 0.241478,
+              "max_ms": 11.148233
+            },
+            "total_no_gpu_ms": 97.397015,
+            "phases": {},
+            "contexts": [
+              {
+                "seq": 3,
+                "T": 1,
+                "context": 154,
+                "frontier": 154,
+                "turn": 1
+              },
+              {
+                "seq": 4,
+                "T": 2,
+                "context": 154,
+                "frontier": 155,
+                "turn": 1
+              },
+              {
+                "seq": 5,
+                "T": 2,
+                "context": 156,
+                "frontier": 155,
+                "turn": 1
+              },
+              {
+                "seq": 8,
+                "T": 2,
+                "context": 158,
+                "frontier": 159,
+                "turn": 1
+              },
+              {
+                "seq": 9,
+                "T": 2,
+                "context": 160,
+                "frontier": 159,
+                "turn": 1
+              },
+              {
+                "seq": 10,
+                "T": 2,
+                "context": 160,
+                "frontier": 161,
+                "turn": 1
+              },
+              {
+                "seq": 11,
+                "T": 2,
+                "context": 162,
+                "frontier": 161,
+                "turn": 1
+              },
+              {
+                "seq": 12,
+                "T": 2,
+                "context": 162,
+                "frontier": 163,
+                "turn": 1
+              },
+              {
+                "seq": 13,
+                "T": 2,
+                "context": 164,
+                "frontier": 163,
+                "turn": 1
+              },
+              {
+                "seq": 14,
+                "T": 2,
+                "context": 164,
+                "frontier": 165,
+                "turn": 1
+              },
+              {
+                "seq": 15,
+                "T": 1,
+                "context": 165,
+                "frontier": 165,
+                "turn": 1
+              },
+              {
+                "seq": 16,
+                "T": 2,
+                "context": 165,
+                "frontier": 166,
+                "turn": 1
+              },
+              {
+                "seq": 17,
+                "T": 2,
+                "context": 167,
+                "frontier": 166,
+                "turn": 1
+              },
+              {
+                "seq": 18,
+                "T": 2,
+                "context": 167,
+                "frontier": 168,
+                "turn": 1
+              },
+              {
+                "seq": 20,
+                "T": 2,
+                "context": 169,
+                "frontier": 170,
+                "turn": 1
+              },
+              {
+                "seq": 21,
+                "T": 2,
+                "context": 171,
+                "frontier": 170,
+                "turn": 1
+              },
+              {
+                "seq": 22,
+                "T": 2,
+                "context": 171,
+                "frontier": 172,
+                "turn": 1
+              },
+              {
+                "seq": 23,
+                "T": 2,
+                "context": 173,
+                "frontier": 172,
+                "turn": 1
+              },
+              {
+                "seq": 24,
+                "T": 2,
+                "context": 173,
+                "frontier": 174,
+                "turn": 1
+              },
+              {
+                "seq": 25,
+                "T": 2,
+                "context": 175,
+                "frontier": 174,
+                "turn": 1
+              },
+              {
+                "seq": 26,
+                "T": 2,
+                "context": 175,
+                "frontier": 176,
+                "turn": 1
+              },
+              {
+                "seq": 27,
+                "T": 2,
+                "context": 177,
+                "frontier": 176,
+                "turn": 1
+              },
+              {
+                "seq": 28,
+                "T": 2,
+                "context": 177,
+                "frontier": 178,
+                "turn": 1
+              },
+              {
+                "seq": 29,
+                "T": 2,
+                "context": 179,
+                "frontier": 178,
+                "turn": 1
+              },
+              {
+                "seq": 30,
+                "T": 2,
+                "context": 179,
+                "frontier": 180,
+                "turn": 1
+              },
+              {
+                "seq": 31,
+                "T": 1,
+                "context": 180,
+                "frontier": 180,
+                "turn": 1
+              },
+              {
+                "seq": 32,
+                "T": 2,
+                "context": 180,
+                "frontier": 181,
+                "turn": 1
+              },
+              {
+                "seq": 33,
+                "T": 2,
+                "context": 182,
+                "frontier": 181,
+                "turn": 1
+              },
+              {
+                "seq": 34,
+                "T": 2,
+                "context": 182,
+                "frontier": 183,
+                "turn": 1
+              },
+              {
+                "seq": 36,
+                "T": 2,
+                "context": 184,
+                "frontier": 185,
+                "turn": 1
+              },
+              {
+                "seq": 37,
+                "T": 2,
+                "context": 186,
+                "frontier": 185,
+                "turn": 1
+              },
+              {
+                "seq": 38,
+                "T": 2,
+                "context": 186,
+                "frontier": 187,
+                "turn": 1
+              },
+              {
+                "seq": 39,
+                "T": 2,
+                "context": 188,
+                "frontier": 187,
+                "turn": 1
+              },
+              {
+                "seq": 40,
+                "T": 2,
+                "context": 188,
+                "frontier": 189,
+                "turn": 1
+              },
+              {
+                "seq": 41,
+                "T": 2,
+                "context": 190,
+                "frontier": 189,
+                "turn": 1
+              },
+              {
+                "seq": 42,
+                "T": 2,
+                "context": 190,
+                "frontier": 191,
+                "turn": 1
+              },
+              {
+                "seq": 43,
+                "T": 2,
+                "context": 192,
+                "frontier": 191,
+                "turn": 1
+              },
+              {
+                "seq": 44,
+                "T": 2,
+                "context": 192,
+                "frontier": 193,
+                "turn": 1
+              },
+              {
+                "seq": 45,
+                "T": 2,
+                "context": 194,
+                "frontier": 193,
+                "turn": 1
+              },
+              {
+                "seq": 46,
+                "T": 2,
+                "context": 194,
+                "frontier": 195,
+                "turn": 1
+              },
+              {
+                "seq": 47,
+                "T": 2,
+                "context": 196,
+                "frontier": 195,
+                "turn": 1
+              },
+              {
+                "seq": 48,
+                "T": 2,
+                "context": 196,
+                "frontier": 197,
+                "turn": 1
+              },
+              {
+                "seq": 49,
+                "T": 2,
+                "context": 198,
+                "frontier": 197,
+                "turn": 1
+              },
+              {
+                "seq": 50,
+                "T": 2,
+                "context": 198,
+                "frontier": 199,
+                "turn": 1
+              },
+              {
+                "seq": 51,
+                "T": 2,
+                "context": 200,
+                "frontier": 199,
+                "turn": 1
+              },
+              {
+                "seq": 52,
+                "T": 2,
+                "context": 200,
+                "frontier": 201,
+                "turn": 1
+              },
+              {
+                "seq": 53,
+                "T": 2,
+                "context": 202,
+                "frontier": 201,
+                "turn": 1
+              },
+              {
+                "seq": 54,
+                "T": 2,
+                "context": 202,
+                "frontier": 203,
+                "turn": 1
+              },
+              {
+                "seq": 55,
+                "T": 2,
+                "context": 204,
+                "frontier": 203,
+                "turn": 1
+              },
+              {
+                "seq": 56,
+                "T": 2,
+                "context": 204,
+                "frontier": 205,
+                "turn": 1
+              },
+              {
+                "seq": 57,
+                "T": 2,
+                "context": 206,
+                "frontier": 205,
+                "turn": 1
+              },
+              {
+                "seq": 58,
+                "T": 2,
+                "context": 206,
+                "frontier": 207,
+                "turn": 1
+              },
+              {
+                "seq": 59,
+                "T": 2,
+                "context": 208,
+                "frontier": 207,
+                "turn": 1
+              },
+              {
+                "seq": 60,
+                "T": 2,
+                "context": 208,
+                "frontier": 209,
+                "turn": 1
+              },
+              {
+                "seq": 61,
+                "T": 2,
+                "context": 210,
+                "frontier": 209,
+                "turn": 1
+              },
+              {
+                "seq": 62,
+                "T": 2,
+                "context": 210,
+                "frontier": 211,
+                "turn": 1
+              },
+              {
+                "seq": 63,
+                "T": 1,
+                "context": 211,
+                "frontier": 211,
+                "turn": 1
+              },
+              {
+                "seq": 64,
+                "T": 2,
+                "context": 211,
+                "frontier": 212,
+                "turn": 1
+              },
+              {
+                "seq": 65,
+                "T": 2,
+                "context": 213,
+                "frontier": 212,
+                "turn": 1
+              },
+              {
+                "seq": 66,
+                "T": 2,
+                "context": 213,
+                "frontier": 214,
+                "turn": 1
+              },
+              {
+                "seq": 68,
+                "T": 2,
+                "context": 215,
+                "frontier": 216,
+                "turn": 1
+              },
+              {
+                "seq": 71,
+                "T": 1,
+                "context": 372,
+                "frontier": 372,
+                "turn": 2
+              },
+              {
+                "seq": 72,
+                "T": 2,
+                "context": 372,
+                "frontier": 373,
+                "turn": 2
+              },
+              {
+                "seq": 73,
+                "T": 2,
+                "context": 374,
+                "frontier": 373,
+                "turn": 2
+              },
+              {
+                "seq": 76,
+                "T": 2,
+                "context": 376,
+                "frontier": 377,
+                "turn": 2
+              },
+              {
+                "seq": 77,
+                "T": 2,
+                "context": 378,
+                "frontier": 377,
+                "turn": 2
+              },
+              {
+                "seq": 78,
+                "T": 2,
+                "context": 378,
+                "frontier": 379,
+                "turn": 2
+              },
+              {
+                "seq": 79,
+                "T": 2,
+                "context": 380,
+                "frontier": 379,
+                "turn": 2
+              },
+              {
+                "seq": 80,
+                "T": 2,
+                "context": 380,
+                "frontier": 381,
+                "turn": 2
+              },
+              {
+                "seq": 81,
+                "T": 2,
+                "context": 382,
+                "frontier": 381,
+                "turn": 2
+              },
+              {
+                "seq": 82,
+                "T": 2,
+                "context": 382,
+                "frontier": 383,
+                "turn": 2
+              },
+              {
+                "seq": 83,
+                "T": 2,
+                "context": 384,
+                "frontier": 383,
+                "turn": 2
+              },
+              {
+                "seq": 84,
+                "T": 2,
+                "context": 384,
+                "frontier": 385,
+                "turn": 2
+              },
+              {
+                "seq": 85,
+                "T": 2,
+                "context": 386,
+                "frontier": 385,
+                "turn": 2
+              },
+              {
+                "seq": 86,
+                "T": 2,
+                "context": 386,
+                "frontier": 387,
+                "turn": 2
+              },
+              {
+                "seq": 87,
+                "T": 2,
+                "context": 388,
+                "frontier": 387,
+                "turn": 2
+              },
+              {
+                "seq": 88,
+                "T": 2,
+                "context": 388,
+                "frontier": 389,
+                "turn": 2
+              },
+              {
+                "seq": 89,
+                "T": 2,
+                "context": 390,
+                "frontier": 389,
+                "turn": 2
+              },
+              {
+                "seq": 90,
+                "T": 2,
+                "context": 390,
+                "frontier": 391,
+                "turn": 2
+              },
+              {
+                "seq": 91,
+                "T": 2,
+                "context": 392,
+                "frontier": 391,
+                "turn": 2
+              },
+              {
+                "seq": 92,
+                "T": 2,
+                "context": 392,
+                "frontier": 393,
+                "turn": 2
+              },
+              {
+                "seq": 93,
+                "T": 2,
+                "context": 394,
+                "frontier": 393,
+                "turn": 2
+              },
+              {
+                "seq": 94,
+                "T": 2,
+                "context": 394,
+                "frontier": 395,
+                "turn": 2
+              },
+              {
+                "seq": 95,
+                "T": 2,
+                "context": 396,
+                "frontier": 395,
+                "turn": 2
+              },
+              {
+                "seq": 96,
+                "T": 2,
+                "context": 396,
+                "frontier": 397,
+                "turn": 2
+              },
+              {
+                "seq": 97,
+                "T": 2,
+                "context": 398,
+                "frontier": 397,
+                "turn": 2
+              },
+              {
+                "seq": 98,
+                "T": 2,
+                "context": 398,
+                "frontier": 399,
+                "turn": 2
+              },
+              {
+                "seq": 99,
+                "T": 2,
+                "context": 400,
+                "frontier": 399,
+                "turn": 2
+              },
+              {
+                "seq": 100,
+                "T": 2,
+                "context": 400,
+                "frontier": 401,
+                "turn": 2
+              },
+              {
+                "seq": 101,
+                "T": 2,
+                "context": 402,
+                "frontier": 401,
+                "turn": 2
+              },
+              {
+                "seq": 102,
+                "T": 2,
+                "context": 402,
+                "frontier": 403,
+                "turn": 2
+              },
+              {
+                "seq": 103,
+                "T": 2,
+                "context": 404,
+                "frontier": 403,
+                "turn": 2
+              },
+              {
+                "seq": 104,
+                "T": 2,
+                "context": 404,
+                "frontier": 405,
+                "turn": 2
+              },
+              {
+                "seq": 105,
+                "T": 2,
+                "context": 406,
+                "frontier": 405,
+                "turn": 2
+              },
+              {
+                "seq": 106,
+                "T": 2,
+                "context": 406,
+                "frontier": 407,
+                "turn": 2
+              },
+              {
+                "seq": 107,
+                "T": 2,
+                "context": 408,
+                "frontier": 407,
+                "turn": 2
+              },
+              {
+                "seq": 108,
+                "T": 2,
+                "context": 408,
+                "frontier": 409,
+                "turn": 2
+              },
+              {
+                "seq": 109,
+                "T": 2,
+                "context": 410,
+                "frontier": 409,
+                "turn": 2
+              },
+              {
+                "seq": 110,
+                "T": 2,
+                "context": 410,
+                "frontier": 411,
+                "turn": 2
+              },
+              {
+                "seq": 111,
+                "T": 2,
+                "context": 412,
+                "frontier": 411,
+                "turn": 2
+              },
+              {
+                "seq": 112,
+                "T": 2,
+                "context": 412,
+                "frontier": 413,
+                "turn": 2
+              },
+              {
+                "seq": 113,
+                "T": 2,
+                "context": 414,
+                "frontier": 413,
+                "turn": 2
+              },
+              {
+                "seq": 114,
+                "T": 2,
+                "context": 414,
+                "frontier": 415,
+                "turn": 2
+              },
+              {
+                "seq": 115,
+                "T": 2,
+                "context": 416,
+                "frontier": 415,
+                "turn": 2
+              },
+              {
+                "seq": 116,
+                "T": 2,
+                "context": 416,
+                "frontier": 417,
+                "turn": 2
+              },
+              {
+                "seq": 117,
+                "T": 2,
+                "context": 418,
+                "frontier": 417,
+                "turn": 2
+              },
+              {
+                "seq": 118,
+                "T": 2,
+                "context": 418,
+                "frontier": 419,
+                "turn": 2
+              },
+              {
+                "seq": 119,
+                "T": 2,
+                "context": 420,
+                "frontier": 419,
+                "turn": 2
+              },
+              {
+                "seq": 120,
+                "T": 2,
+                "context": 420,
+                "frontier": 421,
+                "turn": 2
+              },
+              {
+                "seq": 121,
+                "T": 2,
+                "context": 422,
+                "frontier": 421,
+                "turn": 2
+              },
+              {
+                "seq": 122,
+                "T": 2,
+                "context": 422,
+                "frontier": 423,
+                "turn": 2
+              },
+              {
+                "seq": 123,
+                "T": 2,
+                "context": 424,
+                "frontier": 423,
+                "turn": 2
+              },
+              {
+                "seq": 124,
+                "T": 2,
+                "context": 424,
+                "frontier": 425,
+                "turn": 2
+              },
+              {
+                "seq": 125,
+                "T": 2,
+                "context": 426,
+                "frontier": 425,
+                "turn": 2
+              },
+              {
+                "seq": 126,
+                "T": 2,
+                "context": 426,
+                "frontier": 427,
+                "turn": 2
+              },
+              {
+                "seq": 127,
+                "T": 2,
+                "context": 428,
+                "frontier": 427,
+                "turn": 2
+              },
+              {
+                "seq": 128,
+                "T": 2,
+                "context": 428,
+                "frontier": 429,
+                "turn": 2
+              },
+              {
+                "seq": 129,
+                "T": 2,
+                "context": 430,
+                "frontier": 429,
+                "turn": 2
+              },
+              {
+                "seq": 130,
+                "T": 2,
+                "context": 430,
+                "frontier": 431,
+                "turn": 2
+              },
+              {
+                "seq": 131,
+                "T": 2,
+                "context": 432,
+                "frontier": 431,
+                "turn": 2
+              },
+              {
+                "seq": 132,
+                "T": 2,
+                "context": 432,
+                "frontier": 433,
+                "turn": 2
+              },
+              {
+                "seq": 133,
+                "T": 2,
+                "context": 434,
+                "frontier": 433,
+                "turn": 2
+              },
+              {
+                "seq": 134,
+                "T": 1,
+                "context": 434,
+                "frontier": 435,
+                "turn": 2
+              }
+            ],
+            "special_api_counts": {}
+          },
+          "record_without_instantiate": {
+            "calls": 5,
+            "cpu_range": {
+              "count": 5,
+              "mean_ms": 5.710048400000001,
+              "median_ms": 3.274848,
+              "min_ms": 3.151218,
+              "max_ms": 15.263462
+            },
+            "gpu_active": {
+              "count": 5,
+              "mean_ms": 4.3627894000000005,
+              "median_ms": 2.754116,
+              "min_ms": 2.541413,
+              "max_ms": 10.8139
+            },
+            "no_gpu_activity": {
+              "count": 5,
+              "mean_ms": 1.347259,
+              "median_ms": 0.604973,
+              "min_ms": 0.439296,
+              "max_ms": 4.449562
+            },
+            "total_no_gpu_ms": 6.736295,
+            "phases": {},
+            "contexts": [
+              {
+                "seq": 19,
+                "T": 2,
+                "context": 169,
+                "frontier": 168,
+                "turn": 1
+              },
+              {
+                "seq": 35,
+                "T": 2,
+                "context": 184,
+                "frontier": 183,
+                "turn": 1
+              },
+              {
+                "seq": 67,
+                "T": 2,
+                "context": 215,
+                "frontier": 214,
+                "turn": 1
+              },
+              {
+                "seq": 74,
+                "T": 2,
+                "context": 374,
+                "frontier": 375,
+                "turn": 2
+              },
+              {
+                "seq": 75,
+                "T": 2,
+                "context": 376,
+                "frontier": 375,
+                "turn": 2
+              }
+            ],
+            "special_api_counts": {
+              "cudaStreamBeginCapture_v10000": 5,
+              "cudaStreamEndCapture_v10000": 5,
+              "cudaGraphExecUpdate_v10020": 5
+            }
+          }
+        },
+        "decode_phase_totals": {
+          "runtime_api_summary": {
+            "cudaGraphExecUpdate_v10020": {
+              "calls": 7,
+              "total_ms": 1.310339
+            },
+            "cudaGraphInstantiate_v12000": {
+              "calls": 2,
+              "total_ms": 2.557674
+            },
+            "cudaStreamBeginCapture_v10000": {
+              "calls": 7,
+              "total_ms": 0.027781
+            },
+            "cudaStreamEndCapture_v10000": {
+              "calls": 7,
+              "total_ms": 0.056788
+            }
+          }
+        },
+        "first_decode": {
+          "label": "peer/draft_decode seq=3 T=1 context=154 frontier=154 turn=1",
+          "meta": {
+            "seq": 3,
+            "T": 1,
+            "context": 154,
+            "frontier": 154,
+            "turn": 1
+          },
+          "payload": 3,
+          "start_ns": 2561085373,
+          "end_ns": 2565875736,
+          "globalTid": 282083184395612,
+          "endGlobalTid": null,
+          "cpu_range_ns": 4790363,
+          "gpu_contained_union_ns": 2772324,
+          "no_gpu_activity_ns": 2018039,
+          "kernels": 27,
+          "captured_kernels": 0,
+          "eager_kernels": 27,
+          "gpu_runtime_correlated": 36,
+          "gpu_runtime_uncorrelated": 0,
+          "uncorrelated_by_kind": {},
+          "special_apis": {},
+          "phases": [],
+          "captured_launches": [],
+          "first_use_class": "no_record_or_instantiate"
+        },
+        "first6_decode": [
+          {
+            "label": "peer/draft_decode seq=3 T=1 context=154 frontier=154 turn=1",
+            "meta": {
+              "seq": 3,
+              "T": 1,
+              "context": 154,
+              "frontier": 154,
+              "turn": 1
+            },
+            "payload": 3,
+            "start_ns": 2561085373,
+            "end_ns": 2565875736,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 4790363,
+            "gpu_contained_union_ns": 2772324,
+            "no_gpu_activity_ns": 2018039,
+            "kernels": 27,
+            "captured_kernels": 0,
+            "eager_kernels": 27,
+            "gpu_runtime_correlated": 36,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [],
+            "captured_launches": [],
+            "first_use_class": "no_record_or_instantiate"
+          },
+          {
+            "label": "peer/target_decode seq=4 T=2 context=154 frontier=155 turn=1",
+            "meta": {
+              "seq": 4,
+              "T": 2,
+              "context": 154,
+              "frontier": 155,
+              "turn": 1
+            },
+            "payload": 4,
+            "start_ns": 2565891100,
+            "end_ns": 2586949731,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 21058631,
+            "gpu_contained_union_ns": 9910398,
+            "no_gpu_activity_ns": 11148233,
+            "kernels": 727,
+            "captured_kernels": 0,
+            "eager_kernels": 727,
+            "gpu_runtime_correlated": 739,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [],
+            "captured_launches": [],
+            "first_use_class": "no_record_or_instantiate"
+          },
+          {
+            "label": "peer/draft_decode seq=5 T=2 context=156 frontier=155 turn=1",
+            "meta": {
+              "seq": 5,
+              "T": 2,
+              "context": 156,
+              "frontier": 155,
+              "turn": 1
+            },
+            "payload": 5,
+            "start_ns": 2587023066,
+            "end_ns": 2589928798,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 2905732,
+            "gpu_contained_union_ns": 2490727,
+            "no_gpu_activity_ns": 415005,
+            "kernels": 34,
+            "captured_kernels": 0,
+            "eager_kernels": 34,
+            "gpu_runtime_correlated": 43,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [],
+            "captured_launches": [],
+            "first_use_class": "no_record_or_instantiate"
+          },
+          {
+            "label": "peer/target_decode seq=6 T=2 context=156 frontier=157 turn=1",
+            "meta": {
+              "seq": 6,
+              "T": 2,
+              "context": 156,
+              "frontier": 157,
+              "turn": 1
+            },
+            "payload": 6,
+            "start_ns": 2589947743,
+            "end_ns": 2607015616,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 17067873,
+            "gpu_contained_union_ns": 11055910,
+            "no_gpu_activity_ns": 6011963,
+            "kernels": 727,
+            "captured_kernels": 727,
+            "eager_kernels": 0,
+            "gpu_runtime_correlated": 739,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphExecUpdate_v10020": {
+                "calls": 1,
+                "total_ms": 0.094528,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaGraphInstantiate_v12000": {
+                "calls": 1,
+                "total_ms": 2.458809,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.009917,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.01931,
+                "return_values": {
+                  "0": 1
+                }
+              }
+            },
+            "phases": [],
+            "captured_launches": [
+              {
+                "role": "target",
+                "correlationId": 15763,
+                "kernels": 727,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2595859232,
+                "end_ns": 2606828659,
+                "kernel_union_ns": 10940168,
+                "all_activity_union_ns": 10940168,
+                "kernel_activity_ns": 10942088
+              }
+            ],
+            "first_use_class": "instantiate"
+          },
+          {
+            "label": "peer/draft_decode seq=7 T=2 context=158 frontier=157 turn=1",
+            "meta": {
+              "seq": 7,
+              "T": 2,
+              "context": 158,
+              "frontier": 157,
+              "turn": 1
+            },
+            "payload": 7,
+            "start_ns": 2607078790,
+            "end_ns": 2610955676,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 3876886,
+            "gpu_contained_union_ns": 3270526,
+            "no_gpu_activity_ns": 606360,
+            "kernels": 34,
+            "captured_kernels": 34,
+            "eager_kernels": 0,
+            "gpu_runtime_correlated": 43,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {
+              "cudaGraphExecUpdate_v10020": {
+                "calls": 1,
+                "total_ms": 0.004479,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaGraphInstantiate_v12000": {
+                "calls": 1,
+                "total_ms": 0.098865,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamBeginCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.00233,
+                "return_values": {
+                  "0": 1
+                }
+              },
+              "cudaStreamEndCapture_v10000": {
+                "calls": 1,
+                "total_ms": 0.001636,
+                "return_values": {
+                  "0": 1
+                }
+              }
+            },
+            "phases": [],
+            "captured_launches": [
+              {
+                "role": "draft",
+                "correlationId": 15984,
+                "kernels": 34,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2607628683,
+                "end_ns": 2610849195,
+                "kernel_union_ns": 3219423,
+                "all_activity_union_ns": 3219423,
+                "kernel_activity_ns": 3219967
+              }
+            ],
+            "first_use_class": "instantiate"
+          },
+          {
+            "label": "peer/target_decode seq=8 T=2 context=158 frontier=159 turn=1",
+            "meta": {
+              "seq": 8,
+              "T": 2,
+              "context": 158,
+              "frontier": 159,
+              "turn": 1
+            },
+            "payload": 8,
+            "start_ns": 2610966663,
+            "end_ns": 2622320893,
+            "globalTid": 282083184395612,
+            "endGlobalTid": null,
+            "cpu_range_ns": 11354230,
+            "gpu_contained_union_ns": 10453197,
+            "no_gpu_activity_ns": 901033,
+            "kernels": 727,
+            "captured_kernels": 727,
+            "eager_kernels": 0,
+            "gpu_runtime_correlated": 739,
+            "gpu_runtime_uncorrelated": 0,
+            "uncorrelated_by_kind": {},
+            "special_apis": {},
+            "phases": [],
+            "captured_launches": [
+              {
+                "role": "target",
+                "correlationId": 16025,
+                "kernels": 727,
+                "runtime_graph_launch_matches": 1,
+                "start_ns": 2611804993,
+                "end_ns": 2622172378,
+                "kernel_union_ns": 10339054,
+                "all_activity_union_ns": 10339054,
+                "kernel_activity_ns": 10341038
+              }
+            ],
+            "first_use_class": "no_record_or_instantiate"
+          }
+        ],
+        "last_decode": {
+          "label": "peer/target_decode seq=134 T=1 context=434 frontier=435 turn=2",
+          "meta": {
+            "seq": 134,
+            "T": 1,
+            "context": 434,
+            "frontier": 435,
+            "turn": 2
+          },
+          "payload": 134,
+          "start_ns": 3555222613,
+          "end_ns": 3567034944,
+          "globalTid": 282083184395612,
+          "endGlobalTid": null,
+          "cpu_range_ns": 11812331,
+          "gpu_contained_union_ns": 9175527,
+          "no_gpu_activity_ns": 2636804,
+          "kernels": 582,
+          "captured_kernels": 0,
+          "eager_kernels": 582,
+          "gpu_runtime_correlated": 592,
+          "gpu_runtime_uncorrelated": 0,
+          "uncorrelated_by_kind": {},
+          "special_apis": {},
+          "phases": [],
+          "captured_launches": [],
+          "first_use_class": "no_record_or_instantiate"
+        },
+        "driver_table_present": false
+      }
+    }
+  },
+  "capture_actions": {
+    "scope": "Only same NVTXlogicalcall, same globalTid and ordered actual runtime APIs. Each StreamEndCapture is followed until next StreamBeginCapture or endoflogicalcall. No capturegraph pointer/originallineage or devicefunction identity inferred.",
+    "arms": {
+      "hyle": {
+        "capture_records": 32,
+        "classes": {
+          "instantiate_no_update_attempt": 19,
+          "update_only": 13
+        },
+        "ordered_action_counts": {
+          "instantiate": 19,
+          "update": 13
+        },
+        "update_returns": {
+          "0": 13
+        },
+        "unobserved_output_fields": [
+          "cudaGraphExecUpdateResultInfo.result",
+          "errorNode",
+          "errorFromNode",
+          "capture graph handle",
+          "graph node kind/function address"
+        ]
+      },
+      "peer": {
+        "capture_records": 7,
+        "classes": {
+          "update_and_instantiate": 2,
+          "update_only": 5
+        },
+        "ordered_action_counts": {
+          "instantiate->update": 2,
+          "update": 5
+        },
+        "update_returns": {
+          "0": 7
+        },
+        "unobserved_output_fields": [
+          "cudaGraphExecUpdateResultInfo.result",
+          "errorNode",
+          "errorFromNode",
+          "capture graph handle",
+          "graph node kind/function address"
+        ]
+      }
+    },
+    "interpretation": "All observed Update returns0 mean cudaSuccess per installed CUDA13.3cuda_runtime_api.h:12891. All13Hyle updates have noInstantiatefallback before nextcapture/endlogicalcall. Thus19Hyleinstantiate calls were19capture records with NO Update attempt, not19 observed structural Update failures. Native result/errornodes not directly captured; exact seedeligibility/firstartifact identity remains for source/probe review."
+  },
+  "diagnostic_warnings": {
+    "hyle": [
+      {
+        "severity": 3,
+        "text": "GetGraphId(data.originalGraph, &originalGraphId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+        "count": 248
+      },
+      {
+        "severity": 3,
+        "text": "GetGraphNodeId(data.originalNode, &originalNodeId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+        "count": 248
+      },
+      {
+        "severity": 2,
+        "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Buffers holding CUDA trace data will be flushed on CudaProfilerStop() call. See --flush-on-cudaprofilerstop to control this behavior.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "CUDA hardware tracing is not supported on this system. A legacy (software instrumented) trace was collected instead.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "CUDA injection initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Common injection library initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Enabling trace for device graph launch",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Loaded CUPTI library: C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\cupti64_133.dll",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "NVTX injection initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUDA events collected: \t140985.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUPTI events produced: \t148013, CUPTI buffers: 20.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUPTI events produced: \t148018, CUPTI buffers: 20.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of NVTX events collected: \t7166.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Process 40352 was launched by the profiler",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Profiling has started.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Profiling has stopped.",
+        "count": 1
+      }
+    ],
+    "peer": [
+      {
+        "severity": 3,
+        "text": "GetGraphId(data.originalGraph, &originalGraphId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+        "count": 692
+      },
+      {
+        "severity": 3,
+        "text": "GetGraphNodeId(data.originalNode, &originalNodeId) returned 1: CUPTI_ERROR_INVALID_PARAMETER",
+        "count": 692
+      },
+      {
+        "severity": 2,
+        "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Buffers holding CUDA trace data will be flushed on CudaProfilerStop() call. See --flush-on-cudaprofilerstop to control this behavior.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "CUDA hardware tracing is not supported on this system. A legacy (software instrumented) trace was collected instead.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "CUDA injection initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Common injection library initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Enabling trace for device graph launch",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Loaded CUPTI library: C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\cupti64_133.dll",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "NVTX injection initialized successfully.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUDA events collected: \t72800.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUPTI events produced: \t77076, CUPTI buffers: 20.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of CUPTI events produced: \t77081, CUPTI buffers: 20.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Number of NVTX events collected: \t1203.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Process 36252 was launched by the profiler",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Profiling has started.",
+        "count": 1
+      },
+      {
+        "severity": 1,
+        "text": "Profiling has stopped.",
+        "count": 1
+      }
+    ]
+  },
+  "key_finding": {
+    "hyle_decode_prepare_replay_total_ms": 107.036554,
+    "hyle_decode_replay_GPU_activity_union_ms": 0,
+    "instantiate_episodes": {
+      "count": 13,
+      "replay_cpu_ms": 78.248896
+    },
+    "record_without_instantiate_episodes": {
+      "count": 8,
+      "replay_cpu_ms": 16.324447
+    },
+    "no_record_episodes": {
+      "count": 45,
+      "replay_cpu_ms": 12.463211
+    },
+    "meaning": "Sameprofilephaseactualcost,notrecoverablewallpromise. Replayischildofprepare;APIisnestedandmayoverlap. Donotaddparent/child/APIorcompareprofilesecondsasformalTPS."
+  },
+  "next_evidence_boundary": "13actualHyleupdatesreturnedcudaSuccesswithnosamecapturefallback. 19instantiationshadnoUpdateattempt. Firstreviewseedqualification/firstartifactandfixedslot0rangeidentity;donotassumeUpdatefailure,increasethevariantcache,orblameoldclosedfingerprint/reverse-hiddenclues.",
+  "cleanup": {
+    "files": [
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/compile/unit.obj",
+        "bytes": 14010839,
+        "sha256": "242ffb37487c2dc96dfafd2b77a6307e7e2b6f3ccc6b6123bcaa0d80bbb32f2c"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/link/consumer.exe",
+        "bytes": 141425664,
+        "sha256": "39a3a5e440bdf1058db4aa028af4ee2c1f13ca9888b18c5f1b6896504510ad83"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/link/consumer.exp",
+        "bytes": 24987,
+        "sha256": "57f3701d23a6ff1e81e6bfa7d219136831a514348f178cd9aff45a28b71c4137"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/link/consumer.lib",
+        "bytes": 41736,
+        "sha256": "10bcaaadb0a76381e306214659391a909579bac97884da2fcb20a43a69b1abdc"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/peer/compile/unit.obj",
+        "bytes": 4045928,
+        "sha256": "ce8ff3aa7871251c507c5c5d46ffc222ca42c01ada0f2c66fdbd4a0f6d8f9477"
+      },
+      {
+        "path": ".scratch/mtp-logical-call-trace-20261025/peer/link/consumer.exe",
+        "bytes": 35830784,
+        "sha256": "fbb0cb532829b52b112eda86276f1d90e0daa04bf34c29623e19cda9a4ce31e1"
+      }
+    ],
+    "count": 7,
+    "logical_bytes": 196586722,
+    "scope": "Onlythisbatchrebuildableprivatebinaries,nosource/model/SDK/dependencies;NODELETION"
+  },
+  "first_failures": {
+    "scope": "Offlinehelper failuresonly,norecaptureorrebuild",
+    "issues": [
+      "InitialanalysisreadpeerNVTXcapturedstdout,whichNsighttruncated;correctedtoalreadywrittencompletepeerconsumer-result.json.",
+      "Initialworkcomparisonleftoriginalphase_points.unix_ms;onlythesetimekeys differed. Excludedthatknownwallclockfield,allnon-timefieldsthenexact.",
+      "Aone-lineshellSQLiteinspectionhadPowerShellquotingerror;replacedwithprivateinspect.py."
+    ],
+    "actual_compile_or_model_failures": 0,
+    "actual_model_processes": 2
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-logical-call-attribution-2026-10-25.zip",
+    "bytes": 8433691,
+    "sha256": "210f71533480b782191171cba00a79aeb96b812f97622f2c044a61ea6fe88995",
+    "entries": 118,
+    "CRC_pass": true,
+    "binaries_included": false,
+    "weights_or_SDK_included": false
+  }
+}

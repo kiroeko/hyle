@@ -1010,6 +1010,23 @@ constexpr std::size_t draft_lag(GraphRole role) noexcept {
       role == GraphRole::kMtpCatchupPrefill ? 1u : 0u;
 }
 enum class TextCompletion { kEmitNext, kStateOnly };
+struct SamplingConfiguration final {
+  bool enabled = false;
+  sampling::Policy policy;
+};
+struct PreparedSampling;
+struct ColdResources;
+void validate_sampling_configuration(const SamplingConfiguration &value, std::int64_t vocabulary) {
+  if (vocabulary <= 0 || vocabulary > INT32_MAX || !std::isfinite(value.policy.temperature) || value.policy.temperature <= 0 ||
+      !std::isfinite(value.policy.top_p) || value.policy.top_p <= 0 || value.policy.top_p > 1 ||
+      value.policy.top_k > static_cast<std::size_t>(vocabulary) ||
+      (!value.enabled && (value.policy.temperature != 1 || value.policy.top_k || value.policy.top_p != 1)))
+    throw std::runtime_error("invalid finite sampling configuration for vocabulary");
+}
+bool same_sampling_configuration(const SamplingConfiguration &a, const SamplingConfiguration &b) noexcept {
+  return a.enabled == b.enabled && a.policy.temperature == b.policy.temperature &&
+      a.policy.top_k == b.policy.top_k && a.policy.top_p == b.policy.top_p;
+}
 
 struct GenerationBoundary final {
   std::size_t length = 0, frontier = 0;
@@ -1068,6 +1085,15 @@ struct GenerationCommitRecord final {
 struct GenerationLedger final {
   std::vector<GenerationCommitRecord> records;
   std::size_t committed_count = 0;
+  const PreparedSampling *sampling = nullptr; // Borrowed immutable cold policy, never a cursor.
+  std::weak_ptr<ColdResources> sampling_owner; // Identity only: cannot pin weights or admit an address-reused Model.
+  void validate_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) const {
+    if (sampling && (sampling_owner.expired() || sampling_owner.owner_before(owner) || owner.owner_before(sampling_owner) || sampling != &value))
+      throw std::runtime_error("generation ledger sampling belongs to another model or configuration");
+  }
+  void bind_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) {
+    validate_sampling(value, owner); sampling = &value; sampling_owner = owner;
+  }
   explicit GenerationLedger(std::size_t capacity, std::size_t maximum_width = 2) : records(capacity) {
     for (auto &record : records)
       if (!record.emitted.try_reserve(maximum_width) || !record.accepted_inputs.try_reserve(maximum_width) ||
@@ -1084,12 +1110,13 @@ struct FamilyKey final {
   std::size_t requests, verification_rows;
   GraphRole role;
   TextCompletion completion;
+  std::size_t sampling_index;
   FamilyKey(std::size_t count, GraphRole selected = GraphRole::kText,
-            std::size_t rows = 0, TextCompletion mode = TextCompletion::kEmitNext) noexcept
-      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected), completion(mode) {}
+            std::size_t rows = 0, TextCompletion mode = TextCompletion::kEmitNext, std::size_t sampling = 0) noexcept
+      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected), completion(mode), sampling_index(sampling) {}
   static FamilyKey exact(std::size_t count, GraphRole selected, std::size_t rows,
-                         TextCompletion mode = TextCompletion::kEmitNext) noexcept {
-    FamilyKey key(count, selected, 0, mode); key.verification_rows = rows; return key;
+                         TextCompletion mode = TextCompletion::kEmitNext, std::size_t sampling = 0) noexcept {
+    FamilyKey key(count, selected, 0, mode, sampling); key.verification_rows = rows; return key;
   }
   auto operator<=>(const FamilyKey &) const = default;
 };
@@ -1097,6 +1124,7 @@ struct ExecutionShape final {
   std::size_t requests, tokens;
   GraphRole role = GraphRole::kText;
   TextCompletion completion = TextCompletion::kEmitNext;
+  std::size_t sampling_index = 0;
   auto operator<=>(const ExecutionShape &) const = default;
 };
 struct StatePorts final {
@@ -1137,6 +1165,7 @@ struct FamilyChild final {
   }
 };
 struct Family final : FamilyPorts {
+  const PreparedSampling *sampling = nullptr;
   std::size_t requests = 1;
   GraphRole role = GraphRole::kText;
   TextCompletion completion = TextCompletion::kEmitNext;
@@ -1153,7 +1182,6 @@ struct Family final : FamilyPorts {
 // Model admission holds the whole carrier through native retirement and final
 // readback. Batch width and retained state boundaries do not add in-flight work.
 constexpr std::size_t execution_slot_count = 1;
-struct ColdResources;
 using ResourceRetention = inference::RetainedResources<ColdResources>;
 struct Phase final : FamilyPorts {
   inference::QueueBindings queues;
@@ -1685,8 +1713,9 @@ class Session final : public std::enable_shared_from_this<Session> {
   friend class Model;
   Model *model_;
   std::shared_ptr<ColdResources> resources_;
-  explicit Session(Model &model, std::shared_ptr<ColdResources> resources) noexcept
-      : model_(&model), resources_(std::move(resources)) {}
+  explicit Session(Model &model, std::shared_ptr<ColdResources> resources, const PreparedSampling &sampling) noexcept
+      : model_(&model), resources_(std::move(resources)), sampling_(sampling) {}
+  const PreparedSampling &sampling_;
 public:
   cache::SnapshotRef head;
   hyle::container::SmallVector<c::PagedPageAppender, 32> tails;
@@ -1697,6 +1726,8 @@ public:
   bool failed = false, stopping = false;
   hyle::Status retirement_status;
   std::size_t length() const noexcept { return head ? head->length : 0; }
+  const PreparedSampling &sampling_configuration() const noexcept { return sampling_; }
+  std::weak_ptr<ColdResources> sampling_owner() const noexcept { return resources_; }
   Session(const Session &) = delete;
   Session &operator=(const Session &) = delete;
   // Stopping any member aborts the whole shared batch. No head is published.
@@ -1813,6 +1844,13 @@ struct SamplingFrontier final {
   ResourceRetention retirement;
 };
 
+struct PreparedSampling final {
+  const std::size_t index;
+  const SamplingConfiguration configuration;
+  std::unique_ptr<SamplingFrontier> frontier;
+  PreparedSampling(std::size_t ordinal, SamplingConfiguration value) : index(ordinal), configuration(value) {}
+};
+
 // Actual cold storage and policy addresses borrowed by submitted Graphs. The
 // application Model and Session links are absent: a failed native prefix must
 // never retain or later dereference a destroyed host application object.
@@ -1832,15 +1870,37 @@ struct ColdResources final {
   cache::PageInventory page_inventory, draft_inventory;
   std::vector<cache::StatePools> state_pools;
   c::LeasePool hidden_pool;
+  std::vector<std::unique_ptr<PreparedSampling>> sampling_configurations;
+  const bool retain_sampling_frontier;
   std::map<FamilyKey, std::unique_ptr<Family>> families, probe_families;
   std::map<ExecutionShape, std::unique_ptr<Phase>> phases, probe_phases;
   std::map<std::pair<std::size_t, bool>, std::unique_ptr<DraftProgram>> draft_programs;
   std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
-  std::unique_ptr<SamplingFrontier> sampling_frontier;
 
-  explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision)
-      : state_schema(state_schema_for(geometry, capacity, precision)), state_pools(geometry.layers.size()) {}
+  explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
+      SamplingConfiguration first, std::span<const SamplingConfiguration> additional)
+      : state_schema(state_schema_for(geometry, capacity, precision)), state_pools(geometry.layers.size()),
+        retain_sampling_frontier(first.enabled || std::ranges::any_of(additional, [](const auto &value) { return value.enabled; })) {
+    sampling_configurations.reserve(cache::add(additional.size(), 1));
+    const auto add = [&](SamplingConfiguration value) {
+      validate_sampling_configuration(value, geometry.vocabulary);
+      for (const auto &old : sampling_configurations)
+        if (same_sampling_configuration(old->configuration, value))
+          throw std::runtime_error("duplicate cold sampling configuration");
+      sampling_configurations.push_back(std::make_unique<PreparedSampling>(sampling_configurations.size(), value));
+    };
+    add(first); for (const auto &value : additional) add(value);
+  }
 
+  const PreparedSampling &sampling_configuration(std::size_t index) const {
+    if (index >= sampling_configurations.size()) throw std::runtime_error("sampling configuration was not cold prepared");
+    return *sampling_configurations[index];
+  }
+  std::size_t sampling_index(const PreparedSampling *value) const {
+    if (!value) return 0;
+    for (const auto &entry : sampling_configurations) if (entry.get() == value) return entry->index;
+    throw std::runtime_error("sampling configuration belongs to another model");
+  }
   bool pending() const noexcept {
     for (const auto *cache : {&phases, &probe_phases})
       for (const auto &[shape, phase] : *cache) {
@@ -1853,7 +1913,9 @@ struct ColdResources final {
     for (const auto &[width, program] : prefix_sampling_programs) {
       (void)width; if (program->retirement.pending()) return true;
     }
-    return sampling_frontier && sampling_frontier->retirement.pending();
+    return std::ranges::any_of(sampling_configurations, [](const auto &entry) {
+      return entry->frontier && entry->frontier->retirement.pending();
+    });
   }
   void release_invocation_roots() noexcept {
     // The accepted attachment is the only temporary scope->Graph->scope
@@ -1895,7 +1957,7 @@ private:
   DraftPolicy draft_policy_;
   bool preparation_started_ = false;
 public:
-  const Sampling sampler;
+  const std::uint64_t sampling_seed;
   std::size_t max_drafts() const noexcept { return draft_policy_.max_drafts; }
   float min_draft_probability() const noexcept { return draft_policy_.minimum_probability; }
   void configure_draft_policy(DraftPolicy policy) {
@@ -1923,6 +1985,7 @@ public:
   const std::vector<std::size_t> attention_layer_ids;
   Backend execution;
   std::shared_ptr<ColdResources> resources_;
+  const SamplingConfiguration &default_sampler; // The immutable default, shared by original MTP paths.
   // These original runtimes outlive every phase/slot and its native retirement.
   std::unique_ptr<hyle::sched::Scheduler> scheduler;
   std::unique_ptr<hyle::sched::BlockingPool> workers;
@@ -1957,7 +2020,17 @@ public:
   std::map<std::pair<std::size_t, bool>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
-  std::unique_ptr<SamplingFrontier> &sampling_frontier;
+  const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
+  std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
+  std::size_t sampling_index(const PreparedSampling *value) const { return resources_->sampling_index(value); }
+  std::size_t sampling_index(const GenerationLedger &ledger) const {
+    if (ledger.sampling && (ledger.sampling_owner.expired() || ledger.sampling_owner.owner_before(resources_) || resources_.owner_before(ledger.sampling_owner)))
+      throw std::runtime_error("generation ledger belongs to another or destroyed model");
+    return sampling_index(ledger.sampling);
+  }
+  bool retains_sampling_frontier() const noexcept {
+    return resources_->retain_sampling_frontier;
+  }
   std::vector<std::weak_ptr<Session>> session_links;
   std::size_t frontier_sampling_graph_calls = 0;
   double frontier_sampling_seconds = 0;
@@ -1976,16 +2049,16 @@ public:
                   std::size_t max_cache_bytes = (std::numeric_limits<std::size_t>::max)(),
                   Sampling sampling_configuration = {false, {}, 0},
                   std::size_t cpu_ffn_layer_count = 0,
-                  BackendSelection backend_selection = {})
+                  BackendSelection backend_selection = {}, std::span<const SamplingConfiguration> additional_sampling = {})
        : Model(prepare_weight_source(manifest, selected_cache.draft_cache), model_geometry, selected_capacity,
            selected_cache, std::move(probe), progress, replay, max_cache_bytes,
-           sampling_configuration, cpu_ffn_layer_count, backend_selection) {}
+           sampling_configuration, cpu_ffn_layer_count, backend_selection, additional_sampling) {}
 
   Model(PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
-      BackendSelection backend_selection)
-       : sampler(sampling_configuration), cpu_ffn_layers(cpu_ffn_layer_count),
+      BackendSelection backend_selection, std::span<const SamplingConfiguration> additional_sampling = {})
+       : sampling_seed(sampling_configuration.seed), cpu_ffn_layers(cpu_ffn_layer_count),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
          target_kv_layers(geometry.attention_layers()), draft_bank(target_kv_layers * 2),
@@ -1995,7 +2068,9 @@ public:
            return indices;
          }()),
          execution(create_execution(geometry, selected_cache, cpu_ffn_layer_count, backend_selection)),
-         resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision)),
+         resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
+              SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy}, additional_sampling)),
+          default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
          state_schema(resources_->state_schema), cache_budget(resources_->cache_budget), execution_budget(resources_->execution_budget),
@@ -2006,14 +2081,16 @@ public:
          families(resources_->families), probe_families(resources_->probe_families),
          phases(resources_->phases), probe_phases(resources_->probe_phases),
          draft_programs(resources_->draft_programs), prefix_sampling_programs(resources_->prefix_sampling_programs),
-         sampling_frontier(resources_->sampling_frontier), capacity(selected_capacity),
+         capacity(selected_capacity),
          replay_policy(replay), layer0_probe(std::move(probe)) {
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
-    if (sampler.enabled && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
+    if (cache_plan.draft_cache && !additional_sampling.empty())
+      throw std::runtime_error("nondefault sampling configurations are currently ordinary Text only");
+    if (retains_sampling_frontier() && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
       throw std::runtime_error("sampling requires a cache plan with retained frontier storage");
     const std::array limits{c::ResourceBudgetLimit{execution.device(), max_cache_bytes},
         c::ResourceBudgetLimit{mem::system_resource(), (std::numeric_limits<std::size_t>::max)()}};
@@ -2164,13 +2241,14 @@ public:
   std::string cache_report() const {
     const auto usage = cache_usage();
     std::ostringstream out;
-    out << ",\"sampling\":\"" << (sampler.enabled ? "random" : "greedy") << '"'
+    if (sampling_configuration_count() > 1) out << ",\"sampling_scope\":\"default_configuration\"";
+    out << ",\"sampling\":\"" << (default_sampler.enabled ? "random" : "greedy") << '"'
         << ",\"sampling_policy_order\":\"temperature_top_k_top_p\""
-        << ",\"sampling_temperature\":" << sampler.policy.temperature
-        << ",\"sampling_top_k\":" << sampler.policy.top_k
-        << ",\"sampling_top_p\":" << sampler.policy.top_p
-        << ",\"sampling_seed\":" << sampler.seed
-        << ",\"mtp_acceptance_policy\":\"" << (!cache_plan.draft_cache ? "disabled" : sampler.enabled ? "min_one_p_over_q" : "equal_greedy_ids") << '"'
+        << ",\"sampling_temperature\":" << default_sampler.policy.temperature
+        << ",\"sampling_top_k\":" << default_sampler.policy.top_k
+        << ",\"sampling_top_p\":" << default_sampler.policy.top_p
+        << ",\"sampling_seed\":" << sampling_seed
+        << ",\"mtp_acceptance_policy\":\"" << (!cache_plan.draft_cache ? "disabled" : default_sampler.enabled ? "min_one_p_over_q" : "equal_greedy_ids") << '"'
         << ",\"frontier_sampling_graph_calls\":" << frontier_sampling_graph_calls
         << ",\"mtp_max_drafts\":" << (cache_plan.draft_cache ? max_drafts() : 0)
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
@@ -2353,7 +2431,10 @@ public:
 
   void prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
                       std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                      bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext) {
+                      bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+    const auto &prepared_sampling = sampling_configuration(sampling_index);
+    const auto &selected_sampler = prepared_sampling.configuration;
+    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
         (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
       throw std::runtime_error("state-only completion requires an ordinary Text family");
@@ -2390,17 +2471,18 @@ public:
       throw std::runtime_error("MTP single-token families require T1");
     if (is_mtp_prefill(role) && std::ranges::any_of(planned_chunks, [](auto t) { return t < 2; }))
       throw std::runtime_error("MTP multi-token prefill requires at least two rows; use its single-token family for T1");
-    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion) : FamilyKey(requests, role, prefix_rows, completion);
+    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion, sampling_index) : FamilyKey(requests, role, prefix_rows, completion, sampling_index);
     auto &selected = diagnostic ? probe_families[family_key] : families[family_key];
     if (selected) throw std::runtime_error("text finite family was already prepared");
     auto result = std::make_unique<Family>();
     auto &definition = *result;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
+    definition.sampling = &prepared_sampling;
     definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
     definition.admitted_exact = admitted_exact;
     definition.state_resource_ports.reserve(ports_per_request * requests);
-    if (verifies_prefix(role) || has_mtp(role) || sampler.enabled) {
+    if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) {
       definition.carry_ports.resize(requests);
       for (auto &ports : definition.carry_ports) ports.resize(prefix_rows);
     }
@@ -2435,7 +2517,7 @@ public:
     V target_tokens = definition.token_port;
     std::vector<sampling::Distribution> draft_distributions;
     std::vector<V> proposal_ids;
-    if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) definition.sampling_identity_port = r.input(
+    if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) definition.sampling_identity_port = r.input(
         dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
       return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
@@ -2498,11 +2580,11 @@ public:
               {attention_schema, definition.draft_key_port, definition.draft_value_port, definition.draft_metadata_port},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry);
           append = head.append_nodes; definition.draft_attention_node = head.attention_node;
-          if (!sampler.enabled) definition.draft_id_port = r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
+          if (!selected_sampler.enabled) definition.draft_id_port = r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
               {r.dense_spec(Type::kFloat32, {batch, f(1)}), r.dense_spec(Type::kInt32, {batch, f(1)})})[1];
-          if (sampler.enabled) {
+          if (selected_sampler.enabled) {
             for (std::size_t request = 0; request < requests; ++request) {
-              draft_distributions.push_back(sampling::distribution(r, sampling_row(head.logits, request), sampler.policy));
+              draft_distributions.push_back(sampling::distribution(r, sampling_row(head.logits, request), selected_sampler.policy));
               proposal_ids.push_back(r.one(c::sampling_ops::categorical(),
                   {draft_distributions.back().log_probabilities, sampling_identity(request, 0)}));
             }
@@ -2677,7 +2759,7 @@ public:
         (requests == 1 ? r.copy(r.slice(normalized_last, 0, D(r.last_row), f(1))) :
         r.one(c::Gather{}, {normalized_last, definition.last_ids_port},
             r.dense_spec(precision.activation_type(), {batch, f(hidden)})));
-    if (verifies_prefix(role) || has_mtp(role) || sampler.enabled) for (std::size_t request = 0; request < requests; ++request)
+    if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) for (std::size_t request = 0; request < requests; ++request)
       for (std::size_t row = 0; row < prefix_rows; ++row) {
         const auto carry = r.copy(r.slice(normalized_last, 0,
             verifies_prefix(role) ? f(static_cast<std::int64_t>(request * prefix_rows + row)) :
@@ -2689,16 +2771,16 @@ public:
     definition.hidden_port = last;
     if (completion == TextCompletion::kEmitNext) {
       definition.logits_port = r.scores(last, std::string(geometry.head_role()));
-      if (!sampler.enabled || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
+      if (!selected_sampler.enabled || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
           {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
            r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
       else {
         std::vector<V> ids, valid, accepted;
         for (std::size_t request = 0; request < requests; ++request) {
           const auto p = sampling::distribution(r, sampling_row(definition.logits_port,
-              verifies_prefix(role) ? request * 2 : request), sampler.policy);
+              verifies_prefix(role) ? request * 2 : request), selected_sampler.policy);
           if (drafts_token(role)) {
-            const auto bonus = sampling::distribution(r, sampling_row(definition.logits_port, request * 2 + 1), sampler.policy);
+            const auto bonus = sampling::distribution(r, sampling_row(definition.logits_port, request * 2 + 1), selected_sampler.policy);
             const auto decision = sampling::decision(r, p.log_probabilities,
                 draft_distributions[request].log_probabilities, bonus.log_probabilities,
                 proposal_ids[request], sampling_identity(request, 1), sampling_identity(request, 2));
@@ -2797,12 +2879,12 @@ public:
   }
 
   Family *find_family(std::size_t requests, std::size_t tokens, GraphRole role,
-                      bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext) {
+                      bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     auto &table = diagnostic ? probe_families : families;
-    const auto primary = table.find({requests, role, tokens, completion});
+    const auto primary = table.find({requests, role, tokens, completion, sampling_index});
     if (primary != table.end() && primary->second &&
         std::ranges::find(primary->second->chunks, tokens) != primary->second->chunks.end()) return primary->second.get();
-    const auto exact = table.find(FamilyKey::exact(requests, role, tokens, completion));
+    const auto exact = table.find(FamilyKey::exact(requests, role, tokens, completion, sampling_index));
     return exact == table.end() ? nullptr : exact->second.get();
   }
 
@@ -2811,8 +2893,8 @@ public:
   // Family/Phase owners remain bounded by N*R; decoded hot-loop shapes stay in
   // their original immutable finite families.
   void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
-                         TextCompletion completion = TextCompletion::kEmitNext) {
-    if (find_family(requests, tokens, role, false, completion)) return;
+                         TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+    if (find_family(requests, tokens, role, false, completion, sampling_index)) return;
     if (!state_storage_prepared || active_step || carrier_borrowed || !tokens || tokens > capacity ||
         !requests || requests > cache_plan.active_sequences ||
         cache::multiply(tokens, requests) > cache_plan.max_query_rows || verifies_prefix(role))
@@ -2824,7 +2906,7 @@ public:
       auto old = families.find(victim);
       if (old == families.end() || !old->second->admitted_exact || old->second->chunks.size() != 1)
         throw std::runtime_error("exact family inventory is inconsistent");
-      const ExecutionShape shape{victim.requests, old->second->chunks[0], victim.role, victim.completion};
+      const ExecutionShape shape{victim.requests, old->second->chunks[0], victim.role, victim.completion, victim.sampling_index};
       if (auto phase = phases.find(shape); phase != phases.end()) {
         for (auto &run : phase->second->slots) check(run.drain());
         phases.erase(phase);
@@ -2834,15 +2916,15 @@ public:
     }
     const auto before_history = history_writers, before_recurrent = recurrent_writers;
     const auto before_hidden = hidden_writers, before_generated = generated_state_outputs;
-    const auto key = FamilyKey::exact(requests, role, tokens, completion);
+    const auto key = FamilyKey::exact(requests, role, tokens, completion, sampling_index);
     try {
-      const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion);
+      const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion, sampling_index);
       for (std::size_t i = 0; i < state_schema.size(); ++i)
         if ((!before_history[i] && history_writers[i]) || (!before_recurrent[i] && recurrent_writers[i]))
           throw std::runtime_error("new suffix requires caller-written state storage absent from the original cache plan; reconfigure the idle model");
       if (!before_hidden && hidden_writers)
         throw std::runtime_error("new suffix requires caller-written hidden storage absent from the original cache plan; reconfigure the idle model");
-      planned_slot_uses[{requests, tokens, role, completion}].fill(1);
+      planned_slot_uses[{requests, tokens, role, completion, sampling_index}].fill(1);
       admitted_exact_keys.push_back(key); ++exact_admissions;
       std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
                 << " role=" << static_cast<int>(role) << " retained=" << admitted_exact_keys.size()
@@ -2889,13 +2971,13 @@ public:
           {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry);
       program.append = result.append_nodes; program.attention = result.attention_node;
       program.hidden = result.selected_hidden;
-      if (!sampler.enabled) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
+      if (!default_sampler.enabled) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
           {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1];
-      if (sampler.enabled || min_draft_probability() > 0) {
+      if (default_sampler.enabled || min_draft_probability() > 0) {
         const auto distribution = sampling::distribution(r, result.logits,
-            sampler.enabled ? sampler.policy : sampling::Policy{});
+            default_sampler.enabled ? default_sampler.policy : sampling::Policy{});
         program.log_probabilities = distribution.log_probabilities; program.valid = r.host_predicate(distribution.valid);
-        if (sampler.enabled) {
+        if (default_sampler.enabled) {
           program.identity = r.input(dense(Type::kUInt32, {1, 4}));
           program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
           r.publish(program.log_probabilities);
@@ -2925,7 +3007,7 @@ public:
     if (head) {
       program.hidden_output = take(inference::prepare_output(program.compiled, program.hidden));
       validate_state_output(program.hidden_output, dense(precision.activation_type(), {1, hidden}));
-      if (sampler.enabled) program.probabilities_output =
+      if (default_sampler.enabled) program.probabilities_output =
           take(inference::prepare_output(program.compiled, program.log_probabilities));
     }
     for (std::size_t output = 0; output < program.compiled.executable.output_count(); ++output) {
@@ -2943,7 +3025,7 @@ public:
     }
     if (head) {
       program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution));
-      if (sampler.enabled || min_draft_probability() > 0)
+      if (default_sampler.enabled || min_draft_probability() > 0)
         program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution));
       if (min_draft_probability() > 0)
         program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution));
@@ -2959,11 +3041,11 @@ public:
     check(program.run.bind(program.tokens, program.token_values.read()));
     check(program.run.bind(program.positions, program.position_values.read()));
     if (program.head) check(program.id_value.bind(program.run));
-    if (program.head && sampler.enabled) {
+    if (program.head && default_sampler.enabled) {
       if (!program.identity_values.buffer) program.identity_values = Tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
       check(program.run.bind(program.identity, program.identity_values.read()));
     }
-    if (program.head && (sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
+    if (program.head && (default_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
     if (program.head && min_draft_probability() > 0) check(program.probability_value.bind(program.run));
   }
 
@@ -3036,7 +3118,7 @@ public:
       if (program.hidden_output.value && program.hidden_output.caller_owned())
         check(run.bind(program.hidden_output.value, program.hidden_output.description,
             take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment))));
-      if (head && sampler.enabled) {
+      if (head && default_sampler.enabled) {
         program.identity_values.write<std::uint32_t>(identity);
         if (program.probabilities_output.caller_owned()) check(run.bind(program.probabilities_output.value,
             program.probabilities_output.description, take(program.probability_pool.allocate(vocabulary * sizeof(float)))));
@@ -3055,10 +3137,10 @@ public:
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
       if (head) {
-        if (sampler.enabled || min_draft_probability() > 0) {
+        if (default_sampler.enabled || min_draft_probability() > 0) {
           const auto flag = take(program.valid_value.predicate(execution, run));
           if (flag != 1) throw std::runtime_error("recursive draft distribution is invalid; no head or RNG was published");
-          if (sampler.enabled) output.log_probabilities =
+          if (default_sampler.enabled) output.log_probabilities =
               take(inference::retain_output(run, program.probabilities_output, execution_budget));
           if (min_draft_probability() > 0) {
             check(program.probability_value.read(execution, run, std::as_writable_bytes(std::span(&output.probability, 1))));
@@ -3096,7 +3178,7 @@ public:
 
   void prepare_prefix_sampling(std::size_t proposals) {
     preparation_started_ = true;
-    if (!sampler.enabled || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
+    if (!default_sampler.enabled || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
       throw std::runtime_error("prepare bounded speculative-sampling widths before cache storage");
     if (prefix_sampling_programs.contains(proposals)) return;
     auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
@@ -3108,7 +3190,7 @@ public:
     program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
     if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
     auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
-        program.ids, sampler.policy);
+        program.ids, default_sampler.policy);
     program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
     program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
     for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
@@ -3160,7 +3242,7 @@ public:
   void prepare_recursive_round_programs() {
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
-      if (sampler.enabled && (rows > 1 || min_draft_probability() > 0)) prepare_prefix_sampling(rows - 1);
+      if (default_sampler.enabled && (rows > 1 || min_draft_probability() > 0)) prepare_prefix_sampling(rows - 1);
     }
     prepare_draft_program(1, true);
     if (capacity > 1) prepare_draft_program(2, true);
@@ -3169,7 +3251,7 @@ public:
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
       std::span<const std::int32_t> proposals, std::span<const c::ReadLease> q,
       cache::SamplingCursor cursor) {
-    if (!sampler.enabled || proposals.size() != q.size())
+    if (!default_sampler.enabled || proposals.size() != q.size())
       throw std::runtime_error("speculative sampling requires every actual proposal distribution");
     auto found = prefix_sampling_programs.find(proposals.size());
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
@@ -3240,58 +3322,66 @@ public:
 
   void prepare_sampling_frontier() {
     preparation_started_ = true;
-    if (!sampler.enabled) return;
-    if (!sampling_frontier) {
-      auto prepared = std::make_unique<SamplingFrontier>();
-      GraphAssembly assembly(execution, precision);
-      Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
-      prepared->last_row = r.last_row;
-      prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
-      prepared->identity_port = r.input(dense(Type::kUInt32, {1, 4}));
-      const auto probabilities = sampling::distribution(r,
-          r.scores(prepared->hidden_port, std::string(geometry.head_role())), sampler.policy);
-      prepared->id_port = r.one(c::sampling_ops::categorical(), {probabilities.log_probabilities, prepared->identity_port});
-      prepared->valid_port = r.host_predicate(probabilities.valid);
-      r.publish(prepared->id_port); r.publish(prepared->valid_port);
-      prepared->graph = take(std::move(r.builder).finish());
-      // The frontier is a fixed [1,H] projection with no symbolic model rows.
-      const std::array shape{g::ShapeBinding{r.last_row, 0}};
-      const std::array variants{g::ExactShapeVariant{shape}};
-      prepared->compiled = take(execution.compile(prepared->graph, assembly.constants,
-          assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-           .constants = assembly.constants, .resource_budget = execution_budget})));
-      prepared->compiled.executable = take(prepared->compiled.executable.exact_variant(0));
-      prepared->compiled.report = take(prepared->compiled.report.exact_variant(0));
-      prepared->queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), prepared->compiled.report));
-      record_execution_plan(prepared->compiled.report, assembly.constants);
-      prepared->literals = std::move(assembly.literals);
-      prepared->identity = Tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-      prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution));
-      prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution));
-      sampling_frontier = std::move(prepared);
+    for (auto &entry : resources_->sampling_configurations) {
+      const auto &selected_sampler = entry->configuration;
+      if (!selected_sampler.enabled && sampling_configuration_count() == 1) continue;
+      if (!entry->frontier) {
+        auto prepared = std::make_unique<SamplingFrontier>();
+        GraphAssembly assembly(execution, precision);
+        Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
+        prepared->last_row = r.last_row;
+        prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
+        if (selected_sampler.enabled) prepared->identity_port = r.input(dense(Type::kUInt32, {1, 4}));
+        if (selected_sampler.enabled) {
+          const auto probabilities = sampling::distribution(r,
+              r.scores(prepared->hidden_port, std::string(geometry.head_role())), selected_sampler.policy);
+          prepared->id_port = r.one(c::sampling_ops::categorical(), {probabilities.log_probabilities, prepared->identity_port});
+          prepared->valid_port = r.host_predicate(probabilities.valid);
+        } else prepared->id_port = r.op(c::Operation(c::TopK{.count = 1}),
+            {r.scores(prepared->hidden_port, std::string(geometry.head_role()))})[1];
+        r.publish(prepared->id_port); if (selected_sampler.enabled) r.publish(prepared->valid_port);
+        prepared->graph = take(std::move(r.builder).finish());
+        // The frontier is a fixed [1,H] projection with no symbolic model rows.
+        const std::array shape{g::ShapeBinding{r.last_row, 0}};
+        const std::array variants{g::ExactShapeVariant{shape}};
+        prepared->compiled = take(execution.compile(prepared->graph, assembly.constants,
+            assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
+             .constants = assembly.constants, .resource_budget = execution_budget})));
+        prepared->compiled.executable = take(prepared->compiled.executable.exact_variant(0));
+        prepared->compiled.report = take(prepared->compiled.report.exact_variant(0));
+        prepared->queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), prepared->compiled.report));
+        record_execution_plan(prepared->compiled.report, assembly.constants);
+        prepared->literals = std::move(assembly.literals);
+        if (selected_sampler.enabled) prepared->identity = Tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
+        prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution));
+        if (selected_sampler.enabled) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution));
+        entry->frontier = std::move(prepared);
+      }
     }
   }
 
-  cache::SnapshotRef sample_prefix(cache::SnapshotRef base, cache::SamplingCursor cursor) {
-    if (!sampler.enabled || !base || !base->length || !base->carry_hidden.valid() || active_step || carrier_borrowed || !sampling_frontier)
+  cache::SnapshotRef sample_prefix(cache::SnapshotRef base, cache::SamplingCursor cursor, std::size_t sampling_index = 0) {
+    const auto &selected = sampling_configuration(sampling_index);
+    const auto &selected_sampler = selected.configuration;
+    if (!base || !base->length || !base->carry_hidden.valid() || active_step || carrier_borrowed || !selected.frontier)
       throw std::runtime_error("prefix sampling requires its cold-prepared graph and an idle complete model-state hidden frontier");
-    const auto next_cursor = cursor.advanced(1);
+    const auto next_cursor = selected_sampler.enabled ? cursor.advanced(1) : cache::SamplingCursor{};
     const auto started = Clock::now();
-    auto &frontier = *sampling_frontier;
+    auto &frontier = *selected.frontier;
     // This is the same Graph execution API/runtime as target/draft. It reads
     // the original immutable hidden lease and returns only two scalar results.
     auto run = take(frontier.compiled.executable.create_invocation(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
     if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
-    const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity);
+    if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
     check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
-    check(run.bind(frontier.identity_port, frontier.identity.read()));
-    check(frontier.id.bind(run)); check(frontier.valid.bind(run));
+    if (selected_sampler.enabled) check(run.bind(frontier.identity_port, frontier.identity.read()));
+    check(frontier.id.bind(run)); if (selected_sampler.enabled) check(frontier.valid.bind(run));
     const auto queues = inference::queue_span(frontier.queues);
     check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
     auto done = submit_retained(run, queues, frontier.retirement); check(done.wait());
     ++frontier_sampling_graph_calls;
-    const auto valid = take(frontier.valid.predicate(execution, run));
+    const auto valid = selected_sampler.enabled ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
     std::int32_t pending = -1;
     check(frontier.id.read(execution, run, std::as_writable_bytes(std::span(&pending, 1))));
     if (valid != 1 || pending < 0 || pending >= vocabulary)
@@ -3310,13 +3400,13 @@ public:
   // Aggregate ordered call plans before any execution carriers are created.
   // Prefix adoption can skip full-hit calls. Counts describe actual possible
   // uses of the serial slot, not additional execution carriers.
-  void plan_execution(std::span<const std::size_t> calls, std::size_t requests = 1, GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
+  void plan_execution(std::span<const std::size_t> calls, std::size_t requests = 1, GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
     for (const auto tokens : calls) {
-      if (!families.contains({requests, role, tokens, completion}) || std::find(families.at({requests, role, tokens, completion})->chunks.begin(), families.at({requests, role, tokens, completion})->chunks.end(), tokens) == families.at({requests, role, tokens, completion})->chunks.end())
+      if (!families.contains({requests, role, tokens, completion, sampling_index}) || std::find(families.at({requests, role, tokens, completion, sampling_index})->chunks.begin(), families.at({requests, role, tokens, completion, sampling_index})->chunks.end(), tokens) == families.at({requests, role, tokens, completion, sampling_index})->chunks.end())
         throw std::runtime_error("execution plan chunk is outside the shared finite family");
-      auto &uses = planned_slot_uses[{requests, tokens, role, completion}];
+      auto &uses = planned_slot_uses[{requests, tokens, role, completion, sampling_index}];
       uses[slot_index] = cache::add(uses[slot_index], 1);
     }
   }
@@ -3324,13 +3414,13 @@ public:
   // Finite wave/suffix plans can count many possible restores without
   // materializing repeated host call tapes or execution carriers.
   void plan_replay_uses(std::size_t tokens, std::size_t requests, std::size_t count,
-                        GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
+                        GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
-    if (!families.contains({requests, role, tokens, completion}) ||
-        std::find(families.at({requests, role, tokens, completion})->chunks.begin(), families.at({requests, role, tokens, completion})->chunks.end(), tokens) == families.at({requests, role, tokens, completion})->chunks.end())
+    if (!families.contains({requests, role, tokens, completion, sampling_index}) ||
+        std::find(families.at({requests, role, tokens, completion, sampling_index})->chunks.begin(), families.at({requests, role, tokens, completion, sampling_index})->chunks.end(), tokens) == families.at({requests, role, tokens, completion, sampling_index})->chunks.end())
       throw std::runtime_error("execution use shape is outside the shared finite family");
-    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion}]) uses = cache::add(uses, count);
+    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion, sampling_index}]) uses = cache::add(uses, count);
   }
 
   std::shared_ptr<Session> create_session(std::span<const std::size_t> planned_chunks,
@@ -3338,23 +3428,26 @@ public:
                                         GraphRole role = GraphRole::kText,
                                         std::optional<cache::SamplingCursor> cursor = {},
                                         bool resample_frontier = false,
-                                         TextCompletion completion = TextCompletion::kEmitNext) {
+                                         TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+    const auto &prepared_sampling = sampling_configuration(sampling_index);
+    const auto &selected_sampler = prepared_sampling.configuration;
+    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     for (const auto rows : planned_chunks)
-      if (!find_family(1, rows, role, false, completion)) admit_exact_shape(rows, 1, role, completion);
+      if (!find_family(1, rows, role, false, completion, sampling_index)) admit_exact_shape(rows, 1, role, completion, sampling_index);
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("session must use its complete target/draft cache family");
-    if ((planned_chunks.empty() ? !families.contains({1, role, 0, completion}) : !find_family(1, initial_rows, role, false, completion)) ||
-        (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion})))
+    if ((planned_chunks.empty() ? !families.contains({1, role, 0, completion, sampling_index}) : !find_family(1, initial_rows, role, false, completion, sampling_index)) ||
+        (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion, sampling_index})))
       throw std::runtime_error("session requires the shared text families first");
     if (planned_chunks.empty() && !prefix) throw std::runtime_error("session requires an ordered call plan or a complete prefix");
     if (prefix && (prefix->model != this || prefix->math != math_identity() || prefix->length > capacity ||
         (planned_chunks.empty() && (!prefix->length || prefix->next_id < 0))))
       throw std::runtime_error("prefix belongs to another model or context");
     if (prefix) validate_mtp_snapshot(*prefix);
-    auto session = std::shared_ptr<Session>(new Session(*this, resources_));
+    auto session = std::shared_ptr<Session>(new Session(*this, resources_, prepared_sampling));
     std::erase_if(session_links, [](const auto &weak) { return weak.expired(); });
     session_links.push_back(session);
     if (!session->tails.try_resize(draft_bank)) throw std::bad_alloc{};
@@ -3362,17 +3455,18 @@ public:
     for (const auto tokens : planned_chunks) {
       if (tokens == 0 || tokens > capacity - total)
         throw std::runtime_error("session plan exceeds nonempty context capacity");
-      for (const auto *selected : {find_family(1, tokens, role, false, completion), layer0_probe.empty() ? nullptr : probe_families.at({1, role, tokens, completion}).get()}) {
+      for (const auto *selected : {find_family(1, tokens, role, false, completion, sampling_index), layer0_probe.empty() ? nullptr : probe_families.at({1, role, tokens, completion, sampling_index}).get()}) {
         if (selected && std::find(selected->chunks.begin(), selected->chunks.end(), tokens) == selected->chunks.end())
           throw std::runtime_error("session chunk is outside the shared finite family");
       }
       total += tokens;
-      if (!planned_slot_uses.contains({1, tokens, role, completion}))
+      if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
-      if (sampler.enabled && cursor) prefix = resample_frontier ? sample_prefix(std::move(prefix), *cursor)
-          : sampling_fork(std::move(prefix), *cursor, -1);
+      if (resample_frontier && (selected_sampler.enabled || sampling_configuration_count() > 1))
+        prefix = sample_prefix(std::move(prefix), cursor.value_or(cache::SamplingCursor{}), sampling_index);
+      else if (selected_sampler.enabled && cursor) prefix = sampling_fork(std::move(prefix), *cursor, -1);
       else if (resample_frontier) {
         // Recovery wrappers can preserve a historical pending token. A new
         // greedy request starts from the immutable evaluated state's result.
@@ -3380,12 +3474,16 @@ public:
         if (fresh < 0 || fresh >= vocabulary)
           throw std::runtime_error("cached evaluated frontier has no valid greedy result");
         prefix = sampling_fork(std::move(prefix), {}, fresh);
+      } else if (cursor && sampling_configuration_count() > 1) {
+        // A new greedy request can adopt consumed state from a random request.
+        // The old sampled pending/cursor is not this request's boundary.
+        prefix = sampling_fork(std::move(prefix), {}, -1);
       }
       session->head = std::move(prefix); // Exact evaluated-state fork; no KV/state payload copy.
     }
     else {
       auto initial = reserve_snapshot();
-      initial->sampling = sampler.enabled ? cursor.value_or(cache::SamplingCursor{sampler.seed, 0, 0})
+      initial->sampling = selected_sampler.enabled ? cursor.value_or(cache::SamplingCursor{sampling_seed, 0, 0})
           : cache::SamplingCursor{};
       const std::array<std::int32_t, 2> empty{0, 0};
       const std::array<std::int32_t, 1> tail{0};
@@ -3441,6 +3539,7 @@ public:
   void initialize_slot(Phase &phase, std::size_t slot) {
     if (phase.slots[slot].valid()) return;
     const auto &definition = *phase.family;
+    const auto &selected_sampler = definition.sampling->configuration;
     const std::array shape{g::ShapeBinding{definition.last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
     auto run = take(definition.compiled.executable.create_invocation(
         {.shape = shape, .resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
@@ -3449,7 +3548,7 @@ public:
     if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
     check(run.bind(phase.token_port, phase.tokens.read()));
     check(run.bind(phase.position_port, phase.positions.read()));
-    if (sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
+    if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
       check(run.bind(phase.sampling_identity_port, phase.sampling_identities.read()));
       check(phase.sampling_valid.bind(run));
       if (drafts_token(definition.role)) check(phase.sampling_accept.bind(run));
@@ -3474,13 +3573,14 @@ public:
   }
 
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                       TextCompletion completion = TextCompletion::kEmitNext) {
+                       TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     auto &cache = diagnostic ? probe_phases : phases;
-    const auto found = cache.find({requests, tokens, role, completion});
+    const auto found = cache.find({requests, tokens, role, completion, sampling_index});
     if (found != cache.end()) return *found->second;
-    auto *selected = find_family(requests, tokens, role, diagnostic, completion);
+    auto *selected = find_family(requests, tokens, role, diagnostic, completion, sampling_index);
     if (!selected) throw std::runtime_error("text finite family has not been prepared");
     auto &definition = *selected;
+    const auto &selected_sampler = definition.sampling->configuration;
     const auto point = std::find(definition.chunks.begin(), definition.chunks.end(), tokens);
     if (point == definition.chunks.end()) throw std::runtime_error("unlisted text chunk has no prepared exact child");
     const auto start = Clock::now();
@@ -3489,9 +3589,9 @@ public:
     auto &phase = *result;
     phase.query_rows = tokens;
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
-    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion});
+    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion, sampling_index});
     for (std::size_t slot = 0; slot < phase.replay_modes.size(); ++slot) {
-      phase.replay_modes[slot] = sampler.enabled || replay_policy == ReplayPolicy::kCommands
+      phase.replay_modes[slot] = selected_sampler.enabled || replay_policy == ReplayPolicy::kCommands
           || (replay_policy == ReplayPolicy::kAuto && phase.planned_slot_uses[slot] <= 1)
           ? g::ReplayMode::kCommands : g::ReplayMode::kPreferCapture;
     }
@@ -3507,7 +3607,7 @@ public:
         {has_mtp(role) && !is_mtp_prefill(role) ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests)}));
     phase.positions = Tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
         : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
-    if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
+    if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
       phase.sampling_identities = Tensor(execution.device(), dense(Type::kUInt32,
           {static_cast<std::int64_t>(requests), 3, 4}));
       phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution));
@@ -3554,7 +3654,8 @@ public:
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
       std::filesystem::create_directories(route_directory);
-      const auto label = std::string(diagnostic ? "published" : "default") + (has_mtp(role) ? "-role" + std::to_string(static_cast<int>(role)) : "");
+      const auto label = std::string(diagnostic ? "published" : "default") + (has_mtp(role) ? "-role" + std::to_string(static_cast<int>(role)) : "")
+          + (sampling_configuration_count() > 1 ? "-sampling" + std::to_string(sampling_index) : "");
       std::ofstream route(route_directory / (std::string(label) + "-R" + std::to_string(requests) + "-T" + std::to_string(tokens) + ".route.tsv"));
       route << "step\tkind\tprovider\timplementation\tnodes\n";
       for (std::size_t step = 0; step < phase.child->compiled.report.step_count(); ++step) {
@@ -3604,7 +3705,7 @@ public:
               << " compiled_unknown_providers=" << storage.unknown_provider_count
               << " child_prepare_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
     input_scratch.prepare(phase);
-    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role, completion}, std::move(result)); return *address;
+    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role, completion, sampling_index}, std::move(result)); return *address;
   }
 
   // An engine with a known ordered request can explicitly prepare its actual
@@ -3612,12 +3713,12 @@ public:
   // Candidate prefix suffixes remain unmaterialized until a hit selects one.
   void prepare_execution(std::span<const std::size_t> calls,
                          std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                          TextCompletion completion = TextCompletion::kEmitNext) {
+                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     if (carrier_borrowed)
       throw std::runtime_error("cannot cold-prepare carriers during an active execution loan");
     for (const auto tokens : calls) {
-      if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion);
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion);
+      if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion, sampling_index);
+      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion, sampling_index);
       initialize_slot(phase, slot_index);
     }
   }
@@ -3766,6 +3867,12 @@ public:
       throw std::runtime_error("batch width exceeds the configured active sequence capacity");
     if (carrier_borrowed || active_step)
       throw std::runtime_error("the original execution carrier has not retired");
+    if (!requests.front().session || requests.front().session->model_ != this)
+      throw std::runtime_error("batch session belongs to another model");
+    const auto &prepared_sampling = requests.front().session->sampling_configuration();
+    const auto sampling_index = prepared_sampling.index;
+    const auto &selected_sampler = prepared_sampling.configuration;
+    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
     const auto supplied_tokens = requests.front().ids.size();
     const auto tokens = drafts_token(role) ? 2u : supplied_tokens;
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
@@ -3776,6 +3883,7 @@ public:
       if (!request.session || request.session->model_ != this)
         throw std::runtime_error("batch session belongs to another model");
       const auto &session = *request.session;
+      if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error("batch requires one cold sampling configuration");
       if (session.stopping || session.failed || session.pending)
         throw std::runtime_error("batch session is stopped, failed or already pending");
       if (!supplied_tokens || request.ids.size() != supplied_tokens || tokens > capacity - session.length())
@@ -3793,8 +3901,8 @@ public:
         throw std::runtime_error("token ID outside vocabulary");
     }
     if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
-        !find_family(requests.size(), tokens, role, false, completion))
-      admit_exact_shape(tokens, requests.size(), role, completion);
+        !find_family(requests.size(), tokens, role, false, completion, sampling_index))
+      admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
     const auto step_start = Clock::now();
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
@@ -3811,8 +3919,8 @@ public:
     for (auto &member : step.members) member.session->pending = &step;
     try {
       const auto width = requests.size(), slot = slot_index;
-      if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion);
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion);
+      if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
+      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion, sampling_index);
       auto &run = phase.slots[slot];
       step.phase = &phase; step.run = &run; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
@@ -3825,7 +3933,7 @@ public:
       }
       phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
       phase.positions.write<std::int32_t>(positions);
-      if (sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
+      if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
         for (const auto &member : step.members) {
@@ -3860,7 +3968,7 @@ public:
         member.next = reserve_snapshot();
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
         member.next->length = length + tokens;
-        member.next->sampling = sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
+        member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
         const auto full_prefix_pages = length / cache::Plan::page_rows;
         const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
@@ -3948,7 +4056,7 @@ public:
             bind_state(ports.recurrent_prefix[row - 1], state_pools[i].recurrent);
           }
         }
-      if (verifies_prefix(role) || has_mtp(role) || sampler.enabled) for (const auto &ports : phase.carry_ports)
+      if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) for (const auto &ports : phase.carry_ports)
         for (std::size_t i = 0; i < phase.prefix_rows; ++i)
           if (const auto &output = phase.child->output(ports[i]); output.caller_owned())
             check(run.bind(output.value, output.description, take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment))));
@@ -4028,6 +4136,7 @@ public:
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
+    const auto &selected_sampler = phase.family->sampling->configuration;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto replay_route = step.replay_route;
@@ -4066,7 +4175,7 @@ public:
         check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = phase.draft_ids[j];
       }
-      if (sampler.enabled && !state_only && phase.family->role != GraphRole::kVerify) {
+      if (selected_sampler.enabled && !state_only && phase.family->role != GraphRole::kVerify) {
         check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
         if (std::ranges::any_of(phase.sampling_valid_values, [](auto value) { return value != 1; }))
           throw std::runtime_error("sampling distribution or proposal is invalid; no session or RNG cursor was published");
@@ -4116,7 +4225,7 @@ public:
           step.members[j].next->state[i].history = retain_state_storage(run, phase.child->output(ports.history_prefix.at(row)));
           step.members[j].next->state[i].recurrent = retain_state_storage(run, phase.child->output(ports.recurrent_prefix.at(row)));
         }
-      if (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || sampler.enabled)
+      if (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || retains_sampling_frontier())
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
           const auto &ports = phase.carry_ports[j];
@@ -4319,7 +4428,7 @@ public:
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr) {
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
-        !session.head || !session.head->draft || (sampler.enabled && !q) ||
+        !session.head || !session.head->draft || (default_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
       throw std::runtime_error("recursive proposals require an idle prepared head, bounded width and every stochastic q row");
     validate_mtp_snapshot(*session.head);
@@ -4337,13 +4446,13 @@ public:
       if (!i && work.state.lag) { ids.push_back(work.state.catchup_token); shifted.push_back(session.head->prior_hidden); }
       ids.push_back(inputs.back()); shifted.push_back(i ? approximate : session.head->carry_hidden);
       auto proposal = execute_draft(work, ids, shifted, true,
-          sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{});
+          default_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{});
       // Stop on a distribution property, not the sampled proposal's own
       // probability. The stopping condition is independent of this draw; its
       // unpublished address may then be the target's final draw at 2*m.
       if (min_draft_probability() > 0 && proposal.probability < min_draft_probability()) break;
       inputs.push_back(proposal.id); approximate = std::move(proposal.hidden);
-      if (q && sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
+      if (q && default_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
       if (ended(proposal.id)) break;
     }
     return inputs;
@@ -4398,7 +4507,7 @@ public:
         [&](std::span<const std::int32_t> candidates, StepState &step, std::span<std::int32_t> selected) {
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
-      if (sampler.enabled) {
+      if (default_sampler.enabled) {
         if (step.phase->logits.buffer) logits_storage = step.phase->logits.buffer.view();
         else {
           logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts));
@@ -4412,11 +4521,11 @@ public:
         const auto width = step.input_tokens;
         const auto rows = candidates.subspan(j * width, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
-        result.auxiliary_graph_calls = width + (sampler.enabled ? 1u : 0u);
+        result.auxiliary_graph_calls = width + (default_sampler.enabled ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
         hyle::inference::mtp::AcceptedPrefix accepted;
-        if (sampler.enabled) {
+        if (default_sampler.enabled) {
           if (selection.draft_log_probabilities.size() != width - 1)
             throw std::runtime_error("stochastic verification requires every actual q row");
           const auto bytes = cache::multiply(cache::multiply(width, vocabulary), sizeof(float));
@@ -4511,7 +4620,7 @@ public:
             const std::array inputs{selection.expected_pending, result.draft};
             const auto verified_inputs = std::span<const std::int32_t>(inputs).first(rows);
             hyle::inference::mtp::AcceptedPrefix accepted;
-            if (sampler.enabled) {
+            if (default_sampler.enabled) {
               const std::array flags{std::uint8_t(member.sampled_accept)};
               // The original K1 graph's second ID is its residual/bonus final;
               // its first ID is already Select(accept, proposal, final).
@@ -4716,6 +4825,7 @@ struct GenerationRequest {
   std::vector<TurnObservation> turn_observations;
   std::vector<std::shared_ptr<std::vector<std::int32_t>>> warm_inputs;
   std::size_t last_idle = 0;
+  const std::size_t sampling_index;
   std::size_t input_turn = SIZE_MAX, turn_input_consumed = 0;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
@@ -4724,9 +4834,9 @@ struct GenerationRequest {
   std::int32_t fresh_next_id = -1;
 
   GenerationRequest(std::string name, std::span<const std::int32_t> ids,
-                       std::filesystem::path output, std::size_t steps)
+                       std::filesystem::path output, std::size_t steps, std::size_t sampling = 0)
       : id(std::move(name)), memory_name(id.empty() ? "generation" : "generation_" + id),
-        prompt(ids), trace(std::move(output)), progress(steps) {
+        prompt(ids), trace(std::move(output)), progress(steps), sampling_index(sampling) {
     rounds.reserve(steps - 1);
   }
 };
@@ -4754,6 +4864,7 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
   if (ids.empty() || !session.head || (generation && ids.size() != 1))
     throw std::runtime_error("MTP replay record requires its actual input and complete base");
   auto &record = ledger.next();
+  ledger.bind_sampling(session.sampling_configuration(), session.sampling_owner());
   auto emitted = std::move(record.emitted), consumed = std::move(record.accepted_inputs);
   auto verified = std::move(record.verification_inputs);
   record = {}; record.emitted = std::move(emitted); record.accepted_inputs = std::move(consumed);
@@ -4895,8 +5006,9 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     const std::filesystem::path &trace = {}, bool trace_states = true,
     GenerationRestoreStats *stats = nullptr, cache::PrefixCache *prefix = nullptr,
     std::span<const GenerationRequest> requests = {}) {
+  const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
-  if (!model.cache_plan.draft_cache)
+  if (sampling_index || !model.cache_plan.draft_cache)
     throw std::runtime_error("strict MTP replay requires the original complete target/draft model");
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
@@ -4965,6 +5077,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     const std::filesystem::path &trace = {}, bool trace_states = true,
     GenerationRestoreStats *stats = nullptr, cache::PrefixCache *prefix = nullptr,
     std::span<const GenerationRequest> requests = {}) {
+  const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
@@ -4996,7 +5109,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
         : rows == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
   };
   auto session = model.create_session(calls, {}, role_for(first_ids.size()),
-      ledger.records[0].before.sampling, false, ledger.records[0].completion);
+      ledger.records[0].before.sampling, false, ledger.records[0].completion, sampling_index);
   GenerationLedger actual(ledger.committed_count);
   std::size_t observed = 0;
   const auto observe = [&] {
@@ -5066,6 +5179,13 @@ struct PreparedGenerationCall final {
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
     cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
     std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
+  const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
+  if (model.cache_plan.draft_cache && request.sampling_index)
+    throw std::runtime_error("nondefault request sampling is ordinary Text only");
+  if (request.session && &request.session->sampling_configuration() != &prepared_sampling)
+    throw std::runtime_error("request sampling cannot change after Session admission");
+  if (request.ledger) request.ledger->validate_sampling(prepared_sampling, model.resources_);
+  const auto &sampler = prepared_sampling.configuration;
   if (!max_prefill_rows || (model.cache_plan.draft_cache && max_prefill_rows != SIZE_MAX))
     throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
   if (max_prefill_rows != SIZE_MAX && !request.ledger)
@@ -5090,6 +5210,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         throw std::runtime_error("token ID outside vocabulary");
       request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
     }
+    if (request.ledger) request.ledger->bind_sampling(prepared_sampling, model.resources_);
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_begin\n";
     if (!request.turn_input_consumed) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
         : std::exchange(request.admission_start, Clock::time_point{});
@@ -5122,15 +5243,15 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
         request.session = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
             std::move(hit.payload.snapshot), admission_role,
-            request.progress.initial_sampling, suffix == 0, suffix_completion);
-        if (model.sampler.enabled) {
+            request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index);
+        if (sampler.enabled || model.sampling_configuration_count() > 1) {
           request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
           request.prefix_sampling_seconds = model.frontier_sampling_seconds - prior_sampling_seconds;
           if (request.ledger) {
             for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
               auto &record = request.ledger->records[i];
-              record.before.sampling = request.progress.initial_sampling;
-              record.after.sampling = request.progress.initial_sampling;
+              record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
+              record.after.sampling = record.before.sampling;
               record.emitted_count = 0; record.emitted = {-1, -1};
             }
             auto &last = request.ledger->records[request.ledger->committed_count - 1];
@@ -5162,7 +5283,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         : (lag ? GraphRole::kMtpCatchupPrefill : GraphRole::kMtpPrefill);
     if (!request.session) {
       make_generation_room(model, prefix, nullptr, requests);
-      const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling, false, call.completion);
+      const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling, false, call.completion, request.sampling_index);
     }
     if (!request.turn_observations.empty() &&
         call.input_begin == (request.progress.turn_index ? 0 : request.reused_tokens))
@@ -5178,6 +5299,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       throw std::runtime_error("generation pending differs from its last observed output");
     const auto remaining = model.capacity - request.session->length();
     if (!remaining) throw std::runtime_error("MTP has exhausted the configured context capacity");
+    if (request.ledger) request.ledger->bind_sampling(prepared_sampling, model.resources_);
     call.maximum = model.cache_plan.draft_cache
         ? (std::min)({model.max_drafts(), call.quota - 1, remaining - 1}) : 0;
     const bool one = call.maximum == 0;
@@ -5319,7 +5441,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     throw std::bad_alloc{};
   for (auto &call : calls) {
     auto &request = *call.request;
-    if (call.full_hit || call.role != role || call.completion != calls[0].completion || call.generation != generation || call.ids().size() != calls[0].ids().size())
+    if (call.full_hit || call.request->sampling_index != calls[0].request->sampling_index || call.role != role || call.completion != calls[0].completion || call.generation != generation || call.ids().size() != calls[0].ids().size())
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
     if (request.ledger) prepare_generation_record(*request.ledger, *request.session, role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
@@ -5428,6 +5550,15 @@ void print_generation_rebuild(const GenerationRestoreStats &stats, bool draft_ca
   std::cout << ']';
 }
 
+void write_request_sampling(std::ostream &out, const Model &model, const GenerationRequest &request) {
+  if (model.sampling_configuration_count() == 1) return;
+  const auto &configuration = model.sampling_configuration(request.sampling_index).configuration;
+  out << ",\"sampling_configuration_index\":" << request.sampling_index
+      << ",\"request_sampling\":\"" << (configuration.enabled ? "random" : "greedy") << '\"'
+      << ",\"request_temperature\":" << configuration.policy.temperature
+      << ",\"request_top_k\":" << configuration.policy.top_k << ",\"request_top_p\":" << configuration.policy.top_p;
+}
+
 void print_generation_request(const Model &model, const GenerationRequest &request, std::size_t steps,
                        Clock::time_point startup, Clock::time_point ready) {
   const auto &prompt = request.prompt;
@@ -5460,6 +5591,7 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
             << "{\"source_id\":\"" << model.source_identity << "\",\"score_dtype\":\"F32\",\"score_policy\":\"" << model.score_precision_policy()
             << "\",\"mtp\":" << (model.cache_plan.draft_cache ? "true" : "false") << model.weight_inventory_report()
             << model.cache_report() << ",\"visible_tokens\":" << request.visible_tokens;
+  write_request_sampling(std::cout, model, request);
   if (model.cache_plan.draft_cache) std::cout << ",\"draft_frontier\":" << request.draft_frontier
       << ",\"draft_lag\":" << request.draft_lag;
   std::cout << ",\"generated_ids\":[";
@@ -5542,8 +5674,14 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
 template<GenerationMode Mode>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
-    Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans) {
+    Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans, std::span<const std::size_t> sampling_indices = {}) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  if (!sampling_indices.empty() && sampling_indices.size() != schedules.size())
+    throw std::runtime_error("one cold sampling choice is required per request");
+  for (const auto index : sampling_indices) {
+    (void)model.sampling_configuration(index);
+    if (mtp && index) throw std::runtime_error("nondefault request sampling is ordinary Text only");
+  }
   if (schedules.empty() || model.cache_plan.draft_cache != mtp)
     throw std::runtime_error("natural generation mode differs from its complete model/cache plan");
   if (prefix_enabled && token_plans.size() != schedules.size())
@@ -5569,9 +5707,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     const auto &first = schedule.turns.front().prompt;
     requests.emplace_back(schedule.id, first, trace.empty() ? trace : trace /
-        ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs);
+        ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()]);
     auto &request = requests.back(); request.progress.bind_turns(schedule.turns);
-    request.progress.initial_sampling = {model.sampler.seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
+    request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
     request.turn_observations.resize(schedule.turns.size());
     request.warm_inputs.reserve(schedule.turns.size());
     for (std::size_t i = 0; i < schedule.turns.size(); ++i) {
@@ -5600,7 +5738,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     auto &members = support[role][tokens];
     if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
   };
-  std::size_t decoding_requests = 0;
   for (std::size_t i = 0; i < requests.size(); ++i) {
     std::vector<std::size_t> suffixes{requests[i].prompt.size()};
     if (prefix) for (std::size_t j = 0; j < i; ++j) {
@@ -5615,7 +5752,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       note_prompt(prompt_role(tokens), tokens, i);
       if constexpr (mtp) note_prompt(prompt_role(tokens, true), tokens, i);
     }
-    if (std::ranges::any_of(requests[i].progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; })) ++decoding_requests;
   }
   const std::array roles{GraphRole::kMtpRound, GraphRole::kMtpCatchupRound,
       GraphRole::kMtpSingle, GraphRole::kMtpCatchupSingle};
@@ -5624,21 +5760,26 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   prompt_uses[prompt_role(1)].try_emplace(1, 0);
   if constexpr (mtp) for (std::size_t rows = 2; rows <= model.cache_plan.candidate_boundaries; ++rows)
     prompt_uses[GraphRole::kMtpPrefill].try_emplace(rows, 0);
+  for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
+    if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
+    const auto policy_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
+      return request.sampling_index == sampling_index && std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
+    }));
   for (std::size_t width = 1; width <= model.cache_plan.active_sequences; ++width) {
     std::map<GraphRole, std::map<std::size_t, std::size_t>> shapes;
     for (const auto &[role, tokens] : prompt_uses) for (const auto &[count, uses] : tokens) {
       const auto found_role = support.find(role);
-      const auto eligible = found_role == support.end() || !found_role->second.contains(count) ? 0 : found_role->second.at(count).size();
+      const auto eligible = found_role == support.end() || !found_role->second.contains(count) ? 0 : static_cast<std::size_t>(std::count_if(found_role->second.at(count).begin(), found_role->second.at(count).end(), [&](auto member) { return requests[member].sampling_index == sampling_index; }));
       if (width == 1 || width <= eligible) shapes[role][count] = cache::add(uses, width == 1 ? restore_bound : 0);
     }
-    if (decode_bound && width <= decoding_requests) {
+    if (decode_bound && width <= policy_decoding_requests) {
       if constexpr (mtp) for (auto role : roles) {
         if (drafts_token(role) && (model.max_drafts() != 1 || model.recursive_mtp())) continue;
         auto &uses = shapes[role][drafts_token(role) ? 2 : 1]; uses = cache::add(uses, decode_bound);
       }
       else shapes[GraphRole::kText][1] = cache::add(shapes[GraphRole::kText][1], decode_bound);
     }
-    if (mtp && decode_bound && width <= decoding_requests && model.recursive_mtp())
+    if (mtp && decode_bound && width <= policy_decoding_requests && model.recursive_mtp())
       for (std::size_t rows = 1; rows <= model.cache_plan.candidate_boundaries; ++rows)
         shapes[GraphRole::kVerify][rows] = decode_bound;
     // R1 restoration also needs lag0 versions of each original warm chunk.
@@ -5648,17 +5789,21 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     for (const auto &[role, entries] : shapes) {
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
-      model.prepare_family(chunks, false, width, role);
+      model.prepare_family(chunks, false, width, role, false, TextCompletion::kEmitNext, sampling_index);
       for (const auto &[tokens, uses] : entries) model.plan_replay_uses(tokens, width,
-          cache::add(uses, width == 1 ? restore_bound : 0), role);
+          cache::add(uses, width == 1 ? restore_bound : 0), role, TextCompletion::kEmitNext, sampling_index);
     }
+  }
   }
   if (mtp && decode_bound && model.recursive_mtp()) model.prepare_recursive_round_programs();
   const std::array first_prefill{requests.front().prompt.size()};
-  model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]));
+  model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]), TextCompletion::kEmitNext, requests.front().sampling_index);
   if constexpr (!mtp) if (decode_bound) {
     const std::array decode{std::size_t{1}};
-    model.prepare_execution(decode, 1, GraphRole::kText);
+    for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i)
+      if (std::ranges::any_of(requests, [i](const auto &request) { return request.sampling_index == i &&
+          std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; }); }))
+        model.prepare_execution(decode, 1, GraphRole::kText, TextCompletion::kEmitNext, i);
   }
   if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp()) for (auto role : roles) if (drafts_token(role)) model.prepare_execution(pair, 1, role);
   inference::RequestWindow window;
@@ -5712,7 +5857,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
               // key was most recently published by a different request.
               auto restored = model.sampling_fork(std::move(hit.payload.snapshot), last.after.sampling, last.after.next_id);
               hit.reset();
-              request.session = model.create_session({}, std::move(restored), prompt_role(1));
+              request.session = model.create_session({}, std::move(restored), prompt_role(1), {}, false, TextCompletion::kEmitNext, request.sampling_index);
               ++request.checkpoint_resume_hits;
             } else ++request.checkpoint_resume_misses;
           }
@@ -5747,6 +5892,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       const auto selected = batch_indices.select(first,
           calls[first].full_hit ? std::size_t{1} : model.cache_plan.active_sequences, [&](std::size_t j) {
         return calls[j].full_hit == calls[first].full_hit &&
+            calls[j].request->sampling_index == calls[first].request->sampling_index &&
             calls[j].generation == calls[first].generation && calls[j].role == calls[first].role &&
             calls[j].completion == calls[first].completion &&
             calls[j].planned_rows() == calls[first].planned_rows();
@@ -6278,7 +6424,7 @@ int qwen35::run(int argc, char **argv) {
     for (std::size_t s = 0; s < schedules.size(); ++s) {
       const auto &request = schedules[s];
       auto &run = runs[s];
-      run.saved_sampling = {model.sampler.seed, static_cast<std::uint64_t>(s), 0};
+      run.saved_sampling = {model.sampling_seed, static_cast<std::uint64_t>(s), 0};
       run.summaries.resize(request.phases.size());
       if (prefix_enabled) run.history = std::make_shared<qwen35::cache::ReplayHistory>(capacity);
       run.trace_subdirectory = "session" + std::to_string(s) + "_" + request.id;
@@ -6454,7 +6600,7 @@ int qwen35::run(int argc, char **argv) {
         if (!defer_restore) {
           make_initial_room();
           run.session = model.create_session(run.chunks, {}, qwen35::GraphRole::kText,
-              qwen35::cache::SamplingCursor{model.sampler.seed, static_cast<std::uint64_t>(s), 0});
+              qwen35::cache::SamplingCursor{model.sampling_seed, static_cast<std::uint64_t>(s), 0});
           note_committed_versions();
           // Recompute the original token/chunk tape; never resample or replace
           // already returned tokens. A different legal batch reduction may
@@ -6597,7 +6743,7 @@ int qwen35::run(int argc, char **argv) {
             auto history = qwen35::cache::copy_history(hit.payload.replay, capacity);
             const auto cursor = run.session ? run.session->head->sampling : run.saved_sampling;
             auto adopted = model.create_session(remaining, hit.payload.snapshot, qwen35::GraphRole::kText, cursor, suffix == 0);
-            if (model.sampler.enabled && !suffix) {
+            if (model.default_sampler.enabled && !suffix) {
               history->chunks.back().next_id = adopted->head->next_id; ++run.prefix_sampling_calls;
             }
             if (run.session) {
@@ -6621,7 +6767,7 @@ int qwen35::run(int argc, char **argv) {
           for (const auto &part : run.history->chunks) remaining.push_back(part.count);
           remaining.insert(remaining.end(), run.chunks.begin() + static_cast<std::ptrdiff_t>(index), run.chunks.end());
           run.session = model.create_session(remaining, {}, qwen35::GraphRole::kText,
-              qwen35::cache::SamplingCursor{model.sampler.seed, static_cast<std::uint64_t>(s), 0});
+              qwen35::cache::SamplingCursor{model.sampling_seed, static_cast<std::uint64_t>(s), 0});
           note_committed_versions();
           // Recompute actual evaluated chunks, including imported prefixes.
           // Keep any old shared history immutable: new checkpoint metadata
@@ -6649,7 +6795,7 @@ int qwen35::run(int argc, char **argv) {
             throw std::runtime_error("actual-chunk recompute differs from the retained logical boundary");
           if (run.saved_pending >= 0) {
             model.restore_pending_boundary(*run.session, run.saved_sampling, run.saved_pending);
-            if (model.sampler.enabled && !rebuilt_history->chunks.empty())
+            if (model.default_sampler.enabled && !rebuilt_history->chunks.empty())
               rebuilt_history->chunks.back().next_id = run.saved_pending;
           }
           run.history = std::move(rebuilt_history);

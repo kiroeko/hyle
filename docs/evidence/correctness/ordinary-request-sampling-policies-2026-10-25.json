@@ -1,0 +1,347 @@
+{
+  "title": "Ordinary requests share one weight bank with finite immutable sampling policies",
+  "date": "2026-10-25",
+  "status": "PASS",
+  "implementation": {
+    "main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 464655,
+      "sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb"
+    },
+    "baseline": {
+      "path": ".scratch/inference-request-sampling-20261025/canonical-2da-main.cc",
+      "bytes": 451490,
+      "sha256": "2da022c6a43b3d37f4ad85524a47933d386cfc89b77683a89aa2de399a99ef43"
+    },
+    "patch": {
+      "path": ".scratch/inference-request-sampling-20261025/candidate.patch",
+      "bytes": 93373,
+      "sha256": "c8b28c84d43971c2242391774816803296f7e72c7068888ffcd007ef2562db66"
+    },
+    "scope": [
+      "Constructor-only finite immutable configurations; Session direct stable reference; family, child shape, planned slots and natural bucket include selected policy.",
+      "Greedy/random probability graphs retain original operations and precision; heterogeneous policies ordinary Text only.",
+      "New-request full frontier uses selected policy; same-request restore retains its historical pending/cursor.",
+      "GenerationLedger weak identity reuses original ColdResources control block without owning model weights; expired/foreign Model rejected.",
+      "Credit/input preflight precedes first ledger policy binding; exact suffix cache retains original N*R shared limit/drain gates."
+    ]
+  },
+  "actual": {
+    "status": "PASS",
+    "scope": "One same-Model CUDA ordinary generated-weight A fixture, finite three-policy cold bank; no trained artifact/quality/performance claim.",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 464655,
+      "sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\cuda1\\link\\consumer.exe",
+      "bytes": 141294080,
+      "sha256": "411d4471b17f8e2d24ec0c7ded921fe743de4def0f3654be9d17fa661c0df183"
+    },
+    "compile": {
+      "exit": 0,
+      "seconds": 17.171999999991385,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.7179999999934807,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 1.0309999999881256,
+      "timeout": false
+    },
+    "hardware": "Actual stderr: RTX4070 sm89,12281MiB",
+    "geometry": {
+      "H": 64,
+      "V": 64,
+      "FFN": 128,
+      "layers": "A",
+      "capacity": 16,
+      "N": 2,
+      "R": 2
+    },
+    "weights": {
+      "physical_text_roles": 13,
+      "physical_mtp_roles": 0,
+      "device_bytes": 98944,
+      "generated": true,
+      "original_artifact": false
+    },
+    "configurations": [
+      {
+        "index": 0,
+        "enabled": false,
+        "temperature": 1,
+        "top_k": 0,
+        "top_p": 1
+      },
+      {
+        "index": 1,
+        "enabled": true,
+        "temperature": 1,
+        "top_k": 1,
+        "top_p": 1
+      },
+      {
+        "index": 2,
+        "enabled": true,
+        "temperature": 0.7,
+        "top_k": 8,
+        "top_p": 0.9
+      }
+    ],
+    "natural": {
+      "requests": 6,
+      "turns": 12,
+      "outputs": 30,
+      "actual_buckets": 15,
+      "all_buckets_real_R2": true,
+      "all_buckets_single_policy": true,
+      "idle_evictions": 6,
+      "ledger_restores": 4,
+      "restored_graph_calls": 12,
+      "decision_changes": 0,
+      "requests_facts": [
+        {
+          "id": "g0",
+          "index": 0,
+          "ids": [
+            39,
+            5,
+            42,
+            37,
+            0
+          ],
+          "draw": 0,
+          "restore_count": 0,
+          "input_turn2": [
+            42,
+            3
+          ]
+        },
+        {
+          "id": "g1",
+          "index": 0,
+          "ids": [
+            39,
+            5,
+            42,
+            37,
+            0
+          ],
+          "draw": 0,
+          "restore_count": 0,
+          "input_turn2": [
+            42,
+            3
+          ]
+        },
+        {
+          "id": "r0",
+          "index": 2,
+          "ids": [
+            39,
+            42,
+            11,
+            43,
+            40
+          ],
+          "draw": 5,
+          "restore_count": 1,
+          "input_turn2": [
+            11,
+            3
+          ]
+        },
+        {
+          "id": "r1",
+          "index": 2,
+          "ids": [
+            5,
+            2,
+            45,
+            43,
+            9
+          ],
+          "draw": 5,
+          "restore_count": 1,
+          "input_turn2": [
+            45,
+            3
+          ]
+        },
+        {
+          "id": "k0",
+          "index": 1,
+          "ids": [
+            39,
+            5,
+            42,
+            37,
+            0
+          ],
+          "draw": 5,
+          "restore_count": 1,
+          "input_turn2": [
+            42,
+            3
+          ]
+        },
+        {
+          "id": "k1",
+          "index": 1,
+          "ids": [
+            39,
+            5,
+            42,
+            37,
+            0
+          ],
+          "draw": 5,
+          "restore_count": 1,
+          "input_turn2": [
+            42,
+            3
+          ]
+        }
+      ]
+    },
+    "boundaries": {
+      "private_facts": "mixed-policy-boundaries",
+      "producer": 5,
+      "greedy": 39,
+      "full_hit_selected": true,
+      "partial_hit_zero_cursor": true,
+      "same_request_historical": true,
+      "ledger_rebuild_policy": 2,
+      "old_reader_immutable": true
+    },
+    "credit_and_tokens_rejected_before_ledger_binding": true,
+    "after_boundary_checks_live_versions": 0,
+    "weak_identity_host": {
+      "status": "PASS",
+      "kind": "actual CPU host-only cold policy/identity/ownership checks",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\host3\\host.exe",
+        "bytes": 20556800,
+        "sha256": "4e36d85eb8ef1cdcdc3cdc083134a3bc2ab5086caf43270ab2a28d5ff0e9ad44"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 464655,
+        "sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb"
+      },
+      "GPU": 0,
+      "Model_or_weights": 0,
+      "SDK_build": 0
+    },
+    "strict_CPU_CUDA": {
+      "exit": 0,
+      "seconds": 7.062999999994645,
+      "timeout": false
+    },
+    "permanent_case": {
+      "pins": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 464655,
+          "sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+          "bytes": 18794,
+          "sha256": "b29b18a79b410fd548524f772dd960581055ac5eff2ea44bf77641deb890a6fd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_sampling_policy_case.h",
+          "bytes": 7851,
+          "sha256": "6f7fda05b98fc395a8bed111b9371509891c73d39cebd934cab6e3bcde2aaabf"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+          "bytes": 18244,
+          "sha256": "86f381b7f7ea7b3e1e3be66c63e17d7e55c941de50d2805945e140d896c6c641"
+        }
+      ],
+      "strict": {
+        "exit": 0,
+        "seconds": 7.187999999994645,
+        "timeout": false
+      },
+      "run": false,
+      "reason": "Generalized existing heavy-executable case; source checked only, no repeated GPU run."
+    },
+    "limits": [
+      "Natural run had no directory lookup hits; full-hit/partial-hit selected policy checks directly used original complete Snapshot/hidden with same Model create_session.",
+      "Actual CUDA ran exactly the frozen private main; canonical was then integrated byte-identically by root.",
+      "Default single greedy zero-hidden preservation is source/host derived, no second Model bank/run.",
+      "No nondefault MTP, CPU runtime, other backend, full-model quality or performance claims."
+    ],
+    "HTTP": 0,
+    "SDK_builds": 0,
+    "GPU_processes": 1
+  },
+  "host": {
+    "status": "PASS",
+    "kind": "actual CPU host-only cold policy/identity/ownership checks",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\host3\\host.exe",
+      "bytes": 20556800,
+      "sha256": "4e36d85eb8ef1cdcdc3cdc083134a3bc2ab5086caf43270ab2a28d5ff0e9ad44"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 464655,
+      "sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb"
+    },
+    "GPU": 0,
+    "Model_or_weights": 0,
+    "SDK_build": 0
+  },
+  "first_failures": [
+    {
+      "path": "syntax1",
+      "kind": "private strict check: local sampler shadowed old member",
+      "fixed": true
+    },
+    {
+      "path": "syntax2",
+      "kind": "private strict check: three wrong selected-sampler scope references",
+      "fixed": true
+    },
+    {
+      "path": "syntax4-cpu-cuda",
+      "kind": "private harness lacked cached CUDA include path",
+      "fixed": true
+    },
+    {
+      "path": "host1/link",
+      "kind": "private harness initially omitted existing execution_report object",
+      "fixed": true
+    }
+  ],
+  "verification_boundaries": [
+    "The only CUDA process used the frozen private main and one generated-weight H64/V64 A-only bank. No trained artifact, full-model quality or throughput result.",
+    "The integrated canonical main exactly matched frozen main when permanent test was strict-compiled. A generalized --sampling-policies case was registered in the existing lifecycle executable; it was not separately run.",
+    "Natural run had 0 prefix-directory hits. Additional full/partial prefix policy checks directly reused original complete Snapshot/hidden through real same-Model create_session.",
+    "Default single greedy zero-hidden path retained by original cold condition and host/source review; no extra full Model was allocated for a duplicate baseline.",
+    "Original MTP default graph/math source paths retained; this batch does not add heterogeneous MTP or run another MTP/backend matrix."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ordinary-request-sampling-policies-2026-10-25.zip",
+    "bytes": 395373,
+    "sha256": "42d3ac7b7253ad7846705ef5c568724bab4412e18717cf539efef13e9b0e6d28",
+    "members": 149,
+    "crc_checked": true,
+    "member_sha_checked": true,
+    "weights_or_binaries_included": false
+  },
+  "raw": ".scratch/inference-request-sampling-20261025",
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "GPU_processes": 1
+}

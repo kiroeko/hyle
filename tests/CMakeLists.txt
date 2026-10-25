@@ -286,11 +286,13 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     COMMAND hyle_qwen_request_lifecycle_test --chunked-prefill)
   add_test(NAME hyle_qwen_dual_model_test
     COMMAND hyle_qwen_request_lifecycle_test --dual-model)
+  add_test(NAME hyle_qwen_sampling_policy_test
+    COMMAND hyle_qwen_request_lifecycle_test --sampling-policies)
   add_test(NAME hyle_qwen_retirement_status_test
     COMMAND hyle_qwen_request_lifecycle_test --retirement-status-only)
   set_tests_properties(hyle_qwen_retirement_status_test PROPERTIES
     LABELS "tooling;generation;retirement" TIMEOUT 30)
-  set_tests_properties(hyle_qwen_request_lifecycle_test hyle_qwen_chunked_prefill_test hyle_qwen_dual_model_test PROPERTIES
+  set_tests_properties(hyle_qwen_request_lifecycle_test hyle_qwen_chunked_prefill_test hyle_qwen_dual_model_test hyle_qwen_sampling_policy_test PROPERTIES
     LABELS "tooling;generation;admission;cuda;local-model" TIMEOUT 180
     SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 endif()
