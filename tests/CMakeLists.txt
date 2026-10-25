@@ -304,6 +304,13 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
     COMMAND hyle_qwen_request_lifecycle_test --dual-model)
   add_test(NAME hyle_qwen_sampling_policy_test
     COMMAND hyle_qwen_request_lifecycle_test --sampling-policies)
+  if(TARGET hyle_graph_route_cpu)
+    add_test(NAME hyle_qwen_request_stop_policy_test
+      COMMAND hyle_qwen_request_lifecycle_test --stop-policies)
+    set_tests_properties(hyle_qwen_request_stop_policy_test PROPERTIES
+      LABELS "tooling;generation;stopping;cpu;local-model" TIMEOUT 120
+      SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+  endif()
   add_test(NAME hyle_qwen_retirement_status_test
     COMMAND hyle_qwen_request_lifecycle_test --retirement-status-only)
   set_tests_properties(hyle_qwen_retirement_status_test PROPERTIES

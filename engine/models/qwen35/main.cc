@@ -44,6 +44,7 @@
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/prepared_output.h"
 #include "../../inference/request_progress.h"
+#include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_indices.h"
@@ -1236,6 +1237,22 @@ struct GenerationCommitRecord final {
 struct GenerationLedger final {
   std::vector<GenerationCommitRecord> records;
   std::size_t committed_count = 0;
+private:
+  // Value-owned immutable configuration survives GenerationRequest relocation.
+  // This is copied only at initial cold binding, never per token/record.
+  std::optional<inference::RequestStopPolicy> stop_policy_;
+public:
+  const inference::RequestStopPolicy &stop_policy() const noexcept {
+    return stop_policy_ ? *stop_policy_ : inference::default_request_stop_policy;
+  }
+  void validate_stop_policy(const inference::RequestStopPolicy &value) const {
+    if ((stop_policy_ || committed_count) && stop_policy() != value)
+      throw std::runtime_error("request stop policy differs from its committed generation ledger");
+  }
+  void bind_stop_policy(const inference::RequestStopPolicy &value, std::int64_t vocabulary) {
+    value.validate(vocabulary); validate_stop_policy(value);
+    if (!stop_policy_) stop_policy_.emplace(value);
+  }
   const PreparedSampling *sampling = nullptr; // Borrowed immutable cold policy, never a cursor.
   std::weak_ptr<ColdResources> sampling_owner; // Identity only: cannot pin weights or admit an address-reused Model.
   void validate_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) const {
@@ -1388,6 +1405,9 @@ class Session;
 struct StepMember final {
   std::shared_ptr<Session> session;
   cache::SnapshotRef base;
+  // Synchronous episode borrow, like its original request input. No native
+  // callback reads this policy; the original owner keeps it through finish.
+  const inference::RequestStopPolicy *stop_policy = nullptr;
   std::shared_ptr<cache::Snapshot> next{};
   hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
@@ -1915,6 +1935,7 @@ public:
 struct EvaluationRequest final {
   std::shared_ptr<Session> session;
   std::span<const std::int32_t> ids;
+  const inference::RequestStopPolicy *stop_policy = nullptr;
 };
 struct EvaluationOutput final {
   std::shared_ptr<Session> session;
@@ -4106,6 +4127,10 @@ public:
       if (!request.session || request.session->model_ != this)
         throw std::runtime_error("batch session belongs to another model");
       const auto &session = *request.session;
+      const auto &stop_policy = inference::request_stop_policy(request.stop_policy);
+      stop_policy.validate(vocabulary);
+      if (role != GraphRole::kText && !stop_policy.is_default())
+        throw std::runtime_error("nondefault request stop policy is ordinary Text only");
       if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error("batch requires one cold sampling configuration");
       if (session.stopping || session.failed || session.pending)
         throw std::runtime_error("batch session is stopped, failed or already pending");
@@ -4130,7 +4155,8 @@ public:
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (const auto &request : requests) {
-      candidate->members.push_back({.session = request.session, .base = request.session->head});
+      candidate->members.push_back({.session = request.session, .base = request.session->head,
+          .stop_policy = request.stop_policy});
       candidate->members.back().first_input = request.ids.front();
       if (role == GraphRole::kVerify)
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
@@ -4326,8 +4352,9 @@ public:
 
   void prepare_evaluation(Session &session, std::span<const std::int32_t> ids,
                           inference::PreparationObservation *preparation = nullptr,
-                          GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext) {
-    const std::array requests{EvaluationRequest{session.shared_from_this(), ids}};
+                          GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext,
+                          const inference::RequestStopPolicy *stop_policy = nullptr) {
+    const std::array requests{EvaluationRequest{session.shared_from_this(), ids, stop_policy}};
     prepare_evaluations(requests, preparation, role, completion);
   }
 
@@ -4379,6 +4406,9 @@ public:
             throw std::runtime_error("generation role differs from its complete target/draft participant");
           for (std::size_t k = 0; k < j; ++k) if (outputs[k].generation_ledger == outputs[j].generation_ledger)
             throw std::runtime_error("batch participants cannot share a mutable generation ledger");
+          if (outputs[j].generation_ledger->stop_policy() !=
+              inference::request_stop_policy(step.members[j].stop_policy))
+            throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
           auto &record = outputs[j].generation_ledger->next();
           step.members[j].commit_ledger = outputs[j].generation_ledger; step.members[j].commit_record = &record;
           if (record.role != phase.family->role || record.completion != phase.family->completion || record.before != generation_boundary(*step.members[j].base) ||
@@ -4561,7 +4591,9 @@ public:
         if (!record->generation || phase.family->role == GraphRole::kText) {
           record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
           record->agreed = false; record->accepted_draft = false;
-          record->stopped = !state_only && is_end_of_generation(next_ids[j]);
+          record->stopped = !state_only && (phase.family->role == GraphRole::kText
+              ? inference::request_stop_policy(member.stop_policy).stopped(next_ids[j], is_end_of_generation(next_ids[j]))
+              : is_end_of_generation(next_ids[j]));
           if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
           else { record->emitted = {next_ids[j], -1}; record->emitted_count = 1; }
         }
@@ -4987,8 +5019,8 @@ std::int32_t evaluate(Model &model, Session &session, std::span<const std::int32
     const std::filesystem::path &trace = {}, bool trace_states = true,
     double *complete_seconds = nullptr, Clock::time_point *host_endpoint = nullptr,
     inference::StepObservation *observation = nullptr, inference::PreparationObservation *preparation = nullptr,
-    std::string_view probe_subdirectory = {}) {
-  model.prepare_evaluation(session, ids, preparation);
+    std::string_view probe_subdirectory = {}, const inference::RequestStopPolicy *stop_policy = nullptr) {
+  model.prepare_evaluation(session, ids, preparation, GraphRole::kText, TextCompletion::kEmitNext, stop_policy);
   try { model.submit_evaluation(session); return finish_evaluation(model, session, name, trace, trace_states,
       complete_seconds, host_endpoint, observation, preparation, probe_subdirectory); }
   catch (inference::EvaluationFailure &failure) {
@@ -5069,6 +5101,7 @@ struct GenerationRequest {
   std::size_t prefix_sampling_calls = 0;
   std::size_t auxiliary_graph_calls = 0;
   double prefix_sampling_seconds = 0;
+  const inference::RequestStopPolicy stop_policy;
   std::unique_ptr<GenerationLedger> ledger;
   struct TurnObservation {
     Clock::time_point start{}, prefill_endpoint{}, endpoint{};
@@ -5087,9 +5120,10 @@ struct GenerationRequest {
   std::int32_t fresh_next_id = -1;
 
   GenerationRequest(std::string name, std::span<const std::int32_t> ids,
-                       std::filesystem::path output, std::size_t steps, std::size_t sampling = 0)
+                       std::filesystem::path output, std::size_t steps, std::size_t sampling = 0,
+                       inference::RequestStopPolicy stop = {})
       : id(std::move(name)), memory_name(id.empty() ? "generation" : "generation_" + id),
-        prompt(ids), trace(std::move(output)), progress(steps), sampling_index(sampling) {
+        prompt(ids), trace(std::move(output)), progress(steps), stop_policy(std::move(stop)), sampling_index(sampling) {
     rounds.reserve(steps - 1);
   }
 };
@@ -5169,7 +5203,9 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.prefill_complete = !part.state_only;
     record.input_begin = part.first;
     record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
-    record.stopped = is_end_of_generation(part.next_id);
+    record.stopped = !draft_cache
+        ? ledger.stop_policy().stopped(part.next_id, is_end_of_generation(part.next_id))
+        : is_end_of_generation(part.next_id);
     record.user_output = full_hit && i + 1 == prefix.chunks;
     record.imported = true;
     record.requests = 0; // Role-only source history does not claim original batch geometry.
@@ -5198,7 +5234,7 @@ void observe_generation_commits(GenerationRequest &request) {
          record.ids().data() != request.prompt.data() + request.turn_input_consumed ||
          record.prefill_complete != (record.ids().size() == request.prompt.size() - request.turn_input_consumed)))
       throw std::runtime_error("committed prefill input is not the next actual turn slice");
-    const bool stopped = is_end_of_generation(record.after.next_id);
+    const bool stopped = record.role == GraphRole::kText ? record.stopped : is_end_of_generation(record.after.next_id);
     if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped))
       continue;
     if (record.user_output && record.generation &&
@@ -5282,8 +5318,8 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     std::span<const GenerationRequest> requests = {}) {
   const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
-  if (sampling_index || !model.cache_plan.draft_cache)
-    throw std::runtime_error("strict MTP replay requires the original complete target/draft model");
+  if (sampling_index || !model.cache_plan.draft_cache || !ledger.stop_policy().is_default())
+    throw std::runtime_error("strict MTP replay requires the original complete target/draft model and default stop policy");
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
     throw std::runtime_error("MTP restore requires a complete zero-origin ledger and an idle carrier");
@@ -5297,6 +5333,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
   const std::array calls{first.ids().size()};
   auto session = model.create_session(calls, {}, first.role, first.before.sampling);
   GenerationLedger actual(ledger.committed_count, model.cache_plan.candidate_boundaries);
+  actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
   const std::array<std::int32_t, 2> eos{248044, 248046};
   try {
     for (std::size_t index = 0; index < ledger.committed_count; ++index) {
@@ -5352,6 +5389,9 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     GenerationRestoreStats *stats = nullptr, cache::PrefixCache *prefix = nullptr,
     std::span<const GenerationRequest> requests = {}) {
   const auto sampling_index = model.sampling_index(ledger);
+  ledger.stop_policy().validate(model.vocabulary);
+  if (model.cache_plan.draft_cache && !ledger.stop_policy().is_default())
+    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   const auto started = Clock::now();
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
@@ -5385,6 +5425,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
   auto session = model.create_session(calls, {}, role_for(first_ids.size()),
       ledger.records[0].before.sampling, false, ledger.records[0].completion, sampling_index);
   GenerationLedger actual(ledger.committed_count);
+  actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
   std::size_t observed = 0;
   const auto observe = [&] {
     while (observed < actual.committed_count) {
@@ -5406,7 +5447,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
       prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner, 0,
           source.completion, source.input_begin, source.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
-      model.prepare_evaluation(*session, ids, nullptr, role, source.completion); model.submit_evaluation(*session);
+      model.prepare_evaluation(*session, ids, nullptr, role, source.completion, &actual.stop_policy()); model.submit_evaluation(*session);
       (void)qwen35::finish_evaluation(model, *session, "episode" + std::to_string(i), trace, trace_states,
           nullptr, nullptr, nullptr, nullptr, {}, &actual);
       observe();
@@ -5461,6 +5502,10 @@ bool checkpoint_covers_generation_ledger(const cache::Checkpoint &checkpoint,
 void restore_generation_session(Model &model, GenerationRequest &request,
     cache::PrefixCache *prefix = nullptr, bool trace_states = true,
     std::span<const GenerationRequest> requests = {}) {
+  request.stop_policy.validate(model.vocabulary);
+  if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
+    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
+  if (request.ledger) request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (request.session) {
     if (&request.session->sampling_configuration() != &prepared_sampling)
@@ -5534,6 +5579,10 @@ struct PreparedGenerationCall final {
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
     cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
     std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
+  request.stop_policy.validate(model.vocabulary);
+  if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
+    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
+  if (request.ledger) request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (model.cache_plan.draft_cache && request.sampling_index)
     throw std::runtime_error("nondefault request sampling is ordinary Text only");
@@ -5554,6 +5603,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (request.progress.turn_done) throw std::runtime_error("MTP request has already completed");
   if (request.ledger && request.round_emitted.size() < steps - 1)
     throw std::runtime_error("MTP observer slots must be reserved for every turn before execution");
+  if (request.ledger) request.ledger->bind_stop_policy(request.stop_policy, model.vocabulary);
   PreparedGenerationCall call; call.request = &request; call.steps = steps;
   call.generation = request.progress.prefilled;
   if (!call.generation) {
@@ -5624,7 +5674,9 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
             last.after.sampling = adopted->head->sampling;
             last.after.next_id = adopted->head->next_id;
             last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
-            last.emitted_count = 1; last.stopped = is_end_of_generation(last.after.next_id);
+            last.emitted_count = 1; last.stopped = !model.cache_plan.draft_cache
+                ? request.stop_policy.stopped(last.after.next_id, is_end_of_generation(last.after.next_id))
+                : is_end_of_generation(last.after.next_id);
           }
           request.ledger->bind_sampling(prepared_sampling, model.resources_);
           request.progress.adopt_committed_history(request.ledger->committed_count);
@@ -5714,7 +5766,8 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
   const auto emitted = !apply_output ? std::span<const std::int32_t>{}
       : !call.generation ? std::span<const std::int32_t>(&next_id, 1)
       : std::span<const std::int32_t>(result->emitted);
-  const bool stopped = is_end_of_generation(next_id);
+  const bool stopped = call.role == GraphRole::kText
+      ? request.stop_policy.stopped(next_id, is_end_of_generation(next_id)) : is_end_of_generation(next_id);
   if (apply_output) request.progress.preflight_outputs(emitted, true, !call.generation, stopped);
   if (!request.ledger && call.generation && request.rounds.size() == request.rounds.capacity())
     throw std::runtime_error("generation observer requires its original cold-reserved round storage");
@@ -5820,7 +5873,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if (request.ledger) prepare_generation_record(*request.ledger, *request.session, role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
         call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
-    inputs.push_back({request.session, call.ids()});
+    inputs.push_back({request.session, call.ids(), request.ledger
+        ? &request.ledger->stop_policy() : &request.stop_policy});
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
         nullptr, nullptr, request.ledger.get()));
@@ -5844,7 +5898,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         auto &result = results[j];
         result.pending = calls[j].pending; result.target_first = next[j]; result.next_id = next[j];
         result.processed_target = 1; result.verified_rows = 1;
-        result.emitted = {next[j]}; result.stopped = is_end_of_generation(next[j]);
+        result.emitted = {next[j]}; result.stopped = calls[j].request->stop_policy.stopped(next[j], is_end_of_generation(next[j]));
       }
       calls[j].step_seconds += calls[j].proposal_seconds;
       if (calls[j].request->ledger && calls[j].proposal_seconds) {
@@ -6048,8 +6102,15 @@ void print_generation_request(const Model &model, const GenerationRequest &reque
 template<GenerationMode Mode>
 int run_generation_sessions(Model &model, std::span<const inference::GenerationSessionSchedule> schedules,
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
-    Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans, std::span<const std::size_t> sampling_indices = {}) {
+    Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans,
+    std::span<const std::size_t> sampling_indices = {}, std::span<const inference::RequestStopPolicy> stop_policies = {}) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
+  if (!stop_policies.empty() && stop_policies.size() != schedules.size())
+    throw std::runtime_error("one immutable stop policy is required per request");
+  for (const auto &policy : stop_policies) {
+    policy.validate(model.vocabulary);
+    if (mtp && !policy.is_default()) throw std::runtime_error("nondefault request stop policy is ordinary Text only");
+  }
   if (!sampling_indices.empty() && sampling_indices.size() != schedules.size())
     throw std::runtime_error("one cold sampling choice is required per request");
   for (const auto index : sampling_indices) {
@@ -6081,7 +6142,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     const auto &first = schedule.turns.front().prompt;
     requests.emplace_back(schedule.id, first, trace.empty() ? trace : trace /
-        ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()]);
+        ("session" + std::to_string(requests.size()) + "_" + schedule.id), outputs, sampling_indices.empty() ? 0 : sampling_indices[requests.size()],
+        stop_policies.empty() ? inference::RequestStopPolicy{} : stop_policies[requests.size()]);
     auto &request = requests.back(); request.progress.bind_turns(schedule.turns);
     request.progress.initial_sampling = {model.sampling_seed, static_cast<std::uint64_t>(requests.size() - 1), 0};
     request.turn_observations.resize(schedule.turns.size());

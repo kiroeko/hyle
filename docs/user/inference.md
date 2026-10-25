@@ -61,6 +61,8 @@ local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用
 目前已检查完整原头部、小原权重投影和小清单真实加载，见[接线记录](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)；
 这不代表该 27B 制品已完成整模型生成。借入这类分离 target／MTP 文件时使用完整的 `--role-files` 原角色记录。
 `--steps` 是最多输出数，包含 prefill 首 token，遇 EOS 可提前结束。
+底层普通请求还可独立设置额外停止 token、忽略模型 EOS，并在缓存命中与恢复时保留请求政策；
+当前命令行继续使用默认模型 EOS，该非默认请求配置尚未扩展到 MTP。
 Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-dir>` 是脚本报告的目录。
 输入不足、模型身份不符、上下文容量不足或不支持的参数组合会明确失败。
 

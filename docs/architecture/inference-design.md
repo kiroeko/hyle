@@ -305,6 +305,12 @@ host 合同及 Windows CPU 的真实 Session／R2 准备与续算；合成状态
 覆盖实际坏 A／好 B、B 的状态／ledger／RNG 不变和同 key 续算。默认 CLI 仍遇错退出；
 未注入 native 读失败、退休失败或多个坏成员，不以此宣称所有入口的错误隔离已完成。
 
+普通请求的停止 token 政策是冷不可变输出配置，独立于 KV、采样图和 FamilyKey。
+ledger 冷期值拥有同一政策，完成阶段记录 stopped，观察阶段消费该事实；前缀命中使用
+新请求政策，原请求暂停／重建保持自己的政策。非默认政策进入未绑定 ledger 时必须在
+发布前拒绝，不能在 finish 首次复制配置。[host 与 CPU 旅程](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)
+已检查这些边界；MTP 目前只接受默认停止合同。
+
 `OutputDelivery` 只借用原有界输出记录，保存成功交付的绝对前缀游标；重复或较旧的确认
 不重复推进。它既不观察模型 commit，也不拥有第二队列；模型 turn 完成后仍可保留最终
 未交付输出。owner 先核 request key，再用当前记录的实际长度计算 credit，不能采信晚事件

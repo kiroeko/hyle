@@ -1,5 +1,6 @@
 // Host request semantics only. No model, native route, or test framework.
 #include "../../engine/inference/request_progress.h"
+#include "../../engine/inference/request_stop_policy.h"
 #include "../../engine/inference/request_window.h"
 
 #include <array>
@@ -292,6 +293,43 @@ void real_early_stop_releases_only_unused_open_quota_once() {
       progress.observed_commits()==2 && pending[0]==7,
       "early-stop quota reuse allocated, consumed pending twice or changed commit authority");
 }
+
+void immutable_request_stop_policy_controls_original_progress() {
+  using hyle::inference::RequestStopPolicy;
+  const RequestStopPolicy defaults;
+  const RequestStopPolicy ignored({},true);
+  std::array<std::int32_t,3> source{9,7,9};
+  const RequestStopPolicy extra(source);
+  const RequestStopPolicy copied=extra;
+  source[0]=63;
+  require(extra.extra_tokens().size()==2 && extra.extra_tokens()[0]==7 &&
+      extra.extra_tokens()[1]==9 && copied==extra &&
+      copied.extra_tokens().data()!=extra.extra_tokens().data(),
+      "request stop configuration did not own its normalized cold IDs");
+  require(defaults.stopped(3,true) && !defaults.stopped(3,false) &&
+      !ignored.stopped(3,true) && extra.stopped(7,false) && extra.stopped(3,true),
+      "default/extra/ignored model EOS policies changed their distinct meanings");
+  const std::array<std::int32_t,1> three{3};
+  const RequestStopPolicy explicit_even_if_ignored(three,true);
+  require(explicit_even_if_ignored.stopped(3,true) && !explicit_even_if_ignored.stopped(4,true),
+      "ignoring model EOS also disabled an explicit request stop token");
+  const std::array<std::int32_t,1> negative{-1},outside{64};
+  rejects([&]{(void)RequestStopPolicy(negative);});
+  const RequestStopPolicy invalid(outside);
+  rejects([&]{invalid.validate(64);});
+  rejects([&]{defaults.validate(0);});
+  RequestProgress a(3),b(3);a.begin_turn();b.begin_turn();
+  const std::array<std::int32_t,1> seven{7};
+  allocation_count=0;track_allocations=true;
+  extra.validate(64);copied.validate(64);defaults.validate(64);
+  a.observe_commit(0,seven,true,true,extra.stopped(7,false));
+  b.observe_commit(0,seven,true,true,defaults.stopped(7,false));
+  const bool duplicate=a.observe_commit(0,seven,true,true,false);
+  track_allocations=false;
+  require(!duplicate && a.turn_done && a.request_done() && a.generated.size()==1 &&
+      !b.turn_done && b.remaining_outputs()==2 && allocation_count==0,
+      "request-specific stop changed quotas/duplicate observation or allocated on prepared progress");
+}
 } // namespace
 
 int main() {
@@ -312,6 +350,8 @@ int main() {
     std::puts("PASS cold open bounds, closed/finite input and idempotent close");
     real_early_stop_releases_only_unused_open_quota_once();
     std::puts("PASS actual EOS quota refund, duplicate no-op and allocation-free remaining-capacity admission");
+    immutable_request_stop_policy_controls_original_progress();
+    std::puts("PASS immutable request stop IDs, default/extra/ignore semantics and allocation-free original progress");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false; std::fprintf(stderr, "%s\n", error.what()); return 1;
