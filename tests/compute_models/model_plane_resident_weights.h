@@ -36,10 +36,13 @@ struct Layout final {
       r.slot_bytes+=size;return true;
     };
     for(const auto &d:actual_planes) {
-      if(!d.valid()||!d.is_plain()||!d.is_dense()||d.rank()!=2||d.dimensions()[0]<=0||d.dimensions()[1]<=0)
-        return std::unexpected(hyle::Status::InvalidArgument("original plane must keep its actual dense rank2 encoding"));
+      if(!d.valid()||!d.is_plain()||!d.is_dense()||d.rank()>=c::kMaxTensorRank||
+          std::ranges::any_of(d.dimensions(),[](auto n){return n<=0;}))
+        return std::unexpected(hyle::Status::InvalidArgument("original plane must keep its actual positive plain dense encoding and leave one bank axis"));
       HYLE_ASSIGN_OR_RETURN(auto bytes,d.required_bytes());
-      HYLE_ASSIGN_OR_RETURN(auto bank,c::TensorDesc::dense(d.data_type(),std::array{capacity,d.dimensions()[0],d.dimensions()[1]}));
+      std::array<std::int64_t,c::kMaxTensorRank> dimensions{};dimensions[0]=capacity;
+      std::copy(d.dimensions().begin(),d.dimensions().end(),dimensions.begin()+1);
+      HYLE_ASSIGN_OR_RETURN(auto bank,c::TensorDesc::dense(d.data_type(),std::span(dimensions).first(d.rank()+1)));
       HYLE_ASSIGN_OR_RETURN(auto total,bank.required_bytes());
       if(!add(total)||total>std::numeric_limits<std::size_t>::max()-r.logical_bytes)
         return std::unexpected(hyle::Status::InvalidArgument("original plane layout extent overflow"));

@@ -16,7 +16,9 @@
 
 19的[原fused gate/up冷拆分与bank组合](../evidence/correctness/inferact-fused-mxfp4-source-2026-10-25.json)按原4096行的两个2048行半区，分别使用W与F32 SF的真实行步幅，各取前3行、保完整K8192。现有E8M0转换、四平面及global/local map同代发布、BF16-A grouped reader和独立旧结果在CPU通过；不量化A，不解码完整专家库。数值为生成fixture，现GRS/RNE转换不代表producer OAS或原生kernel逐位等价，也不签完整FFN／模型或吞吐。
 
-CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18／21 selected bank、原数值及完整Model／MoE仍分开记录。
+20的[Kimi NVFP4／FP8混合源组合](../evidence/correctness/kimi-mixed-pb-nvfp4-source-2026-10-25.json)保留attention与routed-expert的两个真实输入边界，同图复用stored-F32动态group128 reader和NVFP4 quartet reader。原标量尺度按rank0进入bank，不再伪造矩阵或插入补救View。两代生成fixture、268个BF16端点及10→10→0 bank退休检查在CPU通过；不代表两个子图间的完整模型、原payload或吞吐。
+
+CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18 selected bank、原数值及完整Model／MoE仍分开记录，21后续结果见下文。
 
 21的[独立源角色到selected bank](../evidence/correctness/ct21-selected-source-2026-10-25.json)已沿现CpuSupply与共享数学执行完整N3072／K3584的有限W1投影，先checked global/local映射再选中解码。两代生成fixture、缺失映射的预期完成失败，以及6→6→0 bank退休检查在CPU通过。消费者用显式12 KiB Copy导出独立旧结果；保留首跑直接导出借用view被拒的记录，不放宽Graph权限。仍不签完整FFN、原payload、其它后端或吞吐；18的local NVFP4专家组合另核。
 

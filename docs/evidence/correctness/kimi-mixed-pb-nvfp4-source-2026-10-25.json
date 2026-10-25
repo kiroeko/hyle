@@ -1,0 +1,138 @@
+{
+  "status": "MIXED_STORED_F32_PB_AND_SELECTED_NVFP4_SOURCE_CPU_PASS",
+  "date": "2026-10-25",
+  "change": "Original layer12 attention f_a E4/F32-SF roles and selected expert W1 NVFP4 quartet roles now have one finite ordinary Graph source/lease consumer. Existing import_float8_block128_weight, Float8BlockLinear, GroupedNvfp4Linear and bounded CpuSupply/map are reused.",
+  "integration": "Root independently reviewed and applied the three exact checked source paths before the CPU check. Packaging did not rebuild or rerun them.",
+  "sources": [
+    {
+      "path": "tests/compute_models/model_plane_resident_weights.h",
+      "before": {
+        "bytes": 9035,
+        "sha256": "90d265da3b0ea59d6b5bedf58a056a3bdc42bb16ed260076bf853a3b8bd4bd68"
+      },
+      "after": {
+        "bytes": 9265,
+        "sha256": "11e260c29883d006c23cfbf06f676b9c146a19a3e67e20984482dfebc06ed561"
+      }
+    },
+    {
+      "path": "tests/compute_models/kimi_modelopt_mixed_source_fixture.h",
+      "before": null,
+      "after": {
+        "bytes": 17464,
+        "sha256": "55db81c7b5251310c06dee3ab8e1abd0a7dd73f2cf4191dfea1f0fa00f52ec70"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/e8m0_weight_import_test.cc",
+      "before": {
+        "bytes": 1772,
+        "sha256": "3430961fc27937b640d2218984c8e47cf41ee0d876fea5667f992a21690e0b34"
+      },
+      "after": {
+        "bytes": 9645,
+        "sha256": "b57ca3e0c5cdc82b3bc35c088264df60e7015902f9b356c7ac3940adfbcd3035"
+      }
+    }
+  ],
+  "scope": {
+    "repository": "nvidia/Kimi-K3-NVFP4",
+    "revision": "b2428a0b83a8b712ff2e1a8448a103d4175341f1",
+    "shard": "model-00013-of-000096.safetensors",
+    "header": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\fixed-role-binding-2026-10-21\\kimi\\20\\headers\\model-00013-of-000096.safetensors\\header.json",
+      "bytes": 1533696,
+      "sha256": "98870ff4dbd8bf7cc42342571f0c38038ec6dc8921a40ec3a38079d22a8fbf78"
+    },
+    "source_metadata_roles": 18,
+    "original_numeric_payload_bytes": 0,
+    "original_PB": "Full E4[128,7168], independent raw F32[1,1,56,1] SF. Singleton removal is an explicit metadata view, then one cold bit-preserving import.",
+    "original_experts": "Original W1 N3072/K3584 quartet roles for experts0..3; this consumer explicitly selects first N3 rows/full K3584. Original WG/IG are F32 scalars (rank0).",
+    "upstream": "Distinct attention f_a BF16[1,7168] and post-routed-down/norm BF16[1,1,3584] inputs. No fabricated128-to3584 edge, complete router/down/norm/layer, or full model is claimed."
+  },
+  "math": {
+    "PB": "Explicit existing stored-F32 software reader: dynamic group128 divide/floor1e-4, F32 scale and normalization. It is not power2, A16, CT BF16 pre-round or an inference from the PB_WO name.",
+    "experts": "Existing ModelOpt NVFP4 quartet equation with independent per-expert WG/IG, group16 A QDQ, original BF16 A/W store points and F32 accumulation/BF16 output. This is separate from CT local-NVFP4 divisor math.",
+    "reference": "Unchanged existing scalar E4/E2M1 and explicit F32/BF16 helpers. Sparse generated weights permit exact endpoint expectations; wrong A16/power2, shared IG, omitted A/W BF16 stores differ on these fixtures."
+  },
+  "geometry": {
+    "PB_N": 128,
+    "PB_K": 7168,
+    "expert_prefix_N": 3,
+    "expert_K": 3584,
+    "selected_capacity": 2,
+    "global_domain": 896,
+    "generations": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "PB_cold_imports": 1,
+    "BF16_endpoints": 268,
+    "successful_submissions": 2,
+    "resident_logical_bytes_per_generation": 15696
+  },
+  "layout": "The existing Layout now accepts positive plain dense source ranks0..7 and prepends capacity to the original dimensions. Existing rank2 resident descriptions are unchanged. Original rank0 WG/IG naturally become[E], eliminating the two artificial{1,1} planes and two Graph reshapes; no original rank1 format is flattened implicitly.",
+  "actual": {
+    "status": "PASS",
+    "compile": {
+      "exit": 0,
+      "seconds": 3.344,
+      "pid": 39072
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.203,
+      "pid": 43584
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.266,
+      "pid": 41980
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 58,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "scope": "generated original-shaped Kimi20 stored-F32 PB divide128 and selected NVFP4 quartet/map; no original publisher values or full Model"
+  },
+  "assertions": [
+    "Exact PB E4 bytes and every original F32 SF bit after cold import.",
+    "Invalid PB SF span and invalid expert IG span reject source admission.",
+    "Same CpuBatch supplies all four compressed quartet planes plus the checked global-to-local map.",
+    "Two resident generations keep10 blocks; dropping public batch handles keeps10 Invocation-held blocks, dropping Invocations retires all10; escaped old output readers remain valid."
+  ],
+  "verification": "Root ran one existing CPU test TU with MSVC/W4/WX, cached core/native closure, one exact filter and120s watchdog. First CPU attempt passed. No SDK/core/provider rebuild, GPU, HTTP or performance measurement.",
+  "filter": "CpuE8M0WeightImport.KimiMixedOriginalSourceRolesKeepDistinctReadersAndSelectedGenerations",
+  "limits": [
+    "All numerical bodies are explicitly generated original-shape fixtures. Exact cached header identities/spans and genuine readonly leases do not authenticate original publisher numeric contents.",
+    "Only finite PB and W1 projections with two upstream boundaries are checked; no complete Kimi FFN/layer/Model, original quality, new MTP, native GPU or TPS qualification.",
+    "Revision1 was a private unrun source proposal. Revision2 preserves the original scalar ranks in the existing common test supply. The generated values and numerical oracle are byte-identical between these proposals.",
+    "Unchanged frozen source trees, SDK, binaries and model bodies are omitted; precise dependency/source/object pins and actual commands/raw/XML are retained."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-mixed-pb-nvfp4-source-2026-10-25.zip",
+    "bytes": 193095,
+    "sha256": "aab1da509d9e489ee9ea5d9684487585cddaed1644f5e3d2faf3bc8fb4672ff5",
+    "members": 41,
+    "logical_bytes": 1877669,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
