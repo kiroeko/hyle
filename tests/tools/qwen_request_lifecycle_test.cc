@@ -6,6 +6,7 @@
 #include "qwen_chunked_prefill_case.h"
 #include "qwen_dual_model_case.h"
 #include "qwen_sampling_policy_case.h"
+#include "qwen_turn_context_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
@@ -63,14 +64,16 @@ int main(int argc,char **argv){
   const bool chunked=argc>1 && std::string_view(argv[1])=="--chunked-prefill";
   const bool dual=argc>1 && std::string_view(argv[1])=="--dual-model";
   const bool sampling=argc>1 && std::string_view(argv[1])=="--sampling-policies";
-  const int argument=(chunked||dual||sampling)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies] [prepared_input_directory]");
+  const bool turn_context=argc>1 && std::string_view(argv[1])=="--turn-context";
+  const int argument=(chunked||dual||sampling||turn_context)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context] [prepared_input_directory]");
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment();
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set HYLE_QWEN_REQUEST_INPUTS\n";return 77;}
   const std::filesystem::path input=input_directory;
   if(chunked)return qwen_chunked_prefill_case::run(input);
   if(dual)return qwen_dual_model_case::run(input);
   if(sampling)return qwen_sampling_policy_case::run(input);
+  if(turn_context)return qwen_turn_context_case::run(input);
   const auto geometry=q::read_weight_geometry(input/"weights.tsv");
   const auto prompt=q::read_ids(input/"prompt.ids",geometry.vocabulary,192);require(prompt.size()==154,"expected original P154 prompt");
   const auto plan=q::cache::plan(geometry,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);

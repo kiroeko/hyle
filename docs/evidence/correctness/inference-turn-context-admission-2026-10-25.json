@@ -1,0 +1,443 @@
+{
+  "status": "PASS_FINITE_ORDINARY_TURN_CONTEXT_ADMISSION_CANONICAL_INTEGRATED",
+  "date": "2026-10-25",
+  "problem": "Direct/open-turn ordinary admission checked input rows but omitted the rest of the turn maximum output journey; old path committed a partial turn then permanently hit context exhausted.",
+  "change": "Only initial turn model-specific admission: validate existing length before subtraction and require prompt rows + current remaining quota - 1 to fit, before input_turn/lookup/Session. Last returned token remains pending.",
+  "actual_scope": "Pure CPU C16, cached untrained A/H64/FFN128/V64; actual model consumer, not publisher model quality",
+  "source": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 479824,
+      "sha256": "cf52462e7de9d097ff6d2bd7979a9cf05ae392abe760b243975220c999af2b2b"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 18812,
+      "sha256": "72cb4beb0b590bbfe4f9716d9d032211bc1d42533ea6b0e9ba27521abc5a7491"
+    },
+    {
+      "path": "tests/tools/qwen_turn_context_case.h",
+      "bytes": 7152,
+      "sha256": "94bc1f4f8d3b91906e68cdfa7631ef7f82c4c12a57fbef57bd090334b1d7a8b5"
+    }
+  ],
+  "baseline_main": {
+    "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/before/engine/models/qwen35/main.cc",
+    "bytes": 479391,
+    "sha256": "75d4d9cb214602a5971fd5f8abe5d9563b86bcbb2575fa7d7ce76e12ce8035c9"
+  },
+  "canonical_integration": {
+    "status": "INTEGRATED_EXACT_FINITE_CPU_CHECKED_SOURCE",
+    "before_files_verified": 40,
+    "changed_paths": [
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 479824,
+        "sha256": "cf52462e7de9d097ff6d2bd7979a9cf05ae392abe760b243975220c999af2b2b"
+      },
+      {
+        "path": "tests/tools/qwen_request_lifecycle_test.cc",
+        "bytes": 18812,
+        "sha256": "72cb4beb0b590bbfe4f9716d9d032211bc1d42533ea6b0e9ba27521abc5a7491"
+      },
+      {
+        "path": "tests/tools/qwen_turn_context_case.h",
+        "bytes": 7152,
+        "sha256": "94bc1f4f8d3b91906e68cdfa7631ef7f82c4c12a57fbef57bd090334b1d7a8b5"
+      }
+    ],
+    "baseline_bug_reproduced": true,
+    "candidate_formal_helper_CPU_pass": true,
+    "identical_two_valid_token_sequences": [
+      1,
+      44
+    ],
+    "scope": "Cached untrained A/H64/FFN128/V64 CPU C16 only; full lifecycle dispatch and other modes not rebuilt",
+    "source_patch": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/source.patch",
+      "bytes": 10533,
+      "sha256": "59dda9b1e168334468acc027fcee42010da38276cb0901a0088fe9617c89891b"
+    },
+    "baseline": {
+      "status": "BASELINE_REPRODUCED_LATE_CONTEXT_REFUSAL",
+      "ordinary": true,
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "capacity": 16,
+      "prompt_rows": 15,
+      "quota": 3,
+      "partial_outputs": 2,
+      "committed_records": 2,
+      "observed_commits": 2,
+      "length": 16,
+      "draw": 2,
+      "turn_done": false,
+      "remaining_outputs": 1,
+      "ids": [
+        1,
+        44
+      ],
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    },
+    "candidate": {
+      "status": "PASS",
+      "ordinary": true,
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "capacity": 16,
+      "oversized_quota": 3,
+      "early_refused_outputs": 0,
+      "early_refused_commits": 0,
+      "exact_quota": 2,
+      "exact_length": 16,
+      "exact_draw": 2,
+      "exact_ids": [
+        1,
+        44
+      ],
+      "pending_only_length": 16,
+      "pending_only_draw": 2,
+      "pending_only_ids": [
+        1,
+        44
+      ],
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    },
+    "no_new_build_or_runtime": true
+  },
+  "actual": {
+    "first_fixture_error": {
+      "status": "FIXTURE_FAILURE_BEFORE_GENERATION_NOT_PRODUCT_BUG",
+      "compile": {
+        "exit": 0,
+        "seconds": 18.360000000015134,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.2179999999934807,
+        "timeout": false
+      },
+      "run": {
+        "exit": 1,
+        "seconds": 0.25,
+        "timeout": false
+      },
+      "error": "invalid map<K, T> key",
+      "cause": "fixture called prepare_execution before declaring plan_replay_uses; planned_slot_uses.at failed before any generation",
+      "correction": "baseline declares T15/T1 one use each; candidate declares two uses each before preparation, matching finite actual journeys"
+    },
+    "baseline": {
+      "result": {
+        "status": "BASELINE_REPRODUCED_LATE_CONTEXT_REFUSAL",
+        "ordinary": true,
+        "backend": "cpu",
+        "fixture": "cached_untrained_A_H64_FFN128_V64",
+        "capacity": 16,
+        "prompt_rows": 15,
+        "quota": 3,
+        "partial_outputs": 2,
+        "committed_records": 2,
+        "observed_commits": 2,
+        "length": 16,
+        "draw": 2,
+        "turn_done": false,
+        "remaining_outputs": 1,
+        "ids": [
+          1,
+          44
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": false
+      },
+      "feature_pass": false,
+      "interpretation": "The diagnostic process successfully reproduced the original late refusal after two committed outputs; it does not pass the corrected feature contract.",
+      "process": {
+        "compile": {
+          "exit": 0,
+          "seconds": 18.5,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.2030000000086147,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.25,
+          "timeout": false
+        },
+        "image": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/attempt2/baseline/link/component.exe",
+          "bytes": 22615552,
+          "sha256": "16878863b35514487b161d5f391248d3f69eab508e79a3e7898816268f87e3d0"
+        },
+        "actual_repository_pins": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/attempt2/baseline/compile/repository-inputs.json",
+          "bytes": 30645,
+          "sha256": "c75e78326e6845e81759b5fc2e260ba3987f848e538b4eb081cd522445c70aad"
+        }
+      }
+    },
+    "candidate": {
+      "result": {
+        "status": "PASS",
+        "ordinary": true,
+        "backend": "cpu",
+        "fixture": "cached_untrained_A_H64_FFN128_V64",
+        "capacity": 16,
+        "oversized_quota": 3,
+        "early_refused_outputs": 0,
+        "early_refused_commits": 0,
+        "exact_quota": 2,
+        "exact_length": 16,
+        "exact_draw": 2,
+        "exact_ids": [
+          1,
+          44
+        ],
+        "pending_only_length": 16,
+        "pending_only_draw": 2,
+        "pending_only_ids": [
+          1,
+          44
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": false
+      },
+      "formal_helper_body_actually_compiled_and_run": true,
+      "process": {
+        "compile": {
+          "exit": 0,
+          "seconds": 18.34399999998277,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.187999999994645,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.25,
+          "timeout": false
+        },
+        "image": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/attempt2/candidate/link/component.exe",
+          "bytes": 22619648,
+          "sha256": "df2eb7419d83ca5b39e80706f78d8a5397e93bab22c2b83e2e2038b093d8a1e7"
+        },
+        "actual_repository_pins": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/attempt2/candidate/compile/repository-inputs.json",
+          "bytes": 30645,
+          "sha256": "71510683f7920121be107f8b40243a9159a7843b34cefccf2ce1bd7fa1f45716"
+        }
+      }
+    }
+  },
+  "counts": {
+    "app_TU_compiles": 3,
+    "links": 3,
+    "CPU_processes": 3,
+    "successful_behavior_processes": 2,
+    "first_fixture_error_processes": 1,
+    "SDK_builds": 0,
+    "core_provider_TUs": 0,
+    "GPU_processes": 0,
+    "HTTP": 0
+  },
+  "fixture": {
+    "manifest": {
+      "path": ".scratch/mtp-runtime-backend-20261024/verification1/tiny-run/fixture/weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    },
+    "body": {
+      "path": ".scratch/mtp-runtime-backend-20261024/verification1/tiny-run/fixture/untrained-bf16.bin",
+      "bytes": 206336,
+      "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+    },
+    "geometry": "A-only H64 FFN128 V64, C16; existing untrained fixture, not publisher artifact or quality validation",
+    "selected_text_roles": 13,
+    "selected_weight_bytes": 98944
+  },
+  "actual_link_contract": {
+    "inputs_per_image": 130,
+    "common_inputs": 129,
+    "app_input": 1,
+    "current_object_sources": {
+      "budget": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+        "bytes": 245205,
+        "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+      },
+      "leases": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\leases\\unit.obj",
+        "bytes": 463196,
+        "sha256": "7689336cef6bb036007c41003f39b1ff513dc597f6d9ddd48ebdc688a8b0bd4c"
+      },
+      "arena": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\arena\\unit.obj",
+        "bytes": 1142006,
+        "sha256": "a4fec250a87cc07472d43fe19d08d5b93cc939633c028d6bf164a291260b11f1"
+      },
+      "resources": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-retention-scopes-20261025\\attempt1\\resources\\unit.obj",
+        "bytes": 1583168,
+        "sha256": "2b6d80f888fcf67c9e90f2c640113033af7f1a87c287834b64330ade4070ac08"
+      }
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "closure": "Original prefix-admission attempt3 strict CPU command/retained link closure. No SDK/core/provider rebuild. Actual dependency pins and full 130-input maps are in archive raw compile/link records."
+  },
+  "assertions": {
+    "early_refusal": "Open borrowed turn P15/quota3 is refused before input_turn/Session/ledger/sampling/output publication; begin_turn may already be marked.",
+    "exact_fit": "No-turn-span P15/quota2 commits length16, outputs [1,44], draw2; final output remains pending, not another KV input.",
+    "pending_only": "Later empty suffix/quota1 consumes its historical pending once into the final context row, outputs [1,44], draw2.",
+    "retirement": "Actual finite CPU payload stop/drain/try_retire returns final state version count zero; no native device failure injected."
+  },
+  "limits": [
+    "Initial oversized case actually uses borrowed bind_open_turns + begin_turn; exact-fit control uses no-turn-span path; pending-only case uses fixed borrowed two-turn schedule.",
+    "The same real helper body is compiled and executed by the candidate private consumer; the lifecycle --turn-context switch itself and its other modes are source-only in this batch.",
+    "CPU baseline and candidate are separate processes using the same retained 129 common inputs, current cache3 budget/leases/arena and latest native-scopes resources object; old retained Graph closure was reused, not rebuilt.",
+    "No new full-prefix-hit/chunked-prefill model run; original full-hit quota1 and resumed chunk admission are preserved by the sentinel and safe source arithmetic, not newly runtime-certified.",
+    "begin_turn marker may remain on refusal; no promise of total function rollback for already admitted host metadata.",
+    "No MTP mathematical/functional expansion; no GPU, SDK/core/provider build, download, speed or independent numeric/quality claim."
+  ],
+  "source_only_boundaries": [
+    "P=C/quota1 full prefix hit; resumed/cancelled chunk admission; extreme size/overflow arithmetic: source review only, no new model run.",
+    "The existing lifecycle --turn-context dispatcher and other modes were not recompiled as a full target; only the same new formal helper body was compiled/run by the private candidate consumer."
+  ],
+  "independent_review": {
+    "included": false,
+    "scope": "Source-only capacity review, no additional build/runtime"
+  },
+  "followup": {
+    "status": "NOT_IMPLEMENTED_SOURCE_ONLY",
+    "records": [
+      "request-findings.md",
+      "retirement-design.md",
+      "request-source-pins.json"
+    ],
+    "retirement_fix_claimed": false
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-turn-context-admission-2026-10-25.zip",
+    "bytes": 161982,
+    "sha256": "5b3562c4982cb40d38d5048525613f8271af8bb013d9340170200c8f9eef1a33",
+    "members": 81,
+    "logical_bytes": 738815,
+    "CRC_and_member_SHA256_checked": true,
+    "manifest": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/archive-manifest.json",
+      "bytes": 20805,
+      "sha256": "0420e2912bcf0e8aa209677943273d7c412e332ef363b986027c682c96ca80d1"
+    },
+    "manifest_scope": "Original agent members plus appended archive:root-followup/manifest.json"
+  },
+  "cleanup": {
+    "status": "PROPOSED_NOT_PERFORMED",
+    "plan": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/cleanup-candidates.json",
+      "bytes": 5899,
+      "sha256": "0adc4aa8d7a5a8e4f9b3ac2836aa6e2b556871272bbfcd06c00b2a25b9b9c7a2"
+    },
+    "files": 5,
+    "logical_bytes": 38093841,
+    "deleted_files": 0,
+    "retained": "Latest attempt2 images/app objects and all shared objects/original native DLL/source/raw logs"
+  },
+  "new_build_or_run_after_root_integration": false,
+  "HTTP_requests": 0,
+  "GPU_processes": 0,
+  "performance_or_independent_numeric_oracle_claim": false,
+  "root_followup": {
+    "independent_review": {
+      "status": "INDEPENDENT_SOURCE_REVIEW_NO_BLOCKER",
+      "reviewer": "/root/mtp_performance_audit",
+      "received": "collaboration message",
+      "main_sha256": "cf52462e7de9d097ff6d2bd7979a9cf05ae392abe760b243975220c999af2b2b",
+      "patch": {
+        "path": ".scratch/inference-ordinary-boundaries-20261025/implementation/source.patch",
+        "bytes": 10533,
+        "sha256": "59dda9b1e168334468acc027fcee42010da38276cb0901a0088fe9617c89891b"
+      },
+      "checks": [
+        "First turn only, before input marker/prefix/Session publication",
+        "Subtract after bounds, no overflowing extent sum",
+        "Remaining current-turn quota, not cumulative request output count",
+        "Final pending not charged as another context row",
+        "No repeated whole-prompt charge after committed chunks"
+      ],
+      "source_only_boundaries": [
+        "Full prefix P=C/quota1",
+        "Intermediate chunk continuation",
+        "size_t extreme"
+      ],
+      "no_new_build_or_runtime": true,
+      "limits": "Finite actual CPU journeys are those in original proof; lifecycle dispatch/other platforms not rerun"
+    },
+    "cleanup": {
+      "previous_archive": {
+        "path": "docs/evidence/correctness/inference-turn-context-admission-2026-10-25.zip",
+        "bytes": 155200,
+        "sha256": "3e5072618eebf7c7ecebfe055e946620d129bb71499cd6a60d7a504d410a21fc",
+        "members": 74,
+        "logical_bytes": 723798,
+        "CRC_and_member_SHA256_checked": true,
+        "manifest": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/archive-manifest.json",
+          "bytes": 20805,
+          "sha256": "0420e2912bcf0e8aa209677943273d7c412e332ef363b986027c682c96ca80d1"
+        }
+      },
+      "cleanup_files": 5,
+      "logical_bytes": 38093841,
+      "physical_bytes_freed_unknown": true,
+      "latest_and_shared_inputs_preserved": true,
+      "members": {
+        "root-followup/independent-review.json": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/root-independent-review-receipt.json",
+          "bytes": 1046,
+          "sha256": "bddffc3a947b535c4a1ba29919a7f13c8a670f973fe9277f0ebb0ddc1773d695"
+        },
+        "root-followup/cleanup/plan.json": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/turn-context-cleanup/plan.json",
+          "bytes": 2232,
+          "sha256": "7da9798c71b64b2a0788d877aeb88bea995c0009489882a37a94829fd0c5a6b8"
+        },
+        "root-followup/cleanup/preview.json": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/turn-context-cleanup/preview.json",
+          "bytes": 1534,
+          "sha256": "ae50f30da253a19c7aa47dda8d121767a39f52f4dcd669396a42dcebe743979b"
+        },
+        "root-followup/cleanup/removed.json": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/turn-context-cleanup/removed.json",
+          "bytes": 1533,
+          "sha256": "19c6c0913aaaa36e71dda0d4f996c7e6ff3ad2212743c8f91fa799457da45961"
+        },
+        "root-followup/cleanup/delete-commands.ps1.txt": {
+          "path": "test.ps1",
+          "bytes": 2977,
+          "sha256": "cb3757eb0742360413a997d7f4169e7f2ed4434c9c32056531e2e5adae10c95d"
+        },
+        "root-followup/finalize-evidence.py": {
+          "path": ".scratch/inference-ordinary-boundaries-20261025/finalize-evidence.py",
+          "bytes": 3559,
+          "sha256": "e0b5ebb01cf31193bf2568d92a04f94e3c3be2bd650604a443f5bb26de5459b0"
+        }
+      }
+    }
+  }
+}

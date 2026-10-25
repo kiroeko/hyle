@@ -5413,8 +5413,13 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (!call.generation) {
     if (request.input_turn != request.progress.turn_index) {
       const auto before = request.session ? request.session->length() : 0;
-      if (request.prompt.empty() || request.prompt.size() > model.capacity - before)
+      if (before > model.capacity || request.prompt.empty() || request.prompt.size() > model.capacity - before)
         throw std::runtime_error("complete turn input exceeds the remaining context");
+      // The turn's final output remains pending. Admit its full maximum journey
+      // before any input chunk, prefix import or Session is published.
+      const auto outputs = request.progress.remaining_outputs();
+      if (!outputs || outputs - 1 > model.capacity - before - request.prompt.size())
+        throw std::runtime_error("complete turn input and output quota exceed the remaining context");
       for (auto id : request.prompt) if (id < 0 || id >= model.vocabulary)
         throw std::runtime_error("token ID outside vocabulary");
       request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
