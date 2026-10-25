@@ -369,6 +369,11 @@ CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定
 与 channel／token 差异，以及 dense／GGUF 直接 F32 head 和部分量化 BF16→F32 head 的原数学。
 共享采样规则不表示可改写各家族的 RNG 地址排布。
 
+冷图的有效历史长度不能由固定物理容量推定。GLM Flash 的原2051项选择状态保持不变，
+实际闭合池与尾窗决定参与 attention 的前缀，零池省去评分；参数／codec／排序差异仍由
+原数学路径表达。[原 CPU 启动组件](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)
+已从空历史续算过首次池化；MLX／GGUF 构图检查不代签其原参数 native 数值。
+
 ModelOpt 静态 FP8 的准备器、角色选择和投影绑定保留原 E4 权重及独立 F32 SA／SW；
 Recipe 仅发出现有十二节点公开链，融合或分解仍由冷图选择。所选软件 reader 的
 倒数／量化／两次 scale 乘法顺序写入源身份，producer 版本只作出处。

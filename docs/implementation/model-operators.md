@@ -112,6 +112,11 @@ KDA／NoPE MLA 已提供[外部参数构图入口](../evidence/correctness/kimi-
 
 GLM Flash [完整原NextN接线](../evidence/correctness/mtp-glm-original-moe-2026-10-23.json)与固定官方两份header逐角色差集为空：layer45为1760份、7,493,399,168B，另有全V154880 BF16 embedding／独立head两份，共1762份、10,030,953,088B。角色数包含量化scale，不是算子或kernel数；本轮只实际执行各次路由所选专家，不把完整288域等同288专家均已计算。
 
+普通空／短历史已按[实际闭合池与尾窗](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)构图，
+零池不运行评分／TopK；选择状态仍2051项，attention只读有效前缀。原layer43的16角色CPU组件已
+从位置0真实续算到frontier5，保13资源同Head、未写区NaN、旧reader及失败发布合同。
+MLX／GGUF九种位置已做构图检查，其原参数native短旅程、其它后端和完整层仍未在本批运行。
+
 原indexer的wk／wq_b／compress_gate保BF16，norm／bias／APE／weights_proj精确扩宽；cache保PowerOfTwo／floor1e-4。原MLA与MoE投影保动态A128 Divide／floor1e-10及原E4／F32 block128权重。原kv_b只做一次普通冷Graph准备共享BF16 K／V，退掉原device临时bank；64头／NoPE256／latent512／value256、scale1/16不变。F32 cache载体只写BF16 latent精确扩宽；postnorm用实际F32残差和，另存BF16残差返回，见[原attention](../evidence/correctness/mtp-glm-original-attention-2026-10-23.json)。
 
 原MoE为288域Top8：BF16输入／router→F32 logits→sigmoid；原F32 bias只影响选择，无bias分数除以sum＋1e-20并乘一次2.5。选定scale-in-topk合同，不宣称与所有vendor runner逐bit等价。原gate／up、clip10／SiLU activation、down后乘路由权重、sum8与shared merge保BF16存储边界。每代最多8个原专家的codes／scales原样组成三bank＋global map，CPU两代／CUDA两device与pinned槽每槽201,377,024B；同实际资源、owner及queue，只有8个I32 ID回读以安排供给，激活和状态通过实际租约传递。GLM与DSpark共用纯冷图切分；不复制执行器、逐token构图或展开整份F32专家权重。

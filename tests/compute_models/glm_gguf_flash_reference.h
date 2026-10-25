@@ -193,13 +193,21 @@ bool observe_history(const Data &data,const pooled::History &p,const sem::Fragme
 template<class Actual,class Original>
 bool observe_index(const pooled::Index &p,const pooled::State &state,const graph::PoolParameters &parameters,
     const sem::Fragment &f,Actual &actual,Original &original,std::int32_t position,std::int32_t tail,bool full,base::ActivationCodec codec) {
-  if(p.policy.weight_scale!=pooled::IndexWeightScale::kCombined||p.policy.pool_order!=pooled::PoolOrder::kDescendingScore||
-      !weight_is(p.query,parameters.nextn.block.index_query)||!weight_is(p.weights,parameters.nextn.block.index_weights)||
+  const auto count=std::size_t((std::int64_t(position)+1)/4),selected=std::min(count,std::size_t{512});
+  if(position<0||tail<0||tail>3||tail!=(position+1)%4||p.scored!=(count>0)||
+      one(actual,state.pool_count)!=std::int32_t(count)||one(actual,state.tail_start)!=position+1-tail||
+      p.policy.weight_scale!=pooled::IndexWeightScale::kCombined||p.policy.pool_order!=pooled::PoolOrder::kDescendingScore)return false;
+  if(count==0) {
+    const auto expanded=ids(actual,p.ids);if(expanded.size()!=2051)return false;
+    for(std::size_t i=0;i<expanded.size();++i)
+      if(expanded[i]!=(i<std::size_t(tail)?position+1-tail+std::int32_t(i):-1))return false;
+    return same_ids(ids(actual,state.selection),expanded,"GGUF zero-pool actual tail and unused padding");
+  }
+  if(!weight_is(p.query,parameters.nextn.block.index_query)||!weight_is(p.weights,parameters.nextn.block.index_weights)||
       !shared::projection(p.query,f,actual,original,full,codec)||!shared::projection(p.weights,f,actual,original,full,codec))return false;
   const auto query=read(actual,p.query.output),bank=read(actual,state.pool),dots=read(actual,p.dots),relu=read(actual,p.relu);
   const auto raw=read(actual,p.weights.output),scaled=read(actual,p.weights_scaled),heads=read(actual,p.head_weights),scores=read(actual,p.scores);
-  const auto count=std::size_t((position+1)/4);
-  if(tail<0||tail>3||count<512||query.size()!=32*128||bank.size()<count*128||dots.size()!=32*count||relu.size()!=dots.size()||
+  if(query.size()!=32*128||bank.size()<count*128||dots.size()!=32*count||relu.size()!=dots.size()||
       raw.size()!=32||scaled.size()!=32||heads.size()!=32||scores.size()!=count)return false;
   std::vector<float> terms(dots.size());
   for(std::size_t h=0;h<32;++h) {
@@ -214,12 +222,12 @@ bool observe_index(const pooled::Index &p,const pooled::State &state,const graph
   if(!packed::expect_sum(scores,terms,count,"GGUF actual index score sum across heads"))return false;
   const auto chosen=ids(actual,p.pool_ids),expanded=ids(actual,p.ids);std::vector<std::size_t> order(count);std::iota(order.begin(),order.end(),0);
   std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return scores[a]>scores[b];});
-  if(chosen.size()!=512||expanded.size()!=2051)return false;
-  for(std::size_t i=0;i<512;++i) {
+  if(chosen.size()!=selected||expanded.size()!=2051)return false;
+  for(std::size_t i=0;i<selected;++i) {
     if(chosen[i]!=std::int32_t(order[i]))return false;
     for(std::size_t j=0;j<4;++j)if(expanded[i*4+j]!=chosen[i]*4+std::int32_t(j))return false;
   }
-  for(std::int32_t i=0;i<3;++i)if(expanded[std::size_t(2048+i)]!=(i<tail?one(actual,state.tail_start)+i:-1))return false;
+  for(std::size_t i=selected*4;i<expanded.size();++i)if(expanded[i]!=(i<selected*4+std::size_t(tail)?one(actual,state.tail_start)+std::int32_t(i-selected*4):-1))return false;
   return same_ids(ids(actual,state.selection),expanded,"GGUF published descending-score expanded IDs");
 }
 
@@ -252,8 +260,8 @@ bool observe_mla(const Data &data,const pooled::Mla &p,const sem::Fragment &f,co
     if(!p.history||!p.index)return false;tail=(position+1)%4;
     if(!observe_history(data,*p.history,f,parameters,before,p.state,actual,original,position,full,codec)||
         !same(read(actual,p.history->key.input),read(actual,p.kv.input),"GGUF actual MLA/index history input")||
-        !same(read(actual,p.index->query.input),read(actual,p.query.input),"GGUF actual index query norm")||
-        !same(read(actual,p.index->weights.input),read(actual,p.kv.input),"GGUF actual index weights input")||
+        (p.index->scored&&(!same(read(actual,p.index->query.input),read(actual,p.query.input),"GGUF actual index query norm")||
+        !same(read(actual,p.index->weights.input),read(actual,p.kv.input),"GGUF actual index weights input")))||
         !observe_index(*p.index,p.state,parameters,f,actual,original,position,tail,full,codec))return false;
   } else {
     if(tail<0||tail>3||!same_ids(ids(actual,p.state.selection),ids(actual,before.selection),"GGUF skip retains actual selection"))return false;
@@ -269,12 +277,16 @@ bool observe_mla(const Data &data,const pooled::Mla &p,const sem::Fragment &f,co
       if(!same_ids(ids(actual,pair.first),ids(actual,pair.second),"GGUF skip retains actual index cursors"))return false;
   }
   const auto selection=ids(actual,p.state.selection);const auto query=read(actual,p.absorbed.output),attended=read(actual,p.attention);
-  const auto rows=std::size_t(2048+tail);if(selection.size()!=2051||query.size()!=64*512||attended.size()!=64*512)return false;
+  // Independent reader extent: actual fresh pool frontier, not the graph's
+  // cold extent helper. Existing MTP skip keeps its mature carried selection.
+  const auto pools=p.history?one(actual,p.state.pool_count):512;
+  if(pools<0||(p.history&&pools!=(position+1)/4))return false;
+  const auto rows=std::size_t(4*std::min(pools,512)+tail);if(rows==0||selection.size()!=2051||query.size()!=64*512||attended.size()!=64*512)return false;
   std::vector<float> expected(attended.size());std::vector<double> score(rows);
   for(std::size_t h=0;h<64;++h) {
     double maximum=-std::numeric_limits<double>::infinity(),denominator=0;
     for(std::size_t row=0;row<rows;++row) {
-      const auto id=selection[row];if(id<0||std::size_t(id)>=main.size()/512)return false;
+      const auto id=selection[row];if(id<0||id>=one(actual,p.state.mla_cursor)||std::size_t(id)>=main.size()/512)return false;
       dspark_original_hc_reference::detail::Sum sum;
       for(std::size_t j=0;j<512;++j)sum.add(double(query[h*512+j])*main[std::size_t(id)*512+j]);
       score[row]=sum.value()*(1.F/16.F);maximum=std::max(maximum,score[row]);

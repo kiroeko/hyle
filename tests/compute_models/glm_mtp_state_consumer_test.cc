@@ -34,6 +34,7 @@
 #include "d5_glm_remaining_fragments.h"
 #include "glm_mtp_target_component.h"
 #include "glm_official_index_cache.h"
+#include "glm_flash_selection_extent.h"
 #include "glm_mtp_target43_component.h"
 #include "glm_original_mtp_roles.h"
 #include "glm_original_indexer_roles.h"
@@ -523,6 +524,8 @@ Value append_sparse_attention(Recipe &r, const SparseState13 &state, Value nx,
                                int role_offset = 0, const SkipJournal *journal = nullptr,
                                const Value *original_qr = nullptr) {
   if (!r.fresh && !journal) throw std::runtime_error("indexer skip requires its actual NextN journal");
+  const auto extent=r.fresh?glm_flash_selection_extent::fresh(r.position):glm_flash_selection_extent::carried(r.selected_tail);
+  if(r.fresh&&r.selected_tail!=extent.tail)throw std::runtime_error("Flash fresh selection tail differs from its absolute position");
   auto &f = r.fragment;
   const auto publish = [&](Value value, bool copy = false) { return expose(r, value, copy); };
   const auto changed = [&](Entry entry, Value value, bool copy = false) { return change(r, entry, value, copy); };
@@ -589,6 +592,8 @@ Value append_sparse_attention(Recipe &r, const SparseState13 &state, Value nx,
   Value selected = state[kSelection];
   if (r.fresh) {
     const auto pool = append_history(r, state, nx, cursor, role_offset);
+    std::optional<Value> pool_ids;
+    if(extent.visible_pools>0) {
     Value iq, weights;
     if (r.sparse) {
       const auto &roles = r.sparse->indexer_roles;
@@ -612,26 +617,27 @@ Value append_sparse_attention(Recipe &r, const SparseState13 &state, Value nx,
     }
     const auto encoded_query = codec::quantize(f, codec::bfloat_boundary(f, iq), kIndexHeads);
     r.query_codec = expose_codec(r, encoded_query);
-    const auto pool_count = (r.position + 1) / 4;
+    const auto pool_count = extent.visible_pools;
     const auto scores = codec::score_encoded(f, pool.codes, pool.scales, encoded_query, weights, pool_count);
     r.scores = publish(scores, true);
-    const auto top = f.append(c::Operation(c::TopK{.count = 512}), {scores}, 2);
+    const auto top = f.append(c::Operation(c::TopK{.count = std::size_t(extent.selected_pools)}), {scores}, 2);
     std::vector<std::int32_t> expanded(std::size_t(pool_count * 4));
     std::iota(expanded.begin(), expanded.end(), 0);
     const auto table = f.constant(sem::dense({pool_count, 4}, c::DataType::kInt32), sem::bytes(expanded));
-    const auto pool_ids = glm::reshape(f, f.one(c::Operation(c::Gather{}), {table, top[1]}), {2048});
+    pool_ids = glm::reshape(f, f.one(c::Operation(c::Gather{}), {table, top[1]}), {extent.pool_tokens()});
+    }
     Value tail;
     if (r.selected_tail) {
       tail = f.one(c::Operation(c::Copy{}), {state[kTailStart]});
       for (std::int32_t i = 1; i < r.selected_tail; ++i)
         tail = f.one(c::Operation(c::Concat{.axis = 0}), {tail, increment(f, state[kTailStart], i)});
     }
-    if (r.selected_tail < 3) {
-      const auto padding = f.constant(sem::dense({3 - r.selected_tail}, c::DataType::kInt32),
-          sem::bytes(std::vector<std::int32_t>(std::size_t(3 - r.selected_tail), -1)));
+    if (extent.padding()>0) {
+      const auto padding = f.constant(sem::dense({extent.padding()}, c::DataType::kInt32),
+          sem::bytes(std::vector<std::int32_t>(std::size_t(extent.padding()), -1)));
       tail = r.selected_tail ? f.one(c::Operation(c::Concat{.axis = 0}), {tail, padding}) : padding;
     }
-    selected = f.one(c::Operation(c::Concat{.axis = 0}), {pool_ids, tail});
+    selected = pool_ids?f.one(c::Operation(c::Concat{.axis = 0}), {*pool_ids, tail}):tail;
     changed(kSelection, selected);
   } else {
     // No wq/wk/wg/pooling/TopK exists in this graph. The actual same-epoch IDs
@@ -640,7 +646,7 @@ Value append_sparse_attention(Recipe &r, const SparseState13 &state, Value nx,
     changed(kJournal, f.one(c::Operation(c::Scatter{}), {journal->rows, journal->count, nx}));
     changed(kLagCount, increment(f, journal->count));
   }
-  const auto selected_count = kSelected + r.selected_tail;
+  const auto selected_count = extent.live_tokens();
   const auto valid = glm::reshape(f, glm::core::rows(f, glm::reshape(f, selected, {kIds, 1}), 0, selected_count), {selected_count});
   const auto chosen = f.one(c::Operation(c::Gather{}), {cache, valid});
   const auto attention = f.one(c::Operation(c::ScaledDotProductAttention{.scale = 1.0F / 16.0F,
@@ -2219,33 +2225,44 @@ void observe_mlx_mla(const StateView &s,const Version &from,const Version &next,
   auto actual=[&](Value value){return typed<float>(output[mlx_port(r,value)]);};
   const auto data=r.mlx->parameters.source;const auto prefix=data->prefix();
   exact_scatter(s,from,next,kCache,std::size_t(s.scalar(from,kMlaCursor)),kLatent,output[mlx_port(r,p.latent)]);
-  EXPECT_EQ(s.scalar(next,kMlaCursor),s.scalar(from,kMlaCursor)+1);
+  const auto cursor=s.scalar(next,kMlaCursor);EXPECT_EQ(cursor,s.scalar(from,kMlaCursor)+1);
   const auto chosen=typed<std::int32_t>(s.member(next,kSelection));ASSERT_EQ(chosen.size(),std::size_t(kIds));
-  std::vector<float> selected;for(std::size_t i=0;i<std::size_t(kSelected+r.selected_tail);++i)selected.push_back(float(chosen[i]));
+  // Independent from the graph extent helper: read the published pool frontier.
+  const auto pool_count=r.fresh?s.scalar(next,kPoolCount):512;ASSERT_GE(pool_count,0);
+  const auto pools=std::size_t(pool_count),selected_pools=std::min(pools,std::size_t{512});
+  const auto tail=r.fresh?(r.position+1)%4:r.selected_tail;
+  if(r.fresh){EXPECT_EQ(cursor,r.position+1);EXPECT_EQ(pool_count,(r.position+1)/4);EXPECT_EQ(s.scalar(next,kTailStart),r.position+1-tail);}
+  std::vector<float> selected;for(std::size_t i=0;i<selected_pools*4+std::size_t(tail);++i){
+    ASSERT_GE(chosen[i],0);ASSERT_LT(chosen[i],cursor);selected.push_back(float(chosen[i]));}
   const auto query=actual(p.absorbed.output),cache=typed<float>(s.member(next,kCache));
   sem::oracle::expect_close(actual(p.attention),glm::attention_reference(query,cache,selected,std::int64_t(selected.size()),kLatent),8.e-5F,4.e-5F);
   if(r.fresh) {
     if(!p.history||!p.index)throw std::runtime_error("MLX fresh query omitted actual indexer history/selection");
     observe_mlx_history(s,from,next,r,output,*p.history);const auto &index=*p.index;
-    mlx_reference::bfloat_projection(*data,index.query,prefix+"self_attn.indexer.wq_b.weight",4096,1536,actual,full);
-    mlx_reference::bfloat_projection(*data,index.weights,prefix+"self_attn.indexer.weights_proj.weight",32,4096,actual,full);
-    const auto pools=std::size_t((r.position+1)/4);const auto rawpool=typed<float>(s.member(next,kPool));
-    const auto pool=std::span(rawpool).first(pools*kIndexDepth);const auto q=actual(index.query.output),dots=actual(index.dots);
-    EXPECT_TRUE(mlx_reference::expect_projection(dots,q,32,pools,128,mlx_reference::FloatRows{pool,pools,128},true));
-    const auto projected=actual(index.weights.output),scaled=actual(index.weights_scaled),head=actual(index.head_weights),relu=actual(index.relu),scores=actual(index.scores);
-    for(std::size_t h=0;h<32;++h){EXPECT_EQ(scaled[h],float(double(projected[h])*float(1./std::sqrt(32.))));EXPECT_EQ(head[h],float(double(scaled[h])*float(1./std::sqrt(128.))));}
-    for(std::size_t row=0;row<pools;++row){for(std::size_t h=0;h<32;++h)EXPECT_EQ(relu[h*pools+row],std::max(dots[h*pools+row],0.F));
-      EXPECT_TRUE(moe_reference::detail::reduced(scores[row],moe_reference::detail::sum(32,[&](std::size_t h){return double(float(double(relu[h*pools+row])*head[h]));}),"MLX actual F32 index-head reduction",row));}
-    std::vector<std::int32_t> order(pools);std::iota(order.begin(),order.end(),0);
-    std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return scores[std::size_t(a)]>scores[std::size_t(b)];});order.resize(512);std::sort(order.begin(),order.end());
-    const auto ids=typed<std::int32_t>(output[mlx_port(r,index.pool_ids)]);EXPECT_EQ(ids,order);
+    ASSERT_EQ(index.scored,pools>0);std::vector<std::int32_t> order;
+    if(pools>0) {
+      mlx_reference::bfloat_projection(*data,index.query,prefix+"self_attn.indexer.wq_b.weight",4096,1536,actual,full);
+      mlx_reference::bfloat_projection(*data,index.weights,prefix+"self_attn.indexer.weights_proj.weight",32,4096,actual,full);
+      const auto rawpool=typed<float>(s.member(next,kPool));
+      const auto pool=std::span(rawpool).first(pools*kIndexDepth);const auto q=actual(index.query.output),dots=actual(index.dots);
+      EXPECT_TRUE(mlx_reference::expect_projection(dots,q,32,pools,128,mlx_reference::FloatRows{pool,pools,128},true));
+      const auto projected=actual(index.weights.output),scaled=actual(index.weights_scaled),head=actual(index.head_weights),relu=actual(index.relu),scores=actual(index.scores);
+      for(std::size_t h=0;h<32;++h){EXPECT_EQ(scaled[h],float(double(projected[h])*float(1./std::sqrt(32.))));EXPECT_EQ(head[h],float(double(scaled[h])*float(1./std::sqrt(128.))));}
+      for(std::size_t row=0;row<pools;++row){for(std::size_t h=0;h<32;++h)EXPECT_EQ(relu[h*pools+row],std::max(dots[h*pools+row],0.F));
+        EXPECT_TRUE(moe_reference::detail::reduced(scores[row],moe_reference::detail::sum(32,[&](std::size_t h){return double(float(double(relu[h*pools+row])*head[h]));}),"MLX actual F32 index-head reduction",row));}
+      order.resize(pools);std::iota(order.begin(),order.end(),0);
+      std::stable_sort(order.begin(),order.end(),[&](auto a,auto b){return scores[std::size_t(a)]>scores[std::size_t(b)];});order.resize(selected_pools);std::sort(order.begin(),order.end());
+      const auto ids=typed<std::int32_t>(output[mlx_port(r,index.pool_ids)]);EXPECT_EQ(ids,order);
+    }
     std::vector<std::int32_t> expected;for(const auto pool_id:order)for(std::int32_t i=0;i<4;++i)expected.push_back(pool_id*4+i);
-    for(std::int32_t i=0;i<3;++i)expected.push_back(i<r.selected_tail?(r.position+1-r.selected_tail)+i:-1);EXPECT_EQ(chosen,expected);
+    for(std::int32_t i=0;i<tail;++i)expected.push_back((r.position+1-tail)+i);
+    expected.resize(std::size_t(kIds),-1);EXPECT_EQ(chosen,expected);
   } else {
     for(const auto entry:{kRawKey,kRawGate,kPool,kIndexCursor,kPoolCount,kRingOffset,kTailValid,kTailStart})same_storage(s.member(next,entry),s.member(from,entry));
     EXPECT_EQ(chosen,typed<std::int32_t>(s.member(from,kSelection)));EXPECT_EQ(s.scalar(next,kLagCount),s.scalar(from,kLagCount)+1);
   }
 }
+
 void observe_mlx(const State &s,const c::StateVersion &from,const c::StateVersion &next,const Recipe &r,
     std::span<const c::ReadLease> output,const c::ReadLease &hidden_input) {
   if(!r.mlx_result)throw std::runtime_error("MLX full NextN observer requires its actual Fragment ports");
@@ -2360,10 +2377,15 @@ void observe_attention(const StateView &s, const Version &from, const Version &n
   EXPECT_EQ(s.scalar(next, kMlaCursor), s.scalar(from, kMlaCursor) + 1);
   const auto ids = typed<std::int32_t>(s.member(next, kSelection));
   ASSERT_EQ(ids.size(), std::size_t(kIds));
-  for (std::int32_t i = 0; i < 3; ++i)
-    EXPECT_EQ(ids[std::size_t(kSelected + i)], i < r.selected_tail ? producer_position + 1 - r.selected_tail + i : -1);
+  const auto physical_pools=r.fresh?s.scalar(next,kPoolCount):512;ASSERT_GE(physical_pools,0);
+  const auto pool_count=std::size_t(physical_pools),selected_pools=std::min(pool_count,std::size_t{512});
+  const auto live=selected_pools*4+std::size_t(r.selected_tail);
+  if(r.fresh){EXPECT_EQ(pool_count,(r.position+1)/4);EXPECT_EQ(s.scalar(next,kTailStart),r.position+1-r.selected_tail);}
+  for (std::size_t i=selected_pools*4;i<ids.size();++i)
+    EXPECT_EQ(ids[i],i<live?producer_position+1-r.selected_tail+std::int32_t(i-selected_pools*4):-1);
   if (r.fresh) {
     observe_history(s, from, next, r, output, nx);
+    if(pool_count>0) {
     if (r.sparse) {
       const auto wq = fp(r.index_query_accum);
       EXPECT_TRUE(index_reference::expect_accum(wq,
@@ -2381,17 +2403,17 @@ void observe_attention(const StateView &s, const Version &from, const Version &n
     const auto query_encoded = observe_codec(iq, kIndexHeads, output, r.query_codec);
     const auto codes = typed<std::uint8_t>(s.member(next, kPool));
     const auto scales = typed<float>(s.member(next, kPoolScales));
-    const auto pool_count = std::size_t((r.position + 1) / 4);
     const auto expected_scores = codec::score_reference(codes, scales, query_encoded, weights, std::int64_t(pool_count));
     const auto scores = fp(r.scores); sem::oracle::expect_close(scores, expected_scores, 8e-5F, 4e-5F);
     std::vector<bool> picked(pool_count, false); float smallest = std::numeric_limits<float>::infinity();
-    for (std::size_t t = 0; t < 512; ++t) {
+    for (std::size_t t = 0; t < selected_pools; ++t) {
       const auto pool_id = ids[t * 4] / 4;
       ASSERT_GE(pool_id, 0); ASSERT_LT(std::size_t(pool_id), pool_count); EXPECT_FALSE(picked[std::size_t(pool_id)]);
       picked[std::size_t(pool_id)] = true; smallest = std::min(smallest, scores[std::size_t(pool_id)]);
       for (std::size_t j = 0; j < 4; ++j) EXPECT_EQ(ids[t * 4 + j], pool_id * 4 + std::int32_t(j));
     }
     for (std::size_t p = 0; p < picked.size(); ++p) if (!picked[p]) EXPECT_GE(smallest, scores[p]);
+    }
   } else {
     for (const auto entry : {kRawKey, kRawGate, kPool, kPoolScales, kIndexCursor, kPoolCount, kRingOffset, kTailValid, kTailStart})
       same_storage(s.member(next, entry), s.member(from, entry));
@@ -2401,12 +2423,12 @@ void observe_attention(const StateView &s, const Version &from, const Version &n
   }
   const auto query = fp(r.query), cache = typed<float>(s.member(next, kCache));
   if(!has_original_attention(r))quantified(r, query, r.absorbed_query_reference(qr));
-  std::vector<float> selected(std::size_t(kSelected + r.selected_tail));
+  std::vector<float> selected(live);
   for (std::size_t i = 0; i < selected.size(); ++i) selected[i] = float(ids[i]);
   const auto attention = fp(r.attention);
   if(has_original_attention(r)) {
     const auto &ports=r.attention_ports;auto &observed=*r.sparse->attention;const auto &data=*observed.source;
-    std::vector<float> chosen(std::size_t(kSelected+r.selected_tail)*std::size_t(kLatent));
+    std::vector<float> chosen(live*std::size_t(kLatent));
     for(std::size_t i=0;i<chosen.size()/std::size_t(kLatent);++i) {
       if(ids[i]<0||ids[i]>=s.scalar(next,kMlaCursor))throw std::runtime_error("original MLA selected IDs require valid prior/current rows");
       std::copy_n(cache.begin()+std::size_t(ids[i])*std::size_t(kLatent),std::size_t(kLatent),chosen.begin()+i*std::size_t(kLatent));
@@ -2416,7 +2438,7 @@ void observe_attention(const StateView &s, const Version &from, const Version &n
       if(!std::isfinite(value)||(std::bit_cast<std::uint32_t>(value)&0xffffu)!=0u)++non_bfloat;
     EXPECT_EQ(non_bfloat,0u)<<"F32 cache carrier stores finite actual BF16 widenings only";
     const auto absorbed=typed<std::uint16_t>(output[ports.absorbed_stored]);
-    sem::oracle::expect_close(attention,attention_reference::attention(absorbed,chosen,std::size_t(kSelected+r.selected_tail)),8e-5F,4e-5F);
+    sem::oracle::expect_close(attention,attention_reference::attention(absorbed,chosen,live),8e-5F,4e-5F);
     const auto stored_attention=typed<std::uint16_t>(output[ports.attention_stored]);
     EXPECT_TRUE(index_reference::expect_bfloat_store(stored_attention,attention,"original compact attention BF16 output"));
     const auto value=typed<std::uint16_t>(output[ports.value_stored]);const bool full=!observed.full_checked;
@@ -2428,7 +2450,7 @@ void observe_attention(const StateView &s, const Version &from, const Version &n
     if(full){observed.full_checked=true;observed.projection_values+=16384+512+4096+32768+16384;}
     ++observed.attention_calls;
   } else {
-    sem::oracle::expect_close(attention, glm::attention_reference(query, cache, selected, kSelected + r.selected_tail, kLatent), 8e-5F, 4e-5F);
+    sem::oracle::expect_close(attention, glm::attention_reference(query, cache, selected, std::int64_t(live), kLatent), 8e-5F, 4e-5F);
     const auto projected = fp(r.output); quantified(r, projected, r.output_reference(attention));
   }
 }
@@ -5146,6 +5168,9 @@ void run_gguf_flash_target_verifier(c::Context &context,const c::StorageOwner &o
   ::testing::Test::RecordProperty("expert_domain",288);::testing::Test::RecordProperty("resident_experts",8);::testing::Test::RecordProperty("expert_planes",3);
   ::testing::Test::RecordProperty("actual_selected_original_experts",int(selected));::testing::Test::RecordProperty("actual_selected_original_bytes",std::to_string(selected_bytes));
 }
+#include "glm_flash_early_history_case.h"
+#include "glm_flash_ordinary_startup_case.h"
+
 #if defined(HYLE_TEST_GLM_STATE_CUDA)
 struct SharedCudaDevice final {
   std::shared_ptr<c::cuda::MemoryResource> resource;

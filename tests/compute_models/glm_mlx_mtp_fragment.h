@@ -1,5 +1,6 @@
 #pragma once
 #include <numeric>
+#include "glm_flash_selection_extent.h"
 #include "glm_gguf_compute_fragment.h"
 #include "glm_mlx_original_roles.h"
 #include "glm_mlx_affine_projection_fragment.h"
@@ -180,17 +181,22 @@ struct IndexPolicy final {
   PoolOrder pool_order=PoolOrder::kChronological;
 };
 struct Index final {
-  IndexPolicy policy;
+  IndexPolicy policy;bool scored=false;
 
   types::Projection query,weights;Value weights_scaled,head_weights,dots,relu,scores,pool_ids,ids;
   template<class Visitor>void visit_values(Visitor &&v) {
-    query.visit_values(v);weights.visit_values(v);for(auto *p:{&weights_scaled,&head_weights,&dots,&relu,&scores,&pool_ids,&ids})v(*p);
+    if(scored){query.visit_values(v);weights.visit_values(v);for(auto *p:{&weights_scaled,&head_weights,&dots,&relu,&scores,&pool_ids})v(*p);}
+    v(ids);
   }
 };
 template<class ParameterSet>
 inline Index select(sem::Fragment &f,const State &s,Value nx,Value query_norm,const ParameterSet &p,std::int32_t position,std::int32_t tail,IndexPolicy policy={}) {
-  const auto pools=(position+1)/4;if(pools<512||tail<0||tail>3)throw std::runtime_error("MLX finite query requires complete512-pool plus declared tail domain");
-  Index r;r.policy=policy;r.query=p.project.linear(f,query_norm,p.nextn.block.index_query);r.weights=p.project.linear(f,nx,p.nextn.block.index_weights);
+  const auto extent=glm_flash_selection_extent::fresh(position);
+  if(tail!=extent.tail)throw std::runtime_error("Flash fresh selection tail differs from its absolute position");
+  const auto pools=extent.visible_pools;Index r;r.policy=policy;
+  std::optional<Value> selected;
+  if(pools>0) {
+  r.scored=true;r.query=p.project.linear(f,query_norm,p.nextn.block.index_query);r.weights=p.project.linear(f,nx,p.nextn.block.index_weights);
   const auto keys=fp::copy(f,fp::slice(f,s.pool,0,0,pools));
   r.dots=f.one(c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}),{fp::reshape(f,r.query.output,{32,128}),permute(f,keys,{1,0})});
   r.relu=core::binary(f,c::BinaryKind::kMaximum,r.dots,core::filled(f,sem::dense({32,pools}),0.F));
@@ -206,13 +212,13 @@ inline Index select(sem::Fragment &f,const State &s,Value nx,Value query_norm,co
     r.head_weights=fp::reshape(f,r.weights_scaled,{32,1});
   } else throw std::runtime_error("pooled index weight scaling policy is unsupported");
   r.scores=fp::reshape(f,glm_original_moe_fragment::sum(f,core::binary(f,c::BinaryKind::kMultiply,r.relu,r.head_weights),0),{pools});
-  const auto top=f.append(c::Operation(c::TopK{.count=512,.stable=true}),{r.scores},2);
+  const auto top=f.append(c::Operation(c::TopK{.count=std::size_t(extent.selected_pools),.stable=true}),{r.scores},2);
   // Pinned MLX restores chronological pool order before attention. Float32
   // exactly represents these finite pool IDs; a second ordinary TopK orders
   // that actual chosen set without host-created replacement IDs.
   if(policy.pool_order==PoolOrder::kChronological) {
     const auto actual=cast(f,top[1],c::DataType::kFloat32);
-    const auto ordered=f.append(c::Operation(c::TopK{.count=512,.largest=false,.stable=true}),{actual},2);
+    const auto ordered=f.append(c::Operation(c::TopK{.count=std::size_t(extent.selected_pools),.largest=false,.stable=true}),{actual},2);
     // TopK indices address the preceding selected-ID vector. Reorder those
     // original I32 IDs directly; no unsupported F32-to-I32 Cast is required.
     r.pool_ids=f.one(c::Operation(c::Gather{}),{top[1],ordered[1]});
@@ -225,12 +231,13 @@ inline Index select(sem::Fragment &f,const State &s,Value nx,Value query_norm,co
   } else throw std::runtime_error("pooled index chosen-set order is unsupported");
   std::vector<std::int32_t> expanded(std::size_t(pools)*4);std::iota(expanded.begin(),expanded.end(),0);
   const auto table=f.constant(sem::dense({pools,4},c::DataType::kInt32),sem::bytes(expanded));
-  const auto selected=fp::reshape(f,f.one(c::Operation(c::Gather{}),{table,r.pool_ids}),{2048});
+  selected=fp::reshape(f,f.one(c::Operation(c::Gather{}),{table,r.pool_ids}),{extent.pool_tokens()});
+  }
   std::vector<Value> suffix;
   for(std::int32_t i=0;i<tail;++i)suffix.push_back(inc(f,s.tail_start,i));
-  if(tail<3)suffix.push_back(f.constant(sem::dense({3-tail},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>(std::size_t(3-tail),-1))));
+  if(extent.padding()>0)suffix.push_back(f.constant(sem::dense({extent.padding()},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>(std::size_t(extent.padding()),-1))));
   Value end=suffix[0];for(std::size_t i=1;i<suffix.size();++i)end=f.one(c::Operation(c::Concat{.axis=0}),{end,suffix[i]});
-  r.ids=f.one(c::Operation(c::Concat{.axis=0}),{selected,end});return r;
+  r.ids=selected?f.one(c::Operation(c::Concat{.axis=0}),{*selected,end}):end;return r;
 }
 struct Mla final {
   State state;std::optional<History> history;std::optional<Index> index;
@@ -245,13 +252,14 @@ struct Mla final {
 template<class ParameterSet>
 inline Mla append_mla(sem::Fragment &f,State state,Value actual_input_norm,Value actual_query_norm,
     const ParameterSet &p,bool fresh,std::int32_t position,std::int32_t carried_tail,IndexPolicy policy={}) {
+  const auto extent=fresh?glm_flash_selection_extent::fresh(position):glm_flash_selection_extent::carried(carried_tail);
   Mla r;r.state=state;r.state.query=actual_query_norm;
   r.query=p.project.linear(f,actual_query_norm,p.nextn.block.query_b);
   r.absorbed=p.project.per_head(f,fp::reshape(f,r.query.output,{1,64,256}),p.nextn.block.key);
   r.kv=p.project.linear(f,actual_input_norm,p.nextn.block.kv_a);
   r.latent_norm=fp::norm(f,r.kv.output,p.nextn.block.kv_norm,1.e-5F);r.latent=r.latent_norm.output;
   r.state.main=f.one(c::Operation(c::Scatter{}),{state.main,state.mla_cursor,r.latent});r.state.mla_cursor=inc(f,state.mla_cursor);
-  const auto tail=fresh?(position+1)%4:carried_tail;
+  const auto tail=std::int32_t(extent.tail);
   if(fresh) {
     r.history=append_history(f,r.state,actual_input_norm,p,position);
     r.index=select(f,r.state,actual_input_norm,actual_query_norm,p,position,tail,policy);r.state.selection=r.index->ids;
@@ -259,10 +267,10 @@ inline Mla append_mla(sem::Fragment &f,State state,Value actual_input_norm,Value
     r.state.selection=fp::copy(f,state.selection);
     r.state.journal=f.one(c::Operation(c::Scatter{}),{state.journal,state.lag,actual_input_norm});r.state.lag=inc(f,state.lag);
   }
-  const auto ids=fp::copy(f,fp::slice(f,r.state.selection,0,0,2048+tail));
+  const auto ids=fp::copy(f,fp::slice(f,r.state.selection,0,0,extent.live_tokens()));
   const auto selected=f.one(c::Operation(c::Gather{}),{r.state.main,ids});
   r.attention=f.one(c::Operation(c::ScaledDotProductAttention{.scale=1.F/16.F,.causal=false,.accumulation_type=c::DataType::kFloat32}),
-      {fp::reshape(f,r.absorbed.output,{1,1,64,512}),fp::reshape(f,selected,{1,2048+tail,1,512}),fp::reshape(f,selected,{1,2048+tail,1,512})});
+      {fp::reshape(f,r.absorbed.output,{1,1,64,512}),fp::reshape(f,selected,{1,extent.live_tokens(),1,512}),fp::reshape(f,selected,{1,extent.live_tokens(),1,512})});
   r.value=p.project.per_head(f,fp::reshape(f,r.attention,{1,64,512}),p.nextn.block.value);
   r.output=p.project.linear(f,fp::reshape(f,r.value.output,{1,16384}),p.nextn.block.output);return r;
 }
