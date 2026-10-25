@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 18:46（北京时间）。整体暂估 **70%**。已按18组共享合同分类33项量化目录，完成异构状态扩展和请求生命周期的有限源码复审。新发现选定Qwen GGUF NVFP4已有底层reader、但角色导入链明确拒绝的冷接线缺口，正在补齐。CPU辅助端点命名已纠正并通过严格编译；本轮未新增GPU或测速结论。目录分类不表示全部制品或功能已支持。
+更新：2026-10-25 19:05（北京时间）。整体暂估 **71%**。已补Qwen GGUF NVFP4的三处冷拒绝，10项Python测试、13,562项C++元数据断言和入口严格编译通过。进一步核到Q27 fidelity的49个普通BF16角色仍被两处冷映射拒绝，继续补齐。MTP状态IO离线反事实保全部真实失效后录制15→5，正在核合法实现与搬运成本，尚无新GPU或测速结论。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
@@ -10,7 +10,8 @@
 - 功能盘点与补齐：约 85%
   - 基础普通推理：约 85%
     - 模型／量化／算子与融合缺项盘点：约 85%
-    - GGUF NVFP4 原角色冷导入：约 10%
+    - GGUF NVFP4 原角色冷导入：100%
+    - GGUF BF16 原角色冷导入：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
     - 选定 MLX affine 普通绑定与有限组件：100%
@@ -87,9 +88,10 @@
     - TensorRT-LLM／Strata：约 10%
     - ds4／DeepInfer／deepseek-recipe：约 15%
   - 已确认热点实现与完整消费者对照：0%
-  - MTP 对 llama.cpp 差距归因与执行优化：约 60%
+  - MTP 对 llama.cpp 差距归因与执行优化：约 65%
     - 固定 hidden 入口候选取舍：100%
     - 图变体扩容的完整 key 离线否证：100%
+    - 状态IO子集的完整key离线反事实：100%
     - 对手次数、图体失效与下一改动成本：约 35%
   - prefill／decode／内存显存／多轮多请求综合对照：0%
 - 完成前遗漏复审与记录收尾：0%
@@ -98,9 +100,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| GGUF NVFP4 冷接线补齐 | 功能／源角色 | 核type40真实布局，补角色文件到描述符及投影的拒绝点，不混用HF NVFP4合同 | 约 10% |
-| 功能／架构阶段差距独审 | 功能／架构 | 按原需求核实际共享source与consumer，区分未实现机制、未决源合同和证据边界 | 约 35% |
-| MTP图体状态IO离线证伪 | 性能／准备 | 复用完整端口key流，保hard-clear和非候选端口；先核是否真能减少重录，尚不运行GPU或实现搬运 | 约 10% |
+| GGUF BF16 冷接线补齐 | 功能／源角色 | 对实际BF16 linear／head补plain映射，核元数据规则与原计算精度一致 | 约 10% |
+| MTP稳定状态IO实现审查 | 架构／性能准备 | 离线反事实已完成；核staging与前后复制、旧reader、预算及真实Completion保活 | 约 35% |
+| 普通decode主机边界定位 | 性能／准备 | 对齐双方每步报告／owner／prepare端点，明确同步日志也在旧formatter计时内，暂不单方关闭IO | 约 25% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -108,7 +110,7 @@
 
 功能阶段的[剩余项分类](../evidence/research/inference-remaining-review-2026-10-25.json)是前一快照，后续独审已发现上述GGUF冷拒绝；不能沿用其“零已确认待实现缺项”代表当前。原制品／整模型、平台组合与真实native故障的未运行范围仍单列。百分比余量不能直接换算为缺失功能数量。
 
-最新依据：[状态／请求合同后续复审](../evidence/research/inference-contract-followup-2026-10-25.json)、[扩展边界与投影简化](../evidence/research/inference-extension-boundaries-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)、[重复Session反例与修复](../evidence/correctness/inference-duplicate-session-2026-10-25.json)、[生成边界审查](../evidence/research/inference-generation-boundary-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
+最新依据：[GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)、[33项量化合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)、[MTP状态IO离线反事实](../evidence/performance/mtp-state-io-offline-2026-10-25.json)、[状态／请求合同后续复审](../evidence/research/inference-contract-followup-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

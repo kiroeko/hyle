@@ -28,7 +28,8 @@ ROOT = Path(__file__).resolve().parents[3]
 # They describe original storage, not activation precision or a Provider.
 CODECS = {0: ('F32', 1, 4), 1: ('F16', 1, 2), 8: ('Q8_0', 32, 34), 12: ('Q4_K', 256, 144),
           13: ('Q5_K', 256, 176), 14: ('Q6_K', 256, 210), 11: ('Q3_K', 256, 110),
-          23: ('IQ4_XS', 256, 136), 20: ('IQ4_NL', 32, 18), 21: ('IQ3_S', 256, 110)}
+          23: ('IQ4_XS', 256, 136), 20: ('IQ4_NL', 32, 18), 21: ('IQ3_S', 256, 110),
+          40: ('NVFP4', 64, 36)}
 
 
 def role_specs(g):

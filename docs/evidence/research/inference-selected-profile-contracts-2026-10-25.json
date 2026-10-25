@@ -1,0 +1,940 @@
+{
+  "status": "ALL_33_CATALOG_ROWS_SOURCE_DISPOSITIONED_NOT_ALL_ARTIFACTS_SUPPORTED_OR_EXECUTED",
+  "head": "bd4869ae8f4354d937b4aa3eccd85c167a7e8620",
+  "scope": "Read-only local catalog/selected original role metadata and real descriptor/emit/consumer code. Shared contracts grouped to avoid33-by-platform matrix. No compile, run, GPU, acquisition/network or canonical changes. General loader/server/full-model execution is not used as a prerequisite for component support.",
+  "summary": {
+    "profiles": 33,
+    "shared_contract_groups": 18,
+    "new_missing_public_compute_or_graph_primitive_confirmed": 0,
+    "not_claimed": "A concrete reference consumer is not a source-bound complete artifact adapter. An original role component is not a whole-model result. Catalog artifact_execution_verified=false is not reused as a current blanket verdict; later original-role followups are reflected separately.",
+    "catalog_rows_classified": 33,
+    "cold_binding_gaps_found_at_snapshot": 1,
+    "not_a_global_exhaustion_proof": true
+  },
+  "real_unclosed_connections": [
+    {
+      "id": "exact-compact-mla-source-interpretation",
+      "profiles": [
+        28,
+        29
+      ],
+      "classification": "SOURCE_MATH_OR_STORAGE_BINDING_UNKNOWN; not justified to implement by guessing",
+      "facts": "Original ModelOpt expanded K/V QDQ config does not uniquely identify raw compact E4 scale or scaled DSA row layout. The current raw CKV512/576 consumer is explicitly independent. Assigning its scalar to these artifacts would invent semantics.",
+      "source": [
+        "tests/compute_models/compact_mla_e4_fixture.h:20",
+        "docs/evidence/research/compact-mla-e4-contract-2026-10-21.json"
+      ],
+      "minimum_next": "Resolve the already fixed source exporter/serving policy and actual scalar identity from cached metadata first. Keep the independent raw reader usable; do not silently reinterpret expanded K/V or demand a new cache owner."
+    },
+    {
+      "id": "remaining-role-adapter-scope",
+      "profiles": [
+        14,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "classification": "ARTIFACT_ROLE_ADAPTER_OR_SOURCE_CONTRACT_PARTIAL; not all equivalent to payload merely unrun",
+      "facts": "Concrete readers/ordinary reference consumers are cited, but selected artifact-specific cold source-span/scale conversion/excluded-role or expert resource compositions are not all present. Exact unknowns are per-row. These are not33 new missing operators and not a request for a universal importer.",
+      "minimum_next": "Choose one known source-role discontinuity, distinguish missing cold glue from missing source identity and missing numerical evidence, and implement only the actual glue needed by a finite original-role consumer. No full-artifact or platform matrix is a completion condition."
+    }
+  ],
+  "contracts": {
+    "ct_int4": {
+      "physical": "I32 Q[N,K/8], original floating SF[N,K/g]; asymmetric Z[ceil(N/8),K/g] is separately N-packed. g32 Qwen, g128 Kimi.",
+      "arithmetic": "Offset-binary low-first nibble. Decode product preserves declared scale/decode rounding. Qwen then uses BF16 operand/F32 accumulation/BF16 projection or F32 score; grouped Kimi reference has explicit BF16 decode then F32 A/Y. Not legacy AWQ GEMM packing.",
+      "actual_connection": "Qwen preparer/roles -> CtPackedProjection -> actual Decode[/Cast]/transpose/MatMul. Existing flat expert reshape -> GroupedMatMul and closed-region packed contraction are concrete consumers.",
+      "source": [
+        "engine/models/qwen35/prepare.py:277",
+        "engine/models/qwen35/prepared_roles.h:377",
+        "engine/models/qwen35/main.cc:306",
+        "engine/models/qwen35/main.cc:957",
+        "include/hyle/compute/model_ops.h:259",
+        "src/graph/artifact_packed_region.h",
+        "tests/compute_models/qwen_artifact_projection_fragment.h:24",
+        "tests/compute_models/expert_working_set_fixture.h:81"
+      ],
+      "limits": "Actual Q27 asymmetric role is covered; catalog0 and Kimi22 exact payload/import coverage is partial. Odd-N independent expert Z fragments require the existing explicit zero-row repack, not concatenation. Packed/default policies differ by backend/rows; decomposition remains valid."
+    },
+    "gptq_v1": {
+      "physical": "I32 Q[K/8,N], Z[K/g,N/8], F16 SF[K/g,N], I32 g_idx[K]; g32/g64.",
+      "arithmetic": "Raw zero nibble+1 including15->16; g_idx selects original K scale group. Multiply rounds F16, explicit BF16 conversion before F32 dot; output BF16 projection/F32 scores.",
+      "actual_connection": "Prepared roles -> GptqProjection -> exact four-node Decode(F16)/Cast(BF16)/View/MatMul, plus actual original projection/target consumers.",
+      "source": [
+        "engine/models/qwen35/prepared_roles.h:401",
+        "engine/models/qwen35/main.cc:289",
+        "engine/models/qwen35/main.cc:940",
+        "src/compute_ops/weight_decode.cc:254",
+        "tests/compute_models/qwen_artifact_projection_fragment.h:24",
+        "src/graph/artifact_packed_region.h"
+      ],
+      "limits": "Original Q35/Q27 finite consumers do not qualify all shards/whole models or arbitrary GPTQ dialects; desc_act/name is not a packing selector."
+    },
+    "ct_channel_token": {
+      "physical": "Original E4 W[N,K] and BF16 SW[N,1]; input BF16 rows.",
+      "arithmetic": "BF16 dynamic token absmax/448, exactly-zero scale epsilon, BF16 QDQ W and A, F32 accumulation and BF16 output. Different from F32 code-dot or block128.",
+      "actual_connection": "Explicit CT policy -> roles -> ChannelTokenFp8Projection -> original ordinary Reduce/Select/Binary/Cast/MatMul graph. A reusable finite QDQ consumer also constructs this equation.",
+      "source": [
+        "engine/models/qwen35/prepare.py:116",
+        "engine/models/qwen35/prepared_roles.h:442",
+        "engine/models/qwen35/main.cc:403",
+        "engine/models/qwen35/main.cc:1012",
+        "tests/compute_models/fp8_channel_token_qdq_fixture.h"
+      ],
+      "limits": "Fixed CT BF16 software reader is explicit; no blanket native FP8 GEMM/deployment equivalence. Original Q27 source also has distinct local-NVFP4 roles."
+    },
+    "modelopt_nvfp4": {
+      "physical": "Adjacent low-first U8 W[N,K/2], E4 SF[N,K/16], independent positive F32 WG/IG; selected-expert banks add E axis and checked I32 IDs.",
+      "arithmetic": "Group16 software A4 QDQ: original scale-first W and A operands stored BF16 before F32 dot, BF16 Y. WG/IG multiply semantics; not CT reciprocal/local arithmetic or hardware FP4 accumulation.",
+      "actual_connection": "Qwen prepared-role/typed binding emits Nvfp4Linear; the same original target fragment inserts seven actual calibrated projection leaves. GroupedNvfp4Linear is bound by the real WeightSlots selected-bank consumer.",
+      "source": [
+        "engine/models/qwen35/prepared_roles.h:429",
+        "engine/models/qwen35/main.cc:383",
+        "engine/models/qwen35/main.cc:980",
+        "include/hyle/compute/model_ops.h:302",
+        "include/hyle/compute/model_ops.h:332",
+        "tests/compute_models/qwen_nvfp4_target_fragment.h:40",
+        "tests/compute_models/expert_working_set_fixture.h:77",
+        "src/compute_provider_native/nvfp4.cc:352",
+        "src/compute_provider_cuda/nvfp4_provider.cc:31"
+      ],
+      "limits": "A generic/actual Qwen original-role component is not an exact imported expert journey for all listed mixed publishers. Each original WG/IG and group must be authenticated; original payload absence is separate from an absent operation."
+    },
+    "qwen_mlx_affine": {
+      "physical": "U32 continuous rows [N,(K/32)*bits], BF16 SF/bias[N,K/64], bits4 or8; source-sanitized direct norm gamma and conv[C,kernel,1].",
+      "arithmetic": "Linear/head F32 affine decode and dot, explicit output cast. Embedding keeps source BF16 multiply then BF16 add; tied payload does not make these two equations interchangeable.",
+      "actual_connection": "mlx_affine_roles -> normalized V2 physical identity -> prepared roles -> MlxAffineProjection/quantized embedding -> MlxQuantized. Original Q35 components and complete four text inventories are recorded.",
+      "source": [
+        "engine/models/qwen35/prepare.py:246",
+        "engine/models/qwen35/prepared_roles.h:329",
+        "engine/models/qwen35/main.cc:347",
+        "engine/models/qwen35/main.cc:923",
+        "include/hyle/compute/model_ops.h:568",
+        "src/compute_ops/weight_decode.cc:144"
+      ],
+      "limits": "This dense Qwen policy admits bits4/8 g64, not GLM mixed5/6 or arbitrary MLX transform flags. Component/source-resident evidence is not all original Q27 payload execution."
+    },
+    "f32_block128_fp8": {
+      "physical": "Canonical encoded weight logically [K,N] (dense) or[E,N,K] (grouped), E4 codes plus F32 macroblock128 grid; source E4[N,K]/SF grid is cold imported, not reinterpreted.",
+      "arithmetic": "F32 group128 activation scale with explicit Divide, PowerOfTwo or MultiplyReciprocal and floor; SATFINITE E4, F32 dot, output matches BF16/F32 A. Policy/floor are actual mathematical fields.",
+      "actual_connection": "Qwen original BF16 scale grid is cold converted to the encoded carrier, then BlockFp8Projection emits Float8BlockLinear. Actual GLM MoE and grouped-power2/scale-policy consumers emit GroupedFloat8Linear and preserve store points.",
+      "source": [
+        "engine/models/qwen35/prepare.py:199",
+        "engine/models/qwen35/main.cc:1759",
+        "engine/models/qwen35/main.cc:394",
+        "include/hyle/compute/model_ops.h:695",
+        "include/hyle/compute/model_ops.h:801",
+        "tests/compute_models/glm_original_moe_fragment.h:136",
+        "tests/compute_models/grouped_fp8_power2_fixture.h:61",
+        "tests/compute_models/fp8_scale_policy_fixture.h:49",
+        "src/compute_provider_cuda/grouped_fp8_provider.cc:75"
+      ],
+      "limits": "Qwen official uses Divide/floor1e-10; Kimi PB_WO selected software reader uses explicit dynamic128/floor1e-4 after F32 scale folding; DSpark uses PowerOfTwo/floor1e-4; GLM Quark override uses MultiplyReciprocal/floor1e-10. CUDA grouped PowerOfTwo accepts BF16, explicitly rejects F32. These are separate contracts, not all-math equivalence."
+    },
+    "stored_static_fp8": {
+      "physical": "Original plain E4 W[N,K] plus independent F32 scalar SA and SW; source BF16 activation.",
+      "arithmetic": "F32(A)*F32(1/SA), SATFINITE E4, F32 code-dot, separate *SA then *SW, BF16 output. No extra BF16 intermediate and no scalar inversion of source identity.",
+      "actual_connection": "Qwen ModelOpt static policy/preparer/V2/typed binding emits the original twelve-node graph; StaticFloat8Pattern qualifies closed intermediates or retains decomposition. Real original k_proj CPU/CUDA component exists.",
+      "source": [
+        "engine/models/qwen35/prepare.py:42",
+        "engine/models/qwen35/prepared_roles.h:415",
+        "engine/models/qwen35/main.cc:367",
+        "engine/models/qwen35/main.cc:989",
+        "src/graph/static_fp8_region.h:10",
+        "src/graph_route_cpu/ct_packed_linear_region.cc:16",
+        "tests/compute_models/static_fp8_reference_fixture.h"
+      ],
+      "limits": "This is selected stored-scale software semantics, not fake-QDQ/native scaled_mm equivalence. Mixed Q27 header audit is85/208 with one actual original role; other mixed source/header/scalar bindings are not inferred from that result."
+    },
+    "ct_local_nvfp4": {
+      "physical": "U8 W[N,K/2], E4 SF[N,K/16], original independent F32 WG/IG; grouped adds E and IDs.",
+      "arithmetic": "Local dynamic A group16; original WG/IG are divisors in reconstruction, BF16 b/6 boundary, explicit Fp4InputRounding before E2M1, BF16 operands/F32 dot/BF16 Y. Not ModelOpt static A4.",
+      "actual_connection": "CT mixed role policy -> LocalNvfp4Projection -> exact custom operation. Existing dense/grouped local fixture constructs actual Graph/PreparedOperation and original native paths.",
+      "source": [
+        "engine/models/qwen35/prepare.py:116",
+        "engine/models/qwen35/prepared_roles.h:366",
+        "engine/models/qwen35/main.cc:307",
+        "engine/models/qwen35/main.cc:974",
+        "include/hyle/compute/model_ops.h:370",
+        "tests/compute_models/local_nvfp4_reference_fixture.h:174"
+      ],
+      "limits": "Q27 ordinary typed binding exists. Q24 fixed expert headers expose1593 groups only in the sampled header; exact selected-expert source-span import/remaining role census is not signed by the reference."
+    },
+    "nf4_doublequant": {
+      "physical": "Six numeric operands: original U8 packed codes plus U8 absmax, F32 nested_absmax, F32 nested_map256, F32 map16 and original F32 offset. Bounded original quant_state authenticates shape/offset bits.",
+      "arithmetic": "Decode F16 and explicit F16 A/MatMul output, F32 accumulation. Dense source F16 norm/conv/embedding/head follow selected F16 precision; GDN recurrent state/declared accumulations remain F32.",
+      "actual_connection": "NF4 parser/preparer -> six prepared physical roles and per-group identity -> cold original loader -> Nf4Projection Decode(F16)/View/MatMul; existing closed packed contraction avoids whole weight expansion when selected.",
+      "source": [
+        "engine/models/qwen35/nf4_state.py",
+        "engine/models/qwen35/nf4_state.h",
+        "engine/models/qwen35/prepared_roles.h:340",
+        "engine/models/qwen35/main.cc:414",
+        "engine/models/qwen35/main.cc:1792",
+        "engine/models/qwen35/main.cc:929",
+        "engine/models/qwen35/precision_profile.h:23",
+        "tests/compute_models/nf4_packed_graph_fixture.h"
+      ],
+      "limits": "All original per-group metadata and finite original-role components do not mean whole27B execution. Other BNB quant modes and BF16-by-default fallback are not admitted."
+    },
+    "gguf_nvfp4_hybrid": {
+      "physical": "Per-tensor GGUF:374 NVFP4 type40,122 Q5_K,9 Q6_K,1 Q8_0,360 F32. NVFP4 is64 values/36B with four inline scales; not HF group16/global-scale NVFP4.",
+      "arithmetic": "F32 public activation/results through existing GGUF MatMul/GroupedMatMul/Gather, with original native internal quantization/reduction. Encoding/block math is not replaced by a dequantized HF FP4 equation.",
+      "actual_connection": "gguf_weight_description/gguf_grouped_weight_description(kNvfp4) -> concrete native Graph MatMul/grouped/Gather tests. Selected hybrid original header identifies embeddingQ6_K/headQ8_0, but that artifact has no source-bound full role consumer.",
+      "source": [
+        "include/hyle/compute/low_precision.h:35",
+        "tests/graph_route_cuda/gguf_nvfp4_test.cc:105",
+        "tests/graph_route_cuda/gguf_nvfp4_test.cc:128",
+        "tests/compute_models/gguf_nvfp4_fixture.h"
+      ],
+      "limits": "Original hybrid numeric payload is not acquired/executed in recorded scope. This is a missing artifact-level qualification/role adapter, not a proven missing shared block reader or need for a general loader."
+    },
+    "quark_mxfp4_a4": {
+      "physical": "U8 adjacent low-even/high-odd W[N,K/2], U8 E8M0 SF[N,K/32]; grouped[E,N,..] plus checked IDs; BF16 A.",
+      "arithmetic": "Dynamic group32 even-scale/half-even A4; BF16 decoded W/A before F32 dot, BF16 Y. SF0=2^-127,255 invalid; zero/extreme portable policy explicit. No global scales or hardware FP4 equivalence.",
+      "actual_connection": "Mxfp4Linear/GroupedMxfp4Linear actual native operations and Graph fixture. Kimi selected-bank consumer and original GLM MoE append reuse these exact ports, with actual map/lease generations.",
+      "source": [
+        "include/hyle/compute/model_ops.h:434",
+        "include/hyle/compute/model_ops.h:460",
+        "tests/compute_models/mxfp4_reference_fixture.h:158",
+        "tests/compute_models/kimi_mixed_working_set_consumer_test.cc:299",
+        "tests/compute_models/glm_original_moe_fragment.h:136",
+        "src/compute_provider_native/nvfp4.cc:356",
+        "src/compute_provider_cuda/nvfp4_provider.cc:33"
+      ],
+      "limits": "Kimi actual resource journey uses synthetic original-format bytes; publisher expert values and all exclusions are unexecuted. Q24 excluded attention/shared/head semantics are not proved by the two expert headers. GLM overrides remain a separate FP8 contract."
+    },
+    "micro32_mxfp4_a16": {
+      "physical": "Original U8 E2M1 W, F32 micro32 SF; cold positive-finite SF -> E8M0 codes0..254. Fixed mbs_mode=off has no extra macro/global operand.",
+      "arithmetic": "Mxfp4ActivationMode::kBFloat16 reads real BF16 A without A4 quantization/workspace; BF16 decoded W/F32 dot/BF16 Y. F32->E8M0 is an explicit cold numerical conversion.",
+      "actual_connection": "Public encode_e8m0_scales plus Mxfp4Linear/GroupedMxfp4Linear(kBFloat16); actual direct/Graph weight-only cases execute original packed layout. Fused gate_up original dim0 split is a caller source-layout fact.",
+      "source": [
+        "include/hyle/compute/weight_import.h:44",
+        "include/hyle/compute/model_ops.h:410",
+        "tests/compute_models/mxfp4_reference_fixture.h:158",
+        "tests/graph_route_cpu/mxfp4_reference_test.cc:29"
+      ],
+      "limits": "Exact Inferact exporter/OAS and original F32 SF values are unknown; no complete selected-expert source import/resource consumer is recorded. Do not borrow Quark A4 or MLX post-dot math."
+    },
+    "ct_bf16_block128": {
+      "physical": "Original E4 W[N,K] or[E,N,K], BF16 block128 SF grid; BF16 A group128.",
+      "arithmetic": "BF16 divide/zero-only epsilon/SATFINITE QDQ with BF16 W*SF storage; F32 MatMul accumulation/BF16 Y. These BF16 boundaries differ from canonical F32-scale code-dot.",
+      "actual_connection": "The concrete ct_block128_qdq fixture builds actual ordinary Graph Gather/reshape/Reduce/Cast/Binary/Select/MatMul, selecting packed experts before W decode. It is more than an expressibility assertion, but not a Qwen V2 artifact adapter.",
+      "source": [
+        "tests/compute_models/ct_block128_qdq_fixture.h:65",
+        "tests/compute_models/ct_block128_qdq_fixture.h:100",
+        "include/hyle/compute/operation.h",
+        "include/hyle/graph/graph.h"
+      ],
+      "limits": "Fixed Kimi21 reference exists. Q24 CT mixed block128 roles need explicit BF16 policy/source binding; reusing Float8BlockLinear with F32 scale conversion would alter this math. No full source role importer is inferred."
+    },
+    "kimi_outer_fp8": {
+      "physical": "E4 W[N,K], F32 SW[N], dynamic token SA from BF16 A flattened rows; physical channel-axis config is retained.",
+      "arithmetic": "No-floor F32 absmax*F32(1/448), separate F32 reciprocal and multiply, F32 code-dot, ordered *SW then *SA, BF16 Y. Not CT BF16 token QDQ/static scalar SA.",
+      "actual_connection": "fp8_outer_scale Case::source_role(M1/M2,N128,K7168) constructs actual ordinary Graph and closed-region candidate. Kimi mixed working-set graph also emits the same outer projection around real routed work.",
+      "source": [
+        "tests/compute_models/fp8_outer_scale_fixture.h:56",
+        "tests/compute_models/fp8_outer_scale_fixture.h:145",
+        "tests/compute_models/kimi_mixed_working_set_consumer_test.cc:338",
+        "src/graph/static_fp8_region.h"
+      ],
+      "limits": "Synthetic finite original-role geometry and explicit software scale order, not original publisher values or AMD reciprocal/GEMM bit certification."
+    },
+    "kimi_k512_w4a8": {
+      "physical": "Low-first I32 offset-binary W[N,K/8], F32 SF[N,K/512], BF16 A; grouped has E/IDs.",
+      "arithmetic": "BF16 group512 absmax/reciprocal -> truncated I8; exact I32 dot followed by sequential BF16 group rescale/accumulate. Not W4A16/GPTQ decode+F32 dot.",
+      "actual_connection": "BlockwiseW4A8Linear/GroupedBlockwiseW4A8Linear are actual native operations, emitted by both standalone fixture and real Kimi selected-bank/SiTU/combine consumer.",
+      "source": [
+        "include/hyle/compute/model_ops.h:496",
+        "include/hyle/compute/model_ops.h:519",
+        "src/compute_provider_native/blockwise_w4a8.cc:203",
+        "src/compute_provider_cuda/blockwise_w4a8_provider.cc:30",
+        "tests/compute_models/blockwise_w4a8_fixture.h",
+        "tests/compute_models/kimi_mixed_working_set_consumer_test.cc:299"
+      ],
+      "limits": "Fixed custom producer source establishes this equation; original artifact values/full layers are absent. The catalog older generic CT entries are explicitly non-equivalent and must not be selected as its reader."
+    },
+    "ds_e8m0_power2": {
+      "physical": "Original E4[N,K] and true U8 E8M0 macroblock128 SF; cold importer copies codes and expands only scale grid to canonical F32 block128 carrier.",
+      "arithmetic": "Explicit dynamic group128 PowerOfTwo/floor1e-4, F32 dot, BF16 A/Y selected reference. Original E8M0 codes validated; canonical stored SF carries exact powers.",
+      "actual_connection": "import_float8_block128_weight -> actual dense Float8BlockLinear(PowerOfTwo) fixture. A separate grouped-power2 actual Graph exists; a source-imported grouped bank/WeightSlots journey is not present in those two fixtures.",
+      "source": [
+        "include/hyle/compute/weight_import.h:31",
+        "tests/compute_models/e8m0_weight_import_fixture.h:47",
+        "tests/compute_models/e8m0_weight_import_fixture.h:63",
+        "tests/compute_models/grouped_fp8_power2_fixture.h:61",
+        "src/compute_provider_cuda/grouped_fp8_provider.cc:77"
+      ],
+      "limits": "Dense import and grouped operation are implemented but the combined imported-grouped original-role consumer is not signed. That is an unfinished consumer composition/qualification, not evidence of an absent public encoding or grouped operation; native CUDA F32 power2 remains explicitly unsupported."
+    },
+    "glm_mlx_mixed": {
+      "physical": "Affine g64 U32 continuous bitstreams. Pro31 BF16 SF/bias, bits4 head banks[H,N,words]; Flash32 original F16 SF/bias with routed4/4/5 and shared6.",
+      "arithmetic": "F32 affine decode/dot with actual source metadata dtype; explicit final casts. Pro both weight orientations are real role semantics. Flash BF16 inputs widen to F32; routed/shared/final preserve the documented F32 boundaries.",
+      "actual_connection": "MlxQuantized explicit orientation/grouped ports -> original Pro embed_q/unembed_out payload consumer; Flash mixed MoE builds actual original-format banks/map via WeightSlots and ordinary Graph.",
+      "source": [
+        "include/hyle/compute/model_ops.h:568",
+        "src/compute_ops/weight_decode.cc:144",
+        "tests/compute_models/mlx_head_payload_fixture.h:164",
+        "tests/compute_models/glm_flash_mixed_mlx_fixture.h:172",
+        "tests/compute_models/glm_flash_mixed_mlx_fixture.h:303",
+        "tests/compute_models/glm_mlx_affine_projection_fragment.h"
+      ],
+      "limits": "Pro six actual layer0 tensors are not full MLA/query/cache composition or all156 triples. Flash uses synthetic original-format bytes, not all37152 publisher triples. Exact native same-low-type MLX QMM is not presumed equivalent."
+    },
+    "glm_compact_e4": {
+      "physical": "Independent raw compact E4 CKV512(+KPE64), one shared scalar interpretation; V is same-row zero-copy prefix512. Not ModelOpt expanded K/V QDQ or scaled DSA656/528.",
+      "arithmetic": "BF16 Q/Y, explicit uniform CacheStorage::float8(scale); original paged/ragged MLA math. Source artifact scalar/exporter mapping is unresolved.",
+      "actual_connection": "Actual MlaBatchCapacity/CacheStorage -> original Graph paged_mla_attention or RaggedMlaAttention -> compact E4 reader and paired-pending consumer exists. It does not authenticate the ModelOpt artifact scalar.",
+      "source": [
+        "tests/compute_models/compact_mla_e4_fixture.h:20",
+        "tests/compute_models/compact_mla_e4_fixture.h:44",
+        "include/hyle/compute/low_precision.h:101"
+      ],
+      "limits": "Exact artifact compact scalar/exporter binding is not known. Config static E4 on expanded K/V cannot silently define raw compact or scaled-DSA storage. Scaled DSA token/group scales remain a distinct unqualified numerical/storage domain, not a blanket missing feature requirement."
+    }
+  },
+  "profiles": [
+    {
+      "i": 0,
+      "source": "cyankiwi/Qwen3.5-2B-AWQ-4bit@718fd9b52c5ca16f1f856f6c4e4209129802a6a2",
+      "groups": [
+        "ct_int4"
+      ],
+      "connection": "DENSE_COLD_CHAIN_PRESENT",
+      "limit": "Qwen symmetric CT role reader is implemented; publisher header/value coverage remains partial."
+    },
+    {
+      "i": 1,
+      "source": "Vishva007/Qwen3.5-2B-W4A16-AutoRound-GPTQ@8ec79a3b08636bc68fd40d69df80e97ff1263995",
+      "groups": [
+        "gptq_v1"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "Original fixed GPTQ target/projection components exist; not full artifact."
+    },
+    {
+      "i": 2,
+      "source": "Freesolo-Co/Qwen3.5-2B-FP8@e200465690a076860468c19bec107ac54a257953",
+      "groups": [
+        "ct_channel_token"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_REFERENCE_CONSUMER_PRESENT",
+      "limit": "Explicit CT channel/token original role contract; no complete payload result."
+    },
+    {
+      "i": 3,
+      "source": "AxionML/Qwen3.5-2B-NVFP4@6f2ad4febe92be529de499b08f0020f5ff06bf25",
+      "groups": [
+        "modelopt_nvfp4"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_ORIGINAL_TARGET_LEAVES_PRESENT",
+      "limit": "Original ModelOpt Qwen NVFP4 role consumer uses real calibration quartet; no entire source execution."
+    },
+    {
+      "i": 4,
+      "source": "mlx-community/Qwen3.5-2B-MLX-4bit@93760be4f1f69842a46bc13dbdc0f19e291392a3",
+      "groups": [
+        "qwen_mlx_affine"
+      ],
+      "connection": "SOURCE_RESIDENT_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "Q35 affine4 original components plus complete text metadata; no whole source run."
+    },
+    {
+      "i": 5,
+      "source": "mlx-community/Qwen3.5-2B-MLX-8bit@e6ffd0033d03c9efa880984e611028e0da63905f",
+      "groups": [
+        "qwen_mlx_affine"
+      ],
+      "connection": "SOURCE_RESIDENT_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "Q35 affine8 original components plus complete text metadata; no whole source run."
+    },
+    {
+      "i": 6,
+      "source": "Qwen/Qwen3.8-27B-FP8@017b9c7af6b5689d5dd426a76e0bc077eb5ca20a",
+      "groups": [
+        "f32_block128_fp8"
+      ],
+      "connection": "DENSE_COLD_CHAIN_PRESENT_SOURCE_BINDING_CONDITIONAL",
+      "limit": "Official dense BF16-scale block128 policy is connected; exact original publisher role execution not supplied by static catalog.",
+      "later_original_tile_evidence": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json; finite MTP-source slices and explicit reader limits, not complete ordinary roles/whole artifacts."
+    },
+    {
+      "i": 7,
+      "source": "nvidia/Qwen3.8-27B-NVFP4@482ca0f3832238542f8f5295dde86b5f22711d80",
+      "groups": [
+        "modelopt_nvfp4",
+        "stored_static_fp8"
+      ],
+      "connection": "MIXED_DENSE_COLD_CHAIN_PARTIAL_ORIGINAL_ROLE_EVIDENCE",
+      "limit": "208 FP8 and193 NVFP4 targets remain distinct;85 FP8 module headers and one original k_proj actually qualified."
+    },
+    {
+      "i": 8,
+      "source": "unsloth/Qwen3.8-27B-NVFP4@f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+      "groups": [
+        "ct_channel_token",
+        "ct_local_nvfp4"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_REFERENCE_CONSUMERS_PRESENT",
+      "limit": "CT token/channel + local NVFP4 policies are both bound; original E4 cache calibration has separate real ordinary pipeline evidence."
+    },
+    {
+      "i": 9,
+      "source": "cyankiwi/Qwen3.8-27B-AWQ-INT4@6e134bae811fb5adac50ee042ae5f029ac6779aa",
+      "groups": [
+        "ct_int4"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "Original Q27 asymmetric g32 projection/zeros implemented and actual; M1 packed versus M2 decomposition is policy, not absence."
+    },
+    {
+      "i": 10,
+      "source": "Vishva007/Qwen3.8-27B-W4A16-AutoRound-GPTQ@1b9d56b428e9f841d7ad566f87660b5f47553c97",
+      "groups": [
+        "gptq_v1"
+      ],
+      "connection": "DENSE_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "Original fixed g64 GPTQ target/projection components exist; not all shards."
+    },
+    {
+      "i": 11,
+      "source": "mlx-community/Qwen3.8-27B-4bit@10c35caafbb80f7dc6a7a432cdd11af10a6d4818",
+      "groups": [
+        "qwen_mlx_affine"
+      ],
+      "connection": "SOURCE_RESIDENT_COLD_CHAIN_PRESENT",
+      "limit": "Complete Q27 affine4 text metadata and source-resident generic loader; no whole27B payload run."
+    },
+    {
+      "i": 12,
+      "source": "mlx-community/Qwen3.8-27B-8bit@815b83c0df8ffd1d1b5244cf75fd6ef14fca9ef9",
+      "groups": [
+        "qwen_mlx_affine"
+      ],
+      "connection": "SOURCE_RESIDENT_COLD_CHAIN_PRESENT",
+      "limit": "Complete Q27 affine8 text metadata and source-resident generic loader; no whole27B payload run."
+    },
+    {
+      "i": 13,
+      "source": "unsloth/Qwen3.8-27B-unsloth-bnb-4bit@8aa5f05d26b7205477066e1449e0af13f762a299",
+      "groups": [
+        "nf4_doublequant"
+      ],
+      "connection": "SOURCE_RESIDENT_COLD_CHAIN_AND_ORIGINAL_COMPONENT_PRESENT",
+      "limit": "All352 original NF4 states authenticated separately; original F16 ordinary/packed components exist; not whole27B."
+    },
+    {
+      "i": 14,
+      "source": "cdiamond/Qwen3.8-27B-iMatrix-NVFP4-MTP-GGUF@ac343e8f44caef0896f79d372ecc07ef7ab34ec8",
+      "groups": [
+        "gguf_nvfp4_hybrid"
+      ],
+      "connection": "PUBLIC_READER_PRESENT_BUT_QWEN_ORIGINAL_ROLE_IMPORT_EXPLICITLY_REJECTS_NVFP4_AT_AUDIT_SNAPSHOT",
+      "limit": "The type40 original GGUF header is known. Existing native consumers do not fix the source-role CODECS, prepared block map and role_description rejection. This is a concrete cold binding gap to repair, separate from missing whole-model/payload evidence.",
+      "resolution_after_audit": {
+        "evidence": "docs/evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json",
+        "scope": "Three cold bindings fixed and bounded host checks passed; not full artifact/payload qualification."
+      }
+    },
+    {
+      "i": 15,
+      "source": "Qwen/Qwen3.8-2.4T-A95B-FP8@d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "groups": [
+        "f32_block128_fp8"
+      ],
+      "connection": "CONCRETE_DENSE_AND_GROUPED_CONSUMERS_SOURCE_ROLE_PARTIAL",
+      "limit": "Q24 dense/shared/grouped FP8 reader exists; no whole original Q24 source import/role execution.",
+      "later_original_tile_evidence": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json; finite MTP-source slices and explicit reader limits, not complete ordinary roles/whole artifacts."
+    },
+    {
+      "i": 16,
+      "source": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4@13dc9676cdd9e2374c3efb50389d3392b975acae",
+      "groups": [
+        "quark_mxfp4_a4"
+      ],
+      "connection": "CONCRETE_REFERENCE_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "Expert MXFP4 equation connected; sampled experts do not establish excluded attention/shared/head contracts."
+    },
+    {
+      "i": 17,
+      "source": "nvidia/Qwen3.8-2.4T-A95B-NVFP4@74eb734297318ecf7c48016a4ac8ce1b47cc74a9",
+      "groups": [
+        "modelopt_nvfp4",
+        "stored_static_fp8"
+      ],
+      "connection": "CONCRETE_MIXED_REFERENCE_CONSUMERS_SOURCE_ROLE_PARTIAL",
+      "limit": "506 static FP8 versus92 NVFP4 expert targets; no all-role source-span/global scalar adapter consumer."
+    },
+    {
+      "i": 18,
+      "source": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8@b94577f02dd4bcb722aad2c60f8117032411dfb5",
+      "groups": [
+        "ct_local_nvfp4",
+        "ct_bf16_block128"
+      ],
+      "connection": "CONCRETE_REFERENCE_CONSUMERS_SOURCE_ROLE_PARTIAL",
+      "limit": "CT BF16 block128 attention plus local-dynamic NVFP4 MLP; not Qwen dense V2 FP8 policy equivalence, nor all69 shard headers."
+    },
+    {
+      "i": 19,
+      "source": "Inferact/Qwen3.8-2.4T-A95B-MXFP4@98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+      "groups": [
+        "micro32_mxfp4_a16"
+      ],
+      "connection": "CONCRETE_WEIGHT_ONLY_REFERENCE_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "Cold scale conversion and weight-only reader exist; exact fused original expert source-span import/resource journey not connected in a dedicated consumer.",
+      "later_original_tile_evidence": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json; finite MTP-source slices and explicit reader limits, not complete ordinary roles/whole artifacts."
+    },
+    {
+      "i": 20,
+      "source": "nvidia/Kimi-K3-NVFP4@b2428a0b83a8b712ff2e1a8448a103d4175341f1",
+      "groups": [
+        "modelopt_nvfp4",
+        "f32_block128_fp8"
+      ],
+      "connection": "CONCRETE_REFERENCE_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "F32 PB_WO scale import and explicit dynamic128 reader exist, separately from ModelOpt expert bank witness; native vLLM/QTensor bit contract not inferred."
+    },
+    {
+      "i": 21,
+      "source": "RedHatAI/Kimi-K3-FP8-BLOCK@6409c37cf440abeb76f0b44ab4fb7db8c8bccb4b",
+      "groups": [
+        "ct_bf16_block128"
+      ],
+      "connection": "CONCRETE_BF16_QDQ_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "BF16 block128 weight/A graph is actual; not F32 code-dot; exact original expert resource/payload journey absent."
+    },
+    {
+      "i": 22,
+      "source": "RedHatAI/Kimi-K3-INT4@d5048a3ba6d23dd68749ea4b84abcb66d59a07e3",
+      "groups": [
+        "ct_int4"
+      ],
+      "connection": "CONCRETE_CT_GROUPED_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "Explicit BF16 decode/operand contract and grouped reader exist; exact original Kimi source spans/payload not bound by generic asymmetric witness."
+    },
+    {
+      "i": 23,
+      "source": "amd/Kimi-K3-Quark-MXFP4-AttnFP8@398ecc22db3722ed6e416d22f8ddb491da32d566",
+      "groups": [
+        "quark_mxfp4_a4",
+        "kimi_outer_fp8"
+      ],
+      "connection": "CONCRETE_MIXED_RESOURCE_CONSUMER_PRESENT_SYNTHETIC_SOURCE_BYTES",
+      "limit": "Kimi mixed MXFP4+outer FP8 selected-bank/SiTU/combine actual resource journey exists; original payload/full KDA is not signed."
+    },
+    {
+      "i": 24,
+      "source": "open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024@dabd12ab69bf9c71fd219bae4c49a34f00249bd2",
+      "groups": [
+        "kimi_k512_w4a8"
+      ],
+      "connection": "CONCRETE_MIXED_RESOURCE_CONSUMER_PRESENT_SYNTHETIC_SOURCE_BYTES",
+      "limit": "K512 distinct arithmetic also uses real selected-bank/SiTU/combine journey; not generic CT/GPTQ math."
+    },
+    {
+      "i": 25,
+      "source": "nvidia/DeepSeek-V4-Pro-0813-NVFP4@949138637e8e8fe190335be2396af62187dc8a83",
+      "groups": [
+        "modelopt_nvfp4",
+        "ds_e8m0_power2"
+      ],
+      "connection": "DENSE_IMPORTED_ORIGINAL_TILE_CONSUMER_PRESENT; NO_REQUIRED_GROUPED_FP8_EXPERT_CONNECTION_ESTABLISHED",
+      "limit": "Sampled ordinary E8M0 macroblock roles are attention/shared dense; ordinary routed experts are NVFP4. Existing original MTP wkv dense E4/E8M0 tiles already reach importer and PowerOfTwo reader on CPU/CUDA; this is not full ordinary role/model qualification. MTP FP4/E8 group32 expert math stays distinct."
+    },
+    {
+      "i": 26,
+      "source": "nvidia/DeepSeek-V4-Flash-0731-NVFP4@f1caa71142bd0be02f728c79f75042ac1e461579",
+      "groups": [
+        "modelopt_nvfp4",
+        "ds_e8m0_power2"
+      ],
+      "connection": "DENSE_IMPORTED_ORIGINAL_TILE_CONSUMER_PRESENT; NO_REQUIRED_GROUPED_FP8_EXPERT_CONNECTION_ESTABLISHED",
+      "limit": "Sampled ordinary E8M0 macroblock roles are attention/shared dense; ordinary routed experts are NVFP4. Existing original MTP wkv dense E4/E8M0 tiles already reach importer and PowerOfTwo reader on CPU/CUDA; this is not full ordinary role/model qualification. MTP FP4/E8 group32 expert math stays distinct."
+    },
+    {
+      "i": 27,
+      "source": "AtlasCloud/DeepSeek-V4-Flash-0731-FP8-DSpark@7eb21d27aee405755da5251f4458e9fff87c047b",
+      "groups": [
+        "f32_block128_fp8"
+      ],
+      "connection": "CONCRETE_GROUPED_POWER2_CONSUMER_SOURCE_ROLE_PARTIAL",
+      "limit": "Header actually stores F32 macroblock scales despite scale_fmt label; use stored F32 bits, not fabricated E8M0 conversion.",
+      "later_original_tile_evidence": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json; finite MTP-source slices and explicit reader limits, not complete ordinary roles/whole artifacts."
+    },
+    {
+      "i": 28,
+      "source": "nvidia/GLM-5.3-NVFP4@e3b8f9f2fad29727dfa95e766c5cac18ea1414bf",
+      "groups": [
+        "modelopt_nvfp4",
+        "stored_static_fp8",
+        "glm_compact_e4"
+      ],
+      "connection": "REFERENCE_PROJECTION_AND_CACHE_CONSUMERS_PRESENT_SOURCE_CACHE_BINDING_UNKNOWN",
+      "limit": "Mixed projection references exist; exact compact cache scalar/exporter/default interpretation unproven."
+    },
+    {
+      "i": 29,
+      "source": "nvidia/GLM-5.3-Flash-NVFP4@da920bb0b9f4a06727223a349e55468e38352348",
+      "groups": [
+        "modelopt_nvfp4",
+        "stored_static_fp8",
+        "glm_compact_e4"
+      ],
+      "connection": "REFERENCE_PROJECTION_AND_CACHE_CONSUMERS_PRESENT_SOURCE_CACHE_BINDING_UNKNOWN",
+      "limit": "README selects FP8+TRTLLM but exact compact scalar/exporter is not fixed by expanded K/V ModelOpt QDQ."
+    },
+    {
+      "i": 30,
+      "source": "amd/GLM-5.3-Flash-Quark-MXFP4@b5688f25491202978c19c4d036eef579f61bbe07",
+      "groups": [
+        "f32_block128_fp8",
+        "quark_mxfp4_a4"
+      ],
+      "connection": "CONCRETE_ORIGINAL_FORMAT_MOE_AND_OVERRIDE_CONSUMERS_PRESENT",
+      "limit": "GLM ordinary MXFP4 MoE and explicit MultiplyReciprocal FP8 reference exist;924 overrides include871 MTP entries (excluded from new function work),53 main; all preserved roles not qualified."
+    },
+    {
+      "i": 31,
+      "source": "mlx-community/GLM-5.3-4bit@81ad9b73c6188f808737dbb52458f082d249dcbe",
+      "groups": [
+        "glm_mlx_mixed"
+      ],
+      "connection": "ORIGINAL_HEAD_PAYLOAD_COMPONENT_PRESENT",
+      "limit": "Two original head-bank orientations and six tensors actually consumed; surrounding full MLA/cache not qualified."
+    },
+    {
+      "i": 32,
+      "source": "mlx-community/GLM-5.3-Flash-4bit@fa04cbc3622b16aa7475404060b05e506d81bd4e",
+      "groups": [
+        "glm_mlx_mixed"
+      ],
+      "connection": "CONCRETE_MIXED_RESOURCE_CONSUMER_PRESENT_SYNTHETIC_SOURCE_BYTES",
+      "limit": "Original-format F16 scale/bias affine4/5/6 MoE plus atomic banks/map and lifetime reference exists; no all publisher values."
+    }
+  ],
+  "important_distinctions": [
+    "AWQ in a repository name does not select legacy AWQ packing.",
+    "CT BF16 channel/token or block128 QDQ cannot be replaced by F32 scale code-dot.",
+    "ModelOpt static stored SA/SW, local-dynamic CT NVFP4, ModelOpt NVFP4 and GGUF NVFP4 are independent equations/encodings.",
+    "MLX affine bits/orientation/source metadata dtype are explicit; Qwen dense4/8 does not silently cover GLM mixed5/6.",
+    "E8M0 stored grids, F32 stored grids and dynamic scale policies are independent facts.",
+    "CUDA grouped F32 PowerOfTwo remains explicitly rejected; this is a real backend qualification limit, not universal failure of the selected BF16 contract.",
+    "Neither33 source dispositions nor no new public primitive gap is an exhaustive feature-completion proof."
+  ],
+  "input_pins": [
+    {
+      "path": "docs/implementation/model-quantizations.json",
+      "bytes": 581959,
+      "sha256": "fa03dc4d08b714c3648c248b58245ed74b5bedc19891520f013de6cadcb9c7aa"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 110955,
+      "sha256": "dc16fa6d8f3367b440a13619975e205ac4bd330e0f75a9b88317807bb931567c"
+    }
+  ],
+  "source_pins": {
+    "engine/models/qwen35/main.cc": [
+      499001,
+      "726ba4899b47fab8fe81738a9d2ca4482ea3388ac3dc3ef7bddab267bb742be9"
+    ],
+    "engine/models/qwen35/nf4_state.h": [
+      5375,
+      "93d74bbfce17d9dc314fc951536b261d72e9f42d7422ebf56903c67814cc9a5f"
+    ],
+    "engine/models/qwen35/nf4_state.py": [
+      5365,
+      "318c164936a1e4d79bd0ff14b97f4c753c4b21faac63a22fbb155e7d2ba60653"
+    ],
+    "engine/models/qwen35/precision_profile.h": [
+      2170,
+      "3fb47d13280b00922356024e5299ced6a425976fb9fbdb5943eb2231195f4f5c"
+    ],
+    "engine/models/qwen35/prepare.py": [
+      45883,
+      "03d383a6ead36e8b830bcdb59cc14cfa4ab44dfd5580311bdebd2a8e17c01d09"
+    ],
+    "engine/models/qwen35/prepared_roles.h": [
+      39007,
+      "2194603b0b87f64044a630b682c00f746a5e8732c02d5779354e47366855ae7e"
+    ],
+    "include/hyle/compute/low_precision.h": [
+      10591,
+      "71f17f2b191fe7d00166e29fc84a44cf6ac2211aba5fed42b7df1f08f00f56fd"
+    ],
+    "include/hyle/compute/model_ops.h": [
+      80480,
+      "f8b4c68f1fb3d6a72acbaebacf286981c25c7aac13f75702f450c74fe5cdc99a"
+    ],
+    "include/hyle/compute/operation.h": [
+      28771,
+      "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5"
+    ],
+    "include/hyle/compute/weight_import.h": [
+      3487,
+      "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+    ],
+    "include/hyle/graph/graph.h": [
+      19988,
+      "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    ],
+    "src/compute_ops/weight_decode.cc": [
+      17848,
+      "e2abed9cfde68ba59e13571ac8c7a0007f1f84f0a4fb0293895b6ba28d66cbf1"
+    ],
+    "src/compute_provider_cuda/blockwise_w4a8_provider.cc": [
+      9381,
+      "b0dfb7762949aebcbd7135c6c533212724dda3d23103e05657fe2e08ab5542a5"
+    ],
+    "src/compute_provider_cuda/grouped_fp8_provider.cc": [
+      15630,
+      "d897e7cc9e3bc5afee5b624b7bb91dd07ae69b6ac2c90bf4213adad715753f0d"
+    ],
+    "src/compute_provider_cuda/nvfp4_provider.cc": [
+      10608,
+      "f1c8f5a0fcbe578a4d3c89b104afd3c3c9c44091b41cfee1dcbabd3f3ed9c5e6"
+    ],
+    "src/compute_provider_native/blockwise_w4a8.cc": [
+      11188,
+      "d0393cd14a6a470feabf0bd9326dfb3221d10f3ad15c248e0432b24b56e2b30d"
+    ],
+    "src/compute_provider_native/nvfp4.cc": [
+      20087,
+      "d588b4feabb03a78aa4e458419010fa1e1b5ef0b98239be60ee26c08e100f564"
+    ],
+    "src/graph/artifact_packed_region.h": [
+      9729,
+      "463c2f199886fdd690bc3e04c02eddfd37a5d434022807f5ffa0c528b878729c"
+    ],
+    "src/graph/static_fp8_region.h": [
+      6986,
+      "f22a0ac2ce8cecae75a283a6470402ba1d672cdf4087cc780ac5d8c742f1d95f"
+    ],
+    "src/graph_route_cpu/ct_packed_linear_region.cc": [
+      712,
+      "5204a2818a5e4e4e57e5a112aff69bedabb800f4ae8bd7e4f3884c3e52116062"
+    ],
+    "tests/compute_models/blockwise_w4a8_fixture.h": [
+      17350,
+      "bb0e5d6a6c2581e19bf81a55b895ba0d7ed611b3f90281243095e6620c4427ac"
+    ],
+    "tests/compute_models/compact_mla_e4_fixture.h": [
+      12031,
+      "67e2c7b51ddd4eec57fecbc52b7f079ead4c30293d63083e9dddf8de602e9c37"
+    ],
+    "tests/compute_models/ct_block128_qdq_fixture.h": [
+      20060,
+      "fbd56d391645b630f8dd8a9037d8395ab2cfef349d98e31b5ddebfa20170d518"
+    ],
+    "tests/compute_models/e8m0_weight_import_fixture.h": [
+      9020,
+      "c6ca40dfa23d1fcff9a5db9965e9071bf4570b62eea54d8f7649f620dc894550"
+    ],
+    "tests/compute_models/expert_working_set_fixture.h": [
+      25059,
+      "7acdd3077cf034cf8656f831fe27e9247341e24095be2da52de9923098d4dc75"
+    ],
+    "tests/compute_models/fp8_channel_token_qdq_fixture.h": [
+      20907,
+      "2feddfd34cd7904b3def4915b7ab1da2db7f29f13f2347278b256788d036ad67"
+    ],
+    "tests/compute_models/fp8_outer_scale_fixture.h": [
+      22241,
+      "df62449003a0f5d34df21d55ce3a1dbc0df69267e55ac0497aea6bdc597b81ad"
+    ],
+    "tests/compute_models/fp8_scale_policy_fixture.h": [
+      10981,
+      "1fef0f3bf56fa7e3d2b196d4146b336350da0a84935c6ed072413c2edfee1833"
+    ],
+    "tests/compute_models/gguf_nvfp4_fixture.h": [
+      3365,
+      "b75573cffa3906c26623252c9d9cf8c5cf4791485addd2e0c9f09fac513fcb26"
+    ],
+    "tests/compute_models/glm_flash_mixed_mlx_fixture.h": [
+      24938,
+      "cf3b828e94c69f9f0f9112a81ba9a05e66446ab54102f4b088ae9981a2583b5a"
+    ],
+    "tests/compute_models/glm_mlx_affine_projection_fragment.h": [
+      3268,
+      "07505ab048c05ed139fdbb2b640ba81c96afd27e0b231d2419d14e71ed752cdf"
+    ],
+    "tests/compute_models/glm_original_moe_fragment.h": [
+      11475,
+      "f20624e9ff5f4f42f1dca1edc3bf970fdb6e959afbfda9d5aadd9b16b37df97b"
+    ],
+    "tests/compute_models/grouped_fp8_power2_fixture.h": [
+      15269,
+      "f611d9be8581ec628eb0432c287b3921b767c810e0f7ba86795ad21e4b7a5057"
+    ],
+    "tests/compute_models/kimi_mixed_working_set_consumer_test.cc": [
+      37685,
+      "5dd61f6c0e69b3278d1ffca2bff202538ca9c6c8d425f421c637bc4f471466fa"
+    ],
+    "tests/compute_models/local_nvfp4_reference_fixture.h": [
+      18751,
+      "6a44e8635da2e8b269a06e3fa472cfa91f24a417cc10845dd8dcfdf5ee4e6015"
+    ],
+    "tests/compute_models/mlx_head_payload_fixture.h": [
+      20066,
+      "de9f40b80684c1b9874bf68f2ead355a7171a65e1a7b9e6312793d4cf789b68c"
+    ],
+    "tests/compute_models/mxfp4_reference_fixture.h": [
+      19914,
+      "4b34ce35e172ad4773acb10e48deb0ed615e91cef2aa3f650c2ad39870a41be8"
+    ],
+    "tests/compute_models/nf4_packed_graph_fixture.h": [
+      6711,
+      "8e42db76be868953ab51dbded4357a5f654706c250d3a6be15a1890aa3589273"
+    ],
+    "tests/compute_models/qwen_artifact_projection_fragment.h": [
+      3495,
+      "0dc7449a5c32ebe610ce9caa8bb93359d7ebf029813be2ab79f965556a9d0e1c"
+    ],
+    "tests/compute_models/qwen_nvfp4_target_fragment.h": [
+      3955,
+      "7025e1d25f30e742551e7887ba4ed2863591923f24fda9c3a5df69a6189c8735"
+    ],
+    "tests/compute_models/static_fp8_reference_fixture.h": [
+      19426,
+      "53353ba911056fe2d1295d66f348b0825b8a0945da13539bb4224c705fb0b406"
+    ],
+    "tests/graph_route_cpu/mxfp4_reference_test.cc": [
+      7779,
+      "5794291848edfb92dc56e51257e935a9a1a7063425b572d5248369b2eeb578c4"
+    ],
+    "tests/graph_route_cuda/gguf_nvfp4_test.cc": [
+      12890,
+      "8b938804dbe2787a7efb721cc1d6d1eb7fa99098b8319be9e3c8aa5557b81371"
+    ]
+  },
+  "catalog_identity_rule": "Profile i means /artifacts/i of the exactly pinned catalog. Original base-weight revision remains as stated there (often unknown); fixed publisher identity does not establish base-weight identity.",
+  "source_pin_format": "path -> [bytes, SHA256]; one pin per actual cited source, no SDK/source tree copies.",
+  "raw_audit_source": {
+    "path": ".scratch/inference-foundation-inventory-20261025/selected-profile-contracts.json",
+    "bytes": 40603,
+    "sha256": "1686756dd25fa89de1b489bbbb89e2f99bc9326248e7999456b517e3ec75700d"
+  },
+  "source_state": "Corrected source-only audit snapshot; discovered gaps are historical findings at the pinned source, not a current support verdict.",
+  "publication_base": "4df59aca0e59dbffa16c49aa5683a1fc98baec19",
+  "discovered_cold_binding_gaps": [
+    {
+      "profiles": [
+        14
+      ],
+      "format": "GGUF type40 NVFP4 block64/36, separate from HF ModelOpt group16",
+      "chain": [
+        "engine/models/qwen35/gguf_roles.py:CODECS",
+        "engine/models/qwen35/prepared_gguf_roles.h:gguf_storage_block",
+        "engine/models/qwen35/main.cc:role_description"
+      ],
+      "fact": "Current actual role-file path rejects this public-reader-supported source format. This is missing cold glue, not a new operation or general loader requirement.",
+      "snapshot_source_pins": [
+        {
+          "path": "engine/models/qwen35/gguf_roles.py",
+          "bytes": 15555,
+          "sha256": "d8e645105d101c4b160a7c590fb4e4986f5af562c6e3ba7324ccf1b9f2daeeb5"
+        },
+        {
+          "path": "engine/models/qwen35/prepared_gguf_roles.h",
+          "bytes": 12730,
+          "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 499001,
+          "sha256": "726ba4899b47fab8fe81738a9d2ca4482ea3388ac3dc3ef7bddab267bb742be9"
+        }
+      ],
+      "resolution_after_audit": "docs/evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json"
+    }
+  ],
+  "dense_expert_role_correction": {
+    "corrected_disposition": {
+      "ordinary_sampled_roles": "In the exact sampled ordinary layer0 header, all eight E8M0 grids are five attention and three shared-expert dense matrices. Routed experts are U8 NVFP4 with E4 group16 SF plus globals. Config ignores *.attn.* and *.ffn.shared_experts.* for the NVFP4 rule. A missing E8M0-to-grouped-FP8 expert path is therefore not established for25/26.",
+      "mtp_must_stay_distinct": "Later exact MTP headers have I8 packed FP4/E8M0 group32 expert tiles as well as dense E4/E8M0 attention. They use GroupedFloat4Linear with dynamic A8, not ordinary NVFP4 experts or GroupedFloat8Linear. Do not merge the main-layer and MTP parameter/quantizer domains.",
+      "dense_connection": "Already connected: exact original E4 row tiles and exact original E8M0 scales are loaded, scales losslessly widened to F32, import_float8_block128_weight produces the canonical encoded bank, then the actual BF16 Float8BlockLinear(PowerOfTwo,1e-4) Graph consumes that bank. The F32 comparison separately supplies already encoded A to MatMul and does not pretend CUDA dynamic-F32 power2 is supported.",
+      "new_shared_glue_needed": false,
+      "full_ordinary_role_limit": "The cached authenticated tiles are mtp.0.attn.wkv first3 rows/fullK, not complete ordinary layer0 tensors. Their original source identity/reader connection is valid finite projection evidence; it is not ordinary full-layer/model/state or quality evidence. No byte identity with an ordinary layer0 role is assumed.",
+      "next_action": "No new grouped consumer, codec or download is warranted by the withdrawn inference. Existing cached original tiles suffice to reproduce the already executed dense projection/importer check if a future relevant change requires it; this review requests no rerun."
+    },
+    "existing_native_evidence": {
+      "path": "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json",
+      "bytes": 39670,
+      "sha256": "53945cd6fff7b9fc05fc4b9b2dfbda064c166889d9cbb31e7d972f1c5c58fd4d"
+    },
+    "no_new_execution": true,
+    "original_note": {
+      "path": ".scratch/inference-foundation-inventory-20261025/selected-profile-contracts-correction.json",
+      "bytes": 20848,
+      "sha256": "ed5b56394574e3ef337fe148a3b7aa8e1251cff2f9feac5c92815477f521dc01"
+    }
+  },
+  "cache_binding_decision": {
+    "status": "SOURCE_AND_RUNTIME_CACHE_CONTRACTS_ARE_DISTINCT_NO_GUESSED_ARTIFACT_BINDING",
+    "date": "2026-10-25",
+    "profiles": [
+      28,
+      29
+    ],
+    "actual_source_chain": [
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/huggingface.py",
+        "anchor": "_QuantAttention._quantized_attention: query/key/value bmm quantizers wrap the already expanded attention-interface tensors",
+        "fact": "The cached recipe hook does not encode the compressed CKV/KPE cache bank."
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm_moe_dsa.py",
+        "anchor": "kv_b_proj before past_key_values.update at lines391-403",
+        "fact": "The selected HF reference expands the latent before cache update/attention; applying QDQ there is a different equation from casting the latent cache."
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm5_next.py",
+        "anchor": "expand_kv followed by past_key_values.update at lines1175-1179",
+        "fact": "The NoPE reference also expands before the interface; no Rope64 suffix may be invented for its latent512."
+      },
+      {
+        "path": "tests/compute_models/compact_mla_e4_fixture.h",
+        "anchor": "MlaBatchCapacity with CacheStorage::float8(scale), CKV512 or CKV512Rope64, shared V prefix",
+        "fact": "The actual Hyle compact consumer explicitly receives its own cache storage/scale and uses the original MLA Graph path. It is not an artifact scalar detector."
+      }
+    ],
+    "decision": "Retain both explicit boundaries. Weight codec and a generic FP8 kv_cache_scheme do not select one physical compact cache representation or uniquely supply its scale. Do not bind an expanded-K/V source scalar to raw CKV, guess unit scale from another recipe, or reinterpret it as mixed scaled-DSA656/528. An artifact-specific consumer must select its declared reader and authenticate the corresponding physical operands; the current library already accepts explicit compact storage parameters.",
+    "remaining_unknown": "Exact catalog28/29 compact source/serving policy and scalar identity remain unqualified. This is not resolved by the independent raw compact reader, and no full-artifact support claim is made. The retained Oct21 record lacked exact producer a4bc45b30; availability was not queried again in this turn.",
+    "implementation": "No new default, operation, cache owner, conversion or executor justified by this source mismatch. Existing expanded math primitives and independent compact MLA capability remain separate contracts.",
+    "limits": "Source inspection only; no new model acquisition, source lookup, numerical run, native GPU, quality or performance measurement. Existing compact MLA numerical/backend evidence remains limited to its original scope.",
+    "source_pins": [
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/recipe/huggingface.py",
+        "bytes": 85644,
+        "sha256": "dda97161da2cad8b4c0939c7fc0223e70327824b6ecd36c52c9be50bef6c57db"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm_moe_dsa.py",
+        "bytes": 37352,
+        "sha256": "adb8317a21716b01273046e46c807f14f0dbaf035af59b60d52bd6bc3007cf72"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/compact-mla-e4-2026-10-21/transformers/modeling_glm5_next.py",
+        "bytes": 102403,
+        "sha256": "2092bbb4efa2a8087b74f4a4da37635c503fe1df9ae73f1e6e8342af8b4b8e8b"
+      },
+      {
+        "path": "tests/compute_models/compact_mla_e4_fixture.h",
+        "bytes": 12031,
+        "sha256": "67e2c7b51ddd4eec57fecbc52b7f079ead4c30293d63083e9dddf8de602e9c37"
+      }
+    ]
+  },
+  "audit_archive": {
+    "path": "docs/evidence/research/inference-selected-profile-contracts-2026-10-25.zip",
+    "bytes": 21370,
+    "sha256": "50d8232890110a67611feb55f8433ad5bcff5e4dd885dbbe9e8a2c4ea6bffce2",
+    "members": 4,
+    "CRC_and_member_SHA256_verified": true,
+    "usage": "Raw audit is a superseded research input; use the corrected public classification, which withdraws the invalid dense-to-grouped inference."
+  }
+}

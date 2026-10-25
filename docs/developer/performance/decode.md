@@ -53,6 +53,8 @@
 
 增加图变体容量在此路径没有依据：对已有66次图体查询逐端口重建完整2031端口 key，保留每次真实失效，容量2、3及不淘汰的理论缓存均为15次录制、51次命中，未知比较为零；原容量精确复现全部录制位置。关闭容量扩展方向，继续调查完整状态绑定与实际失效的原因；离线等价关系推断不代表候选实际运行或资源寿命证明。详见[对手次数与离线设计](../../evidence/performance/mtp-body-replay-design-2026-10-25.json)。
 
+[状态IO离线反事实](../../evidence/performance/mtp-state-io-offline-2026-10-25.json)已先逐条复现原15次录制／51次命中。仅规范化有实际外部状态来源的GDN端口offset后为12／54，再包括独立发布的carry端口为5／61；所有真实hard-clear及其它端口保留，未合并ValueId或授予别名权限。剩五次为两个首录及三个图体hard-clear后首录。固定地址的实际搬运、额外存储、旧reader与退休仍待实现设计；此结果没有测速或收益结论。
+
 本次612个 NVTX 阶段完整；Nsight stderr 实际截断，后60条 POD metadata 标为未知。所有时间属于插桩诊断，不能与旧无插桩1.5423ms差额硬相减，也不把嵌套 replay 或 wall 减 GPU union 当作可回收收益；未刷新 TPS。
 
 当前 CLI／report 与本 BF16 路径实际变化的 4 个 Graph／batch／CUDA region 对象已刷新，复用兼容的 native 数学；不是全 SDK 或其它量化组合的重新认证。V2 清单 335 个角色与旧窗口逐项匹配原 dtype、形状和源范围，普通仅选择 320 个文本角色。本窗是优化前同窗基线，与 [10 月 24 日窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)分开，不据跨日差值宣布架构收益或回归。
@@ -73,7 +75,7 @@
 
 Hyle 早期两次 target 间隔含真实 draft，约 12.02／9.57ms 没有 GPU 活动，并伴随录图／实例化；首个间隔的 `cuMemAlloc` 合计约 0.255ms，不能把整个间隙说成分配。参考首个录图前还有 eager target／draft，双方前 24 个录图区间的真实起点没有对齐，不能据该表比较冷启动胜负。四条轨迹另有 driver 13.4／工具 13.3 警告，MTP 原图身份查询报错；活动关联可读，完整性与图谱系没有认证。保留这些限制，不重采矩阵或用 profiler 时长替换前面的无插桩 TPS。
 
-仅逐步 formatter 的两次私有诊断保持原文本、顺序和工作量：普通 128 次合计 17.03ms、MTP 68 次 9.75ms，中位约 130／138µs。它不含入口日志，也不是全部主机成本。完整 trace、IO、源码窄审与口径纠正见[当前成本归因](../../evidence/performance/mtp-current-cost-attribution-2026-10-25.json)。
+逐步报告函数的两次私有诊断保持原文本、顺序和工作量：普通 128 次合计 17.03ms、MTP 68 次 9.75ms，中位约 130／138µs。原计时包住向 `std::cerr` 写入的完整函数，包含同步stream写入及其触发的缓冲／flush开销；只是没有单独观察OS write／flush次数，不能称为纯格式化成本。它不含函数外的入口日志，也不是全部主机成本；参考同样有逐步日志，不能仅单方关闭IO来归因底座速度。完整 trace、IO、源码窄审与口径纠正见[当前成本归因](../../evidence/performance/mtp-current-cost-attribution-2026-10-25.json)。
 
 [控制传输复算](../../evidence/performance/inference-control-transfer-2026-10-25.json)直接复用上述四条轨迹，无新模型或 profiler 进程。Runtime 表的 `eventClass=1` 实际记录了可见 Driver API，不能因没有独立 Driver 表就认为这些上传不可观测。普通／MTP warm 窗中，直接 H2D＋显式流同步 API 的区间 union 为 1.385／1.875ms，占各自窗口 0.528%／0.531%；参考同窗的 H2D 次数及字节反而更多。逐端口同步值得简化，但目前不能列作约 10% MTP 差距的主因或承诺收益。窗口排除首 target 前上传与末 target 后读回，保留原工具诊断和实际工作差异；API 等待、GPU 活动与图内复制分别计量。
 

@@ -1600,6 +1600,7 @@ c::TensorDesc role_description(const prepared::Role &role) {
     if (role.dtype == "Q5_K") return c::GgufQuantizedType::kQ5K;
     if (role.dtype == "Q6_K") return c::GgufQuantizedType::kQ6K;
     if (role.dtype == "Q8_0") return c::GgufQuantizedType::kQ8_0;
+    if (role.dtype == "NVFP4") return c::GgufQuantizedType::kNvfp4;
     return std::nullopt;
   }();
   if (!codec) return take(c::TensorDesc::dense(role_type(role.dtype), role.shape));

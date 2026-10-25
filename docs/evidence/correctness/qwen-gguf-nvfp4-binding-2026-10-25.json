@@ -1,0 +1,115 @@
+{
+  "status": "THREE_COLD_BINDINGS_FIXED_HOST_INPUT_CHECKS_AND_STRICT_APP_COMPILE_PASS",
+  "date": "2026-10-25",
+  "base_commit": "4df59aca0e59dbffa16c49aa5683a1fc98baec19",
+  "problem": "Selected cdiamond Q27 GGUF has native-reader-supported tensor type40 NVFP4, but the actual Qwen role-file producer, prepared block map and runtime role descriptor rejected it.",
+  "change": "Map tensor type40 to original GGUF NVFP464/36, admit the same block interpretation in prepared metadata, map the loaded role to the existing GgufQuantizedType::kNvfp4 descriptor. Original range/authentication/role meaning/layout checks remain.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/gguf_roles.py",
+      "before": {
+        "bytes": 15555,
+        "sha256": "d8e645105d101c4b160a7c590fb4e4986f5af562c6e3ba7324ccf1b9f2daeeb5"
+      },
+      "after": {
+        "bytes": 15589,
+        "sha256": "30ab0d3e97c19f490bc6205e8aef1fd0cc84055a2161df6ba406bd627f8fd189"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h",
+      "before": {
+        "bytes": 12730,
+        "sha256": "f338960d3577f1cddf9622522278f2cc77d2863a6a09ed72388a6daa6e704ffd"
+      },
+      "after": {
+        "bytes": 12771,
+        "sha256": "afb5d669d8b788e3cf5c0e68deb4b2f009b7c733d4847158d25c890612e9905e"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "bytes": 499001,
+        "sha256": "726ba4899b47fab8fe81738a9d2ca4482ea3388ac3dc3ef7bddab267bb742be9"
+      },
+      "after": {
+        "bytes": 499069,
+        "sha256": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701"
+      }
+    },
+    {
+      "path": "tests/tooling/qwen_gguf_roles_test.py",
+      "before": {
+        "bytes": 13383,
+        "sha256": "e1b9dc201564a75ec0d06ec76e54e5c060601d3b5f9592226b33ed7cd4ab110b"
+      },
+      "after": {
+        "bytes": 14682,
+        "sha256": "592ac8161ebb13bbff818ff42fa352732de4c85a27574a0326f7bea2a62efaba"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "before": {
+        "bytes": 58652,
+        "sha256": "936853eb4e95f68b7b267ade484f9ea9fab0bcb7572171493689efa08f3f3537"
+      },
+      "after": {
+        "bytes": 60786,
+        "sha256": "c9f826739c38818b89a413858d28dffe1b294f8d34332b8fba86834f49e27db7"
+      }
+    }
+  ],
+  "precision_and_boundaries": "GGUF NVFP4 is four inline UE4M3 scales plus64 values in36 bytes, distinct from HF group16 NVFP4. Existing StoredProjection, selected-row Gather and tied/untied head paths remain; converted-source Model keeps its BF16 boundary while packed MatMul consumes explicit F32 activation and scores are F32. No new reader, route, state/request code or MTP flow.",
+  "source_header_scope": "The inspected selected source has366 ordinary type40 roles and8 NextN roles. Its actual embedding is Q6_K and output head Q8_0. A synthetic type40 embedding metadata case checks generic legal row/role handling, not that publisher embedding dtype.",
+  "checks": {
+    "python": {
+      "tests": 10,
+      "process": {
+        "pid": 34364,
+        "exit": 0,
+        "seconds": 0.29699999999138527
+      },
+      "GPU": false,
+      "HTTP": 0
+    },
+    "metadata": {
+      "assertions": 13562,
+      "compile": {
+        "pid": 23036,
+        "exit": 0,
+        "seconds": 4.26600000000326
+      },
+      "run": {
+        "pid": 40004,
+        "exit": 0,
+        "seconds": 0.8429999999934807
+      },
+      "frozen_project_files": 18,
+      "scope": "Existing stdlib-only complete metadata/selection/range suites; no model bodies or native device execution."
+    },
+    "app": {
+      "mode": "One MSVC /W4 /WX /Zs CPU app TU",
+      "process": {
+        "pid": 56384,
+        "exit": 0,
+        "seconds": 7.187
+      },
+      "frozen_files": 166,
+      "object_link_or_execution": false
+    },
+    "core_provider_SDK_rebuilds": 0,
+    "model_or_GPU_runs": 0,
+    "downloads": 0
+  },
+  "regression_boundaries": "Complete64-value K blocks, physical row stride/extent, wrong bytes, overflow, nonfloating norm/convolution rejection, type39 distinction, original selected inventory and precision/authentication all retain targeted checks.",
+  "limits": "No original catalog14 payload, whole Q27/2B generation, new native CPU/GPU numerical run, MTP acceptance, quality, Linux or TPS qualification. Existing public GGUF NVFP4 native reader evidence is not re-executed here.",
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.zip",
+    "bytes": 27219,
+    "sha256": "74a713acf20f82d13846fc39b73433b916dbeee9d81c64f90c28f696f0a460bd",
+    "members": 29,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

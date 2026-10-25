@@ -725,6 +725,34 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
       parsed.selected.front().source==directory/all.begin()->second.source &&
       p::read_roles(path,false).selected.size()==320 && p::is_role_signature(p::gguf_role_signature),
       "distinct GGUF format must roundtrip quoted borrowed sources without reading bodies");
+  auto nvfp4=all;
+  for (const auto *name : {"model.language_model.embed_tokens.weight", "model.language_model.layers.0.mlp.gate_proj.weight"}) {
+    auto &role=nvfp4.at(name);role.dtype="NVFP4";
+    role.bytes=p::gguf_physical_bytes(role.dtype,role.shape);
+  }
+  const auto packed=p::select_gguf_roles(nvfp4,identity,original,false,gguf_geometry);
+  require(p::gguf_storage_block("NVFP4").elements==64 && p::gguf_storage_block("NVFP4").bytes==36 &&
+      p::gguf_physical_bytes("NVFP4",{3,128})==216,
+      "GGUF NVFP4 must keep its original64-value/36-byte blocks, not HF group16 storage");
+  require(packed.selected.size()==320 &&
+      nvfp4.at("model.language_model.embed_tokens.weight").bytes==286064640 &&
+      qwen35::PrecisionProfile::from_roles(packed).activation_type()==hyle::compute::DataType::kBFloat16 &&
+      !packed.nf4_policy.enabled && !packed.ct_mixed_policy.enabled &&
+      std::ranges::all_of(packed.selected,[](const auto &role) {
+        return role.projection_codec==p::ProjectionCodec::kUnspecified && !role.projection_group_size;
+      }),
+      "GGUF NVFP4 must preserve the existing converted-source precision and stay out of HF NVFP4 binding");
+  write(path,serialize(nvfp4));
+  const auto packed_read=p::read_roles(path,false);
+  require(packed_read.bytes==packed.bytes && packed_read.selected.size()==320 &&
+      std::ranges::count(packed_read.selected,std::string("NVFP4"),&p::Role::dtype)==2,
+      "GGUF NVFP4 embedding/tied-head and linear role metadata must roundtrip without payload IO");
+  rejects([&]{(void)p::gguf_physical_bytes("NVFP4",{3,63});},"K blocks");
+  rejects([&]{(void)p::gguf_physical_bytes("NVFP4",{INT64_MAX,INT64_MAX-63});},"overflows");
+  auto wrong_nv=nvfp4;wrong_nv.at("model.language_model.embed_tokens.weight").bytes+=1;
+  rejects([&]{(void)p::select_gguf_roles(wrong_nv,identity,original,false,gguf_geometry);},"byte range");
+  wrong_nv=nvfp4;wrong_nv.at("model.language_model.embed_tokens.weight").dtype="U8";
+  rejects([&]{(void)p::select_gguf_roles(wrong_nv,identity,original,false,gguf_geometry);},"unsupported prepared GGUF storage");
   auto ordinary_geometry = gguf_geometry; ordinary_geometry.mtp_layers = 0;
   auto ordinary_roles = all;
   std::erase_if(ordinary_roles, [](const auto &entry) { return entry.first.starts_with("mtp."); });

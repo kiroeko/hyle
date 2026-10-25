@@ -6,6 +6,8 @@
 
 这是当前模型与量化版本到权重角色、计算子图、Hyle custom descriptor 的现行人读入口。模型范围由[需求目录 D](tasks/compute/llm-moe-provider-demand-matrix.json) 的 `/current_scope` 定义：六个既有模型，加 DeepSeek V4 Pro-0813、Flash-0731 两个正式版，共 **8 个模型**；下表的 **24 个 profile 是本轮已锁基线，不是量化支持范围上限**。旧 `deepseek_v4_pro`、`deepseek_v4_flash` preview 及其量化衍生制品不再属于当前范围；正式版属于单独锁定的身份，不自动扩大到 V4.1。
 
+[33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。
+
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 
 来源索引：D 的 `/profile_catalog` 与 `/current_scope/added_releases` 保存身份，`/demand_units` 保存 15 个区域；[需求明细 C](tasks/compute/llm-moe-coverage-matrix.json) 的 `/requirements` 保存 64 条历史需求；[原生映射 P](tasks/compute/llm-moe-provider-map.json) 的 `/requirements` 回指 C 的具体 domain。下面保留这些来源的反向关系，不继承旧状态、通过结论或 Provider 支持声明。

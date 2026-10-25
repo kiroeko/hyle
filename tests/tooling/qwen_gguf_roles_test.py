@@ -73,7 +73,7 @@ class QwenGgufInputTest(unittest.TestCase):
             'qwen35.ssm.inner_size':6144})
         g=roles.geometry.from_gguf(m,[dict(name='token_embd.weight',shape=[5120,248320]),
                                      dict(name='output.weight',shape=[5120,248320])])
-        tensors,offset=[],0;codecs=(11,23,20,21,12,13,14,8)
+        tensors,offset=[],0;codecs=(11,23,20,21,12,13,14,8,40)
         for i,(name,spec)in enumerate(roles.role_specs(g).items()):
             shape=roles._shape_ne(spec)
             code=codecs[i%len(codecs)] if spec['semantic']in ('linear_weight','embedding_rows') else 0
@@ -93,9 +93,29 @@ class QwenGgufInputTest(unittest.TestCase):
         self.assertEqual(result['geometry']['gdn_layout'],'cyclic')
         self.assertEqual(result['vocabulary']['draft_head_physical'],'output.weight')
         for code,expected in ((11,('Q3_K',256,110)),(23,('IQ4_XS',256,136)),
-                              (20,('IQ4_NL',32,18)),(21,('IQ3_S',256,110))):
+                              (20,('IQ4_NL',32,18)),(21,('IQ3_S',256,110)),
+                              (40,('NVFP4',64,36))):
             self.assertEqual(roles.CODECS[code],expected)
             self.assertIn(expected[0],result['physical_codecs'])
+
+    def test_nvfp4_type40_preserves_64_value_blocks_and_selected_row_layout(self):
+        header,source=fixture(40)
+        result=inventory(header,source)
+        embedding=next(row for row in result['roles'] if row['physical_name']=='token_embd.weight')
+        self.assertEqual(embedding['dtype_code'],40)
+        self.assertEqual(embedding['storage'],dict(kind='gguf_blocked',dtype='NVFP4',logical_dtype='F32',
+            logical_shape=[248320,2048],original_ne=[2048,248320],block_axis=1,
+            elements_per_block=64,bytes_per_block=36,byte_strides=[1152,36]))
+        self.assertEqual(embedding['bytes'],286064640)
+        self.assertEqual(result['vocabulary']['target_head_physical'],'token_embd.weight')
+        # GGUF tensor type39 is MXFP4, not NVFP4; file_type39 cannot select it.
+        bad=deepcopy(header);bad['tensors'][0]['dtype_code']=39
+        with self.assertRaisesRegex(ValueError,'unsupported physical GGUF codec'):
+            inventory(bad,source)
+        bad=deepcopy(header)
+        next(row for row in bad['tensors'] if row['name']=='output_norm.weight')['dtype_code']=40
+        with self.assertRaisesRegex(ValueError,'plain floating representation'):
+            inventory(bad,source)
 
     def test_payload_preparation_is_distinct_complete_and_uses_borrowed_ranges(self):
         header,source = fixture(1)

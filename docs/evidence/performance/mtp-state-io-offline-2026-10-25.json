@@ -1,0 +1,264 @@
+{
+  "date": "2026-10-25",
+  "status": "ACTUAL_OFFLINE_SIMULATION_ONLY_NO_PRODUCT_STAGING_OR_SPEED_MEASUREMENT",
+  "scope": "The retained complete2031-port MTP body binding stream; same2variants and all real invalidations. No new model, native process, allocation, GPU work or download.",
+  "source_and_completion_boundary": "State external IO/prefix publication was traced in the actual diagnostic app source71c9e0b8. Current Model was consulted only for the same mechanism. The graph ids, stream and these results belong to that original app, not a newly measured current executable.",
+  "actual_run": {
+    "command": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-state-io-offline-20261025\\simulate.py"
+    ],
+    "cwd": "C:\\public\\project-hyle\\hyle",
+    "started_utc": "2026-10-25T10:49:57.735266+00:00",
+    "seconds": 0.32172629999695346,
+    "exit_code": 0,
+    "native_processes": 0,
+    "GPU_work": 0,
+    "downloads": 0,
+    "canonical_edits": 0
+  },
+  "result": {
+    "status": "OFFLINE_ONLY_COMPLETED",
+    "original_record_set_exactly_reproduced": true,
+    "original": {
+      "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+      "records": 15,
+      "hits": 51,
+      "hard_clear_events": 54,
+      "hard_clear_boundaries": [
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          43,
+          55
+        ]
+      ],
+      "record_set": [
+        [
+          2,
+          57
+        ],
+        [
+          3,
+          55
+        ],
+        [
+          4,
+          55
+        ],
+        [
+          8,
+          57
+        ],
+        [
+          13,
+          57
+        ],
+        [
+          14,
+          57
+        ],
+        [
+          15,
+          55
+        ],
+        [
+          16,
+          55
+        ],
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          39,
+          57
+        ],
+        [
+          40,
+          55
+        ],
+        [
+          41,
+          55
+        ],
+        [
+          43,
+          55
+        ],
+        [
+          44,
+          55
+        ]
+      ]
+    },
+    "gdn_io_offset_only": {
+      "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+      "records": 12,
+      "hits": 54,
+      "hard_clear_events": 54,
+      "hard_clear_boundaries": [
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          43,
+          55
+        ]
+      ],
+      "record_set": [
+        [
+          2,
+          57
+        ],
+        [
+          3,
+          55
+        ],
+        [
+          4,
+          55
+        ],
+        [
+          13,
+          57
+        ],
+        [
+          14,
+          57
+        ],
+        [
+          15,
+          55
+        ],
+        [
+          16,
+          55
+        ],
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          41,
+          55
+        ],
+        [
+          43,
+          55
+        ],
+        [
+          44,
+          55
+        ]
+      ]
+    },
+    "gdn_and_carry_io_offset_only": {
+      "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+      "records": 5,
+      "hits": 61,
+      "hard_clear_events": 54,
+      "hard_clear_boundaries": [
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          43,
+          55
+        ]
+      ],
+      "record_set": [
+        [
+          2,
+          57
+        ],
+        [
+          3,
+          55
+        ],
+        [
+          37,
+          57
+        ],
+        [
+          38,
+          55
+        ],
+        [
+          43,
+          55
+        ]
+      ]
+    },
+    "all_native_hard_clears_preserved": true,
+    "variants_per_range": 2,
+    "normalized_field": "offset only; descriptor/resource/native handle/span are never wildcarded",
+    "normalization_scope": "Each named logical boundary gets its own invariant address token for equality; different ValueIds/prefixes are never merged or granted alias permission.",
+    "source_bound_candidates": {
+      "GDN_IO": "actual external Snapshot history/recurrent inputs and independently published prefix outputs",
+      "GDN_AND_CARRY_IO": "GDN_IO plus two explicitly published immutable carry prefix rows"
+    },
+    "remaining_ports_preserved": {
+      "begin57": 1921,
+      "begin55": 1957
+    },
+    "limits": [
+      "This fixes only the recorded binding-stream address dimension. It proves neither a legal implementation nor any throughput gain.",
+      "No buffer allocation/staging/copy, budget increase, native configuration/queue/arguments change, model run, GPU work or download was performed.",
+      "A realizable fixed-work boundary must preserve distinct chronological prefix outputs, immutable escaped old readers, expected-head publication, cancellation and true retirement.",
+      "Copy cost and added completion/dependency boundaries remain unmeasured; fewer offline records are not saved wall time.",
+      "The logged 2026-10-25 app is frozen and pinned. Current Model source is read only to confirm the state IO mechanism still exists, not to claim current graph ids/TPS."
+    ]
+  },
+  "clear_event_scope": "54 total logged clear events are preserved. Three of their boundaries affect the selected body ranges; the remaining five counterfactual recordings are two first recordings plus those three body hard-clear boundaries.",
+  "counterfactual_scope": "Normalize only offset for individually identified external GDN state boundaries, then additionally the independently published carry rows. Descriptor/resource/native handle/span and other1921/1957 body ports remain intact. Different ValueIds or chronological prefixes are never merged or granted alias permission.",
+  "next_action": "Review a realizable fixed-address boundary, exact copy/staging bytes, old-reader immutability, selected prefix publication, budget and true retirement before implementing a private candidate. A reduction15->5 in this fixed stream is neither proof of a legal implementation nor tokens/s benefit.",
+  "existing_large_inputs": [
+    {
+      "archive": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.zip",
+      "member": "records.json",
+      "bytes": 7191322,
+      "sha256": "40b823e7a1b9490c817785074d0d0ca48559f8b0254d150101a8ce2951317ba8",
+      "CRC_and_SHA256_verified": true
+    },
+    {
+      "archive": "docs/evidence/performance/mtp-finish-phase-attribution-2026-10-25.zip",
+      "member": "source/engine/models/qwen35/main.cc",
+      "bytes": 452729,
+      "sha256": "71c9e0b8f06d1f1cf43b20374d2f53e835d4a992635db971c922dd19280d6494",
+      "CRC_and_SHA256_verified": true
+    }
+  ],
+  "reproduction": "The companion ZIP retains the new scripts, all output details, role map and raw offline process record. Large source inputs remain in the two existing archives above; recipes use their original local path layout. No SQLite/model/SDK duplication.",
+  "archive": {
+    "path": "docs/evidence/performance/mtp-state-io-offline-2026-10-25.zip",
+    "bytes": 27915,
+    "sha256": "f7ab0a0af6bbbfa56f904be9e4bf9afdb3eab438d6a905347dbff210a977df19",
+    "members": 12,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
