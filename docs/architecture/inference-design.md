@@ -390,6 +390,17 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 与 channel／token 差异，以及 dense／GGUF 直接 F32 head 和部分量化 BF16→F32 head 的原数学。
 共享采样规则不表示可改写各家族的 RNG 地址排布。
 
+采样的分布数学已集中在 `sampling::distribution`。家族批图保留行提取、分布、
+身份提取和抽样的原构图顺序；完整前缀则直接提供身份。端口形状、批量 greedy
+TopK、读回和发布属于各自调用者，不为合并几行装配增加地址描述或延迟回调。
+
+投影的逻辑 `[N,K]` 由已验证的 `ProjectionBinding` 解释一次：冷发图复用
+`projection_detail::logical_shape` 的输出宽度，十个格式分支只表达各自数学和原操作链。
+dense／GGUF 权重银行仍为 `[N,K]`，通用 MatMul 的 `[K,N]` 来自原元数据 View；
+block128 编码 carrier 的 `[K,N]` 保留独立解释。这不改变编码、舍入、累加或融合资格。
+[扩展边界记录](../evidence/research/inference-extension-boundaries-2026-10-25.json)区分
+十种格式的源码等价复核与本次实际运行的既有 BF16 CPU Model 检查，不代签全格式执行或测速。
+
 缓存的拓扑、存储解释与页权限分别表达：
 
 - 每个 bank 的 `CacheStorage`／schema 决定真实 dtype、K/V scale、行大小和 native recipe。

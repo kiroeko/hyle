@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 18:03（北京时间）。整体暂估 **68%**。完成普通推理、其它模型状态、会话／请求、量化接线及共同所有权的五组有界审查，发现并修复重复Session晚拒绝导致无关前缀先被淘汰的问题。CPU旧路径反例与修复后检查均实际运行，原请求直接重试及相邻账簿检查通过；未新增GPU或测速结论。过时的“待实施”文档已校正。正在收敛普通选词端点装配，并复核模型／codec／后端扩展边界；完整功能审查及深入性能工作仍未结束。
+更新：2026-10-25 18:17（北京时间）。整体暂估 **68%**。投影冷发图已复用唯一逻辑形状解释，删除十种格式的重复输出宽度推导；独立源码复核及既有 BF16 CPU Model 请求检查通过。采样数学原已共享，保留各调用者的端口装配，避免为短接线增加新抽象。继续复审新模型的状态／角色扩展边界；完整功能审查及深入性能工作仍未结束。本轮没有新增GPU或测速结论。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
@@ -63,14 +63,15 @@
 - 架构复审、设计与调整：约 60%
   - 全链职责、所有权与配置合同复审：约 15%
   - 按真实缺项调整共同机制：约 50%
-  - 普通选词端点的共同冷装配：约 10%
+  - 采样共享数学与调用者装配边界复审：100%
   - 请求提交账簿唯一化：100%
   - 模型权重／图放置的单一冷事实：100%
   - 缓存拓扑与存储解释的边界：100%
     - 原元数据域与显式存储变体：100%
     - Graph／后端真实缓存解释接线：100%
   - Session／缓存退休事实与错误出口：100%
-  - 新模型／新后端／新请求政策扩展检查：约 10%
+  - 新模型／新后端／新请求政策扩展检查：约 25%
+    - 投影逻辑形状唯一化：100%
 - 性能设施复用与参考引擎狩猎：约 18%
   - Hyle 设施实际消费与成本盘点：约 5%
     - 内存／容器／调度与 I/O：约 5%
@@ -93,14 +94,13 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 普通选词端点共同装配 | 架构／生成边界 | 设计复用greedy／draw／valid端点，保batched TopK、原采样数学、RNG及完整前缀重采样；尚未改实现 | 约 10% |
-| 模型／codec／后端扩展复审 | 架构／typed投影 | 沿真实源绑定到Graph/native资格复核格式、布局和精度职责，不侵入请求／缓存／提交 | 约 10% |
+| 新模型状态／角色扩展复审 | 架构／模型边界 | 追踪一次模型扩展实际需改哪些层，区分必要数学／状态适配与可消除的跨层耦合 | 约 10% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)、[重复Session反例与修复](../evidence/correctness/inference-duplicate-session-2026-10-25.json)、[生成边界审查](../evidence/research/inference-generation-boundary-2026-10-25.json)、[F32分页追加](../evidence/correctness/ordinary-f32-append-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
+最新依据：[扩展边界与投影简化](../evidence/research/inference-extension-boundaries-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)、[重复Session反例与修复](../evidence/correctness/inference-duplicate-session-2026-10-25.json)、[生成边界审查](../evidence/research/inference-generation-boundary-2026-10-25.json)、[F32分页追加](../evidence/correctness/ordinary-f32-append-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

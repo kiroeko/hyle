@@ -879,6 +879,8 @@ struct Recipe final {
     if (spec(x).rank() != 2 || spec(x).data_type() != activation_type())
       throw std::runtime_error("model projection differs from source activation [rows,K] precision");
     auto dimensions = std::vector<D>(spec(x).dimensions().begin(), spec(x).dimensions().end());
+    // Cold bindings already validate the source logical [N,K] layout.
+    dimensions.back() = f(projection_detail::logical_shape(binding)[0]);
     const auto result = std::visit([&](const auto &projection) -> V {
       using P = std::decay_t<decltype(projection)>;
       if constexpr (std::is_same_v<P, StoredProjection>) {
@@ -886,7 +888,6 @@ struct Recipe final {
         const auto stored = spec(original);
         if (stored.rank() != 2 || spec(x).dimensions()[1] != stored.dimensions()[1])
           throw std::runtime_error("original stored projection type/shape differs");
-        dimensions.back() = stored.dimensions()[0];
         if (activation_type() == Type::kFloat16) {
           if (stored.data_type() != Type::kFloat16 || !projection.weight->description.is_plain())
             throw std::runtime_error("F16 source projection requires a dense F16 operand");
@@ -913,7 +914,6 @@ struct Recipe final {
         return one(c::MatMul{}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, MlxAffineProjection>) {
         if (activation_type() != Type::kBFloat16) throw std::runtime_error("MLX source projection requires BF16 activation");
-        dimensions.back() = f(projection.scales->description.dimensions()[0]);
         return one(c::Operation::custom(projection.equation),
             {x, operand(*projection.codes), operand(*projection.scales), operand(*projection.biases)},
             dense_spec(Type::kBFloat16, dimensions));
@@ -926,7 +926,6 @@ struct Recipe final {
              operand(*projection.original[4]), operand(*projection.original[5])}, &nodes.chain[0]);
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {decoded}, &nodes.chain[1]);
-        dimensions.back() = spec(decoded).dimensions()[0];
         const auto output = one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs},
             dense_spec(Type::kFloat16, dimensions), &nodes.chain[2]);
         packed_projection_nodes.push_back(nodes);
@@ -941,7 +940,6 @@ struct Recipe final {
         const auto converted = one(c::Cast{Type::kBFloat16}, {decoded}, &nodes.chain[1]);
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {converted}, &nodes.chain[2]);
-        dimensions.back() = spec(decoded).dimensions()[0];
         const auto output = one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs},
             dense_spec(Type::kBFloat16, dimensions), &nodes.chain[3]);
         packed_projection_nodes.push_back(nodes);
@@ -954,26 +952,22 @@ struct Recipe final {
             one(c::Operation::custom(projection.decode), {operand(*projection.codes), operand(*projection.scales)}, &nodes.chain[0]);
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {decoded}, &nodes.chain[1]);
-        dimensions.back() = spec(decoded).dimensions()[0];
         const auto output = one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs},
             dense_spec(Type::kBFloat16, dimensions), &nodes.chain[2]);
         packed_projection_nodes.push_back(nodes);
         return output;
       } else if constexpr (std::is_same_v<P, LocalNvfp4Projection>) {
         const auto codes = operand(*projection.codes);
-        dimensions.back() = spec(codes).dimensions()[0];
         return one(c::Operation::custom(projection.equation),
             {x, codes, operand(*projection.scales), operand(*projection.weight_global), operand(*projection.input_global)},
             dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, ModelOptNvfp4Projection>) {
         const auto codes = operand(*projection.codes);
-        dimensions.back() = spec(codes).dimensions()[0];
         return one(c::model_ops::nvfp4_linear(),
             {x, codes, operand(*projection.scales), operand(*projection.weight_global), operand(*projection.input_global)},
             dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, BlockFp8Projection>) {
         const auto carrier = operand(*projection.carrier);
-        dimensions.back() = spec(carrier).dimensions()[1];
         return one(c::Operation::custom(projection.equation), {x, carrier}, dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, ModelOptStaticFp8Projection>) {
         if (activation_type() != Type::kBFloat16)
@@ -994,7 +988,6 @@ struct Recipe final {
         const auto w = cast(original, Type::kFloat32);
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {w});
-        dimensions.back() = spec(original).dimensions()[0];
         const auto dot = one(c::MatMul{.accumulation_type = Type::kFloat32},
             {q, rhs}, dense_spec(Type::kFloat32, dimensions));
         const auto scaled = binary(c::BinaryKind::kMultiply,
@@ -1020,7 +1013,6 @@ struct Recipe final {
             cast(cast(clipped, Type::kFloat8E4M3FN), Type::kBFloat16), scale);
         const auto decoded = binary(c::BinaryKind::kMultiply, cast(original, Type::kBFloat16), operand(*projection.channel_scales));
         constexpr std::array<std::int32_t, 2> axes{1, 0};
-        dimensions.back() = spec(original).dimensions()[0];
         return one(c::MatMul{.accumulation_type = Type::kFloat32},
             {activation, one(take(c::View::permute(axes)), {decoded})}, dense_spec(Type::kBFloat16, dimensions));
       }

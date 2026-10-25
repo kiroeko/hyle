@@ -1,0 +1,121 @@
+{
+  "kind": "bounded_architecture_cleanup_and_existing_CPU_regression",
+  "date": "2026-10-25",
+  "base_commit": "2a5687a4b8e37740f9d4ade3339755f49fc4dc68",
+  "status": "SOURCE_EQUIVALENCE_REVIEW_AND_FINITE_BF16_CPU_PASS",
+  "change": "Use existing projection_detail::logical_shape(binding)[0] once in cold emit_projection; remove ten duplicated format-specific output-N assignments. No new API, shape table, K gate, hot dispatch or operation.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "bytes": 498747,
+        "sha256": "1dd4f8c8ad1beb2b1927de96ef8d5b4d3dfb441d64008c89638fe9e5b49eafc0"
+      },
+      "after": {
+        "bytes": 498290,
+        "sha256": "69b4bdc92ed00e0bcc884d73e2e7e07e4016db485121687aaad54d1a66288ed7"
+      }
+    }
+  ],
+  "precision_boundary": "Stored dense BF16/F16/F32 and GGUF banks remain [N,K]; generic MatMul receives [K,N] through the original metadata View. Block128 encoded carrier remains [K,N]. Decode, scale, rounding, accumulation and fusion chains are unchanged.",
+  "source_review": {
+    "ten_variant_N_equalities": "n-equivalence.json",
+    "independent_review": "independent-review.json",
+    "unchanged_bytes_after_removing_N_plumbing": true,
+    "scope": "Existing cold-resolved bindings borrowing stable Tensor descriptors; no contract added for forged/malformed variants."
+  },
+  "selection_decision": {
+    "product_change": false,
+    "reason": "distribution mathematics is already shared. Caller port ABI, family row->distribution->identity->draw order and direct frontier identity remain caller responsibilities; a new draw-address/spec/callback abstraction would expand coupling to combine short wiring.",
+    "open_boundary": "A richer precommit policy extension is separate future architecture review; this decision neither implements it nor proves a missing Compute primitive."
+  },
+  "actual_check": {
+    "case": "Existing qwen_request_ledger_case::run, tiny ordinary BF16 CPU Model A/H64/FFN128/V64; N2/R2 and Q1/Q2.",
+    "case_source": {
+      "path": "tests/tools/qwen_request_ledger_case.h",
+      "bytes": 16262,
+      "sha256": "1ad36aeddee338177167ac3232b7bc1d22130ad611b74df487493f39d9e0dbc7"
+    },
+    "app_TUs": 1,
+    "common_link_inputs": 129,
+    "core_provider_SDK_TUs": 0,
+    "actual_repository_dependencies": 146,
+    "compile": {
+      "pid": 24860,
+      "exit": 0,
+      "seconds": 19.281
+    },
+    "link": {
+      "pid": 47560,
+      "exit": 0,
+      "seconds": 1.203
+    },
+    "run": {
+      "pid": 2696,
+      "exit": 0,
+      "seconds": 0.281
+    },
+    "results": [
+      {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "missing_prepare_atomic": true,
+        "missing_later_execute_member_atomic": true,
+        "duplicate_Session_before_prefix_eviction": true,
+        "same_request_retry": true,
+        "real_R2_late_trace_error": true,
+        "both_ledgers_observed": true,
+        "duplicate_observation_noop": true,
+        "both_pending_continuations": true,
+        "raw_Session_without_request_ledger": true,
+        "A_ids": [
+          2,
+          8
+        ],
+        "B_ids": [
+          2,
+          8
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      }
+    ],
+    "same_previous_finite_result": true,
+    "same_previous_finite_graph_facts": [
+      "compile full text finite family requests=1 variants=2 max_query_rows=2 nodes=116",
+      "compile full text finite family requests=2 variants=2 max_query_rows=2 nodes=168",
+      "compiled T=1 steps=91 workspace/slot=6284 compiled_known_bytes=16176 compiled_unknown_providers=36",
+      "compiled T=2 steps=91 workspace/slot=8460 compiled_known_bytes=16176 compiled_unknown_providers=36",
+      "compiled T=1 steps=136 workspace/slot=12912 compiled_known_bytes=29944 compiled_unknown_providers=50",
+      "compiled T=2 steps=136 workspace/slot=16752 compiled_known_bytes=29944 compiled_unknown_providers=50"
+    ],
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "commands_and_logs": "cpu/ in companion ZIP; reused runner and exact input pins included."
+  },
+  "limits": [
+    "One existing tiny ordinary BF16 CPU Model/Graph request-ledger case only.",
+    "The ten projection-variant N equalities are source-reviewed; this process does not exercise all codec/provider/precision variants.",
+    "No before rerun, performance measurement, core/provider/SDK compilation, GPU, HTTP or new fixture.",
+    "Existing before result is compared from retained logs, not rerun.",
+    "Source review establishes ten shape equalities; CPU execution exercises only BF16 and does not newly qualify all codecs, GPU backends, MTP, full-model quality or throughput.",
+    "ZIP contains source patch, decisions, commands, pins and logs; no binary, SDK, model payload or frozen source tree. Reproduction uses retained local cached objects/fixtures."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-extension-boundaries-2026-10-25.zip",
+    "bytes": 47297,
+    "sha256": "7433eef28567b666f65bb3fe11d8645408eb5237b341f36a04c3536f98c17680",
+    "members": 29,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
