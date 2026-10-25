@@ -1,0 +1,172 @@
+{
+  "status": "KIMI_CT_INT4_INDEPENDENT_SOURCE_ROLES_TWO_GENERATIONS_CPU_FIXTURE_PASS",
+  "date": "2026-10-25",
+  "base_commit": "0cddd5e352da983e6a55f60dcb682fe88a87c09c",
+  "problem": "The generic asymmetric expert witness did not connect the selected Kimi symmetric group128 source Q/I64 shape/BF16 SF roles to its actual selected-bank ownership and BF16 operand/store boundary.",
+  "change": "One finite caller-side source adapter validates cached header identities/ranges/types and the contents of supplied ready I64 shape leases, then feeds existing CpuSupply Q/SF/map batches. Existing closed CT grouped Graph consumes compressed banks; no new codec, math operator, owner, registry or executor.",
+  "source": {
+    "repository": "RedHatAI/Kimi-K3-INT4",
+    "revision": "d5048a3ba6d23dd68749ea4b84abcb66d59a07e3",
+    "shard": "model-00001-of-00142.safetensors",
+    "cached_header_roles": "Layer1 W1 expert0/1 and2/3; original header contains I32 Q[3072,448], I64 shape[2], BF16 SF[3072,28]. Independent exact data-relative spans are recorded in binding-plan.json.",
+    "weight_shape_contract": "Cold admission reads the supplied16-byte I64 buffer and requires actual values [3072,3584]. The original shape[2] header alone does not establish those two original body values.",
+    "value_qualification": "All Q/shape/SF body bytes used in this test are explicitly generated fixture values. Original publisher payload was not cached/downloaded or numerically qualified in this batch."
+  },
+  "sources": [
+    {
+      "path": "tests/compute_models/original_named_role_source.h",
+      "before": {
+        "exists": true,
+        "bytes": 11819,
+        "sha256": "2abde5714513b49558a794e7bbc3a19a91475a6cbd838dc00bdddced5cb1abf6"
+      },
+      "after": {
+        "bytes": 10296,
+        "sha256": "0bb573d12cedefcc44939531231dc67d3de078f50798478fdb5f82e32c143245"
+      }
+    },
+    {
+      "path": "tests/compute_models/original_readonly_role.h",
+      "before": {
+        "exists": false,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "after": {
+        "bytes": 2038,
+        "sha256": "0761babb99448cc6690f3735f06b76aa1803d6b65f2977fdb294d88fb2a5fc26"
+      }
+    },
+    {
+      "path": "tests/compute_models/kimi_ct_int4_source_roles.h",
+      "before": {
+        "exists": false,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "after": {
+        "bytes": 7032,
+        "sha256": "4f32c34114b5b46c9cd455f2e6f88183d405e16a67ea58b62d47f28ee02b19fc"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/ct_packed_grouped_test.cc",
+      "before": {
+        "exists": true,
+        "bytes": 1638,
+        "sha256": "e77674aacc36fec4736116e174d07111471665d30692ee9948a9cb1a54b93431"
+      },
+      "after": {
+        "bytes": 14507,
+        "sha256": "b9adef4da541b17e12827a8d351175873a35aa9a712ab195f5a185f97a562df5"
+      }
+    }
+  ],
+  "lightweight_dependency_split": {
+    "reason": "First CPU compile could not find ggml.h through original_named_role_source.h; no link or test ran.",
+    "change": "Identity/ReadonlyRole/detail::take/detail::bind moved byte-for-byte to original_readonly_role.h in the same namespace; native GGUF manifest/Data definitions stay in the original header. Kimi includes only the lightweight role header; the test explicitly includes its existing SHA helper.",
+    "source_only_native_suffix": {
+      "bytes": 9361,
+      "sha256": "a6437f328b31f6da6b2122384a1a4987e6f7819ef6f8fdd03960a0bd02e98fc8"
+    },
+    "scope": "Light header/Kimi/test are frozen and compiled in CPU2. The retained original GGUF manifest/Data suffix is mechanically unchanged; no separate original GGUF consumer run is signed."
+  },
+  "geometry": {
+    "source_projection": "W1 N3072/K3584/group128, noZ/noA quantizer, BF16 SF",
+    "global_domain": 896,
+    "selected_capacity": 2,
+    "generation0": [
+      0,
+      1
+    ],
+    "generation1": [
+      2,
+      3
+    ],
+    "tokens": 2,
+    "slots_per_token": 2,
+    "precision": "BF16 activation widened explicitly toF32; source code*SF rounds BF16, BF16 weight operand, F32 accumulation then BF16 projection store.",
+    "source_bank_logical_bytes_per_generation": 11357696,
+    "two_generation_pool_capacity_bytes": 22715392,
+    "memory_limit": "Known CpuSupply fixture capacity, not measured RAM/VRAM peak or a complete Model memory bound."
+  },
+  "actual_CPU": {
+    "status": "PASS",
+    "compile": {
+      "exit": 0,
+      "seconds": 4.172,
+      "pid": 38296
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.171,
+      "pid": 46324
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.657,
+      "pid": 54840
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 64,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "gtest_case_seconds": 0.41,
+    "successful_Graph_submissions": 2,
+    "numeric_witnesses": {
+      "query0_final_BF16_diff_without_weight_store": 4096,
+      "query1_final_BF16_diff_without_weight_store": 8192
+    },
+    "same_generation": "Original Q/SF plane bytes are SHA-compared after copy. Each Invocation binds one complete Q/SF/map generation before prepare/submit. Source leases/mappings close before Graph execution; Invocation input readers retain actual bank lifetime.",
+    "ownership_checks": "Two generations occupy six bank blocks; third upload is rejected. Dropping CpuBatch alone leaves six original Invocation-held blocks; destroying both retired Invocations releases them. Independent BF16 result leases remain byte-identical after bank/compiled owners retire.",
+    "cold_rejections": "Wrong source range, actual shape values and SF dtype reject without consuming caller roles. These are cold input checks, not native device-fault tests.",
+    "filter": "CpuCtPackedGrouped.KimiInt4IndependentSourceRolesKeepSelectedBanksAndBfloatStore"
+  },
+  "first_attempt": {
+    "status": "COMPILE_FAILED_NO_RUN",
+    "compile": {
+      "exit": 2,
+      "seconds": 1.375,
+      "pid": 23600
+    },
+    "reason": "MSVC C1083 missing ggml.h through the original heavy role header; no link/run, not a numerical or Graph failure. Original command/stdout/stderr/frozen pins preserved."
+  },
+  "review_correction": "The first source-only one-hot oracle could not distinguish an intermediate BF16 weight store from final output rounding. Before any CPU run, r2 changed both queries to two terms and independently compared final BF16 against omission of the intermediate store. Actual XML records4096 and8192 distinguishing outputs; r1 and r2 patches/pins remain in archive.",
+  "independent_review": {
+    "status": "SOURCE_ONLY_R2_NO_BLOCKER_FOUND",
+    "path": "review/independent-review-performance.json",
+    "pin": {
+      "bytes": 7706,
+      "sha256": "e43f8981b96a1acbfbfe55b898be9b301f264e5730d047e83fbd38ff725dc6ae"
+    },
+    "lightweight_followup": "SOURCE_ONLY_MECHANICAL_SPLIT_NO_NEW_BLOCKER"
+  },
+  "not_claimed": [
+    "Original publisher Q/shape/SF numeric values or full artifact/model qualification.",
+    "W2/W3, full expert FFN/SiTU/combine, natural Top16 router or all selected experts.",
+    "New GPU/Linux/Apple/Vulkan execution, CUDA WeightSlots composition, native faults or cross-platform qualification.",
+    "TPS, speedup, complete prefill/decode/window update, measured peak memory or task quality."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-ct-int4-selected-source-2026-10-25.zip",
+    "bytes": 103250,
+    "sha256": "86a92ac01fa85f761eb1deda024898fd126fa7e94c1ddcf598f9c613e2526471",
+    "members": 48,
+    "CRC_and_member_SHA256_verified": true,
+    "index": "member-sha256.json",
+    "no_model_SDK_or_binary_payloads": true
+  },
+  "sources_scope": "Listed source changes relative to base_commit. Intermediate private r2/light-split before-pins are retained separately in the unchanged archive."
+}

@@ -8,7 +8,9 @@
 
 [33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。另补[Q27 fidelity GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)，原type30按plain 1值2字节承载，计算路径与精度策略不变。
 
-[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)继续保留真实未闭项：CT BF16 block128需共享的原参数数学入口；17／20混合角色、19 fused gate_up与22独立专家仍需原span／scale／bank的实际组合。16的[原shard193复核](../evidence/research/quark-q24-excluded-roles-2026-10-25.json)已确认28个excluded普通权重为BF16，可复用现rank2 reader；该局部事实不推广到全部977项或未存header的head。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
+[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)保留的实际连接包括CT BF16 block128的Model策略、17／20混合角色及19 fused gate_up源拆分；共享数学的后续进展见下文。16的[原shard193复核](../evidence/research/quark-q24-excluded-roles-2026-10-25.json)已确认28个excluded普通权重为BF16，可复用现rank2 reader；该局部事实不推广到全部977项或未存header的head。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
+
+22的[Kimi CT INT4独立源角色组合](../evidence/correctness/kimi-ct-int4-selected-source-2026-10-25.json)已接原Q／shape／BF16 SF合同、两代选中bank和现有grouped Graph。CPU单例通过，检查实际shape正文、旧bank与输出寿命，并以双项输入区分中间BF16权重存储和仅末端舍入。数值为生成fixture；不代表原payload、完整专家FFN或整模型通过。
 
 CT BF16 block128第一批已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)：旧fixture、原header／span只读W／SF入口共用同一BF16数学。4项CPU检查通过，不代表18／21整制品已接通；Model的冷reader策略和角色分派、selected bank及原数值资格仍单列。
 
