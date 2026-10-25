@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nvfp4_reference_fixture.h"
+#include "../../engine/inference/ct_block128_graph.h"
 
 namespace ct_block128_qdq_test {
 namespace c = hyle::compute;
@@ -61,62 +62,29 @@ struct Case final {
     auto b=take(g::GraphBuilder::create(),"CT block128 builder");
     activation=take(b.input(activation_description),"original BF16 A");
     for(std::size_t i=0;i<constants.size();++i) constants[i]=take(b.constant(descriptions[i]),"original CT block constant");
-    auto reshape=[&](g::ValueId v,std::initializer_list<std::int64_t> shape) {
-      std::vector<g::Dimension> dimensions;for(const auto n:shape) dimensions.push_back(g::Dimension::fixed(n));
-      return take(b.add(take(g::ViewSpec::reshape(dimensions),"reshape spec"),v),"metadata reshape");
+    namespace math = hyle::inference::ct_block128;
+    const auto operand = [&](std::size_t index) {
+      return math::Operand{constants[index], descriptions[index]};
     };
-    g::ValueId aq{};
-    if(kind!=Output::kWeight) {
-    const auto grouped_a=reshape(activation,{tokens,groups,128});
-    const auto absolute=take(b.add(c::Unary{c::UnaryKind::kAbs},grouped_a),"BF16 abs");
-    const auto maximum=take(b.add(c::Reduce{.kind=c::ReductionKind::kMaximum,
-      .axes=take(c::Axes::from(std::array<std::int32_t,1>{2}),"group reduce axis"),.keep_dimensions=true,.accumulation_type=Type::kFloat32},absolute),"BF16 group128 maximum");
-    const auto raw_scale=take(b.add(c::Binary{c::BinaryKind::kDivide},maximum,constants[3]),"BF16 amax/448");
-    const auto nonzero=take(b.add(c::Cast{Type::kBool},raw_scale),"scale nonzero");
-    const auto scale=take(b.add(c::Select{},nonzero,raw_scale,constants[5]),"only zero scales become BF16 epsilon");
-    const auto normalized=take(b.add(c::Binary{c::BinaryKind::kDivide},grouped_a,scale),"BF16 A/SA");
-    // The fixed dynamic producer explicitly supplies a symmetric +0 zero point.
-    // Keep both nodes: the first changes the sign of a source negative zero.
-    const auto shifted=take(b.add(c::Binary{c::BinaryKind::kAdd},normalized,constants[6]),"BF16 normalized+0");
-    // Public E4 Cast is SATFINITE RNE: it includes the producer clamp while
-    // preserving NaN class, unlike ordinary fmin/fmax's single-NaN policy.
-    const auto encoded=take(b.add(c::Cast{Type::kFloat8E4M3FN},shifted),"SATFINITE E4 RNE includes producer clamp");
-    const auto widened=take(b.add(c::Cast{Type::kBFloat16},encoded),"E4 code to BF16");
-    const auto centered=take(b.add(c::Binary{c::BinaryKind::kSubtract},widened,constants[6]),"BF16 code-0");
-    const auto restored=take(b.add(c::Binary{c::BinaryKind::kMultiply},centered,scale),"BF16 activation QDQ");
-    aq=reshape(restored,{tokens,depth});
-    }
+    const math::Constants literals{operand(3), operand(5), operand(6)};
+    math::Operand aq;
+    if(kind!=Output::kWeight)
+      aq=take(math::append_activation(b,{activation,activation_description},literals),"original CT activation QDQ");
     if(kind==Output::kActivation) {
-      output=aq;output_description=activation_description;
+      output=aq.value;output_description=aq.description;
       check(b.publish(output),"publish only activation QDQ");
       graph=take(std::move(b).finish(),"finish activation-only CT graph");return;
     }
-    auto raw_w=constants[0],sf=constants[1];
+    std::optional<math::Operand> selected_ids;
     if(grouped) {
-      ids=take(b.input(dense(Type::kInt32,{tokens,slots})),"current expert IDs");
-      const auto flat_ids=reshape(ids,{tokens*slots});
-      raw_w=take(b.add(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},raw_w,flat_ids),"select original E4 expert rows before any floating decode");
-      sf=take(b.add(c::Gather{.axis=0,.bounds=c::IndexBoundsPolicy::kChecked},sf,flat_ids),"select original BF16 expert scale grids");
+      const auto description=dense(Type::kInt32,{tokens,slots});
+      ids=take(b.input(description),"current expert IDs");
+      selected_ids=math::Operand{ids,description};
     }
-    const auto selected_sf=take(b.add(c::Gather{.axis=grouped?1:0,.bounds=c::IndexBoundsPolicy::kChecked},sf,constants[2]),"broadcast original block128 SF by logical row");
-    const auto scales_view=grouped?reshape(selected_sf,{tokens*slots,columns,groups,1}):reshape(selected_sf,{columns,groups,1});
-    const auto codes=take(b.add(c::Cast{Type::kBFloat16},raw_w),"selected weight codes to BF16");
-    const auto codes_view=grouped?reshape(codes,{tokens*slots,columns,groups,128}):reshape(codes,{columns,groups,128});
-    const auto restored_w=take(b.add(c::Binary{c::BinaryKind::kMultiply},codes_view,scales_view),"BF16 block128 weight multiply");
-    const auto weight=grouped?reshape(restored_w,{tokens*slots,columns,depth}):reshape(restored_w,{columns,depth});
-    if(kind==Output::kWeight) {
-      output=weight;output_description=grouped?dense(Type::kBFloat16,{tokens*slots,columns,depth}):dense(Type::kBFloat16,{columns,depth});
-    } else if(grouped) {
-      const auto rhs=reshape(weight,{tokens,slots,columns,depth});
-      const auto transposed=take(b.add(take(g::ViewSpec::permute(std::array<std::int32_t,4>{0,1,3,2}),"batched transpose"),rhs),"selected BF16 W transpose");
-      const auto lhs=reshape(aq,{tokens,1,1,depth});
-      const auto product=take(b.add(c::MatMul{.accumulation_type=Type::kFloat32},lhs,transposed),"ordinary BF16 batched projection with shared A");
-      output=reshape(product,{tokens,slots,columns});output_description=dense(Type::kBFloat16,{tokens,slots,columns});
-    } else {
-      const auto rhs=take(b.add(take(g::ViewSpec::permute(std::array<std::int32_t,2>{1,0}),"dense transpose"),weight),"original BF16 W transpose");
-      output=take(b.add(c::MatMul{.accumulation_type=Type::kFloat32},aq,rhs),"ordinary BF16 block128 projection");
-      output_description=dense(Type::kBFloat16,{tokens,columns});
-    }
+    const auto weight=take(math::append_weight(b,operand(0),operand(1),operand(2),selected_ids),"original CT BF16 weight");
+    const auto result=kind==Output::kWeight ? weight
+        : take(math::append_matmul(b,aq,weight,selected_ids),"ordinary CT projection");
+    output=result.value;output_description=result.description;
     check(b.publish(output),"publish requested CT result");graph=take(std::move(b).finish(),"finish CT block graph");
   }
   Data data(unsigned phase=0) const {

@@ -465,7 +465,11 @@
         "quark_mxfp4_a4"
       ],
       "connection": "CONCRETE_REFERENCE_CONSUMER_SOURCE_ROLE_PARTIAL",
-      "limit": "Expert MXFP4 equation connected; sampled experts do not establish excluded attention/shared/head contracts."
+      "limit": "Expert MXFP4 equation connected; sampled experts do not establish excluded attention/shared/head contracts.",
+      "resolution_after_audit": {
+        "evidence": "docs/evidence/research/quark-q24-excluded-roles-2026-10-25.json",
+        "scope": "Fixed-revision shard193 has42 ordinary BF16 tensors, including28 exact excluded weight roles. Existing rank2 BF16 reader can bind these matrices; the16KiB shared-expert gate is the smallest complete source role. Original numeric bytes, head shard212 and all977 excluded groups are not qualified. Full MoE Model remains distinct from this finite bottom-layer binding."
+      }
     },
     {
       "i": 17,
@@ -485,7 +489,11 @@
         "ct_bf16_block128"
       ],
       "connection": "CONCRETE_REFERENCE_CONSUMERS_SOURCE_ROLE_PARTIAL",
-      "limit": "CT BF16 block128 attention plus local-dynamic NVFP4 MLP; not Qwen dense V2 FP8 policy equivalence, nor all69 shard headers."
+      "limit": "CT BF16 block128 attention plus local-dynamic NVFP4 MLP; not Qwen dense V2 FP8 policy equivalence, nor all69 shard headers.",
+      "shared_math_followup": {
+        "evidence": "docs/evidence/correctness/ct-block128-supplied-graph-2026-10-25.json",
+        "scope": "Supplied cold CT BF16 block128 math and explicit header-derived readonly-role entry added; four CPU cases pass. Not the Model reader-policy/role dispatch, selected-bank composition or original publisher values."
+      }
     },
     {
       "i": 19,
@@ -514,7 +522,11 @@
         "ct_bf16_block128"
       ],
       "connection": "CONCRETE_BF16_QDQ_CONSUMER_SOURCE_ROLE_PARTIAL",
-      "limit": "BF16 block128 weight/A graph is actual; not F32 code-dot; exact original expert resource/payload journey absent."
+      "limit": "BF16 block128 weight/A graph is actual; not F32 code-dot; exact original expert resource/payload journey absent.",
+      "shared_math_followup": {
+        "evidence": "docs/evidence/correctness/ct-block128-supplied-graph-2026-10-25.json",
+        "scope": "Supplied cold CT BF16 block128 math and explicit header-derived readonly-role entry added; four CPU cases pass. Not the Model reader-policy/role dispatch, selected-bank composition or original publisher values."
+      }
     },
     {
       "i": 22,

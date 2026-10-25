@@ -1,0 +1,387 @@
+{
+  "status": "SOURCE_ONLY_EXCLUDED_ORDINARY_BF16_ROLES_CONFIRMED",
+  "scope": {
+    "catalog_index": 16,
+    "repository": "amd/Qwen3.8-2.4T-A95B-Quark-MXFP4",
+    "revision": "13dc9676cdd9e2374c3efb50389d3392b975acae",
+    "builds": 0,
+    "runs": 0,
+    "http_requests": 0,
+    "canonical_changes": 0,
+    "not_claimed": [
+      "all 977 excluded groups classified",
+      "original role numerical execution",
+      "full Q24 Model import",
+      "exact publisher GPU accumulation/reduction order"
+    ]
+  },
+  "finding": "The complete cached shard193 header contains actual ordinary excluded BF16 roles. These roles require the existing dense BF16 reader, not Quark expert A4 and not block128 FP8. Source data is sufficient for cold descriptor/binding; original values for the selected ordinary role are not established in the checked component caches.",
+  "source_identity": {
+    "file": "model-00193-of-00213.safetensors",
+    "size": 3565758112,
+    "lfs_sha256": "d73e3647b4e2f92b9ea0b30536f4356c4fa6b68e0846409b9fdd8ec237ddd2f0",
+    "api_xet_hash": "5f44d0ac45da20b26919ba3fc5f112ad65055da035e63adf1b5f5e7817d57a10",
+    "etag": "\"5f44d0ac45da20b26919ba3fc5f112ad65055da035e63adf1b5f5e7817d57a10\"",
+    "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size",
+    "data_start": 6816,
+    "header": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00193-of-00213.safetensors/header.json",
+      "bytes": 6808,
+      "sha256": "4a0d7dce9ef972662c8296aebee3339875ee6f2906ca863e09ed9ff081892203"
+    },
+    "acquisition": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00193-of-00213.safetensors/acquisition.json",
+      "bytes": 2592,
+      "sha256": "309899729dca6924e31a83525ceed5d0165f5d50f179546e4849392f30ce6f6b"
+    },
+    "same_whole_shard_LFS_as_original_FP8_checkpoint": {
+      "kind": "local_header_same_complete_LFS",
+      "header": {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat15/mtp-headers/model-00193-of-00213.safetensors/header.json",
+        "bytes": 6808,
+        "sha256": "4a0d7dce9ef972662c8296aebee3339875ee6f2906ca863e09ed9ff081892203"
+      },
+      "acquisition": {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat15/mtp-headers/model-00193-of-00213.safetensors/acquisition.json",
+        "bytes": 2052,
+        "sha256": "beac4b3041e04da8c33d091d1559cf55ab0960d02269ed5fa784ead1002841bc"
+      },
+      "expanded_metadata": {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat15/expanded-api.json",
+        "bytes": 108206,
+        "sha256": "e9774ac1cdf8d8f80e1d2709192e0e7820147b817905b921d20ad9bb0d9bba1b"
+      },
+      "tree_metadata": {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat15/tree-api.json",
+        "bytes": 69654,
+        "sha256": "52022d3e5bc80eda560e17c196d7cb595c3f00e9fadd45b7b12128a320261db1"
+      },
+      "repository": "Qwen/Qwen3.8-2.4T-A95B-FP8",
+      "revision": "d2dc35658bcf77e66643428cb52e774cc3b5bd29",
+      "source": {
+        "file": "model-00193-of-00213.safetensors",
+        "size": 3565758112,
+        "lfs_sha256": "d73e3647b4e2f92b9ea0b30536f4356c4fa6b68e0846409b9fdd8ec237ddd2f0",
+        "api_xet_hash": "e912dda48cefcccf25d302fece9793dab0a64a754768dc943c63d6eec8d05c10",
+        "etag": "\"e912dda48cefcccf25d302fece9793dab0a64a754768dc943c63d6eec8d05c10\"",
+        "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+      },
+      "original_size": 3565758112,
+      "same_complete_lfs_sha256": "d73e3647b4e2f92b9ea0b30536f4356c4fa6b68e0846409b9fdd8ec237ddd2f0"
+    },
+    "index": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/model.safetensors.index.json",
+      "bytes": 28120283,
+      "sha256": "79721613d0206766276f6c2017b705c089148a75633fe9405aefec872d891881"
+    },
+    "index_acquisition": {
+      "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/index-acquisition.json",
+      "bytes": 6791,
+      "sha256": "70c325d8632daeffa263a7e4936e0d4f2fe08dbdd262043e45cdf1042c89c30b"
+    },
+    "config": {
+      "path": ".scratch/architecture-refactor-2026-10-18/quark-mxfp4-contract-review/artifact/16/fixed-config.json",
+      "bytes": 57529,
+      "sha256": "03c45bb8de155ff683727782a526002b2aab9a2ae4b782f84e74152f4d57f01d"
+    },
+    "config_receipt": {
+      "path": ".scratch/architecture-refactor-2026-10-18/quark-mxfp4-contract-review/artifact/16/fixed-config.json.http.json",
+      "bytes": 874,
+      "sha256": "21e06b285f6e4a6a622561a5af12250dc2af600cb3e7f93177ed8495cbf04eb0"
+    }
+  },
+  "bounded_header_coverage": {
+    "complete_shard_tensor_count": 59,
+    "non_mtp_tensor_count": 42,
+    "non_mtp_dtypes": [
+      "BF16"
+    ],
+    "explicit_excluded_ordinary_principals_confirmed": 28,
+    "exclusion_config_total": 977,
+    "checked_header_files": [
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-mxfp4-contract-review/artifact/16/model-00001-of-00213.safetensors/header.json",
+        "bytes": 256080,
+        "sha256": "1911d076319a74abd90a1fc0bee3b629f390042e1815a57a3582bf7b70ca0255"
+      },
+      {
+        "path": ".scratch/architecture-refactor-2026-10-18/quark-mxfp4-contract-review/artifact/16/model-00002-of-00213.safetensors/header.json",
+        "bytes": 128304,
+        "sha256": "f4f5fc66c7003409e57a8d1a5ca48d8fee3a0dd371f17002740966caef72ef55"
+      },
+      {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00185-of-00213.safetensors/header.json",
+        "bytes": 251984,
+        "sha256": "33db0a960fb0da75fc6fdf7909a95b457bd947849c6c86a2dac4f4a73a211608"
+      },
+      {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00186-of-00213.safetensors/header.json",
+        "bytes": 126256,
+        "sha256": "206a714f1e28f6039334f430cfe965aa937ca801fa59c8b69cc51ae0ae8b12f0"
+      },
+      {
+        "path": ".scratch/mtp-metadata-offline-20261024/indexes/cat16/mtp-headers/model-00193-of-00213.safetensors/header.json",
+        "bytes": 6808,
+        "sha256": "4a0d7dce9ef972662c8296aebee3339875ee6f2906ca863e09ed9ff081892203"
+      }
+    ],
+    "caveat": "First two and185/186 headers are expert-only. The ordinary tensor names and exact ranges here come from193 itself; its mtp-headers directory name does not make the model.layers.81/82/83 tensors MTP."
+  },
+  "roles": [
+    {
+      "name": "model.layers.81.linear_attn.in_proj_a.weight",
+      "dtype": "BF16",
+      "shape": [
+        128,
+        8192
+      ],
+      "data_offsets": [
+        180736,
+        2277888
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        187552,
+        2284704
+      ],
+      "bytes": 2097152,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    {
+      "name": "model.layers.81.linear_attn.conv1d.weight",
+      "dtype": "BF16",
+      "shape": [
+        20480,
+        1,
+        4
+      ],
+      "data_offsets": [
+        16640,
+        180480
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        23456,
+        187296
+      ],
+      "bytes": 163840,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    {
+      "name": "model.layers.81.mlp.shared_expert_gate.weight",
+      "dtype": "BF16",
+      "shape": [
+        1,
+        8192
+      ],
+      "data_offsets": [
+        985842432,
+        985858816
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        985849248,
+        985865632
+      ],
+      "bytes": 16384,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    {
+      "name": "model.layers.81.mlp.shared_expert.gate_proj.weight",
+      "dtype": "BF16",
+      "shape": [
+        2048,
+        8192
+      ],
+      "data_offsets": [
+        918733568,
+        952288000
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        918740384,
+        952294816
+      ],
+      "bytes": 33554432,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    {
+      "name": "model.layers.81.mlp.shared_expert.down_proj.weight",
+      "dtype": "BF16",
+      "shape": [
+        8192,
+        2048
+      ],
+      "data_offsets": [
+        885179136,
+        918733568
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        885185952,
+        918740384
+      ],
+      "bytes": 33554432,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    {
+      "name": "model.layers.83.self_attn.o_proj.weight",
+      "dtype": "BF16",
+      "shape": [
+        8192,
+        16384
+      ],
+      "data_offsets": [
+        2080851968,
+        2349287424
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        2080858784,
+        2349294240
+      ],
+      "bytes": 268435456,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    }
+  ],
+  "numerical_policy": {
+    "source_facts": {
+      "config_dtype": "bfloat16",
+      "model_type": "qwen3_5_moe_text",
+      "hidden_size": 8192,
+      "shared_intermediate": 2048,
+      "expert_quantized_dtype": "fp4",
+      "expert_activation_group": 32,
+      "role_specific_quant_overrides": {},
+      "confirmed_roles_have_no_scale_auxiliaries": true
+    },
+    "source_contract": "Exact BF16 payload and no scale/packed auxiliaries for the confirmed groups, plus explicit exclusion from routed-expert MXFP4 quantization. Do not quantize these activations/weights to A4 merely because the global config is FP4.",
+    "existing_selected_software_reader": "DenseLinearF32: BF16 [T,K] activation + unchanged BF16 [N,K] W, F32 products/accumulation, F32 raw result. Qwen BF16 fragment then explicitly casts projection output to BF16; shared-expert gate applies Sigmoid after this BF16 store.",
+    "reader_anchors": [
+      "include/hyle/compute/model_ops.h:1421-1474",
+      "tests/compute_models/qwen_full_attention_fragment.h:74-87",
+      "tests/compute_models/qwen24_original_moe_fragment.h:150-159",
+      "tests/compute_models/qwen24_original_moe_fragment.h:200-205"
+    ],
+    "limit": "Header/config establish source codec and BF16 storage, not the exact reduction order of AMD MI350 publisher kernels. Existing Hyle selected software reader is explicit; no original-value comparison is claimed. Conv is a separate [C,1,kernel] operator, not rank2 ProjectionBinding."
+  },
+  "connection_disposition": [
+    {
+      "path": "engine/models/qwen35/main.cc:430-451,895-931",
+      "classification": "EXISTING_DENSE_BINDER_AND_RECIPE",
+      "fact": "resolve_projection accepts dense BF16 output-major [N,K] with no packed auxiliaries as StoredProjection. Recipe accepts BF16 activation and preserves BF16 W/store; no Quark-specific projection codec is required for these confirmed rank2 roles."
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_roles.h:250-278,331-340;tests/compute_models/qwen_full_attention_fragment.h:74-87",
+      "classification": "EXISTING_PINNED_COMPONENT_SOURCE_ROUTE",
+      "fact": "Exact ordinary role name/repository/revision/per-role SHA and descriptor can use existing Data/load + original read-only lease binding. It is not restricted to mtp.* names and does not need a new loader/registry. Per-role payload SHA is absent until bytes are actually acquired/read."
+    },
+    {
+      "path": "engine/models/qwen35/geometry.py:56-85;engine/models/qwen35/main.cc:454-475",
+      "classification": "FULL_MODEL_OUTSIDE_CURRENT_DENSE_MODEL_GEOMETRY",
+      "fact": "Actual config is qwen3_5_moe_text,512 experts,92 layers; the full CLI preparer expects qwen3_5_text/intermediate_size. Do not bypass that rejection or relabel the MoE model as dense to exercise one ordinary role. A finite source component can reuse the dense resolver/fragment."
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_roles.h:223-237;engine/models/qwen35/main.cc:2925-2927",
+      "classification": "CONV_DISTINCT_BOUNDARY",
+      "fact": "Source conv is BF16 [20480,1,4]; main has explicit F32 convolution math after reshape. The test BF16 Data helper currently rejects rank3 immutable roles (rank3 only SelectedSource), so its current component loader cannot directly bind this conv as immutable. That is not a dense projection failure; this first finite candidate selects rank2 shared gate and does not broaden conv ownership/placement."
+    }
+  ],
+  "remaining_unknown": [
+    {
+      "kind": "excluded head",
+      "role": "lm_head.weight",
+      "known_shard": "model-00212-of-00213.safetensors",
+      "known_source_size": 4068474976,
+      "known_LFS_SHA256": "ba874192a7583031a3ee6f2d77d458e699768c34cb6eb6dcb7dd80dbd23c88dd",
+      "missing": "Complete header dtype/shape/data offsets and original values; index alone supplies only role-to-shard. First missing header-length range would be [0,8); no request is made."
+    },
+    {
+      "kind": "other excluded roles",
+      "missing": "Complete actual headers for the other ordinary shards; no blanket BF16 classification from exclusion/config/name."
+    },
+    {
+      "kind": "numeric payload",
+      "checked_roots": [
+        ".scratch/mtp-metadata-offline-20261024/components",
+        ".scratch/mtp-metadata-offline-20261024/source-components"
+      ],
+      "result": "No same selected ordinary role payload/source-range pin found in these named component caches. Existing cat16 codes/scales are the separately tested expert0 down A4 tile, not these roles. This is bounded cache inspection, not an assertion that every local file was searched."
+    }
+  ],
+  "minimal_next_plan": {
+    "implementation_needed_for_one_role": "No new codec/Graph op required. Use exact rank2 shared-expert-gate role Spec/readonly binding and existing BF16 DenseLinearF32 -> BF16 store -> Sigmoid fragment; only an original-source manifest/finite consumer connection is missing. Do not call this full MoE import.",
+    "smallest_full_confirmed_matrix_role": {
+      "name": "model.layers.81.mlp.shared_expert_gate.weight",
+      "dtype": "BF16",
+      "shape": [
+        1,
+        8192
+      ],
+      "data_offsets": [
+        985842432,
+        985858816
+      ],
+      "source_file": "model-00193-of-00213.safetensors",
+      "absolute_range_half_open": [
+        985849248,
+        985865632
+      ],
+      "bytes": 16384,
+      "exact_exclude_member": true,
+      "same_base_auxiliaries": []
+    },
+    "necessary_payload_bytes": 16384,
+    "payload_sha256": null,
+    "acquisition": "Not performed or authorized in this read-only batch. If later authorized, existing budget.py fixed-revision hf-mirror.net exactRange/ETag/hash guard can obtain only this 16KiB full original role; no expert/shard/fullmodel download.",
+    "finite_check": "One unchanged BF16 [1,8192] role, actual pinned W, explicit BF16 activation/store, independent F64 dot plus correctly rounded BF16 projection and Sigmoid boundary. Existing CPU/CUDA DenseLinearF32 route can be reused after root chooses a bounded run; no numerical claim now."
+  },
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 499069,
+      "sha256": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701"
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "bytes": 3366,
+      "sha256": "155b90ec1c9bed64c269519bfdf9ddf337de79cd7fe16332525de80c37e22412"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 39007,
+      "sha256": "2194603b0b87f64044a630b682c00f746a5e8732c02d5779354e47366855ae7e"
+    },
+    {
+      "path": "engine/models/qwen35/geometry.py",
+      "bytes": 8542,
+      "sha256": "43b93b3ee48902caba25657c4fc938ab31ef804ecb33b10a4b9cb63f7744ae7f"
+    },
+    {
+      "path": "include/hyle/compute/model_ops.h",
+      "bytes": 80480,
+      "sha256": "f8b4c68f1fb3d6a72acbaebacf286981c25c7aac13f75702f450c74fe5cdc99a"
+    },
+    {
+      "path": "tests/compute_models/qwen_bfloat_original_roles.h",
+      "bytes": 37309,
+      "sha256": "90045627ce53b8d02d469dcc13f3b7c3cc3dcbbdc773ff4d953589318d3da660"
+    },
+    {
+      "path": "tests/compute_models/qwen24_original_moe_fragment.h",
+      "bytes": 13981,
+      "sha256": "f21914639b97ac357043764b85b32a51f10396a334fc5e9b6be4a72f4fb6bd99"
+    },
+    {
+      "path": "tests/compute_models/qwen_full_attention_fragment.h",
+      "bytes": 18882,
+      "sha256": "be5628fbb2979d8d5208a5d88551e5debce337ad57bdfb41f6002ea4f6efb37e"
+    }
+  ]
+}

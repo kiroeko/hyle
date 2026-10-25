@@ -8,7 +8,9 @@
 
 [33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。另补[Q27 fidelity GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)，原type30按plain 1值2字节承载，计算路径与精度策略不变。
 
-[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)继续保留真实未闭项：CT BF16 block128需共享的原参数数学入口；17／20混合角色、19 fused gate_up与22独立专家仍需原span／scale／bank的实际组合。16还需核excluded普通角色的源合同。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
+[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)继续保留真实未闭项：CT BF16 block128需共享的原参数数学入口；17／20混合角色、19 fused gate_up与22独立专家仍需原span／scale／bank的实际组合。16的[原shard193复核](../evidence/research/quark-q24-excluded-roles-2026-10-25.json)已确认28个excluded普通权重为BF16，可复用现rank2 reader；该局部事实不推广到全部977项或未存header的head。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
+
+CT BF16 block128第一批已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)：旧fixture、原header／span只读W／SF入口共用同一BF16数学。4项CPU检查通过，不代表18／21整制品已接通；Model的冷reader策略和角色分派、selected bank及原数值资格仍单列。
 
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 
