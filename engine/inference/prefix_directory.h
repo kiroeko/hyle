@@ -230,10 +230,20 @@ public:
     const auto victim = evictable(); if (victim == none) return false;
     erase_entry(victim); ++evictions; return true;
   }
+  // Pure single-owner preview; it neither pins nor changes LRU/payload state.
+  std::size_t match_length(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) const {
+    const auto best = find_match(identity, input, target, minimum);
+    return best == none ? 0 : nodes_[entries_[best].node].depth;
+  }
   Hit lookup(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) {
+    const auto best = find_match(identity, input, target, minimum);
+    return best == none ? Hit{} : Hit(*this, best);
+  }
+private:
+  std::size_t find_match(CacheDomain identity, const TokenPlan &input, std::size_t target, std::size_t minimum) const {
     const auto model = identity.model, math = identity.math;
     const auto domain = domain_position(model, math);
-    if (!same_domain(domain, model, math)) return {};
+    if (!same_domain(domain, model, math)) return none;
     const auto limit = (std::min)(target, input.ids.size());
     auto current = domains_[domain].root; std::size_t position = 0, best = none;
     while (position < limit) {
@@ -246,9 +256,8 @@ public:
       position += edge.count; current = child;
       if (edge.entry != none && position >= minimum) best = edge.entry;
     }
-    return best == none ? Hit{} : Hit(*this, best);
+    return best;
   }
-private:
   template<class Source>
   bool publish_impl(CacheDomain identity, TokenPlanRef input, std::size_t complete_length, Source &&payload) {
     if (!input || !complete_length || complete_length > input->ids.size())

@@ -395,12 +395,12 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 身份提取和抽样的原构图顺序；完整前缀则直接提供身份。端口形状、批量 greedy
 TopK、读回和发布属于各自调用者，不为合并几行装配增加地址描述或延迟回调。
 
-受控logits政策若需接入，应在冷Graph上显式承载modifier输入及选择／有效性输出，并同时覆盖普通批图和完整前缀重采样。默认identity图保原批量greedy与读回，不增加热策略分派；坏行包括greedy全mask时也必须在head／ledger／RNG发布前拒绝。postcommit logits观察不能代替该边界，不能只为合并已有几行代码引入通用callback框架。当前仍为[设计待实现边界](../evidence/research/inference-generation-boundary-2026-10-25.json)。
+受控logits已沿`sampling::ordinary_selection`接入普通批图和完整前缀重采样。冷配置只决定bias／allowed端口是否存在，每个episode借入typed ready租约，owner可以在下一步换值；载荷不进入KV、快照或历史账簿。默认图保原批量greedy和读回，不增加modifier端口。原logits的NaN／正无穷、非有限bias及全mask在head／ledger／RNG发布前拒绝；可定位的坏行沿原退休和幸存请求重排机制处理。StateOnly不需要这些输入；历史恢复只重建已消费状态并恢复原pending／游标，不能用当前mask重采历史。原CPU小Model的[有限请求流程](../evidence/correctness/inference-logits-modifiers-2026-10-25.json)已通过，不代表其它后端、质量或吞吐；MTP没有新增此政策。
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。
 
 投影的逻辑 `[N,K]` 由已验证的 `ProjectionBinding` 解释一次：冷发图复用
-`projection_detail::logical_shape` 的输出宽度，十个格式分支只表达各自数学和原操作链。
+`projection_detail::logical_shape` 的输出宽度，各格式分支只表达各自数学和原操作链。
 dense／GGUF 权重银行仍为 `[N,K]`，通用 MatMul 的 `[K,N]` 来自原元数据 View；
 block128 编码 carrier 的 `[K,N]` 保留独立解释。这不改变编码、舍入、累加或融合资格。
 [扩展边界记录](../evidence/research/inference-extension-boundaries-2026-10-25.json)区分

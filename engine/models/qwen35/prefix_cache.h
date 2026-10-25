@@ -121,6 +121,10 @@ public:
   std::size_t size() const noexcept { return directory_.size(); }
   std::size_t evictions() const noexcept { return directory_.evictions; }
   bool evict_one() noexcept { return directory_.evict_one(); }
+  std::size_t match_length(const TokenPlan &input, std::size_t target, std::size_t minimum,
+                           const void *model, const void *math) const {
+    return directory_.match_length({model, math}, input, target, minimum);
+  }
   Hit lookup(const TokenPlan &input, std::size_t target, std::size_t minimum,
              const void *model, const void *math) {
     auto hit = directory_.lookup({model, math}, input, target, minimum);

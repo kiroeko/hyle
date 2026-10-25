@@ -6,6 +6,7 @@
 #include "qwen_chunked_prefill_case.h"
 #include "qwen_dual_model_case.h"
 #include "qwen_sampling_policy_case.h"
+#include "qwen_logits_modifier_case.h"
 #include "qwen_turn_context_case.h"
 #include "qwen_retirement_observation_case.h"
 #include "qwen_midturn_resume_case.h"
@@ -72,6 +73,7 @@ int main(int argc,char **argv){
   const bool chunked=argc>1 && std::string_view(argv[1])=="--chunked-prefill";
   const bool dual=argc>1 && std::string_view(argv[1])=="--dual-model";
   const bool sampling=argc>1 && std::string_view(argv[1])=="--sampling-policies";
+  const bool logits=argc>1 && std::string_view(argv[1])=="--logits-modifiers";
   const bool turn_context=argc>1 && std::string_view(argv[1])=="--turn-context";
   const bool retirement=argc>1 && std::string_view(argv[1])=="--retirement-observation";
   const bool midturn=argc>1 && std::string_view(argv[1])=="--midturn-resume";
@@ -80,8 +82,8 @@ int main(int argc,char **argv){
   const bool sampling_budget=argc>1 && std::string_view(argv[1])=="--sampling-budget";
   const bool request_ledger=argc>1 && std::string_view(argv[1])=="--request-ledger";
   const bool e4_cache=argc>1 && std::string_view(argv[1])=="--e4-cache";
-  const int argument=(chunked||dual||sampling||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache] [prepared_input_directory]");
+  const int argument=(chunked||dual||sampling||logits||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--logits-modifiers|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache] [prepared_input_directory]");
   const char *input_environment=e4_cache?"HYLE_QWEN_E4_INPUTS":"HYLE_QWEN_REQUEST_INPUTS";
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment(input_environment);
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set "<<input_environment<<'\n';return 77;}
@@ -89,6 +91,7 @@ int main(int argc,char **argv){
   if(chunked)return qwen_chunked_prefill_case::run(input);
   if(dual)return qwen_dual_model_case::run(input);
   if(sampling)return qwen_sampling_policy_case::run(input);
+  if(logits)return qwen_logits_modifier_case::run(input);
   if(turn_context)return qwen_turn_context_case::run(input);
   if(retirement)return qwen_retirement_observation_case::run(input);
   if(midturn)return qwen_midturn_resume_case::run(input);

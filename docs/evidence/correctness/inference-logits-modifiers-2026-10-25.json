@@ -1,0 +1,503 @@
+{
+  "status": "FINITE_CPU_MODEL_DYNAMIC_LOGITS_MODIFIERS_PASS",
+  "date": "2026-10-25",
+  "change": "Ordinary precommit typed F32 bias and Bool allowed-mask inputs use the original Graph/Invocation leases, greedy/categorical selection, commit ledger and request lifecycle. Cold policy fixes port existence; ready values can change each output episode.",
+  "sources": [
+    {
+      "path": "engine/inference/sampling_graph.h",
+      "before": {
+        "bytes": 18479,
+        "sha256": "ac43b9cb30ca502a0a614eb3d0869386333f19a54cdc264f1e9b70f2cebbb9ce"
+      },
+      "after": {
+        "bytes": 23019,
+        "sha256": "d066651db9acba82ca5b96d8f35ccceefd60e96c2c61e6e5040389f8f71485bb"
+      }
+    },
+    {
+      "path": "engine/inference/prefix_directory.h",
+      "before": {
+        "bytes": 14899,
+        "sha256": "5161c250059bf9a02dffbcdfcfba2b1c4292d11f741d3decf59568644fae1e9c"
+      },
+      "after": {
+        "bytes": 15448,
+        "sha256": "29133f31072a5adc2a326529a0b7e4f39ebbd7354eeb265ca9c3cbe0444ca2a1"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/prefix_cache.h",
+      "before": {
+        "bytes": 8153,
+        "sha256": "5031a6c6a407f4b197d73b9befebc1c3db38c6e06dbdf4e32091f1c319a7b1de"
+      },
+      "after": {
+        "bytes": 8400,
+        "sha256": "cd8d5e6970b24f006c2bfa93a9feb4304947eac85d1ee553f43a2ebd8e1f377c"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "bytes": 502403,
+        "sha256": "a416380bd6e7b2dbbea3e4a0451f747f4b19c791d057fc931e89f7157bbe8f31"
+      },
+      "after": {
+        "bytes": 509149,
+        "sha256": "cc3fa78b6e61350c9c1e730d179af006130bf4648dd2bf7b788e381b5d847fda"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_logits_modifier_case.h",
+      "before": null,
+      "after": {
+        "bytes": 17956,
+        "sha256": "c6b5ca6845b11bae7b7697e84e0d33fe021957dbdae58fc3c675d4bcc680873b"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "before": {
+        "bytes": 21283,
+        "sha256": "5897c6f812df98b82818ed5cd7fa16facf9a34fdffa1e1d0f81a97dac9f756d1"
+      },
+      "after": {
+        "bytes": 21486,
+        "sha256": "c49ccb25937b06361574a31bd296aded9394871908dd93fa8153c4ccf4fb409b"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_sampling_policy_case.h",
+      "before": {
+        "bytes": 8253,
+        "sha256": "eeb72da895892787eed232cd0de3f0ad69391ec6ad0f4c9ed99dd79e562c6fbc"
+      },
+      "after": {
+        "bytes": 8381,
+        "sha256": "374f07c761be5a4c621b51f65c8df0a4b12d3610209e125c246bcf38f3348414"
+      }
+    }
+  ],
+  "input_contract": {
+    "bias": "optional dense F32[1,V], every supplied value finite",
+    "allowed": "optional dense Bool[1,V], uint8_t carrier",
+    "lifetime": "Existing read permission and real StorageOwner, or caller-retained borrowed allocator/resource/Context until every copy/native use retires. No extra owner/registry."
+  },
+  "actual_final_CPU": {
+    "formal_compile_only": {
+      "pid": 50492,
+      "exit": 0,
+      "seconds": 19.641
+    },
+    "thin_compile": {
+      "pid": 41392,
+      "exit": 0,
+      "seconds": 18.953
+    },
+    "link": {
+      "pid": 57124,
+      "exit": 0,
+      "seconds": 1.156
+    },
+    "run": {
+      "pid": 51700,
+      "exit": 0,
+      "seconds": 0.281
+    },
+    "result": {
+      "status": "PASS",
+      "backend": "cpu",
+      "dynamic_inputs": true,
+      "greedy_draws": 0,
+      "fullhit_random_draws": 1,
+      "allmasked_survivor": true,
+      "state_only_without_inputs": true,
+      "same_key_restore": true,
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false,
+      "quality_claim": false
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    }
+  },
+  "actual_attempts": [
+    {
+      "attempt": "cpu1",
+      "stages": {
+        "formal-compile": {
+          "pid": 41220,
+          "exit": 2,
+          "seconds": 5.203
+        }
+      }
+    },
+    {
+      "attempt": "cpu2",
+      "stages": {
+        "formal-compile": {
+          "pid": 45636,
+          "exit": 2,
+          "seconds": 5.266
+        }
+      }
+    },
+    {
+      "attempt": "cpu3",
+      "stages": {
+        "formal-compile": {
+          "pid": 47740,
+          "exit": 0,
+          "seconds": 19.671
+        },
+        "compile": {
+          "pid": 57140,
+          "exit": 0,
+          "seconds": 18.86
+        },
+        "link": {
+          "pid": 12492,
+          "exit": 0,
+          "seconds": 1.188
+        },
+        "run": {
+          "pid": 37324,
+          "exit": 1,
+          "seconds": 0.235
+        }
+      }
+    },
+    {
+      "attempt": "cpu4",
+      "stages": {
+        "formal-compile": {
+          "pid": 50052,
+          "exit": 0,
+          "seconds": 19.563
+        },
+        "compile": {
+          "pid": 44240,
+          "exit": 0,
+          "seconds": 18.828
+        },
+        "link": {
+          "pid": 51452,
+          "exit": 0,
+          "seconds": 1.172
+        },
+        "run": {
+          "pid": 38324,
+          "exit": 1,
+          "seconds": 0.266
+        }
+      }
+    },
+    {
+      "attempt": "cpu5",
+      "stages": {
+        "formal-compile": {
+          "pid": 30460,
+          "exit": 0,
+          "seconds": 19.578
+        },
+        "compile": {
+          "pid": 28236,
+          "exit": 0,
+          "seconds": 18.907
+        },
+        "link": {
+          "pid": 53512,
+          "exit": 0,
+          "seconds": 1.172
+        },
+        "run": {
+          "pid": 41748,
+          "exit": 1,
+          "seconds": 0.265
+        }
+      }
+    },
+    {
+      "attempt": "cpu6",
+      "stages": {
+        "formal-compile": {
+          "pid": 56108,
+          "exit": 0,
+          "seconds": 19.578
+        },
+        "compile": {
+          "pid": 28596,
+          "exit": 0,
+          "seconds": 18.891
+        },
+        "link": {
+          "pid": 23620,
+          "exit": 0,
+          "seconds": 1.188
+        }
+      }
+    },
+    {
+      "attempt": "cpu7",
+      "stages": {
+        "formal-compile": {
+          "pid": 50492,
+          "exit": 0,
+          "seconds": 19.641
+        },
+        "compile": {
+          "pid": 41392,
+          "exit": 0,
+          "seconds": 18.953
+        },
+        "link": {
+          "pid": 57124,
+          "exit": 0,
+          "seconds": 1.156
+        },
+        "run": {
+          "pid": 51700,
+          "exit": 0,
+          "seconds": 0.281
+        }
+      }
+    }
+  ],
+  "failures_and_corrections": [
+    {
+      "attempt": "cpu1",
+      "stage": "formal-compile",
+      "classification": "recipe",
+      "cause": "Existing formal lifecycle includes CUDA declarations; original CPU flags omitted the installed CUDA header path.",
+      "fix": "Formal compile only adds cached CUDA13.3 external header include; no CUDA macro/library/provider build or GPU execution."
+    },
+    {
+      "attempt": "cpu2",
+      "stage": "formal-compile",
+      "classification": "source",
+      "cause": "New helper incorrectly called namespace q::caller_tensor instead of Model::caller_tensor; existing sampling-policy case ignored nodiscard retirement observation.",
+      "fix": "Use model.caller_tensor; the seventh product path explicitly checks retirement.status and retirement.retired."
+    },
+    {
+      "attempt": "cpu3",
+      "stage": "run",
+      "classification": "fixture ownership",
+      "cause": "Unconditional StorageOwner::adopt_buffer rejected CPU primary, whose existing process-system resource domain has no StorageOwner.",
+      "fix": "Use existing Backend::adopt_buffer, retaining actual native StorageOwner when present and the original CPU process-system domain otherwise. No numeric assertion reached."
+    },
+    {
+      "attempt": "cpu4",
+      "stage": "run",
+      "classification": "new R2 binding shape",
+      "cause": "Modified greedy TopK produces I32[1,1], while categorical produces I32[1]. R1 concat shortcut hid the distinction; R2 concat with explicit [R] correctly rejected.",
+      "fix": "Only the new modifier Family branch reshapes each member ID to [1] before concatenation. Default graph and selection math are unchanged."
+    },
+    {
+      "attempt": "cpu5",
+      "stage": "run",
+      "classification": "fixture fixed-slot assumption",
+      "cause": "RequestWindow.enqueue(index) names the fixed slot. Test assigned A slot0 but required A.slot!=0; the assertion was necessarily false.",
+      "fix": "Keep actual calls [A,B], explicitly assign B slot0/A slot1 and admit FIFO B then A. No weakened predicate or state-publication gate."
+    },
+    {
+      "attempt": "cpu6",
+      "stage": "not run",
+      "classification": "unused diagnostic image",
+      "cause": "Compiled extra failure facts before the fixed-slot mistake was identified from source.",
+      "fix": "Skipped execution rather than running a known-invalid test. Source, commands and successful compile/link are retained."
+    }
+  ],
+  "totals": {
+    "formal_strict_compile_attempts": 7,
+    "linked_thin_app_compile_attempts": 5,
+    "CPU_process_attempts": 4,
+    "final_successful_processes": 1,
+    "core_provider_SDK_TUs": 0,
+    "GPU_processes": 0,
+    "HTTP_requests": 0
+  },
+  "finite_checks": [
+    "One real shared Recipe/Graph in the same CPU process checks greedy and categorical on nine explicit rows: finite, masked raw NaN/+Inf, masked bias NaN/+Inf/-Inf, all masked, all raw -Inf, and one masked raw -Inf.",
+    "The real Model default greedy cold Family has no modifier inputs or validity readback. Default graph code branches remain intact; this is not a fresh full default behavior/performance window.",
+    "R2 ordinary execution rejects unique all-masked participant0 (Window slot1) before publishing either head, ledger, output or cursor; actual retirement succeeds and same-key B requeues and emits4.",
+    "StateOnly prefill has no modifier input requirement or binding. Bad typed rank rejects before mutation; final prefill emits3, next ready lease emits5.",
+    "After pause and actual Session retirement, original committed input partitions rebuild with StateOnly, restore historical pending/cursor, then a new ready mask emits7 without replaying prior selections.",
+    "A new request fully reuses the completed consumed-state prefix, uses its own ready inputs and current random cursor, shares physical state/carry, emits6 with exactly one committed draw.",
+    "Final published Snapshot versions are0; no active episode/carrier or queued/active key remains."
+  ],
+  "boundaries": [
+    "Actual fixture is the cached untrained A/H64/FFN128/V64 BF16 Model, N3/R2/C16, pure CPU. No trained-model quality, complete model-family, GPU/backend, capture or throughput conclusion.",
+    "Normal lifecycle --logits-modifiers reaches the same helper. Its existing dual-Model case directly references CUDA symbols, so this batch strict-compiles that exact formal TU only and executes a thin CPU driver; it does not link/run the full lifecycle executable.",
+    "Cold flags, not bias/mask values, are part of PreparedSampling identity. Values do not enter Snapshot, KV or historical commit records. Ordinary-only; MTP modifier configurations reject and existing default MTP math is unchanged by source review, not rerun here.",
+    "Modifier recovery requires the owner to cold-prepare StateOnly historical widths and use budgets. The finite consumer explicitly prepares widths1,2; no new dispatcher or generic restore controller is added.",
+    "Raw NaN/+Inf validity is checked before masking. Modified greedy uses safe placeholders before TopK and typed invalidity before publication. No numerical tolerance was relaxed.",
+    "Final versions0 is not a claim that Model workspace/input leases or all resource-budget bytes are0. No physical-memory cap, concurrency throughput or arbitrary callback/grammar policy is established."
+  ],
+  "reproduction": {
+    "runner": ".scratch/inference-logits-modifiers-20261025/check_cpu.py",
+    "commands": [
+      "python .scratch/inference-logits-modifiers-20261025/check_cpu.py prepare --attempt repro1",
+      "python .scratch/inference-logits-modifiers-20261025/check_cpu.py build --attempt repro1",
+      "python .scratch/inference-logits-modifiers-20261025/check_cpu.py run --attempt repro1"
+    ],
+    "cache": "129 pinned common link inputs; original CPU native DLL. No core/provider/SDK rebuild.",
+    "fixture_directory": ".scratch/inference-e4-model-20261025/fixture-preparation/bf16-original",
+    "generators": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\source\\tiny.cc",
+        "bytes": 12416,
+        "sha256": "5bc1c9d2285cc5d6e9c0e2308b27f95d6eeea32ee9e4e69268092234694f27ec"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\prepare-fixture.py",
+        "bytes": 9931,
+        "sha256": "f67a88cff27fc85566d30111440b334f3ff91959a6a0c81848197158bcda3f54"
+      }
+    ]
+  },
+  "review_scope": "Independent reviews pin the earlier six-source draft. Final small changes and seventh legacy-call migration are separately preserved in source revisions and actual strict compiles; earlier review hashes are not relabeled final.",
+  "cleanup": {
+    "status": "INVENTORY_ONLY_NOT_DELETED",
+    "scope": "Superseded CPU3-6 rebuildable outputs only; CPU6 never executed. Keep CPU7 success image/objects, every source/command/raw/pin, original native library, all129 cache inputs and fixture.",
+    "files": [
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/compile/unit.obj",
+        "bytes": 15018626,
+        "sha256": "587b846f50c9f31ea2080779f5c456c0508239b2e5f3a6883d2e54fbe937232b"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/formal-compile/unit.obj",
+        "bytes": 16344817,
+        "sha256": "1286dce4bf1dedd917fa03574ab7c793327e4abba9677a8d70dadcaaf58c6bac"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/link/component.exe",
+        "bytes": 22789632,
+        "sha256": "83413672bb28dc4eaf0655b61fd10039fdddc28fc93a976e9eae188c05d8597b"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/link/component.exp",
+        "bytes": 24992,
+        "sha256": "8c185b18c28a545dbb47bd483da5a93b51f9a74cde9496eb24520b2012848fdd"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu3/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/compile/unit.obj",
+        "bytes": 15018590,
+        "sha256": "8d142573f2957efd46795be44795656622fac4fdcb04ba8741deaa6e01cf6aac"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/formal-compile/unit.obj",
+        "bytes": 16344781,
+        "sha256": "5125ced816be80513bf386f289ec050a2430ceb980dcbe095226b3fa96275633"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/link/component.exe",
+        "bytes": 22789632,
+        "sha256": "7a79df89f8167e6caaf8c7d1b89c42325975a4d900150ffbf6a8f189962fd5f4"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/link/component.exp",
+        "bytes": 24992,
+        "sha256": "fde9b3959f50778f8288d8b2ef2c3499bb3f13a3ea58cd58c4538293c8cc73e3"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu4/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/compile/unit.obj",
+        "bytes": 15018536,
+        "sha256": "71e36e5debd3cfe791ba9e6b94ddbf249901cb1760475cb491a777525ae0466e"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/formal-compile/unit.obj",
+        "bytes": 16344727,
+        "sha256": "c0764fab47f45e1928f9fb17e899ed68494de5e351cbfeff9b1a3c4b3e064ddf"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/link/component.exe",
+        "bytes": 22789632,
+        "sha256": "57efcf115bf0567e21d95ccd21c101d1ab09eb0161d9ec2a6508e9842891c336"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/link/component.exp",
+        "bytes": 24992,
+        "sha256": "07397b23ceea20cb0022127e131452679d5bef2c79b8437e29f8502b5978ad4b"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu5/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/compile/unit.obj",
+        "bytes": 15023358,
+        "sha256": "d9dd9cb13b49549dfdf7887d12084da7687968c3cf5f56eff334e291e06eea27"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/formal-compile/unit.obj",
+        "bytes": 16349128,
+        "sha256": "5ddd243adf3e843f86b56001c460382d2670e92ec67e355107117f6b0f714b36"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/link/component.exe",
+        "bytes": 22791168,
+        "sha256": "b2afb7cc731a48a30e5703ff0d7e7a5a5de23b09649a1e1d8bbf9536d24f81d7"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/link/component.exp",
+        "bytes": 24992,
+        "sha256": "45303731cf3e9471ffab3914997305c9be5b165ddb5300271fbc821385214eca"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "relative_repository_path": ".scratch/inference-logits-modifiers-20261025/cpu6/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      }
+    ],
+    "count": 24,
+    "logical_bytes": 222327339,
+    "hardlink_note": "Local DLL entries are hard links; logical bytes do not imply the same physical space will be reclaimed."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-logits-modifiers-2026-10-25.zip",
+    "bytes": 788729,
+    "sha256": "3a7e493611f4fdedd01e5e2cf183f81f47113445a2fa34d380e7cde05bb04cb4",
+    "members": 185,
+    "CRC_and_member_SHA_verified": true
+  }
+}

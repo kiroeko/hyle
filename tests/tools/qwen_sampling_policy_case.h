@@ -66,7 +66,9 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
         "same-request restore discarded historical pending or cursor");
   }
   require(original->next_id == producer_id && original->sampling == producer_cursor, "policy forks mutated an old reader");
-  calls = {}; q::retire_generation_request(request);
+  calls = {}; const auto retired = q::retire_generation_request(request);
+  q::check(retired.status);
+  require(retired.retired, "sampling-policy request did not actually retire");
   {
     auto rebuilt = q::rebuild_generation_session(model, *request.ledger);
     require(&rebuilt->sampling_configuration() == &model.sampling_configuration(2) &&

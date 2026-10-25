@@ -1204,7 +1204,18 @@ enum class TextCompletion { kEmitNext, kStateOnly };
 struct SamplingConfiguration final {
   bool enabled = false;
   sampling::Policy policy;
+  sampling::LogitsPolicy modifiers;
 };
+// Typed ready inputs for one ordinary output episode. Copies only retain the
+// original read permission. Use a lease carrying its existing StorageOwner,
+// or keep its borrowed allocator/resource/Context alive through every retained
+// copy and native use. Owners may supply different leases next episode; no
+// modifier payload enters a Snapshot, commit ledger or KV cache.
+struct LogitsInput final {
+  c::TensorDesc description;
+  c::ReadLease lease;
+};
+struct LogitsInputs final { LogitsInput bias, allowed; };
 struct PreparedSampling;
 struct ColdResources;
 void validate_sampling_configuration(const SamplingConfiguration &value, std::int64_t vocabulary) {
@@ -1216,7 +1227,28 @@ void validate_sampling_configuration(const SamplingConfiguration &value, std::in
 }
 bool same_sampling_configuration(const SamplingConfiguration &a, const SamplingConfiguration &b) noexcept {
   return a.enabled == b.enabled && a.policy.temperature == b.policy.temperature &&
-      a.policy.top_k == b.policy.top_k && a.policy.top_p == b.policy.top_p;
+      a.policy.top_k == b.policy.top_k && a.policy.top_p == b.policy.top_p && a.modifiers == b.modifiers;
+}
+
+void validate_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+                            std::int64_t vocabulary) {
+  const auto require = [&](const LogitsInput &input, bool enabled, Type type) {
+    if (input.lease.valid() != enabled || input.description.valid() != enabled)
+      throw std::runtime_error("logits input does not match its cold port configuration");
+    if (enabled) {
+      if (input.description != dense(type, {1, vocabulary}))
+        throw std::runtime_error("logits input requires the exact cold dense [1,V] descriptor");
+      (void)take(input.lease.tensor(input.description));
+    }
+  };
+  require(inputs.bias, configuration.modifiers.bias, Type::kFloat32);
+  require(inputs.allowed, configuration.modifiers.allowed, Type::kBool);
+}
+sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPolicy policy) {
+  sampling::LogitsInputsFor<V> result;
+  if (policy.bias) result.bias = r.input(dense(Type::kFloat32, {1, r.geometry.vocabulary}));
+  if (policy.allowed) result.allowed = r.input(dense(Type::kBool, {1, r.geometry.vocabulary}));
+  return result;
 }
 
 struct GenerationBoundary final {
@@ -1348,6 +1380,7 @@ struct FamilyPorts {
   std::size_t prefix_rows = 1;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
+  std::vector<V> logits_bias_ports, logits_allowed_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
@@ -1989,6 +2022,7 @@ struct EvaluationRequest final {
   std::shared_ptr<Session> session;
   std::span<const std::int32_t> ids;
   const inference::RequestStopPolicy *stop_policy = nullptr;
+  LogitsInputs logits;
 };
 struct EvaluationOutput final {
   std::shared_ptr<Session> session;
@@ -2088,7 +2122,7 @@ struct SamplingFrontier final {
   g::Graph graph;
   g::CompiledGraph compiled;
   g::DimensionId last_row;
-  V hidden_port, identity_port, id_port, valid_port;
+  V hidden_port, identity_port, id_port, valid_port, bias_port, allowed_port;
   Tensor identity;
   PreparedReadback id, valid;
   ResourceRetention retirement;
@@ -2134,7 +2168,8 @@ struct ColdResources final {
       prepared::CachePolicy policy, std::vector<CacheStoragePair> storage)
       : state_schema(state_schema_for(geometry, capacity, precision)),
         cache_policy(policy), attention_storage(std::move(storage)), state_pools(geometry.layers.size()),
-        retain_sampling_frontier(first.enabled || std::ranges::any_of(additional, [](const auto &value) { return value.enabled; })) {
+        retain_sampling_frontier(first.enabled || !first.modifiers.empty() || std::ranges::any_of(additional,
+            [](const auto &value) { return value.enabled || !value.modifiers.empty(); })) {
     sampling_configurations.reserve(cache::add(additional.size(), 1));
     const auto add = [&](SamplingConfiguration value) {
       validate_sampling_configuration(value, geometry.vocabulary);
@@ -2200,6 +2235,7 @@ public:
     bool enabled = false;
     sampling::Policy policy;
     std::uint64_t seed = 0;
+    sampling::LogitsPolicy modifiers;
   };
   struct DraftPolicy final {
     std::size_t max_drafts = 1;
@@ -2339,7 +2375,7 @@ public:
          }()),
          execution(std::move(prepared_execution)),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
-              SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy}, additional_sampling,
+              SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy, sampling_configuration.modifiers}, additional_sampling,
               source.roles.cache_policy, std::move(source.cache_storage))),
           default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
@@ -2383,7 +2419,7 @@ public:
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
-    if (cache_plan.draft_cache && !additional_sampling.empty())
+    if (cache_plan.draft_cache && (!additional_sampling.empty() || !default_sampler.modifiers.empty()))
       throw std::runtime_error("nondefault sampling configurations are currently ordinary Text only");
     if (retains_sampling_frontier() && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
       throw std::runtime_error("sampling requires a cache plan with retained frontier storage");
@@ -2758,7 +2794,8 @@ public:
                       bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
+      throw std::runtime_error("nondefault sampling is ordinary Text only");
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
         (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
       throw std::runtime_error("state-only completion requires an ordinary Text family");
@@ -3105,10 +3142,24 @@ public:
     definition.hidden_port = last;
     if (completion == TextCompletion::kEmitNext) {
       definition.logits_port = r.scores(last, std::string(geometry.head_role()));
-      if (!selected_sampler.enabled || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
+      if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
           {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
            r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
-      else {
+      else if (!selected_sampler.modifiers.empty()) {
+        std::vector<V> ids, valid;
+        for (std::size_t request = 0; request < requests; ++request) {
+          const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+          if (inputs.bias) { definition.logits_bias_ports.push_back(*inputs.bias); definition.state_resource_ports.push_back(*inputs.bias); }
+          if (inputs.allowed) { definition.logits_allowed_ports.push_back(*inputs.allowed); definition.state_resource_ports.push_back(*inputs.allowed); }
+          const auto selection = sampling::ordinary_selection(r, sampling_row(definition.logits_port, request),
+              selected_sampler.enabled ? std::optional<V>(sampling_identity(request, 0)) : std::nullopt,
+              selected_sampler.policy, inputs);
+          ids.push_back(r.reshape(selection.id, {f(1)})); valid.push_back(*selection.valid);
+        }
+        definition.id_port = r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32, {batch})), {batch, f(1)});
+        definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
+        r.publish(definition.sampling_valid_port);
+      } else {
         std::vector<V> ids, valid, accepted;
         for (std::size_t request = 0; request < requests; ++request) {
           const auto p = sampling::distribution(r, sampling_row(definition.logits_port,
@@ -3659,7 +3710,7 @@ public:
     preparation_started_ = true;
     for (auto &entry : resources_->sampling_configurations) {
       const auto &selected_sampler = entry->configuration;
-      if (!selected_sampler.enabled && sampling_configuration_count() == 1) continue;
+      if (!selected_sampler.enabled && selected_sampler.modifiers.empty() && sampling_configuration_count() == 1) continue;
       if (!entry->frontier) {
         auto prepared = std::make_unique<SamplingFrontier>();
         GraphAssembly assembly(execution, precision, allocation_budget);
@@ -3667,14 +3718,16 @@ public:
         prepared->last_row = r.last_row;
         prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
         if (selected_sampler.enabled) prepared->identity_port = r.input(dense(Type::kUInt32, {1, 4}));
-        if (selected_sampler.enabled) {
-          const auto probabilities = sampling::distribution(r,
-              r.scores(prepared->hidden_port, std::string(geometry.head_role())), selected_sampler.policy);
-          prepared->id_port = r.one(c::sampling_ops::categorical(), {probabilities.log_probabilities, prepared->identity_port});
-          prepared->valid_port = r.host_predicate(probabilities.valid);
-        } else prepared->id_port = r.op(c::Operation(c::TopK{.count = 1}),
-            {r.scores(prepared->hidden_port, std::string(geometry.head_role()))})[1];
-        r.publish(prepared->id_port); if (selected_sampler.enabled) r.publish(prepared->valid_port);
+        const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+        if (inputs.bias) prepared->bias_port = *inputs.bias;
+        if (inputs.allowed) prepared->allowed_port = *inputs.allowed;
+        const auto selection = sampling::ordinary_selection(r,
+            r.scores(prepared->hidden_port, std::string(geometry.head_role())),
+            selected_sampler.enabled ? std::optional<V>(prepared->identity_port) : std::nullopt,
+            selected_sampler.policy, inputs);
+        prepared->id_port = selection.id;
+        if (selection.valid) prepared->valid_port = r.host_predicate(*selection.valid);
+        r.publish(prepared->id_port); if (prepared->valid_port) r.publish(prepared->valid_port);
         prepared->graph = take(std::move(r.builder).finish());
         // The frontier is a fixed [1,H] projection with no symbolic model rows.
         const std::array shape{g::ShapeBinding{r.last_row, 0}};
@@ -3689,15 +3742,17 @@ public:
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
         prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution, allocation_budget));
-        if (selected_sampler.enabled) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution, allocation_budget));
+        if (prepared->valid_port) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution, allocation_budget));
         entry->frontier = std::move(prepared);
       }
     }
   }
 
-  cache::SnapshotRef sample_prefix(cache::SnapshotRef base, cache::SamplingCursor cursor, std::size_t sampling_index = 0) {
+  cache::SnapshotRef sample_prefix(cache::SnapshotRef base, cache::SamplingCursor cursor, std::size_t sampling_index = 0,
+                                   const LogitsInputs &inputs = {}) {
     const auto &selected = sampling_configuration(sampling_index);
     const auto &selected_sampler = selected.configuration;
+    validate_logits_inputs(selected_sampler, inputs, vocabulary);
     if (!base || !base->length || !base->carry_hidden.valid() || active_step || carrier_borrowed || !selected.frontier)
       throw std::runtime_error("prefix sampling requires its cold-prepared graph and an idle complete model-state hidden frontier");
     const auto next_cursor = selected_sampler.enabled ? cursor.advanced(1) : cache::SamplingCursor{};
@@ -3713,12 +3768,14 @@ public:
     if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
     check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
     if (selected_sampler.enabled) check(run.bind(frontier.identity_port, frontier.identity.read()));
-    check(frontier.id.bind(run)); if (selected_sampler.enabled) check(frontier.valid.bind(run));
+    if (frontier.bias_port) check(run.bind(frontier.bias_port, inputs.bias.description, inputs.bias.lease));
+    if (frontier.allowed_port) check(run.bind(frontier.allowed_port, inputs.allowed.description, inputs.allowed.lease));
+    check(frontier.id.bind(run)); if (frontier.valid_port) check(frontier.valid.bind(run));
     const auto queues = inference::queue_span(frontier.queues);
     check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
     auto done = submit_retained(run, queues, frontier.retirement); check(done.wait());
     ++frontier_sampling_graph_calls;
-    const auto valid = selected_sampler.enabled ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
+    const auto valid = frontier.valid_port ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
     std::int32_t pending = -1;
     check(frontier.id.read(execution, run, std::as_writable_bytes(std::span(&pending, 1))));
     if (valid != 1 || pending < 0 || pending >= vocabulary)
@@ -3765,10 +3822,13 @@ public:
                                         GraphRole role = GraphRole::kText,
                                         std::optional<cache::SamplingCursor> cursor = {},
                                         bool resample_frontier = false,
-                                         TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+                                         TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+                                         const LogitsInputs &logits = {}) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
+      throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (resample_frontier) validate_logits_inputs(selected_sampler, logits, vocabulary);
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     for (const auto rows : planned_chunks)
@@ -3801,9 +3861,10 @@ public:
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
-      if (resample_frontier && (selected_sampler.enabled || sampling_configuration_count() > 1))
-        prefix = sample_prefix(std::move(prefix), cursor.value_or(cache::SamplingCursor{}), sampling_index);
-      else if (selected_sampler.enabled && cursor) prefix = sampling_fork(std::move(prefix), *cursor, -1);
+      if (resample_frontier && (selected_sampler.enabled || !selected_sampler.modifiers.empty() || sampling_configuration_count() > 1))
+        prefix = sample_prefix(std::move(prefix), cursor.value_or(cache::SamplingCursor{}), sampling_index, logits);
+      else if ((selected_sampler.enabled || !selected_sampler.modifiers.empty()) && cursor)
+        prefix = sampling_fork(std::move(prefix), selected_sampler.enabled ? *cursor : cache::SamplingCursor{}, -1);
       else if (resample_frontier) {
         // Recovery wrappers can preserve a historical pending token. A new
         // greedy request starts from the immutable evaluated state's result.
@@ -3887,6 +3948,8 @@ public:
     check(run.bind(phase.position_port, phase.positions.read()));
     if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
       check(run.bind(phase.sampling_identity_port, phase.sampling_identities.read()));
+    }
+    if (phase.sampling_valid_port) {
       check(phase.sampling_valid.bind(run));
       if (drafts_token(definition.role)) check(phase.sampling_accept.bind(run));
     }
@@ -3947,6 +4010,8 @@ public:
     if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
       phase.sampling_identities = caller_tensor(execution.device(), dense(Type::kUInt32,
           {static_cast<std::int64_t>(requests), 3, 4}));
+    }
+    if (phase.sampling_valid_port) {
       phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
       phase.sampling_valid_values.resize(requests);
       bool float_predicates = phase.sampling_valid.facts.description.data_type() == Type::kFloat32;
@@ -4210,7 +4275,8 @@ public:
     const auto &prepared_sampling = requests.front().session->sampling_configuration();
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && sampling_index) throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
+      throw std::runtime_error("nondefault sampling is ordinary Text only");
     const auto supplied_tokens = requests.front().ids.size();
     const auto tokens = drafts_token(role) ? 2u : supplied_tokens;
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
@@ -4226,6 +4292,7 @@ public:
       if (role != GraphRole::kText && !stop_policy.is_default())
         throw std::runtime_error("nondefault request stop policy is ordinary Text only");
       if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error("batch requires one cold sampling configuration");
+      if (completion == TextCompletion::kEmitNext) validate_logits_inputs(selected_sampler, request.logits, vocabulary);
       if (session.stopping || session.failed || session.pending)
         throw std::runtime_error("batch session is stopped, failed or already pending");
       if (!supplied_tokens || request.ids.size() != supplied_tokens || tokens > capacity - session.length())
@@ -4277,6 +4344,10 @@ public:
         if (width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
         for (std::size_t row = 0; row < tokens; ++row)
           positions.push_back(static_cast<std::int32_t>(request.session->length() + row));
+      }
+      for (std::size_t j = 0; j < width; ++j) {
+        if (!phase.logits_bias_ports.empty()) check(run.bind(phase.logits_bias_ports[j], requests[j].logits.bias.description, requests[j].logits.bias.lease));
+        if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
       }
       phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
       phase.positions.write<std::int32_t>(positions);
@@ -4451,8 +4522,8 @@ public:
   void prepare_evaluation(Session &session, std::span<const std::int32_t> ids,
                           inference::PreparationObservation *preparation = nullptr,
                           GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext,
-                          const inference::RequestStopPolicy *stop_policy = nullptr) {
-    const std::array requests{EvaluationRequest{session.shared_from_this(), ids, stop_policy}};
+                          const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {}) {
+    const std::array requests{EvaluationRequest{session.shared_from_this(), ids, stop_policy, logits}};
     prepare_evaluations(requests, preparation, role, completion);
   }
 
@@ -4487,7 +4558,6 @@ public:
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
-    const auto &selected_sampler = phase.family->sampling->configuration;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto replay_route = step.replay_route;
@@ -4529,7 +4599,7 @@ public:
         check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = phase.draft_ids[j];
       }
-      if (selected_sampler.enabled && !state_only && phase.family->role != GraphRole::kVerify) {
+      if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
         check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
         const auto bad = std::ranges::find_if(phase.sampling_valid_values, [](auto value) { return value != 1; });
         if (bad != phase.sampling_valid_values.end()) {
@@ -5117,8 +5187,9 @@ std::int32_t evaluate(Model &model, Session &session, std::span<const std::int32
     const std::filesystem::path &trace = {}, bool trace_states = true,
     double *complete_seconds = nullptr, Clock::time_point *host_endpoint = nullptr,
     inference::StepObservation *observation = nullptr, inference::PreparationObservation *preparation = nullptr,
-    std::string_view probe_subdirectory = {}, const inference::RequestStopPolicy *stop_policy = nullptr) {
-  model.prepare_evaluation(session, ids, preparation, GraphRole::kText, TextCompletion::kEmitNext, stop_policy);
+    std::string_view probe_subdirectory = {}, const inference::RequestStopPolicy *stop_policy = nullptr,
+    const LogitsInputs &logits = {}) {
+  model.prepare_evaluation(session, ids, preparation, GraphRole::kText, TextCompletion::kEmitNext, stop_policy, logits);
   try { model.submit_evaluation(session); return finish_evaluation(model, session, name, trace, trace_states,
       complete_seconds, host_endpoint, observation, preparation, probe_subdirectory); }
   catch (inference::EvaluationFailure &failure) {
@@ -5210,6 +5281,7 @@ struct GenerationRequest {
   std::vector<std::shared_ptr<std::vector<std::int32_t>>> warm_inputs;
   std::size_t last_idle = 0;
   const std::size_t sampling_index;
+  LogitsInputs logits; // Owner may replace ready inputs between output episodes.
   std::size_t input_turn = SIZE_MAX, turn_input_consumed = 0;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
@@ -5514,6 +5586,10 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
   if (model.snapshot_versions.live >= model.cache_plan.resident_sessions)
     throw std::runtime_error("retire the old MTP head before rebuilding within N committed versions");
   if (stats) stats->decision_changes.reserve(cache::add(stats->decision_changes.size(), ledger.committed_count));
+  // Modifier values are per-output inputs, not replay history. Rebuild only
+  // consumed state, then restore each recorded pending/cursor below; no old
+  // mask/bias retention, historical resampling or extra RNG draw is required.
+  const bool state_rebuild = !model.sampling_configuration(sampling_index).configuration.modifiers.empty();
   const auto first_ids = ledger.records[0].committed_ids();
   const std::array calls{first_ids.size()};
   const auto role_for = [&](std::size_t rows) {
@@ -5521,7 +5597,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
         : rows == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
   };
   auto session = model.create_session(calls, {}, role_for(first_ids.size()),
-      ledger.records[0].before.sampling, false, ledger.records[0].completion, sampling_index);
+      ledger.records[0].before.sampling, false, state_rebuild ? TextCompletion::kStateOnly : ledger.records[0].completion, sampling_index);
   GenerationLedger actual(ledger.committed_count);
   actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
   std::size_t observed = 0;
@@ -5532,7 +5608,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
         ++stats->graph_calls; stats->target_rows = cache::add(stats->target_rows, fresh.accepted);
         stats->draft_rows = cache::add(stats->draft_rows, fresh.draft_rows);
         stats->step_seconds += fresh.step_seconds;
-        if (fresh.after.next_id != old.after.next_id)
+        if (!state_rebuild && fresh.after.next_id != old.after.next_id)
           stats->decision_changes.push_back({observed, old.after.next_id, fresh.after.next_id});
       }
       ++observed;
@@ -5542,10 +5618,11 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     for (std::size_t i = 0; i < ledger.committed_count; ++i) {
       const auto &source = ledger.records[i]; const auto ids = source.committed_ids();
       const auto role = role_for(ids.size());
+      const auto completion = state_rebuild ? TextCompletion::kStateOnly : source.completion;
       prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner, 0,
-          source.completion, source.input_begin, source.prefill_complete);
+          completion, source.input_begin, state_rebuild ? false : source.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
-      model.prepare_evaluation(*session, ids, nullptr, role, source.completion, &actual.stop_policy()); model.submit_evaluation(*session);
+      model.prepare_evaluation(*session, ids, nullptr, role, completion, &actual.stop_policy()); model.submit_evaluation(*session);
       (void)qwen35::finish_evaluation(model, *session, "episode" + std::to_string(i), trace, trace_states,
           nullptr, nullptr, nullptr, nullptr, {}, &actual);
       observe();
@@ -5705,6 +5782,7 @@ struct PreparedGenerationCall final {
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
+  LogitsInputs logits; // Snapshot the caller's input leases for this prepared episode.
   TextCompletion completion = TextCompletion::kEmitNext;
   std::size_t input_begin = 0;
   std::string name;
@@ -5725,7 +5803,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
-  if (model.cache_plan.draft_cache && request.sampling_index)
+  if (model.cache_plan.draft_cache && (request.sampling_index || !prepared_sampling.configuration.modifiers.empty()))
     throw std::runtime_error("nondefault request sampling is ordinary Text only");
   if (request.session && &request.session->sampling_configuration() != &prepared_sampling)
     throw std::runtime_error("request sampling cannot change after Session admission");
@@ -5739,12 +5817,27 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (steps != request.progress.output_limit())
     throw std::runtime_error("generation call quota differs from its prepared request turn");
   preflight_generation_sampling(model, request);
+  if (!sampler.modifiers.empty()) {
+    bool emits = request.progress.prefilled;
+    if (!emits) {
+      auto consumed = request.input_turn == request.progress.turn_index ? request.turn_input_consumed : 0;
+      if (consumed > request.prompt.size()) throw std::runtime_error("prefill offset exceeds its turn input");
+      if (prefix && request.progress.turn_index == 0 && !request.session) {
+        if (!request.input) throw std::runtime_error("prefix admission requires its complete token plan");
+        // No eviction/publication or directory mutation occurs between this
+        // pure length preview and the original pinned lookup below.
+        consumed = prefix->match_length(*request.input, request.prompt.size(), 1, &model, model.math_identity());
+      }
+      emits = request.prompt.size() - consumed <= max_prefill_rows;
+    }
+    if (emits) validate_logits_inputs(sampler, request.logits, model.vocabulary);
+  }
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
   if (request.progress.turn_done) throw std::runtime_error("MTP request has already completed");
   if (request.round_emitted.size() < steps - 1)
     throw std::runtime_error("MTP observer slots must be reserved for every turn before execution");
   request.ledger->bind_stop_policy(request.stop_policy, model.vocabulary);
-  PreparedGenerationCall call; call.request = &request; call.steps = steps;
+  PreparedGenerationCall call; call.request = &request; call.steps = steps; call.logits = request.logits;
   call.generation = request.progress.prefilled;
   if (!call.generation) {
     if (request.input_turn != request.progress.turn_index) {
@@ -5792,12 +5885,12 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
         auto adopted = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
             hit.payload.snapshot, admission_role,
-            request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index);
+            request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index, call.logits);
         if (!suffix) history->chunks.back().next_id = adopted->head->next_id;
         // Only original reserved metadata remains. Preconditions are unchanged
         // since preflight; no allocation or native work follows this commit.
         import_generation_prompt_ledger(*request.ledger, hit.payload.replay, full_hit, model.cache_plan.draft_cache);
-        if (sampler.enabled || model.sampling_configuration_count() > 1) {
+        if (sampler.enabled || !sampler.modifiers.empty() || model.sampling_configuration_count() > 1) {
           for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
             auto &record = request.ledger->records[i];
             record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
@@ -5823,7 +5916,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         request.prefix_full_hits = full_hit ? 1 : 0;
         request.turn_input_consumed = reused_tokens;
         call.name = std::move(hit_name);
-        if (sampler.enabled || model.sampling_configuration_count() > 1) {
+        if (sampler.enabled || !sampler.modifiers.empty() || model.sampling_configuration_count() > 1) {
           request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
           request.prefix_sampling_seconds = model.frontier_sampling_seconds - prior_sampling_seconds;
         }
@@ -5872,6 +5965,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     call.name = (request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_" : "") +
         (model.cache_plan.draft_cache ? "mtp" : "decode") + std::to_string(request.rounds.size() + 1);
   }
+  if (call.completion == TextCompletion::kStateOnly) call.logits = {};
   return call;
 }
 
@@ -5964,6 +6058,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if (&request.session->sampling_configuration() != &sampling)
       throw std::runtime_error("request sampling cannot change after Session admission");
     request.ledger->validate_sampling(sampling, model.resources_);
+    if (call.completion == TextCompletion::kEmitNext) validate_logits_inputs(sampling.configuration, call.logits, model.vocabulary);
     if (request.ledger->stop_policy() != request.stop_policy)
       throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
     if ((call.full_hit && calls.size() != 1) ||
@@ -6026,7 +6121,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     prepare_generation_record(*request.ledger, *request.session, role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
         call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
-    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy()});
+    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits});
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
         nullptr, nullptr, request.ledger.get()));

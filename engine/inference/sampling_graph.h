@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -33,6 +34,22 @@ struct Policy final {
   float temperature = 1;
   std::size_t top_k = 0; // Zero disables top-k; a positive value must fit V.
   float top_p = 1;
+};
+
+// Immutable cold port contract. Values are ordinary Graph constants or ready
+// per-episode inputs; neither their contents nor their lifetime belong to KV.
+struct LogitsPolicy final {
+  bool bias = false, allowed = false;
+  bool empty() const noexcept { return !bias && !allowed; }
+  friend bool operator==(const LogitsPolicy &, const LogitsPolicy &) = default;
+};
+template<class Value> struct LogitsInputsFor final {
+  std::optional<Value> bias;    // F32[1,V]; every value must be finite.
+  std::optional<Value> allowed; // Bool[1,V]; false removes that token.
+};
+template<class Value> struct SelectionFor final {
+  Value id;
+  std::optional<Value> valid; // Present for categorical or any modifier.
 };
 template<class Value> struct DistributionFor final {
   Value log_probabilities; // F32[1,V], in original vocabulary order.
@@ -120,6 +137,72 @@ DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
   }
   const auto normalized = r.one(c::Softmax{.axis = 1, .kind = c::SoftmaxKind::kLogSoftmax}, {selected});
   return {normalized, select(input_valid, valid_mass(normalized), no)};
+}
+
+// Ordinary precommit selection. The empty modifier branch emits the original
+// greedy/temperature-top-k-top-p graph, without new ports or validity work.
+// Raw NaN/+Inf must not disappear behind a mask. Dynamic bias itself must be
+// finite even in disallowed columns. All-masked greedy has valid=false too.
+// Failed rows only produce unusable placeholders: owners MUST check valid
+// before publishing state, IDs or the original RNG cursor.
+template<class R, class Value>
+SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> identity,
+    Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
+  if (!inputs.bias && !inputs.allowed) {
+    if (!identity) return {r.op(c::Operation(c::TopK{.count = 1}), {raw}).at(1), {}};
+    const auto p = distribution(r, raw, policy);
+    return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}), p.valid};
+  }
+  const auto description = r.spec(raw);
+  if (description.data_type() != Type::kFloat32 || description.rank() != 2 ||
+      description.dimensions()[0] != fixed(1) || !description.dimensions()[1].is_fixed() ||
+      description.dimensions()[1].fixed_value() <= 0 ||
+      description.dimensions()[1].fixed_value() > (std::numeric_limits<std::int32_t>::max)())
+    throw std::runtime_error("ordinary selection requires one F32[1,V] row");
+  const auto require_input = [&](Value value, Type type) {
+    const auto spec = r.spec(value);
+    if (spec.data_type() != type || spec.rank() != 2 ||
+        !std::ranges::equal(spec.dimensions(), description.dimensions()))
+      throw std::runtime_error("logits modifier differs from its cold typed [1,V] port");
+  };
+  if (inputs.bias) require_input(*inputs.bias, Type::kFloat32);
+  if (inputs.allowed) require_input(*inputs.allowed, Type::kBool);
+  const auto zero = r.scalar(0), one = r.scalar(1);
+  const auto no = r.cast(zero, Type::kBool), yes = r.cast(one, Type::kBool);
+  const auto select = [&](Value condition, Value a, Value b) {
+    return r.one(c::Select{}, {condition, a, b});
+  };
+  const auto reduce = [&](c::ReductionKind kind, Value value) {
+    return r.copy(r.reshape(r.one(c::Reduce{.kind = kind,
+        .accumulation_type = Type::kFloat32}, {value}), {fixed(1)}));
+  };
+  const auto row_valid = [&](Value row) {
+    const auto centered = r.binary(c::BinaryKind::kSubtract, row,
+        reduce(c::ReductionKind::kMaximum, row));
+    const auto mass = reduce(c::ReductionKind::kSum, r.unary(c::UnaryKind::kExp, centered));
+    const auto nonfinite = r.cast(r.binary(c::BinaryKind::kSubtract, mass, mass), Type::kBool);
+    return select(r.cast(mass, Type::kBool), select(nonfinite, no, yes), no);
+  };
+  auto valid = row_valid(raw), processed = raw;
+  if (inputs.bias) {
+    // Every finite x has x-x==0, without overflowing a sum of large biases.
+    // NaN and either infinity produce NaN, including masked columns.
+    const auto differences = r.binary(c::BinaryKind::kSubtract, *inputs.bias, *inputs.bias);
+    const auto bad = r.cast(reduce(c::ReductionKind::kSum,
+        r.unary(c::UnaryKind::kAbs, differences)), Type::kBool);
+    valid = select(bad, no, valid);
+    processed = r.binary(c::BinaryKind::kAdd, raw, *inputs.bias);
+  }
+  if (inputs.allowed) processed = select(*inputs.allowed, processed,
+      r.scalar(-(std::numeric_limits<float>::infinity)()));
+  if (identity) {
+    const auto p = distribution(r, processed, policy);
+    return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}),
+        select(valid, p.valid, no)};
+  }
+  const auto combined = select(valid, row_valid(processed), no);
+  const auto safe = select(combined, processed, zero);
+  return {r.op(c::Operation(c::TopK{.count = 1}), {safe}).at(1), combined};
 }
 
 // log_p/log_q/log_bonus are F32[1,V], already normalized AFTER the caller's
