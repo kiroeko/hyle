@@ -1,0 +1,466 @@
+{
+  "schema": "hyle.cpu-host-direct-io-screen.v1",
+  "status": "CLOSE_NOT_MERGED",
+  "generated_UTC": "2026-10-25T21:56:52.749336+00:00",
+  "scope": "Private buffered CPU FileStream direct-destination IO candidate. Existing typed endpoint, WriteLease, exact IO and late Context/Queue gate. No canonical product edit, public API, new runtime, executor, registry or option.",
+  "results": {
+    "status": "CLOSE_NOT_MERGED",
+    "scope": "CPU buffered host direct-IO candidate; canonical unchanged. Correctness gates separated from performance screen.",
+    "recommendation": "CLOSE_NOT_MERGED: actual loading/startup endpoints are slower with nonoverlapping ranges; all generation TPS ranges overlap. Fewer physical copies is not itself net benefit. No retries/polling/tuning/further samples.",
+    "source": {
+      "product_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\source-pins.json",
+        "bytes": 2435,
+        "sha256": "a66516b1f2a8fa3dce146c3c7811df42e9d131b3d049877c8de8088a82e69b96"
+      },
+      "product_patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\source.patch",
+        "bytes": 13336,
+        "sha256": "57fe3e90cdf00eb3da2890795956a4d48eef15d99855b077337b90e7a3e86f13"
+      },
+      "test_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\test-pins.json",
+        "bytes": 361,
+        "sha256": "859c407ba3eb4d6968e3ee2d05d5c07358b82c7d3b43d33b8e1738ed92d6c4c2"
+      },
+      "test_patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\test.patch",
+        "bytes": 9209,
+        "sha256": "e3156c8475fd06e6df4fcd2e41f9b04931ba896881f42351b4d6627156440d7e"
+      }
+    },
+    "correctness": {
+      "tests": 17,
+      "failures": 0,
+      "skips": 0,
+      "suite_run": {
+        "exit": 0,
+        "pid": 58868,
+        "seconds": 0.4990082999574952
+      },
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\attempt3\\suite-run\\results.xml",
+        "bytes": 6209,
+        "sha256": "235d699bb873342fb6b50e394b966cdd02f6db9be0d023d70d9ba012ac08dedc"
+      },
+      "behavior_process": {
+        "exit": 0,
+        "pid": 59080,
+        "seconds": 7.114769399981014
+      },
+      "full_stdout_nontime_difference_count": 0,
+      "raw_diff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\attempt3\\behavior1\\nontime-diff.json",
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "IDs": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198,
+        1445,
+        18904,
+        1120,
+        5586,
+        11,
+        51338,
+        11,
+        36760,
+        11,
+        1697
+      ],
+      "target_rows": 169,
+      "decode_outputs": 15,
+      "loader_report_changes": [
+        {
+          "field": "native_calls",
+          "before": "627",
+          "after": "0"
+        },
+        {
+          "field": "phase_completions",
+          "before": "627",
+          "after": "0"
+        },
+        {
+          "field": "copied_physical_bytes",
+          "before": "3763655360",
+          "after": "0"
+        }
+      ],
+      "loader_unchanged": {
+        "backend": "cpu",
+        "staging_bytes": "16777216",
+        "io_calls": "627",
+        "native_waits": "0",
+        "host_waits": "0",
+        "peak_backing_bytes": "3780432576"
+      },
+      "performance_samples_pooled": false
+    },
+    "first_build_failures": [
+      {
+        "stage": "common FileStream host strict compile",
+        "pid": 26084,
+        "exit": 2,
+        "error": "C2039 ResultError has no Update; explicit local Status required",
+        "models_run": 0,
+        "link_runs": 0,
+        "passed_core_compile_pid": 14112
+      },
+      {
+        "stage": "test TU strict compile",
+        "pid": 55448,
+        "exit": 2,
+        "error": "C2872 ambiguous detail namespace because both hyle and hyle::compute are imported; qualify hyle::compute::detail",
+        "models_run": 0,
+        "link_runs": 0,
+        "five_product_TUs": "all compiled PASS across attempt1/attempt2"
+      }
+    ],
+    "build": {
+      "five_product_TUs_total": 5,
+      "core_success_reused_from_attempt1": 14112,
+      "four_other_product_TUs_succeeded_attempt2": true,
+      "attempt3_only_new_test_TU": true,
+      "Model_TUs": 0,
+      "SDK_builds": 0,
+      "device_TUs": 0,
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\attempt3\\ready.json",
+        "bytes": 15341,
+        "sha256": "625dedd1b48b3b51252efe3624e8c75bd8a372162e4e13967aa658a12af888c7"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\attempt3\\model-link\\hyle.exe",
+        "bytes": 141490176,
+        "sha256": "c229241ee3bfecaa3dea6bbdfe8d81261ca0ee1d9d7add12d0371e8a253c2d6a"
+      }
+    },
+    "fresh_performance": {
+      "timing": {
+        "H": {
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.895052,
+            "min": 0.889762,
+            "max": 0.898366,
+            "samples": [
+              0.898366,
+              0.889762,
+              0.895052
+            ]
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.0034477,
+            "min": 0.998694,
+            "max": 1.012261,
+            "samples": [
+              1.012261,
+              0.998694,
+              1.0034477
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 43.331453854970135,
+            "min": 43.26138599648599,
+            "max": 43.53645369462785,
+            "samples": [
+              43.26138599648599,
+              43.331453854970135,
+              43.53645369462785
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 11.415738833466744,
+            "min": 11.027074187141062,
+            "max": 11.567911661873953,
+            "samples": [
+              11.415738833466744,
+              11.027074187141062,
+              11.567911661873953
+            ]
+          },
+          "output_tokens_per_second": {
+            "count": 3,
+            "median": 3.2829052414639386,
+            "min": 3.2558120416452545,
+            "max": 3.3099184187857733,
+            "samples": [
+              3.2829052414639386,
+              3.2558120416452545,
+              3.3099184187857733
+            ]
+          }
+        },
+        "C": {
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.0035,
+            "min": 0.995826,
+            "max": 1.01356,
+            "samples": [
+              0.995826,
+              1.01356,
+              1.0035
+            ]
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.1165493,
+            "min": 1.1018937,
+            "max": 1.1200299,
+            "samples": [
+              1.1018937,
+              1.1200299,
+              1.1165493
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 43.35936659736301,
+            "min": 43.349074020148365,
+            "max": 43.478557928035535,
+            "samples": [
+              43.349074020148365,
+              43.35936659736301,
+              43.478557928035535
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 11.419096840792667,
+            "min": 11.361128308493113,
+            "max": 11.433491532203723,
+            "samples": [
+              11.419096840792667,
+              11.433491532203723,
+              11.361128308493113
+            ]
+          },
+          "output_tokens_per_second": {
+            "count": 3,
+            "median": 3.289712026011095,
+            "min": 3.2880238846987018,
+            "max": 3.2906459768397758,
+            "samples": [
+              3.2880238846987018,
+              3.289712026011095,
+              3.2906459768397758
+            ]
+          }
+        }
+      },
+      "comparison": {
+        "weights_load_seconds": {
+          "C_over_H_percent": 12.116391002980853,
+          "better_direction": "lower",
+          "ranges_overlap": false
+        },
+        "startup_to_ready_seconds": {
+          "C_over_H_percent": 11.271299939199618,
+          "better_direction": "lower",
+          "ranges_overlap": false
+        },
+        "prefill_tokens_per_second": {
+          "C_over_H_percent": 0.06441681482993733,
+          "better_direction": "higher",
+          "ranges_overlap": true
+        },
+        "decode_output_tokens_per_second": {
+          "C_over_H_percent": 0.02941559346187894,
+          "better_direction": "higher",
+          "ranges_overlap": true
+        },
+        "output_tokens_per_second": {
+          "C_over_H_percent": 0.20734026864939192,
+          "better_direction": "higher",
+          "ranges_overlap": true
+        }
+      },
+      "wholeprocess_CPU": {
+        "H": {
+          "user_seconds": {
+            "count": 3,
+            "median": 19.921875,
+            "min": 19.703125,
+            "max": 19.953125,
+            "samples": [
+              19.921875,
+              19.953125,
+              19.703125
+            ]
+          },
+          "kernel_seconds": {
+            "count": 3,
+            "median": 1.921875,
+            "min": 1.765625,
+            "max": 2.109375,
+            "samples": [
+              1.921875,
+              1.765625,
+              2.109375
+            ]
+          },
+          "total_seconds": {
+            "count": 3,
+            "median": 21.8125,
+            "min": 21.71875,
+            "max": 21.84375,
+            "samples": [
+              21.84375,
+              21.71875,
+              21.8125
+            ]
+          }
+        },
+        "C": {
+          "user_seconds": {
+            "count": 3,
+            "median": 19.453125,
+            "min": 19.421875,
+            "max": 19.453125,
+            "samples": [
+              19.421875,
+              19.453125,
+              19.453125
+            ]
+          },
+          "kernel_seconds": {
+            "count": 3,
+            "median": 1.984375,
+            "min": 1.875,
+            "max": 2.015625,
+            "samples": [
+              1.984375,
+              1.875,
+              2.015625
+            ]
+          },
+          "total_seconds": {
+            "count": 3,
+            "median": 21.40625,
+            "min": 21.328125,
+            "max": 21.46875,
+            "samples": [
+              21.40625,
+              21.328125,
+              21.46875
+            ]
+          }
+        }
+      },
+      "protocol": "H,C,C,H,H,C timing; H,C independent memory",
+      "samples_per_arm": 3,
+      "independent_memory_processes_per_arm": 1,
+      "old_samples_pooled": false,
+      "retries": 0,
+      "warmups": 0,
+      "peer_processes": 0,
+      "all_stdout_and_loader_contracts_pass": true,
+      "PIDs": [
+        47272,
+        11408,
+        2668,
+        37780,
+        37948,
+        53536,
+        21724,
+        23916
+      ]
+    },
+    "memory": {
+      "H": {
+        "peaks": {
+          "sampled_max_working_set_bytes": 5712048128,
+          "observed_os_peak_working_set_bytes": 5712064512,
+          "sampled_max_private_commit_bytes": 6511484928,
+          "observed_os_peak_commit_bytes": 6511484928,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "thread_count_samples": 57,
+        "OS_thread_peak": 17,
+        "OS_thread_median": 17,
+        "setup_error": null,
+        "thread_error": null
+      },
+      "C": {
+        "peaks": {
+          "sampled_max_working_set_bytes": 5711175680,
+          "observed_os_peak_working_set_bytes": 5711220736,
+          "sampled_max_private_commit_bytes": 6511362048,
+          "observed_os_peak_commit_bytes": 6511382528,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "thread_count_samples": 57,
+        "OS_thread_peak": 17,
+        "OS_thread_median": 17,
+        "setup_error": null,
+        "thread_error": null
+      }
+    },
+    "limitations": [
+      "Original P154/16/C256/N1/R1 CPU4 greedy endpoints; Windows only. No GPU/mac/Linux/mixedModel or other request-throughput claim.",
+      "weights_load_seconds and startup_to_ready_seconds are original producer measurements; different historical startup, diagnostic or old throughput samples are not pooled.",
+      "GetProcessTimes after exit counts all threads/startup/loading/generation/teardown; not decode-only CPU cost, energy or utilization.",
+      "Independent memory/thread samples are observed lower bounds, not allocator totals or busy threads. GPU PID instances absent remain null.",
+      "Stage backing/allocation remains16MiB; source mechanism changes data copies, not staging budget or resource-owner policy."
+    ],
+    "decision": {
+      "status": "CLOSE_NOT_MERGED",
+      "canonical_product_changed": false,
+      "reason": "Correctness checks passed, but the candidate loading and startup-to-ready times are slower with disjoint sample ranges. Prefill/decode/combined ranges overlap. No stable net throughput benefit; fewer copy calls alone is insufficient to merge.",
+      "next_action": "Stop this candidate, no extra samples/tuning. Do not speculate about the cause of slower IO."
+    }
+  },
+  "mechanism": "CPU-only optional private mapping/finish callbacks qualify original catalog/physical host identity and unique writer. Flush capability is checked before IO for every mapped carrier. Unsupported capability returns to the original staged route. Actual IO retirement, explicit flush/close, second cancellation/deadline checkpoint and original late QueueSequence gate precede unchanged group publication.",
+  "source_review": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\independent-review.json",
+      "bytes": 11042,
+      "sha256": "24defba68d25b4757623b925869f6001fb02fc595274c0f19cda43377cc64d64"
+    },
+    "history": "Initial coherent-flush capability omission was fixed before compilation. The independent resolved review covers that change and three regression source cases. Its test pins precede a later two-name qualification fix for an ambiguous detail namespace; final test pins and successful strict compile/runtime receipts are separate authoritative records.",
+    "later_compile_corrections": [
+      "Explicit local Status replaces auto ResultError before Update.",
+      "Two test-only detail:: references become hyle::compute::detail::. No mathematical/control/lifetime change."
+    ]
+  },
+  "correctness_scope": "The original FileStream.* target passed17 Windows tests, including3 added tests. A separate sole normal P154/16/C256/N1/R1 CPU4 greedy behavior had complete stdout non-time0diff versus caller217e and identical16IDs/169target/15decode. These are correctness observations, not performance samples.",
+  "closure_scope": "Five host product TUs refreshed together: batch_transfer, common file_stream, stream_sources, CPU factory and CUDA factory. Passed core object reused from attempt1, four remaining passed products from attempt2; final test object compiled in attempt3. No old/new StreamCopyEndpoint layout mixing in either final image. All other caller217e absolute link inputs preserved; Model/weights/provider/SDK/device TUs not rebuilt. GPU factory is linked but no GPU work was run.",
+  "precision": "Existing frozen caller217e CPU BF16 weights, original activation/store points and F32 operation boundaries; native4/ATen4 with caller executor unchanged. No per-run kernel/ISA sampling, cross-dtype bit/quality, multi-request or mixed-device claim.",
+  "counter_scope": "copied_bytes remains logical completed source-to-destination progress, verified by suite. Real loading stderr keeps627 IO calls,16MiB stage and backing budget; actual native calls/phases627->0 and physical-copy bytes3,763,655,360->0. These changes are expected work counters, not evidence of speed or freed staging.",
+  "measurement_limits": [
+    "Fresh6 timing+2 separate memory processes only; no old correctness/behavior/window samples pooled, warmup, retry, peer process or profiler.",
+    "Original producer weights_load_seconds/startup_to_ready and154/15/16 prefill/decode/combined denominators retained; do not attribute changes between historical windows.",
+    "Post-exit GetProcessTimes measures all process threads, startup/loading/generation/teardown. It is not decode CPU cost or energy.",
+    "PSAPI/PDH and OS-thread sampling occurs only in independent memory processes. Peaks are lower bounds; OS thread count is not active-thread count. Missing GPU instances remain null.",
+    "Windows CPU evidence only. Direct-IO files, mapping sources/writeback and GPU factories retain staged routes. No Mac/Linux/native-GPU runtime claim.",
+    "No explanation of slower IO is established by these measurements. No extra samples or implementation tuning follow this closed candidate."
+  ],
+  "cleanup_proposal": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\host-direct-io1\\cleanup-candidates.json",
+    "bytes": 2403,
+    "sha256": "1b7eb5749e08838676ef91b7e3b58e93bebcf07995a296881fbc52a01024c891"
+  },
+  "publication": "Offline source/raw-results archive only; no model/build/network during publication.",
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.zip",
+    "bytes": 416372,
+    "sha256": "545980367b6a709d967237e0ea7e6dcb1d190a993c10b7da37b8eccbcc5b9e87",
+    "members": 165,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "exclusions": "NoEXE/OBJ/LIB/EXP/DLL/map/SDK/model or whole frozen source tree; no old timing or memory samples."
+  }
+}

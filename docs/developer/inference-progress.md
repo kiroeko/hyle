@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 05:46（北京时间）。整体粗估 **86%**。四请求普通随机采样decode约＋10.8%、综合＋9.8%，已合入；单请求／MTP正式CUDA对照未刷新，原差距仍保留。CPU共享池与原生有限轮询已合入；本次调用线程配置另窗decode＋6.54%、综合＋3.36%，采用为后续同负载配置，不是新库实现。Graph自身未见大热点；host直接IO候选修复独审回退问题后正做有限检查。加载候选不计decode收益。
+更新：2026-10-26 06:00（北京时间）。整体粗估 **86%**。四请求普通随机采样decode约＋10.8%、综合＋9.8%，已合入；单请求／MTP正式CUDA对照未刷新，原差距仍保留。CPU共享池与原生有限轮询已合入；本次调用线程配置另窗decode＋6.54%、综合＋3.36%，采用为后续同负载配置，不是新库实现。Graph自身未见大热点；host直接IO虽通过正确性检查，加载却慢约12.1%，已关闭。继续核原生图聚合接点，不把调用次数当收益。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -27,7 +27,7 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| CPU载权直接IO候选 | 性能设施复用 | 七文件私有候选已修coherent资源flush回退缺口，复用原FileStream suite检查及五个host TU刷新 | 约55% |
+| CPU原生图聚合接点核对 | 性能设施复用 | 已核原矩阵图及参考源码，继续看已有ggml region发现／编译机制能否保精度存储点减少程序边界 | 约20% |
 
 ## 本次完成与剩余顺序
 
@@ -43,8 +43,9 @@
 - CPU等待策略：[新两臂筛选](../evidence/performance/inference-cpu-polling-screen-2026-10-26.json)8新进程全成功、工作0差异，9项runtime及先行正常行为也通过，保原生默认有限轮询已采用。BF16点积／MUL_MAT相关核心与参考相同，不能归因于旧版CPU数学；参考每整图临时创建默认pool，并非跨step常驻自旋。
 - CPU Graph归因：[单TU诊断](../evidence/performance/inference-cpu-graph-submission-attribution-2026-10-26.json)10944步及64个scope完整、0溢出、非时间工作0差异。同run decode墙时约99.05%在provider调用包络内，Graph其余每输出约0.919ms且含仪器；未见支撑大改Graph提交机制的量级，不跨run减去旧native耗时。
 - CPU调用配置：[新两臂筛选](../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)六计时＋两独立内存进程全成功、工作0差异。原生4与ATen4不变，去掉测试入口的worker-only交接后decode＋6.54%、综合＋3.36%。默认executor本来为空，未改库或绕过用户回调；通用provider分工可能改变，不能把收益全算为纯交接耗时。后续该延迟负载采用调用线程配置。
-- 载权候选：源码确认CPU原权重仍有约3.76GB私有backing及staging复制；现文件映射与直接host IO有可复用设施，合法只读导入与直读路径尚未接通。属于加载／内存优化候选，不计decode收益。
-- 剩余顺序：继续核CPU其它provider／Graph流程及参考同项成本，再按有量级依据的CPU／CUDA普通及MTP热点推进；加载候选随后处理，混合FFN放置与参考整层offload另列。当前greedy MTP仍未追平。
+- CPU矩阵源码：[有限复核](../evidence/research/inference-cpu-matmul-granularity-review-2026-10-26.json)未发现审查路径大权重重复转型／pack。Hyle中间BF16存储点与参考保留F32结果是实际数值合同差异；187矩阵／569原生小图来自旧诊断，不能由次数预测吞吐或把旧33ms包络当转换成本。现有region聚合机制仍在核对，未改精度。
+- 载权取舍：[直接host IO筛选](../evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.json)五个host TU、17项原suite及独立真实行为通过，但新六计时＋两独立内存窗口加载0.895→1.004秒（慢12.12%）、startup到ready1.003→1.117秒（慢11.27%），三样本范围不重叠。prefill43.331→43.359、decode11.416→11.419、综合3.283→3.290 tok/s均范围重叠；工作集各约5.320GiB、线程峰17，GPU缺测。627次／约3.76GB显式复制虽消除，staging与backing预算不变；关闭、不合入、不补样，不猜慢因。合法只读映射导入仍为设计，未计收益。
+- 剩余顺序：先核CPU原生图边界及参考同项成本，再按有量级依据的CPU／CUDA普通及MTP热点推进；只读映射加载候选与混合FFN放置另列。当前greedy MTP仍未追平。
 
 ## 最新完整性能对照
 

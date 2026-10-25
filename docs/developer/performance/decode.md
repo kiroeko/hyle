@@ -29,7 +29,11 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 随后[调用线程配置筛选](../../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)只换测试入口对象，native4／ATen4及Scheduler4寿命不变，原borrowed executor concurrency4改用默认empty executor concurrency1。一个正常行为及六计时＋两独立内存进程全成功，完整非时间报告0差异。prefill42.247→43.362（＋2.64%，范围重叠）、decode10.842→11.551（＋6.54%，范围不重叠）、综合3.182→3.289（＋3.36%，范围不重叠）；整进程CPU时间中位22.328→21.703秒，两边线程峰17、工作集约5.320GiB，GPU仍缺测。此延迟负载后续采用调用线程；默认executor原本为空，没有库实现或默认策略改动，也不能绕过用户的执行位置要求。通用provider分工可能改变，不把全部收益签成纯交接耗时。没有新参考进程，不跨窗拼算收益或剩余差距。
 
-加载期另有两个候选：[原权重导入](../../../engine/models/qwen35/weights.cc)目前分配约3.76GB私有backing，[FileStream](../../../src/compute_stream/file_stream.cc)先读staging再复制。合格host目的直接IO已准备私有候选，正在原suite有限检查；合法只读映射导入仍为设计。须保真实mapping owner、ReadLease与IO退休／发布，不能将裸借用视图伪装成所有者。两项均不计作decode或确定工作集节省。
+[CPU矩阵源码复核](../../evidence/research/inference-cpu-matmul-granularity-review-2026-10-26.json)未发现审查路径大权重重复转换／pack；旧catalog每步187个矩阵均为BF16×BF16，66个wide的权重transpose只改描述，输出转换共811,008B／步。Hyle保留BF16中间存储点，参考主要保留F32结果、在MUL_MAT内转换输入，两者数学路径并非逐项相同。569个Hyle原生小图与参考整图执行的源码差异真实存在，但尚未单独计时；旧wide33.032ms不是转换／图kickoff的可回收成本。后续先看已有region聚合机制，不改数值合同来假称同工作提速。
+
+加载期[host直接IO候选](../../evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.json)已关闭、不合入、不补样。私有实现复用实际CPU目的映射和原晚期Queue门，IO退休、flush／close及整组发布保持；修复coherent资源缺flush时的原路回退后，五个host TU及原FileStream Windows17项通过，独立真实行为工作不变。627次、3,763,655,360B显式复制降为零，但不能据此预测加载更快。
+
+新六计时＋两独立内存进程全成功：加载中位0.895052→1.003500秒（慢12.12%）、startup到ready1.003448→1.116549秒（慢11.27%），三样本范围均不重叠。prefill43.331→43.359、decode11.416→11.419、综合3.283→3.290 tok/s均范围重叠；工作集各约5.320GiB、private commit约6.064GiB、线程峰17、GPU缺测。staging仍16MiB、逻辑backing预算仍约3.78GB；不猜加载变慢的原因，不将整进程CPU时间微降当能耗或decode收益。正常产品仍走原staging复制；合法只读映射导入仍为设计，须有真实mapping owner及原权限／预算接点，不能将借用视图伪装成所有者。
 
 ## 目标与当前基线
 

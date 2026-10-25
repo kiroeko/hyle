@@ -1,0 +1,188 @@
+{
+  "status": "BOUNDED_SOURCE_REVIEW_COMPLETE_NO_NEW_IMPLEMENTATION_OR_RUN",
+  "scope": "LargestBF16M1 matrix graphs in retained native catalog versus actual retained peerCPU source. Current latency choice caller/native4/ATen4;no ISA reaudit,no host-direct candidate changes.",
+  "conclusions": [
+    {
+      "kind": "No repeated whole-weight conversion or pack found in audited matrix path",
+      "facts": [
+        "Catalog:187MUL_MAT/step,allW/A BF16. Wide66 K2048/N6144:TRANSPOSE(metadata,sameWaddress),RESHAPE,MUL_MAT,CPY,RESHAPE;no25,165,824B Wcopy.",
+        "Eachwide CPY F32toBF16 writes12,288B;66outputs=811,008B/step. All187matrixgraphs contain186 F32toBF16 and48BF16toF32 CPYs,nominaloutputs1,158,528B/step. These are not isolatedtime or measuredDRAM.",
+        "Head WBF16span1,017,118,720B is read directly. ItsDUP is only4,096B activation. Constantmap is cold;hotrun remapsports,not W.",
+        "Peer build_lora_mm retains the F32 result; its F32 activation is converted to BF16 inside native MUL_MAT. Hyle's BF16 input skips that conversion. Hyle's additional BF16 storage point is part of its numerical contract, not a redundant copy that can simply be removed."
+      ],
+      "anchors": [
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "line": 1501
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "line": 1219
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "line": 645
+        },
+        {
+          "path": ".scratch/architecture-refactor-2026-10-18/llama-matched-consumer/source/src/llama-graph.cpp",
+          "line": 1518
+        },
+        {
+          "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cpu/ggml-cpu.c",
+          "line": 1323
+        }
+      ],
+      "boundary": "PeerF32flow is source-derived;no newpeerperop trace. No claim allprovider partitioning/algorithms are identical or storepoints can be removed."
+    },
+    {
+      "kind": "Real graph granularity difference;no measured recoverable cost",
+      "facts": [
+        "Catalog:Hyle569nativegraphs/step,187withMUL_MAT. Currentteam isContextshared;graph/cplan/workspace preparedcold. No perstep poolcreate/free/plan.",
+        "PeerCPUbackend plans/submits itswholegraph;nullattachedpool causesdefault50poolcreate/free for thatgraph. Oneordinaryllama_decode/token sourcepath is not a newnativecallmeasurement.",
+        "Real distinction:manyHylegraphkickoff/completion boundaries,not hundreds ofnewworkerpools. Perboundarytime is unknown."
+      ],
+      "anchors": [
+        {
+          "path": "src/compute_ggml_runtime/cpu_execution.cc",
+          "line": 160
+        },
+        {
+          "path": "src/compute_ggml_runtime/cpu_execution.cc",
+          "line": 177
+        },
+        {
+          "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cpu/ggml-cpu.cpp",
+          "line": 173
+        },
+        {
+          "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cpu/ggml-cpu.c",
+          "line": 3516
+        }
+      ],
+      "decision": "No quantified new mechanism to implement. Many smallgraphs/mandatory casts require same-item timing;do not infer bigrestructure from counts."
+    }
+  ],
+  "time_boundary": "Oldcatalog observation usedpoll0/borrowed4+instrumentation. Wide33.032ms/head19.409ms envelopes include dot+wrappers,not currentcaller conversion/kickoff costs or recoverablebounds. No crossrun subtraction.",
+  "inputs": {
+    "catalog": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\facts.json",
+      "bytes": 32906,
+      "sha256": "dcbf8ccdaa52e71b91d2822c3192d7f826e56e128367294e52514a1a6dba0dc6"
+    },
+    "catalog_raw": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\run\\stderr.log",
+      "bytes": 5964022,
+      "sha256": "3fc37a77bd86a475b8873c92340b11be08a018a1ffcebe21e475c0d625ef92e0"
+    },
+    "parity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-native-source-parity.json",
+      "bytes": 12467,
+      "sha256": "1f00eac3fa682e92efbed7acf22732b7de9998763f1a29b9844fd38f5707e74b"
+    },
+    "caller_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\ready.json",
+      "bytes": 3084,
+      "sha256": "64cbc325158641a4d1db01a3c81e70425716572e52a8673f8bbb617fea6cda80"
+    },
+    "caller_window": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\screen1\\final-summary.json",
+      "bytes": 28183,
+      "sha256": "cb991c63bcca80680d82a6efa2eea90e8c35be995748608697695f0581edefa4"
+    }
+  },
+  "source_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "bytes": 120159,
+      "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime\\cpu_execution.cc",
+      "bytes": 7633,
+      "sha256": "365aaf3b4f7622eadf61592a2c470302f38bda3124cd36f8708e44378a6810ea"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-graph.cpp",
+      "bytes": 138753,
+      "sha256": "90f5c6f082790599124630680ba1293d702b369e9ce9088680d210b69905c8d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\models\\qwen35.cpp",
+      "bytes": 28105,
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\src\\ggml-cpu\\ggml-cpu.c",
+      "bytes": 134274,
+      "sha256": "7331342629eb447d08bfc5cb5d2e69cb26086b7a5413a126c76a99b9e66ddf6a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\src\\ggml-cpu\\ggml-cpu.cpp",
+      "bytes": 24546,
+      "sha256": "b620923a8966395ba9c5f2ee4acb35b8d42ea77a58943d7eb733a917c4c1cafb"
+    }
+  ],
+  "new_builds": 0,
+  "new_model_processes": 0,
+  "GPU": 0,
+  "HTTP": 0,
+  "canonical_changes": 0,
+  "fairness_boundary": "Sameinput/weights and16greedyIDs do not establish operationwise computation equivalence. Hyle explicitBF16intermediate storepoints versus peerF32retained results are an actual numerical-contract difference;no precision change proposed or tested. Graphcounts alone are not throughput.",
+  "schema": "hyle.cpu-matmul-granularity-source-review.v1",
+  "source_only": true,
+  "new_runs": 0,
+  "generated_UTC": "2026-10-25T21:57:40.163706+00:00",
+  "private_memo": {
+    "path": ".scratch/inference-cpu-shared-pool-20261026/cpu-matrix-source-review.json",
+    "bytes": 6792,
+    "sha256": "8971edf3de820cbc8f162378e1f616707f55f9b34d16887fd2d66b5bc5a2702f"
+  },
+  "peer_version": {
+    "host_upstream_commit": "d9e03f1074dbd2979126d91dce1b5d304ec8394e",
+    "host_ggml_pin": "456172ec733a135778adcd32d00e576a58232e45",
+    "actual_native_source_snapshot": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d",
+    "actual_native_boundary": "Retained4e1a snapshot/AVX2 archive,not a claim latest upstream. Exact source hashes in source_pins;host expectedGGMLpin and retainednative source identity are separate facts.",
+    "peer_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\link\\peer-avx2.exe",
+      "bytes": 35860992,
+      "sha256": "27a49a73fdafccde9528bda413aee69f2e2d755b7705fa60bbd60fc8a8ca5404"
+    },
+    "peer_CPU_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\archive\\ggml-cpu-avx2.lib",
+      "bytes": 3162550,
+      "sha256": "73a642b2b29427a44ef5cd25e5fdda61a37c4d48a6e6ed02afd87347ab89b226"
+    },
+    "host_metadata": {
+      "path": ".scratch/architecture-refactor-2026-10-18/llama-matched-consumer/summary.json",
+      "bytes": 6308,
+      "sha256": "5ecf36a8ab4dc27f4c913e750895b847032645c7a75cc34af35c44b986a3c812"
+    },
+    "peer_ready": {
+      "path": ".scratch/inference-cpu-representative-20261026/peer-avx2/ready.json",
+      "bytes": 3982,
+      "sha256": "24202e2a094cccc7508a6fcd7898543bdce4526faab30f4aa652d983682737b2"
+    }
+  },
+  "public_evidence": [
+    {
+      "path": "docs/evidence/performance/inference-cpu-native-attribution-2026-10-26.json",
+      "bytes": 24113,
+      "sha256": "6d4dca6b074ccd542f4ca18f2b4f3770b28c7ea6dbd0672f279c7e2408b98415",
+      "use": "Originalnativegraph catalog/one-run composite envelope;historical instrumented timings,not currentcaller cost."
+    },
+    {
+      "path": "docs/evidence/performance/inference-cpu-polling-screen-2026-10-26.json",
+      "bytes": 29175,
+      "sha256": "318b2bc8faa205a6f64bf7986d5753af1c21cb18ccb226ef85466083397bedad",
+      "use": "cold_source.parity_review pins retained cpu-native-source-parity;ZIP contains exact BF16dot/MUL_MAT source comparison."
+    },
+    {
+      "path": "docs/evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json",
+      "bytes": 19448,
+      "sha256": "1f8347215e33eea831dc086cddc48b284b8d751616c6c567f79568137b6e1431",
+      "use": "Current selectedcaller/native4/ATen4 finite configuration window;no new runs here."
+    }
+  ],
+  "next_boundary": "A later source review may inspect existingGraph provider coldaggregation while preserving BF16storepoints. No precision change,newIR/executor or refactor is proposed/tested here.",
+  "publication_note": "Offline copy only;initial locale-default read failed on UTF8memo and was corrected to explicitUTF8. No model/build/source changes."
+}
