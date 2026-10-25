@@ -8,9 +8,11 @@
 
 [33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。另补[Q27 fidelity GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)，原type30按plain 1值2字节承载，计算路径与精度策略不变。
 
-[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)保留的实际连接包括CT BF16 block128的Model策略、17／20混合角色及19 fused gate_up源拆分；共享数学的后续进展见下文。16的[原shard193复核](../evidence/research/quark-q24-excluded-roles-2026-10-25.json)已确认28个excluded普通权重为BF16，可复用现rank2 reader；该局部事实不推广到全部977项或未存header的head。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
+[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)保留的实际连接包括17源跨度、20混合角色及19 fused gate_up源拆分；CT普通冷入口和有限组合的后续进展见下文。16的[原shard193复核](../evidence/research/quark-q24-excluded-roles-2026-10-25.json)已确认28个excluded普通权重为BF16，可复用现rank2 reader；该局部事实不推广到全部977项或未存header的head。它们不等于缺新算子，也不能全部改写成仅原payload未跑；自然提交前的logits政策输入边界另行设计。
 
 22的[Kimi CT INT4独立源角色组合](../evidence/correctness/kimi-ct-int4-selected-source-2026-10-25.json)已接原Q／shape／BF16 SF合同、两代选中bank和现有grouped Graph。CPU单例通过，检查实际shape正文、旧bank与输出寿命，并以双项输入区分中间BF16权重存储和仅末端舍入。数值为生成fixture；不代表原payload、完整专家FFN或整模型通过。
+
+17的[ModelOpt混合精度有限组合](../evidence/correctness/q24-modelopt-mixed-source-2026-10-25.json)将NVFP4专家down、逐步BF16合并／残差、F32归一化与后续静态FP8投影接在同一Graph；七个物理角色分别保留只读租约。两组生成fixture在CPU通过，保留首次BF16 Fill标量类型错误及修正。仅六个角色有已存原header，layer41 SA137仍缺精确跨度；不据此签原payload、完整FFN／GDN或整模型。
 
 CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18／21 selected bank、原数值及完整Model／MoE仍分开记录。
 

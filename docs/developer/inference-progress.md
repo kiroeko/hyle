@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 20:43（北京时间）。整体粗估 **72%**，上次为71%。这次完成CT BF16 block128普通冷接线与Kimi INT4有限源组合；共同架构复审和深入性能阶段尚未完成。
+更新：2026-10-25 20:48（北京时间）。整体粗估 **72%**，上次为71%。这次完成CT BF16 block128普通冷接线、Kimi INT4源组合及NVFP4／FP8有限连接；共同架构复审和深入性能阶段尚未完成。
 
 百分比估计剩余开发工作量，不是功能覆盖率、测试通过率或分支的简单平均。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座。新增缺项继续补；MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -10,7 +10,8 @@
   - 模型／量化／算子与融合接线：约87%
     - CT BF16 block128普通策略／角色／Recipe入口：100%
     - Kimi CT INT4 W1独立源角色与两代bank组合：100%
-    - 其余选定混合源／专家bank组合：约25%
+    - ModelOpt NVFP4→BF16合并→静态FP8有限连接：100%
+    - 其余选定混合源／专家bank组合：约35%
   - prefill／decode／精度／上下文与完整状态复核：约75%
   - 多会话状态／前缀复用／隔离／淘汰恢复：约70%
   - 多请求接纳／取消／错误隔离／背压／公平性：约82%
@@ -30,13 +31,13 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| Q24 ModelOpt混合角色组合 | 功能／源组合17 | 已有独立NVFP4与static FP8同图候选，准备有限CPU执行并独审；缺失SA137原header明确保留 | 约40% |
+| fused gate/up源拆分与bank组合 | 功能／源组合19 | 核原W／SF半拆、global/local map和同代lease，复用现reader与bank设施 | 约10% |
 
 ## 本次完成与剩余顺序
 
-CT已接源配置→显式reader策略→原W／SF角色→投影绑定→共用Graph数学；保留symbolic token行数和原placement。20项Python、两组C++元数据／精度检查、4项CPU回归和T1／T3 Recipe投影通过。Kimi INT4组合也已通过CPU用例并提交。两项均含生成fixture，不能据此宣布原payload、完整Model／MoE或其它平台通过；本次未刷新性能。
+CT已接源配置→显式reader策略→原W／SF角色→投影绑定→共用Graph数学；保留symbolic token行数和原placement。20项Python、两组C++元数据／精度检查、4项CPU回归和T1／T3 Recipe投影通过。Kimi INT4组合与NVFP4／FP8同图连接也已通过CPU用例。这些检查含生成fixture，不能据此宣布原payload、完整Model／MoE或其它平台通过；本次未刷新性能。
 
-接下来完成源组合17，再处理19 fused gate_up拆分、20混合角色、18／21 selected bank及16排除角色的实际连接；可控logits补自然提交前typed输入与前沿重采样边界。然后集中复审普通推理、会话与请求的共同职责、状态和资源寿命，最后深入处理性能差距。功能阶段只做相关有限检查，明显复杂度或实质回归及时处理，不扩全库重编和组合矩阵。
+接下来处理19 fused gate_up拆分、20混合角色、18／21 selected bank及16排除角色的实际连接；17缺失SA137原header与原数值资格分开保留。可控logits补自然提交前typed输入与前沿重采样边界。然后集中复审普通推理、会话与请求的共同职责、状态和资源寿命，最后深入处理性能差距。功能阶段只做相关有限检查，明显复杂度或实质回归及时处理，不扩全库重编和组合矩阵。
 
 已有实现及资格边界见[推理设计](../architecture/inference-design.md)、[模型与算子清单](../implementation/model-operators.md)和[工程范围](../implementation/inference-roadmap.md)。未取得原值、未运行大模型或平台组合，不冒充功能通过，也不自动变成缺少新算子。
 

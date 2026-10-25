@@ -1,0 +1,140 @@
+{
+  "status": "CONNECTED_MIXED_MODELOPT_GENERATED_SOURCE_ROLES_CPU_PASS",
+  "date": "2026-10-25",
+  "base_commit": "2d470ae391b1dd851541a872b54ff5a37c71a9d7",
+  "change": "Two test-source paths connect seven independently named/owned typed fixture roles in one ordinary Graph: one selected NVFP4 expert-down contribution, original ordered BF16 tail/residual/norm, then adjacent static-FP8 GDN input projection. No product math, loader, codec, owner, registry or executor is added.",
+  "sources": [
+    {
+      "path": "tests/compute_models/q24_modelopt_mixed_source_case.h",
+      "before": null,
+      "after": {
+        "bytes": 12449,
+        "sha256": "fc147ac514c911a6a7d6016a5a80bdf520fbc4f52c840367ced4f809ef244457"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/static_fp8_reference_test.cc",
+      "before": {
+        "bytes": 4700,
+        "sha256": "afa1a6dd6116fe54decdeceffbab4cba87faaf2c086267cabfb4c3f7777a42d8"
+      },
+      "after": {
+        "bytes": 9465,
+        "sha256": "6f12e7fb421470321262a40aeee5341391d1afbcf369f05774dedc77eb38a1b1"
+      }
+    }
+  ],
+  "source_evidence": {
+    "repository": "nvidia/Qwen3.8-2.4T-A95B-NVFP4",
+    "revision": "74eb734297318ecf7c48016a4ac8ce1b47cc74a9",
+    "roles": 7,
+    "confirmed_header_roles": 6,
+    "unique_cached_headers": 3,
+    "original_payload_bytes": 0,
+    "unresolved": "Layer41 in_proj_a.input_scale is mapped by the fixed index to shard137, but its original header/dtype/shape/offset are unknown. F32[1] is the existing reader requirement, not an observed source fact.",
+    "qualification": "Runtime binds generated hyle-fixture/q24-modelopt-mixed leases. It does not execute authenticated original-file source binding or original publisher values."
+  },
+  "finite_journey": {
+    "rows": 1,
+    "expert_down_NK": [
+      8192,
+      2048
+    ],
+    "next_projection_NK": [
+      128,
+      8192
+    ],
+    "semantic_inputs": 14,
+    "constant_roles": 7,
+    "generations": 2,
+    "actual_submissions": 2,
+    "upstream_boundaries": "Nine other already-weighted BF16 expert terms, shared-gated contribution, residual and effective F32 gamma are explicit fixture inputs; no router, complete FFN or full GDN is constructed.",
+    "math": "Original NVFP4 output BF16; routing multiply F32 then BF16; zero+expert0 and nine ordered BF16 adds; shared and residual BF16 adds; original F32 RMS/effective gamma then BF16; separate static-FP8 reciprocal SA, E4 cast, F32 code-dot, SA then SW and BF16 store.",
+    "numerical_gate": "Reuses existing independent NVFP4 projection and norm gates; exact scalar BF16 tail checks and independent sparse static-FP8 scalar oracle. No new tolerance or unreported max-error/bit-level claim.",
+    "lifetime": "Original external parameter, binding and compile handles are dropped before submit. Held GraphOutputs remain readable across the second source generation and after external invocation handles leave scope; GraphOutput retains the original slot. This does not prove underlying Invocation destruction or independent output export.",
+    "rejections": "Same-typed SA/SW logical-role swap rejects. Both generations and held old results pass the existing checks; any output pools used by the selected ownership mode report zero live blocks after held readers reset."
+  },
+  "actual_CPU": {
+    "compile": {
+      "exit": 0,
+      "seconds": 3.078,
+      "pid": 12424
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.172,
+      "pid": 45712
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 1.266,
+      "pid": 40512
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "filter": "CpuStaticFloat8ReferenceGraph.ModelOptMixedSourceRolesConnectOrderedMoeTailToNextGdnProjection",
+    "gtest_case_seconds": 1.031,
+    "frozen_files": 60,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_test_TUs_per_attempt": 1,
+    "attempts": 2,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_Model_processes": 0,
+    "HTTP": 0
+  },
+  "first_failure": {
+    "compile": {
+      "exit": 0,
+      "seconds": 3.109,
+      "pid": 51272
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.156,
+      "pid": 49812
+    },
+    "run": {
+      "exit": 1,
+      "seconds": 0.25,
+      "pid": 17592
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "phase": "Graph construction before numerical comparison",
+    "cause": "BF16 Fill received ScalarValue(0.F), an F32 scalar. The strict original operation correctly rejected it.",
+    "fix": "Only replace that zero with ScalarValue::from_bits(Type::kBFloat16,0). R2 source/patch/pins/raw are retained, with exact r2-to-r3.patch; no operation contract, oracle, tolerance or other math changed."
+  },
+  "independent_review": {
+    "path": "candidate/independent-review-sampling.json",
+    "scope": "Source-only r2 review; actual cpu1 subsequently exposed the Fill type mistake. R3 changes only the explicit zero scalar type.",
+    "result": "No other source blocker identified; GraphOutput slot-lifetime boundary retained."
+  },
+  "reproduction": {
+    "command": "python .scratch/inference-q24-modelopt-mixed-binding-20261025/check_cpu.py cpuN",
+    "required": "Fresh cpuN directory, r3 canonical source pins and existing pinned CPU closure/native DLL. Actual cpu1/cpu2 commands and dependency/link pins are archived."
+  },
+  "not_claimed": [
+    "Original source-file binding, publisher payload numerical qualification or SA137 source extent.",
+    "Complete ten-expert FFN/router/shared branch, full GDN, Model construction, prefill/decode or entire selected profile.",
+    "GPU/other-backend execution, quality, TPS, speedup, complete zero-allocation or total resource-budget-zero."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/q24-modelopt-mixed-source-2026-10-25.zip",
+    "bytes": 247231,
+    "sha256": "beb408433ca1101264fecc1e57f855668827daf4c5d662c053265dfdcde32bc6",
+    "members": 71,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
