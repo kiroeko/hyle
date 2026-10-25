@@ -1,9 +1,11 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 11:16（北京时间）。整体暂估 **46%**。前缀命中提交前拒绝后的重试与 frontier 提前退休门禁已修，有限 CPU 旅程通过。MTP 全端口变化已查清，小段候选尚未测速；107ms replay 的其余成本继续离线归因。
+更新：2026-10-25 11:45（北京时间）。整体暂估 **46%**。按用户最新要求，优先补齐功能并收敛架构，深入性能狩猎后置。固定 hidden 入口候选已关闭、未合产品；现有性能结果落档，不再追加实验。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
+
+执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
 
 - 功能盘点与补齐：约 56%
   - 基础普通推理：约 61%
@@ -58,7 +60,10 @@
     - TensorRT-LLM／Strata：约 10%
     - ds4／DeepInfer／deepseek-recipe：约 15%
   - 已确认热点实现与完整消费者对照：0%
-  - MTP 对 llama.cpp 差距归因与执行优化：约 50%
+  - MTP 对 llama.cpp 差距归因与执行优化：约 60%
+    - 固定 hidden 入口候选取舍：100%
+    - 图变体扩容的完整 key 离线否证：100%
+    - 对手次数、图体失效与下一改动成本：约 35%
   - prefill／decode／内存显存／多轮多请求综合对照：0%
 - 完成前遗漏复审与记录收尾：0%
 
@@ -66,14 +71,13 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| MTP 固定 hidden 入口候选 | 性能／实现 | 私有源码已准备，正复核原 CopyBatch、固定 writer 和真实退休接线；当前两个 Phase 固定12KiB，每轮复制4／8KiB，未编译或测速 | 约 35% |
-| MTP 冷准备余项归因 | 性能／归因 | 全端口与旧 trace 已对齐；12个小段录制窄窗口合计4.26ms，正拆分其余107ms replay成本，不按录制次数分摊 | 约 20% |
+| 普通推理采样／停止／上下文边界 | 功能／架构 | 回到原请求进度与生成接纳路径，先查提交前拒绝、已提交错误、续轮与重试合同，再补实际缺项 | 约 5% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[cache 双限额与重试](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)、[native 结果双限额](../evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json)、[Kimi 原量化组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)、[MTP 分段诊断](../evidence/performance/mtp-finish-phase-attribution-2026-10-25.json)。另见[前缀接纳重试](../evidence/correctness/inference-prefix-admission-retry-2026-10-25.json)、[frontier 提前门禁](../evidence/correctness/inference-frontier-retirement-gate-2026-10-25.json)、[MTP 全端口变化](../evidence/performance/mtp-complete-binding-diff-2026-10-25.json)。其它性能归因及已关闭候选统一见[decode 性能计划](performance/decode.md)。
+最新依据：[cache 双限额与重试](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)、[native 结果双限额](../evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json)、[Kimi 原量化组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)、[MTP 分段诊断](../evidence/performance/mtp-finish-phase-attribution-2026-10-25.json)。另见[前缀接纳重试](../evidence/correctness/inference-prefix-admission-retry-2026-10-25.json)、[frontier 提前门禁](../evidence/correctness/inference-frontier-retirement-gate-2026-10-25.json)、[MTP 全端口变化](../evidence/performance/mtp-complete-binding-diff-2026-10-25.json)。本轮新增[固定入口取舍](../evidence/performance/mtp-fixed-hidden-ingress-2026-10-25.json)与[对手次数／离线设计](../evidence/performance/mtp-body-replay-design-2026-10-25.json)。其它性能归因及已关闭候选统一见[decode 性能计划](performance/decode.md)。
 
 ## 最新完整性能对照
 

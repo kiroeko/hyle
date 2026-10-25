@@ -746,9 +746,9 @@
   },
   "archive": {
     "path": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.zip",
-    "bytes": 893276,
-    "sha256": "d823dc0de28ca7e3227be7b05a450f76360436983b42332ef3055d064a7c1da3",
-    "members": 123,
+    "bytes": 905310,
+    "sha256": "f4dda318293be7b2b8ab2269727a6a472260a3b04a7bb1771b82f97d8b5964e1",
+    "members": 127,
     "scope": "Completebothactualrunlogs, finalall-portrecords/parser, source-delta/finalGraph/privatehelper/failurecopies, precisecommands/dependencyandclosurepins/rootindependentreview. No binaries/SDK/weights/wholedependencytree."
   },
   "root_cleanup": {
@@ -821,5 +821,115 @@
     ],
     "evidence": "archive:root-followup/offline-join/eligible-record-api-windows.json",
     "no_new_profile_or_native_process": true
+  },
+  "offline_replay_surroundings": {
+    "status": "OFFLINE_EXISTING_CAPTURE_SURROUNDINGS_CHECK_COMPLETE",
+    "same66_decode_trace": {
+      "prepare_wall_ms": 137.692054,
+      "replay_child_wall_ms": 107.096586,
+      "eligible12_capture_through_native_ms": 4.259603,
+      "all_small17": {
+        "count": 17,
+        "capture_span": {
+          "count": 17,
+          "total_ms": 5.282555,
+          "median_ms": 0.27287,
+          "min_ms": 0.247499,
+          "max_ms": 0.512473
+        },
+        "following_native_API": {
+          "cudaGraphInstantiateWithFlags_v11040": {
+            "count": 6,
+            "total_ms": 0.740378,
+            "median_ms": 0.104421,
+            "min_ms": 0.091131,
+            "max_ms": 0.196482
+          },
+          "cudaGraphExecUpdate_v10020": {
+            "count": 11,
+            "total_ms": 0.267951,
+            "median_ms": 0.023817,
+            "min_ms": 0.019243,
+            "max_ms": 0.02842
+          }
+        },
+        "capture_through_native_API_end": {
+          "count": 17,
+          "total_ms": 6.308232,
+          "median_ms": 0.338692,
+          "min_ms": 0.267662,
+          "max_ms": 0.701143
+        }
+      },
+      "all_body15": {
+        "count": 15,
+        "capture_span": {
+          "count": 15,
+          "total_ms": 58.097852,
+          "median_ms": 3.677333,
+          "min_ms": 3.240873,
+          "max_ms": 7.952085
+        },
+        "following_native_API": {
+          "cudaGraphInstantiateWithFlags_v11040": {
+            "count": 7,
+            "total_ms": 17.524712,
+            "median_ms": 2.94678,
+            "min_ms": 1.573195,
+            "max_ms": 3.468306
+          },
+          "cudaGraphExecUpdate_v10020": {
+            "count": 8,
+            "total_ms": 2.798185,
+            "median_ms": 0.3707585,
+            "min_ms": 0.232927,
+            "max_ms": 0.438286
+          }
+        },
+        "capture_through_native_API_end": {
+          "count": 15,
+          "total_ms": 78.431404,
+          "median_ms": 4.121719,
+          "min_ms": 3.474492,
+          "max_ms": 10.99856
+        }
+      },
+      "disjoint_all32_capture_through_native_ms": 84.739636,
+      "replay_outside_these32_windows_ms": 22.35695,
+      "prepare_outside_replay_ms": 30.595468,
+      "replay_execution_GPU_union_ms": 0.0,
+      "prepare_execution_GPU_union_ms": 0.438298,
+      "submit_execution_GPU_union_ms": 56.628347
+    },
+    "eligible12_cleanup_ms": 0.224217,
+    "unseparated_before_small_begin_ms": 2.88452,
+    "unseparated_after_small_sync_ms": 0.511857,
+    "evidence": "archive:root-followup/offline-surroundings/eligible-boundary-surroundings.json",
+    "independent_root_review": {
+      "status": "PASS_FINITE_OFFLINE_TIMESTAMP_AND_PIN_REVIEW",
+      "source": {
+        "path": ".scratch/mtp-complete-binding-diff-20261025/eligible-boundary-surroundings.json",
+        "bytes": 33555,
+        "sha256": "9d0c4cfdf3f8170c40e09f187fb17939e886bd8a0347ba69df5809e4ea6f03d1"
+      },
+      "source_and_raw_pins_verified": true,
+      "exact_timestamps_recomputed": true,
+      "record_windows_disjoint": true,
+      "no_new_GPU_build_download": true,
+      "claim": "Observed API/wall attribution only; not recoverable time or new TPS"
+    },
+    "limits": [
+      "Full true per-range preparation boundaries are not present in the existing NVTX. Shared prelude and inter-range bookkeeping remain unknown.",
+      "Runtime extracts do not expose graph/event argument handles. The cleanup attribution uses the unique immediate same-thread API sequence and normal source call order, not a direct graph/event handle or call-stack join.",
+      "API wall intervals and GPU execution union are different views; nested API intervals must not be added to parent capture windows.",
+      "No cross-trace address or original graph/node identity join, no new performance claim, no direct subtraction from the historical unprofiled1.54ms episode algebra."
+    ],
+    "conclusions": [
+      "The eligible12 observed capture-through-native subset is4.259603ms. No additional eager GPU warmup is observed around it; only the anchored small cleanup sequence can be separately identified.",
+      "The largest identified replay cost is the15 body-range capture-through-native windows78.431404ms, not the small-range17 windows6.308232ms. Both are CPU/API wall observations with zero concurrent observed GPU activity; not recoverable-time estimates.",
+      "The22.356950ms replay residual includes common preparation, key/variant traversal, capture cleanup and unmarked gaps across all66 calls; it cannot be allocated to the eligible12. Another30.595468ms prepare lies outside replay.",
+      "The56.628347ms visible GPU union belongs to submit overlap, not prepare/replay warmup. Replay GPU union is0; prepare GPU union is0.438298ms.",
+      "Next evidence-led scope is the body-range repeated capture/instantiation and large mutable state binding contract, with copy/immutable-state/retirement costs included. Small ingress remains a narrow candidate, without any claim to recover the107ms replay total."
+    ]
   }
 }

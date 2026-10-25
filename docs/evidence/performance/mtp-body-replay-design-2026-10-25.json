@@ -1,0 +1,822 @@
+{
+  "status": "SOURCE_AND_EXISTING_TRACE_ONLY_NO_IMPLEMENTATION",
+  "generated_UTC": "2026-10-25T03:44:45.600696+00:00",
+  "scope": "Offline/source results only. No new GPU/model/profile/build/download, product changes, or throughput measurements. Deeper performance work stopped per user priority.",
+  "reconstruction": {
+    "input": {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/records.json",
+      "bytes": 7191322,
+      "sha256": "40b823e7a1b9490c817785074d0d0ca48559f8b0254d150101a8ce2951317ba8"
+    },
+    "complete_body_queries": 66,
+    "complete_key_ports": 2031,
+    "original_record_set": [
+      [
+        2,
+        57
+      ],
+      [
+        3,
+        55
+      ],
+      [
+        4,
+        55
+      ],
+      [
+        8,
+        57
+      ],
+      [
+        13,
+        57
+      ],
+      [
+        14,
+        57
+      ],
+      [
+        15,
+        55
+      ],
+      [
+        16,
+        55
+      ],
+      [
+        37,
+        57
+      ],
+      [
+        38,
+        55
+      ],
+      [
+        39,
+        57
+      ],
+      [
+        40,
+        55
+      ],
+      [
+        41,
+        55
+      ],
+      [
+        43,
+        55
+      ],
+      [
+        44,
+        55
+      ]
+    ],
+    "actual_capacity2_reproduced": true,
+    "simulations": [
+      {
+        "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+        "capacity": 2,
+        "records": 15,
+        "hits": 51
+      },
+      {
+        "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+        "capacity": 3,
+        "records": 15,
+        "hits": 51
+      },
+      {
+        "status": "EXACT_LOGGED_TUPLE_EQUALITY_SIMULATION",
+        "capacity": 66,
+        "records": 15,
+        "hits": 51
+      }
+    ],
+    "conclusion": "Additional variant capacity gives no fewer recordings under the actual complete-key stream and real hard-clears; no native lifetime or resource proof implied."
+  },
+  "opponent_counts": {
+    "earlier_Hyle": {
+      "capture_records": 32,
+      "instantiate": 19,
+      "update": 13,
+      "graphLaunch": 132
+    },
+    "later_Hyle_merged_seed": {
+      "logical_decode_calls": 66,
+      "all_decode_API": {
+        "capture": {
+          "count": 32,
+          "API_wall_ms": 0.086825,
+          "return_values": {
+            "0": 32
+          }
+        },
+        "instantiate": {
+          "count": 13,
+          "API_wall_ms": 18.26509,
+          "return_values": {
+            "0": 13
+          }
+        },
+        "update": {
+          "count": 19,
+          "API_wall_ms": 3.066136,
+          "return_values": {
+            "0": 19
+          }
+        },
+        "graphLaunch": {
+          "count": 132,
+          "API_wall_ms": 61.241071,
+          "return_values": {
+            "0": 132
+          }
+        }
+      },
+      "range_groups": [
+        {
+          "role": "small",
+          "capture_records": 17,
+          "native_action_counts": {
+            "instantiate": 6,
+            "update": 11
+          },
+          "capture_through_native_API_ms": 6.308232
+        },
+        {
+          "role": "body",
+          "capture_records": 15,
+          "native_action_counts": {
+            "instantiate": 7,
+            "update": 8
+          },
+          "capture_through_native_API_ms": 78.431404
+        }
+      ]
+    },
+    "peer": {
+      "capture_records": 7,
+      "target_captures": 2,
+      "draft_captures": 5,
+      "instantiate": 2,
+      "update": 7,
+      "graphLaunch": 116,
+      "ordered_capture_actions": {
+        "instantiate_then_update": 2,
+        "update_only": 5
+      }
+    },
+    "peer_capture_by_role": {
+      "target_decode": {
+        "count": 2,
+        "wall_ms": 8.222699,
+        "seqs": [
+          6,
+          74
+        ]
+      },
+      "draft_decode": {
+        "count": 5,
+        "wall_ms": 0.951869,
+        "seqs": [
+          7,
+          19,
+          35,
+          67,
+          75
+        ]
+      }
+    },
+    "earlier_logical_role_groups": {
+      "hyle": [
+        {
+          "role": "hyle/episode",
+          "hyle_role": 2,
+          "T": 154,
+          "draft_T": 154,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            1
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "hyle/episode",
+          "hyle_role": 3,
+          "T": 2,
+          "draft_T": 1,
+          "logical_calls": 8,
+          "counts": {
+            "capture": {
+              "count": 10,
+              "API_wall_ms": 0.026101,
+              "return_values": {
+                "0": 10
+              }
+            },
+            "instantiate": {
+              "count": 7,
+              "API_wall_ms": 9.173125,
+              "return_values": {
+                "0": 7
+              }
+            },
+            "update": {
+              "count": 3,
+              "API_wall_ms": 0.498938,
+              "return_values": {
+                "0": 3
+              }
+            },
+            "graphLaunch": {
+              "count": 16,
+              "API_wall_ms": 7.310565,
+              "return_values": {
+                "0": 16
+              }
+            }
+          },
+          "no_graphLaunch_calls": [],
+          "source_matched_captured_launch_role_counts": {
+            "draft": 8,
+            "target": 8
+          }
+        },
+        {
+          "role": "hyle/episode",
+          "hyle_role": 4,
+          "T": 2,
+          "draft_T": 2,
+          "logical_calls": 58,
+          "counts": {
+            "capture": {
+              "count": 22,
+              "API_wall_ms": 0.056897,
+              "return_values": {
+                "0": 22
+              }
+            },
+            "instantiate": {
+              "count": 12,
+              "API_wall_ms": 12.976957,
+              "return_values": {
+                "0": 12
+              }
+            },
+            "update": {
+              "count": 10,
+              "API_wall_ms": 1.197512,
+              "return_values": {
+                "0": 10
+              }
+            },
+            "graphLaunch": {
+              "count": 116,
+              "API_wall_ms": 55.35252,
+              "return_values": {
+                "0": 116
+              }
+            }
+          },
+          "no_graphLaunch_calls": [],
+          "source_matched_captured_launch_role_counts": {
+            "draft": 58,
+            "target": 58
+          }
+        },
+        {
+          "role": "hyle/episode",
+          "hyle_role": 7,
+          "T": 155,
+          "draft_T": 156,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            36
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        }
+      ],
+      "peer": [
+        {
+          "role": "peer/target_prefill",
+          "hyle_role": null,
+          "T": 154,
+          "draft_T": null,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            1
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "peer/draft_prefill",
+          "hyle_role": null,
+          "T": 154,
+          "draft_T": null,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            2
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "peer/draft_decode",
+          "hyle_role": null,
+          "T": 1,
+          "draft_T": null,
+          "logical_calls": 5,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            3,
+            15,
+            31,
+            63,
+            71
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "peer/target_decode",
+          "hyle_role": null,
+          "T": 2,
+          "draft_T": null,
+          "logical_calls": 64,
+          "counts": {
+            "capture": {
+              "count": 2,
+              "API_wall_ms": 0.012985,
+              "return_values": {
+                "0": 2
+              }
+            },
+            "instantiate": {
+              "count": 1,
+              "API_wall_ms": 2.458809,
+              "return_values": {
+                "0": 1
+              }
+            },
+            "update": {
+              "count": 2,
+              "API_wall_ms": 1.256031,
+              "return_values": {
+                "0": 2
+              }
+            },
+            "graphLaunch": {
+              "count": 62,
+              "API_wall_ms": 37.309302,
+              "return_values": {
+                "0": 62
+              }
+            }
+          },
+          "no_graphLaunch_calls": [
+            4,
+            72
+          ],
+          "source_matched_captured_launch_role_counts": {
+            "target": 62
+          }
+        },
+        {
+          "role": "peer/draft_decode",
+          "hyle_role": null,
+          "T": 2,
+          "draft_T": null,
+          "logical_calls": 60,
+          "counts": {
+            "capture": {
+              "count": 5,
+              "API_wall_ms": 0.014796,
+              "return_values": {
+                "0": 5
+              }
+            },
+            "instantiate": {
+              "count": 1,
+              "API_wall_ms": 0.098865,
+              "return_values": {
+                "0": 1
+              }
+            },
+            "update": {
+              "count": 5,
+              "API_wall_ms": 0.054308,
+              "return_values": {
+                "0": 5
+              }
+            },
+            "graphLaunch": {
+              "count": 54,
+              "API_wall_ms": 3.51987,
+              "return_values": {
+                "0": 54
+              }
+            }
+          },
+          "no_graphLaunch_calls": [
+            5,
+            17,
+            33,
+            65,
+            73,
+            133
+          ],
+          "source_matched_captured_launch_role_counts": {
+            "draft": 54
+          }
+        },
+        {
+          "role": "peer/target_prefill",
+          "hyle_role": null,
+          "T": 155,
+          "draft_T": null,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            69
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "peer/draft_prefill",
+          "hyle_role": null,
+          "T": 156,
+          "draft_T": null,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            70
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        },
+        {
+          "role": "peer/target_decode",
+          "hyle_role": null,
+          "T": 1,
+          "draft_T": null,
+          "logical_calls": 1,
+          "counts": {
+            "capture": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "instantiate": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "update": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            },
+            "graphLaunch": {
+              "count": 0,
+              "API_wall_ms": 0.0,
+              "return_values": {}
+            }
+          },
+          "no_graphLaunch_calls": [
+            134
+          ],
+          "source_matched_captured_launch_role_counts": {}
+        }
+      ]
+    }
+  },
+  "observation_windows": {
+    "body15_ms": 78.431404,
+    "first_per_body_range2_ms": 18.186282,
+    "other13_ms": 60.245122,
+    "native_clear3_ms": 11.597198,
+    "valid_key_address_miss10_ms": 48.647924,
+    "warning": "Descriptive API/capture windows only, not guaranteed removable cost or predicted speedup."
+  },
+  "conditional_state_IO_cost_gate": {
+    "boundary_bytes": 19537920,
+    "input_plus_selected_output_bytes_per_episode": 39075840,
+    "over66_episode_bytes": 2579005440,
+    "max_three_work_bank_payload_bytes": 58613760,
+    "address_miss_records": 10,
+    "address_miss_observed_window_ms": 48.647924,
+    "optimistic_added_overhead_limit_ms_per_episode": 0.7370897575757577,
+    "equivalent_payload_only_decimal_GBps": 53.01367926820474,
+    "ideal_all13_nonfirst_record_window_ms": 60.245122,
+    "limit": "Theoretical required cost gate only, not measured bandwidth, recoverable time, or projected speedup. GDN stable I/O alone cannot suppress native-argument hard invalidations."
+  },
+  "implementation_readiness": {
+    "ready_safe_minimal_candidate": false,
+    "next_action": "None in this batch. Functional and architecture work takes priority; concrete invalidation/ownership work is deferred.",
+    "rejected_here": [
+      "More retained variants for this logged stream",
+      "Ignoring physical offsets",
+      "Mixing new InvocationState layout with old cached TUs"
+    ],
+    "stopped_other_candidate": "Small ingress CLOSED_NOT_MERGED; parent reported decode+0.006%, combined\u22120.38%, no stable gain."
+  },
+  "limits": [
+    "Peer7 captures =2 target+5 draft. Two windows each Instantiate then Update, not9 recordings.",
+    "Old Hyle logical trace is19Instantiate+13Update. Later merged-seed trace is13Instantiate+19Update; both32 captures. Do not pool their timing values.",
+    "Hyle66 combined episodes use targetT2 all66 and draftT1\u00d78/T2\u00d758. Peer65 target calls useT2\u00d764/T1\u00d71; peer65 draft calls useT2\u00d760/T1\u00d75. Continuations and arithmetic precision differ.",
+    "Hyle small/body ranges are not one-to-one logical peer draft/target graphs. Small includes draft/control and target ingress. GraphLaunch role annotation uses matched source/kernel signatures, not original Graph/node IDs.",
+    "No graph launch is not automatically warmup: peer first uses, shape changes and tail can be eager. Source warmup does execute directly until properties stabilize; all observed eager work stays inside these logical windows.",
+    "Logical NVTX completion boundaries differ between engines. API/capture windows are not complete episode prices and cannot be subtracted from unprofiled TPS.",
+    "Driver table/original graph lineage remains unavailable; exact Update result/errorNode outputs and opaque executable bytes are unknown.",
+    "Unknown complete-entry equality never counts as a hit or miss: simulation stops at the first unknown comparison.",
+    "Exact equality may be reconstructed symbolically from all equal positions plus complete changed Physical values; absolute values of invariant cells can remain unknown.",
+    "Every actual discard_keys is applied; hypothetical capacity does not suppress native/configuration/Queue invalidation.",
+    "This is an offline fixed-binding-stream counterfactual, not an executed artifact/lifetime/cost proof.",
+    "Large fixed-state staging and indexed-pool/node-update/segmented options are source-level tradeoffs only; no product implementation or performance approval.",
+    "No peer logical-call completion boundary equivalence is assumed. Hyle66 combined and peer65 target/draft calls have different T/work/acceptance and arithmetic precision.",
+    "Archive keeps compact prior extracts and exact pins; original raw Nsight/sqlite/logs remain in their separately published parent batches. No raw activity data is regenerated here."
+  ],
+  "sources": {
+    "src/graph/plan_state.h": {
+      "path": "src/graph/plan_state.h",
+      "bytes": 59252,
+      "sha256": "48adc18109e716e2cb9d441d9842a76f6957cd54ad4b80b6a39675eb3139a8a7"
+    },
+    "src/graph/executable.cc": {
+      "path": "src/graph/executable.cc",
+      "bytes": 481504,
+      "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+    },
+    "src/compute/resource_leases.cc": {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 46499,
+      "sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d"
+    },
+    "engine/models/qwen35/session_state.h": {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14335,
+      "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+    },
+    "engine/models/qwen35/main.cc": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 479391,
+      "sha256": "75d4d9cb214602a5971fd5f8abe5d9563b86bcbb2575fa7d7ce76e12ce8035c9"
+    },
+    "include/hyle/compute/detail/command_capture.h": {
+      "path": "include/hyle/compute/detail/command_capture.h",
+      "bytes": 5120,
+      "sha256": "7a6f262d713015806c9936f0108f8945afb6ee5a790c7d213f7005bcf0b46473"
+    },
+    "src/compute_backend_cuda/cuda_backend.cc": {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "bytes": 70516,
+      "sha256": "c79c39eea9f5d07f26434de8b2a959c5f783b1a2a2503a030bdb9a2a1b0e886c"
+    },
+    "src/graph/submission.cc": {
+      "path": "src/graph/submission.cc",
+      "bytes": 50109,
+      "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+    },
+    "src/graph/region_access.cc": {
+      "path": "src/graph/region_access.cc",
+      "bytes": 12864,
+      "sha256": "ac4853957e32bd479c37e01e2ce2b366a4632f729dc554869613f85ba9938fbb"
+    },
+    "src/graph/input_sources.cc": {
+      "path": "src/graph/input_sources.cc",
+      "bytes": 22954,
+      "sha256": "0b2b241cc6677aa4fc69c13a7e68e4b00d15edd889bfe936424db030cca8ebe8"
+    },
+    "src/graph/resources.cc": {
+      "path": "src/graph/resources.cc",
+      "bytes": 102119,
+      "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+    },
+    "src/graph/resource_report.cc": {
+      "path": "src/graph/resource_report.cc",
+      "bytes": 4553,
+      "sha256": "20783282921d71140259e3d8e1b6aab1479612df955af2213ba2162c40d57e6b"
+    },
+    "src/graph/constant_artifact.cc": {
+      "path": "src/graph/constant_artifact.cc",
+      "bytes": 29692,
+      "sha256": "314d8cb679a21202e18707705314af52036b49f96ceb0e6d77e6790599be4361"
+    }
+  },
+  "local_reference_repositories": [
+    {
+      "repository": "TensorRT-LLM",
+      "independently_read_HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "file": "tensorrt_llm/_torch/pyexecutor/kv_cache/mamba_cache_manager.py",
+      "bytes": 231416,
+      "sha256": "15f7dd923d8a6c4c18b972370ab406b859bedf1c2b3d2a5ac4628b39768aa3f1"
+    },
+    {
+      "repository": "TensorRT-LLM",
+      "independently_read_HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "file": "tensorrt_llm/_torch/modules/mamba/mamba2_metadata.py",
+      "bytes": 27211,
+      "sha256": "1863b573e015a162ce8f7b14bd1f2643307665ac3b0ecb01488de9eebaa9bec7"
+    },
+    {
+      "repository": "TensorRT-LLM",
+      "independently_read_HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "file": "tensorrt_llm/_torch/modules/mamba/gdn_mixer.py",
+      "bytes": 49555,
+      "sha256": "ff550b1b1ebd061a5c3879f8a7fb974308c928d265eaafa1eb8eb3b92de3b06a"
+    },
+    {
+      "repository": "llama.cpp",
+      "independently_read_HEAD": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "file": "src/llama-memory-recurrent.cpp",
+      "bytes": 47147,
+      "sha256": "51172be188d0eece2267c9105dc5a8d2c3ef7ebd58e88a6f562ac6ee36326f98"
+    },
+    {
+      "repository": "llama.cpp",
+      "independently_read_HEAD": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "file": "ggml/src/ggml-cuda/ggml-cuda.cu",
+      "bytes": 253372,
+      "sha256": "97e68ff9c9a887478bb3ef35396a607ec28f848ab8b873be9df334e5df74e368"
+    }
+  ],
+  "reproduction": {
+    "commands": [
+      "python .scratch/mtp-body-variant-design-20261025/reconstruct_keys.py",
+      "python .scratch/mtp-body-variant-design-20261025/compare_capture_roles.py"
+    ],
+    "requires": "Existing pinned private raw SQLite/extracts at the original paths for count regeneration; archive contains the exact resulting API/capture actions and SQL."
+  },
+  "prior_public_evidence": [
+    {
+      "path": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.json",
+      "bytes": 40459,
+      "sha256": "c9ac51c4f58ff7401319fbfcb922d1c4c207989d138c08f983f4d96bc95f3902"
+    },
+    {
+      "path": "docs/evidence/performance/mtp-finish-phase-attribution-2026-10-25.json",
+      "bytes": 50808,
+      "sha256": "18b5863da9deb00956b883b6d3e6ca0f5b663d4dea82f2b40c97a5cad099fb5b"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/mtp-body-replay-design-2026-10-25.zip",
+    "bytes": 267149,
+    "sha256": "aea65cb875c5d0b056361c07667f23d5b52a2fffb925d484284ea626d171dae8",
+    "members": 18,
+    "testzip": "PASS"
+  },
+  "cleanup": {
+    "files": [],
+    "logical_bytes": 0
+  }
+}

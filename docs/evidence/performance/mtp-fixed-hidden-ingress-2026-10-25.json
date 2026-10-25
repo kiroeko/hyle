@@ -1,0 +1,609 @@
+{
+  "date": "2026-10-25",
+  "status": "MECHANISM_PASS_NO_OBSERVED_THROUGHPUT_GAIN_CLOSED",
+  "decision": {
+    "owner": "root",
+    "product_status": "NOT_MERGED",
+    "followup": "CLOSED; no automatic additional runs",
+    "reason": "Fixed hidden ingress removed the targeted leading-range binding churn, but the finite clean three-sample-per-arm screen did not show observed throughput gain. Extra copy/control/wait cost is included. Do not infer stable prefill regression from three points."
+  },
+  "scope": "Same canonical Qwen3.5 BF16 CUDA C1024/N1/R1 greedy K1 direct natural two-turn original case; original P154/P155 and 128 outputs. Private Phase-local carry/prior ingress only; no Graph/Compute public API, model math, precision, output/state or acceptance change.",
+  "archive": {
+    "path": "docs/evidence/performance/mtp-fixed-hidden-ingress-2026-10-25.zip",
+    "bytes": 789397,
+    "sha256": "46dfa2142bc626e2be15511f7aed3826990fea697cc3abde964243a8f3123db8",
+    "members": 113,
+    "logical_bytes": 10006777,
+    "manifest": {
+      "path": ".scratch/mtp-fixed-hidden-ingress-20261025/archive-manifest.json",
+      "bytes": 27177,
+      "sha256": "92e7eaeda331479064f250e725a6816636d3003cabc3220812661dedb11c3177"
+    },
+    "CRC_and_member_SHA_verified": true,
+    "manifest_scope": "Original106-member agent manifest; seven appended root members described by archive:root-followup/manifest.json"
+  },
+  "baseline_main": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 479391,
+    "sha256": "75d4d9cb214602a5971fd5f8abe5d9563b86bcbb2575fa7d7ce76e12ce8035c9"
+  },
+  "candidate_main": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\source\\engine\\models\\qwen35\\main.cc",
+    "bytes": 486929,
+    "sha256": "1f62dbdc38a4fab786aea475c971de07382e5c47582a3b8a548e04f259bde31b"
+  },
+  "canonical_main_unchanged": true,
+  "canonical_graph": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\source\\executable.cc",
+    "bytes": 481504,
+    "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+  },
+  "images": {
+    "diagnostic": {
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\build1\\baseline\\link\\hyle.exe",
+        "bytes": 141519872,
+        "sha256": "a35e80445aacd80212913da3aee55b6c503a37fe5eb6eb072315e763ec70d758"
+      },
+      "candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\build2\\candidate\\link\\hyle.exe",
+        "bytes": 141533184,
+        "sha256": "0ac20472fea1cb7c1a35cfb46bf9ff77c004bd8d24fcb17b16c57aadaabbce36"
+      }
+    },
+    "clean": {
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\clean1\\baseline\\link\\hyle.exe",
+        "bytes": 141509120,
+        "sha256": "c488ae8221a13220adfd9a8d9ee59ecdad9fb2abe119e6635b0d11c004bdfa40"
+      },
+      "candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\clean1\\candidate\\link\\hyle.exe",
+        "bytes": 141522432,
+        "sha256": "4846baf87a01688aacc8b344300cd00ba487f8e96c943e2c67771ab66a3b82f6"
+      }
+    }
+  },
+  "readiness": {
+    "strict": "/W4 /WX /O2 identical app flags",
+    "compile_processes": 3,
+    "successful_current_app_TUs": 2,
+    "link_processes": 4,
+    "SDK_core_Graph_provider_compile_processes": 0,
+    "first_failure": "Candidate local phases variable shadowed Model::phases (C4458 under /WX); retained raw logs/input. Only renamed to copy_phases; second candidate compile passed.",
+    "diagnostic_link_inputs": 231,
+    "identical_non_app_inputs": 230,
+    "copy_program_and_native_copy_objects": "Already present cached objects; required symbols resolved, no rebuild.",
+    "metadata_corrections": [
+      "Ready first-count assertion used 217 shorthand; actual unchanged link4 recipe has231 OBJ/LIB inputs; no recipe change.",
+      "Offline BIND parser first assumed every outcome had a candidate-start. Source-proven standalone retained fast path corrected; no native rerun."
+    ]
+  },
+  "mechanism": {
+    "processes": 2,
+    "all_exit0": true,
+    "BIND_overflow_and_concurrent_skips": 0,
+    "decisions_per_arm": 132,
+    "all": {
+      "baseline": {
+        "recorded": 32,
+        "variant_hit": 90,
+        "retained_hit": 10
+      },
+      "candidate": {
+        "recorded": 20,
+        "retained_hit": 65,
+        "variant_hit": 47
+      }
+    },
+    "front": {
+      "baseline": {
+        "recorded": 17,
+        "variant_hit": 43,
+        "retained_hit": 6
+      },
+      "candidate": {
+        "recorded": 5,
+        "variant_hit": 0,
+        "retained_hit": 61
+      }
+    },
+    "later": {
+      "baseline": {
+        "recorded": 15,
+        "variant_hit": 47,
+        "retained_hit": 4
+      },
+      "candidate": {
+        "recorded": 15,
+        "variant_hit": 47,
+        "retained_hit": 4
+      }
+    },
+    "front_changed_hidden_input_occurrences": {
+      "baseline": 76,
+      "candidate": 0
+    },
+    "later_range_outcomes_and_invalidation_distributions_equal": true,
+    "logical_sequence": 0,
+    "FINISH_META_records": 0,
+    "parsing": "Complete actual invocation+range decision boundaries, including standalone retained fast path; no logical-sequence grouping.",
+    "work": {
+      "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+      "generated_tokens": 128,
+      "actual_graph_calls": 68,
+      "prefill_graph_calls": 2,
+      "decode_graph_calls": 66,
+      "logical_prompt_tokens": 309,
+      "actual_target_rows": 441,
+      "committed_target_rows": 435,
+      "actual_draft_rows": 434,
+      "agreements": 60,
+      "consumed_drafts": 60,
+      "cache_live_requested_bytes": 73539635,
+      "cache_peak_requested_bytes": 73539635
+    },
+    "non_time_CLI_difference_count": 0,
+    "unreported_state": {
+      "visible": "All normally emitted nested session/turn/episode ledger fields, committed input IDs, pending IDs, target/draft frontier/lag, quotas and RNG identities/cursors compared recursively.",
+      "payload_bitwise_equality": "UNKNOWN: no complete KV/GDN/hidden device payload hashes or dumps requested.",
+      "old_reader_cancel_unknown_native_failure": "NOT_EXERCISED by this unchanged two-turn case; source-only contracts, no fault injection.",
+      "no_FINISH_META_required": true
+    }
+  },
+  "clean_screen": {
+    "processes": 6,
+    "order": [
+      "B",
+      "C",
+      "C",
+      "B",
+      "B",
+      "C"
+    ],
+    "samples_per_arm": 3,
+    "all_exit0": true,
+    "all_non_time_CLI_difference_count": 0,
+    "non_time_exclusions": [],
+    "time_exclusion_rules": [
+      "seconds",
+      "tokens_per_second",
+      "clock_unix",
+      "unix_ns",
+      "unix_ms"
+    ],
+    "graph": "Uninstrumented cached Graph2; canonical executable.cc source SHA6476518e… matches. App objects reused unchanged; no profiler/NVTX/BIND dump.",
+    "rows": [
+      {
+        "index": 1,
+        "side": "baseline",
+        "prefill_seconds": 0.1092842,
+        "decode_seconds": 1.0037085000000001,
+        "session_seconds": 1.1129927,
+        "prefill_tokens_per_second": 2827.490158687166,
+        "decode_output_tokens_per_second": 125.53445547188251,
+        "output_tokens_per_second": 115.00524666513986,
+        "process_seconds": 3.8280000000086147,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\01-baseline\\stdout.log",
+          "bytes": 77480,
+          "sha256": "866340c2410cd3e3fdb132d38e271a0009c19e61f67b68e5a987b12bad947ba3"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\01-baseline\\stderr.log",
+          "bytes": 26183,
+          "sha256": "014a81e841dbff5e446b9f7dd6c3a9210667420f703060326fa026919606ba19"
+        },
+        "non_time_difference_count": 0
+      },
+      {
+        "index": 2,
+        "side": "candidate",
+        "prefill_seconds": 0.1079174,
+        "decode_seconds": 1.0053869999999998,
+        "session_seconds": 1.1133044,
+        "prefill_tokens_per_second": 2863.3010061398813,
+        "decode_output_tokens_per_second": 125.32487489891955,
+        "output_tokens_per_second": 114.97304780255965,
+        "process_seconds": 3.827999999979511,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\02-candidate\\stdout.log",
+          "bytes": 77476,
+          "sha256": "b51990cc71a9ec65889b006a37f0c1203454d11a0bf555f1fb96c6ecb181024d"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\02-candidate\\stderr.log",
+          "bytes": 26183,
+          "sha256": "8dc56f59a3a899282e8fa005e3d21bda079b26a644744b0e33c060299384c63a"
+        },
+        "non_time_difference_count": 0
+      },
+      {
+        "index": 3,
+        "side": "candidate",
+        "prefill_seconds": 0.1106067,
+        "decode_seconds": 1.0128169999999999,
+        "session_seconds": 1.1234237,
+        "prefill_tokens_per_second": 2793.6824803560726,
+        "decode_output_tokens_per_second": 124.40549477348821,
+        "output_tokens_per_second": 113.93742182935966,
+        "process_seconds": 3.3910000000032596,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\03-candidate\\stdout.log",
+          "bytes": 77486,
+          "sha256": "3bcef9648634ca179fbb98e55a73d5554c7a6f59782576c69d2cedd281c3651b"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\03-candidate\\stderr.log",
+          "bytes": 26190,
+          "sha256": "535e5a32a5cc9c61ed01ac364b0f05a78dbb7aa6ed08e0e5ed4a4b9e3cf311dc"
+        },
+        "non_time_difference_count": 0
+      },
+      {
+        "index": 4,
+        "side": "baseline",
+        "prefill_seconds": 0.1073656,
+        "decode_seconds": 1.0058361999999998,
+        "session_seconds": 1.1132018,
+        "prefill_tokens_per_second": 2878.016794951083,
+        "decode_output_tokens_per_second": 125.26890561306107,
+        "output_tokens_per_second": 114.98364447488318,
+        "process_seconds": 3.389999999984866,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\04-baseline\\stdout.log",
+          "bytes": 77540,
+          "sha256": "809472a7c37b6c082a3e2e65b47a50e82385ed137ec8035ec465d9c24257565c"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\04-baseline\\stderr.log",
+          "bytes": 26190,
+          "sha256": "6989d1287761cf6e0696ccc0e073cd43175b3dc741319841e36a7dca5732497d"
+        },
+        "non_time_difference_count": 0
+      },
+      {
+        "index": 5,
+        "side": "baseline",
+        "prefill_seconds": 0.1069299,
+        "decode_seconds": 1.0054474,
+        "session_seconds": 1.1123773,
+        "prefill_tokens_per_second": 2889.74365448766,
+        "decode_output_tokens_per_second": 125.31734628783167,
+        "output_tokens_per_second": 115.06887096671247,
+        "process_seconds": 3.4060000000172295,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\05-baseline\\stdout.log",
+          "bytes": 77478,
+          "sha256": "3f5c021f11f1b90caa1a05e730acf18cdc0f3346144af09b2676465691162658"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\05-baseline\\stderr.log",
+          "bytes": 26185,
+          "sha256": "520cb2c9028a41e3aacb0258876e7d9cd058f3be16bade932da375bad00ec958"
+        },
+        "non_time_difference_count": 0
+      },
+      {
+        "index": 6,
+        "side": "candidate",
+        "prefill_seconds": 0.11209440000000001,
+        "decode_seconds": 1.0051427999999998,
+        "session_seconds": 1.1172372,
+        "prefill_tokens_per_second": 2756.6051470903094,
+        "decode_output_tokens_per_second": 125.35532264669261,
+        "output_tokens_per_second": 114.5683298049868,
+        "process_seconds": 3.390999999974156,
+        "source_stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\06-candidate\\stdout.log",
+          "bytes": 77493,
+          "sha256": "a7c8d8bd044a1dce5b0c96b336ee3c9cece322fc339af5527ff84f2001ec7f26"
+        },
+        "source_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-ingress-20261025\\screen1\\06-candidate\\stderr.log",
+          "bytes": 26177,
+          "sha256": "df5b0875843d7c0531d152a29adba4cfb1516c91f94065c6e6cdd5d48e69d157"
+        },
+        "non_time_difference_count": 0
+      }
+    ],
+    "statistics": {
+      "baseline": {
+        "prefill_seconds": {
+          "values": [
+            0.1092842,
+            0.1073656,
+            0.1069299
+          ],
+          "median": 0.1073656,
+          "minimum": 0.1069299,
+          "maximum": 0.1092842
+        },
+        "decode_seconds": {
+          "values": [
+            1.0037085000000001,
+            1.0058361999999998,
+            1.0054474
+          ],
+          "median": 1.0054474,
+          "minimum": 1.0037085000000001,
+          "maximum": 1.0058361999999998
+        },
+        "session_seconds": {
+          "values": [
+            1.1129927,
+            1.1132018,
+            1.1123773
+          ],
+          "median": 1.1129927,
+          "minimum": 1.1123773,
+          "maximum": 1.1132018
+        },
+        "prefill_tokens_per_second": {
+          "values": [
+            2827.490158687166,
+            2878.016794951083,
+            2889.74365448766
+          ],
+          "median": 2878.016794951083,
+          "minimum": 2827.490158687166,
+          "maximum": 2889.74365448766
+        },
+        "decode_output_tokens_per_second": {
+          "values": [
+            125.53445547188251,
+            125.26890561306107,
+            125.31734628783167
+          ],
+          "median": 125.31734628783167,
+          "minimum": 125.26890561306107,
+          "maximum": 125.53445547188251
+        },
+        "output_tokens_per_second": {
+          "values": [
+            115.00524666513986,
+            114.98364447488318,
+            115.06887096671247
+          ],
+          "median": 115.00524666513986,
+          "minimum": 114.98364447488318,
+          "maximum": 115.06887096671247
+        }
+      },
+      "candidate": {
+        "prefill_seconds": {
+          "values": [
+            0.1079174,
+            0.1106067,
+            0.11209440000000001
+          ],
+          "median": 0.1106067,
+          "minimum": 0.1079174,
+          "maximum": 0.11209440000000001
+        },
+        "decode_seconds": {
+          "values": [
+            1.0053869999999998,
+            1.0128169999999999,
+            1.0051427999999998
+          ],
+          "median": 1.0053869999999998,
+          "minimum": 1.0051427999999998,
+          "maximum": 1.0128169999999999
+        },
+        "session_seconds": {
+          "values": [
+            1.1133044,
+            1.1234237,
+            1.1172372
+          ],
+          "median": 1.1172372,
+          "minimum": 1.1133044,
+          "maximum": 1.1234237
+        },
+        "prefill_tokens_per_second": {
+          "values": [
+            2863.3010061398813,
+            2793.6824803560726,
+            2756.6051470903094
+          ],
+          "median": 2793.6824803560726,
+          "minimum": 2756.6051470903094,
+          "maximum": 2863.3010061398813
+        },
+        "decode_output_tokens_per_second": {
+          "values": [
+            125.32487489891955,
+            124.40549477348821,
+            125.35532264669261
+          ],
+          "median": 125.32487489891955,
+          "minimum": 124.40549477348821,
+          "maximum": 125.35532264669261
+        },
+        "output_tokens_per_second": {
+          "values": [
+            114.97304780255965,
+            113.93742182935966,
+            114.5683298049868
+          ],
+          "median": 114.5683298049868,
+          "minimum": 113.93742182935966,
+          "maximum": 114.97304780255965
+        }
+      }
+    },
+    "median_throughput_change_percent": {
+      "prefill_tokens_per_second": -2.930292649541111,
+      "decode_output_tokens_per_second": 0.006007636860250187,
+      "output_tokens_per_second": -0.3799103717635033
+    },
+    "extra_copy_wait_default_logging_included": true,
+    "stable_gain_or_regression_proven": false,
+    "full_peer_four_metric_window": false,
+    "memory_side_sampling": false,
+    "new_peer_processes": 0
+  },
+  "programmed_copy_bytes": {
+    "source_derived_not_API_measured": true,
+    "no_lag_R1_round": 4096,
+    "lag1_R1_round": 8192,
+    "both_R1_round_slot_payloads": 12288,
+    "per_case_round_counts": {
+      "no_lag": 8,
+      "lag1": 58
+    },
+    "per_case_programmed_decode_bytes": 507904,
+    "copy_native_calls_bandwidth_and_opaque_metadata_measured": false
+  },
+  "original_execution_case": {
+    "path": ".scratch/mtp-complete-binding-diff-20261025/run2/command.json",
+    "bytes": 788,
+    "sha256": "9514de55eb931ce98f7cd4f0b0f121e0e0240a0f486a9b13b2580b3165a8371e"
+  },
+  "static_hardware": {
+    "command": [
+      "nvidia-smi",
+      "--query-gpu=name,driver_version,memory.total",
+      "--format=csv,noheader"
+    ],
+    "exit": 0,
+    "stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB",
+    "scope": "Static hardware identity after all processes ended, not VRAM/RAM performance sampling."
+  },
+  "independent_review": {
+    "result": "PASS_FINITE_READY_AND_VISIBLE_WORK_REVIEW",
+    "artifact": {
+      "path": ".scratch/inference-system-review-20261025/fixed-ingress-pair-root-review.json",
+      "bytes": 1058,
+      "sha256": "a6c035df414b8b20ce6a406a08aeec4ba038d39647b3771d41a81ac57b64f348"
+    },
+    "all_non_time_differences": [],
+    "non_time_exclusions": []
+  },
+  "cleanup": {
+    "status": "PROPOSED_NOT_PERFORMED",
+    "inventory": {
+      "path": ".scratch/mtp-fixed-hidden-ingress-20261025/cleanup-candidates.json",
+      "bytes": 5712,
+      "sha256": "ea161bc1166c8c0578c5894c7be3afff408d94bf4080e7a25b23ab19d66571fc"
+    },
+    "count": 8,
+    "logical_bytes": 285599377,
+    "scope": "Private diagnostic EXE/EXP/LIB/DLL hardlinks only; root test.ps1 will own exact preview/Apply. Retain clean images/current appOBJ and all original shared objects/native DLL."
+  },
+  "limits": [
+    "Behavior agreement covers every normally reported ID/ledger/RNG/frontier/lag/work/capacity fact, with no non-time exclusions. Complete unreported device payload values are UNKNOWN.",
+    "Old-reader/cancellation/unknown-native-failure contracts were source-reviewed, not newly fault-injected by this unchanged case.",
+    "Only six clean processes, three per arm, one original case. No stable statistical speed certificate; no claim that prefill drop is a stable regression.",
+    "No new VRAM/RAM measurement and no peer runs; the prior full four-metric peer window remains unchanged.",
+    "CUDA PreferCapture K1 round-only private prototype, not a new general backend policy or completed production architecture.",
+    "The counterfactual12-of17 candidate matches were predictive here; the actual mechanism17-to5 result is limited to these runs, not an unconditional future cache promise."
+  ],
+  "actual_GPU_processes": 8,
+  "HTTP_requests": 0,
+  "model_or_SDK_copies": 0,
+  "public_product_edits": 0,
+  "root_owns_docs_board_git_cleanup": true,
+  "root_followup": {
+    "screen_review": {
+      "status": "PASS_ALL_SIX_RAW_REPORTS_AND_ARITHMETIC",
+      "raw": [
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/01-baseline/stdout.log",
+          "bytes": 77480,
+          "sha256": "866340c2410cd3e3fdb132d38e271a0009c19e61f67b68e5a987b12bad947ba3"
+        },
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/02-candidate/stdout.log",
+          "bytes": 77476,
+          "sha256": "b51990cc71a9ec65889b006a37f0c1203454d11a0bf555f1fb96c6ecb181024d"
+        },
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/03-candidate/stdout.log",
+          "bytes": 77486,
+          "sha256": "3bcef9648634ca179fbb98e55a73d5554c7a6f59782576c69d2cedd281c3651b"
+        },
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/04-baseline/stdout.log",
+          "bytes": 77540,
+          "sha256": "809472a7c37b6c082a3e2e65b47a50e82385ed137ec8035ec465d9c24257565c"
+        },
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/05-baseline/stdout.log",
+          "bytes": 77478,
+          "sha256": "3f5c021f11f1b90caa1a05e730acf18cdc0f3346144af09b2676465691162658"
+        },
+        {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/screen1/06-candidate/stdout.log",
+          "bytes": 77493,
+          "sha256": "a7c8d8bd044a1dce5b0c96b336ee3c9cece322fc339af5527ff84f2001ec7f26"
+        }
+      ],
+      "time_only_normalization": true,
+      "non_time_exclusions": [],
+      "complete_visible_non_time_differences": 0,
+      "median_change_percent": {
+        "prefill_tokens_per_second": -2.930292649541111,
+        "decode_output_tokens_per_second": 0.006007636860250187,
+        "output_tokens_per_second": -0.3799103717635033
+      },
+      "scope": "Finite three-per-arm current consumer screen; no new peer/memory profile or stable-speed claim",
+      "cleanup_files_absent": 8,
+      "retained_shared_and_clean_input_pins_verified": 11
+    },
+    "cleanup": {
+      "previous_archive": {
+        "path": "docs/evidence/performance/mtp-fixed-hidden-ingress-2026-10-25.zip",
+        "bytes": 781940,
+        "sha256": "1a02542ac7ef0631673f8693087f318b9b228c1924375fa6ed2dac4fbc7687c4",
+        "members": 106,
+        "logical_bytes": 9987374,
+        "manifest": {
+          "path": ".scratch/mtp-fixed-hidden-ingress-20261025/archive-manifest.json",
+          "bytes": 27177,
+          "sha256": "92e7eaeda331479064f250e725a6816636d3003cabc3220812661dedb11c3177"
+        },
+        "CRC_and_member_SHA_verified": true
+      },
+      "cleanup_performed": true,
+      "files": 8,
+      "logical_bytes": 285599377,
+      "physical_freed_bytes_unknown": true,
+      "retained_clean_images_app_and_shared_cores": true,
+      "members": {
+        "root-followup/root-screen-review.json": {
+          "path": ".scratch/inference-system-review-20261025/fixed-ingress-screen-root-review.json",
+          "bytes": 1833,
+          "sha256": "e19a9e180bb704bfd2e861781b1ebcfd6741d09bcc0957c5411a6d9c41f93b49"
+        },
+        "root-followup/root-screen-review-and-publish.py": {
+          "path": ".scratch/inference-system-review-20261025/finalize-fixed-ingress-evidence.py",
+          "bytes": 4944,
+          "sha256": "14e1b4bade8557d16ffa4a8df96e3ff3eae6ce68c5075f3d0c7e274a230142d6"
+        },
+        "root-followup/cleanup/plan.json": {
+          "path": ".scratch/inference-system-review-20261025/fixed-ingress-cleanup/plan.json",
+          "bytes": 3146,
+          "sha256": "a38c4be28e960a2344d310af676b0217df06bfaa8e7fcf05c7779b24fed98b8d"
+        },
+        "root-followup/cleanup/preview.json": {
+          "path": ".scratch/inference-system-review-20261025/fixed-ingress-cleanup/preview.json",
+          "bytes": 2177,
+          "sha256": "6ae28f33e9569b4d559cc71210ed7798638095ca6762067b2de7ecb0d34f8972"
+        },
+        "root-followup/cleanup/removed.json": {
+          "path": ".scratch/inference-system-review-20261025/fixed-ingress-cleanup/removed.json",
+          "bytes": 2176,
+          "sha256": "06d3eba36bc63ff74ffe8c03864721a8c6984ba08445aab647429d7777221a26"
+        },
+        "root-followup/cleanup/delete-commands.ps1.txt": {
+          "path": "test.ps1",
+          "bytes": 2973,
+          "sha256": "552f64dd1f8a757cb84327c96aad87b816930990e20ceef88746ed721b3c2bf0"
+        }
+      }
+    },
+    "evidence": "archive:root-followup/manifest.json"
+  }
+}
