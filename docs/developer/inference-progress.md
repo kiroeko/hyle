@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 13:58（北京时间）。整体暂估 **53%**。静态 FP8 准备／投影接线及有限 CPU 冷链检查已完成；GLM Flash 短／空历史、Kimi 原参数与普通推理边界扫描并行推进。深入性能狩猎后置。
+更新：2026-10-25 13:59（北京时间）。整体暂估 **53%**。静态 FP8 冷接线、Kimi 原参数冷绑定及有限租约检查已合入；Kimi 原数值、GLM Flash 短／空历史和普通推理边界扫描并行推进。深入性能狩猎后置。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
@@ -21,7 +21,7 @@
     - Kimi 混合量化工作集原几何生成组件：100%
     - Kimi 两制品原 payload 有限组件：100%
     - KDA／Kimi MLA 外部参数构图与共用数学体：100%
-    - Kimi 原 KDA／MLA 参数绑定与数值组件：0%
+    - Kimi 原 KDA／MLA 参数绑定与数值组件：约 45%
     - ModelOpt 静态 FP8 准备／投影接线：100%
     - ModelOpt 静态 FP8 原 payload 组件与 GPU 路线：0%
     - GLM Flash 普通 target43 短／空历史：0%
@@ -83,13 +83,13 @@
 |---|---|---|---|
 | 普通推理功能边界扫描 | 普通推理／上下文与采样 | 继续查 prefill／decode、停止与预算的真实缺项；静态 FP8 冷接线已完成，原 payload／GPU 数值待办 | 约 10% |
 | GLM Flash 普通 target43 短／空历史 | 普通推理／上下文状态 | 修复共享 MLX／GGUF 与官方 FP8 路径固定 Top512／2048 的启动限制，保原状态和成熟路径 | 约 10% |
-| Kimi 原注意力参数绑定与必需片段 | 普通推理／模型接线 | 23角色已与原头部逐项核对；准备 conv／decay／KV-b 映射，只取约1.35GB必要范围 | 约 20% |
+| Kimi 原注意力参数数值与必需片段 | 普通推理／模型接线 | 冷绑定与两项租约／状态 CUDA 检查已过；原片段下载期间补独立参考与真实续算案例 | 约 45% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)、[请求局部采样失败](../evidence/correctness/inference-request-sampling-failure-2026-10-25.json)、[Kimi 外部参数入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)、[采样范围与中途恢复](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)。职责与已有功能证据见[推理设计](../architecture/inference-design.md)，性能基线、已关闭候选及数据见[decode 性能资料](performance/decode.md)。
+最新依据：[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)、[请求局部采样失败](../evidence/correctness/inference-request-sampling-failure-2026-10-25.json)、[Kimi 外部参数入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)、[采样范围与中途恢复](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)。职责与已有功能证据见[推理设计](../architecture/inference-design.md)，性能基线、已关闭候选及数据见[decode 性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

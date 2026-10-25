@@ -97,7 +97,8 @@ Kimi 两个所选混合量化制品的[原 router／bias 组件](../evidence/cor
 原七 bank／两代供给保留旧读者、忙槽拒绝和失败绑定后执行合同；独立参考逐阶段使用已核对的实际前驱，输入仍为生成 hidden，不代表整模型质量或吞吐通过。
 
 KDA／NoPE MLA 已提供[外部参数构图入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)，与原测试权重共用数学体；BF16、非方阵 F32／GGUF 的参数边及原 CUDA 合成完整状态旅程通过。
-原 layer0 KDA 的14角色、layer3 MLA 的9角色共1,352,207,360B，尚需核对原分片身份、绑定并检查数值；不由参数入口或已有 router／FFN 组件推定完成。
+原 layer0 KDA 的14角色、layer3 MLA 的9角色共1,352,207,360B，原header、分片身份与范围已核；
+[冷绑定及真实租约检查](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)已接 QKV conv／KV-b 布局，复用原 Run 常量租约和共用数学。两项 CUDA 用例通过，但原参数数值仍待必要片段；不由合成状态旅程、入口已编译或已有 router／FFN 组件推定完成。
 
 | 模型／状态族 | 同一快照须保留的内容 | 当前边界 |
 | --- | --- | --- |

@@ -340,6 +340,10 @@ Provider 的调优策略受完整冷容量和原字节预算约束，查询与�
 当前 Qwen 已将这些职责从 Recipe 移入 GraphAssembly；CPU FFN 放置在数学调用之外，
 普通主干、draft、接受采样和前沿采样沿用各自原图。后续共享化以真实跨模型共同点为依据。
 
+原参数接入可用现有 GraphConstantBinding 借入同一 ReadLease；冷期重排只保必要的派生布局，
+不为构图复制大矩阵或添加第二权重 owner。Kimi [有限绑定检查](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)
+已核真实租约、零主机常量载荷及旧 reader 寿命；原23角色数值仍待片段齐备后检查。
+
 N1／R1 是共同控制链中的直接路径，继续使用 R1 原图和同一 prepare／submit／finish／commit。
 prefix 关闭且能证明 head 独占时，避免目录和无关请求扫描；N1 本身不能证明没有逃逸读者。
 自然循环只对多成员桶执行外层缩批查询；最终单成员桶仍由执行入口检查真实版本接纳，

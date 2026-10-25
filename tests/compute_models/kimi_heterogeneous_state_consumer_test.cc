@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "d5_kimi_remaining_fragments.h"
+#include "kimi_original_attention_roles.h"
 #include "model_graph_run.h"
 #include "hyle/compute/state_versions.h"
 #if defined(HYLE_TEST_KIMI_STATE_CUDA)
@@ -196,17 +197,36 @@ struct Run final {
   std::vector<model_graph_run::Port> inputs;
   std::vector<model_graph_run::OutputPort> outputs;
   std::size_t submissions=0;
-  static Run prepare(sem::Fragment f,c::Context &context,const c::StorageOwner &owner,LiteralBank *shared=nullptr) {
-    Run result;
+  static sem::ValueId source_constant(sem::Fragment &f,std::vector<c::ReadLease> &supplied,
+      const original_named_role_source::ReadonlyRole &role,const c::StorageOwner &owner) {
+    if(f.constants.size()!=supplied.size())throw std::runtime_error("original Kimi learned constants must be the entire cold prefix");
+    if(role.owner.ref()!=owner.ref())throw std::runtime_error("original Kimi constant owner differs from its cold Graph owner");
+    const auto value=f.constant(role.description,{});supplied.push_back(role.lease);return value;
+  }
+  static Run prepare(sem::Fragment f,c::Context &context,const c::StorageOwner &owner,LiteralBank *shared=nullptr,
+      std::vector<c::ReadLease> supplied_literals={}) {
+    Run result;result.literals=std::move(supplied_literals);
+    const auto supplied=result.literals.size();
+    if(supplied>f.constants.size())throw std::runtime_error("original Kimi constant lease count differs");
+    for(std::size_t i=0;i<supplied;++i) {
+      const auto &description=f.description(f.constants[i]);
+      if(!f.constant_bytes[i].empty()||result.literals[i].size()!=take(description.required_bytes(),"original Kimi supplied constant extent"))
+        throw std::runtime_error("original Kimi constant must have its actual lease and no generated payload");
+      take(result.literals[i].tensor(description),"original Kimi typed source lease");
+    }
     // Explicit caller outputs keep every generated value independent of the
     // phase's mutable storage and of source/input aliases across later steps.
     for(auto &output:f.outputs)output=f.one(c::Operation(c::Copy{}),{output});
     result.logical=sem::make_graph(f);std::vector<g::ConstantBinding> constants;
     for(std::size_t i=0;i<f.constants.size();++i) {
       const auto &description=f.description(f.constants[i]);
-      result.literals.push_back(shared?shared->bind(i,description,std::move(f.constant_bytes[i]),owner):upload(owner,f.constant_bytes[i]));
-      constants.push_back({.value=result.logical.constants[i],.tensor=take(result.literals.back().tensor(description),"Kimi typed literal"),
-          .owner=owner,.lease=result.literals.back()});
+      if(i>=supplied) {
+        if(f.constant_bytes[i].empty()&&take(description.required_bytes(),"Kimi literal extent"))
+          throw std::runtime_error("original Kimi constant source lease is absent");
+        result.literals.push_back(shared?shared->bind(i,description,std::move(f.constant_bytes[i]),owner):upload(owner,f.constant_bytes[i]));
+      }
+      constants.push_back({.value=result.logical.constants[i],.tensor=take(result.literals[i].tensor(description),"Kimi typed literal"),
+          .owner=owner,.lease=result.literals[i]});
     }
     f.constant_bytes.clear();
     const c::WorkloadContext workload{take(c::ModelArtifactProfile::create(*f.profile),"Kimi geometry profile"),f.phase,{0x48594c454d4f444cULL,f.region,1}};
@@ -227,6 +247,46 @@ struct Run final {
     return model_graph_run::execute(invocation,pool,queue,inputs,input,outputs,submissions);
   }
 };
+
+// Cold-only original parameter assembly. ReadLeases are moved into the
+// existing Run::literals vector; no second table owns the native constants.
+inline Run prepare_original_kda(const kimi_original_attention_roles::Kda &original,
+    c::Context &context,const c::StorageOwner &owner) {
+  sem::Fragment f{.profile=kProfile,.region=0x030602};
+  const auto input=f.input(sem::dense({1,7168}));
+  const auto history=f.input(sem::dense({3,kChannels}));
+  const auto state=f.input(sem::dense({1,96,128,128}));
+  std::vector<c::ReadLease> literals;literals.reserve(12);
+  const auto constant=[&](const original_named_role_source::ReadonlyRole &role) {
+    return Run::source_constant(f,literals,role,owner);
+  };
+  const auto parameters=kimi_original_attention_values::declare_kda(original.view(),constant);
+  const auto result=kda::append_kda(f,input,history,state,parameters,{7168,96,128,1.e-5F,1.e-5F});
+  const auto outputs=result.outputs();f.outputs.assign(outputs.begin(),outputs.end());
+  f.state_ports={{1,0},{2,2}};
+  return Run::prepare(std::move(f),context,owner,nullptr,std::move(literals));
+}
+inline Run prepare_original_mla(std::int32_t position,const kimi_original_attention_roles::Mla &original,
+    c::Context &context,const c::StorageOwner &owner,LiteralBank &small_literals) {
+  sem::Fragment f{.profile=kProfile,.region=0x070701};
+  const auto input=f.input(sem::dense({1,7168}));
+  const auto past=f.input(sem::dense({kCapacity,576}));
+  std::vector<c::ReadLease> literals;literals.reserve(10);
+  const auto constant=[&](const original_named_role_source::ReadonlyRole &role) {
+    return Run::source_constant(f,literals,role,owner);
+  };
+  const auto parameters=kimi_original_attention_values::declare_mla(original.view(),constant);
+  const auto result=kimi::append_mla(f,input,past,parameters,kimi::OrdinaryHistory{kCapacity,position});
+  const auto outputs=result.outputs();f.outputs.assign(outputs.begin(),outputs.end());
+  f.bfloat_chain_outputs={0,1,2,3,4,5,6,8};f.state_ports={{1,0}};
+  // Same real integer cursor successor as the synthetic ordinary consumer.
+  const auto cursor=f.input(sem::dense({1},c::DataType::kInt32));
+  const auto one=f.constant(sem::dense({1},c::DataType::kInt32),sem::bytes(std::vector<std::int32_t>{1}));
+  const auto joined=f.one(c::Operation(c::Concat{.axis=0}),{cursor,one});
+  const auto scanned=f.one(c::Operation(c::Scan{.axis=0}),{joined});
+  f.outputs.push_back(f.one(c::Operation(c::Gather{}),{scanned,one}));
+  return Run::prepare(std::move(f),context,owner,&small_literals,std::move(literals));
+}
 
 enum Entry:std::size_t {kHistory,kRecurrent,kMla,kCursor,kFeature,kEpoch,kEntries};
 struct State final {
@@ -296,6 +356,54 @@ std::array<Bytes,kEpoch> snapshot(const State &state,const c::StateVersion &vers
   for(std::size_t i=0;i<kEpoch;++i)result[i]=read(state.member(version,static_cast<Entry>(i)));return result;
 }
 struct SharedDevice final {std::shared_ptr<c::cuda::MemoryResource> device;m::MemoryResourceRef ref() noexcept{return device->ref();}};
+
+TEST(KimiHeterogeneousState,CudaBorrowedLiteralPrefixUsesActualLeaseAndRejectsMisalignment) {
+  auto context=take(g::cuda::create_context(),"literal-prefix CUDA Context");
+  auto device=std::make_shared<c::cuda::MemoryResource>(take(c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice),"literal-prefix actual device"));
+  auto owner=take(c::StorageOwner::adopt(context,SharedDevice{device}),"literal-prefix original native owner");
+  auto queue=take(context.create_queue(),"literal-prefix original queue");
+  const std::vector<float> weights{1.F,2.F,3.F,4.F},input_values{5.F,6.F,7.F,8.F};
+  const auto description=sem::dense({4});
+  auto lease=upload(owner,sem::bytes(weights));
+  const auto original_view=take(lease.view(),"literal-prefix original view");
+  original_named_role_source::ReadonlyRole role{"synthetic F32 literal",description,owner,lease,nullptr};
+  sem::Fragment bad{.profile=kProfile,.region=0x4b494d494c495431ULL};
+  bad.constant(description,sem::bytes(weights));
+  std::vector<c::ReadLease> empty_prefix;
+  const auto bad_constants=bad.constants.size(),bad_values=bad.descriptions.size();
+  EXPECT_THROW(Run::source_constant(bad,empty_prefix,role,owner),std::runtime_error);
+  EXPECT_EQ(bad.constants.size(),bad_constants);EXPECT_EQ(bad.descriptions.size(),bad_values);EXPECT_TRUE(empty_prefix.empty());
+  const auto reject=[&](bool real_bytes,bool excessive) {
+    sem::Fragment f{.profile=kProfile,.region=0x4b494d494c495432ULL};
+    const auto input=f.input(description);
+    const auto constant=f.constant(description,real_bytes?sem::bytes(weights):Bytes{});
+    f.outputs={f.one(c::Operation(c::Binary{c::BinaryKind::kAdd}),{input,constant})};
+    std::vector<c::ReadLease> supplied{lease};if(excessive)supplied.push_back(lease);
+    EXPECT_THROW(Run::prepare(std::move(f),context,owner,nullptr,std::move(supplied)),std::runtime_error);
+  };
+  reject(true,false);reject(false,true);
+  c::ReadLease escaped;
+  {
+    sem::Fragment f{.profile=kProfile,.region=0x4b494d494c495433ULL};
+    const auto input=f.input(description);std::vector<c::ReadLease> supplied;
+    const auto constant=Run::source_constant(f,supplied,role,owner);
+    ASSERT_EQ(f.constant_bytes.size(),1u);EXPECT_TRUE(f.constant_bytes[0].empty());
+    f.outputs={f.one(c::Operation(c::Binary{c::BinaryKind::kAdd}),{input,constant})};
+    auto run=Run::prepare(std::move(f),context,owner,nullptr,std::move(supplied));
+    ASSERT_EQ(run.literals.size(),1u);
+    const auto actual_view=take(run.literals[0].view(),"literal-prefix retained original view");
+    EXPECT_EQ(actual_view.native_handle(),original_view.native_handle());EXPECT_EQ(actual_view.offset(),original_view.offset());
+    EXPECT_EQ(actual_view.resource(),original_view.resource());
+    role.lease={};lease={}; // The original Run owns the same immutable lease.
+    const std::array inputs{upload(owner,sem::bytes(input_values))};
+    const auto output=run.execute(queue,inputs);
+    ASSERT_EQ(output.size(),1u);EXPECT_EQ(values<float>(output[0]),(std::vector<float>{6.F,8.F,10.F,12.F}));
+    EXPECT_EQ(run.submissions,1u);escaped=run.literals[0];
+  }
+  EXPECT_EQ(values<float>(escaped),weights);escaped={};
+  ::testing::Test::RecordProperty("source_scope","Synthetic F32[4] lease only; no original Kimi payload read or numeric qualification");
+  ::testing::Test::RecordProperty("binding_scope","Actual original native handle/offset/resource reused through existing Run literals and GraphConstantBinding; no numeric constant byte carrier");
+}
 
 TEST(KimiHeterogeneousState,CudaOriginalGeometrySyntheticKdaMlaPublishesWholeStateAndRestoresForks) {
   auto context=take(g::cuda::create_context(),"Kimi CUDA Context");

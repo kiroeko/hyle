@@ -1,0 +1,173 @@
+{
+  "status": "PASS_FINITE_SYNTHETIC_BORROWED_LITERAL_AND_EXISTING_STATE_JOURNEY",
+  "date": "2026-10-25",
+  "base_commit": "59570e37994a1ac1173618d171cf63eb7ca7fd08",
+  "source_pins": [
+    {
+      "path": "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 33876,
+      "sha256": "b79e5fcec7fa926f6fb8468313d8db25bac7b14a7dc41253d81090e30e9df14f"
+    },
+    {
+      "path": "tests/compute_models/kimi_original_attention_layout.h",
+      "bytes": 2803,
+      "sha256": "1db331bd4f65565fee0390238dbd5d68e342542d67001c622273d4aa6496aeef"
+    },
+    {
+      "path": "tests/compute_models/kimi_original_attention_roles.h",
+      "bytes": 10725,
+      "sha256": "a983f1ab0c23911b1c95a9398e84b1ad501cbf8bd654bf2e7ce5a64bcc7af915"
+    },
+    {
+      "path": "tests/compute_models/kimi_original_attention_values.h",
+      "bytes": 5720,
+      "sha256": "d4de206bebb6840830e557b84d2f42afacb979d66eca4faed99f9ec98f7507ee"
+    }
+  ],
+  "tested_source_pins": [
+    {
+      "path": "source/tests/compute_models/kimi_heterogeneous_state_consumer_test.cc",
+      "bytes": 33876,
+      "sha256": "b79e5fcec7fa926f6fb8468313d8db25bac7b14a7dc41253d81090e30e9df14f"
+    },
+    {
+      "path": "source/tests/compute_models/kimi_original_attention_layout.h",
+      "bytes": 2839,
+      "sha256": "01e8d97666cb8ed7b220793ca1c5ae0125ef8bc220e44ac72663663f05acc117"
+    },
+    {
+      "path": "source/tests/compute_models/kimi_original_attention_roles.h",
+      "bytes": 10770,
+      "sha256": "245a84570c3973362c750481395a68ee53e7e2f09541acf68a0236924dccc214"
+    },
+    {
+      "path": "source/tests/compute_models/kimi_original_attention_values.h",
+      "bytes": 5735,
+      "sha256": "abd9e1a9683c06dc24b2f1911d6fcf27af19a05d4187148edc8e4bf8f7b76e5c"
+    }
+  ],
+  "after_test_changes": "Only three header comments remove obsolete private/uncompiled wording. Consumer bytes and all C++ tokens are unchanged.",
+  "changes": [
+    "Authenticated original header geometry defines fourteen KDA0 and nine MLA3 roles in four exact ranges, totaling 1,352,207,360 bytes. Runtime loading requires matching union and role SHA pins.",
+    "Cold preparation bit-copies Q/K/V convolution banks and splits/transposes original BF16 KV-b once; it does not create generated coefficients, an F32 weight bank or a second native owner table.",
+    "The existing Run retains original ReadLeases in its original literals vector and uses GraphConstantBinding. A supplied prefix must match descriptors, actual leases and empty host payloads before graph preparation.",
+    "Original KDA/MLA cold builders call the existing shared math and state ports; these builders are compiled only until genuine payload cases run."
+  ],
+  "execution": {
+    "processes": {
+      "compile": {
+        "exit": 0,
+        "seconds": 4.782000000006519,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.7030000000086147,
+        "timeout": false
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 2.4059999999881256,
+        "timeout": false
+      }
+    },
+    "tests": 2,
+    "failures": 0,
+    "skips": 0,
+    "cases": [
+      {
+        "name": "CudaBorrowedLiteralPrefixUsesActualLeaseAndRejectsMisalignment",
+        "seconds": 0.106,
+        "properties": {
+          "source_scope": "Synthetic F32[4] lease only; no original Kimi payload read or numeric qualification",
+          "binding_scope": "Actual original native handle/offset/resource reused through existing Run literals and GraphConstantBinding; no numeric constant byte carrier"
+        }
+      },
+      {
+        "name": "CudaOriginalGeometrySyntheticKdaMlaPublishesWholeStateAndRestoresForks",
+        "seconds": 1.232,
+        "properties": {
+          "weight_scope": "Generated sparse BF16/F32 weights at fixed Kimi7168/96x128 geometry; NOT original artifact payload or quality",
+          "composition_scope": "Actual KDA hidden lease feeds actual absorbed MLA. Intervening full model layers/residuals and LM head are not executed; no generated token or MTP claim.",
+          "state_scope": "One StateStore, two independent Heads and one immutable restored fork; convolution history, recurrent KDA, full finite MLA cache, actual Graph I32 cursor, actual final feature, Epoch metadata. AttnRes is frame-only and absent.",
+          "ordinary_commits": "6",
+          "cancelled_unpublished_candidates": "1",
+          "stale_publish_rejections": "6",
+          "native_cancellation_scope": "Cancellation is of the unpublished StateDraft after KDA has actually retired; no GPU preemption claim",
+          "state_backing_budget": "105969664"
+        }
+      }
+    ],
+    "new_consumer_TUs": 1,
+    "new_core_provider_SDK_TUs": 0,
+    "cached_link_inputs": 232
+  },
+  "source_headers": {
+    "repository": "moonshotai/Kimi-K3",
+    "revision": "f831ab66814297da540d832a5235f8e904f29d06",
+    "headers": [
+      {
+        "file": "model-00001-of-000096.safetensors",
+        "source_bytes": 2341216112,
+        "lfs_sha256": "975584c00f85a95fce8ae0f840af8cef69c2ef4db00d34cab3e2cbdfc60f6e51",
+        "xet_hash": "a8211e237bf9a455d6f194c255a201ee87d75df10d2742e269c036f8504e959d",
+        "strong_etag": "\"a8211e237bf9a455d6f194c255a201ee87d75df10d2742e269c036f8504e959d\"",
+        "header_bytes": 2920,
+        "header_sha256": "bfd47268eb1556d004cc0d8a8ce63935a73e812c87333cfa56d46312b1c692c8",
+        "data_base": 2928,
+        "checked_roles": 14,
+        "tensor_count": 23
+      },
+      {
+        "file": "model-00004-of-000096.safetensors",
+        "source_bytes": 16567501776,
+        "lfs_sha256": "5955fd8feda89b1af8400c25e885e7177d47edff155f54b318beb8dd1cec5c05",
+        "xet_hash": "c0910cc07a217656b12901d115663cf19fdb182d884e5ca228f238537d04c11e",
+        "strong_etag": "\"c0910cc07a217656b12901d115663cf19fdb182d884e5ca228f238537d04c11e\"",
+        "header_bytes": 817608,
+        "header_sha256": "3ff389a539b7408ba7b99e9445efa1bc1e5f4bbba1e9402e2c494015add5a647",
+        "data_base": 817616,
+        "checked_roles": 9,
+        "tensor_count": 5398
+      }
+    ],
+    "transfer": {
+      "status": "PASS",
+      "error_type": null,
+      "actual_request_ids": [
+        14843,
+        14844,
+        14845,
+        14846,
+        14847,
+        14848
+      ],
+      "requests": 6,
+      "application_body_received_bytes": 884076,
+      "admitted_body_ceiling_bytes": 1344834,
+      "hard_application_body_limit_bytes": 8388608,
+      "received_bytes_by_final_host": {
+        "hf-mirror.net": 884076
+      },
+      "all_opened_final_hosts_mirror": true,
+      "tensor_payload_bytes_read": 0,
+      "automatic_retries": 0
+    },
+    "whole_LFS_body_verified": false
+  },
+  "acquisition": "Only the separately recorded minimal payload batch is running. Partial bytes and header identity do not establish original source numeric correctness; no completed payload or original numeric claim in this record.",
+  "limits": [
+    "The borrowed-prefix case uses actual synthetic F32[4] native storage, not original Kimi payload.",
+    "The original-geometry journey still uses generated sparse parameters; original23-role numeric/source quality is not verified.",
+    "Cold original KDA/MLA builders and role/layout helpers were compiled but not executed with original roles.",
+    "The separately authorized payload download continues on its original handle; no new HTTP was initiated by this build/run.",
+    "One CUDA backend only; no throughput, full model, cross-platform or native preemption claim."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-original-attention-binding-2026-10-25.zip",
+    "bytes": 57762,
+    "sha256": "006ac7011ff8eb0c29d3cb9d927b1640d24fb06a9b5397957cf47e3a971ee068",
+    "members": 26,
+    "contents": "Compiled source, patch/pins, bounded source/header facts and minimal range plan, exact commands and raw CUDA results. No model body, binary or dependency cache."
+  }
+}
