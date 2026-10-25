@@ -101,9 +101,14 @@ CUDA 实际共享 primary context；这个合同依赖各自原资源与 Complet
 
 已知字节的共用接纳沿一个 `ResourceBudget` scope 扩展：指定多个真实资源行共享总额，
 其副本沿原分配、Graph 与租约传播，保留同 scope 的 backing 去重。不会自动合并独立预算，
-也不把无资源归属的私有存储归到某个设备。底层门禁与引擎接线是两步：当前 Model 的
-独立 cache／execution 预算、权重 IO 及直接 Buffer 还需统一到实际分配源，不能仅设置
-总额参数便宣称全部受控。预算所有权须随 backing 和实际退休延续；raw Buffer 转租约时
+也不把无资源归属的私有存储归到某个设备。验证消费者已可显式移入原 Backend 和共用 scope：
+权重池先接纳再分配，原文件 pipeline、已知 Graph workspace、caller Tensor 和 readback
+沿同一 scope 计量；常量沿原 ready lease 去重。默认不传 scope 时沿原分配路径。
+[两个 Model 的有限检查](../evidence/correctness/inference-shared-known-byte-sources-batch1-2026-10-25.json)
+已覆盖加载拒绝、A 实际退休与 B 继续；FP8／NF4 的新预算路径仅源码接线，不以此代签量化实跑。
+原 `--cache-bytes` 与 cache-only 计量保留为局部约束，cache backing 尚未共同接入跨 Model 总额。
+原文件映射、普通 STL 及 opaque 私有存储也仍在此范围外，不能仅设置总额参数便宣称全部受控。
+预算所有权须随 backing 和实际退休延续；raw Buffer 转租约时
 应转移同一实际费用，不能重复计账或先退费再接纳，移动赋值也须先释放旧 backing。
 
 源精度在准备状态／图之前确定：从同一份已校验角色得到不可变 `PrecisionProfile`，

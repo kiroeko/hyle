@@ -1,4 +1,8 @@
 #include <gtest/gtest.h>
+#include <atomic>
+#include <memory>
+#include <semaphore>
+#include <thread>
 
 #include <array>
 #include <utility>
@@ -6,6 +10,7 @@
 #include "completion_internal.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/resource_budget_access.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -284,4 +289,101 @@ TEST(RetainedLeaseBudget, UnannotatedRetainedDomainCannotChangeItsAccountingKey)
   EXPECT_EQ(external(budget), 0u);
   EXPECT_EQ(budget.usage(m::system_resource())->live_bytes, baseline);
 }
+
+class DeallocationWitnessResource final : public m::MemoryResource {
+public:
+  const c::ResourceBudget *budget = nullptr;
+  std::size_t live_at_free = SIZE_MAX;
+  bool nested_admitted = false;
+  std::string_view name() const noexcept override { return "actual-backing-free-witness"; }
+  m::MemoryProperties properties() const noexcept override { return m::system_resource().properties(); }
+  hyle::Result<m::ResourceAllocation> allocate(std::size_t bytes,std::size_t alignment) noexcept override {
+    return m::system_resource().resource().allocate(bytes,alignment);
+  }
+  hyle::Result<m::ResourceHostMapping> map_host(void *h,std::size_t o,std::size_t n,m::HostAccess a) noexcept override {
+    return m::system_resource().resource().map_host(h,o,n,a);
+  }
+  hyle::Status unmap_host(void *h,void *t,std::size_t o,std::size_t n,m::HostAccess a) noexcept override {
+    return m::system_resource().resource().unmap_host(h,t,o,n,a);
+  }
+  void deallocate(m::ResourceAllocation a) noexcept override {
+    live_at_free=budget->usage(m::MemoryResourceRef(*this))->live_bytes;
+    auto nested=budget->reserve(m::MemoryResourceRef(*this),512);nested_admitted=bool(nested);
+    m::system_resource().resource().deallocate(a);
+  }
+};
+TEST(RetainedLeaseBudget, DirectAndImportedQuotaOutliveActualBackingDeallocate) {
+  for(bool retain:{false,true}) {
+    DeallocationWitnessResource resource;const auto ref=m::MemoryResourceRef(resource);
+    const std::array limits{c::ResourceBudgetLimit{ref,512},c::ResourceBudgetLimit{m::system_resource()}};
+    const std::array rows{ref};auto budget=c::ResourceBudget::create({.limits=limits},rows,512).value();resource.budget=&budget;
+    auto pool=c::LeasePool::create(ref,512,{.max_blocks=1,.resource_budget=budget}).value();
+    auto writer=pool.allocate(16).value();auto ready=writer.publish().value();
+    if(retain)ASSERT_TRUE(d::LeaseAccess::retain_budget(ready,ref,budget).ok());
+    pool={};ready.reset();
+    EXPECT_EQ(resource.live_at_free,512u);EXPECT_FALSE(resource.nested_admitted);
+    EXPECT_EQ(budget.usage(ref)->live_bytes,0u);EXPECT_EQ(budget.shared_usage()->live_bytes,0u);
+  }
+}
+class SlowAliasResource final : public m::MemoryResource {
+public:
+  std::atomic<unsigned> frees{0};std::binary_semaphore entered{0},allow{0};
+  std::string_view name() const noexcept override{return "slow-owned-alias-backing";}
+  m::MemoryProperties properties() const noexcept override{return m::system_resource().properties();}
+  hyle::Result<m::ResourceAllocation> allocate(std::size_t,std::size_t) noexcept override {
+    return std::unexpected(hyle::Status::Unimplemented("external alias cannot allocate"));
+  }
+  hyle::Result<m::ResourceHostMapping> map_host(void *h,std::size_t o,std::size_t n,m::HostAccess a) noexcept override {
+    return m::system_resource().resource().map_host(h,o,n,a);
+  }
+  hyle::Status unmap_host(void *h,void *t,std::size_t o,std::size_t n,m::HostAccess a) noexcept override {
+    return m::system_resource().resource().unmap_host(h,t,o,n,a);
+  }
+  void deallocate(m::ResourceAllocation) noexcept override {
+    // The real original backing belongs to the attached native owner, like
+    // an array export. Its two wrappers share one authenticated allocation.
+    if(frees.fetch_add(1)==0){entered.release();allow.acquire();}
+  }
+};
+struct ActualAliasPayload final {
+  ActualAliasPayload(SlowAliasResource &selected,const c::ResourceBudget &scope,
+                     std::size_t &observed,bool &admitted,unsigned &frees)
+      :resource(selected),budget(scope),live_at_free(observed),nested_admitted(admitted),physical_frees(frees),
+       allocation(m::system_resource().resource().allocate(512,256).value()){}
+  ~ActualAliasPayload(){
+    const auto ref=m::MemoryResourceRef(resource);live_at_free=budget.usage(ref)->live_bytes;
+    auto nested=budget.reserve(ref,512);nested_admitted=bool(nested);
+    m::system_resource().resource().deallocate(allocation);++physical_frees;
+  }
+  SlowAliasResource &resource;const c::ResourceBudget &budget;
+  std::size_t &live_at_free;bool &nested_admitted;unsigned &physical_frees;m::ResourceAllocation allocation;
+};
+TEST(RetainedLeaseBudget, ConcurrentAliasRetirementUnlinksIdentityButKeepsQuotaThroughLastOwner) {
+  SlowAliasResource resource;const auto ref=m::MemoryResourceRef(resource);
+  const std::array limits{c::ResourceBudgetLimit{ref,512},c::ResourceBudgetLimit{m::system_resource()}};
+  const std::array rows{ref};auto budget=c::ResourceBudget::create({.limits=limits},rows,512).value();
+  std::size_t live_at_free=SIZE_MAX;bool admitted=true;unsigned physical_frees=0;
+  auto payload=std::make_shared<ActualAliasPayload>(resource,budget,live_at_free,admitted,physical_frees);
+  int canonical,authority;
+  const auto alias=[&]{
+    auto buffer=m::Buffer::adopt(ref,payload->allocation).value();auto ready=c::ReadLease::adopt(std::move(buffer)).value();
+    auto *owner=new std::shared_ptr<ActualAliasPayload>(payload);
+    d::LeaseAccess::retain_resource_owner(ready,owner,+[](void *p)noexcept{delete static_cast<std::shared_ptr<ActualAliasPayload>*>(p);});
+    EXPECT_TRUE(d::LeaseAccess::set_retained_backing(ready,ref,&authority,&canonical,512).ok());
+    EXPECT_TRUE(d::LeaseAccess::retain_budget(ready,ref,budget).ok());return ready;
+  };
+  auto first=alias(),last=alias();payload.reset();
+  EXPECT_EQ(budget.usage(ref)->live_bytes,512u);
+  std::thread slow([&]{first.reset();});resource.entered.acquire();
+  last.reset(); // Last ACTIVE token ends while the first true owner is still retiring.
+  EXPECT_EQ(budget.usage(ref)->live_bytes,512u);EXPECT_EQ(physical_frees,0u);
+  auto reused=d::ResourceBudgetAccess::reserve_backing(budget,ref,{&authority,&canonical},512);
+  EXPECT_FALSE(reused);if(!reused)EXPECT_TRUE(reused.error().IsResourceExhausted());
+  resource.allow.release();slow.join();
+  EXPECT_EQ(live_at_free,512u);EXPECT_FALSE(admitted);EXPECT_EQ(physical_frees,1u);
+  EXPECT_EQ(budget.usage(ref)->live_bytes,0u);
+  auto new_allocation=d::ResourceBudgetAccess::reserve_backing(budget,ref,{&authority,&canonical},512);
+  ASSERT_TRUE(new_allocation);new_allocation->reset();EXPECT_EQ(budget.usage(ref)->live_bytes,0u);
+}
+
 } // namespace

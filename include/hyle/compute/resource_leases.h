@@ -66,6 +66,7 @@ public:
   HYLE_COMPUTE_API void reset() noexcept;
 private:
   friend class WriteLease;
+  friend class LeasePool;
   friend class LeaseUseBatch;
   friend struct detail::LeaseAccess;
   ReadLease(detail::LeaseBlock *block, std::size_t offset, std::size_t size) noexcept
@@ -127,6 +128,12 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_COMPUTE_API Result<WriteLease> allocate(std::size_t bytes,
                                             std::size_t alignment = 256) noexcept;
+  // Freeze one exclusive full-backing writer and relinquish this pool's
+  // allocation authority without closing readonly/native admission. Success
+  // empties both handles and permanently forbids writer promotion; rejection
+  // changes neither. The original resource/context/allocator remain borrowed
+  // through every resulting lease/use, exactly as with ReadLease::adopt.
+  HYLE_COMPUTE_API Result<ReadLease> freeze(WriteLease &&writer) noexcept;
   HYLE_COMPUTE_API LeasePoolStats stats() const noexcept;
   // Stops allocation/new native use. No hidden wait; live read views remain
   // backed. Unavailable means an admitted use still owns storage.

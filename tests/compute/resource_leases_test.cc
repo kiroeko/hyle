@@ -58,6 +58,75 @@ static_assert(!std::is_copy_constructible_v<detail::AppendLease>);
 static_assert(!std::is_copy_assignable_v<detail::AppendLease>);
 static_assert(std::is_nothrow_move_constructible_v<detail::AppendLease>);
 
+TEST(ResourceLeases, FreezeFullPoolKeepsBudgetAndFutureReadonlyAdmission) {
+  const std::array limits{ResourceBudgetLimit{mem::system_resource(), 65536}};
+  auto budget = ResourceBudget::create({.limits = limits}).value();
+  const auto baseline = budget.usage(mem::system_resource())->live_bytes;
+  auto pool = LeasePool::create(mem::system_resource(), 512,
+      {.max_blocks = 1, .resource_budget = budget}).value();
+  auto writer = pool.allocate(512).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+  const auto generation = writer.generation();
+  auto frozen = pool.freeze(std::move(writer)); ASSERT_TRUE(frozen);
+  EXPECT_FALSE(pool.valid()); EXPECT_FALSE(writer.valid());
+  EXPECT_EQ(frozen->generation(), generation);
+  EXPECT_FALSE(frozen->try_write());
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_by_category[
+      static_cast<std::size_t>(ResourceBudgetCategory::kExternal)], 512u);
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto episode = uses.begin().value();
+  ASSERT_TRUE(episode.read(*frozen).ok()); // New use after pool-root relinquishment.
+  auto complete = Completion::completed();
+  ASSERT_TRUE(episode.attach(complete).ok());
+  ASSERT_TRUE(complete.wait().ok());
+  std::array<std::byte, 512> bytes{};
+  ASSERT_TRUE(frozen->view()->read(bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{37});
+  frozen->reset();
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, baseline);
+}
+
+TEST(ResourceLeases, FreezeRejectsForeignAndPartialWritersWithoutMutation) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto partial = pool.allocate(256).value();
+  auto other = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1}).value();
+  auto foreign = other.allocate(512).value();
+  const auto partial_generation = partial.generation(), foreign_generation = foreign.generation();
+  EXPECT_FALSE(pool.freeze(std::move(foreign)));
+  EXPECT_TRUE(pool.valid()); EXPECT_TRUE(other.valid()); EXPECT_TRUE(foreign.valid());
+  EXPECT_EQ(foreign.generation(), foreign_generation);
+  EXPECT_FALSE(pool.freeze(std::move(partial)));
+  EXPECT_TRUE(partial.valid()); EXPECT_EQ(partial.generation(), partial_generation);
+  EXPECT_TRUE(partial.view()->fill(std::byte{19}).ok());
+  auto legacy = partial.publish(); ASSERT_TRUE(legacy);
+  EXPECT_TRUE(legacy->try_write()); // Rejection did not permanently freeze it.
+}
+
+TEST(ResourceLeases, FreezeWaitsForActualWritesAndPreservesFailure) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(512).value();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto episode = uses.begin().value(); ASSERT_TRUE(episode.write(writer).ok());
+  PendingUse pending;
+  auto completion = detail::CompletionAccess::make(&kPending, &pending);
+  ASSERT_TRUE(episode.attach(completion).ok());
+  auto rejected = pool.freeze(std::move(writer));
+  ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsUnavailable());
+  EXPECT_TRUE(pool.valid()); EXPECT_TRUE(writer.valid());
+  ASSERT_TRUE(completion.wait().ok());
+  auto frozen = pool.freeze(std::move(writer)); ASSERT_TRUE(frozen);
+  EXPECT_FALSE(frozen->try_write());
+
+  auto failed_pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1}).value();
+  auto failed_writer = failed_pool.allocate(512).value();
+  auto failed_use = uses.begin().value(); ASSERT_TRUE(failed_use.write(failed_writer).ok());
+  auto failed = Completion::completed(hyle::Status::Internal("test original write failure"));
+  ASSERT_TRUE(failed_use.attach(failed).ok());
+  auto failed_freeze = failed_pool.freeze(std::move(failed_writer));
+  ASSERT_FALSE(failed_freeze); EXPECT_TRUE(failed_freeze.error().IsInternal());
+  EXPECT_TRUE(failed_pool.valid()); EXPECT_TRUE(failed_writer.valid());
+}
+
 TEST(AppendLeases, BoundedPrefixCannotWidenOrPromoteAndFullPageHasNoTail) {
   auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 3}).value();
   auto writer = pool.allocate(256).value();

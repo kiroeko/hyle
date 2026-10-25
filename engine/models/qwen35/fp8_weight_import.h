@@ -11,6 +11,7 @@
 #include "prepared_roles.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/weight_import.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/mem/mapping.h"
 
 namespace qwen35 {
@@ -20,9 +21,12 @@ struct ImportedFloat8Weight final {
   hyle::compute::TensorDesc description;
   hyle::mem::Buffer storage;
   std::size_t temporary_scale_bytes = 0;
+  hyle::compute::LeasePool pool;
+  hyle::compute::ReadLease ready;
 };
 inline hyle::Result<ImportedFloat8Weight> import_float8_block128_roles(
-    const prepared::Role &codes, const prepared::Role &scales) {
+    const prepared::Role &codes, const prepared::Role &scales,
+    const hyle::compute::ResourceBudget &budget = {}) {
   namespace c = hyle::compute;
   namespace m = hyle::mem;
   if (codes.projection_codec != prepared::ProjectionCodec::kFloat8Block128 ||
@@ -44,8 +48,19 @@ inline hyle::Result<ImportedFloat8Weight> import_float8_block128_roles(
   HYLE_ASSIGN_OR_RETURN(auto original_scales, m::FileMapping::open(scales.source.string().c_str(),
       m::MappingAccess::kReadOnly, scales.offset, scales.bytes));
   HYLE_ASSIGN_OR_RETURN(auto raw, original_scales.bytes());
-  HYLE_ASSIGN_OR_RETURN(auto sf, m::Buffer::create(m::system_resource(), sb, 64));
-  HYLE_ASSIGN_OR_RETURN(auto sf_map, sf.view().map_host(m::HostAccess::kWrite));
+  m::Buffer sf;
+  c::LeasePool sf_pool;
+  c::WriteLease sf_writer;
+  if (budget) {
+    HYLE_ASSIGN_OR_RETURN(sf_pool, c::LeasePool::create(m::system_resource(), sb,
+        {.max_blocks = 1, .backing_alignment = 64, .resource_budget = budget}));
+    HYLE_ASSIGN_OR_RETURN(sf_writer, sf_pool.allocate(sb, 64));
+  } else {
+    HYLE_ASSIGN_OR_RETURN(sf, m::Buffer::create(m::system_resource(), sb, 64));
+  }
+  m::BufferView sf_view = sf.view();
+  if (budget) { HYLE_ASSIGN_OR_RETURN(sf_view, sf_writer.view()); }
+  HYLE_ASSIGN_OR_RETURN(auto sf_map, sf_view.map_host(m::HostAccess::kWrite));
   HYLE_ASSIGN_OR_RETURN(auto sf_bytes, sf_map.writable_bytes());
   for (std::size_t i = 0; i < raw.size() / 2; ++i) {
     // Safetensors is little-endian. Construct native F32 bits exactly, without
@@ -56,12 +71,25 @@ inline hyle::Result<ImportedFloat8Weight> import_float8_block128_roles(
     std::copy(native.begin(), native.end(), sf_bytes.begin() + static_cast<std::ptrdiff_t>(4*i));
   }
   HYLE_RETURN_IF_ERROR(sf_map.flush()); HYLE_RETURN_IF_ERROR(sf_map.close());
-  HYLE_ASSIGN_OR_RETURN(auto destination, m::Buffer::create(m::system_resource(), yb, 256));
+  ImportedFloat8Weight result;
+  result.description = yd; result.temporary_scale_bytes = sb;
+  c::WriteLease destination;
+  m::BufferView destination_view;
+  if (budget) {
+    HYLE_ASSIGN_OR_RETURN(result.pool, c::LeasePool::create(m::system_resource(), yb,
+        {.max_blocks = 1, .resource_budget = budget}));
+    HYLE_ASSIGN_OR_RETURN(destination, result.pool.allocate(yb));
+    HYLE_ASSIGN_OR_RETURN(destination_view, destination.view());
+  } else {
+    HYLE_ASSIGN_OR_RETURN(result.storage, m::Buffer::create(m::system_resource(), yb, 256));
+    destination_view = result.storage.view();
+  }
   HYLE_ASSIGN_OR_RETURN(auto cv, original_codes.view());
   HYLE_ASSIGN_OR_RETURN(auto wv, c::ConstTensorView::create(wd, cv));
-  HYLE_ASSIGN_OR_RETURN(auto sv, c::ConstTensorView::create(sd, sf.view()));
-  HYLE_ASSIGN_OR_RETURN(auto yv, c::TensorView::create(yd, destination.view()));
+  HYLE_ASSIGN_OR_RETURN(auto sv, c::ConstTensorView::create(sd, sf_view));
+  HYLE_ASSIGN_OR_RETURN(auto yv, c::TensorView::create(yd, destination_view));
   HYLE_RETURN_IF_ERROR(c::import_float8_block128_weight(wv, sv, yv));
-  return ImportedFloat8Weight{yd, std::move(destination), sb};
+  if (budget) { HYLE_ASSIGN_OR_RETURN(result.ready, destination.publish()); }
+  return result;
 }
 } // namespace qwen35

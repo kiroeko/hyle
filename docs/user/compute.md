@@ -1181,6 +1181,10 @@ auto ready = output_write_lease.publish().value();
 初始化 host bytes 后才 publish；异步 writer 必须实际成功退休后才 publish，失败不会变成 ready。
 `LeasePool::adopt`/`ReadLease::adopt` 接管唯一 `mem::Buffer` 而不复制 payload，拒绝不消费输入；
 readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
+已经通过池完成初始化时，可对唯一、覆盖整个 backing 的普通 writer 调用
+`pool.freeze(std::move(writer))`，直接得到永久只读的租约；成功同时清空 pool 和 writer，
+不复制 payload，仍允许后续只读原生提交。尚有原生在途使用、部分块或失败写入时拒绝，
+保留原句柄；resource、Context 和 allocator 的借用寿命不变。
 Apple的`import_readonly`与原生Graph结果支持plain非连续只读视图：要求ready、shape／dtype／有效stride与完整地址span相符，保留原Array和结果寿命，不复制payload。
 借用输入的视图保持借用权限，已有拥有者的视图沿原lease范围导出；编码carrier仍要求原精确dense布局。
 所有未跟踪的 writable aliases 必须停止，不从裸 view 猜拥有权或就绪。

@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "status": "PASS_FINITE_CORE_CONTRACTS",
+  "scope": "Actual backing retirement quota order and immutable full-block LeasePool::freeze; host core foundation only.",
+  "problem": {
+    "bytes": 512,
+    "old_direct_and_retained": "Both actual deallocator callbacks observed budget.live=0 before freeing original backing and successfully reserved another 512 bytes.",
+    "original_failures": [
+      {
+        "attempt": "initial",
+        "process": {
+          "exit": 6,
+          "seconds": 0.25,
+          "timeout": false
+        },
+        "stdout": "retained=0 live_at_original_deallocate=0 nested_admitted=1 after=0\n"
+      },
+      {
+        "attempt": "attempt2",
+        "process": {
+          "exit": 6,
+          "seconds": 0.23399999999674037,
+          "timeout": false
+        },
+        "stdout": "retained=0 live_at_original_deallocate=0 nested_admitted=1 after=0\nretain setup rejected: memory resource is not host mappable\n"
+      },
+      {
+        "attempt": "attempt3",
+        "process": {
+          "exit": 1,
+          "seconds": 0.25,
+          "timeout": false
+        },
+        "stdout": "retained=0 live_at_original_deallocate=0 nested_admitted=1 after=0\nretained=1 live_at_original_deallocate=0 nested_admitted=1 after=0\n"
+      }
+    ],
+    "fixture_boundary": "Initial and attempt2 retained paths lacked host-map support; their direct path is a valid negative witness. Only corrected attempt3 establishes both direct and retained failures."
+  },
+  "implementation": [
+    "Last active shared-backing holder removes lookup identity; separate retiring holders retain charge until actual payload owners finish.",
+    "Domain teardown preserves allocator lifetime: backing and Domain metadata, native payload owner, deferred charges/spill metadata, then independent actual allocator owner.",
+    "Ordinary accounting token copy/reset semantics are unchanged. No lock is held across native/resource/allocator destruction.",
+    "LeasePool::freeze consumes one unique full-block writer and pool root only on successful preflight, retains original identity and budget, leaves future read admission open and permanently rejects writer promotion.",
+    "SharedBackingReservation remains one pointer; active and retiring generations cannot unlink each other."
+  ],
+  "validation": {
+    "tests": 36,
+    "failures": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "name": "ResourceLeases",
+        "tests": 12
+      },
+      {
+        "name": "SharedBackingBudget",
+        "tests": 5
+      },
+      {
+        "name": "SharedRequestedBudget",
+        "tests": 7
+      },
+      {
+        "name": "RetainedLeaseBudget",
+        "tests": 7
+      },
+      {
+        "name": "StorageOwner",
+        "tests": 5
+      }
+    ],
+    "core_translation_units": 2,
+    "existing_test_translation_units": 4,
+    "run": {
+      "path": ".scratch/lease-budget-deallocation-order-20261025/implementation/attempt1/run/process.json",
+      "bytes": 74,
+      "sha256": "04811018a0d79bc94c6c257ceb6527ef90bca2fcaa6e5d479c5881902f070638"
+    },
+    "xml": {
+      "path": ".scratch/lease-budget-deallocation-order-20261025/implementation/attempt1/results.xml",
+      "bytes": 13483,
+      "sha256": "744f2ae7a6584dcc505d7d263f21ce74d95ece8b95f28696965ef311e0c3f9de"
+    },
+    "closure": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\link\\checks.exe",
+        "bytes": 21449216,
+        "sha256": "a4f22a1942ad37ff831aee11f8f831997e1e672c9e996c5f1a0d25c89bc34f97"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\current1\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "refreshed_core_TUs": 2,
+      "test_TUs": 4,
+      "removed": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\budget\\budget.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\leases\\leases.obj",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-sampling-20261025\\host3\\host.obj"
+      ],
+      "source": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\src\\compute\\resource_budget.cc",
+          "bytes": 23076,
+          "sha256": "b5d6fdce4703e30a51be3046cd93480cf7e83bb01a654061bb833aa58ee953bd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\src\\compute\\resource_leases.cc",
+          "bytes": 43940,
+          "sha256": "456c075f6fdfa6016a8c1159348224d040bcdccbd69d6ae11eac2a0dbdf70c2e"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\tests\\compute\\resource_leases_test.cc",
+          "bytes": 31128,
+          "sha256": "d314ebdf217eac04815c57b3fb56975b231791296e7b00b9364ce323f6faea7f"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\tests\\compute\\shared_backing_budget_test.cc",
+          "bytes": 17667,
+          "sha256": "f92db165f106704b5b2ebd0de3916c48f8f79f591c8c77142bbccbbf49ade058"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\tests\\compute\\retained_lease_budget_test.cc",
+          "bytes": 21972,
+          "sha256": "77fa247ede4c3a49288c7b1951974949107b6765dedc9751712c4512c56243f5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\source\\tests\\graph\\constant_artifact_cache_test.cc",
+          "bytes": 51643,
+          "sha256": "f7f911069c5b25b38ce343589199e49c77ea656629852cd51e69ca5d1655b12d"
+        }
+      ],
+      "GPU": 0,
+      "SDK_full_build": 0
+    },
+    "checked_sources": [
+      {
+        "path": "include\\hyle\\compute\\detail\\lease_access.h",
+        "bytes": 7622,
+        "sha256": "45fb2c10a2224f4c3537a468794ea0c7f40e0d77e22d76a094ffcd7d54b2d9d1"
+      },
+      {
+        "path": "include\\hyle\\compute\\detail\\resource_budget_access.h",
+        "bytes": 4135,
+        "sha256": "5c85c53454fc8b12eeff264e362a21f7decb8e925c63a654ab155bfee914669e"
+      },
+      {
+        "path": "include\\hyle\\compute\\resource_leases.h",
+        "bytes": 9141,
+        "sha256": "4fcab3c18372d363be917f24b6977bb8e0fce84daa129de1efc58281310ab889"
+      },
+      {
+        "path": "include\\hyle\\compute\\storage_owner.h",
+        "bytes": 8142,
+        "sha256": "d86222a73bebeb646162b16d3aaeb59628007cc6f3648cc3a754687d780d24eb"
+      },
+      {
+        "path": "src\\compute\\resource_budget.cc",
+        "bytes": 23076,
+        "sha256": "b5d6fdce4703e30a51be3046cd93480cf7e83bb01a654061bb833aa58ee953bd"
+      },
+      {
+        "path": "src\\compute\\resource_leases.cc",
+        "bytes": 43940,
+        "sha256": "456c075f6fdfa6016a8c1159348224d040bcdccbd69d6ae11eac2a0dbdf70c2e"
+      },
+      {
+        "path": "tests\\compute\\resource_leases_test.cc",
+        "bytes": 31128,
+        "sha256": "d314ebdf217eac04815c57b3fb56975b231791296e7b00b9364ce323f6faea7f"
+      },
+      {
+        "path": "tests\\compute\\retained_lease_budget_test.cc",
+        "bytes": 21972,
+        "sha256": "77fa247ede4c3a49288c7b1951974949107b6765dedc9751712c4512c56243f5"
+      },
+      {
+        "path": "tests\\compute\\shared_backing_budget_test.cc",
+        "bytes": 17667,
+        "sha256": "f92db165f106704b5b2ebd0de3916c48f8f79f591c8c77142bbccbbf49ade058"
+      },
+      {
+        "path": "tests\\graph\\constant_artifact_cache_test.cc",
+        "bytes": 51643,
+        "sha256": "f7f911069c5b25b38ce343589199e49c77ea656629852cd51e69ca5d1655b12d"
+      }
+    ],
+    "checks": [
+      "direct and same-scope imported 512B deallocator observes charge and rejects nested reservation",
+      "concurrent aliased native-owner teardown retains quota until last actual payload free",
+      "retiring old record cannot remove new active generation; active siblings still share old record",
+      "sole custom allocator owner with two retained scopes/spill frees metadata before allocator destruction",
+      "original shared quota, alias dedup, rollback, controlled Completion retention and resource lease neighbors",
+      "new freeze future read admission, foreign/partial rejection and actual failed write retirement"
+    ]
+  },
+  "integration": {
+    "record": {
+      "path": ".scratch/lease-budget-deallocation-order-20261025/implementation/root-integration.json",
+      "bytes": 5012,
+      "sha256": "06af13e5f8a3c98db79b699f41e87414a5d1a0e63e998d6d21db11a881878cb8"
+    },
+    "normalized_sources_match": true,
+    "additional_build_or_run": false,
+    "note": "Root preserved canonical line endings; two test files have different raw line endings but identical normalized checked source."
+  },
+  "limits": [
+    "No GPU, platform matrix, SDK rebuild, HTTP, trained-model quality or throughput measurement belongs to this core proof.",
+    "Copies of one ResourceBudget scope aggregate selected actual resource rows; independent scopes are not implicitly merged.",
+    "Engine shared-source wiring remains a separate private Batch1 slice. Original finite cache scope and cross-Model aggregate cache-source accounting are not complete in this proof.",
+    "The later generic-freeze engine host/CUDA revalidation is separate from these 36 host checks."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/compute-lease-retirement-quota-and-readonly-freeze-2026-10-25.zip",
+    "bytes": 182091,
+    "sha256": "f48ba7813858c9df2aa7974a67f54f9113c7a267c49d2e341deda2c1d6ea178a",
+    "crc_verified": true,
+    "member_hashes_verified": true,
+    "members": 132,
+    "logical_bytes": 837941,
+    "contains_binaries_or_model_payload": false
+  }
+}

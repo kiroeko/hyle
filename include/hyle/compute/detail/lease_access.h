@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "hyle/compute/detail/append_lease.h"
 
 namespace hyle::compute::detail {
@@ -67,6 +69,10 @@ struct LeaseAccess final {
   // or require its caller-owned LeasePool to remain open.
   static HYLE_COMPUTE_API bool unique_read_owner(const ReadLease &lease) noexcept;
   using ReleaseOwnerFn = void (*)(void *owner) noexcept;
+  // Only the actual allocator object, independent of payload/controller
+  // ownership. This token remains through delayed accounting metadata free.
+  static HYLE_COMPUTE_API void retain_allocator_owner(ReadLease &lease,
+      std::shared_ptr<void> owner) noexcept;
   static HYLE_COMPUTE_API void retain_resource_owner(ReadLease &lease, void *owner,
                                                      ReleaseOwnerFn release) noexcept;
   static HYLE_COMPUTE_API void retain_resource_owner(LeasePool &pool, void *owner,

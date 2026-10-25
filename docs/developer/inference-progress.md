@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 09:08（北京时间）。整体暂估 **38%**，当前阶段：共享预算接线及释放顺序、Kimi 工作集组件合入；MTP F32 TopK1 捕获候选因实测退化关闭。
+更新：2026-10-25 09:25（北京时间）。整体暂估 **41%**，当前阶段：cache 局部／跨 Model 总额共同约束、Kimi 原角色组件与 MTP 双投影候选。共享预算首批引擎接线、释放顺序修复及 Kimi 生成组件已合入；F32 TopK1 捕获候选因实测退化关闭。
 百分比只表示本轮工作完成度，不是现有引擎的功能覆盖率；盘点后按实际缺项调整。
 本轮基线为 `c950466ec`，已提交并推送；上一轮 MTP 范围与结果保留在[工程说明](../implementation/inference-roadmap.md)及所属证据。
 已完成并归档：NF4 六输入驻留、MLX 普通绑定及有限组件、普通请求独立采样、MTP 逻辑调用及重建来源归因、共享预算基础门禁。
@@ -16,8 +16,8 @@
 功能完成标准是当前硬件能实现、能检查的相关底层功能全部完成；新增缺项继续纳入。
 首批清单、代表样例或盘点完成都不作为功能穷尽完成。本轮性能查明普通／MTP 落后原因，寻找反超机会和更好的基础设计，CUDA 重点参考 TensorRT-LLM；不以只整理旧对照作为完成。
 
-- 功能盘点与补齐：约 48%
-  - 基础普通推理：约 55%
+- 功能盘点与补齐：约 50%
+  - 基础普通推理：约 57%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
@@ -27,7 +27,8 @@
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
     - GLM Pro 原组件短历史与真实 index 供给：100%
     - Kimi 普通异构状态提交与恢复组件：100%
-    - Kimi 混合量化专家工作集组合：约 80%
+    - Kimi 混合量化工作集原几何生成组件：100%
+    - Kimi 两制品原 payload 有限组件：约 10%
     - prefill／decode／上下文与状态：约 20%
     - 采样／停止／预算与错误边界：约 5%
     - 验证消费者输入边界与仅 pending 续轮：100%
@@ -36,18 +37,20 @@
     - 生成后前缀命中的 Text R2 suffix 接纳：100%
     - 容量／淘汰／驻留与实际退休：约 5%
     - 已确认缺项的实现与有限检查：0%
-  - 多请求与多任务：约 52%
+  - 多请求与多任务：约 55%
     - 有界槽／世代／FIFO 与等待／唤醒原语：100%
     - 运行中有界接纳与增量续轮：约 65%
     - 请求级取消与保留同批未提交成员：约 80%
     - 请求局部失败与设备失败区分：约 25%
     - 输出消费／背压与完成观察：约 60%
     - prefill／decode 调度量与公平性：约 30%
-    - 多 Model 的资源寿命与设备接纳：约 40%
+    - 多 Model 的资源寿命与设备接纳：约 55%
     - 同预算多资源行的合计字节门禁：100%
-    - backing 实际释放与预算归还顺序：约 10%
+    - 共用 scope 的权重／IO／Graph／caller 接线：100%
+    - cache 局部／跨 Model 总额共同门禁：约 10%
+    - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
-- 架构复审、设计与调整：约 28%
+- 架构复审、设计与调整：约 30%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 30%
   - 新模型／新后端／新请求政策扩展检查：0%
@@ -70,9 +73,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 共享预算引擎接线 | 功能／架构 | 私有原型的主机组件和双 Model CUDA 旅程通过：128MiB scope 峰约16.3MiB，A退休销毁后B继续正常；正补通用 readonly 冻结，尚未合入，cache总量与已发现释放顺序仍待修 | 约 40% |
-| backing 释放顺序修复 | 功能／资源寿命 | 主机复现已确认：直接与导入去重两种 512 字节 charge 都在实际 deallocate 前归还。正审查身份先移除、实际 backing／owner 释放后才退额度的两阶段修复 | 约 10% |
-| Kimi 专家工作集组件合入 | 功能／基础推理 | 两种量化合同的原几何、生成原格式 CUDA 组件已通过两代 Top16、旧 reader 和失败后旧绑定执行；正复审供应器解耦及整理记录。首轮 oracle 符号零错误与失败保留，不代表原权重或整模型通过 | 约 80% |
+| cache 两种限额共同约束 | 功能／架构 | 首批权重／IO／Graph／caller 接线及最终 host、双 Model CUDA 回归已通过并合入；正设计如何同时保留 cache 局部限额与跨 Model 总额，避免对同 backing 重复计账 | 约 10% |
+| Kimi 原角色组件 | 功能／基础推理 | 两制品 router／bias 四个精确范围共 25,697,280B 已取得，全部 206、同镜像 host、零重试；正准备真实路由与独立参考，专家范围尚待实际 IDs，不下载整模 | 约 10% |
+| MTP M2 双投影候选审查 | 性能／实现候选 | 检查 verifier 的 gate／up 能否沿既有双输出合同共享实际工作，保两份原权重、BF16 边界及 F32 累加；仅私有源码与最小可证伪方案，尚未编译或运行 | 约 8% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -90,6 +93,8 @@
 | [普通分块 prefill](../evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json) | 原 BF16 CUDA P154／Q64 通过：中间块零输出／零采样、decode 穿插、部分状态恢复、已提交块取消重试及 pending 一次消费；普通 Text 图族增加冷输出模式，没有第二执行器。正式入口已严格语法检查；三处后续辅助接线未重跑 GPU，不代表 CLI 公平性或吞吐结果 |
 | [两个 Model 的寿命隔离](../evidence/correctness/qwen-dual-model-lifetime-2026-10-25.json) | 同一 CUDA 设备的独立 Backend／队列／资源通过：A 取消、退休、销毁后，B 已提交工作及新续算正常；两者实际共享 CUDA primary context。正式入口随后通过与新精度／暂存组合的严格语法检查，未重跑 GPU，不代表物理显存总额接纳、线程安全或并发吞吐 |
 | [同预算多资源行的合计门禁](../evidence/correctness/compute-shared-requested-byte-budget-2026-10-25.json) | 16 项 host 检查通过，包括两资源并发接纳、CPU 控制／metadata、失败回滚、同 backing 去重及实际 controlled Completion 退休后归还；公开类型尺寸／对齐未变，仅刷新一个核心 TU。独立预算不会自动合并，引擎全部已知字节接线及 GPU 多 Model 总量尚未完成 |
+| [实际释放后归还预算与通用 freeze](../evidence/correctness/compute-lease-retirement-quota-and-readonly-freeze-2026-10-25.json) | 直接及导入两路径的 512B 提前归还已修；36 项相关 host 检查通过，含并发别名退休、身份重用、唯一分配器 owner 与溢出 metadata，以及完整块 freeze 后新只读提交。独立复审后合入；无退休时分配、平台分支或新吞吐结论，GPU 引擎接线另测 |
+| [共用 scope 首批引擎接线](../evidence/correctness/inference-shared-known-byte-sources-batch1-2026-10-25.json) | 最终通用 freeze 与两个新核心对象的 host、双 Model CUDA 回归通过；128MiB scope 峰约16.3MiB，1MiB 提前拒绝，A 退休销毁后 B 正常继续，最终回到控制基线。原小模型为生成权重；FP8／NF4 预算新路径仅源码接线，cache 的局部／总额共同约束、映射与 opaque 私有存储仍未覆盖；未测性能 |
 | [普通请求独立采样](../evidence/correctness/ordinary-request-sampling-policies-2026-10-25.json) | 同 Model 三策略、N2／R2 六请求十二轮 CUDA 合成权重检查通过：30 输出、15 个真实 R2 桶、4 次 ledger 恢复；自然目录无命中，另外直接用真实 Snapshot 检查新请求前沿重选和历史 pending／RNG。host 检查弱身份、过期／foreign 及失败前置；正式入口仅严格语法检查，不是原权重、质量或吞吐结论 |
 | [Linux](../evidence/correctness/request-host-linux-portability-2026-10-25.json)／[macOS 主机原语检查](../evidence/correctness/request-host-macos-portability-2026-10-25.json) | WSL／GCC13、指定 Air／Apple Clang21 三套严格编译及运行通过；测试分配钩子修正后 Windows 两套复验通过；不是 Linux／Apple GPU 推理检查 |
 | [NF4 F16 导入与状态链](../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json) | 352 份原 state、完整 k_proj 的 524 万个解码值及原投影通过；未训练 CPU C192／CUDA C256 各自的 prefill、decode、恢复及退休通过，不作两几何跨平台数值对照。首 CUDA C192 受原生通道限制而拒绝，记录保留；完整 27B 未跑，约 50.1 GiB 是旧冷 F16 展开的估计，后续驻留方案见下项 |
@@ -100,6 +105,7 @@
 | [DeepSeek 普通短历史](../evidence/correctness/deepseek-ordinary-early-history-2026-10-25.json) | 原三层 target CUDA 组件通过空启动、ratio4／ratio128 首压缩及 SWA 回绕；给定 126 前缀不是实际执行前 126 行；旧 Flash／Pro 消费者仅语法检查 |
 | [GLM Pro 真实 index 短历史](../evidence/correctness/glm-pro-ordinary-short-history-real-index-2026-10-25.json) | 原 layer74 的 7 个角色供给 target77，CUDA 连续可见 1／2／3／4 行、完整状态提交、4 次 stale 及 11 个非法索引拒绝通过；74 上游输入及 76 hidden 是明确 fixture，不代表完整 78 层生成 |
 | [Kimi 普通异构状态](../evidence/correctness/kimi-ordinary-heterogeneous-state-2026-10-25.json) | 原几何、合成权重的 KDA→MLA CUDA 组件通过两会话／恢复分支、6 次完整提交、1 次取消候选、6 次 stale 拒绝与最终回收；Epoch 另有 CPU 实际回读。不是原权重或完整 Kimi 推理，后加 GPU 回读断言仅编译 |
+| [Kimi 混合量化工作集](../evidence/correctness/kimi-mixed-selected-working-set-2026-10-25.json) | 两制品不同 codec 的原几何生成组件通过：两代真实 Top16、七 bank、旧 reader、忙 slot 拒绝及绑定末项失败后旧绑定继续执行。772,352 个 BF16 精确值和 249,856 个非线性区间值通过；正式独立入口及原 GLM 消费者严格检查通过。原首轮 oracle 符号零失败保留；不是 publisher payload、完整模型或吞吐结论 |
 | [控制传输归因](../evidence/performance/inference-control-transfer-2026-10-25.json) | 既有 trace 的直接 H2D＋显式同步 API 约占普通／MTP warm 窗 0.528%／0.531%，尚未确认约 10% 差距主因 |
 | [整数暂存复用](../evidence/performance/inference-integer-scratch-reuse-2026-10-25.json) | 原 MTP 两轮行为检查的全部非时间字段相同；复用原 InputScratch／SmallVector，保留所有页与版本 owner。被计数子集原累计约 0.1071ms，不能解释 10% 余差；未开测速窗、不宣称 TPS 改善，合并新精度后仅严格语法检查 |
 | [MTP 逻辑调用归因](../evidence/performance/mtp-logical-call-attribution-2026-10-25.json) | 两端各一条新 trace，全部原非时间工作一致；Hyle 66 次 decode 的 replay CPU 范围合计 107.037ms、范围内 GPU union 为零。19 次实例化没有尝试 Update；13 次更新成功，没有实例化回退。优先追 seed／首录与显式失效，不将该时长当作可回收收益或新 TPS |

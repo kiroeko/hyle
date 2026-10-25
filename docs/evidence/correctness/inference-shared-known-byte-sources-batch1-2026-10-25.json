@@ -1,0 +1,233 @@
+{
+  "status": "PASS_BATCH1_CANONICAL_SOURCE_INTEGRATED",
+  "canonical_engine_modified": true,
+  "private_sources": [
+    {
+      "path": ".scratch/inference-shared-budget-engine-20261025/batch1/source/engine/inference/readback.h",
+      "bytes": 6207,
+      "sha256": "33dbe5e9eaceaec02564db646ef991c6dd258c1e8c89523c04486c5d98f06189"
+    },
+    {
+      "path": ".scratch/inference-shared-budget-engine-20261025/batch1/source/engine/models/qwen35/fp8_weight_import.h",
+      "bytes": 4915,
+      "sha256": "84ff6e8a775acfaef333a02fb35ab079a3d0f4021fb705f4804e1978e03bf622"
+    },
+    {
+      "path": ".scratch/inference-shared-budget-engine-20261025/batch1/source/engine/models/qwen35/main.cc",
+      "bytes": 476016,
+      "sha256": "12a8c0bfa7d5b08393d56e7e290cd78e1437f2a491006b799fa923729a6a7d96"
+    }
+  ],
+  "patch": {
+    "path": ".scratch/inference-shared-budget-engine-20261025/batch1/final-source.patch",
+    "bytes": 43369,
+    "sha256": "4f8537d9a0188254414fb81683c00c9ef1205f2a585eb3bf1cd21911af1899ae"
+  },
+  "host": {
+    "process": {
+      "exit": 0,
+      "seconds": 0.23499999998603016,
+      "timeout": false
+    },
+    "stdout": "small_io_rejected_before_weights=1 peak=18120 limit=1048576\nPASS actual two CPU endpoints, pool-first loader+IO, import dedup, small IO rejection, escaped Tensor replacement/readmission, exact Graph caller readback; no Model/weights artifact/GPU\n",
+    "build": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shared-budget-engine-20261025\\batch1\\host-final1\\link\\consumer.exe",
+        "bytes": 21644288,
+        "sha256": "fadca7865178af249a5996b4d1e422d6a8fdb930c2b35453f99a88b792d418e1"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\current1\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "core_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\unit.obj",
+          "bytes": 243196,
+          "sha256": "4c434358cd6807490401d4c38b3cf0912ac93b99f84d4a6396988be16bd227b9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\unit.obj",
+          "bytes": 446666,
+          "sha256": "97c3079899d4c9cf599bfbaa6693f4e178e568c0a7a8b1e8a9247fee5a94e3fd"
+        }
+      ],
+      "refreshed_consumer_TUs": 1,
+      "SDK_build": 0,
+      "HTTP": 0,
+      "GPU_run": false
+    }
+  },
+  "cuda": {
+    "process": {
+      "exit": 0,
+      "seconds": 1.0929999999934807,
+      "timeout": false
+    },
+    "actual": {
+      "status": "PASS",
+      "ordinary": true,
+      "models": 2,
+      "physical_text_roles_each": 13,
+      "physical_mtp_roles_each": 0,
+      "weight_bytes_each": 98944,
+      "cache_limit_each": 268435456,
+      "P": 2,
+      "C": 16,
+      "N_each": 1,
+      "R_each": 1,
+      "independent_HYLE_contexts": true,
+      "independent_native_streams": true,
+      "independent_ColdResources": true,
+      "same_CUDA_primary_context": true,
+      "primary_A": 1493671040304,
+      "primary_B": 1493671040304,
+      "stream_A": 1493909389552,
+      "stream_B": 1493909389136,
+      "HYLE_context_A": 6021276437248,
+      "HYLE_context_B": 6021276438144,
+      "device_ordinal_A": 0,
+      "device_ordinal_B": 0,
+      "A_logical_inflight_at_cancel": true,
+      "B_logical_inflight_before_A_teardown": true,
+      "physical_GPU_completion_at_A_teardown": "unknown",
+      "A_scope_released": true,
+      "foreign_Model_rejected": true,
+      "A_committed_records": 1,
+      "A_draw": 1,
+      "B_committed_records": 3,
+      "B_draw": 3,
+      "B_ids": [
+        33,
+        2,
+        5
+      ]
+    },
+    "stages": [
+      {
+        "stage": "loaded_A",
+        "live": 137984,
+        "peak": 16943488,
+        "limit": 134217728
+      },
+      {
+        "stage": "loaded_A_B",
+        "live": 274784,
+        "peak": 17080288,
+        "limit": 134217728
+      },
+      {
+        "stage": "A_retired_B_live",
+        "live": 4626013,
+        "peak": 17080288,
+        "limit": 134217728
+      },
+      {
+        "stage": "all_retired",
+        "live": 1184,
+        "peak": 17080288,
+        "limit": 134217728
+      }
+    ],
+    "small_scope": {
+      "peak": 25248,
+      "limit": 1048576
+    },
+    "build": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shared-budget-engine-20261025\\batch1\\cuda-final1\\link\\consumer.exe",
+        "bytes": 141229568,
+        "sha256": "1478756815d212de39807a7011b5ca85ac1f49fc86c724bff4eadaf192bfc929"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-system-review-20261025\\schedule-inputs\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "core_objects": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\unit.obj",
+          "bytes": 243196,
+          "sha256": "4c434358cd6807490401d4c38b3cf0912ac93b99f84d4a6396988be16bd227b9"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\unit.obj",
+          "bytes": 446666,
+          "sha256": "97c3079899d4c9cf599bfbaa6693f4e178e568c0a7a8b1e8a9247fee5a94e3fd"
+        }
+      ],
+      "refreshed_consumer_TUs": 1,
+      "SDK_build": 0,
+      "HTTP": 0,
+      "GPU_run": false
+    }
+  },
+  "core_proof": {
+    "path": "docs/evidence/correctness/compute-lease-retirement-quota-and-readonly-freeze-2026-10-25.json",
+    "bytes": 10423,
+    "sha256": "3025629b2da27845f55a848ce4b196aca02110c3b8c5e9bbd2b8eaa33be65418"
+  },
+  "core_objects_replaced": [
+    "resource_budget.cc",
+    "resource_leases.cc"
+  ],
+  "first_failures": [
+    {
+      "attempt": "syntax1",
+      "kind": "consumer API compile error: const caller view conversion",
+      "passed": false
+    },
+    {
+      "attempt": "syntax2",
+      "kind": "consumer API compile error: nonexistent BufferView::as_const",
+      "passed": false
+    },
+    {
+      "attempt": "host1/run and run2",
+      "kind": "native CPU DLL discovery; LOAD_LIBRARY_SEARCH_DEFAULT_DIRS requires executable-directory DLL, PATH-only did not fix it",
+      "passed": false
+    },
+    {
+      "attempt": "cuda1/run",
+      "kind": "consumer compared post-load live bytes with post-prepare bytes; fixed only comparison snapshot timing before A destruction",
+      "passed": false
+    }
+  ],
+  "previous_results": "Checkpoint1 host1/run3 and cuda2/run passed with old lease core; retained separately and not substituted for final generic-freeze results.",
+  "GPU_released": true,
+  "SDK_full_build": 0,
+  "HTTP": 0,
+  "model_payload_copies": 0,
+  "limits": [
+    "Batch1 source is canonically integrated; this finite slice is not a complete shared-Model memory cap.",
+    "Original per-Model cache budget/max_cache_bytes are preserved separately; cache original backing allocations are not yet consistently gated by the aggregate source scope.",
+    "Scope covers explicitly managed original BF16 weights, actual IO staging, Graph import dedup and caller storage. Opaque provider/native-private storage, original file mappings and ordinary STL containers remain excluded.",
+    "FP8 canonical and temporary extents/NF4 typed operands are source-wired; this Batch1 proof does not claim new quantized runtime validation.",
+    "CUDA fixture uses generated H64/V64/FFN128 A-only weights: 13 Text roles/98944B each, P2/C16/N1R1 per Model. No trained artifact quality or performance claim.",
+    "Physical GPU completion at A teardown is unknown; the checked boundary is logical in-flight work, original retirement and B continuation.",
+    "Current Backend endpoints use system metadata allocators. An externally supplied custom Budget allocator remains borrowed under its original lifetime contract; a Budget handle is not an owning allocator token."
+  ],
+  "scope": "Finite source-allocation shared-scope engine Batch1; generic readonly freeze and two refreshed core objects.",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-shared-known-byte-sources-batch1-2026-10-25.zip",
+    "bytes": 622514,
+    "sha256": "b2c134ede5413baab47eae11ac002344ed24e4768e8ab91c9fa4103cf4e04933",
+    "members": 210,
+    "crc_verified": true,
+    "member_hashes_verified": true,
+    "logical_bytes": 2694440,
+    "contains_binaries_or_model_payload": false
+  },
+  "integration": {
+    "record": {
+      "path": ".scratch/inference-shared-budget-engine-20261025/batch1/root-integration.json",
+      "bytes": 2073,
+      "sha256": "51a1a9ced808a700e6774720c62fb70c799761e79b08589be6752df430933852"
+    },
+    "status": "EXACT_REVIEWED_BATCH1_ENGINE_INTEGRATION",
+    "additional_build_or_model_run": false,
+    "normalized_checked_source_equal": true,
+    "note": "Exact checked source integrated by root, preserving original line endings; runtime facts remain the finite private final host/CUDA consumers."
+  }
+}

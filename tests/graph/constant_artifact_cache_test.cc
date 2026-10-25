@@ -848,6 +848,35 @@ TEST(StorageOwner, BudgetBackingRequiresActualAllocatorOwnerBeforeBufferTransfer
   EXPECT_EQ(lifetime.live_metadata, 0U);
 }
 
+
+TEST(StorageOwner, SoleAllocatorOwnerOutlivesRetainedSpillAndBothDeferredScopes) {
+  StorageOwnerLifetime lifetime;
+  auto metadata = std::make_shared<OwnedMetadataAllocator>(lifetime);
+  std::weak_ptr<OwnedMetadataAllocator> observer = metadata;
+  auto context = c::Context::create(c::cpu::device(),
+      {.metadata_allocator = metadata->ref()}).value();
+  auto owner = c::StorageOwner::adopt(context, OwnedTrackedResource(lifetime), metadata).value();
+  const std::array limits{c::ResourceBudgetLimit{m::system_resource()},
+                        c::ResourceBudgetLimit{owner.ref(), 512}};
+  auto first = c::ResourceBudget::create({.limits = limits, .allocator = metadata->ref()}).value();
+  auto second = c::ResourceBudget::create({.limits = limits, .allocator = metadata->ref()}).value();
+  auto backing = m::Buffer::create(owner.ref(), 512, 256).value();
+  auto ready = owner.adopt_buffer(std::move(backing), first).value();
+  ASSERT_TRUE(c::detail::LeaseAccess::retain_budget(ready, owner.ref(), first).ok());
+  ASSERT_TRUE(c::detail::LeaseAccess::retain_budget(ready, owner.ref(), second).ok());
+  // Two independent scopes force the original retained SmallVector<...,1>
+  // to own spill metadata. Only the lease now owns allocator/controller life.
+  context = {}; owner = {}; first = {}; second = {}; metadata.reset();
+  EXPECT_FALSE(observer.expired()); EXPECT_EQ(lifetime.allocator_destroys, 0U);
+  ready.reset();
+  EXPECT_EQ(lifetime.resource_destroys, 1U);
+  EXPECT_GT(lifetime.live_metadata_at_resource_destroy, 0U);
+  EXPECT_EQ(lifetime.allocator_destroys, 1U);
+  EXPECT_EQ(lifetime.live_metadata_at_allocator_destroy, 0U);
+  EXPECT_EQ(lifetime.live_metadata, 0U);
+  EXPECT_TRUE(observer.expired());
+}
+
 struct QueuedArtifactSource final : d::ExecutionSourceState {
   static const d::ExecutionSourceVTable table;
   QueuedArtifactSource(c::detail::ContextRef retained,

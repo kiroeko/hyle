@@ -25,6 +25,7 @@ const unsigned retained_host_address_authority = 0;
 struct RetainedBacking final {
   mem::MemoryResourceRef resource;
   SharedBackingReservation charge;
+  RetiringBackingReservation retiring;
 };
 struct LeaseBlock final : util::RefCounted<LeaseBlock> {
   LeaseBlock(LeaseDomain *owner, mem::RangeAllocation allocation,
@@ -57,15 +58,25 @@ struct LeaseDomain final : util::RefCounted<LeaseDomain> {
     const auto selected = allocator;
     const auto retained_owner = resource_owner;
     const auto release_owner = release_resource_owner;
+    // Keep only the actual allocator alive past payload-owner release. This
+    // is independent of that owner, which can own the real native payload.
+    auto allocator_guard = std::move(allocator_owner);
+    auto retiring = std::move(retained);
+    auto direct_charge = std::move(charge);
+    for (auto &entry : retiring)
+      entry.retiring = ResourceBudgetAccess::retire_backing(entry.charge);
     this->~LeaseDomain();
     selected.deallocate(this, sizeof(LeaseDomain), alignof(LeaseDomain));
     if (release_owner) release_owner(retained_owner);
+    // Direct/deferred quotas and spill metadata are released last, outside
+    // the lookup/domain locks, while allocator_guard still owns their heap.
   }
   mem::AllocatorRef allocator;
   void *resource_owner = nullptr;
   LeaseAccess::ReleaseOwnerFn release_resource_owner = nullptr;
-  // Accounting tokens must disappear before the original payload can free
-  // and its canonical identity can be reused by another allocation.
+  std::shared_ptr<void> allocator_owner;
+  // Teardown first withdraws lookup identity, then frees actual backing and
+  // provider ownership, and only then releases its original quota charges.
   mem::Buffer backing{};
   ResourceBudget::Reservation charge{};
   container::SmallVector<RetainedBacking, 1, mem::AllocatorRef> retained;
@@ -157,7 +168,7 @@ Status LeaseAccess::retain_budget(ReadLease &lease, mem::MemoryResourceRef nomin
     HYLE_ASSIGN_OR_RETURN(retained, ResourceBudgetAccess::reserve_backing(
         budget, nominated, identity, bytes));
   }
-  HYLE_FATAL_ASSERT(domain.retained.try_push_back(RetainedBacking{nominated, std::move(retained)}));
+  HYLE_FATAL_ASSERT(domain.retained.try_push_back(RetainedBacking{nominated, std::move(retained), {}}));
   return Status::Ok();
 }
 mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
@@ -575,6 +586,13 @@ Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
 }
 } // namespace detail
 
+void detail::LeaseAccess::retain_allocator_owner(ReadLease &lease,
+                                               std::shared_ptr<void> owner) noexcept {
+  HYLE_FATAL_ASSERT(lease.block_);
+  auto *domain = lease.block_->domain;
+  HYLE_FATAL_ASSERT(!domain->allocator_owner);
+  domain->allocator_owner = std::move(owner);
+}
 void detail::LeaseAccess::retain_resource_owner(ReadLease &lease, void *owner,
                                                ReleaseOwnerFn release) noexcept {
   HYLE_FATAL_ASSERT(lease.block_ && owner && release);
@@ -815,6 +833,28 @@ Result<WriteLease> LeasePool::allocate(std::size_t bytes, std::size_t alignment)
                                  std::move(*range), state_->next_generation++);
   return WriteLease(block, 0, bytes);
 }
+Result<ReadLease> LeasePool::freeze(WriteLease &&writer) noexcept {
+  if (!state_ || !writer.block_ || writer.block_->domain != state_)
+    return std::unexpected(Status::InvalidArgument("readonly pool freeze requires its original writer"));
+  auto *domain = state_;
+  auto *block = writer.block_;
+  std::unique_lock guard(domain->lock);
+  const auto ranges = domain->ranges.stats();
+  if (domain->closed || ranges.live_allocations != 1 || writer.offset_ != 0 ||
+      writer.size_ != domain->backing.size() || block->append_mode || !block->writer)
+    return std::unexpected(Status::FailedPrecondition("readonly pool freeze requires one full ordinary block"));
+  if (!block->is_unique())
+    return std::unexpected(Status::Unavailable("readonly pool freeze has admitted uses"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  block->writer = false;
+  block->writable = false;
+  ReadLease result(std::exchange(writer.block_, nullptr), writer.offset_, writer.size_);
+  state_ = nullptr;
+  guard.unlock();
+  detail::release_domain(domain);
+  return result;
+}
+
 LeasePoolStats LeasePool::stats() const noexcept {
   if (!state_) return {};
   std::lock_guard guard(state_->lock);

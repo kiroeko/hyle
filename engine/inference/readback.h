@@ -16,23 +16,45 @@ namespace hyle::inference {
 struct PreparedReadback final {
   PreparedOutputFacts facts;
 
+  PreparedReadback() = default;
+  PreparedReadback(const PreparedReadback &) = delete;
+  PreparedReadback &operator=(const PreparedReadback &) = delete;
+  PreparedReadback(PreparedReadback &&) noexcept = default;
+  PreparedReadback &operator=(PreparedReadback &&other) noexcept {
+    if (this != &other) {
+      writer_.reset(); pool_ = {}; caller_ = {};
+      facts = std::move(other.facts);
+      caller_ = std::move(other.caller_); pool_ = std::move(other.pool_);
+      writer_ = std::move(other.writer_);
+    }
+    return *this;
+  }
+
   static Result<PreparedReadback> prepare(const graph::CompiledGraph &compiled,
                                         graph::ValueId value,
-                                        const Backend &backend) noexcept {
+                                        const Backend &backend,
+                                        const compute::ResourceBudget &budget = {}) noexcept {
     PreparedReadback result;
     HYLE_ASSIGN_OR_RETURN(result.facts, prepare_output(compiled, value));
     HYLE_ASSIGN_OR_RETURN(auto resource, backend.resource_for(result.facts.storage));
     if (result.facts.caller_owned()) {
       HYLE_ASSIGN_OR_RETURN(auto bytes, result.facts.description.required_bytes());
-      HYLE_ASSIGN_OR_RETURN(result.caller_, mem::Buffer::create(resource, bytes, 256));
+      if (budget && bytes) {
+        HYLE_ASSIGN_OR_RETURN(result.pool_, compute::LeasePool::create(resource, bytes,
+            {.max_blocks = 1, .resource_budget = budget}));
+        HYLE_ASSIGN_OR_RETURN(result.writer_, result.pool_.allocate(bytes));
+      } else {
+        HYLE_ASSIGN_OR_RETURN(result.caller_, mem::Buffer::create(resource, bytes, 256));
+      }
     }
     return result;
   }
 
   Status bind(graph::Invocation &run) noexcept {
     if (!facts.caller_owned()) return Status::Ok();
+    HYLE_ASSIGN_OR_RETURN(auto storage, caller_storage());
     HYLE_ASSIGN_OR_RETURN(auto tensor,
-                         compute::TensorView::create(facts.description, caller_.view()));
+                         compute::TensorView::create(facts.description, storage));
     return run.bind(facts.value, tensor);
   }
 
@@ -41,7 +63,10 @@ struct PreparedReadback final {
   // complete synchronous read; it does not change the output's ownership.
   Status read(const Backend &backend, graph::Invocation &run,
               std::span<std::byte> bytes) const noexcept {
-    if (facts.caller_owned()) return backend.read(caller_.view(), bytes);
+    if (facts.caller_owned()) {
+      HYLE_ASSIGN_OR_RETURN(auto storage, caller_storage());
+      return backend.read(storage, bytes);
+    }
     HYLE_ASSIGN_OR_RETURN(auto output, run.result(facts.value));
     if (auto tensor = output.tensor(); tensor)
       return backend.read(tensor->storage(), bytes);
@@ -97,7 +122,20 @@ struct PreparedReadback final {
   }
 
 private:
+  Result<mem::BufferView> caller_storage() noexcept {
+    if (writer_) return writer_.view();
+    return caller_.view();
+  }
+  Result<mem::ConstBufferView> caller_storage() const noexcept {
+    if (writer_) {
+      HYLE_ASSIGN_OR_RETURN(auto storage, writer_.view());
+      return mem::ConstBufferView(storage);
+    }
+    return caller_.view();
+  }
   mem::Buffer caller_;
+  compute::LeasePool pool_;
+  compute::WriteLease writer_;
 };
 
 } // namespace hyle::inference

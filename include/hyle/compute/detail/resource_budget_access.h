@@ -10,9 +10,10 @@ struct BackingIdentity final {
 };
 
 // Accounting only: copies share one charge for a live original allocation in
-// one budget scope. The native adapter must separately retain the payload and
-// prevent reuse of its identity while any token remains. The authority names
-// the adapter's identity namespace and must outlive all tokens.
+// one budget scope. Active holders name the original live payload; its native
+// adapter separately retains storage and prevents identity reuse. Teardown can
+// withdraw that lookup authority into a retiring holder which preserves only
+// quota through actual owner release. The authority namespace outlives both.
 class SharedBackingReservation final {
 public:
   SharedBackingReservation() noexcept = default;
@@ -30,9 +31,32 @@ private:
   SharedBackingRecord *record_ = nullptr;
 };
 
+// Original storage teardown has withdrawn lookup authority, but its actual
+// backing/provider owner has not finished releasing yet. Moving this token
+// allocates nothing; its final reset releases only this retiring holder.
+class RetiringBackingReservation final {
+public:
+  RetiringBackingReservation() noexcept = default;
+  RetiringBackingReservation(const RetiringBackingReservation &) = delete;
+  RetiringBackingReservation &operator=(const RetiringBackingReservation &) = delete;
+  HYLE_COMPUTE_API RetiringBackingReservation(RetiringBackingReservation &&) noexcept;
+  HYLE_COMPUTE_API RetiringBackingReservation &operator=(RetiringBackingReservation &&) noexcept;
+  HYLE_COMPUTE_API ~RetiringBackingReservation();
+  HYLE_COMPUTE_API void reset() noexcept;
+private:
+  friend struct ResourceBudgetAccess;
+  explicit RetiringBackingReservation(SharedBackingRecord *record) noexcept : record_(record) {}
+  SharedBackingRecord *record_ = nullptr;
+};
+
 // Cold lifetime composition only: the accounting wrapper retains its budget,
 // while the actual allocator object must be retained by its real owner.
 struct ResourceBudgetAccess final {
+  // Transfer an existing active holder to actual storage retirement. The last
+  // active holder unlinks its identity now; quota remains until every retiring
+  // storage owner has finished. No new storage or fallible work is introduced.
+  static HYLE_COMPUTE_API RetiringBackingReservation
+  retire_backing(SharedBackingReservation &) noexcept;
   static HYLE_COMPUTE_API mem::AllocatorRef
   backing_allocator(const ResourceBudget &) noexcept;
   static HYLE_COMPUTE_API mem::AllocatorRef

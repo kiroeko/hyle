@@ -117,6 +117,7 @@ public:
           {.allocator = state_->allocator, .resource_budget = std::move(budget)});
       if (!lease)
         return std::unexpected(std::move(lease).error());
+      detail::LeaseAccess::retain_allocator_owner(*lease, state_->allocator_owner);
       detail::LeaseAccess::retain_resource_owner(*lease, retained.release(),
           +[](void *owner) noexcept {
             delete static_cast<StorageOwner *>(owner);

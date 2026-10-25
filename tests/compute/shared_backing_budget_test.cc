@@ -309,4 +309,28 @@ TEST(SharedRequestedBudget, ConcurrentDifferentRowsCannotExceedTheSharedTotal) {
   EXPECT_NE(accepted[0], accepted[1]); EXPECT_EQ(made->shared_usage()->live_bytes, 768u);
   holders[0].reset(); holders[1].reset(); EXPECT_EQ(made->shared_usage()->live_bytes, 0u);
 }
+
+static_assert(sizeof(d::SharedBackingReservation)==sizeof(void*));
+static_assert(alignof(d::SharedBackingReservation)==alignof(void*));
+TEST(SharedBackingBudget, ActiveSiblingsKeepLookupAndRetiredRecordCannotUnlinkNewGeneration) {
+  auto budget=make_budget().value();const auto baseline=budget.usage(m::system_resource())->live_bytes;
+  int key;const d::BackingIdentity id{&authority,&key};
+  auto original=d::ResourceBudgetAccess::reserve_backing(budget,m::system_resource(),id,512).value();
+  auto sibling=original;
+  auto first_retiring=d::ResourceBudgetAccess::retire_backing(original);
+  EXPECT_FALSE(original.valid());EXPECT_EQ(external(budget),512u);
+  auto still_active=d::ResourceBudgetAccess::reserve_backing(budget,m::system_resource(),id,512).value();
+  EXPECT_EQ(external(budget),512u);still_active.reset();
+  auto last_retiring=d::ResourceBudgetAccess::retire_backing(sibling);
+  auto next=d::ResourceBudgetAccess::reserve_backing(budget,m::system_resource(),id,512).value();
+  EXPECT_EQ(external(budget),1024u); // Same identity, now a distinct active generation.
+  first_retiring.reset();EXPECT_EQ(external(budget),1024u);
+  last_retiring.reset();EXPECT_EQ(external(budget),512u);
+  // Destroying the old unlinked record must not alter the new list head.
+  auto next_alias=d::ResourceBudgetAccess::reserve_backing(budget,m::system_resource(),id,512).value();
+  EXPECT_EQ(external(budget),512u);next.reset();EXPECT_EQ(external(budget),512u);
+  next_alias.reset();EXPECT_EQ(external(budget),0u);
+  EXPECT_EQ(budget.usage(m::system_resource())->live_bytes,baseline);
+}
+
 } // namespace

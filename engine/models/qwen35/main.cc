@@ -109,23 +109,55 @@ c::TensorDesc dense(Type type, std::initializer_list<std::int64_t> shape) {
 struct Tensor final {
   c::TensorDesc description;
   mem::Buffer buffer;
+  c::LeasePool pool;
+  c::WriteLease writer;
   c::ReadLease ready;
   Tensor() = default;
-  Tensor(mem::MemoryResourceRef resource, c::TensorDesc desc, bool caller = true)
-      : description(desc) {
-    if (caller) buffer = take(mem::Buffer::create(resource, take(desc.required_bytes()), 256));
+  Tensor(const Tensor &) = delete;
+  Tensor &operator=(const Tensor &) = delete;
+  Tensor(Tensor &&) noexcept = default;
+  Tensor &operator=(Tensor &&other) noexcept {
+    if (this != &other) {
+      // Drop the previous payload and its original domain together, before
+      // adopting a replacement. Escaped readers keep that domain's charge.
+      ready.reset(); writer.reset(); pool = {}; buffer = {};
+      description = other.description;
+      buffer = std::move(other.buffer); pool = std::move(other.pool);
+      writer = std::move(other.writer); ready = std::move(other.ready);
+    }
+    return *this;
   }
-  c::TensorView view() { return take(c::TensorView::create(description, buffer.view())); }
+  Tensor(mem::MemoryResourceRef resource, c::TensorDesc desc, bool caller = true,
+         const c::ResourceBudget &budget = {})
+      : description(desc) {
+    if (!caller) return;
+    const auto bytes = take(desc.required_bytes());
+    if (budget && bytes) {
+      pool = take(c::LeasePool::create(resource, bytes, {.max_blocks = 1, .resource_budget = budget}));
+      writer = take(pool.allocate(bytes));
+    } else buffer = take(mem::Buffer::create(resource, bytes, 256));
+  }
+  bool caller_owned() const noexcept { return bool(buffer) || bool(writer); }
+  mem::BufferView storage() { return writer ? take(writer.view()) : buffer.view(); }
+  c::TensorView view() { return take(c::TensorView::create(description, storage())); }
+  void freeze(const Backend &backend) {
+    if (!writer) { check(backend.freeze(buffer, ready)); return; }
+    auto owner = take(backend.storage_owner_for(storage().resource()));
+    auto retained = owner ? std::make_unique<c::StorageOwner>(std::move(owner)) : nullptr;
+    ready = take(pool.freeze(std::move(writer)));
+    if (retained) c::detail::LeaseAccess::retain_resource_owner(ready, retained.release(),
+        +[](void *value) noexcept { delete static_cast<c::StorageOwner *>(value); });
+  }
   c::ConstTensorView read() {
     return ready ? take(ready.tensor(description)) : view().as_const();
   }
-  void zero() { check(buffer.view().fill(std::byte{})); }
+  void zero() { check(storage().fill(std::byte{})); }
   template<class T> void write(std::span<const T> values) {
-    check(buffer.view().write(std::as_bytes(values)));
+    check(storage().write(std::as_bytes(values)));
   }
   void dump(const std::filesystem::path &path) {
-    std::vector<std::byte> bytes(buffer.size());
-    check(buffer.view().read(bytes));
+    std::vector<std::byte> bytes(take(description.required_bytes()));
+    check(storage().read(bytes));
     std::ofstream output(path, std::ios::binary);
     output.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
     if (!output) throw std::runtime_error("cannot write trace: " + path.string());
@@ -559,8 +591,9 @@ struct GraphAssembly final {
   std::vector<g::NodePlacement> node_placements;
   std::vector<g::ExternalResourceContract> external_resources;
 
-  explicit GraphAssembly(const Backend &environment, PrecisionProfile precision = {})
-      : backend_(environment), precision_(precision), mixed_(environment.has_cpu_endpoint()),
+  explicit GraphAssembly(const Backend &environment, PrecisionProfile precision = {},
+                         const c::ResourceBudget &budget = {})
+      : backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_endpoint()),
         predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {}
   GraphAssembly(const GraphAssembly &) = delete;
   GraphAssembly &operator=(const GraphAssembly &) = delete;
@@ -570,7 +603,7 @@ struct GraphAssembly final {
     return {g::ExecutionTargetId{1}, g::StorageDomainId{1}};
   }
   Tensor &literal_at(Location location, c::TensorDesc description) {
-    literals.emplace_back(take(backend_.resource_for(location.storage)), description);
+    literals.emplace_back(take(backend_.resource_for(location.storage)), description, true, budget_);
     return literals.back();
   }
   Tensor &literal(c::TensorDesc description) { return literal_at(location_, description); }
@@ -589,7 +622,7 @@ struct GraphAssembly final {
     options.node_placements = node_placements; options.external_resources = external_resources; return options;
   }
   void bind_constant(V value, Tensor &tensor) {
-    check(backend_.freeze(tensor.buffer, tensor.ready));
+    tensor.freeze(backend_);
     const auto read = tensor.read();
     const auto owner = take(backend_.storage_owner_for(read.storage().resource()));
     if (mixed_) external(value, g::StorageDomainId{read.storage().resource() == backend_.device() ? 0u : 1u});
@@ -604,6 +637,7 @@ struct GraphAssembly final {
 
 private:
   const Backend &backend_;
+  const c::ResourceBudget budget_;
   const PrecisionProfile precision_;
   const bool mixed_;
   const Type predicate_type_;
@@ -1299,9 +1333,9 @@ struct InputPreparationScratch final {
     target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
     if (phase.family->requests > 1) reserve(packed_ids, phase.tokens);
     reserve(positions, phase.positions);
-    if (phase.sampling_identities.buffer) reserve(sampling_identities, phase.sampling_identities);
-    if (phase.draft_positions.buffer) reserve(draft_positions, phase.draft_positions);
-    if (phase.catchup_token.buffer) reserve(catchups, phase.catchup_token);
+    if (phase.sampling_identities.caller_owned()) reserve(sampling_identities, phase.sampling_identities);
+    if (phase.draft_positions.caller_owned()) reserve(draft_positions, phase.draft_positions);
+    if (phase.catchup_token.caller_owned()) reserve(catchups, phase.catchup_token);
   }
 };
 class Session;
@@ -1515,7 +1549,8 @@ c::TensorDesc role_description(const prepared::Role &role) {
 // both paths use this one IO/lease/shape-authentication implementation.
 WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     Backend &backend, std::map<std::string, LoadedWeight> &weights,
-    std::vector<c::LeasePool> &weight_pools, std::size_t cpu_ffn_layers = 0) {
+    std::vector<c::LeasePool> &weight_pools, std::size_t cpu_ffn_layers = 0,
+    const c::ResourceBudget &budget = {}) {
   roles.geometry.validate();
   validate_cpu_ffn_layers(cpu_ffn_layers, roles.geometry.layers.size());
   (void)PrecisionProfile::from_roles(roles);
@@ -1577,6 +1612,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
   for (std::size_t domain = 0; domain < pipelines.size(); ++domain) if (source_counts[domain]) {
     const std::array targets{c::CopyResourceSpec{weight_resource(backend, domain != 0), largest[domain]}};
     const c::FileStreamOptions options{
+        .resource_budget = budget,
         .max_requests = static_cast<std::uint32_t>(source_counts[domain]),
         .max_groups_per_request = static_cast<std::uint32_t>(largest_group[domain]),
         .max_ranges_per_group = 1, .in_flight_slots = slots, .staging_bytes_per_slot = staging_per_slot,
@@ -1613,8 +1649,11 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       const auto description = role_description(role);
       if (take(description.required_bytes()) != role.bytes)
         throw std::runtime_error("physical weight extent differs: " + role.name);
-      Tensor tensor(weight_resource(backend, host), description);
-      auto pool = take(c::LeasePool::adopt(std::move(tensor.buffer), {.max_blocks = 1}));
+      Tensor tensor(weight_resource(backend, host), description, !budget);
+      auto pool = budget
+          ? take(c::LeasePool::create(weight_resource(backend, host), role.bytes,
+                {.max_blocks = 1, .resource_budget = budget}))
+          : take(c::LeasePool::adopt(std::move(tensor.buffer), {.max_blocks = 1}));
       auto writer = take(pool.allocate(role.bytes));
       ranges.push_back({.file_offset = role.offset, .destination = std::move(writer),
           .bytes = role.bytes, .description = description});
@@ -1659,23 +1698,38 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     const auto scale = std::ranges::find(roles.selected, scale_name, &prepared::Role::name);
     if (scale == roles.selected.end() || !roles.float8_policy.enabled)
       throw std::runtime_error("FP8 block128 import requires its complete group and reader policy");
-    auto imported = take(import_float8_block128_roles(role, *scale));
-    const auto carrier_bytes = imported.storage.size();
+    auto imported = take(import_float8_block128_roles(role, *scale, budget));
+    const auto carrier_bytes = take(imported.description.required_bytes());
     // Includes the mapped original group as a conservative host-residency
     // upper bound, its exact F32 scale grid, and this one canonical carrier.
     import_peak_bytes = (std::max)(import_peak_bytes, cache::add(cache::add(role.bytes, scale->bytes),
         cache::add(carrier_bytes, imported.temporary_scale_bytes)));
     const bool host = cpu_ffn_weight(role.name, cpu_ffn_layers);
     Tensor tensor; tensor.description = imported.description;
-    if (weight_resource(backend, host) == mem::system_resource()) {
-      tensor.buffer = std::move(imported.storage);
+    if (budget) {
+      if (weight_resource(backend, host) == mem::system_resource()) {
+        tensor.ready = std::move(imported.ready);
+        weight_pools.push_back(std::move(imported.pool));
+      } else {
+        auto pool = take(c::LeasePool::create(weight_resource(backend, host), carrier_bytes,
+            {.max_blocks = 1, .resource_budget = budget}));
+        auto writer = take(pool.allocate(carrier_bytes));
+        auto mapped = take(take(imported.ready.view()).map_host());
+        check(mapped.invalidate()); check(backend.write(take(writer.view()), mapped.bytes()));
+        check(mapped.close());
+        tensor.ready = take(writer.publish());
+        weight_pools.push_back(std::move(pool));
+      }
     } else {
-      tensor.buffer = take(mem::Buffer::create(weight_resource(backend, host), carrier_bytes, 256));
-      auto mapped = take(imported.storage.view().map_host(mem::HostAccess::kRead));
-      check(mapped.invalidate()); check(backend.write(tensor.buffer.view(), mapped.bytes()));
-      check(mapped.close());
+      if (weight_resource(backend, host) == mem::system_resource()) tensor.buffer = std::move(imported.storage);
+      else {
+        tensor.buffer = take(mem::Buffer::create(weight_resource(backend, host), carrier_bytes, 256));
+        auto mapped = take(imported.storage.view().map_host(mem::HostAccess::kRead));
+        check(mapped.invalidate()); check(backend.write(tensor.buffer.view(), mapped.bytes()));
+        check(mapped.close());
+      }
+      tensor.freeze(backend);
     }
-    check(backend.freeze(tensor.buffer, tensor.ready));
     if (!weights.emplace(role.name, LoadedWeight{std::move(tensor), role.projection_codec, 128}).second)
       throw std::runtime_error("duplicate selected FP8 projection: " + role.name);
     loaded = cache::add(loaded, cache::add(role.bytes, scale->bytes));
@@ -1710,9 +1764,18 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     const std::array<std::span<const std::byte>, 6> payloads{
         raw[0], raw[1], raw[2], raw[3], std::as_bytes(std::span(&offset, 1)), raw[4]};
     for (std::size_t i = 0; i < payloads.size(); ++i) {
-      auto buffer = take(mem::Buffer::create(resource, payloads[i].size(), 256));
-      check(backend.write(buffer.view(), payloads[i]));
-      inputs.ready[i] = take(backend.adopt_buffer(std::move(buffer)));
+      if (budget) {
+        auto pool = take(c::LeasePool::create(resource, payloads[i].size(),
+            {.max_blocks = 1, .resource_budget = budget}));
+        auto writer = take(pool.allocate(payloads[i].size()));
+        check(backend.write(take(writer.view()), payloads[i]));
+        inputs.ready[i] = take(writer.publish());
+        weight_pools.push_back(std::move(pool));
+      } else {
+        auto buffer = take(mem::Buffer::create(resource, payloads[i].size(), 256));
+        check(backend.write(buffer.view(), payloads[i]));
+        inputs.ready[i] = take(backend.adopt_buffer(std::move(buffer)));
+      }
       copied_bytes = cache::add(copied_bytes, payloads[i].size());
     }
     (void)take(validate_nf4_decode_inputs(backend, role.nf4_state, inputs, domain));
@@ -1941,7 +2004,7 @@ struct ColdResources final {
   WeightMeanings weight_meanings;
   std::string source_identity;
   std::vector<StateSchema> state_schema;
-  c::ResourceBudget cache_budget, execution_budget;
+  c::ResourceBudget cache_budget, execution_budget, allocation_budget;
   cache::VersionCount snapshot_versions;
   bool carrier_borrowed = false;
   cache::PageInventory page_inventory, draft_inventory;
@@ -2072,7 +2135,7 @@ public:
   WeightMeanings &weight_meanings;
   std::string &source_identity;
   std::vector<StateSchema> &state_schema;
-  c::ResourceBudget &cache_budget, &execution_budget;
+  c::ResourceBudget &cache_budget, &execution_budget, &allocation_budget;
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
   std::vector<bool> history_writers, recurrent_writers;
@@ -2135,6 +2198,19 @@ public:
       cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
       std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
       BackendSelection backend_selection, std::span<const SamplingConfiguration> additional_sampling = {})
+       : Model(create_execution(model_geometry, selected_cache, cpu_ffn_layer_count, backend_selection), {},
+           std::move(source), model_geometry, selected_capacity, selected_cache, std::move(probe), progress,
+           replay, max_cache_bytes, sampling_configuration, cpu_ffn_layer_count, additional_sampling) {}
+
+  // Explicit cold seam: endpoints exist before the caller constructs one
+  // requested-byte scope from their actual resource identities. No new owner
+  // or endpoint is created here. The default constructor delegates with no
+  // allocation budget, retaining its original allocation path.
+  Model(Backend &&prepared_execution, c::ResourceBudget shared_budget,
+      PreparedWeightSource source, const ModelGeometry &model_geometry, std::size_t selected_capacity,
+      cache::Plan selected_cache, std::filesystem::path probe, bool progress, ReplayPolicy replay,
+      std::size_t max_cache_bytes, Sampling sampling_configuration, std::size_t cpu_ffn_layer_count,
+      std::span<const SamplingConfiguration> additional_sampling = {})
        : sampling_seed(sampling_configuration.seed), cpu_ffn_layers(cpu_ffn_layer_count),
          precision(PrecisionProfile::from_roles(source.roles)),
          geometry(model_geometry), hidden(geometry.hidden), intermediate(geometry.intermediate), vocabulary(geometry.vocabulary),
@@ -2144,13 +2220,14 @@ public:
            for (std::size_t i = 0; i < geometry.layers.size(); ++i) if (!geometry.is_gdn(i)) indices.push_back(i);
            return indices;
          }()),
-         execution(create_execution(geometry, selected_cache, cpu_ffn_layer_count, backend_selection)),
+         execution(std::move(prepared_execution)),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
               SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy}, additional_sampling)),
           default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
          state_schema(resources_->state_schema), cache_budget(resources_->cache_budget), execution_budget(resources_->execution_budget),
+         allocation_budget(resources_->allocation_budget),
          history_writers(geometry.layers.size(), false), recurrent_writers(geometry.layers.size(), false),
          cache_plan(selected_cache), snapshot_versions(resources_->snapshot_versions), carrier_borrowed(resources_->carrier_borrowed),
          page_inventory(resources_->page_inventory), draft_inventory(resources_->draft_inventory),
@@ -2160,6 +2237,19 @@ public:
          draft_programs(resources_->draft_programs), prefix_sampling_programs(resources_->prefix_sampling_programs),
          capacity(selected_capacity),
          replay_policy(replay), layer0_probe(std::move(probe)) {
+    geometry.validate();
+    validate_mtp_source(geometry, cache_plan.draft_cache);
+    validate_cpu_ffn_layers(cpu_ffn_layers, geometry.layers.size());
+    if (execution.kind() == BackendKind::kDefault || execution.has_cpu_endpoint() != (cpu_ffn_layers != 0))
+      throw std::runtime_error("prepared Backend differs from the model CPU placement");
+    allocation_budget = std::move(shared_budget);
+    if (allocation_budget) {
+      // Validate actual rows before any managed source allocation. Resources
+      // are explicit; absent rows never become inferred/unattributed charges.
+      for (const auto resource : {execution.device(), execution.staging(), mem::system_resource()})
+        (void)take(allocation_budget.usage(resource));
+      if (execution.has_cpu_endpoint()) (void)take(allocation_budget.usage(execution.host_device()));
+    }
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
@@ -2176,7 +2266,8 @@ public:
     // the otherwise independent unlimited metadata-domain entry.
     const auto limit_count = execution.device() == mem::system_resource() ? 1u : 2u;
     cache_budget = take(c::ResourceBudget::create({.limits = std::span(limits).first(limit_count)}));
-    if (execution.native_generated_storage() || execution.host_only() || cpu_ffn_layers) {
+    if (allocation_budget) execution_budget = allocation_budget;
+    else if (execution.native_generated_storage() || execution.host_only() || cpu_ffn_layers) {
       // Native checked operations can own staging status/metadata buffers.
       // Register actual resource identities once, including CPU's shared
       // payload/metadata resource. Execution workspace has its own scope,
@@ -2204,7 +2295,7 @@ public:
       check(status);
     }
     const auto weight_load_start = Clock::now();
-    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, cpu_ffn_layers);
+    auto loading = load_selected_weight_roles(source_roles, execution, weights, weight_pools, cpu_ffn_layers, allocation_budget);
     source_identity = loading.identity;
     weight_meanings = std::move(loading.meanings);
     projections = prepare_projection_bindings(weights, cache_plan.draft_cache, geometry);
@@ -2301,6 +2392,10 @@ public:
         std::to_string(omitted_cache_roles);
     return result;
   }
+  Tensor caller_tensor(mem::MemoryResourceRef resource, c::TensorDesc description, bool caller = true) const {
+    return Tensor(resource, description, caller, allocation_budget);
+  }
+
   c::ResourceBudgetUsage cache_usage() const {
     const auto usage = take(cache_budget.usage(execution.device()));
     const auto metadata = usage.live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata)];
@@ -2571,7 +2666,7 @@ public:
     }
     const auto start = Clock::now();
     const auto max_query_rows = *std::max_element(definition.chunks.begin(), definition.chunks.end());
-    GraphAssembly assembly(execution, precision);
+    GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, max_query_rows, requests, &weight_meanings);
     const auto t = r.token_rows, packed = r.packed_rows;
     const auto batch = f(static_cast<std::int64_t>(requests));
@@ -3023,7 +3118,7 @@ public:
     prepare_cache();
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
     program.rows = rows; program.head = head;
-    GraphAssembly assembly(execution, precision);
+    GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
     program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
@@ -3080,8 +3175,8 @@ public:
     program.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), program.compiled.report));
     record_execution_plan(program.compiled.report, assembly.constants);
     program.literals = std::move(assembly.literals);
-    program.token_values = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    program.position_values = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     if (head) {
       program.hidden_output = take(inference::prepare_output(program.compiled, program.hidden));
       validate_state_output(program.hidden_output, dense(precision.activation_type(), {1, hidden}));
@@ -3102,11 +3197,11 @@ public:
       }
     }
     if (head) {
-      program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution));
+      program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution, allocation_budget));
       if (default_sampler.enabled || min_draft_probability() > 0)
-        program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution));
+        program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution, allocation_budget));
       if (min_draft_probability() > 0)
-        program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution));
+        program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution, allocation_budget));
     }
     initialize_draft_program(program);
     draft_programs.emplace(key, std::move(prepared));
@@ -3120,7 +3215,7 @@ public:
     check(program.run.bind(program.positions, program.position_values.read()));
     if (program.head) check(program.id_value.bind(program.run));
     if (program.head && default_sampler.enabled) {
-      if (!program.identity_values.buffer) program.identity_values = Tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
+      if (!program.identity_values.caller_owned()) program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
       check(program.run.bind(program.identity, program.identity_values.read()));
     }
     if (program.head && (default_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
@@ -3261,7 +3356,7 @@ public:
     if (prefix_sampling_programs.contains(proposals)) return;
     auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
     program.proposals = proposals;
-    GraphAssembly assembly(execution, precision);
+    GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
     program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
@@ -3290,12 +3385,12 @@ public:
     program.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), program.compiled.report));
     record_execution_plan(program.compiled.report, assembly.constants);
     program.literals = std::move(assembly.literals);
-    program.identity_values = Tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
+    program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
     input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
-    if (proposals) program.id_values = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
+    if (proposals) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
     const auto prepare = [&](const std::vector<V> &ports, std::vector<PreparedReadback> &values) {
       values.reserve(ports.size());
-      for (const auto port : ports) values.push_back(take(PreparedReadback::prepare(program.compiled, port, execution)));
+      for (const auto port : ports) values.push_back(take(PreparedReadback::prepare(program.compiled, port, execution, allocation_budget)));
     };
     if (proposals) prepare(program.accepted, program.accepted_values);
     prepare(program.final_ids, program.final_values); prepare(program.valid, program.valid_values);
@@ -3405,7 +3500,7 @@ public:
       if (!selected_sampler.enabled && sampling_configuration_count() == 1) continue;
       if (!entry->frontier) {
         auto prepared = std::make_unique<SamplingFrontier>();
-        GraphAssembly assembly(execution, precision);
+        GraphAssembly assembly(execution, precision, allocation_budget);
         Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
         prepared->last_row = r.last_row;
         prepared->hidden_port = r.input(dense(precision.activation_type(), {1, hidden}));
@@ -3430,9 +3525,9 @@ public:
         prepared->queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), prepared->compiled.report));
         record_execution_plan(prepared->compiled.report, assembly.constants);
         prepared->literals = std::move(assembly.literals);
-        if (selected_sampler.enabled) prepared->identity = Tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-        prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution));
-        if (selected_sampler.enabled) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution));
+        if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
+        prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution, allocation_budget));
+        if (selected_sampler.enabled) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution, allocation_budget));
         entry->frontier = std::move(prepared);
       }
     }
@@ -3632,9 +3727,9 @@ public:
       if (drafts_token(definition.role)) check(phase.sampling_accept.bind(run));
     }
     if (definition.requests != 1 && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, phase.last_ids.read()));
-    if (phase.logits.buffer) check(run.bind(phase.logits_port, phase.logits.view()));
+    if (phase.logits.caller_owned()) check(run.bind(phase.logits_port, phase.logits.view()));
     if (definition.completion == TextCompletion::kEmitNext) check(phase.next_id.bind(run));
-    if (phase.final_hidden.buffer) check(run.bind(phase.hidden_port, phase.final_hidden.view()));
+    if (phase.final_hidden.caller_owned()) check(run.bind(phase.hidden_port, phase.final_hidden.view()));
     if (has_mtp(definition.role)) {
       check(run.bind(phase.draft_position_port, phase.draft_positions.read()));
       if (draft_lag(definition.role)) check(run.bind(phase.catchup_token_port, phase.catchup_token.read()));
@@ -3681,18 +3776,18 @@ public:
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
     const auto t = static_cast<std::int64_t>(tokens);
-    phase.tokens = Tensor(execution.device(), dense(Type::kInt32,
+    phase.tokens = caller_tensor(execution.device(), dense(Type::kInt32,
         {has_mtp(role) && !is_mtp_prefill(role) ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests)}));
-    phase.positions = Tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
+    phase.positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
         : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
     if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
-      phase.sampling_identities = Tensor(execution.device(), dense(Type::kUInt32,
+      phase.sampling_identities = caller_tensor(execution.device(), dense(Type::kUInt32,
           {static_cast<std::int64_t>(requests), 3, 4}));
-      phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution));
+      phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
       phase.sampling_valid_values.resize(requests);
       bool float_predicates = phase.sampling_valid.facts.description.data_type() == Type::kFloat32;
       if (drafts_token(role)) {
-        phase.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution));
+        phase.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution, allocation_budget));
         phase.sampling_accept_values.resize(requests);
         float_predicates = float_predicates || phase.sampling_accept.facts.description.data_type() == Type::kFloat32;
       }
@@ -3700,34 +3795,34 @@ public:
     }
     if (has_mtp(role)) {
       const auto draft_rows = is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
-      phase.draft_positions = Tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
+      phase.draft_positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
           : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
-      if (draft_lag(role)) phase.catchup_token = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+      if (draft_lag(role)) phase.catchup_token = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
       if (drafts_token(role)) {
-        phase.draft_id = take(PreparedReadback::prepare(phase.child->compiled, phase.draft_id_port, execution));
+        phase.draft_id = take(PreparedReadback::prepare(phase.child->compiled, phase.draft_id_port, execution, allocation_budget));
         phase.draft_ids.resize(requests);
       }
     }
     if (requests != 1 && !verifies_prefix(role)) {
-      phase.last_ids = Tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+      phase.last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
       std::vector<std::int32_t> last_ids(requests);
       for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
       phase.last_ids.write<std::int32_t>(last_ids);
     }
     if (completion == TextCompletion::kEmitNext) {
       phase.logits_facts = &phase.child->output(phase.logits_port);
-      phase.logits = Tensor(take(execution.resource_for(phase.logits_facts->storage)),
+      phase.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
           phase.logits_facts->description, phase.logits_facts->caller_owned());
-      phase.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution));
+      phase.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution, allocation_budget));
     }
     if (verifies_prefix(role)) phase.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
     phase.hidden_facts = &phase.child->output(phase.hidden_port);
-    phase.final_hidden = Tensor(take(execution.resource_for(phase.hidden_facts->storage)),
+    phase.final_hidden = caller_tensor(take(execution.resource_for(phase.hidden_facts->storage)),
         phase.hidden_facts->description, phase.hidden_facts->caller_owned());
     if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i) {
       phase.probe_facts[i] = &phase.child->output(phase.probe_ports[i]);
       const auto &output = *phase.probe_facts[i];
-      phase.probe_outputs[i] = Tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
+      phase.probe_outputs[i] = caller_tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
     }
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
@@ -4246,8 +4341,8 @@ public:
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
-        if (!state_only && !phase.logits.buffer) generated_logits = take(inference::retain_output(run, *phase.logits_facts));
-        if (!phase.final_hidden.buffer) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts));
+        if (!state_only && !phase.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts));
+        if (!phase.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts));
       }
       if (drafts_token(phase.family->role)) {
         check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
@@ -4484,9 +4579,9 @@ public:
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
           .member_index = j, .requests = outputs.size()};
       if (output.capture_tensors) {
-        if (!state_only) completed.logits = phase.logits.buffer ? phase.logits.view().as_const()
+        if (!state_only) completed.logits = phase.logits.caller_owned() ? phase.logits.view().as_const()
             : take(generated_logits.tensor(phase.logits.description));
-        completed.hidden = phase.final_hidden.buffer ? phase.final_hidden.view().as_const()
+        completed.hidden = phase.final_hidden.caller_owned() ? phase.final_hidden.view().as_const()
             : take(generated_hidden.tensor(phase.final_hidden.description));
       }
       if (output.capture_probes) completed.probes = probe_views;
@@ -4586,7 +4681,7 @@ public:
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
       if (default_sampler.enabled) {
-        if (step.phase->logits.buffer) logits_storage = step.phase->logits.buffer.view();
+        if (step.phase->logits.caller_owned()) logits_storage = step.phase->logits.storage();
         else {
           logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts));
           logits_storage = take(logits_owner.view());

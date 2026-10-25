@@ -76,17 +76,33 @@ struct SharedBackingRecord final {
   ResourceBudgetState *scope;
   mem::MemoryResourceRef resource;
   BackingIdentity allocation;
-  std::size_t bytes, holders = 1;
+  std::size_t bytes, holders = 1, retiring = 0;
   SharedBackingRecord *previous = nullptr, *next = nullptr;
   mem::AllocatorRef allocator;
   ResourceBudget::Reservation charge;
 };
 
+namespace {
+// Caller holds the lookup lock. An unlinked retirement record is invisible to
+// a later allocation reusing the original canonical identity.
+void unlink_record(SharedBackingRecord *record) noexcept {
+  if (record->previous) record->previous->next = record->next;
+  else record->scope->backings = record->next;
+  if (record->next) record->next->previous = record->previous;
+  record->previous = record->next = nullptr;
+}
+void destroy_record(SharedBackingRecord *record) noexcept {
+  const auto allocator = record->allocator;
+  std::destroy_at(record);
+  allocator.deallocate(record, sizeof(SharedBackingRecord), alignof(SharedBackingRecord));
+}
+} // namespace
+
 SharedBackingReservation::SharedBackingReservation(const SharedBackingReservation &other) noexcept
     : record_(other.record_) {
   if (record_) {
     std::lock_guard lock(record_->scope->backing_mutex);
-    HYLE_FATAL_ASSERT(record_->holders != SIZE_MAX);
+    HYLE_FATAL_ASSERT(record_->holders != 0 && record_->holders != SIZE_MAX);
     ++record_->holders;
   }
 }
@@ -113,15 +129,29 @@ void SharedBackingReservation::reset() noexcept {
     std::lock_guard lock(record->scope->backing_mutex);
     HYLE_FATAL_ASSERT(record->holders != 0);
     if (--record->holders != 0) return;
-    if (record->previous) record->previous->next = record->next;
-    else record->scope->backings = record->next;
-    if (record->next) record->next->previous = record->previous;
+    unlink_record(record);
+    if (record->retiring != 0) return;
   }
   // Unlink under the lookup lock, then release outside it. The metadata
   // allocation retains the scope after charge destruction until deallocation.
-  const auto allocator = record->allocator;
-  std::destroy_at(record);
-  allocator.deallocate(record, sizeof(SharedBackingRecord), alignof(SharedBackingRecord));
+  destroy_record(record);
+}
+RetiringBackingReservation::RetiringBackingReservation(RetiringBackingReservation &&other) noexcept
+    : record_(std::exchange(other.record_, nullptr)) {}
+RetiringBackingReservation &RetiringBackingReservation::operator=(RetiringBackingReservation &&other) noexcept {
+  if (this != &other) { reset(); record_ = std::exchange(other.record_, nullptr); }
+  return *this;
+}
+RetiringBackingReservation::~RetiringBackingReservation() { reset(); }
+void RetiringBackingReservation::reset() noexcept {
+  auto *record = std::exchange(record_, nullptr);
+  if (!record) return;
+  {
+    std::lock_guard lock(record->scope->backing_mutex);
+    HYLE_FATAL_ASSERT(record->retiring != 0);
+    if (--record->retiring != 0 || record->holders != 0) return;
+  }
+  destroy_record(record);
 }
 namespace {
 Result<SharedBackingRecord *> reserve_backing_record(
@@ -167,6 +197,18 @@ Result<SharedBackingRecord *> reserve_backing_record(
 }
 } // namespace
 } // namespace detail
+detail::RetiringBackingReservation detail::ResourceBudgetAccess::retire_backing(
+    SharedBackingReservation &existing) noexcept {
+  auto *record = std::exchange(existing.record_, nullptr);
+  if (!record) return {};
+  {
+    std::lock_guard lock(record->scope->backing_mutex);
+    HYLE_FATAL_ASSERT(record->holders != 0 && record->retiring != SIZE_MAX);
+    ++record->retiring;
+    if (--record->holders == 0) detail::unlink_record(record);
+  }
+  return RetiringBackingReservation(record);
+}
 mem::AllocatorRef detail::ResourceBudgetAccess::backing_allocator(
     const ResourceBudget &budget) noexcept {
   return budget.state_ ? budget.state_->allocator : mem::AllocatorRef{};
