@@ -5,7 +5,7 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照；宽Lt候选无提速，关闭。typed BF16 MMF完整消费者亦无稳定收益，已关闭；Graph分段归因完成，转向K2辅助图固定Commands的有限实验。已关闭候选保持关闭。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照。宽Lt、typed BF16 MMF和K2辅助图强制捕获均无稳定完整收益，已关闭；CPU预算工厂转发与冷replay配置一致性已修。继续核对普通随机多请求的批量采样，以及Graph外准备阶段。已关闭候选保持关闭。
 
 ## 目标与当前基线
 
@@ -17,17 +17,25 @@
 
 [Graph分段诊断](../../evidence/performance/mtp-graph-prepare-attribution-2026-10-26.json)随后只替换当前映像的一个Graph host对象：唯一真实两轮exit0、所有非时间字段相同，68次prepare／132个range记录完整、零溢出。27次录制中，大图体10次的分发累计22.624ms、捕获结束16.756ms，前段17次另为3.181／0.871ms；全部录制后的真实等待共0.246ms。21个有录制decode的原cold为62.451ms，Graph部分50.954ms；45个无录制decode为25.615／11.284ms，其中冷绑定9.368ms（约208µs／轮）。父子桶不相加，不与旧provider诊断相减，也不能将捕获结束直接称Instantiate或可回收时间。原cold整段98.096ms中仍有34.477ms在Graph之外，包含上层layout／batch／input包络。现有revision／span复用已在使用，本次结果不支持新造dirty-bit或删权限／退休门。首次离线prefill掩码断言失败已保留，仅修解析器，没有重跑，不刷新上表TPS。
 
+[Model准备分段](../../evidence/performance/inference-model-prepare-attribution-2026-10-26.json)复用已有观察接口，仅替换一个当前Model对象，唯一真实两轮exit0、完整非时间字段0差异，68次观察及408份target报告完整。此次同运行cold95.061ms＝layout8.768＋batch24.650＋replay61.626＋尾部0.017ms；66次decode分别8.441／16.328／60.361ms。target计划366复用／30新建；66次共享元数据上传仅1952B、各有一次真实host等待，不是六层各上传。45个无Graph重录轮次的270份target计划全部复用，排除稳态反复执行FlashInfer scheduler的解释。整个decode batch桶也仅占本次decode约1.64%，不能将其当作主要提速空间。可先核既有queue／copy依赖能否减少host往返，须保持写入真实退休后才发布ReadLease；不能只移动wait。replay仍是较大准备项。报告快照另0.961ms在原host端点后；本图为诊断，不刷新TPS，不与上一份运行相减。
+
 [宽Lt叶筛选](../../evidence/performance/mtp-m2-wide-lt-screen-2026-10-26.json)对照两次N6144与一次N12288，保持BF16 A／W／Y、独立数值门、四个共192MiB物理bank及原工作量。中位114.400→115.040µs／对，五次范围重叠；图节点128→64没有提速，关闭，不继续投入共享子view和权重打包。后续typed MMF也已完成下述完整消费者筛选；两种原实现本来就使用TensorCore，不将其表述为首次启用。
 
 [typed MMF叶](../../evidence/performance/mtp-m2-typed-mmf-screen-2026-10-26.json)随后保原BF16 A／W／Y与F32累加，数值门通过，两份输出相对Lt有13／11个BF16位差。局部中位127.376→115.408µs／对，但五次范围明显重叠。其[私有完整消费者](../../evidence/performance/mtp-m2-typed-mmf-consumer-screen-2026-10-26.json)仅换一个cuBLAS provider对象、加入原typed native对象，原stream／指针／context／错误前缀边界全部保留。一次真实两轮行为和八进程配对筛选均exit0、所有非时间工作0差异；decode121.129→121.999（+0.72%）、综合111.113→111.659（+0.49%），prefill2764.530→2721.230 tok/s。全部范围重叠、显存采样峰相同，单次RAM差不作节省结论；关闭，不合入产品或追加样本，不刷新正式四臂表。
 
-[K2调用源审](../../evidence/research/mtp-k2-source-review-2026-10-26.json)确认旧193次调用＝2prefill＋48多行验证＋95proposal＋48repair；143个辅助调用仍有真实自回归与正式KV修复依赖，不能直接删掉。T3验证／三前缀GDN状态已经接通。下一个有限候选只研究辅助DraftProgram固定Commands这一接缝，保全部原数学、完整状态和预算；不是重开批宽功能或宣称已获得吞吐收益。
+[K2调用源审](../../evidence/research/mtp-k2-source-review-2026-10-26.json)确认旧193次调用＝2prefill＋48多行验证＋95proposal＋48repair；143个辅助调用仍有真实自回归与正式KV修复依赖，不能直接删掉。T3验证／三前缀GDN状态已经接通，后续只筛选辅助图捕获，未重开批宽功能。
+
+[辅助捕获筛选](../../evidence/performance/mtp-k2-aux-capture-screen-2026-10-26.json)的两次行为和八进程配对均exit0、完整非时间字段0差异；实际143个辅助调用有78次录制／65次复用，未减少原提案、修复或权重读取。decode中位123.582→125.032（+1.17%）、综合113.304→114.176（+0.77%），范围重叠；prefill2879.060→2726.346，三样本不代签稳定回归。单次显存采样差不归因节省。候选带少量POD计数、原时钟端点未移，不称完全无插桩；关闭，不默认启用、不追加样本或刷新四臂表。
+
+[冷replay一致性](../../evidence/research/inference-replay-policy-consistency-2026-10-26.json)单独修复配置接缝：Phase与Draft共用冷selector，辅助Auto保原Commands，显式prefer传入Graph原fallback；采样强制Commands例外保留。当前Model严格语法检查通过，未新链接／运行或宣称提速。CPU配置亦已在原有限预算工厂[补转发](../../evidence/research/inference-cpu-options-forwarding-2026-10-26.json)，不更改默认线程策略。
 
 目标是查清并消除可重复的额外成本，在相同权重、输入及明确的计算和完成边界下追平 llama.cpp，
 再根据实际热点争取反超。同时保持数值、状态、寿命和资源限制正确，检查 prefill、启动和内存是否退化。
 每批改动以真实 tokens/s 判断收益；kernel 数减少和微基准变快只用于解释。
 
 **2026-10-26：最近一次完整普通／MTP窗口使用 image `2a94f0b2`，参考仍为 image `433e7051`。** 单轮 P154＋64 输出；真实两轮在同一会话各追加 P154、各生成 64。每种负载各 12 个交错新进程测速，另 4 个进程独立旁采内存，共 32 个进程全部 exit0，臂内输出、实际工作和非时间决策稳定。保留自然 greedy／EOS、原计时端点和默认日志；没有新增时钟或 profiler。复用原参考源码／补丁闭包，不称最新上游；所有旧窗口保留在原证据，不混入本次样本。
+
+该窗口早于后续CPU预算工厂转发与冷replay一致性修复；二者默认策略未改，未为这些配置改动追加完整测速，也不将旧映像标成更新源码的运行结果。
 
 此前be3映像的部分缓存对象仍用历史源码／头，原数据对其有效。本轮按实际依赖刷新107个自有旧对象，以108个当前对象链接，正式engine入口／模型／权重／报告分开编译；保留的native／vendor依据及未知历史边界见[构建证据](../../evidence/research/inference-current-source-build-2026-10-26.json)。未重建整套SDK，不据构建成功签全平台／模型认证，也不归因跨次绝对速度变化。
 

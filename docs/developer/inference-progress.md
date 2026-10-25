@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 01:55（北京时间）。整体粗估 **83%**。当前自有源码依赖刷新、完整32进程对照及证据已提交推送：普通decode落后约3.4%–3.6%，MTP仍落后约8.9%–9.7%。Graph分段诊断已完成。BF16 MMF完整消费者仅+0.72%、范围重叠，候选关闭、不合入产品；宽Lt亦已关闭。现在验证K2短辅助图固定逐算子执行这一具体接缝；CPU配置复用源审已完成。不用跨次绝对速度变化宣布本次优化收益。
+更新：2026-10-26 02:40（北京时间）。整体粗估 **84%**。正式完整对照仍为下表：普通decode落后约3.4%–3.6%，MTP落后约8.9%–9.7%。K2辅助图捕获筛选仅+1.17%、范围重叠，候选关闭。CPU冷配置转发和主／辅助图冷重放选择一致性已修复、提交推送；默认策略不变，不声称吞吐收益。Graph外准备已完成一次真实诊断；继续按实际耗时选择MTP主差距候选，另检查无过滤多请求批量采样。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -16,10 +16,10 @@
   - 全链职责／所有权／配置合同：100%
   - 模型／codec／后端扩展的改动范围：100%
   - 已确认接缝的共同机制调整：100%
-- 性能设施复用与完整消费者优化：约30%
-  - Hyle内存／容器／调度IO／图重放与缓存复用：约25%
-  - 本地参考引擎思路与可证伪候选：约55%
-  - MTP差距归因与执行优化：约85%
+- 性能设施复用与完整消费者优化：约33%
+  - Hyle内存／容器／调度IO／图重放与缓存复用：约30%
+  - 本地参考引擎思路与可证伪候选：约60%
+  - MTP差距归因与执行优化：约88%
   - 已确认热点实现与最新完整四项对照：约15%
 - 完成前遗漏复审与收尾：0%
 
@@ -27,37 +27,17 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| K2辅助图重放筛选 | 性能／MTP | 源审已确认短提案／修复图固定Commands；准备仅换私有Model对象的控制／候选行为检查，保原完整状态与依赖 | 约20% |
+| 无过滤多请求批量采样 | 性能／设施复用 | 私有候选已收窄并完成跨provider源审，检查N1及小R2数学／身份。真实top-k／top-p保原逐行路径；本项不改善单请求MTP | 约50% |
+| MTP主差距候选选择 | 性能／MTP | 新诊断已拆出布局、batch及replay，正在结合原参考轨迹按耗时排序，避免继续盲改小项 | 约30% |
 
 ## 本次完成与剩余顺序
 
-[设施与参考实现复核](../evidence/research/inference-performance-review-2026-10-25.json)已覆盖实际加载IO、热容器、前缀索引、重放和CPU／Apple执行设施，并核对本地参考版本与适用边界。没有发现每token重载权重、重建CPU池或复制完整历史的事实；六个补充参考仓库是有界源码审阅，不能称全部实现已穷尽。旧轨迹晚段target GPU并集约多0.317ms，主要正差来自66个N6144／K2048投影；draft略快，复制总数也不能解释完整余差。不重开已关闭的MMVF／Lt候选，也不把旧轨迹比例套到最新窗口。
-
-[CPU配置接通](../evidence/research/inference-cpu-cold-options-2026-10-26.json)复用原`DefaultContextOptions`，不增加线程池或全局设置。实际有限CPU Graph、非法参数、executor借用与Backend移动检查通过，GPU-only头检查通过；完整CPU＋CUDA测试TU未重跑，CPU吞吐未测。
-
-[当前源码增量构建](../evidence/research/inference-current-source-build-2026-10-26.json)按实际依赖刷新79个已定位对象、18个补查对象、7个自有CUDA对象，并以正式engine四TU替换三个旧对象；最终107→108，链接成功。没有重建整套SDK，保留的native／vendor逐项说明依据及未知历史边界，不作为全平台认证。此前冻结映像的成绩保留，不与当前样本混算。
-
-[同步报告合并](../evidence/performance/inference-synchronous-step-report-2026-10-26.json)保持原调用内同步交付与成功输出字节，单次同步29→1，新增4次／480B局部分配已计入微测。25项host检查通过；普通／MTP各六个交错计时进程和两个独立内存进程均exit0，非时间工作0差异。普通decode 92.442→93.203、综合86.921→87.475；MTP decode119.916→121.072、综合109.795→110.770 tok/s。普通三样本范围未重叠，MTP范围重叠，不声称统计显著性或MTP稳定收益；两模式显存采样峰各自相同，单次RAM差不作节省结论。普通首次汇总因缺少MTP专用字段失败，已仅从原日志离线修正，没有重跑。
-
-[剩余热点复核](../evidence/performance/new-hotspots-2026-10-26.json)排除单侧GDN固定：只固定输入或输出都不能减少旧流重录；两侧固定才可能再少5次，但每轮多37.27MiB搬运、两role暂存约111.80MiB，当前不推进。新单进程录制诊断4446条完整、零溢出、所有非时间工作相同；GGML bindings／guard／收尾合计约2.12ms，桥内约13.17ms，21次有录制prepare还剩49.08ms在provider计时外、具体归属未知，不能称Graph CPU或可回收收益。不会只为406次子调用数量重构接口，也不把本次含诊断时长当TPS。
-
-[Graph准备分段诊断](../evidence/performance/mtp-graph-prepare-attribution-2026-10-26.json)另用当前映像只换一个私有Graph对象，唯一两轮进程exit0、非时间报告0差异、零溢出。实际27次录制／105次复用，大图体10次录制的分发累计22.624ms、捕获结束16.756ms；所有录制后真实等待合计仅0.246ms。无录制的45轮冷绑定共9.368ms，约208µs／轮，不能单独解释完整差距。各桶互斥，不与旧provider进程相减，也不称纯CPU或可回收收益；不据此新造dirty-bit或删除权限／退休检查。首次离线解析对prefill阶段掩码要求过严，已保留失败，仅离线修正，没有重跑。
-
-TensorRT-LLM的tiny／persistent／lowM等微核多要求SM90或更高，没有找到可直接用于4070的新BF16微核。[宽Lt叶实验](../evidence/performance/mtp-m2-wide-lt-screen-2026-10-26.json)保持同权重、数值与物理bank：两次Lt中位114.400µs／对，一次宽Lt为115.040µs，范围重叠；节点128→64未带来提速，关闭路线，不继续投入权重打包和子view。typed MMF的完整消费者结论见下文。接下来先筛选K2辅助图重放，多请求路径随后继续。CPU／混合路线的配置性能与CUDA单用户差距分开，不为小改动自动重跑完整矩阵。
-
-[typed MMF叶实验](../evidence/performance/mtp-m2-typed-mmf-screen-2026-10-26.json)数值门通过、保原BF16输入输出与F32累加，中位127.376→115.408µs／对但范围明显重叠。随后[完整消费者筛选](../evidence/performance/mtp-m2-typed-mmf-consumer-screen-2026-10-26.json)只换一个私有provider对象并加入已测native对象；一次行为及八个交错计时／独立内存进程均exit0、非时间工作0差异。decode中位121.129→121.999（+0.72%）、综合111.113→111.659（+0.49%）、prefill2764.530→2721.230，全部范围重叠；两臂显存采样峰相同，单次RAM差不作节省结论。没有稳定收益依据，明确关闭、不合入产品，也不把叶收益当整模收益。
-
-[K2源审](../evidence/research/mtp-k2-source-review-2026-10-26.json)将旧193次Graph调用闭合为2次prefill＋48次多行验证＋95次提案＋48次修复；不是缺少T3验证或GDN前缀状态。提案有自回归依赖，修复使用真实target hidden，不能直接删除或并排batch。可实测的最小方向是辅助图目前固定Commands，尚未复用主Phase的冷重放选择；先做有限私有实验，再决定共同策略。
-
-[CPU／混合源审](../evidence/research/inference-cpu-hybrid-reuse-2026-10-26.json)未发现新CPU选项传递断点；自然消费者仍使用默认ggml线程和空executor，底层已有外部Scheduler适配可复用。ATen线程独立，不能称整个Model单线程；Model仍需原有限workspace预算。源审未测吞吐，也未改变默认值，后续接通消费者配置时保留这些边界。
-
-[功能反向复审](../evidence/research/inference-functional-review-2026-10-25.json)确认本轮已发现的可实现缺项已补齐，没有理由继续添加同类叶测试。新补源组合见[模型与算子清单](../implementation/model-operators.md)；原payload未取得或完整大模型未运行，继续单列资格边界。
-
-可控logits已通过9组共享数学输入及真实CPU请求流程：R2坏行不发布、同身份幸存请求重试、StateOnly无输入、逐步换租约、暂停恢复不重采历史、完整前缀命中使用当前游标。冷权重现为独立weights编译单元，按各消费者实际后端宏编译；两TU、原请求流程及8项工程检查通过，没有重编核心／SDK。
-
-[共同架构复审](../evidence/research/inference-architecture-closure-2026-10-25.json)按codec、新状态与后端扩展反向追链，未发现需要继续增加框架的具体问题。保留真实模型／平台差异，后续出现真实共同实现再提取。
-
-旧trace的15次body重录为2次首次录制、10次地址键未命中、3次native计划失效；不是15次重载权重。[hidden输出优化](../evidence/performance/mtp-fixed-hidden-output-2026-10-25.json)区别于已关闭的hidden输入候选：已用原CopyBatch和独立canonical租约实现，六次配对测速与两次独立内存进程全部成功，完整非时间报告0差异。总重录实际32→27，与旧离线预测五个位置一致；未单独记录新body分项。decode中位118.912→120.443、综合108.891→109.973 tok/s，三样本范围未重叠；显存采样峰相同，不声称统计显著性。最终主干另外完成下列完整对照，不用历史样本归因本次收益。架构与范围见[推理设计](../architecture/inference-design.md)及[工程范围](../implementation/inference-roadmap.md)。
+- 功能／共同架构：本轮发现的可实现缺项已补齐；[功能复查](../evidence/research/inference-functional-review-2026-10-25.json)与[架构复查](../evidence/research/inference-architecture-closure-2026-10-25.json)保留有限运行和模型／平台边界。
+- 配置接线：已补[CPU预算工厂转发](../evidence/research/inference-cpu-options-forwarding-2026-10-26.json)及[共同冷replay选择](../evidence/research/inference-replay-policy-consistency-2026-10-26.json)。默认行为不变，有限编译通过；未据此声明完整运行或吞吐收益。
+- 当前基线：已按实际依赖完成[107→108对象刷新](../evidence/research/inference-current-source-build-2026-10-26.json)，完整32进程结果见下表。后续配置改动未追加全窗，旧样本不改名、不混算。
+- 性能取舍：同步报告和hidden输出已合入；宽Lt、typed MMF及K2辅助强制捕获均无稳定完整收益，关闭且不补样。数字、源身份和取舍见[性能资料](performance/decode.md)。
+- 准备归因：[唯一真实诊断](../evidence/performance/inference-model-prepare-attribution-2026-10-26.json)正常结束、非时间字段0差异。66次decode的布局／batch／replay为8.441／16.328／60.361ms；target原生计划366复用／30新建。整个batch桶仅占本次decode约1.64%，不能据此期待大幅收益。
+- 正在推进：无过滤R>1先过逐行数学／身份门，再检查原小Model与实际性能。MTP另按重录、GPU计算及准备成本选择下一批；不将多请求收益计入单请求，不新增执行器、缓存owner或后端白名单。
 
 ## 最新完整性能对照
 

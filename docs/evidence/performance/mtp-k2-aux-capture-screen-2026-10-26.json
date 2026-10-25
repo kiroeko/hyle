@@ -1,0 +1,588 @@
+{
+  "status": "BEHAVIOR_AND_REPLAY_MECHANISM_PASS_SCREEN_OVERLAP_CLOSED_NOT_MERGED",
+  "date": "2026-10-26",
+  "decision": "Close this private K2 auxiliary capture candidate: decode and combined ranges overlap. No extra samples or product route.",
+  "scope": "Original two-turn K2 work, control2a94 versus privatebed123. No peer comparison, full32 window, new MTP feature or product change.",
+  "control_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+    "bytes": 141459968,
+    "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+  },
+  "candidate_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\link\\hyle.exe",
+    "bytes": 141461504,
+    "sha256": "bed123d596a154ab815e394a499f5ee80a83255c65b1f580a53aa5f332d5e4fb"
+  },
+  "source": {
+    "before_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\before\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "candidate_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 469511,
+      "sha256": "c1f15e162e0f6dd67bbe8b018921a4763d1e29f08701c7367c6bad91ea858b76"
+    },
+    "patch": {
+      "path": ".scratch/mtp-k2-aux-capture-pilot-20261026/source.patch",
+      "bytes": 3339,
+      "sha256": "2916b599ba350f5a808f20277d389a03ea06c7f01b89be95363fcad983b8de7b"
+    },
+    "pins": {
+      "path": ".scratch/mtp-k2-aux-capture-pilot-20261026/source-pins.json",
+      "bytes": 956,
+      "sha256": "6c32a6091111c7e3c5bd210c5da56f2deef8015e8a93434ef6d6fdb1b4e411f1"
+    },
+    "frozen_boundary": "Both images use main1892 baseline and identical cached dependencies. Later canonical CPU-options forwarding is outside both images."
+  },
+  "eligibility": "Private max_drafts==2, actual execute_draft rows<=3, !default_sampler.enabled, replay_policy!=Commands; long/noneligible work retains Commands.",
+  "unchanged_contract": "Original prepare/bind, submit_retained, actual Completion.wait, repair, accepted-prefix selection, budgets and atomic Head/ledger publication are unchanged.",
+  "build": {
+    "Model_TUs": 1,
+    "compile": {
+      "exit": 0,
+      "pid": 16364,
+      "seconds": 19.00309950002702
+    },
+    "link": {
+      "exit": 0,
+      "pid": 55956,
+      "seconds": 1.7444029000471346
+    },
+    "unchanged_other_absolute_link_inputs": 221,
+    "unchanged_system_libraries": 13,
+    "SDK_builds": 0,
+    "other_TU_builds": 0
+  },
+  "pre_screen_behavior": {
+    "processes": [
+      {
+        "arm": "control",
+        "exit": 0,
+        "pid": 32792,
+        "seconds": 3.599933100049384
+      },
+      {
+        "arm": "candidate",
+        "exit": 0,
+        "pid": 56152,
+        "seconds": 4.020394699997269
+      }
+    ],
+    "complete_stdout_non_time_differences": 0,
+    "stderr_classification": {
+      "expected_exact_lines": [
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup complete",
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup reset"
+      ],
+      "counts": {
+        "control": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 94,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 15
+        },
+        "candidate": {}
+      },
+      "other_timing_normalized_lines_equal": true,
+      "other_diff": [],
+      "private_counter_line_only_candidate": true,
+      "interpretation": "Native internal warmup/reset logging changes when the auxiliary path moves from Commands/provider nested graph compute to outer Graph capture/replay. Counts are logging/replay metadata, not native capture API counts or speed evidence."
+    }
+  },
+  "screen_protocol": {
+    "timing_processes": 6,
+    "memory_processes": 2,
+    "timing_order": [
+      "B",
+      "C",
+      "C",
+      "B",
+      "B",
+      "C"
+    ],
+    "memory_order": [
+      "B",
+      "C"
+    ],
+    "watchdog_seconds": 120,
+    "all_exit0": true,
+    "stdout_non_time_differences": 0,
+    "unexpected_stderr_differences": 0,
+    "profiler": false,
+    "old_samples_pooled": false
+  },
+  "screen_processes": [
+    {
+      "mode": "timing",
+      "arm": "control",
+      "pid": 55088,
+      "exit": 0,
+      "process_wall_seconds": 3.5461156,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-01-control\\result.json",
+        "bytes": 1383,
+        "sha256": "419691790908c5223ae9589a6cde9c1d985af5977550f1b9ad5288c20e28ecf8"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 94,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 15
+        },
+        "final_pilot_POD": [],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "timing",
+      "arm": "candidate",
+      "pid": 52600,
+      "exit": 0,
+      "process_wall_seconds": 3.496036,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-02-candidate\\result.json",
+        "bytes": 1366,
+        "sha256": "082e9b5a92c6449e39e7f82fd51982880a0f1efa3893269b2ca638843481a83a"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 0,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 0
+        },
+        "final_pilot_POD": [
+          {
+            "eligible_prepares": 143,
+            "recorded_ranges": 78,
+            "reused_ranges": 65,
+            "commands_fallbacks": 0,
+            "noneligible_commands": 0
+          }
+        ],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "timing",
+      "arm": "candidate",
+      "pid": 56660,
+      "exit": 0,
+      "process_wall_seconds": 3.4670674,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-03-candidate\\result.json",
+        "bytes": 1367,
+        "sha256": "51189c541345229942d99f01e39841f9f24c190d61a45d56f81e526724f1f7c5"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 0,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 0
+        },
+        "final_pilot_POD": [
+          {
+            "eligible_prepares": 143,
+            "recorded_ranges": 78,
+            "reused_ranges": 65,
+            "commands_fallbacks": 0,
+            "noneligible_commands": 0
+          }
+        ],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "timing",
+      "arm": "control",
+      "pid": 54368,
+      "exit": 0,
+      "process_wall_seconds": 3.4719326,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-04-control\\result.json",
+        "bytes": 1383,
+        "sha256": "178b4e59dcdc4f8ab8c20ff8bca7161125aab37a868f63c21dcd8c611a987653"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 94,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 15
+        },
+        "final_pilot_POD": [],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "timing",
+      "arm": "control",
+      "pid": 48772,
+      "exit": 0,
+      "process_wall_seconds": 3.4664444,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-05-control\\result.json",
+        "bytes": 1383,
+        "sha256": "30746ce5901ca359a770793cf05d9b58d70a0ea514c2144db662b921f29c339e"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 94,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 15
+        },
+        "final_pilot_POD": [],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "timing",
+      "arm": "candidate",
+      "pid": 42356,
+      "exit": 0,
+      "process_wall_seconds": 3.4751004,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\timing-06-candidate\\result.json",
+        "bytes": 1367,
+        "sha256": "310674eece908ac92b69d67200d57649c4c9745fa6ccfbe40c1bcda0348d981b"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 0,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 0
+        },
+        "final_pilot_POD": [
+          {
+            "eligible_prepares": 143,
+            "recorded_ranges": 78,
+            "reused_ranges": 65,
+            "commands_fallbacks": 0,
+            "noneligible_commands": 0
+          }
+        ],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "memory",
+      "arm": "control",
+      "pid": 52352,
+      "exit": 0,
+      "process_wall_seconds": 3.4892991,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\memory-01-control\\result.json",
+        "bytes": 2899,
+        "sha256": "f8963c84690245d359f065dbe3c21363898b70eca4d8adb15dd2f8224003a975"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 94,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 15
+        },
+        "final_pilot_POD": [],
+        "pilot_equal_original_behavior": true
+      }
+    },
+    {
+      "mode": "memory",
+      "arm": "candidate",
+      "pid": 36684,
+      "exit": 0,
+      "process_wall_seconds": 3.4814699,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\memory-02-candidate\\result.json",
+        "bytes": 2883,
+        "sha256": "882271507d51db85ca4b4b11cedc91ce943d7eee5a4f786be14887efd73a960f"
+      },
+      "non_time_difference_count": 0,
+      "unexpected_stderr_difference_count": 0,
+      "replay_stderr": {
+        "exact_allowed_warmup_counts": {
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 0,
+          "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 0
+        },
+        "final_pilot_POD": [
+          {
+            "eligible_prepares": 143,
+            "recorded_ranges": 78,
+            "reused_ranges": 65,
+            "commands_fallbacks": 0,
+            "noneligible_commands": 0
+          }
+        ],
+        "pilot_equal_original_behavior": true
+      }
+    }
+  ],
+  "replay": {
+    "eligible_prepares": 143,
+    "recorded_ranges": 78,
+    "reused_ranges": 65,
+    "commands_fallbacks": 0,
+    "noneligible_commands": 0
+  },
+  "replay_scope": "Same143 eligible/78record/65reuse/0fallback/0noneligible in each candidate. Existing ReplayReport counts are not CUDA API capture measurements. Exact warmup logs94complete/15reset for each control and0/0 for each candidate; all other237 timing-normalized stderr lines match.",
+  "metrics": {
+    "control": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.1073267,
+        "min": 0.1072421,
+        "max": 0.1101349,
+        "samples": [
+          0.1073267,
+          0.1072421,
+          0.1101349
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.0195644000000001,
+        "min": 1.0136475,
+        "max": 1.0230061,
+        "samples": [
+          1.0230061,
+          1.0136475,
+          1.0195644000000001
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1296993,
+        "min": 1.1208896,
+        "max": 1.1303328,
+        "samples": [
+          1.1303328,
+          1.1208896,
+          1.1296993
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2879.059917056986,
+        "min": 2805.650161756174,
+        "max": 2881.331119028814,
+        "samples": [
+          2879.059917056986,
+          2881.331119028814,
+          2805.650161756174
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 123.58218862879086,
+        "min": 123.16642100179071,
+        "max": 124.30356706843355,
+        "samples": [
+          123.16642100179071,
+          124.30356706843355,
+          123.58218862879086
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 113.30448730914502,
+        "min": 113.24098530981318,
+        "max": 114.19501081997728,
+        "samples": [
+          113.24098530981318,
+          114.19501081997728,
+          113.30448730914502
+        ]
+      }
+    },
+    "candidate": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.11333850000000001,
+        "min": 0.1120948,
+        "max": 0.11495659999999999,
+        "samples": [
+          0.11495659999999999,
+          0.11333850000000001,
+          0.1120948
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.0077403999999999,
+        "min": 0.9997143000000003,
+        "max": 1.0141312000000002,
+        "samples": [
+          0.9997143000000003,
+          1.0077403999999999,
+          1.0141312000000002
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1210789,
+        "min": 1.1146709,
+        "max": 1.126226,
+        "samples": [
+          1.1146709,
+          1.1210789,
+          1.126226
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2726.3462989187256,
+        "min": 2687.970938597697,
+        "max": 2756.5953103979846,
+        "samples": [
+          2687.970938597697,
+          2726.3462989187256,
+          2756.5953103979846
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 125.03220075328926,
+        "min": 124.24427924118692,
+        "max": 126.03600848762488,
+        "samples": [
+          126.03600848762488,
+          125.03220075328926,
+          124.24427924118692
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 114.17572839877728,
+        "min": 113.6539202611199,
+        "max": 114.8320997704345,
+        "samples": [
+          114.8320997704345,
+          114.17572839877728,
+          113.6539202611199
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "prefill_seconds": {
+      "candidate_relative_percent": 5.6014020742275905,
+      "ranges_overlap": false
+    },
+    "decode_seconds": {
+      "candidate_relative_percent": -1.1597109510689374,
+      "ranges_overlap": true
+    },
+    "session_seconds": {
+      "candidate_relative_percent": -0.7630703143747919,
+      "ranges_overlap": true
+    },
+    "prefill_tokens_per_second": {
+      "candidate_relative_percent": -5.304287598653601,
+      "ranges_overlap": false
+    },
+    "decode_output_tokens_per_second": {
+      "candidate_relative_percent": 1.1733180489737594,
+      "ranges_overlap": true
+    },
+    "combined_output_tokens_per_second": {
+      "candidate_relative_percent": 0.7689378508506373,
+      "ranges_overlap": true
+    }
+  },
+  "memory": {
+    "control": {
+      "path": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\memory-01-control\\memory-summary.json",
+        "bytes": 44649,
+        "sha256": "088c246e11e261dbd84fd018e51c870efa2f0599856e753e0317c20a9f276d15"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1290645504,
+        "observed_os_peak_working_set_bytes": 1290690560,
+        "sampled_max_private_commit_bytes": 6524116992,
+        "observed_os_peak_commit_bytes": 6524116992,
+        "sampled_peak_gpu_dedicated_bytes": 4543561728,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4625350656
+      },
+      "sample_count": 333,
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 34,
+        "shared:no_pid_instance": 34
+      }
+    },
+    "candidate": {
+      "path": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-k2-aux-capture-pilot-20261026\\screen\\memory-02-candidate\\memory-summary.json",
+        "bytes": 44692,
+        "sha256": "36e462fa2043304214f7bd30bfcc999971f1323094c03d865246e8e4c76ce2d7"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1289564160,
+        "observed_os_peak_working_set_bytes": 1289564160,
+        "sampled_max_private_commit_bytes": 6512713728,
+        "observed_os_peak_commit_bytes": 6512713728,
+        "sampled_peak_gpu_dedicated_bytes": 4537270272,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4619059200
+      },
+      "sample_count": 332,
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 33,
+        "shared:no_pid_instance": 33
+      }
+    }
+  },
+  "work": {
+    "generated_tokens": 128,
+    "actual_graph_calls": 193,
+    "prefill_target_rows": 309,
+    "verified_target_rows": 143,
+    "actual_target_rows": 452,
+    "actual_draft_rows": 571,
+    "consumed_drafts": 78
+  },
+  "limits": [
+    "Control is frozen2a94; candidatebed123 uses only private Model TU from frozen1892 main. Later canonical CPU factory forwarding is not in either arm.",
+    "All reported stdout non-time fields equal original behavior control; only original time-key exclusions. Stderr preserves exact warmup text counts and final candidate POD; remaining237 lines equal after named timing fields only.",
+    "Candidate143 eligible prepares,78 recorded ranges,65 reused ranges,0 Commands fallback,0 noneligible Commands in all4 new candidate processes; native warmup log counts are not direct CUDA graph capture API counts.",
+    "Timing3 observations per arm, descriptive ranges only; not an uninstrumented or peer full-window result. Fixed POD counter work is inside original endpoints.",
+    "Prefill decrease is observed here, not a stable causal regression certificate. Decode+1.173318% and combined+0.768938% do not establish repeatable gain.",
+    "Memory1 separate process per arm:333/332 samples,34/33 initial GPU no_pid_instance samples; sampled maxima are lower bounds, not guaranteed physical caps.",
+    "No independent unreported device tensor readback or injected cancellation/native-error/unknown-retirement test. No SDK/core/provider/weights rebuild, profiler, or HTTP.",
+    "One behavior pair preceded the six timing and two independent memory processes; its wall times are not pooled into timing statistics.",
+    "Fixed POD counters execute inside original endpoints. This is not a wholly uninstrumented pilot; its final POD print is after the original endpoints.",
+    "ready.json and screen-adapter.json retain pre-run checkpoint status. Actual execution facts are the later behavior and screen receipts.",
+    "Observed prefill decrease and tiny single-process sampled VRAM difference do not establish stable causal effects."
+  ],
+  "HTTP": 0,
+  "SDK_builds": 0,
+  "new_core_or_provider_TUs": 0,
+  "source_build_reference": "../research/inference-current-source-build-2026-10-26.json",
+  "archive": {
+    "path": "docs/evidence/performance/mtp-k2-aux-capture-screen-2026-10-26.zip",
+    "bytes": 342357,
+    "sha256": "6fe25443b5e351c294ec3400cd15119e0f7ff88a9b3118d3202a0a129c82417f",
+    "members": 134,
+    "logical_bytes": 2714925,
+    "CRC": "PASS"
+  }
+}

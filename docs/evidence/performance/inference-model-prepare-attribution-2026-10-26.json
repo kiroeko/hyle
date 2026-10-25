@@ -1,0 +1,670 @@
+{
+  "status": "PASS_ONE_K1_MODEL_OBSERVATION_DIAGNOSTIC_NOT_TPS",
+  "date": "2026-10-26",
+  "scope": "Exactly one current-b346 private Model observation TU using existing PreparationObservation/g::batch::report. Original K1 natural two-turn fixture, no Graph/core/provider changes or profiler.",
+  "source": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\before\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    "canonical": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    "after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 473434,
+      "sha256": "1f6d6b74da199a41633a43e48a6c2e67354c04bd45fa76c50ae2ac08553713c7"
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\source.patch",
+      "bytes": 7843,
+      "sha256": "9589fdffd9683211c03f3030a7c32824dc6503affed8c6d2f8c662a8b3a1f5c6"
+    }
+  },
+  "control_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+    "bytes": 141459968,
+    "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+  },
+  "diagnostic_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\link\\hyle.exe",
+    "bytes": 141464576,
+    "sha256": "b4e6dc65b1964c27c749eb6ef59b40cdda6ce37cdccc122db16cd8390d545565"
+  },
+  "frozen_boundary": "Control2a94 is historical frozen current-source image. Diagnostic Model starts at canonical b346 including CPU forwarding/shared selection, with default K1 GPU semantics unchanged; all other221absolute+13system inputs use the same2a94 closure. No claim the source/image is byte-identical to2a94.",
+  "build": {
+    "Model_TUs": 1,
+    "other_TUs": 0,
+    "compile": {
+      "exit": 0,
+      "pid": 51260,
+      "seconds": 18.325308299972676
+    },
+    "link": {
+      "exit": 0,
+      "pid": 56272,
+      "seconds": 1.7143482000101358
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\compile\\actual-dependencies.json",
+      "bytes": 74046,
+      "sha256": "8f2294504b439dce76ba5e1fcda013e5d8fd3045f6ae47f4aa66e32f25a42268"
+    },
+    "object_map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-batch-clock-20261026\\object-map.json",
+      "bytes": 527,
+      "sha256": "a43902475ca0c673e99edb5c5fb4c71d87df8a1bd1631bd7c059a6dd5d7c489f"
+    }
+  },
+  "process": {
+    "exit": 0,
+    "pid": 29116,
+    "seconds": 3.953621299995575
+  },
+  "GPU": "RELEASED",
+  "model_processes": 1,
+  "stdout_full_non_time_differences": 0,
+  "stdout_gate": "Original recursive named timing/clock/throughput fields only; no work/cache/ledger/RNG/ID/state or replay metadata excluded. Original stdout retained.",
+  "stderr_unexpected_difference_count": 0,
+  "stderr_gate": "Exactly one final MODEL_BATCH_CLOCK line is new. Other lines compared after named clock/time normalization; differences are retained, not silently filtered.",
+  "completeness": {
+    "seen": 68,
+    "finished": 68,
+    "capacity": 68,
+    "overflow": 0,
+    "expected_reports_per_call": 6
+  },
+  "original_graph_capture": {
+    "recorded": 27,
+    "reused": 105
+  },
+  "groups": {
+    "all": {
+      "calls": 68,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 68,
+          "total_ms": 95.0611,
+          "mean_us": 1397.9573529411766,
+          "median_us": 569.45,
+          "min_us": 407.8,
+          "max_us": 10541.800000000001
+        },
+        "layout_seconds": {
+          "count": 68,
+          "total_ms": 8.768099999999999,
+          "mean_us": 128.94264705882355,
+          "median_us": 111.75,
+          "min_us": 70.4,
+          "max_us": 411.59999999999997
+        },
+        "batch_prepare_seconds": {
+          "count": 68,
+          "total_ms": 24.650399999999998,
+          "mean_us": 362.50588235294117,
+          "median_us": 161.45,
+          "min_us": 113.1,
+          "max_us": 4424.400000000001
+        },
+        "replay_prepare_seconds": {
+          "count": 68,
+          "total_ms": 61.6257,
+          "mean_us": 906.2602941176472,
+          "median_us": 261.70000000000005,
+          "min_us": 125.8,
+          "max_us": 9597.3
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 68,
+          "total_ms": 33.4354,
+          "mean_us": 491.6970588235294,
+          "median_us": 269.75,
+          "min_us": 183.79999999999995,
+          "max_us": 4585.1
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 68,
+          "total_ms": 0.016900000000001768,
+          "mean_us": 0.24852941176473184,
+          "median_us": 0.20000000000003196,
+          "min_us": 0.0,
+          "max_us": 0.6999999999999628
+        },
+        "report_snapshot_seconds": {
+          "count": 68,
+          "total_ms": 0.9606,
+          "mean_us": 14.126470588235295,
+          "median_us": 13.7,
+          "min_us": 12.1,
+          "max_us": 26.400000000000002
+        }
+      },
+      "target_node_reports": {
+        "count": 408,
+        "reused": 366,
+        "fresh": 42,
+        "host_waits": 110,
+        "metadata_staging_bytes": 2168,
+        "upload": {
+          "active_copies": 179,
+          "logical_bytes": 2168,
+          "physical_bytes": 2168,
+          "staging_bytes": 0,
+          "native_calls": 68,
+          "native_waits": 0,
+          "phase_completions": 68,
+          "host_waits": 68
+        }
+      }
+    },
+    "prefill": {
+      "calls": 2,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 2,
+          "total_ms": 9.915000000000001,
+          "mean_us": 4957.5,
+          "median_us": 4957.5,
+          "min_us": 4672.3,
+          "max_us": 5242.700000000001
+        },
+        "layout_seconds": {
+          "count": 2,
+          "total_ms": 0.3267,
+          "mean_us": 163.35,
+          "median_us": 163.35,
+          "min_us": 160.4,
+          "max_us": 166.3
+        },
+        "batch_prepare_seconds": {
+          "count": 2,
+          "total_ms": 8.3226,
+          "mean_us": 4161.299999999999,
+          "median_us": 4161.299999999999,
+          "min_us": 3898.2000000000003,
+          "max_us": 4424.400000000001
+        },
+        "replay_prepare_seconds": {
+          "count": 2,
+          "total_ms": 1.2651,
+          "mean_us": 632.55,
+          "median_us": 632.55,
+          "min_us": 607.5,
+          "max_us": 657.6
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 2,
+          "total_ms": 8.6499,
+          "mean_us": 4324.95,
+          "median_us": 4324.95,
+          "min_us": 4064.8,
+          "max_us": 4585.1
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 2,
+          "total_ms": 0.0005999999999990388,
+          "mean_us": 0.29999999999951943,
+          "median_us": 0.29999999999951943,
+          "min_us": 0.2999999999990857,
+          "max_us": 0.2999999999999531
+        },
+        "report_snapshot_seconds": {
+          "count": 2,
+          "total_ms": 0.032799999999999996,
+          "mean_us": 16.4,
+          "median_us": 16.4,
+          "min_us": 14.5,
+          "max_us": 18.3
+        }
+      },
+      "target_node_reports": {
+        "count": 12,
+        "reused": 0,
+        "fresh": 12,
+        "host_waits": 14,
+        "metadata_staging_bytes": 216,
+        "upload": {
+          "active_copies": 10,
+          "logical_bytes": 216,
+          "physical_bytes": 216,
+          "staging_bytes": 0,
+          "native_calls": 2,
+          "native_waits": 0,
+          "phase_completions": 2,
+          "host_waits": 2
+        }
+      }
+    },
+    "decode": {
+      "calls": 66,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 66,
+          "total_ms": 85.1461,
+          "mean_us": 1290.0924242424242,
+          "median_us": 563.9,
+          "min_us": 407.8,
+          "max_us": 10541.800000000001
+        },
+        "layout_seconds": {
+          "count": 66,
+          "total_ms": 8.4414,
+          "mean_us": 127.89999999999999,
+          "median_us": 108.8,
+          "min_us": 70.4,
+          "max_us": 411.59999999999997
+        },
+        "batch_prepare_seconds": {
+          "count": 66,
+          "total_ms": 16.3278,
+          "mean_us": 247.3909090909091,
+          "median_us": 157.75,
+          "min_us": 113.1,
+          "max_us": 1432.8
+        },
+        "replay_prepare_seconds": {
+          "count": 66,
+          "total_ms": 60.3606,
+          "mean_us": 914.5545454545455,
+          "median_us": 259.6,
+          "min_us": 125.8,
+          "max_us": 9597.3
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 66,
+          "total_ms": 24.785500000000003,
+          "mean_us": 375.5378787878788,
+          "median_us": 261.40000000000003,
+          "min_us": 183.79999999999995,
+          "max_us": 1589.2000000000003
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 66,
+          "total_ms": 0.01630000000000273,
+          "mean_us": 0.24696969696973828,
+          "median_us": 0.20000000000000487,
+          "min_us": 0.0,
+          "max_us": 0.6999999999999628
+        },
+        "report_snapshot_seconds": {
+          "count": 66,
+          "total_ms": 0.9278,
+          "mean_us": 14.057575757575757,
+          "median_us": 13.65,
+          "min_us": 12.1,
+          "max_us": 26.400000000000002
+        }
+      },
+      "target_node_reports": {
+        "count": 396,
+        "reused": 366,
+        "fresh": 30,
+        "host_waits": 96,
+        "metadata_staging_bytes": 1952,
+        "upload": {
+          "active_copies": 169,
+          "logical_bytes": 1952,
+          "physical_bytes": 1952,
+          "staging_bytes": 0,
+          "native_calls": 66,
+          "native_waits": 0,
+          "phase_completions": 66,
+          "host_waits": 66
+        }
+      }
+    },
+    "decode_no_graph_record": {
+      "calls": 45,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 45,
+          "total_ms": 23.5618,
+          "mean_us": 523.5955555555555,
+          "median_us": 500.0,
+          "min_us": 407.8,
+          "max_us": 680.5999999999999
+        },
+        "layout_seconds": {
+          "count": 45,
+          "total_ms": 5.2972,
+          "mean_us": 117.71555555555555,
+          "median_us": 104.7,
+          "min_us": 89.7,
+          "max_us": 157.89999999999998
+        },
+        "batch_prepare_seconds": {
+          "count": 45,
+          "total_ms": 7.457,
+          "mean_us": 165.7111111111111,
+          "median_us": 151.9,
+          "min_us": 121.10000000000001,
+          "max_us": 251.29999999999998
+        },
+        "replay_prepare_seconds": {
+          "count": 45,
+          "total_ms": 10.7952,
+          "mean_us": 239.89333333333335,
+          "median_us": 233.4,
+          "min_us": 125.8,
+          "max_us": 312.90000000000003
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 45,
+          "total_ms": 12.766599999999999,
+          "mean_us": 283.70222222222225,
+          "median_us": 252.99999999999997,
+          "min_us": 218.8,
+          "max_us": 401.4
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 45,
+          "total_ms": 0.012400000000000192,
+          "mean_us": 0.27555555555555983,
+          "median_us": 0.20000000000011328,
+          "min_us": 0.09999999999994821,
+          "max_us": 0.6999999999999628
+        },
+        "report_snapshot_seconds": {
+          "count": 45,
+          "total_ms": 0.6181,
+          "mean_us": 13.735555555555555,
+          "median_us": 13.4,
+          "min_us": 12.1,
+          "max_us": 26.400000000000002
+        }
+      },
+      "target_node_reports": {
+        "count": 270,
+        "reused": 270,
+        "fresh": 0,
+        "host_waits": 45,
+        "metadata_staging_bytes": 1164,
+        "upload": {
+          "active_copies": 104,
+          "logical_bytes": 1164,
+          "physical_bytes": 1164,
+          "staging_bytes": 0,
+          "native_calls": 45,
+          "native_waits": 0,
+          "phase_completions": 45,
+          "host_waits": 45
+        }
+      }
+    },
+    "decode_has_graph_record": {
+      "calls": 21,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 21,
+          "total_ms": 61.5843,
+          "mean_us": 2932.5857142857144,
+          "median_us": 954.9,
+          "min_us": 563.9,
+          "max_us": 10541.800000000001
+        },
+        "layout_seconds": {
+          "count": 21,
+          "total_ms": 3.1441999999999997,
+          "mean_us": 149.7238095238095,
+          "median_us": 115.5,
+          "min_us": 70.4,
+          "max_us": 411.59999999999997
+        },
+        "batch_prepare_seconds": {
+          "count": 21,
+          "total_ms": 8.8708,
+          "mean_us": 422.4190476190476,
+          "median_us": 215.70000000000002,
+          "min_us": 113.1,
+          "max_us": 1432.8
+        },
+        "replay_prepare_seconds": {
+          "count": 21,
+          "total_ms": 49.565400000000004,
+          "mean_us": 2360.2571428571428,
+          "median_us": 642.4,
+          "min_us": 354.6,
+          "max_us": 9597.3
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 21,
+          "total_ms": 12.0189,
+          "mean_us": 572.3285714285714,
+          "median_us": 377.8000000000002,
+          "min_us": 183.79999999999995,
+          "max_us": 1589.2000000000003
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 21,
+          "total_ms": 0.0039000000000025343,
+          "mean_us": 0.1857142857144064,
+          "median_us": 0.20000000000000487,
+          "min_us": 0.0,
+          "max_us": 0.40000000000000974
+        },
+        "report_snapshot_seconds": {
+          "count": 21,
+          "total_ms": 0.3097,
+          "mean_us": 14.747619047619049,
+          "median_us": 14.1,
+          "min_us": 12.1,
+          "max_us": 24.5
+        }
+      },
+      "target_node_reports": {
+        "count": 126,
+        "reused": 96,
+        "fresh": 30,
+        "host_waits": 51,
+        "metadata_staging_bytes": 788,
+        "upload": {
+          "active_copies": 65,
+          "logical_bytes": 788,
+          "physical_bytes": 788,
+          "staging_bytes": 0,
+          "native_calls": 21,
+          "native_waits": 0,
+          "phase_completions": 21,
+          "host_waits": 21
+        }
+      }
+    },
+    "decode_target_all_reused": {
+      "calls": 61,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 61,
+          "total_ms": 54.756600000000006,
+          "mean_us": 897.6491803278689,
+          "median_us": 555.7,
+          "min_us": 407.8,
+          "max_us": 5895.9
+        },
+        "layout_seconds": {
+          "count": 61,
+          "total_ms": 7.7903,
+          "mean_us": 127.70983606557378,
+          "median_us": 107.30000000000001,
+          "min_us": 70.4,
+          "max_us": 411.59999999999997
+        },
+        "batch_prepare_seconds": {
+          "count": 61,
+          "total_ms": 10.3359,
+          "mean_us": 169.44098360655738,
+          "median_us": 155.0,
+          "min_us": 113.1,
+          "max_us": 283.90000000000003
+        },
+        "replay_prepare_seconds": {
+          "count": 61,
+          "total_ms": 36.6152,
+          "mean_us": 600.2491803278688,
+          "median_us": 256.5,
+          "min_us": 125.8,
+          "max_us": 5449.5
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 61,
+          "total_ms": 18.141399999999997,
+          "mean_us": 297.40000000000003,
+          "median_us": 256.19999999999993,
+          "min_us": 183.79999999999995,
+          "max_us": 639.6000000000001
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 61,
+          "total_ms": 0.015200000000000153,
+          "mean_us": 0.249180327868855,
+          "median_us": 0.20000000000000487,
+          "min_us": 0.0,
+          "max_us": 0.6999999999999628
+        },
+        "report_snapshot_seconds": {
+          "count": 61,
+          "total_ms": 0.8562,
+          "mean_us": 14.036065573770491,
+          "median_us": 13.6,
+          "min_us": 12.1,
+          "max_us": 26.400000000000002
+        }
+      },
+      "target_node_reports": {
+        "count": 366,
+        "reused": 366,
+        "fresh": 0,
+        "host_waits": 61,
+        "metadata_staging_bytes": 1608,
+        "upload": {
+          "active_copies": 147,
+          "logical_bytes": 1608,
+          "physical_bytes": 1608,
+          "staging_bytes": 0,
+          "native_calls": 61,
+          "native_waits": 0,
+          "phase_completions": 61,
+          "host_waits": 61
+        }
+      }
+    },
+    "decode_any_target_fresh": {
+      "calls": 5,
+      "stages": {
+        "cold_parent_seconds": {
+          "count": 5,
+          "total_ms": 30.389499999999998,
+          "mean_us": 6077.9,
+          "median_us": 4371.1,
+          "min_us": 3899.3,
+          "max_us": 10541.800000000001
+        },
+        "layout_seconds": {
+          "count": 5,
+          "total_ms": 0.6511,
+          "mean_us": 130.22,
+          "median_us": 116.2,
+          "min_us": 104.7,
+          "max_us": 158.5
+        },
+        "batch_prepare_seconds": {
+          "count": 5,
+          "total_ms": 5.991899999999999,
+          "mean_us": 1198.3799999999999,
+          "median_us": 1285.0,
+          "min_us": 839.5,
+          "max_us": 1432.8
+        },
+        "replay_prepare_seconds": {
+          "count": 5,
+          "total_ms": 23.7454,
+          "mean_us": 4749.08,
+          "median_us": 2781.9,
+          "min_us": 2747.2999999999997,
+          "max_us": 9597.3
+        },
+        "outside_prepare_replay_seconds": {
+          "count": 5,
+          "total_ms": 6.644100000000002,
+          "mean_us": 1328.8200000000004,
+          "median_us": 1400.7999999999997,
+          "min_us": 944.5000000000009,
+          "max_us": 1589.2000000000003
+        },
+        "parent_tail_and_print_rounding_seconds": {
+          "count": 5,
+          "total_ms": 0.0011000000000025746,
+          "mean_us": 0.22000000000051492,
+          "median_us": 0.20000000000054696,
+          "min_us": 0.10000000000027348,
+          "max_us": 0.3000000000016878
+        },
+        "report_snapshot_seconds": {
+          "count": 5,
+          "total_ms": 0.07160000000000001,
+          "mean_us": 14.32,
+          "median_us": 13.8,
+          "min_us": 13.5,
+          "max_us": 16.7
+        }
+      },
+      "target_node_reports": {
+        "count": 30,
+        "reused": 0,
+        "fresh": 30,
+        "host_waits": 35,
+        "metadata_staging_bytes": 344,
+        "upload": {
+          "active_copies": 22,
+          "logical_bytes": 344,
+          "physical_bytes": 344,
+          "staging_bytes": 0,
+          "native_calls": 5,
+          "native_waits": 0,
+          "phase_completions": 5,
+          "host_waits": 5
+        }
+      }
+    }
+  },
+  "interpretation": {
+    "strongest_fact": "The same-run Graph-external parent is33.4354ms: layout8.7681ms + batch24.6504ms + tail/printed rounding0.0169ms. On66decode calls layout8.4414ms, batch16.3278ms and replay60.3606ms are separate siblings, never additive to the parent again.",
+    "reuse": "396target decode reports:366reused/30fresh.61episodes reuse all6target plans;5episodes contain fresh target plans.45episodes with no Graph record reuse all270target plans. Per-episode metadata upload remains:66native calls,66host waits,1952physical bytes total; shared followers do not repeat it.",
+    "source_exclusion": "FlashInfer successful workspace/update reuse skips its scheduler/device queries. The45Graph-no-record episodes show7.457ms whole batch preparation despite270/270target-plan reuse; a static SM/CC/occupancy cache cannot explain or remove this whole cost.",
+    "next_mechanism": {
+      "priority": "Conditional source-feasibility candidate, not an implementation or demonstrated gain: eliminate the repeated host-side metadata readiness round trip only if the existing copy/queue/Graph dependency can carry it safely.",
+      "trigger": "Actual target metadata is about30bytes per decode on average, but has one real host wait per episode. It is already shared across6target layers. Investigate queue-ordered metadata production rather than another metadata cache or6layer upload dedup.",
+      "required_contract": "Current mirror is published as ReadLease only after CopyBatch actual retirement. Moving uploaded.wait alone is invalid. A candidate must keep the original mutable/native-use owner through copy completion, provide a legal current metadata dependency/seal before attention, preserve fresh-plan sizing and before-command-change invalidation, and retain all owners on failure/unknown retirement. No second manager or fake ready publication.",
+      "qualification": "The reports cover6target nodes; separate draft attention planning/upload is inside the batch parent but not separately reported. No per-upload/query/wait elapsed clock exists here. Do not claim metadata wait accounts for16.3278ms.",
+      "same_run_whole_batch_elapsed_share_percent": 1.6436209953612033,
+      "hypothetical_speed_percent_if_entire_batch_were_deleted": 1.6710873376943658,
+      "bound_warning": "The16.3278ms whole decode batch bucket is a deliberately generous algebraic envelope, not recoverable time. It includes validation, native fresh planning, real copies/retirement and append binding. Moving work to submit/wait may merely move cost; no gain or ceiling for a concrete mechanism is measured."
+    },
+    "broader_priority": "Replay preparation60.3606ms remains the larger sibling. This diagnostic does not justify a new cache, a broad batch API redesign, or reopening closed state/copy/chunk candidates.",
+    "graph_prior_comparison": "The prior Graph-only diagnostic supports consistent interpretation of capture27/reuse105 and the stage boundary. Its98.0957/34.477ms are not subtracted from this run; no cross-run residual is a result.",
+    "observations_cost": "Original nodes/reports vectors resize and query after host_endpoint. Their separately measured snapshot total0.9606ms can affect the next natural endpoint/process; final serialization is also outside the journey endpoints. This image is diagnostic, not TPS evidence."
+  },
+  "limits": [
+    "Only same-run clocks are subtracted. Historical98.0957/34.477ms is not an operand in this decomposition.",
+    "layout includes actual layout/page/state/output preparation after cold_start; earlier token/position/identity writes and initialize_slot are outside this parent.",
+    "batch_prepare includes g::batch::prepare and bind_append. The6target reports are counts/bytes/waits, not per-node timing, and omit the separate draft attention node.",
+    "Fresh/reused native-plan facts differ from Graph capture facts. Shared metadata followers report no upload; summing the6target nodes avoids pretending6independent uploads.",
+    "Existing vectors resize in original finish report branch after host_endpoint; report_snapshot_seconds is separate, not part of cold_parent. It may still affect subsequent natural work/process timing. Fixed controls and final serialization also alter diagnostic footprint. Not TPS or a wholly uninstrumented binary.",
+    "No independent device-state byte readback or failure injection. No claimed time per driver query/upload/wait and no recoverable ceiling.",
+    "ready.json remains the pre-run BUILT_NOT_RUN checkpoint. The later run/process and summary are authoritative.",
+    "No independently readback comparison of unreported device tensors, no failure/unknown-retirement injection, no peer or throughput screen."
+  ],
+  "product_edits": 0,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/performance/inference-model-prepare-attribution-2026-10-26.zip",
+    "bytes": 153262,
+    "sha256": "b217256ed43f0daab52b396e01f018060148f335e9b66e7317d8ca0f9882f820",
+    "members": 48,
+    "logical_bytes": 1784698,
+    "CRC": "PASS"
+  }
+}
