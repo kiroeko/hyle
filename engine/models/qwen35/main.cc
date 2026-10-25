@@ -2520,13 +2520,13 @@ public:
   }
 
   c::ReadLease retain_state_storage(g::Invocation &run, const PreparedOutputFacts &output) const {
-    auto retained = inference::retain_output(run, output, cache_budget);
+    auto retained = inference::retain_output(run, output, cache_budget, allocation_budget);
     if (retained) return std::move(*retained);
     const auto usage = cache_usage();
     throw std::runtime_error("cache retained-state admission failed before snapshot publication: " +
         std::string(retained.error().message()) + "; live=" + std::to_string(usage.live_bytes) +
         ", limit=" + std::to_string(usage.limit_bytes) +
-        "; increase --cache-bytes or reduce retained sessions/context; old snapshots remain valid");
+        "; adjust the exhausted cache/shared byte limit or reduce retained sessions/context; old snapshots remain valid");
   }
 
   void prepare_cache() {
@@ -4354,8 +4354,8 @@ public:
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
-        if (!state_only && !phase.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts));
-        if (!phase.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts));
+        if (!state_only && !phase.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));
+        if (!phase.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
       }
       if (drafts_token(phase.family->role)) {
         check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
@@ -4436,7 +4436,7 @@ public:
           const auto &output = *phase.probe_facts[i];
           if (output.caller_owned()) probe_views[i] = take(run.output(output.value));
           else {
-            probe_owners[i] = take(inference::retain_output(run, output));
+            probe_owners[i] = take(inference::retain_output(run, output, allocation_budget));
             probe_views[i] = take(probe_owners[i].tensor(output.description));
           }
         }
@@ -4696,7 +4696,7 @@ public:
       if (default_sampler.enabled) {
         if (step.phase->logits.caller_owned()) logits_storage = step.phase->logits.storage();
         else {
-          logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts));
+          logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts, allocation_budget));
           logits_storage = take(logits_owner.view());
         }
       }

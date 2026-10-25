@@ -1,0 +1,502 @@
+{
+  "status": "PASS_CORRECTED_EXPORT_OWNER_CONTRACT_CANONICAL_SOURCE_INTEGRATED",
+  "scope": "Four product paths plus one existing Graph layer test TU; correction changes only result.h comments and that existing test TU",
+  "final_sources": [
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 2912,
+      "sha256": "362ed95ec873e99565d71c6078e22c00ec1d2f68940e053f064a891b6a414509"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 102119,
+      "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 7310,
+      "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 477174,
+      "sha256": "6e690bc368e4e5c6747cf0c030c7252561efd2b9fc02e8ce4a1869489db726e6"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 626852,
+      "sha256": "790882a3e5f2540315429a805a3a8e94c1eb68b0727d8759e6810303cf1b19e4"
+    }
+  ],
+  "final_before_sources": [
+    {
+      "path": "include/hyle/graph/result.h",
+      "bytes": 2146,
+      "sha256": "dc576aa9e523321df6d69ced5717cd9a8e92a9261245a42a431ecc8039a3dd46"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 101488,
+      "sha256": "95e518cdd8e9222b5b267506dab8021165afdf23f62ca3034e3a966226b117df"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 6830,
+      "sha256": "fc74f081a5ad3c090bca09ed2dc3fddc6d5498174545e4f68102d53a526eaf36"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 477057,
+      "sha256": "177628b2d6df809f6bd987cd43841f7ff59d27235c77ae0251480d84f7817a57"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 609601,
+      "sha256": "16a7ec2f4b9e06b394addb8303b6314db1bcca0bc5e80ce691583cd542e0bb1f"
+    }
+  ],
+  "final_patch": {
+    "path": ".scratch/inference-native-retention-scopes-20261025/correction2/final-source.patch",
+    "bytes": 28474,
+    "sha256": "53239508f334385712a345d21b971d72429e8d75eff7a9c621290c3883aaa561"
+  },
+  "correction_delta": {
+    "before": [
+      {
+        "path": "include/hyle/graph/result.h",
+        "bytes": 2639,
+        "sha256": "ee04a996c008426bfd1233ffae7a8dfc2c891f8c7adc4c1b89dca9d9f0e7dd68"
+      },
+      {
+        "path": "tests/graph/region_provider_test.cc",
+        "bytes": 618284,
+        "sha256": "55653f127911e61323c519b2e6583e7e09a9dbc6fec8fd28fec1ee6be2823e9e"
+      }
+    ],
+    "after": [
+      {
+        "path": "include/hyle/graph/result.h",
+        "bytes": 2912,
+        "sha256": "362ed95ec873e99565d71c6078e22c00ec1d2f68940e053f064a891b6a414509"
+      },
+      {
+        "path": "tests/graph/region_provider_test.cc",
+        "bytes": 626852,
+        "sha256": "790882a3e5f2540315429a805a3a8e94c1eb68b0727d8759e6810303cf1b19e4"
+      }
+    ],
+    "patch": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/correction2/source.patch",
+      "bytes": 14694,
+      "sha256": "818dea879f7957e9af96d6c21791423c68f5821e2da3552dcf0bf3b54ff9d69c"
+    }
+  },
+  "unchanged_execution": [
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 102119,
+      "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 7310,
+      "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 477174,
+      "sha256": "6e690bc368e4e5c6747cf0c030c7252561efd2b9fc02e8ce4a1869489db726e6"
+    }
+  ],
+  "corrected_contract": {
+    "successful": "Both scopes succeed on the one returned export ReadLease/Domain. Its retained owners/subviews hold both fees and its actual backing owner until they retire.",
+    "failure": "The original GraphOutput/result and permissions remain intact. A first fee follows normal export-owner lifetime; no atomic counter rollback or persistence beyond that lifetime is promised.",
+    "persistent": "Apple cached exports and the persistent host fixture can keep the first fee after second-scope rejection.",
+    "transient": "Vulkan fresh export_storage/ReadLease::adopt domains can die on rejected second scope and normally return the first fee while the uncharged native slot remains readable.",
+    "independent_uncharged": "Prior independent uncharged exports/native slot ownership are not retroactively charged by later admission.",
+    "cap": "Completed-result retention admission, not preallocation reservation for Provider-private storage or a physical-device memory cap."
+  },
+  "correction_reason": "Attempt1 universally generalized persistent-owner fee lifetime. Independent source review found the current fresh-wrapper Vulkan counterexample; the API comments were narrowed instead of adding a slot cache or new owner mechanism.",
+  "independent_review": {
+    "path": ".scratch/inference-native-retention-scopes-20261025/independent-review.md",
+    "bytes": 5101,
+    "sha256": "08fbc2fdf845722d061738a699103ce870fe956a171ba26744f16b327dcef6ca"
+  },
+  "native_source_anchors": [
+    {
+      "path": "src/graph_route_vulkan/native_region.cc",
+      "function": "lease",
+      "lines": "454-486"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_region.cc",
+      "function": "lease",
+      "lines": "569-584"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_ragged_region.cc",
+      "function": "lease",
+      "lines": "205-219"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory.cc",
+      "function": "MemoryAccess::export_storage",
+      "lines": "488-520"
+    },
+    {
+      "path": "src/graph_route_apple/native_region.cc",
+      "function": "lease",
+      "lines": "452-456"
+    }
+  ],
+  "actual_correction": {
+    "test_compile": {
+      "exit": 0,
+      "seconds": 12.812000000005355,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.2190000000118744,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.25,
+      "timeout": false
+    },
+    "xml": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/correction2/attempt1/results.xml",
+      "bytes": 1073,
+      "sha256": "c459d345c2e72e021c37318749c52b881aa314acec8972a7a7aea6add2ab4d97"
+    },
+    "ready": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-retention-scopes-20261025\\correction2\\attempt1\\link\\checks.exe",
+        "bytes": 24154624,
+        "sha256": "a063a2a93ad38c08a17dd6f3a2aaf0a49e24769d4a8764d5f17db7b82644e570"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\current1\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "source": [
+        {
+          "path": "include/hyle/graph/result.h",
+          "bytes": 2912,
+          "sha256": "362ed95ec873e99565d71c6078e22c00ec1d2f68940e053f064a891b6a414509"
+        },
+        {
+          "path": "tests/graph/region_provider_test.cc",
+          "bytes": 626852,
+          "sha256": "790882a3e5f2540315429a805a3a8e94c1eb68b0727d8759e6810303cf1b19e4"
+        }
+      ],
+      "fresh_test_TUs": 1,
+      "resources_reused": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-retention-scopes-20261025\\attempt1\\resources\\unit.obj",
+        "bytes": 1583168,
+        "sha256": "2b6d80f888fcf67c9e90f2c640113033af7f1a87c287834b64330ade4070ac08"
+      },
+      "filter": [
+        "GraphResultRetentionScopes.TransientFailureCanReleaseFirstFeeWithoutInvalidatingOriginalResult",
+        "GraphResultRetentionScopes.RejectedSecondScopePreservesFirstChargeAndResultForRetry"
+      ],
+      "expected_tests": 2,
+      "main_check": false,
+      "GPU": 0,
+      "HTTP": 0,
+      "SDK_build": 0
+    },
+    "tests": 2,
+    "failures": 0,
+    "new_cases": 1,
+    "persistent_owner_control": 1,
+    "results": [
+      {
+        "suite": "GraphResultRetentionScopes",
+        "name": "RejectedSecondScopePreservesFirstChargeAndResultForRetry"
+      },
+      {
+        "suite": "GraphResultRetentionScopes",
+        "name": "TransientFailureCanReleaseFirstFeeWithoutInvalidatingOriginalResult"
+      }
+    ]
+  },
+  "measured_journey": [
+    "Fresh host export tokens retain the same original Root; compiled region_output_resource and original Graph source validation are used.",
+    "Second-scope rejection destroys its temporary Domain and returns its first32B fee; earlier uncharged export plus original result remain readable.",
+    "Explicit credit release permits dual success, two scopes each retain32B on the escaped charged Domain.",
+    "Another failed temporary sibling cannot clear an earlier successful reader's shared canonical charge.",
+    "After Graph/slot destruction uncharged and charged readers retain the original Root; after uncharged reader release the charged reader retains both fees; last charged reader release frees Root and both fees."
+  ],
+  "initial_validation": {
+    "actual": {
+      "new_tests": [
+        "GeneratedOwnerUsesOneExportAndDeduplicatesBothScopes",
+        "RejectedSecondScopePreservesFirstChargeAndResultForRetry",
+        "SourceAliasSubviewKeepsTheSameDualAdmittedBacking"
+      ],
+      "tests": 6,
+      "failures": 0,
+      "skipped": 0,
+      "xml": {
+        "path": ".scratch/inference-native-retention-scopes-20261025/attempt1/results.xml",
+        "bytes": 2687,
+        "sha256": "da295643b1ca09d7c874a0734d8b6b93e89087dac3efee28f0b0a11cdd97d88d"
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.235000000015134,
+        "timeout": false
+      },
+      "ready": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-retention-scopes-20261025\\attempt1\\link\\checks.exe",
+          "bytes": 24129536,
+          "sha256": "4dd8a97b47d7d8a5d4175f43420cd1d6408c6ab8f70ef0139c03cd4405ed6f25"
+        },
+        "native": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-pure-cpu-deployment-20261024\\current1\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+          "bytes": 1359360,
+          "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+        },
+        "source": [
+          {
+            "path": "include/hyle/graph/result.h",
+            "bytes": 2639,
+            "sha256": "ee04a996c008426bfd1233ffae7a8dfc2c891f8c7adc4c1b89dca9d9f0e7dd68"
+          },
+          {
+            "path": "src/graph/resources.cc",
+            "bytes": 102119,
+            "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+          },
+          {
+            "path": "engine/inference/prepared_output.h",
+            "bytes": 7310,
+            "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+          },
+          {
+            "path": "engine/models/qwen35/main.cc",
+            "bytes": 477174,
+            "sha256": "6e690bc368e4e5c6747cf0c030c7252561efd2b9fc02e8ce4a1869489db726e6"
+          },
+          {
+            "path": "tests/graph/region_provider_test.cc",
+            "bytes": 618284,
+            "sha256": "55653f127911e61323c519b2e6583e7e09a9dbc6fec8fd28fec1ee6be2823e9e"
+          }
+        ],
+        "fresh_TUs": 2,
+        "core_reused": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+            "bytes": 245205,
+            "sha256": "c7895c54bd0ddc99b9badd0acaabd026af318658056c37fa6465c81719b68f69"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\leases\\unit.obj",
+            "bytes": 463196,
+            "sha256": "7689336cef6bb036007c41003f39b1ff513dc597f6d9ddd48ebdc688a8b0bd4c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\arena\\unit.obj",
+            "bytes": 1142006,
+            "sha256": "a4fec250a87cc07472d43fe19d08d5b93cc939633c028d6bf164a291260b11f1"
+          }
+        ],
+        "filter": [
+          "GraphResultRetentionScopes.*",
+          "GraphRegions.DeferredPortsBindOriginalSourcesAndProjectOnlyAfterSuccess",
+          "GraphRegions.OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndRebind",
+          "GraphRouteBoundary.ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort"
+        ],
+        "expected_tests": 6,
+        "GPU": 0,
+        "HTTP": 0,
+        "SDK_build": 0
+      },
+      "resources_compile": {
+        "exit": 0,
+        "seconds": 2.235000000015134,
+        "timeout": false
+      },
+      "test_compile": {
+        "exit": 0,
+        "seconds": 12.562000000005355,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.2030000000086147,
+        "timeout": false
+      },
+      "main_strict": {
+        "exit": 0,
+        "seconds": 7.10899999999674,
+        "timeout": false
+      }
+    },
+    "main": "CPU strict only, final corrected recipe exit0/7.109s",
+    "shadow_failures": [
+      {
+        "path": "attempt1/main-syntax",
+        "exit": 2,
+        "kind": "private compile recipe",
+        "reason": "Missing original model include path picked Windows SDK schedule.h and missed session_schedule.h"
+      },
+      {
+        "path": "attempt1/main-syntax2",
+        "exit": 2,
+        "kind": "private shadow closure",
+        "reason": "Canonical readback/NF4 relative includes also opened canonical prepared_output; fixed by only three unchanged backend/readback/NF4 shadow headers"
+      }
+    ],
+    "qualification": "Initial six passing cases include persistent-owner behavior. Their raw results remain valid; their universal fee-persistence interpretation is superseded."
+  },
+  "attempt1_history": {
+    "json": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/correction2/history/attempt1-public.json",
+      "bytes": 15396,
+      "sha256": "d05c018468ba1cd5621989bc88d6d66827970013eb29abc393387eb5c66e2170"
+    },
+    "archive": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/correction2/history/attempt1-public.zip",
+      "bytes": 518550,
+      "sha256": "4121d9c5463ed304225dd8cdc4e3f2f4bd9a41afeff6c0f33da4440c2dedceb3"
+    },
+    "archive_nested_verbatim": true,
+    "old_sources_pins_raw_unchanged": true
+  },
+  "integration": {
+    "initial": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/root-integration.json",
+      "bytes": 2824,
+      "sha256": "0a8eda593d1201d158ac427f80696f651ca9a2e061a995f1470a60465d36883c"
+    },
+    "correction": {
+      "path": ".scratch/inference-native-retention-scopes-20261025/correction2/root-integration.json",
+      "bytes": 1594,
+      "sha256": "fb3c1b5a2ea1c9183cdbdd7025f5e90a9a68bf8e461356194e69a3e0c579b295"
+    },
+    "actual": {
+      "status": "INTEGRATED_AFTER_TWO_PASSING_CASES",
+      "before": [
+        {
+          "path": "include/hyle/graph/result.h",
+          "bytes": 2639,
+          "sha256": "ee04a996c008426bfd1233ffae7a8dfc2c891f8c7adc4c1b89dca9d9f0e7dd68"
+        },
+        {
+          "path": "tests/graph/region_provider_test.cc",
+          "bytes": 618284,
+          "sha256": "55653f127911e61323c519b2e6583e7e09a9dbc6fec8fd28fec1ee6be2823e9e"
+        }
+      ],
+      "after": [
+        {
+          "path": "include/hyle/graph/result.h",
+          "bytes": 2912,
+          "sha256": "362ed95ec873e99565d71c6078e22c00ec1d2f68940e053f064a891b6a414509"
+        },
+        {
+          "path": "tests/graph/region_provider_test.cc",
+          "bytes": 626852,
+          "sha256": "790882a3e5f2540315429a805a3a8e94c1eb68b0727d8759e6810303cf1b19e4"
+        }
+      ],
+      "unchanged_execution": [
+        {
+          "path": "src/graph/resources.cc",
+          "bytes": 102119,
+          "sha256": "47ef5fa1373a3f2460d5bdd20bfbe760f1538fd983091965f1d740fc47e89e77"
+        },
+        {
+          "path": "engine/inference/prepared_output.h",
+          "bytes": 7310,
+          "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 477174,
+          "sha256": "6e690bc368e4e5c6747cf0c030c7252561efd2b9fc02e8ce4a1869489db726e6"
+        }
+      ],
+      "actual_cases": [
+        "RejectedSecondScopePreservesFirstChargeAndResultForRetry",
+        "TransientFailureCanReleaseFirstFeeWithoutInvalidatingOriginalResult"
+      ],
+      "xml": {
+        "bytes": 1073,
+        "sha256": "c459d345c2e72e021c37318749c52b881aa314acec8972a7a7aea6add2ab4d97"
+      },
+      "extra_build_or_runtime": false
+    },
+    "extra_build_or_runtime": false
+  },
+  "limits": [
+    "Actual host Graph generated-result fixture; no Apple/Vulkan/CUDA native hardware run or Model execution in this batch.",
+    "Model only CPU /W4 /WX /Zs in attempt1. Resources/prepared_output/Model execution code is byte-for-byte unchanged in correction2; no new main check.",
+    "Initial one Graph TU plus one existing test TU, initial six runtime cases; correction one test TU only plus exactly two cases. No full target/SDK/vendor build or platform matrix.",
+    "No Source authorization, alias, readiness, permission or retirement gate relaxed; no new slot cache/executor/registry.",
+    "No throughput, quality or physical-memory-cap claim."
+  ],
+  "GPU": 0,
+  "HTTP": 0,
+  "SDK_full_build": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-generated-result-dual-scope-2026-10-25.zip",
+    "bytes": 764080,
+    "sha256": "ac34bd82330f38127ad205cccc7094e56124801de42687c5d0669d58653c9e34",
+    "members": 51,
+    "logical_bytes": 1948109,
+    "CRC": true,
+    "member_sha256": true,
+    "attempt1_archive_preserved_verbatim": true,
+    "no_binaries": true
+  },
+  "cleanup": {
+    "status": "LIST_ONLY_NOT_REMOVED",
+    "files": [
+      {
+        "path": ".scratch/inference-native-retention-scopes-20261025/attempt1/tests/unit.obj",
+        "bytes": 14251618,
+        "sha256": "87d33428c6e36029b755ec088370b22b7a3e0b00fd2bcedf4e4d415e8fa963eb"
+      },
+      {
+        "path": ".scratch/inference-native-retention-scopes-20261025/attempt1/link/checks.exe",
+        "bytes": 24129536,
+        "sha256": "4dd8a97b47d7d8a5d4175f43420cd1d6408c6ab8f70ef0139c03cd4405ed6f25"
+      },
+      {
+        "path": ".scratch/inference-native-retention-scopes-20261025/attempt1/link/checks.exp",
+        "bytes": 24998,
+        "sha256": "0786457099ad7c6d1f58cf6e68cb96cc9c893cd879cb98e7d9b0b0f574293bb3"
+      },
+      {
+        "path": ".scratch/inference-native-retention-scopes-20261025/attempt1/link/checks.lib",
+        "bytes": 41560,
+        "sha256": "e3eec625c4d56af921c84bc5bca498fbb2dd363ea9da365d72c9c124867c8b3a"
+      }
+    ],
+    "logical_bytes": 38447712,
+    "preserve": [
+      "correction2/attempt1/tests/unit.obj",
+      "correction2/attempt1/link/*",
+      "attempt1/resources/unit.obj",
+      ".scratch/inference-cache-shared-source-20261025/attempt1/{budget,leases,arena}/unit.obj"
+    ],
+    "note": "Only superseded attempt1 test object and image/link products. Root test.ps1 exact preview/Apply; no deletion here.",
+    "snapshot_note": "The original cleanup candidate list predates completed root cleanup; see root_cleanup."
+  },
+  "root_cleanup": {
+    "performed": true,
+    "files": 4,
+    "logical_bytes": 38447712,
+    "physical_bytes_freed_unknown": true,
+    "evidence": "archive:root-review-and-cleanup/manifest.json",
+    "current_ready_and_resources_and_shared_core_preserved": true
+  }
+}

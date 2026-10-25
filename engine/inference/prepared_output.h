@@ -150,4 +150,13 @@ inline Result<compute::ReadLease> retain_output(graph::Invocation &run,
   return output.storage_lease(budget);
 }
 
+// Both constraints apply to the one original completed output owner and its
+// actual prepared storage domain. This does not reserve provider allocations.
+inline Result<compute::ReadLease> retain_output(graph::Invocation &run,
+    const PreparedOutputFacts &facts, const compute::ResourceBudget &budget,
+    const compute::ResourceBudget &additional) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto output, run.result(facts.value));
+  return output.storage_lease(budget, additional);
+}
+
 } // namespace hyle::inference

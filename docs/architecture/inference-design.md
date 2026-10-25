@@ -115,9 +115,15 @@ CUDA 实际共享 primary context；这个合同依赖各自原资源与 Complet
 cache 的 schema、inventory 和完成标记在全部准备成功后一次发布，失败释放额度后可在同一个 Model 重试。
 [有限检查](../evidence/correctness/compute-cache-local-and-shared-admission-2026-10-25.json)覆盖八项 host、
 原 C16 双 Model CUDA 拒绝／重试及逃逸快照寿命；正式四个原层回归 TU 仅严格编译。
-native 生成状态的结果导出仍只保留局部约束，第二 scope 的留存接线尚未补齐。
+native 完成结果通过原 `GraphOutput::storage_lease(local, additional)` 留存，
+一次取得原只读 lease，再按同一授权资源施加两种约束。成功读者及子视图保有同一导出 owner 和两份费用；
+第二门拒绝时原结果及权限仍有效，第一份费用按实际导出 owner 的寿命归还：持久 Domain 可以继续保费，临时导出销毁则可退费。
+先前独立的未计费导出和 Provider 私有槽不会被追溯计费，也不承诺两份计数的原子回滚。
+[有限 host 检查](../evidence/correctness/inference-generated-result-dual-scope-2026-10-25.json)覆盖生成结果、拒绝后重试和别名子视图；
+Model 状态／logits／hidden 的新接线仅严格编译，没有新增 Apple／Vulkan native 实跑。
+这属于完成结果的留存接纳，不能预留 Provider 未来的私有分配。
 原文件映射、普通 STL 及 opaque 私有存储也仍在此范围外，不能仅设置总额参数便宣称全部受控。
-预算所有权须随 backing 和实际退休延续；raw Buffer 转租约时
+已接纳租约的费用须随其导出 owner 和实际退休延续；raw Buffer 转租约时
 应转移同一实际费用，不能重复计账或先退费再接纳，移动赋值也须先释放旧 backing。
 
 源精度在准备状态／图之前确定：从同一份已校验角色得到不可变 `PrecisionProfile`，

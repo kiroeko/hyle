@@ -111,6 +111,7 @@ enum class ProposalMode : std::uint8_t {
 struct PackingProbe;
 struct ReadyConstantProbe;
 struct RegionProbe;
+class TransientHostResource;
 
 struct AsyncQueuePrefix final {
   RegionProbe *probe = nullptr;
@@ -177,6 +178,9 @@ struct RegionProbe final {
   bool delegated_single = false;
   bool bounded_unary_domain = false;
   bool deferred_outputs = false;
+  bool deferred_owned_output = false;
+  bool deferred_transient_export = false;
+  std::size_t deferred_lease_exports = 0;
   std::size_t deferred_projections = 0;
   std::size_t deferred_references = 0;
   std::size_t deferred_owned_inputs = 0;
@@ -617,6 +621,66 @@ public:
 
 private:
   bool host_accessible_;
+};
+
+// Each Buffer token owns the same original host Root, while every exported
+// ReadLease adopts a fresh Domain. The slot never caches an exported Domain.
+class TransientHostResource final : public hyle::mem::MemoryResource {
+  struct Root final {
+    Buffer backing;
+    std::size_t *live;
+    Root(Buffer selected, std::size_t &count) noexcept : backing(std::move(selected)),live(&count) { ++*live; }
+    ~Root() { backing={};--*live; }
+  };
+  struct Token final { std::shared_ptr<Root> root; };
+public:
+  std::size_t live_roots=0,live_tokens=0,exports=0;
+  hyle::mem::MemoryResourceRef ref() noexcept { return hyle::mem::MemoryResourceRef(*this); }
+  std::string_view name() const noexcept override { return "graph.transient-export.host"; }
+  hyle::mem::MemoryProperties properties() const noexcept override {
+    return {.flags=hyle::mem::MemoryProperty::kHostAccessible |
+                   hyle::mem::MemoryProperty::kHostDeviceCoherent |
+                   hyle::mem::MemoryProperty::kHostAddressIdentity,
+            .domain=hyle::mem::MemoryDomainId{this,0}};
+  }
+  Result<hyle::mem::ResourceAllocation> allocate(std::size_t bytes,std::size_t alignment) noexcept override {
+    HYLE_ASSIGN_OR_RETURN(auto backing,Buffer::create(hyle::mem::system_resource(),bytes,alignment));
+    std::shared_ptr<Root> root;
+    try { root=std::make_shared<Root>(std::move(backing),live_roots); }
+    catch(const std::bad_alloc &) { return std::unexpected(Status::ResourceExhausted("transient host root")); }
+    auto *token=new(std::nothrow) Token{std::move(root)};
+    if (!token) return std::unexpected(Status::ResourceExhausted("transient host token"));
+    ++live_tokens;return hyle::mem::ResourceAllocation{token,bytes,alignment};
+  }
+  void deallocate(hyle::mem::ResourceAllocation allocation) noexcept override {
+    delete static_cast<Token *>(allocation.native_handle);--live_tokens;
+  }
+  Result<Buffer> export_alias(hyle::mem::BufferView original) noexcept {
+    if (original.resource()!=ref() || !original.native_handle() || original.offset())
+      return std::unexpected(Status::InvalidArgument("transient export source differs"));
+    const auto &root=static_cast<const Token *>(original.native_handle())->root;
+    if (original.size()!=root->backing.size())
+      return std::unexpected(Status::InvalidArgument("transient export is not the whole original root"));
+    auto *token=new(std::nothrow) Token{root};
+    if (!token) return std::unexpected(Status::ResourceExhausted("transient export token"));
+    ++live_tokens;
+    auto result=Buffer::adopt(ref(),{token,root->backing.size(),root->backing.alignment()});
+    if (!result) { delete token;--live_tokens; }
+    else ++exports;
+    return result;
+  }
+  Result<hyle::mem::ResourceHostMapping> map_host(void *handle,std::size_t offset,
+      std::size_t bytes,hyle::mem::HostAccess access) noexcept override {
+    const auto &root=static_cast<const Token *>(handle)->root;
+    if (offset>root->backing.size() || bytes>root->backing.size()-offset)
+      return std::unexpected(Status::OutOfRange("transient root mapping range"));
+    return hyle::mem::system_resource().resource().map_host(root->backing.native_handle(),offset,bytes,access);
+  }
+  Status unmap_host(void *handle,void *token,std::size_t offset,std::size_t bytes,
+      hyle::mem::HostAccess access) noexcept override {
+    return hyle::mem::system_resource().resource().unmap_host(
+        static_cast<const Token *>(handle)->root->backing.native_handle(),token,offset,bytes,access);
+  }
 };
 
 OwnedTensor make_tensor(TensorDesc description) {
@@ -1503,6 +1567,8 @@ struct DeferredPlan final {
 struct DeferredRun final {
   RegionRun base;
   Buffer backing;
+  hyle::compute::ReadLease output_owner;
+  bool immutable_generation = false;
   ConstTensorView input;
   hyle::graph::RegionOutputReference source;
   hyle::compute::ReadLease input_owner;
@@ -1524,7 +1590,9 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
       *output = run;
       run->base.probe = plan.base.probe;
       HYLE_ASSIGN_OR_RETURN(auto bytes, plan.description.required_bytes());
-      HYLE_ASSIGN_OR_RETURN(run->backing, Buffer::create(hyle::mem::system_resource(), bytes));
+      const auto resource = plan.base.probe->deferred_transient_export
+          ? plan.base.probe->region_output_resource : hyle::mem::system_resource();
+      HYLE_ASSIGN_OR_RETURN(run->backing, Buffer::create(resource, bytes));
       ++plan.base.probe->create_invocation_count;
       return Status::Ok();
     },
@@ -1538,6 +1606,8 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
         std::span<const ConstTensorView>, std::span<const TensorView>) noexcept -> Result<Completion> {
       auto &plan = *static_cast<DeferredPlan *>(prepared);
       auto &run = *static_cast<DeferredRun *>(invocation);
+      if (run.immutable_generation)
+        return std::unexpected(Status::Unavailable("owned deferred generation is immutable"));
       auto input = run.input;
       if (run.source.valid()) {
         auto value = run.source.vtable->output_value(
@@ -1552,6 +1622,12 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
       const std::array inputs{input};
       const std::array outputs{output};
       run.terminal = execute_region(&plan.base, &run.base, inputs, outputs);
+      run.immutable_generation = run.terminal.ok() &&
+          (plan.base.probe->deferred_owned_output || plan.base.probe->deferred_transient_export);
+      if (run.terminal.ok() && plan.base.probe->deferred_owned_output) {
+        HYLE_ASSIGN_OR_RETURN(run.output_owner,
+            hyle::compute::ReadLease::adopt(std::move(run.backing)));
+      }
       return Completion::completed(run.terminal);
     },
     .endpoint = [](void *prepared, void *) noexcept {
@@ -1574,6 +1650,10 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
       ++plan.base.probe->deferred_projections;
       if (port != 0) return std::unexpected(Status::OutOfRange("deferred output port"));
       if (!run.terminal.ok()) return std::unexpected(run.terminal);
+      if (run.output_owner.valid()) {
+        HYLE_ASSIGN_OR_RETURN(auto tensor, run.output_owner.tensor(plan.description));
+        return hyle::graph::RegionValue{.description = plan.description, .tensor = tensor};
+      }
       HYLE_ASSIGN_OR_RETURN(auto tensor, ConstTensorView::create(plan.description, run.backing.view()));
       return hyle::graph::RegionValue{.description = plan.description, .tensor = tensor};
     },
@@ -1582,6 +1662,10 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
         std::span<const TensorView> outputs) noexcept -> Status {
       auto &plan = *static_cast<DeferredPlan *>(prepared);
       auto &run = *static_cast<DeferredRun *>(invocation);
+      // This opt-in fixture publishes one immutable generation, never a new
+      // writer over an exported backing. Existing reusable deferred slots are unchanged.
+      if (run.immutable_generation)
+        return Status::Unavailable("owned deferred generation is immutable");
       if (inputs.size() != 1 || outputs.size() != 1 || outputs[0].valid())
         return Status::InvalidArgument("deferred test binding arity/storage");
       if (plan.base.probe->deferred_binding_observer)
@@ -1598,6 +1682,28 @@ const hyle::graph::ProviderRegionPreparedVTable kDeferredRegionVTable{
       run.input_owner = inputs[0].lease ? *inputs[0].lease : hyle::compute::ReadLease{};
       if (run.input_owner.valid()) ++plan.base.probe->deferred_owned_inputs;
       return Status::Ok();
+    },
+    .output_lease = [](void *prepared, void *invocation, std::size_t port) noexcept
+        -> Result<hyle::compute::ReadLease> {
+      auto &plan = *static_cast<DeferredPlan *>(prepared);
+      auto &run = *static_cast<DeferredRun *>(invocation);
+      if (!plan.base.probe->deferred_owned_output && !plan.base.probe->deferred_transient_export)
+        return std::unexpected(Status::Unimplemented("deferred fixture has no owned lease"));
+      if (port != 0) return std::unexpected(Status::OutOfRange("deferred output lease port"));
+      if (!run.terminal.ok()) return std::unexpected(run.terminal);
+      if (plan.base.probe->deferred_transient_export) {
+        auto *resource = dynamic_cast<TransientHostResource *>(
+            &plan.base.probe->region_output_resource.resource());
+        if (!resource)
+          return std::unexpected(Status::InvalidArgument("transient fixture output resource differs"));
+        HYLE_ASSIGN_OR_RETURN(auto backing, resource->export_alias(run.backing.view()));
+        ++plan.base.probe->deferred_lease_exports;
+        return hyle::compute::ReadLease::adopt(std::move(backing));
+      }
+      if (!run.output_owner.valid())
+        return std::unexpected(Status::FailedPrecondition("deferred output lease is not ready"));
+      ++plan.base.probe->deferred_lease_exports;
+      return run.output_owner;
     },
 };
 
@@ -12626,5 +12732,186 @@ TEST(SubmissionLifetime, UnacceptedFailureKeepsAdmissionUntilTheOriginalOwnerExi
   EXPECT_EQ(read(first_output, 8), std::vector<float>(values.begin(), values.end()));
   EXPECT_EQ(read(second_output, 8), std::vector<float>(values.begin(), values.end()));
 }
+
+
+namespace retention_scopes {
+namespace c=hyle::compute;
+namespace g=hyle::graph;
+namespace m=hyle::mem;
+c::ResourceBudget scope() {
+  const std::array limits{c::ResourceBudgetLimit{m::system_resource()}};
+  const std::array selected{m::system_resource()};
+  return c::ResourceBudget::create({.limits=limits},selected,1u<<20).value();
+}
+std::size_t external(const c::ResourceBudget &budget) {
+  return budget.usage(m::system_resource())->live_by_category[
+      static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+}
+void owned_deferred(RegionProbe &probe) {
+  probe.deferred_outputs=true;probe.deferred_owned_output=true;
+  probe.artifact_properties.runtime={
+      .mode=c::ProviderRuntimeMode::kDelegated,
+      .workspace_owner=c::ProviderWorkspaceOwner::kProvider,
+      .replay_class=ProviderReplayClass::kManaged,
+      .blocks_host=true,.supports_concurrent_invocations=true};
+}
+const std::array<float,8> values{1.F,-2.F,3.F,-4.F,5.F,-6.F,7.F,-8.F};
+void expect_values(const c::ReadLease &lease) {
+  std::array<float,8> actual{};
+  ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual,values);
+}
+
+TEST(GraphResultRetentionScopes, GeneratedOwnerUsesOneExportAndDeduplicatesBothScopes) {
+  auto local=scope(),global=scope();c::ReadLease escaped;
+  {
+    RegionProbe probe;owned_deferred(probe);auto context=make_context(probe);
+    const auto logical=make_negations(2);
+    auto compiled=g::compile(logical.graph,context,{.operation_fallback=OperationFallbackPolicy::kReject}).value();
+    ASSERT_EQ(compiled.report.region_count(),1u);
+    auto run=compiled.executable.create_invocation().value();
+    auto input=make_tensor(row(8));write(input,values);
+    ASSERT_TRUE(run.bind(logical.input,input.view).ok());
+    ASSERT_TRUE(run.prepare_replay({}).ok());ASSERT_TRUE(run.submit()->wait().ok());
+    auto result=run.result(logical.output).value();
+    auto unbudgeted=result.storage_lease();ASSERT_TRUE(unbudgeted);expect_values(*unbudgeted);
+    EXPECT_EQ(external(local),0u);EXPECT_EQ(external(global),0u);
+    const auto before=probe.deferred_lease_exports;
+    auto additional_only=result.storage_lease({},global);ASSERT_TRUE(additional_only);
+    EXPECT_EQ(probe.deferred_lease_exports,before+1);
+    EXPECT_EQ(external(global),32u);
+    auto same=result.storage_lease(global,global);ASSERT_TRUE(same);
+    EXPECT_EQ(external(global),32u);
+    const auto exports=probe.deferred_lease_exports;
+    auto pair=result.storage_lease(local,global);ASSERT_TRUE(pair);
+    EXPECT_EQ(probe.deferred_lease_exports,exports+1); // no second native owner export
+    EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),32u);
+    EXPECT_EQ(pair->generation(),same->generation());
+    auto piece=pair->subview(8,8).value();EXPECT_EQ(piece.size(),8u);
+    EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),32u);
+    EXPECT_FALSE(pair->try_write());
+    escaped=std::move(*pair);
+  }
+  // The original slot/artifact/context no longer owns the backing; the one
+  // exported immutable reader retains both completed-result charges.
+  EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),32u);expect_values(escaped);
+  escaped.reset();EXPECT_EQ(external(local),0u);EXPECT_EQ(external(global),0u);
+}
+
+TEST(GraphResultRetentionScopes, RejectedSecondScopePreservesFirstChargeAndResultForRetry) {
+  auto local=scope(),global=scope();
+  RegionProbe probe;owned_deferred(probe);auto context=make_context(probe);
+  const auto logical=make_negations(2);
+  auto compiled=g::compile(logical.graph,context,{.operation_fallback=OperationFallbackPolicy::kReject}).value();
+  auto run=compiled.executable.create_invocation().value();
+  auto input=make_tensor(row(8));write(input,values);
+  ASSERT_TRUE(run.bind(logical.input,input.view).ok());
+  ASSERT_TRUE(run.prepare_replay({}).ok());ASSERT_TRUE(run.submit()->wait().ok());
+  auto result=run.result(logical.output).value();
+  const auto usage=*global.shared_usage();
+  auto credit=global.reserve(m::system_resource(),usage.limit_bytes-usage.live_bytes-1).value();
+  const auto blocked_live=global.shared_usage()->live_bytes,blocked_external=external(global);
+  const auto count=probe.deferred_lease_exports;
+  auto rejected=result.storage_lease(local,global);ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  EXPECT_EQ(probe.deferred_lease_exports,count+1);
+  EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),blocked_external);
+  EXPECT_EQ(global.shared_usage()->live_bytes,blocked_live);
+  std::array<float,8> observed{};
+  ASSERT_TRUE(result.tensor()->storage().read(std::as_writable_bytes(std::span(observed))).ok());
+  EXPECT_EQ(observed,values);
+  credit.reset();
+  auto retried=result.storage_lease(local,global);ASSERT_TRUE(retried);expect_values(*retried);
+  EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),32u);
+  result.reset();run={};compiled={};context={};
+  EXPECT_EQ(external(local),32u);EXPECT_EQ(external(global),32u);
+  retried->reset();EXPECT_EQ(external(local),0u);EXPECT_EQ(external(global),0u);
+}
+
+TEST(GraphResultRetentionScopes, SourceAliasSubviewKeepsTheSameDualAdmittedBacking) {
+  auto local=scope(),global=scope();c::ReadLease escaped;
+  {
+    RegionProbe probe;auto context=make_context(probe);
+    auto pool=c::LeasePool::create(m::system_resource(),512,
+        {.max_blocks=1,.resource_budget=local},global).value();
+    auto writer=pool.allocate(32,16).value();
+    ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(values))).ok());
+    auto ready=writer.publish().value();
+    auto builder=GraphBuilder::create().value();const auto source=builder.input(row(8)).value();
+    const auto alias=builder.add(c::View::slice(0,2,4).value(),source).value();
+    ASSERT_TRUE(builder.publish(alias).ok());auto graph=std::move(builder).finish().value();
+    auto compiled=g::compile(graph,context).value();auto run=compiled.executable.create_invocation().value();
+    ASSERT_TRUE(run.prepare_resources().ok());ASSERT_TRUE(run.bind(source,row(8),ready).ok());
+    ASSERT_TRUE(run.prepare_replay({}).ok());ASSERT_TRUE(run.submit()->wait().ok());
+    auto result=run.result(alias).value();auto retained=result.storage_lease(local,global);ASSERT_TRUE(retained);
+    EXPECT_EQ(retained->size(),16u);EXPECT_EQ(external(local),512u);EXPECT_EQ(external(global),512u);
+    EXPECT_EQ(retained->generation(),ready.generation());escaped=std::move(*retained);
+  }
+  std::array<float,4> actual{};ASSERT_TRUE(escaped.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual,(std::array<float,4>{3.F,-4.F,5.F,-6.F}));
+  EXPECT_EQ(external(local),512u);EXPECT_EQ(external(global),512u);
+  escaped.reset();EXPECT_EQ(external(local),0u);EXPECT_EQ(external(global),0u);
+}
+
+TEST(GraphResultRetentionScopes, TransientFailureCanReleaseFirstFeeWithoutInvalidatingOriginalResult) {
+  TransientHostResource resource;
+  const auto make_scope=[&] {
+    const std::array limits{c::ResourceBudgetLimit{resource.ref()},c::ResourceBudgetLimit{m::system_resource()}};
+    const std::array selected{resource.ref(),m::system_resource()};
+    return c::ResourceBudget::create({.limits=limits},selected,1u<<20).value();
+  };
+  const auto bytes=[&](const c::ResourceBudget &budget) {
+    return budget.usage(resource.ref())->live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kExternal)];
+  };
+  auto local=make_scope(),global=make_scope();c::ReadLease escaped,uncharged;
+  {
+    RegionProbe probe;owned_deferred(probe);probe.deferred_owned_output=false;probe.deferred_transient_export=true;
+    probe.region_output_resource=resource.ref();auto context=make_context(probe);
+    const auto logical=make_negations(2);
+    const std::array domains{g::StorageDomain{m::system_resource()},g::StorageDomain{resource.ref()}};
+    const std::array targets{g::ExecutionTarget{g::ExecutionSource::acquire(context).value(),g::StorageDomainId{0}}};
+    auto compiled=g::compile(logical.graph,{.storage_domains=domains,.targets=targets},
+        {.operation_fallback=OperationFallbackPolicy::kReject}).value();
+    auto run=compiled.executable.create_invocation().value();auto input=make_tensor(row(8));write(input,values);
+    ASSERT_TRUE(run.bind(logical.input,input.view).ok());
+    ASSERT_TRUE(run.prepare_replay({}).ok());ASSERT_TRUE(run.submit()->wait().ok());
+    auto result=run.result(logical.output).value();
+    uncharged=result.storage_lease().value();expect_values(uncharged);
+    EXPECT_EQ(bytes(local),0u);EXPECT_EQ(bytes(global),0u);
+    const auto usage=*global.shared_usage();
+    auto credit=global.reserve(m::system_resource(),usage.limit_bytes-usage.live_bytes-1).value();
+    const auto blocked=global.shared_usage()->live_bytes;
+    auto rejected=result.storage_lease(local,global);ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsResourceExhausted());
+    // The fresh failed export Domain has died. Its first fee is correctly
+    // released, although the uncharged slot/root and earlier export still live.
+    EXPECT_EQ(bytes(local),0u);EXPECT_EQ(bytes(global),0u);
+    EXPECT_EQ(global.shared_usage()->live_bytes,blocked);
+    EXPECT_EQ(resource.live_roots,1u);EXPECT_EQ(resource.live_tokens,2u);
+    std::array<float,8> observed{};
+    ASSERT_TRUE(result.tensor()->storage().read(std::as_writable_bytes(std::span(observed))).ok());
+    EXPECT_EQ(observed,values);expect_values(uncharged);
+    credit.reset();
+    auto admitted=result.storage_lease(local,global);ASSERT_TRUE(admitted);expect_values(*admitted);
+    EXPECT_EQ(bytes(local),32u);EXPECT_EQ(bytes(global),32u);
+    escaped=std::move(*admitted);
+    auto denied=make_scope();const auto denied_usage=*denied.shared_usage();
+    auto denied_credit=denied.reserve(m::system_resource(),denied_usage.limit_bytes-denied_usage.live_bytes-1).value();
+    auto failed_sibling=result.storage_lease(local,denied);ASSERT_FALSE(failed_sibling);
+    EXPECT_TRUE(failed_sibling.error().IsResourceExhausted());
+    // Releasing the transient failed sibling never clears an existing
+    // successful charged export's same-scope canonical identity/fee.
+    EXPECT_EQ(bytes(local),32u);EXPECT_EQ(bytes(global),32u);EXPECT_EQ(bytes(denied),0u);
+    expect_values(escaped);expect_values(uncharged);
+  }
+  EXPECT_EQ(resource.live_roots,1u);EXPECT_EQ(resource.live_tokens,2u);
+  EXPECT_EQ(bytes(local),32u);EXPECT_EQ(bytes(global),32u);expect_values(escaped);expect_values(uncharged);
+  uncharged.reset();EXPECT_EQ(resource.live_tokens,1u);
+  EXPECT_EQ(bytes(local),32u);EXPECT_EQ(bytes(global),32u);
+  escaped.reset();EXPECT_EQ(resource.live_tokens,0u);EXPECT_EQ(resource.live_roots,0u);
+  EXPECT_EQ(bytes(local),0u);EXPECT_EQ(bytes(global),0u);
+}
+
+} // namespace retention_scopes
 
 } // namespace

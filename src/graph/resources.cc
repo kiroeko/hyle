@@ -1380,12 +1380,17 @@ Result<compute::ConstTensorView> output_tensor(const InvocationState &state,
 }
 
 Result<compute::ReadLease> output_storage(InvocationState &state,
-    std::uint32_t instance, const compute::ResourceBudget &retention_budget = {}) noexcept {
+    std::uint32_t instance, const compute::ResourceBudget &retention_budget = {},
+    const compute::ResourceBudget &additional = {}) noexcept {
   const auto &plan = *state.plan;
   const auto retain = [&](compute::ReadLease &lease, std::uint32_t selected) -> Status {
-    if (!retention_budget.valid()) return Status::Ok();
+    if (!retention_budget.valid() && !additional.valid()) return Status::Ok();
     const auto nominated = plan.storage_domains[plan.instance_storage[selected]].resource;
-    return compute::detail::LeaseAccess::retain_budget(lease, nominated, retention_budget);
+    if (retention_budget.valid())
+      HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::retain_budget(lease, nominated, retention_budget));
+    if (additional.valid())
+      HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::retain_budget(lease, nominated, additional));
+    return Status::Ok();
   };
   // An external may-alias pair can be bound to distinct storage. Export the
   // actual ready owned binding before following the cold alias permission;
@@ -1497,6 +1502,12 @@ Result<compute::ReadLease> GraphOutput::storage_lease(
     const compute::ResourceBudget &retention_budget) const noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("graph output is empty"));
   return detail::output_storage(*state_, instance_, retention_budget);
+}
+Result<compute::ReadLease> GraphOutput::storage_lease(
+    const compute::ResourceBudget &retention_budget,
+    const compute::ResourceBudget &additional) const noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("graph output is empty"));
+  return detail::output_storage(*state_, instance_, retention_budget, additional);
 }
 
 Status Invocation::prepare_resources(ResourceOptions options) noexcept {
