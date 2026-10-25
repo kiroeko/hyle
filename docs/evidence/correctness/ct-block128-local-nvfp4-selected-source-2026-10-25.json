@@ -1,0 +1,138 @@
+{
+  "status": "CT_BF16_BLOCK128_AND_SELECTED_LOCAL_NVFP4_SOURCE_CPU_PASS",
+  "date": "2026-10-25",
+  "change": "A finite ordinary source adapter binds original CT BF16 block128 roles and selected local-NVFP4 expert quartet spans to genuine readonly leases, the existing resident-bank/map supply and existing shared Graph math.",
+  "integration": "Root reviewed and exact-applied revision2. The authorized revision3 fix supplies one missing error-context argument in canonical and private helper sources. The checked two-source canonical hashes are listed below; packaging did not rebuild or rerun.",
+  "sources": [
+    {
+      "path": "tests/compute_models/ct_block128_mixed_source_fixture.h",
+      "before": null,
+      "after": {
+        "bytes": 19102,
+        "sha256": "66518cecb221fa76f7f67c48e681916eb71961723848bdb47b4489286a1be439"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/local_nvfp4_reference_test.cc",
+      "before": {
+        "bytes": 4033,
+        "sha256": "9f95975554d5e3d1d63d8905ad8286478ecb0091b9e29398bde6d8c776e01332"
+      },
+      "after": {
+        "bytes": 11126,
+        "sha256": "7e248bdcd896663295e68dce6da32345e7473fa75bb5e064a614fb58a0156d1d"
+      }
+    }
+  ],
+  "source_contract": {
+    "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+    "revision": "b94577f02dd4bcb722aad2c60f8117032411dfb5",
+    "file": "model-00001-of-00070.safetensors",
+    "header": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\artifact\\18\\model-00001-of-00070.safetensors\\header.json",
+      "bytes": 798144,
+      "sha256": "716718e8be07c9be792b9980c7f462f77cab5eb0647c3586cbfece0c1c8c186e"
+    },
+    "config": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\ct-local-nvfp4-contract-review\\artifact\\18\\config.json",
+      "bytes": 18914,
+      "sha256": "b874c8b8e0678dd0964bb9960834b579a75c7760cc3262467e64180f8bdd68e5",
+      "version": "0.17.2.dev32+g46196ce"
+    },
+    "reader_commit": "compressed-tensors@46196ce607421d9992a47644612dc6b443f3c434",
+    "original_numeric_payload_bytes": 0,
+    "CT": "Original layer0 linear_attn.in_proj_a E4[128,8192] and BF16 SF[1,64]. They enter the same shared CT block128 BF16 append without converting the SF contract to code-dot/F32 scales or channel/token math.",
+    "experts": "Original layer0 expert0..3 gate quartet headers: packed U8[2048,4096], E4 SF[2048,512], F32 WG[1] and IG[1]. This consumer explicitly selects the first N3 rows/full K8192 of the full source descriptors.",
+    "input_boundaries": "Independent BF16 GDN[1,8192] and post-attention MLP[1,1,8192] boundaries. The128-wide CT projection is not connected to the8192-wide MLP input."
+  },
+  "math": {
+    "CT": "Existing shared BF16 block128 dynamic activation: BF16 intermediates, zero-only epsilon1/128, original positive/negative zero handling and E4 casts; BF16 SF axes and weight dequant store points are preserved.",
+    "local": "Existing GroupedLocalNvfp4Linear with explicit kBFloat16 input rounding: original local WG/IG division and group16 math. It is not the ModelOpt multiplier equation and does not substitute F32 pre-round.",
+    "oracle": "CT uses the existing independent BF16/E4 scalar reference and F64/F32 dot-to-BF16 interval. Sparse local generated weights use existing independent local activation/weight equations with exact BF16 endpoints. Existing numerical gates were not widened."
+  },
+  "geometry": {
+    "CT_N": 128,
+    "CT_K": 8192,
+    "expert_prefix_N": 3,
+    "expert_K": 8192,
+    "domain": 512,
+    "selected_capacity": 2,
+    "generations": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "successful_graph_submissions": 2,
+    "checked_BF16_endpoints": 268,
+    "resident_logical_bytes_per_generation": 29712,
+    "independent_CT_result_copy_bytes": 256
+  },
+  "ownership": "Original source WG/IG rank1 is preserved: the existing Layout prepends capacity to produce[E,1]; explicit reader reshapes remove this original singleton axis only at the grouped scalar-vector boundary. Each generation supplies all four compressed planes and its checked I32 map together. No new owner table, route, op, registry or executor is introduced.",
+  "assertions": [
+    "A bad CT scale span and a bad expert IG span reject cold source admission.",
+    "The original CT parameter ConstantBindings retain genuine source leases and the same actual StorageOwner/resource.",
+    "All64 CT scale columns and signed/zero activation groups participate in the nonzero generated fixture; floor substitution differs from the zero-only reference.",
+    "The local fixture distinguishes BF16 from F32 pre-round and independent per-expert IG from a shared scale.",
+    "Both generations remain readable together. Supply live_blocks is10; dropping batch handles keeps10 Invocation-held blocks, dropping Invocations retires all10. Independent old output leases remain readable after constants and the compiled graph are released."
+  ],
+  "actual": {
+    "status": "PASS",
+    "compile": {
+      "exit": 0,
+      "seconds": 3.86,
+      "pid": 35180
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.141,
+      "pid": 17592
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.312,
+      "pid": 44044
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 63,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "scope": "generated original-shaped CT18 shared BF16 block128 and selected local16 quartet/map; no original publisher values or full Model"
+  },
+  "filter": "CpuLocalNvfp4ReferenceGraph.OriginalCtMixedRolesKeepBfloatPreRoundAndSelectedSourceGenerations",
+  "failures_and_revisions": [
+    "Revision1 was an uncompiled source proposal. Revision2 explicitly copies the256-byte shared terminal reshape result so its output storage can escape independently; no execution failure was claimed for revision1.",
+    "cpu1 actually failed strict compilation in1.562s: C2660 at helper125, missing the existing check function message argument. No link or test ran. Original commands and logs are retained.",
+    "Revision3 adds that message only. cpu2 strict compilation, cached link and the single CPU test all passed; no numerical/ownership threshold or input was changed."
+  ],
+  "limits": [
+    "Original cached configuration/header identities and exact role spans are checked; all numerical tensor bodies in this test are explicitly generated original-shape fixtures. Original publisher numeric payload bytes are0.",
+    "This is a finite source/lease/selected-bank Graph consumer, not a complete layer, router, FFN, Model constructor or generation journey. It does not certify publisher quality, new MTP, GPU native execution or throughput.",
+    "Only one existing CPU test TU was rebuilt. Cached core/provider/SDK/native objects were reused unchanged; no GPU, HTTP or additional test matrix ran.",
+    "Archive retains the two changed sources, original test before-image, commands, actual dependencies, frozen-source/object hashes and raw results. Unchanged frozen source trees, SDK, binaries and model bodies are omitted. Source-only status fields in historical pins remain preparation checkpoints."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ct-block128-local-nvfp4-selected-source-2026-10-25.zip",
+    "bytes": 98984,
+    "sha256": "37c84f81d4bfc9f91372e80c7f7c4774a8b19812df56b8b8c368641914369779",
+    "members": 49,
+    "logical_bytes": 409506,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

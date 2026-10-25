@@ -18,9 +18,11 @@
 
 20的[Kimi NVFP4／FP8混合源组合](../evidence/correctness/kimi-mixed-pb-nvfp4-source-2026-10-25.json)保留attention与routed-expert的两个真实输入边界，同图复用stored-F32动态group128 reader和NVFP4 quartet reader。原标量尺度按rank0进入bank，不再伪造矩阵或插入补救View。两代生成fixture、268个BF16端点及10→10→0 bank退休检查在CPU通过；不代表两个子图间的完整模型、原payload或吞吐。
 
-CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18 selected bank、原数值及完整Model／MoE仍分开记录，21后续结果见下文。
+CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18／21后续源组合见下文，原数值及完整Model／MoE仍分开记录。
 
-21的[独立源角色到selected bank](../evidence/correctness/ct21-selected-source-2026-10-25.json)已沿现CpuSupply与共享数学执行完整N3072／K3584的有限W1投影，先checked global/local映射再选中解码。两代生成fixture、缺失映射的预期完成失败，以及6→6→0 bank退休检查在CPU通过。消费者用显式12 KiB Copy导出独立旧结果；保留首跑直接导出借用view被拒的记录，不放宽Graph权限。仍不签完整FFN、原payload、其它后端或吞吐；18的local NVFP4专家组合另核。
+21的[独立源角色到selected bank](../evidence/correctness/ct21-selected-source-2026-10-25.json)已沿现CpuSupply与共享数学执行完整N3072／K3584的有限W1投影，先checked global/local映射再选中解码。两代生成fixture、缺失映射的预期完成失败，以及6→6→0 bank退休检查在CPU通过。消费者用显式12 KiB Copy导出独立旧结果；保留首跑直接导出借用view被拒的记录，不放宽Graph权限。
+
+18的[CT block128与local NVFP4专家组合](../evidence/correctness/ct-block128-local-nvfp4-selected-source-2026-10-25.json)复用同一共享CT数学及原local16除法／BF16预舍入reader，保原F32[1] global尺度与独立GDN／MLP输入边界。两代bank的268个BF16端点、独立旧输出与10→10→0退休检查在CPU通过，CT末端只为独立导出增加256字节Copy。18／21数值均为生成fixture，不签完整FFN、原payload、其它后端或吞吐。
 
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 
