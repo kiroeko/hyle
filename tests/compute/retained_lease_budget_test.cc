@@ -102,6 +102,31 @@ TEST(RetainedLeaseBudget, ExistingPoolChargeAndSubviewSurviveUntilActualUseRetir
   EXPECT_EQ(budget.usage(m::system_resource())->live_bytes, baseline);
 }
 
+TEST(RetainedLeaseBudget, FlatSharedScopeRetainsOneBackingUntilDroppedCompletionActuallyRetires) {
+  const std::array limits{c::ResourceBudgetLimit{m::system_resource(), 65536}};
+  const std::array selected{m::system_resource()};
+  auto made = c::ResourceBudget::create({.limits = limits}, selected, 65536); ASSERT_TRUE(made);
+  auto copy = *made; const auto baseline = made->shared_usage()->live_bytes;
+  auto pool = c::LeasePool::create(m::system_resource(), 4096, {.max_blocks = 1, .resource_budget = *made}); ASSERT_TRUE(pool);
+  auto writer = pool->allocate(256); ASSERT_TRUE(writer);
+  auto lease = writer->publish(); ASSERT_TRUE(lease);
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(*lease, m::system_resource(), copy).ok());
+  EXPECT_EQ(external(copy), 4096u);
+  const auto admitted = made->shared_usage()->live_bytes;
+  ASSERT_TRUE(d::LeaseAccess::retain_budget(*lease, m::system_resource(), *made).ok());
+  EXPECT_EQ(made->shared_usage()->live_bytes, admitted);
+  auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}); ASSERT_TRUE(uses);
+  auto episode = uses->begin(); ASSERT_TRUE(episode); ASSERT_TRUE(episode->read(*lease).ok());
+  PendingNative native; auto completion = d::CompletionAccess::make(&pending_native, &native);
+  ASSERT_TRUE(episode->attach(completion).ok());
+  lease->reset(); EXPECT_TRUE(pool->close().IsUnavailable()); pool = c::LeasePool{}; completion = {};
+  EXPECT_TRUE(native.retained.valid()); EXPECT_EQ(external(copy), 4096u);
+  EXPECT_GT(copy.shared_usage()->live_bytes, baseline);
+  made = c::ResourceBudget{}; // A copy plus accepted original uses keep this scope alive.
+  native.retire(); EXPECT_EQ(external(copy), 0u);
+  EXPECT_EQ(copy.shared_usage()->live_bytes, baseline);
+}
+
 TEST(RetainedLeaseBudget, QuotaRejectionPreservesReadonlyLeaseAndRetryChargesWholeBacking) {
   const std::array limits{c::ResourceBudgetLimit{m::system_resource(), 65536}};
   auto made = c::ResourceBudget::create({.limits = limits}); ASSERT_TRUE(made);

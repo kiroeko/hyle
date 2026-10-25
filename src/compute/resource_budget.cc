@@ -21,6 +21,7 @@ struct ResourceBudgetRow final {
   mem::MemoryProperties properties;
   mem::QuotaAllocator quota;
   std::array<std::atomic<std::size_t>, kResourceBudgetCategoryCount> categories{};
+  bool shared = false;
 };
 
 struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
@@ -29,10 +30,12 @@ struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
         allow_unattributed(options.allow_unattributed) {}
   mem::AllocatorRef allocator;
   mem::QuotaAllocator opaque;
+  std::optional<mem::QuotaAllocator> shared_quota;
   mem::QuotaAllocator::Reservation control_charge;
   ResourceBudgetRow *rows = nullptr;
   ResourceBudgetRow *metadata = nullptr;
   std::size_t count = 0, allocation_bytes = 0, unassigned_control = 0;
+  std::size_t shared_control_bytes = 0;
   std::atomic<std::size_t> unknown{0};
   std::mutex backing_mutex;
   SharedBackingRecord *backings = nullptr; // Non-owning; tokens own each record.
@@ -42,12 +45,19 @@ struct ResourceBudgetState final : util::RefCounted<ResourceBudgetState> {
       if (rows[i].resource == resource) return rows + i;
     return nullptr;
   }
+  bool acquire_shared(const ResourceBudgetRow &row, std::size_t bytes) noexcept {
+    return !row.shared || shared_quota->try_acquire_bytes(bytes);
+  }
+  void release_shared(const ResourceBudgetRow &row, std::size_t bytes) noexcept {
+    if (row.shared) shared_quota->release_bytes(bytes);
+  }
   void destroy() noexcept {
     HYLE_FATAL_ASSERT(backings == nullptr);
     const auto backing = allocator;
     const auto bytes = allocation_bytes;
     if (metadata != nullptr)
       metadata->categories[0].fetch_sub(control_charge.size(), std::memory_order_relaxed);
+    if (shared_control_bytes) shared_quota->release_bytes(shared_control_bytes);
     control_charge.reset();
     for (std::size_t i = 0; i < count; ++i) std::destroy_at(rows + i);
     std::destroy_at(this);
@@ -192,11 +202,12 @@ Result<detail::SharedBackingReservation> detail::ResourceBudgetAccess::adopt_bac
 namespace {
 void *allocate(void *opaque, std::size_t bytes, std::size_t alignment) noexcept {
   auto &row = *static_cast<detail::ResourceBudgetRow *>(opaque);
+  if (!row.owner->acquire_shared(row, bytes)) return nullptr;
   auto *p = row.quota.get().allocate(bytes, alignment);
   if (p != nullptr) {
     row.categories[0].fetch_add(bytes, std::memory_order_relaxed);
     row.owner->incref();
-  }
+  } else row.owner->release_shared(row, bytes);
   return p;
 }
 void deallocate(void *opaque, void *p, std::size_t bytes,
@@ -206,6 +217,7 @@ void deallocate(void *opaque, void *p, std::size_t bytes,
   auto *owner = row.owner;
   row.quota.get().deallocate(p, bytes, alignment);
   row.categories[0].fetch_sub(bytes, std::memory_order_relaxed);
+  owner->release_shared(row, bytes);
   owner->decref();
 }
 void *reallocate(void *opaque, void *p, std::size_t old_bytes,
@@ -213,13 +225,16 @@ void *reallocate(void *opaque, void *p, std::size_t old_bytes,
   if (p == nullptr) return allocate(opaque, bytes, alignment);
   auto &row = *static_cast<detail::ResourceBudgetRow *>(opaque);
   auto *owner = row.owner;
+  const auto growth = bytes > old_bytes ? bytes - old_bytes : 0;
+  if (growth && !owner->acquire_shared(row, growth)) return nullptr;
   auto *result = row.quota.get().reallocate(p, old_bytes, bytes, alignment);
   if (result != nullptr || bytes == 0) {
     if (bytes >= old_bytes)
       row.categories[0].fetch_add(bytes - old_bytes, std::memory_order_relaxed);
     else
       row.categories[0].fetch_sub(old_bytes - bytes, std::memory_order_relaxed);
-  }
+    if (bytes < old_bytes) owner->release_shared(row, old_bytes - bytes);
+  } else if (growth) owner->release_shared(row, growth);
   if (bytes == 0) owner->decref();
   return result;
 }
@@ -254,6 +269,7 @@ void ResourceBudget::Reservation::reset() noexcept {
   if (row_ != SIZE_MAX)
     owner->rows[row_].categories[static_cast<std::size_t>(category_)].fetch_sub(
         charge_.size(), std::memory_order_relaxed);
+  if (row_ != SIZE_MAX) owner->release_shared(owner->rows[row_], charge_.size());
   charge_.reset();
   if (unknown_) owner->unknown.fetch_sub(1, std::memory_order_relaxed);
   owner->decref();
@@ -280,6 +296,18 @@ ResourceBudget &ResourceBudget::operator=(ResourceBudget &&other) noexcept {
 }
 ResourceBudget::~ResourceBudget() { if (state_ != nullptr) state_->decref(); }
 Result<ResourceBudget> ResourceBudget::create(ResourceBudgetOptions options) noexcept {
+  return create_impl(options, {}, std::nullopt);
+}
+Result<ResourceBudget> ResourceBudget::create(ResourceBudgetOptions options,
+    std::span<const mem::MemoryResourceRef> nominated_resources,
+    std::size_t max_shared_bytes) noexcept {
+  if (nominated_resources.empty())
+    return std::unexpected(Status::InvalidArgument("shared resource budget requires nominated resources"));
+  return create_impl(options, nominated_resources, max_shared_bytes);
+}
+Result<ResourceBudget> ResourceBudget::create_impl(ResourceBudgetOptions options,
+    std::span<const mem::MemoryResourceRef> nominated_resources,
+    std::optional<std::size_t> max_shared_bytes) noexcept {
   if (!options.allocator.valid() || options.limits.empty() ||
       !options.metadata_resource.valid() ||
       !options.metadata_resource.properties().has(mem::MemoryProperty::kHostAccessible))
@@ -291,19 +319,38 @@ Result<ResourceBudget> ResourceBudget::create(ResourceBudgetOptions options) noe
       if (options.limits[i].resource == options.limits[j].resource)
         return std::unexpected(Status::InvalidArgument("duplicate budget resource"));
   }
+  bool shared_metadata = false;
+  for (std::size_t i = 0; i < nominated_resources.size(); ++i) {
+    const auto resource = nominated_resources[i];
+    bool found = false;
+    for (const auto limit : options.limits) found = found || limit.resource == resource;
+    if (!resource.valid() || !found)
+      return std::unexpected(Status::InvalidArgument("shared resource is absent from budget"));
+    for (std::size_t j = 0; j < i; ++j)
+      if (resource == nominated_resources[j])
+        return std::unexpected(Status::InvalidArgument("duplicate shared budget resource"));
+    shared_metadata = shared_metadata || resource == options.metadata_resource;
+  }
   if (options.limits.size() > (SIZE_MAX - sizeof(detail::ResourceBudgetState)) /
                                  sizeof(detail::ResourceBudgetRow))
     return std::unexpected(Status::ResourceExhausted("resource budget size overflows"));
   const auto bytes = sizeof(detail::ResourceBudgetState) +
                      options.limits.size() * sizeof(detail::ResourceBudgetRow);
+  // This scope is not published yet. Account its nominated CPU control before
+  // even allocating the State that will own the aggregate quota.
+  if (shared_metadata && bytes > *max_shared_bytes)
+    return std::unexpected(Status::ResourceExhausted("shared budget cannot hold control state"));
   auto *memory = options.allocator.allocate(bytes, alignof(detail::ResourceBudgetState));
   if (memory == nullptr)
     return std::unexpected(Status::ResourceExhausted("resource budget metadata"));
   auto *state = std::construct_at(static_cast<detail::ResourceBudgetState *>(memory), options);
+  if (max_shared_bytes) state->shared_quota.emplace(options.allocator, *max_shared_bytes);
   state->allocation_bytes = bytes;
   state->rows = reinterpret_cast<detail::ResourceBudgetRow *>(state + 1);
   for (auto limit : options.limits) {
     std::construct_at(state->rows + state->count, state, limit, options.allocator);
+    for (const auto resource : nominated_resources)
+      if (resource == limit.resource) state->rows[state->count].shared = true;
     ++state->count;
   }
   state->metadata = state->find(options.metadata_resource);
@@ -316,9 +363,22 @@ Result<ResourceBudget> ResourceBudget::create(ResourceBudgetOptions options) noe
     state->decref();
     return std::unexpected(Status::ResourceExhausted("resource budget cannot hold control state"));
   }
+  if (state->metadata->shared) {
+    if (!state->acquire_shared(*state->metadata, bytes)) {
+      control->reset();
+      state->decref();
+      return std::unexpected(Status::ResourceExhausted("shared budget cannot admit control state"));
+    }
+    state->shared_control_bytes = bytes;
+  }
   state->control_charge = std::move(*control);
   state->metadata->categories[0].fetch_add(bytes, std::memory_order_relaxed);
   return ResourceBudget(state);
+}
+std::optional<SharedRequestedBytesUsage> ResourceBudget::shared_usage() const noexcept {
+  if (!state_ || !state_->shared_quota) return std::nullopt;
+  const auto &quota = *state_->shared_quota;
+  return SharedRequestedBytesUsage{quota.used(), quota.peak(), quota.limit()};
 }
 std::size_t ResourceBudget::resource_count() const noexcept { return state_ ? state_->count : 0; }
 Result<mem::MemoryResourceRef> ResourceBudget::resource(std::size_t index) const noexcept {
@@ -352,6 +412,8 @@ Result<ResourceBudget::Reservation> ResourceBudget::reserve(
   auto charge = row->quota.try_reserve_bytes(bytes);
   if (!charge)
     return std::unexpected(Status::ResourceExhausted("shared resource budget is exhausted"));
+  if (!state_->acquire_shared(*row, bytes))
+    return std::unexpected(Status::ResourceExhausted("shared nominated-resource total is exhausted"));
   return Reservation(state_, std::move(*charge), false,
       static_cast<std::size_t>(row - state_->rows), category);
 }

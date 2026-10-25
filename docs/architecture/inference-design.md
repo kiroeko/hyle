@@ -99,6 +99,13 @@ Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生�
 CUDA 实际共享 primary context；这个合同依赖各自原资源与 Completion，不能把销毁一个 Model 实现为设备 reset。
 这不提供跨 Model 的物理显存总额上限或公平调度；现有 `ResourceBudget` 仍按真实 resource 计量。
 
+已知字节的共用接纳沿一个 `ResourceBudget` scope 扩展：指定多个真实资源行共享总额，
+其副本沿原分配、Graph 与租约传播，保留同 scope 的 backing 去重。不会自动合并独立预算，
+也不把无资源归属的私有存储归到某个设备。底层门禁与引擎接线是两步：当前 Model 的
+独立 cache／execution 预算、权重 IO 及直接 Buffer 还需统一到实际分配源，不能仅设置
+总额参数便宣称全部受控。预算所有权须随 backing 和实际退休延续；raw Buffer 转租约时
+应转移同一实际费用，不能重复计账或先退费再接纳，移动赋值也须先释放旧 backing。
+
 源精度在准备状态／图之前确定：从同一份已校验角色得到不可变 `PrecisionProfile`，
 由 Recipe、缓存 schema、hidden 与读回共同使用。存储为 F16 本身不能推定计算精度；原 GPTQ 的 BF16 计算保持原合同。
 NF4 的原 F16 配置沿此路径执行，GDN 递归状态及规定的累加仍为 F32。

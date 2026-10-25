@@ -265,5 +265,15 @@
     "CRC_pass": true,
     "binaries_included": false,
     "weights_or_SDK_included": false
+  },
+  "cleanup_followup": {
+    "performed": true,
+    "files_removed": 10,
+    "logical_bytes_removed": 295804175,
+    "physical_bytes_freed": null,
+    "method": "Exact binary paths written to test.ps1, previewed and removed with PowerShell LiteralPath after the owning agent released all dependencies.",
+    "retained": "Source, diagnostics including failed attempts, commands, logs, public archive, original SDK/app and the separate active performance candidate remain.",
+    "archive_unchanged": true,
+    "scope": "Rebuildable private seed-diagnostic binaries only, including hardlinks; no physical free-space measurement."
   }
 }

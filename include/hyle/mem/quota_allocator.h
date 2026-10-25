@@ -84,11 +84,20 @@ public:
   // No backing call or allocation. Zero bytes succeeds; nullopt means the
   // shared hard limit was exceeded. This quota must outlive the returned token.
   std::optional<Reservation> try_reserve_bytes(std::size_t bytes) noexcept {
-    if (!reserve(bytes))
+    if (!try_acquire_bytes(bytes))
       return std::nullopt;
-    commit_growth(bytes);
     return Reservation(this, bytes);
   }
+
+  // Paired accounting for owners whose existing lifetime token already stores
+  // the original size. No allocation or backing call. Every successful charge
+  // must be released exactly once; prefer try_reserve_bytes for ordinary use.
+  bool try_acquire_bytes(std::size_t bytes) noexcept {
+    if (!reserve(bytes)) return false;
+    commit_growth(bytes);
+    return true;
+  }
+  void release_bytes(std::size_t bytes) noexcept { commit_shrink(bytes); }
 
   std::size_t used() const noexcept {
     return live_.load(std::memory_order_relaxed);

@@ -28,6 +28,13 @@ Compute 的 `prepare()` 和 Graph 的 `compile()` 检查具体设备、dtype、�
 需要拒绝未知内存、host 等待或热分配时，在准备期明确提出约束，并处理无可行实现的错误。
 `kManaged` 程序可能在重复执行中建立原库 metadata 或临时数据；不能仅由“已编译”推断零开销。
 
+`compute::ResourceBudget::create(options, nominated_resources, max_shared_bytes)` 可让同一预算中
+指定的真实资源行共用已知请求字节总额，同时保留每行原限额。把这个预算的副本传给各个分配／
+Graph／租约入口，才会共用总额与原 backing 去重；分别创建的预算不会自动合并。
+`shared_usage()` 单列该总额的 live／peak／limit。指定 metadata 资源时，控制块与 metadata
+分配也计入；未归属资源的 Provider 私有存储仍单列，未经过该预算的原始 Buffer 分配不会自动纳入。
+额度随原 backing 及其实际在途使用释放，销毁业务句柄或公开 Completion 不等于退款。
+
 ## Fiber 与线程本地状态
 
 可窃取的 Fiber 在 `yield()`、等待或挂起后可能换 OS 线程。不要把 `thread_local` 地址、当前 worker 的

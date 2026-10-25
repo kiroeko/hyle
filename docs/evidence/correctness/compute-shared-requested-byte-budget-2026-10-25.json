@@ -1,0 +1,170 @@
+{
+  "title": "One ResourceBudget scope aggregates explicitly nominated resource rows",
+  "date": "2026-10-25",
+  "status": "PASS",
+  "stage": "foundation complete; engine integration not implemented",
+  "API": [
+    "ResourceBudget::create(ResourceBudgetOptions, span<const mem::MemoryResourceRef> nominated_resources, size_t max_shared_bytes)",
+    "ResourceBudget::shared_usage() const noexcept -> optional<SharedRequestedBytesUsage>",
+    "QuotaAllocator::try_acquire_bytes(size_t) / release_bytes(size_t): paired no-allocation accounting for existing RAII owners"
+  ],
+  "contract": [
+    "Copies of ONE budget handle share its State, nominated-row total, and original backing identity table. Independent scopes remain independent.",
+    "Each local row limit and the nominated shared limit must both admit known requested bytes; rejection rolls back live charges.",
+    "Nominated CPU metadata includes scope control storage before State backing allocation and metadata allocator allocate/reallocate/free.",
+    "Original aliases/adoption share one same-scope payload charge; no relaxed same_scope or inferred resource/device mapping.",
+    "Unattributed private upper bounds and unknown provider memory remain separately reported, outside the explicit nominated total."
+  ],
+  "actual": {
+    "status": "PASS",
+    "scope": "Flat nominated-row shared total within ONE copied ResourceBudget scope; independent scopes not associated. Foundation only, no engine wiring.",
+    "source": [
+      {
+        "path": "include/hyle/compute/resource_budget.h",
+        "bytes": 5622,
+        "sha256": "f7e35ccf1a277152fc6a8adf01b3344bad2f08cdb29a929be3a48e706b1f001a"
+      },
+      {
+        "path": "src/compute/resource_budget.cc",
+        "bytes": 21351,
+        "sha256": "380f8e6728d9fa1c4310a7701fdb7ba132ee8e1d8c568331992f0dab37ee43dc"
+      },
+      {
+        "path": "include/hyle/mem/quota_allocator.h",
+        "bytes": 7562,
+        "sha256": "da6ac925240a538aa96090045277249ed9b52cf3b6f6227b66ab6e0ffd509e27"
+      },
+      {
+        "path": "tests/compute/shared_backing_budget_test.cc",
+        "bytes": 16395,
+        "sha256": "7b689c4cc479efceec19b790912e6e3e8b4c7ca48d96e8b09081a18207293c87"
+      },
+      {
+        "path": "tests/compute/retained_lease_budget_test.cc",
+        "bytes": 15684,
+        "sha256": "080b5f5b5b546bf112c1c272c12038a77d5bf8cd09d836f3b33d24994f66817c"
+      }
+    ],
+    "tests": {
+      "total": 16,
+      "failures": 0,
+      "new_flat_contract_cases": 7,
+      "new_retirement_case": 1,
+      "existing_regressions": 8,
+      "results": "attempt1/results.xml"
+    },
+    "runtime": {
+      "exit": 0,
+      "seconds": 0.235000000015134,
+      "timeout": false
+    },
+    "public_ABI": {
+      "status": "PASS",
+      "layouts": {
+        "before": {
+          "ResourceBudget": [
+            8,
+            8
+          ],
+          "Reservation": [
+            48,
+            8
+          ],
+          "Options": [
+            64,
+            8
+          ],
+          "QuotaAllocator": [
+            64,
+            8
+          ],
+          "QuotaReservation": [
+            16,
+            8
+          ]
+        },
+        "after": {
+          "ResourceBudget": [
+            8,
+            8
+          ],
+          "Reservation": [
+            48,
+            8
+          ],
+          "Options": [
+            64,
+            8
+          ],
+          "QuotaAllocator": [
+            64,
+            8
+          ],
+          "QuotaReservation": [
+            16,
+            8
+          ]
+        }
+      },
+      "scope": "Actual Windows MSVC x64 before pinned public headers vs current headers; size/alignment only, not a universal ABI guarantee. Old cached lease/SDK objects also linked and executed against refreshed core."
+    },
+    "core_compile": {
+      "exit": 0,
+      "seconds": 0.6410000000032596,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.202999999979511,
+      "timeout": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shared-requested-budget-20261025\\attempt1\\link\\checks.exe",
+      "bytes": 20958720,
+      "sha256": "1dd9a58b94a0a2a9412f785b9c4a0ef0df89f269c56ae776869b373e55bd97c6"
+    },
+    "SDK_core_TUs_refreshed": 1,
+    "SDK_or_vendor_rebuild": false,
+    "engine_wired": false,
+    "GPU": 0,
+    "HTTP": 0,
+    "failures": [],
+    "limitations": [
+      "One shared State over actual explicitly nominated resource rows, not a physical device identity heuristic.",
+      "Original backing/lease dedup is exact same-scope only. Independent cache/execution scopes must not be implicitly treated as one aggregate.",
+      "Unattributed private bounds and unknown native memory are reported separately and excluded.",
+      "CPU system nomination includes control state and metadata allocate/reallocate/free; failed local/shared/backing operations roll back live charges.",
+      "Controlled host Completion retirement uses the real existing lifetime attachment; no native GPU error or GPU execution injected.",
+      "Windows MSVC x64 before/after public size/alignment equality plus old SDK lease objects linked/run; not universal ABI/platform certification.",
+      "Actual engine Tensor/weight/IO allocation source, cache-only local policy and correct move/adoption transfer remain outstanding."
+    ]
+  },
+  "ABI_scope": "Windows MSVC x64 before/current size+alignment equal; old cached lease/Completion/SDK objects actually linked and executed with one refreshed resource_budget core TU.",
+  "proof_limits": [
+    "16 host tests, including 8 new cases; no engine, Model, GPU, native GPU error injection or platform matrix.",
+    "The controlled Completion test exercises original accepted-use retention after public Completion/drop; the host-controlled terminal releases the original backing charge.",
+    "No per-Model shared physical-device cap is claimed. Engine source allocations and meaningful local cache subset policy still need consistent same-scope wiring.",
+    "Tensor move replacement and source-aware charge transfer/adoption must preserve backing-before-charge release and prevent reset gaps or duplicate charging.",
+    "The nomination is explicit accounting scope, not authority over driver allocation, other processes, or opaque provider private memory."
+  ],
+  "source_patch": {
+    "path": ".scratch/inference-shared-requested-budget-20261025/source.patch",
+    "bytes": 25688,
+    "sha256": "ec4070625d211f9c2ff56b09d609eab66289b747107d9d8428493eda9a298851"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/compute-shared-requested-byte-budget-2026-10-25.zip",
+    "bytes": 72655,
+    "sha256": "fd997ebce73ace13ca4df93e3d331554540d24d4c51071efcc17de1f3a1d67a1",
+    "members": 74,
+    "CRC": "PASS",
+    "member_SHA": "PASS",
+    "binaries_or_weights": false
+  },
+  "raw": ".scratch/inference-shared-requested-budget-20261025",
+  "new_core_TUs": 1,
+  "full_SDK_rebuild": false,
+  "vendor_builds": 0,
+  "GPU_runs": 0,
+  "HTTP": 0
+}

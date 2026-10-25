@@ -45,6 +45,10 @@ struct UnattributedStorageUsage final {
   std::size_t control_bytes = 0;
 };
 
+struct SharedRequestedBytesUsage final {
+  std::size_t live_bytes = 0, peak_bytes = 0, limit_bytes = SIZE_MAX;
+};
+
 // A local admission scope for explicitly managed requested bytes. It reserves
 // no physical device memory and controls neither drivers nor other processes.
 // Native resource owners remain borrowed. Buffers and raw metadata allocations
@@ -82,6 +86,17 @@ public:
   HYLE_COMPUTE_API ~ResourceBudget();
   HYLE_COMPUTE_API static Result<ResourceBudget>
   create(ResourceBudgetOptions options) noexcept;
+  // One scope's nominated actual resource rows share this additional total.
+  // Copies of this handle share admission and existing backing deduplication;
+  // independently created scopes are never implicitly associated. Host
+  // metadata/control is included iff its resource is nominated. Unattributed
+  // provider-private storage stays outside this explicitly managed total.
+  HYLE_COMPUTE_API static Result<ResourceBudget>
+  create(ResourceBudgetOptions options,
+         std::span<const mem::MemoryResourceRef> nominated_resources,
+         std::size_t max_shared_bytes) noexcept;
+  HYLE_COMPUTE_API std::optional<SharedRequestedBytesUsage>
+  shared_usage() const noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   HYLE_COMPUTE_API std::size_t resource_count() const noexcept;
@@ -100,6 +115,9 @@ public:
   HYLE_COMPUTE_API Result<mem::AllocatorRef> metadata_allocator() const noexcept;
 private:
   friend struct detail::ResourceBudgetAccess;
+  static Result<ResourceBudget> create_impl(ResourceBudgetOptions options,
+      std::span<const mem::MemoryResourceRef> nominated_resources,
+      std::optional<std::size_t> max_shared_bytes) noexcept;
   explicit ResourceBudget(detail::ResourceBudgetState *state) noexcept : state_(state) {}
   detail::ResourceBudgetState *state_ = nullptr;
 };
