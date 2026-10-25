@@ -1,0 +1,747 @@
+{
+  "status": "COMPLETED_R4_RANDOM_SCREEN_BATCH_INTEGRATED_HYBRID_CLOSED",
+  "scope": "Qwen3.5-2B original335-role source, ordinary320 text roles selected; single Windows CUDA device,4 simultaneous ordinary requests, temp1/k0/p1 seed123, no modifiers/MTP/prefix cache. Each request uses originalP154 prompt twice and at most64 natural EOS outputs per turn. No forced IDs.",
+  "protocol": {
+    "behavior_processes": 3,
+    "timing_processes": 9,
+    "timing_per_arm": 3,
+    "independent_memory_processes": 3,
+    "memory_per_arm": 1,
+    "all15_exit0": true,
+    "historical_samples_pooled": false,
+    "same_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\inputs\\four-sessions.txt",
+      "bytes": 452,
+      "sha256": "d851eda922fa10f4d3da89c01bbf54f983d53e4566ee54e87f695ca048ac6bff"
+    },
+    "actual_command_arguments": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\command-arguments.json",
+      "bytes": 4053,
+      "sha256": "589a7c8f5e06d6d57317ddb5ba2c8d658f0c33c4eb2fdef310778a15fdf7f741"
+    },
+    "actual_work": {
+      "generated_tokens": 512,
+      "generated_decode_tokens": 504,
+      "prefill_target_rows": 1236,
+      "logical_prompt_tokens": 1236,
+      "actual_graph_calls": 128,
+      "decode_graph_calls": 126,
+      "prefill_graph_calls": 2
+    },
+    "full_non_time_stdout_differences": 0,
+    "non_time_scope": "Original complete output IDs, ledger/RNG, schedule, state/cache/work; only original clocks/rates excluded.",
+    "timing_order": [
+      "control",
+      "batch",
+      "hybrid",
+      "hybrid",
+      "batch",
+      "control",
+      "batch",
+      "control",
+      "hybrid"
+    ],
+    "completion": "Original consumer continuous pref/decode/session endpoints, default synchronous logging unchanged. PSAPI/PDH sampling only in independent memory processes.",
+    "source_instruments": "Retained source/observer/commands included; no new GPU profiler or timing endpoint."
+  },
+  "decisions": {
+    "batch": "Integrate the narrowly qualified ordinary homogeneous unfiltered R>1 sampling assembly; actual current main/header exact match the tested batch source.",
+    "hybrid": "Closed without integration or further samples; real replay/reuse is correct but slower in this consumer. No future MTP probe pending."
+  },
+  "metrics": {
+    "control": {
+      "prefill_tokens_per_second": {
+        "samples": [
+          6083.701095361523,
+          6036.6742613499,
+          5885.061324148321
+        ],
+        "median": 6036.6742613499,
+        "min": 5885.061324148321,
+        "max": 6083.701095361523
+      },
+      "decode_output_tokens_per_second": {
+        "samples": [
+          221.9542525862294,
+          221.12761129662002,
+          221.43540404140703
+        ],
+        "median": 221.43540404140703,
+        "min": 221.12761129662002,
+        "max": 221.9542525862294
+      },
+      "output_tokens_per_second": {
+        "samples": [
+          206.96033475834147,
+          206.121203937849,
+          205.94653732473276
+        ],
+        "median": 206.121203937849,
+        "min": 205.94653732473276,
+        "max": 206.96033475834147
+      },
+      "prefill_seconds": {
+        "samples": [
+          0.2031658,
+          0.2047485,
+          0.2100233
+        ],
+        "median": 0.2047485,
+        "min": 0.2031658,
+        "max": 0.2100233
+      },
+      "decode_seconds": {
+        "samples": [
+          2.2707382000000007,
+          2.279226899999999,
+          2.2760588
+        ],
+        "median": 2.2760588,
+        "min": 2.2707382000000007,
+        "max": 2.279226899999999
+      },
+      "session_seconds": {
+        "samples": [
+          2.473904,
+          2.4839754,
+          2.4860821
+        ],
+        "median": 2.4839754,
+        "min": 2.473904,
+        "max": 2.4860821
+      }
+    },
+    "batch": {
+      "prefill_tokens_per_second": {
+        "samples": [
+          5944.6341019995325,
+          5974.226721904097,
+          5865.954399323422
+        ],
+        "median": 5944.6341019995325,
+        "min": 5865.954399323422,
+        "max": 5974.226721904097
+      },
+      "decode_output_tokens_per_second": {
+        "samples": [
+          246.01141785849586,
+          245.27126490917158,
+          244.83278940620184
+        ],
+        "median": 245.27126490917158,
+        "min": 244.83278940620184,
+        "max": 246.01141785849586
+      },
+      "output_tokens_per_second": {
+        "samples": [
+          226.88960934217968,
+          226.37274288247843,
+          225.62468954571528
+        ],
+        "median": 226.37274288247843,
+        "min": 225.62468954571528,
+        "max": 226.88960934217968
+      },
+      "prefill_seconds": {
+        "samples": [
+          0.2079186,
+          0.20688869999999998,
+          0.2107074
+        ],
+        "median": 0.2079186,
+        "min": 0.20688869999999998,
+        "max": 0.2107074
+      },
+      "decode_seconds": {
+        "samples": [
+          2.048685400000001,
+          2.0548676999999995,
+          2.0585477999999995
+        ],
+        "median": 2.0548676999999995,
+        "min": 2.048685400000001,
+        "max": 2.0585477999999995
+      },
+      "session_seconds": {
+        "samples": [
+          2.256604,
+          2.2617564,
+          2.2692552
+        ],
+        "median": 2.2617564,
+        "min": 2.256604,
+        "max": 2.2692552
+      }
+    },
+    "hybrid": {
+      "prefill_tokens_per_second": {
+        "samples": [
+          5639.174928483764,
+          5674.337121733813,
+          5689.054507678152
+        ],
+        "median": 5674.337121733813,
+        "min": 5639.174928483764,
+        "max": 5689.054507678152
+      },
+      "decode_output_tokens_per_second": {
+        "samples": [
+          214.21959948670593,
+          214.82914433551812,
+          213.60326456989367
+        ],
+        "median": 214.21959948670593,
+        "min": 213.60326456989367,
+        "max": 214.82914433551812
+      },
+      "output_tokens_per_second": {
+        "samples": [
+          199.0740800143271,
+          199.69786337327446,
+          198.6980774175832
+        ],
+        "median": 199.0740800143271,
+        "min": 198.6980774175832,
+        "max": 199.69786337327446
+      },
+      "prefill_seconds": {
+        "samples": [
+          0.21918100000000001,
+          0.2178228,
+          0.21725930000000002
+        ],
+        "median": 0.2178228,
+        "min": 0.21725930000000002,
+        "max": 0.21918100000000001
+      },
+      "decode_seconds": {
+        "samples": [
+          2.352725900000001,
+          2.3460503999999998,
+          2.359514499999998
+        ],
+        "median": 2.352725900000001,
+        "min": 2.3460503999999998,
+        "max": 2.359514499999998
+      },
+      "session_seconds": {
+        "samples": [
+          2.5719069,
+          2.5638732,
+          2.5767738
+        ],
+        "median": 2.5719069,
+        "min": 2.5638732,
+        "max": 2.5767738
+      }
+    }
+  },
+  "comparisons": {
+    "batch": {
+      "prefill_tokens_per_second": {
+        "relative_percent": -1.5246832173744895,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "relative_percent": 10.764250175327605,
+        "ranges_overlap": false
+      },
+      "output_tokens_per_second": {
+        "relative_percent": 9.825063388789346,
+        "ranges_overlap": false
+      },
+      "prefill_seconds": {
+        "relative_percent": 1.548289731060315,
+        "ranges_overlap": true
+      },
+      "decode_seconds": {
+        "relative_percent": -9.718162817234788,
+        "ranges_overlap": false
+      },
+      "session_seconds": {
+        "relative_percent": -8.946103089426726,
+        "ranges_overlap": false
+      }
+    },
+    "hybrid": {
+      "prefill_tokens_per_second": {
+        "relative_percent": -6.002264225783538,
+        "ranges_overlap": false
+      },
+      "decode_output_tokens_per_second": {
+        "relative_percent": -3.2586498920253004,
+        "ranges_overlap": false
+      },
+      "output_tokens_per_second": {
+        "relative_percent": -3.4189223567929417,
+        "ranges_overlap": false
+      },
+      "prefill_seconds": {
+        "relative_percent": 6.38554128601676,
+        "ranges_overlap": false
+      },
+      "decode_seconds": {
+        "relative_percent": 3.3684147351554117,
+        "ranges_overlap": false
+      },
+      "session_seconds": {
+        "relative_percent": 3.5399505164181777,
+        "ranges_overlap": false
+      }
+    }
+  },
+  "load_and_ready": {
+    "control": {
+      "startup_to_ready_seconds": {
+        "median": 1.7811402,
+        "min": 1.7786821,
+        "max": 1.7993798,
+        "samples": [
+          1.7786821,
+          1.7811402,
+          1.7993798
+        ]
+      },
+      "weights_load_seconds": {
+        "median": 0.838513,
+        "min": 0.826579,
+        "max": 0.846547,
+        "samples": [
+          0.846547,
+          0.826579,
+          0.838513
+        ]
+      },
+      "scope": "Reported original consumer startup-ready and weights_load_seconds; same endpoints, not timed decode and not process wall."
+    },
+    "batch": {
+      "startup_to_ready_seconds": {
+        "median": 1.7352456,
+        "min": 1.7340088,
+        "max": 1.7631594,
+        "samples": [
+          1.7352456,
+          1.7340088,
+          1.7631594
+        ]
+      },
+      "weights_load_seconds": {
+        "median": 0.830565,
+        "min": 0.822638,
+        "max": 0.8438,
+        "samples": [
+          0.830565,
+          0.822638,
+          0.8438
+        ]
+      },
+      "scope": "Reported original consumer startup-ready and weights_load_seconds; same endpoints, not timed decode and not process wall."
+    },
+    "hybrid": {
+      "startup_to_ready_seconds": {
+        "median": 1.7843272,
+        "min": 1.7789248,
+        "max": 1.7846496,
+        "samples": [
+          1.7789248,
+          1.7846496,
+          1.7843272
+        ]
+      },
+      "weights_load_seconds": {
+        "median": 0.82485,
+        "min": 0.817549,
+        "max": 0.82514,
+        "samples": [
+          0.817549,
+          0.82514,
+          0.82485
+        ]
+      },
+      "scope": "Reported original consumer startup-ready and weights_load_seconds; same endpoints, not timed decode and not process wall."
+    }
+  },
+  "memory": {
+    "control": {
+      "independent_processes": 1,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1349083136,
+        "observed_os_peak_working_set_bytes": 1349095424,
+        "sampled_max_private_commit_bytes": 6813462528,
+        "observed_os_peak_commit_bytes": 6813462528,
+        "sampled_peak_gpu_dedicated_bytes": 4742791168,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4824580096
+      },
+      "sample_count": 461,
+      "ready_baseline": {
+        "ready_marker_ns": 284270484311600,
+        "first_prefill_marker_ns": 284270484393600,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "requested_interval_seconds": 0.01,
+      "actual_gap_ms": {
+        "count": 441,
+        "min": 0.1226,
+        "median": 15.1844,
+        "max": 16.6847
+      },
+      "sample_cost_ms": {
+        "count": 442,
+        "min": 0.0586,
+        "median": 0.1368,
+        "max": 0.4664
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 34,
+        "shared:no_pid_instance": 34
+      },
+      "setup_error": null,
+      "thread_error": null
+    },
+    "batch": {
+      "independent_processes": 1,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1340309504,
+        "observed_os_peak_working_set_bytes": 1340309504,
+        "sampled_max_private_commit_bytes": 6787305472,
+        "observed_os_peak_commit_bytes": 6787313664,
+        "sampled_peak_gpu_dedicated_bytes": 4726013952,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4807802880
+      },
+      "sample_count": 431,
+      "ready_baseline": {
+        "ready_marker_ns": 284275395896600,
+        "first_prefill_marker_ns": 284275395907500,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "requested_interval_seconds": 0.01,
+      "actual_gap_ms": {
+        "count": 409,
+        "min": 0.1257,
+        "median": 15.258,
+        "max": 16.8407
+      },
+      "sample_cost_ms": {
+        "count": 410,
+        "min": 0.0576,
+        "median": 0.13585,
+        "max": 0.4973
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 36,
+        "gpu_shared_bytes": 36,
+        "gpu_total_bytes": 36
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 36,
+        "shared:no_pid_instance": 36
+      },
+      "setup_error": null,
+      "thread_error": null
+    },
+    "hybrid": {
+      "independent_processes": 1,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1351417856,
+        "observed_os_peak_working_set_bytes": 1351417856,
+        "sampled_max_private_commit_bytes": 6791753728,
+        "observed_os_peak_commit_bytes": 6791753728,
+        "sampled_peak_gpu_dedicated_bytes": 4717625344,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4799414272
+      },
+      "sample_count": 465,
+      "ready_baseline": {
+        "ready_marker_ns": 284280092791300,
+        "first_prefill_marker_ns": 284280092800800,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "requested_interval_seconds": 0.01,
+      "actual_gap_ms": {
+        "count": 445,
+        "min": 0.1138,
+        "median": 15.0434,
+        "max": 22.5241
+      },
+      "sample_cost_ms": {
+        "count": 446,
+        "min": 0.0579,
+        "median": 0.1326,
+        "max": 0.2897
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 31,
+        "gpu_shared_bytes": 31,
+        "gpu_total_bytes": 31
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 31,
+        "shared:no_pid_instance": 31
+      },
+      "setup_error": null,
+      "thread_error": null
+    }
+  },
+  "memory_delta_scope": {
+    "batch_sampled_dedicated_peak_difference_bytes": -16777216,
+    "interpretation": "Single sampled WDDM peak lower-bound difference, not proven allocation savings. Dedicated/shared separate peaks cannot be summed. Ready sample is unknown when no point lies between original markers; repeated per-session phase names have ambiguous per-turn windows."
+  },
+  "stderr": {
+    "classification": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\behavior2\\stderr-classification.json",
+      "bytes": 38771,
+      "sha256": "8a56bf4688a29506f096b931f62d50bedbeb42c9361c6da2ee049abb30f44638"
+    },
+    "unexpected_work_differences": 0,
+    "ordinary_other_lines_equal_in_order": 1191,
+    "native_warmup_messages": {
+      "control": {
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 506,
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 167
+      },
+      "batch": {
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup complete": 484,
+        "ggml_backend_cuda_graph_compute: CUDA graph warmup reset": 167
+      },
+      "hybrid": {}
+    },
+    "replay_member_observations": {
+      "control": {
+        "commands": 512
+      },
+      "batch": {
+        "commands": 512
+      },
+      "hybrid": {
+        "hybrid": 512
+      }
+    },
+    "hybrid_member_observations_with_reuse": 500,
+    "boundary": "Cold graph topology/footprint and explicit replay/capture diagnostics are separately retained.512 member log observations are not512 independent GPU captures."
+  },
+  "first_manifest_failure": {
+    "process": {
+      "exit": 1,
+      "pid": 53564,
+      "seconds": 0.41621830000076443
+    },
+    "model_loaded": false,
+    "reason": "std::quoted consumed Windows backslashes as escapes in quoted paths; all four shared rows changed to C:/... before any actual model run.",
+    "old_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\inputs\\first-backslash-manifest.txt",
+      "bytes": 452,
+      "sha256": "b463bbf8b15dc2046aa08bfb6c5c809a5daeb19a6da87bde60a0f055e927a712"
+    },
+    "actual_forward_slash_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\inputs\\four-sessions.txt",
+      "bytes": 452,
+      "sha256": "d851eda922fa10f4d3da89c01bbf54f983d53e4566ee54e87f695ca048ac6bff"
+    },
+    "raw_directory": "behavior/control",
+    "actual_success_directory": "behavior2",
+    "old_host_ready_preparation_pins_are_not_actual_run_inputs": true
+  },
+  "source": {
+    "control_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-control-b346-20261026\\ready.json",
+      "bytes": 2850,
+      "sha256": "e45ea845b8213937dd4395493bf12d53ebe56e334757b3aff879fe80b4f1d98a"
+    },
+    "batch_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\batch\\ready.json",
+      "bytes": 2056,
+      "sha256": "dd54d898d88a3aac189262c319c80060cdcbd5caadabddfef02f86911f6f01a7"
+    },
+    "hybrid_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\hybrid\\ready.json",
+      "bytes": 2065,
+      "sha256": "0e9315f3afac01c93a17f02c60c94cb6ce0e0622780e8f8a6c28f36776c8e17f"
+    },
+    "batch_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source.patch",
+      "bytes": 8095,
+      "sha256": "8dc8c188d06d6f1dd3c78684a9e40e0172f7f3b80916fa5d8483f72607bc7bb8"
+    },
+    "hybrid_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\product.patch",
+      "bytes": 6290,
+      "sha256": "aede2f63e179436363ca8f7426f6c3776e284c5ef66fe63e9f6049e27ae70468"
+    },
+    "actual_dependencies_and_link_inputs": "Build receipts in archive; formal entry retained, only Model TU replaced per candidate, same221 absolute+13 system inputs.",
+    "current_integrated_batch": {
+      "main": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 470192,
+        "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6"
+      },
+      "header": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\sampling_graph.h",
+        "bytes": 23819,
+        "sha256": "085be10d28ae789a7fb576d372c23b8cdefede0bbc6ac4c8e4c66328d75a17d5"
+      }
+    },
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\independent-review-architecture.json",
+      "bytes": 3285,
+      "sha256": "430e7dcaf7db25f64d309b358fc4f2199f3edf3872ca7c9d15f940e61b12c4d8"
+    }
+  },
+  "processes": [
+    {
+      "kind": "behavior",
+      "arm": "control",
+      "exit": 0,
+      "pid": 27344,
+      "seconds": 4.816332699963823,
+      "raw": "behavior2\\control\\process.json"
+    },
+    {
+      "kind": "behavior",
+      "arm": "batch",
+      "exit": 0,
+      "pid": 47640,
+      "seconds": 4.970754800015129,
+      "raw": "behavior2\\batch\\process.json"
+    },
+    {
+      "kind": "behavior",
+      "arm": "hybrid",
+      "exit": 0,
+      "pid": 43648,
+      "seconds": 5.402924299996812,
+      "raw": "behavior2\\hybrid\\process.json"
+    },
+    {
+      "kind": "memory",
+      "arm": "control",
+      "pid": 53832,
+      "exit": 0,
+      "seconds": 4.8499538,
+      "raw": "screen\\memory-01-control\\result.json"
+    },
+    {
+      "kind": "memory",
+      "arm": "batch",
+      "pid": 52428,
+      "exit": 0,
+      "seconds": 4.5233856,
+      "raw": "screen\\memory-02-batch\\result.json"
+    },
+    {
+      "kind": "memory",
+      "arm": "hybrid",
+      "pid": 53228,
+      "exit": 0,
+      "seconds": 4.8865268,
+      "raw": "screen\\memory-03-hybrid\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "control",
+      "pid": 50164,
+      "exit": 0,
+      "seconds": 4.8148143,
+      "raw": "screen\\timing-01-control\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "batch",
+      "pid": 56372,
+      "exit": 0,
+      "seconds": 4.5553531,
+      "raw": "screen\\timing-02-batch\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "hybrid",
+      "pid": 55116,
+      "exit": 0,
+      "seconds": 4.9028686,
+      "raw": "screen\\timing-03-hybrid\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "hybrid",
+      "pid": 49548,
+      "exit": 0,
+      "seconds": 4.8750152,
+      "raw": "screen\\timing-04-hybrid\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "batch",
+      "pid": 52352,
+      "exit": 0,
+      "seconds": 4.628343,
+      "raw": "screen\\timing-05-batch\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "control",
+      "pid": 54468,
+      "exit": 0,
+      "seconds": 4.7996015,
+      "raw": "screen\\timing-06-control\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "batch",
+      "pid": 56132,
+      "exit": 0,
+      "seconds": 4.5732921,
+      "raw": "screen\\timing-07-batch\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "control",
+      "pid": 49468,
+      "exit": 0,
+      "seconds": 4.8503534,
+      "raw": "screen\\timing-08-control\\result.json"
+    },
+    {
+      "kind": "timing",
+      "arm": "hybrid",
+      "pid": 52120,
+      "exit": 0,
+      "seconds": 4.922744,
+      "raw": "screen\\timing-09-hybrid\\result.json"
+    }
+  ],
+  "limits": [
+    "Three timing observations per arm: observed medians/ranges only; no statistical-significance claim.",
+    "Hyle-only R4 ordinary random comparison; no single-request greedy, MTP, other platform, or llama.cpp improvement claim.",
+    "Batch prefill throughput lower by1.525% with overlapping observed ranges; decode and combined ranges do not overlap.",
+    "Hybrid prefill/decode/combined all slower with nonoverlapping observed ranges; functionality pass does not establish throughput benefit.",
+    "Single memory process per arm, null counters retained; sample peaks are lower bounds rather than exact allocated bytes.",
+    "First manifest configuration failure and build-driver count correction preserved, not counted as model/numerical failures."
+  ],
+  "raw_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-random-four-request-screen-2026-10-26.zip",
+    "bytes": 1022989,
+    "sha256": "a44c31e274a4ab048213a522b44264e21cfe00c639def78aa1a27527ffffa223",
+    "members": 160,
+    "CRC": "PASS",
+    "member_SHA256": "ALL_PASS",
+    "binaries_SDK_models": false
+  }
+}

@@ -615,4 +615,98 @@ TEST(QwenSamplingGraph, CategoricalRequiresCommandsAndRejectsRequiredCapture) {
   EXPECT_TRUE(session.run(p, p, p, 0, key(1), key(1, true)).valid);
 }
 #endif
+struct BatchedPolicyAnswer final {
+  std::vector<float> logp;
+  std::vector<std::uint8_t> valid;
+  std::vector<std::int32_t> ids;
+};
+BatchedPolicyAnswer run_policy_rows(std::span<const float> logits,
+    std::span<const Identity> identities, s::Policy policy) {
+  const auto rows = static_cast<std::int64_t>(identities.size());
+  if (!rows || logits.size() % identities.size()) throw std::runtime_error("bad finite batch fixture");
+  const auto width = static_cast<std::int64_t>(logits.size() / identities.size());
+#if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
+  auto context = take(g::cuda::create_context());
+  auto device = take(c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice));
+  const auto resource = device.ref();
+#else
+  auto context = take(g::cpu::create_context());
+  const auto resource = m::system_resource();
+#endif
+  auto queue = take(context.create_queue());
+  Recipe r; r.resource = resource;
+  const auto logits_desc = dense(Type::kFloat32, {rows, width});
+  const auto keys_desc = dense(Type::kUInt32, {rows, 4});
+  const auto input = r.input(logits_desc), keys = r.input(keys_desc);
+  const auto distribution = s::distribution(r, input, policy);
+  const auto ids = r.one(c::sampling_ops::categorical(), {distribution.log_probabilities, keys});
+  const std::array outputs{distribution.log_probabilities, distribution.valid, ids};
+  std::array<c::TensorDesc, 3> descriptions;
+  std::array<m::Buffer, 3> buffers;
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    require(r.builder.publish(outputs[i]));
+    descriptions[i] = take(r.spec(outputs[i]).concrete_description());
+    buffers[i] = take(m::Buffer::create(resource, take(descriptions[i].required_bytes()), 64));
+  }
+  const auto logical = take(std::move(r.builder).finish());
+#if defined(HYLE_TEST_QWEN_SAMPLING_CUDA)
+  auto compiled = take(g::cuda::compile(logical, context, resource, {.constants = r.constants}));
+#else
+  auto compiled = take(g::cpu::compile(logical, context, {.constants = r.constants}));
+#endif
+  auto input_buffer = take(m::Buffer::create(resource, take(logits_desc.required_bytes()), 64));
+  auto key_buffer = take(m::Buffer::create(resource, take(keys_desc.required_bytes()), 64));
+  require(input_buffer.view().write(std::as_bytes(logits)));
+  require(key_buffer.view().write(std::as_bytes(identities)));
+  auto run = take(compiled.executable.create_invocation());
+  require(run.bind(input, take(c::ConstTensorView::create(logits_desc, input_buffer.view()))));
+  require(run.bind(keys, take(c::ConstTensorView::create(keys_desc, key_buffer.view()))));
+  for (std::size_t i = 0; i < outputs.size(); ++i)
+    require(run.bind(outputs[i], take(c::TensorView::create(descriptions[i], buffers[i].view()))));
+  const std::array queues{g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
+  require(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+  auto done = take(run.submit(queue)); require(done.wait());
+  BatchedPolicyAnswer result{std::vector<float>(logits.size()),
+      std::vector<std::uint8_t>(identities.size()), std::vector<std::int32_t>(identities.size())};
+  require(buffers[0].view().read(std::as_writable_bytes(std::span(result.logp))));
+  require(buffers[1].view().read(std::as_writable_bytes(std::span(result.valid))));
+  require(buffers[2].view().read(std::as_writable_bytes(std::span(result.ids))));
+  return result;
+}
+
+TEST(QwenSamplingGraph, UnfilteredBatchMatchesRowsKeysAndValidity) {
+  const s::Policy policy{.temperature = 2.F, .top_k = 4, .top_p = 1.F};
+  const std::array<float, 8> logits{0.F, std::log(2.F), std::log(4.F), -INFINITY,
+      -1.F, 0.F, -2.F, std::log(3.F)};
+  const std::array<Identity, 2> identities{key(0xffffffffULL), key(0x100000000ULL, true)};
+  const auto batch = run_policy_rows(logits, identities, policy);
+  ASSERT_EQ(batch.valid, (std::vector<std::uint8_t>{1, 1}));
+  for (std::size_t row = 0; row < 2; ++row) {
+    const auto data = std::span(logits).subspan(row * 4, 4);
+    const auto single = run_policy_rows(data, std::span(identities).subspan(row, 1), policy);
+    EXPECT_EQ(batch.ids[row], single.ids[0]);
+    std::array<double, 4> probabilities;
+    double mass = 0;
+    const auto maximum = *std::max_element(data.begin(), data.end());
+    for (std::size_t i = 0; i < 4; ++i) { probabilities[i] = std::exp((double(data[i]) - double(maximum)) / double(policy.temperature)); mass += probabilities[i]; }
+    for (auto &p : probabilities) p /= mass;
+    expect_probabilities(std::span(batch.logp).subspan(row * 4, 4), probabilities);
+    for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(batch.logp[row * 4 + i], single.logp[i]);
+  }
+  const std::array<float, 8> permuted{logits[4], logits[5], logits[6], logits[7], logits[0], logits[1], logits[2], logits[3]};
+  const std::array<Identity, 2> keys_reversed{identities[1], identities[0]};
+  const auto reversed = run_policy_rows(permuted, keys_reversed, policy);
+  EXPECT_EQ(reversed.ids, (std::vector<std::int32_t>{batch.ids[1], batch.ids[0]}));
+  EXPECT_EQ(reversed.valid, batch.valid);
+  auto bad = logits; bad[0] = std::numeric_limits<float>::quiet_NaN();
+  const auto invalid = run_policy_rows(bad, identities, policy);
+  EXPECT_EQ(invalid.valid, (std::vector<std::uint8_t>{0, 1}));
+  EXPECT_EQ(invalid.ids[1], batch.ids[1]);
+  for (std::size_t i = 4; i < 8; ++i) EXPECT_EQ(invalid.logp[i], batch.logp[i]);
+  Recipe r;
+  const auto input = r.input(dense(Type::kFloat32, {2, 4}));
+  EXPECT_THROW((void)s::distribution(r, input, s::Policy{.top_k = 2}), std::runtime_error);
+  EXPECT_THROW((void)s::distribution(r, input, s::Policy{.top_p = .9F}), std::runtime_error);
+}
+
 } // namespace

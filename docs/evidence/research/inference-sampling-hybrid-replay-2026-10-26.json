@@ -1,0 +1,549 @@
+{
+  "status": "FINITE_COMMANDS_VS_HYBRID_ORIGINAL_POLICY_FLOW_PASS_NOT_TPS",
+  "parent_product_patch": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\product.patch",
+    "bytes": 6290,
+    "sha256": "aede2f63e179436363ca8f7426f6c3776e284c5ef66fe63e9f6049e27ae70468"
+  },
+  "parent_product_pins": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\product-pins.json",
+    "bytes": 743,
+    "sha256": "abb35fecc0b506f71948a67c9e0e34df3899f212f9b5630ddf7de0b3f5ffc5b7"
+  },
+  "actual_source_pins": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\source-pins.json",
+    "bytes": 5692,
+    "sha256": "1907439337ecfb172f10379d822cf4f3af027ef4c3c089fbbe281e4afbc1cea0"
+  },
+  "actual_helper_patch": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\helper.patch",
+    "bytes": 3667,
+    "sha256": "49db2b62ad8608bd6a131fd75c1eeb9dfc00b500cfa8bddc39b4c62065f000e9"
+  },
+  "actual_comparison": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\comparison.json",
+    "bytes": 212041,
+    "sha256": "742d4d520871468f8cc3b2b1e6799b09a9a6d18e84e1e302c0394ccf7e6ca92b"
+  },
+  "stderr_boundary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\stderr-non-time-differences.json",
+    "bytes": 408,
+    "sha256": "d9242eb8d717b42da0cff124d5a0e9754a643f4633ad66114a10ab88432e190c"
+  },
+  "arms": {
+    "control": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\control2\\ready.json",
+        "bytes": 1901,
+        "sha256": "6671db14b0d4f878facb906015e022d67c90d3092f788f8db8b120f4b1e47ab9"
+      },
+      "actual": {
+        "status": "ORIGINAL_POLICY_FLOW_PASS",
+        "arm": "control",
+        "process": {
+          "exit": 0,
+          "pid": 55544,
+          "seconds": 1.118879800022114
+        },
+        "result": {
+          "status": "PASS",
+          "case": "sampling-policies",
+          "ordinary": true,
+          "same_model": true,
+          "configurations": 3,
+          "requests": 6,
+          "turns": 12,
+          "N": 2,
+          "R": 2,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "witness": "sampling_hybrid_witness identity_phases=2 final_draw=4 words=24",
+        "cursor_progress_and_expected_U32_keys": [
+          {
+            "session": "policy2",
+            "stream": 2,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                121,
+                0,
+                0,
+                0
+              ],
+              [
+                121,
+                0,
+                1,
+                0
+              ],
+              [
+                121,
+                0,
+                2,
+                0
+              ],
+              [
+                121,
+                0,
+                3,
+                0
+              ],
+              [
+                121,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy3",
+            "stream": 3,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                120,
+                0,
+                0,
+                0
+              ],
+              [
+                120,
+                0,
+                1,
+                0
+              ],
+              [
+                120,
+                0,
+                2,
+                0
+              ],
+              [
+                120,
+                0,
+                3,
+                0
+              ],
+              [
+                120,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy4",
+            "stream": 4,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                127,
+                0,
+                0,
+                0
+              ],
+              [
+                127,
+                0,
+                1,
+                0
+              ],
+              [
+                127,
+                0,
+                2,
+                0
+              ],
+              [
+                127,
+                0,
+                3,
+                0
+              ],
+              [
+                127,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy5",
+            "stream": 5,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                126,
+                0,
+                0,
+                0
+              ],
+              [
+                126,
+                0,
+                1,
+                0
+              ],
+              [
+                126,
+                0,
+                2,
+                0
+              ],
+              [
+                126,
+                0,
+                3,
+                0
+              ],
+              [
+                126,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          }
+        ],
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\control2\\ready.json",
+          "bytes": 1901,
+          "sha256": "6671db14b0d4f878facb906015e022d67c90d3092f788f8db8b120f4b1e47ab9"
+        },
+        "GPU_released": true,
+        "TPS_claim": false
+      }
+    },
+    "hybrid": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\hybrid2\\ready.json",
+        "bytes": 1902,
+        "sha256": "9e5176dbee5abc1612282cb8309e9ec917498a14e27950cc38c5bf0c1a44a376"
+      },
+      "actual": {
+        "status": "ORIGINAL_POLICY_FLOW_PASS",
+        "arm": "hybrid",
+        "process": {
+          "exit": 0,
+          "pid": 44316,
+          "seconds": 1.1497468000161462
+        },
+        "result": {
+          "status": "PASS",
+          "case": "sampling-policies",
+          "ordinary": true,
+          "same_model": true,
+          "configurations": 3,
+          "requests": 6,
+          "turns": 12,
+          "N": 2,
+          "R": 2,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "witness": "sampling_hybrid_witness identity_phases=2 final_draw=4 words=24",
+        "cursor_progress_and_expected_U32_keys": [
+          {
+            "session": "policy2",
+            "stream": 2,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                121,
+                0,
+                0,
+                0
+              ],
+              [
+                121,
+                0,
+                1,
+                0
+              ],
+              [
+                121,
+                0,
+                2,
+                0
+              ],
+              [
+                121,
+                0,
+                3,
+                0
+              ],
+              [
+                121,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy3",
+            "stream": 3,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                120,
+                0,
+                0,
+                0
+              ],
+              [
+                120,
+                0,
+                1,
+                0
+              ],
+              [
+                120,
+                0,
+                2,
+                0
+              ],
+              [
+                120,
+                0,
+                3,
+                0
+              ],
+              [
+                120,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy4",
+            "stream": 4,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                127,
+                0,
+                0,
+                0
+              ],
+              [
+                127,
+                0,
+                1,
+                0
+              ],
+              [
+                127,
+                0,
+                2,
+                0
+              ],
+              [
+                127,
+                0,
+                3,
+                0
+              ],
+              [
+                127,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          },
+          {
+            "session": "policy5",
+            "stream": 5,
+            "draws": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "U32_keys": [
+              [
+                126,
+                0,
+                0,
+                0
+              ],
+              [
+                126,
+                0,
+                1,
+                0
+              ],
+              [
+                126,
+                0,
+                2,
+                0
+              ],
+              [
+                126,
+                0,
+                3,
+                0
+              ],
+              [
+                126,
+                0,
+                4,
+                0
+              ]
+            ],
+            "final_draw": 5
+          }
+        ],
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-hybrid-replay-20261026\\policy-check\\hybrid2\\ready.json",
+          "bytes": 1902,
+          "sha256": "9e5176dbee5abc1612282cb8309e9ec917498a14e27950cc38c5bf0c1a44a376"
+        },
+        "GPU_released": true,
+        "TPS_claim": false
+      }
+    }
+  },
+  "findings": {
+    "original_three_configurations": true,
+    "requests": 6,
+    "turns": 12,
+    "same_full_non_time_JSON": true,
+    "retained_outputs_ledger_RNG_schedule_cache_restore": true,
+    "each_random_request_draw_before": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "each_random_request_final_draw": 5,
+    "actual_completed_Tensor_identity": "Two R2 phases each [2,3,4] U32, all three slots match original member stream at draw4 word-for-word. This is the old carrier, not the separately frozen [R,4] batched proposal.",
+    "random_step_log_observations": {
+      "control_commands": 26,
+      "candidate_hybrid": 26,
+      "candidate_with_reuse": 16,
+      "candidate_capture_count_histogram": [
+        {
+          "recorded": 1,
+          "reused": 1,
+          "member_log_observations": 4
+        },
+        {
+          "recorded": 1,
+          "reused": 4,
+          "member_log_observations": 6
+        },
+        {
+          "recorded": 1,
+          "reused": 6,
+          "member_log_observations": 6
+        },
+        {
+          "recorded": 2,
+          "reused": 0,
+          "member_log_observations": 2
+        },
+        {
+          "recorded": 5,
+          "reused": 0,
+          "member_log_observations": 4
+        },
+        {
+          "recorded": 7,
+          "reused": 0,
+          "member_log_observations": 4
+        }
+      ],
+      "limit": "Per-member logs can duplicate one episode; not a native total."
+    }
+  },
+  "first_failures_retained": [
+    {
+      "path": "policy-check/control/compile",
+      "reason": "Private fixture used dot on unique_ptr; no product issue."
+    },
+    {
+      "path": "policy-check/control/run",
+      "reason": "Private fixture requested Invocation replay_report after retirement had intentionally cleared replay preparation; no math or Hybrid failure. Final source observes original completion-time prepared reports instead."
+    }
+  ],
+  "limits": [
+    "No TPS/latency comparison",
+    "CUDA tiny A1/H64/FFN128/V64/context16 BF16 fixture only",
+    "Original sampling_graph.h d066 and original per-row sampling unchanged; no unfiltered R2 proposal included",
+    "Categorical native capture=false and submit rejection unchanged",
+    "Native GGML internal graph warmup messages differ and remain explicitly counted",
+    "No MTP, no new provider qualification, no native SDK/core/provider build"
+  ],
+  "live_processes": 0,
+  "GPU_released": true,
+  "source_state": "Private candidate; native sampling capture qualification unchanged; no canonical integration claimed here.",
+  "raw_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-sampling-hybrid-replay-2026-10-26.zip",
+    "bytes": 258669,
+    "sha256": "0b8430dfc0d1235e05db1c60c488940ecf40768bdb98d7d13afaca019e524dee",
+    "CRC": "PASS",
+    "member_SHA256": "ALL_PASS",
+    "members": 103,
+    "SDK_model_payload_binaries": false
+  }
+}

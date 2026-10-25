@@ -61,7 +61,7 @@ Apple生成的conv／GDN与MTP carry／prior沿原Graph结果租约保活，在�
 - `--mtp-min-probability P`：须配合 `--mtp on`，范围[0,1]、默认0。用实际草稿分布的最大概率决定是否继续，不另造置信度头；截短或无草稿时保留正确的目标续算和 RNG 位置。
 - `--cpu-ffn-layers N`：分别选择 `--backends cpu,cuda`、`cpu,metal` 或 `cpu,vulkan` 构建，将前 N 层 target FFN 放在 CPU，其原权重直接加载到 host，不在 GPU 保留副本；注意力、缓存与 MTP 留在所选 GPU。默认0。CUDA 普通／MTP、多 K、随机、多会话和恢复见[CUDA 分置记录](../../../docs/evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json)，Apple／Vulkan 随机 K1 见[原生混合记录](../../../docs/evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.json)。JSON 分列真实权重域、共享执行预算范围与每次执行的已知 workspace；原生私有开销未知，不能据此推定全进程或物理显存上限。
 - `--schedule FILE`：普通／MTP均支持prompt／generate自然多轮；一行prompt可配合`--steps`，显式generate与显式steps互斥。普通模式另支持prompt／decode固定重放，与显式steps互斥；MTP拒绝固定重放。schedule与continuation／decode-ids互斥。先检查完整语法，再读取所有ID并校验会话容量，最后创建Model。
-- `--session-schedules FILE`：执行多会话manifest，与`--schedule`互斥；普通／MTP的prompt-only自然请求可配合`--steps`。同一manifest的所有会话必须使用一致的自然生成或固定重放语法，在读取token文件前检查。每行`SESSION_ID SCHEDULE_FILE`，路径相对manifest，支持双引号和整行`#`注释；ID为ASCII字母／数字开头，后续可含`_`／`-`且不能重复。`--capacity`是每会话上下文上限，所有会话和ID均先校验再加载模型。
+- `--session-schedules FILE`：执行多会话manifest，与`--schedule`互斥；普通／MTP的prompt-only自然请求可配合`--steps`。同一manifest的所有会话必须使用一致的自然生成或固定重放语法，在读取token文件前检查。每行`SESSION_ID SCHEDULE_FILE`，路径相对manifest，支持双引号和整行`#`注释；Windows清单中的路径使用`/`，例如`user1 "C:/inputs/user one.txt"`，避免双引号中的反斜杠被当成转义。ID为ASCII字母／数字开头，后续可含`_`／`-`且不能重复。`--capacity`是每会话上下文上限，所有会话和ID均先校验再加载模型。
 - `--max-sessions auto|N`：保留的设备缓存会话上限；默认auto取本次输入会话数。普通文本和MTP都可淘汰空闲head；MTP生成中的head不淘汰，轮次间可淘汰并在下轮恢复。共享backing按解析后的容量预留，不为各会话复制权重或执行载体。
 - `--active-sequences auto|R`：活跃请求和单次真实Graph批次的序列上限，实际按等T分桶，批宽不超过R；不是同时提交多个独立Invocation。默认auto随输入、缓存数量和字节预算解析，满足`1≤R≤N`；显式值受输入数量和缓存容量约束。
 - `--cache-bytes auto|N`：共享KV页池、初始／caller状态池及选中保留的原生结果backing的请求字节额度。CUDA默认auto按N份可提交版本及最多R份在途候选解析；显式额度不足时缩小可驻留数量，不能容纳活跃请求则在加载前报错。Apple／Vulkan的auto不设字节额度，仍执行N／R及版本数边界；显式额度按实际池及完成后的结果准入，不用CUDA公式预估可驻留会话数，空间不足会报错并保留旧快照，可提高额度或减少会话／上下文后重试。淘汰归还页／版本，Model池及仍有读者的结果继续计费。这不是全进程或物理显存上限。
@@ -96,6 +96,8 @@ hyle --inputs DIR --schedule session/manifest.txt --capacity 1024
 每个prompt块产生一个逻辑结果，每个decode ID产生一次单token逻辑调用，固定输入允许跨过预测EOS；同波次的兼容调用可以合成一次真实Graph批次。
 后续prompt沿同一个Session及原KV、conv/GDN状态追加，不重新加载或重置缓存。
 图族按所有会话的shape并集冷编译，Model按有序调用冷统计每个形状的串行槽使用上界，预选Commands或PreferCapture。完整prompt命中跳过prompt计算和预热；random仍有上述frontier采样Graph。切换会话不复制载体。准备诊断的prior-use计数属于共享执行槽，跨会话不清零，失败后重建该槽才清零。
+
+普通随机生成中，同策略、无logits修改且不执行top-k／top-p过滤的多请求批次，直接沿原Categorical算子批量采样；每行保留原请求的随机身份和draw位置。过滤策略继续按原逐行路径执行，用户无需另设优化开关。四请求CUDA有限对照的decode约提升10.8%，边界及原始数据见[本轮采样对照](../../../docs/evidence/performance/inference-random-four-request-screen-2026-10-26.json)；不代表单请求或MTP提速。
 日志标签为`round1_prefill`、`round1_decode1`等；每个阶段另有
 `memory_phase=roundX_prefill_begin/end`或`roundX_decode_begin/end`标记，供独立显存旁采定位，不代表消费者已测得显存数值。
 

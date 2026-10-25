@@ -52,8 +52,8 @@ template<class Value> struct SelectionFor final {
   std::optional<Value> valid; // Present for categorical or any modifier.
 };
 template<class Value> struct DistributionFor final {
-  Value log_probabilities; // F32[1,V], in original vocabulary order.
-  Value valid;             // Bool[1]; caller must check before using the row.
+  Value log_probabilities; // F32[R,V], in original vocabulary order per row.
+  Value valid;             // Bool[1] for R1, Bool[R,1] otherwise; check every row.
 };
 
 // Concrete Graph identities remain the ordinary engine-facing types. Cold
@@ -74,19 +74,30 @@ using Distribution = DistributionFor<g::ValueId>;
 template<class R, class Value>
 DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
   const auto spec = r.spec(logits);
-  if (spec.data_type() != Type::kFloat32 || spec.rank() != 2 || spec.dimensions()[0] != fixed(1) ||
+  if (spec.data_type() != Type::kFloat32 || spec.rank() != 2 ||
+      !spec.dimensions()[0].is_fixed() || spec.dimensions()[0].fixed_value() <= 0 ||
       !spec.dimensions()[1].is_fixed() || spec.dimensions()[1].fixed_value() <= 0 ||
       spec.dimensions()[1].fixed_value() > (std::numeric_limits<std::int32_t>::max)())
-    throw std::runtime_error("sampling policy requires one F32[1,V] row with positive I32 vocabulary");
+    throw std::runtime_error("sampling policy requires positive fixed F32[R,V] rows and I32 vocabulary");
+  const auto rows = spec.dimensions()[0].fixed_value();
   const auto vocabulary_size = static_cast<std::size_t>(spec.dimensions()[1].fixed_value());
   if (!std::isfinite(policy.temperature) || policy.temperature <= 0 || !std::isfinite(policy.top_p) ||
       policy.top_p <= 0 || policy.top_p > 1 || policy.top_k > vocabulary_size)
     throw std::runtime_error("sampling policy requires positive finite temperature, top_p in (0,1], top_k <= V");
+  // Filtering retains the existing one-row vocabulary-order recipe. A batch
+  // must not reinterpret Cartesian Gather/Scatter or change RNG token columns.
+  if (rows != 1 && (policy.top_p != 1.F || (policy.top_k && policy.top_k != vocabulary_size)))
+    throw std::runtime_error("batched sampling distribution requires no top-k or nucleus filtering");
   const auto zero = r.scalar(0), one = r.scalar(1);
   const auto no = r.cast(zero, Type::kBool), yes = r.cast(one, Type::kBool);
   const auto select = [&](Value condition, Value a, Value b) { return r.one(c::Select{}, {condition, a, b}); };
   const auto reduce = [&](c::ReductionKind kind, Value value) {
-    return r.copy(r.reshape(r.one(c::Reduce{.kind = kind, .accumulation_type = Type::kFloat32}, {value}), {fixed(1)}));
+    if (rows == 1)
+      return r.copy(r.reshape(r.one(c::Reduce{.kind = kind, .accumulation_type = Type::kFloat32}, {value}), {fixed(1)}));
+    const auto axis = c::Axes::from(std::array<std::int32_t, 1>{1});
+    if (!axis) throw std::runtime_error("sampling row reduction axis differs");
+    return r.copy(r.one(c::Reduce{.kind = kind, .axes = *axis,
+        .keep_dimensions = true, .accumulation_type = Type::kFloat32}, {value}));
   };
   const auto valid_mass = [&](Value log_weights) {
     const auto mass = reduce(c::ReductionKind::kSum, r.unary(c::UnaryKind::kExp, log_weights));

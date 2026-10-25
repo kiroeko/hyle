@@ -1,0 +1,209 @@
+{
+  "status": "FINITE_UNFILTERED_R2_CORRECTNESS_PASS_PRIVATE_CANDIDATE_NOT_INTEGRATED",
+  "scope": {
+    "qualified": "Ordinary Text, homogeneous enabled policy, no modifiers, R>1, top_p==1 and top_k==0 or V. N1 and actual filtering retain original branch.",
+    "not_changed": [
+      "Greedy",
+      "MTP",
+      "Heterogeneous policy bucketing",
+      "Modifier paths",
+      "Existing completion/publication/RNG advancement",
+      "Replay selection shared by both before and candidate"
+    ],
+    "not_claimed": [
+      "TPS or latency benefit",
+      "Apple/Vulkan actual runtime",
+      "Full model publisher quality",
+      "Filtered batched distribution",
+      "Product integration"
+    ]
+  },
+  "product_patch": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source.patch",
+    "bytes": 8095,
+    "sha256": "8dc8c188d06d6f1dd3c78684a9e40e0172f7f3b80916fa5d8483f72607bc7bb8"
+  },
+  "source_pins": {
+    "revision": "r2-unfiltered-only-rebased-b346",
+    "files": [
+      {
+        "path": "engine/inference/sampling_graph.h",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\before\\engine\\inference\\sampling_graph.h",
+          "bytes": 23019,
+          "sha256": "d066651db9acba82ca5b96d8f35ccceefd60e96c2c61e6e5040389f8f71485bb"
+        },
+        "canonical_before": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\sampling_graph.h",
+          "bytes": 23019,
+          "sha256": "d066651db9acba82ca5b96d8f35ccceefd60e96c2c61e6e5040389f8f71485bb"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source\\engine\\inference\\sampling_graph.h",
+          "bytes": 23819,
+          "sha256": "085be10d28ae789a7fb576d372c23b8cdefede0bbc6ac4c8e4c66328d75a17d5"
+        }
+      },
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\before\\engine\\models\\qwen35\\main.cc",
+          "bytes": 468967,
+          "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+        },
+        "canonical_before": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 468967,
+          "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 470192,
+          "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6"
+        }
+      }
+    ]
+  },
+  "test_pins": [
+    {
+      "path": "tests/graph_route_cpu/qwen_sampling_graph_test.cc",
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\qwen_sampling_graph_test.cc",
+        "bytes": 32987,
+        "sha256": "05c098303b75bb93bd8964a3736bc39172833c9bdde429efec1ad672c09d07aa"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source\\tests\\graph_route_cpu\\qwen_sampling_graph_test.cc",
+        "bytes": 38652,
+        "sha256": "9b4be4c236e32d55c469edc95d39a64d042f3c67f47ed86be97f99fdbb80a0ca"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_sampling_policy_case.h",
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_sampling_policy_case.h",
+        "bytes": 8381,
+        "sha256": "374f07c761be5a4c621b51f65c8df0a4b12d3610209e125c246bcf38f3348414"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\source\\tests\\tools\\qwen_sampling_policy_case.h",
+        "bytes": 10714,
+        "sha256": "4dc5b1fd3d4cde4634f606508436058cb4dd9b33f4118e89c54d44734e6cfa9d"
+      }
+    }
+  ],
+  "actual_math": {
+    "cpu": {
+      "tests": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        "PolicyHasExplicitTemperatureThenTopKThenNucleusOrder",
+        "PolicyStableTiesAndExactCdfBoundariesRetainFirst",
+        "PolicyCannotHideBadUnselectedColumnsAndCentersLargeLogits",
+        "PolicyPreservesWideFiniteRangeAndNearbyLargeLogits",
+        "PolicyTemperaturePreservesTinyLogitRanking",
+        "PolicyParametersFailClearlyAtColdConstruction",
+        "UnfilteredBatchMatchesRowsKeysAndValidity"
+      ],
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\cpu1\\run2\\results.xml",
+        "bytes": 2707,
+        "sha256": "3b6380f8a86eee0e019a0386b4f37ab54472598ef0a3a5cdd25d2c65732f19b6"
+      }
+    },
+    "cuda": {
+      "tests": 7,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        "PolicyHasExplicitTemperatureThenTopKThenNucleusOrder",
+        "PolicyStableTiesAndExactCdfBoundariesRetainFirst",
+        "PolicyCannotHideBadUnselectedColumnsAndCentersLargeLogits",
+        "PolicyPreservesWideFiniteRangeAndNearbyLargeLogits",
+        "PolicyTemperaturePreservesTinyLogitRanking",
+        "PolicyParametersFailClearlyAtColdConstruction",
+        "UnfilteredBatchMatchesRowsKeysAndValidity"
+      ],
+      "XML": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\cuda2\\run\\results.xml",
+        "bytes": 2707,
+        "sha256": "0f67753e1ff7b509afde6e244188a2687790ed53b3e01be3a73ff457c6450d18"
+      }
+    }
+  },
+  "actual_model": {
+    "status": "TINY_MODEL_SAMPLING_POLICIES_BATCHED_IDENTITY_PASS",
+    "process": {
+      "exit": 0,
+      "pid": 43136,
+      "seconds": 1.1607465000124648
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\model2\\ready.json",
+      "bytes": 1264,
+      "sha256": "fd2bb4b6e986f3aebaf825260929621ecae60411d9d9ca8088f3f6cb7faebcba"
+    },
+    "result": {
+      "status": "PASS",
+      "case": "sampling-policies",
+      "ordinary": true,
+      "same_model": true,
+      "configurations": 4,
+      "requests": 6,
+      "turns": 12,
+      "N": 2,
+      "R": 2,
+      "quality_claim": false,
+      "performance_claim": false
+    },
+    "GPU_released": true,
+    "no_TPS_or_quality_claim": true,
+    "backend": "CUDA",
+    "geometry": "1 attention layer, H64/FFN128/V64/context16 BF16 13 roles",
+    "witness": "batched_text_sampling=true flat_identity_rows=2 flat_identity_words=4 families=1 phases=2",
+    "identity_assertion": "Actual retained phase [2,4] UInt32 carrier has the two original SamplingCursor(123,stream2/3,draw4).identity() rows, either member order, word-exact. Final request draw is 5.",
+    "old_boundaries": "Original cfg2 filtered producer/full-hit/partial-hit/historical pending/ledger rebuild kept; cfg2 original prompt T2 finite family and two planned producer/rebuild uses prepared cold."
+  },
+  "retained_first_failures": [
+    {
+      "path": "cpu1/run",
+      "kind": "Native CPU program load setup failure, not math; exact original host3 native same-file app hardlink then run2 passes, no recompile."
+    },
+    {
+      "path": "cuda1/compile",
+      "kind": "Missing HYLE_COMPUTE_CUDA compile define hides original CUDA public API; corrected recipe, cuda2 compiles and runs."
+    },
+    {
+      "path": "model1/run",
+      "kind": "New R2 cohort passed including identity witness, then original cfg2 boundary missing shared cold family. Added original prepare_family/plan_replay_uses in fixture only."
+    }
+  ],
+  "execution_budget_facts": {
+    "SDK_core_provider_rebuilds": 0,
+    "new_GPU_math_processes": 1,
+    "tiny_Model_GPU_processes_including_retained_fixture_failure": 2,
+    "no_TPS_runs": true,
+    "GPU_released": true,
+    "CPU_compile_TUs": 1,
+    "CUDA_math_compile_TUs_including_macro_failure": 2,
+    "tiny_Model_compile_TUs_including_fixture_failure": 2
+  },
+  "closures": {
+    "cpu": "Original 130-input host3 closure (inference-cpu-cold-options-20261025); original CPU native SHA pinned in native-cpu-runtime.json.",
+    "cuda": "Current 2a94 closure; formal fixture replaces entry object, Model fixture replaces model object/removes entry; remaining exact inputs pinned."
+  },
+  "review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-text-sampling-20261026\\proof\\reviewer-note.json",
+    "bytes": 2940,
+    "sha256": "34c232f6a719fdae7e63fdda253999de16ce555f8c0009a7cad248d1f08034cf"
+  },
+  "raw_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-batched-unfiltered-sampling-2026-10-26.zip",
+    "bytes": 226883,
+    "sha256": "17f2ebf1ea0e7cd663649ac5a05a178ddfd05da1c2f0bfca98e0ee2a2e905cda",
+    "CRC": "PASS",
+    "all113_member_SHA256": "PASS",
+    "report_inside_archive": "Detailed private pack-time report retains every member SHA256. No SDK/binary/model payload."
+  }
+}

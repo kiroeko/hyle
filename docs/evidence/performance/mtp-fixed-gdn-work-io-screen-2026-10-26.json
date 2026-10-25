@@ -1,0 +1,672 @@
+{
+  "status": "MECHANISM_PASS_NO_NET_THROUGHPUT_GAIN_CLOSED",
+  "date": "2026-10-26",
+  "GPU": "RELEASED",
+  "CPU": "NO_ACTIVE_BUILD_OR_MODEL",
+  "scope": "Private K1 fixed GDN working ingress and both-prefix outputs, retaining independent canonical selected Snapshots. Closed after one behavior process and a finite6 timing +2 memory process screen.",
+  "decision": "Do not integrate, resample, or perform the planned byte check. Five fewer actual recordings produced no observed net throughput gain on this finite workload. No causal breakdown of the slowdown is claimed.",
+  "source": {
+    "before": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\before\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    "canonical": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    "after": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 475265,
+      "sha256": "d71f46fb8f92084116c8bb9ef1e53ce5950555be07aba9e4328cd6cb02192f56"
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\source.patch",
+      "bytes": 21873,
+      "sha256": "549063e500c0136d50cd4d24401cfd9d0865b69046fdf0dcf0f53c92c32f7c10"
+    }
+  },
+  "product_edits": 0,
+  "canonical_integration": false,
+  "images": {
+    "control": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-control-b346-20261026\\link\\hyle.exe",
+      "bytes": 141459968,
+      "sha256": "ddb447ac4dea2d6cf031a510303fe99343727f16d4b770eefc05131f55ef16c4"
+    },
+    "candidate": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\link\\hyle.exe",
+      "bytes": 141470208,
+      "sha256": "ac2042900dd1f11d1a6f81cb7f57d54d4001bbb03ec7cf661810b6706ebe1407"
+    }
+  },
+  "build": {
+    "Model_TUs": 2,
+    "other_TUs": 0,
+    "SDK_builds": 0,
+    "control": {
+      "compile": {
+        "exit": 0,
+        "pid": 52668,
+        "seconds": 18.358150899992324
+      },
+      "link": {
+        "exit": 0,
+        "pid": 11680,
+        "seconds": 1.7326765999896452
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-control-b346-20261026\\compile\\actual-dependencies.json",
+        "bytes": 73990,
+        "sha256": "f4505183d87204306e5ada324ede2c53b05cf0b369bae3855362137f326a9de6"
+      }
+    },
+    "candidate": {
+      "compile": {
+        "exit": 0,
+        "pid": 51400,
+        "seconds": 18.628272200003266
+      },
+      "link": {
+        "exit": 0,
+        "pid": 27772,
+        "seconds": 2.0656116000027396
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\compile\\actual-dependencies.json",
+        "bytes": 74040,
+        "sha256": "ff45b5fc8704e4c05cc1568bf49c3d1714577c69aa4133a2d6500e0d1705389c"
+      }
+    },
+    "closure": "Both arms replace only the Model app object in the same retained2a94 221 absolute +13 system link inputs. Current b346 control includes CPU-options forwarding/shared selector; candidate is d71 on the identical baseline. No private sampling or diagnostic clock hook."
+  },
+  "mechanism": {
+    "eligibility": "Existing K1 PreferCapture and actual caller-owned same-resource output qualification, without a backend whitelist.",
+    "lifecycle": "Original WorkingStateCopy/CopyBatch/RetainedResources chain: copy canonical input to fixed scratch and actually retire; Graph reads/writes fixed original-resource blocks; selected-prefix GDN and hidden egress share one original copy submit/wait; independent canonical Head and ledger publish only after real copy retirement. Original unbind and unique try_write precede reuse.",
+    "budget": "Working scratch/Copy metadata use the existing allocation/workspace budget; canonical selected states keep the existing cache pools. No second owner/manager, no fake ready, no overwrite of escaped readers.",
+    "programmed_cost": {
+      "fixed_GDN_payload_bytes": 117227520,
+      "ingress_bytes_per_eligible_episode": 19537920,
+      "selected_egress_bytes_per_eligible_episode": 19537920,
+      "extra_host_waits_per_eligible_episode": 1
+    }
+  },
+  "first_behavior": {
+    "process": {
+      "exit": 0,
+      "pid": 28564,
+      "seconds": 3.848845699976664
+    },
+    "reference": "Previously recorded frozen2a94 behavior only, not a throughput sample.",
+    "full_stdout_non_time_differences": 0,
+    "capture": {
+      "baseline": {
+        "calls": 68,
+        "recorded": 27,
+        "reused": 105
+      },
+      "candidate": {
+        "calls": 68,
+        "recorded": 22,
+        "reused": 110
+      },
+      "changes": [
+        {
+          "index": 3,
+          "rows": 2,
+          "visible": 160,
+          "baseline": {
+            "recorded": 2,
+            "reused": 0
+          },
+          "candidate": {
+            "recorded": 1,
+            "reused": 1
+          }
+        },
+        {
+          "index": 7,
+          "rows": 2,
+          "visible": 167,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 38,
+          "rows": 2,
+          "visible": 377,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 39,
+          "rows": 2,
+          "visible": 379,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 43,
+          "rows": 2,
+          "visible": 387,
+          "baseline": {
+            "recorded": 2,
+            "reused": 0
+          },
+          "candidate": {
+            "recorded": 1,
+            "reused": 1
+          }
+        }
+      ]
+    },
+    "stderr_unexpected_differences": 0
+  },
+  "screen": {
+    "timing_order": [
+      "B",
+      "C",
+      "C",
+      "B",
+      "B",
+      "C"
+    ],
+    "independent_memory_order": [
+      "B",
+      "C"
+    ],
+    "timeout_seconds_per_process": 120,
+    "processes": [
+      {
+        "mode": "timing",
+        "index": 1,
+        "arm": "control",
+        "pid": 29640,
+        "exit": 0,
+        "wall_seconds": 3.798762,
+        "capture": {
+          "calls": 68,
+          "recorded": 27,
+          "reused": 105
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-01-control\\result.json",
+          "bytes": 1376,
+          "sha256": "43c46fc517e5480ed516959386504933b50e253bcd946c6fa5ae19c1c9a85052"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "index": 2,
+        "arm": "candidate",
+        "pid": 42508,
+        "exit": 0,
+        "wall_seconds": 3.4165261,
+        "capture": {
+          "calls": 68,
+          "recorded": 22,
+          "reused": 110
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-02-candidate\\result.json",
+          "bytes": 1361,
+          "sha256": "414b5f8d6d1c3a0596ddba2266084e8657e6c9241f89656fef05f999d9cddbb5"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "index": 3,
+        "arm": "candidate",
+        "pid": 15616,
+        "exit": 0,
+        "wall_seconds": 3.4021789,
+        "capture": {
+          "calls": 68,
+          "recorded": 22,
+          "reused": 110
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-03-candidate\\result.json",
+          "bytes": 1361,
+          "sha256": "15a096166561ee54719e84de904db973951b9e33465609bf0dbf431d8af4c446"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "index": 4,
+        "arm": "control",
+        "pid": 42048,
+        "exit": 0,
+        "wall_seconds": 3.3993041,
+        "capture": {
+          "calls": 68,
+          "recorded": 27,
+          "reused": 105
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-04-control\\result.json",
+          "bytes": 1377,
+          "sha256": "003ee8b47616edaa49a04e04f5b91f4bed3cd1b68a2db58065c1e69aa112927b"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "index": 5,
+        "arm": "control",
+        "pid": 10948,
+        "exit": 0,
+        "wall_seconds": 3.3830118,
+        "capture": {
+          "calls": 68,
+          "recorded": 27,
+          "reused": 105
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-05-control\\result.json",
+          "bytes": 1377,
+          "sha256": "c57e0c8b2d9f8504b69d952b28a225c992c8d4120b2b37be6559b7188cbebcbb"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "timing",
+        "index": 6,
+        "arm": "candidate",
+        "pid": 48528,
+        "exit": 0,
+        "wall_seconds": 3.3895153,
+        "capture": {
+          "calls": 68,
+          "recorded": 22,
+          "reused": 110
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\timing-06-candidate\\result.json",
+          "bytes": 1361,
+          "sha256": "759b4e7feb206f7ddab01640e0ca095675f4115ef513eef5049584e8a5b6a78b"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "index": 1,
+        "arm": "control",
+        "pid": 36100,
+        "exit": 0,
+        "wall_seconds": 3.3777131,
+        "capture": {
+          "calls": 68,
+          "recorded": 27,
+          "reused": 105
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\memory-01-control\\result.json",
+          "bytes": 2893,
+          "sha256": "20f06872ed2d58c82ae580a2d0d0aefd9285446808e71abdfed2a46349801158"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      },
+      {
+        "mode": "memory",
+        "index": 2,
+        "arm": "candidate",
+        "pid": 55036,
+        "exit": 0,
+        "wall_seconds": 3.3903957,
+        "capture": {
+          "calls": 68,
+          "recorded": 22,
+          "reused": 110
+        },
+        "result": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-gdn-work-io-20261026\\screen\\memory-02-candidate\\result.json",
+          "bytes": 2876,
+          "sha256": "7d364854e1393a7a5444ba56d7f388d1ab7d437cd6ee612c2c5ced3557861a47"
+        },
+        "stdout_difference_count": 0,
+        "stderr_difference_count": 0
+      }
+    ],
+    "all_exit0": true,
+    "stdout_non_time_differences": 0,
+    "unexpected_stderr_differences": 0,
+    "comparison_gate": "Every report, including the new control first sample, is compared with frozen2a94 after original named timing exclusions only. Exact per-arm prepared capture lines are compared with preserved behavior stderr; no route, budget, state, ledger, RNG, ID or work field is excluded.",
+    "metrics": {
+      "control": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1144245,
+          "min": 0.1122745,
+          "max": 0.11470469999999999,
+          "samples": [
+            0.1144245,
+            0.1122745,
+            0.11470469999999999
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.987062,
+          "min": 0.9849123,
+          "max": 0.9887085999999997,
+          "samples": [
+            0.9849123,
+            0.987062,
+            0.9887085999999997
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.0993368,
+          "min": 1.0993365,
+          "max": 1.1034133,
+          "samples": [
+            1.0993368,
+            1.0993365,
+            1.1034133
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2700.4706159957004,
+          "min": 2693.873921469652,
+          "max": 2752.1832651225345,
+          "samples": [
+            2700.4706159957004,
+            2752.1832651225345,
+            2693.873921469652
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 127.65155582931973,
+          "min": 127.43896432174256,
+          "max": 127.93017205694355,
+          "samples": [
+            127.93017205694355,
+            127.65155582931973,
+            127.43896432174256
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 116.43383538147728,
+          "min": 116.00367695404796,
+          "max": 116.43386715532506,
+          "samples": [
+            116.43383538147728,
+            116.43386715532506,
+            116.00367695404796
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.1124546,
+          "min": 0.11019999999999999,
+          "max": 0.1127676,
+          "samples": [
+            0.1124546,
+            0.1127676,
+            0.11019999999999999
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 0.9919283000000002,
+          "min": 0.9918999999999999,
+          "max": 1.0051901,
+          "samples": [
+            0.9918999999999999,
+            1.0051901,
+            0.9919283000000002
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1043546,
+          "min": 1.1021283,
+          "max": 1.1179577,
+          "samples": [
+            1.1043546,
+            1.1179577,
+            1.1021283
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2747.7755467539787,
+          "min": 2740.148766134954,
+          "max": 2803.9927404718696,
+          "samples": [
+            2747.7755467539787,
+            2740.148766134954,
+            2803.9927404718696
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 127.02531019631154,
+          "min": 125.34942395473253,
+          "max": 127.02893436838393,
+          "samples": [
+            127.02893436838393,
+            125.34942395473253,
+            127.02531019631154
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 115.90480086740256,
+          "min": 114.49449294906238,
+          "max": 116.13892865286192,
+          "samples": [
+            115.90480086740256,
+            114.49449294906238,
+            116.13892865286192
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_seconds": {
+        "candidate_relative_percent": -1.721571866165028,
+        "ranges_overlap": true
+      },
+      "decode_seconds": {
+        "candidate_relative_percent": 0.49300854454941145,
+        "ranges_overlap": false
+      },
+      "session_seconds": {
+        "candidate_relative_percent": 0.4564388274821862,
+        "ranges_overlap": true
+      },
+      "prefill_tokens_per_second": {
+        "candidate_relative_percent": 1.751729142249392,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "candidate_relative_percent": -0.4905898944510656,
+        "ranges_overlap": false
+      },
+      "combined_output_tokens_per_second": {
+        "candidate_relative_percent": -0.4543649295253638,
+        "ranges_overlap": true
+      }
+    },
+    "actual_capture": {
+      "control": {
+        "calls": 68,
+        "recorded": 27,
+        "reused": 105
+      },
+      "candidate": {
+        "calls": 68,
+        "recorded": 22,
+        "reused": 110
+      },
+      "changed_prepares": [
+        {
+          "index": 3,
+          "rows": 2,
+          "visible": 160,
+          "baseline": {
+            "recorded": 2,
+            "reused": 0
+          },
+          "candidate": {
+            "recorded": 1,
+            "reused": 1
+          }
+        },
+        {
+          "index": 7,
+          "rows": 2,
+          "visible": 167,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 38,
+          "rows": 2,
+          "visible": 377,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 39,
+          "rows": 2,
+          "visible": 379,
+          "baseline": {
+            "recorded": 1,
+            "reused": 1
+          },
+          "candidate": {
+            "recorded": 0,
+            "reused": 2
+          }
+        },
+        {
+          "index": 43,
+          "rows": 2,
+          "visible": 387,
+          "baseline": {
+            "recorded": 2,
+            "reused": 0
+          },
+          "candidate": {
+            "recorded": 1,
+            "reused": 1
+          }
+        }
+      ]
+    }
+  },
+  "memory": {
+    "sampled_peaks": {
+      "control": {
+        "sampled_max_working_set_bytes": 1273188352,
+        "observed_os_peak_working_set_bytes": 1273212928,
+        "sampled_max_private_commit_bytes": 6456135680,
+        "observed_os_peak_commit_bytes": 6456135680,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "candidate": {
+        "sampled_max_working_set_bytes": 1259110400,
+        "observed_os_peak_working_set_bytes": 1259130880,
+        "sampled_max_private_commit_bytes": 6547017728,
+        "observed_os_peak_commit_bytes": 6547017728,
+        "sampled_peak_gpu_dedicated_bytes": 4600184832,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4681973760
+      }
+    },
+    "delta": {
+      "sampled_max_working_set_bytes": -14077952,
+      "observed_os_peak_working_set_bytes": -14082048,
+      "sampled_max_private_commit_bytes": 90882048,
+      "observed_os_peak_commit_bytes": 90882048,
+      "sampled_peak_gpu_dedicated_bytes": 100663296,
+      "sampled_peak_gpu_shared_bytes": 0,
+      "sampled_peak_gpu_total_bytes": 100663296
+    },
+    "qualification": "One independent memory process per arm; PSAPI/PDH sampled maxima are lower bounds. The96MiB sampled dedicated-GPU delta is not the111.796875MiB programmed payload, exact physical allocation, or a physical cap. No inference from the small host working-set difference."
+  },
+  "byte_check": {
+    "status": "PLANNED_NOT_IMPLEMENTED_OR_RUN",
+    "plan": {
+      "path": ".scratch/mtp-fixed-gdn-work-io-20261026/byte-check-plan.json",
+      "bytes": 3778,
+      "sha256": "f89f7bdfbe35011ea34072d9bafdc9bba21ad7db8e7fa9d1d25449d165c578d5"
+    }
+  },
+  "limits": [
+    "Three timed observations per arm, descriptive medians/ranges, no confidence/noise certificate. No stable regression claim from this sample count.",
+    "One independent memory process per arm; PDH sampled GPU maxima are lower bounds and not the programmed payload byte count or physical allocation cap.",
+    "All8 full stdout reports compare to frozen2a94 using only original named time exclusions; exact per-arm stderr captures compare to preserved successful behavior logs. No route/ledger/RNG/budget exclusion.",
+    "Current b346 control and d71 candidate use same221absolute+13system rest closure, only Model appOBJ differs. No additional SDK/core/provider compilation.",
+    "No current native APItrace, tensor byte identity, retained-old-reader failure injection, unknown Completion fault test or peer32-process window.",
+    "No additional GPU run authorized by closure; source/caches preserved, no cleanup.",
+    "The6 timed processes contain no private instrumentation or profiler; original logging and all added copy/wait costs remain in the natural endpoints. The earlier single behavior wall is not pooled into timing.",
+    "Both decode timing sample ranges are disjoint with candidate slower; combined ranges overlap. Three points do not establish a stable regression or noise distribution. Prefill improvement overlaps and is not signed as a stable gain.",
+    "No current API trace certifies exact range keys or attribution. Only complete original prepared-line recording/reuse counters are observed.",
+    "Source plan and Ready files preserve their pre-run checkpoints, including BUILT_NOT_RUN/GPU_runs0. Later process logs and this report are authoritative.",
+    "No independent GDN bytes or retained-old-reader/unknown-completion fault check was executed; source review alone does not certify those runtime cases.",
+    "Control Ready and shared object/runtime cache remain available for reuse; no cleanup was executed."
+  ],
+  "HTTP": 0,
+  "added_tests": 0,
+  "archive": {
+    "path": "docs/evidence/performance/mtp-fixed-gdn-work-io-screen-2026-10-26.zip",
+    "bytes": 380366,
+    "sha256": "4dd5f20d060609995a2db45e6428883e892b5062c66033c52a8e9192300ceffb",
+    "members": 150,
+    "logical_bytes": 2938112,
+    "CRC": "PASS"
+  }
+}

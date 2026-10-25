@@ -1,0 +1,120 @@
+{
+  "status": "BOUNDED_INDEPENDENT_CURRENT_SOURCE_REVIEW_NO_ADDITIONAL_CONFIRMED_GAP",
+  "baseline_commit": "3b4b9442150807b6112270b4acb1172db6f5e682",
+  "activity": "Read-only current canonical/evidence; no build, runtime, SSH, GPU, network, cleanup or product/docs edit. Private performance candidates excluded.",
+  "goal_basis": "AGENTS.md: current-machine ordinary inference/multi-session/multi-request bottom-layer functions and shared architecture, then performance; new implementable missing functions must still be admitted. get_goal in this subagent has no local goal; no goal completion decision is made here.",
+  "focused_checks": [
+    {
+      "chain": "Complete-prefix checkpoint -> mid-turn eviction -> same-key Session restore",
+      "current_source": [
+        "main.cc:5003–5025 checkpoint_covers_generation_ledger",
+        "main.cc:5069–5125 restore_generation_session",
+        "prefix_cache.h:129–176 domain/complete-key/replay validation",
+        "session_state.h:258–280 Snapshot owner;main.cc:2920–2944 canonical owner/sampling wrapper;3025 math_identity",
+        "qwen_midturn_resume_case.h:126–218 real owner path"
+      ],
+      "counterexamples_checked": [
+        "A completed checkpoint exists, but later StateOnly chunks or output commits have advanced the ledger. It must not install the old complete state or restart the turn.",
+        "Same consumed key is published by a peer sampler; request RNG/pending must come from its own last committed boundary, while incompatible physical/frontier facts must not be rewritten.",
+        "An escaped prefix outlives the old Model; reusing a Model address must not authorize a foreign state."
+      ],
+      "result": "No new defect found. Checkpoint shortcut requires latest exact consumed ledger coverage, forks only request scalar facts, then checks the complete boundary/draft domain. Otherwise the original recorded-mode rebuild runs; installation follows all fallible work. Caller progress/input offset/delivery remain outside the helper, and natural owner begins only !turn_started. Canonical Snapshot pins ColdResources; wrapper pins canonical origin, and math identity references its retained families map, preventing Model-address-only reuse.",
+      "evidence": "Existing finite CPU midturn case includes one exact peer-sampler checkpoint hit, two obsolete-checkpoint misses/rebuilds, actual paused evictions, StateOnly and emitted-output pause/resume, same key, pending exactly once and final versions0. This review did not rerun it or claim all platforms."
+    },
+    {
+      "chain": "RequestWindow/Progress/OutputDelivery -> actual shared Model batch cancellation, pressure, input continuation and final release",
+      "current_source": [
+        "request_window.h:69–144 FIFO/pause/wake/requeue/cancel/release",
+        "request_progress.h:62–104 open tail/wait/close;197–233 observed output/ledger",
+        "output_delivery.h:23–51 available credit/absolute ACK",
+        "qwen_request_lifecycle_test.cc:160–221 actual Model lifecycle",
+        "main.cc:5393–5433 complete request preflight;3897–3970 precommit invalid member;4148–4210 atomic publication/observation",
+        "main.cc:5858–5972 natural owner loop"
+      ],
+      "counterexamples_checked": [
+        "Cancel A after a shared R2 submit: B must not receive a committed next head/RNG/output from the aborted episode or lose its key.",
+        "Credit-blocked B must not consume an active scheduling slot or permit stale ACK to advance a reused slot; another C can arrive/run.",
+        "Last known turn with input still open must wait; later pending-only turn must consume real pending once, and terminal output must retain key until ACK/retirement."
+      ],
+      "result": "No new missing primitive found. The real lifecycle consumer invokes the original Model/Completion retirement, requeues surviving B under the same RequestKey, pauses B outside active/FIFO, runs C, wakes at FIFO tail after ACK, extends/closes input, and releases only after final drain and payload retirement. Request-local exact-one-invalid row identity and cleanup facts remain distinct; uncertain native errors stay batch-level. Window/Delivery deliberately do not retire device work or own tokens.",
+      "evidence": "Retained real Qwen2B CUDA lifecycle evidence plus finite CPU logits/ledger/restore consumers cover these mechanisms at their own frozen versions. Current source was inspected; no new native fault injection or full-platform runtime claim."
+    }
+  ],
+  "classification": {
+    "confirmed_new_implementable_gap": [],
+    "application_policy_not_gap": [
+      "Natural CLI fixed schedule/whole-turn/fail-fast owner choices, when shared quantum/pause/requeue/local-failure mechanisms are already actually consumed.",
+      "No cross-Model global fairness or physical GPU preemption promise; one serialized Model/one in-flight atomic batch is explicit.",
+      "Context capacity admission is finite; arbitrary sliding/truncation or application tokenization/server behavior was not added to this scope."
+    ],
+    "not_certified_by_this_review": [
+      "Every selected artifact full numerical payload/whole large-model quality, or all dtype/backend/composition combinations. Missing execution evidence is not by itself missing implementation.",
+      "All arbitrary native faults/concurrent owners/transport protocols. Current owner lifetime and serialization contracts still apply.",
+      "A generic GLM/full non-Qwen engine driver from finite original-role consumers; their explicit state/math limitations remain."
+    ]
+  },
+  "percent_and_goal_boundary": "The two research reports already say bounded/source-only and retain limited-run/model/platform exclusions; progress.md calls percentages work estimates and says newly found gaps continue. Their100% can defensibly mean the enumerated/discovered current implementable items are finished, not exhaustive proof of all future input journeys or goal completion. Current formal speed gap/performance work and completion omissions review remain open. This bounded negative review is not sufficient evidence to mark the whole goal complete.",
+  "scope_not_repeated": "No new codec/provider catalogue, all-model rescan, second scheduler/restore controller, test framework or performance proposal.",
+  "pins": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 7345,
+      "sha256": "2723b88ae85ebebb88c0f00d6ccf4b86243aaf3250ad560650fc976265389c15"
+    },
+    {
+      "path": "docs/evidence/research/inference-functional-review-2026-10-25.json",
+      "bytes": 7038,
+      "sha256": "0f6c89c4c204922fce36ef75280188aba35bba7c2a0e1bb2597128b989cb907f"
+    },
+    {
+      "path": "docs/evidence/research/inference-architecture-closure-2026-10-25.json",
+      "bytes": 7393,
+      "sha256": "ab40e781d9e998c2205a3a90487c259b7b4545c3c6bf321979f8662b34644dfd"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14709,
+      "sha256": "8ee8e6cc07eee1e89fdb048aad0109381205fc0bb126829df7e376d3107b2361"
+    },
+    {
+      "path": "engine/models/qwen35/prefix_cache.h",
+      "bytes": 8400,
+      "sha256": "cd8d5e6970b24f006c2bfa93a9feb4304947eac85d1ee553f43a2ebd8e1f377c"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 12536,
+      "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+    },
+    {
+      "path": "engine/inference/output_delivery.h",
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 21486,
+      "sha256": "c49ccb25937b06361574a31bd296aded9394871908dd93fa8153c4ccf4fb409b"
+    },
+    {
+      "path": "tests/tools/qwen_midturn_resume_case.h",
+      "bytes": 11254,
+      "sha256": "3a3330d364b6e46c3a52ed5e16605376bfafe9dfcd7afcf0c539b7eb0f47109c"
+    },
+    {
+      "path": "tests/tools/qwen_logits_modifier_case.h",
+      "bytes": 17956,
+      "sha256": "c6b5ca6845b11bae7b7697e84e0d33fe021957dbdae58fc3c675d4bcc680873b"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 02:48（北京时间）。整体粗估 **84%**。正式完整对照仍为下表：普通decode落后约3.4%–3.6%，MTP落后约8.9%–9.7%。K2辅助捕获候选已关闭，准备归因完成。下一批MTP先设计GDN双向固定工作IO，核其复制成本能否抵消减少的重录；另检查无过滤多请求批量采样。尚无新的明显提速结论。
+更新：2026-10-26 04:01（北京时间）。整体粗估 **85%**。四请求普通随机采样已测得decode约**＋10.8%**、综合约**＋9.8%**，批量采样已合入；Hybrid候选反而慢约3.3%，关闭。单请求普通／MTP正式对照未刷新，decode仍分别落后约3.4%–3.6%／8.9%–9.7%。CPU首对照已跑通，但参考库ISA配置不等价，不能据此判断胜负。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -16,29 +16,30 @@
   - 全链职责／所有权／配置合同：100%
   - 模型／codec／后端扩展的改动范围：100%
   - 已确认接缝的共同机制调整：100%
-- 性能设施复用与完整消费者优化：约33%
-  - Hyle内存／容器／调度IO／图重放与缓存复用：约30%
-  - 本地参考引擎思路与可证伪候选：约60%
-  - MTP差距归因与执行优化：约88%
-  - 已确认热点实现与最新完整四项对照：约15%
+- 性能设施复用与完整消费者优化：约39%
+  - Hyle内存／容器／调度IO／图重放与缓存复用：约36%
+  - 本地参考引擎思路与可证伪候选：约62%
+  - MTP差距归因与执行优化：约90%
+  - 已确认热点实现与最新完整四项对照：约20%
 - 完成前遗漏复审与收尾：0%
 
 ## 正在做
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 无过滤多请求批量采样 | 性能／设施复用 | 私有候选CPU／CUDA各7项有限数学与身份检查通过，正准备小Model实际走新R2分支。真实top-k／top-p保原逐行路径；本项不改善单请求MTP | 约60% |
-| GDN双向固定工作IO | 性能／MTP | 正设计有预算的固定工作输入／输出和原CopyBatch退休，保留独立Snapshot及接受前缀；净收益待实验 | 约10% |
+| CPU公平基线准备 | 性能／设施复用 | 首对照ISA不等价已确认；仅刷新同版本参考库15个CPU TU的AVX2配置，复用其余库；未跑新模型，不混Hyle异版对象 | 约55% |
 
 ## 本次完成与剩余顺序
 
-- 功能／共同架构：本轮发现的可实现缺项已补齐；[功能复查](../evidence/research/inference-functional-review-2026-10-25.json)与[架构复查](../evidence/research/inference-architecture-closure-2026-10-25.json)保留有限运行和模型／平台边界。
+- 功能／共同架构：本轮发现的可实现缺项已补齐；[功能复查](../evidence/research/inference-functional-review-2026-10-25.json)、[架构复查](../evidence/research/inference-architecture-closure-2026-10-25.json)及[本次独立遗漏复审](../evidence/research/inference-closure-omissions-2026-10-26.json)保留有限运行和模型／平台边界，不能据此宣布整个goal完成。
 - 配置接线：已补[CPU预算工厂转发](../evidence/research/inference-cpu-options-forwarding-2026-10-26.json)及[共同冷replay选择](../evidence/research/inference-replay-policy-consistency-2026-10-26.json)。默认行为不变，有限编译通过；未据此声明完整运行或吞吐收益。
 - 当前基线：已按实际依赖完成[107→108对象刷新](../evidence/research/inference-current-source-build-2026-10-26.json)，完整32进程结果见下表。后续配置改动未追加全窗，旧样本不改名、不混算。
 - 性能取舍：同步报告和hidden输出已合入；宽Lt、typed MMF及K2辅助强制捕获均无稳定完整收益，关闭且不补样。数字、源身份和取舍见[性能资料](performance/decode.md)。
 - 准备归因：[唯一真实诊断](../evidence/performance/inference-model-prepare-attribution-2026-10-26.json)正常结束、非时间字段0差异。66次decode的布局／batch／replay为8.441／16.328／60.361ms；target原生计划366复用／30新建。整个batch桶仅占本次decode约1.64%，不能据此期待大幅收益。
-- 后续取舍：[候选优先级](../evidence/research/mtp-next-priorities-2026-10-26.json)依次为GDN双向固定工作IO、已有Graph静态端口的残余遍历、不同形状down投影。先做首项；另两项待触发条件满足才投入。六层fresh plan共享量级小，暂不做。
-- 正在推进：无过滤R>1再检查小Model实际接线，之后才决定性能筛选。MTP先算清双向工作IO约111.8MiB固定空间与每轮37.27MiB复制的真实代价；不能覆盖旧reader或直接删等待，不将多请求收益计入单请求。
+- GDN取舍：[单行为＋8进程筛选](../evidence/performance/mtp-fixed-gdn-work-io-screen-2026-10-26.json)完整工作相同、录制27→22，但复制成本未换来净收益，关闭、不补样、不合入；未追加字节／故障检查。静态端口已有复用，剩余遍历量级未知；不同down形状也尚无足够收益依据，不盲开小项。
+- 随机采样：[无过滤R2检查](../evidence/research/inference-batched-unfiltered-sampling-2026-10-26.json)CPU／CUDA各7项及小Model通过；[三臂正式对照](../evidence/performance/inference-random-four-request-screen-2026-10-26.json)全程工作与输出相同，批量路径有净收益，已合入。[Hybrid功能检查](../evidence/research/inference-sampling-hybrid-replay-2026-10-26.json)虽通过，完整吞吐却下降，关闭、不合入或补样。均不计作当前greedy MTP收益。
+- [CPU首对照](../evidence/performance/inference-cpu-initial-pair-2026-10-26.json)：CPU／T4、P154＋16、C256、相同16枚输出，原生成端点均正常完成；参考CPU库ISA配置明显不同，不当公平速度窗口。先对齐这一偏差，再决定CPU热点；每Invocation独立线程池暂只有源码发现，不据此新造共享池。混合FFN放置与参考整层offload也另列。
+- 剩余顺序：先补公平CPU基线及实际设施复用检查，再继续按有量级依据的热点处理普通／MTP余差；未发现可观净收益前不盲开新的微优化。当前greedy MTP仍未追平。
 
 ## 最新完整性能对照
 
@@ -52,3 +53,13 @@
 | 两轮 MTP | 2797.193／2420.500 | 127.091／140.805 | 116.165／125.083 | 4.191／3.896 |
 
 32进程均正常结束、各臂输出和工作稳定。跨引擎续文不同，不能称逐token工作相同；不与旧窗口混样或归因跨次绝对速度变化。显存为独立旁采下界；加载、RAM WS／commit、范围及公平性边界见[新窗口证据](../evidence/performance/inference-current-window-2026-10-26.json)与[完整性能资料](performance/decode.md)。不代签其它制品、合批或多用户吞吐；每次完整对照后更新这里。
+
+本轮另测Hyle四请求普通随机生成，N4／R4、每请求两轮P154＋64、无top-k／top-p过滤、自然EOS；不含llama.cpp。每臂三个交错测速及一个独立内存进程，单位同上。
+
+| Hyle配置 | prefill | decode合计 | 综合合计 | dedicated显存采样峰GiB |
+|---|---:|---:|---:|---:|
+| 原Commands | 6036.674 | 221.435 | 206.121 | 4.417 |
+| 仅批量采样，已采用 | 5944.634 | 245.271 | 226.373 | 4.401 |
+| 仅Hybrid，已拒绝 | 5674.337 | 214.220 | 199.074 | 4.394 |
+
+批量采样decode＋10.76%、综合＋9.83%，三次范围不重叠；prefill−1.52%但范围重叠。所有输出、RNG、ledger、调度与工作相同。显存各仅一次采样，不将16MiB差值签为确定节省；三点不代表统计显著性或所有负载。首次清单转义错误在加载前失败，修正后的三行为及12筛选进程均成功，原失败保留。

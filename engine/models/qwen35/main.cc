@@ -955,6 +955,7 @@ struct FamilyPorts {
   std::size_t prefix_rows = 1;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
+  bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
   std::vector<V> logits_bias_ports, logits_allowed_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
@@ -2113,8 +2114,14 @@ public:
     V target_tokens = definition.token_port;
     std::vector<sampling::Distribution> draft_distributions;
     std::vector<V> proposal_ids;
-    if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) definition.sampling_identity_port = r.input(
-        dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
+    definition.batched_text_sampling = requests > 1 && role == GraphRole::kText &&
+        completion == TextCompletion::kEmitNext && selected_sampler.enabled &&
+        selected_sampler.modifiers.empty() && selected_sampler.policy.top_p == 1.F &&
+        (!selected_sampler.policy.top_k || selected_sampler.policy.top_k == static_cast<std::size_t>(vocabulary));
+    if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify)
+      definition.sampling_identity_port = r.input(definition.batched_text_sampling
+          ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
+          : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
     const auto sampling_identity = [&](std::size_t request, std::size_t draw) {
       return r.copy(r.reshape(r.slice(r.slice(definition.sampling_identity_port, 0,
           f(static_cast<std::int64_t>(request)), f(1)), 1,
@@ -2380,7 +2387,13 @@ public:
       if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || role == GraphRole::kVerify) definition.id_port = r.op(c::Operation(c::TopK{.count = 1}), {definition.logits_port},
           {r.dense_spec(Type::kFloat32, {verifies_prefix(role) ? packed : batch, f(1)}),
            r.dense_spec(Type::kInt32, {verifies_prefix(role) ? packed : batch, f(1)})})[1];
-      else if (!selected_sampler.modifiers.empty()) {
+      else if (definition.batched_text_sampling) {
+        const auto p = sampling::distribution(r, definition.logits_port, selected_sampler.policy);
+        definition.id_port = r.reshape(r.one(c::sampling_ops::categorical(),
+            {p.log_probabilities, definition.sampling_identity_port}), {batch, f(1)});
+        definition.sampling_valid_port = r.host_predicate(r.reshape(p.valid, {batch}));
+        r.publish(definition.sampling_valid_port);
+      } else if (!selected_sampler.modifiers.empty()) {
         std::vector<V> ids, valid;
         for (std::size_t request = 0; request < requests; ++request) {
           const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
@@ -3347,8 +3360,9 @@ public:
     phase.positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
         : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
     if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
-      phase.sampling_identities = caller_tensor(execution.device(), dense(Type::kUInt32,
-          {static_cast<std::int64_t>(requests), 3, 4}));
+      phase.sampling_identities = caller_tensor(execution.device(), phase.batched_text_sampling
+          ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
+          : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
     }
     if (phase.sampling_valid_port) {
       phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
@@ -3695,8 +3709,9 @@ public:
         identities.clear();
         for (const auto &member : step.members) {
           if (role != GraphRole::kText) (void)member.base->sampling.advanced(drafts_token(role) ? 3 : 1);
-          for (std::size_t draw = 0; draw < 3; ++draw) {
-            // Non-round roles bind three stable slots but consume only slot0.
+          for (std::size_t draw = 0; draw < (phase.batched_text_sampling ? 1u : 3u); ++draw) {
+            // Batched ordinary Text binds one original slot0 key per row.
+            // Other non-round roles retain three slots and consume slot0.
             const auto identity = member.base->sampling.identity(drafts_token(role) ? draw : 0);
             identities.insert(identities.end(), identity.begin(), identity.end());
           }

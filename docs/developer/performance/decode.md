@@ -5,9 +5,15 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照。宽Lt、typed BF16 MMF和K2辅助图强制捕获均无稳定完整收益，已关闭；CPU预算工厂转发与冷replay配置一致性已修。Graph外准备归因已完成；下一批优先核GDN双向固定工作IO，独立推进无过滤多请求采样。已关闭候选保持关闭。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，已关闭；CPU预算工厂转发与冷replay配置一致性已修。Graph外准备归因已完成。最新四请求普通随机对照中，批量采样decode约＋10.76%、综合＋9.83%，已合入；Hybrid约−3.26%，关闭。CPU首次短对照已运行，但参考库ISA不等价，先修公平性。这些不代表当前greedy MTP余差已消除。已关闭候选保持关闭。
 
-[下一批量级排序](../../evidence/research/mtp-next-priorities-2026-10-26.json)：先设计GDN双向固定工作IO，条件是保留独立canonical状态、接受前缀及真实复制退休，验证额外约111.8MiB工作块／每轮37.27MiB复制能否被减少的录制抵消。它是尚未实测的结构候选，不能把旧完整key的10→5反事实当成当前收益。次级仅在触发条件成立时核已有Graph常量端口残余遍历及不同形状N2048／K6144 down投影；不重造revision／span缓存。六层fresh native plan共享只有很小的整个准备包络且须新增寿命机制，暂不优先。无过滤R>1采样不影响当前N1 MTP窗口。
+[量级排序原记录](../../evidence/research/mtp-next-priorities-2026-10-26.json)中的GDN双向工作IO现已筛选关闭，结果见下文。次级源审确认已有常量安装、alias索引和revision／span复用，实际剩余静态遍历占比未知，尚不支持实施；不同形状N2048／K6144 down也只在旧均值有小差、范围混杂。六层fresh native plan共享包络小且须新增寿命机制，暂不优先。无过滤R>1及随机Hybrid不影响当前greedy N1 MTP窗口。
+
+[GDN固定工作IO筛选](../../evidence/performance/mtp-fixed-gdn-work-io-screen-2026-10-26.json)仅替换Model对象，控制使用新编canonical b346，候选保原独立Snapshot和接受前缀，以一个原CopyBatch控制串行处理ingress和合并hidden／GDN egress。新增逻辑固定payload约111.8MiB、每轮37.27MiB复制与真实等待全部计时。一次行为及八进程均exit0、完整非时间stdout相同；原stderr只在预测的五个位置改变录制／复用，总27／105→22／110。decode中位127.652→127.025（−0.49%，三个范围不重叠）、综合116.434→115.905（−0.45%，范围重叠），prefill中位＋1.75%但范围重叠。三点不代签稳定回归；单次独立dedicated显存采样峰多96MiB，不等于逻辑payload或精确物理分配。关闭、未合入，不补样，也未继续字节／故障检查；不刷新正式四臂表。
+
+两项随机普通推理候选已完成[四请求正式筛选](../../evidence/performance/inference-random-four-request-screen-2026-10-26.json)。无过滤批量采样沿原Categorical接整批logits及各请求原身份，decode221.435→245.271 tok/s（＋10.76%）、综合206.121→226.373（＋9.83%），三次范围不重叠；prefill6036.674→5944.634（−1.52%，范围重叠），已采用。其[有限数值检查](../../evidence/research/inference-batched-unfiltered-sampling-2026-10-26.json)CPU／CUDA各7项及小Model通过；真实过滤继续保原逐行路径。单次独立dedicated显存采样峰4.417→4.401GiB，不能签16MiB确定节省。
+
+[Hybrid功能检查](../../evidence/research/inference-sampling-hybrid-replay-2026-10-26.json)虽然通过，正式四请求decode却为214.220（−3.26%）、综合199.074（−3.42%）、prefill5674.337（−6.00%），三个范围均不重叠，关闭、不合入、不补样。该候选只让原Graph捕获兼容连续范围，采样原生capture=false不变。全程输出、RNG、ledger、调度和工作均与控制相同；512条成员报告为Hybrid、500条有复用，不称512次独立捕获。三行为＋九计时＋三独立内存进程均成功；首次清单转义失败在加载前退出，修正后重新进行行为检查，保留原失败。三点不代表统计显著性，不计作单请求／MTP或对参考引擎收益。
 
 ## 目标与当前基线
 

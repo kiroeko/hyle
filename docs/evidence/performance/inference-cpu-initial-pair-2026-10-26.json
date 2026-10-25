@@ -1,0 +1,591 @@
+{
+  "status": "FINITE_CPU_INITIAL_PAIR_COMPLETE_NOT_A_FAIR_OR_STABLE_CPU_RANKING",
+  "generated_UTC": "2026-10-25T19:56:38.416063+00:00",
+  "scope": "One serial Hyle then peer CPU execution each, ordinary greedy P154/requested16/C256/N1/R1, T4, no warmup/retry/sidecar. Private consumer-only injection; product defaults unchanged. Offline analysis only after Root ran the pair.",
+  "processes": [
+    {
+      "arm": "hyle",
+      "process": {
+        "exit": 0,
+        "pid": 53036,
+        "seconds": 7.866377500002272
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\ready.json",
+        "bytes": 5335,
+        "sha256": "d1d1fc4f07f824caa50bbfa54e8463f13ed2feb97d0aed18c76d3f9eac89342f"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\runtime.json",
+        "bytes": 8205,
+        "sha256": "8e5197d9ca5cd577bba80ef7e21391f9c30e562f6b835338230aa8d1cbf2a913"
+      }
+    },
+    {
+      "arm": "peer",
+      "process": {
+        "exit": 0,
+        "pid": 11060,
+        "seconds": 35.50701709999703
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\ready.json",
+        "bytes": 3091,
+        "sha256": "cd654ebd1cbacc6cbd84f8d9f2d3f90616effe6820f9836be5985706b11db963"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\runtime.json",
+        "bytes": 5845,
+        "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+      }
+    }
+  ],
+  "work": {
+    "checks_passed": true,
+    "prompt_rows": 154,
+    "requested_outputs": 16,
+    "emitted_outputs_each": 16,
+    "decode_calls_each": 15,
+    "target_calls_each": 16,
+    "target_rows_each": 169,
+    "draft_rows_each": 0,
+    "sessions": 1,
+    "turns": 1,
+    "requests_per_batch": 1,
+    "context_capacity": 256,
+    "prefix_cache": false,
+    "restore_count": 0,
+    "sampling": "greedy",
+    "EOS_early_stop": false,
+    "identical_prompt_ids": true,
+    "identical_generated_ids": true,
+    "generated_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198,
+      1445,
+      18904,
+      1120,
+      5586,
+      11,
+      51338,
+      11,
+      36760,
+      11,
+      1697
+    ],
+    "identical_all_15_pending_inputs_and_selected_next_ids": true,
+    "hyle_ledger_records": 16,
+    "hyle_commit_lengths": [
+      154,
+      155,
+      156,
+      157,
+      158,
+      159,
+      160,
+      161,
+      162,
+      163,
+      164,
+      165,
+      166,
+      167,
+      168,
+      169
+    ],
+    "hyle_sampling_draws": 0,
+    "hyle_final_live_committed_versions": 0,
+    "boundary": "16 matching greedy IDs are observed, not intermediate-bit equality, a quality score, or a general precision equivalence proof."
+  },
+  "single_observation": {
+    "sample_count_per_arm": 1,
+    "hyle": {
+      "prefill_seconds": 3.7255357,
+      "decode_seconds": 1.4748283999999998,
+      "session_seconds": 5.2003641,
+      "prefill_tokens_per_second": 41.336337214538034,
+      "decode_output_tokens_per_second": 10.170674771383574,
+      "output_tokens_per_second": 3.0767076482202467,
+      "startup_to_ready_seconds": 1.3661349,
+      "startup_to_endpoint_seconds": 6.5665568
+    },
+    "peer": {
+      "prefill_seconds": 30.0310464,
+      "decode_seconds": 4.1727411,
+      "session_seconds": 34.2037875,
+      "prefill_tokens_per_second": 5.12802644132973,
+      "decode_output_tokens_per_second": 3.5947593297844436,
+      "output_tokens_per_second": 0.46778445223354287,
+      "startup_to_ready_seconds": 0.5870484,
+      "startup_to_endpoint_seconds": 34.7909391
+    },
+    "metrics": "Prefill154/time; decode15/time excludes the first prefill-produced output; combined16/session time. No averaging, selection of best samples, or cross-window normalization."
+  },
+  "CPU_and_threads": {
+    "hardware": "Existing local inventory: Intel Core i9-13900K,24 cores/32 logical processors; no per-run CPUID/affinity/module sample.",
+    "hyle": {
+      "reported_backend": "cpu",
+      "host_weight_bytes": 3763655360,
+      "device_weight_bytes": 0,
+      "cpu_ffn_layers": 0,
+      "entry_config": "native_threads4; original borrowed Scheduler/bulk executor concurrency4; startup configure_runtime_threads(4) succeeds only after ATen setter/getter agreement. Entry logs the requested budget.",
+      "actual_scope": "Single CPU execution source/domain, finite original workspace admission, actual CPU loader/plan logs. No per-op provider census in this run."
+    },
+    "peer": {
+      "backend": "cpu",
+      "selected_device": "CPU",
+      "selected_device_type_cpu": true,
+      "requested_gpu_layers": 0,
+      "offload_kqv": false,
+      "op_offload": false,
+      "target_actual_threads": 4,
+      "target_actual_batch_threads": 4,
+      "configured_type_k": "bf16",
+      "configured_type_v": "bf16",
+      "target_sampling": "original native CPU greedy"
+    },
+    "not_a_process_thread_cap": true,
+    "GPU_boundary": "CPU-only model placement is supported by actual fields and CPU model/KV/recurrent/compute buffer logs. Peer stderr still enumerates the linked CUDA registry/RTX4070 at startup. No profiler or GPU-memory sidecar was taken: do not claim zero CUDA API calls or zero GPU runtime initialization."
+  },
+  "fairness_and_precision": {
+    "fair_CPU_victory_claim": false,
+    "matched": [
+      "same original154 prompt IDs",
+      "same requested16/actual16 outputs",
+      "same169target rows/16target calls",
+      "same explicit CPU T4 configurations",
+      "no offload in either model"
+    ],
+    "ISA_mismatch": "Peer links the retained generic ggml-cpu.lib528f3921; all15 corresponding cached CPU TU commands lack AVX/AVX2,FMA,F16C options. Hyle has a feature-gated AVX2/FMA/F16C optimized GDN-v3 program with corrected AVX2 objects, plus CPU routes that can use ATen/oneDNN. Therefore this is not an ISA-matched peer baseline.",
+    "hardware_and_route_limit": "This run did not capture CPUID bits, the selected optimized module, per-operation routes or sampled kernel symbols. Source eligibility and cached build flags do not prove that every Hyle operation used that AVX2 program or quantify its contribution.",
+    "peer_BF16_support": "Existing BF16 CPU trait points to ggml_vec_dot_bf16. Its AVX/AVX2 branches are compile-conditional; the generic x64 fallback widens BF16 to F32 products, accumulates ggml_float(double), then stores F32. This is supported scalar math, not an absent BF16 reader. No kernel sampling proves how much of the observed run used that function.",
+    "hyle_precision": {
+      "score_dtype": "F32",
+      "score_policy": "bf16_inputs_f32_output",
+      "source": "Original selected HF BF16 source; source-defined BF16 activation/store points and F32 operations remain unchanged."
+    },
+    "peer_precision": "Original mostly-BF16 GGUF with F32 vectors/conv exceptions. MTP-on exports native F32 hidden/host carry; off exports no nextn hidden. No bit-equivalence with Hyle BF16 intermediate tree.",
+    "peer_actual_loaded_types": "Original loader log:187 BF16 tensors,133 F32 tensors. Configured K/V BF16; recurrent state F32.",
+    "timing_limit": "Only one short pair; no distribution, temperature/affinity sweep, repeatability or stable throughput claim. Large observed differences may reflect implementation/ISA/precision/provider differences. No allocation/thread-default/team-owner changes follow from these data.",
+    "startup_not_comparable": "Hyle configures ATen and constructs its borrowed Scheduler before entering qwen35::run startup clock; peer startup is inside its original run(). Startup/process-wall values are listed only, never a fair cold-start ranking.",
+    "pool_fact_not_bug": "Source shows persistent ggml native pools per prepared Invocation. No per-step pool rebuild, oversubscription fault, or attributable pool performance bug was observed or established."
+  },
+  "identities": {
+    "source": {
+      "files": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468967,
+            "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 469205,
+            "sha256": "831ad56cfa406e38fb397ca79d8b9f68598dca8fe6db23c5e209e0d2bafe9b0c"
+          }
+        },
+        {
+          "path": "engine/models/qwen35/weights.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 47831,
+            "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 47831,
+            "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+          }
+        },
+        {
+          "path": "peer_multiturn.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\source\\peer_multiturn.cc",
+            "bytes": 33292,
+            "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\peer_multiturn.cc",
+            "bytes": 33761,
+            "sha256": "6ceb596dc51cf003a957ca40177aad1bcb5bf1fbd5394ba6047e849e0ac7a6af"
+          }
+        }
+      ],
+      "entry": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\cpu_entry.cc",
+        "bytes": 2407,
+        "sha256": "c2fb4dc93b7460c1cbd9c0b69c0f32851dbb26eb3a34b5cefb2becb80006072c"
+      },
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source.patch",
+        "bytes": 5406,
+        "sha256": "6be77ab97a4e395e04588e7444c6f30c1db5aa18afaa799c4f56e22251fe5790"
+      },
+      "private_only": true,
+      "support": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\mtp_schedule.h",
+          "bytes": 5486,
+          "sha256": "b4323081d2b8defc71cb40fe5b183411adc993df0172f44aaa80505811b99f5c"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_schedule.h",
+          "bytes": 4134,
+          "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\schedule.h",
+          "bytes": 3938,
+          "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\token_ids.h",
+          "bytes": 2200,
+          "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+        }
+      ],
+      "parser_bridge": "Exact historical b4323081 mtp_schedule is local private support. Its unchanged session_schedule resolves to current engine schedule/token_ids helpers through the existing engine include path. This is captured in actualdeps. The proposed unscheduled P154 case reads prompt.ids in peer_multiturn.cc itself and never calls either schedule parser; no sampler/equation/endpoint change.",
+      "revision": 3,
+      "peer_report_correction": "CPU text label; existing getters provide actual target decode/batch threads. Selected CPU device and original nooffload/configured BF16 cold facts are added only to final JSON after endpoint. No equations, sampling, IDs, timing boundaries or native provider changes."
+    },
+    "hyle_ready": {
+      "status": "BUILT_NOT_RUN",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\link\\hyle.exe",
+        "bytes": 141489152,
+        "sha256": "fa7b901efa7f74520857594ad582f9902355a5e8cf2bbd086ac1472f2338e297"
+      },
+      "compile": {
+        "model": {
+          "result": {
+            "exit": 0,
+            "pid": 32060,
+            "seconds": 18.286266499955673
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\model\\unit.obj",
+            "bytes": 12719650,
+            "sha256": "07675852a32c918b4cecdb56113e560477c053d92b2e1c4b336ff4461e8f2bed"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 469205,
+            "sha256": "831ad56cfa406e38fb397ca79d8b9f68598dca8fe6db23c5e209e0d2bafe9b0c"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\model\\command.json",
+            "bytes": 3039,
+            "sha256": "68528fc798eb9bbe726ab26e62a06ad182c9c0b1e44d0dfdaf6616fcdfa1bd90"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\model\\actual-dependencies.json",
+            "bytes": 73728,
+            "sha256": "6cdb871938cdddc987b8518a5f27127b39cd1b86934c4796f1167e6f6933cb44"
+          }
+        },
+        "weights": {
+          "result": {
+            "exit": 0,
+            "pid": 53776,
+            "seconds": 5.43332339997869
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\weights\\unit.obj",
+            "bytes": 3499284,
+            "sha256": "4d8c85d7c12db20d8d0c3a612a86ba36e80df71d9a82eda5666970f50e018d3c"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 47831,
+            "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\weights\\command.json",
+            "bytes": 2983,
+            "sha256": "e4381eb3cfa75b0ea702d1d5d627e3b323fb9916edba321c5ee46a1c020e8ec5"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\weights\\actual-dependencies.json",
+            "bytes": 68658,
+            "sha256": "d72c16fc42e1bd468262ac7bfb874d463738463f86ddb69dcde9973c70e367c2"
+          }
+        },
+        "entry": {
+          "result": {
+            "exit": 0,
+            "pid": 26592,
+            "seconds": 1.0573168999981135
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\entry\\unit.obj",
+            "bytes": 26259,
+            "sha256": "ce00107ff4a5579ca617010e891a117a9a445c50c1241ee3ccd906c0df3f551b"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\cpu_entry.cc",
+            "bytes": 2407,
+            "sha256": "c2fb4dc93b7460c1cbd9c0b69c0f32851dbb26eb3a34b5cefb2becb80006072c"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\entry\\command.json",
+            "bytes": 2947,
+            "sha256": "a350864d29a6a5b4f025c3f9bed14401738c94796719d074b71c68852afb5adc"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\entry\\actual-dependencies.json",
+            "bytes": 46733,
+            "sha256": "7419e8a73eb61834fb1bcfd6ee6c200f2a20962f87e8dd7e8c29014384998253"
+          }
+        }
+      },
+      "link": {
+        "exit": 0,
+        "pid": 48836,
+        "seconds": 2.0009735000203364
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\link-inputs.json",
+        "bytes": 57011,
+        "sha256": "4a8e97203e2834779b24435f8c4a32af2ec4006c18643901d520cdbd5e058f6a"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\runtime.json",
+        "bytes": 8205,
+        "sha256": "8e5197d9ca5cd577bba80ef7e21391f9c30e562f6b835338230aa8d1cbf2a913"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source-pins.json",
+        "bytes": 3763,
+        "sha256": "c44d0332ef043abc6db70f04863ea924bf6bd0505f9cf447264125b84421f91e"
+      },
+      "threads": 4,
+      "model_runs": 0,
+      "GPU_runs": 0,
+      "SDK_builds": 0,
+      "native_builds": 0,
+      "limits": "Private CPU/nooffload consumer only; compilation/linking do not prove CPU route completion, performance or a global thread cap. Original endpoints unchanged; Hyle outer ATen/Scheduler startup lies before qwen35::run startup clock.",
+      "parser_bridge": "Independent peer include restoration did not change the already compiled Hyle source/dependencies/objects.",
+      "unrelated_peer_report_bridge": "Peer r3 report-only correction does not change Hyle source/objects or its actual dependencies."
+    },
+    "peer_ready": {
+      "status": "BUILT_NOT_RUN",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\link\\peer3.exe",
+        "bytes": 35833856,
+        "sha256": "0877b64e3e1df213f3631c445f93f0dffbd920e9eab5bbc9e33e3be8546ed7aa"
+      },
+      "compile": {
+        "peer": {
+          "result": {
+            "exit": 0,
+            "pid": 49344,
+            "seconds": 2.581780100008473
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\peer3\\unit.obj",
+            "bytes": 4021847,
+            "sha256": "0a4ffe10ea39a58292a9c0560c0b99b51ea4da2ed8a7dfc8dc34d63b122bdc94"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\peer_multiturn.cc",
+            "bytes": 33761,
+            "sha256": "6ceb596dc51cf003a957ca40177aad1bcb5bf1fbd5394ba6047e849e0ac7a6af"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\peer3\\command.json",
+            "bytes": 1813,
+            "sha256": "798b1aabd944db94a3f7f6acb1080ef084a8efa258f69607b99fe5b13b1a682b"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\peer3\\actual-dependencies.json",
+            "bytes": 61249,
+            "sha256": "5c0e94c22b6788b6569d2154bc703700b76a496b5d736709024de3e2d5492ea1"
+          }
+        }
+      },
+      "link": {
+        "exit": 0,
+        "pid": 44760,
+        "seconds": 0.515037500008475
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\link-inputs.json",
+        "bytes": 2047,
+        "sha256": "88947ab449ed6699efd16163a3af506082f8f5b67b4fa38d22f53ae969011a11"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\runtime.json",
+        "bytes": 5845,
+        "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source-pins.json",
+        "bytes": 3763,
+        "sha256": "c44d0332ef043abc6db70f04863ea924bf6bd0505f9cf447264125b84421f91e"
+      },
+      "threads": 4,
+      "model_runs": 0,
+      "GPU_runs": 0,
+      "SDK_builds": 0,
+      "native_builds": 0,
+      "limits": "Private CPU/nooffload consumer only; compilation/linking do not prove CPU route completion, performance or a global thread cap. Original endpoints unchanged; Hyle outer ATen/Scheduler startup lies before qwen35::run startup clock.",
+      "revision": 3,
+      "historical_build": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\history\\peer2\\ready.json",
+        "bytes": 3035,
+        "sha256": "863180b2e3492559be1ba62b5308a093abf20cf77145137be7f5c01bdebe975e"
+      },
+      "report_correction": "CPU greedy label; existing actual target thread getters, selected CPU device and no-offload/BF16 cold facts in final JSON after the original endpoint. Not run."
+    },
+    "compile_scope": "Hyle Model/weights/private entry only; peer consumer TU only. CPU core/providers/native archives/SDKs and both local weight files reused. Model runs2, warmups0, retries0, native builds0, SDK builds0.",
+    "existing_current_core_reference": "docs/evidence/research/inference-current-source-build-2026-10-26.json"
+  },
+  "failures_and_bridges": [
+    "Peer first compile failed on the removed tools/qwen35_text/mtp_schedule.h include. Exact5486B/b4323081 header restored from local git c950466ec^, with current actual parser dependencies recorded; no download or model run in that failure.",
+    "Offline metadata initially assumed current schedule.h was byte-identical to the historical tools header; assertion failed, recorded separately, and metadata was corrected. The actual unscheduled P154 branch reads prompt.ids in peer_multiturn.cc and does not invoke that schedule parser.",
+    "Peer2 built but retained old GPU text in target/draft sampling labels. Peer3 changes only report labels and adds existing actual thread getters, selected CPU and no-offload/configured BF16 facts after the original endpoint. Only peer3 was run. Historical peer2 source/builds and first failure remain in scratch."
+  ],
+  "reproduce": {
+    "build_script": ".scratch/inference-cpu-representative-20261026/build.py",
+    "run_script": ".scratch/inference-cpu-representative-20261026/run.py",
+    "commands": {
+      "status": "PLANNED_ONLY_NOT_EXECUTED",
+      "cwd": "C:\\public\\project-hyle\\hyle",
+      "hyle": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\link\\hyle.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+          "--backend",
+          "cpu",
+          "--capacity",
+          "256",
+          "--steps",
+          "16",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "off",
+          "--sampling",
+          "greedy"
+        ],
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\ready.json",
+          "bytes": 5335,
+          "sha256": "d1d1fc4f07f824caa50bbfa54e8463f13ed2feb97d0aed18c76d3f9eac89342f"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\runtime.json",
+          "bytes": 8205,
+          "sha256": "8e5197d9ca5cd577bba80ef7e21391f9c30e562f6b835338230aa8d1cbf2a913"
+        }
+      },
+      "peer": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\link\\peer3.exe",
+          "--model",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs",
+          "--capacity",
+          "256",
+          "--steps",
+          "16",
+          "--mtp",
+          "off",
+          "--memory-snapshots",
+          "off",
+          "--output",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\future-run\\peer-result.json"
+        ],
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\ready.json",
+          "bytes": 3091,
+          "sha256": "cd654ebd1cbacc6cbd84f8d9f2d3f90616effe6820f9836be5985706b11db963"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\runtime.json",
+          "bytes": 5845,
+          "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+        }
+      },
+      "work": "Same154 prompt IDs; ordinary greedy requested16 outputs/C256/N1/R1, Commands/no warmup. Preserve actual EOS and report output/work fields rather than force equal cross-engine continuation.",
+      "threads": "Both requested4: Hyle native4 + borrowed Scheduler4 + ATen intraop4; peer decode/batch4. Not a process-wide quota.",
+      "limits": "Only compile/link completed. No CPU/GPU model, sample, warmup, clock or memory measurement run. Root must first coordinate run window. Original generation endpoints unchanged; Hyle outer ATen/Scheduler startup is outside qwen35::run startup clock so startup costs are not a fair cross-engine metric without separate outer reporting.",
+      "build_commands": [
+        "python .scratch/inference-cpu-representative-20261026/build.py prepare",
+        "python .scratch/inference-cpu-representative-20261026/build.py hyle",
+        "python .scratch/inference-cpu-representative-20261026/build.py peer"
+      ],
+      "peer_report_fields": [
+        "backend=cpu",
+        "selected_device",
+        "selected_device_type_cpu",
+        "requested_gpu_layers=0",
+        "offload_kqv=false",
+        "op_offload=false",
+        "target_actual_threads",
+        "target_actual_batch_threads",
+        "configured_type_k",
+        "configured_type_v"
+      ]
+    },
+    "requirements": "Same retained local source/header/object/native/SDK/weight cache identities. Archive contains no executable, object, SDK or model payload. No automatic acquisition or extra run is performed by this analysis script."
+  },
+  "raw_identity": {
+    "run/hyle/stdout.log": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\run\\hyle\\stdout.log",
+      "bytes": 20383,
+      "sha256": "6fed7d27f33c4e84cad35bf3eaa9f1504b5e76eaca88da9f3256b40945318787"
+    },
+    "run/hyle/stderr.log": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\run\\hyle\\stderr.log",
+      "bytes": 7122,
+      "sha256": "59c77cd928acf72722e0939d8592d1d5a954df423f05ece0b659715ba0b67de6"
+    },
+    "run/peer/stdout.log": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\run\\peer\\stdout.log",
+      "bytes": 25344,
+      "sha256": "32f838ac68569394e4b1d6102292fba0866c49022dad45ecbf3021b48fd6efc2"
+    },
+    "run/peer/stderr.log": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\run\\peer\\stderr.log",
+      "bytes": 57811,
+      "sha256": "5c7a8dbe913d9522710e8240d0f3b764f7ab3e7d765a6e025143f96f441a59e1"
+    },
+    "future-run/peer-result.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\future-run\\peer-result.json",
+      "bytes": 24135,
+      "sha256": "fa54c6e4913e61273c0eafa89a529dbffbc2545847009c6f374fd89b54495129"
+    }
+  },
+  "limits": [
+    "No CPU/hybrid scaling or MTP performance result.",
+    "No memory-peak sample; requested-byte accounting is not physical RAM/VRAM.",
+    "No precision-quality or cross-dtype bit-equivalence claim.",
+    "No product source/default change or extra run during analysis/publication."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-initial-pair-2026-10-26.zip",
+    "bytes": 136102,
+    "sha256": "851806b3fb9b7442b825a0dd8a90cd37c179ab26bdacb0c4b13a662c9f596bb5",
+    "members": 72,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "excluded": "Binaries,objects,SDKs,model payloads,full source/dependency trees."
+  }
+}
