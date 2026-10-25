@@ -1,0 +1,311 @@
+{
+  "status": "BOUNDED_SOURCE_AUDIT_NO_NEW_PIPELINE_GAP",
+  "date": "2026-10-26",
+  "scope": "Current CPU-only / explicit GPU+CPU Backend cold configuration through real Graph/Compute/provider execution; source only. No default change, build, GPU, benchmark, runtime test or network.",
+  "conclusions": [
+    {
+      "kind": "implemented_reachable_common_seam",
+      "fact": "Backend::create(selection,budgets,DefaultContextOptions) forwards the original same options to both CPU-primary and explicit CPU-assist endpoints. Model accepts Backend&&, so an owner can configure either mode without a second executor/runtime or Model API. No lost-field or unavailable lower-level binding was found."
+    },
+    {
+      "kind": "actual_natural_consumer_policy_not_missing_primitive",
+      "fact": "Qwen create_execution and its delegating Model constructors still call the default two-argument Backend factory. Current CLI exposes backend and cpu-ffn-layers, not CPU thread/executor configuration. Their selected ggml programs retain native_threads=1 and empty borrowed executor. This is a real facility-consumption opportunity, not a blocking foundation/CLI feature gap: explicit prepared-Backend Model construction already exists."
+    },
+    {
+      "kind": "parallel_facilities_not_automatically_used",
+      "fact": "With those defaults ggml internal programs have one-thread native budget; native fallback work chooses one task from empty executor concurrency1; oneDNN threadpool/fanout also receives the empty executor. Supplying executor concurrency alone does not parallelize a ggml program: its entire execution is submitted as one executor task. native_threads and executor are independent policies."
+    },
+    {
+      "kind": "not_whole_model_single_thread_claim",
+      "fact": "ATen low-precision/general alternatives use an independent shared CPU runtime, controlled only by explicit startup configure_runtime_threads. Default native_threads=1 does not clamp ATen, OpenMP, BLAS, simultaneous callers or all process threads. No actual selected whole-Model provider mix or runtime thread count was measured."
+    },
+    {
+      "kind": "hybrid_default_separate",
+      "fact": "CPU-assist uses the same conservative1/empty defaults. These avoid automatically multiplying private pools while the GPU and host-submit path exist, but optimal hybrid threading is unmeasured. No source evidence establishes that1 is optimal or that larger counts are a gain; pure CPU and mixed workloads should remain separately selected owner policies."
+    }
+  ],
+  "anchors": [
+    {
+      "file": "engine/inference/backend.h",
+      "lines": [
+        170,
+        179,
+        195,
+        224,
+        295,
+        298,
+        506,
+        509,
+        511
+      ],
+      "fact": "Optional cold CPU options are checked before endpoint creation, never implicitly create CPU; same initialize_cpu for primary and assist."
+    },
+    {
+      "file": "engine/models/qwen35/main.cc",
+      "lines": [
+        144,
+        155,
+        161,
+        174,
+        180,
+        1576,
+        1584,
+        1619,
+        6087
+      ],
+      "fact": "Natural factory uses original defaults; explicit Backend&& Model seam preserves a caller-configured endpoint and validates CPU placement."
+    },
+    {
+      "file": "engine/models/qwen35/main.cc",
+      "lines": [
+        1859,
+        1864,
+        1872,
+        1876
+      ],
+      "fact": "Actual CPU or mixed Model compilation requires finite known workspace-domain budgets. A configured Backend created with default-unlimited budgets is valid for the old tiny Graph case but is not sufficient for a real Model."
+    },
+    {
+      "file": "include/hyle/compute/cpu.h",
+      "lines": [
+        31,
+        42,
+        51,
+        54,
+        56,
+        57,
+        60
+      ],
+      "fact": "Borrowed allocator/executor; independent ggml native thread budget; global ATen runtime is a different explicit startup API."
+    },
+    {
+      "file": "src/graph_route_cpu/cpu_context.cc",
+      "lines": [
+        15,
+        19,
+        24,
+        26,
+        29
+      ],
+      "fact": "Graph forwards options.executor/native_threads into original ggml region provider, oneDNN and native fallback."
+    },
+    {
+      "file": "src/compute_route_cpu/cpu_context.cc",
+      "lines": [
+        47,
+        64,
+        73,
+        81,
+        87,
+        92
+      ],
+      "fact": "Direct and Graph share original provider assembly; native_threads and executor concurrency also qualify original one-thread route preferences."
+    },
+    {
+      "file": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "lines": [
+        1584,
+        1696,
+        1742,
+        2051,
+        2054,
+        2085
+      ],
+      "fact": "Each Invocation builds CpuExecution with configured native_threads; executor.parallel_for(1) wraps a complete program. Invalid native budget is rejected in ggml context."
+    },
+    {
+      "file": "src/compute_ggml_runtime/cpu_execution.cc",
+      "lines": [
+        10,
+        27,
+        28,
+        31,
+        45,
+        62,
+        97
+      ],
+      "fact": "Cold persistent native threadpool and workspace per Invocation; polling0; replay runs original program; reset frees its pool. More threads may multiply worker/pool resources across prepared invocations, not share a global quota."
+    },
+    {
+      "file": "include/hyle/compute/provider.h",
+      "lines": [
+        182,
+        185,
+        196,
+        200,
+        207
+      ],
+      "fact": "Empty borrowed executor is caller-thread synchronous loop with concurrency1; no implicit worker creation."
+    },
+    {
+      "file": "src/compute_provider_native/native_provider.cc",
+      "lines": [
+        64,
+        67,
+        75,
+        186
+      ],
+      "fact": "Native fanout is bounded by executor concurrency, independent units and minimum work; no executor means one task."
+    },
+    {
+      "file": "src/compute_provider_native/native_plan.h",
+      "lines": [
+        92,
+        102,
+        110
+      ],
+      "fact": "Prepared native synchronous fanout; detectable nested execution stays caller-thread to preserve progress."
+    },
+    {
+      "file": "src/compute_provider_onednn/normalization_internal.cc",
+      "lines": [
+        48,
+        52,
+        58,
+        66
+      ],
+      "fact": "oneDNN threadpool reports executor concurrency and delegates synchronous fanout; BRGEMM uses same original executor path."
+    },
+    {
+      "file": "src/compute_provider_onednn/brgemm_internal.cc",
+      "lines": [
+        198,
+        221
+      ],
+      "fact": "Prepared BRGEMM task fanout uses ParallelExecutorRef."
+    },
+    {
+      "file": "src/compute_provider_native/aten_cpu_provider.cc",
+      "lines": [
+        1095,
+        1104,
+        1121,
+        1154,
+        1190
+      ],
+      "fact": "Separate shared ATen intra-op startup setting; no per-Context restore or automatic change. Foreign runtime use and configured limits must be coordinated."
+    },
+    {
+      "file": "src/compute_route_cpu/default_policy.cc",
+      "lines": [
+        100,
+        106,
+        116,
+        158
+      ],
+      "fact": "Actual capability admission and original route preference still apply. Thread/executor settings can disable specific qualified one-thread policies; a future cost comparison must record actual routes, not assume only scheduling differs."
+    },
+    {
+      "file": "samples/package/graph/cpu_executor/main.cc",
+      "lines": [
+        60,
+        65,
+        68,
+        80,
+        145
+      ],
+      "fact": "Existing actual package consumer adapts application-owned hyle::sched::Scheduler/bulk_execute to synchronous ParallelExecutorRef and handles nested progress; reuse this shape if an owner wants library scheduler workers."
+    }
+  ],
+  "smallest_next_step": {
+    "product_change_required": false,
+    "candidate": "If CPU facility performance is selected next, use the existing explicit Backend factory and Model(Backend&&...) seam in a bounded real cached CPU consumer, with declared native_threads and/or existing Scheduler adapter. Report exact providers, requested native budget, executor concurrency and independent ATen limits. No new thread pool, option registry, global setter-on-construction or default auto-core policy is required.",
+    "hybrid": "Select a separate explicit CPU-assist policy; do not infer it from CPU-only tuning or scale every prepared Invocation to all cores. No experiment is launched by this memo.",
+    "required_actual_model_fact": "The caller must supply the same finite WorkspaceBudgets/placement as create_execution, not Backend::create(selection,{},options): record_execution_plan rejects unlimited CPU or mixed domains. If avoiding repeated admission arithmetic becomes necessary, forward the original cold options through create_execution while leaving its existing finite-budget calculation unchanged; that is small consumer glue, not a missing executor or new budget owner."
+  },
+  "evidence_boundary": {
+    "existing": {
+      "path": "docs/evidence/research/inference-cpu-cold-options-2026-10-26.json",
+      "bytes": 5277,
+      "sha256": "30135f1c55587ce627c979d30548227dca80f86483eba13d54d04155467f9ed8"
+    },
+    "read_only_interpretation": "Existing proof exercised configured/default tiny CPU Graph, a borrowed dispatch probe, move and rejection semantics at native_threads1. It did not establish parallel speed, native_threads>1, whole real Model configured options, mixed endpoint throughput or process-wide bounds; not repeated here. Its default-unlimited Backend budget is a Graph-only fixture choice; do not reuse it unchanged for real Model admission.",
+    "package_executor_sample": "Source consumer inspected only; no new execution result claimed."
+  },
+  "source_pins": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 24664,
+      "sha256": "7fa40bcd91706096187d7c52387d29c97a79434a31083642cb58ff6374b9e8e2"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "bytes": 3070,
+      "sha256": "5573eb9618c4ef2a0db299dfb3bc3f2bf93f0e7005ec31aa7ccd95e25efac21f"
+    },
+    {
+      "path": "include/hyle/compute/provider.h",
+      "bytes": 10281,
+      "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+    },
+    {
+      "path": "src/graph_route_cpu/cpu_context.cc",
+      "bytes": 1204,
+      "sha256": "0474886077f21efd345dadd2e78676180d836b9f20f323ff9dad7053190a88b2"
+    },
+    {
+      "path": "src/compute_route_cpu/cpu_context.cc",
+      "bytes": 3909,
+      "sha256": "cff2d22dca2bad3581d1456b284430101aabdbc4899cb606159554dabb67ab4c"
+    },
+    {
+      "path": "src/compute_route_cpu/default_policy.cc",
+      "bytes": 6578,
+      "sha256": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a"
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "bytes": 119879,
+      "sha256": "fbb324c8bb656509f0acb30a531ef8c37e61f0eee05b19276640c868193220ad"
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "bytes": 3907,
+      "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "bytes": 40915,
+      "sha256": "5e52894af3a1e1325a4b4a84b9ef44b89a89c327912b76b2d764f605b71d233d"
+    },
+    {
+      "path": "src/compute_provider_native/native_plan.h",
+      "bytes": 10966,
+      "sha256": "dd9b7d8254cac0d9357bb29f0164803c330c8f8b5c87be0718415ee9066486ef"
+    },
+    {
+      "path": "src/compute_provider_native/aten_cpu_provider.cc",
+      "bytes": 51652,
+      "sha256": "66647bdeaec20c48e911e6672398480d9f3c4977ba2e2bfc1d131a4e34f1fdb6"
+    },
+    {
+      "path": "src/compute_provider_onednn/normalization_internal.cc",
+      "bytes": 32477,
+      "sha256": "9f26641200f950ffd640021160c44c06209011d30390fe62142d55b5d883d7b5"
+    },
+    {
+      "path": "src/compute_provider_onednn/brgemm_internal.cc",
+      "bytes": 13298,
+      "sha256": "5c4132acb63a4955d795dca50028a44fbb60f057c213ffb6709279fb3741f8ed"
+    },
+    {
+      "path": "samples/package/graph/cpu_executor/main.cc",
+      "bytes": 13826,
+      "sha256": "583d8f13501a4b2ca12615b87a2c5cec1d4e386a72ea6a137cc0b38dc795f535"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_options_case.h",
+      "bytes": 5802,
+      "sha256": "7e36b8b6456edec68840e7b1077e11b5186b2745d0524404a705b84f35b0715b"
+    }
+  ],
+  "not_checked": [
+    "No CPU/GPU throughput, selected real-model route census, NUMA/affinity, core-count tuning, total live native worker count or memory overhead measured.",
+    "No new broad provider audit or CMake/hardware matrix; no conclusion that all parallel facilities are idle or that default1 is slow."
+  ]
+}

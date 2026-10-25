@@ -1,0 +1,315 @@
+{
+  "status": "FINITE_LEAF_ONLY_NOT_ACCEPTED_FOR_PRODUCT",
+  "date": "2026-10-26",
+  "decision": "The local median time fell9.40% but sample ranges overlap materially. Do not integrate a product route or assert a stable win from this leaf. No added samples or algorithm searches.",
+  "mechanism": "BF16 typed load/final RN on original TensorCore mul_mat_f; not SIMT mul_mat_vec_f or pair fusion.",
+  "shape": {
+    "M": 2,
+    "N": 6144,
+    "K": 2048,
+    "projections_per_pair": 2
+  },
+  "math": "BF16 A/W/Y, original BF16 MMA with F32 tile accumulation and cross-warp F32 sum, final BF16 RN; no SiLU fusion or intermediate rounding change.",
+  "native_geometry": {
+    "grid": [
+      192,
+      1,
+      1
+    ],
+    "block": [
+      32,
+      8,
+      1
+    ],
+    "dynamic_shared_bytes": 18432,
+    "global_candidate_scratch": 0,
+    "ABI": "Only scalar/pointer leaf hook, no ggml context/tensor crosses runtime ABI; original header defaults unchanged."
+  },
+  "execution": {
+    "processes": {
+      "host": {
+        "pid": 35756,
+        "state": "TERMINAL",
+        "exit": 0,
+        "seconds": 1.2472311000456102
+      },
+      "native": {
+        "pid": 53740,
+        "state": "TERMINAL",
+        "exit": 0,
+        "seconds": 2.9878843000042252
+      },
+      "link": {
+        "pid": 47560,
+        "state": "TERMINAL",
+        "exit": 0,
+        "seconds": 0.05291139998007566
+      }
+    },
+    "GPU": {
+      "pid": 46308,
+      "state": "TERMINAL",
+      "exit": 0,
+      "seconds": 0.5160381000023335
+    },
+    "GPU_released": true,
+    "host_TUs": 1,
+    "CUDA_TUs": 1,
+    "SDK_builds": 0,
+    "Model_runs": 0,
+    "HTTP": 0,
+    "product_edits": 0
+  },
+  "original_inputs": {
+    "original_roles": [
+      {
+        "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "source_file_bytes": 4548221488,
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1084498960,
+          "bytes": 25165824,
+          "sha256": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42"
+        }
+      },
+      {
+        "name": "model.language_model.layers.0.mlp.up_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "source_file_bytes": 4548221488,
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1109664784,
+          "bytes": 25165824,
+          "sha256": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e"
+        }
+      }
+    ],
+    "activation": {
+      "full_trace": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\candidate\\prefill\\07-post-attn-norm.bf16",
+        "bytes": 94208,
+        "sha256": "545902e287c560ae81cac441c679e73effaf13c9dd1b9f03824f803348989a4f"
+      },
+      "trace_shape": [
+        23,
+        2048
+      ],
+      "selected_shape": [
+        2,
+        2048
+      ],
+      "selected_byte_range": [
+        0,
+        8191
+      ],
+      "selected_sha256": "394e94f2aa1eddf2820e132cfb8615de3a1b54fd80f64571207446bd9811df0a",
+      "role": "Actual original BF16 model layer0 post_attention_layernorm output, directly consumed by both gate/up projections.",
+      "limitation": "Retained T23 prefill first2 rows, not freshly captured current T2 verifier activations. Leaf exploration cannot claim current model/decode performance.",
+      "trace_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\01-main.cc",
+        "bytes": 31390,
+        "sha256": "819d99e2cffb5cc54a10c9360f94356be56c6add2545c235d5b7581b0f803fed"
+      },
+      "trace_summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\summary.json",
+        "bytes": 4183,
+        "sha256": "62fd14c5ce68cb6111501902936575714dfd29d3bb0d688959c99ea6310b85bf"
+      }
+    }
+  },
+  "physical_banks": {
+    "count": 4,
+    "weight_bytes_total": 201326592,
+    "same_physical_bytes_and_addresses": true,
+    "candidate_extra_weights": 0,
+    "candidate_extra_outputs": 0,
+    "shared_workspace_cap": 33554432
+  },
+  "protocol": {
+    "jobs_per_graph": 64,
+    "trials_per_arm": 5,
+    "order": "alternating by trial",
+    "numeric": "Full independent original F64/gamma/BF16 gate for both roles in direct and first captured execution before timing; NaN output poison. No tolerance adaptation.",
+    "candidate_kernels_per_graph": 128,
+    "no_algorithm_grid": true
+  },
+  "numerical_results": {
+    "both_arms_direct_and_first_captured": "PASS complete retained independent F64/fixed gamma/BF16 endpoint gate",
+    "values_per_role_per_phase": 12288,
+    "roles": 2,
+    "MMF_direct_BF16_bit_differences_from_Lt": [
+      13,
+      11
+    ],
+    "bit_identity": false,
+    "no_tolerance_changes": true,
+    "no_baseline_output_as_numerical_oracle": true
+  },
+  "timing_results": [
+    {
+      "arm": "two_Lt_production_request1_M2",
+      "device_us_per_original_pair": [
+        127.3760050535202,
+        140.6240016222,
+        132.6719969511032,
+        113.82400244474411,
+        120.40950357913971
+      ],
+      "median_us": 127.3760050535202,
+      "range_us": [
+        113.82400244474411,
+        140.6240016222
+      ],
+      "host_us_per_pair": [
+        127.659375,
+        140.98593749999998,
+        134.69843749999998,
+        114.23281250000001,
+        120.7046875
+      ]
+    },
+    {
+      "arm": "two_typed_TC_MMF_original_W_M2",
+      "device_us_per_original_pair": [
+        113.48800361156464,
+        111.55200004577637,
+        115.40800333023071,
+        115.77600240707397,
+        143.2799994945526
+      ],
+      "median_us": 115.40800333023071,
+      "range_us": [
+        111.55200004577637,
+        143.2799994945526
+      ],
+      "host_us_per_pair": [
+        113.7265625,
+        112.56875,
+        115.81093750000001,
+        117.909375,
+        143.7578125
+      ]
+    }
+  ],
+  "prespecified_median_time_change_percent": -9.395805527313271,
+  "descriptive_paired_trials_same_original_statistic": [
+    {
+      "trial": 0,
+      "first_arm": "Lt",
+      "Lt_us": 127.3760050535202,
+      "MMF_us": 113.48800361156464,
+      "candidate_minus_control_us": -13.888001441955566,
+      "candidate_time_change_percent": -10.903153569716817
+    },
+    {
+      "trial": 1,
+      "first_arm": "MMF",
+      "Lt_us": 140.6240016222,
+      "MMF_us": 111.55200004577637,
+      "candidate_minus_control_us": -29.072001576423645,
+      "candidate_time_change_percent": -20.673570116805795
+    },
+    {
+      "trial": 2,
+      "first_arm": "Lt",
+      "Lt_us": 132.6719969511032,
+      "MMF_us": 115.40800333023071,
+      "candidate_minus_control_us": -17.263993620872498,
+      "candidate_time_change_percent": -13.01253770020151
+    },
+    {
+      "trial": 3,
+      "first_arm": "MMF",
+      "Lt_us": 113.82400244474411,
+      "MMF_us": 115.77600240707397,
+      "candidate_minus_control_us": 1.9519999623298645,
+      "candidate_time_change_percent": 1.7149282404451238
+    },
+    {
+      "trial": 4,
+      "first_arm": "Lt",
+      "Lt_us": 120.40950357913971,
+      "MMF_us": 143.2799994945526,
+      "candidate_minus_control_us": 22.870495915412903,
+      "candidate_time_change_percent": 18.99392924610901
+    }
+  ],
+  "actual_graph_nodes": [
+    128,
+    128
+  ],
+  "cublasLt_version": 130600,
+  "Lt_request1_algorithm_key": [
+    21,
+    5,
+    1,
+    0,
+    0,
+    0,
+    19,
+    0,
+    0
+  ],
+  "workspace_bytes": [
+    0,
+    0
+  ],
+  "compile_after_prior32": {
+    "prior_complete_window_process_count": 32,
+    "last_prior_process_finished_unix_ns": 1792948754817862700,
+    "leaf_compile_before_launch_utc": "2026-10-25T17:24:43.830131+00:00",
+    "leaf_compilation_started_after_all32_terminal": true,
+    "basis": "Original full32 process receipts use finished_unix_ns; leaf uses preserved command/running/process file-UTC envelopes. No timestamps fabricated as exact OS starts."
+  },
+  "source_pins": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\source-pins.json",
+    "bytes": 2905,
+    "sha256": "cd9cb3f367be4079c281c4cb6031e887bbaa5f0e6ac8bca79663f97324e39345"
+  },
+  "ready": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\ready.json",
+    "bytes": 2607,
+    "sha256": "27f345993db865fc411386f4152de6f6fedc244f761cd295ba25392e2a739511"
+  },
+  "actual_result": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\summary.json",
+    "bytes": 5971,
+    "sha256": "f5eb3c804472ad519d4408d730d8c1d0ce588731acf691ea6001967adf685c9a"
+  },
+  "independent_source_review": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\independent-review-architecture.json",
+    "bytes": 3708,
+    "sha256": "9c6afa9847e74ff3a0f3982112ba579858452094de8d461a27f6a4233892df40"
+  },
+  "limits": [
+    "Retained real T23 prefill first2 A rows, not fresh current verifier A.",
+    "Private fixed SM89/non-indexed/dense geometry, no Model/provider route or task quality/TPS claim.",
+    "Existing F32 MMF and F32-A mixed precision not changed.",
+    "Coherent reference native headers expose compile-time math only; no old GGML runtime object/context/tensor is imported.",
+    "GPU execution requires ROOT release/authorization; compilation itself launches no model/GPU work.",
+    "This is not a comparison of complete-model speed, memory, task quality or MTP acceptance; no significance or stable throughput claim.",
+    "Both Lt and MMF use TensorCore-capable arithmetic; the candidate is a different fixed tile/reduction path, not first TensorCore enablement.",
+    "Four original-role pairs occupy192MiB for both arms, beyond actual36MiB L2. Same physical W/A/Y pointers, same two projections per pair, same128 graph nodes; no extra candidate W or global scratch.",
+    "BF16 terminal values differ13/11 from Lt under the original fixed numerical bound; a real complete consumer could diverge in generated tokens/acceptance and must not normalize that difference away.",
+    "Native compile retained original C4819 SDK/native-header code-page warnings; exit0, no warning-hiding rebuild.",
+    "A late ROOT wait-for-review message arrived after the sole run had already completed under preceding authorization. Independent actual-source review subsequently found no blocker; no rerun was performed."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\performance\\mtp-m2-typed-mmf-screen-2026-10-26.zip",
+    "bytes": 69888,
+    "sha256": "736414f12a4bf6ea0a75e84104a865d3ddc1c4b93b865d9cb679173adb039cf5",
+    "entries": 39,
+    "CRC_verified": true,
+    "member_SHA256_verified": true,
+    "model_SDK_binary_payload": false
+  }
+}

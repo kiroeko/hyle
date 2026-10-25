@@ -1,0 +1,115 @@
+{
+  "status": "SOURCE_AND_RETAINED_RAW_CALL_ACCOUNT_CLOSED_NO_NEW_RUN",
+  "sources": [
+    {
+      "path": "engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    {
+      "path": "engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 17700,
+      "sha256": "e54d0a6402e4f7d00afb92ad55ae9305253e6b06ead8cf32f0da8ac4fd4e1193"
+    },
+    {
+      "path": "engine\\models\\qwen35\\session_state.h",
+      "bytes": 14709,
+      "sha256": "8ee8e6cc07eee1e89fdb048aad0109381205fc0bb126829df7e376d3107b2361"
+    },
+    {
+      "path": "engine\\inference\\mtp_acceptance.h",
+      "bytes": 6899,
+      "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+    }
+  ],
+  "retained_evidence": [
+    {
+      "path": ".scratch\\mtp-performance-convergence-20261025\\k2-exploration\\run1\\normalized-result.json",
+      "bytes": 134353,
+      "sha256": "1359114665008c40669ed08a407770e4edc7b6d54e6dec1fb934648c64a5fff3"
+    },
+    {
+      "path": ".scratch\\mtp-performance-convergence-20261025\\k2-exploration\\exploration-summary.json",
+      "bytes": 4446,
+      "sha256": "5b681a11e757ad50e1aaca73e537f7fd967cc14c2ab522ecfbc01dc541e5f59c"
+    }
+  ],
+  "actual_old_K2": {
+    "verifier_rounds": 48,
+    "verifier_widths": {
+      "3": 47,
+      "2": 1
+    },
+    "proposal_calls": 95,
+    "repair_calls": 48,
+    "auxiliary_calls": 143,
+    "prefill_calls": 2,
+    "total_Graph_calls": 193,
+    "proposal_rows": 137,
+    "repair_rows": 124,
+    "decode_draft_rows": 261,
+    "prefill_draft_rows": 310,
+    "total_draft_rows": 571,
+    "note": "Exact old c343 greedy K2 retained result. This is not a current K2 timing, peer comparison or new experiment."
+  },
+  "actual_path": [
+    {
+      "anchor": "main.cc:1483,5298-5302,5421-5448",
+      "fact": "max_drafts>1 (or probability stopping) selects recursive mode. propose_recursive completes actual proposal IDs, then one kVerify call consumes the whole exact [pending,proposal...] width; distinct real widths are bucketed without padding."
+    },
+    {
+      "anchor": "main.cc:2114-2180,2190-2192",
+      "fact": "K1 Round/CatchupRound builds NextN full_head and target T2 in the same graph, with the real draft append preceding target append. This joint K1 graph is absent from the generic recursive route."
+    },
+    {
+      "anchor": "main.cc:4199-4230,2647-2790",
+      "fact": "Each recursive proposal depends on the preceding proposal ID/approximate hidden and private draft pages. execute_draft submits and retires one already-cold program per autoregressive proposal. This is sequential draft generation, not sequential target verification."
+    },
+    {
+      "anchor": "main.cc:4235-4265,4068-4075,4110-4142",
+      "fact": "After target selection, one batched head=false program repairs actual retained draft KV using true target hidden rows. Approximate proposal KV is never installed into the complete published Head. Repair finishes before ledger checks/head swaps; existing COW/old-reader/retirement semantics remain authoritative."
+    }
+  ],
+  "existing_multirow_capability": [
+    {
+      "anchor": "main.cc:2030-2047,2210-2266",
+      "fact": "Verify already has exact T families, GDN.snapshot_count=T and independent history/recurrent output per target prefix. K2 therefore truly uses one T3 target, not three T1 calls."
+    },
+    {
+      "anchor": "main.cc:3973-4028,4048-4068,4110-4122; session_state.h:84-90",
+      "fact": "Accepted target KV is reframed to the selected prefix; immutable GDN/history/carry outputs select accepted row. Partial acceptance discards mutable tail authority, never rewinds it. Existing finite N+T*R state and2N+T*R hidden budgeting already accounts those prefixes."
+    },
+    {
+      "anchor": "mtp_acceptance.h:56-79,82-109",
+      "fact": "Public accepted-prefix selection is already arbitrary finite width, preserving output quota/EOS and final pending token. No common verifier API/operator/GDN snapshot extension is needed merely to admit K2 target batching."
+    }
+  ],
+  "minimal_performance_direction": {
+    "first": "Investigate reuse of existing capture policy for the original finite DraftPrograms, rather than another target-width rewrite.",
+    "source_seam": "main.cc:2744 fixes every execute_draft prepare_replay to kCommands; main.cc:3319-3322 instead cold-selects Commands/PreferCapture from ReplayPolicy and planned uses for target Phase.",
+    "affected_modules": [
+      "Model::DraftProgram/prepare_draft_program/prepare_recursive_round_programs/execute_draft in existing qwen35 main adapter"
+    ],
+    "unchanged_modules": [
+      "engine/inference/mtp_acceptance.h",
+      "GatedDeltaNet snapshot operator",
+      "Graph/Compute executor and public resource/retirement APIs"
+    ],
+    "constraint": "Would retain exact row/head finite programs, real page/hidden binding changes, hard invalidation, same RetainedResources/StepState retirement and normal Commands fallback. Source only: native capture qualification and actual savings have not been checked or measured here.",
+    "expected_kind": "Could reduce eager per-command host dispatch; does not reduce mathematical work or weight bytes by itself. Current call count alone does not prove that dispatch is the performance bottleneck."
+  },
+  "why_not_trivial_wider_batch": [
+    "Target width is alreadyK+1. Increasing it again cannot remove the95 autoregressive proposal calls without changing how later proposal inputs are produced.",
+    "Repair already batches its actually retained rows in one call. Removing it or publishing approximate KV would violate the true-target hidden/full-Head contract.",
+    "Moving bounded teacher-forced repair math into Verify is source-expressible with existing projections and prefix reframe, but still must materialize actual candidate KV and select the correct frontier/lag. It removes a host invocation only, not the required projection/weight reads, and can compute extra rejected-prefix rows; it is a larger separate design, not a verified free win.",
+    "Batching the same draft depth across independent requests could share weight reads forR>1 using existing request-major geometry. The investigated old case isR1, so that does not explain or fix this193-call observation.",
+    "No new manager, parallel speculative token policy, lazy incomplete Head, unbudgeted candidate storage, state deletion or fixed-address overwrite is justified by this call account."
+  ],
+  "changes": {
+    "product": 0,
+    "builds": 0,
+    "model_runs": 0,
+    "GPU": 0,
+    "HTTP": 0
+  }
+}

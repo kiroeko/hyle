@@ -1,0 +1,533 @@
+{
+  "status": "CLOSED_NOT_ACCEPTED_FOR_PRODUCT_NO_STABLE_GAIN",
+  "date": "2026-10-26",
+  "decision": "Six timing and two independent memory processes preserve identical original work. Decode median+0.718% and combined+0.491% have overlapping ranges; the screen does not establish a stable benefit. Recommend close without product route, more samples or algorithms.",
+  "scope": "Private exact dense, non-batched BF16 M2/K2048/N6144 CUDA cuBLAS-provider substitution only; same original K1 two-turn journey, no peer/full32 window.",
+  "control_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+    "bytes": 141459968,
+    "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+  },
+  "candidate_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\attempt1\\link\\hyle.exe",
+    "bytes": 141509632,
+    "sha256": "31e189fdd2c0a9511ccf5ffb90be87b4e5d86d2ad1ddf06fbec80b5b4d57593a"
+  },
+  "mechanism": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\source\\src\\compute_provider_cublas\\cublas_provider.cc",
+      "bytes": 33428,
+      "sha256": "168c4050fedf0a69c6255e3604a88c6e2fb111939ae965aa50d8cea7909d93c2"
+    },
+    "source_patch": {
+      "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\source.patch",
+      "bytes": 2855,
+      "sha256": "59d21840ba219cd7493e59fc98678dd27a59741b16b51400e52251f22df16133"
+    },
+    "source_pins": {
+      "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\source-pins.json",
+      "bytes": 1347,
+      "sha256": "7dcbe9ac5698c711bb874ad74f29faf84a52436f40cbf5e8c36ef0fef59b28ea"
+    },
+    "qualification": "Cold rank0/count1/one run/batch1, matching BF16 A[2,2048]row ld2048, W[2048,6144]col ld2048, Y[2,6144]row ld6144; all other cases remain original Lt.",
+    "preserved": "Original configure and Lt artifacts, stream/pointer/context guards, accepted-command error prefix, source/Invocation/Completion lifetimes. No allocation/query in eligible hot submit.",
+    "SDK_GGML_ABI": "No public Operation or GGML tensor/context ABI change; one private provider host TU plus existing tested typed-MMF scalar/pointer native object.",
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\attempt1\\link-inputs.json",
+      "bytes": 58344,
+      "sha256": "367fb0b67d113d99d149e0c479839448bd4daa2efbb16e466790fe33563ca0bd"
+    },
+    "absolute_inputs": 223,
+    "unchanged_absolute_inputs": 221
+  },
+  "build": {
+    "compile": {
+      "exit": 0,
+      "pid": 46924,
+      "seconds": 1.4656719000195153
+    },
+    "link": {
+      "exit": 0,
+      "pid": 54596,
+      "seconds": 1.7673169000190683
+    }
+  },
+  "new_host_TUs": 1,
+  "new_CUDA_TUs": 0,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "product_edits": 0,
+  "independent_source_review": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\independent-review-architecture.json",
+    "bytes": 2493,
+    "sha256": "dc53684cc3339dbb23ac4d2b84b249ff99bdef2f5c716f493bf2d35f754cd263"
+  },
+  "pre_screen_behavior": {
+    "process": {
+      "exit": 0,
+      "pid": 1932,
+      "seconds": 3.816131100000348
+    },
+    "non_time_difference_count": 0,
+    "stderr_equal_after_only_original_clocks_removed": true,
+    "actual_work": {
+      "generated_tokens": 128,
+      "actual_graph_calls": 68,
+      "prefill_target_rows": 309,
+      "verified_target_rows": 132
+    },
+    "summary": {
+      "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\attempt1\\summary.json",
+      "bytes": 2176,
+      "sha256": "1d66f269db7f12fc74dad5a3606b320a9e4f8a72a27facb2990789db636f9b74"
+    }
+  },
+  "screen_protocol": {
+    "retained_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\screen.py",
+      "bytes": 9526,
+      "sha256": "b7eae8d313283ad3a9a0966fe7bd8acb77b8cb4a305f7ec1971ac3419c86713f"
+    },
+    "adapted_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen.py",
+      "bytes": 9633,
+      "sha256": "b00b8fb32c9b1dcafdf8a5a260e57e6d8de9f0a2ee5fb911ee07087902f7434a"
+    },
+    "math_statistic_and_clock_exclusions_unchanged": true,
+    "new_model_samples": 8,
+    "timing_order": [
+      "control",
+      "candidate",
+      "candidate",
+      "control",
+      "control",
+      "candidate"
+    ],
+    "memory_order": [
+      "control",
+      "candidate"
+    ],
+    "autorun_module_imported": false
+  },
+  "actual_screen_plan": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\plan.json",
+    "bytes": 3999,
+    "sha256": "dcb70b4a52c5ed9285ae8a0f2d86c0ab83549f02ed3a37e1d51773c01bd73d34"
+  },
+  "screen_processes": [
+    {
+      "folder": "memory-01-control",
+      "pid": 41192,
+      "exit": 0,
+      "seconds": 3.485589,
+      "started_unix_ns": 1792950532538545600,
+      "finished_unix_ns": 1792950536256786600,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\memory-01-control\\result.json",
+        "bytes": 2898,
+        "sha256": "f9af12885a7de47f9fe53e21d2c638ac62a3f510db58e874e5c0a724978e1729"
+      }
+    },
+    {
+      "folder": "memory-02-candidate",
+      "pid": 15196,
+      "exit": 0,
+      "seconds": 3.438963,
+      "started_unix_ns": 1792950536377205800,
+      "finished_unix_ns": 1792950539819192800,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\memory-02-candidate\\result.json",
+        "bytes": 2905,
+        "sha256": "8c15604590ca0a2a19649dd5208a18038b97dea95c8094270f93a1b208a784c6"
+      }
+    },
+    {
+      "folder": "timing-01-control",
+      "pid": 29640,
+      "exit": 0,
+      "seconds": 3.4755499,
+      "started_unix_ns": 1792950511144270900,
+      "finished_unix_ns": 1792950514621353500,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-01-control\\result.json",
+        "bytes": 1383,
+        "sha256": "adebb81c31e3300050c67d95cec56689d0b5056b6b2e3a1d9dcf9c4e72c50345"
+      }
+    },
+    {
+      "folder": "timing-02-candidate",
+      "pid": 48028,
+      "exit": 0,
+      "seconds": 3.4790005,
+      "started_unix_ns": 1792950514727869000,
+      "finished_unix_ns": 1792950518208823100,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-02-candidate\\result.json",
+        "bytes": 1391,
+        "sha256": "93a5cd299f7850ed36489350655739364eca61fa37b0f21133a4844740eb25d3"
+      }
+    },
+    {
+      "folder": "timing-03-candidate",
+      "pid": 56388,
+      "exit": 0,
+      "seconds": 3.4258536,
+      "started_unix_ns": 1792950518312611200,
+      "finished_unix_ns": 1792950521739265700,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-03-candidate\\result.json",
+        "bytes": 1391,
+        "sha256": "4084eb302c753eaededcbfb3fd6d0dd2a21967fffae6aeaa136748f170f92451"
+      }
+    },
+    {
+      "folder": "timing-04-control",
+      "pid": 24788,
+      "exit": 0,
+      "seconds": 3.4748255,
+      "started_unix_ns": 1792950521846878300,
+      "finished_unix_ns": 1792950525323392200,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-04-control\\result.json",
+        "bytes": 1383,
+        "sha256": "9d757a96add5096d0ae7331fab60a45e9cf658a8537c4f24d94d5206ce376218"
+      }
+    },
+    {
+      "folder": "timing-05-control",
+      "pid": 49756,
+      "exit": 0,
+      "seconds": 3.4430035,
+      "started_unix_ns": 1792950525430876600,
+      "finished_unix_ns": 1792950528874684200,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-05-control\\result.json",
+        "bytes": 1383,
+        "sha256": "3384a75e4f094c5e47471402606e1b9ec66bd1686b3cf6b4b352dbcfd393f6cd"
+      }
+    },
+    {
+      "folder": "timing-06-candidate",
+      "pid": 50604,
+      "exit": 0,
+      "seconds": 3.4524614,
+      "started_unix_ns": 1792950528977085200,
+      "finished_unix_ns": 1792950532430485900,
+      "result": {
+        "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\timing-06-candidate\\result.json",
+        "bytes": 1391,
+        "sha256": "07cfe7b965c10429a1e4b07d2122a9fbbbe58543dfc5947ec573f0c126ac318b"
+      }
+    }
+  ],
+  "GPU_released": true,
+  "all_eight_exit0_and_same_normalized_work": true,
+  "work": {
+    "generated_tokens": 128,
+    "actual_graph_calls": 68,
+    "prefill_target_rows": 309,
+    "verified_target_rows": 132,
+    "actual_target_rows": 441,
+    "actual_draft_rows": 434,
+    "consumed_drafts": 60
+  },
+  "metrics": {
+    "control": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.1117731,
+        "min": 0.1113631,
+        "max": 0.1190049,
+        "samples": [
+          0.1113631,
+          0.1117731,
+          0.1190049
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.0402099999999999,
+        "min": 1.0288007999999997,
+        "max": 1.0539482,
+        "samples": [
+          1.0288007999999997,
+          1.0402099999999999,
+          1.0539482
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1519831,
+        "min": 1.1401639,
+        "max": 1.1729531,
+        "samples": [
+          1.1401639,
+          1.1519831,
+          1.1729531
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2764.529211411332,
+        "min": 2596.531739449384,
+        "max": 2774.7072414471218,
+        "samples": [
+          2774.7072414471218,
+          2764.529211411332,
+          2596.531739449384
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 121.12938733524963,
+        "min": 119.55046747079221,
+        "max": 122.47268859044436,
+        "samples": [
+          122.47268859044436,
+          121.12938733524963,
+          119.55046747079221
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 111.11274115045612,
+        "min": 109.12627282369603,
+        "max": 112.26456126176247,
+        "samples": [
+          112.26456126176247,
+          111.11274115045612,
+          109.12627282369603
+        ]
+      }
+    },
+    "candidate": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.11355180000000001,
+        "min": 0.1118787,
+        "max": 0.11458009999999999,
+        "samples": [
+          0.11458009999999999,
+          0.1118787,
+          0.11355180000000001
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.032798,
+        "min": 1.0312954000000003,
+        "max": 1.0354486000000003,
+        "samples": [
+          1.0354486000000003,
+          1.0312954000000003,
+          1.032798
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1463498,
+        "min": 1.1431741,
+        "max": 1.1500287,
+        "samples": [
+          1.1500287,
+          1.1431741,
+          1.1463498
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2721.225026815955,
+        "min": 2696.8033716151413,
+        "max": 2761.9198292436363,
+        "samples": [
+          2696.8033716151413,
+          2761.9198292436363,
+          2721.225026815955
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 121.99868706174875,
+        "min": 121.68638790954951,
+        "max": 122.17643945662897,
+        "samples": [
+          121.68638790954951,
+          122.17643945662897,
+          121.99868706174875
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 111.65876244755309,
+        "min": 111.3015701260325,
+        "max": 111.96894681221347,
+        "samples": [
+          111.3015701260325,
+          111.96894681221347,
+          111.65876244755309
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "prefill_seconds": {
+      "candidate_relative_percent": 1.5913489023745564,
+      "ranges_overlap": true
+    },
+    "decode_seconds": {
+      "candidate_relative_percent": -0.7125484277213046,
+      "ranges_overlap": true
+    },
+    "session_seconds": {
+      "candidate_relative_percent": -0.48900890993973656,
+      "ranges_overlap": true
+    },
+    "prefill_tokens_per_second": {
+      "candidate_relative_percent": -1.5664216683487164,
+      "ranges_overlap": true
+    },
+    "decode_output_tokens_per_second": {
+      "candidate_relative_percent": 0.7176621178584641,
+      "ranges_overlap": true
+    },
+    "combined_output_tokens_per_second": {
+      "candidate_relative_percent": 0.49141195819983885,
+      "ranges_overlap": true
+    }
+  },
+  "memory": {
+    "control": {
+      "path": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\memory-01-control\\memory-summary.json",
+        "bytes": 45261,
+        "sha256": "2b6fcb10aa046d7a0a20346268dfe3fbdc56045bb4a9c5cfdeecf22a8970a9be"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1272147968,
+        "observed_os_peak_working_set_bytes": 1272172544,
+        "sampled_max_private_commit_bytes": 6453055488,
+        "observed_os_peak_commit_bytes": 6453055488,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 335,
+      "ready_baseline": {
+        "ready_marker_ns": 277224923302800,
+        "first_prefill_marker_ns": 277224923380600,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 35,
+        "gpu_shared_bytes": 35,
+        "gpu_total_bytes": 35
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 35,
+        "shared:no_pid_instance": 35
+      },
+      "actual_sample_gaps_ms": {
+        "count": 315,
+        "min": 0.1166,
+        "median": 15.1548,
+        "max": 16.2266
+      },
+      "sample_cost_ms": {
+        "count": 316,
+        "min": 0.0588,
+        "median": 0.1427,
+        "max": 0.271
+      }
+    },
+    "candidate": {
+      "path": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\memory-02-candidate\\memory-summary.json",
+        "bytes": 44836,
+        "sha256": "1df8ec4a1ecd7d9e44c25fce11f949e05c2a17a1d04eb40c9b388ca44b1e8327"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1270427648,
+        "observed_os_peak_working_set_bytes": 1270452224,
+        "sampled_max_private_commit_bytes": 6450757632,
+        "observed_os_peak_commit_bytes": 6450757632,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 327,
+      "ready_baseline": {
+        "ready_marker_ns": 277228499286400,
+        "first_prefill_marker_ns": 277228499297300,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 31,
+        "gpu_shared_bytes": 31,
+        "gpu_total_bytes": 31
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 31,
+        "shared:no_pid_instance": 31
+      },
+      "actual_sample_gaps_ms": {
+        "count": 309,
+        "min": 0.1145,
+        "median": 15.1892,
+        "max": 21.4371
+      },
+      "sample_cost_ms": {
+        "count": 310,
+        "min": 0.0596,
+        "median": 0.1395,
+        "max": 0.4347
+      }
+    }
+  },
+  "actual_screen_summary": {
+    "path": ".scratch\\mtp-m2-typed-mmf-20261026\\consumer\\screen\\summary.json",
+    "bytes": 107385,
+    "sha256": "dfab560af99a1f93b00b7ceea5399b23f06cd8e2a4e22632a80635a0d4ce86a8"
+  },
+  "leaf_dependency": {
+    "report": {
+      "path": "docs\\evidence\\performance\\mtp-m2-typed-mmf-screen-2026-10-26.json",
+      "bytes": 11204,
+      "sha256": "42aa95d12c56d4bb2a9671daec1e6af5c882bcbd4ea4d8fb8e6ad7d33cb60f60"
+    },
+    "archive": {
+      "path": "docs\\evidence\\performance\\mtp-m2-typed-mmf-screen-2026-10-26.zip",
+      "bytes": 69888,
+      "sha256": "736414f12a4bf6ea0a75e84104a865d3ddc1c4b93b865d9cb679173adb039cf5"
+    },
+    "scope": "Leaf fixed oracle passed with13/11 terminal BF16 bit differences from Lt. That was retained T23-first2 A, while this real consumer uses its natural inputs. No original tolerance/normalization changes."
+  },
+  "limits": [
+    "3 observations per arm: descriptive medians/ranges only, no fixed clocks.",
+    "Original P+D=session endpoints. Decode126 outputs; combined128; prefill309 rows.",
+    "Independent1 memory process per arm; PSAPI/PDH maxima are sampled lower bounds.",
+    "Private exact dense BF16 M2 K2048 N6144 MMF provider candidate; all other operations original Lt. No canonical merge or peer window.",
+    "No fault injection or independent hidden tensor readback in this screen.",
+    "All eight complete-consumer reports match the first fresh control after the retained clock-only exclusions. This is one prompt/schedule and does not prove task quality or continuation/acceptance equality for other inputs.",
+    "Same GPU dedicated/shared/total sampled peaks do not prove exact live allocation equality at every instant. WS/private differences around2MiB from one process each are not attributed to this route.",
+    "Native BF16 TensorCore reduction changes can cross logits/acceptance boundaries elsewhere; this screen cannot establish global bit identity.",
+    "No additional leaf trial or complete consumer process was run beyond the single behavior gate and authorized8-process screen.",
+    "Provider changes remain private; current2a94 baseline is unchanged and no public route or product integration is implied."
+  ],
+  "archive": {
+    "path": "docs\\evidence\\performance\\mtp-m2-typed-mmf-consumer-screen-2026-10-26.zip",
+    "bytes": 240656,
+    "sha256": "d2f081bb0698e7fe7f01d34d1c6f569dcabe58d727592d6e07bef4829eb7a8ec",
+    "entries": 90,
+    "CRC_verified": true,
+    "member_SHA256_verified": true,
+    "no_SDK_binaries_models_or_duplicate_full_source_trees": true
+  }
+}

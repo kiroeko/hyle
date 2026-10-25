@@ -1,0 +1,440 @@
+{
+  "schema": "hyle-performance-evidence-v1",
+  "status": "BOUNDED_CURRENT_GRAPH_PREPARE_ATTRIBUTION_COMPLETE_NOT_TPS",
+  "date": "2026-10-26",
+  "scope": "One private Graph executable.cc host TU, exact current2a94 closure relink, one original K1 two-turn CUDA process. Fixed POD CPU-elapsed diagnostic only; no profiler or peer run.",
+  "closure": {
+    "baseline_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\link-current\\hyle.exe",
+      "bytes": 141459968,
+      "sha256": "2a94f0b297d00825c6470138c6daf472868161ff76a0dea15477f0c57b58b7a6"
+    },
+    "diagnostic_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\attempt1\\link\\hyle.exe",
+      "bytes": 141463552,
+      "sha256": "d3b241f9a49ea69d611b992d90ea35002ee5e5004b1c0a8ab3073581f2a10856"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\source\\src\\graph\\executable.cc",
+      "bytes": 488359,
+      "sha256": "8d92350daea26e548ec4b2e36d425ec9518483eddfe869236b2561f12e485fc6"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\source-pins.json",
+      "bytes": 888,
+      "sha256": "6ccbc68f6316c95790c09b57c176e823fa08db64b778264644c8df5dbbfeb495"
+    },
+    "graph_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\attempt1\\compile\\unit.obj",
+      "bytes": 5155920,
+      "sha256": "e8fa482ed0b3384c1056829076fa9011dbfb7d9e1adcff00c45feddae24c8c94"
+    },
+    "absolute_link_inputs": 222,
+    "unchanged_absolute_link_inputs": 221,
+    "current_project_dependency_count": 86,
+    "actual_dependency_count": 255,
+    "dependency_check": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\attempt1\\compile\\dependency-check.json",
+      "bytes": 8410,
+      "sha256": "dc34eb403f92d6632f125cfc5d625ec6fd75897722ce3f4d5693d074a4b7d10b"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-cold-clock-20261026\\attempt1\\runtime.json",
+      "bytes": 8323,
+      "sha256": "d61adeef17d2e293633d279b6b2deb335c5f5ca878e989343d371f2012d57094"
+    },
+    "current_build_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-current-source-build-2026-10-26.json",
+      "bytes": 11063,
+      "sha256": "b9fbb73423dd8ff9c56eb80e881e360fcdd22ca9480e34695ad74fd594dfd74d"
+    },
+    "current_window_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-current-window-2026-10-26.json",
+      "bytes": 155811,
+      "sha256": "6cfa51699c84bdae5bff2b3fb9b43b99a31d067fecf91a7e9960d2bdfbafccf3"
+    }
+  },
+  "actual_processes": {
+    "compile": {
+      "exit": 0,
+      "pid": 51992,
+      "seconds": 6.586067800002638
+    },
+    "link": {
+      "exit": 0,
+      "pid": 37068,
+      "seconds": 1.7060246999608353
+    },
+    "single_model_run": {
+      "exit": 0,
+      "pid": 56356,
+      "seconds": 3.9395823000231758
+    },
+    "GPU_released_at_model_terminal_before_offline_analysis": true,
+    "additional_app_core_provider_device_SDK_builds": 0,
+    "additional_model_processes": 0
+  },
+  "completeness": {
+    "prepare_attempted": 68,
+    "prepare_finished": 68,
+    "prepare_capacity": 512,
+    "prepare_overflow": 0,
+    "range_attempted": 132,
+    "range_finished": 132,
+    "range_capacity": 2048,
+    "range_overflow": 0,
+    "store_bytes": 319520
+  },
+  "work": {
+    "baseline_command": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window\\two-turn-timing\\02-hyle_mtp\\command.json",
+      "bytes": 1170,
+      "sha256": "5257a5cb36c0a5780a17bf970c0c41e48d42ff9cf287cbf06d6fac2694cdcbe0"
+    },
+    "full_JSON_non_time_difference_count": 0,
+    "original_stderr_equal_after_removing_only_diagnostic_lines_and_original_clock_values": true,
+    "normalization": "Literal retained behavior.py functions; recursive fields whose names contain seconds/tokens_per_second/clock_unix/unix_ns/unix_ms are original clock exclusions. No work/ledger/RNG/cache metadata exclusions.",
+    "prepare_log_mapping": "68 prepare calls align by actual original prepared-log order and exact per-call recorded/reused counts. Prefill2, recorded decode21, no-record decode45; do not call all68 decode."
+  },
+  "boundaries": {
+    "source_only_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\next-cold-clock-boundaries.json",
+      "bytes": 8740,
+      "sha256": "ad2519488dc7747bd7e62b628db1dba1417261c068dbc27c04b5107cab497034"
+    },
+    "prepare_ticks": [
+      "queue/prelude begin",
+      "cold bindings begin",
+      "cold bindings end",
+      "routes/inputs/reserve end",
+      "capture cache qualification end",
+      "range loop begin",
+      "range loop end",
+      "scope exit after original preparation/candidate destructors"
+    ],
+    "range_ticks": [
+      "key lookup/setup begin",
+      "begin capture begin OR successful reuse decision",
+      "begin capture end",
+      "dispatch end",
+      "capture end/instantiate-update end",
+      "sequence.finish + retained preparation completion + real wait end",
+      "key/command publication end",
+      "range scope exit"
+    ],
+    "parent_children": "Parent range-loop is inclusive of children. Exclusive loop/control is computed only after subtracting all matching contained child intervals; never sum inclusive parent and children.",
+    "mode_and_absent_ticks": "Mode is requested mode. Two original Commands prefills have seen159 and no range-loop ticks;66 decode preparations seen255. Reused ranges seen131; recorded ranges seen255. Missing ticks are unknown, never fabricated zero intervals.",
+    "CPU_elapsed": "Buckets include original native API calls and real waits; no GPU union or pure-CPU classification is available.",
+    "normal_exit_only": "Static dump owns only POD/stdio, no resources; actual normal-exit marker, attempted==finished, contiguous ordinals, stage masks, monotonic ticks and zero overflows checked."
+  },
+  "groups": {
+    "all": {
+      "count": 68,
+      "cold_batch_total_ms": 98.0957,
+      "prepare_replay_total_ms": 63.6187,
+      "outside_prepare_replay_ms": 34.477,
+      "cold_bindings": {
+        "count": 68,
+        "total_ms": 16.2607,
+        "mean_us": 239.1279411764706,
+        "median_us": 215.05,
+        "min_us": 120.3,
+        "max_us": 767.5
+      },
+      "range_loop_INCLUSIVE_ms": 46.8296,
+      "loop_control_EXCLUSIVE_ms": 0.0407
+    },
+    "prefill": {
+      "count": 2,
+      "cold_batch_total_ms": 10.0296,
+      "prepare_replay_total_ms": 1.3806,
+      "outside_prepare_replay_ms": 8.649,
+      "cold_bindings": {
+        "count": 2,
+        "total_ms": 1.3414,
+        "mean_us": 670.7,
+        "median_us": 670.7,
+        "min_us": 633.3,
+        "max_us": 708.1
+      },
+      "range_loop_INCLUSIVE_ms": null,
+      "loop_control_EXCLUSIVE_ms": null
+    },
+    "decode_has_record": {
+      "count": 21,
+      "cold_batch_total_ms": 62.4512,
+      "prepare_replay_total_ms": 50.954,
+      "outside_prepare_replay_ms": 11.4972,
+      "cold_bindings": {
+        "count": 21,
+        "total_ms": 5.5511,
+        "mean_us": 264.33809523809526,
+        "median_us": 219.6,
+        "min_us": 126.2,
+        "max_us": 767.5
+      },
+      "range_loop_INCLUSIVE_ms": 45.0691,
+      "loop_control_EXCLUSIVE_ms": 0.009
+    },
+    "decode_no_record": {
+      "count": 45,
+      "cold_batch_total_ms": 25.6149,
+      "prepare_replay_total_ms": 11.2841,
+      "outside_prepare_replay_ms": 14.3308,
+      "cold_bindings": {
+        "count": 45,
+        "total_ms": 9.3682,
+        "mean_us": 208.1822222222222,
+        "median_us": 214.4,
+        "min_us": 120.3,
+        "max_us": 262.0
+      },
+      "range_loop_INCLUSIVE_ms": 1.7605,
+      "loop_control_EXCLUSIVE_ms": 0.0317
+    }
+  },
+  "parent_closure": {
+    "prepare_replay_total_ms": 63.6187,
+    "disjoint_parent_sum_ms": 63.6187,
+    "child_plus_exclusive_control_matches_range_loop_ms": 46.8296,
+    "cold_batch_total_ms": 98.0957,
+    "outside_prepare_replay_ms": 34.477,
+    "warning": "Original cold_batch seconds are printed with finite precision; outside difference is same-call elapsed envelope, not CPU/GPU attribution."
+  },
+  "range_summary": {
+    "recorded_count": 27,
+    "reused_count": 105,
+    "recorded": {
+      "lookup_and_setup": {
+        "count": 27,
+        "total_ms": 0.0274,
+        "mean_us": 1.0148148148148148,
+        "median_us": 1.0,
+        "min_us": 0.4,
+        "max_us": 1.7
+      },
+      "begin_capture": {
+        "count": 27,
+        "total_ms": 0.1038,
+        "mean_us": 3.8444444444444446,
+        "median_us": 3.5,
+        "min_us": 0.9,
+        "max_us": 22.7
+      },
+      "dispatch": {
+        "count": 27,
+        "total_ms": 25.8052,
+        "mean_us": 955.7481481481482,
+        "median_us": 183.9,
+        "min_us": 149.5,
+        "max_us": 5372.5
+      },
+      "end_capture_native_build": {
+        "count": 27,
+        "total_ms": 17.627,
+        "mean_us": 652.8518518518518,
+        "median_us": 93.7,
+        "min_us": 18.6,
+        "max_us": 3020.2
+      },
+      "finish_retained_completion_real_wait": {
+        "count": 27,
+        "total_ms": 0.2456,
+        "mean_us": 9.096296296296295,
+        "median_us": 4.7,
+        "min_us": 2.9,
+        "max_us": 23.4
+      },
+      "key_publication": {
+        "count": 27,
+        "total_ms": 0.8364,
+        "mean_us": 30.977777777777778,
+        "median_us": 6.2,
+        "min_us": 1.9,
+        "max_us": 146.0
+      },
+      "range_cleanup": {
+        "count": 27,
+        "total_ms": 0.0033,
+        "mean_us": 0.12222222222222223,
+        "median_us": 0.1,
+        "min_us": 0.1,
+        "max_us": 0.2
+      }
+    },
+    "reuse_lookup": {
+      "count": 105,
+      "total_ms": 2.1382,
+      "mean_us": 20.363809523809522,
+      "median_us": 3.8,
+      "min_us": 0.0,
+      "max_us": 106.6
+    },
+    "reuse_cleanup": {
+      "count": 105,
+      "total_ms": 0.002,
+      "mean_us": 0.019047619047619046,
+      "median_us": 0.0,
+      "min_us": 0.0,
+      "max_us": 0.1
+    }
+  },
+  "record_class_totals": {
+    "body": {
+      "count": 10,
+      "range_wall_ms": 40.3623,
+      "lookup_setup_ms": 0.0093,
+      "begin_ms": 0.0213,
+      "dispatch_ms": 22.6239,
+      "end_native_build_ms": 16.7556,
+      "finish_wait_ms": 0.1737,
+      "key_publication_ms": 0.7771,
+      "range_cleanup_ms": 0.0014,
+      "sequence_one_based": [
+        2,
+        3,
+        4,
+        8,
+        37,
+        38,
+        39,
+        40,
+        43,
+        44
+      ]
+    },
+    "front": {
+      "count": 17,
+      "range_wall_ms": 4.2864,
+      "lookup_setup_ms": 0.0181,
+      "begin_ms": 0.0825,
+      "dispatch_ms": 3.1813000000000002,
+      "end_native_build_ms": 0.8714,
+      "finish_wait_ms": 0.0719,
+      "key_publication_ms": 0.0593,
+      "range_cleanup_ms": 0.0019,
+      "sequence_one_based": [
+        2,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        37,
+        38,
+        41,
+        42,
+        44,
+        45
+      ]
+    }
+  },
+  "largest_record_dispatch": {
+    "prepare_ordinal": 1,
+    "sequence_one_based": 2,
+    "original_prepared": {
+      "T": 2,
+      "visible": 156,
+      "cold_batch_seconds": 0.0103371,
+      "capture_recorded": 2,
+      "capture_reused": 0
+    },
+    "range_begin": 57,
+    "range_step_count": 1269,
+    "command_count": 631,
+    "range_class": "body",
+    "range_wall_ms": 8.1604,
+    "lookup_setup_ms": 0.0007,
+    "begin_ms": 0.0012,
+    "dispatch_ms": 5.3725,
+    "end_native_build_ms": 2.6301,
+    "finish_wait_ms": 0.0174,
+    "key_publication_ms": 0.1384,
+    "range_cleanup_ms": 0.0001
+  },
+  "largest_record_end": {
+    "prepare_ordinal": 2,
+    "sequence_one_based": 3,
+    "original_prepared": {
+      "T": 2,
+      "visible": 158,
+      "cold_batch_seconds": 0.0079334,
+      "capture_recorded": 2,
+      "capture_reused": 0
+    },
+    "range_begin": 55,
+    "range_step_count": 1269,
+    "command_count": 631,
+    "range_class": "body",
+    "range_wall_ms": 5.0808,
+    "lookup_setup_ms": 0.0004,
+    "begin_ms": 0.0012,
+    "dispatch_ms": 1.9372,
+    "end_native_build_ms": 3.0202,
+    "finish_wait_ms": 0.0169,
+    "key_publication_ms": 0.1048,
+    "range_cleanup_ms": 0.0001
+  },
+  "first_offline_failure": {
+    "stage": "offline analysis after exit0",
+    "error": "assert all prepare seen255",
+    "cause": "actual two Commands prefills correctly seen159 (p5/p6 never executed); 66 decode seen255. No runtime or instrumentation failure.",
+    "run": {
+      "exit": 0,
+      "pid": 56356,
+      "seconds": 3.9395823000231758
+    },
+    "action": "parser accepts original Commands early-return shape and leaves range-loop ticks unknown; no recompile/model rerun"
+  },
+  "findings": [
+    "Actual body10 record dispatch22.6239ms and end_capture16.7556ms dominate the observed recording path. Front17 dispatch3.1813ms/end0.8714ms are separate. Counts are current-run facts, not old15body extrapolation.",
+    "Graph Queue/prelude, dependency/input routes, cache qualification, publication and finish real-wait buckets are small here. No evidence justifies changing their permission/retirement contracts.",
+    "Warm45 cold bindings9.3682ms (208.182us/episode; median214.4us) dominate the small prepare_replay portion, but cannot by themselves explain the historical roughly1.5ms algebraic whole-episode gap. The function already has revision/span reuse and still seals original readiness; this result does not justify a speculative dirty-bit mechanism.",
+    "The strongest unresolved implementation boundary is now concrete: enqueue_segment_steps dispatch vs CommandCaptureAccess::end/native backend. Existing ggml provider timing is another process and cannot split this dispatch25.8052ms. End includes StreamEndCapture, eligible ExecUpdate or Instantiate, graph destruction and artifact/status ownership; this run cannot label individual calls instantiate/update or pure CPU.",
+    "If another diagnostic is warranted later, a single backend-host end_capture split (EndCapture / eligible update / instantiate / destruction+artifact publication) would distinguish the17.6270ms. Do not run it automatically or infer recoverable time from this measurement."
+  ],
+  "old_provider_boundary": {
+    "old_provider_total_ms": 15.2907,
+    "evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\new-hotspots-2026-10-26.json",
+      "bytes": 15268,
+      "sha256": "3b87d81b672a0fae14d9a76ac9b39cb6776fc9aa7490e8146e91f1011914c4e7"
+    },
+    "rule": "Different process and historical703 closure. Never subtract15.2907ms from this run, nor old15-body Nsight/peer timings from current10-body native elapsed buckets."
+  },
+  "follow_up": "Stopped after this archive. Further backend-end instrumentation or an optimization requires a separately selected next task; no candidate speed benefit follows here.",
+  "reproduction": {
+    "archive_offline": "Extract ZIP; python scripts/recompute.py EXTRACTED_DIRECTORY (stdlib only).",
+    "original_build_run": "Exact compile/link/run commands, current input pins and private runner are archived. Only source patch changes src/graph/executable.cc; current original source SHA is in source-pins.json.",
+    "raw_format": "Entire direct stdout/stderr retained, no Nsight truncation. Both initial offline failed parser and corrected analyzer retained; the model itself exited0 once."
+  },
+  "limits": [
+    "CPU elapsed contains original native API calls and possible waits; no GPU activity union measured.",
+    "Parent range-loop includes children. Only parent exclusive control plus child buckets may be summed.",
+    "Mode is requested mode, not proof of selected route. Original prepared replay and actual record/reuse facts remain authoritative.",
+    "Normal exit and all counts/masks/overflow were checked. Clock overhead is not calibrated; timings are diagnostic, not a benchmark.",
+    "No additional Model/GPU/compile/profiler process was launched to repair the initial offline Commands-mask assertion.",
+    "No throughput, current-vs-peer unit-cost, pure CPU or recoverable-time claim; no benchmark samples were added.",
+    "prepare_replay excludes preceding Model layout/batch/input work. Same-call cold_batch minus prepare_replay is an unclassified upper-level envelope, printed at finite clock precision.",
+    "Dispatch covers all selected region/operation/copy steps; it is not equivalent to ggml provider time or kernel-launch time. End combines native capture/update-or-instantiation and artifact lifetime work; no exact Update/Instantiate counts were measured."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/mtp-graph-prepare-attribution-2026-10-26.zip",
+    "bytes": 202560,
+    "sha256": "d6c8fe6d547a64774000475e68292cbeb5b2fd73b919d4d417e3c3f78dbfc530",
+    "member_count": 58,
+    "zip_CRC": "PASS",
+    "member_SHA256": "PASS",
+    "contains_binaries_SDK_models_full_source_tree": false
+  }
+}
