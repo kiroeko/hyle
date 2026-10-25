@@ -116,7 +116,8 @@ bool unchanged(const HeadImage &a, const HeadImage &b) {
 }
 void retire(std::shared_ptr<q::Session> &session) {
   q::check(session->stop());
-  require(q::take(session->try_retire()), "completed native Session did not retire");
+  const auto observed = session->try_retire(); q::check(observed.status);
+  require(observed.retired, "completed native Session did not retire");
   session.reset();
 }
 q::GraphRole round_role(const q::Session &session) {

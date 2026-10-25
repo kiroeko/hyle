@@ -20,8 +20,10 @@ void require(bool value, const char *message) {
 }
 void retire(std::shared_ptr<q::Session> &session) {
   if (!session) return;
-  q::check(session->stop()); q::check(session->drain());
-  require(q::take(session->try_retire()), "original session failed to retire"); session.reset();
+  (void)session->stop(); const auto drained = session->drain();
+  const auto retired = session->try_retire(); if (retired.retired) session.reset();
+  q::check(drained.status); q::check(retired.status);
+  require(retired.retired, "original session failed to retire");
 }
 q::MtpRoundResult round(q::Model &model, const std::shared_ptr<q::Session> &session,
     q::GenerationLedger &ledger, const q::GenerationCommitRecord *expected = nullptr) {
@@ -97,15 +99,19 @@ void run(const std::filesystem::path &input) {
     std::cerr << "random_probe_stage=cancel_submit\n";
     q::check(gate.arm()); q::check(gate.wait_until_entered()); model.submit_evaluation(*session);
     q::check(gate.wait_for_model_submission()); q::check(session->stop());
-    require(!q::take(session->try_retire()) && model.active_step.get() == episode &&
+    const auto pending = session->try_retire();
+    if (!pending.status.IsCancelled() || pending.status.has_native_error()) q::check(pending.status);
+    require(!pending.retired && model.active_step.get() == episode &&
         session->head == base && session->head->sampling.draw == 1 &&
         model.snapshot_versions.live == candidates, "blocked cancellation published or released an accepted native owner");
     gate.release(); q::check(gate.wait());
     require(!gate.timed_out(), "native gate watchdog released the queue");
   }
-  const auto drained = session->drain(); if (!drained.IsCancelled()) q::check(drained);
-  require(q::take(session->try_retire()), "cancelled Graph did not actually retire");
-  session.reset();
+  const auto drained = session->drain();
+  const auto retired = session->try_retire(); if (retired.retired) session.reset();
+  if (!drained.status.IsCancelled() || drained.status.has_native_error()) q::check(drained.status);
+  if (!retired.status.IsCancelled() || retired.status.has_native_error()) q::check(retired.status);
+  require(retired.retired, "cancelled Graph did not actually retire");
   require(base->sampling.draw == 1 && !model.active_step && !model.carrier_borrowed,
       "cancelled sampled work advanced the old cursor");
   // Same state, two independent request streams, one real R2 target/draft

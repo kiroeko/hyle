@@ -148,10 +148,12 @@ void model_retirement(bool retain_session) {
   EXPECT_FALSE(scope.expired());
   EXPECT_FALSE(runtime.expired());
   EXPECT_EQ(session->pending, nullptr);
-  auto pending = session->try_retire();
-  ASSERT_TRUE(pending);
-  EXPECT_FALSE(*pending);
-  EXPECT_FALSE(session->drain().ok());
+  const auto pending = session->try_retire();
+  EXPECT_FALSE(pending.retired);
+  EXPECT_TRUE(pending.status.IsResourceExhausted());
+  const auto pending_drain = session->drain();
+  EXPECT_FALSE(pending_drain.retired);
+  EXPECT_EQ(pending_drain.status, pending.status);
   EXPECT_FALSE(scope.expired());
   if (!retain_session) {
     session.reset();
@@ -165,10 +167,12 @@ void model_retirement(bool retain_session) {
   }
   original_runtime.reset();
   failure.unknown_drain = false;
-  EXPECT_TRUE(session->drain().IsResourceExhausted()); // Original native observation diagnosis.
-  auto retired = session->try_retire();
-  ASSERT_TRUE(retired);
-  EXPECT_TRUE(*retired);
+  const auto drained = session->drain();
+  EXPECT_TRUE(drained.retired);
+  EXPECT_EQ(drained.status, pending.status); // Original native observation diagnosis survives retirement.
+  const auto retired = session->try_retire();
+  EXPECT_TRUE(retired.retired);
+  EXPECT_EQ(retired.status, pending.status);
   session.reset();
   EXPECT_TRUE(scope.expired());
   EXPECT_TRUE(runtime.expired()); // No application/Graph/resource-owner cycle.

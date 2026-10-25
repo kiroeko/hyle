@@ -237,7 +237,8 @@ struct Probe final {
 };
 
 void retire(Run &run) {
-  q::check(run.session->stop()); require(q::take(run.session->try_retire()), "completed MTP Session failed actual retirement");
+  q::check(run.session->stop()); const auto observed = run.session->try_retire(); q::check(observed.status);
+  require(observed.retired, "completed MTP Session failed actual retirement");
   run.session.reset();
 }
 void advance(q::Model &model, Probe &probe, Run &run, std::size_t which, bool reference) {
@@ -457,7 +458,8 @@ struct PrefixObservation final {
 };
 
 void retire_prefix_session(std::shared_ptr<q::Session> &session) {
-  q::check(session->stop()); require(q::take(session->try_retire()), "prefix Session did not really retire"); session.reset();
+  q::check(session->stop()); const auto observed = session->try_retire(); q::check(observed.status);
+  require(observed.retired, "prefix Session did not really retire"); session.reset();
 }
 void prefix_commit(q::Model &model, PrefixObservation &observation, std::size_t which, std::size_t index,
                    const std::shared_ptr<q::Session> &session, std::span<const std::int32_t> inputs,
@@ -1079,7 +1081,9 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       gate.wait_until_entered(); model.submit_evaluations(); ++observation.graph_calls;
       q::check(sessions[0]->stop()); observation.dropped_completion = episode->completion.valid();
       require(observation.dropped_completion,"MTP batch had no actual Completion to drop"); episode->completion = {};
-      require(!q::take(sessions[0]->try_retire()),"MTP batch retired while its native queue was blocked");
+      const auto blocked_retirement = sessions[0]->try_retire();
+      if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
+      require(!blocked_retirement.retired,"MTP batch retired while its native queue was blocked");
       observation.blocked_retained = model.active_step.get() == episode && model.carrier_borrowed &&
           sessions[0]->pending == episode && sessions[1]->pending == episode && !weak[0].expired() && !weak[1].expired() &&
           sessions[0]->head == old_heads[0] && sessions[1]->head == old_heads[1] && episode->cancelled &&
@@ -1089,9 +1093,11 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       require(observation.blocked_retained,"blocked MTP cancellation lost candidates, oldheads, versions, ledger or carrier");
       // Never read device bytes while the real callback blocks this queue.
       gate.release(); q::check(blocked.wait()); blocked = {};
-      const auto drained = q::take(model.execution.common_context())->drain(); if (!drained.ok() && !drained.IsCancelled()) q::check(drained);
-      const auto run_drained = run->drain(); if (!run_drained.ok() && !run_drained.IsCancelled()) q::check(run_drained);
-      require(q::take(sessions[0]->try_retire()),"released MTP batch failed its original retirement gates");
+      const auto drained = q::take(model.execution.common_context())->drain(); if (!drained.IsCancelled() || drained.has_native_error()) q::check(drained);
+      const auto run_drained = run->drain(); if (!run_drained.IsCancelled() || run_drained.has_native_error()) q::check(run_drained);
+      const auto cancelled_retirement = sessions[0]->try_retire();
+      if (!cancelled_retirement.status.IsCancelled() || cancelled_retirement.status.has_native_error()) q::check(cancelled_retirement.status);
+      require(cancelled_retirement.retired,"released MTP batch failed its original retirement gates");
     }
     observation.versions_after_cancel = model.snapshot_versions.live;
     observation.cancelled = !model.active_step && !model.carrier_borrowed && !sessions[0]->head && !sessions[0]->pending &&

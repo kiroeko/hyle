@@ -38,7 +38,8 @@ struct ReleaseAndDrain final {
     std::cerr << "native_gate_cleanup stage=release_begin\n";
     gate.release();
     std::cerr << "native_gate_cleanup stage=model_abort_begin\n";
-    model.abort_episode().IgnoreError();
+    const auto observed = model.abort_episode();
+    observed.status.IgnoreError(); // Cleanup never substitutes for a retirement proof.
     std::cerr << "native_gate_cleanup stage=gate_wait_begin\n";
     gate.wait().IgnoreError();
     std::cerr << "native_gate_cleanup stage=done\n";
@@ -178,7 +179,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   model.plan_execution(calls);
   hyle::inference::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
   auto session = model.create_session(calls);
-  auto admission = directory.admit(0, 0, [](std::size_t) { return false; });
+  auto admission = directory.admit(0, 0, [](std::size_t) { return hyle::inference::RetirementObservation{}; });
+  q::check(admission.retirement_status);
   require(admission.accepted(), "initial owner was not admitted");
   auto pin = directory.pin(0);
   require(static_cast<bool>(pin), "initial owner could not pin");
@@ -214,7 +216,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           shared_run == &shared_phase->slots[borrowed_slot],
           "prepared candidate did not borrow an actual Model execution slot");
   q::check(idle->stop());
-  require(q::take(idle->try_retire()), "idle logical Session did not retire");
+  const auto idle_retirement = idle->try_retire(); q::check(idle_retirement.status);
+  require(idle_retirement.retired, "idle logical Session did not retire");
   idle.reset();
   require(session->pending->phase == shared_phase && session->pending->run == shared_run &&
           shared_run->valid() && model.carrier_borrowed,
@@ -261,24 +264,26 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   expect_borrow_busy("stopped_native_pending");
   std::size_t collector_calls = 0;
   const auto collect = [&] {
-    return directory.collect_retired(0, [&](std::size_t owner) {
+    const auto observed = directory.collect_retired(0, [&](std::size_t owner) {
       require(owner == 0 && session, "collector lost the actual Session owner");
       ++collector_calls;
-      const bool retired = q::take(session->try_retire());
-      if (!retired) return false;
+      const auto retired = session->try_retire();
+      if (!retired.retired) return retired;
       require(!session->pending && !model.active_step,
               "retired Model episode left its borrowed Session pending link alive");
       session.reset();
-      return true;
+      return retired;
     });
+    if (!observed.status.IsCancelled() || observed.status.has_native_error()) q::check(observed.status);
+    return observed;
   };
-  require(!collect(), "collect reclaimed a native-blocked owner");
+  require(!collect().retired, "collect reclaimed a native-blocked owner");
   const bool dropped_public_completion = session->pending->completion.valid();
   // One externally serialized owner abandons the public observation. The
   // original Graph/native reaper must retain all actual resource uses.
   session->pending->completion = {};
   expect_borrow_busy("dropped_completion_native_pending");
-  require(!collect(), "dropping public Completion reclaimed native-blocked work");
+  require(!collect().retired, "dropping public Completion reclaimed native-blocked work");
   require(directory.retained_sessions() == 1 && !candidate.expired() &&
           session->pending && session->pending->members[0].next.get() == candidate_identity &&
           session->head == old_prefix && model.snapshot_versions.live == 2 &&
@@ -286,8 +291,9 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           "pending retirement released candidate, visible head or finite version charge");
   require(q::take(model.cache_budget.usage(model.execution.device())).live_bytes == pending_bytes,
           "blocked owner returned managed bytes before native retirement");
-  const auto same_id = directory.admit(0, 0, [](std::size_t) { return true; });
-  const auto other_id = directory.admit(1, 0, [](std::size_t) { return true; });
+  const auto same_id = directory.admit(0, 0, [](std::size_t) { return hyle::inference::RetirementObservation{.retired = true}; });
+  const auto other_id = directory.admit(1, 0, [](std::size_t) { return hyle::inference::RetirementObservation{.retired = true}; });
+  q::check(same_id.retirement_status); q::check(other_id.retirement_status);
   require(same_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
           other_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "resident limit1 readmitted a still-retiring owner or another owner");
@@ -298,7 +304,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   gate.release();
   q::check(gate.wait()); require(!gate.timed_out(), "native gate watchdog opened during assertions");
   const auto deadline = q::Clock::now() + std::chrono::seconds(30);
-  while (!collect()) {
+  while (!collect().retired) {
     require(q::Clock::now() < deadline, "native retirement did not become collectible");
     std::this_thread::yield();
   }
@@ -318,7 +324,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
     require(!key && key.error().IsUnavailable() && !value && value.error().IsUnavailable(),
             "retained old prefix lost its original page after suffix retirement");
   }
-  admission = directory.admit(1, 0, [](std::size_t) { return false; });
+  admission = directory.admit(1, 0, [](std::size_t) { return hyle::inference::RetirementObservation{}; });
+  q::check(admission.retirement_status);
   require(admission.accepted(), "retired directory slot was not reusable");
   auto next_pin = directory.pin(1);
   require(static_cast<bool>(next_pin), "replacement owner could not pin");
@@ -348,7 +355,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   auto after_report = model.create_session(resume, recovered->head);
   std::weak_ptr<const q::cache::Snapshot> report_head = recovered->head;
   q::check(recovered->stop());
-  require(q::take(recovered->try_retire()), "reported-error Session did not retire its committed head alias");
+  const auto report_retirement = recovered->try_retire(); q::check(report_retirement.status);
+  require(report_retirement.retired, "reported-error Session did not retire its committed head alias");
   recovered.reset();
   const auto after_report_slot = model.slot_index;
   model.prepare_evaluation(*after_report, std::span(&tape[1], 1));
@@ -366,7 +374,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           model.snapshot_versions.live == 1,
           "retained old prefix was not a usable independent continuation");
   next_pin.reset();
-  q::check(recovered->drain());
+  const auto live_drain = recovered->drain(); q::check(live_drain.status);
+  require(!live_drain.retired && recovered->head, "draining an unstopped Session retired its committed head");
   recovered.reset();
   for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i) {
     auto key = q::take(model.page_inventory.keys[i].acquire(dirty_page));
@@ -445,7 +454,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   auto waiting = model.create_session(catchup_calls, old_prefix, catchup_role);
   auto idle = model.create_session(catchup_calls, old_prefix, catchup_role);
   hyle::inference::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
-  require(directory.admit(0, 0, [](std::size_t) { return false; }).accepted(), "MTP owner admission failed");
+  const auto admission = directory.admit(0, 0, [](std::size_t) { return hyle::inference::RetirementObservation{}; });
+  q::check(admission.retirement_status); require(admission.accepted(), "MTP owner admission failed");
   auto pin = directory.pin(0); require(static_cast<bool>(pin), "MTP owner pin failed");
   const auto pending = old_prefix->next_id;
   const auto slot = model.slot_index;
@@ -463,7 +473,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   require(all_bound() && session->pending->members[0].next->length == 17 + verify_rows &&
           session->pending->members[0].next->draft->frontier == 18,
           "catchup did not prepare all14 real append permissions and both query frontiers");
-  q::check(idle->stop()); require(q::take(idle->try_retire()), "idle MTP alias could not retire"); idle.reset();
+  q::check(idle->stop()); const auto idle_retirement = idle->try_retire(); q::check(idle_retirement.status);
+  require(idle_retirement.retired, "idle MTP alias could not retire"); idle.reset();
   require(run->valid() && model.carrier_borrowed && all_bound(), "idle stop closed another MTP carrier");
   std::weak_ptr<const q::cache::Snapshot> candidate = session->pending->members[0].next;
   const auto *candidate_identity = session->pending->members[0].next.get();
@@ -497,27 +508,33 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   busy();
   std::size_t collector_calls = 0;
   const auto collect = [&] {
-    return directory.collect_retired(0, [&](std::size_t id) {
+    const auto observed = directory.collect_retired(0, [&](std::size_t id) {
       require(id == 0 && session, "MTP collector lost its original owner"); ++collector_calls;
-      if (!q::take(session->try_retire())) return false;
+      const auto retired = session->try_retire();
+      if (!retired.retired) return retired;
       require(!session->pending && !model.active_step, "MTP retired episode retained a pending link");
-      session.reset(); return true;
+      session.reset(); return retired;
     });
+    if (!observed.status.IsCancelled() || observed.status.has_native_error()) q::check(observed.status);
+    return observed;
   };
   std::cerr << "native_gate_probe stage=mtp_first_collect_begin\n";
   const auto collected_before_release = collect();
-  std::cerr << "native_gate_probe stage=mtp_first_collect_done retired=" << collected_before_release << '\n';
-  require(!collected_before_release, "MTP blocked work retired before its original native owner");
+  std::cerr << "native_gate_probe stage=mtp_first_collect_done retired=" << collected_before_release.retired << '\n';
+  require(!collected_before_release.retired, "MTP blocked work retired before its original native owner");
   const bool dropped = session->pending->completion.valid();
   session->pending->completion = {};
   busy();
-  require(!collect() && session->head == old_prefix && all_bound() && !candidate.expired() &&
+  require(!collect().retired && session->head == old_prefix && all_bound() && !candidate.expired() &&
           session->pending->members[0].next.get() == candidate_identity &&
           model.snapshot_versions.live == 2 && model.carrier_borrowed && directory.retained_sessions() == 1 &&
           q::take(model.cache_budget.usage(model.execution.device())).live_bytes == native_pending_bytes,
           "dropping MTP Completion returned candidate, permissions or budget before retirement");
-  require(directory.admit(0, 0, [](std::size_t) { return true; }).status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
-          directory.admit(1, 0, [](std::size_t) { return true; }).status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
+  const auto same_id = directory.admit(0, 0, [](std::size_t) { return hyle::inference::RetirementObservation{.retired = true}; });
+  const auto other_id = directory.admit(1, 0, [](std::size_t) { return hyle::inference::RetirementObservation{.retired = true}; });
+  q::check(same_id.retirement_status); q::check(other_id.retirement_status);
+  require(same_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
+          other_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "MTP retiring directory slot was readmitted");
   for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i)
     require(!model.page_inventory.keys[i].acquire(target_page) && !model.page_inventory.values[i].acquire(target_page),
@@ -528,7 +545,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   // immutable byte only after native retirement has actually become observable.
   gate.release(); q::check(gate.wait()); require(!gate.timed_out(), "native gate watchdog opened during MTP assertions");
   const auto deadline = q::Clock::now() + std::chrono::seconds(30);
-  while (!collect()) { require(q::Clock::now() < deadline, "MTP native retirement timed out"); std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+  while (!collect().retired) { require(q::Clock::now() < deadline, "MTP native retirement timed out"); std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
   require(!session && candidate.expired() && !model.active_step && !model.carrier_borrowed &&
           model.snapshot_versions.live == 1 && !run->valid() &&
           directory.retained_sessions() == 0 && directory.retained_bytes() == 0,
@@ -546,7 +563,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
           recovered->head->draft->lag == recovered->length() - 18 && retried.processed_draft == 2,
           "retried MTP catchup committed inconsistent target/draft frontiers");
   const auto retry_length = recovered->length();
-  q::check(recovered->stop()); require(q::take(recovered->try_retire()), "successful MTP retry could not retire"); recovered.reset();
+  q::check(recovered->stop()); const auto retry_retirement = recovered->try_retire(); q::check(retry_retirement.status);
+  require(retry_retirement.retired, "successful MTP retry could not retire"); recovered.reset();
 
   // A host selector failure happens after the real successful terminal but
   // before any of the 14 append outputs or the complete new head is published.
@@ -607,7 +625,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   std::weak_ptr<const q::cache::Snapshot> prefix_weak = old_prefix;
   old_prefix.reset();
   require(prefix_weak.expired() && model.snapshot_versions.live == 1, "MTP probe leaked an extra committed prefix owner");
-  q::check(policy_session->stop()); require(q::take(policy_session->try_retire()), "final MTP Session did not retire"); policy_session.reset();
+  q::check(policy_session->stop()); const auto final_retirement = policy_session->try_retire(); q::check(final_retirement.status);
+  require(final_retirement.retired, "final MTP Session did not retire"); policy_session.reset();
   require(model.snapshot_versions.live == 0 && !model.active_step && !model.carrier_borrowed,
           "MTP probe left committed or pending owners behind");
   std::cout << "{\"status\":\"PASS\",\"backend\":\"" << model.execution.name()

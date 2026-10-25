@@ -7,6 +7,7 @@
 #include "qwen_dual_model_case.h"
 #include "qwen_sampling_policy_case.h"
 #include "qwen_turn_context_case.h"
+#include "qwen_retirement_observation_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
@@ -32,27 +33,28 @@ void retirement_status_contract() {
   const auto native_cancelled = hyle::Status::FromNative(hyle::StatusCode::Cancelled,
       {hyle::NativeErrorDomain::CudaDriver, 999}, "synthetic native cancellation failure");
   auto status = hyle::Status::Ok();
-  q::record_retirement_status(status, cancelled);
+  i::record_retirement_status(status, cancelled);
   require(status == cancelled, "initial cancellation was lost");
-  q::record_retirement_status(status, hyle::Status::Ok());
+  i::record_retirement_status(status, hyle::Status::Ok());
   require(status == cancelled, "success cleared prior cancellation");
-  q::record_retirement_status(status, failure);
+  i::record_retirement_status(status, failure);
   require(status == failure, "prior cancellation hid retirement failure");
-  q::record_retirement_status(status, cancelled);
+  i::record_retirement_status(status, cancelled);
   require(status == failure, "later cancellation replaced real failure");
-  status = cancelled; q::record_retirement_status(status, native);
+  status = cancelled; i::record_retirement_status(status, native);
   require(status == native && status.has_native_error(), "prior cancellation hid native failure");
-  status = cancelled; q::record_retirement_status(status, native_cancelled);
+  status = cancelled; i::record_retirement_status(status, native_cancelled);
   require(status == native_cancelled && status.has_native_error(), "native cancelled code was mistaken for a normal cancellation");
-  q::record_retirement_status(status, failure);
+  i::record_retirement_status(status, failure);
   require(status == native_cancelled, "later failure replaced an already native first error");
 }
 void event(const char *name){std::cerr<<"live_owner_stage="<<name<<'\n';}
 void finish_payload(q::GenerationRequest &request){
   const auto stopped=request.session->stop();
   std::cerr<<"live_owner_payload_stop id="<<request.id<<" ok="<<stopped.ok()<<" cancelled="<<stopped.IsCancelled()<<" message="<<stopped.message()<<'\n';
-  q::check(stopped);q::check(request.session->drain());
-  require(q::take(request.session->try_retire()),"request payload did not actually retire");request.session.reset();
+  const auto drained=request.session->drain();const auto retired=request.session->try_retire();
+  if(retired.retired)request.session.reset();q::check(stopped);q::check(drained.status);q::check(retired.status);
+  require(retired.retired,"request payload did not actually retire");
 }
 }
 int main(int argc,char **argv){
@@ -65,8 +67,9 @@ int main(int argc,char **argv){
   const bool dual=argc>1 && std::string_view(argv[1])=="--dual-model";
   const bool sampling=argc>1 && std::string_view(argv[1])=="--sampling-policies";
   const bool turn_context=argc>1 && std::string_view(argv[1])=="--turn-context";
-  const int argument=(chunked||dual||sampling||turn_context)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context] [prepared_input_directory]");
+  const bool retirement=argc>1 && std::string_view(argv[1])=="--retirement-observation";
+  const int argument=(chunked||dual||sampling||turn_context||retirement)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation] [prepared_input_directory]");
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment();
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set HYLE_QWEN_REQUEST_INPUTS\n";return 77;}
   const std::filesystem::path input=input_directory;
@@ -74,6 +77,7 @@ int main(int argc,char **argv){
   if(dual)return qwen_dual_model_case::run(input);
   if(sampling)return qwen_sampling_policy_case::run(input);
   if(turn_context)return qwen_turn_context_case::run(input);
+  if(retirement)return qwen_retirement_observation_case::run(input);
   const auto geometry=q::read_weight_geometry(input/"weights.tsv");
   const auto prompt=q::read_ids(input/"prompt.ids",geometry.vocabulary,192);require(prompt.size()==154,"expected original P154 prompt");
   const auto plan=q::cache::plan(geometry,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
@@ -137,14 +141,18 @@ int main(int argc,char **argv){
   std::cerr<<"live_owner_cancel_status stop_ok="<<cancel_status.ok()<<" stop_cancelled="<<cancel_status.IsCancelled()<<" message="<<cancel_status.message()<<'\n';
   if(!cancel_status.IsCancelled())q::check(cancel_status);
   const auto abort_status=model.abort_episode();
-  std::cerr<<"live_owner_cancel_status abort_ok="<<abort_status.ok()<<" abort_cancelled="<<abort_status.IsCancelled()<<" message="<<abort_status.message()<<'\n';
-  if(!abort_status.IsCancelled())q::check(abort_status);
+  std::cerr<<"live_owner_cancel_status abort_ok="<<abort_status.status.ok()<<" abort_cancelled="<<abort_status.status.IsCancelled()<<" message="<<abort_status.status.message()<<'\n';
+  if(!abort_status.status.IsCancelled()||abort_status.status.has_native_error())q::check(abort_status.status);
+  require(abort_status.retired,"cancelled shared native episode did not actually retire");
   require(!model.active_step && !model.carrier_borrowed && !a.session->pending && !b.session->pending,"cancelled shared native episode did not completely retire");
   require(a.session->head.get()==head_a && b.session->head.get()==head_b && q::generation_boundary(*a.session->head)==before_a && q::generation_boundary(*b.session->head)==before_b && b.session->head->state.size()==base_b_state_count,"cancelled R2 changed a committed full head or random cursor");
   require(a.ledger->committed_count==1 && b.ledger->committed_count==1 && !a.ledger->records[1].committed && !b.ledger->records[1].committed && b.progress.generated==base_b_outputs && b.progress.observed_commits()==1 && !b.session->stopping && !b.session->failed,"cancelled batch published or stopped its surviving request");
   const bool survivor_retirement_ok=b.session->retirement_status.ok();
   std::cerr<<"live_owner_survivor_status ok="<<survivor_retirement_ok<<" cancelled="<<b.session->retirement_status.IsCancelled()<<" message="<<b.session->retirement_status.message()<<'\n';
-  require(q::take(a.session->try_retire()),"cancelled A payload was not retired");a.session.reset();window.retire_active(key_a);window.release(key_a);
+  const auto retired_a=a.session->try_retire();
+  if(retired_a.retired){a.session.reset();window.retire_active(key_a);window.release(key_a);}
+  if(!retired_a.status.IsCancelled()||retired_a.status.has_native_error())q::check(retired_a.status);
+  require(retired_a.retired,"cancelled A payload was not retired");
   window.requeue(key_b);require(window.waiting_front()==key_b && window.matches(key_b),"survivor lost its original key or FIFO continuation");window.admitted(key_b);
   event("invalid_C_request_local_preflight");c.request_key=window.enqueue(2);const auto old_c_key=c.request_key;window.admitted(old_c_key);
   const std::array chunks{std::size_t{154}};c.session=model.create_session(chunks,{},q::GraphRole::kText,c.progress.initial_sampling);

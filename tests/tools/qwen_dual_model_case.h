@@ -23,8 +23,9 @@ Endpoint endpoint(q::Model &model){
       reinterpret_cast<std::uintptr_t>(model.resources_.get()),q::take(q::c::cuda::device_ordinal(context->device()))};
 }
 void normal_retire(q::GenerationRequest &request){
-  q::check(request.session->stop());q::check(request.session->drain());
-  require(q::take(request.session->try_retire()),"normal payload did not retire");request.session.reset();
+  (void)request.session->stop();const auto drained=request.session->drain();
+  const auto retired=request.session->try_retire();if(retired.retired)request.session.reset();
+  q::check(drained.status);q::check(retired.status);require(retired.retired,"normal payload did not retire");
 }
 void expected_cancel(const hyle::Status &status){
   if(!status.IsCancelled()||status.has_native_error())q::check(status);
@@ -83,10 +84,11 @@ inline int run(const std::filesystem::path &input){try{
   const bool a_inflight=model_a->active_step->run->in_flight(),b_inflight=model_b->active_step->run->in_flight();
   auto *b_pending=b.session->pending;std::weak_ptr<q::ColdResources> a_resources=model_a->resources_;
   std::cerr<<"dual_model_stage=cancel_retire_destroy_A\n";
-  const auto stop=a.session->stop();expected_cancel(stop);const auto abort=model_a->abort_episode();expected_cancel(abort);
+  const auto stop=a.session->stop();expected_cancel(stop);const auto abort=model_a->abort_episode();expected_cancel(abort.status);require(abort.retired,"A episode did not actually retire");
   require(!model_a->active_step&&!a.session->pending&&a.session->head.get()==head_a&&q::generation_boundary(*a.session->head)==a_boundary&&
       a.ledger->committed_count==1&&!a.ledger->records[1].committed,"cancelled A published an unobserved result");
-  require(q::take(a.session->try_retire()),"A did not actually retire");a.session.reset();model_a.reset();
+  const auto retired_a=a.session->try_retire();if(retired_a.retired)a.session.reset();
+  expected_cancel(retired_a.status);require(retired_a.retired,"A did not actually retire");model_a.reset();
   const bool a_scope_released=a_resources.expired();
   require(a_scope_released,"ModelA ColdResources still retained after actual retirement/destruction");
   require(model_b->active_step&&b.session->pending==b_pending&&b.session->head.get()==head_b&&q::generation_boundary(*b.session->head)==b_boundary&&

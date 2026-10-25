@@ -211,6 +211,22 @@ add_test(NAME hyle_inference_output_delivery_test COMMAND hyle_inference_output_
 set_tests_properties(hyle_inference_output_delivery_test PROPERTIES
   LABELS "tooling;generation;backpressure" TIMEOUT 30)
 
+# Retirement observations use the existing Status implementation; do not pull
+# an unselected product into a standalone header-only/util test configuration.
+if(TARGET hyle_error)
+  add_executable(hyle_inference_session_cache_test tools/inference_session_cache_test.cc)
+  target_link_libraries(hyle_inference_session_cache_test PRIVATE hyle_build_contract hyle_error)
+  target_compile_features(hyle_inference_session_cache_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_session_cache_test)
+  hyle_apply_sanitizer(hyle_inference_session_cache_test)
+  set_target_properties(hyle_inference_session_cache_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_session_cache_test)
+  add_test(NAME hyle_inference_session_cache_test COMMAND hyle_inference_session_cache_test)
+  set_tests_properties(hyle_inference_session_cache_test PROPERTIES
+    LABELS "tooling;generation;cache;retirement" TIMEOUT 30)
+endif()
+
 # Engine-owned policy checks use the real host storage primitives only when
 # those factors are already selected; a util-only test build stays independent.
 if(TARGET hyle_compute_batch)

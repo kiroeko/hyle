@@ -27,10 +27,12 @@ inline void execute(q::Model &model, q::GenerationRequest &value) {
 }
 
 inline void retire(q::GenerationRequest &value) {
-  q::check(value.session->stop());
-  q::check(value.session->drain());
-  require(q::take(value.session->try_retire()), "context-boundary payload did not actually retire");
-  value.session.reset();
+  (void)value.session->stop();
+  const auto drained = value.session->drain();
+  const auto retired = value.session->try_retire();
+  if (retired.retired) value.session.reset();
+  q::check(drained.status); q::check(retired.status);
+  require(retired.retired, "context-boundary payload did not actually retire");
 }
 
 inline int run(const std::filesystem::path &input_directory) {

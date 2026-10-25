@@ -251,7 +251,9 @@ void cancel_batch(Observation &observation, q::Model &model,
   observation.dropped_live_completion = episode->completion.valid();
   require(observation.dropped_live_completion, "batch had no original live public Completion to abandon");
   episode->completion = {}; // Original Graph/native uses still own both candidates.
-  require(!q::take(a->try_retire()), "native-blocked batch retired after public Completion was dropped"); // Exactly one blocked check.
+  const auto blocked_retirement = a->try_retire();
+  if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
+  require(!blocked_retirement.retired, "native-blocked batch retired after public Completion was dropped"); // Exactly one blocked check.
   require(model.active_step.get() == episode && a->pending == episode && b->pending == episode &&
           !candidates[0].expired() && !candidates[1].expired() &&
           episode->members[0].next.get() == candidate_ids[0] && episode->members[1].next.get() == candidate_ids[1] &&
@@ -264,9 +266,11 @@ void cancel_batch(Observation &observation, q::Model &model,
   // retirement, not cancellation/terminal flags or sleep, permits collection.
   gate.release(); q::check(blocked.wait()); blocked = {};
   const auto native_drained = q::take(model.execution.common_context())->drain();
-  if (!native_drained.ok() && !native_drained.IsCancelled()) q::check(native_drained);
-  const auto drained = run->drain(); if (!drained.ok() && !drained.IsCancelled()) q::check(drained);
-  require(q::take(a->try_retire()), "released original batch did not pass its actual typed retirement gates");
+  if (!native_drained.IsCancelled() || native_drained.has_native_error()) q::check(native_drained);
+  const auto drained = run->drain(); if (!drained.IsCancelled() || drained.has_native_error()) q::check(drained);
+  const auto cancelled_retirement = a->try_retire();
+  if (!cancelled_retirement.status.IsCancelled() || cancelled_retirement.status.has_native_error()) q::check(cancelled_retirement.status);
+  require(cancelled_retirement.retired, "released original batch did not pass its actual typed retirement gates");
   require(!a->pending && !b->pending && !model.active_step && !model.carrier_borrowed && !a->head &&
           b->head == old_b.head && candidates[0].expired() && candidates[1].expired() && !run->valid(),
           "whole-batch abort retained candidates, published B or kept stopped A's head");

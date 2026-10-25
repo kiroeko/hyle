@@ -117,7 +117,9 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
     q::finish_evaluation(model, *session,"same_T1_continuation",{},false);
     result.continued=image(model,*session->head);
   }
-  q::check(session->stop());q::check(session->drain());require(q::take(session->try_retire()),"prefix test Session did not retire");
+  (void)session->stop();const auto drained=session->drain();const auto retired=session->try_retire();
+  if(retired.retired)session.reset();q::check(drained.status);q::check(retired.status);
+  require(retired.retired,"prefix test Session did not retire");
   return result;
 }
 }
@@ -169,7 +171,9 @@ int main(int argc,char**argv) {
       std::cout<<"PASS lag1_base=true width=5 consumed="<<consumed<<" same_graph_state=true visible_KV_prefix=true draft_target_hidden_reference=true suffix_independent=true same_T1_continuation=true\n";
     }
     require(same(before,image(model,*base)),"finite prefix checks mutated the old complete head");
-    lagged.reset();base.reset();q::check(seed->stop());q::check(seed->drain());require(q::take(seed->try_retire()),"seed did not retire");seed.reset();
+    lagged.reset();base.reset();(void)seed->stop();const auto drained_seed=seed->drain();const auto retired_seed=seed->try_retire();
+    if(retired_seed.retired)seed.reset();q::check(drained_seed.status);q::check(retired_seed.status);
+    require(retired_seed.retired,"seed did not retire");
     require(!model.active_step&&!model.carrier_borrowed&&model.snapshot_versions.live==0,"prefix-value test leaked an accepted model state");
     std::cout<<"{\"prefix_cases\":"<<cases<<",\"perturbed_suffix_pairs\":"<<perturbed<<",\"exact_checked_bytes\":"<<checked<<",\"old_complete_state_unchanged\":true,\"final_live_versions\":0,\"new_graph_ports\":0,\"cross_width_bit_equality_required\":false,\"quality_claim\":false,\"performance_claim\":false}\n";
     return 0;

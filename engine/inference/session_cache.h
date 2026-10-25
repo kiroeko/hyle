@@ -10,6 +10,8 @@
 #include <utility>
 #include <vector>
 
+#include "retirement_observation.h"
+
 namespace hyle::inference {
 
 struct SessionCacheLimits {
@@ -22,6 +24,7 @@ enum class CacheAdmissionStatus {
   kAlreadyResident,
   kCapacityExceeded,
   kRetirementUnproven,
+  kRetirementFailed,
   kByteCountMismatch,
 };
 
@@ -29,6 +32,7 @@ struct CacheAdmissionResult {
   CacheAdmissionStatus status;
   std::size_t evicted_sessions = 0;
   std::size_t evicted_bytes = 0;
+  hyle::Status retirement_status{};
   bool accepted() const noexcept {
     return status == CacheAdmissionStatus::kAdmitted ||
         status == CacheAdmissionStatus::kAlreadyResident;
@@ -132,17 +136,19 @@ public:
     }
     return true;
   }
-  // collect must nonblockingly prove actual owner retirement/release. A false
-  // return or exception leaves the same invisible entry and its charge intact.
-  // Never reenter this directory from the callback.
+  // The original owner supplies cumulative status and actual release proof.
+  // Pending work stays invisible and charged even when an error was observed.
+  // Retired work returns its charge even on error. Never reenter the directory.
   template<class Collect>
-  bool collect_retired(std::size_t owner_index, Collect &&collect) {
+  RetirementObservation collect_retired(std::size_t owner_index, Collect &&collect) {
     const auto slot = find(owner_index);
-    if (slot == kNoSlot || !entries_[slot].retiring || entries_[slot].active) return false;
-    if (!collect(owner_index)) return false;
-    retained_bytes_ -= entries_[slot].bytes; --retained_sessions_;
-    entries_[slot] = {};
-    return true;
+    if (slot == kNoSlot || !entries_[slot].retiring || entries_[slot].active) return {};
+    const RetirementObservation observed = collect(owner_index);
+    if (observed.retired) {
+      retained_bytes_ -= entries_[slot].bytes; --retained_sessions_;
+      entries_[slot] = {};
+    }
+    return observed;
   }
 
   // One exclusive pin per entry. No owner load, allocation or native work.
@@ -163,11 +169,12 @@ public:
   // physical/unknown provider memory and async page retirement need their own
   // resource ledger; this directory neither reserves nor measures that memory.
   //
-  // retire(owner_index) may start retirement and return false while work is
-  // pending. The victim is withdrawn first and remains charged. A later
-  // collect_retired releases it only after the original owner is gone. Existing
-  // synchronous callers use this same lifecycle. Callbacks must not reenter the
-  // directory; an exception leaves the victim invisible and charged.
+  // retire(owner_index) may start retirement and report pending plus status.
+  // The victim is withdrawn first and remains charged until its original owner
+  // is gone. A retired error returns the old charge and stops new admission;
+  // the exact error is returned separately from the directory result. There is
+  // no second status/owner table. Callbacks must not reenter the directory;
+  // an exception leaves the victim invisible and charged.
   template<class Retire>
   CacheAdmissionResult admit(std::size_t owner_index, std::size_t reported_bytes,
                               Retire &&retire) {
@@ -195,12 +202,18 @@ public:
       const auto slot = idle_.front();
       const auto entry = entries_[slot];
       begin_retire(entry.owner_index);
-      if (!collect_retired(entry.owner_index, retire)) {
+      const auto observed = collect_retired(entry.owner_index, retire);
+      record_retirement_status(result.retirement_status, observed.status);
+      if (!observed.retired) {
         result.status = CacheAdmissionStatus::kRetirementUnproven;
         return result;
       }
       // Actual retirement/release is proven before any metadata charge returns.
       ++result.evicted_sessions; result.evicted_bytes += entry.bytes;
+      if (!observed.status.ok()) {
+        result.status = CacheAdmissionStatus::kRetirementFailed;
+        return result;
+      }
     }
     for (std::size_t slot = 0; slot < entries_.size(); ++slot) {
       if (entries_[slot].occupied) continue;

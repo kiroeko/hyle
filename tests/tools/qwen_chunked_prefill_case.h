@@ -7,8 +7,9 @@ namespace i=hyle::inference;
 namespace {
 void require(bool value,const char *message){if(!value)throw std::runtime_error(message);}
 void retire(q::GenerationRequest &request){
-  q::check(request.session->stop());q::check(request.session->drain());
-  require(q::take(request.session->try_retire()),"payload did not retire");request.session.reset();
+  (void)request.session->stop();const auto drained=request.session->drain();
+  const auto retired=request.session->try_retire();if(retired.retired)request.session.reset();
+  q::check(drained.status);q::check(retired.status);require(retired.retired,"payload did not retire");
 }
 std::uint64_t gdn_digest(q::Model &model,const q::cache::Snapshot &head){
   std::uint64_t hash=1469598103934665603ULL;
@@ -71,7 +72,7 @@ inline int run(const std::filesystem::path &input){try{
   const auto *cancel_base=a.session->head.get();const auto before_b=q::generation_boundary(*b.session->head);auto cancelled=prepare(0);
   q::prepare_generation_record(*a.ledger,*a.session,cancelled.role,cancelled.ids(),false,0,0,a.warm_inputs[0],0,cancelled.completion,cancelled.input_begin,cancelled.prefill_complete);
   const std::array inputs{q::EvaluationRequest{a.session,cancelled.ids()}};model.prepare_evaluations(inputs,nullptr,q::GraphRole::kText,cancelled.completion);model.submit_evaluations();
-  const bool submitted_inflight=model.active_step->run->in_flight();const auto abort=model.abort_episode();if(!abort.IsCancelled())q::check(abort);
+  const bool submitted_inflight=model.active_step->run->in_flight();const auto abort=model.abort_episode();if(!abort.status.IsCancelled()||abort.status.has_native_error())q::check(abort.status);require(abort.retired,"cancelled chunk did not actually retire");
   require(!model.active_step&&!model.carrier_borrowed&&!a.session->pending&&a.session->head.get()==cancel_base&&a.turn_input_consumed==64&&a.ledger->committed_count==1&&a.session->head->sampling.draw==0&&q::generation_boundary(*b.session->head)==before_b,"cancelled chunk published or advanced input");
   execute(0);require(a.turn_input_consumed==128&&!a.progress.prefilled&&a.progress.generated.empty()&&a.session->head->sampling.draw==0,"second state-only chunk changed RNG/output");window.requeue(key_a);
   require(window.waiting_front()==key_b,"decode lost second FIFO turn");window.admitted(key_b);execute(1);require(b.progress.request_done()&&b.session->head->sampling.draw==3,"B decode did not complete");window.release_turn(key_b,false);retire(b);window.release(key_b);

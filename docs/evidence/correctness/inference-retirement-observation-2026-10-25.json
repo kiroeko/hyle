@@ -1,0 +1,269 @@
+{
+  "status": "FINITE_WINDOWS_CPU_AND_HOST_PASS",
+  "date": "2026-10-25",
+  "baseline_commit": "32c0fb38046cec89fae02c66f30825cb70249c8f",
+  "scope": "Ordinary/MTP shared retirement observation and original owner accounting; no numerical graph change.",
+  "changes": [
+    "One nodiscard RetirementObservation separates actual retirement from cumulative status; no bool conversion or compatibility overload.",
+    "Session repeated stop preserves its error; pending is not synthesized into persistent failure. Unstopped drain preserves its head and peer cancellation attribution.",
+    "Actual retirement returns the old payload/window/directory capacity even on error; that admission stops and reports the original error before starting new work.",
+    "Original Model/Graph/page/native cleanup and first-real-error rules remain authoritative; no second executor, owner or status table."
+  ],
+  "source_pins": [
+    {
+      "path": "engine/inference/retirement_observation.h",
+      "bytes": 942,
+      "sha256": "984af01e375f8d7f9b2b44862fd341b84928dac43f85b3c53c68d09e57c7fafe",
+      "CRLF": 25,
+      "bare_LF": 0
+    },
+    {
+      "path": "engine/inference/session_cache.h",
+      "bytes": 9476,
+      "sha256": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891",
+      "CRLF": 0,
+      "bare_LF": 229
+    },
+    {
+      "path": "engine/models/qwen35/batch_probe.cc",
+      "bytes": 28024,
+      "sha256": "c2b0d4b68758712a53e646b1822c6ca729a77c0d6505571b3d8c6b2be70bbe1c",
+      "CRLF": 0,
+      "bare_LF": 411
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 480526,
+      "sha256": "f491b920af77700b56a014b31bf9fce2c3109e1c5ce19c51b918a4c97bafa54b",
+      "CRLF": 0,
+      "bare_LF": 7404
+    },
+    {
+      "path": "engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 115598,
+      "sha256": "a91f0b1bdf71548599a6e40340751207e3b6230833cb5e0ca7994ca8a964ee8f",
+      "CRLF": 0,
+      "bare_LF": 1453
+    },
+    {
+      "path": "engine/models/qwen35/retained_budget_probe.cc",
+      "bytes": 20280,
+      "sha256": "cef4f2b7a440c9e0520615e2dd4291833961c0c035c99c5d05f0c03bba1ca29e",
+      "CRLF": 0,
+      "bare_LF": 333
+    },
+    {
+      "path": "engine/models/qwen35/retirement_probe.cc",
+      "bytes": 43136,
+      "sha256": "0676e5abccee596ccaccd1a3d4b5393be61af9f04c57df140f1902824da9968b",
+      "CRLF": 0,
+      "bare_LF": 689
+    },
+    {
+      "path": "tests/tools/qwen_chunked_prefill_case.h",
+      "bytes": 11064,
+      "sha256": "e2dc0bc6c1dd384a86f3dbab204a417e7cd050d470351020c8e50b9281f43e5a",
+      "CRLF": 0,
+      "bare_LF": 97
+    },
+    {
+      "path": "tests/tools/qwen_dual_model_case.h",
+      "bytes": 10455,
+      "sha256": "968756aca9414d363d95f8c3c8b7ed6d8908370c54133699ede8b065a0f05822",
+      "CRLF": 0,
+      "bare_LF": 116
+    },
+    {
+      "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+      "bytes": 12770,
+      "sha256": "b7e0ab1814e3faf27770eb7e3bb4e9ffdbdc4f691fdb114a4b7eeecc9cd92de4",
+      "CRLF": 0,
+      "bare_LF": 181
+    },
+    {
+      "path": "tests/tools/qwen_random_mtp_probe.cc",
+      "bytes": 10207,
+      "sha256": "202f0b5f0de2aca0c36537d6a50d29a2031295ba10be57a493f66943a304162f",
+      "CRLF": 0,
+      "bare_LF": 155
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 19487,
+      "sha256": "bb58eec9461b21d411826b4de9a545e5574fec9857ee7f0231c21cfe586c36cf",
+      "CRLF": 0,
+      "bare_LF": 200
+    },
+    {
+      "path": "tests/tools/qwen_resource_retirement_test.cc",
+      "bytes": 13440,
+      "sha256": "fdf2aa976758025f171bf816366e4aae57a11779a934195fac44f8d56a3e7825",
+      "CRLF": 0,
+      "bare_LF": 265
+    },
+    {
+      "path": "tests/tools/qwen_retirement_observation_case.h",
+      "bytes": 7351,
+      "sha256": "649c0044bc54f0c1c659a6f646101eec4f40f6fcddcd5c105f8f064d593a08ae",
+      "CRLF": 0,
+      "bare_LF": 133
+    },
+    {
+      "path": "tests/tools/qwen_turn_context_case.h",
+      "bytes": 7265,
+      "sha256": "eabaa342728ff9830b1c8ce49ceb014134b180d1c078034b2ef863eb7d54af02",
+      "CRLF": 0,
+      "bare_LF": 122
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 19229,
+      "sha256": "419acfbae1233fac9a3923dcc2f7609a69fe0234d5581d42b85ea75236ea3964"
+    },
+    {
+      "path": "tests/tools/inference_session_cache_test.cc",
+      "bytes": 6898,
+      "sha256": "41cf2fd17fb407065abf1bcbd9155841352d288599b04fb6e968d06af695369d"
+    }
+  ],
+  "host_check": {
+    "contracts": 3,
+    "compile": {
+      "exit": 0,
+      "seconds": 0.5940000000118744,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.031000000017229468,
+      "timeout": false
+    },
+    "scope": "Real SessionCache metadata; callback facts do not simulate native work."
+  },
+  "cpu_checks": {
+    "retirement-observation": {
+      "status": "PASS",
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "synthetic_status_only": true,
+      "native_fault_injected": false,
+      "repeated_stop_preserves_error": true,
+      "retired_error_releases_head": true,
+      "unstopped_drain_keeps_head": true,
+      "first_error_preserved": true,
+      "prepared_R2_survivor_continues": true,
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    },
+    "turn-context": {
+      "status": "PASS",
+      "ordinary": true,
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "capacity": 16,
+      "oversized_quota": 3,
+      "early_refused_outputs": 0,
+      "early_refused_commits": 0,
+      "exact_quota": 2,
+      "exact_length": 16,
+      "exact_draw": 2,
+      "exact_ids": [
+        1,
+        44
+      ],
+      "pending_only_length": 16,
+      "pending_only_draw": 2,
+      "pending_only_ids": [
+        1,
+        44
+      ],
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    }
+  },
+  "build": {
+    "attempt1_compile": {
+      "exit": 0,
+      "seconds": 18.046000000002095,
+      "timeout": false
+    },
+    "attempt1_link": {
+      "exit": 0,
+      "seconds": 1.187999999994645,
+      "timeout": false
+    },
+    "attempt2_compile": {
+      "exit": 0,
+      "seconds": 18.562000000005355,
+      "timeout": false
+    },
+    "attempt2_link": {
+      "exit": 0,
+      "seconds": 1.172000000020489,
+      "timeout": false
+    },
+    "one_app_TU_each_attempt": true,
+    "retained_common_inputs": 129,
+    "total_link_inputs": 130,
+    "new_core_or_provider_or_SDK_TUs": 0,
+    "actual_final_dependencies": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/retirement-implementation/attempt2/compile/repository-inputs.json",
+      "bytes": 30918,
+      "sha256": "7d6b4b54200f99106665f8296fbbb0fc975f937b5a4bce58ecb89be3cfd80066"
+    }
+  },
+  "first_failure": {
+    "scope": "Private test setup cold preparation order; not a product failure",
+    "process": {
+      "exit": 1,
+      "seconds": 0.25,
+      "timeout": false
+    },
+    "message": "execution use plans must precede carrier preparation",
+    "frozen_helper": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/retirement-implementation/attempt1/failed-helper.h",
+      "bytes": 7291,
+      "sha256": "a83e8870bb38a6c18c62bf75f159ef6eb0a3fe844e3498539570a08fd40c3ace"
+    },
+    "original_runner": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/retirement-implementation/attempt1/check.py",
+      "bytes": 7652,
+      "sha256": "3da3318346edc04596b9f259dfaa438390253d13383bd6ccf699df3ab7a4d190"
+    },
+    "source_plan": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/retirement-implementation/attempt1/execution-plan.json",
+      "bytes": 99486,
+      "sha256": "afa158bb468fbf612ed37e0667a3e3f215eaca9e4c58382fe45ef085820dbbe2"
+    },
+    "raw_stderr": {
+      "path": ".scratch/inference-ordinary-boundaries-20261025/retirement-implementation/attempt1/retirement-observation/stderr.log",
+      "bytes": 2175,
+      "sha256": "e86ea304e889c596c1f060649fda4d0baf63b8bd9e30693bd7dca1b747df9dec"
+    },
+    "correction": "Prepare all R1/R2 family and replay-use plans before preparing any carriers; no product/math/budget changes."
+  },
+  "independent_review": "Source review of Session/ColdResources, original gates, three runtime release paths and cache bookkeeping; first-error order and survivor cancellation corrected.",
+  "not_run": [
+    "Full lifecycle dispatch TU and other mechanically migrated probe/GPU consumers",
+    "CUDA/Vulkan/Apple or Linux/macOS execution",
+    "Actual backend failure injection",
+    "CMake configuration matrix",
+    "New throughput or memory comparison"
+  ],
+  "cleanup": {
+    "files": 5,
+    "logical_bytes": 38178308,
+    "physical_freed_bytes": null,
+    "successful_attempt2_and_original_native_DLL_preserved": true,
+    "method": "Exact test.ps1 plan, preview and Apply; failed source/commands/raw retained."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-retirement-observation-2026-10-25.zip",
+    "bytes": 112876,
+    "sha256": "df016669e3973e51d1ca84af5781817dfb039b401449d00ec700d3aa2b569f66",
+    "members": 61,
+    "contains": "Text source patches, commands, results, dependencies, review and cleanup records; no model, SDK or binaries."
+  }
+}

@@ -40,6 +40,7 @@
 #include "../../inference/mtp_acceptance.h"
 #include "../../inference/sampling_graph.h"
 #include "../../inference/execution_resources.h"
+#include "../../inference/retirement_observation.h"
 #include "../../inference/prepared_output.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_window.h"
@@ -1357,16 +1358,6 @@ struct StepMember final {
   GenerationCommitRecord *commit_record = nullptr;
   GenerationLedger *commit_ledger = nullptr;
 };
-// A requested cancellation is an expected episode outcome. Preserve a later
-// actual retirement failure instead of letting first-error aggregation hide it.
-// Other first errors keep their original identity; this does not prove retirement.
-void record_retirement_status(hyle::Status &status, const hyle::Status &observed) noexcept {
-  if (status.IsCancelled() && !status.has_native_error() && !observed.ok() &&
-      (!observed.IsCancelled() || observed.has_native_error()))
-    status = observed;
-  else status.Update(observed);
-}
-
 struct StepState final {
   // Model owns the episode; these strong pins outlive all accepted native work.
   // Session's pending link borrows this owner and never creates a cycle.
@@ -1403,7 +1394,7 @@ struct StepState final {
     if (completion.valid()) {
       auto observed = completion.poll();
       if (observed && *observed == c::CompletionPoll::kPending) return false;
-      if (!observed) record_retirement_status(terminal, observed.error());
+      if (!observed) inference::record_retirement_status(terminal, observed.error());
       completion = {}; // Error/abandonment keeps actual native guards retained.
     }
     if (run) {
@@ -1872,8 +1863,8 @@ public:
   Session &operator=(const Session &) = delete;
   // Stopping any member aborts the whole shared batch. No head is published.
   hyle::Status stop() noexcept;
-  hyle::Result<bool> try_retire() noexcept;
-  hyle::Status drain() noexcept;
+  inference::RetirementObservation try_retire() noexcept;
+  inference::RetirementObservation drain() noexcept;
   ~Session();
 };
 struct EvaluationRequest final {
@@ -2068,17 +2059,15 @@ struct ColdResources final {
     for (auto &[shape, program] : draft_programs) { (void)shape; program->run = {}; }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->run = {}; }
   }
-  hyle::Status retire(bool wait) noexcept {
+  inference::RetirementObservation retire(bool wait) noexcept {
     hyle::Status status;
     if (retirement_backend) {
       g::Invocation empty;
       status = wait ? retirement_backend->drain_retired(empty) : retirement_backend->collect_retired();
     }
-    if (pending()) {
-      if (!status.ok()) return status;
-      return hyle::Status::Unavailable("original native resource scope is not yet retired");
-    }
-    return status;
+    // A pending original guard is not an observation failure. Preserve actual
+    // backend errors independently; neither fact substitutes for the other.
+    return {!pending(), status};
   }
 };
 
@@ -2340,7 +2329,7 @@ public:
     // Stop the host driver before joining its original scheduler/pool. Native
     // cancellation remains advisory and never serves as retirement proof.
     for (auto &weak : session_links) if (auto session = weak.lock()) session->stop().IgnoreError();
-    abort_episode().IgnoreError();
+    (void)abort_episode();
     // Attempt actual native retirement before detaching application links.
     // Scheduler idleness alone does not prove native/completion retirement.
     for (auto *cache : {&phases, &probe_phases})
@@ -2350,7 +2339,7 @@ public:
       }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
-    abort_episode().IgnoreError();
+    (void)abort_episode();
     // A persistent unknown observation may outlive this application Model.
     // Preserve the original native endpoint as an explicit Session retirement
     // continuation, while the accepted guard pins the complete cold scope.
@@ -2359,7 +2348,7 @@ public:
       session->model_ = nullptr;
       session->stopping = true;
       session->pending = nullptr;
-      if (active_step) record_retirement_status(session->retirement_status, active_step->terminal);
+      if (active_step) inference::record_retirement_status(session->retirement_status, active_step->terminal);
     }
     resources_->release_invocation_roots();
     if (active_step) {
@@ -3921,37 +3910,38 @@ public:
         active_step->terminal.IsCancelled() && !active_step->terminal.has_native_error();
     for (auto &member : active_step->members) {
       if (!cancelled_episode || member.session->stopping)
-        record_retirement_status(member.session->retirement_status, active_step->terminal);
+        inference::record_retirement_status(member.session->retirement_status, active_step->terminal);
       member.session->pending = nullptr;
     }
     active_step.reset();
   }
 
-  hyle::Result<bool> try_retire_episode(hyle::Status *observed_status = nullptr) noexcept {
-    if (!active_step) return true;
+  inference::RetirementObservation try_retire_episode() noexcept {
+    if (!active_step) return {true, {}};
     // Dropping the public Completion does not remove original native work.
     // Drive its owning environment before checking the unchanged Graph/page
     // retirement gates; an observation error alone never proves retirement.
-    record_retirement_status(active_step->terminal, execution.collect_retired());
-    HYLE_ASSIGN_OR_RETURN(auto retired, active_step->try_abort());
-    if (observed_status) record_retirement_status(*observed_status, active_step->terminal);
-    if (retired) detach_episode();
-    return retired;
+    inference::record_retirement_status(active_step->terminal, execution.collect_retired());
+    const auto retired = active_step->try_abort();
+    if (!retired) {
+      inference::record_retirement_status(active_step->terminal, retired.error());
+      return {false, active_step->terminal};
+    }
+    const auto terminal = active_step->terminal;
+    if (*retired) detach_episode();
+    return {*retired, terminal};
   }
 
-  hyle::Status abort_episode() noexcept {
-    if (!active_step) return hyle::Status::Ok();
+  inference::RetirementObservation abort_episode() noexcept {
+    if (!active_step) return {true, {}};
     // Nonblocking collection cannot drain a partially accepted Vulkan prefix.
     // Hand off once to the original blocking owner, then check the unchanged
     // Graph/page gates. Unknown native failure keeps this candidate, Session
     // pins and admission intact for an explicit retry; it must not spin.
-    hyle::Status terminal;
-    if (active_step->run) terminal = execution.drain_retired(*active_step->run);
-    record_retirement_status(active_step->terminal, terminal);
-    HYLE_ASSIGN_OR_RETURN(auto retired, try_retire_episode(&terminal));
-    if (retired) return terminal;
-    if (!terminal.ok()) return terminal;
-    return hyle::Status::Unavailable("Qwen episode still retains original native work");
+    if (active_step->run)
+      inference::record_retirement_status(active_step->terminal, execution.drain_retired(*active_step->run));
+    // Episode retirement alone does not release a Session's published head.
+    return try_retire_episode();
   }
 
   // Selection and equal-T bucketing belong to the caller. A batch owns one
@@ -4283,7 +4273,7 @@ public:
       step.capture_reused = replay_report.reused_capture_range_count;
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
       ++phase.preparation_uses[slot]; step.prepared = true;
-    } catch (...) { abort_episode().IgnoreError(); throw; }
+    } catch (...) { (void)abort_episode(); throw; }
   }
 
   void prepare_evaluation(Session &session, std::span<const std::int32_t> ids,
@@ -4561,7 +4551,7 @@ public:
       }
       return_readback.admission = std::exchange(step.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
-    } catch (...) { abort_episode().IgnoreError(); throw; }
+    } catch (...) { (void)abort_episode(); throw; }
     const auto finished = Clock::now();
     for (const auto &output : outputs) if (output.generation_ledger) {
       auto &record = output.generation_ledger->records[output.generation_ledger->committed_count - 1];
@@ -4938,40 +4928,49 @@ std::int32_t evaluate(Model &model, Session &session, std::span<const std::int32
   model.prepare_evaluation(session, ids, preparation);
   try { model.submit_evaluation(session); return finish_evaluation(model, session, name, trace, trace_states,
       complete_seconds, host_endpoint, observation, preparation, probe_subdirectory); }
-  catch (...) { model.abort_episode().IgnoreError(); throw; }
+  catch (...) { (void)model.abort_episode(); throw; }
 }
 
 hyle::Status Session::stop() noexcept {
-  if (stopping) return hyle::Status::Ok();
+  if (stopping) return retirement_status;
   stopping = true;
   if (pending) {
     pending->cancelled = true;
     if (pending->completion.valid()) {
       const auto cancelled = pending->completion.request_cancel();
-      if (!cancelled.IsUnimplemented()) record_retirement_status(retirement_status, cancelled);
+      if (!cancelled.IsUnimplemented()) inference::record_retirement_status(retirement_status, cancelled);
     }
     if (pending->run) pending->run->close().IgnoreError();
   }
   return retirement_status;
 }
-hyle::Result<bool> Session::try_retire() noexcept {
-  if (!stopping) return std::unexpected(hyle::Status::FailedPrecondition("stop the Qwen session before retirement"));
-  if (!model_) {
-    record_retirement_status(retirement_status, resources_->retire(false));
-    if (resources_->pending()) return false;
-  } else if (pending) {
-    HYLE_ASSIGN_OR_RETURN(auto retired, model_->try_retire_episode());
-    if (!retired) return false;
+inference::RetirementObservation Session::try_retire() noexcept {
+  if (!stopping) return {false, hyle::Status::FailedPrecondition("stop the Qwen session before retirement")};
+  inference::RetirementObservation observed{true, {}};
+  if (!model_) observed = resources_->retire(false);
+  else if (pending) observed = model_->try_retire_episode();
+  inference::record_retirement_status(retirement_status, observed.status);
+  if (observed.retired) {
+    tails = {}; draft_tails = {}; tail_head = nullptr; draft_tail_head = nullptr; head.reset();
   }
-  tails = {}; draft_tails = {}; tail_head = nullptr; draft_tail_head = nullptr; head.reset(); return true;
+  return {observed.retired, retirement_status};
 }
-hyle::Status Session::drain() noexcept {
-  hyle::Status status;
-  if (!model_) record_retirement_status(status, resources_->retire(true));
-  else if (pending) record_retirement_status(status, model_->abort_episode());
-  record_retirement_status(status, retirement_status); return status;
+inference::RetirementObservation Session::drain() noexcept {
+  inference::RetirementObservation observed{true, {}};
+  if (!model_) observed = resources_->retire(true);
+  else if (pending) observed = model_->abort_episode();
+  // Driving an unstopped Session preserves its head and continued-use contract.
+  // In particular, a peer's ordinary episode cancellation is not made sticky.
+  if (!stopping) {
+    auto status = retirement_status;
+    inference::record_retirement_status(status, observed.status);
+    return {false, status};
+  }
+  // A stopped Session still proves/releases through the original retirement gate.
+  inference::record_retirement_status(retirement_status, observed.status);
+  return try_retire();
 }
-Session::~Session() { drain().IgnoreError(); }
+Session::~Session() { (void)drain(); }
 
 struct GenerationRestoreStats final {
   std::size_t graph_calls = 0, target_rows = 0, draft_rows = 0;
@@ -5271,8 +5270,8 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       if (stats) stats->step_seconds += step_seconds;
     }
   } catch (...) {
-    session->stop().IgnoreError(); session->drain().IgnoreError();
-    auto retired = session->try_retire(); if (!retired) retired.error().IgnoreError();
+    session->stop().IgnoreError(); (void)session->drain();
+    (void)session->try_retire();
     if (stats) stats->seconds += std::chrono::duration<double>(Clock::now() - started).count();
     throw;
   }
@@ -5355,8 +5354,8 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
       throw std::runtime_error("MTP committed-token rebuild has an inconsistent complete boundary");
     if (stats) stats->normalized_lag_rows = cache::add(stats->normalized_lag_rows, ledger.records[ledger.committed_count - 1].after.lag);
   } catch (...) {
-    observe(); session->stop().IgnoreError(); session->drain().IgnoreError();
-    auto retired = session->try_retire(); if (!retired) retired.error().IgnoreError();
+    observe(); session->stop().IgnoreError(); (void)session->drain();
+    (void)session->try_retire();
     if (stats) stats->seconds += std::chrono::duration<double>(Clock::now() - started).count();
     throw;
   }
@@ -5757,11 +5756,11 @@ void advance_generation_request(Model &model, GenerationRequest &request,
   publish_generation_prompt(model, calls[0], prefix);
 }
 
-void retire_generation_request(GenerationRequest &request) {
-  check(request.session->stop());
-  if (!take(request.session->try_retire()))
-    throw std::runtime_error("finished MTP request still retains an in-flight episode");
-  request.session.reset();
+inference::RetirementObservation retire_generation_request(GenerationRequest &request) {
+  // Stop/observe even on error; the runtime owner returns payload/key capacity
+  // only after proof, before reporting the original observation status.
+  (void)request.session->stop();
+  return request.session->try_retire();
 }
 
 void print_generation_rebuild(const GenerationRestoreStats &stats, bool draft_cache) {
@@ -6072,7 +6071,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           const auto victim = window.idle_victim([&](auto member) { return bool(requests[member].session); },
               [&](auto member) { return requests[member].last_idle; });
           if (!victim) throw std::runtime_error("all MTP heads are generating; no idle owner may be evicted");
-          retire_generation_request(requests[*victim]); ++requests[*victim].idle_evictions; evictions.push_back(*victim);
+          const auto retired = retire_generation_request(requests[*victim]);
+          if (retired.retired) {
+            requests[*victim].session.reset();
+            ++requests[*victim].idle_evictions; evictions.push_back(*victim);
+          }
+          check(retired.status);
+          if (!retired.retired)
+            throw std::runtime_error("idle generation request still retains an in-flight episode");
         }
         if (request.ledger->committed_count) {
           if (prefix && request.completed_checkpoint.input) {
@@ -6162,9 +6168,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       const auto more = request.progress.more_turns();
       const auto idle_order = window.release_turn(request.request_key, more);
       if (!more) {
-        retire_generation_request(request);
-        window.release(request.request_key);
-        ++completed;
+        const auto retired = retire_generation_request(request);
+        if (retired.retired) {
+          request.session.reset();
+          window.release(request.request_key);
+          ++completed;
+        }
+        check(retired.status);
+        if (!retired.retired)
+          throw std::runtime_error("finished generation request still retains an in-flight episode");
       }
       else { request.last_idle = idle_order; request.progress.advance_turn(); }
     }
@@ -6805,16 +6817,18 @@ int qwen35::run(int argc, char **argv) {
       const auto begin = qwen35::Clock::now();
       const auto admission = resident_cache.admit(s, 0, [&](std::size_t victim) {
         auto &old = runs[victim];
-        if (old.pin) return false;
+        if (old.pin) return hyle::inference::RetirementObservation{};
+        hyle::inference::RetirementObservation retired{true, {}};
         if (old.session) {
-          old.session->stop().IgnoreError();
-          const auto retired = old.session->try_retire();
-          if (!retired || !*retired) return false;
+          (void)old.session->stop();
+          retired = old.session->try_retire();
+          if (!retired.retired) return retired;
         }
         old.session.reset(); // Actual state leases retire before quota returns.
         evicted_sessions.push_back(victim);
-        return true;
+        return retired;
       });
+      check(admission.retirement_status);
       if (!admission.accepted())
         throw std::runtime_error(admission.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven
             ? "session cache cannot prove retirement; the original owner remains charged"
@@ -6974,9 +6988,11 @@ int qwen35::run(int argc, char **argv) {
               history->chunks.back().next_id = adopted->head->next_id; ++run.prefix_sampling_calls;
             }
             if (run.session) {
-              run.session->stop().IgnoreError();
+              (void)run.session->stop();
               const auto retired = run.session->try_retire();
-              if (!retired || !*retired)
+              if (retired.retired) run.session.reset();
+              check(retired.status);
+              if (!retired.retired)
                 throw std::runtime_error("prefix adoption cannot retire the original session");
             }
             run.session = std::move(adopted);
