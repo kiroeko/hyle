@@ -9,6 +9,7 @@ CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修
 量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
 NF4 已接原量化状态校验、F16 激活／缓存及六输入压缩权重驻留，[CPU／CUDA 有限状态链](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json)通过；完整 27B 模型未运行。加载器不预先展开整库，实际计划会报告压缩融合、分解及 workspace；CPU 多行仍可能选择分解，不能仅按 4bit 文件大小估算运行空间。
 CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
+选定 MLX affine4／8 group64 制品已接原压缩投影、embedding 与共享 head，保留源 norm／conv 语义；[原 CPU／CUDA 组件及小型 CPU 状态链](../evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json)通过。完整 2B／27B、质量及吞吐未测，不代表任意 MLX 目录可直接加载。
 
 目前使用准备后的本地权重清单和 token IDs，输出 JSON 中的生成 IDs 与计时。
 尚无通用模型目录加载、C++ tokenizer、聊天服务或图片输入；其它模型的有限组件检查也不表示已有完整引擎。

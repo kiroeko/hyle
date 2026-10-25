@@ -26,7 +26,7 @@ public:
     });
     if ((has_nf4 && !roles.nf4_policy.enabled) ||
         (roles.nf4_policy.enabled && (roles.float8_policy.enabled ||
-            roles.ct_mixed_policy.enabled || roles.ct_asymmetric_policy.enabled ||
+            roles.ct_mixed_policy.enabled || roles.ct_asymmetric_policy.enabled || roles.mlx_policy.enabled() ||
             !roles.omitted_cache_calibration.empty())))
       throw std::runtime_error("incompatible source activation precision policies");
     PrecisionProfile result;

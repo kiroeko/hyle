@@ -143,8 +143,42 @@ def digest(path: Path) -> str:
     return result.hexdigest()
 
 
-ROLE_SIZES = {"BF16": 2, "F16": 2, "F32": 4, "I32": 4, "I64": 8, "U8": 1, "F8_E4M3": 1}
+ROLE_SIZES = {"BF16": 2, "F16": 2, "F32": 4, "I32": 4, "U32": 4, "I64": 8, "U8": 1, "F8_E4M3": 1}
 
+
+MLX_READER = "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052"
+MLX_CORE_READER = "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00"
+
+def mlx_affine_roles(roles, config, model_geometry):
+    policy = config.get("quantization", {})
+    if not any(r["dtype"] == "U32" for r in roles.values()):
+        return roles, None
+    if policy != dict(group_size=64, bits=policy.get('bits'), mode='affine') or policy.get('bits') not in (4,8) or model_geometry.get('gdn_layout') != 'grouped':
+        raise ValueError("selected MLX source requires affine4/8 BF16 group64")
+    normalized = {}
+    for name,row in roles.items():
+        if name.startswith('language_model.model.'):
+            logical = 'model.language_model.' + name[21:]
+        elif name.startswith('language_model.lm_head.'):
+            logical = name[15:]
+        else:
+            raise ValueError('unsupported MLX text role: '+name)
+        actual = dict(row)
+        if name.endswith('.conv1d.weight'):
+            if actual['shape'] != [2*model_geometry['gdn_key_heads']*model_geometry['gdn_key_depth']+model_geometry['gdn_value_heads']*model_geometry['gdn_value_depth'],model_geometry['conv_kernel'],1]:
+                raise ValueError('MLX convolution must be already sanitized: '+name)
+            actual['shape'] = [actual['shape'][0],1,actual['shape'][1]]
+        if logical in normalized: raise ValueError('duplicate normalized MLX parameter')
+        normalized[logical] = actual
+    for name,row in normalized.items():
+        if row['dtype'] != 'U32': continue
+        base = name[:-7] if name.endswith('.weight') else None
+        if base is None or len(row['shape']) != 2 or base+'.scales' not in normalized or base+'.biases' not in normalized:
+            raise ValueError('incomplete MLX affine source group: '+name)
+        sf,bias=normalized[base+'.scales'],normalized[base+'.biases']
+        if sf['dtype'] != 'BF16' or bias['dtype'] != 'BF16' or sf['shape'] != bias['shape'] or len(sf['shape']) != 2 or row['shape'] != [sf['shape'][0],sf['shape'][1]*2*policy['bits']]:
+            raise ValueError('MLX original affine geometry differs: '+name)
+    return normalized, dict(bits=policy['bits'],group_size=64,mode='affine',activation_dtype='BF16',dot='F32 decoded affine weights and accumulation',embedding='BF16 multiply then BF16 add',reader=MLX_READER,core_reader=MLX_CORE_READER,parameters='already sanitized direct gamma and [C,kernel,1] convolution',producer_version_verified=False)
 
 def ct_packed_groups(roles: dict[str, dict]) -> dict[str, dict]:
     """Infer original CT group geometry; neither inspect values nor decode weights."""
@@ -214,7 +248,7 @@ def validate_ct_shape_values(raw: bytes, geometry: dict, name: str) -> None:
 
 
 def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
-    auxiliary = (".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale", ".weight_zero_point", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
+    auxiliary = (".qzeros", ".scales", ".biases", ".g_idx", ".input_scale", ".weight_scale", ".weight_zero_point", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
     result = set()
     for name in names:
         if name in omitted_cache_calibration or name.endswith(auxiliary):
@@ -238,6 +272,8 @@ def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted
         elif name in roles:
             row = roles[name]
             actual = list(row['shape'])
+            if row['dtype'] == 'U32' and name[:-7]+'.biases' in roles:
+                actual = [roles[name[:-7]+'.scales']['shape'][0],roles[name[:-7]+'.scales']['shape'][1]*64]
             if row['dtype'] == 'U8' and len(actual) == 2 and name[:-7]+'.weight_scale_2' in roles:
                 actual[1] *= 2  # Original packed two-nibble NVFP4 storage.
         elif name[:-7]+'.qweight' in roles:
@@ -305,7 +341,7 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     all_roles = {}
     for role in original["roles"]:
         name, dtype, shape = role["name"], role["dtype"], role["shape"]
-        if (not name.startswith(("model.language_model.", "mtp.")) and not name.startswith("lm_head.")) or name in all_roles:
+        if (not name.startswith(("model.language_model.", "mtp.", "language_model.model.", "language_model.lm_head.")) and not name.startswith("lm_head.")) or name in all_roles:
             raise ValueError("role source contains a duplicate or non-text role")
         if dtype not in ROLE_SIZES or len(shape) > 3:
             raise ValueError(f"unsupported original role dtype/rank: {name}")
@@ -321,10 +357,12 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         all_roles[name] = role
     if mtp and not any(name.startswith('mtp.') for name in all_roles):
         raise ValueError('source has no original NextN roles')
-    mixed = ct_mixed_groups(all_roles, config, model_geometry, fp8_reader, kv_cache_dtype)
+    normalized, mlx_policy = mlx_affine_roles(all_roles, config, model_geometry)
+    if mlx_policy and (mtp or fp8_reader or kv_cache_dtype): raise ValueError('MLX reader cannot mix NextN or other precision policies')
+    mixed = ct_mixed_groups(normalized, config, model_geometry, fp8_reader, kv_cache_dtype)
     omitted = set(mixed["omitted_cache_calibration"])
-    nf4_groups = nf4_state.groups(all_roles, config, geometry.role_shapes(model_geometry))
-    validate_role_geometry(all_roles, model_geometry, omitted, nf4_groups)
+    nf4_groups = nf4_state.groups(normalized, config, geometry.role_shapes(model_geometry))
+    validate_role_geometry(normalized, model_geometry, omitted, nf4_groups)
     channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
     fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
@@ -358,6 +396,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
                     geometry=model_geometry, roles=sorted(identities, key=lambda item: item["name"]))
     if fp8_groups:
         identity["fp8_block128_policy"] = dict(FP8_POLICY)
+    if mlx_policy:
+        identity["mlx_affine_policy"] = mlx_policy
     if nf4_groups:
         identity['nf4_double_quant_policy'] = dict(nf4_state.POLICY)
         identity['nf4_states'] = nf4_groups
@@ -371,6 +411,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     chosen = [item for item in identities if item['name'] not in omitted and (mtp or not item['name'].startswith('mtp.'))]
     policy_lines = [FP8_POLICY_LINE] if fp8_groups else []
+    if mlx_policy:
+        policy_lines.append("\t".join(("mlx_affine",str(mlx_policy["bits"]),"64","BF16","F32","BF16","sanitized_norm_conv",MLX_READER)))
     if nf4_groups:
         policy_lines.append(nf4_state.POLICY_LINE)
         policy_lines.extend('\t'.join(('nf4_state', name, state['original_json_sha256'], state['offset_f32_bits']))
@@ -389,6 +431,9 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         text_weight_bytes=sum(item["bytes"] for item in identities if item['name'] not in omitted and not item["name"].startswith("mtp.")),
         mtp_weight_bytes=sum(item["bytes"] for item in identities if item["name"].startswith("mtp.")),
         original_role_records=identity["roles"], storage="borrowed original cached files/ranges; no copied checkpoint")
+    if mlx_policy:
+        receipt["mlx_affine_policy"] = mlx_policy
+        receipt["mlx_execution_scope"] = "selected current-reader parameter convention; component execution requires separate verification; full source/model execution unverified"
     if fp8_groups:
         receipt["fp8_block128_policy"] = dict(FP8_POLICY)
         receipt["fp8_block128_groups"] = sum(mtp or not name.startswith("mtp.") for name in fp8_groups)
@@ -424,7 +469,7 @@ def prepare_safetensors(model: Path, mtp: bool, config: dict, fp8_reader: str | 
         if not isinstance(mapping, dict) or not mapping:
             raise ValueError('invalid local safetensors index')
         shard_names = sorted({filename for name,filename in mapping.items()
-                              if name.startswith(('model.language_model.','mtp.','lm_head.'))})
+                              if name.startswith(('model.language_model.','mtp.','lm_head.','language_model.model.','language_model.lm_head.'))})
     else:
         mapping, shard_names = None, ['model.safetensors']
     roles, seen = [], set()
@@ -444,7 +489,7 @@ def prepare_safetensors(model: Path, mtp: bool, config: dict, fp8_reader: str | 
                 raise ValueError('invalid safetensors header extent')
             header = json.loads(stream.read(length))
         for name,row in sorted(header.items()):
-            if not name.startswith(('model.language_model.','mtp.','lm_head.')):
+            if not name.startswith(('model.language_model.','mtp.','lm_head.','language_model.model.','language_model.lm_head.')):
                 continue
             if name in seen or (mapping is not None and mapping.get(name) != filename):
                 raise ValueError('duplicate or misplaced local safetensors role: '+name)

@@ -1,9 +1,9 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 08:35（北京时间）。整体暂估 **36%**，当前阶段：MLX 普通状态链、共享预算引擎接线设计与 MTP 重建候选筛选。
+更新：2026-10-25 08:42（北京时间）。整体暂估 **38%**，当前阶段：共享预算引擎接线与 MTP 剩余差距归因。
 百分比只表示本轮工作完成度，不是现有引擎的功能覆盖率；盘点后按实际缺项调整。
 本轮基线为 `c950466ec`，已提交并推送；上一轮 MTP 范围与结果保留在[工程说明](../implementation/inference-roadmap.md)及所属证据。
-已完成并归档：NF4 六输入驻留、普通请求独立采样、MTP 逻辑调用及重建来源归因、共享预算基础门禁。
+已完成并归档：NF4 六输入驻留、MLX 普通绑定及有限组件、普通请求独立采样、MTP 逻辑调用及重建来源归因、共享预算基础门禁。
 此前还有原 F16 导入、整数暂存、分块 prefill、Kimi 异构状态及双 Model 寿命；共享预算的引擎接线仍待补。
 单成员桶重复预算查询已移除，相关接口严格检查通过；尚未测吞吐收益。
 
@@ -16,12 +16,12 @@
 功能完成标准是当前硬件能实现、能检查的相关底层功能全部完成；新增缺项继续纳入。
 首批清单、代表样例或盘点完成都不作为功能穷尽完成。本轮性能查明普通／MTP 落后原因，寻找反超机会和更好的基础设计，CUDA 重点参考 TensorRT-LLM；不以只整理旧对照作为完成。
 
-- 功能盘点与补齐：约 45%
-  - 基础普通推理：约 50%
+- 功能盘点与补齐：约 48%
+  - 基础普通推理：约 55%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
-    - MLX affine 普通投影／embedding／head：约 60%
+    - 选定 MLX affine 普通绑定与有限组件：100%
     - CT asymmetric INT4 原投影角色与零点接线：100%
     - 解码／激活／计算／缓存精度合同：约 20%
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
@@ -69,9 +69,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| MLX 普通状态链 | 功能／基础推理 | 原 4／8bit 组件 CPU／CUDA 各 24,690 值符合独立 reader；正补一个 tiny 普通 Model 的 loader／norm／conv／完整状态旅程，完整原模型未跑 | 约 60% |
-| 共享预算引擎接线设计 | 功能／架构 | 基础门禁 16 项 host 检查通过；正在确定实际端点先准备、同 scope 分配以及独立 cache 上限的组合，权重／IO／直接 Buffer 尚未接全 | 约 25% |
-| MTP 重建候选筛选 | 性能／实现候选 | 私有候选 host 及原两轮行为通过；单次计时没有正向信号，正核一对 CUDA API trace 的真实更新／实例化，未合入或宣称提速 | 约 40% |
+| 共享预算引擎接线 | 功能／架构 | 最小接线设计已明确：复用实际 Backend、权重 pool-first 与 IO；独立 cache 上限和原 charge 转移仍需分批处理，尚未形成完整总量约束 | 约 30% |
+| MTP 重建复用复审及剩余归因 | 性能／实现候选 | API 证实 6 次实例化改为成功更新；3 对计时 decode 中位仅 +0.82% 且区间重叠，不证明提速。正复审是否保留资源复用，并从原 trace 继续定位主要差距 | 约 65% |
+| Kimi 专家工作集设计 | 功能／基础推理 | 只读核对两种原量化合同与已有 WeightSlots／WeightBatch 的组合缺口，先形成有限组件方案，尚未实施 | 约 5% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -94,6 +94,7 @@
 | [NF4 F16 导入与状态链](../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json) | 352 份原 state、完整 k_proj 的 524 万个解码值及原投影通过；未训练 CPU C192／CUDA C256 各自的 prefill、decode、恢复及退休通过，不作两几何跨平台数值对照。首 CUDA C192 受原生通道限制而拒绝，记录保留；完整 27B 未跑，约 50.1 GiB 是旧冷 F16 展开的估计，后续驻留方案见下项 |
 | [NF4 压缩投影基础路径](../evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.json) | 原 k_proj 的 CPU／CUDA 各 3,072 个 F16 输出逐位符合独立 reader，三节点融合且图中无完整 F16 权重；CPU M2 用既有 Prepared 合同选取，默认排序未变。正式小图两后端各一项通过，含 nested256 边界与修改 offset 后重算；不是完整模型、吞吐或 Apple／Vulkan 融合通过 |
 | [NF4 六输入驻留消费者](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json) | 同一 loader／Recipe 保留六个压缩输入，默认 CPU P2 分解、T1 融合，CUDA P2／T1 均融合；两后端小状态链各 22 个输出文件与各自旧冷展开结果逐字相同。合并逐请求采样后的正式接口严格检查通过；完整 27B、质量及吞吐未测 |
+| [MLX affine 普通绑定](../evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json) | 原 4／8bit CPU／CUDA 组件各 24,690 值符合独立 reader；四制品完整文本 metadata、370 项主机检查及 17 个 Python 测试通过。独立未训练 CPU 小模型完成 loader／norm／conv、状态与 RNG 恢复及退休；合入 NF4／采样／N1 后正式接口严格检查通过。完整原模型、质量、吞吐及其它后端未测，所选当前 reader 不证明原发布者版本 |
 | [CT asymmetric INT4 metadata](../evidence/correctness/ct-asymmetric-qwen-cold-metadata-2026-10-25.json)／[原投影](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json) | 同一原 loader／Recipe 的 28 角色、七组投影及 178,176 值通过 CPU 独立原值检查；M1 七组 packed，M2 按既有策略分解。不是完整 27B 或性能／其它原权重后端结果 |
 | [DeepSeek 普通短历史](../evidence/correctness/deepseek-ordinary-early-history-2026-10-25.json) | 原三层 target CUDA 组件通过空启动、ratio4／ratio128 首压缩及 SWA 回绕；给定 126 前缀不是实际执行前 126 行；旧 Flash／Pro 消费者仅语法检查 |
 | [GLM Pro 真实 index 短历史](../evidence/correctness/glm-pro-ordinary-short-history-real-index-2026-10-25.json) | 原 layer74 的 7 个角色供给 target77，CUDA 连续可见 1／2／3／4 行、完整状态提交、4 次 stale 及 11 个非法索引拒绝通过；74 上游输入及 76 hidden 是明确 fixture，不代表完整 78 层生成 |

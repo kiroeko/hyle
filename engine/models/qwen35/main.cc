@@ -184,12 +184,12 @@ void auxiliaries(std::map<std::string, LoadedWeight> &bank, const std::string &b
                  std::initializer_list<std::string_view> allowed, std::string_view name) {
   // Recognized auxiliaries of another representation must not silently select
   // the first matching branch. Source inventory validation owns unknown names.
-  constexpr std::array<std::string_view, 16> known{
+  constexpr std::array<std::string_view, 17> known{
       ".qzeros", ".scales", ".g_idx", ".weight_scale", ".weight_shape",
       ".weight_global_scale", ".input_global_scale", ".weight_scale_2",
       ".input_scale", ".weight_scale_inv", ".weight_zero_point",
       ".weight.absmax", ".weight.nested_absmax", ".weight.nested_quant_map",
-      ".weight.nf4_offset", ".weight.quant_map"};
+      ".weight.nf4_offset", ".weight.quant_map", ".biases"};
   for (const auto suffix : known) if (bank.contains(base + std::string(suffix)) &&
       std::ranges::find(allowed, suffix) == allowed.end())
     fail(name, "unexpected physical auxiliary " + base + std::string(suffix));
@@ -213,6 +213,8 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding) {
       const auto d = value.weight->description.dimensions(); return {d[0], d[1]};
     } else if constexpr (std::is_same_v<Entry, GptqProjection>) {
       const auto d = value.codes->description.dimensions(); return {d[1], d[0] * 8};
+    } else if constexpr (std::is_same_v<Entry, MlxAffineProjection>) {
+      const auto d = value.scales->description.dimensions(); return {d[0], d[1] * value.equation.group_size};
     } else if constexpr (std::is_same_v<Entry, Nf4Projection>) {
       const auto d = value.original[0]->description.dimensions(); return {d[0], d[1] * 2};
     } else if constexpr (std::is_same_v<Entry, CtPackedProjection>) {
@@ -302,6 +304,25 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
     return CtPackedProjection{&packed->tensor, zeros, &scales, decode};
   }
 
+  if (stored->codec == Codec::kMlxAffine) {
+    detail::auxiliaries(bank, base, {".scales", ".biases"}, name);
+    auto &scales = detail::require(bank, base + ".scales", name);
+    auto &biases = detail::require(bank, base + ".biases", name);
+    detail::matrix(scales, name);
+    const auto group = stored->group_size;
+    if (group != 64 || scales.description.data_type() != Type::kBFloat16)
+      detail::fail(name, "selected MLX source requires original BF16 affine group64");
+    const auto k = detail::packed_width(scales.description.dimensions()[1], group, name);
+    const auto bits_numerator = detail::packed_width(stored->tensor.description.dimensions()[1], 32, name);
+    if (bits_numerator % k || (bits_numerator / k != 4 && bits_numerator / k != 8))
+      detail::fail(name, "selected MLX packed width requires exactly four or eight bits");
+    const ops::MlxQuantized equation{.format = ops::MlxWeightFormat::kAffine,
+        .kind = ops::MlxQuantizedKind::kLinear,
+        .bits = static_cast<std::uint32_t>(bits_numerator / k), .group_size = group};
+    detail::validate(equation, std::array{detail::activation(k, name), stored->tensor.description,
+        scales.description, biases.description}, name);
+    return MlxAffineProjection{&stored->tensor, &scales, &biases, equation};
+  }
   if (stored->codec == Codec::kNvfp4) {
     detail::auxiliaries(bank, base, {".weight_scale", ".weight_scale_2", ".input_scale"}, name);
     auto &scales = detail::require(bank, base + ".weight_scale", name);
@@ -385,6 +406,10 @@ ProjectionBindings prepare_projection_bindings(std::map<std::string, LoadedWeigh
     bindings.emplace(name, std::move(binding));
   };
   for (const auto &[name, parameter] : inventory) if (parameter.linear) add(name, parameter);
+  // A quantized embedding must have a cold binding even with an untied head.
+  const std::string embedding("model.language_model.embed_tokens.weight");
+  if (bank.at(embedding).codec == prepared::ProjectionCodec::kMlxAffine && !bindings.contains(embedding))
+    add(embedding, inventory.at(embedding));
   const std::string head(geometry.head_role());
   if (!bindings.contains(head)) {
     const auto parameter = inventory.find(head);
@@ -405,6 +430,7 @@ std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile
     if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
     return "bf16_inputs_f32_output";
   }
+  if (std::holds_alternative<MlxAffineProjection>(binding)) return "mlx_affine_f32_weight_dot_bf16_projection_f32_logits";
   if (std::holds_alternative<Nf4Projection>(binding)) return "nf4_double_quant_f16_projection_f32_logits";
   if (std::holds_alternative<GptqProjection>(binding)) return "gptq_f16_weight_to_bf16_projection_f32_logits";
   if (const auto *projection = std::get_if<CtPackedProjection>(&binding))
@@ -654,8 +680,22 @@ struct Recipe final {
     return prepared::ParameterMeaning::kHfRaw;
   }
   V embedding(V tokens, const std::string &name) {
+    const auto ids = spec(tokens);
+    if (const auto found = projections.find(name); found != projections.end())
+      if (const auto *mlx = std::get_if<MlxAffineProjection>(&found->second)) {
+        if (activation_type() != Type::kBFloat16 || ids.rank() != 1 || ids.data_type() != Type::kInt32)
+          throw std::runtime_error("MLX source embedding requires BF16 and checked I32 rows");
+        const auto shape = projection_detail::logical_shape(found->second);
+        if (shape[1] != hidden) throw std::runtime_error("MLX embedding logical width differs");
+        // The embedding has typed BF16 product/add boundaries. Its tied head
+        // reuses these original operands as a linear operation, not this table.
+        return one(c::model_ops::mlx_quantized_embedding(
+            mlx->equation.bits, mlx->equation.group_size),
+            {operand(*mlx->codes), operand(*mlx->scales), operand(*mlx->biases), tokens},
+            dense_spec(Type::kBFloat16, {ids.dimensions()[0], f(hidden)}));
+      }
     const auto original = weight_absolute(name);
-    const auto ids = spec(tokens), stored = spec(original);
+    const auto stored = spec(original);
     if (ids.rank() != 1 || ids.data_type() != Type::kInt32 || stored.rank() != 2 ||
         stored.dimensions()[1] != f(hidden))
       throw std::runtime_error("embedding requires I32 rows and original [vocabulary,hidden] storage: " + name);
@@ -827,6 +867,12 @@ struct Recipe final {
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {original});
         return one(c::MatMul{}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
+      } else if constexpr (std::is_same_v<P, MlxAffineProjection>) {
+        if (activation_type() != Type::kBFloat16) throw std::runtime_error("MLX source projection requires BF16 activation");
+        dimensions.back() = f(projection.scales->description.dimensions()[0]);
+        return one(c::Operation::custom(projection.equation),
+            {x, operand(*projection.codes), operand(*projection.scales), operand(*projection.biases)},
+            dense_spec(Type::kBFloat16, dimensions));
       } else if constexpr (std::is_same_v<P, Nf4Projection>) {
         if (activation_type() != Type::kFloat16) throw std::runtime_error("NF4 source equation requires F16 activation");
         PackedProjectionNodes nodes; nodes.count = 3;
@@ -1442,6 +1488,7 @@ Type role_type(std::string_view dtype) {
   if (dtype == "F16") return Type::kFloat16;
   if (dtype == "F32") return Type::kFloat32;
   if (dtype == "I32") return Type::kInt32;
+  if (dtype == "U32") return Type::kUInt32;
   if (dtype == "I64") return Type::kInt64;
   if (dtype == "U8") return Type::kUInt8;
   if (dtype == "F8_E4M3") return Type::kFloat8E4M3FN;

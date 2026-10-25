@@ -52,7 +52,7 @@ enum class ParameterMeaning {
 // GGUF conversion retains its independent storage descriptor and parameter
 // meaning; this discriminator describes original HF projection groups.
 enum class ProjectionCodec { kUnspecified, kDense, kGptqV1Int4, kNvfp4, kCtSymmetric4, kFloat8Block128,
-                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4 };
+                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4, kMlxAffine };
 // This is an explicit selected-reader arithmetic contract, not a claim that
 // every reader of the HF config chooses the same activation quantization.
 inline constexpr std::string_view fp8_reader = "sglang@06992c92ad4494fe9f9636e75be3e35040512447";
@@ -70,6 +70,13 @@ struct Bf16CachePolicy final { bool omit_calibration = false; };
 inline constexpr std::string_view ct_asymmetric_policy_line =
     "ct_asymmetric_int4\t32\tBF16\tpacked_N\tcompressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4";
 struct CtAsymmetricPolicy final { bool enabled = false; };
+// Selected current-reader convention, not the artifact publisher's producer version.
+inline constexpr std::string_view mlx_reader = "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052";
+struct MlxAffinePolicy final { std::uint32_t bits = 0; bool enabled() const noexcept { return bits != 0; } };
+inline std::string mlx_policy_line(std::uint32_t bits) {
+  if (bits != 4 && bits != 8) throw std::runtime_error("selected MLX reader requires four or eight bits");
+  return "mlx_affine\t" + std::to_string(bits) + "\t64\tBF16\tF32\tBF16\tsanitized_norm_conv\t" + std::string(mlx_reader);
+}
 struct OriginalSource final {
   std::string repository, revision, file, lfs_sha256, xet_hash, header_sha256;
   std::uint64_t bytes = 0, header_bytes = 0;
@@ -154,6 +161,7 @@ struct Roles final {
   std::vector<Role> omitted_cache_calibration{};
   Nf4Policy nf4_policy{};
   CtAsymmetricPolicy ct_asymmetric_policy{};
+  MlxAffinePolicy mlx_policy{};
 };
 inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp);
 inline bool is_role_signature(std::string_view signature) noexcept {
@@ -171,7 +179,7 @@ inline std::uint64_t unsigned_field(std::istream &input) {
 }
 inline std::size_t element_bytes(std::string_view dtype) {
   if (dtype == "BF16" || dtype == "F16") return 2;
-  if (dtype == "F32" || dtype == "I32") return 4;
+  if (dtype == "F32" || dtype == "I32" || dtype == "U32") return 4;
   if (dtype == "I64") return 8;
   if (dtype == "U8" || dtype == "F8_E4M3") return 1;
   throw std::runtime_error("unsupported prepared role dtype: " + std::string(dtype));
@@ -210,13 +218,33 @@ inline void validate_ct_shape_values(const Role &codes, std::span<const std::byt
       field(8) != static_cast<std::uint64_t>(codes.shape[1] * 8))
     throw std::runtime_error("original CT weight_shape values differ: " + codes.name);
 }
+// MLX-LM's selected reader accepts this already-sanitized parameter convention.
+// Only names and singleton convolution axes change; the original byte ranges,
+// physical names and effective gamma remain intact, without a weight copy.
+inline Role normalize_mlx_role(Role role, const ModelGeometry &geometry) {
+  const auto original = role.name;
+  if (original.starts_with("language_model.model.")) role.name = "model.language_model." + original.substr(21);
+  else if (original.starts_with("language_model.lm_head.")) role.name = original.substr(15);
+  else throw std::runtime_error("MLX manifest contains a non-text or unsupported role: " + original);
+  role.physical_name = original;
+  if (role.name.ends_with(".conv1d.weight")) {
+    if (role.shape != std::vector<std::int64_t>{geometry.gdn_qkv_width(), geometry.conv_kernel, 1})
+      throw std::runtime_error("MLX reader requires already-sanitized [C,kernel,1] convolution");
+    role.shape = {geometry.gdn_qkv_width(), 1, geometry.conv_kernel};
+    role.meaning = ParameterMeaning::kGdnConvolution;
+  } else if (role.name.ends_with("linear_attn.norm.weight")) role.meaning = ParameterMeaning::kGdnEffectiveGamma;
+  else if (role.name == "model.language_model.norm.weight" || role.name.ends_with(".input_layernorm.weight") ||
+      role.name.ends_with(".post_attention_layernorm.weight") || role.name.ends_with(".q_norm.weight") || role.name.ends_with(".k_norm.weight"))
+    role.meaning = ParameterMeaning::kRmsEffectiveGamma;
+  return role;
+}
 // Both prepared file layouts enter through the same physical/logical contract.
 // Validation covers the entire inventory even when MTP is not selected for IO.
 inline Roles select_roles(const std::map<std::string, Role> &all, std::string identity, bool include_mtp, const ModelGeometry &geometry,
                           Float8BlockPolicy float8_policy = {}, CtMixedPolicy ct_mixed_policy = {},
                           Bf16CachePolicy bf16_cache_policy = {}, Nf4Policy nf4_policy = {},
                           const std::map<std::string, Nf4State> &nf4_states = {},
-                          CtAsymmetricPolicy ct_asymmetric_policy = {}) {
+                          CtAsymmetricPolicy ct_asymmetric_policy = {}, MlxAffinePolicy mlx_policy = {}) {
   geometry.validate();
   if (geometry.gdn_layout != GdnHeadLayout::kGrouped) throw std::runtime_error("HF roles require their original grouped GDN layout");
   const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * maximum_physical_components;
@@ -228,6 +256,10 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   result.ct_mixed_policy = ct_mixed_policy;
   result.nf4_policy = nf4_policy;
   result.ct_asymmetric_policy = ct_asymmetric_policy;
+  result.mlx_policy = mlx_policy;
+  if (mlx_policy.enabled() && (include_mtp || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
+      ct_asymmetric_policy.enabled || bf16_cache_policy.omit_calibration || (mlx_policy.bits != 4 && mlx_policy.bits != 8)))
+    throw std::runtime_error("selected MLX reader cannot mix precision or NextN policies");
   if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration || ct_asymmetric_policy.enabled))
     throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
   if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration))
@@ -237,7 +269,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   bool has_ct_mixed = false;
   for (const auto &[name, role] : all) {
     if (name != role.name) throw std::runtime_error("prepared role name/key differs");
-    if (!role.physical_name.empty() || role.meaning != ParameterMeaning::kHfRaw || role.original_offset)
+    if (!mlx_policy.enabled() && (!role.physical_name.empty() || role.meaning != ParameterMeaning::kHfRaw || role.original_offset))
       throw std::runtime_error("HF prepared roles cannot describe converted GGUF parameters");
     if (role.source.empty() || role.source.native().find(std::filesystem::path::value_type{}) !=
         std::filesystem::path::string_type::npos)
@@ -251,6 +283,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   std::set<std::string> consumed;
   std::size_t nf4_groups = 0;
   std::size_t ct_asymmetric_groups = 0;
+  std::size_t mlx_groups = 0;
   for (const auto &[name, parameter] : inventory) {
     const bool selected = include_mtp || !name.starts_with("mtp.");
     const auto take = [&](const std::string &physical, std::string_view dtype,
@@ -275,7 +308,15 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       }
     };
     const auto base = name.ends_with(".weight") ? name.substr(0, name.size() - 7) : name;
-    if (parameter.linear && (all.contains(name + std::string(nf4_state_suffix)) || nf4_states.contains(name))) {
+    if (all.contains(name) && all.at(name).dtype == "U32") {
+      if (!mlx_policy.enabled() || parameter.shape.size() != 2 || (!parameter.linear && name != "model.language_model.embed_tokens.weight"))
+        throw std::runtime_error("original MLX affine principal requires its selected reader policy: " + name);
+      const auto n = parameter.shape[0], k = parameter.shape[1];
+      if (k % 64) throw std::runtime_error("MLX group64 does not partition K");
+      take(name, "U32", {n, k / 32 * mlx_policy.bits}, ProjectionCodec::kMlxAffine, 64);
+      take(base + ".scales", "BF16", {n, k / 64}); take(base + ".biases", "BF16", {n, k / 64});
+      ++mlx_groups;
+    } else if (parameter.linear && (all.contains(name + std::string(nf4_state_suffix)) || nf4_states.contains(name))) {
       if (!nf4_policy.enabled || !nf4_states.contains(name))
         throw std::runtime_error("prepared NF4 requires its per-group original state and F16 policy: " + name);
       const auto n = parameter.shape[0], k = parameter.shape[1];
@@ -409,6 +450,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
     throw std::runtime_error("prepared CT asymmetric policy has no matching weights");
   if (bf16_cache_policy.omit_calibration && result.omitted_cache_calibration.empty())
     throw std::runtime_error("prepared BF16 cache omission has no calibration roles");
+  if (mlx_policy.enabled() && !mlx_groups) throw std::runtime_error("MLX reader has no original affine groups");
   if (consumed.size() != all.size()) throw std::runtime_error("unclaimed prepared physical role");
   return result;
 }
@@ -432,10 +474,17 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
   Bf16CachePolicy bf16_cache_policy;
   Nf4Policy nf4_policy;
   CtAsymmetricPolicy ct_asymmetric_policy;
+  MlxAffinePolicy mlx_policy;
   std::map<std::string, Nf4State> nf4_states;
   std::string line;
   while (read_manifest_line(input, line)) {
     if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
+    if (line.starts_with("mlx_affine")) {
+      if (line.ends_with('\r')) line.pop_back();
+      if (mlx_policy.enabled() || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled ||
+          (line != mlx_policy_line(4) && line != mlx_policy_line(8))) throw std::runtime_error("invalid or misplaced MLX reader policy");
+      mlx_policy.bits = line == mlx_policy_line(4) ? 4u : 8u; continue;
+    }
     if (line.starts_with("nf4_double_quant")) {
       if (line.ends_with('\r')) line.pop_back();
       if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != nf4_policy_line)
@@ -505,11 +554,12 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     if (declared != bytes || declared > UINT64_MAX - role.offset || (fields >> extra))
       throw std::runtime_error("prepared role byte extent differs: " + role.name);
     role.bytes = bytes;
+    if (mlx_policy.enabled()) role = normalize_mlx_role(std::move(role), geometry);
     if (!all.emplace(role.name, std::move(role)).second)
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy);
 }
 } // namespace qwen35::prepared
 

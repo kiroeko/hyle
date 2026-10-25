@@ -711,6 +711,44 @@ void source_geometry_drives_role_layout() {
   invalid = larger; invalid.rope_theta = std::numeric_limits<float>::infinity();
   rejects([&] { invalid.validate(); }, "geometry");
 }
+void mlx_original_affine_names_and_effective_parameters(const fs::path &directory) {
+  for (const unsigned bits : {4u, 8u}) {
+    auto model = geometry; model.tied_head = bits == 4;
+    const auto expected = p::parameter_inventory(false, model);
+    std::string manifest = std::string(p::role_signature) + "\n" + identity + "\n" +
+        qwen_test::geometry_line(model) + "\n" + p::mlx_policy_line(bits) + "\n";
+    const auto original = [&](const std::string &logical) {
+      return logical.starts_with("model.language_model.") ? "language_model.model." + logical.substr(21) : "language_model." + logical;
+    };
+    for (const auto &[name, parameter] : expected) {
+      if (parameter.shape.size() == 2 && (parameter.linear || name == "model.language_model.embed_tokens.weight")) {
+        const auto n = parameter.shape[0], k = parameter.shape[1];
+        for (const auto &component : std::array<std::pair<std::string,std::vector<std::int64_t>>,3>{{
+              {name,{n,k/32*bits}}, {name.substr(0,name.size()-7)+".scales",{n,k/64}},
+              {name.substr(0,name.size()-7)+".biases",{n,k/64}}}}) {
+          p::Role value; value.name = original(component.first); value.dtype = component.first == name ? "U32" : "BF16";
+          value.shape = component.second; value.source = "original-mlx-not-read.bin"; value.bytes = p::physical_bytes(value.dtype,value.shape); manifest += row(value);
+        }
+      } else {
+        p::Role value; value.name=original(name); value.dtype="BF16"; value.shape=parameter.shape;
+        if(name.ends_with(".conv1d.weight")) value.shape={model.gdn_qkv_width(),model.conv_kernel,1};
+        value.source="original-mlx-not-read.bin"; value.bytes=p::physical_bytes(value.dtype,value.shape); manifest+=row(value);
+      }
+    }
+    const auto path=directory/("mlx-"+std::to_string(bits)+".tsv"); write(path,manifest); const auto parsed=p::read_roles(path,false);
+    require(parsed.geometry==model && parsed.mlx_policy.bits==bits,"MLX ordinary geometry/policy differs");
+    const auto find=[&](std::string_view name)->const p::Role&{const auto it=std::ranges::find(parsed.selected,name,&p::Role::name);if(it==parsed.selected.end())throw std::runtime_error("missing selected MLX role");return *it;};
+    require(find("model.language_model.norm.weight").meaning==p::ParameterMeaning::kRmsEffectiveGamma,"MLX already-sanitized gamma must not get another +1");
+    const auto &conv=find("model.language_model.layers.0.linear_attn.conv1d.weight");
+    require(conv.shape==std::vector<std::int64_t>{model.gdn_qkv_width(),1,model.conv_kernel} && conv.bytes==static_cast<std::size_t>(model.gdn_qkv_width()*model.conv_kernel*2) && conv.meaning==p::ParameterMeaning::kGdnConvolution,"MLX singleton conv layout must preserve original bytes");
+    require(find("model.language_model.layers.0.linear_attn.norm.weight").meaning==p::ParameterMeaning::kGdnEffectiveGamma && conv.physical_name=="language_model.model.layers.0.linear_attn.conv1d.weight","MLX provenance/direct GDN gamma lost");
+    const auto &head=find(std::string(model.head_role()));
+    require(head.projection_codec==p::ProjectionCodec::kMlxAffine && head.projection_group_size==64 && head.shape==std::vector<std::int64_t>{model.vocabulary,model.hidden/32*bits},"MLX tied/untied head must keep packed original operand");
+    auto missing=manifest; const auto at=missing.find("language_model.model.embed_tokens.biases\t");const auto end=missing.find('\n',at);missing.erase(at,end-at+1);write(path,missing);
+    rejects([&]{(void)p::read_roles(path,false);},"missing prepared role");
+    write(path,manifest);rejects([&]{(void)p::read_roles(path,true);},"MLX reader cannot mix");
+  }
+}
 } // namespace
 
 int main(int argc, char **argv) {
@@ -718,6 +756,7 @@ int main(int argc, char **argv) {
     if (argc < 2) throw std::runtime_error("pass the scratch fixture directory");
     const fs::path directory = argv[1];
     fs::create_directories(directory);
+    mlx_original_affine_names_and_effective_parameters(directory);
     full_inventory_and_selection(directory);
     complete_validation_also_applies_when_mtp_is_off(directory);
     quantized_auxiliaries_are_complete_and_typed(directory);

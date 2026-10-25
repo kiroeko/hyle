@@ -1,0 +1,1163 @@
+{
+  "status": "PASS_ORIGINAL_COMPONENTS_AND_FINITE_ORDINARY_JOURNEY",
+  "scope": "Ordinary Qwen selected MLX affine4/8 source-resident loader, linear, embedding and tied-head wiring; current selected reader parameter convention; no new MTP functions.",
+  "source": {
+    "cached_plan": {
+      "path": ".scratch/mlx-ordinary-qwen-20261025/source-role-plan.json",
+      "bytes": 9938,
+      "sha256": "7466be4fbd2141f99cf06a37d522a2e75cec770ae7a175b6f2081ac05c19d86f"
+    },
+    "payload_receipt": {
+      "path": ".scratch/mlx-ordinary-qwen-20261025/payload/complete.json",
+      "bytes": 19820,
+      "sha256": "656821eab8e50ecc7406dfcde7c900162d7166e3378fe12ddd31464ffbb3d0ed"
+    },
+    "source_archive": {
+      "path": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+      "bytes": 3235093,
+      "sha256": "afc43569ab74af8b94fbba9a1f93265e687498cbc943c92f43804d56533268fd"
+    },
+    "producer_reader": {
+      "repository": "https://github.com/ml-explore/mlx-lm",
+      "revision": "4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+      "identity_basis": "git ls-remote HEAD followed by immutable raw Git commit paths",
+      "files": [
+        {
+          "name": "qwen3_5.py",
+          "bytes": 20559,
+          "sha256": "851449fd9989d6bf4b3c4fed92ddc3be5f1e781eb2246f89c54d7eff2518d9c6",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx-lm/4cfc6478473b0668ede3eb0cc93f2a9181a15052/mlx_lm/models/qwen3_5.py",
+          "final_url": "https://raw.githubusercontent.com/ml-explore/mlx-lm/4cfc6478473b0668ede3eb0cc93f2a9181a15052/mlx_lm/models/qwen3_5.py",
+          "status": 200,
+          "content_length": "20559"
+        },
+        {
+          "name": "qwen3_next.py",
+          "bytes": 17853,
+          "sha256": "67ca08a4d08cb7be124965e95399735e556f1eaeb21a16bc23cb88d1ac035e11",
+          "url": "https://raw.githubusercontent.com/ml-explore/mlx-lm/4cfc6478473b0668ede3eb0cc93f2a9181a15052/mlx_lm/models/qwen3_next.py",
+          "final_url": "https://raw.githubusercontent.com/ml-explore/mlx-lm/4cfc6478473b0668ede3eb0cc93f2a9181a15052/mlx_lm/models/qwen3_next.py",
+          "status": 200,
+          "content_length": "17853"
+        }
+      ],
+      "total_source_bytes": 38412,
+      "model_bytes": 0,
+      "packages_installed": 0,
+      "boundary": "Current pinned upstream reader semantics, not proof of the original producer version of the two fixed model artifacts."
+    },
+    "total_original_range_bytes": 63232,
+    "original_parts": 12,
+    "new_download_bytes_this_agent": 0,
+    "full_LFS_hash_verified": false,
+    "publisher_producer_version_verified": false
+  },
+  "metadata": [
+    {
+      "catalog_index": 4,
+      "text_physical_roles": 694,
+      "affine_groups": 187,
+      "dense_parameters": 133,
+      "tied_head": true,
+      "policy": {
+        "bits": 4,
+        "group_size": 64,
+        "mode": "affine",
+        "activation_dtype": "BF16",
+        "dot": "F32 decoded affine weights and accumulation",
+        "embedding": "BF16 multiply then BF16 add",
+        "reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+        "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+        "parameters": "already sanitized direct gamma and [C,kernel,1] convolution",
+        "producer_version_verified": false
+      },
+      "logical_inventory": 320,
+      "full_header_only": true,
+      "payload_verified": false
+    },
+    {
+      "catalog_index": 5,
+      "text_physical_roles": 694,
+      "affine_groups": 187,
+      "dense_parameters": 133,
+      "tied_head": true,
+      "policy": {
+        "bits": 8,
+        "group_size": 64,
+        "mode": "affine",
+        "activation_dtype": "BF16",
+        "dot": "F32 decoded affine weights and accumulation",
+        "embedding": "BF16 multiply then BF16 add",
+        "reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+        "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+        "parameters": "already sanitized direct gamma and [C,kernel,1] convolution",
+        "producer_version_verified": false
+      },
+      "logical_inventory": 320,
+      "full_header_only": true,
+      "payload_verified": false
+    },
+    {
+      "catalog_index": 11,
+      "text_physical_roles": 1847,
+      "affine_groups": 498,
+      "dense_parameters": 353,
+      "tied_head": false,
+      "policy": {
+        "bits": 4,
+        "group_size": 64,
+        "mode": "affine",
+        "activation_dtype": "BF16",
+        "dot": "F32 decoded affine weights and accumulation",
+        "embedding": "BF16 multiply then BF16 add",
+        "reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+        "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+        "parameters": "already sanitized direct gamma and [C,kernel,1] convolution",
+        "producer_version_verified": false
+      },
+      "logical_inventory": 851,
+      "full_header_only": true,
+      "payload_verified": false
+    },
+    {
+      "catalog_index": 12,
+      "text_physical_roles": 1847,
+      "affine_groups": 498,
+      "dense_parameters": 353,
+      "tied_head": false,
+      "policy": {
+        "bits": 8,
+        "group_size": 64,
+        "mode": "affine",
+        "activation_dtype": "BF16",
+        "dot": "F32 decoded affine weights and accumulation",
+        "embedding": "BF16 multiply then BF16 add",
+        "reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+        "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+        "parameters": "already sanitized direct gamma and [C,kernel,1] convolution",
+        "producer_version_verified": false
+      },
+      "logical_inventory": 851,
+      "full_header_only": true,
+      "payload_verified": false
+    }
+  ],
+  "independent_oracle": {
+    "status": "INDEPENDENT_SOURCE_EQUATION_ORACLE_READY",
+    "source": [
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/non-gguf/mlx-cpu-quantized.cpp",
+        "bytes": 40348,
+        "sha256": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d"
+      },
+      {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/non-gguf/mlx-quantized.py",
+        "bytes": 15026,
+        "sha256": "8ca4574a212f14cbec4c446826474583ef0bf1e2cb1630574fd730c77af03b33"
+      }
+    ],
+    "scope": "Independent NumPy implementation of fixed source SIMD affine weight math and typed embedding boundaries; not an execution of the MLX runtime, not publisher-version or whole-forward equivalence.",
+    "activation": "Two fixed sparse BF16 rows; only indices0,1,2047 nonzero. F64 dot and independent F32 dot agree after final BF16 cast.",
+    "results": [
+      {
+        "index": 4,
+        "bits": 4,
+        "kind": "linear",
+        "logical_shape": [
+          16,
+          2048
+        ],
+        "linear_values": 32,
+        "f64_vs_f32_final_bf16_equal": true
+      },
+      {
+        "index": 4,
+        "bits": 4,
+        "kind": "embedding",
+        "logical_shape": [
+          3,
+          2048
+        ],
+        "linear_values": 6,
+        "f64_vs_f32_final_bf16_equal": true,
+        "embedding_values": 6144,
+        "typed_embedding_vs_qmm_weight_different": 3716,
+        "wrong_tied_head_changed": 3
+      },
+      {
+        "index": 5,
+        "bits": 8,
+        "kind": "linear",
+        "logical_shape": [
+          16,
+          2048
+        ],
+        "linear_values": 32,
+        "f64_vs_f32_final_bf16_equal": true
+      },
+      {
+        "index": 5,
+        "bits": 8,
+        "kind": "embedding",
+        "logical_shape": [
+          3,
+          2048
+        ],
+        "linear_values": 6,
+        "f64_vs_f32_final_bf16_equal": true,
+        "embedding_values": 6144,
+        "typed_embedding_vs_qmm_weight_different": 5839,
+        "wrong_tied_head_changed": 3
+      }
+    ],
+    "inputs": [
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-00/data.bin",
+        "bytes": 3072,
+        "sha256": "69716d3e9f08302f1065e03bf6461a32a8679b406abadcf992755ed040e3eab8"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-01/data.bin",
+        "bytes": 192,
+        "sha256": "86b62ac92b8757c9c06bef6f4cc2766933bb7c87742fe0ea65fc04d4a8d412ab"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-02/data.bin",
+        "bytes": 192,
+        "sha256": "1fcc9735d7c8471d08630fc8c6c2d78b6d22878b651b2785c167bb861ca5f4f6"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-03/data.bin",
+        "bytes": 16384,
+        "sha256": "106b316c80131460aca2bac872b2abc7117c87dcbbb62568dc504bad23eb8764"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-04/data.bin",
+        "bytes": 1024,
+        "sha256": "97342006b4f2a1b1e892fe55f676e49d0b6f2ab922d8e6248592f9c73cbf1298"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-04-range-05/data.bin",
+        "bytes": 1024,
+        "sha256": "9bf214f59055a106b018dd8f0232388b0d7d7ceccab8bba00ee81790af56a782"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-00/data.bin",
+        "bytes": 6144,
+        "sha256": "f4dcd9b7896bcc84864840ca8a6b0cdf549f36a8deb55dec14cd32d61a009157"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-01/data.bin",
+        "bytes": 192,
+        "sha256": "58ec1166b400af8084cdd4eac4caa1fa44365dec2dc59a52861062d62f804266"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-02/data.bin",
+        "bytes": 192,
+        "sha256": "1fcc9735d7c8471d08630fc8c6c2d78b6d22878b651b2785c167bb861ca5f4f6"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-03/data.bin",
+        "bytes": 32768,
+        "sha256": "2623ab9b2de33888494cb14230db70752dcc82204c8f402e2a6bc073bb3f3d4c"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-04/data.bin",
+        "bytes": 1024,
+        "sha256": "88b64ac71341c3833a7b2cf4d62c1b73b1c1be3d90f23008215612d6bc42fb26"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/payload/artifact-05-range-05/data.bin",
+        "bytes": 1024,
+        "sha256": "9bf214f59055a106b018dd8f0232388b0d7d7ceccab8bba00ee81790af56a782"
+      }
+    ],
+    "outputs": [
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-a.bf16",
+        "bytes": 8192,
+        "sha256": "cf6e8deee50cd4d58417f5ff9ad0d9e5b1ec6341b6b2a798bd118c80edf7d380"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-embedding-affine.f32",
+        "bytes": 24576,
+        "sha256": "68fc813e873ed6427b16fbc91a10786abcf60c474bb8d2aa5d3b8edf6ecdba6a"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-embedding-linear.bf16",
+        "bytes": 12,
+        "sha256": "ad85178d98f33cff83ea1bb5bc31bba6fde04bfb63c9e87c52590748aa750c4f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-embedding.bf16",
+        "bytes": 12288,
+        "sha256": "45a628b43cd34c7dacf1a04e2216e7806ec8dd98a0388a4324b179f9f08acfca"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-geometry.txt",
+        "bytes": 136,
+        "sha256": "146fed09e57a8c04dd7e9252e58cda5b85593f526d8f4a336a01335f7a990871"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-linear-affine.f32",
+        "bytes": 131072,
+        "sha256": "13de879b65e9d3bf8774931e37523aef0552e8d692cbd3c0b6c5a1435d095f48"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/4-linear-linear.bf16",
+        "bytes": 64,
+        "sha256": "b36cce57d4ed7857cef807adc2107b48d9e744d676a0ab784f86237bcb197cc7"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-a.bf16",
+        "bytes": 8192,
+        "sha256": "cf6e8deee50cd4d58417f5ff9ad0d9e5b1ec6341b6b2a798bd118c80edf7d380"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-embedding-affine.f32",
+        "bytes": 24576,
+        "sha256": "1a32bc3de482b9ea4da423950072a69f59659f5c3b3b9bd2754603d05a2a563c"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-embedding-linear.bf16",
+        "bytes": 12,
+        "sha256": "74c1cce8a788fd0588210c19280c7d2395c451f51e4366cb3993bd2ca7f0dfbe"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-embedding.bf16",
+        "bytes": 12288,
+        "sha256": "4b51826cf20141ec6c935651df609306a4542807d70c444152c558628a548031"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-geometry.txt",
+        "bytes": 136,
+        "sha256": "146fed09e57a8c04dd7e9252e58cda5b85593f526d8f4a336a01335f7a990871"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-linear-affine.f32",
+        "bytes": 131072,
+        "sha256": "df6a314a5edb3ab8cd8b7f09308a43462039901b119c22696eb7405ea88ce2e8"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/5-linear-linear.bf16",
+        "bytes": 64,
+        "sha256": "1352aac2640b5286456718643bb833d762b569d535b92949cf353dd418ff7333"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/original-cpu-reader.txt",
+        "bytes": 1335,
+        "sha256": "902b5466fbd94b42206de80bd1fe6ad6ee23c425428c27460a83bde942dd3c95"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/oracle/original-embedding-reader.txt",
+        "bytes": 871,
+        "sha256": "332196f24314dcb263a9ed6823ec4985cb3007bd8fa4a6dfb3774a7e06c92687"
+      }
+    ]
+  },
+  "actual": {
+    "original_CPU": {
+      "process": {
+        "exit": 0,
+        "seconds": 0.8589999999967404,
+        "timeout": false
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "CPU",
+        "cases": [
+          {
+            "bits": 4,
+            "rows": 1,
+            "original_numeric_tensors": 6,
+            "original_bytes": 21888,
+            "workspace": 6,
+            "steps": [
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cpu",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 4,
+            "rows": 2,
+            "original_numeric_tensors": 6,
+            "original_bytes": 21888,
+            "workspace": 12,
+            "steps": [
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cpu",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 8,
+            "rows": 1,
+            "original_numeric_tensors": 6,
+            "original_bytes": 41344,
+            "workspace": 6,
+            "steps": [
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cpu",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 8,
+            "rows": 2,
+            "original_numeric_tensors": 6,
+            "original_bytes": 41344,
+            "workspace": 12,
+            "steps": [
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "hyle-native",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cpu",
+                "nodes": 1
+              }
+            ]
+          }
+        ],
+        "checked_values": 24690,
+        "projection": "F32_affine_dot_BF16",
+        "embedding": "BF16_multiply_then_BF16_add",
+        "tied_head": "packed_linear_BF16_then_F32",
+        "whole_model": false,
+        "new_download_bytes": 0
+      }
+    },
+    "original_CUDA": {
+      "process": {
+        "exit": 0,
+        "seconds": 0.5470000000204891,
+        "timeout": false
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "CUDA",
+        "cases": [
+          {
+            "bits": 4,
+            "rows": 1,
+            "original_numeric_tensors": 6,
+            "original_bytes": 21888,
+            "workspace": 6,
+            "steps": [
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cuda",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 4,
+            "rows": 2,
+            "original_numeric_tensors": 6,
+            "original_bytes": 21888,
+            "workspace": 12,
+            "steps": [
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cuda",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 8,
+            "rows": 1,
+            "original_numeric_tensors": 6,
+            "original_bytes": 41344,
+            "workspace": 6,
+            "steps": [
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cuda",
+                "nodes": 1
+              }
+            ]
+          },
+          {
+            "bits": 8,
+            "rows": 2,
+            "original_numeric_tensors": 6,
+            "original_bytes": 41344,
+            "workspace": 12,
+            "steps": [
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "original-artifacts-cuda",
+                "nodes": 1
+              },
+              {
+                "provider": "ggml-cuda",
+                "nodes": 1
+              }
+            ]
+          }
+        ],
+        "checked_values": 24690,
+        "projection": "F32_affine_dot_BF16",
+        "embedding": "BF16_multiply_then_BF16_add",
+        "tied_head": "packed_linear_BF16_then_F32",
+        "whole_model": false,
+        "new_download_bytes": 0
+      }
+    },
+    "untrained_Model_CPU": {
+      "process": {
+        "exit": 0,
+        "seconds": 0.8589999999967404,
+        "timeout": false
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "CPU",
+        "source": "untrained_tiny_GA_MLX_packed_embedding_tied_head_and_projection",
+        "fixture_bytes": 179462,
+        "activation": "BF16",
+        "GDN_history": "BF16",
+        "GDN_recurrent": "F32",
+        "ordinary_ids": [
+          2,
+          62
+        ],
+        "actual_decode_replay_same_request": true,
+        "fresh_prefix_own_stream": true,
+        "old_snapshot_unchanged": true,
+        "sampling_draw": 2,
+        "cache_peak": 164917,
+        "full_original_model": false,
+        "source_operands_resident": true,
+        "resident_MLX_W_bytes": 4096,
+        "GPU_runs": 0
+      },
+      "state": [
+        {
+          "name": "carry.bf16",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/carry.bf16",
+            "bytes": 128,
+            "sha256": "daa63f7bdb35310af6e77ab71d035058b82d49712b1730b24e72ab78fa8a7337"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/carry.bf16",
+            "bytes": 128,
+            "sha256": "c4fdf5cad300b1932a79d4ae40e78a7feefeaeb4504c2313abec39fcd1c06bbc"
+          },
+          "different": true,
+          "base_nonzero_bytes": 127,
+          "after_nonzero_bytes": 128
+        },
+        {
+          "name": "gdn0.history.bf16",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/gdn0.history.bf16",
+            "bytes": 1152,
+            "sha256": "0559bf6865d4c5153a37b2e6241c7fd69153eabd93c2696aaf1f8938612e1224"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/gdn0.history.bf16",
+            "bytes": 1152,
+            "sha256": "ea15d92977d44b023f6713cbca5aaa0da02a469176d81d94c827b70e25f900c3"
+          },
+          "different": true,
+          "base_nonzero_bytes": 768,
+          "after_nonzero_bytes": 1152
+        },
+        {
+          "name": "gdn0.recurrent.f32",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/gdn0.recurrent.f32",
+            "bytes": 16384,
+            "sha256": "7a975de0f33207c297c50aebcee413453dc9f3aaf7b4e833ae81c83088fb77c7"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/gdn0.recurrent.f32",
+            "bytes": 16384,
+            "sha256": "1b0da94ad3cf81bb21fd7136773440cd6d9c0257ca133a5bc809e495ba882501"
+          },
+          "different": true,
+          "base_nonzero_bytes": 16331,
+          "after_nonzero_bytes": 16340
+        },
+        {
+          "name": "metadata.txt",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/metadata.txt",
+            "bytes": 40,
+            "sha256": "7e993774a695d450982bcbd8e38a8d46660284a5d928b91159268b657191e847"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/metadata.txt",
+            "bytes": 41,
+            "sha256": "d1fd8f07a0b36c061fa11f8bccdadf629f4a78c594730ce4d7713433489ca90b"
+          },
+          "different": true,
+          "base_nonzero_bytes": 40,
+          "after_nonzero_bytes": 41
+        },
+        {
+          "name": "target0.key.bf16",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/target0.key.bf16",
+            "bytes": 256,
+            "sha256": "81ba4d6257f828852e892a3a7d0e0c930bd1e69d953bead165fc0412e5298f40"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/target0.key.bf16",
+            "bytes": 384,
+            "sha256": "f4de2fd1f7b988b5590ad9446a0fd90dc89322481e67c49a5e0e27714cabcb64"
+          },
+          "different": true,
+          "base_nonzero_bytes": 256,
+          "after_nonzero_bytes": 384
+        },
+        {
+          "name": "target0.value.bf16",
+          "base": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/base-state/target0.value.bf16",
+            "bytes": 256,
+            "sha256": "28154ebda4fc5186d6fc87c3c8c43beecf95beb7666165db483b4b6027fd3a8f"
+          },
+          "after": {
+            "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/actual/final-state/target0.value.bf16",
+            "bytes": 384,
+            "sha256": "9a0c2a6fb16419106448e2fbdc0eee18bfc864341ed2f8918964f1c45e5ef601"
+          },
+          "different": true,
+          "base_nonzero_bytes": 256,
+          "after_nonzero_bytes": 384
+        }
+      ]
+    },
+    "host": {
+      "cpp_checks": 370,
+      "python_tests": 17,
+      "processes": {
+        "status": "PASS",
+        "cpp": {
+          "exit": 0,
+          "seconds": 0.5940000000118744,
+          "timeout": false
+        },
+        "python": {
+          "exit": 0,
+          "seconds": 0.28099999998812564,
+          "timeout": false
+        },
+        "initial_missing_fixture": true,
+        "sources": [
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mlx-ordinary-qwen-20261025\\consumer\\source\\tests\\tools\\qwen_prepared_roles_test.cc",
+            "bytes": 48114,
+            "sha256": "f460790b6bdbe13509bfa2a81d63b6652313aaec9a797a209a2b927377e1bb9c"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mlx-ordinary-qwen-20261025\\consumer\\source\\tests\\tooling\\qwen_hf_roles_test.py",
+            "bytes": 31922,
+            "sha256": "f3c37ccd62ba9fbaec61f6ca6f874176cf6386bcbdf9ed39bb7211d0ac6e8bf7"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mlx-ordinary-qwen-20261025\\consumer\\source\\engine\\models\\qwen35\\prepared_roles.h",
+            "bytes": 34572,
+            "sha256": "d2c7381b913540df43a2eb256b653e154c0f80cb492fa4f0dfc0f4e14f46c1f8"
+          },
+          {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mlx-ordinary-qwen-20261025\\consumer\\source\\engine\\models\\qwen35\\prepare.py",
+            "bytes": 36465,
+            "sha256": "79bc1859cfa106f239ceced3734df1ee49bf9d12da6af13fb308f4313932ad84"
+          }
+        ]
+      }
+    }
+  },
+  "behavior": {
+    "activation": "BF16",
+    "linear": "original U32+BF16 affine scale/bias; F32 point multiply/add and dot, final BF16",
+    "embedding": "checked selected IDs; BF16 product then BF16 add",
+    "tied_head": "same original operands, independent linear equation; BF16 projection then F32 logits",
+    "direct_norm": true,
+    "convolution": "already-sanitized [C,kernel,1] has the same bytes as [C,1,kernel]; descriptor only",
+    "engine_hot_allocation_sites_added": 0,
+    "engine_cold_full_weight_bank_expansion_added": false,
+    "engine_hot_provider_lookup_added": false
+  },
+  "failures": [
+    {
+      "stage": "private source preparation",
+      "kind": "replacement-count assertion",
+      "effect": "No compiler or inference started; fixed exact private text match"
+    },
+    {
+      "stage": "attempt1 compile",
+      "kind": "private new binding/helper API misuse",
+      "paths": [
+        "consumer/attempt1/compile"
+      ],
+      "effect": "Operation convenience vs typed descriptor and Buffer create API corrected in private candidate"
+    },
+    {
+      "stage": "attempt2 launch preparation",
+      "kind": "private runner PATH key spelling",
+      "effect": "No process launched by build.py; fixed runner uses original runtime PATH"
+    },
+    {
+      "stage": "attempt2 actual CPU",
+      "kind": "private component omitted independent Recipe dimension binding",
+      "paths": [
+        "consumer/attempt2/cpu-run"
+      ],
+      "effect": "Graph correctly rejected before numeric submit; final consumer supplies original required exact ShapeBinding, no Graph/provider change"
+    },
+    {
+      "stage": "host1 compile",
+      "kind": "private test generator escaped newline",
+      "effect": "Corrected generated C++ fixture only"
+    },
+    {
+      "stage": "host2 first CPP run",
+      "kind": "private frozen-source closure omitted existing171B NF4 JSON fixture",
+      "effect": "Copied unchanged original fixture; same compiled host image then passed all370 checks"
+    },
+    {
+      "stage": "ga1 actual CPU",
+      "kind": "private generated manifest invalid BMLX dtype from text replacement",
+      "effect": "Prepared parser correctly refused before loading; corrected only fixture text to BF16, product candidate unchanged"
+    }
+  ],
+  "execution_accounting": {
+    "successful_original_component_processes": 2,
+    "successful_untrained_Model_processes": 1,
+    "failed_component_CPU_pre_submit_processes": 1,
+    "failed_untrained_CPU_before_weight_IO_processes": 1,
+    "GPU_processes": 1,
+    "GPU_released": true,
+    "additional_GPU_runs_planned": false
+  },
+  "closure": {
+    "original_baseline": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle.exe",
+      "bytes": 141401600,
+      "sha256": "c343db76232c4b5bd34878820433057b8c23789cd1b170b6a3b86cd91bf82fa1"
+    },
+    "retained_five_leaves": [
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_native--ct_packed/unit.obj",
+        "bytes": 977073,
+        "sha256": "794a73283fabb2dfbb6f0d0cd2c363733bc56e4b4af0d2974f5ff4d49128c814"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cpu--ct_packed_linear_region/unit.obj",
+        "bytes": 1136077,
+        "sha256": "e62ee314ea2183e64335b8f6e2ed041c5386474623d02606b2742c0034c2dcb8"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/graph_route_cuda--ct_packed_linear_region/unit.obj",
+        "bytes": 1136350,
+        "sha256": "03716288612523949e9f49663e31cb7cf4196c270516f1845a5b65a17f8c3f35"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/host1/compute_provider_torch_cuda--artifact_provider/unit.obj",
+        "bytes": 1381707,
+        "sha256": "d48a4034697c592316af86a9f808199ebc7a20caec37b8d9cf90a721ea025fab"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/cuda1/unit.obj",
+        "bytes": 1007874,
+        "sha256": "fe734576d63c6b8fbf6297b3773f55a83cdf0082effed9aa9eff25e4d4211e41"
+      }
+    ],
+    "exact_entry_link_delta": [
+      {
+        "position": 237,
+        "before": "C:\\public\\project-hyle\\hyle\\.scratch\\nf4-packed-contraction-20261025\\component3\\compile\\component.obj",
+        "after": "C:\\public\\project-hyle\\hyle\\.scratch\\mlx-ordinary-qwen-20261025\\consumer\\attempt3\\compile\\unit.obj"
+      }
+    ],
+    "CUDA_native_kernel_rebuilt": false,
+    "SDK_rebuilt": false,
+    "canonical_product_modified_by_agent": false,
+    "final_private_sources": {
+      "private_baseline_main": "7ac7ae01c4b56632822689f2456fc46eed8f9003c7a7ba0e2ba852e647a18fca",
+      "canonical_untouched": true,
+      "files": [
+        {
+          "relative_path": "engine/models/qwen35/main.cc",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/main.cc",
+          "bytes": 470320,
+          "sha256": "06c929ff7cb14a628ba3d03997d3c5c11ff62f1383c8452c331b4c5eeb826a53"
+        },
+        {
+          "relative_path": "engine/models/qwen35/precision_profile.h",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/precision_profile.h",
+          "bytes": 1492,
+          "sha256": "7d7b356097456cdb277944676f6a847f8fc46fa87b15dbaae620f6022983d1a0"
+        },
+        {
+          "relative_path": "engine/models/qwen35/prepare.py",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/prepare.py",
+          "bytes": 36465,
+          "sha256": "79bc1859cfa106f239ceced3734df1ee49bf9d12da6af13fb308f4313932ad84"
+        },
+        {
+          "relative_path": "engine/models/qwen35/prepared_roles.h",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/prepared_roles.h",
+          "bytes": 34572,
+          "sha256": "d2c7381b913540df43a2eb256b653e154c0f80cb492fa4f0dfc0f4e14f46c1f8"
+        },
+        {
+          "relative_path": "engine/models/qwen35/projection_binding.h",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/projection_binding.h",
+          "bytes": 2988,
+          "sha256": "baf00c59e57fe8ffddbb159568795b56825ae77089ebc78de1e1bb721865a67c"
+        },
+        {
+          "relative_path": "tests/tooling/qwen_hf_roles_test.py",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/tests/tooling/qwen_hf_roles_test.py",
+          "bytes": 31922,
+          "sha256": "f3c37ccd62ba9fbaec61f6ca6f874176cf6386bcbdf9ed39bb7211d0ac6e8bf7"
+        },
+        {
+          "relative_path": "tests/tools/qwen_prepared_roles_test.cc",
+          "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/tests/tools/qwen_prepared_roles_test.cc",
+          "bytes": 48114,
+          "sha256": "f460790b6bdbe13509bfa2a81d63b6652313aaec9a797a209a2b927377e1bb9c"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Q35/Q27 full selected headers/configs are metadata-only; no full original model, full source digest, benchmark or task-quality result.",
+    "The fixed current MLX-LM reader is authenticated; original artifact publisher producer-version equivalence is unknown.",
+    "Oracle is an independent source-equation NumPy F32/F64/typed-BF16 implementation, not execution of the upstream MLX runtime.",
+    "Sparse fixed original projection activations discriminate embedding-vs-linear rounding; they do not certify all arbitrary reduction orders bitwise.",
+    "CPU/CUDA Graph workspace6/12B is visible workspace only; provider-private transient backing is not measured.",
+    "A separate CPU untrained GA exercises ordinary Model state/sampling/restore/retirement and sanitized conventions, not original model quality or GPU state journey.",
+    "Apple/Vulkan MLX availability follows existing public provider support and is not newly executed in this batch."
+  ],
+  "canonical_integration_followup": {
+    "status": "STRICT_MLX_NF4_SAMPLING_AND_SINGLETON_INTERFACE_PASS",
+    "canonical_main": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 470223,
+      "sha256": "c92181e4de678b4924cc32cd652a0169411b5cf95dd070963e7103cf7c2ece4d"
+    },
+    "actual_private_main": {
+      "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/source/engine/models/qwen35/main.cc",
+      "bytes": 470320,
+      "sha256": "06c929ff7cb14a628ba3d03997d3c5c11ff62f1383c8452c331b4c5eeb826a53"
+    },
+    "differences_from_actual_private_image": "Only two pre-existing N1 singleton bucket admission source lines, preserved from canonical647; exact diff archived. Other six changed product/test files are normalized-text equal.",
+    "interface_summary": {
+      "status": "STRICT_MLX_NF4_SAMPLING_AND_SINGLETON_INTERFACE_PASS",
+      "source_files": 42,
+      "source_bytes": 789636,
+      "source_pins": "source-pins.json",
+      "process": "strict-final/process.json",
+      "scope": "Combined current source, CPU/CUDA consumer interface and canonical lifecycle/chunked/dual/sampling cases. Syntax only, no object/link, model/GPU run, SDK rebuild or CMake configure."
+    },
+    "interface_process": {
+      "exit": 0,
+      "seconds": 7.155999999988126,
+      "timeout": false
+    },
+    "integration": {
+      "before": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 466769,
+          "sha256": "647967bf47440a94799f8212d5ba8b976ce4cfc1724a70589b80f3ee159d8d93"
+        },
+        {
+          "path": "engine/models/qwen35/precision_profile.h",
+          "bytes": 1462,
+          "sha256": "92a62afc327b279bbeb524f264b9cccebca1095ca82d6e2a3d89d8ec38b3def2"
+        },
+        {
+          "path": "engine/models/qwen35/prepare.py",
+          "bytes": 33483,
+          "sha256": "ed96b4c2e588089c0b3ed1208d8aa552dd54a66fdc2476e1bf03ea0ba5632f45"
+        },
+        {
+          "path": "engine/models/qwen35/prepared_roles.h",
+          "bytes": 31109,
+          "sha256": "b35b9b42b312d5c2831d6941d698105320be5719081052bd4c7cfa4115962c93"
+        },
+        {
+          "path": "engine/models/qwen35/projection_binding.h",
+          "bytes": 2813,
+          "sha256": "0e2a06e7f6634f3b7bb05b820c418e0a93693c5b792627087f487c22c06f9e4c"
+        },
+        {
+          "path": "tests/tooling/qwen_hf_roles_test.py",
+          "bytes": 29834,
+          "sha256": "676d98ee762b62e2ac3a47247f511fd96f9a52bc5a682eb8ca3d6ff301334acf"
+        },
+        {
+          "path": "tests/tools/qwen_prepared_roles_test.cc",
+          "bytes": 45113,
+          "sha256": "1c65471672fbf7d301b235b62190e1251ebc689d4aea90a103264e2d38de764e"
+        }
+      ],
+      "after": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 470223,
+          "sha256": "c92181e4de678b4924cc32cd652a0169411b5cf95dd070963e7103cf7c2ece4d"
+        },
+        {
+          "path": "engine/models/qwen35/precision_profile.h",
+          "bytes": 1492,
+          "sha256": "7d7b356097456cdb277944676f6a847f8fc46fa87b15dbaae620f6022983d1a0"
+        },
+        {
+          "path": "engine/models/qwen35/prepare.py",
+          "bytes": 37041,
+          "sha256": "c08315695dd1f251d2c76477f8e4c009e4195d389e702516a43bf3b88dc94f79"
+        },
+        {
+          "path": "engine/models/qwen35/prepared_roles.h",
+          "bytes": 35138,
+          "sha256": "f88f29737246e2b2781bfe9f8c25109cad8e36172089f35cf0e2d2848c12c75f"
+        },
+        {
+          "path": "engine/models/qwen35/projection_binding.h",
+          "bytes": 2988,
+          "sha256": "baf00c59e57fe8ffddbb159568795b56825ae77089ebc78de1e1bb721865a67c"
+        },
+        {
+          "path": "tests/tooling/qwen_hf_roles_test.py",
+          "bytes": 32373,
+          "sha256": "14e4b4ef61bfd071af334de2a2dd6c499afe6e60e848b5f6c0adedf05751e89d"
+        },
+        {
+          "path": "tests/tools/qwen_prepared_roles_test.cc",
+          "bytes": 48898,
+          "sha256": "6d15aa0c2f65b82bae579a60811671c76d1abb66106c484f57eb8322dada32d5"
+        }
+      ],
+      "original_patch_sha256": "cd1463b3e38ed203e1aa614e0bbd8e829fd0bc096fabf06d7ca9c559bbe00851",
+      "preflight_failure": "git apply --check rejected LF context against four CRLF files; no product mutation. Exact normalized context and frozen outputs checked before writes.",
+      "scope": "Private MLX seven-file patch applied with existing singleton bucket admission preserved; no runtime claim."
+    },
+    "full_model_or_GPU_rerun": false,
+    "pins": []
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.zip",
+    "bytes": 1200093,
+    "sha256": "54dcb9356d125a444d8ed5372870eb17109579006c8a596c566770d0bb4d6216",
+    "CRC_verified": true,
+    "payload_count": 257,
+    "original_path_references": 619,
+    "duplicate_bytes_resolved_by": "proof-payloads.json archive_path and source-payload-aliases.json"
+  },
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt2/compile/unit.obj",
+        "bytes": 14536004,
+        "sha256": "bb972a14cb712b1311ca5b3bf534837a31d089495a2988fb87a0edf0164549c2"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt2/link/mlx.exe",
+        "bytes": 140467200,
+        "sha256": "b1016547090ca9c28c4722a453129c62614755c5cc23005c7bd14c0f3603706c"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt2/link/mlx.exp",
+        "bytes": 24984,
+        "sha256": "63840aa0fcbab92992f268ffc244303f8896bedc9483727ba3011bdcb2d73be7"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt2/link/mlx.lib",
+        "bytes": 41298,
+        "sha256": "390f607760ad581feff4b7159848b6758bf8de207626eff3a751745438edcb39"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt3/compile/unit.obj",
+        "bytes": 14536036,
+        "sha256": "1a94eea69b41b00bd842bfa5e636d4480df69614cc0f7511a17f9ab80c31842f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt3/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt3/link/mlx.exe",
+        "bytes": 140467200,
+        "sha256": "9801c41ffbf8ffcc00ec4b2e2a670a2d2ae3e72520804b34588253e076250c0a"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt3/link/mlx.exp",
+        "bytes": 24984,
+        "sha256": "3405b9423e99de757a2899df46d3d5075fe3b8d086172569d4349eb1e8f6a74a"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/attempt3/link/mlx.lib",
+        "bytes": 41298,
+        "sha256": "390f607760ad581feff4b7159848b6758bf8de207626eff3a751745438edcb39"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga1/compile/unit.obj",
+        "bytes": 14803149,
+        "sha256": "9aeca792bab909ed441d5a6cb55d1d5099db6d0aa33e0b5a0f9fb8d4e303e37a"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga1/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga1/link/mlx.exe",
+        "bytes": 141222400,
+        "sha256": "ddc12342440ebb6956b7ffc7292da3a064f6dd1815e95c833fd6938a2698f645"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga1/link/mlx.exp",
+        "bytes": 24979,
+        "sha256": "bbfccc8514b6f98744f7b4be3ce687ce2877758de6e47d0408c68238a813e650"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga1/link/mlx.lib",
+        "bytes": 41298,
+        "sha256": "390f607760ad581feff4b7159848b6758bf8de207626eff3a751745438edcb39"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/compile/unit.obj",
+        "bytes": 14803013,
+        "sha256": "1a972fac72024607b8a5a13fcfe05f3532f125a74fb6d59c61df334613f99f52"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/link/mlx.exe",
+        "bytes": 141222400,
+        "sha256": "4c5bee5563ea1694c2360bc18f03baca7646c3a9696db2b22c2e02598eaca895"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/link/mlx.exp",
+        "bytes": 24979,
+        "sha256": "097fa4d3becb88eba7504c2213b5df05bc95fe6a08a892253295719ffaa0a551"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/ga2/link/mlx.lib",
+        "bytes": 41298,
+        "sha256": "390f607760ad581feff4b7159848b6758bf8de207626eff3a751745438edcb39"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/host2/checks.exe",
+        "bytes": 331264,
+        "sha256": "7ecfe93daa06548792f7ddd94ec1f91f7e072874d849da748c6692d53d497ba9"
+      },
+      {
+        "path": ".scratch/mlx-ordinary-qwen-20261025/consumer/host2/checks.obj",
+        "bytes": 3122232,
+        "sha256": "2b60f0af84d9a359591e48ac3e95129319309a4c3107b151ae48164e224e39ed"
+      }
+    ],
+    "logical_bytes": 630603152,
+    "scope": "Only newly generated MLX private entry/host binaries and private DLL hardlinks; original baseline, original DLL, five reused backend leaves, SDK, source/oracle/logs and model fragments retained."
+  }
+}

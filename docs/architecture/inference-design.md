@@ -113,6 +113,9 @@ NF4 加载器保留原六个数字操作数，JSON 只作冷期认证，offset �
 Recipe 表达原 Decode→View→MatMul，由同一冷规划器选择 CPU／CUDA packed 融合或原分解，
 报告实际融合数、分解数及全图 workspace，不能把所有后端／行数称为无展开。
 显式 F16 冷导入工具与驻留加载器共用原状态校验；需要展开的调用者仍承担实际空间及退休合同。
+MLX affine4／8 group64 也借入原 U32 权重及 BF16 scale／bias，由既有 `MlxQuantized` 执行。
+准备器保留原物理身份，将已转换的 norm gamma 和 conv 描述映射为显式参数语义；不再套 HF 的加一。
+embedding 保留 BF16 乘法／加法舍入，绑定同一权重的 head 使用 F32 affine 线性计算，不能共用预展开的 embedding 表冒充两者。
 
 ## 从输入到一次完整提交
 

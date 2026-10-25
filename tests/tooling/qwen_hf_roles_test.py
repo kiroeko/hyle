@@ -57,6 +57,35 @@ def source_fixture():
 
 
 class OriginalHfRolesTest(unittest.TestCase):
+    def test_mlx_original_affine_reader_preserves_provenance_and_tied_head_math(self):
+        for bits,tied in ((4,True),(8,False)):
+            config=source_config();config['text_config']['tie_word_embeddings']=tied
+            config['quantization']=dict(group_size=64,bits=bits,mode='affine')
+            g=roles.geometry.from_hf(config);physical=[]
+            for name,shape in roles.geometry.role_shapes(g,include_mtp=False).items():
+                original='language_model.model.'+name[21:] if name.startswith('model.language_model.') else 'language_model.'+name
+                if len(shape)==2:
+                    n,k=shape
+                    entries=((original,'U32',[n,k//32*bits]),(original[:-7]+'.scales','BF16',[n,k//64]),(original[:-7]+'.biases','BF16',[n,k//64]))
+                else:
+                    stored=[shape[0],shape[2],1] if name.endswith('.conv1d.weight') else list(shape)
+                    entries=((original,'BF16',stored),)
+                for key,dtype,dims in entries:
+                    count=roles.ROLE_SIZES[dtype]
+                    for d in dims:count*=d
+                    physical.append(dict(name=key,dtype=dtype,shape=dims,bytes=count,path='original-mlx.bin',offset=0,sha256='3'*64))
+            source=dict(complete=True,repository='test/original-mlx',revision='b'*40,roles=physical)
+            lines,receipt=roles._prepare_role_records(source,False,config,lambda r:(Path(r['path']),None))
+            self.assertIn('mlx_affine\t'+str(bits)+'\t64\tBF16\tF32\tBF16', '\n'.join(lines))
+            self.assertTrue(any(x.startswith('language_model.model.embed_tokens.weight\tU32')for x in lines))
+            self.assertEqual(receipt['original_role_records'][0]['name'].split('.')[0],'language_model')
+            self.assertEqual(receipt['geometry']['tied_head'],tied)
+            self.assertEqual(receipt['mlx_affine_policy']['producer_version_verified'],False)
+            broken=deepcopy(source);broken['roles']=[r for r in broken['roles']if r['name']!='language_model.model.embed_tokens.biases']
+            with self.assertRaisesRegex(ValueError,'incomplete MLX'):roles._prepare_role_records(broken,False,config,lambda r:(Path('x'),None))
+            broken=deepcopy(source);conv=next(r for r in broken['roles']if r['name'].endswith('conv1d.weight'));conv['shape']=[conv['shape'][0],1,conv['shape'][1]]
+            with self.assertRaisesRegex(ValueError,'already sanitized'):roles._prepare_role_records(broken,False,config,lambda r:(Path('x'),None))
+
     def test_ct_asymmetric_preserves_packed_zero_axis_and_requires_source_policy(self):
         # Original Q27 cyankiwi@6e134bae... uses I32 Z[ceil(N/8),K/32],
         # not its config's unpacked int8 zero dtype or AWQ/GPTQ axes.

@@ -753,10 +753,10 @@
       "config_url": "https://huggingface.co/mlx-community/Qwen3.5-2B-MLX-4bit/blob/93760be4f1f69842a46bc13dbdc0f19e291392a3/config.json",
       "notes": "base_model is target post-trained Qwen3.5-2B, unlike similarly named -4bit/-6bit Base derivatives",
       "provider_coverage": {
-        "review": "fixed_revision_roles_and_bounded_operation_reference",
+        "review": "ordinary_source_resident_binding_and_bounded_original_components",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-21 fixed-source metadata/producer follow-up supersedes prior unresolved role descriptions; existing reachable entries retain only their stated generic mathematical proof. No whole-artifact execution.",
-        "mapping_status": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
+        "review_scope": "2026-10-25: all four fixed text inventories pass prepare/C++ reading. Original Qwen3.5-2B 4/8bit projection, embedding and tied-head components each pass 24,690 CPU/CUDA values against an independent pinned reader. A separate untrained tiny CPU Model passes loading, direct norm/conv semantics, prefill/decode, state/RNG restore and retirement. Canonical combined interfaces pass strict syntax only; no complete original model or performance result.",
+        "mapping_status": "Ordinary prepared loader and Recipe bind original affine triples, quantized embedding and tied/untied head. Linear uses F32 affine decoding/dot then BF16 output; embedding keeps BF16 multiply/add rounding. Sanitized norm gamma is direct and [C,kernel,1] conv is descriptor-mapped without changing bytes.",
         "required_format_domain": "MLX affine g64, U32 continuous low-first rows; original scale/bias BF16; bits 4",
         "reachable_entry_points": [
           {
@@ -811,12 +811,12 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+          "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+          "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence."
         ],
         "missing_capabilities": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Complete original-artifact runtime integration/quality/performance remains unverified; only the explicitly bounded component and tiny-state scope is closed."
         ],
         "code": [
           "include/hyle/compute/model_ops.h:271-313",
@@ -890,8 +890,9 @@
             "observed": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
             "evidence": "docs/evidence/research/fixed-role-binding-2026-10-21.json",
             "unresolved": [
-              "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-              "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+              "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+              "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+              "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence."
             ]
           }
         ],
@@ -903,6 +904,18 @@
           "execution": "F32 pointwise affine multiply then add, F32 dot/accumulation and unchanged same/mixed-source output promotion; no scale hoist or whole NK/ENK floating bank. Grouped shared/independent/zero-slot A and full checked IDs use the original execution and resource system.",
           "validation_scope": "Finite software reference and original-default neighbors; actual passed/pending backend windows are in the batch followup below, not a claim of complete artifact execution.",
           "artifact_execution_verified": false
+        },
+        "ordinary_mlx_followup": {
+          "observed_on": "2026-10-25",
+          "evidence": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json",
+          "source_reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+          "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+          "original_publisher_producer_version_verified": false,
+          "original_component_CPU_CUDA_verified": true,
+          "ordinary_tiny_CPU_fixture_verified": true,
+          "complete_text_metadata_verified": true,
+          "original_artifact_execution_verified": false,
+          "quality_or_performance_claim": false
         }
       }
     },
@@ -932,10 +945,10 @@
       "config_url": "https://huggingface.co/mlx-community/Qwen3.5-2B-MLX-8bit/blob/e6ffd0033d03c9efa880984e611028e0da63905f/config.json",
       "notes": "integer storage word/packing and activation precision not stated in config",
       "provider_coverage": {
-        "review": "fixed_revision_roles_and_bounded_operation_reference",
+        "review": "ordinary_source_resident_binding_and_bounded_original_components",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-21 fixed-source metadata/producer follow-up supersedes prior unresolved role descriptions; existing reachable entries retain only their stated generic mathematical proof. No whole-artifact execution.",
-        "mapping_status": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
+        "review_scope": "2026-10-25: all four fixed text inventories pass prepare/C++ reading. Original Qwen3.5-2B 4/8bit projection, embedding and tied-head components each pass 24,690 CPU/CUDA values against an independent pinned reader. A separate untrained tiny CPU Model passes loading, direct norm/conv semantics, prefill/decode, state/RNG restore and retirement. Canonical combined interfaces pass strict syntax only; no complete original model or performance result.",
+        "mapping_status": "Ordinary prepared loader and Recipe bind original affine triples, quantized embedding and tied/untied head. Linear uses F32 affine decoding/dot then BF16 output; embedding keeps BF16 multiply/add rounding. Sanitized norm gamma is direct and [C,kernel,1] conv is descriptor-mapped without changing bytes.",
         "required_format_domain": "MLX affine g64, U32 continuous low-first rows; original scale/bias BF16; bits 8",
         "reachable_entry_points": [
           {
@@ -990,12 +1003,12 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+          "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+          "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence."
         ],
         "missing_capabilities": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Complete original-artifact runtime integration/quality/performance remains unverified; only the explicitly bounded component and tiny-state scope is closed."
         ],
         "code": [
           "include/hyle/compute/model_ops.h:271-313",
@@ -1069,8 +1082,9 @@
             "observed": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
             "evidence": "docs/evidence/research/fixed-role-binding-2026-10-21.json",
             "unresolved": [
-              "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-              "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+              "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+              "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+              "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence."
             ]
           }
         ],
@@ -1082,6 +1096,18 @@
           "execution": "F32 pointwise affine multiply then add, F32 dot/accumulation and unchanged same/mixed-source output promotion; no scale hoist or whole NK/ENK floating bank. Grouped shared/independent/zero-slot A and full checked IDs use the original execution and resource system.",
           "validation_scope": "Finite software reference and original-default neighbors; actual passed/pending backend windows are in the batch followup below, not a claim of complete artifact execution.",
           "artifact_execution_verified": false
+        },
+        "ordinary_mlx_followup": {
+          "observed_on": "2026-10-25",
+          "evidence": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json",
+          "source_reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+          "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+          "original_publisher_producer_version_verified": false,
+          "original_component_CPU_CUDA_verified": true,
+          "ordinary_tiny_CPU_fixture_verified": true,
+          "complete_text_metadata_verified": true,
+          "original_artifact_execution_verified": false,
+          "quality_or_performance_claim": false
         }
       }
     },
@@ -2021,10 +2047,10 @@
       "config_url": "https://huggingface.co/mlx-community/Qwen3.8-27B-4bit/blob/10c35caafbb80f7dc6a7a432cdd11af10a6d4818/config.json",
       "notes": "base identity target model; no runtime verification",
       "provider_coverage": {
-        "review": "fixed_revision_roles_and_bounded_operation_reference",
+        "review": "ordinary_source_resident_binding_and_complete_text_metadata",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-21 fixed-source metadata/producer follow-up supersedes prior unresolved role descriptions; existing reachable entries retain only their stated generic mathematical proof. No whole-artifact execution.",
-        "mapping_status": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
+        "review_scope": "2026-10-25: complete fixed Qwen3.8-27B text inventories pass prepare/C++ reading, including untied head and original physical naming. Consumer code supports selected affine4/8 group64 with original U32/BF16/BF16 inputs and explicit sanitized parameters. Original operation payload was checked only for the distinct Qwen3.5-2B artifacts; no Qwen3.8-27B operation or complete model run.",
+        "mapping_status": "Ordinary prepared loader and Recipe bind original affine triples, quantized embedding and tied/untied head. Linear uses F32 affine decoding/dot then BF16 output; embedding keeps BF16 multiply/add rounding. Sanitized norm gamma is direct and [C,kernel,1] conv is descriptor-mapped without changing bytes.",
         "required_format_domain": "MLX affine g64, U32 continuous low-first rows; original scale/bias BF16; bits 4",
         "reachable_entry_points": [
           {
@@ -2079,12 +2105,13 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+          "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+          "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence.",
+          "Qwen3.8-27B original payload remains unread in this follow-up; its complete text header and ordinary loader metadata are checked, not its original operation output."
         ],
         "missing_capabilities": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Complete original-artifact runtime integration/quality/performance remains unverified; only the explicitly bounded component and tiny-state scope is closed."
         ],
         "code": [
           "include/hyle/compute/model_ops.h:271-313",
@@ -2157,8 +2184,10 @@
             "observed": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
             "evidence": "docs/evidence/research/fixed-role-binding-2026-10-21.json",
             "unresolved": [
-              "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-              "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+              "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+              "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+              "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence.",
+              "Qwen3.8-27B original payload remains unread in this follow-up; its complete text header and ordinary loader metadata are checked, not its original operation output."
             ]
           }
         ],
@@ -2170,6 +2199,18 @@
           "execution": "F32 pointwise affine multiply then add, F32 dot/accumulation and unchanged same/mixed-source output promotion; no scale hoist or whole NK/ENK floating bank. Grouped shared/independent/zero-slot A and full checked IDs use the original execution and resource system.",
           "validation_scope": "Finite software reference and original-default neighbors; actual passed/pending backend windows are in the batch followup below, not a claim of complete artifact execution.",
           "artifact_execution_verified": false
+        },
+        "ordinary_mlx_followup": {
+          "observed_on": "2026-10-25",
+          "evidence": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json",
+          "source_reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+          "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+          "original_publisher_producer_version_verified": false,
+          "original_component_CPU_CUDA_verified": false,
+          "ordinary_tiny_CPU_fixture_verified": true,
+          "complete_text_metadata_verified": true,
+          "original_artifact_execution_verified": false,
+          "quality_or_performance_claim": false
         }
       }
     },
@@ -2199,10 +2240,10 @@
       "config_url": "https://huggingface.co/mlx-community/Qwen3.8-27B-8bit/blob/815b83c0df8ffd1d1b5244cf75fd6ef14fca9ef9/config.json",
       "notes": "bitwidth changes numeric/storage domain; kept separately from affine4",
       "provider_coverage": {
-        "review": "fixed_revision_roles_and_bounded_operation_reference",
+        "review": "ordinary_source_resident_binding_and_complete_text_metadata",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-21 fixed-source metadata/producer follow-up supersedes prior unresolved role descriptions; existing reachable entries retain only their stated generic mathematical proof. No whole-artifact execution.",
-        "mapping_status": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
+        "review_scope": "2026-10-25: complete fixed Qwen3.8-27B text inventories pass prepare/C++ reading, including untied head and original physical naming. Consumer code supports selected affine4/8 group64 with original U32/BF16/BF16 inputs and explicit sanitized parameters. Original operation payload was checked only for the distinct Qwen3.5-2B artifacts; no Qwen3.8-27B operation or complete model run.",
+        "mapping_status": "Ordinary prepared loader and Recipe bind original affine triples, quantized embedding and tied/untied head. Linear uses F32 affine decoding/dot then BF16 output; embedding keeps BF16 multiply/add rounding. Sanitized norm gamma is direct and [C,kernel,1] conv is descriptor-mapped without changing bytes.",
         "required_format_domain": "MLX affine g64, U32 continuous low-first rows; original scale/bias BF16; bits 8",
         "reachable_entry_points": [
           {
@@ -2257,12 +2298,13 @@
           }
         ],
         "artifact_unaligned_or_unverified": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+          "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+          "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence.",
+          "Qwen3.8-27B original payload remains unread in this follow-up; its complete text header and ordinary loader metadata are checked, not its original operation output."
         ],
         "missing_capabilities": [
-          "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-          "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+          "Complete original-artifact runtime integration/quality/performance remains unverified; only the explicitly bounded component and tiny-state scope is closed."
         ],
         "code": [
           "include/hyle/compute/model_ops.h:271-313",
@@ -2335,8 +2377,10 @@
             "observed": "All stored affine W/scale/bias triples match existing affine4/5/6/8 g64 descriptor domains; no new codec/bitwidth/scale-type schema gap.",
             "evidence": "docs/evidence/research/fixed-role-binding-2026-10-21.json",
             "unresolved": [
-              "Exact producer activation/output/dequant rounding and original forward import remain unqualified; descriptor compatibility is not upstream numerical equivalence.",
-              "No artifact payload or whole-model execution, Linux closure, quality or throughput acceptance."
+              "Original publisher producer-version/base revision remains unpinned; the selected current mlx-lm/core reader does not establish historical producer identity.",
+              "Complete original 2B/27B generation, task quality, throughput and peak-memory comparison are unverified.",
+              "This follow-up does not run Linux, Apple or Vulkan original-payload execution or certify cross-provider bit equivalence.",
+              "Qwen3.8-27B original payload remains unread in this follow-up; its complete text header and ordinary loader metadata are checked, not its original operation output."
             ]
           }
         ],
@@ -2348,6 +2392,18 @@
           "execution": "F32 pointwise affine multiply then add, F32 dot/accumulation and unchanged same/mixed-source output promotion; no scale hoist or whole NK/ENK floating bank. Grouped shared/independent/zero-slot A and full checked IDs use the original execution and resource system.",
           "validation_scope": "Finite software reference and original-default neighbors; actual passed/pending backend windows are in the batch followup below, not a claim of complete artifact execution.",
           "artifact_execution_verified": false
+        },
+        "ordinary_mlx_followup": {
+          "observed_on": "2026-10-25",
+          "evidence": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json",
+          "source_reader": "mlx-lm@4cfc6478473b0668ede3eb0cc93f2a9181a15052",
+          "core_reader": "mlx@2b2bb49790158ecd008d1685c94e3ef119792a00",
+          "original_publisher_producer_version_verified": false,
+          "original_component_CPU_CUDA_verified": false,
+          "ordinary_tiny_CPU_fixture_verified": true,
+          "complete_text_metadata_verified": true,
+          "original_artifact_execution_verified": false,
+          "quality_or_performance_claim": false
         }
       }
     },
@@ -2404,19 +2460,34 @@
           "unquantized_f16_roles": 499,
           "original_quant_states_read": 1,
           "original_component_payload_bytes": 9183,
-          "original_role_shape": [1024, 5120],
-          "component_view_shape": [3, 5120],
+          "original_role_shape": [
+            1024,
+            5120
+          ],
+          "component_view_shape": [
+            3,
+            5120
+          ],
           "full_artifact_prepared": false,
           "original_value_arithmetic_verified": false
         },
         "ordinary_component_followup": {
           "evidence": "../evidence/correctness/nf4-original-f16-component-2026-10-25.json",
           "status": "PASS_ORIGINAL_NF4_F16_COMPONENT",
-          "component_view_shape": [3, 5120],
+          "component_view_shape": [
+            3,
+            5120
+          ],
           "decoded_F16_values_compared": 15360,
           "decode_invocations": 1,
-          "projection_M": [1, 2],
-          "projection_providers": ["ggml-cpu", "cublasLt13.6.0"],
+          "projection_M": [
+            1,
+            2
+          ],
+          "projection_providers": [
+            "ggml-cpu",
+            "cublasLt13.6.0"
+          ],
           "A_W_Y_dtype": "F16",
           "accumulation_dtype": "F32",
           "whole_model_execution": false
@@ -2427,8 +2498,14 @@
           "original_quant_states_read": 352,
           "original_state_JSON_bytes": 60553,
           "original_kproj_decoded_values_compared": 5242880,
-          "original_kproj_shape": [1024, 5120],
-          "ordinary_untrained_state_consumers": ["CPU_C192", "CUDA_C256"],
+          "original_kproj_shape": [
+            1024,
+            5120
+          ],
+          "ordinary_untrained_state_consumers": [
+            "CPU_C192",
+            "CUDA_C256"
+          ],
           "A_W_Y_dtype": "F16",
           "recurrent_and_accumulation_dtype": "F32",
           "full_source_expanded_bank_estimate_GiB": 50.09770107269287,
@@ -2440,14 +2517,23 @@
           "component_evidence": "../evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.json",
           "consumer_evidence": "../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json",
           "status": "PASS_SOURCE_RESIDENT_FINITE_ORDINARY_CPU_CUDA",
-          "original_kproj_shape": [1024, 5120],
+          "original_kproj_shape": [
+            1024,
+            5120
+          ],
           "original_kproj_output_values_per_backend": 3072,
           "source_numeric_operands": 6,
           "whole_bank_preexpanded": false,
           "CPU_default_plan": "P2 decomposed, T1 packed; original preferences unchanged",
           "CUDA_default_plan": "P2 and T1 packed; no complete floating W intermediate in selected contraction",
-          "state_consumers": ["untrained_CPU_C192", "untrained_CUDA_C256"],
-          "same_backend_prior_output_files_equal": [22, 22],
+          "state_consumers": [
+            "untrained_CPU_C192",
+            "untrained_CUDA_C256"
+          ],
+          "same_backend_prior_output_files_equal": [
+            22,
+            22
+          ],
           "workspace_scope": "Actual whole Graph, including other operators; not NF4 private storage alone",
           "Apple_Vulkan_packed": "Unsupported format rejected before lowerer arrays; original public decomposition remains available, not newly executed here",
           "whole_model_execution": false,
@@ -11975,6 +12061,19 @@
       "distinct_cases": 8,
       "skipped": 0,
       "artifact_execution_verified": false
+    },
+    {
+      "observed_on": "2026-10-25",
+      "evidence": "docs/evidence/correctness/mlx-source-resident-ordinary-consumer-2026-10-25.json",
+      "artifact_indices": [
+        4,
+        5,
+        11,
+        12
+      ],
+      "scope": "Ordinary selected MLX affine4/8 group64 source-resident loader/Recipe, four complete text inventories, original Q35 components CPU/CUDA, separate tiny CPU state journey and combined strict interfaces. Historical primitive and 2026-10-21 metadata facts are retained at their original scope.",
+      "artifact_execution_verified": false,
+      "throughput_claim": false
     }
   ]
 }
