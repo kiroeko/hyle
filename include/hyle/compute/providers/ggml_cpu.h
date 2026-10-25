@@ -14,15 +14,17 @@ struct Options final {
   // Borrowed through all derived objects. Dispatches one complete native
   // program; its concurrency does not configure ggml's internal workers.
   ParallelExecutorRef executor{};
-  // Includes the submitting thread. Each invocation prepares its own pool;
-  // one executes on the submitting thread without creating another worker.
+  // Includes the submitting thread. One provider Context lazily owns a shared
+  // native team; its complete computes are serialized. One executes on the
+  // submitting thread without creating another worker.
   std::uint32_t native_threads = 1;
 };
 
 // Original ggml CPU programs and qualified standard index algorithms.
 // Preparation owns each program's resources; replay updates bindings and
 // synchronously completes the fixed program.
-// Invocations are independent; one invocation cannot run or close concurrently.
+// Invocation graph/workspace state is independent; one invocation cannot run
+// or close concurrently. Programs and slots retain their Context native team.
 HYLE_COMPUTE_PROVIDER_GGML_API Provider provider(Options options = {}) noexcept;
 
 } // namespace hyle::compute::ggml_cpu

@@ -34,14 +34,16 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 模型给出数学，Graph 根据真实能力冷选 Provider 和等价融合。模型驱动无需逐算子指定
 实现；新增后端融合不应要求修改请求循环。共享机制也不能反向依赖 Qwen 的字段或平台宏。
 
-CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultContextOptions`，CPU主端点和显式CPU辅助端点共用原工厂。未传配置仍用原默认值；不隐式创建CPU端点，不修改全局线程设置。外部allocator／executor的支撑对象须活到全部派生制品和原生工作退休；executor并发度不等于每个Invocation的`native_threads`。Model只接收已准备的Backend，不参与线程池配置。有限CPU数值／移动／错误检查及GPU-only头检查见[配置接通依据](../evidence/research/inference-cpu-cold-options-2026-10-26.json)，尚未据此测定吞吐收益。
+CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultContextOptions`，CPU主端点和显式CPU辅助端点共用原工厂。未传配置仍用原默认值；不隐式创建CPU端点，不修改全局线程设置。Model只接收已准备的Backend，不参与线程池配置。
+
+一个CPU Provider Context拥有一个延迟创建的原生工作团队，派生Program和执行槽共同保活；每槽仍独立拥有graph、plan、workspace及取消状态。同一团队的完整原生compute串行执行，不随Invocation数复制线程池；不同Context各自独立。执行器分发时不持团队锁，同线程重入在触及原生池前拒绝。Context关闭仍禁止新提交，已派生内部资源按原退休规则释放。外部allocator／executor须活到全部派生制品和原生工作退休，executor并发度与`native_threads`是不同预算。[有限并发、取消、分配失败及真实模型对照](../evidence/performance/inference-cpu-context-team-2026-10-26.json)支持这一资源调整；不代表跨平台吞吐或所有并行负载均已测定。
 
 Qwen实现内部的`create_execution(..., cpu_options=nullptr)`继续使用原有限workspace预算公式，
 再把可选配置转发给CPU主端点或显式CPU辅助端点；省略参数保持原构造调用。
 例如实现内可用`create_execution(geometry, plan, cpu_layers, selection, &cpu_options)`，
 随后将原Backend移入Model；这不是已安装SDK导出的公共引擎API。只有GPU的选择会沿原Backend入口拒绝CPU配置，
 GPU-only构建只需配置类型的前置声明。`native_threads`不配置ATen的共享线程，
-后者仍须使用原显式启动接口；没有新增线程池、全局设置或自动核心数策略。
+后者仍须使用原显式启动接口；没有新增全局设置或自动核心数策略。
 
 Qwen的冷制品准备已独立为`weights.h`／`weights.cc`：原Tensor存储、LoadedWeight和冷加载／投影绑定接口留在模型内，Recipe只消费绑定结果，加载器不依赖Model、Session或请求循环。绑定仍借稳定map节点，存储仍归原ColdResources，不复制权重银行或新增owner。Tensor的热读写／view／move保原inline；移出的freeze仅在冷导入和常量构图调用。同一weights源由每个实际消费者按自己的后端能力宏编译，避免把完整产品的Backend布局强加给Vulkan等factor消费者；没有新增用户构建选项。拆分后的原CPU请求流程及[工程构建检查](../evidence/correctness/inference-cold-weights-split-2026-10-25.json)已通过，不据此声称吞吐提升。
 

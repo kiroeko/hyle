@@ -43,6 +43,11 @@ struct Configuration final {
   Options options;
   const internal::Extension *extension = nullptr;
 };
+struct Context final {
+  Options options;
+  const internal::Extension *extension = nullptr;
+  ggml_runtime::CpuTeam team;
+};
 struct Program final {
   struct IndexCheck final {
     std::uint32_t input;
@@ -50,6 +55,7 @@ struct Program final {
     std::int64_t limit;
   };
   Options options;
+  ggml_runtime::CpuTeam team;
   internal::Recipe recipe;
   // The selected native CPU program owns the unary FWHT implementation.
   ggml_custom_op_t hadamard = nullptr;
@@ -1582,8 +1588,7 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
       invocation->storage_bytes = invocation->graph_storage->bytes();
     }
     auto execution = ggml_runtime::CpuExecution::prepare(
-        invocation->graph, static_cast<int>(program.options.native_threads),
-        allocator);
+        invocation->graph, program.team, allocator);
     if (!execution)
       return std::move(execution).error();
     invocation->execution = std::move(*execution);
@@ -1743,17 +1748,19 @@ Status create_context(const Provider &provider, Device device, void *,
       configuration.options.native_threads > GGML_MAX_N_THREADS)
     return Status::InvalidArgument(
         "ggml CPU native_threads is outside the supported range");
-  void *storage =
-      allocator.allocate(sizeof(Configuration), alignof(Configuration));
+  HYLE_ASSIGN_OR_RETURN(auto team, ggml_runtime::CpuTeam::create(
+      static_cast<int>(configuration.options.native_threads), allocator));
+  void *storage = allocator.allocate(sizeof(Context), alignof(Context));
   if (!storage)
     return allocation_failure();
-  *output = ::new (storage) Configuration(configuration);
+  *output = ::new (storage)
+      Context{configuration.options, configuration.extension, std::move(team)};
   return Status::Ok();
 }
 void destroy_context(void *value, mem::AllocatorRef allocator) noexcept {
   if (value) {
-    static_cast<Configuration *>(value)->~Configuration();
-    allocator.deallocate(value, sizeof(Configuration), alignof(Configuration));
+    static_cast<Context *>(value)->~Context();
+    allocator.deallocate(value, sizeof(Context), alignof(Context));
   }
 }
 Status propose(void *context, const detail::ProviderOperationRequest &request,
@@ -1814,7 +1821,7 @@ ProviderPrepareOutcome prepare(void *context,
   *output = {};
   if (request.route == standard_index::kRoute)
     return standard_index::prepare(
-        static_cast<Configuration *>(context)->options, request, allocator,
+        static_cast<Context *>(context)->options, request, allocator,
         output);
   if (request.route != 1 || !request.shape.exact() ||
       !internal::supports(context, request.operation, request.inputs,
@@ -1855,7 +1862,7 @@ const void *extension(void *value, ProviderExtensionId id) noexcept {
         }};
     return &access;
   }
-  for (auto *extension = static_cast<Configuration *>(value)->extension;
+  for (auto *extension = static_cast<Context *>(value)->extension;
        extension; extension = extension->next)
     if (extension->id == id) return extension->table;
   return nullptr;
@@ -2047,9 +2054,9 @@ static Status pack_constant(void *value, ConstTensorView source,
           &cast_nan_storage, GGML_N_TASKS_MAX, nullptr);
     auto *graph = ggml_new_graph_custom(context, 8, false);
     ggml_build_forward_expand(graph, packed);
-    const auto &options = static_cast<Configuration *>(value)->options;
+    const auto &options = static_cast<Context *>(value)->options;
     HYLE_ASSIGN_OR_RETURN(auto execution, ggml_runtime::CpuExecution::prepare(
-        graph, static_cast<int>(options.native_threads), allocator));
+        graph, static_cast<Context *>(value)->team, allocator));
     struct Call { ggml_runtime::CpuExecution *execution; Status status; } call{&execution, Status::Ok()};
     options.executor.parallel_for(1, [](void *opaque, std::size_t, std::size_t) noexcept {
       auto &work = *static_cast<Call *>(opaque);
@@ -2083,7 +2090,7 @@ ProviderRuntimeProperties runtime(void *value) noexcept {
           .replay_class = ProviderReplayClass::kPrepared,
           .blocks_host = true,
           .uses_private_threads =
-              static_cast<Configuration *>(value)->options.native_threads > 1,
+              static_cast<Context *>(value)->options.native_threads > 1,
           .supports_concurrent_invocations = true,
           .capture_compatible = false};
 }
@@ -2554,9 +2561,10 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
     if (!storage)
       return ProviderPrepareOutcome::error(allocation_failure());
     auto *program = ::new (storage)
-        Program{static_cast<Configuration *>(context)->options,
-                std::move(recipe), hadamard, std::move(index_checks),
-                std::move(fill_values), std::move(snapshot_indices)};
+        Program{static_cast<Context *>(context)->options,
+                static_cast<Context *>(context)->team, std::move(recipe),
+                hadamard, std::move(index_checks), std::move(fill_values),
+                std::move(snapshot_indices)};
     *output = {.vtable = &kPrepared,
                .state = program,
                .workspace = {},

@@ -474,7 +474,7 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 
 # Shared locked source and fallible resource seam; private to native providers.
 _hyle_declare_component(compute_ggml_runtime
-  PRIVATE_DEPS core error mem platform)
+  PRIVATE_DEPS core error mem platform util_core)
 
 # Native provider dependencies and public headers follow their implementations.
 _hyle_declare_component(compute_provider_ggml_cuda

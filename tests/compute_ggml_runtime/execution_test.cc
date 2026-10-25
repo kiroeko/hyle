@@ -18,6 +18,7 @@
 
 namespace {
 using hyle::compute::ggml_runtime::CpuExecution;
+using hyle::compute::ggml_runtime::CpuTeam;
 using hyle::compute::ggml_runtime::MetadataArena;
 
 TEST(GgmlCpuExecution, Avx2ProgramRequiresCpuAndOsEnabledPrerequisites) {
@@ -160,7 +161,9 @@ TEST(GgmlCpuExecution, ReusesGraphPoolWorkspaceAndRetiresExactBacking) {
   ASSERT_TRUE(region.build(constant));
   hyle::mem::QuotaAllocator workspace(hyle::mem::system_allocator(), 16384);
   {
-    auto execution = CpuExecution::prepare(region.graph, 2, workspace.get());
+    auto team = CpuTeam::create(2, hyle::mem::system_allocator());
+    ASSERT_TRUE(team);
+    auto execution = CpuExecution::prepare(region.graph, *team, workspace.get());
     ASSERT_TRUE(execution);
     ASSERT_GT(execution->workspace_bytes(), 0u);
     const auto allocated = workspace.used();
@@ -192,9 +195,13 @@ TEST(GgmlCpuExecution, IndependentSlotsShareOnlyImmutableWeights) {
   first.input.fill(0.5f);
   second.input.fill(-1.5f);
   second.state.fill(3.0f);
-  auto a = CpuExecution::prepare(first.graph, 2, hyle::mem::system_allocator());
+  auto first_team = CpuTeam::create(2, hyle::mem::system_allocator());
+  auto second_team = CpuTeam::create(2, hyle::mem::system_allocator());
+  ASSERT_TRUE(first_team);
+  ASSERT_TRUE(second_team);
+  auto a = CpuExecution::prepare(first.graph, *first_team, hyle::mem::system_allocator());
   auto b =
-      CpuExecution::prepare(second.graph, 2, hyle::mem::system_allocator());
+      CpuExecution::prepare(second.graph, *second_team, hyle::mem::system_allocator());
   ASSERT_TRUE(a);
   ASSERT_TRUE(b);
   std::atomic<bool> good{true};
@@ -219,12 +226,21 @@ TEST(GgmlCpuExecution, CancellationJoinsWorkersAndAllowsReuse) {
   ASSERT_TRUE(region.build(constant));
   region.input.fill(1.0f);
   std::atomic<bool> cancelled{true};
+  auto team = CpuTeam::create(3, hyle::mem::system_allocator());
+  ASSERT_TRUE(team);
+  Region other;
+  ASSERT_TRUE(other.build(constant));
+  other.input.fill(-0.5f);
+  auto independent = CpuExecution::prepare(other.graph, *team, hyle::mem::system_allocator());
+  ASSERT_TRUE(independent);
   auto execution = CpuExecution::prepare(
-      region.graph, 3, hyle::mem::system_allocator(),
+      region.graph, *team, hyle::mem::system_allocator(),
       [](void *p) { return static_cast<std::atomic<bool> *>(p)->load(); },
       &cancelled);
   ASSERT_TRUE(execution);
   EXPECT_TRUE(execution->run().IsCancelled());
+  ASSERT_TRUE(independent->run().ok());
+  other.check(constant);
   cancelled.store(false);
   ASSERT_TRUE(execution->run().ok());
   region.check(constant);
@@ -235,22 +251,88 @@ TEST(GgmlCpuExecution, InvalidPreparationAndWorkspaceExhaustionAreRecoverable) {
   Region region;
   ASSERT_TRUE(region.build(constant));
   auto allocator = hyle::mem::system_allocator();
-  EXPECT_FALSE(CpuExecution::prepare(nullptr, 2, allocator));
-  EXPECT_FALSE(CpuExecution::prepare(region.graph, 0, allocator));
-  EXPECT_FALSE(
-      CpuExecution::prepare(region.graph, GGML_MAX_N_THREADS + 1, allocator));
-  EXPECT_FALSE(CpuExecution::prepare(region.graph, 2, {}));
+  EXPECT_FALSE(CpuTeam::create(0, allocator));
+  EXPECT_FALSE(CpuTeam::create(GGML_MAX_N_THREADS + 1, allocator));
+  EXPECT_FALSE(CpuTeam::create(2, {}));
+  auto team = CpuTeam::create(2, allocator);
+  ASSERT_TRUE(team);
+  EXPECT_FALSE(CpuExecution::prepare(nullptr, *team, allocator));
+  EXPECT_FALSE(CpuExecution::prepare(region.graph, CpuTeam{}, allocator));
+  EXPECT_FALSE(CpuExecution::prepare(region.graph, *team, {}));
   hyle::mem::QuotaAllocator exhausted(allocator, 0);
-  auto failed = CpuExecution::prepare(region.graph, 2, exhausted.get());
+  auto no_team = CpuTeam::create(2, exhausted.get());
+  ASSERT_FALSE(no_team);
+  EXPECT_TRUE(no_team.error().IsResourceExhausted());
+  auto failed = CpuExecution::prepare(region.graph, *team, exhausted.get());
   ASSERT_FALSE(failed);
   EXPECT_TRUE(failed.error().IsResourceExhausted());
   EXPECT_EQ(exhausted.used(), 0u);
-  EXPECT_TRUE(CpuExecution::prepare(region.graph, 2, allocator));
+  EXPECT_TRUE(CpuExecution::prepare(region.graph, *team, allocator));
   EXPECT_FALSE(MetadataArena::for_graph(0, 8, allocator));
   EXPECT_FALSE(MetadataArena::for_graph(
       8, (std::numeric_limits<std::size_t>::max)(), allocator));
   EXPECT_FALSE(MetadataArena::for_graph(
       (std::numeric_limits<std::size_t>::max)(), 8, allocator));
+}
+
+TEST(GgmlCpuExecution, SharedTeamRetainsOwnerAndSerializesIndependentSlots) {
+  auto constant = weights();
+  Region first, second;
+  ASSERT_TRUE(first.build(constant));
+  ASSERT_TRUE(second.build(constant));
+  first.input.fill(0.5f);
+  second.input.fill(-1.5f);
+  second.state.fill(3.0f);
+  hyle::mem::QuotaAllocator resources(hyle::mem::system_allocator(), 16384);
+  {
+    auto team = CpuTeam::create(3, resources.get());
+    ASSERT_TRUE(team);
+    auto a = CpuExecution::prepare(first.graph, *team, resources.get());
+    auto b = CpuExecution::prepare(second.graph, *team, resources.get());
+    ASSERT_TRUE(a);
+    ASSERT_TRUE(b);
+    *team = CpuTeam{}; // Both slots must keep the pool's owner alive.
+    std::atomic<bool> good{true};
+    std::thread worker([&] {
+      for (int i = 0; i < 16; ++i)
+        if (!a->run().ok()) good.store(false);
+    });
+    for (int i = 0; i < 16; ++i)
+      if (!b->run().ok()) good.store(false);
+    worker.join();
+    EXPECT_TRUE(good.load());
+    first.check(constant);
+    second.check(constant);
+  }
+  EXPECT_EQ(resources.used(), 0u);
+}
+
+TEST(GgmlCpuExecution, SameTeamReentryFailsBeforePoolMutationAndAllowsLaterRun) {
+  auto constant = weights();
+  Region outer, inner;
+  ASSERT_TRUE(outer.build(constant));
+  ASSERT_TRUE(inner.build(constant));
+  outer.input.fill(0.5f);
+  inner.input.fill(-0.75f);
+  auto team = CpuTeam::create(3, hyle::mem::system_allocator());
+  ASSERT_TRUE(team);
+  auto nested = CpuExecution::prepare(inner.graph, *team, hyle::mem::system_allocator());
+  ASSERT_TRUE(nested);
+  struct Reentry { CpuExecution *inner; hyle::Status status; unsigned calls = 0; } probe{&*nested, hyle::Status::Ok()};
+  auto execution = CpuExecution::prepare(outer.graph, *team, hyle::mem::system_allocator(),
+      [](void *value) {
+        auto &observed = *static_cast<Reentry *>(value);
+        ++observed.calls;
+        observed.status = observed.inner->run();
+        return false;
+      }, &probe);
+  ASSERT_TRUE(execution);
+  ASSERT_TRUE(execution->run().ok());
+  ASSERT_GT(probe.calls, 0u);
+  EXPECT_TRUE(probe.status.IsFailedPrecondition());
+  outer.check(constant);
+  ASSERT_TRUE(nested->run().ok());
+  inner.check(constant);
 }
 
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
@@ -305,7 +387,9 @@ TEST(GgmlCpuExecution, OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks) {
     ggml_build_forward_expand(graph, gather);
     hyle::mem::QuotaAllocator workspace(hyle::mem::system_allocator(), 65536);
     {
-      auto execution = CpuExecution::prepare(graph, 2, workspace.get());
+      auto team = CpuTeam::create(2, hyle::mem::system_allocator());
+      ASSERT_TRUE(team);
+      auto execution = CpuExecution::prepare(graph, *team, workspace.get());
       ASSERT_TRUE(execution);
       const auto allocated = workspace.used();
       for (int pass = 0; pass < 2; ++pass) {

@@ -29,6 +29,7 @@ struct Request {
 };
 struct Slot {
   c::BatchCapacity capacity; c::BatchProgramOptions options;mem::AllocatorRef allocator;
+  n::CpuTeam team;
   c::BatchLayoutVersion layout;std::vector<std::unique_ptr<Request>> requests;std::size_t known=0;
 };
 Status qualify(void *,c::BatchCapacity cap,const c::BatchProgramOptions &options)noexcept{
@@ -39,13 +40,14 @@ Status qualify(void *,c::BatchCapacity cap,const c::BatchProgramOptions &options
   return Status::Ok();
 }
 Status create(void *,c::BatchCapacity cap,const c::BatchProgramOptions &options,mem::AllocatorRef a,void **out)noexcept{
-  *out=nullptr;HYLE_RETURN_IF_ERROR(qualify(nullptr,cap,options));auto *s=a.construct<Slot>();
-  if(!s)return Status::ResourceExhausted("original ragged slot");s->capacity=cap;s->options=options;s->allocator=a;*out=s;return Status::Ok();
+  *out=nullptr;HYLE_RETURN_IF_ERROR(qualify(nullptr,cap,options));
+  HYLE_ASSIGN_OR_RETURN(auto team,n::CpuTeam::create(1,a));auto *s=a.construct<Slot>();
+  if(!s)return Status::ResourceExhausted("original ragged slot");s->capacity=cap;s->options=options;s->allocator=a;s->team=std::move(team);*out=s;return Status::Ok();
 }
 void destroy(void *p,mem::AllocatorRef a)noexcept{a.destroy(static_cast<Slot *>(p));}
 c::BatchPlanReport report(const Slot &s,bool reused=false)noexcept{return {.layout_generation=s.layout.generation(),.float_workspace_bytes=s.known,.native_metadata_unknown=true,.reused_native_plan=reused};}
 Result<bool> update(void *p,const c::BatchLayoutVersion &next,c::BatchPlanReport *r)noexcept{
-  auto &s=*static_cast<Slot *>(p);if(!s.layout.valid()||!s.layout.schema().owns(next))return false;
+  auto &s=*static_cast<Slot *>(p);if(!s.layout.valid()||!s.layout.origin_schema().owns(next))return false;
   const auto equal=[](auto a,auto b){return a.size()==b.size()&&std::equal(a.begin(),a.end(),b.begin());};
   if(!equal(s.layout.host().query_indptr,next.host().query_indptr)||!equal(s.layout.host().kv_indptr,next.host().kv_indptr))return false;
   s.layout=next;*r=report(s,true);return true;
@@ -71,7 +73,7 @@ Status make_request(Slot &slot,std::int32_t nq,std::int32_t nk,std::int32_t qsta
     HYLE_ASSIGN_OR_RETURN(auto mapping,buffer.view().map_host(mem::HostAccess::kReadWrite));HYLE_ASSIGN_OR_RETURN(auto bytes,mapping.writable_bytes());t->data=bytes.data();
     s.known+=buffer.size();s.payload.push_back(std::move(buffer));s.mappings.push_back(std::move(mapping));
   }
-  HYLE_ASSIGN_OR_RETURN(s.execution,n::CpuExecution::prepare(s.graph,1,slot.allocator));
+  HYLE_ASSIGN_OR_RETURN(s.execution,n::CpuExecution::prepare(s.graph,slot.team,slot.allocator));
   s.known+=s.arena.capacity()+s.execution.workspace_bytes()+s.mask.size()*2;
   s.qoffset=std::size_t(qstart)*cap.query_heads*cap.qk_head_dim*2;s.koffset=std::size_t(kstart)*cap.kv_heads*cap.qk_head_dim*2;
   s.qbytes=std::size_t(nq)*cap.query_heads*cap.qk_head_dim*2;s.kbytes=std::size_t(nk)*cap.kv_heads*cap.qk_head_dim*2;

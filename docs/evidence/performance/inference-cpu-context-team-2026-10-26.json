@@ -1,0 +1,1252 @@
+{
+  "schema": "hyle.inference-cpu-context-team.v1",
+  "status": "WINDOWS_CPU_SHARED_CONTEXT_TEAM_FINITE_CHECKS_AND_FRESH3ARM_WINDOW_PASS",
+  "generated_UTC": "2026-10-25T20:48:19.238189+00:00",
+  "scope": "Windows i9-13900K ordinary P154/16/C256/N1/R1 greedy naturalEOS;CPUonly model placement. Private candidate shared native pool versus originalHyle and same-source AVX2 peer. No macOS/Linux runtime or GPU inference claim.",
+  "results": {
+    "timing": {
+      "H": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 42.584284253305036,
+          "min": 42.54267513755787,
+          "max": 42.67597778909338,
+          "samples": [
+            42.584284253305036,
+            42.67597778909338,
+            42.54267513755787
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 10.060651644504059,
+          "min": 9.91867086636416,
+          "max": 10.212158268845824,
+          "samples": [
+            9.91867086636416,
+            10.212158268845824,
+            10.060651644504059
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.13059367384892,
+          "min": 3.119725105422336,
+          "max": 3.151203674130168,
+          "samples": [
+            3.119725105422336,
+            3.151203674130168,
+            3.13059367384892
+          ]
+        }
+      },
+      "C": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 43.15856459434467,
+          "min": 43.12904467821756,
+          "max": 43.285402526417165,
+          "samples": [
+            43.12904467821756,
+            43.285402526417165,
+            43.15856459434467
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 10.322605508211117,
+          "min": 10.291976512337337,
+          "max": 10.42580662380687,
+          "samples": [
+            10.322605508211117,
+            10.291976512337337,
+            10.42580662380687
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.190284053720077,
+          "min": 3.18483946348911,
+          "max": 3.19554228242686,
+          "samples": [
+            3.18483946348911,
+            3.190284053720077,
+            3.19554228242686
+          ]
+        }
+      },
+      "P": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 42.9806272358299,
+          "min": 42.9614259399416,
+          "max": 42.99876875538584,
+          "samples": [
+            42.99876875538584,
+            42.9806272358299,
+            42.9614259399416
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 12.042325401936695,
+          "min": 11.985865308758687,
+          "max": 12.211695107840256,
+          "samples": [
+            12.211695107840256,
+            11.985865308758687,
+            12.042325401936695
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.312480166525003,
+          "min": 3.3095571301646958,
+          "max": 3.326521864001557,
+          "samples": [
+            3.326521864001557,
+            3.3095571301646958,
+            3.312480166525003
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "C_vs_H": {
+        "prefill_tokens_per_second": {
+          "median_tps_percent": 1.348573425876154,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_tps_percent": 2.603746486443126,
+          "ranges_overlap": false
+        },
+        "output_tokens_per_second": {
+          "median_tps_percent": 1.9066792464884186,
+          "ranges_overlap": false
+        }
+      },
+      "P_vs_H": {
+        "prefill_tokens_per_second": {
+          "median_tps_percent": 0.9307259461431627,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_tps_percent": 19.697270390185786,
+          "ranges_overlap": false
+        },
+        "output_tokens_per_second": {
+          "median_tps_percent": 5.809968064378723,
+          "ranges_overlap": false
+        }
+      },
+      "P_vs_C": {
+        "prefill_tokens_per_second": {
+          "median_tps_percent": -0.41228748033498297,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_tps_percent": 16.659746343669024,
+          "ranges_overlap": false
+        },
+        "output_tokens_per_second": {
+          "median_tps_percent": 3.8302580819547183,
+          "ranges_overlap": false
+        }
+      }
+    },
+    "fourth_timing_metric_startup_diagnostic_seconds": {
+      "H": {
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.1965267,
+          "min": 1.1712146,
+          "max": 1.2130787,
+          "samples": [
+            1.2130787,
+            1.1712146,
+            1.1965267
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 6.3074403,
+          "min": 6.2487061,
+          "max": 6.3418029,
+          "samples": [
+            6.3418029,
+            6.2487061,
+            6.3074403
+          ]
+        }
+      },
+      "C": {
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.0150065,
+          "min": 0.9889576,
+          "max": 1.0305409,
+          "samples": [
+            1.0305409,
+            0.9889576,
+            1.0150065
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 6.0220348,
+          "min": 6.0042332,
+          "max": 6.0543872,
+          "samples": [
+            6.0543872,
+            6.0042332,
+            6.0220348
+          ]
+        }
+      },
+      "P": {
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 0.5711585,
+          "min": 0.5669576,
+          "max": 0.5899134,
+          "samples": [
+            0.5711585,
+            0.5669576,
+            0.5899134
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 5.4015413,
+          "min": 5.3810942,
+          "max": 5.4202352,
+          "samples": [
+            5.3810942,
+            5.4015413,
+            5.4202352
+          ]
+        }
+      }
+    },
+    "main_timing_definition": "Prefill154/prefill_seconds;decode15/decode_seconds;combined16/session_seconds. The fourth category lists original startup clocks only,not a fair Hyle/peer coldstart ranking. Each has3fresh timing samples/ranges.",
+    "memory": {
+      "H": {
+        "pid": 34752,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 7030800384,
+          "observed_os_peak_working_set_bytes": 7030816768,
+          "sampled_max_private_commit_bytes": 7891714048,
+          "observed_os_peak_commit_bytes": 7891714048,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "memory_samples": 630,
+        "running_memory_samples": 599,
+        "OS_threads": {
+          "samples": 63,
+          "peak": 3428,
+          "range": {
+            "count": 63,
+            "median": 3410,
+            "min": 4,
+            "max": 3428
+          },
+          "requested_interval_seconds": 0.1,
+          "actual_gaps_ms": {
+            "count": 62,
+            "min": 106.4469,
+            "median": 109.82945,
+            "max": 181.4607
+          }
+        },
+        "phases": {
+          "window_prefill": {
+            "memory_samples": 324,
+            "OS_threads": {
+              "count": 33,
+              "min": 3407,
+              "median": 3410,
+              "max": 3410
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 6994755584,
+              "private_commit_bytes": 7877271552,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          },
+          "window_decode": {
+            "memory_samples": 128,
+            "OS_threads": {
+              "count": 14,
+              "min": 3415,
+              "median": 3428.0,
+              "max": 3428
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 7030800384,
+              "private_commit_bytes": 7891714048,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          }
+        },
+        "setup_error": null,
+        "thread_error": null,
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 630,
+          "shared:no_pid_instance": 630
+        },
+        "ready_baseline_unknown": true,
+        "raw": {
+          "memory": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\10-memory-H\\memory.json",
+            "bytes": 645170,
+            "sha256": "c3c05a67fd0b604a465899f00d7e9f1b7e453f687c51b034b9c7f189db37015c"
+          },
+          "threads": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\10-memory-H\\threads.json",
+            "bytes": 9344,
+            "sha256": "00e2f12c8474ec46450c5d2d4361013496371fddc57d2124130bd4750162ca46"
+          }
+        }
+      },
+      "C": {
+        "pid": 13544,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 5712273408,
+          "observed_os_peak_working_set_bytes": 5712289792,
+          "sampled_max_private_commit_bytes": 6512062464,
+          "observed_os_peak_commit_bytes": 6512062464,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "memory_samples": 607,
+        "running_memory_samples": 576,
+        "OS_threads": {
+          "samples": 58,
+          "peak": 17,
+          "range": {
+            "count": 58,
+            "median": 17.0,
+            "min": 4,
+            "max": 17
+          },
+          "requested_interval_seconds": 0.1,
+          "actual_gaps_ms": {
+            "count": 57,
+            "min": 100.3088,
+            "median": 109.4024,
+            "max": 112.027
+          }
+        },
+        "phases": {
+          "window_prefill": {
+            "memory_samples": 326,
+            "OS_threads": {
+              "count": 33,
+              "min": 14,
+              "median": 17,
+              "max": 17
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 5682794496,
+              "private_commit_bytes": 6504579072,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          },
+          "window_decode": {
+            "memory_samples": 129,
+            "OS_threads": {
+              "count": 13,
+              "min": 17,
+              "median": 17,
+              "max": 17
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 5712273408,
+              "private_commit_bytes": 6512062464,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          }
+        },
+        "setup_error": null,
+        "thread_error": null,
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 607,
+          "shared:no_pid_instance": 607
+        },
+        "ready_baseline_unknown": true,
+        "raw": {
+          "memory": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\11-memory-C\\memory.json",
+            "bytes": 621768,
+            "sha256": "c51c24d72a8c352097377250a891f22d7d58ac45bcef296e33462d5668db15b3"
+          },
+          "threads": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\11-memory-C\\threads.json",
+            "bytes": 8433,
+            "sha256": "bfdb33883c26cdfd1c6bc37237cc7eddd0014ca6c1d1dd71afb8b6e5eb751e95"
+          }
+        }
+      },
+      "P": {
+        "pid": 38808,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4110524416,
+          "observed_os_peak_working_set_bytes": 4110528512,
+          "sampled_max_private_commit_bytes": 651292672,
+          "observed_os_peak_commit_bytes": 651300864,
+          "sampled_peak_gpu_dedicated_bytes": 24576,
+          "sampled_peak_gpu_shared_bytes": 0,
+          "sampled_peak_gpu_total_bytes": 24576
+        },
+        "memory_samples": 531,
+        "running_memory_samples": 528,
+        "OS_threads": {
+          "samples": 54,
+          "peak": 16,
+          "range": {
+            "count": 54,
+            "median": 15.0,
+            "min": 4,
+            "max": 16
+          },
+          "requested_interval_seconds": 0.1,
+          "actual_gaps_ms": {
+            "count": 53,
+            "min": 107.3803,
+            "median": 109.4266,
+            "max": 112.3863
+          }
+        },
+        "phases": {
+          "generation_prefill": {
+            "memory_samples": 325,
+            "OS_threads": {
+              "count": 32,
+              "min": 15,
+              "median": 15.0,
+              "max": 16
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 4110458880,
+              "private_commit_bytes": 651276288,
+              "gpu_dedicated_bytes": 24576,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 24576
+            }
+          },
+          "generation_decode": {
+            "memory_samples": 109,
+            "OS_threads": {
+              "count": 11,
+              "min": 16,
+              "median": 16,
+              "max": 16
+            },
+            "sampled_phase_peaks": {
+              "working_set_bytes": 4110524416,
+              "private_commit_bytes": 651292672,
+              "gpu_dedicated_bytes": 24576,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 24576
+            }
+          }
+        },
+        "setup_error": null,
+        "thread_error": null,
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 11,
+          "shared:no_pid_instance": 11
+        },
+        "ready_baseline_unknown": true,
+        "raw": {
+          "memory": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\12-memory-P\\memory.json",
+            "bytes": 666257,
+            "sha256": "ffa4ee107b3eff3ef7cbdcc48e3d738aa3351f257549e9b298f5ed42f5d80d66"
+          },
+          "threads": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\12-memory-P\\threads.json",
+            "bytes": 7887,
+            "sha256": "a44dece95ccd2803c05058d87f76791603c24dcc196b7fe1f34b5fc86361cc57"
+          }
+        }
+      }
+    },
+    "interleaved_triplets": [
+      {
+        "triplet": 1,
+        "order": [
+          "H",
+          "C",
+          "P"
+        ],
+        "C_vs_H_tps_percent": {
+          "prefill_tokens_per_second": 1.279252274553011,
+          "decode_output_tokens_per_second": 4.072467443362449,
+          "output_tokens_per_second": 2.0871825518729237
+        }
+      },
+      {
+        "triplet": 2,
+        "order": [
+          "P",
+          "C",
+          "H"
+        ],
+        "C_vs_H_tps_percent": {
+          "prefill_tokens_per_second": 1.4280275904528628,
+          "decode_output_tokens_per_second": 0.781600141617611,
+          "output_tokens_per_second": 1.2401730776953501
+        }
+      },
+      {
+        "triplet": 3,
+        "order": [
+          "C",
+          "H",
+          "P"
+        ],
+        "C_vs_H_tps_percent": {
+          "prefill_tokens_per_second": 1.4476979992334105,
+          "decode_output_tokens_per_second": 3.6295360599458704,
+          "output_tokens_per_second": 2.0746419160199814
+        }
+      }
+    ]
+  },
+  "work": {
+    "all12_complete_within_arm_non_time_equal_initial_reference": true,
+    "H_and_C_reference": "fa7 original Hyle initialpair",
+    "P_reference": "peerAVX2 own initialpair",
+    "same154prompt_ids": true,
+    "same16generated_ids": true,
+    "generated_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198,
+      1445,
+      18904,
+      1120,
+      5586,
+      11,
+      51338,
+      11,
+      36760,
+      11,
+      1697
+    ],
+    "target_rows_each": 169,
+    "target_calls_each": 16,
+    "decode_calls_each": 15,
+    "draft_rows_each": 0,
+    "greedy": true,
+    "natural_EOS_honored": true,
+    "early_EOS": false,
+    "capacity": 256,
+    "N": 1,
+    "R": 1,
+    "original_Hyle_ledgers_unchanged": true,
+    "original_Hyle_final_live_committed_versions": 0
+  },
+  "protocol": {
+    "timing_order": "H,C,P,P,C,H,C,H,P",
+    "memory_order": "H,C,P",
+    "timing_samples_each": 3,
+    "memory_samples_each": 1,
+    "prior_samples_pooled": false,
+    "warmups": 0,
+    "retries": 0,
+    "watchdog_seconds": 180,
+    "prefill": "154/prefill_seconds",
+    "decode": "15/decode_seconds",
+    "combined": "16/session_seconds",
+    "timing_processes_unmonitored": true,
+    "memory_TPS_not_speed_sample": true
+  },
+  "fresh_window_reference": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3\\final-summary.json",
+    "bytes": 25280,
+    "sha256": "b620bf43dd5d446350bc125ed672aa13916897a4c994c2dbd69b65fd613bccfe"
+  },
+  "cold_source": {
+    "product_paths": [
+      {
+        "path": "src/compute_ggml_runtime/cpu_execution.h",
+        "before": {
+          "bytes": 1566,
+          "sha256": "0ca5a22a3c5aefe9c01e2384ea363b7f9252674040b5f6e2aafd0bcff3eccd98"
+        },
+        "after": {
+          "bytes": 2828,
+          "sha256": "f661cc16fa50bf9cf92dcf92e9ecdd79a096c1db5fa70071af26534cd82ecd2a"
+        }
+      },
+      {
+        "path": "src/compute_ggml_runtime/cpu_execution.cc",
+        "before": {
+          "bytes": 3907,
+          "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+        },
+        "after": {
+          "bytes": 7654,
+          "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196"
+        }
+      },
+      {
+        "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+        "before": {
+          "bytes": 119879,
+          "sha256": "fbb324c8bb656509f0acb30a531ef8c37e61f0eee05b19276640c868193220ad"
+        },
+        "after": {
+          "bytes": 120159,
+          "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+        }
+      },
+      {
+        "path": "include/hyle/compute/providers/ggml_cpu.h",
+        "before": {
+          "bytes": 1054,
+          "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+        },
+        "after": {
+          "bytes": 1189,
+          "sha256": "d3bc5f017a9fd094a97c9487ccecc7177434af97bb42e9ee5b073eec71bb8ade"
+        }
+      }
+    ],
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source.patch",
+      "bytes": 17500,
+      "sha256": "7f2766b38c87841a0b3bed22d9de7db1e74abf8f8d4fbaaa4e74b77f39b5ec30"
+    },
+    "independent_review": {
+      "status": "NO_SOURCE_BLOCKER_IN_EXACT_FOUR_PATH_CANDIDATE",
+      "scope": "Independent source-only. No build,model,SSH,network or product write. Root owns finite actual checks.",
+      "files": [
+        {
+          "path": "src/compute_ggml_runtime/cpu_execution.h",
+          "before": {
+            "bytes": 1566,
+            "sha256": "0ca5a22a3c5aefe9c01e2384ea363b7f9252674040b5f6e2aafd0bcff3eccd98"
+          },
+          "after": {
+            "bytes": 2828,
+            "sha256": "f661cc16fa50bf9cf92dcf92e9ecdd79a096c1db5fa70071af26534cd82ecd2a"
+          }
+        },
+        {
+          "path": "src/compute_ggml_runtime/cpu_execution.cc",
+          "before": {
+            "bytes": 3907,
+            "sha256": "7afabc73d8ab541c98fde67e41f2e1384994c15cd123582ef218f89322a0d2db"
+          },
+          "after": {
+            "bytes": 7654,
+            "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196"
+          }
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "before": {
+            "bytes": 119879,
+            "sha256": "fbb324c8bb656509f0acb30a531ef8c37e61f0eee05b19276640c868193220ad"
+          },
+          "after": {
+            "bytes": 120159,
+            "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+          }
+        },
+        {
+          "path": "include/hyle/compute/providers/ggml_cpu.h",
+          "before": {
+            "bytes": 1054,
+            "sha256": "9a4255d47bb85235d9f1fa66228367017cd6ae2e61c0edebcc63f65ade0e1e58"
+          },
+          "after": {
+            "bytes": 1189,
+            "sha256": "d3bc5f017a9fd094a97c9487ccecc7177434af97bb42e9ee5b073eec71bb8ade"
+          }
+        }
+      ],
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source.patch",
+        "bytes": 17500,
+        "sha256": "7f2766b38c87841a0b3bed22d9de7db1e74abf8f8d4fbaaa4e74b77f39b5ec30"
+      },
+      "checks": [
+        "TeamScope traverses complete same-thread active-team chain before taking nonrecursive mutex. Both prepare and run use it; RAII restores TLS/unlocks on all returns. Native compute lock is inside original synchronous executor callback,not held while dispatching executor.",
+        "Context,Program and CpuExecution strongly retain the same CpuTeam. Separate Contexts create separate teams. Team metadata allocator is explicitly borrowed through all derived handles. Lastdrop frees/joins pool using its bound CpuProgram before deallocating team metadata;slot reset drops team before freeing private workspace.",
+        "Native pool initialization installs program/pool only after successful create. Plan and compute use same selected native program;CpuProgram ABI/vtable/native source unchanged. Each slot retains private graph,cplan,work_data,abort callback/data/status;no workspace or cancellation flag shared.",
+        "Inline provider Configuration remains trivial options+extension. Separate Context owns team;all context casts,standard-index/pack/widen/runtime/prepare and Program aggregate updated. Provider mapping/flush/close and original executor.parallel_for(1) compute path unchanged.",
+        "Public Context.close gate unchanged: internal work/native-owner retention does not permit new public submissions after close. No singleton,new executor,public option,threaddefault or Model-loop change."
+      ],
+      "minimum_checks_for_root": [
+        "Two distinct slots sharing a team run from separate host threads with isolated results/workspaces;no concurrent run/close on one slot.",
+        "Same-team run and prepare attempted from synthetic native ith0 abort callback reject FailedPrecondition without hang;subsequent legal run succeeds.",
+        "Cancellation returns original Cancelled after workers complete,then other-slot/retry compute succeeds with independent abort/status.",
+        "Team metadata/workspace OOM and partial prepare preserve references/quota and allow retry;lastdrop returns backing. Internal slots survive facade-handle release while borrowed allocator lives;public close still blocks new submit."
+      ],
+      "limits": [
+        "No runtime PASS,memory/thread reduction,TPS or quality claim from source review. SameContext serialization is an intentional resource/concurrency policy;no fairness/latency guarantee.",
+        "TLS handles same-thread team-chain reentry,not arbitrary cross-thread/secondary-worker callbacks or cross-team lockcycles. Trusted Hyle lowering does not make such calls;actual provider passes no user abort callback.",
+        "CpuExecution private signature/layout changes require consistent runtime/provider consumer rebuild;CpuProgram ABI and public Options layout unchanged. Root owns actual closure/dependency validation.",
+        "Provider35c7-to29e0 last change is aggregate-initializer formatting only. Runtime/header/publicpins unchanged;this final review uses29e0."
+      ]
+    },
+    "mechanism": "One CpuTeam per ggml providerContext lazily owns the native pool;Program andCpuExecution retain it. Each slot keeps privategraph/cplan/workspace/abort. Original executor callback serializes complete nativecompute under same-team mutex;TLS chain rejects same-thread reentry. CpuProgram ABI/nativecode/thread4/defaults unchanged.",
+    "close_boundary": "Public Context.close still forbids newsubmissions. Internal CpuExecution/team ownership canretain alreadyderivednative work;facade release is not publicclose bypass."
+  },
+  "build": {
+    "ready": {
+      "status": "BUILT_NOT_RUN",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link\\hyle.exe",
+        "bytes": 141491712,
+        "sha256": "56303f189ee8b9833231c1e0b3166ff9d81908516c815fa7b5eadceb914acb62"
+      },
+      "compile": {
+        "runtime": {
+          "result": {
+            "exit": 0,
+            "pid": 44024,
+            "seconds": 0.6889577999827452
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\unit.obj",
+            "bytes": 129449,
+            "sha256": "d845f61d1e41b0ce71eea44dd3b73cabd49f778885828fc33afe239113db07ca"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+            "bytes": 7654,
+            "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\records\\cpu-execution\\identity.json",
+            "bytes": 36099,
+            "sha256": "90423f8d2785cab8b28115a14d82cbbf1a42c2f6f0ad4f60958702a9bb8cee74"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\command.json",
+            "bytes": 2521,
+            "sha256": "9361f67662d26fa376df68820f831d7530ce9cebbcc47b4747fcd0a2295657d4"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\actual-dependencies.json",
+            "bytes": 34756,
+            "sha256": "55a72fc0b6938e0a9c0d8b4bf51cfdd70a7a4be394f7d9cbdf22234312182bcd"
+          }
+        },
+        "provider": {
+          "result": {
+            "exit": 0,
+            "pid": 52800,
+            "seconds": 2.243029300007038
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\unit.obj",
+            "bytes": 1991131,
+            "sha256": "49befda3e1193e55ceaca2e9babd8392fb0bee693ee6e8afd229314f7051d523"
+          },
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+            "bytes": 120159,
+            "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_ggml--ggml_cpu_provider_cc\\command.json",
+            "bytes": 2319,
+            "sha256": "3b91df31119f4bc82dd35b409f60e2f59797505bfc7a94b52087cc942f44c3d1"
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\command.json",
+            "bytes": 2485,
+            "sha256": "eae617692f68b3b99f65a3de361fc17326b2c5c115ef4c24e8d84f616a968c59"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\actual-dependencies.json",
+            "bytes": 41779,
+            "sha256": "748cafebb21a468c176769f74105c23627ee3e702f289094e524860f4f188402"
+          }
+        }
+      },
+      "link": {
+        "exit": 0,
+        "pid": 29528,
+        "seconds": 1.991240100003779
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source-pins.json",
+        "bytes": 1436,
+        "sha256": "ecd2abe2e584c29bc8b7ff732579ac43c6577aa4323917b4bca05c9c6f84c584"
+      },
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source.patch",
+        "bytes": 17500,
+        "sha256": "7f2766b38c87841a0b3bed22d9de7db1e74abf8f8d4fbaaa4e74b77f39b5ec30"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link-inputs.json",
+        "bytes": 56943,
+        "sha256": "b50dc80d5989be16bb1590c695a9d39db5fdb8057be4bae7aa67fd9b96e294cd"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime.json",
+        "bytes": 8204,
+        "sha256": "f528f393b8de505fec6b17f8b21cf95283df724f4367b204380a4d00bee07a16"
+      },
+      "control": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\ready.json",
+        "bytes": 5335,
+        "sha256": "d1d1fc4f07f824caa50bbfa54e8463f13ed2feb97d0aed18c76d3f9eac89342f"
+      },
+      "replacements": [
+        {
+          "old": "c:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\foundation1\\cpu-execution.obj",
+          "new": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\unit.obj",
+            "bytes": 129449,
+            "sha256": "d845f61d1e41b0ce71eea44dd3b73cabd49f778885828fc33afe239113db07ca"
+          }
+        },
+        {
+          "old": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_ggml--ggml_cpu_provider_cc\\unit.obj",
+          "new": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\unit.obj",
+            "bytes": 1991131,
+            "sha256": "49befda3e1193e55ceaca2e9babd8392fb0bee693ee6e8afd229314f7051d523"
+          }
+        }
+      ],
+      "model_runs": 0,
+      "unit_runs": 0,
+      "GPU_runs": 0,
+      "SDK_builds": 0
+    },
+    "private_product_TUs": 2,
+    "SDK_or_native_rebuilds": 0,
+    "changes": "Only CpuExecution runtime and ggmlCPU provider objects replace originals in frozenfa7link. Runtime test1TU+finite link separately. Images,SDK,nativeprograms,weights are identified but excluded fromZIP.",
+    "image_scope": "Original fa7CPU Model image predates currentR>1 batchedsampling changes;this frozen N1greedy path is unchanged. Candidate56303f18 uses exactlisted4path privatepatch and samefa7otherinputs,not an assertion of allcurrentcanonical combinations."
+  },
+  "followup_compilation": {
+    "benchmark_review": {
+      "status": "SOURCE_REVIEW_NO_BLOCKER_TWO_TU_COMPILE_ONLY",
+      "ownership": {
+        "cpu_reference": "Cold prepared Kernel retains one CpuTeam; derived Invocation CpuExecution copies retain it. No team creation in create_invocation/enqueue/run.",
+        "cpu_ragged_reference": "Cold Slot retains one CpuTeam; all per-layout Request executions share it across plan rebuilds. No team creation in make_request/run.",
+        "native_threads": "Original value 1 preserved in both reference consumers.",
+        "allocator": "Original borrowed cold allocator contract preserved; failed Slot allocation releases the temporary team before publication."
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\bench-pins.json",
+        "bytes": 835,
+        "sha256": "71ecf55295e935e7d2d814b94244fcb6679e684bb4b5743863f9a4102ead691d"
+      },
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\bench.patch",
+        "bytes": 4353,
+        "sha256": "b354a4e348f9822d3b0f41d7dcb20805cbcf65e2188b45b9f8b5963c25ace015"
+      },
+      "compile_summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\bench-compile2\\summary.json",
+        "bytes": 4038,
+        "sha256": "980be4c0cb96711fe8105aca0caa051f8353209632459961235f445681353f2e"
+      },
+      "diff_check": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "scope": [
+        "Only these two benchmark source files changed by this followup.",
+        "Original root-domain owns(next) check mechanically migrated from removed schema() to origin_schema(); no cache interpretation/permission relaxation.",
+        "No link, benchmark execution, model, SDK or network action.",
+        "Original 4-product source, tested CPU image and runtime9 facts remain unchanged."
+      ]
+    },
+    "first_benchmark_failure": "Raggedreference stillused removedlayout.schema();firstC2039raw andr1patch preserved. Mechanical origin_schema() migration corrected existingAPI use;2TU strictcompilePASS,no link/run.",
+    "cmake": {
+      "exit": 0,
+      "pid": 44276,
+      "seconds": 0.5704714999883436,
+      "scope": "LANGUAGES NONE engine CPU component resolution and existing full source dependency checks; no native SDK/build/model",
+      "cmake_manifest_sha256": "e1b8dbe919e18c3041d73a8925a65cee93ba3a5ec410b33a2a42fb157c936f99"
+    },
+    "cmake_source": {
+      "path": "cmake/HyleComponents.cmake",
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleComponents.cmake",
+        "bytes": 52770,
+        "sha256": "e1b8dbe919e18c3041d73a8925a65cee93ba3a5ec410b33a2a42fb157c936f99"
+      },
+      "scope": "Root explicitutil_core private dependency for existingRefCounted header;singlemanifest line;LANGUAGESNONE closurecheck only."
+    },
+    "scope": "These2benchmarkAPI migrations andexplicitCMakeheaderdependency close consumers/buildmetadata. They do not change the4runtimeproductpins,563image,9runtimechecks or12Modelprocess facts."
+  },
+  "runtime_unit": {
+    "summary": {
+      "status": "PASS",
+      "compile": {
+        "result": {
+          "exit": 0,
+          "pid": 57848,
+          "seconds": 1.4762432999559678
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit\\unit.obj",
+          "bytes": 917705,
+          "sha256": "8ca1e0be5cc1b4acb0cc38cca289bcc565094bf28995e78f3d9908d13971e053"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\test-source\\tests\\compute_ggml_runtime\\execution_test.cc",
+          "bytes": 17503,
+          "sha256": "4b8141bb12f0e922adea682de3d203f7c31c6feca2d2ff5b71ba5b4313e12d1b"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit\\command.json",
+          "bytes": 2476,
+          "sha256": "e24ec331c2c8f55f554820855f3ef855e1730549ee733683acd8804ff6272448"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit\\actual-dependencies.json",
+          "bytes": 52398,
+          "sha256": "a0335ee37a217903dde0a9eb76384c8e47fa9c772cfd66fa48af02346b63a5b1"
+        }
+      },
+      "link": {
+        "exit": 0,
+        "pid": 49356,
+        "seconds": 0.09601770003791898
+      },
+      "run": {
+        "exit": 0,
+        "pid": 15968,
+        "seconds": 0.05148860003100708
+      },
+      "tests": 9,
+      "failed": 0,
+      "skipped": 0,
+      "IQ1_enabled": true,
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\test-source\\tests\\compute_ggml_runtime\\execution_test.cc",
+        "bytes": 17503,
+        "sha256": "4b8141bb12f0e922adea682de3d203f7c31c6feca2d2ff5b71ba5b4313e12d1b"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit-link2\\runtime-test.exe",
+        "bytes": 1675264,
+        "sha256": "82a4a80b233e28b59fdfe2f1b0422689783d983c388609b4954f9b071b05926c"
+      },
+      "runtime_native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "native_alias": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit-link2\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source-pins.json",
+        "bytes": 1436,
+        "sha256": "ecd2abe2e584c29bc8b7ff732579ac43c6577aa4323917b4bca05c9c6f84c584"
+      },
+      "tests_xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit-run1\\results.xml",
+        "bytes": 3300,
+        "sha256": "9bcc88135314a88d5aab8247ea37bf2f081272d704dbded69cd58cc336a58515"
+      },
+      "model_runs": 0,
+      "GPU_runs": 0
+    },
+    "test_names": [
+      "Avx2ProgramRequiresCpuAndOsEnabledPrerequisites",
+      "UnaryHadamardOwnsNoMatrixInEitherReferenceSetting",
+      "ReusesGraphPoolWorkspaceAndRetiresExactBacking",
+      "IndependentSlotsShareOnlyImmutableWeights",
+      "CancellationJoinsWorkersAndAllowsReuse",
+      "InvalidPreparationAndWorkspaceExhaustionAreRecoverable",
+      "SharedTeamRetainsOwnerAndSerializesIndependentSlots",
+      "SameTeamReentryFailsBeforePoolMutationAndAllowsLaterRun",
+      "OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks"
+    ],
+    "passed_contracts": [
+      "Same-team two independent slots fromtwohostthreads;internal teamhandle dropped while slots retainowner;finalquota0",
+      "Synthetic nativeith0 abortcallback same-teamrun reentry rejects FailedPrecondition andlatercompute succeeds",
+      "Cancellation joinsworkers and allowsreuse;metadata/workspaceOOM;existingnumerical/IQ1/prerequisite tests"
+    ],
+    "not_tested": "No arbitrary secondary-worker callback,cross-team lockcycle or modified publicContext.close behavior. Same-teamprepare reentry is source-guarded but not a separate runtime assertion.",
+    "first_link_failure": {
+      "process": {
+        "exit": 1120,
+        "pid": 41208,
+        "seconds": 0.06242029997520149
+      },
+      "cause": "Missing existingcpu-baseline GDNcontract symbol object andWindowsadvapi32 system imports;no test orModelrun atthatfailedlink.",
+      "correction": "Reuse existingcpu-baseline.obj andlink advapi32.lib;sametestobject/native/source,secondlinkPASS,one9testprocessPASS. Rawfirststdout retainedbyteexact."
+    }
+  },
+  "behavior_gate": {
+    "summary": {
+      "process": {
+        "exit": 0,
+        "pid": 48000,
+        "seconds": 7.031123699969612
+      },
+      "nontime_equal": true,
+      "work": {
+        "backend": "cpu",
+        "generated_tokens": 16,
+        "generated_decode_tokens": 15,
+        "actual_target_rows": 169,
+        "actual_graph_calls": 16
+      },
+      "source_image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link\\hyle.exe",
+        "bytes": 141491712,
+        "sha256": "56303f189ee8b9833231c1e0b3166ff9d81908516c815fa7b5eadceb914acb62"
+      },
+      "throughput_claim": false
+    },
+    "pooled_into_timing": false
+  },
+  "initial_resource_gate": {
+    "summary": {
+      "status": "ONE_CANDIDATE_MEMORY_WORK_PASS",
+      "process": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link\\hyle.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+          "--backend",
+          "cpu",
+          "--capacity",
+          "256",
+          "--steps",
+          "16",
+          "--max-sessions",
+          "1",
+          "--active-sequences",
+          "1",
+          "--prefix-cache",
+          "off",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--mtp",
+          "off",
+          "--sampling",
+          "greedy"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link\\hyle.exe",
+          "bytes": 141491712,
+          "sha256": "56303f189ee8b9833231c1e0b3166ff9d81908516c815fa7b5eadceb914acb62"
+        },
+        "arm": "hyle",
+        "memory_only": true,
+        "throughput_evidence": false,
+        "profiler": false,
+        "markers": [
+          {
+            "name": "model_loaded",
+            "timestamp_ns": 287222744555100,
+            "line": "weights_load_seconds=0.905472"
+          },
+          {
+            "name": "ready_before_first",
+            "timestamp_ns": 287222850344000,
+            "line": "measure_memory name=ready_before_first"
+          },
+          {
+            "name": "window_prefill_begin",
+            "timestamp_ns": 287222850418600,
+            "line": "memory_phase=generation_default_prefill_begin"
+          },
+          {
+            "name": "window_prefill_end",
+            "timestamp_ns": 287226419289400,
+            "line": "memory_phase=generation_default_prefill_end"
+          },
+          {
+            "name": "window_decode_begin",
+            "timestamp_ns": 287226419298300,
+            "line": "memory_phase=generation_default_decode_begin"
+          },
+          {
+            "name": "window_decode_end",
+            "timestamp_ns": 287227840844800,
+            "line": "memory_phase=generation_default_decode_end"
+          }
+        ],
+        "started_unix_ns": 1792960533489734800,
+        "popen_perf_ns": 287221533677600,
+        "pid": 25864,
+        "exit": 0,
+        "finished_perf_ns": 287228194865300,
+        "reader_errors": [],
+        "finished_unix_ns": 1792960540378430100,
+        "process_wall_seconds": 6.6611877
+      },
+      "work": {
+        "all_within_arm_non_time_fields_equal_initial_AVX2_pair": true,
+        "common_prompt_ids_equal": true,
+        "all16_generated_ids_equal": true,
+        "prompt_rows": 154,
+        "target_rows": 169,
+        "decode_calls": 15,
+        "target_calls": 16,
+        "generated_ids": [
+          71093,
+          12305,
+          198,
+          464,
+          19298,
+          198,
+          1445,
+          18904,
+          1120,
+          5586,
+          11,
+          51338,
+          11,
+          36760,
+          11,
+          1697
+        ]
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\ready.json",
+        "bytes": 5559,
+        "sha256": "d4ff4d0bb4d4618ffd3358de4bde193520a2c2131e2c931d02cdbdde77c6549f"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\link\\hyle.exe",
+        "bytes": 141491712,
+        "sha256": "56303f189ee8b9833231c1e0b3166ff9d81908516c815fa7b5eadceb914acb62"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime.json",
+        "bytes": 8204,
+        "sha256": "f528f393b8de505fec6b17f8b21cf95283df724f4367b204380a4d00bee07a16"
+      },
+      "script": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\check_memory.py",
+        "bytes": 2408,
+        "sha256": "05cd88ba19a82356a1d9ea62836cf7e93d91da5638fba6114abf0e7c214efe18"
+      },
+      "retained_observer_adapter": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen.py",
+        "bytes": 10563,
+        "sha256": "9406ef0e03ed6395b7ef2d7d7834174010db5581ed2e35ad1440d15af7bcdc80"
+      },
+      "memory_sampled_peaks": {
+        "sampled_max_working_set_bytes": 5711937536,
+        "observed_os_peak_working_set_bytes": 5711974400,
+        "sampled_max_private_commit_bytes": 6511366144,
+        "observed_os_peak_commit_bytes": 6511386624,
+        "sampled_peak_gpu_dedicated_bytes": null,
+        "sampled_peak_gpu_shared_bytes": null,
+        "sampled_peak_gpu_total_bytes": null
+      },
+      "OS_threads": {
+        "samples": 58,
+        "peak": 17,
+        "range": {
+          "count": 58,
+          "median": 17.0,
+          "min": 4,
+          "max": 17
+        }
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "GPU_unavailable_reasons": {
+        "dedicated:no_pid_instance": 604,
+        "shared:no_pid_instance": 604
+      },
+      "throughput_evidence": false,
+      "model_processes": 1,
+      "retries": 0,
+      "limits": [
+        "Independent memory process only;its TPS is not a speed sample.",
+        "OS thread count is not busy threads;sampled memory/thread peaks are lower bounds.",
+        "Complete within-arm non-time report matches originalfa7 initialpair;all16IDs/169target/15decode unchanged.",
+        "No newbaseline,peer,model retry,SDK rebuild or product modification."
+      ]
+    },
+    "pooled_into_timing_or_memory_window": false,
+    "observed": "Candidateinitialmemory OSthreadpeak17 versus earliercontrol3428;independent early gate only. Allfreshwindow RAM/thread comparisons below use onlynew3memoryprocesses."
+  },
+  "prior_evidence": {
+    "CPU_AVX2_window": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-avx2-window-2026-10-26.json",
+      "bytes": 28840,
+      "sha256": "b461c262adce7599186420e7118ed96cf1a41a119cd6e16bf2fff8defd38a6aa"
+    },
+    "old_samples_pooled": false,
+    "matched_ISA_peer": "Peer27a49a links same4e1a15CPU TUs built AVX2/FMA/F16C. NoHyleother-version nativeobjects used forpeer."
+  },
+  "resource_boundary": "Fresh OSthreadpeaks H/C/P3428/17/16;totalthreads,notbusythreads. WS/privatecommit are separatelysampled;filebackedmapping differences affect crossengineprivatecommit. No allocator-total/physicalmemoryhardlimit claim.",
+  "failures": {
+    "model_or_observer_failures_in_fresh_window": 0,
+    "offline_summary_failure": {
+      "phase": "Offline compact summary only;12model processes already completedPASS",
+      "actual_error": "AttributeError: 'str' object has no attribute 'resolve'",
+      "location": "pin(__file__) in analyze_screen3.py",
+      "fix": "Convert pin argument through Path before resolve;no model/observer/raw report rerun"
+    }
+  },
+  "precision_and_limits": [
+    "Only this fresh9timing+3memory window. Prior generic/AVX2 pairs,old8screen,behavior1 andcandidate initialmemory are excluded from every statistic.",
+    "CandidatevsHyle medians+1.35%prefill,+2.60%decode,+1.91%combined;this shortsample positive signal is not broad/scaling/deployment throughput or a cross-window speed claim.",
+    "Native4+borrowedScheduler4+ATenintraop4 for bothHyle;peer actual decode/batch4. T4 is not processwide quota. OSthread peak3428/17/16 is totalthreads,not busythreads.",
+    "Same16greedy IDs do not establish intermediatebit/precision/quality equivalence. Hyle BF16 storepoints/F32 operations differ frompeer187BF16+133F32source tensors,F32recurrent,K/VBF16.",
+    "Peer now uses AVX2/FMA/F16C same-versionCPU archive. Routes/accumulation/ISA use are not per-op profiled or proven identical.",
+    "Hyle ATen/Scheduler startup is outside originalqwen startupclock;startup/processwall not fairHyle-vspeer coldstart ranking.",
+    "Independentmemory observations are sampled lowerbounds. Working set includes residentmappedpages;privatecommit excludes filebacked/sharedmapping. Missing GPUcounterinstances remainnull,notzero. Peer24KiB dedicated0shared canreflectlinkedCUDAregistry despite noGPUmodel.",
+    "Resource metadata was not normalized away:complete semantic reports matched. No SDK/native rebuild,newweights,extra experiment,product/default/threadbudget change during this window."
+  ],
+  "reproducibility": {
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\screen3.py",
+      "bytes": 4900,
+      "sha256": "17a7cfb98a2b548c2288ff080ad76d1424e5f4ff145ee784b73ec3a6babfeca9"
+    },
+    "offline_parser": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\analyze_screen3.py",
+      "bytes": 5292,
+      "sha256": "e0e6ce4d037ead7b1ce248a6d53919d02a061d71ecf2c21f5da9e8a8b55dcc17"
+    },
+    "requirements": "RetainedlocalexactHF/GGUF2Bweights,fa7app/SDK/core/native/librarycaches andruntimePATH. Noautomaticacquisition;no model/build launched bypublication.",
+    "no_rerun_during_publication": true
+  },
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-context-team-2026-10-26.zip",
+    "bytes": 455871,
+    "sha256": "4769787452bdf708a7112622b4b6acec429cbab05177ed3e6fbc7027db08ca4a",
+    "members": 191,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "exclusions": "Noobjects,executables,libraries,DLLs,SDKs,modelpayloads orfullsource/vendor trees."
+  }
+}

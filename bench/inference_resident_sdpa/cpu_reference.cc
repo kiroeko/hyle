@@ -35,6 +35,7 @@ struct State {
 struct Kernel {
   std::array<c::TensorDesc, 3> descriptions;
   c::ScaledDotProductAttention operation;
+  native::CpuTeam team;
   std::vector<ggml_fp16_t> mask;
   struct Invocation {
     std::unique_ptr<State> state;
@@ -103,7 +104,7 @@ struct Kernel {
         state->payload_maps.push_back(std::move(mapping));
       }
       HYLE_ASSIGN_OR_RETURN(state->execution, native::CpuExecution::prepare(
-                                                  state->graph, 1, allocator));
+                                                  state->graph, team, allocator));
       std::size_t payload_bytes = 0;
       for (const auto &buffer : state->payloads)
         payload_bytes += buffer.size();
@@ -218,8 +219,12 @@ struct Factory {
           *request.operation.get_if<c::ScaledDotProductAttention>();
       const auto rows = request.inputs[0].dimensions()[2];
       const auto keys = request.inputs[1].dimensions()[2];
+      auto team = native::CpuTeam::create(1, allocator);
+      if (!team)
+        return c::KernelPreparation::error(std::move(team).error());
       Kernel kernel{{request.inputs[0], request.inputs[1], request.inputs[2]},
                     operation,
+                    std::move(*team),
                     {}};
       if (operation.causal)
         kernel.mask.resize(static_cast<std::size_t>(rows * keys));

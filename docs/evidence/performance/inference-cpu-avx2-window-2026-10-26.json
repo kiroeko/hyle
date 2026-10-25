@@ -1,0 +1,733 @@
+{
+  "schema": "hyle.inference-cpu-avx2-window.v1",
+  "status": "FINITE_3PAIRED_CPU_TIMING_AND2_INDEPENDENT_MEMORY_COMPLETE",
+  "generated_UTC": "2026-10-25T20:19:44.059322+00:00",
+  "scope": "Local i9-13900K,ordinary P154/requested16/C256/N1/R1,greedy/naturalEOS. Hyle fa7b versus same-source AVX2 peer27a49a. No GPU model workload,new SDK,model download or product/default change.",
+  "screen": {
+    "status": "FINITE_CPU_SCREEN_6_TIMING_2_INDEPENDENT_MEMORY_PASS",
+    "timing": {
+      "hyle": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 42.62085135482692,
+          "min": 42.48593129423486,
+          "max": 42.82996370911491,
+          "samples": [
+            42.62085135482692,
+            42.48593129423486,
+            42.82996370911491
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 10.16010358970684,
+          "min": 10.14088940467706,
+          "max": 10.231552306560225,
+          "samples": [
+            10.231552306560225,
+            10.14088940467706,
+            10.16010358970684
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.150035336505773,
+          "min": 3.134864107069716,
+          "max": 3.154588748587459,
+          "samples": [
+            3.150035336505773,
+            3.134864107069716,
+            3.154588748587459
+          ]
+        }
+      },
+      "peer": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 42.91040071487613,
+          "min": 42.71375223616201,
+          "max": 42.933301276468384,
+          "samples": [
+            42.91040071487613,
+            42.71375223616201,
+            42.933301276468384
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 12.032729022942403,
+          "min": 11.997109176572813,
+          "max": 12.150809037318131,
+          "samples": [
+            12.032729022942403,
+            12.150809037318131,
+            11.997109176572813
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.307657367380925,
+          "min": 3.305865789824334,
+          "max": 3.3088796784844337,
+          "samples": [
+            3.3088796784844337,
+            3.305865789824334,
+            3.307657367380925
+          ]
+        }
+      }
+    },
+    "paired_timing": [
+      {
+        "pair": 1,
+        "order": [
+          "hyle",
+          "peer"
+        ],
+        "peer_vs_hyle_tps_percent": {
+          "prefill_tokens_per_second": 0.6793608077855229,
+          "decode_output_tokens_per_second": 17.604139258783903,
+          "output_tokens_per_second": 5.042620955321131
+        }
+      },
+      {
+        "pair": 2,
+        "order": [
+          "peer",
+          "hyle"
+        ],
+        "peer_vs_hyle_tps_percent": {
+          "prefill_tokens_per_second": 0.5362267814006172,
+          "decode_output_tokens_per_second": 19.819954172008636,
+          "output_tokens_per_second": 5.454835581835171
+        }
+      },
+      {
+        "pair": 3,
+        "order": [
+          "hyle",
+          "peer"
+        ],
+        "peer_vs_hyle_tps_percent": {
+          "prefill_tokens_per_second": 0.2412740016669357,
+          "decode_output_tokens_per_second": 18.080579303611,
+          "output_tokens_per_second": 4.852252733799478
+        }
+      }
+    ],
+    "median_comparison": {
+      "prefill_tokens_per_second": {
+        "peer_over_hyle_median_percent": 0.6793608077855229,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "peer_over_hyle_median_percent": 18.431164768169417,
+        "ranges_overlap": false
+      },
+      "output_tokens_per_second": {
+        "peer_over_hyle_median_percent": 5.003817863516313,
+        "ranges_overlap": false
+      }
+    },
+    "memory": {
+      "hyle": {
+        "pid": 53944,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 7030308864,
+          "observed_os_peak_working_set_bytes": 7030325248,
+          "sampled_max_private_commit_bytes": 7894220800,
+          "observed_os_peak_commit_bytes": 7894228992,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "memory_sample_count": 618,
+        "running_memory_samples": 587,
+        "actual_memory_sample_gaps_ms": {
+          "count": 586,
+          "min": 0.1235,
+          "median": 15.02,
+          "max": 154.1865
+        },
+        "os_threads": {
+          "count": 62,
+          "peak": 3428,
+          "range": {
+            "count": 62,
+            "median": 3410.0,
+            "min": 4,
+            "max": 3428
+          },
+          "requested_interval_seconds": 0.1,
+          "actual_sample_gaps_ms": {
+            "count": 61,
+            "min": 106.4985,
+            "median": 109.8696,
+            "max": 154.2808
+          },
+          "unavailable_samples": []
+        },
+        "phases": {
+          "window_prefill": {
+            "memory_samples": 322,
+            "os_threads": {
+              "count": 33,
+              "min": 3407,
+              "median": 3410,
+              "max": 3410
+            },
+            "memory_peaks": {
+              "working_set_bytes": 6994186240,
+              "private_commit_bytes": 7879393280,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          },
+          "window_decode": {
+            "memory_samples": 124,
+            "os_threads": {
+              "count": 14,
+              "min": 3428,
+              "median": 3428.0,
+              "max": 3428
+            },
+            "memory_peaks": {
+              "working_set_bytes": 7030308864,
+              "private_commit_bytes": 7894220800,
+              "gpu_dedicated_bytes": null,
+              "gpu_shared_bytes": null,
+              "gpu_total_bytes": null
+            }
+          }
+        },
+        "ready_baseline_unknown": true,
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 618,
+          "shared:no_pid_instance": 618
+        },
+        "setup_error": null,
+        "thread_error": null,
+        "raw": {
+          "memory": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\07-memory-hyle-after-adapter-fix\\memory.json",
+            "bytes": 633024,
+            "sha256": "869679e6268543524a0fe4ca4d6520889625304dd02a391310c2c6093ba3853a"
+          },
+          "threads": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\07-memory-hyle-after-adapter-fix\\threads.json",
+            "bytes": 9210,
+            "sha256": "45a1e1c8871342ca89595d78954719a590801aec5fe2b49a621678cc5acb06eb"
+          }
+        }
+      },
+      "peer": {
+        "pid": 46056,
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 4110983168,
+          "observed_os_peak_working_set_bytes": 4110983168,
+          "sampled_max_private_commit_bytes": 651636736,
+          "observed_os_peak_commit_bytes": 651644928,
+          "sampled_peak_gpu_dedicated_bytes": 24576,
+          "sampled_peak_gpu_shared_bytes": 0,
+          "sampled_peak_gpu_total_bytes": 24576
+        },
+        "memory_sample_count": 531,
+        "running_memory_samples": 527,
+        "actual_memory_sample_gaps_ms": {
+          "count": 526,
+          "min": 0.1051,
+          "median": 14.97935,
+          "max": 25.3446
+        },
+        "os_threads": {
+          "count": 54,
+          "peak": 15,
+          "range": {
+            "count": 54,
+            "median": 15.0,
+            "min": 4,
+            "max": 15
+          },
+          "requested_interval_seconds": 0.1,
+          "actual_sample_gaps_ms": {
+            "count": 53,
+            "min": 105.4806,
+            "median": 109.6923,
+            "max": 112.0106
+          },
+          "unavailable_samples": []
+        },
+        "phases": {
+          "generation_prefill": {
+            "memory_samples": 326,
+            "os_threads": {
+              "count": 33,
+              "min": 15,
+              "median": 15,
+              "max": 15
+            },
+            "memory_peaks": {
+              "working_set_bytes": 4053172224,
+              "private_commit_bytes": 651632640,
+              "gpu_dedicated_bytes": 24576,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 24576
+            }
+          },
+          "generation_decode": {
+            "memory_samples": 109,
+            "os_threads": {
+              "count": 11,
+              "min": 15,
+              "median": 15,
+              "max": 15
+            },
+            "memory_peaks": {
+              "working_set_bytes": 4110983168,
+              "private_commit_bytes": 651636736,
+              "gpu_dedicated_bytes": 24576,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 24576
+            }
+          }
+        },
+        "ready_baseline_unknown": true,
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 9,
+          "shared:no_pid_instance": 9
+        },
+        "setup_error": null,
+        "thread_error": null,
+        "raw": {
+          "memory": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\08-memory-peer-after-adapter-fix\\memory.json",
+            "bytes": 666627,
+            "sha256": "9a33f3c4f25782cfceead56513856e18bb950c027266aa5353e8116ca88bc849"
+          },
+          "threads": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\08-memory-peer-after-adapter-fix\\threads.json",
+            "bytes": 7887,
+            "sha256": "b154bc495865c30c97eb95f640cd9489da9a36d012bbbebf027e52417929e9b4"
+          }
+        }
+      }
+    },
+    "processes": [
+      {
+        "index": 1,
+        "arm": "hyle",
+        "mode": "timing",
+        "pid": 57816,
+        "exit": 0,
+        "process_wall_seconds": 7.1193438,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\01-timing-hyle"
+      },
+      {
+        "index": 2,
+        "arm": "peer",
+        "mode": "timing",
+        "pid": 61528,
+        "exit": 0,
+        "process_wall_seconds": 5.8989037,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\02-timing-peer"
+      },
+      {
+        "index": 3,
+        "arm": "peer",
+        "mode": "timing",
+        "pid": 58616,
+        "exit": 0,
+        "process_wall_seconds": 5.8853494,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\03-timing-peer"
+      },
+      {
+        "index": 4,
+        "arm": "hyle",
+        "mode": "timing",
+        "pid": 54228,
+        "exit": 0,
+        "process_wall_seconds": 7.1005706,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\04-timing-hyle"
+      },
+      {
+        "index": 5,
+        "arm": "hyle",
+        "mode": "timing",
+        "pid": 51532,
+        "exit": 0,
+        "process_wall_seconds": 7.1040794,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\05-timing-hyle"
+      },
+      {
+        "index": 6,
+        "arm": "peer",
+        "mode": "timing",
+        "pid": 46084,
+        "exit": 0,
+        "process_wall_seconds": 5.9023013,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\06-timing-peer"
+      },
+      {
+        "index": 7,
+        "arm": "hyle",
+        "mode": "memory",
+        "pid": 53944,
+        "exit": 0,
+        "process_wall_seconds": 7.116609,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\07-memory-hyle-after-adapter-fix"
+      },
+      {
+        "index": 8,
+        "arm": "peer",
+        "mode": "memory",
+        "pid": 46056,
+        "exit": 0,
+        "process_wall_seconds": 5.8740672,
+        "folder": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\08-memory-peer-after-adapter-fix"
+      }
+    ],
+    "work": {
+      "all8_complete_within_arm_non_time_reports_equal_first_AVX2_pair": true,
+      "same154_prompt_ids": true,
+      "same16_generated_ids": true,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198,
+        1445,
+        18904,
+        1120,
+        5586,
+        11,
+        51338,
+        11,
+        36760,
+        11,
+        1697
+      ],
+      "actual_target_rows_each": 169,
+      "target_calls_each": 16,
+      "decode_calls_each": 15,
+      "draft_rows_each": 0,
+      "greedy": true,
+      "EOS_honored": true,
+      "early_EOS": false,
+      "capacity": 256,
+      "sessions": 1,
+      "active_sequences": 1,
+      "prefix_cache": false,
+      "restore_count": 0,
+      "each_hyle_ledger16_records": true,
+      "each_hyle_final_live_committed_versions": 0
+    },
+    "timing_protocol": {
+      "order": "B,C,C,B,B,C",
+      "B": "Hyle fa7b901e",
+      "C": "same-version peer AVX2 27a49a73",
+      "timing_samples_per_arm": 3,
+      "independent_memory_samples_per_arm": 1,
+      "warmups": 0,
+      "model_retries": 0,
+      "first_AVX2_pair_pooled": false,
+      "generic_peer_samples_pooled": false,
+      "prefill": "154/prefill_seconds",
+      "decode": "15/decode_seconds; excludes prefill-produced first output",
+      "combined": "16/session_seconds",
+      "memory_sampler": "Original PSAPI/PDH10ms request; psutil total OS threads100ms request only in memory processes",
+      "timeout_seconds": 180
+    },
+    "identities": {
+      "hyle": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\link\\hyle.exe",
+        "bytes": 141489152,
+        "sha256": "fa7b901efa7f74520857594ad582f9902355a5e8cf2bbd086ac1472f2338e297"
+      },
+      "peer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\link\\peer-avx2.exe",
+        "bytes": 35860992,
+        "sha256": "27a49a73fdafccde9528bda413aee69f2e2d755b7705fa60bbd60fc8a8ca5404"
+      },
+      "commands": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\commands.json",
+        "bytes": 3730,
+        "sha256": "567db392525689b5781be0de2f28a20c06991ae3e53c250a4fe6d1fa8168be57"
+      },
+      "initial_plan": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\plan.json",
+        "bytes": 5666,
+        "sha256": "11df080345e36b63f5b28be53beabedf3ca06a5e3bc7468078344e1fe822bf29"
+      },
+      "memory_continuation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\memory-continuation.json",
+        "bytes": 5666,
+        "sha256": "a95324544b1cace113a8f36df85224a965f0d97f334d43e8806d3a66eab23f5e"
+      },
+      "script": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen.py",
+        "bytes": 10563,
+        "sha256": "9406ef0e03ed6395b7ef2d7d7834174010db5581ed2e35ad1440d15af7bcdc80"
+      },
+      "analyzer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\analyze_screen.py",
+        "bytes": 6766,
+        "sha256": "c9667a1d88c70d7e994398d3e185e2a444a25018af97949014aa8c1150f473bf"
+      }
+    },
+    "initial_observer_failure": {
+      "phase": "Before first memory Popen; no model PID started",
+      "actual_error": {
+        "error": "AttributeError(\"'types.SimpleNamespace' object has no attribute 'PIPE'\")",
+        "stopped_before_next_process": true,
+        "completed": 6
+      },
+      "frozen_script": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\first-orchestrator-failure\\screen.py",
+        "bytes": 10028,
+        "sha256": "04281afabb70584ed49cfe79094af3a0bfc521ac0e54f3fcc52ef84e5daa9431"
+      },
+      "fix": "Forward existing subprocess.PIPE constant through thin Popen wrapper. Continued only the2 originally planned memory processes in fresh folders;6 timing processes not repeated.",
+      "failed_command_directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen\\07-memory-hyle"
+    },
+    "limits": [
+      "Finite P154/16output/T4 short window,3 timing samples each; not broad CPU scaling or stable deployment throughput.",
+      "OS3428/15 thread peaks are actual sampled process counts, not busy threads. No source attribution or performance causation is established by thread count.",
+      "T4 requests native4/borrowed Scheduler4/ATen intraop4 for Hyle and actual decode/batch4 for peer, not a process-wide cap.",
+      "Same observed greedy16IDs does not prove intermediate-bit, sourceprecision, algorithm or quality equality.",
+      "Hyle uses source BF16 activation/store points plus F32 operations/head; peer source contains187BF16+133F32tensors,recurrentF32,K/VBF16.",
+      "Peer CPU library now uses AVX2/FMA/F16C same-source build; no kernel sampling proves equal routes/ISA usage across engines.",
+      "Hyle outer ATen configuration/Scheduler construction precede its original startup clock; startup/process wall are not fair cold-start comparisons.",
+      "Memory processes are separate and not TPS samples. Sampled RAM/PDH maxima are lower bounds; ready-to-prefill gaps had no sample.",
+      "Hyle GPU counters have no PID instance and remain null. Peer24576B dedicated/shared0 is observed despite no model offload; linked CUDA registry can initialize.",
+      "No product/default/thread-owner change, extra model run, CPU MTP or hybrid test follows from this screen."
+    ]
+  },
+  "initial_pairs": {
+    "generic_initial": {
+      "processes": [
+        {
+          "arm": "hyle",
+          "process": {
+            "exit": 0,
+            "pid": 53036,
+            "seconds": 7.866377500002272
+          },
+          "ready": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\ready.json",
+            "bytes": 5335,
+            "sha256": "d1d1fc4f07f824caa50bbfa54e8463f13ed2feb97d0aed18c76d3f9eac89342f"
+          },
+          "runtime": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\runtime.json",
+            "bytes": 8205,
+            "sha256": "8e5197d9ca5cd577bba80ef7e21391f9c30e562f6b835338230aa8d1cbf2a913"
+          }
+        },
+        {
+          "arm": "peer",
+          "process": {
+            "exit": 0,
+            "pid": 11060,
+            "seconds": 35.50701709999703
+          },
+          "ready": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\ready.json",
+            "bytes": 3091,
+            "sha256": "cd654ebd1cbacc6cbd84f8d9f2d3f90616effe6820f9836be5985706b11db963"
+          },
+          "runtime": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer3\\runtime.json",
+            "bytes": 5845,
+            "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+          }
+        }
+      ],
+      "hyle": {
+        "prefill_seconds": 3.7255357,
+        "decode_seconds": 1.4748283999999998,
+        "session_seconds": 5.2003641,
+        "prefill_tokens_per_second": 41.336337214538034,
+        "decode_output_tokens_per_second": 10.170674771383574,
+        "output_tokens_per_second": 3.0767076482202467,
+        "startup_to_ready_seconds": 1.3661349,
+        "startup_to_endpoint_seconds": 6.5665568
+      },
+      "peer": {
+        "prefill_seconds": 30.0310464,
+        "decode_seconds": 4.1727411,
+        "session_seconds": 34.2037875,
+        "prefill_tokens_per_second": 5.12802644132973,
+        "decode_output_tokens_per_second": 3.5947593297844436,
+        "output_tokens_per_second": 0.46778445223354287,
+        "startup_to_ready_seconds": 0.5870484,
+        "startup_to_endpoint_seconds": 34.7909391
+      },
+      "same16_IDs": true,
+      "pooled_in_screen": false
+    },
+    "AVX2_initial": {
+      "processes": [
+        {
+          "arm": "hyle",
+          "process": {
+            "exit": 0,
+            "pid": 57716,
+            "seconds": 7.093069399998058
+          },
+          "ready": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\ready.json",
+            "bytes": 5335,
+            "sha256": "d1d1fc4f07f824caa50bbfa54e8463f13ed2feb97d0aed18c76d3f9eac89342f"
+          },
+          "runtime": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\hyle\\runtime.json",
+            "bytes": 8205,
+            "sha256": "8e5197d9ca5cd577bba80ef7e21391f9c30e562f6b835338230aa8d1cbf2a913"
+          }
+        },
+        {
+          "arm": "peer",
+          "process": {
+            "exit": 0,
+            "pid": 32588,
+            "seconds": 6.075929099984933
+          },
+          "ready": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\ready.json",
+            "bytes": 3982,
+            "sha256": "24202e2a094cccc7508a6fcd7898543bdce4526faab30f4aa652d983682737b2"
+          },
+          "runtime": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\runtime.json",
+            "bytes": 5845,
+            "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+          }
+        }
+      ],
+      "hyle": {
+        "prefill_seconds": 3.6035336,
+        "decode_seconds": 1.4650558999999999,
+        "session_seconds": 5.0685895,
+        "prefill_tokens_per_second": 42.735830186237195,
+        "decode_output_tokens_per_second": 10.238517178764306,
+        "output_tokens_per_second": 3.1566967496578684,
+        "startup_to_ready_seconds": 1.1554787,
+        "startup_to_endpoint_seconds": 6.2244654
+      },
+      "peer": {
+        "prefill_seconds": 3.5969245,
+        "decode_seconds": 1.2442764,
+        "session_seconds": 4.8412009,
+        "prefill_tokens_per_second": 42.814354318529624,
+        "decode_output_tokens_per_second": 12.05519931102125,
+        "output_tokens_per_second": 3.304965096573456,
+        "startup_to_ready_seconds": 0.5813089,
+        "startup_to_endpoint_seconds": 5.4226118
+      },
+      "same16_IDs": true,
+      "pooled_in_screen": false
+    }
+  },
+  "initial_pair_limits": "Both initial pairs are separate historical n1 observations and excluded from the3paired timing stats. Generic peer lacked AVX2/FMA/F16C CPU compile flags and is not a fair ISA baseline. AVX2 initial pair preserves that correction and motivated the finite screen.",
+  "original_initial_pair_evidence": {
+    "json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-initial-pair-2026-10-26.json",
+      "bytes": 29011,
+      "sha256": "c26ea81455e5b89d95aa102bd9a65160adae953905ae1dc1bf10b387f236eb08"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-initial-pair-2026-10-26.zip",
+      "bytes": 136102,
+      "sha256": "851806b3fb9b7442b825a0dd8a90cd37c179ab26bdacb0c4b13a662c9f596bb5"
+    }
+  },
+  "same_source_ISA_correction": {
+    "peer_source": "source-4e1a7b2f39afe15d",
+    "compiler": "MSVC14.50.35717 /O2 /MD",
+    "CPU_TUs": 15,
+    "compile_exit_zero": 15,
+    "compile_seconds_sum": 4.330443099956028,
+    "added_flags": [
+      "/arch:AVX2",
+      "/DGGML_AVX2",
+      "/DGGML_FMA",
+      "/DGGML_F16C"
+    ],
+    "excluded": [
+      "native-CPU tune",
+      "AVX512",
+      "AMX",
+      "OpenMP",
+      "BLAS",
+      "Hyle newer mixed-iq1 objects"
+    ],
+    "old_cpu_library": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\bin\\ggml-cpu.lib",
+      "bytes": 3007656,
+      "sha256": "528f3921dc2983a2edec6af2b400af92e92cf857a4a97f3fd194e1b9d5905b8e"
+    },
+    "new_cpu_library": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\archive\\ggml-cpu-avx2.lib",
+      "bytes": 3162550,
+      "sha256": "73a642b2b29427a44ef5cd25e5fdda61a37c4d48a6e6ed02afd87347ab89b226"
+    },
+    "one_archive_replaced_other_peer_inputs_unchanged": true,
+    "source_and_actual_dependencies_in_archive": true,
+    "historical_prefix": "C-root cache paths appear only in retained original command provenance; actual compilation remapped to repository .scratch/legacy-root. No new C-root path was created.",
+    "immutable_build_receipt_status": "ready.json/commands.json preserve their original build-only not-run text. Actual later pair/window process records establish runtime, not rewritten build receipts."
+  },
+  "resource_observation": {
+    "actual_OS_thread_peak_hyle": 3428,
+    "actual_OS_thread_peak_peer": 15,
+    "actual_hyle_prefill_threads": "3407..3410 in33 phase samples",
+    "actual_hyle_decode_threads": "3428 in14 phase samples",
+    "native4_not_process_cap": true,
+    "interpretation": "Thousands of live OS threads and7.03GB working set are an observed resource issue. This sample does not identify busy threads or prove the cause/speed impact of a particular pool. A shared-context/provider-pool candidate is a separate subsequent task, absent from these images/results.",
+    "memory_definitions": "Working set includes resident mapped pages. Private commit excludes shared/file-backed mappings; distinct loading/mapping strategies affect this comparison. Neither is a total allocator-accounted physical footprint."
+  },
+  "precision_and_route": {
+    "matched": [
+      "same154prompt IDs",
+      "same16generated IDs",
+      "same169target rows/15decode calls",
+      "explicitCPU T4",
+      "AVX2/FMA/F16C peer CPU build"
+    ],
+    "hyle": "Source BF16 activations/storepoints with F32 operations and bf16_inputs_f32_output head. native4+borrowed Scheduler4+ATen intraop4; no per-op census here.",
+    "peer": "187BF16+133F32 source tensors;F32 recurrent state,K/VBF16;actualCPU/nooffload and decode/batch4 getters. Native AVX2 BF16 dot may use different accumulation/math from Hyle.",
+    "limits": "Matching greedy IDs are observed,not intermediate-bit or precision/quality equivalence. This is an improved ISA-matched representative comparison,not proof of identical algorithms or complete CPU tuning."
+  },
+  "reproducibility": {
+    "work": ".scratch/inference-cpu-representative-20261026/peer-avx2",
+    "original_commands": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\commands.json",
+      "bytes": 3730,
+      "sha256": "567db392525689b5781be0de2f28a20c06991ae3e53c250a4fe6d1fa8168be57"
+    },
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\screen.py",
+      "bytes": 10563,
+      "sha256": "9406ef0e03ed6395b7ef2d7d7834174010db5581ed2e35ad1440d15af7bcdc80"
+    },
+    "offline_parser": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\analyze_screen.py",
+      "bytes": 6766,
+      "sha256": "c9667a1d88c70d7e994398d3e185e2a444a25018af97949014aa8c1150f473bf"
+    },
+    "phases": "Run screen.py once for6timing then2memory. Historical first execution stopped before first memory Popen on missingPIPE; corrected remaining-memory command ran only the2unstarted memory processes. Do not rerun into existing folders.",
+    "source_cache_required": "Exact retained local sources,SDK/native libraries,original2B HF/GGUF weights and runtime identities. No automatic acquisition. Public ZIP intentionally excludes them."
+  },
+  "no_new_runtime_during_publication": true,
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-avx2-window-2026-10-26.zip",
+    "bytes": 460165,
+    "sha256": "7110708f6df41c7f33124bbf3a215727124e2ba0c8c70950405949858b665960",
+    "members": 210,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "exclusions": "No executable,object,library,DLL,SDK,model payload,complete vendor/source tree or previous giant archive."
+  }
+}

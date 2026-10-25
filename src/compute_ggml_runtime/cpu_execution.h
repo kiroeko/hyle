@@ -8,11 +8,37 @@ namespace hyle::compute::ggml_runtime {
 
 struct CpuProgram;
 
+// One cold provider-Context native team, retained by all derived programs and
+// slots. Construction allocates metadata only; first prepare lazily selects
+// the same native program and creates its persistent worker pool. The metadata
+// allocator is borrowed through all team copies and derived execution slots.
+class CpuTeam final {
+public:
+  CpuTeam() noexcept = default;
+  HYLE_GGML_RUNTIME_INTERNAL_API CpuTeam(const CpuTeam &) noexcept;
+  HYLE_GGML_RUNTIME_INTERNAL_API CpuTeam &operator=(const CpuTeam &) noexcept;
+  HYLE_GGML_RUNTIME_INTERNAL_API CpuTeam(CpuTeam &&) noexcept;
+  HYLE_GGML_RUNTIME_INTERNAL_API CpuTeam &operator=(CpuTeam &&) noexcept;
+  HYLE_GGML_RUNTIME_INTERNAL_API ~CpuTeam();
+  HYLE_GGML_RUNTIME_INTERNAL_API static Result<CpuTeam>
+  create(int threads, mem::AllocatorRef allocator) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+
+private:
+  friend class CpuExecution;
+  struct State;
+  explicit CpuTeam(State *state) noexcept : state_(state) {}
+  State *state_ = nullptr;
+};
+
 // One synchronous invocation slot. Graph metadata, tensor payloads, callback
 // data and allocator are borrowed and must outlive this object. Preparation
 // validates a graph built by a trusted, capacity-checked HYLE lowering; this is
 // not an API for arbitrary native graphs. No concurrent run/close on one slot.
-// Distinct slots can run concurrently with shared immutable tensor payloads.
+// Distinct slots may be called concurrently; one Context team serializes its
+// complete native computes. Same-team reentry on the submitting thread fails
+// before touching the pool. Trusted lowering does not call user code or nested
+// Hyle executions from secondary native workers.
 class CpuExecution final {
 public:
   CpuExecution() noexcept = default;
@@ -24,7 +50,7 @@ public:
   HYLE_GGML_RUNTIME_INTERNAL_API ~CpuExecution();
 
   HYLE_GGML_RUNTIME_INTERNAL_API static Result<CpuExecution>
-  prepare(ggml_cgraph *graph, int threads, mem::AllocatorRef allocator,
+  prepare(ggml_cgraph *graph, const CpuTeam &team, mem::AllocatorRef allocator,
           ggml_abort_callback abort = nullptr,
           void *abort_data = nullptr) noexcept;
   // Returns only after all workers have completed, including on cancellation.
@@ -34,6 +60,7 @@ public:
 private:
   void reset() noexcept;
   mem::AllocatorRef allocator_;
+  CpuTeam team_;
   const CpuProgram *program_ = nullptr;
   ggml_cgraph *graph_ = nullptr;
   ggml_cplan plan_{};
