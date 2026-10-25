@@ -378,7 +378,9 @@ ModelOpt 静态 FP8 的准备器、角色选择和投影绑定保留原 E4 权�
 Recipe 仅发出现有十二节点公开链，融合或分解仍由冷图选择。所选软件 reader 的
 倒数／量化／两次 scale 乘法顺序写入源身份，producer 版本只作出处。
 [有限冷链检查](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)已通过元数据、
-准备器及 CPU 分解数值／租约；原制品数值、packed 与 GPU 路径仍待检查。
+准备器及合成 CPU 分解数值／租约。随后一个[原 k_proj 组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)
+以原 E4 权重及独立 SA／SW 通过 CPU／CUDA 各两次 Invocation、共8192个输出的解析误差界检查；
+默认 CPU 走六步分解，CUDA 走一步 packed，保旧输出及原权重租约。该组件不代表整制品或吞吐。
 
 Qwen 分页 COW Snapshot 与 GLM／DeepSeek StateHead 不强制换成同一容器；共用的是
 完整选择、提交和退休协议。原 state entries／端口仍是唯一声明，不加同义映射表。

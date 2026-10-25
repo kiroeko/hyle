@@ -1,0 +1,310 @@
+{
+  "status": "PASS_ORIGINAL_STATIC_FP8_CPU_DEFAULT_DECOMPOSITION_AND_CUDA_DEFAULT_PACKED",
+  "date": "2026-10-25",
+  "base_commit": "b9096abc65a9c85d7cb226e874154f992cfb4f1a",
+  "original_source": {
+    "status": "ACQUIRED_ONLY_ONE_ORIGINAL_STATIC_FP8_PROJECTION",
+    "repository": "nvidia/Qwen3.8-27B-NVFP4",
+    "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+    "source": {
+      "file": "model-00001-of-00003.safetensors",
+      "size": 9965652544,
+      "lfs_sha256": "7d0fd155118901373eb0fd13ed3aae68f95be747bc205be72ebc41739c25ee80",
+      "api_xet_hash": "c321ada4cff81b8bf39ed130ab3441a2a59d16cbeb156351c759be05b6d8ad45",
+      "etag": "\"c321ada4cff81b8bf39ed130ab3441a2a59d16cbeb156351c759be05b6d8ad45\"",
+      "etag_basis": "fixed tree API xetHash crosschecked with expanded API LFS/size"
+    },
+    "base": "model.language_model.layers.11.self_attn.k_proj",
+    "roles": [
+      {
+        "name": "model.language_model.layers.11.self_attn.k_proj.weight",
+        "dtype": "F8_E4M3",
+        "shape": [
+          1024,
+          5120
+        ],
+        "absolute_range": [
+          3898001984,
+          3903244863
+        ],
+        "bytes": 5242880,
+        "path": "weight.e4m3",
+        "offset": 0,
+        "sha256": "98ec9cec46ee5dfe71a75f899bc89457430ee2af342ef18d6be0bc03cf86ed67"
+      },
+      {
+        "name": "model.language_model.layers.11.self_attn.k_proj.input_scale",
+        "dtype": "F32",
+        "shape": [],
+        "absolute_range": [
+          126712,
+          126715
+        ],
+        "bytes": 4,
+        "path": "scales.f32",
+        "offset": 0,
+        "sha256": "2e412a25091ca0bc493ffc89623938480bf8d21cb426e35eb9dcb5918fc30b4a"
+      },
+      {
+        "name": "model.language_model.layers.11.self_attn.k_proj.weight_scale",
+        "dtype": "F32",
+        "shape": [],
+        "absolute_range": [
+          126716,
+          126719
+        ],
+        "bytes": 4,
+        "path": "scales.f32",
+        "offset": 4,
+        "sha256": "0f8452b8b63c44a581a0ece0fc8cf4f7c0b78b038538e318d616ab26aedc8d90"
+      }
+    ],
+    "parts": [
+      {
+        "path": "scales.f32",
+        "offset": 0,
+        "range": [
+          126712,
+          126719
+        ],
+        "bytes": 8,
+        "sha256": "94e6ff660f8d0e393da329462f60936323ae5e7e320dc312c277c47be1600723",
+        "receipt_id": 15006
+      },
+      {
+        "path": "weight.e4m3",
+        "offset": 0,
+        "range": [
+          3898001984,
+          3902196287
+        ],
+        "bytes": 4194304,
+        "sha256": "57f7d3e3b006b052246ea4f78389e756994359b40cd9a7bbadf1cba4f15fc9ee",
+        "receipt_id": 15007
+      },
+      {
+        "path": "weight.e4m3",
+        "offset": 4194304,
+        "range": [
+          3902196288,
+          3903244863
+        ],
+        "bytes": 1048576,
+        "sha256": "1dc916924980defc32db90222945bf54fea5882abcc2187a3c5ab933069166cf",
+        "receipt_id": 15008
+      }
+    ],
+    "payload_bytes": 5242888,
+    "whole_file_LFS_body_verified": false,
+    "automatic_retries": 0
+  },
+  "source_pins": [
+    {
+      "path": ".scratch\\inference-qwen-static-fp8-20261025\\source\\original_component.cc",
+      "bytes": 9934,
+      "sha256": "fa890b850f38d854c7447dd652784a954a56721d1d358319c47ec0fb85f6e917"
+    },
+    {
+      "path": ".scratch\\inference-qwen-static-fp8-20261025\\source\\original_input.h",
+      "bytes": 2151,
+      "sha256": "b889ee3f07e638285a5e43156de81c4f0a70233383edf330800bffc4f3911160"
+    },
+    {
+      "path": ".scratch\\inference-qwen-static-fp8-20261025\\source\\original_reference.h",
+      "bytes": 4141,
+      "sha256": "86acf825995f65e83a5720d08e1e376da4c11089524dd76617a031afb8f938ea"
+    }
+  ],
+  "cases": {
+    "cpu": {
+      "result": {
+        "status": "PASS_ORIGINAL_STATIC_FP8_COMPONENT",
+        "backend": "cpu",
+        "repository": "nvidia/Qwen3.8-27B-NVFP4",
+        "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+        "source_file": "model-00001-of-00003.safetensors",
+        "header_sha256": "60f09f862dd9fc8c2594641081613cc3f12f162419cfa06f2e6ee3feac7bc5f5",
+        "weight_sha256": "98ec9cec46ee5dfe71a75f899bc89457430ee2af342ef18d6be0bc03cf86ed67",
+        "scales_sha256": "94e6ff660f8d0e393da329462f60936323ae5e7e320dc312c277c47be1600723",
+        "scale_f32_bits": [
+          1042733934,
+          975550172
+        ],
+        "original_roles": 3,
+        "original_bytes": 5242888,
+        "shape": [
+          1024,
+          5120
+        ],
+        "graph_submissions": 2,
+        "checked_output_values": 4096,
+        "actual_packed_static_steps": 0,
+        "actual_steps": 6,
+        "workspace_bytes": 21022720,
+        "old_output_retained": true,
+        "old_weight_retained": true,
+        "permanent_f32_weight_bank": false,
+        "full_model": false
+      },
+      "actual_main_dependency": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 492574,
+        "sha256": "f8fbb80d369cc8a2c1dfcc5e6442b57af21047cef0be9de2b32ce74111c3cd7b"
+      },
+      "processes": {
+        "compile": {
+          "exit": 0,
+          "seconds": 30.530999999988126,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.2039999999979045,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.5629999999946449,
+          "timeout": false
+        }
+      },
+      "actual_link_inputs": 153,
+      "runtime_image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\component.exe",
+        "bytes": 21431808,
+        "sha256": "90d3cb7d669dfcd8265611dabe9ab0b85aac3eef9ab13568cff89a30e5fffb5d"
+      },
+      "inputs_different": true,
+      "outputs_different": true,
+      "route": {
+        "path": ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\results\\route.tsv",
+        "bytes": 288,
+        "sha256": "b5238d8bb75aba13143498ad881499a9faabddde3dbc7848198f0e2a6f88c3b0"
+      },
+      "numeric_intervals": {
+        "path": ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\results\\numeric.tsv",
+        "bytes": 395554,
+        "sha256": "260102ddef904d86b9000cd4bf6631085ec4f600539538f4149cd40399c97304"
+      },
+      "actual_sources": ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\actual-repository-dependencies.json",
+      "raw_command_folders": [
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\compile",
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\link",
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cpu\\attempt1\\run"
+      ]
+    },
+    "cuda": {
+      "result": {
+        "status": "PASS_ORIGINAL_STATIC_FP8_COMPONENT",
+        "backend": "cuda",
+        "repository": "nvidia/Qwen3.8-27B-NVFP4",
+        "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+        "source_file": "model-00001-of-00003.safetensors",
+        "header_sha256": "60f09f862dd9fc8c2594641081613cc3f12f162419cfa06f2e6ee3feac7bc5f5",
+        "weight_sha256": "98ec9cec46ee5dfe71a75f899bc89457430ee2af342ef18d6be0bc03cf86ed67",
+        "scales_sha256": "94e6ff660f8d0e393da329462f60936323ae5e7e320dc312c277c47be1600723",
+        "scale_f32_bits": [
+          1042733934,
+          975550172
+        ],
+        "original_roles": 3,
+        "original_bytes": 5242888,
+        "shape": [
+          1024,
+          5120
+        ],
+        "graph_submissions": 2,
+        "checked_output_values": 4096,
+        "actual_packed_static_steps": 1,
+        "actual_steps": 1,
+        "workspace_bytes": 10240,
+        "old_output_retained": true,
+        "old_weight_retained": true,
+        "permanent_f32_weight_bank": false,
+        "full_model": false
+      },
+      "actual_main_dependency": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 492574,
+        "sha256": "f8fbb80d369cc8a2c1dfcc5e6442b57af21047cef0be9de2b32ce74111c3cd7b"
+      },
+      "processes": {
+        "compile": {
+          "exit": 0,
+          "seconds": 30.84299999999348,
+          "timeout": false
+        },
+        "link": {
+          "exit": 1120,
+          "seconds": 0.9679999999934807,
+          "timeout": false
+        },
+        "link2": {
+          "exit": 0,
+          "seconds": 1.7660000000032596,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 1.202999999979511,
+          "timeout": false
+        }
+      },
+      "actual_link_inputs": 233,
+      "runtime_image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\link2\\component.exe",
+        "bytes": 140005376,
+        "sha256": "ee193dfb4e2f0bee413e25d7d722d3050e748f5e18a2e23b7b35ff5ce1f6bd1c"
+      },
+      "inputs_different": true,
+      "outputs_different": true,
+      "route": {
+        "path": ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\results\\route.tsv",
+        "bytes": 150,
+        "sha256": "6e8752fb2b7de4f2d750b29d00a60ad4a3c0cb1a343e5a351989197e8e76eb06"
+      },
+      "numeric_intervals": {
+        "path": ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\results\\numeric.tsv",
+        "bytes": 395554,
+        "sha256": "260102ddef904d86b9000cd4bf6631085ec4f600539538f4149cd40399c97304"
+      },
+      "actual_sources": ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\actual-repository-dependencies.json",
+      "raw_command_folders": [
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\compile",
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\link",
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\link2",
+        ".scratch\\inference-qwen-static-fp8-20261025\\original-cuda\\attempt1\\run"
+      ]
+    }
+  },
+  "counts": {
+    "new_app_TUs": 2,
+    "new_SDK_core_provider_TUs": 0,
+    "actual_consumer_processes": 2,
+    "actual_submissions": 4,
+    "total_checked_output_values": 8192,
+    "original_acquisition_requests": 3,
+    "original_acquisition_bytes": 5242888,
+    "new_HTTP_by_build_or_consumers": 0,
+    "canonical_edits": 0
+  },
+  "numeric_contract": "Independent exact FP64 E4-code dot center and outward gamma_5120 F32 accumulation bound, followed by the original separate F32 SA/SW multiplies and BF16 rounding. No empirical tolerance widening or demand for sequential-F32 bit identity.",
+  "graph_contract": "Current cold role resolver and Recipe emit the existing twelve public nodes. No forced provider, new model executor, permanent decoded weight bank or lifecycle instrumentation.",
+  "first_failure": "CUDA app link omitted cached formatter OBJ from Kimi-only template; fixed by link-only addition of the identical existing CPU formatter leaf; no source/math/oracle change.",
+  "limits": [
+    "One real k_proj component, BF16 A/Y and original E4 W plus independent original F32 SA/SW; no full Q27 model/quality/LM-token claim.",
+    "No provider was forced. CPU uses6 decomposition steps and may have transient F32 weight cast workspace; CUDA uses1 original-artifacts-cuda packed static step.",
+    "Numeric acceptance follows the public F32-dot analytic interval then separate F32 SA/SW multiplies and final BF16 rounding; no empirical tolerance widening or sequential-F32 dense bit-identity requirement.",
+    "Current actual scales are finite positive and tests stay within the finite certificate domain; exceptional-scale semantics retain the existing independent generic fixtures, not a new actual-domain run.",
+    "No new Apple/Vulkan, cancellation/unknown-retirement fault injection, benchmark/throughput or provider private physical-memory-cap claim.",
+    "Partial exact source ranges verified; whole shard LFS body was not downloaded or validated.",
+    "Original Kimi23-role download/numeric work remains separate and is not qualified by these static FP8 processes."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-static-fp8-original-component-2026-10-25.zip",
+    "bytes": 392007,
+    "sha256": "19e211b9cdf18423c89e5a9eccc06c2b6ed0a03eb48aa21da30c567b9c5dda30",
+    "members": 78,
+    "contents": "Exact private standalone consumer/oracle, source pins, acquisition ranges/receipts, finite runners, actual compile/link dependencies, raw commands including initial CUDA link failure, numeric intervals and generated BF16 inputs/outputs. No model payload, executable, SDK or cache objects."
+  }
+}

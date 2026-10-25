@@ -1,14 +1,14 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 14:20（北京时间）。整体暂估 **55%**。请求停止配置、GLM Flash 空／短历史构图与原 CPU 启动组件已完成。静态 FP8 原组件检查、Kimi 原参数续算及多会话／架构复审并行推进，深入性能狩猎后置。
+更新：2026-10-25 14:30（北京时间）。整体暂估 **56%**。静态 FP8 原投影 CPU／CUDA 组件已通过；普通随机请求整轮预算的有限检查已通过、正在集成。Kimi 原参数续算及冷装配边界复审并行推进，深入性能狩猎后置。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
 
 执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
 
-- 功能盘点与补齐：约 66%
-  - 基础普通推理：约 69%
+- 功能盘点与补齐：约 67%
+  - 基础普通推理：约 70%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
@@ -23,13 +23,13 @@
     - KDA／Kimi MLA 外部参数构图与共用数学体：100%
     - Kimi 原 KDA／MLA 参数绑定与数值组件：约 45%
     - ModelOpt 静态 FP8 准备／投影接线：100%
-    - ModelOpt 静态 FP8 原 payload 组件与 GPU 路线：约 25%
+    - ModelOpt 静态 FP8 原投影 CPU／CUDA 组件：100%
     - GLM Flash 短／空历史构图与原 FP8 启动组件：100%
     - prefill／decode／上下文与状态：约 20%
     - 采样／停止／预算与错误边界：约 15%
     - 采样合法有限值范围与原 TopK 排序：100%
     - 普通请求停止 token 政策与缓存／恢复：100%
-    - 普通随机请求的整轮地址预算接纳：约 20%
+    - 普通随机请求的整轮地址预算接纳：约 85%
     - 增量请求的整轮上下文接纳：100%
     - 验证消费者输入边界与仅 pending 续轮：100%
   - 多会话：约 20%
@@ -83,16 +83,15 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| 普通随机请求整轮地址预算 | 普通推理／请求接纳 | 提前证明整轮输出所需随机地址，避免近上限游标部分提交后才耗尽 | 约 20% |
+| 普通随机请求整轮地址预算 | 普通推理／请求接纳 | 整轮早拒、同请求重试、前缀复用和退休／恢复的有限CPU检查已过，正在集成 | 约 85% |
 | 冷装配与模型接线边界复审 | 架构／职责与扩展 | 复审 Recipe、原参数绑定、Backend／Graph 的真实依赖及新增模型改动范围 | 约 10% |
 | Kimi 原注意力参数数值与必需片段 | 普通推理／模型接线 | 冷绑定与两项租约／状态 CUDA 检查已过；原片段下载期间补独立参考与真实续算案例 | 约 45% |
-| 静态 FP8 原参数组件 | 普通推理／模型接线 | 已取得一个原 E4 投影及独立 SA／SW，共5,242,888B；准备原参数 CPU／CUDA 冷图数值检查 | 约 25% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
+最新依据：[静态 FP8 原组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)、[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 
