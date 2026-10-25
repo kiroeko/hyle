@@ -41,6 +41,7 @@
 #include "../../inference/sampling_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/retirement_observation.h"
+#include "../../inference/evaluation_failure.h"
 #include "../../inference/prepared_output.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_window.h"
@@ -98,10 +99,10 @@ constexpr std::array<const char *, 9> layer0_probe_names{
     "07-post-attn-norm", "08-gate-proj-output", "09-up-proj-output"};
 
 void check(hyle::Status status) {
-  if (!status.ok()) throw std::runtime_error(std::string(status.message()));
+  if (!status.ok()) throw inference::EvaluationFailure(std::move(status));
 }
 template<class T> T take(hyle::Result<T> result) {
-  if (!result) throw std::runtime_error(std::string(result.error().message()));
+  if (!result) throw inference::EvaluationFailure(static_cast<hyle::Status>(result.error()));
   return static_cast<T &&>(*result);
 }
 c::TensorDesc dense(Type type, std::initializer_list<std::int64_t> shape) {
@@ -4273,6 +4274,9 @@ public:
       step.capture_reused = replay_report.reused_capture_range_count;
       step.cold_batch_seconds = std::chrono::duration<double>(Clock::now() - cold_start).count();
       ++phase.preparation_uses[slot]; step.prepared = true;
+    } catch (inference::EvaluationFailure &failure) {
+      failure.observe_retirement(abort_episode());
+      throw;
     } catch (...) { (void)abort_episode(); throw; }
   }
 
@@ -4355,8 +4359,20 @@ public:
       }
       if (selected_sampler.enabled && !state_only && phase.family->role != GraphRole::kVerify) {
         check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
-        if (std::ranges::any_of(phase.sampling_valid_values, [](auto value) { return value != 1; }))
+        const auto bad = std::ranges::find_if(phase.sampling_valid_values, [](auto value) { return value != 1; });
+        if (bad != phase.sampling_valid_values.end()) {
+          if (phase.family->role == GraphRole::kText) {
+            std::optional<std::size_t> participant;
+            // Everything before the first bad value is already proven 1.
+            // Only the failure path inspects the remainder for a unique 0.
+            if (*bad == 0 && std::all_of(bad + 1, phase.sampling_valid_values.end(),
+                [](auto value) { return value == 1; }))
+              participant = static_cast<std::size_t>(bad - phase.sampling_valid_values.begin());
+            throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+                "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
+          }
           throw std::runtime_error("sampling distribution or proposal is invalid; no session or RNG cursor was published");
+        }
         if (drafts_token(phase.family->role)) {
           check(phase.sampling_accept.predicates(execution, run, phase.sampling_accept_values, phase.sampling_scratch));
           for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = phase.sampling_accept_values[j] != 0;
@@ -4551,6 +4567,9 @@ public:
       }
       return_readback.admission = std::exchange(step.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
+    } catch (inference::EvaluationFailure &failure) {
+      failure.observe_retirement(abort_episode());
+      throw;
     } catch (...) { (void)abort_episode(); throw; }
     const auto finished = Clock::now();
     for (const auto &output : outputs) if (output.generation_ledger) {
@@ -4928,7 +4947,10 @@ std::int32_t evaluate(Model &model, Session &session, std::span<const std::int32
   model.prepare_evaluation(session, ids, preparation);
   try { model.submit_evaluation(session); return finish_evaluation(model, session, name, trace, trace_states,
       complete_seconds, host_endpoint, observation, preparation, probe_subdirectory); }
-  catch (...) { (void)model.abort_episode(); throw; }
+  catch (inference::EvaluationFailure &failure) {
+    failure.observe_retirement(model.abort_episode());
+    throw;
+  } catch (...) { (void)model.abort_episode(); throw; }
 }
 
 hyle::Status Session::stop() noexcept {

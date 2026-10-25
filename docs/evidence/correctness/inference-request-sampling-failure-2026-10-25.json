@@ -1,0 +1,109 @@
+{
+  "status": "FINITE_WINDOWS_CPU_REQUEST_FAILURE_COMPONENT_PASS",
+  "date": "2026-10-25",
+  "integrated_on_commit": "84347ad8f12d487bfaeb07772e958cab3b0d5813",
+  "source_pins": [
+    {
+      "path": "engine/inference/evaluation_failure.h",
+      "bytes": 1635,
+      "sha256": "fe95eef0073cb56dca57522e3a1df631f95995679617deffeb630c069be67f04"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 485171,
+      "sha256": "a9242c09e4c0b236dc5ceaa9d02ab10099dfecdac2e2b2e2c01e3c6fd472765c"
+    },
+    {
+      "path": "tests/tools/qwen_participant_failure_case.h",
+      "bytes": 14195,
+      "sha256": "4d2a1238b55744958a425fc8a54833a8117f7f366dc06e31ef892e2e3c7f9a52"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 19943,
+      "sha256": "3b33b5596353b033f734cb4f3f6cfee8f7ec60c1a937315a14980323b5d580c5"
+    }
+  ],
+  "changes": [
+    "EvaluationFailure preserves the original Status, optional original evaluation member index and actual retirement observation. It owns no Session, native work or retry policy.",
+    "Only a successful ordinary Text/EmitNext predicate read with exactly one zero and all other members one qualifies a local participant before any state publication; the successful path retains one scan.",
+    "The original abort supplies retirement facts. The finite owner removes the known failed request only after clean actual retirement, and requeues the unchanged other request with its original key."
+  ],
+  "execution": {
+    "compile": {
+      "exit": 0,
+      "seconds": 18.094000000011874,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.2030000000086147,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.26500000001396984,
+      "timeout": false
+    },
+    "result": {
+      "status": "PASS",
+      "backend": "cpu",
+      "ordinary": true,
+      "fixture": "derived_original_tiny_with_one_NaN_embedding_row_and_finite_independent_head",
+      "fixture_bytes": 107136,
+      "member_index": 0,
+      "bad_window_slot": 1,
+      "original_batch_retired": true,
+      "survivor_same_key": true,
+      "survivor_committed_records": 2,
+      "survivor_draw": 2,
+      "survivor_ids": [
+        2,
+        6
+      ],
+      "native_status_transport": true,
+      "native_fault_injected": false,
+      "multiple_invalid_members": "source_only_fail_closed",
+      "MTP": "unchanged_not_run",
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    },
+    "new_application_TUs": 1,
+    "new_core_provider_SDK_TUs": 0,
+    "GPU_processes": 0,
+    "HTTP_bytes": 0
+  },
+  "fixture": {
+    "bytes": 107136,
+    "construction": "Copy the cached untrained 13-role tiny fixture; preserve an independent finite LM head, then poison only token63 embedding. No trained model or download.",
+    "identities": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-participant-failure-20261025\\implementation\\attempt1\\fixture\\weights.tsv",
+        "bytes": 3021,
+        "sha256": "84710480a44b7acfaced000cf2543c1e05ee0d8c7703237c1d71592b2193c5fd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-participant-failure-20261025\\implementation\\attempt1\\fixture\\participant-bf16.bin",
+        "bytes": 107136,
+        "sha256": "3625a05ba59919740bba90f6d2aa17f93e9ac1184364779d3508a23bcb6252f5"
+      }
+    ]
+  },
+  "failures": [],
+  "limits": [
+    "synthetic native Status transport only; no failed backend read injection",
+    "multiple-invalid member branch source-only; MTP unchanged/not run",
+    "default CLI request isolation policy not added",
+    "Thin consumer executes the formal helper; complete lifecycle dispatcher TU was source-migrated, not compiled.",
+    "Synthetic native Status transport is checked; actual failing native reads, pending/error cleanup, multiple invalid members and other devices were not injected or run.",
+    "The default CLI still exits on failure. This is a bottom-layer error/recovery component, not a claim that every caller implements request isolation."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-request-sampling-failure-2026-10-25.zip",
+    "bytes": 42333,
+    "sha256": "b5cb062a698b871e275bc76119a78520909b6124a6e3429f55465c0a57be6ecc",
+    "members": 23,
+    "contents": "Patch/pins, independent review, exact commands, source identities, raw output and derived fixture manifest; no binary, SDK or weight payload."
+  }
+}

@@ -296,6 +296,15 @@ Session、Model、冷资源与逻辑缓存统一返回 `RetirementObservation { 
 host 合同及 Windows CPU 的真实 Session／R2 准备与续算；合成状态不代签设备故障。
 其余 GPU／平台消费者已按接口迁移，本轮未编跑，不据此宣布全局错误隔离完成。
 
+引擎的 `check`／`take` 用 `EvaluationFailure` 保留原 Status 及可选的原批成员序号，
+不再只剩错误字符串。仅普通 Text 在发布前成功读出采样有效性、恰一个值为0且其余为1时，
+才定位该成员；设备／读回错误没有这个定位。原 abort 提供真实退休与错误观察，逻辑采样错误
+不写进整批持久错误。owner 只有在干净退休后才终止坏请求、按原 key 重排其它成员；
+其它情形继续原错误／退休处理，不能推定仅一个请求失败。序号属于原调用的成员顺序，不是窗口 slot。
+[有限 CPU R2→R1 检查](../evidence/correctness/inference-request-sampling-failure-2026-10-25.json)
+覆盖实际坏 A／好 B、B 的状态／ledger／RNG 不变和同 key 续算。默认 CLI 仍遇错退出；
+未注入 native 读失败、退休失败或多个坏成员，不以此宣称所有入口的错误隔离已完成。
+
 `OutputDelivery` 只借用原有界输出记录，保存成功交付的绝对前缀游标；重复或较旧的确认
 不重复推进。它既不观察模型 commit，也不拥有第二队列；模型 turn 完成后仍可保留最终
 未交付输出。owner 先核 request key，再用当前记录的实际长度计算 credit，不能采信晚事件
