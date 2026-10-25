@@ -71,7 +71,8 @@ inline constexpr std::string_view static_fp8_policy_line =
     "modelopt_static_fp8\tBF16\tF32\tBF16\tstored_SA_SW\tf32_recip_mul_satfinite_e4\tSA_then_SW\tsglang@234ccba7f625e12639e621044496bcc6197c3758";
 struct ModelOptStaticFp8Policy final { bool enabled = false; };
 inline constexpr std::string_view bf16_cache_policy_line = "kv_cache\tBF16\tomit_original_calibration";
-struct Bf16CachePolicy final { bool omit_calibration = false; };
+inline constexpr std::string_view float8_cache_policy_line = "kv_cache\tE4M3FN\toriginal_kv_scales";
+enum class CachePolicy { kDefault, kBFloat16OmitCalibration, kFloat8OriginalCalibration };
 inline constexpr std::string_view ct_asymmetric_policy_line =
     "ct_asymmetric_int4\t32\tBF16\tpacked_N\tcompressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4";
 struct CtAsymmetricPolicy final { bool enabled = false; };
@@ -166,7 +167,9 @@ struct Roles final {
   ModelGeometry geometry{};
   Float8BlockPolicy float8_policy{};
   CtMixedPolicy ct_mixed_policy{};
-  std::vector<Role> omitted_cache_calibration{};
+  CachePolicy cache_policy = CachePolicy::kDefault;
+  // Original metadata only, in attention-slot K/V order; not weight operands.
+  std::vector<Role> cache_calibration{};
   Nf4Policy nf4_policy{};
   CtAsymmetricPolicy ct_asymmetric_policy{};
   MlxAffinePolicy mlx_policy{};
@@ -251,7 +254,7 @@ inline Role normalize_mlx_role(Role role, const ModelGeometry &geometry) {
 // Validation covers the entire inventory even when MTP is not selected for IO.
 inline Roles select_roles(const std::map<std::string, Role> &all, std::string identity, bool include_mtp, const ModelGeometry &geometry,
                           Float8BlockPolicy float8_policy = {}, CtMixedPolicy ct_mixed_policy = {},
-                          Bf16CachePolicy bf16_cache_policy = {}, Nf4Policy nf4_policy = {},
+                          CachePolicy cache_policy = CachePolicy::kDefault, Nf4Policy nf4_policy = {},
                           const std::map<std::string, Nf4State> &nf4_states = {},
                           CtAsymmetricPolicy ct_asymmetric_policy = {}, MlxAffinePolicy mlx_policy = {},
                           ModelOptStaticFp8Policy static_fp8_policy = {}) {
@@ -264,20 +267,23 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   Roles result{std::move(identity), {}, 0}; result.geometry = geometry;
   result.float8_policy = float8_policy;
   result.ct_mixed_policy = ct_mixed_policy;
+  result.cache_policy = cache_policy;
   result.nf4_policy = nf4_policy;
   result.ct_asymmetric_policy = ct_asymmetric_policy;
   result.mlx_policy = mlx_policy;
   result.static_fp8_policy = static_fp8_policy;
   if (static_fp8_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled ||
-      nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() || bf16_cache_policy.omit_calibration))
+      nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() || cache_policy != CachePolicy::kDefault))
     throw std::runtime_error("prepared static FP8 cannot mix unrelated precision policies");
   if (mlx_policy.enabled() && (include_mtp || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
-      ct_asymmetric_policy.enabled || bf16_cache_policy.omit_calibration || (mlx_policy.bits != 4 && mlx_policy.bits != 8)))
+      ct_asymmetric_policy.enabled || cache_policy != CachePolicy::kDefault || (mlx_policy.bits != 4 && mlx_policy.bits != 8)))
     throw std::runtime_error("selected MLX reader cannot mix precision or NextN policies");
-  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration || ct_asymmetric_policy.enabled))
+  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || cache_policy != CachePolicy::kDefault || ct_asymmetric_policy.enabled))
     throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
-  if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || bf16_cache_policy.omit_calibration))
+  if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || cache_policy != CachePolicy::kDefault))
     throw std::runtime_error("prepared CT asymmetric reader cannot mix unrelated precision policies");
+  if (cache_policy == CachePolicy::kFloat8OriginalCalibration && include_mtp)
+    throw std::runtime_error("prepared E4 KV currently supports ordinary inference only, not MTP");
   if (nf4_policy.enabled != !nf4_states.empty()) throw std::runtime_error("prepared NF4 policy/state inventory differs");
   bool has_float8_block = false;
   bool has_ct_mixed = false;
@@ -455,19 +461,23 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
           parameter.linear ? ProjectionCodec::kDense : ProjectionCodec::kUnspecified);
     }
   }
-  // The manifest explicitly selects BF16 KV storage. Only the original
-  // full-attention calibration pair is omitted; arbitrary suffixes stay errors.
+  // Cache metadata has one original role table, independent of weight operands.
+  // BF16 may omit existing pairs; E4 must retain every full-attention pair.
   for (std::size_t i = 0; i < geometry.layers.size(); ++i) if (!geometry.is_gdn(i)) {
     const auto base = "model.language_model.layers." + std::to_string(i) + ".self_attn.";
-    if (!all.contains(base + "k_scale") && !all.contains(base + "v_scale")) continue;
-    if (!ct_mixed_policy.enabled || !bf16_cache_policy.omit_calibration)
-      throw std::runtime_error("cache calibration omission requires explicit CT BF16 KV policy");
+    if (!all.contains(base + "k_scale") && !all.contains(base + "v_scale")) {
+      if (cache_policy == CachePolicy::kFloat8OriginalCalibration)
+        throw std::runtime_error("missing original E4 cache calibration pair: " + base);
+      continue;
+    }
+    if (!ct_mixed_policy.enabled || cache_policy == CachePolicy::kDefault)
+      throw std::runtime_error("cache calibration requires explicit CT BF16 or E4 KV policy");
     for (const auto *suffix : {"k_scale", "v_scale"}) {
       const auto found = all.find(base + suffix);
       if (found == all.end() || found->second.dtype != "BF16" || found->second.shape != std::vector<std::int64_t>{1})
         throw std::runtime_error("invalid original BF16 cache calibration pair: " + base + suffix);
       consumed.insert(found->first);
-      result.omitted_cache_calibration.push_back(found->second);
+      result.cache_calibration.push_back(found->second);
     }
   }
   if (static_fp8_policy.enabled && !static_fp8_groups)
@@ -477,8 +487,10 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (nf4_groups != nf4_states.size()) throw std::runtime_error("prepared NF4 per-group state inventory differs");
   if (ct_asymmetric_policy.enabled && !ct_asymmetric_groups)
     throw std::runtime_error("prepared CT asymmetric policy has no matching weights");
-  if (bf16_cache_policy.omit_calibration && result.omitted_cache_calibration.empty())
+  if (cache_policy == CachePolicy::kBFloat16OmitCalibration && result.cache_calibration.empty())
     throw std::runtime_error("prepared BF16 cache omission has no calibration roles");
+  if (cache_policy == CachePolicy::kFloat8OriginalCalibration && result.cache_calibration.empty())
+    throw std::runtime_error("prepared E4 cache policy has no calibration roles");
   if (mlx_policy.enabled() && !mlx_groups) throw std::runtime_error("MLX reader has no original affine groups");
   if (consumed.size() != all.size()) throw std::runtime_error("unclaimed prepared physical role");
   return result;
@@ -500,7 +512,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
   std::map<std::string, Role> all;
   Float8BlockPolicy float8_policy;
   CtMixedPolicy ct_mixed_policy;
-  Bf16CachePolicy bf16_cache_policy;
+  CachePolicy cache_policy = CachePolicy::kDefault;
   Nf4Policy nf4_policy;
   CtAsymmetricPolicy ct_asymmetric_policy;
   MlxAffinePolicy mlx_policy;
@@ -543,9 +555,12 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     }
     if (line.starts_with("kv_cache")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (bf16_cache_policy.omit_calibration || !ct_mixed_policy.enabled || !all.empty() || line != bf16_cache_policy_line)
-        throw std::runtime_error("invalid or misplaced prepared BF16 cache omission policy");
-      bf16_cache_policy.omit_calibration = true; continue;
+      if (cache_policy != CachePolicy::kDefault || !ct_mixed_policy.enabled || !all.empty() ||
+          (line != bf16_cache_policy_line && line != float8_cache_policy_line))
+        throw std::runtime_error("invalid or misplaced prepared cache policy");
+      cache_policy = line == bf16_cache_policy_line ? CachePolicy::kBFloat16OmitCalibration :
+          CachePolicy::kFloat8OriginalCalibration;
+      continue;
     }
     if (line.starts_with("ct_asymmetric_int4")) {
       if (line.ends_with('\r')) line.pop_back();
@@ -597,7 +612,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy, static_fp8_policy);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy, static_fp8_policy);
 }
 } // namespace qwen35::prepared
 

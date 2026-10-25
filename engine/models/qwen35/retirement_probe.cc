@@ -168,11 +168,12 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
     require(tape[i] >= 0 && tape[i] < geometry.vocabulary, "decode token outside vocabulary");
 
   constexpr std::size_t capacity = 256;
-  const auto plan = q::cache::plan(geometry, capacity, 1, prompt.size(),
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", false);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, 1, prompt.size(),
                                   q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry));
   const bool progress = native_backend == hyle::inference::BackendKind::kApple ||
       native_backend == hyle::inference::BackendKind::kVulkan;
-  q::Model model(inputs / "weights.tsv", geometry, capacity, plan, {}, progress,
+  q::Model model(std::move(weight_source), geometry, capacity, plan, {}, progress,
       q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0, {.primary=native_backend});
   const std::array<std::size_t, 3> calls{128, 1, 1};
   model.prepare_family(calls);
@@ -416,11 +417,12 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   // N2 permits the deliberately retained lag1 prefix beside one new committed
   // continuation. N+1 is still only one actual pending Snapshot candidate.
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, capacity, 2, prompt.size(),
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, 2, prompt.size(),
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 1, 2, true);
   const bool progress = native_backend == hyle::inference::BackendKind::kApple ||
       native_backend == hyle::inference::BackendKind::kVulkan;
-  q::Model model(inputs / "weights.tsv", geometry, capacity, plan, {}, progress,
+  q::Model model(std::move(weight_source), geometry, capacity, plan, {}, progress,
       q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0, {.primary=native_backend});
   require(model.weights.size() == 335, "MTP probe did not load the real text+15MTP inventory");
   const auto catchup_role = verify_rows == 1 ? q::GraphRole::kMtpCatchupSingle : q::GraphRole::kMtpCatchupRound;

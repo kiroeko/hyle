@@ -55,8 +55,12 @@ python engine/models/qwen35/prepare.py --model LOCAL_MODEL --output .scratch/qwe
 JSON 的 `text_tensors`／`mtp_tensors` 统计实际加载的物理角色，`weight_count_scope` 标明口径。只需普通模式时可省略准备器的 `--mtp`。
 原 CT channel/token FP8 与 local NVFP4 混合清单使用
 `--fp8-reader compressed-tensors-0.17.2a20260716` 固定参考算法；存在原 KV 校准参数时，
-还须显式选择 `--kv-cache-dtype bf16`。校准参数的名字、形状及 hash 保留在输入身份和记录中，
-省略行只将其排除出权重加载，不表示执行 FP8 KV。channel/token 保留 BF16 QDQ 与逐权重舍入，
+还须显式选择缓存政策：`--kv-cache-dtype bf16` 保留原 BF16 缓存并省略校准角色加载；
+普通推理也可用 `--kv-cache-dtype e4m3fn`，读取每层原 BF16 K/V scale，采用固定校准的 E4 缓存。
+后者不能与 `--mtp` 合用，缺失、非正或非有限 scale 会在冷准备时拒绝；不合成默认 scale。
+两者都将校准参数的名字、形状及 hash 保留在输入身份和记录中，不把它们装成模型权重张量。
+E4 的缓存行载荷为 BF16 的一半，实际总 backing 仍包括页、元数据和其它状态。
+缓存政策不改变 activation、recurrent 或投影计算精度。channel/token 保留 BF16 QDQ 与逐权重舍入，
 local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用 block128 或 ModelOpt 的算法。
 目前已检查完整原头部、小原权重投影和小清单真实加载，见[接线记录](../evidence/correctness/mtp-qwen-ct-mixed-prepared-binding-2026-10-24.json)；
 这不代表该 27B 制品已完成整模型生成。借入这类分离 target／MTP 文件时使用完整的 `--role-files` 原角色记录。

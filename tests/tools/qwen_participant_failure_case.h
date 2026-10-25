@@ -105,7 +105,11 @@ inline int run(const std::filesystem::path &input, std::filesystem::path fixture
       / ".scratch/validation/qwen-participant-failure";
   const auto manifest = prepare_fixture(input, fixture);
   const auto geometry = q::read_weight_geometry(manifest);
-  const auto plan = q::cache::plan(geometry, 16, 2, 2,
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+  const auto plan = q::cache::plan(geometry, cache_rows, 16, 2, 2,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 2, 1, false, true);
   q::Model model(manifest, geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands,
       16u << 20, {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0,

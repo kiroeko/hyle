@@ -27,9 +27,11 @@ Result<c::TensorDesc> row_description(const PagedAppend&op,std::int64_t rows)noe
       ((op.schema.mla_layout()!=c::MlaCacheLayout::kNone)!=(op.role==c::BatchCacheRole::kMla)))
     return std::unexpected(Status::InvalidArgument("paged append needs its paged schema/role/active rows"));
   const auto cap=op.schema.capacity();const auto storage=row_storage(op);
-  if(storage.data_type()!=c::DataType::kFloat16 && storage.data_type()!=c::DataType::kBFloat16)
-    return std::unexpected(Status::Unimplemented("paged append currently copies plain F16/BF16 rows"));
-  return c::TensorDesc::dense(storage.data_type(),std::array<std::int64_t,3>{rows,cap.kv_heads,
+  if(!storage.format().is_plain() ||
+      (storage.data_type()!=c::DataType::kFloat16 && storage.data_type()!=c::DataType::kBFloat16 &&
+       storage.data_type()!=c::DataType::kFloat8E4M3FN))
+    return std::unexpected(Status::Unimplemented("paged append copies plain F16/BF16/E4 rows"));
+  return c::cache_carrier_description(storage,std::array<std::int64_t,3>{rows,cap.kv_heads,
       op.role==c::BatchCacheRole::kValue?cap.value_head_dim:cap.qk_head_dim});
 }
 std::uint32_t history(c::HostBatchLayout h,std::uint32_t request,std::uint32_t page_size)noexcept{

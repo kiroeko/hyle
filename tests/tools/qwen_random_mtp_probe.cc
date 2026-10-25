@@ -40,7 +40,11 @@ void run(const std::filesystem::path &input) {
   require(source.size() >= 15, "integration check requires fifteen existing prompt tokens");
   const auto prompt = std::span(source).first(15);
   const auto geometry = q::probe::read_two_b_geometry(input);
-  const auto plan = q::cache::plan(geometry, 64, 3, 15,
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+  const auto plan = q::cache::plan(geometry, cache_rows, 64, 3, 15,
       q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry), 2, 2, true, true);
   q::Model model(input / "weights.tsv", geometry, 64, plan, {}, true, q::ReplayPolicy::kCommands, SIZE_MAX,
       {.enabled = true, .policy = {1.5F, 40, .95F}, .seed = 123}, 0, {.primary=native_backend});

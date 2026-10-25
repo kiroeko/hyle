@@ -399,7 +399,20 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 加 owned metadata 接口，不能从 layout 反推实际缓存 scale。旧 `.schema()` 查询已删除，无兼容别名。
 [有限检查](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)覆盖 Windows CPU
 39项及普通消费者、Apple 原 E4 Q1 续算，以及相关原生 host 严格编译；未运行所有后端的双 scale
-共享域案例，不代表 E4 分页写入或普通模型接线已经完成。原 E4 编码／读取设施继续复用。
+共享域案例。原 E4 编码／读取设施继续复用。
+
+普通 CT 制品的缓存政策与权重／activation 精度分开：准备器显式选择 BF16 校准省略或
+E4 原校准，保留按实际 attention 层排序的独立 K/V BF16 标量。冷期一次读取精确两字节并扩宽，
+同一份已准备来源给出实际 carrier 行字节，随后规划容量并移入 Model；容量搜索不重复源读取。
+`Plan::row_bytes` 显式承载物理事实，不再由模型几何硬编码两字节。GDN／conv／hidden 不随之改变。
+每层原 Arena、append 和 typed attention 使用同一存储变体；K 在原 norm／RoPE 之后、V 在原投影之后
+各编码一次，仅处理新行，旧编码页直接共享或 COW。可追加页按实际行字节保留旧前缀与后缀权限，
+不放宽 fresh generation、成功发布、真实退休及后端复制对齐条件。E4＋MTP 仍冷拒绝。
+[有限检查](../evidence/correctness/ordinary-e4-kv-2026-10-25.json)覆盖准备器／角色、物理字节规划、
+CPU分页六项、CPU默认BF16及CPU／CUDA双层实际Model续算、分叉和旧读者；生成夹具借入四个原标量，
+不代表原27B数学／质量或吞吐。Apple另用原生编码→同页追加→reader核独立字节、输出与预算归还；
+Vulkan本批仅严格host编译。CLI的初始化诊断另加回前移的metadata准备耗时，未把参数规划时间算成模型加载；
+该报表修正只做源码检查，实际运行的Model定义与最终源码相同。
 
 冷图的有效历史长度不能由固定物理容量推定。GLM Flash 的原2051项选择状态保持不变，
 实际闭合池与尾窗决定参与 attention 的前缀，零池省去评分；参数／codec／排序差异仍由

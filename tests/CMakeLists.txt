@@ -305,6 +305,11 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_test(NAME hyle_qwen_sampling_policy_test
     COMMAND hyle_qwen_request_lifecycle_test --sampling-policies)
   if(TARGET hyle_graph_route_cpu)
+    add_test(NAME hyle_qwen_e4_cache_test
+      COMMAND hyle_qwen_request_lifecycle_test --e4-cache)
+    set_tests_properties(hyle_qwen_e4_cache_test PROPERTIES
+      LABELS "tooling;generation;cache;quantization;cpu;local-model" TIMEOUT 120
+      SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
     add_test(NAME hyle_qwen_request_ledger_test
       COMMAND hyle_qwen_request_lifecycle_test --request-ledger)
     set_tests_properties(hyle_qwen_request_ledger_test PROPERTIES

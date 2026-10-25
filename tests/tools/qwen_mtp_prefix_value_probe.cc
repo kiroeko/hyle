@@ -129,7 +129,11 @@ int main(int argc,char**argv) {
     const std::filesystem::path inputs=argv[1];auto prompt=q::read_ids(inputs/"prompt.ids");
     require(prompt.size()>=15,"prefix-value probe requires15 existing prompt IDs");prompt.resize(15);
     const auto geometry=q::probe::read_two_b_geometry(inputs);constexpr std::size_t context=64;
-    const auto plan=q::cache::plan(geometry,context,4,15,q::recurrent_bytes(q::state_schema_for(geometry,context),geometry),1,5,true);
+    // This case uses the original plain 16-bit K/V cache carriers.
+    const q::cache::KvRowBytes cache_rows{
+        q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+        q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+    const auto plan=q::cache::plan(geometry, cache_rows,context,4,15,q::recurrent_bytes(q::state_schema_for(geometry,context),geometry),1,5,true);
     q::Model model(inputs/"weights.tsv",geometry,context,plan,{},false,q::ReplayPolicy::kCommands,1024ULL*1024*1024);
     model.configure_draft_policy({4,0});
     const std::array prompt_shape{std::size_t{15}},single{std::size_t{1}};const std::array<std::size_t,2> wide{3,5};

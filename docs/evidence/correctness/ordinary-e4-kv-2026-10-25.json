@@ -1,0 +1,521 @@
+{
+  "status": "FINITE_ORDINARY_E4_KV_IMPLEMENTATION_AND_COMPONENT_CHECKS_PASS",
+  "implementation": [
+    "Explicit CT BF16-calibration-omission versus ordinary fixed-original-scale E4 cache policy; original BF16[1] scalar bytes authenticated and read once cold, never loaded as GPU weights.",
+    "Single prepared source supplies explicit physical K/V row bytes to capacity planning and moves into the original Model. Per-attention-layer K/V CacheStorage variants share the original metadata domain.",
+    "Original CacheEncode handles finalized new K/V rows; original Graph append and appendable page permissions support plain E4. COW copies encoded bytes, native alignment and true retirement remain required.",
+    "BF16/F16 activation, conv/recurrent/hidden and ordinary default math remain unchanged. E4 with MTP rejects cold; no new executor, codec, provider registry or compatibility alias."
+  ],
+  "current_source": {
+    "base_commit": "1bcdfe88a0b440e7e206a5db590a44127fd6d8a0",
+    "files": [
+      {
+        "path": "engine/models/qwen35/batch_probe.cc",
+        "bytes": 28139,
+        "sha256": "fe2af622903169a8d53d2e16538a7952fa7b4192caeba8b7aee9f0576850ec47"
+      },
+      {
+        "path": "engine/models/qwen35/cache_precision.h",
+        "bytes": 4151,
+        "sha256": "a7f46574940ca8ca74688a558c0425e1cf2d7c3f0320a99018369dc81f22d613"
+      },
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 498476,
+        "sha256": "a3062a3a696c757d725a2aaed6112995043778b8bca33106fabd6d9a0a9e6bd1"
+      },
+      {
+        "path": "engine/models/qwen35/model_geometry.h",
+        "bytes": 6510,
+        "sha256": "718dab27fff7b6c3a184dadcb7773c0edc8fd4ae441bbbc85169d936a3322294"
+      },
+      {
+        "path": "engine/models/qwen35/mtp_session_probe.cc",
+        "bytes": 116158,
+        "sha256": "98c7fa3fcad30e07f22e6aea68fd0e019dd4c1e36a9b79675d41446416bd30d3"
+      },
+      {
+        "path": "engine/models/qwen35/precision_profile.h",
+        "bytes": 2170,
+        "sha256": "3fb47d13280b00922356024e5299ced6a425976fb9fbdb5943eb2231195f4f5c"
+      },
+      {
+        "path": "engine/models/qwen35/prepare.py",
+        "bytes": 45883,
+        "sha256": "03d383a6ead36e8b830bcdb59cc14cfa4ab44dfd5580311bdebd2a8e17c01d09"
+      },
+      {
+        "path": "engine/models/qwen35/prepared_roles.h",
+        "bytes": 39007,
+        "sha256": "2194603b0b87f64044a630b682c00f746a5e8732c02d5779354e47366855ae7e"
+      },
+      {
+        "path": "engine/models/qwen35/retained_budget_probe.cc",
+        "bytes": 20392,
+        "sha256": "397154299e9a5bb673b93cf166c8b741551d1aed6ff4b24d3a29e2abd1b17d40"
+      },
+      {
+        "path": "engine/models/qwen35/retirement_probe.cc",
+        "bytes": 43361,
+        "sha256": "41f5a20811d19035c6ef51b604a4fc710f47659529c339837ec7304e4a19595b"
+      },
+      {
+        "path": "engine/models/qwen35/session_state.h",
+        "bytes": 14709,
+        "sha256": "8ee8e6cc07eee1e89fdb048aad0109381205fc0bb126829df7e376d3107b2361"
+      },
+      {
+        "path": "include/hyle/compute/paged_arena.h",
+        "bytes": 14734,
+        "sha256": "29e88910aafab9b40cc49a66b304e6ba4af5ca71e3ef7ecaad0dfeec79fa9391"
+      },
+      {
+        "path": "src/compute_batch/paged_arena.cc",
+        "bytes": 50938,
+        "sha256": "8490f8fd6ae48ae0d04769d6d35b57fe3c01b8f5b91f336f31f8347162e92efc"
+      },
+      {
+        "path": "src/graph_batch/paged_append.cc",
+        "bytes": 55525,
+        "sha256": "b20bbc7d2481d265992d17016d243cecae9e904d377c93b36173ad8e1befce1a"
+      },
+      {
+        "path": "src/graph_route_vulkan/native_paged_append.cc",
+        "bytes": 17822,
+        "sha256": "93de18d5e849b8e035b561445a1a0c6182628261cb1699158bc14a7614fd1c7a"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "bytes": 20457,
+        "sha256": "95191fb1af0a92d8819241ef1aa85693ea8e4256d9d58ae427553c59f49a2391"
+      },
+      {
+        "path": "tests/graph_batch/typed_capability_graph_test.cc",
+        "bytes": 55870,
+        "sha256": "cdbfc2bcf99babaff59b68e0d483e193c7435d95a9e3a2b58c468d2bc3f9ba4b"
+      },
+      {
+        "path": "tests/tooling/qwen_hf_roles_test.py",
+        "bytes": 42559,
+        "sha256": "ccaa2d3b52d23da66a8134257b15e2e1700d652579605345bd48a5e4e91ed817"
+      },
+      {
+        "path": "tests/tools/qwen_chunked_prefill_case.h",
+        "bytes": 11432,
+        "sha256": "989dd737839aca517ccd2a36d9a8eca52d2060d11156dde2001e2144b65cdc3d"
+      },
+      {
+        "path": "tests/tools/qwen_dual_model_case.h",
+        "bytes": 10849,
+        "sha256": "4f4d868f78b657ecb3177dc315b17b5ed77ca9411576a5adba5f83f4328d518f"
+      },
+      {
+        "path": "tests/tools/qwen_e4_cache_case.h",
+        "bytes": 7436,
+        "sha256": "36412e7dafba8d8b149b02978710a6d5296127016a538e2058562268c4b3b6e3"
+      },
+      {
+        "path": "tests/tools/qwen_midturn_resume_case.h",
+        "bytes": 11254,
+        "sha256": "3a3330d364b6e46c3a52ed5e16605376bfafe9dfcd7afcf0c539b7eb0f47109c"
+      },
+      {
+        "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+        "bytes": 13180,
+        "sha256": "ae3404956a8e55d169c5bb8236e504a756d34f4f466444a805bf6f402f39c5a6"
+      },
+      {
+        "path": "tests/tools/qwen_participant_failure_case.h",
+        "bytes": 14597,
+        "sha256": "4d2375262fc3beb33cdb570438d7badf2c00d8c5ebbdaf479f7e047ddf482242"
+      },
+      {
+        "path": "tests/tools/qwen_precision_profile_test.cc",
+        "bytes": 4342,
+        "sha256": "99192d8863b7c843392171d464d8a2719e80c8b565890cb8d56c8a5f80890e74"
+      },
+      {
+        "path": "tests/tools/qwen_prefix_cache_test.cc",
+        "bytes": 47567,
+        "sha256": "b9a8433677d562e7887670c28f5a94611c54d2d1b178d10d6230875fea7b16a1"
+      },
+      {
+        "path": "tests/tools/qwen_prepared_roles_test.cc",
+        "bytes": 58652,
+        "sha256": "936853eb4e95f68b7b267ade484f9ea9fab0bcb7572171493689efa08f3f3537"
+      },
+      {
+        "path": "tests/tools/qwen_random_mtp_probe.cc",
+        "bytes": 10609,
+        "sha256": "3ac817677c8dd29220192a9f611c97249df5abd139262469c51fb6c370bfd477"
+      },
+      {
+        "path": "tests/tools/qwen_request_ledger_case.h",
+        "bytes": 9441,
+        "sha256": "f6e4fa616b017fe9473ebff796d57516a51b44ffed3b810b4535c39067aa91fa"
+      },
+      {
+        "path": "tests/tools/qwen_request_lifecycle_test.cc",
+        "bytes": 21283,
+        "sha256": "5897c6f812df98b82818ed5cd7fa16facf9a34fdffa1e1d0f81a97dac9f756d1"
+      },
+      {
+        "path": "tests/tools/qwen_request_stop_case.h",
+        "bytes": 12724,
+        "sha256": "0e30d52f4ea3ac36136a5feeb777c4c026fdc6cb019dd4871a28a8d67389f61c"
+      },
+      {
+        "path": "tests/tools/qwen_resource_retirement_test.cc",
+        "bytes": 13830,
+        "sha256": "447d47d10f9305e754b712d888ad99e4a947e6de7a8f96f6d53633773b31290e"
+      },
+      {
+        "path": "tests/tools/qwen_retirement_observation_case.h",
+        "bytes": 7753,
+        "sha256": "4859929c16ecacfb2241c7c46dfc75ea6112cf3c9b45f8a357b3b6e63bd349cd"
+      },
+      {
+        "path": "tests/tools/qwen_sampling_budget_case.h",
+        "bytes": 14012,
+        "sha256": "e1f19ea6ddcf9f067c09c824bd1673fb1f419a1ef95d0a8917027c5b9dc9eb17"
+      },
+      {
+        "path": "tests/tools/qwen_sampling_policy_case.h",
+        "bytes": 8253,
+        "sha256": "eeb72da895892787eed232cd0de3f0ad69391ec6ad0f4c9ed99dd79e562c6fbc"
+      },
+      {
+        "path": "tests/tools/qwen_turn_context_case.h",
+        "bytes": 7667,
+        "sha256": "049f7035ad7b7d7f7e5211c150a997746ac738612f161dfe5d655f28a8a89a3b"
+      }
+    ]
+  },
+  "original_calibration": {
+    "repository": "unsloth/Qwen3.8-27B-NVFP4",
+    "revision": "f0b7c9e722f5565102fff8481c99e4d86ae099c7",
+    "file": "model.safetensors",
+    "roles": 32,
+    "application_body_bytes": 64,
+    "payload_sha256": "aabf9095ed6a1d2d8ce6f71d282e6812160b0ea9dfc30cf4d2def08c4d0f12a6",
+    "source": {
+      "size": 22568192096,
+      "strong_etag": "\"a0d562e22f1cdcf307ddb9d5967a46dc1deeabd485e7ec27312518b5f0c12974\"",
+      "declared_LFS_sha256": "c473512c70eace07e2256fe9fd76596ac03e3295bee7d54cfb72676416afcc05",
+      "LFS_basis": "Existing fixed inventory declaration; not whole-body verified or independently rederived from unexpanded API in this task",
+      "header": {
+        "path": ".scratch/architecture-refactor-2026-10-18/ct-local-nvfp4-contract-review/artifact/8/model.safetensors/header.json",
+        "bytes": 251128,
+        "sha256": "4b84e0212253cc57dc5d3a6ac51fec8eb4775c7c0c35d1d59b375822be22f9e4"
+      },
+      "data_base": 251136,
+      "revision_API": {
+        "path": ".scratch/model-quantization-discovery-2026-10-19/qwen-kimi/unsloth--Qwen3.8-27B-NVFP4/api-model.json",
+        "bytes": 26138,
+        "sha256": "e907e9098ba74a4c97399d3eb0cfe7162ee33d21fdd089aa4fcfeda4a615a887"
+      },
+      "identity_basis": "Cached fixed revision API sha + exact historical original header/length responses with matching strongETag and total; mirror response must independently match those expected facts"
+    },
+    "unique_KV_pairs": 16,
+    "positive_finite": true,
+    "endpoint": "hf-mirror.net only, enforced for initial requests and redirects; no HF/CAS fallback",
+    "boundaries": "32 exact two-byte 206 reads. The complete shard LFS SHA is a provenance declaration, not a newly verified whole-body hash. Full receipts/role values are in archive summary.json."
+  },
+  "checks": {
+    "preparer_python_cases": 19,
+    "prepared_roles_assertions": 13555,
+    "precision_profile_assertions": 17,
+    "physical_row_plan": "One original host capacity suite, explicit E4 half-width/asymmetric rows/zero/overflow and unchanged plain16/Q35/Q27 expectations.",
+    "graph_CPU": {
+      "cases": 6,
+      "failed": 0,
+      "skipped": 0,
+      "scope": "Original four typed capability cases plus encoded E4 write/attention/old pages and odd-row finite carrier checks; independent codec and attention oracle."
+    },
+    "CPU": {
+      "default": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "initial_rejection_atomic": true,
+        "same_request_cursor_retry": true,
+        "MAX_minus_1_quota_1": true,
+        "full_hit_request_cursor": true,
+        "later_head_budget": true,
+        "evicted_ledger_budget": true,
+        "state_only_no_draw": true,
+        "raw_draw_preflight": true,
+        "greedy_unchanged": true,
+        "pending_only_single_consumption": true,
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      },
+      "E4": {
+        "status": "PASS",
+        "backend": "cpu",
+        "generated_AA_fixture": true,
+        "original_scale_roles": 4,
+        "physical_row_bytes": 64,
+        "activation": "BF16",
+        "prefill_rows": 2,
+        "decode_rows": 1,
+        "fork_equal": true,
+        "old_readers_unchanged": true,
+        "final_versions": 0,
+        "model_quality": false,
+        "HTTP": 0
+      },
+      "processes": {
+        "default": {
+          "pid": 55972,
+          "exit": 0,
+          "seconds": 0.266
+        },
+        "E4": {
+          "pid": 23476,
+          "exit": 0,
+          "seconds": 0.234
+        }
+      },
+      "compiled": "One Model app TU, later reused unchanged after one Arena TU fix and relink."
+    },
+    "CUDA": {
+      "E4": {
+        "status": "PASS",
+        "backend": "cuda",
+        "generated_AA_fixture": true,
+        "original_scale_roles": 4,
+        "physical_row_bytes": 64,
+        "activation": "BF16",
+        "prefill_rows": 2,
+        "decode_rows": 1,
+        "fork_equal": true,
+        "old_readers_unchanged": true,
+        "final_versions": 0,
+        "model_quality": false,
+        "HTTP": 0
+      },
+      "processes": {
+        "app": {
+          "exit": 0,
+          "seconds": 18.48399999999674,
+          "timeout": false
+        },
+        "cpu-native-batch": {
+          "exit": 0,
+          "seconds": 1.375,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.687000000005355,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 1.1719999999913853,
+          "timeout": false
+        }
+      },
+      "total_link_inputs": 233,
+      "unchanged_link_inputs": 224,
+      "scope": "Actual CUDA Context on RTX4070; original native/device cache reused. New host app and original-macro CPU companion only, plus current cached common/FlashInfer hosts and Arena.",
+      "native_record_ABI": {
+        "header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_flashinfer\\native_batch.h",
+          "bytes": 2620,
+          "sha256": "34d8379ae430ec676223fe0a9d1a80c5244e54b210e64c94a2cd170a71c3b9d6"
+        },
+        "old_generated_host": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-feature-completion-2026-10-18\\windows-batch\\native-batch-portable-llp64-hostrestrict-hostsyntax.cpp",
+          "bytes": 41200074,
+          "sha256": "d1eb26a8f161c70c793d43f420a162b23ca22c340597beed0a9e821fe350fe74"
+        },
+        "records": {
+          "BatchSpec": {
+            "equal": true,
+            "fields": "std::uint32_tquery_heads,kv_heads,qk_head_dim,value_head_dim,page_size;std::uint32_tquery_rows,requests;std::size_tquery_indptr_offset,kv_indptr_offset,page_indices_offset,tail_offset;floatscale;floatkey_scale,value_scale;std::int32_twindow_left;boolpaged,bfloat16,fp8,causal;boolallow_bf16_partials;"
+          },
+          "BatchFacts": {
+            "equal": true,
+            "fields": "std::size_tfloat_bytes,int_bytes;std::uint32_tcta_tile_q,padded_batch_size,kv_chunk_rows;boolsplit_kv;boolbf16_partials;"
+          }
+        },
+        "scope": "Current BatchSpec/BatchFacts field ABI equals preserved generated host text; no new CUDA numerical claim; final native cache remains the already used portable-llp64-posenc object, not CPU native_batch."
+      }
+    },
+    "Apple": {
+      "status": "PASS_APPLE_NATIVE_E4_APPENDABLE_ENCODE_APPEND_READER",
+      "result": {
+        "tests": 1,
+        "failures": 0,
+        "skips": 0,
+        "process": {
+          "exit_code": 0,
+          "wall_seconds": 1.499761833
+        },
+        "gtest_seconds": 0.857,
+        "properties": {
+          "device": "Apple M4",
+          "target": "original Apple native Context, no CPU lane",
+          "step_count": "4",
+          "encoded_bytes_checked": "256",
+          "bounded_old_bytes_checked": "128",
+          "native_copy_alignment_bytes": "4"
+        }
+      },
+      "environment": {
+        "host": "kiro@172.22.10.198",
+        "hardware": "Mac16,12 / Apple M4",
+        "memory_bytes": 17179869184,
+        "macos": "27.0.1 / 26A434",
+        "compiler": "Apple clang 21.0.0 / arm64 C++23",
+        "strict_flags": [
+          "-Wall",
+          "-Wextra",
+          "-Wpedantic",
+          "-Werror"
+        ]
+      },
+      "scope": {
+        "source": "Synthetic BF16 activations and independent enumerated E4 encoding oracle; no model artifact, CT weight or full Model use.",
+        "route": "Actual Apple Context, Apple shared MemoryResource and graph::apple::execution_source; single compiled GPU target; empty queue span; no CPUContext fallback.",
+        "geometry": {
+          "query_rows": 1,
+          "query_heads": 2,
+          "kv_heads": 1,
+          "key_depth": 64,
+          "value_depth": 64,
+          "page_size": 16,
+          "max_pages": 2,
+          "history_before": 1,
+          "history_after": 2,
+          "K_scale": 0.5,
+          "V_scale": 2.0,
+          "row_bytes": 64,
+          "page_bytes": 1024,
+          "per_arena_backing_bytes": 2049,
+          "both_arena_requested_bytes": 4098
+        },
+        "sequence": "One exact old E4 row is initialized from independent encoder bytes and published appendable(1); incoming BF16 row is encoded by native CacheEncode and appended to the same physical page; native reader runs after both write effects.",
+        "oracle": "Independent E4 code enumeration validates all 256 committed K/V bytes. Zero-query causal attention compares every 128 BF16 output words exactly to the F64 two-row mean over independently decoded E4 values.",
+        "retirement": "Before native success ready() is rejected. Waits actual native completion before taking append transactions and publishing new ready frames. Old 64B reader per bank remains bounded/readable; cannot form the 2-row layout. Taking original transactions revokes submit. After Graph/arenas/tails teardown, escaped old readers still hold both actual requested bank charges (4098B); releasing them returns payload live to zero.",
+        "alignment": "Actual row/suffix spans are 64B and page/suffix offsets are aligned. The original Apple Metal copy adapter enforces its 4B constraints; this is a valid-aligned execution, not a new negative misalignment test."
+      },
+      "product_TUs": 4,
+      "first_fixture_failures": [
+        {
+          "stage": "compile/consumer",
+          "exit_code": 1,
+          "source": {
+            "path": ".scratch/inference-e4-model-20261025/apple-actual/consumer-first-compile-failure.cc",
+            "bytes": 12755,
+            "sha256": "7878303c6201afdf95df4e2a1abd639081c05d97aea16048970bfc272ba3edae"
+          },
+          "reason": "Existing generic take<T> moves T and cannot bind a PagedPageAppender& reference. Fixed by checking Result then borrowing its value. No product change."
+        },
+        {
+          "stage": "run",
+          "exit_code": 1,
+          "source": {
+            "path": ".scratch/inference-e4-model-20261025/apple-actual/consumer-first-run-failure.cc",
+            "bytes": 12831,
+            "sha256": "326b46a47cd7c171fbb1748e300d0a436ca1d79d957e7bca8e0187597f75c57d"
+          },
+          "reason": "Fixture budget omitted the required system metadata resource row; rejected before graph construction/native submit."
+        },
+        {
+          "stage": "run2",
+          "exit_code": 1,
+          "source": {
+            "path": ".scratch/inference-e4-model-20261025/apple-actual/consumer-second-run-failure.cc",
+            "bytes": 12903,
+            "sha256": "6d537f2db7ddfdfa78114e1e868358a58786d1bd85b4f5d988c49247baf1e72c"
+          },
+          "reason": "Fixture incorrectly used layout-only attention over the BF16 origin of an E4 storage variant. Replaced with existing typed PagedAttention capacity + metadata API. Rejected at add_node before compile/submit."
+        },
+        {
+          "stage": "run3",
+          "exit_code": 1,
+          "source": {
+            "path": ".scratch/inference-e4-model-20261025/apple-actual/consumer-third-run-failure.cc",
+            "bytes": 13043,
+            "sha256": "2ad168c05153e885869553976f466fefe924ea56d5402a9fb27bef5b7d02e503"
+          },
+          "reason": "Fixture used P4 whereas the existing Apple native reader explicitly supports P16 only. Rejected at graph compile before submit; adjusted only fixture page geometry to actual supported P16 and exact derived backing-byte assertions."
+        }
+      ],
+      "note": "One native component, not Model or Q27. Four current source leaves and a small consumer; existing SDKs/native archives reused."
+    },
+    "Vulkan": "Changed native append host TU strict /W4 /WX compile only; no new native execution in this batch.",
+    "formal_test_entry": "CPU CTest registration and HYLE_QWEN_E4_INPUTS isolation reviewed in source. The full lifecycle test TU/CTest invocation was not rerun; its actual case header was compiled/run through the thin CPU/CUDA consumers."
+  },
+  "first_actual_Model_failure": {
+    "cause": "Original appendable page gate still rejected E4 despite Graph append accepting it.",
+    "evidence": {
+      "process": {
+        "pid": 41836,
+        "exit": 1,
+        "seconds": 0.219
+      },
+      "raw": {
+        "path": ".scratch/inference-e4-model-20261025/cpu1/run-e4/stderr.log",
+        "bytes": 1527,
+        "sha256": "fc793c577843f1994f5d9a2ae5dd42ebd43924be4678a5a6e32bf0bd90876b78"
+      },
+      "cause": "Original PagedArena appendable gate still admitted only plain F16/BF16; preserved before actual carrier fix. This was not a numerical comparison failure."
+    },
+    "fix": "Admit only whole plain F16/BF16/E4 rows; retain original fresh generation, exact permission bounds, native retirement and backend alignment.",
+    "final": "CPU2 default and E4 actual consumer passed after recompiling just Arena and relinking the same app object."
+  },
+  "source_only_final_delta": {
+    "status": "SOURCE_ONLY_CLI_DIAGNOSTIC_TIMING_CORRECTION",
+    "validated_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 498349,
+      "sha256": "dbe2922e7b48c910061153ae1c55ecc136483157f672e867178daedec3680b8d"
+    },
+    "final_main": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 498476,
+      "sha256": "a3062a3a696c757d725a2aaed6112995043778b8bca33106fabd6d9a0a9e6bd1"
+    },
+    "Model_and_all_previous_definitions_byte_identical": true,
+    "executed_source_prefix_sha256": "c4fe25b1031a5e4aea426a941389a45e477c0b275521979657fa46ba133a396f",
+    "change": "Save source metadata preparation elapsed before move; add only this elapsed stage to initialized model_seconds. startup and weights_load_seconds already include it and are unchanged.",
+    "checked": "Exact two replacements and identical prefix before CLI run. No model recompile or execution for this report-only delta."
+  },
+  "limitations": [
+    "Generated tiny AA weights borrow four original calibrated scalars; they are not an original complete Q27 model or an independent whole-model numerical/quality oracle.",
+    "No new complete prefill/decode/combined-throughput/peak-memory benchmark; previous complete performance window remains unchanged.",
+    "No new Linux, full Apple Model, Vulkan native, E4-MTP or multimodal execution claim.",
+    "MTP metadata/precision/default-policy controls passed in host checks; no new native MTP benchmark in this batch.",
+    "Compiler/fixture setup failures are retained separately; failed or unexecuted steps are not marked passed."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ordinary-e4-kv-2026-10-25.zip",
+    "bytes": 604191,
+    "sha256": "c0bf3088b86d50b781a673f02961260d287f8e8c3222782f2cb02fa03c612ca7",
+    "members": 383,
+    "CRC_verified": true,
+    "all_member_SHA_verified": true,
+    "contents": "Detailed summary.json, manifest.json, source pins/patches, reproduction drivers and small consumers, original transfer receipts, actual commands/dependencies/raw outputs including first failures. No SDK, native binary or model payload."
+  },
+  "cleanup": {
+    "plan": ".scratch/inference-e4-model-20261025/cleanup/plan.json",
+    "preview_checked": true,
+    "files": 26,
+    "logical_bytes": 153173708,
+    "applied": true,
+    "scope": "Superseded append check1-check7 binaries only; retain current objects, all source/commands/results, native DLLs and SDK caches.",
+    "all_targets_absent": true,
+    "receipt": {
+      "path": ".scratch/inference-e4-model-20261025/cleanup/removed.json",
+      "bytes": 6846,
+      "sha256": "8e1fec55a19ebe84a24986b836cf37a6a6d29895edf8950c58b870290536ba77"
+    },
+    "physical_bytes_freed": "Unknown: reported size is logical, not physical allocation/hardlink accounting.",
+    "archive_boundary": "Plan and preview were archived before deletion; this outer report adds the completed removal receipt without repacking the verified archive."
+  }
+}

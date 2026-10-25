@@ -316,8 +316,9 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
     const auto &ids = observation.teacher_forced;
     constexpr std::size_t capacity = 256, residents = 8, requests = 2;
     const auto geometry = q::probe::read_two_b_geometry(inputs);
-    const auto plan = q::cache::plan(geometry, capacity, residents, prompt.size(), q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), requests);
-    q::Model model(inputs / "weights.tsv", geometry, capacity, plan, {}, false,
+    auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", false);
+    const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents, prompt.size(), q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), requests);
+    q::Model model(std::move(weight_source), geometry, capacity, plan, {}, false,
         q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0,
         {.primary=hyle::inference::BackendKind::kCuda});
     const std::array<std::size_t, 2> chunks{128, 1}; const std::array<std::size_t, 1> singleton{1};

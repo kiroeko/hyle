@@ -83,7 +83,11 @@ inline int run(const std::filesystem::path &input) {
   require(prompt.size() >= 2 && geometry.vocabulary > 1, "sampling policy case requires two prompt tokens and a nontrivial vocabulary");
   const auto suffix = prompt.size() > 2 ? prompt[2] : prompt[0]; prompt.resize(2);
   constexpr std::size_t capacity = 16;
-  const auto plan = q::cache::plan(geometry, capacity, 2, 5,
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+  const auto plan = q::cache::plan(geometry, cache_rows, capacity, 2, 5,
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 2, 1, false, true);
   const std::array additional{q::SamplingConfiguration{true, {1.F, 1, 1.F}},
       q::SamplingConfiguration{true, {.7F, (std::min)(std::size_t{8}, static_cast<std::size_t>(geometry.vocabulary)), .9F}}};

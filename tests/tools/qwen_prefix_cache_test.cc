@@ -413,42 +413,61 @@ void aligned_state_pool_capacity() {
   rejects(128, (std::numeric_limits<std::size_t>::max)());
 }
 
+p::KvRowBytes bf16_cache_rows(const qwen35::ModelGeometry &g) {
+  // These host capacity fixtures explicitly model plain BF16 K/V rows.
+  return {p::multiply(p::multiply(static_cast<std::size_t>(g.kv_heads), static_cast<std::size_t>(g.key_depth)), 2),
+      p::multiply(p::multiply(static_cast<std::size_t>(g.kv_heads), static_cast<std::size_t>(g.value_depth)), 2)};
+}
+
 void batch_state_capacity() {
   constexpr std::size_t payload = 19537920; // Current 36 Qwen conv/GDN resources.
-  const auto single = p::plan(geometry, 256, 4, 16, payload);
-  const auto explicit_single = p::plan(geometry, 256, 4, 16, payload, 1);
+  const auto single = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload);
+  const auto explicit_single = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 1);
   require(single.active_sequences == 1 && single.max_requests == 1 &&
       single.max_query_rows == 16 && single.max_kv_rows == 256 &&
       single.max_pages == 65 && single.max_page_refs == 16 && single.state_slots == 5 &&
       single.key_bank_bytes == 1064961 && single.backing_bytes == 110469168 &&
       explicit_single.backing_bytes == single.backing_bytes,
       "R1 must preserve the original real Qwen state/page budget");
-  const auto batch = p::plan(geometry, 256, 4, 16, payload, 2);
+  const auto batch = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 2);
   require(batch.active_sequences == 2 && batch.max_requests == 2 &&
       batch.max_query_rows == 32 && batch.max_kv_rows == 512 && batch.max_page_refs == 32 &&
       batch.state_slots == 6 && batch.max_pages == 66 && batch.key_bank_bytes == 1081345 &&
       batch.backing_bytes == 130203696 &&
       batch.backing_bytes - single.backing_bytes == payload + 12 * 16 * 1024,
       "R2 must reserve two candidates, packed request extents and both possible COW tails");
-  const auto three=p::plan(geometry, 256,4,16,payload,2,3,true);
-  const auto five=p::plan(geometry, 256,4,16,payload,2,5,true);
+  const auto bf16_rows = bf16_cache_rows(geometry);
+  const p::KvRowBytes e4_rows{bf16_rows.key / 2, bf16_rows.value / 2};
+  const auto e4 = p::plan(geometry, e4_rows, 256, 4, 16, payload, 2);
+  const auto mixed_widths = p::plan(geometry, {e4_rows.key, bf16_rows.value}, 256, 4, 16, payload, 2);
+  require(batch.row_bytes == bf16_rows && e4.row_bytes == e4_rows &&
+      e4.key_bank_bytes == (batch.key_bank_bytes - 1) / 2 + 1 &&
+      e4.value_bank_bytes == (batch.value_bank_bytes - 1) / 2 + 1 &&
+      batch.backing_bytes - e4.backing_bytes ==
+          ((batch.key_bank_bytes - e4.key_bank_bytes) + (batch.value_bank_bytes - e4.value_bank_bytes)) * batch.attention_layers &&
+      mixed_widths.key_bank_bytes == e4.key_bank_bytes && mixed_widths.value_bank_bytes == batch.value_bank_bytes &&
+      e4.recurrent_payload_bytes == batch.recurrent_payload_bytes && e4.state_slots == batch.state_slots &&
+      e4.hidden_row_bytes == batch.hidden_row_bytes && e4.hidden_bytes == batch.hidden_bytes,
+      "actual K/V row extents must change only physical KV backing, independently for each bank");
+  const auto three=p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,3,true);
+  const auto five=p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,5,true);
   require(three.candidate_boundaries==3 && three.state_slots==10 && three.hidden_slots==14 &&
       five.candidate_boundaries==5 && five.state_slots==14 && five.hidden_slots==18 &&
       three.snapshot_slots==6 && five.snapshot_slots==6 &&
       three.max_pages==batch.max_pages && five.max_pages==batch.max_pages,
       "K2/K4 candidate material rows must grow without adding committed versions or whole-context KV copies");
-  const auto two=p::plan(geometry, 256,4,16,payload,2,2,true);
+  const auto two=p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,2,true);
   require(two.state_slots==8 && two.hidden_slots==12 &&
       two.hidden_bytes==49153 && two.backing_bytes==171491379,
       "existing two-boundary MTP state/hidden/backing numbers must remain unchanged");
-  const auto no_draft=p::plan(geometry, 1,1,1,0,1,1,true);
+  const auto no_draft=p::plan(geometry, bf16_cache_rows(geometry), 1,1,1,0,1,1,true);
   require(no_draft.candidate_boundaries==1 && no_draft.state_slots==2 &&
       no_draft.hidden_slots==3 && no_draft.hidden_bytes==12289 && no_draft.backing_bytes==471091,
       "target-only MTP/context1 still needs finite committed/candidate carry storage");
   const auto larger = qwen_test::q27();
   // Independent original Q27 geometry: 48 states of 3*10240 BF16 history
   // and 48*128*128 F32 recurrent entries; 16 target KV layers plus NextN.
-  const auto larger_plan = p::plan(larger, 64, 1, 15, 153944064, 1, 2, true);
+  const auto larger_plan = p::plan(larger, bf16_cache_rows(larger), 64, 1, 15, 153944064, 1, 2, true);
   require(larger_plan.attention_layers == 16 && larger_plan.recurrent_layers == 48 &&
       larger_plan.hidden_row_bytes == 10240 && larger_plan.key_bank_bytes == 163841 &&
       larger_plan.value_bank_bytes == 163841 && larger_plan.hidden_bytes == 40961 &&
@@ -459,21 +478,25 @@ void batch_state_capacity() {
     try { (void)make_plan(); } catch (const std::runtime_error &) { rejected = true; }
     require(rejected, "invalid or overflowing batch state capacity must reject");
   };
-  rejects([&] { return p::plan(geometry, 256, 4, 16, payload, 0); });
-  rejects([&] { return p::plan(geometry, 256, 1, 16, payload, 2); });
-  rejects([&] { return p::plan(geometry, 0, 4, 1, payload, 1); });
-  rejects([&] { return p::plan(geometry, 256, 0, 16, payload, 1); });
-  rejects([&] { return p::plan(geometry, 256, 4, 0, payload, 1); });
-  rejects([&] { return p::plan(geometry, 256, 4, 257, payload, 1); });
-  rejects([&] { return p::plan(geometry, 256,4,16,payload,2,0,true); });
-  rejects([&] { return p::plan(geometry, 256,4,16,payload,2,257,true); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 0); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 1, 16, payload, 2); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 0, 4, 1, payload, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 0, 16, payload, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 0, payload, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 257, payload, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,0,true); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,257,true); });
+  rejects([&] { return p::plan(geometry, {0, 1024}, 256, 4, 16, payload, 1); });
+  rejects([&] { return p::plan(geometry, {1024, 0}, 256, 4, 16, payload, 1); });
   const auto maximum = (std::numeric_limits<std::size_t>::max)();
-  rejects([&] { return p::plan(geometry, maximum, 1, 1, payload, 1); });
-  rejects([&] { return p::plan(geometry, 256,4,16,payload,2,maximum,true); });
-  rejects([&] { return p::plan(geometry, 256, 4, 16, maximum, 2); });
+  rejects([&] { return p::plan(geometry, {maximum, 1024}, 1, 1, 1, 0); });
+  rejects([&] { return p::plan(geometry, {1024, maximum}, 1, 1, 1, 0); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), maximum, 1, 1, payload, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,maximum,true); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, maximum, 2); });
   const auto max_index = std::size_t((std::numeric_limits<std::int32_t>::max)());
-  rejects([&] { return p::plan(geometry, max_index, 2, 1, 0, 2); });
-  rejects([&] { return p::plan(geometry, 1, max_index, 1, 0, 1); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), max_index, 2, 1, 0, 2); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 1, max_index, 1, 0, 1); });
 }
 
 void exact_boundaries_and_domains() {

@@ -168,28 +168,67 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
   add(roles, local + ".input_global_scale", "F32", {1});
   const std::string cache = "model.language_model.layers.3.self_attn.";
   add(roles, cache + "k_scale", "BF16", {1}); add(roles, cache + "v_scale", "BF16", {1});
-  const auto all = p::select_roles(roles, identity, true, geometry, {}, {true}, {true});
+  const auto all = p::select_roles(roles, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration);
   check_placement(all);
-  const auto text = p::select_roles(roles, identity, false, geometry, {}, {true}, {true});
-  require(all.selected.size() == 339 && text.selected.size() == 324 && all.omitted_cache_calibration.size() == 2,
+  const auto text = p::select_roles(roles, identity, false, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration);
+  require(all.selected.size() == 339 && text.selected.size() == 324 && all.cache_calibration.size() == 2,
       "CT mixed selected roles must exclude only explicit BF16 cache calibration");
   require(std::ranges::count(all.selected, p::ProjectionCodec::kCtFloat8ChannelToken, &p::Role::projection_codec) == 1 &&
       std::ranges::count(all.selected, p::ProjectionCodec::kCtLocalNvfp4, &p::Role::projection_codec) == 1,
       "CT mixed codecs must follow the original complete groups");
   rejects([&] { (void)p::select_roles(roles, identity, true, geometry); }, "fixed reader policy");
-  rejects([&] { (void)p::select_roles(roles, identity, true, geometry, {}, {true}); }, "explicit CT BF16 KV policy");
+  rejects([&] { (void)p::select_roles(roles, identity, true, geometry, {}, {true}); }, "explicit CT BF16 or E4 KV policy");
   auto invalid = roles; invalid.erase(local + ".input_global_scale");
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, {true}); }, "missing prepared role");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "missing prepared role");
   invalid = roles; invalid.at(channel + ".weight_scale").shape[1] = 2; invalid.at(channel + ".weight_scale").bytes *= 2;
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, {true}); }, "type/shape differs");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "type/shape differs");
   invalid = roles; add(invalid, "model.language_model.layers.0.self_attn.k_scale", "BF16", {1});
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, {true}); }, "unclaimed");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "unclaimed");
   invalid = roles; invalid.at(cache + "v_scale").shape = {2}; invalid.at(cache + "v_scale").bytes = 4;
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, {true}); }, "calibration pair");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "calibration pair");
   auto serialized = manifest(roles); const auto at = serialized.find('\n', serialized.find('\n', serialized.find('\n') + 1) + 1);
   serialized.insert(at + 1, std::string(p::ct_mixed_policy_line) + '\n' + std::string(p::bf16_cache_policy_line) + '\n');
   const auto path = directory / "ct-mixed.tsv"; write(path, serialized);
-  require(p::read_roles(path, true).omitted_cache_calibration.size() == 2, "explicit CT/cache policy must roundtrip");
+  require(p::read_roles(path, true).cache_calibration.size() == 2, "explicit CT/cache policy must roundtrip");
+
+  // E4 needs every original A-layer pair, without changing the weight bank.
+  auto e4 = roles;
+  for (std::size_t i = 0; i < geometry.layers.size(); ++i) if (!geometry.is_gdn(i)) {
+    const auto prefix = "model.language_model.layers." + std::to_string(i) + ".self_attn.";
+    for (const auto *suffix : {"k_scale", "v_scale"})
+      if (!e4.contains(prefix + suffix)) add(e4, prefix + suffix, "BF16", {1});
+  }
+  const auto selected = p::select_roles(e4, identity, false, geometry, {}, {true},
+      p::CachePolicy::kFloat8OriginalCalibration);
+  require(selected.selected.size() == text.selected.size() && selected.bytes == text.bytes &&
+      selected.cache_policy == p::CachePolicy::kFloat8OriginalCalibration &&
+      selected.cache_calibration.size() == 2 * geometry.attention_layers(),
+      "E4 calibration must remain separate from actual selected weight bytes");
+  std::size_t slot = 0;
+  for (std::size_t i = 0; i < geometry.layers.size(); ++i) if (!geometry.is_gdn(i)) {
+    const auto prefix = "model.language_model.layers." + std::to_string(i) + ".self_attn.";
+    require(selected.cache_calibration[2*slot].name == prefix + "k_scale" &&
+        selected.cache_calibration[2*slot+1].name == prefix + "v_scale",
+        "calibration order must follow actual attention slots, not lexical layer names");
+    ++slot;
+  }
+  rejects([&] { (void)p::select_roles(e4, identity, true, geometry, {}, {true},
+      p::CachePolicy::kFloat8OriginalCalibration); }, "ordinary inference only");
+  invalid = e4; invalid.erase(cache + "k_scale"); invalid.erase(cache + "v_scale");
+  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {true},
+      p::CachePolicy::kFloat8OriginalCalibration); }, "missing original E4 cache calibration pair");
+  invalid = e4; invalid.erase(cache + "v_scale");
+  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {true},
+      p::CachePolicy::kFloat8OriginalCalibration); }, "calibration pair");
+  serialized = manifest(e4);
+  serialized.insert(at + 1, std::string(p::ct_mixed_policy_line) + '\n' + std::string(p::float8_cache_policy_line) + '\n');
+  write(path, serialized);
+  require(p::read_roles(path, false).cache_policy == p::CachePolicy::kFloat8OriginalCalibration,
+      "ordinary E4 policy must roundtrip without reading scalar payloads");
+  serialized.insert(at + 1 + p::ct_mixed_policy_line.size() + 1,
+      std::string(p::bf16_cache_policy_line) + '\n');
+  write(path, serialized);
+  rejects([&] { (void)p::read_roles(path, false); }, "policy");
 }
 void check_placement(const p::Roles &roles) {
   const qwen35::FfnPlacement primary(roles, 0), mixed(roles, 2), all_ffn(roles, roles.geometry.layers.size());

@@ -56,6 +56,7 @@
 #include "projection_binding.h"
 #include "fp8_weight_import.h"
 #include "precision_profile.h"
+#include "cache_precision.h"
 #include "nf4_weight_import.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/container/small_vector.h"
@@ -1553,12 +1554,21 @@ prepared::Roles read_weight_roles(const std::filesystem::path &manifest, bool in
 }
 struct PreparedWeightSource {
   prepared::Roles roles;
+  std::vector<CacheStoragePair> cache_storage;
+  cache::KvRowBytes cache_row_bytes;
   double metadata_prepare_seconds = 0;
 };
 PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest, bool include_mtp) {
   const auto start = Clock::now();
   auto roles = read_weight_roles(manifest, include_mtp);
-  return {std::move(roles), std::chrono::duration<double>(Clock::now() - start).count()};
+  auto storage = read_cache_calibration(roles);
+  const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).activation_type()));
+  const auto rows = cache_storage_row_bytes(roles.geometry, storage.empty() ? CacheStoragePair{plain, plain} : storage.front());
+  for (const auto &pair : storage)
+    if (cache_storage_row_bytes(roles.geometry, pair) != rows)
+      throw std::runtime_error("selected cache layers require different physical row extents");
+  return {std::move(roles), std::move(storage), {rows[0], rows[1]},
+      std::chrono::duration<double>(Clock::now() - start).count()};
 }
 Type role_type(std::string_view dtype) {
   if (dtype == "BF16") return Type::kBFloat16;
@@ -1875,7 +1885,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       canonical_bytes, fp8_groups, import_peak_bytes, roles.float8_policy.enabled,
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtFloat8ChannelToken, &prepared::Role::projection_codec)),
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4, &prepared::Role::projection_codec)),
-      roles.omitted_cache_calibration.size(), nf4_groups, nf4_original_bytes, nf4_input_copy_bytes, nf4_known_group_peak_bytes};
+      (roles.cache_policy == prepared::CachePolicy::kBFloat16OmitCalibration ? roles.cache_calibration.size() : 0), nf4_groups, nf4_original_bytes, nf4_input_copy_bytes, nf4_known_group_peak_bytes};
 }
 
 WeightLoadReport load_weight_bank(const std::filesystem::path &manifest,
@@ -2050,6 +2060,8 @@ struct ColdResources final {
   WeightMeanings weight_meanings;
   std::string source_identity;
   std::vector<StateSchema> state_schema;
+  const prepared::CachePolicy cache_policy;
+  const std::vector<CacheStoragePair> attention_storage;
   c::ResourceBudget cache_budget, execution_budget, allocation_budget;
   cache::VersionCount snapshot_versions;
   bool carrier_borrowed = false;
@@ -2064,8 +2076,10 @@ struct ColdResources final {
   std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
-      SamplingConfiguration first, std::span<const SamplingConfiguration> additional)
-      : state_schema(state_schema_for(geometry, capacity, precision)), state_pools(geometry.layers.size()),
+      SamplingConfiguration first, std::span<const SamplingConfiguration> additional,
+      prepared::CachePolicy policy, std::vector<CacheStoragePair> storage)
+      : state_schema(state_schema_for(geometry, capacity, precision)),
+        cache_policy(policy), attention_storage(std::move(storage)), state_pools(geometry.layers.size()),
         retain_sampling_frontier(first.enabled || std::ranges::any_of(additional, [](const auto &value) { return value.enabled; })) {
     sampling_configurations.reserve(cache::add(additional.size(), 1));
     const auto add = [&](SamplingConfiguration value) {
@@ -2187,6 +2201,11 @@ public:
   bool generated_state_outputs = false;
   const cache::Plan cache_plan;
   c::BatchSchema attention_schema;
+  std::vector<c::BatchSchema> attention_schemas;
+  const c::BatchSchema &target_attention_schema(std::size_t layer) const {
+    if (layer >= target_kv_layers) throw std::runtime_error("invalid target attention cache slot");
+    return attention_schemas.empty() ? attention_schema : attention_schemas.at(layer);
+  }
   cache::VersionCount &snapshot_versions;
   bool &carrier_borrowed;
   static constexpr std::size_t slot_index = 0;
@@ -2266,7 +2285,8 @@ public:
          }()),
          execution(std::move(prepared_execution)),
          resources_(std::make_shared<ColdResources>(geometry, selected_capacity, precision,
-              SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy}, additional_sampling)),
+              SamplingConfiguration{sampling_configuration.enabled, sampling_configuration.policy}, additional_sampling,
+              source.roles.cache_policy, std::move(source.cache_storage))),
           default_sampler(resources_->sampling_configurations[0]->configuration),
          weight_pools(resources_->weight_pools), weights(resources_->weights), projections(resources_->projections),
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
@@ -2296,6 +2316,16 @@ public:
     }
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
+    const bool calibrated = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
+    if ((calibrated && resources_->attention_storage.size() != target_kv_layers) ||
+        (!calibrated && !resources_->attention_storage.empty()) || (calibrated && cache_plan.draft_cache))
+      throw std::runtime_error("prepared E4 cache storage requires its complete ordinary target pairs");
+    if (cache_plan.row_bytes != source.cache_row_bytes ||
+        cache_plan.key_bank_bytes != cache::add(cache::multiply(cache::multiply(cache_plan.max_pages,
+            cache::Plan::page_rows), source.cache_row_bytes.key), 1) ||
+        cache_plan.value_bank_bytes != cache::add(cache::multiply(cache::multiply(cache_plan.max_pages,
+            cache::Plan::page_rows), source.cache_row_bytes.value), 1))
+      throw std::runtime_error("cache backing plan differs from prepared physical storage");
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
@@ -2438,6 +2468,9 @@ public:
         ",\"ct_local_nvfp4_groups\":" + std::to_string(ct_local_groups);
     if (omitted_cache_roles) result += ",\"kv_cache_dtype\":\"BF16\",\"omitted_original_cache_calibration_roles\":" +
         std::to_string(omitted_cache_roles);
+    if (resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration)
+      result += ",\"kv_cache_dtype\":\"E4M3FN\",\"original_cache_calibration_roles\":" +
+          std::to_string(resources_->attention_storage.size() * 2);
     return result;
   }
   Tensor caller_tensor(mem::MemoryResourceRef resource, c::TensorDesc description, bool caller = true) const {
@@ -2587,12 +2620,17 @@ public:
         .max_page_refs = cache_plan.max_page_refs, .query_heads = static_cast<std::uint32_t>(geometry.query_heads), .kv_heads = static_cast<std::uint32_t>(geometry.kv_heads),
         .qk_head_dim = static_cast<std::uint32_t>(geometry.key_depth), .value_head_dim = static_cast<std::uint32_t>(geometry.value_depth), .page_size = cache::Plan::page_rows},
         {.resource_budget = cache_budget}));
+    std::vector<c::BatchSchema> prepared_schemas;
+    prepared_schemas.reserve(resources_->attention_storage.size());
+    for (const auto &pair : resources_->attention_storage)
+      prepared_schemas.push_back(take(prepared_schema.with_cache_storage(pair[0], pair[1])));
     cache::PageInventory prepared_inventory, prepared_draft;
     prepared_inventory.prepare(cache_plan.max_pages, target_kv_layers);
     for (std::size_t i = 0; i < prepared_inventory.keys.size(); ++i) {
-      prepared_inventory.keys[i] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
+      const auto &schema = prepared_schemas.empty() ? prepared_schema : prepared_schemas[i];
+      prepared_inventory.keys[i] = take(c::PagedArena::create(schema, c::BatchCacheRole::kKey,
           execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
-      prepared_inventory.values[i] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
+      prepared_inventory.values[i] = take(c::PagedArena::create(schema, c::BatchCacheRole::kValue,
           execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
     if (cache_plan.draft_cache) {
@@ -2612,6 +2650,7 @@ public:
     draft_inventory = std::move(prepared_draft);
     known_cache_backing_bytes = prepared_bytes;
     snapshot_versions.capacity = cache_plan.snapshot_slots;
+    attention_schemas = std::move(prepared_schemas);
     attention_schema = std::move(prepared_schema);
   }
 
@@ -2932,8 +2971,10 @@ public:
             definition.state_resource_ports.push_back(port);
         }
       } else {
-        ports.key = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kKey)));
-        ports.value = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kValue)));
+        const auto layer = geometry.attention_slot(i);
+        const auto &schema = target_attention_schema(layer);
+        ports.key = r.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kKey)));
+        ports.value = r.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kValue)));
         auto projected = r.reshape(r.linear(normalized, prefix + "self_attn.q_proj.weight"), {batch, t, f(geometry.query_heads), f(geometry.key_depth + geometry.value_depth)});
         auto q = r.norm(r.slice(projected, 3, f(0), f(geometry.key_depth)), prefix + "self_attn.q_norm.weight");
         auto gate = r.reshape(r.copy(r.slice(projected, 3, f(geometry.key_depth), f(geometry.value_depth))), {packed, f(geometry.attention_width())});
@@ -2942,18 +2983,26 @@ public:
         const c::RoPE rope{.rotary_dimensions = static_cast<std::size_t>(geometry.rotary), .sequence_axis = 1, .layout = c::RopeLayout::kHalfSplit};
         q = r.same(rope, {q, definition.position_port, frequencies}, q);
         k = r.same(rope, {k, definition.position_port, frequencies}, k);
-        const auto layer = geometry.attention_slot(i);
         auto &key_append = definition.append_nodes[layer * 2];
         auto &value_append = definition.append_nodes[layer * 2 + 1];
-        r.op(c::Operation::custom(take(g::batch::paged_append(attention_schema, c::BatchCacheRole::kKey))),
-            {r.reshape(k, {packed, f(geometry.kv_heads), f(geometry.key_depth)})}, {}, &key_append);
-        r.op(c::Operation::custom(take(g::batch::paged_append(attention_schema, c::BatchCacheRole::kValue))),
-            {r.reshape(v, {packed, f(geometry.kv_heads), f(geometry.value_depth)})}, {}, &value_append);
+        auto key_rows = r.reshape(k, {packed, f(geometry.kv_heads), f(geometry.key_depth)});
+        auto value_rows = r.reshape(v, {packed, f(geometry.kv_heads), f(geometry.value_depth)});
+        const auto cache_capacity = schema.capacity();
+        if (cache_capacity.key_storage.data_type() == Type::kFloat8E4M3FN)
+          key_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.key_storage}),
+              {key_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.key_depth)}));
+        if (cache_capacity.value_storage.data_type() == Type::kFloat8E4M3FN)
+          value_rows = r.one(c::Operation::custom(c::model_ops::CacheEncode{cache_capacity.value_storage}),
+              {value_rows}, r.dense_spec(Type::kFloat8E4M3FN, {packed, f(geometry.kv_heads), f(geometry.value_depth)}));
+        r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kKey))),
+            {key_rows}, {}, &key_append);
+        r.op(c::Operation::custom(take(g::batch::paged_append(schema, c::BatchCacheRole::kValue))),
+            {value_rows}, {}, &value_append);
         if (has_prior_append) check(r.builder.depends_on(key_append, prior_append));
         check(r.builder.depends_on(value_append, key_append));
         prior_append = value_append; has_prior_append = true;
         auto attention = r.one(c::Operation::custom(c::PagedAttention{
-            .capacity = definition.attention_schema.capacity(), .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true}),
+            .capacity = cache_capacity, .scale = 1.F / std::sqrt(static_cast<float>(geometry.key_depth)), .causal = true}),
             {r.reshape(q, {packed, f(geometry.query_heads), f(geometry.key_depth)}), ports.key, ports.value, definition.metadata_port},
             r.dense_spec(precision.activation_type(), {packed, f(geometry.query_heads), f(geometry.value_depth)}), &definition.attention_nodes[layer]);
         check(r.builder.depends_on(definition.attention_nodes[layer], key_append));
@@ -6674,7 +6723,8 @@ int qwen35::run(int argc, char **argv) {
     const bool scheduled = single_schedule || multiple_schedules;
     if (input.empty()) throw std::runtime_error("--inputs DIR is required");
     backend_selection = qwen35::select_execution(backend_selection, cpu_ffn_layers);
-    const auto geometry = qwen35::read_weight_geometry(input / "weights.tsv");
+    auto weight_source = qwen35::prepare_weight_source(input / "weights.tsv", mtp_enabled);
+    const auto geometry = weight_source.roles.geometry;
     qwen35::validate_mtp_source(geometry, mtp_enabled);
     qwen35::FfnPlacement::validate(cpu_ffn_layers, geometry.layers.size());
     if (sampler.policy.top_k > static_cast<std::size_t>(geometry.vocabulary))
@@ -6794,7 +6844,7 @@ int qwen35::run(int argc, char **argv) {
         mtp_enabled && mtp_has_decode ? max_drafts + 1 : std::size_t{1}});
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     const auto plan_for = [&](std::size_t residents) {
-      return qwen35::cache::plan(geometry, capacity, residents,
+      return qwen35::cache::plan(geometry, weight_source.cache_row_bytes, capacity, residents,
           mtp_enabled && mtp_has_decode ? (std::max)(max_query_rows, std::size_t{2}) : max_query_rows, recurrent_payload,
           active_sequences == 0 ? residents : requested_active,
           mtp_enabled ? max_drafts + 1 : 1, mtp_enabled, sampler.enabled);
@@ -6828,8 +6878,9 @@ int qwen35::run(int argc, char **argv) {
     }
     const auto cache_slots = selected_cache.resident_sessions;
     const auto active_slots = selected_cache.active_sequences;
+    const auto metadata_prepare_seconds = weight_source.metadata_prepare_seconds;
     const auto model_start = qwen35::Clock::now();
-    qwen35::Model model(input / "weights.tsv", geometry, capacity, selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers, backend_selection);
+    qwen35::Model model(std::move(weight_source), geometry, capacity, selected_cache, layer0_probe, progress, replay, cache_bytes, sampler, cpu_ffn_layers, backend_selection);
     model.configure_draft_policy({max_drafts, min_draft_probability});
     const auto constructed = qwen35::Clock::now();
     if (!trace.empty()) model.trace_routes = trace / "routes";
@@ -7127,7 +7178,8 @@ int qwen35::run(int argc, char **argv) {
     std::vector<std::int32_t> generated, consumed;
     if (!scheduled) { generated.reserve(steps); consumed.reserve(steps - 1); }
     const auto ready = qwen35::Clock::now();
-    std::cerr << "initialized model_seconds=" << std::chrono::duration<double>(constructed - model_start).count()
+    std::cerr << "initialized model_seconds=" << metadata_prepare_seconds +
+                  std::chrono::duration<double>(constructed - model_start).count()
               << " shape_prepare_seconds=" << std::chrono::duration<double>(ready - constructed).count()
               << " startup_to_ready_seconds=" << std::chrono::duration<double>(ready - startup).count() << '\n';
     std::cerr << "cache_limits context=" << capacity << " max_sessions=" << max_sessions

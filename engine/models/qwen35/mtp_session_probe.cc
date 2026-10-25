@@ -293,8 +293,9 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   auto source = q::read_ids(inputs / "prompt.ids"); require(source.size() >= 23, "probe needs original prompt first23 IDs");
   require(!std::filesystem::exists(output), "probe output directory must be fresh"); std::filesystem::create_directories(output);
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, 64, 2, 23, q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry), 1, 2, true);
-  q::Model model(inputs / "weights.tsv", geometry, 64, plan, {}, false,
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, 64, 2, 23, q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry), 1, 2, true);
+  q::Model model(std::move(weight_source), geometry, 64, plan, {}, false,
       q::ReplayPolicy::kAuto, SIZE_MAX, {false, {}, 0}, 0, selection);
   require(model.weights.size() == 335, "MTP Session probe requires complete335 weight inventory");
   Probe probe{.output = output};
@@ -518,9 +519,10 @@ void run_prefix(const std::filesystem::path &inputs, const std::filesystem::path
   require(!std::filesystem::exists(output), "prefix probe output must be fresh"); std::filesystem::create_directories(output);
   const auto prompt = std::span(source).first(15), suffix8 = std::span(source).subspan(15,8), suffix1 = std::span(source).subspan(16,1);
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, 64,2,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),1,2,true);
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, 64,2,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),1,2,true);
   constexpr std::size_t cache_byte_limit = 256u * 1024u * 1024u;
-  q::Model model(inputs / "weights.tsv", geometry, 64,plan,{},false,q::ReplayPolicy::kAuto,cache_byte_limit,
+  q::Model model(std::move(weight_source), geometry, 64,plan,{},false,q::ReplayPolicy::kAuto,cache_byte_limit,
       {false, {}, 0}, 0, selection);
   require(model.weights.size() == 335, "prefix probe requires335 weights");
   q::cache::PrefixCache directory(1);
@@ -770,8 +772,9 @@ void run_resume(const std::filesystem::path &inputs, const std::filesystem::path
   require(!std::filesystem::exists(output), "resume output must be fresh"); std::filesystem::create_directories(output);
   const auto prompt = std::span(source).first(15);
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, 64,1,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),1,2,true);
-  q::Model model(inputs / "weights.tsv", geometry, 64,plan,{},false,
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, 64,1,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),1,2,true);
+  q::Model model(std::move(weight_source), geometry, 64,plan,{},false,
       q::ReplayPolicy::kAuto,SIZE_MAX,{false,{},0},0,selection);
   require(model.weights.size() == 335, "resume needs the complete335 Model");
   ResumeObservation observation{.output=output}; q::GenerationLedger ledger(4);
@@ -1023,8 +1026,9 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
   const auto source = q::read_ids(inputs / "prompt.ids"); require(source.size() >= 23,"MTP batch needs original P15/P23 inputs");
   require(!std::filesystem::exists(output),"MTP batch output must be fresh"); std::filesystem::create_directories(output);
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, 64,4,23,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),2,2,true);
-  q::Model model(inputs / "weights.tsv", geometry, 64,plan,{},false,
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, 64,4,23,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),2,2,true);
+  q::Model model(std::move(weight_source), geometry, 64,plan,{},false,
       q::ReplayPolicy::kAuto,SIZE_MAX,{false,{},0},0,
       selection);
   require(model.weights.size() == 335,"MTP batch needs335 weights");
@@ -1285,8 +1289,9 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
   require(!std::filesystem::exists(output),"numerical control output must be fresh"); std::filesystem::create_directories(output);
   const auto prompt = std::span(tokens).first(15);
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, 64,6,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),2,2,true);
-  q::Model model(inputs / "weights.tsv", geometry, 64,plan,{},false,
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, 64,6,15,q::recurrent_bytes(q::state_schema_for(geometry, 64), geometry),2,2,true);
+  q::Model model(std::move(weight_source), geometry, 64,plan,{},false,
       q::ReplayPolicy::kAuto,SIZE_MAX,{false,{},0},0,selection);
   require(model.weights.size() == 335,"numerical control requires335 weights");
   model.trace_routes = output / "routes";

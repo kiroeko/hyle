@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import struct
@@ -104,6 +105,7 @@ CT_MIXED_POLICY = dict(reader="compressed-tensors@0.17.2a20260716",
 CT_MIXED_POLICY_LINE = "\t".join(("ct_mixed", "channel_token_bf16_zero_only",
     "local_nvfp4_f32", CT_MIXED_POLICY["reader"]))
 BF16_CACHE_POLICY_LINE = "kv_cache\tBF16\tomit_original_calibration"
+FLOAT8_CACHE_POLICY_LINE = "kv_cache\tE4M3FN\toriginal_kv_scales"
 CT_ASYMMETRIC_POLICY = dict(reader="compressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
     group_size=32, scale_dtype="BF16", zero_dtype="I32", zero_packing_axis="N",
     arithmetic="scale_dtype_subtract_then_multiply")
@@ -113,9 +115,9 @@ CT_ASYMMETRIC_POLICY_LINE = "\t".join(("ct_asymmetric_int4", "32", "BF16", "pack
 
 def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
                     reader: str | None, kv_cache_dtype: str | None) -> dict:
-    """Identify the fixed CT reader's original groups and optional BF16-KV omission."""
-    if kv_cache_dtype not in (None, "bf16"):
-        raise ValueError("only explicit BF16 KV storage is currently supported")
+    """Identify original CT groups and the explicitly selected KV interpretation."""
+    if kv_cache_dtype not in (None, "bf16", "e4m3fn"):
+        raise ValueError("unsupported explicit KV storage policy")
     channel, local = {}, {}
     for name, role in roles.items():
         if name.endswith(".weight") and role["dtype"] == "F8_E4M3" and name[:-7]+".weight_scale" in roles:
@@ -142,17 +144,19 @@ def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
         if any(base+s in roles for s in (".weight", ".weight_shape", ".qweight", ".qzeros", ".scales", ".g_idx", ".input_scale", ".weight_scale_2")):
             raise ValueError("ambiguous original CT local NVFP4 storage: "+base)
         local[base] = dict(logical_shape=[n,k])
-    omitted = []
+    calibration = []
     for index,kind in enumerate(model_geometry["layers"]):
         if kind != "A":
             continue
         names = [f"model.language_model.layers.{index}.self_attn.{which}_scale" for which in ("k","v")]
         if not any(n in roles for n in names):
+            if kv_cache_dtype == "e4m3fn":
+                raise ValueError("missing original E4 cache calibration pair: "+names[0])
             continue
         if any(n not in roles or roles[n]["dtype"] != "BF16" or roles[n]["shape"] != [1] for n in names):
             raise ValueError("invalid original BF16 cache calibration pair: "+names[0])
-        omitted.extend(names)
-    if channel or local or omitted:
+        calibration.extend(names)
+    if channel or local or calibration:
         q = config.get("quantization_config", {})
         if reader != CT_MIXED_READER or q.get("quant_method") != "compressed-tensors" or q.get("version") != "0.17.2.a20260716":
             raise ValueError("CT mixed roles require explicit --fp8-reader "+CT_MIXED_READER+" and its fixed producer config")
@@ -164,11 +168,32 @@ def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
             raise ValueError("CT channel/token reader arithmetic differs from source config")
         if local and not any(matches(g,"nvfp4-pack-quantized",4,("tensor_group","tensor_group"),"local",16) for g in groups):
             raise ValueError("CT local NVFP4 reader arithmetic differs from source config")
-        if omitted and kv_cache_dtype != "bf16":
-            raise ValueError("source KV calibration requires explicit --kv-cache-dtype bf16; FP8 KV execution is not implemented")
+        if calibration and kv_cache_dtype not in ("bf16", "e4m3fn"):
+            raise ValueError("source KV calibration requires explicit --kv-cache-dtype bf16 or e4m3fn")
+        if kv_cache_dtype == "e4m3fn":
+            scheme = q.get("kv_cache_scheme") or {}
+            expected = dict(dynamic=False, num_bits=8, type="float", strategy="tensor",
+                            symmetric=True, group_size=None)
+            if any(scheme.get(k) != v for k,v in expected.items()):
+                raise ValueError("original E4 cache scheme differs from static tensor float8 calibration")
     elif reader == CT_MIXED_READER:
         raise ValueError("selected CT reader has no matching original weights")
-    return dict(channel=channel,local=local,omitted_cache_calibration=omitted)
+    if kv_cache_dtype == "e4m3fn" and not calibration:
+        raise ValueError("selected E4 cache policy has no original calibration roles")
+    if kv_cache_dtype == "e4m3fn" and not (channel or local):
+        raise ValueError("selected E4 cache policy requires original CT mixed weights")
+    return dict(channel=channel,local=local,cache_calibration=calibration)
+
+
+def cache_scale_bits(raw: bytes, name: str) -> dict:
+    """Read the original scalar exactly; CacheEncode consumes its F32 widening."""
+    if not isinstance(raw, bytes) or len(raw) != 2:
+        raise ValueError("original BF16 cache scalar requires exactly two bytes: "+name)
+    bits = int.from_bytes(raw, "little")
+    value = struct.unpack("<f", struct.pack("<I", bits << 16))[0]
+    if not math.isfinite(value) or not value > 0:
+        raise ValueError("original cache scale must be positive finite: "+name)
+    return dict(bf16_bits=f"{bits:04x}", f32_bits=f"{bits << 16:08x}")
 
 
 def float8_block_groups(roles: dict[str, dict], config: dict, reader: str | None = None) -> dict:
@@ -316,11 +341,11 @@ def validate_ct_shape_values(raw: bytes, geometry: dict, name: str) -> None:
         raise ValueError(f"original CT weight_shape values differ: {name}")
 
 
-def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
+def logical_roles(names, cache_calibration=()) -> set[str]:
     auxiliary = (".qzeros", ".scales", ".biases", ".g_idx", ".input_scale", ".weight_scale", ".weight_zero_point", ".weight_scale_2", ".weight_scale_inv", ".weight_shape", ".weight_global_scale", ".input_global_scale", *nf4_state.SUFFIXES[1:])
     result = set()
     for name in names:
-        if name in omitted_cache_calibration or name.endswith(auxiliary):
+        if name in cache_calibration or name.endswith(auxiliary):
             continue
         logical = name[:-8] + ".weight" if name.endswith(".qweight") else name[:-14] + ".weight" if name.endswith(".weight_packed") else name
         if logical in result:
@@ -329,11 +354,11 @@ def logical_roles(names, omitted_cache_calibration=()) -> set[str]:
     return result
 
 
-def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted_cache_calibration=(), nf4_groups=None) -> None:
+def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, cache_calibration=(), nf4_groups=None) -> None:
     # Config can declare a trained NextN layer omitted by this artifact. Keep
     # that original geometry identity; validate all NextN roles if any exist.
     expected = geometry.role_shapes(model_geometry, include_mtp=any(name.startswith('mtp.') for name in roles))
-    if logical_roles(roles, omitted_cache_calibration) != set(expected):
+    if logical_roles(roles, cache_calibration) != set(expected):
         raise ValueError("complete original text/MTP logical role inventory differs from source geometry")
     for name, shape in expected.items():
         if nf4_groups and name in nf4_groups:
@@ -360,16 +385,19 @@ def validate_role_geometry(roles: dict[str, dict], model_geometry: dict, omitted
 
 
 def _read_role_source(role: dict) -> tuple[Path, bytes | None, str]:
-    """Hash one borrowed range; retain only bounded CT/NF4 source metadata."""
+    """Hash one borrowed range; retain only bounded source metadata/scalars."""
     name, count, offset = role["name"], role["bytes"], role["offset"]
     source = (ROOT / role["path"]).resolve()
     if type(offset) is not int or offset < 0 or offset + count > source.stat().st_size:
         raise ValueError(f"short original role source: {name}")
     received, remaining = hashlib.sha256(), count
     is_nf4_state = name.endswith(nf4_state.STATE_SUFFIX)
+    is_cache_scale = name.endswith((".self_attn.k_scale", ".self_attn.v_scale"))
     if (is_nf4_state and not 0 < count <= nf4_state.MAX_STATE_BYTES) or (name.endswith('.weight_shape') and count != 16):
         raise ValueError("original CT/NF4 metadata byte limit differs: " + name)
-    shape_value = bytearray() if name.endswith(".weight_shape") or is_nf4_state else None
+    if is_cache_scale and (role["dtype"] != "BF16" or role["shape"] != [1] or count != 2):
+        raise ValueError("original cache scalar must be BF16[1]: " + name)
+    shape_value = bytearray() if name.endswith(".weight_shape") or is_nf4_state or is_cache_scale else None
     with source.open("rb") as stream:
         stream.seek(offset)
         while remaining:
@@ -402,6 +430,8 @@ def prepare_role_files(path: Path, mtp: bool, config: dict, fp8_reader: str | No
 
 
 def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, kv_cache_dtype=None):
+    if mtp and kv_cache_dtype == "e4m3fn":
+        raise ValueError("E4 KV currently supports ordinary inference only, not MTP")
     if fp8_reader not in (None, FP8_READER, CT_MIXED_READER, STATIC_FP8_READER):
         raise ValueError("unknown fixed FP8 reference reader")
     model_geometry = geometry.from_hf(config)
@@ -435,9 +465,10 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     other_roles = {name:role for name,role in normalized.items() if name not in static_physical}
     mixed = ct_mixed_groups(other_roles, config, model_geometry,
         None if static_fp8 else fp8_reader, kv_cache_dtype)
-    omitted = set(mixed["omitted_cache_calibration"])
+    calibration = set(mixed["cache_calibration"])
+    omitted = calibration if kv_cache_dtype == "bf16" else set()
     nf4_groups = nf4_state.groups(normalized, config, geometry.role_shapes(model_geometry))
-    validate_role_geometry(normalized, model_geometry, omitted, nf4_groups)
+    validate_role_geometry(normalized, model_geometry, calibration, nf4_groups)
     channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
     fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical and name not in static_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
@@ -457,11 +488,17 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
             raise ValueError("original NF4 quant_state SHA differs: " + name)
         group_geometry.update(state)
         checked_shapes[state_name] = source
-    lines, identities = [], []
+    lines, identities, cache_bits = [], [], {}
     for role in original["roles"]:
         name, dtype, shape = role["name"], role["dtype"], role["shape"]
         count, offset = role["bytes"], role["offset"]
-        source = checked_shapes[name] if name in checked_shapes else authenticate(role)[0]
+        if name in calibration and kv_cache_dtype == "e4m3fn":
+            source, raw = authenticate(role)
+            if not isinstance(raw, bytes) or hashlib.sha256(raw).hexdigest() != role["sha256"]:
+                raise ValueError("original cache scalar SHA differs: "+name)
+            cache_bits[name] = cache_scale_bits(raw, name)
+        else:
+            source = checked_shapes[name] if name in checked_shapes else authenticate(role)[0]
         filename = source.as_posix()
         quoted = '"' + filename.replace('\\', '\\\\').replace('"', '\\"') + '"'
         lines.append("\t".join((name, dtype, str(len(shape)), *(str(d) for d in shape),
@@ -487,10 +524,14 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     has_mixed = bool(mixed['channel'] or mixed['local'])
     if has_mixed:
         identity["ct_mixed_policy"] = dict(CT_MIXED_POLICY)
+        if cache_bits:
+            identity["ct_mixed_policy"]["cache_dtype"] = "E4M3FN"
     if omitted:
         identity["cache_calibration_omission"] = dict(cache_dtype="BF16",reason="original calibration unused by explicitly selected BF16 KV storage",roles=sorted(omitted))
+    if cache_bits:
+        identity["kv_cache_policy"] = FLOAT8_CACHE_POLICY_LINE
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    chosen = [item for item in identities if item['name'] not in omitted and (mtp or not item['name'].startswith('mtp.'))]
+    chosen = [item for item in identities if item['name'] not in calibration and (mtp or not item['name'].startswith('mtp.'))]
     policy_lines = [FP8_POLICY_LINE] if fp8_groups else []
     if static_fp8:
         policy_lines.append(STATIC_FP8_POLICY_LINE)
@@ -506,12 +547,14 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         policy_lines.append(CT_ASYMMETRIC_POLICY_LINE)
     if omitted:
         policy_lines.append(BF16_CACHE_POLICY_LINE)
+    if cache_bits:
+        policy_lines.append(FLOAT8_CACHE_POLICY_LINE)
     receipt = dict(
         source_id=fingerprint, source_repository=original["repository"], source_revision=original["revision"],
         geometry=model_geometry, metadata_tensor_count=len(lines),
         physical_roles=len(chosen), selected_tensor_count=len(chosen),
         selected_weight_bytes=sum(item["bytes"] for item in chosen),
-        text_weight_bytes=sum(item["bytes"] for item in identities if item['name'] not in omitted and not item["name"].startswith("mtp.")),
+        text_weight_bytes=sum(item["bytes"] for item in identities if item['name'] not in calibration and not item["name"].startswith("mtp.")),
         mtp_weight_bytes=sum(item["bytes"] for item in identities if item["name"].startswith("mtp.")),
         original_role_records=identity["roles"], storage="borrowed original cached files/ranges; no copied checkpoint")
     if static_fp8:
@@ -534,7 +577,7 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         receipt['metadata_nf4_double_quant_groups'] = len(nf4_groups)
         receipt['nf4_execution_scope'] = 'metadata preparation only; consumer retains six original NF4 operands with F16 activation; cold planner selects packed contraction or explicit F16 decode with reported workspace; full artifact execution is not verified'
     if has_mixed:
-        receipt['ct_mixed_policy'] = dict(CT_MIXED_POLICY)
+        receipt['ct_mixed_policy'] = dict(identity['ct_mixed_policy'])
         receipt['ct_channel_token_groups'] = len(mixed['channel'])
         receipt['ct_local_nvfp4_groups'] = len(mixed['local'])
     if asymmetric_policy:
@@ -545,6 +588,9 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     if omitted:
         receipt['cache_calibration_omission'] = dict(identity['cache_calibration_omission'],
             original_roles=[r for r in identities if r['name'] in omitted],bytes=sum(r['bytes']for r in identities if r['name']in omitted))
+    if cache_bits:
+        receipt['cache_calibration'] = dict(cache_dtype="E4M3FN", bytes=2*len(cache_bits),
+            original_roles=[dict(r, **cache_bits[r['name']]) for r in identities if r['name'] in cache_bits])
     return ["HYLE_QWEN_ROLE_FILES_V2", fingerprint, geometry.line(model_geometry), *policy_lines, *sorted(lines)], receipt
 
 
@@ -613,8 +659,8 @@ def main() -> None:
                         help="complete acquired GGUF payload-source record; preserve original codec and converted parameters")
     parser.add_argument("--fp8-reader", choices=[FP8_READER, CT_MIXED_READER, STATIC_FP8_READER],
                         help="explicit fixed reference-reader arithmetic for original FP8/CT sources")
-    parser.add_argument("--kv-cache-dtype", choices=['bf16'],
-                        help="explicit BF16 KV storage; source cache calibration remains authenticated but is omitted from weight IO")
+    parser.add_argument("--kv-cache-dtype", choices=['bf16','e4m3fn'],
+                        help="explicit BF16 KV omission or ordinary E4M3FN KV with the original authenticated K/V scales")
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError("output directory must be new")

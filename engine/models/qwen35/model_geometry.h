@@ -56,8 +56,6 @@ struct ModelGeometry final {
   std::int64_t attention_width() const { return multiply(query_heads, value_depth); }
   std::int64_t query_gate_width() const { return multiply(query_heads, add(key_depth, value_depth)); }
   std::size_t hidden_bytes() const { return static_cast<std::size_t>(multiply(hidden, 2)); }
-  std::size_t key_row_bytes() const { return static_cast<std::size_t>(multiply(multiply(kv_heads, key_depth), 2)); }
-  std::size_t value_row_bytes() const { return static_cast<std::size_t>(multiply(multiply(kv_heads, value_depth), 2)); }
   std::string_view head_role() const noexcept {
     return tied_head ? "model.language_model.embed_tokens.weight" : "lm_head.weight";
   }
@@ -77,7 +75,7 @@ struct ModelGeometry final {
     (void)multiply(hidden, 2); (void)multiply(gdn_qkv_width(), conv_kernel);
     (void)multiply(gdn_value_heads, multiply(gdn_key_depth, gdn_value_depth));
     (void)query_gate_width(); (void)attention_width(); (void)hidden_bytes();
-    (void)key_row_bytes(); (void)value_row_bytes();
+    (void)multiply(kv_heads, key_depth); (void)multiply(kv_heads, value_depth);
   }
 };
 

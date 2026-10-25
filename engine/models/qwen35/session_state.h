@@ -41,10 +41,16 @@ inline std::size_t state_pool_backing_bytes(std::size_t payload, std::size_t slo
   return add(add(multiply(payload, slots), multiply(state_pool_padding(payload), slots - 1)), 1);
 }
 
+struct KvRowBytes final {
+  std::size_t key = 0, value = 0;
+  friend constexpr bool operator==(const KvRowBytes &, const KvRowBytes &) noexcept = default;
+};
+
 // Target and draft inventories use the same page geometry but independent
 // arena blocks and policy references; this policy is not a Compute owner.
 struct Plan final {
   static constexpr std::uint32_t page_rows = 16;
+  KvRowBytes row_bytes;
   std::size_t resident_sessions = 0, active_sequences = 1, recurrent_payload_bytes = 0;
   std::uint32_t max_requests = 0, max_query_rows = 0, max_kv_rows = 0;
   std::uint32_t max_pages = 0, max_page_refs = 0, state_slots = 0;
@@ -53,12 +59,15 @@ struct Plan final {
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
 };
-inline Plan plan(const ModelGeometry &geometry, std::size_t context, std::size_t residents,
+inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
+                 std::size_t context, std::size_t residents,
                  std::size_t query_rows_per_request, std::size_t recurrent_payload,
                   std::size_t active_sequences = 1,
                    std::size_t candidate_boundaries = 1,
                    bool draft_cache = false, bool frontier_hidden = false) {
   geometry.validate();
+  if (!row_bytes.key || !row_bytes.value)
+    throw std::runtime_error("cache plan requires positive actual K/V row byte extents");
   if (context > static_cast<std::size_t>(geometry.context_limit) || (draft_cache && geometry.mtp_layers != 1))
     throw std::runtime_error("cache context or NextN selection exceeds source geometry");
   if (!context || !residents || !query_rows_per_request || query_rows_per_request > context ||
@@ -90,6 +99,7 @@ inline Plan plan(const ModelGeometry &geometry, std::size_t context, std::size_t
       hidden_slots > std::size_t((std::numeric_limits<std::uint32_t>::max)()))
     throw std::runtime_error("cache batch/page/state capacity exceeds the supported index range");
   Plan result;
+  result.row_bytes = row_bytes;
   result.resident_sessions = residents;
   result.active_sequences = active_sequences;
   result.recurrent_payload_bytes = recurrent_payload;
@@ -106,8 +116,8 @@ inline Plan plan(const ModelGeometry &geometry, std::size_t context, std::size_t
   result.draft_cache = draft_cache;
   result.hidden_row_bytes = geometry.hidden_bytes();
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
-  result.key_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), geometry.key_row_bytes()), 1);
-  result.value_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), geometry.value_row_bytes()), 1);
+  result.key_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), row_bytes.key), 1);
+  result.value_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), row_bytes.value), 1);
   // Every real arena/pool contributes its own final byte, independently of
   // shape. Draft K/V has one additional pair, never aliases of target banks.
   const auto arena_layers = add(result.attention_layers, draft_cache ? 1u : 0u);

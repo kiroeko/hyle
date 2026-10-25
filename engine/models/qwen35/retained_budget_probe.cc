@@ -148,11 +148,12 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   std::filesystem::create_directories(output);
   constexpr std::size_t capacity = 64, limit = 256u * 1024u * 1024u;
   const auto geometry = q::probe::read_two_b_geometry(inputs);
-  const auto plan = q::cache::plan(geometry, capacity, 1, prompt.size(),
+  auto weight_source = q::prepare_weight_source(inputs / "weights.tsv", true);
+  const auto plan = q::cache::plan(geometry, weight_source.cache_row_bytes, capacity, 1, prompt.size(),
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 1, 2, true);
   // This is an explicit finite admission limit, not the CUDA pool formula or
   // a claim that native execution/private peak allocations fit in 256 MiB.
-  q::Model model(inputs / "weights.tsv", geometry, capacity, plan, {}, false,
+  q::Model model(std::move(weight_source), geometry, capacity, plan, {}, false,
       q::ReplayPolicy::kAuto, limit, {false, {}, 0}, 0, selection);
   require(model.execution.native_generated_storage(),
           "retained-budget probe requires a native-generated-storage backend");

@@ -48,8 +48,15 @@ int main(int argc, char **argv) {
   rejects([&] { (void)PrecisionProfile::from_roles(roles); });
   roles.ct_mixed_policy.enabled = false; roles.ct_asymmetric_policy.enabled = true;
   rejects([&] { (void)PrecisionProfile::from_roles(roles); });
-  roles.ct_asymmetric_policy.enabled = false; roles.omitted_cache_calibration.push_back({});
+  roles.ct_asymmetric_policy.enabled = false; roles.cache_calibration.push_back({});
   rejects([&] { (void)PrecisionProfile::from_roles(roles); });
+  prepared::Roles e4;
+  e4.ct_mixed_policy.enabled = true;
+  e4.cache_policy = prepared::CachePolicy::kFloat8OriginalCalibration;
+  e4.cache_calibration.push_back({});
+  require(PrecisionProfile::from_roles(e4).activation_type() == DataType::kBFloat16);
+  e4.cache_policy = prepared::CachePolicy::kBFloat16OmitCalibration;
+  require(PrecisionProfile::from_roles(e4).activation_type() == DataType::kBFloat16);
   // Optional fixed original-state inventory. This never opens a weight body.
   if (argc == 2) {
     std::ifstream manifest(argv[1]);

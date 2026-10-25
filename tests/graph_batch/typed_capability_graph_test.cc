@@ -3,12 +3,15 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <exception>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "../compute_provider_native/half_test_support.h"
 #include "../compute_models/paged_e4_kv_fixture.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/result.h"
@@ -622,5 +625,336 @@ TEST(TypedCapabilityGraph, StorageVariantsShareTopologyButKeepRealCacheInterpret
     for (const auto &frame : old_frames[branch]) EXPECT_EQ(frame.layout(), layouts[0]);
   }
 }
+
+TEST(TypedCapabilityGraph, EncodedE4AppendPreservesOldReaderAndExactPages) {
+  std::string_view phase = "E4 source context/topology";
+  try {
+  namespace e4 = paged_e4_kv_test;
+  constexpr std::size_t depth = 64;
+  const auto resource = m::system_resource();
+  auto context = c::Context::create(c::cpu::device(),
+      c::ggml_cpu::provider({.native_threads = 1})).value();
+  auto queue = context.create_queue().value();
+  struct Drain { c::Context &context; ~Drain() { context.drain().IgnoreError(); } } drain{context};
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const auto bf16 = c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const c::BatchCapacity root_capacity{
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .key_storage = bf16, .value_storage = bf16, .max_requests = 1,
+      .max_query_rows = 2, .max_kv_rows = 8, .max_pages = 4, .max_page_refs = 3,
+      .query_heads = 2, .kv_heads = 1, .qk_head_dim = 64, .value_head_dim = 64,
+      .page_size = 2};
+  const auto root = c::BatchSchema::create(root_capacity).value();
+  const std::array scales{.5F, 2.F};
+  const std::array storage{c::CacheStorage::float8(scales[0]).value(),
+                           c::CacheStorage::float8(scales[1]).value()};
+  const auto schema = root.with_cache_storage(storage[0], storage[1]).value();
+  const auto unit = c::CacheStorage::float8(1.F).value();
+  const auto wrong_schema = root.with_cache_storage(unit, unit).value();
+  const std::array<std::int32_t, 2> query_rows{0, 2}, old_ptr{0, 2}, new_ptr{0, 3}, old_ids{0, 1};
+  const std::array<std::int32_t, 3> new_ids{0, 2, 3};
+  const std::array<std::int32_t, 1> tail{1};
+  const std::array layouts{root.version({query_rows, old_ptr, old_ids, tail}).value(),
+                           root.version({query_rows, new_ptr, new_ids, tail}).value()};
+  std::array<std::vector<std::uint8_t>, 2> expected_rows;
+  std::array<std::vector<std::uint16_t>, 2> incoming;
+  for (std::size_t role = 0; role < 2; ++role) {
+    expected_rows[role].resize(5 * depth);
+    incoming[role].resize(2 * depth);
+    for (std::size_t row = 0; row < 5; ++row)
+      for (std::size_t d = 0; d < depth; ++d) {
+        const auto value = float(row + 1) * (role ? .2F : -.125F) +
+            float(int(d % 5) - 2) * .03125F;
+        // Preserve the real BF16 activation boundary before CacheEncode.
+        const auto word = e4::scalar::bf16(value);
+        expected_rows[role][row * depth + d] = e4::encode(e4::scalar::wide(word), scales[role]);
+        if (row >= 3) incoming[role][(row - 3) * depth + d] = word;
+      }
+  }
+  std::array<c::PagedArena, 2> arenas, wrong_arenas;
+  std::array<std::array<c::ReadLease, 2>, 2> old_leases, wrong_leases;
+  std::array<std::array<std::vector<std::uint8_t>, 2>, 2> old_bytes;
+  std::array<c::PagedArenaRead, 2> previous, wrong_frames;
+  std::array<gb::PagedAppendPages, 2> pages;
+  phase = "E4 original arena/old permissions/COW reservations";
+  for (std::size_t role = 0; role < 2; ++role) {
+    const auto cache_role = role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey;
+    arenas[role] = c::PagedArena::create(schema, cache_role, resource,
+        {.max_backing_bytes = 4096}).value();
+    wrong_arenas[role] = c::PagedArena::create(wrong_schema, cache_role, resource,
+        {.max_backing_bytes = 4096}).value();
+    ASSERT_EQ(arenas[role].page_bytes(), 2 * depth);
+    for (std::uint32_t page = 0; page < 2; ++page) {
+      auto &bytes = old_bytes[role][page];
+      bytes.assign(2 * depth, 0x7f); // Unwritten tail is E4 NaN, never an attention row.
+      const auto rows = page ? 1u : 2u;
+      std::copy_n(expected_rows[role].begin() + page * 2 * depth, rows * depth, bytes.begin());
+      auto writer = arenas[role].acquire(page).value();
+      ASSERT_TRUE(writer.lease().view()->write(std::as_bytes(std::span(bytes))).ok());
+      old_leases[role][page] = writer.publish(rows).value();
+      auto wrong_writer = wrong_arenas[role].acquire(page).value();
+      ASSERT_TRUE(wrong_writer.lease().view()->write(std::as_bytes(std::span(bytes))).ok());
+      wrong_leases[role][page] = wrong_writer.publish(rows).value();
+    }
+    previous[role] = arenas[role].read(layouts[0], old_leases[role]).value();
+    wrong_frames[role] = wrong_arenas[role].read(layouts[0], wrong_leases[role]).value();
+    std::array<c::PagedPageWriter, 2> dirty;
+    for (std::uint32_t i = 0; i < 2; ++i) {
+      dirty[i] = arenas[role].acquire(i + 2).value();
+      const std::vector<std::uint8_t> poison(2 * depth, 0x7f);
+      ASSERT_TRUE(dirty[i].lease().view()->write(std::as_bytes(std::span(poison))).ok());
+    }
+    pages[role] = gb::PagedAppendPages::create(arenas[role], layouts[1], previous[role], dirty).value();
+  }
+
+  auto builder = g::GraphBuilder::create().value();
+  phase = "E4 original source Graph/encode/append/readers";
+  const auto qdesc = c::batch_query_description(schema.capacity(), 2).value();
+  const auto rows_desc = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{2, 1, 64}).value();
+  const auto query_input = builder.input(qdesc).value();
+  std::array<g::ValueId, 2> row_inputs;
+  std::array<g::NodeId, 2> writers;
+  for (std::size_t role = 0; role < 2; ++role) {
+    row_inputs[role] = builder.input(rows_desc).value();
+    const auto encoded = builder.add(c::Operation::custom(c::model_ops::CacheEncode{storage[role]}),
+        row_inputs[role]).value();
+    const auto descriptor = gb::paged_append(schema,
+        role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey).value();
+    writers[role] = builder.add_node(c::Operation::custom(descriptor), std::array{encoded}).value();
+  }
+  ASSERT_TRUE(builder.depends_on(writers[1], writers[0]).ok());
+  std::array<std::array<g::ValueId, 2>, 2> bank_inputs;
+  std::array<g::NodeId, 2> readers;
+  std::array<g::ValueId, 2> outputs;
+  for (std::size_t branch = 0; branch < 2; ++branch) {
+    for (std::size_t role = 0; role < 2; ++role)
+      bank_inputs[branch][role] = builder.input(c::batch_cache_description(schema,
+          role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey).value()).value();
+    const auto metadata = builder.input(root.metadata_description().value()).value();
+    readers[branch] = builder.add_node(c::Operation::custom(c::PagedAttention{
+        .capacity = schema.capacity(), .scale = .125F, .causal = true}),
+        std::array{query_input, bank_inputs[branch][0], bank_inputs[branch][1], metadata}).value();
+    if (branch == 1)
+      for (const auto writer : writers) ASSERT_TRUE(builder.depends_on(readers[branch], writer).ok());
+    outputs[branch] = builder.result(readers[branch]).value();
+    ASSERT_TRUE(builder.publish(outputs[branch]).ok());
+  }
+  auto graph = std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{resource}};
+  const std::array targets{g::ExecutionTarget{
+      g::ExecutionSource::acquire(context).value(), g::StorageDomainId{0}}};
+  phase = "E4 compile original source Graph";
+  auto compilation = gb::compile(graph, {.storage_domains = domains, .targets = targets});
+  ASSERT_TRUE(compilation) << compilation.error().message();
+  auto compiled = std::move(*compilation);
+  ASSERT_EQ(compiled.report.target_count(), 1u);
+  EXPECT_EQ(compiled.report.target(0)->backend, c::cpu::kBackendId);
+  EXPECT_EQ(compiled.report.target(0)->device_class, c::DeviceClass::kCpu);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0u);
+  for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+    const auto step = compiled.report.step(i).value();
+    EXPECT_EQ(step.target, g::ExecutionTargetId{0});
+  }
+  RecordProperty("e4_append_target", "original CPU target0");
+  RecordProperty("e4_append_boundary_copy_bytes", 0);
+  auto invocation = compiled.executable.create_invocation().value();
+  phase = "E4 prepare/bind/submit";
+  const auto prepared = gb::prepare(invocation, queues,
+      std::array{gb::NodeLayout{readers[0], layouts[0]}, gb::NodeLayout{readers[1], layouts[1]}},
+      {.host_workspace = resource, .max_float_workspace_bytes = 1u << 20,
+       .max_int_workspace_bytes = 64u << 10});
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  for (std::size_t role = 0; role < 2; ++role) {
+    EXPECT_TRUE(gb::bind(invocation, bank_inputs[0][role], wrong_frames[role]).IsInvalidArgument())
+        << "Same layout/dtype/bytes cannot replace the actual fixed bank scale";
+    ASSERT_TRUE(gb::bind(invocation, bank_inputs[0][role], previous[role]).ok());
+    const auto bound = gb::bind_append(invocation, graph, writers[role],
+        bank_inputs[1][role], std::move(pages[role]));
+    ASSERT_TRUE(bound.ok()) << bound.message();
+  }
+  auto pool = c::LeasePool::create(resource, 8192, {.max_blocks = 8}).value();
+  const std::vector<std::uint16_t> zero_query(4 * depth, 0);
+  const auto load_words = [&](std::span<const std::uint16_t> words) {
+    auto writer = pool.allocate(words.size_bytes(), 64).value();
+    e4::check(writer.view()->write(std::as_bytes(words)), "write BF16 activation");
+    return writer.publish().value();
+  };
+  ASSERT_TRUE(invocation.bind(query_input, qdesc, load_words(zero_query)).ok());
+  for (std::size_t role = 0; role < 2; ++role)
+    ASSERT_TRUE(invocation.bind(row_inputs[role], rows_desc, load_words(incoming[role])).ok());
+  const auto output_desc = c::batch_output_description(schema.capacity(), 2).value();
+  if (compiled.executable.output_ownership().value() == g::OutputOwnership::kCaller)
+    for (const auto output : outputs)
+      ASSERT_TRUE(invocation.bind(output, output_desc,
+          pool.allocate(output_desc.required_bytes().value(), 64).value()).ok());
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  {
+    auto done = invocation.submit(queues);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto terminal = done->wait();
+    ASSERT_TRUE(terminal.ok()) << terminal.message();
+  }
+  for (std::size_t branch = 0; branch < 2; ++branch) {
+    const auto lease = invocation.result(outputs[branch]).value().storage_lease().value();
+    std::vector<std::uint16_t> actual(4 * depth);
+    ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+      const auto row_count = (branch ? 4u : 2u) + i / (2 * depth);
+      double total = 0;
+      for (std::size_t row = 0; row < row_count; ++row)
+        total += double(e4::scalar::e4m3(expected_rows[1][row * depth + i % depth])) * scales[1];
+      // Zero Q makes causal attention a uniform mean: F64 sum over the
+      // independent E4 enumeration oracle, then the existing BF16 boundary.
+      const auto expected = e4::scalar::rounded_bf16(static_cast<float>(total / double(row_count)));
+      ASSERT_TRUE(std::isfinite(e4::scalar::wide(actual[i])));
+      ASSERT_NEAR(e4::scalar::wide(actual[i]), expected, .008F) << "branch=" << branch << " lane=" << i;
+    }
+  }
+  for (std::size_t role = 0; role < 2; ++role) {
+    auto returned = gb::take_append(invocation, writers[role]).value();
+    for (std::size_t i = 0; i < 2; ++i) {
+      auto &writer = returned.page(i).value();
+      EXPECT_EQ(writer.page(), i + 2);
+      std::vector<std::uint8_t> actual(2 * depth), expected(2 * depth, 0x7f);
+      const auto first_row = i ? 4u : 2u;
+      std::copy_n(expected_rows[role].begin() + first_row * depth, (i ? 1u : 2u) * depth, expected.begin());
+      ASSERT_TRUE(writer.lease().view()->read(std::as_writable_bytes(std::span(actual))).ok());
+      EXPECT_EQ(actual, expected) << "Whole COW/new page, including its unwritten NaN suffix";
+    }
+    const auto ready = returned.ready().value();
+    EXPECT_EQ(ready.layout(), layouts[1]);
+    EXPECT_EQ(ready.page_count(), 3u);
+    for (std::size_t page = 0; page < 2; ++page) {
+      std::vector<std::uint8_t> actual(2 * depth);
+      ASSERT_TRUE(old_leases[role][page].view()->read(std::as_writable_bytes(std::span(actual))).ok());
+      EXPECT_EQ(actual, old_bytes[role][page]);
+    }
+    EXPECT_EQ(previous[role].layout(), layouts[0]);
+    EXPECT_FALSE(arenas[role].acquire(1));
+  }
+  ASSERT_TRUE(invocation.close().ok());
+  } catch (const std::exception &error) { FAIL() << phase << ": " << error.what(); }
+}
+
+TEST(TypedCapabilityGraph, EncodedE4AppendKeepsCpuOddRowsAndFiniteCarrierContract) {
+  std::string_view phase = "E4 odd source topology/carrier contract";
+  try {
+  namespace e4 = paged_e4_kv_test;
+  const auto resource = m::system_resource();
+  const auto storage = c::CacheStorage::float8(.5F).value();
+  const c::BatchCapacity capacity{
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .key_storage = storage, .value_storage = storage, .max_requests = 1,
+      .max_query_rows = 2, .max_kv_rows = 4, .max_pages = 3, .max_page_refs = 2,
+      .query_heads = 1, .kv_heads = 1, .qk_head_dim = 3, .value_head_dim = 3, .page_size = 2};
+  const auto schema = c::BatchSchema::create(capacity).value();
+  const auto append = gb::paged_append(schema, c::BatchCacheRole::kKey).value();
+  const auto rows_desc = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{2, 1, 3}).value();
+  const auto bytes_desc = c::TensorDesc::dense(c::DataType::kUInt8,
+      std::array<std::int64_t, 3>{2, 1, 3}).value();
+  EXPECT_TRUE(append.infer_output_descriptions(std::span(&bytes_desc, 1), {}).IsInvalidArgument());
+  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+    const auto plain = c::CacheStorage::plain(type).value();
+    const auto plain_append = gb::paged_append(schema.with_cache_storage(plain, plain).value(),
+        c::BatchCacheRole::kKey).value();
+    const auto plain_rows = c::TensorDesc::dense(type, std::array<std::int64_t, 3>{2, 1, 3}).value();
+    EXPECT_TRUE(plain_append.infer_output_descriptions(std::span(&plain_rows, 1), {}).ok());
+  }
+  const auto f32 = c::CacheStorage::plain(c::DataType::kFloat32).value();
+  const auto unsupported = gb::paged_append(schema.with_cache_storage(f32, f32).value(), c::BatchCacheRole::kKey);
+  ASSERT_FALSE(unsupported);
+  EXPECT_TRUE(unsupported.error().IsUnimplemented());
+  auto blocked_capacity = capacity;
+  blocked_capacity.key_storage = blocked_capacity.value_storage = c::CacheStorage::q8_0().value();
+  blocked_capacity.qk_head_dim = blocked_capacity.value_head_dim = 32;
+  const auto blocked_schema = c::BatchSchema::create(blocked_capacity).value();
+  const auto blocked = gb::paged_append(blocked_schema, c::BatchCacheRole::kKey);
+  ASSERT_FALSE(blocked);
+  EXPECT_TRUE(blocked.error().IsUnimplemented());
+
+  const std::array<std::int32_t, 2> q{0, 2}, old_ptr{0, 1}, new_ptr{0, 2}, ids{1, 2};
+  const std::array<std::int32_t, 1> old_ids{0}, tail{1};
+  const auto old_layout = schema.version({q, old_ptr, old_ids, tail}).value();
+  const auto layout = schema.version({q, new_ptr, ids, tail}).value();
+  phase = "E4 odd original arena/old permissions/COW reservations";
+  auto arena = c::PagedArena::create(schema, c::BatchCacheRole::kKey, resource,
+      {.max_backing_bytes = 1024}).value();
+  ASSERT_EQ(arena.page_bytes(), 6u);
+  const std::array<std::uint8_t, 6> old_bytes{e4::encode(.25F, .5F), e4::encode(.5F, .5F),
+      e4::encode(.75F, .5F), 0x7f, 0x7f, 0x7f};
+  auto old_writer = arena.acquire(0).value();
+  ASSERT_TRUE(old_writer.lease().view()->write(std::as_bytes(std::span(old_bytes))).ok());
+  const auto old_lease = old_writer.publish(1).value();
+  const auto previous = arena.read(old_layout, std::span(&old_lease, 1)).value();
+  std::array<c::PagedPageWriter, 2> dirty;
+  for (std::uint32_t i = 0; i < 2; ++i) {
+    dirty[i] = arena.acquire(i + 1).value();
+    const std::array<std::uint8_t, 6> poison{0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f};
+    ASSERT_TRUE(dirty[i].lease().view()->write(std::as_bytes(std::span(poison))).ok());
+  }
+  auto pages = gb::PagedAppendPages::create(arena, layout, previous, dirty).value();
+  phase = "E4 odd source Graph/encode/append";
+  auto context = c::Context::create(c::cpu::device(), c::ggml_cpu::provider({.native_threads = 1})).value();
+  auto queue = context.create_queue().value();
+  struct Drain { c::Context &context; ~Drain() { context.drain().IgnoreError(); } } drain{context};
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(rows_desc).value();
+  const auto encoded = builder.add(c::Operation::custom(c::model_ops::CacheEncode{storage}), input).value();
+  const auto writer_node = builder.add_node(c::Operation::custom(append), std::array{encoded}).value();
+  auto graph = std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{resource}};
+  const std::array targets{g::ExecutionTarget{
+      g::ExecutionSource::acquire(context).value(), g::StorageDomainId{0}}};
+  auto compilation = gb::compile(graph, {.storage_domains = domains, .targets = targets});
+  ASSERT_TRUE(compilation) << compilation.error().message();
+  auto compiled = std::move(*compilation);
+  ASSERT_EQ(compiled.report.target_count(), 1u);
+  EXPECT_EQ(compiled.report.target(0)->backend, c::cpu::kBackendId);
+  EXPECT_EQ(compiled.report.target(0)->device_class, c::DeviceClass::kCpu);
+  EXPECT_EQ(compiled.report.copy_bytes(), 0u);
+  for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
+    const auto step = compiled.report.step(i).value();
+    EXPECT_EQ(step.target, g::ExecutionTargetId{0});
+  }
+  RecordProperty("e4_odd_append_target", "original CPU target0");
+  RecordProperty("e4_odd_append_boundary_copy_bytes", 0);
+  auto invocation = compiled.executable.create_invocation().value();
+  ASSERT_TRUE(gb::prepare(invocation, queues, std::span<const gb::NodeLayout>{}).ok());
+  ASSERT_TRUE(gb::bind_append(invocation, graph, writer_node, std::move(pages)).ok());
+  const std::array<std::uint16_t, 6> words{e4::scalar::bf16(-.25F), e4::scalar::bf16(1.F),
+      e4::scalar::bf16(1.5F), e4::scalar::bf16(.125F), e4::scalar::bf16(-.5F), e4::scalar::bf16(2.F)};
+  auto pool = c::LeasePool::create(resource, 128).value();
+  auto input_writer = pool.allocate(sizeof(words), 64).value();
+  ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(words))).ok());
+  ASSERT_TRUE(invocation.bind(input, rows_desc, input_writer.publish().value()).ok());
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  {
+    auto done = invocation.submit(queues);
+    ASSERT_TRUE(done) << done.error().message();
+    const auto terminal = done->wait();
+    ASSERT_TRUE(terminal.ok()) << terminal.message();
+  }
+  auto returned = gb::take_append(invocation, writer_node).value();
+  for (std::size_t page = 0; page < 2; ++page) {
+    std::array<std::uint8_t, 6> expected{0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f}, actual{};
+    if (page == 0) std::copy_n(old_bytes.begin(), 3, expected.begin());
+    for (std::size_t d = 0; d < 3; ++d)
+      expected[(page ? 0 : 3) + d] = e4::encode(e4::scalar::wide(words[page * 3 + d]), .5F);
+    ASSERT_TRUE(returned.page(page)->lease().view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, expected) << "Odd row byte offset must not truncate or pad the CPU copy";
+  }
+  const auto ready = returned.ready().value();
+  EXPECT_EQ(ready.layout(), layout);
+  EXPECT_EQ(ready.page_count(), 2u);
+  std::array<std::uint8_t, 6> unchanged{};
+  ASSERT_TRUE(old_lease.view()->read(std::as_writable_bytes(std::span(unchanged))).ok());
+  EXPECT_EQ(unchanged, old_bytes);
+  ASSERT_TRUE(invocation.close().ok());
+  } catch (const std::exception &error) { FAIL() << phase << ": " << error.what(); }
+}
+
 
 } // namespace

@@ -309,6 +309,7 @@ class OriginalHfRolesTest(unittest.TestCase):
         self.assertEqual((receipt['ct_channel_token_groups'],receipt['ct_local_nvfp4_groups']),(1,1))
         self.assertEqual(receipt['cache_calibration_omission']['bytes'],4)
         self.assertEqual(len(receipt['cache_calibration_omission']['original_roles']),2)
+        self.assertEqual(receipt['ct_mixed_policy']['cache_dtype'],'BF16')
         # Omission affects IO only. Its original hash still fixes source identity.
         changed=deepcopy(original)
         changed['roles'][-1]['sha256']='2'*64
@@ -323,6 +324,59 @@ class OriginalHfRolesTest(unittest.TestCase):
             else:changed['roles'][-1].update(shape=[2],bytes=4)
             with self.subTest(bad=bad),self.assertRaises(ValueError):
                 roles._prepare_role_records(changed,False,config,authenticate,roles.CT_MIXED_READER,'bf16')
+
+        # Original calibration is metadata, not another device weight operand.
+        e4_config=deepcopy(config)
+        e4_config['quantization_config']['kv_cache_scheme']=dict(dynamic=False,num_bits=8,
+            type='float',strategy='tensor',symmetric=True,group_size=None)
+        e4=deepcopy(original)
+        known={r['name'] for r in e4['roles']}
+        raw_scales={}
+        for index,kind in enumerate(roles.geometry.from_hf(e4_config)['layers']):
+            if kind!='A':continue
+            for side,bits in (('k',0x3d00),('v',0x3e00)):
+                name=f'model.language_model.layers.{index}.self_attn.{side}_scale'
+                raw=struct.pack('<H',bits);raw_scales[name]=raw
+                if name not in known:
+                    e4['roles'].append(dict(name=name,dtype='BF16',shape=[1],bytes=2,
+                        path='original-calibration.bin',offset=0,sha256=hashlib.sha256(raw).hexdigest()))
+                else:next(r for r in e4['roles'] if r['name']==name)['sha256']=hashlib.sha256(raw).hexdigest()
+        def e4_auth(role):return Path(role['path']),raw_scales.get(role['name'])
+        e4_lines,e4_receipt=roles._prepare_role_records(e4,False,e4_config,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        self.assertEqual(e4_lines[3:5],[roles.CT_MIXED_POLICY_LINE,roles.FLOAT8_CACHE_POLICY_LINE])
+        self.assertEqual(e4_receipt['selected_weight_bytes'],receipt['selected_weight_bytes'])
+        self.assertEqual(e4_receipt['physical_roles'],receipt['physical_roles'])
+        self.assertEqual(e4_receipt['ct_mixed_policy']['cache_dtype'],'E4M3FN')
+        self.assertEqual(e4_receipt['cache_calibration']['bytes'],24)
+        self.assertEqual(len(e4_receipt['cache_calibration']['original_roles']),12)
+        self.assertNotIn('cache_calibration_omission',e4_receipt)
+        _,same_source_bf16=roles._prepare_role_records(e4,False,e4_config,e4_auth,roles.CT_MIXED_READER,'bf16')
+        self.assertNotEqual(e4_receipt['source_id'],same_source_bf16['source_id'])
+        self.assertEqual({r['f32_bits'] for r in e4_receipt['cache_calibration']['original_roles']},
+                         {'3d000000','3e000000'})
+        with self.assertRaisesRegex(ValueError,'ordinary inference only'):
+            roles._prepare_role_records(e4,True,e4_config,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        incomplete=deepcopy(e4)
+        incomplete['roles']=[r for r in incomplete['roles']if r['name']!='model.language_model.layers.7.self_attn.v_scale']
+        with self.assertRaisesRegex(ValueError,'calibration pair'):
+            roles._prepare_role_records(incomplete,False,e4_config,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        wrong_scheme=deepcopy(e4_config);wrong_scheme['quantization_config']['kv_cache_scheme']['dynamic']=True
+        with self.assertRaisesRegex(ValueError,'cache scheme'):
+            roles._prepare_role_records(e4,False,wrong_scheme,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        with self.assertRaisesRegex(ValueError,'requires original CT mixed weights'):
+            roles.ct_mixed_groups({r['name']:r for r in e4['roles'] if r['name'] in raw_scales},
+                e4_config,roles.geometry.from_hf(e4_config),roles.CT_MIXED_READER,'e4m3fn')
+        for bits in (0,0x8000,0xbf80,0x7f80,0x7fc0):
+            with self.subTest(bits=bits),self.assertRaisesRegex(ValueError,'positive finite'):
+                roles.cache_scale_bits(struct.pack('<H',bits),'original K/V fixture')
+        bad_scale=deepcopy(e4);bad_name='model.language_model.layers.3.self_attn.k_scale'
+        next(r for r in bad_scale['roles']if r['name']==bad_name)['sha256']=hashlib.sha256(b'\0\0').hexdigest()
+        with self.assertRaisesRegex(ValueError,'positive finite'):
+            roles._prepare_role_records(bad_scale,False,e4_config,
+                lambda r:(Path(r['path']),b'\0\0'if r['name']==bad_name else raw_scales.get(r['name'])),
+                roles.CT_MIXED_READER,'e4m3fn')
+        _,bf16_mtp=roles._prepare_role_records(original,True,config,authenticate,roles.CT_MIXED_READER,'bf16')
+        self.assertEqual(bf16_mtp['physical_roles'],339)
 
     def test_geometry_comes_from_axes_and_layers_not_model_name(self):
         config=source_config();c=config['text_config']
@@ -430,6 +484,24 @@ class OriginalHfRolesTest(unittest.TestCase):
                 role["sha256"]="0"*64
                 with self.assertRaisesRegex(ValueError,"SHA differs"):
                     roles.verify_role_source(role)
+
+    def test_original_cache_scalar_range_retains_exact_bf16_bytes(self):
+        raw=struct.pack('<H',0x3ce1)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/'scales.bf16').write_bytes(b'xx'+raw+b'yy')
+            role=dict(name='model.language_model.layers.3.self_attn.k_scale',dtype='BF16',
+                shape=[1],bytes=2,path='scales.bf16',offset=2,sha256=hashlib.sha256(raw).hexdigest())
+            with patch.object(roles,'ROOT',root):
+                source,values=roles.verify_role_source(role)
+                self.assertEqual((source,values),(root/'scales.bf16',raw))
+                self.assertEqual(roles.cache_scale_bits(values,role['name']),
+                    dict(bf16_bits='3ce1',f32_bits='3ce10000'))
+                bad=dict(role,dtype='F32')
+                with self.assertRaisesRegex(ValueError,r'BF16\[1\]'):
+                    roles.verify_role_source(bad)
+                bad=dict(role,sha256='0'*64)
+                with self.assertRaisesRegex(ValueError,'SHA differs'):
+                    roles.verify_role_source(bad)
 
     def test_full_source_shape_checks_precede_mtp_selection(self):
         original=source_fixture();groups=roles.ct_packed_groups({r["name"]:r for r in original["roles"]})

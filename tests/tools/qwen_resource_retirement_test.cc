@@ -116,7 +116,11 @@ struct NativeFailure final {
 
 void model_retirement(bool retain_session) {
   const auto shape = geometry();
-  const auto plan = q::cache::plan(shape, 32, 1, 2,
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(shape.kv_heads), static_cast<std::size_t>(shape.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(shape.kv_heads), static_cast<std::size_t>(shape.value_depth)), 2)};
+  const auto plan = q::cache::plan(shape, cache_rows, 32, 1, 2,
       q::recurrent_bytes(q::state_schema_for(shape, 32), shape));
   auto model = std::make_unique<q::Model>(weights(shape), shape, 32, plan,
       std::filesystem::path{}, false, q::ReplayPolicy::kAuto, SIZE_MAX,

@@ -1,21 +1,22 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 15:29（北京时间）。整体暂估 **61%**。缓存拓扑与逐 bank 存储解释已分开：Windows CPU 39项及普通消费者、Apple原E4续算通过，相关原生文件严格编译通过；Kimi原23角色两步CUDA组件已完成。现在补普通E4 KV冷绑定与分页写入，原32个scale共64字节已取得。深入性能狩猎后置。
+更新：2026-10-25 16:44（北京时间）。整体暂估 **62%**。普通E4 KV的本批实现完成：原校准、逐层解释、实际字节规划及分页／可追加页已接通，CPU／CUDA实际Model与Apple原生追加组件通过。默认BF16和分页CPU六项通过；Vulkan本批仅严格host编译，未新增原生运行。证据已归档，清除本轮26个过时测试二进制、合计约146MiB逻辑字节。下一批补现有Q8编码器到分页追加的公共链路。深入性能狩猎后置。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
 
 执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
 
-- 功能盘点与补齐：约 70%
-  - 基础普通推理：约 74%
+- 功能盘点与补齐：约 71%
+  - 基础普通推理：约 76%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
     - 选定 MLX affine 普通绑定与有限组件：100%
     - CT asymmetric INT4 原投影角色与零点接线：100%
-    - 解码／激活／计算／缓存精度合同：约 20%
-    - 普通 E4 KV 冷绑定与分页写入：约 20%
+    - 解码／激活／计算／缓存精度合同：约 35%
+    - 普通 E4 KV 冷绑定与分页写入：100%
+    - Q8 KV 编码到分页追加的公共链路：0%
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
     - GLM Pro 原组件短历史与真实 index 供给：100%
     - Kimi 普通异构状态提交与恢复组件：100%
@@ -57,7 +58,7 @@
     - frontier 未退休时的共享输入提前门禁：100%
     - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
-- 架构复审、设计与调整：约 51%
+- 架构复审、设计与调整：约 52%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 40%
   - 请求提交账簿唯一化：100%
@@ -89,14 +90,14 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| E4原校准角色与冷绑定 | 普通推理／缓存精度 | 原32个BF16 scale已取得且16对互异，准备器／角色合同保留真实校准值，冷期接到实际存储解释 | 约 25% |
-| E4分页写入 | 普通推理／缓存精度 | 复用原CacheEncode和append字节路径，保后端对齐、逐bank scale、旧页面及退休检查 | 约 15% |
+| Q8行几何与分页追加 | 普通推理／缓存精度 | 最小设计完成，私有候选正补逻辑行数、原追加／COW及整block页尾权限，尚未整合或运行 | 约 20% |
+| Q8候选独立复核 | 普通推理／缓存精度 | 检查真实carrier、K/V不同深度、后端资格及旧读者权限；CUDA现reader仍不支持Q8 | 约 10% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[缓存拓扑／存储解释](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)、[Kimi原参数续算](../evidence/correctness/kimi-original-attention-state-2026-10-25.json)、[FFN 冷放置统一](../evidence/correctness/inference-ffn-cold-placement-2026-10-25.json)、[请求账簿统一](../evidence/correctness/inference-request-ledger-2026-10-25.json)、[整轮随机预算](../evidence/correctness/inference-turn-sampling-budget-2026-10-25.json)、[静态 FP8 原组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)、[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
+最新依据：[普通E4 KV接线与原生追加](../evidence/correctness/ordinary-e4-kv-2026-10-25.json)、[缓存拓扑／存储解释](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)、[Kimi原参数续算](../evidence/correctness/kimi-original-attention-state-2026-10-25.json)、[FFN 冷放置统一](../evidence/correctness/inference-ffn-cold-placement-2026-10-25.json)、[请求账簿统一](../evidence/correctness/inference-request-ledger-2026-10-25.json)、[整轮随机预算](../evidence/correctness/inference-turn-sampling-budget-2026-10-25.json)、[静态 FP8 原组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)、[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

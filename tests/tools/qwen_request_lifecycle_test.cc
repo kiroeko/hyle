@@ -13,19 +13,20 @@
 #include "qwen_request_stop_case.h"
 #include "qwen_sampling_budget_case.h"
 #include "qwen_request_ledger_case.h"
+#include "qwen_e4_cache_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
-std::string input_directory_from_environment() {
+std::string input_directory_from_environment(const char *name = "HYLE_QWEN_REQUEST_INPUTS") {
 #if defined(_MSC_VER)
   char *value = nullptr;
   std::size_t length = 0;
-  if (_dupenv_s(&value, &length, "HYLE_QWEN_REQUEST_INPUTS"))
-    throw std::runtime_error("cannot read HYLE_QWEN_REQUEST_INPUTS");
+  if (_dupenv_s(&value, &length, name))
+    throw std::runtime_error("cannot read " + std::string(name));
   const std::unique_ptr<char, decltype(&std::free)> owner(value, &std::free);
   return value ? value : "";
 #else
-  const auto *value = std::getenv("HYLE_QWEN_REQUEST_INPUTS");
+  const auto *value = std::getenv(name);
   return value ? value : "";
 #endif
 }
@@ -78,10 +79,12 @@ int main(int argc,char **argv){
   const bool stop_policy=argc>1 && std::string_view(argv[1])=="--stop-policies";
   const bool sampling_budget=argc>1 && std::string_view(argv[1])=="--sampling-budget";
   const bool request_ledger=argc>1 && std::string_view(argv[1])=="--request-ledger";
-  const int argument=(chunked||dual||sampling||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger] [prepared_input_directory]");
-  const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment();
-  if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set HYLE_QWEN_REQUEST_INPUTS\n";return 77;}
+  const bool e4_cache=argc>1 && std::string_view(argv[1])=="--e4-cache";
+  const int argument=(chunked||dual||sampling||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache] [prepared_input_directory]");
+  const char *input_environment=e4_cache?"HYLE_QWEN_E4_INPUTS":"HYLE_QWEN_REQUEST_INPUTS";
+  const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment(input_environment);
+  if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set "<<input_environment<<'\n';return 77;}
   const std::filesystem::path input=input_directory;
   if(chunked)return qwen_chunked_prefill_case::run(input);
   if(dual)return qwen_dual_model_case::run(input);
@@ -93,9 +96,14 @@ int main(int argc,char **argv){
   if(stop_policy)return qwen_request_stop_case::run(input);
   if(sampling_budget)return qwen_sampling_budget_case::run(input);
   if(request_ledger)return qwen_request_ledger_case::run(input);
+  if(e4_cache)return qwen_e4_cache_case::run(input);
   const auto geometry=q::read_weight_geometry(input/"weights.tsv");
   const auto prompt=q::read_ids(input/"prompt.ids",geometry.vocabulary,192);require(prompt.size()==154,"expected original P154 prompt");
-  const auto plan=q::cache::plan(geometry,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+  const auto plan=q::cache::plan(geometry, cache_rows,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
   event("load_original_ordinary");
   q::Model model(input/"weights.tsv",geometry,192,plan,{},true,q::ReplayPolicy::kCommands,1073741824,
       {.enabled=true,.policy={1,8,.9F},.seed=123},0,{.primary=q::BackendKind::kCuda});

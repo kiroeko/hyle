@@ -40,7 +40,11 @@ inline int run(const std::filesystem::path &input_directory) {
   const auto geometry = q::read_weight_geometry(manifest);
   require(geometry.hidden == 64 && geometry.intermediate == 128 && geometry.vocabulary == 64 && geometry.layers == "A",
       "turn-context case requires the cached untrained A/H64/FFN128/V64 fixture");
-  const auto plan = q::cache::plan(geometry, 16, 1, 15,
+  // This case uses the original plain 16-bit K/V cache carriers.
+  const q::cache::KvRowBytes cache_rows{
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
+      q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
+  const auto plan = q::cache::plan(geometry, cache_rows, 16, 1, 15,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, true);
   q::Model model(manifest, geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, 16u << 20,
       {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0, {.primary = i::BackendKind::kCpu});
