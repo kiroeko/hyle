@@ -38,6 +38,8 @@
 #error "Hyle inference requires a CPU, Apple, CUDA or Vulkan backend"
 #endif
 
+namespace hyle::compute::cpu { struct DefaultContextOptions; }
+
 namespace hyle::inference {
 
 enum class BackendKind : std::uint8_t { kDefault, kCpu, kCuda, kApple, kVulkan };
@@ -167,6 +169,23 @@ public:
 
   static Result<Backend> create(BackendSelection selection = {},
                                 WorkspaceBudgets budgets = {}) noexcept {
+    return create_impl(selection, budgets, nullptr);
+  }
+
+  // Cold CPU endpoint configuration. The original allocator/executor backings
+  // remain borrowed through every derived artifact and native use. Options
+  // require a CPU primary or an explicitly selected CPU assistance endpoint;
+  // they never create one implicitly or reconfigure a shared runtime.
+  static Result<Backend> create(BackendSelection selection,
+                                WorkspaceBudgets budgets,
+                                const compute::cpu::DefaultContextOptions &cpu_options) noexcept {
+    return create_impl(selection, budgets, &cpu_options);
+  }
+
+private:
+  static Result<Backend> create_impl(BackendSelection selection,
+                                     WorkspaceBudgets budgets,
+                                     const compute::cpu::DefaultContextOptions *cpu_options) noexcept {
     if (selection.primary == BackendKind::kDefault) {
       HYLE_ASSIGN_OR_RETURN(auto chosen, default_selection());
       selection.primary = chosen.primary;
@@ -175,6 +194,14 @@ public:
     case BackendKind::kCpu: case BackendKind::kCuda:
     case BackendKind::kApple: case BackendKind::kVulkan: break;
     default: return std::unexpected(Status::InvalidArgument("backend selection kind is invalid"));
+    }
+    if (cpu_options != nullptr) {
+#if defined(HYLE_COMPUTE_CPU)
+      if (selection.primary != BackendKind::kCpu && !selection.cpu_assist)
+        return std::unexpected(Status::InvalidArgument("CPU options require a selected CPU endpoint"));
+#else
+      return std::unexpected(Status::Unimplemented("CPU options require the compiled CPU backend"));
+#endif
     }
     if (!is_compiled(selection.primary))
       return std::unexpected(Status::Unimplemented("selected backend is not compiled into this image"));
@@ -194,7 +221,7 @@ public:
 #if defined(HYLE_COMPUTE_CPU)
     case BackendKind::kCpu: {
       auto &endpoint = state.primary.emplace<CpuEndpoint>();
-      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint));
+      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options));
       state.device = state.host = state.staging = endpoint.memory;
       state.domains[0] = {.resource = endpoint.memory, .workspace_budget_bytes = budgets.host};
       state.targets[0] = {endpoint.source, graph::StorageDomainId{0}};
@@ -268,7 +295,7 @@ public:
 #if defined(HYLE_COMPUTE_CPU)
     if (selection.cpu_assist) {
       auto &endpoint = state.cpu.emplace();
-      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint));
+      HYLE_RETURN_IF_ERROR(initialize_cpu(endpoint, cpu_options));
       state.host = endpoint.memory;
       state.domains[state.domain_count++] = {.resource = state.host, .workspace_budget_bytes = budgets.host};
       state.targets[state.target_count++] = {endpoint.source, graph::StorageDomainId{1}};
@@ -284,6 +311,7 @@ public:
     return result;
   }
 
+public:
   BackendKind kind() const noexcept { return state_ ? state_->selection.primary : BackendKind::kDefault; }
   BackendSelection selection() const noexcept { return state_ ? state_->selection : BackendSelection{}; }
   bool host_only() const noexcept { return kind() == BackendKind::kCpu; }
@@ -475,8 +503,13 @@ private:
     return false;
   }
 #if defined(HYLE_COMPUTE_CPU)
-  static Status initialize_cpu(CpuEndpoint &endpoint) noexcept {
-    HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context());
+  static Status initialize_cpu(CpuEndpoint &endpoint,
+                               const compute::cpu::DefaultContextOptions *cpu_options) noexcept {
+    if (cpu_options != nullptr) {
+      HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context(*cpu_options));
+    } else {
+      HYLE_ASSIGN_OR_RETURN(endpoint.context, graph::cpu::create_context());
+    }
     HYLE_ASSIGN_OR_RETURN(endpoint.memory, compute::cpu::memory_resource(compute::cpu::device()));
     HYLE_ASSIGN_OR_RETURN(endpoint.queue, endpoint.context.create_queue());
     HYLE_ASSIGN_OR_RETURN(endpoint.source, graph::ExecutionSource::acquire(endpoint.context));

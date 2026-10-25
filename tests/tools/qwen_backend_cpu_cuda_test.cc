@@ -1,5 +1,6 @@
 #include "../../engine/inference/backend.h"
 #include "../../engine/inference/readback.h"
+#include "qwen_backend_cpu_options_case.h"
 
 #include <algorithm>
 #include <array>
@@ -121,6 +122,14 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   ASSERT_TRUE(readback->read(backend,*run,std::as_writable_bytes(std::span(actual))).ok());
   for(std::size_t i=0;i<input.size();++i)EXPECT_EQ(actual[i],-input[i]);
   ASSERT_TRUE(run->drain().ok());ASSERT_TRUE(backend.collect_retired().ok());
+}
+
+TEST(QwenBackendCpuCuda, ExplicitCpuOptionsKeepOriginalExecutorAndMoveContract) {
+  auto checked=hyle::inference::test::cpu_options_case();
+  ASSERT_TRUE(checked)<<checked.error().message();
+  EXPECT_GT(checked->executor_calls,0U);
+  EXPECT_GT(checked->executor_tasks,0U);
+  EXPECT_EQ(checked->compared_values,68U);
 }
 
 TEST(QwenBackendCpuCuda, InvalidOrUncompiledSelectionNeverFallsBack) {

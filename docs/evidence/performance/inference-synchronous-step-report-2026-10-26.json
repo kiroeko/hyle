@@ -1,0 +1,1259 @@
+{
+  "status": "SYNCHRONOUS_REPORT_IMPLEMENTATION_MERGE_DECISION_FINITE_SCREENS_COMPLETE",
+  "generated_UTC": "2026-10-25T16:08:29.717848+00:00",
+  "scope": "One report-only candidate,25 host contracts,2 separate frozen-be3 real-two-turn screens: ordinary and K1 MTP each6 timing+2 independent memory processes. Existing bytes/order and synchronous delivery retained; no async logger, silent mode, endpoint movement or new peer run.",
+  "source": {
+    "files": [
+      {
+        "path": "engine/reporting/execution_report.cc",
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\before\\engine\\reporting\\execution_report.cc",
+          "bytes": 4377,
+          "sha256": "069a735b7e1f760d27bf427cddb63aba8850972caaa52790435be428049843ce"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\source\\engine\\reporting\\execution_report.cc",
+          "bytes": 5214,
+          "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+        }
+      }
+    ]
+  },
+  "build": {
+    "status": "READY_PRIVATE_SYNCHRONOUS_REPORT_CUDA_LINK_NO_GPU_RUN",
+    "baseline_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\ready.json",
+      "bytes": 6020,
+      "sha256": "6398be33aa1c6f25622148bf7775d7c4c0a6ebfd075d181bc478f7f3019b080b"
+    },
+    "baseline_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\link\\hyle.exe",
+      "bytes": 141614080,
+      "sha256": "be3c210ea954e97f7109783baf4b22345c4b4140c7d0d0d12af606807241c22a"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\link\\hyle.exe",
+      "bytes": 141614592,
+      "sha256": "7030426b20990d8d5dcfcbce35f75ded435696efd16de49fd30aafefebef4b40"
+    },
+    "app": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\app\\unit.obj",
+      "bytes": 12689055,
+      "sha256": "7e66936353df143d0a3c5961de9997104630f00987cf8ff22f6a640fb12f2de8"
+    },
+    "weights": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-cuda-20261025\\weights\\unit.obj",
+      "bytes": 3493911,
+      "sha256": "38a854fa82411aca9bc0ca427040d131a2b911e2f314ed964bd12e8de00af46b"
+    },
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\report\\unit.obj",
+      "bytes": 106041,
+      "sha256": "385b05bdf8361a37a198adf5f8449a771deea216c0ad6d5701423992d21725e6"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\source\\engine\\reporting\\execution_report.cc",
+      "bytes": 5214,
+      "sha256": "878e18b97a493521769fd40c491ddfe75789911f9daa7c6e01e53253d1bc286f"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\product-pins.json",
+      "bytes": 676,
+      "sha256": "e3658ba2fa16d5bcd4cfd0175bb3a4c3aa961821d67942c4e3c9626bfbe79bb6"
+    },
+    "host_contracts": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\host3\\summary.json",
+      "bytes": 17839,
+      "sha256": "bd012aaf823b78e413f7e2c08d0d0a6bb4f10e5163ef76e397e368d6f32486cf"
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\report\\actual-dependencies.json",
+      "bytes": 46241,
+      "sha256": "65ca01be17eed0fb561dbb072ec9a5399d60e6562d60911008b11aa995068d17"
+    },
+    "object_map": [
+      {
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\report\\unit.obj",
+          "bytes": 49434,
+          "sha256": "ffa751638220fb9312347f5babd998ca09dc697456d31c79a1f897030528e123"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\report\\unit.obj",
+          "bytes": 106041,
+          "sha256": "385b05bdf8361a37a198adf5f8449a771deea216c0ad6d5701423992d21725e6"
+        }
+      }
+    ],
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\link-inputs.json",
+      "bytes": 59033,
+      "sha256": "e46804541fbd80836c9760c4dfef5ab5fe69be31b44a577de322a5389dde8971"
+    },
+    "linked_absolute_inputs": 221,
+    "inherited_system_libraries": 13,
+    "total_inputs": 234,
+    "unchanged_inputs": 233,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\runtime.json",
+      "bytes": 8234,
+      "sha256": "17b92eb1d6b94f8375f2ae5c6e45c8889a0b3625d68583ebb4df562ef2de87e6"
+    },
+    "processes": {
+      "report": {
+        "exit": 0,
+        "pid": 52428,
+        "seconds": 1.4504408999928273
+      },
+      "link": {
+        "exit": 0,
+        "pid": 53580,
+        "seconds": 1.7744672000408173
+      }
+    },
+    "commands": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\report\\command.json",
+        "bytes": 2156,
+        "sha256": "8b1a78ba3c658a5fa06a0dba7cc5c1e5d3007a5b1cdb41fd420c606d90dc9de6"
+      },
+      "link": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\link\\command.json",
+        "bytes": 32842,
+        "sha256": "c5c1d2f4ac9c5e2f28305647bd520dcdeb675e486edafc16770386fd562438f9"
+      }
+    },
+    "new_TUs": 1,
+    "main_weights_core_provider_SDK_device_rebuilds": 0,
+    "GPU_runs": 0,
+    "limits": "Compile/link only; no Model behavior/TPS/memory claim. App and weights are frozen be3 objects, unrelated current unused coldCPU backend API changes are not compiled by this image."
+  },
+  "host": {
+    "final_contract_cases": 25,
+    "all_pass": true,
+    "r1_microcheck_cases": 24,
+    "microsecond_samples_per_call": {
+      "baseline": [
+        115.17734374999999,
+        109.40546875,
+        110.52109375
+      ],
+      "candidate": [
+        4.9796875,
+        4.89921875,
+        4.9781249999999995
+      ]
+    },
+    "microsecond_median_per_call": {
+      "baseline": 110.52109375,
+      "candidate": 4.9781249999999995
+    },
+    "default_bytes_equal": 224,
+    "counted_sink_writes_before_after": [
+      66,
+      1
+    ],
+    "unitbuf_and_tie_syncs_before_after": [
+      29,
+      1
+    ],
+    "new_local_allocations_per_call": 4,
+    "new_local_allocated_bytes_per_call": 480,
+    "micro_scope": "Author host2 actual synchronous forwarding to stderr pipe; finalr2 changes only the pre-bad width path. host3 reran25 contracts without timing loops. These are not OS syscall counts or Model TPS."
+  },
+  "screens": {
+    "MTP": {
+      "timing_processes": 6,
+      "independent_memory_processes": 2,
+      "metrics": {
+        "control": {
+          "prefill_seconds": {
+            "count": 3,
+            "median": 0.1131211,
+            "min": 0.1112222,
+            "max": 0.1176892,
+            "samples": [
+              0.1176892,
+              0.1131211,
+              0.1112222
+            ]
+          },
+          "decode_seconds": {
+            "count": 3,
+            "median": 1.0507342999999998,
+            "min": 1.0412773,
+            "max": 1.0545918999999997,
+            "samples": [
+              1.0507342999999998,
+              1.0412773,
+              1.0545918999999997
+            ]
+          },
+          "session_seconds": {
+            "count": 3,
+            "median": 1.1658141,
+            "min": 1.1543984,
+            "max": 1.1684235,
+            "samples": [
+              1.1684235,
+              1.1543984,
+              1.1658141
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2731.5858845078415,
+            "min": 2625.559524578296,
+            "max": 2778.2223333111556,
+            "samples": [
+              2625.559524578296,
+              2731.5858845078415,
+              2778.2223333111556
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 119.91613864703953,
+            "min": 119.47749646095332,
+            "max": 121.00523078722642,
+            "samples": [
+              119.91613864703953,
+              121.00523078722642,
+              119.47749646095332
+            ]
+          },
+          "combined_output_tokens_per_second": {
+            "count": 3,
+            "median": 109.7945204128171,
+            "min": 109.54932008813584,
+            "max": 110.88026456031123,
+            "samples": [
+              109.54932008813584,
+              110.88026456031123,
+              109.7945204128171
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_seconds": {
+            "count": 3,
+            "median": 0.11378450000000001,
+            "min": 0.1074636,
+            "max": 0.114836,
+            "samples": [
+              0.11378450000000001,
+              0.114836,
+              0.1074636
+            ]
+          },
+          "decode_seconds": {
+            "count": 3,
+            "median": 1.0407068000000002,
+            "min": 1.0334281,
+            "max": 1.0426929,
+            "samples": [
+              1.0426929,
+              1.0407068000000002,
+              1.0334281
+            ]
+          },
+          "session_seconds": {
+            "count": 3,
+            "median": 1.1555428,
+            "min": 1.1408917,
+            "max": 1.1564774,
+            "samples": [
+              1.1564774,
+              1.1555428,
+              1.1408917
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2715.6598657989443,
+            "min": 2690.793827719531,
+            "max": 2875.392225832747,
+            "samples": [
+              2715.6598657989443,
+              2690.793827719531,
+              2875.392225832747
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 121.07156405627404,
+            "min": 120.84094943007668,
+            "max": 121.92430223254041,
+            "samples": [
+              120.84094943007668,
+              121.07156405627404,
+              121.92430223254041
+            ]
+          },
+          "combined_output_tokens_per_second": {
+            "count": 3,
+            "median": 110.77045350462137,
+            "min": 110.680935053292,
+            "max": 112.19294521995383,
+            "samples": [
+              110.680935053292,
+              110.77045350462137,
+              112.19294521995383
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "prefill_seconds": {
+          "candidate_relative_percent": 0.5864511572111653,
+          "ranges_overlap": true
+        },
+        "decode_seconds": {
+          "candidate_relative_percent": -0.9543326033993216,
+          "ranges_overlap": true
+        },
+        "session_seconds": {
+          "candidate_relative_percent": -0.8810409824345,
+          "ranges_overlap": true
+        },
+        "prefill_tokens_per_second": {
+          "candidate_relative_percent": -0.5830319595375499,
+          "ranges_overlap": true
+        },
+        "decode_output_tokens_per_second": {
+          "candidate_relative_percent": 0.9635278639477995,
+          "ranges_overlap": true
+        },
+        "combined_output_tokens_per_second": {
+          "candidate_relative_percent": 0.8888723117828068,
+          "ranges_overlap": true
+        }
+      },
+      "pair_comparisons": null,
+      "work": {
+        "generated_tokens": 128,
+        "actual_graph_calls": 68,
+        "prefill_target_rows": 309,
+        "verified_target_rows": 132,
+        "actual_target_rows": 441,
+        "actual_draft_rows": 434,
+        "consumed_drafts": 60
+      },
+      "memory": {
+        "control": {
+          "sampled_peaks": {
+            "sampled_max_working_set_bytes": 1280241664,
+            "observed_os_peak_working_set_bytes": 1280413696,
+            "sampled_max_private_commit_bytes": 6454484992,
+            "observed_os_peak_commit_bytes": 6454628352,
+            "sampled_peak_gpu_dedicated_bytes": 4499521536,
+            "sampled_peak_gpu_shared_bytes": 96468992,
+            "sampled_peak_gpu_total_bytes": 4581310464
+          },
+          "sample_count": 329,
+          "ready_baseline": {
+            "ready_marker_ns": 270365123046600,
+            "first_prefill_marker_ns": 270365123128600,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 33,
+            "shared:no_pid_instance": 33
+          },
+          "actual_sample_gaps_ms": {
+            "count": 309,
+            "min": 0.1081,
+            "median": 15.1868,
+            "max": 20.6923
+          },
+          "sample_cost_ms": {
+            "count": 310,
+            "min": 0.0583,
+            "median": 0.13985,
+            "max": 0.3687
+          },
+          "phase_windows": {
+            "round1_prefill": {
+              "begin_ns": 270365123128600,
+              "end_ns": 270365191105600,
+              "sample_count": 7,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 14027000,
+                "after": 9630400
+              }
+            },
+            "round1_decode": {
+              "begin_ns": 270365191113400,
+              "end_ns": 270365726322400,
+              "sample_count": 51,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 5340500,
+                "after": 7620300
+              }
+            },
+            "round2_prefill": {
+              "begin_ns": 270365726333300,
+              "end_ns": 270365768587900,
+              "sample_count": 5,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 8389400,
+                "after": 12949200
+              }
+            },
+            "round2_decode": {
+              "begin_ns": 270365768596900,
+              "end_ns": 270366273601000,
+              "sample_count": 47,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 1887400,
+                "after": 7298400
+              }
+            }
+          }
+        },
+        "candidate": {
+          "sampled_peaks": {
+            "sampled_max_working_set_bytes": 1280458752,
+            "observed_os_peak_working_set_bytes": 1280487424,
+            "sampled_max_private_commit_bytes": 6449168384,
+            "observed_os_peak_commit_bytes": 6449168384,
+            "sampled_peak_gpu_dedicated_bytes": 4499521536,
+            "sampled_peak_gpu_shared_bytes": 96468992,
+            "sampled_peak_gpu_total_bytes": 4581310464
+          },
+          "sample_count": 329,
+          "ready_baseline": {
+            "ready_marker_ns": 270368710466400,
+            "first_prefill_marker_ns": 270368710475200,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 32,
+            "gpu_shared_bytes": 32,
+            "gpu_total_bytes": 32
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 32,
+            "shared:no_pid_instance": 32
+          },
+          "actual_sample_gaps_ms": {
+            "count": 309,
+            "min": 0.1196,
+            "median": 15.2191,
+            "max": 17.3507
+          },
+          "sample_cost_ms": {
+            "count": 310,
+            "min": 0.0577,
+            "median": 0.13940000000000002,
+            "max": 0.3747
+          },
+          "phase_windows": {
+            "round1_prefill": {
+              "begin_ns": 270368710475200,
+              "end_ns": 270368781102400,
+              "sample_count": 6,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 1530900,
+                "after": 3690700
+              }
+            },
+            "round1_decode": {
+              "begin_ns": 270368781109100,
+              "end_ns": 270369314535000,
+              "sample_count": 52,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 12017900,
+                "after": 15543100
+              }
+            },
+            "round2_prefill": {
+              "begin_ns": 270369314544100,
+              "end_ns": 270369356603200,
+              "sample_count": 3,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 284700,
+                "after": 4881700
+              }
+            },
+            "round2_decode": {
+              "begin_ns": 270369356610300,
+              "end_ns": 270369860291400,
+              "sample_count": 49,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 10234500,
+                "after": 14774700
+              }
+            }
+          }
+        }
+      },
+      "capture_recorded_reused_each_process": [
+        27,
+        105
+      ],
+      "raw_summary": {
+        "path": ".scratch/inference-synchronous-step-report-20261025/screen/summary.json",
+        "bytes": 106822,
+        "sha256": "74a897600ba597e6febba142c4cbb223bc6a937fc6916df5650d5a66846ce9a3"
+      }
+    },
+    "ordinary": {
+      "timing_processes": 6,
+      "independent_memory_processes": 2,
+      "metrics": {
+        "control": {
+          "prefill_seconds": {
+            "count": 3,
+            "median": 0.1098546,
+            "min": 0.1077607,
+            "max": 0.1112214,
+            "samples": [
+              0.1112214,
+              0.1077607,
+              0.1098546
+            ]
+          },
+          "decode_seconds": {
+            "count": 3,
+            "median": 1.3630138,
+            "min": 1.3607889000000002,
+            "max": 1.3648383,
+            "samples": [
+              1.3607889000000002,
+              1.3648383,
+              1.3630138
+            ]
+          },
+          "session_seconds": {
+            "count": 3,
+            "median": 1.472599,
+            "min": 1.4720103,
+            "max": 1.4728684,
+            "samples": [
+              1.4720103,
+              1.472599,
+              1.4728684
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2812.8089310779887,
+            "min": 2778.242316676467,
+            "max": 2867.4646694017392,
+            "samples": [
+              2778.242316676467,
+              2867.4646694017392,
+              2812.8089310779887
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 92.44220418017778,
+            "min": 92.31862851445479,
+            "max": 92.59334787342841,
+            "samples": [
+              92.59334787342841,
+              92.31862851445479,
+              92.44220418017778
+            ]
+          },
+          "combined_output_tokens_per_second": {
+            "count": 3,
+            "median": 86.92115097185317,
+            "min": 86.9052523633476,
+            "max": 86.95591328403069,
+            "samples": [
+              86.95591328403069,
+              86.92115097185317,
+              86.9052523633476
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_seconds": {
+            "count": 3,
+            "median": 0.11043739999999999,
+            "min": 0.1098479,
+            "max": 0.11319889999999999,
+            "samples": [
+              0.1098479,
+              0.11043739999999999,
+              0.11319889999999999
+            ]
+          },
+          "decode_seconds": {
+            "count": 3,
+            "median": 1.3518908,
+            "min": 1.3500837,
+            "max": 1.3544508999999996,
+            "samples": [
+              1.3544508999999996,
+              1.3518908,
+              1.3500837
+            ]
+          },
+          "session_seconds": {
+            "count": 3,
+            "median": 1.4632826,
+            "min": 1.4623282,
+            "max": 1.4642988,
+            "samples": [
+              1.4642988,
+              1.4623282,
+              1.4632826
+            ]
+          },
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2797.965182085055,
+            "min": 2729.708504234582,
+            "max": 2812.9804939375263,
+            "samples": [
+              2812.9804939375263,
+              2797.965182085055,
+              2729.708504234582
+            ]
+          },
+          "decode_output_tokens_per_second": {
+            "count": 3,
+            "median": 93.20279419018163,
+            "min": 93.02662798629322,
+            "max": 93.32754702541774,
+            "samples": [
+              93.02662798629322,
+              93.20279419018163,
+              93.32754702541774
+            ]
+          },
+          "combined_output_tokens_per_second": {
+            "count": 3,
+            "median": 87.47455891295365,
+            "min": 87.41385296498228,
+            "max": 87.5316498717593,
+            "samples": [
+              87.41385296498228,
+              87.5316498717593,
+              87.47455891295365
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "prefill_seconds": {
+          "candidate_relative_percent": 0.5305194320492701,
+          "ranges_overlap": true
+        },
+        "decode_seconds": {
+          "candidate_relative_percent": -0.8160592357905672,
+          "ranges_overlap": false
+        },
+        "session_seconds": {
+          "candidate_relative_percent": -0.6326501647766936,
+          "ranges_overlap": false
+        },
+        "prefill_tokens_per_second": {
+          "candidate_relative_percent": -0.5277197760903407,
+          "ranges_overlap": true
+        },
+        "decode_output_tokens_per_second": {
+          "candidate_relative_percent": 0.8227735553788751,
+          "ranges_overlap": false
+        },
+        "combined_output_tokens_per_second": {
+          "candidate_relative_percent": 0.6366781098879892,
+          "ranges_overlap": false
+        }
+      },
+      "pair_comparisons": [
+        {
+          "pair": 1,
+          "actual_order": [
+            "control",
+            "candidate"
+          ],
+          "control_index": 1,
+          "candidate_index": 2,
+          "candidate_relative_percent": {
+            "prefill_tokens_per_second": 1.2503652778068641,
+            "decode_output_tokens_per_second": 0.4679387049025152,
+            "combined_output_tokens_per_second": 0.5266343180777122
+          }
+        },
+        {
+          "pair": 2,
+          "actual_order": [
+            "candidate",
+            "control"
+          ],
+          "control_index": 4,
+          "candidate_index": 3,
+          "candidate_relative_percent": {
+            "prefill_tokens_per_second": -2.4237260203517907,
+            "decode_output_tokens_per_second": 0.9577326807757025,
+            "combined_output_tokens_per_second": 0.7023594292991264
+          }
+        },
+        {
+          "pair": 3,
+          "actual_order": [
+            "control",
+            "candidate"
+          ],
+          "control_index": 5,
+          "candidate_index": 6,
+          "candidate_relative_percent": {
+            "prefill_tokens_per_second": -2.9543573303274173,
+            "decode_output_tokens_per_second": 0.9577258061851834,
+            "combined_output_tokens_per_second": 0.6550887709592113
+          }
+        }
+      ],
+      "work": {
+        "mtp": false,
+        "mtp_tensors": 0,
+        "mtp_acceptance_policy": "disabled",
+        "mtp_max_drafts": 0,
+        "draft_program_graph_calls": 0,
+        "generated_tokens": 128,
+        "generated_decode_tokens": 126,
+        "actual_graph_calls": 128,
+        "prefill_graph_calls": 2,
+        "decode_graph_calls": 126,
+        "prefill_target_rows": 309,
+        "verified_target_rows": 126,
+        "actual_target_rows": 435,
+        "committed_target_rows": 435,
+        "committed_target_decode_rows": 126,
+        "actual_draft_rows": 0,
+        "consumed_drafts": 0
+      },
+      "memory": {
+        "control": {
+          "sampled_peaks": {
+            "sampled_max_working_set_bytes": 1165795328,
+            "observed_os_peak_working_set_bytes": 1165824000,
+            "sampled_max_private_commit_bytes": 6106693632,
+            "observed_os_peak_commit_bytes": 6106693632,
+            "sampled_peak_gpu_dedicated_bytes": 4319166464,
+            "sampled_peak_gpu_shared_bytes": 96468992,
+            "sampled_peak_gpu_total_bytes": 4400955392
+          },
+          "sample_count": 307,
+          "ready_baseline": {
+            "ready_marker_ns": 270499387925500,
+            "first_prefill_marker_ns": 270499388001800,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 33,
+            "shared:no_pid_instance": 33
+          },
+          "actual_sample_gaps_ms": {
+            "count": 287,
+            "min": 0.1185,
+            "median": 15.1621,
+            "max": 23.9634
+          },
+          "sample_cost_ms": {
+            "count": 288,
+            "min": 0.059,
+            "median": 0.13435,
+            "max": 0.3673
+          },
+          "phase_windows": {
+            "round1_prefill": {
+              "begin_ns": 270499388001800,
+              "end_ns": 270499456384500,
+              "sample_count": 6,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 8563800,
+                "after": 432000
+              }
+            },
+            "round1_decode": {
+              "begin_ns": 270499456391900,
+              "end_ns": 270500128380200,
+              "sample_count": 66,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 14573400,
+                "after": 13421100
+              }
+            },
+            "round2_prefill": {
+              "begin_ns": 270500128389300,
+              "end_ns": 270500170610800,
+              "sample_count": 3,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 1998200,
+                "after": 823500
+              }
+            },
+            "round2_decode": {
+              "begin_ns": 270500170617900,
+              "end_ns": 270500850262700,
+              "sample_count": 66,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 13897400,
+                "after": 7058000
+              }
+            }
+          }
+        },
+        "candidate": {
+          "sampled_peaks": {
+            "sampled_max_working_set_bytes": 1165168640,
+            "observed_os_peak_working_set_bytes": 1165193216,
+            "sampled_max_private_commit_bytes": 6100615168,
+            "observed_os_peak_commit_bytes": 6100615168,
+            "sampled_peak_gpu_dedicated_bytes": 4319166464,
+            "sampled_peak_gpu_shared_bytes": 96468992,
+            "sampled_peak_gpu_total_bytes": 4400955392
+          },
+          "sample_count": 304,
+          "ready_baseline": {
+            "ready_marker_ns": 270502705527700,
+            "first_prefill_marker_ns": 270502705541300,
+            "sample": null,
+            "unknown": true,
+            "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 33,
+            "shared:no_pid_instance": 33
+          },
+          "actual_sample_gaps_ms": {
+            "count": 286,
+            "min": 0.1237,
+            "median": 15.20205,
+            "max": 20.0509
+          },
+          "sample_cost_ms": {
+            "count": 287,
+            "min": 0.0593,
+            "median": 0.1352,
+            "max": 0.3578
+          },
+          "phase_windows": {
+            "round1_prefill": {
+              "begin_ns": 270502705541300,
+              "end_ns": 270502775044300,
+              "sample_count": 6,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 6124700,
+                "after": 2393500
+              }
+            },
+            "round1_decode": {
+              "begin_ns": 270502775051200,
+              "end_ns": 270503446396600,
+              "sample_count": 64,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 12966200,
+                "after": 6612700
+              }
+            },
+            "round2_prefill": {
+              "begin_ns": 270503446404900,
+              "end_ns": 270503488229900,
+              "sample_count": 5,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 8422600,
+                "after": 11818100
+              }
+            },
+            "round2_decode": {
+              "begin_ns": 270503488236000,
+              "end_ns": 270504170597400,
+              "sample_count": 65,
+              "missing_boundary": false,
+              "ambiguous_boundary": false,
+              "invalid_boundary_order": false,
+              "exact_phase_boundary_values": false,
+              "bracket_ages_ns": {
+                "before": 3984700,
+                "after": 11496000
+              }
+            }
+          }
+        }
+      },
+      "capture_recorded_reused_each_process": [
+        6,
+        120
+      ],
+      "raw_summary": {
+        "path": ".scratch/inference-synchronous-step-report-20261025/ordinary-screen/summary.json",
+        "bytes": 121920,
+        "sha256": "56c784fcfbb2003a69b9cf2dc6a704376e52c7e2c61aba54c4206c1b3bb2b126"
+      }
+    }
+  },
+  "all16_actual_processes": [
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "control",
+      "index": 1,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943650833304400,
+      "finished_unix_ns": 1792943654353108800
+    },
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 2,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943654464875900,
+      "finished_unix_ns": 1792943658310044800
+    },
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 3,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943658415077700,
+      "finished_unix_ns": 1792943661886077000
+    },
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "control",
+      "index": 4,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943661994167100,
+      "finished_unix_ns": 1792943665492361800
+    },
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "control",
+      "index": 5,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943665599902800,
+      "finished_unix_ns": 1792943669106263200
+    },
+    {
+      "workload": "MTP",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 6,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943669213791600,
+      "finished_unix_ns": 1792943672679871500
+    },
+    {
+      "workload": "MTP",
+      "mode": "memory",
+      "arm": "control",
+      "index": 1,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943672785696800,
+      "finished_unix_ns": 1792943676460780900
+    },
+    {
+      "workload": "MTP",
+      "mode": "memory",
+      "arm": "candidate",
+      "index": 2,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        27,
+        105
+      ],
+      "prepared_observations": 68,
+      "started_unix_ns": 1792943676591821300,
+      "finished_unix_ns": 1792943680034920900
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "control",
+      "index": 1,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943787728286600,
+      "finished_unix_ns": 1792943790946482400
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 2,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943791063469700,
+      "finished_unix_ns": 1792943794252242900
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 3,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943794370439200,
+      "finished_unix_ns": 1792943797565928100
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "control",
+      "index": 4,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943797677559600,
+      "finished_unix_ns": 1792943800860073100
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "control",
+      "index": 5,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943800970406900,
+      "finished_unix_ns": 1792943804171210600
+    },
+    {
+      "workload": "ordinary",
+      "mode": "timing",
+      "arm": "candidate",
+      "index": 6,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943804285253400,
+      "finished_unix_ns": 1792943807465395700
+    },
+    {
+      "workload": "ordinary",
+      "mode": "memory",
+      "arm": "control",
+      "index": 1,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943807575041100,
+      "finished_unix_ns": 1792943811022814400
+    },
+    {
+      "workload": "ordinary",
+      "mode": "memory",
+      "arm": "candidate",
+      "index": 2,
+      "all_nontime_equal": true,
+      "capture_recorded_reused": [
+        6,
+        120
+      ],
+      "prepared_observations": 128,
+      "started_unix_ns": 1792943811149609000,
+      "finished_unix_ns": 1792943814334432400
+    }
+  ],
+  "retained_failures_and_corrections": [
+    {
+      "stage": "host1 compile",
+      "fact": "Original probe double-included copied observation structs and omitted existing wd4324; compile failed, no link/run. Original command/deps/stdout/stderr retained; exact pre-fix probe snapshot was not separately preserved."
+    },
+    {
+      "stage": "source independent review",
+      "fact": "Pre-bad stream with nonzero width was not consumed inr1 early return; r2 resetswidth only after nonthrowing emptywrite. Originalr1 source/pins and new25th actual case retained."
+    },
+    {
+      "stage": "CUDA build runner dependency check",
+      "fact": "Report compile passed; string assertion compared c: vsC:. Fixed to WindowsPath equality; same compiled OBJ was reused for one actual link, no TU rerun.",
+      "evidence": {
+        "path": ".scratch/inference-synchronous-step-report-20261025/cuda/dependency-check-first-failure.json",
+        "bytes": 1025,
+        "sha256": "733a8e21d615e5261227449a921c7d30348b9836c18211feb958c70d03df94b7"
+      }
+    },
+    {
+      "stage": "ordinary final summary",
+      "fact": "All8 processes already finished exit0 before KeyError actual_draft_rows. Offline recovery reuses original stats and saved original memory parser output. Only derived summary marks missing actual_draft_rows/consumed_drafts=0 after8 independent mtp=false/no draft program confirmations. No raw/runs overwrite or model rerun.",
+      "evidence": {
+        "path": ".scratch/inference-synchronous-step-report-20261025/ordinary-screen/first-summary-failure.json",
+        "bytes": 1274,
+        "sha256": "16b5144eadb28cf87071455904a254bcd549e1055b89d21391105b226dd322ca"
+      }
+    }
+  ],
+  "independent_merge_recommendation": "Merge as a bounded synchronous-report implementation improvement: ordinary decode+0.823%/combined+0.637% with3 positive pairs and disjoint observed ranges; ordinary prefill-.528% overlaps. MTP decode+.964%/combined+.889% overlaps, so stable MTP throughput benefit is unproven. Single-file local state has acceptable maintenance cost and preserves normal bytes/order/errors. No further MTP samples or formal peer-window refresh is justified by this package.",
+  "limits": [
+    "Three timing samples per arm are descriptive, not significance or broad hardware evidence.",
+    "Each workload has one independent memory process per arm. Same sampled dedicated/shared peaks, ready baselines null, original null samples/gaps retained; small single-run RAM differences are not savings claims.",
+    "Unitbuf/tie/sentry invocation counts intentionally decrease. Failedsync may expose a different partial prefix; no every-field fault/interleaving or arbitrary custom-facet/tie-callback equivalence is claimed.",
+    "Frozenbe3 app/weights/core/Graph/native closure; only report object replaced. Current new coldCPU backend API is not certified by this image. New public peer32 performance table is unchanged.",
+    "No binaries, SDK, weight tensors or whole model source tree are packed. Existing prerequisite cache paths and exact pins are retained."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/inference-synchronous-step-report-2026-10-26.zip",
+    "bytes": 493088,
+    "sha256": "8ef8d323f00aa66b66faf00271be657a385d2db35f8cc590b82aa77faf91017d"
+  },
+  "archive_verification": {
+    "members": 192,
+    "CRC": "PASS",
+    "all_content_member_SHA256": "PASS",
+    "binary_SDK_model_payload": false
+  }
+}

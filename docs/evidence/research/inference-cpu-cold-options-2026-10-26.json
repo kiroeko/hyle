@@ -1,0 +1,116 @@
+{
+  "status": "PASS_FINITE_CPU_GRAPH_AND_GPU_ONLY_HEADER",
+  "date": "2026-10-26",
+  "implementation": {
+    "canonical_integrated": true,
+    "production_paths": [
+      "engine/inference/backend.h"
+    ],
+    "shared_case": "tests/tools/qwen_backend_cpu_options_case.h",
+    "formal_test": "QwenBackendCpuCuda.ExplicitCpuOptionsKeepOriginalExecutorAndMoveContract",
+    "formal_test_source": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+    "contract": "Explicit original CPU DefaultContextOptions at cold Backend construction; default factory unchanged, no extra option inventory or owner. Model continues to accept Backend&&."
+  },
+  "source_pins": [
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 24664,
+      "sha256": "7fa40bcd91706096187d7c52387d29c97a79434a31083642cb58ff6374b9e8e2"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_options_case.h",
+      "bytes": 5802,
+      "sha256": "7e36b8b6456edec68840e7b1077e11b5186b2745d0524404a705b84f35b0715b"
+    },
+    {
+      "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+      "bytes": 20185,
+      "sha256": "f2faf8bc5067c082607463ff1b76a06ffb75e66a15e8c48d4930cfbf43ece244"
+    }
+  ],
+  "patch": {
+    "path": ".scratch/inference-cpu-cold-options-20261025/source.patch",
+    "bytes": 11567,
+    "sha256": "84923ba2f7c51536e72652ea005f8e0ced9fb059f4d2edbfede91a745f700d32"
+  },
+  "actual_checks": {
+    "cpu": {
+      "status": "PASS",
+      "configured_provider": "ggml-cpu",
+      "default_provider": "ggml-cpu",
+      "executor_calls": 2,
+      "executor_tasks": 2,
+      "compared_values": 68,
+      "native_threads": 1,
+      "invalid_threads": [
+        0,
+        4294967295
+      ]
+    },
+    "durations_seconds": {
+      "compile": 2.641,
+      "link": 1.141,
+      "run": 0.234,
+      "gpu_header": 1.984
+    },
+    "statuses": {
+      "compile": 0,
+      "link": 0,
+      "run": 0,
+      "gpu_header": 0
+    },
+    "checks": [
+      "Configured/default CPU Graph each replayed twice; Backend moved while original prepared Graph/Invocation/Queue remain in use.",
+      "Nonzero F32 input Neg values exactly match independent expected values for both endpoints.",
+      "Borrowed executor dispatches the configured graph; the default graph does not invoke the other endpoint executor.",
+      "native_threads 0 and UINT32_MAX preserve original cold InvalidArgument rejection.",
+      "Explicit CPU options without a selected CPU endpoint reject before endpoint construction.",
+      "GPU-only thin /W4 /WX /Zs translation names the incomplete original CPU options type; actual sourceDependencies contain no CPU factory/header."
+    ],
+    "link_input_count": 130,
+    "core_SDK_provider_rebuilds": 0,
+    "GPU_runs": 0,
+    "HTTP": 0,
+    "publication_reruns": 0
+  },
+  "first_failures": [
+    {
+      "path": "host1/compile",
+      "kind": "implementation compile failure",
+      "detail": "MSVC C2280 conditional expression copied move-only Result<Context>; changed only initialize_cpu to explicit cold if/else"
+    },
+    {
+      "path": "host2/compile",
+      "kind": "same-source repeated compile failure",
+      "detail": "Attempted byte replacement assumed CRLF but canonical was LF; assertion prevented edit. Shell then repeated original failing source. Preserved, not a new product failure."
+    },
+    {
+      "path": "host3/gpu-header",
+      "kind": "thin compile recipe failure",
+      "detail": "CPU recipe did not include CUDA SDK headers. Reused actual existing CUDA flags for gpu-header2 only. CPU runtime was not repeated."
+    }
+  ],
+  "boundaries": [
+    "The shared helper was really compiled and run through a thin CPU driver. The whole original CPU+CUDA test TU and its full target were not recompiled or rerun; its new gtest wrapper is source-reviewed only.",
+    "GPU-only is a header/syntax check, not a GPU runtime or Model/mixed-endpoint test.",
+    "No throughput, parallel speed, process-wide thread bound, all-core tuning or global ATen thread setting was measured or changed.",
+    "native_threads>1 and a custom metadata allocator are existing borrowed policies, not newly runtime-tested here.",
+    "Default native_threads=1/empty executor, all Model/CLI callers, instance layout, original workspace/cache budgets and retirement mechanisms remain unchanged.",
+    "Command/dependency/object records reference the retained local cache. The archive deliberately excludes compiler/SDK/provider binaries, model data and a duplicate full source tree."
+  ],
+  "review": {
+    "path": ".scratch/inference-cpu-cold-options-20261025/publication-review.json",
+    "bytes": 2557,
+    "sha256": "34a3b52612a3243183f5a193caaa93f926d67673fcce63b8b59ae2813b8ed0a4"
+  },
+  "archive": {
+    "path": "docs/evidence/research/inference-cpu-cold-options-2026-10-26.zip",
+    "bytes": 88869,
+    "sha256": "7eacb41c11c29c5c8208730a2bc1fc5f6a664ecb4453188247b8c88766fdc599",
+    "members": 52,
+    "logical_bytes": 428372,
+    "crc_check": "PASS",
+    "manifest": "manifest.json",
+    "contents": "Changed product/shared-case source and patch, thin consumers, exact commands/results/dependency pins, first failures; no binaries, SDK or models."
+  }
+}

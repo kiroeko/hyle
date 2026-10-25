@@ -2,26 +2,49 @@
 
 #include <iomanip>
 #include <ostream>
+#include <sstream>
 
 #include "../inference/execution_observation.h"
 
 namespace hyle::engine::reporting {
 
 void write_step_observation(std::ostream &output, const inference::StepObservation &step) {
-  if (step.prefix_hit)
-    output << "prefix_hit name=" << step.name << " reused_tokens=" << step.reused_tokens
-              << " graph_calls=" << step.graph_executed << " visible=" << step.visible << '\n';
-  if (step.graph_executed) output << "prepared T=" << (step.graph_input_tokens ? step.graph_input_tokens : step.input_tokens) << " visible=" << step.visible
-            << " replay=" << (step.replay_route == graph::ReplayRoute::kCaptured ? "captured"
-                : step.replay_route == graph::ReplayRoute::kHybrid ? "hybrid" : "commands")
-            << " cold_batch_seconds=" << step.cold_batch_seconds
-            << " capture_recorded=" << step.capture_recorded
-            << " capture_reused=" << step.capture_reused << '\n';
-  output << step.name << " tokens=" << step.input_tokens << " visible=" << step.visible
-            << " seconds=" << step.seconds << " submit_seconds=" << step.submit_seconds
-            << " step_seconds=" << step.step_seconds
-            << " progress=" << (step.scheduled_progress ? "scheduler" : "direct")
-            << " next=" << step.next << '\n';
+  // Keep the original synchronous endpoint, but emit one formatted record.
+  if (!output.good()) { output.write("", 0); output.width(0); return; }
+  std::ostringstream record;
+  record.imbue(output.getloc());
+  record.flags(output.flags() & ~std::ios_base::unitbuf);
+  record.precision(output.precision());
+  record.width(output.width());
+  record.fill(output.fill());
+  record.exceptions(output.exceptions());
+  const auto emit = [&] {
+    output.width(record.width());
+    const auto text = record.view();
+    output.write(text.data(), static_cast<std::streamsize>(text.size()));
+    output.setstate(record.rdstate());
+  };
+  try {
+    if (step.prefix_hit)
+      record << "prefix_hit name=" << step.name << " reused_tokens=" << step.reused_tokens
+                << " graph_calls=" << step.graph_executed << " visible=" << step.visible << '\n';
+    if (step.graph_executed) record << "prepared T=" << (step.graph_input_tokens ? step.graph_input_tokens : step.input_tokens) << " visible=" << step.visible
+              << " replay=" << (step.replay_route == graph::ReplayRoute::kCaptured ? "captured"
+                  : step.replay_route == graph::ReplayRoute::kHybrid ? "hybrid" : "commands")
+              << " cold_batch_seconds=" << step.cold_batch_seconds
+              << " capture_recorded=" << step.capture_recorded
+              << " capture_reused=" << step.capture_reused << '\n';
+    record << step.name << " tokens=" << step.input_tokens << " visible=" << step.visible
+              << " seconds=" << step.seconds << " submit_seconds=" << step.submit_seconds
+              << " step_seconds=" << step.step_seconds
+              << " progress=" << (step.scheduled_progress ? "scheduler" : "direct")
+              << " next=" << step.next << '\n';
+  } catch (...) {
+    // Preserve a formatting exception after publishing its original prefix.
+    try { emit(); } catch (...) {}
+    throw;
+  }
+  emit();
 }
 void write_preparation_observation(std::ostream &output, const inference::StepObservation &step,
                                    const inference::PreparationObservation &preparation) {

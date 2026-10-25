@@ -1,0 +1,113 @@
+{
+  "status": "BOUNDED_SOURCE_AND_RETAINED_TRACE_REVIEW",
+  "generated_UTC": "2026-10-25T15:50:46.006775+00:00",
+  "scope": "Performance facility reuse and selected mechanisms in nine actual local reference engines. This is not an exhaustive code audit of those engines or a new throughput window.",
+  "execution": {
+    "new_model_runs": 0,
+    "GPU": 0,
+    "builds": 0,
+    "network": 0,
+    "downloads": 0
+  },
+  "reference_versions": [
+    {
+      "repository": "llama.cpp",
+      "HEAD": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "clean": true,
+      "qualification": "Selected local-source comparison; executable benchmark remains matched433e7051 closure."
+    },
+    {
+      "repository": "vllm",
+      "HEAD": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "qualification": "Fixed-buffer/shape-bucket source anchors only."
+    },
+    {
+      "repository": "TensorRT-LLM",
+      "HEAD": "46d9966b54d9d11998b712e732fb20f64d4d35c0",
+      "qualification": "Index reports staged deletions of tracked tree and corresponding untracked directories. Do not call repository clean. All ten files actually inspected below are byte-for-byte HEAD blobs; no relevant local source delta was observed. No index/remote changes were made."
+    },
+    {
+      "repository": "ik_llama.cpp",
+      "HEAD": "35e72560fac6eb4e0bedc99976d3a12040749230",
+      "clean": true,
+      "inspected_files": 3
+    },
+    {
+      "repository": "sglang",
+      "HEAD": "234ccba7f625e12639e621044496bcc6197c3758",
+      "clean": true,
+      "inspected_files": 3
+    },
+    {
+      "repository": "ds4",
+      "HEAD": "5379c1c9ac315f1540371b06a3db88491d4059ff",
+      "clean": true,
+      "inspected_files": 2
+    },
+    {
+      "repository": "Strata",
+      "HEAD": "8183c6b67162340c09b67360860177c577a65f2e",
+      "clean": true,
+      "inspected_files": 3
+    },
+    {
+      "repository": "DeepInfer",
+      "HEAD": "774ce244b87cc0eb8d4b94ab9f5de2ab22049f01",
+      "clean": true,
+      "inspected_files": 3
+    },
+    {
+      "repository": "deepseek-recipe",
+      "HEAD": "935817c66f5d6e64838f419692545f06787e485f",
+      "clean": true,
+      "inspected_files": 2
+    }
+  ],
+  "strongest_findings": [
+    {
+      "area": "Existing Hyle acceleration facilities",
+      "conclusion": "Weight loading already uses bounded Scheduler/IoContext/FileResourcePipeline; hot integer/request storage uses reserved vectors/SmallVector and a fixed FIFO. Output facts are cold-indexed; Graph uses prepared binding spans and reserved full keys. No measured reason to mechanically substitute containers or add a second scheduler/cache."
+    },
+    {
+      "area": "No-record host stages in retained diagnostic",
+      "conclusion": "45 original no-record episodes: mean prepare0.633568ms, including replay0.255652ms; publication/retirement0.015825ms. Finish/wait13.120427ms overlaps12.708460ms GPU activity. Nested/overlapped intervals are not added or treated as removable host time."
+    },
+    {
+      "area": "Matched captured GPU subsets",
+      "conclusion": "Late T2 target Hyle23/peer25 captured intervals differ by mean+0.316575ms; draft by-0.026362ms. Largest positive family is66 N6144/K2048 projections,+0.340235ms, partly offset by faster vocabulary head. Existing MMVF/Lt routes remain closed absent a new mechanism.",
+      "limit": "These are retained instrumented subsets with explicit outside activities and precision/work differences, not a decomposition of the current complete9.6-9.9% throughput gap."
+    },
+    {
+      "area": "CPU/mixed cold configuration",
+      "conclusion": "Public CPU Context options already accept borrowed ParallelExecutorRef and native_threads. Engine Backend did not forward them and used native_threads=1. A narrow cold forwarding seam can reuse those facilities; default all-core pools or global ATen setters are not justified.",
+      "status": "Selected for implementation and finite checks separately."
+    },
+    {
+      "area": "Synchronous reporting",
+      "conclusion": "Original step reporting is inside the natural consumer journey and costs about0.13ms per call in an earlier retained diagnostic, including synchronous stream IO. Coalescing within the same call while preserving bytes/order/format and synchronous delivery is a legitimate candidate.",
+      "status": "Private host probe/consumer screening is separate evidence; no whole-engine gain claimed here."
+    },
+    {
+      "area": "Further native state and metadata ideas",
+      "conclusion": "ik_llama direct state-copy fusion and SGLang multi-state slot operations are concrete source ideas. Hyle old Snapshot ownership prevents blind in-place adoption; existing CopyBatch/delta metadata routes must be measured first. DeepInfer metadata kernels and Strata residency ideas have explicit model/hardware/cold-capacity prerequisites. deepseek-recipe inspected code is Rust protocol/token stream processing, with no CUDA/KV mechanism in that read scope."
+    }
+  ],
+  "current_full_consumer_evidence": {
+    "path": "docs/evidence/performance/inference-current-window-2026-10-25.json",
+    "bytes": 82623,
+    "sha256": "92a3d05144eb7dfe7068cdf11019ffecd7ac7160e25843467ebae5651aa1dd6f"
+  },
+  "retained_source_snapshot": "bfe1bb16c; exact source hashes in archived notes. Later implementations do not retroactively change these findings.",
+  "limits": [
+    "No new CPU/Apple/mixed throughput result.",
+    "Source presence does not prove optimality; finite read domains do not prove absence of all other opportunities.",
+    "No full GDN staging, generic manager, key relaxation, extra variants or reopening closed leaf candidates.",
+    "Published progress remains active; functionality/architecture closure is not whole-goal performance completion."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-performance-review-2026-10-25.zip",
+    "bytes": 49539,
+    "sha256": "05f639406a7c9de3763e0968d020e20727b812275ba196cf83d7c4a736a1025f"
+  },
+  "archive_members": 13
+}

@@ -34,6 +34,8 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 模型给出数学，Graph 根据真实能力冷选 Provider 和等价融合。模型驱动无需逐算子指定
 实现；新增后端融合不应要求修改请求循环。共享机制也不能反向依赖 Qwen 的字段或平台宏。
 
+CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultContextOptions`，CPU主端点和显式CPU辅助端点共用原工厂。未传配置仍用原默认值；不隐式创建CPU端点，不修改全局线程设置。外部allocator／executor的支撑对象须活到全部派生制品和原生工作退休；executor并发度不等于每个Invocation的`native_threads`。Model只接收已准备的Backend，不参与线程池配置。有限CPU数值／移动／错误检查及GPU-only头检查见[配置接通依据](../evidence/research/inference-cpu-cold-options-2026-10-26.json)，尚未据此测定吞吐收益。
+
 Qwen的冷制品准备已独立为`weights.h`／`weights.cc`：原Tensor存储、LoadedWeight和冷加载／投影绑定接口留在模型内，Recipe只消费绑定结果，加载器不依赖Model、Session或请求循环。绑定仍借稳定map节点，存储仍归原ColdResources，不复制权重银行或新增owner。Tensor的热读写／view／move保原inline；移出的freeze仅在冷导入和常量构图调用。同一weights源由每个实际消费者按自己的后端能力宏编译，避免把完整产品的Backend布局强加给Vulkan等factor消费者；没有新增用户构建选项。拆分后的原CPU请求流程及[工程构建检查](../evidence/correctness/inference-cold-weights-split-2026-10-25.json)已通过，不据此声称吞吐提升。
 
 KDA／Kimi NoPE MLA 组件的参数准备与数学追加已分开：调用者提供真实参数 Value，
