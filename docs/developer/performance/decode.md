@@ -5,7 +5,11 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。下面保留各独立窗口及边界，不跨窗累加。状态索引／重绑调查已结束，尚无可直接实施的安全补丁或净收益量级；下一批先核当前CUDA／MTP真实耗时，正式余差尚未刷新。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。下面保留各独立窗口及边界，不跨窗累加。当前CUDA／MTP配对诊断已完成，下一步沿录制时replay准备定位主机工作；状态索引／参数重绑尚无可直接实施的安全补丁或净收益量级，正式余差未刷新。
+
+[当前CUDA／MTP双引擎诊断](../../evidence/performance/inference-cuda-mtp-current-attribution-2026-10-26.json)各仅一个新Nsight进程，均正常结束、完整非时间报告与各自参考一致；当前Model／sampling身份与冻结依赖闭包明确列出，未重编SDK或设备内核。Hyle66个合并decode episode的墙时／GPU活动并集为1043.67／895.99ms；其中21个有录制episode的replay准备71.48ms，可见API区间并集40.63ms，其余30.85ms尚未归因，不能称纯CPU或承诺可回收。45个无录制episode墙时／GPU并集为662.66／612.89ms；差值含等待和仪器，不等于Graph开销。父子区间不相加。
+
+Hyle27次录制对应13次Instantiate及14次成功ExecUpdate，参考7次捕获、2次Instantiate、7次成功Update；没有观察到Hyle更新失败回退。后续同核签名组合补齐的5次Instantiate合5.49ms，签名不证明完整图拓扑可更新，量级也不足以支持新造重绑框架。晚段Hyle target捕获子集均值10.883ms、参考target整调用内GPU并集10.602ms；draft分别2.721／2.738ms，范围不同，不能合成完整墙时差距或收益。两边根间gap每轮约1.5–2.0ms，不支持把主要差距归为日志间隙。实际target行441／438、draft行434／435且续文／中间精度不同，不能签同工作量胜负。独立复算未发现所审计算的阻断问题；端点补充另保留源码边界说明。仅为诊断，正式prefill／decode／RAM／VRAM／综合速度表不变。
 
 [量级排序原记录](../../evidence/research/mtp-next-priorities-2026-10-26.json)中的GDN双向工作IO现已筛选关闭，结果见下文。次级源审确认已有常量安装、alias索引和revision／span复用，实际剩余静态遍历占比未知，尚不支持实施；不同形状N2048／K6144 down也只在旧均值有小差、范围混杂。六层fresh native plan共享包络小且须新增寿命机制，暂不优先。无过滤R>1及随机Hybrid不影响当前greedy N1 MTP窗口。
 

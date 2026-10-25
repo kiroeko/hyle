@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 06:57（北京时间）。整体粗估 **87%**。CPU常量View透明发现已采用：新同窗prefill＋1.15%，工作集采样峰下降约341MB；decode无稳定收益，仍比同窗参考慢约4.9%。四请求普通随机采样decode约＋10.8%的收益已合入，但单请求／MTP正式CUDA对照未刷新。状态索引／捕获源码调查已完成，未找到可直接接通的安全补丁或当前可回收量级；下一批回到当前CUDA／MTP真实耗时排序。
+更新：2026-10-26 07:44（北京时间）。整体粗估 **87%**。CPU常量View透明发现已采用：新同窗prefill＋1.15%，工作集采样峰下降约341MB；decode无稳定收益，仍比同窗参考慢约4.9%。四请求普通随机采样decode约＋10.8%的收益已合入，但单请求／MTP正式CUDA对照未刷新。当前CUDA／MTP双引擎诊断及独立复核已完成，未产生新的提速补丁；正在定位图录制时replay准备的主机路径。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -21,15 +21,19 @@
   - 本地参考引擎思路与可证伪候选：约65%
   - MTP差距归因与执行优化：约90%
   - 已确认热点实现与最新完整四项对照：约35%
-- 完成前遗漏复审与收尾：0%
+- 完成前遗漏复审与收尾：约10%
 
 ## 正在做
 
-本批实现、验证与源码调查均已完成，暂无进行中子任务；下批顺序见下文。
+| 任务 | 所属 | 简述 | 进度 |
+|---|---|---|---|
+| 录制时replay主机路径定位 | 性能设施复用 | 沿本次71.48ms录制准备包络核源码，选择少量内部计时点，尚无可回收收益结论 | 约10% |
 
 ## 本次完成与剩余顺序
 
 - 功能／共同架构：本轮发现的可实现缺项已补齐；[功能复查](../evidence/research/inference-functional-review-2026-10-25.json)、[架构复查](../evidence/research/inference-architecture-closure-2026-10-25.json)及[本次独立遗漏复审](../evidence/research/inference-closure-omissions-2026-10-26.json)保留有限运行和模型／平台边界，不能据此宣布整个goal完成。
+- 生命周期复查：[两条当前源码链](../evidence/research/inference-lifecycle-followup-2026-10-26.json)未新增确定缺口，涵盖full-hit frontier失败重试／真实退休和双预算拒绝／跨后端Snapshot／整批发布；8份当前源码身份已核。仅源码复查，未新增故障执行，不代签全平台或全部生命周期。
+- 当前CUDA／MTP归因：[每引擎一个新诊断](../evidence/performance/inference-cuda-mtp-current-attribution-2026-10-26.json)均正常退出，完整非时间工作与各自参考相同；GPU并集、父子区间及correlation独立复核未见阻断问题。Hyle为66个合并episode，参考为65个target＋65个draft调用，实际target行441／438、draft行434／435，不能当相同计算量。Hyle27次录制包含13次Instantiate及14次成功Update，没有Update失败回退。21个有录制decode的replay准备累计71.48ms，其中30.85ms未被可见API区间覆盖；尚非纯CPU或可回收时间。两边各轮根间gap均约1.5–2.0ms，不能从日志／调度间隙期待大幅收益。正式四项表不变。
 - 配置接线：已补[CPU预算工厂转发](../evidence/research/inference-cpu-options-forwarding-2026-10-26.json)及[共同冷replay选择](../evidence/research/inference-replay-policy-consistency-2026-10-26.json)。默认行为不变，有限编译通过；未据此声明完整运行或吞吐收益。
 - 当前基线：已按实际依赖完成[107→108对象刷新](../evidence/research/inference-current-source-build-2026-10-26.json)，完整32进程结果见下表。后续配置改动未追加全窗，旧样本不改名、不混算。
 - 性能取舍：同步报告和hidden输出已合入；宽Lt、typed MMF及K2辅助强制捕获均无稳定完整收益，关闭且不补样。数字、源身份和取舍见[性能资料](performance/decode.md)。
@@ -45,7 +49,7 @@
 - CPU矩阵源码：[有限复核](../evidence/research/inference-cpu-matmul-granularity-review-2026-10-26.json)未发现审查路径大权重重复转型／pack。Hyle中间BF16存储点与参考保留F32结果是实际数值合同差异；187矩阵／569原生小图来自旧诊断，不能由次数预测吞吐或把旧33ms包络当转换成本。
 - CPU常量View：[实现、检查与新三臂对照](../evidence/performance/inference-cpu-constant-view-regions-2026-10-26.json)已完成。仅安全常量View参与冷发现连通性证明，实际View仍由原Graph管理；每图1195→1039步，逐节点BF16舍入保留。Windows四项薄入口检查及正式测试TU编译通过；[Mac五个当前产品TU＋薄消费者](../evidence/correctness/inference-cpu-constant-view-macos-2026-10-26.json)严格编译、7次提交通过，沿用冻结Graph／native／SDK，不代表完整当前Mac构建或吞吐。采用为资源／prefill优化，不计decode收益。
 - 载权取舍：[直接host IO筛选](../evidence/performance/inference-cpu-host-direct-io-screen-2026-10-26.json)五个host TU、17项原suite及独立真实行为通过，但新六计时＋两独立内存窗口加载0.895→1.004秒（慢12.12%）、startup到ready1.003→1.117秒（慢11.27%），三样本范围不重叠。prefill43.331→43.359、decode11.416→11.419、综合3.283→3.290 tok/s均范围重叠；工作集各约5.320GiB、线程峰17，GPU缺测。627次／约3.76GB显式复制虽消除，staging与backing预算不变；关闭、不合入、不补样，不猜慢因。合法只读映射导入仍为设计，未计收益。
-- 剩余顺序：先核当前CUDA／MTP闭包的GPU执行与主机准备占比，按真实量级选择候选；CPU原生矩阵及工作分配、合法只读映射加载、混合FFN放置另列。参数重绑缺少完整映射，索引状态需要原生能力，均无当前净收益依据，暂不开发新机制。减少CPU图步数未带来稳定decode提升，不再据次数外推。当前greedy MTP仍未追平。
+- 剩余顺序：先定位本次录制时replay主机路径，确认具体可删除或可摊销的动作，再决定是否实施；当前没有现成净收益补丁。CPU原生矩阵及工作分配、合法只读映射加载、混合FFN放置另列。参数重绑缺少完整映射，索引状态需要原生能力，均无当前净收益依据，暂不开发新机制。减少CPU图步数未带来稳定decode提升，不再据次数外推。当前greedy MTP仍未追平。
 
 ## 最新完整性能对照
 

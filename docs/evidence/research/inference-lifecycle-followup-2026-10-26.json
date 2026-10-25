@@ -1,0 +1,102 @@
+{
+  "status": "BOUNDED_SOURCE_REVIEW_NO_NEW_CONFIRMED_FUNCTION_OR_ARCHITECTURE_GAP",
+  "head": "1db560ce30691634ffd38468167f5cf66d76beb3",
+  "activity": "Read-only current source and retained closure evidence; no build/test/model/GPU/SSH/download or product edit.",
+  "basis": [
+    "docs/evidence/research/inference-functional-review-2026-10-25.json",
+    "docs/evidence/research/inference-architecture-closure-2026-10-25.json",
+    "docs/evidence/research/inference-closure-omissions-2026-10-26.json"
+  ],
+  "focused_checks": [
+    {
+      "trigger": "Ordinary full-prefix hit resampling has accepted native work, then an observation/readback fails; the caller retries or destroys the Model while actual retirement is still unproven.",
+      "question": "Can a reused frontier overwrite identity/modifier state, or can an omitted persistent Invocation root strand the ColdResources retirement owner?",
+      "anchors": [
+        "engine/models/qwen35/main.cc:1353 SamplingFrontier fields",
+        "engine/models/qwen35/main.cc:1427 ColdResources::pending",
+        "engine/models/qwen35/main.cc:1740 Model teardown/handoff",
+        "engine/models/qwen35/main.cc:1772 submit_retained",
+        "engine/models/qwen35/main.cc:3001 sample_prefix",
+        "engine/inference/execution_resources.h:19 RetainedResources"
+      ],
+      "result": "No new defect found. The frontier pending guard precedes Invocation creation and identity writes; inputs are ready lease bindings. Accepted original Completion owns the retained cold scope. The frontier has no persistent Invocation field: sample_prefix creates a local run, so dropping that handle already removes the application Invocation root on success/error. ColdResources includes its frontier pending fact and receives the original Backend at Model teardown. This uses existing Completion retirement, not a new observer/manager or an error-as-retirement shortcut.",
+      "existing_evidence": "inference-frontier-retirement-gate-2026-10-25.json checks the early gate on a finite CPU fixture; inference-retirement-observation-2026-10-25.json separates error and retirement facts.",
+      "limit": "No new native error injected; source ordering/lifetime check, not proof that every arbitrary unknown completion will eventually retire. MTP auxiliary-program changes are outside this review."
+    },
+    {
+      "trigger": "A cache/global retention gate rejects after a completed ordinary batch has produced state, or a complete old Snapshot outlives its Session/Model on CPU/GPU/mixed endpoints.",
+      "question": "Can partial export/append extraction publish only some participants or free the borrowed backend/resource before old readers/native uses retire?",
+      "anchors": [
+        "engine/models/qwen35/main.cc:1927 retain_state_storage",
+        "engine/models/qwen35/main.cc:1937 prepare_cache transactional sentinel",
+        "engine/models/qwen35/main.cc:1985 prepare_state_storage local tuple",
+        "engine/models/qwen35/main.cc:3911 finish_selected_evaluations",
+        "engine/models/qwen35/main.cc:4017 exports before any take_append",
+        "engine/models/qwen35/main.cc:4154 unbind/expected-base then all head+ledger publication",
+        "engine/models/qwen35/main.cc:1152 StepState::try_abort",
+        "engine/models/qwen35/session_state.h:255 Snapshot/resource_owner",
+        "engine/inference/backend.h:91 endpoint and owner destruction order",
+        "include/hyle/compute/resource_leases.h:108 borrowed pool resource/Context/allocator contract"
+      ],
+      "result": "No new defect found. All fallible output admission, append recovery and expected-base checks precede batch head swaps and committed ledger flags. Abort retains the actual StepState/guards until native retirement; no first participant is published before a later export rejection. Complete Snapshot owns ColdResources before its PageRef/VersionRef/read fields and therefore releases it last. Backend keeps stable endpoint addresses and moves the original endpoint into the same cold owner on teardown. CPU system resource is process lifetime; CUDA owned domains use StorageOwner; other borrowed native-resource uses must keep their original endpoint as explicitly documented.",
+      "borrowed_boundary": "Copying an internal LeasePool ReadLease alone is not a promise to own its MemoryResource/Context/allocator. The public pool contract keeps these borrowed; actual prefix/request consumers retain the complete Snapshot or original admitted native owner. LogitsInput explicitly requires an owned lease or a caller-retained borrowed endpoint. No second owner manager is missing from that declared contract.",
+      "accounting_boundary": "Two-scope completed-result retention is not a physical provider cap. A first successful fee follows the actual export owner after second-gate rejection; persistent and transient exports may retain/return it differently. This is documented and not an atomic counter rollback guarantee.",
+      "existing_evidence": [
+        "compute-cache-local-and-shared-admission-2026-10-25.json: finite host/core and same-Model retry consumer",
+        "inference-generated-result-dual-scope-2026-10-25.json: persistent/transient host export-owner correction",
+        "qwen-dual-model-lifetime-2026-10-25.json: independent CUDA Models and A teardown/B continuation"
+      ],
+      "limit": "No new admission-failure/native-fault execution; no claim that all platform combinations or unrelated full payload journeys were run."
+    }
+  ],
+  "confirmed_new_gaps": [],
+  "conclusion": "This bounded reverse check does not add a currently implementable missing primitive or justify a new manager/IR/executor. Keep current functional/architecture work-item closure; retain unrun-artifact/platform/quality and separate performance boundaries. It is not an exhaustive proof over all possible owners and future APIs.",
+  "not_reopened": [
+    "CPU View optimization just completed",
+    "MTP or multimodal functional scope",
+    "server/application transport policy",
+    "codec/payload inventory or backend coverage matrix"
+  ],
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 470192,
+      "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14709,
+      "sha256": "8ee8e6cc07eee1e89fdb048aad0109381205fc0bb126829df7e376d3107b2361"
+    },
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 24664,
+      "sha256": "7fa40bcd91706096187d7c52387d29c97a79434a31083642cb58ff6374b9e8e2"
+    },
+    {
+      "path": "engine/inference/execution_resources.h",
+      "bytes": 3312,
+      "sha256": "fe229f195fdcab2ba21255de9a927af2224e7138cb481ca2c089cc3754a5ca65"
+    },
+    {
+      "path": "engine/inference/prepared_output.h",
+      "bytes": 7310,
+      "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "engine/inference/output_delivery.h",
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 9640,
+      "sha256": "9fd35f1e9ec5f10558024f7b856767ab9fe155857a130045555237d27caf297c"
+    }
+  ]
+}

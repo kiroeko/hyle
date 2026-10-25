@@ -1,0 +1,2101 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "PASS_ONE_PAIRED_MTP_DIAGNOSTIC_NOT_A_THROUGHPUT_WINDOW",
+  "head_before_documentation": "1db560ce30691634ffd38468167f5cf66d76beb3",
+  "hardware": "Windows; NVIDIA GeForce RTX 4070 12GiB; driver 617.14",
+  "scope": "Pure CUDA Qwen3.5-2B BF16 weights, original score/activation policy, C1024 N1 R1, greedy K1 MTP, two natural P154+64 turns. One profiled process per engine. No SDK/native/kernel or product source change.",
+  "identities": {
+    "hyle": {
+      "status": "INSTRUMENTED_CONSUMER_BUILT_NOT_PROFILED",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\link\\consumer.exe",
+        "bytes": 141466624,
+        "sha256": "619113379dd284726c74ce0777b0872bc4b16642533f33b647aa5ea87b05d07b"
+      },
+      "app": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\compile\\unit.obj",
+        "bytes": 12814983,
+        "sha256": "53501d62cf452589ba71fc2130d7c00122550192adc989c11d52a7327e8a1e30"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 471323,
+        "sha256": "5eb0992521fdab8a8e94f00b6947ce98f042d8c3222abbc184f12a4562df023c"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\source-pins.json",
+        "bytes": 3817,
+        "sha256": "967c161388f9d4461a735496328b5abf0bcbd1687fc43f13af9cd67819c6dfff"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\compile\\actual-dependencies.json",
+        "bytes": 103482,
+        "sha256": "33b307fd0e4b9e4e46987a00251ec63302f3205d490608cd151017767c9f42f8"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\link-inputs.json",
+        "bytes": 57006,
+        "sha256": "3aa495a012cb9f8d7c24ea90de34de7048464513dc63f64ec696acf1144fedb3"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\runtime.json",
+        "bytes": 8211,
+        "sha256": "85905e39fd3f32a5425d37a82b93dd0e1a379c1d4577ad3b5b8ec1a717f3231a"
+      },
+      "compile": {
+        "exit": 0,
+        "pid": 34240,
+        "seconds": 18.791255399992224
+      },
+      "link": {
+        "exit": 0,
+        "pid": 59696,
+        "seconds": 1.7069518999778666
+      },
+      "original_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\batch\\ready.json",
+        "bytes": 2056,
+        "sha256": "dd54d898d88a3aac189262c319c80060cdcbd5caadabddfef02f86911f6f01a7"
+      },
+      "new_host_TUs": 1,
+      "SDK_builds": 0,
+      "model_runs": 0,
+      "scope": "NVTX-only delta; mathematical/native/kernel/Graph/report closure retained"
+    },
+    "peer": {
+      "status": "INSTRUMENTED_CONSUMER_BUILT_NOT_PROFILED",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\link\\consumer.exe",
+        "bytes": 35832832,
+        "sha256": "89e7f9f71e9bcada232c2e935f621ec879f6c7bac7301d813c0c67c155cb896f"
+      },
+      "app": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\compile\\unit.obj",
+        "bytes": 4051918,
+        "sha256": "a115110e75365a271ef8a918062e8edb43d44ef1922a501cbb46d85c69231adc"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\source\\peer_multiturn.cc",
+        "bytes": 34610,
+        "sha256": "c42743461cbecf6be858cef6cb96f426ba9802d17b25e67dd2756575dce578a1"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\source-pins.json",
+        "bytes": 3817,
+        "sha256": "967c161388f9d4461a735496328b5abf0bcbd1687fc43f13af9cd67819c6dfff"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\compile\\actual-dependencies.json",
+        "bytes": 75145,
+        "sha256": "a228aa5009dcd63c86f639edfb0b2df0749311e0fbb24760d271fd850e76fe70"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\link-inputs.json",
+        "bytes": 2052,
+        "sha256": "ec3319fa0e4427ce70ab728a6ea12e75253053b4babbb53253e188fe424d7f24"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\runtime.json",
+        "bytes": 5845,
+        "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+      },
+      "compile": {
+        "exit": 0,
+        "pid": 61252,
+        "seconds": 2.6449161999626085
+      },
+      "link": {
+        "exit": 0,
+        "pid": 35120,
+        "seconds": 0.44690179999452084
+      },
+      "original_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\peer-ready.json",
+        "bytes": 1842,
+        "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+      },
+      "new_host_TUs": 1,
+      "SDK_builds": 0,
+      "model_runs": 0,
+      "scope": "NVTX-only delta; mathematical/native/kernel/Graph/report closure retained"
+    }
+  },
+  "findings": {
+    "status": "FROZEN_OFFLINE_TWO_ENGINE_DIAGNOSTIC_NO_ADDITIONAL_RUN",
+    "measured_processes": 2,
+    "model_retry": 0,
+    "first_preparation_failure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\initial-preparation-failure.json",
+      "bytes": 498,
+      "sha256": "e625600f3f1e00f152bad2f3f0a1582be7f6073a971e4eb95b59a12d33a6b400"
+    },
+    "source_and_runtime_scope": "Hyle41 dfaa formalModel+085be sampling header, inherited221 absolute+13 system inputs; new NVTX-only ModelTU. peer433 source0a6ce with exact9-input llama/GGML closure, new NVTX-only consumerTU. No native/SDK/kernel changes. Current CPU/team/View runtime is not certified by this CUDA image.",
+    "work_alignment": {
+      "equal": [
+        "one session/two natural turns",
+        "128emit/126decodeemit",
+        "309target-prefill rows",
+        "435committed target rows",
+        "complete per-arm non-time report matches own reference"
+      ],
+      "different": [
+        "Hyle66 combineddecode episodes;peer65target+65draft decode native calls",
+        "Hyle actualtarget441 vspeer438, actualdraft434 vspeer435",
+        "acceptance/continuations and intermediate precision differ; no per-seq cross-engine join"
+      ]
+    },
+    "measured": {
+      "hyle": {
+        "quality": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\trace1\\quality.json",
+          "bytes": 1672,
+          "sha256": "f184e5354dd965afb681eff20b5ff7493abe4b4b5385371c44f563792d35faef"
+        },
+        "process": {
+          "exit": 0,
+          "nsys_pid": 60184,
+          "seconds": 7.191288199974224,
+          "timeout": false
+        },
+        "work": {
+          "mtp": true,
+          "turn_count": 2,
+          "generated_tokens": 128,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "actual_target_rows": 441,
+          "actual_draft_rows": 434,
+          "committed_target_rows": 435
+        },
+        "logical_calls": 68,
+        "capture_count": 27,
+        "capture_begin_to_last_finish_api_ms": 62.266403,
+        "api_counts": {
+          "cudaGraphExecUpdate_v10020": {
+            "calls": 14,
+            "return_values": {
+              "0": 14
+            },
+            "union_ms": 1.454736
+          },
+          "cudaGraphInstantiateWithFlags_v11040": {
+            "calls": 13,
+            "return_values": {
+              "0": 13
+            },
+            "union_ms": 16.972315
+          },
+          "cudaStreamBeginCapture_v10000": {
+            "calls": 27,
+            "return_values": {
+              "0": 27
+            },
+            "union_ms": 0.074387
+          },
+          "cudaStreamEndCapture_v10000": {
+            "calls": 27,
+            "return_values": {
+              "0": 27
+            },
+            "union_ms": 0.397
+          }
+        },
+        "outside_all_role_roots_GPU_union_ms": 163.590456,
+        "driver_table_present": false,
+        "diagnostic_groups": {
+          "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3": 1,
+          "graph_lineage_error": 714,
+          "CUDA hardware tracing is not supported on this system. A legacy (software instrumented) trace was collected instead.": 1
+        }
+      },
+      "peer": {
+        "quality": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\trace1\\quality.json",
+          "bytes": 1562,
+          "sha256": "e31d0f6fe0300fefba7093ab270b1aafd7fbebbad17d7e853b6ec0cf28d01d0e"
+        },
+        "process": {
+          "exit": 0,
+          "nsys_pid": 23924,
+          "seconds": 5.98102949996246,
+          "timeout": false
+        },
+        "work": {
+          "mtp": true,
+          "turn_count": 2,
+          "generated_tokens": 128,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "actual_target_rows": 438,
+          "actual_draft_rows": 435,
+          "committed_target_rows": 435
+        },
+        "logical_calls": 134,
+        "capture_count": 7,
+        "capture_begin_to_last_finish_api_ms": 8.238377,
+        "api_counts": {
+          "cudaGraphExecUpdate_v10020": {
+            "calls": 7,
+            "return_values": {
+              "0": 7
+            },
+            "union_ms": 1.331015
+          },
+          "cudaGraphInstantiate_v12000": {
+            "calls": 2,
+            "return_values": {
+              "0": 2
+            },
+            "union_ms": 2.043512
+          },
+          "cudaStreamBeginCapture_v10000": {
+            "calls": 7,
+            "return_values": {
+              "0": 7
+            },
+            "union_ms": 0.027892
+          },
+          "cudaStreamEndCapture_v10000": {
+            "calls": 7,
+            "return_values": {
+              "0": 7
+            },
+            "union_ms": 0.059298
+          }
+        },
+        "outside_all_role_roots_GPU_union_ms": 947.427912,
+        "driver_table_present": false,
+        "diagnostic_groups": {
+          "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3": 1,
+          "graph_lineage_error": 1384,
+          "CUDA hardware tracing is not supported on this system. A legacy (software instrumented) trace was collected instead.": 1
+        }
+      }
+    },
+    "hyle_decode_parent": {
+      "wall_ns": {
+        "count": 66,
+        "total_ms": 1043.673136,
+        "mean_ms": 15.813229333333334,
+        "median_ms": 14.8860995,
+        "min_ms": 13.747509,
+        "max_ms": 27.114387
+      },
+      "gpu_overlap_union_ns": {
+        "count": 66,
+        "total_ms": 895.985474,
+        "mean_ms": 13.575537484848484,
+        "median_ms": 13.606336,
+        "min_ms": 12.682176,
+        "max_ms": 14.701986
+      },
+      "wall_without_observed_gpu_ns": {
+        "count": 66,
+        "total_ms": 147.687662,
+        "mean_ms": 2.2376918484848485,
+        "median_ms": 1.1553125,
+        "min_ms": 0.868322,
+        "max_ms": 14.249338
+      },
+      "sequences": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68
+      ],
+      "phases_inclusive_ms": {
+        "hyle/completion_wait": {
+          "wall_total": 853.413622,
+          "wall_mean": 12.930509424242423,
+          "GPU_union_total": 840.609427
+        },
+        "hyle/postwait_publish": {
+          "wall_total": 15.446149,
+          "wall_mean": 0.23403256060606062,
+          "GPU_union_total": 0.29251
+        },
+        "hyle/prepare": {
+          "wall_total": 109.618939,
+          "wall_mean": 1.660893015151515,
+          "GPU_union_total": 0.446874
+        },
+        "hyle/prepare_replay": {
+          "wall_total": 82.38671,
+          "wall_mean": 1.248283484848485,
+          "GPU_union_total": 0.0
+        },
+        "hyle/submit": {
+          "wall_total": 64.562602,
+          "wall_mean": 0.9782212424242425,
+          "GPU_union_total": 54.319135
+        },
+        "hyle/wait_publish": {
+          "wall_total": 869.178531,
+          "wall_mean": 13.169371681818182,
+          "GPU_union_total": 840.978
+        }
+      }
+    },
+    "hyle_record21": {
+      "wall_ns": {
+        "count": 21,
+        "total_ms": 381.011211,
+        "mean_ms": 18.143391,
+        "median_ms": 15.727257,
+        "min_ms": 14.273035,
+        "max_ms": 27.114387
+      },
+      "gpu_overlap_union_ns": {
+        "count": 21,
+        "total_ms": 283.098814,
+        "mean_ms": 13.480895904761905,
+        "median_ms": 13.602414,
+        "min_ms": 12.865049,
+        "max_ms": 14.265385
+      },
+      "wall_without_observed_gpu_ns": {
+        "count": 21,
+        "total_ms": 97.912397,
+        "mean_ms": 4.6624950952380955,
+        "median_ms": 1.91306,
+        "min_ms": 1.187967,
+        "max_ms": 14.249338
+      },
+      "sequences": [
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        16,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45
+      ],
+      "phases_inclusive_ms": {
+        "hyle/completion_wait": {
+          "wall_total": 270.434555,
+          "wall_mean": 12.877835952380952,
+          "GPU_union_total": 265.841155
+        },
+        "hyle/postwait_publish": {
+          "wall_total": 4.978515,
+          "wall_mean": 0.23707214285714287,
+          "GPU_union_total": 0.093663
+        },
+        "hyle/prepare": {
+          "wall_total": 84.920684,
+          "wall_mean": 4.043842095238095,
+          "GPU_union_total": 0.177855
+        },
+        "hyle/prepare_replay": {
+          "wall_total": 71.482527,
+          "wall_mean": 3.4039298571428573,
+          "GPU_union_total": 0.0
+        },
+        "hyle/submit": {
+          "wall_total": 20.375557,
+          "wall_mean": 0.9702646190476191,
+          "GPU_union_total": 16.783226
+        },
+        "hyle/wait_publish": {
+          "wall_total": 275.516479,
+          "wall_mean": 13.119832333333333,
+          "GPU_union_total": 265.965611
+        }
+      }
+    },
+    "hyle_no_record45": {
+      "wall_ns": {
+        "count": 45,
+        "total_ms": 662.661925,
+        "mean_ms": 14.725820555555556,
+        "median_ms": 14.669483,
+        "min_ms": 13.747509,
+        "max_ms": 16.008431
+      },
+      "gpu_overlap_union_ns": {
+        "count": 45,
+        "total_ms": 612.88666,
+        "mean_ms": 13.619703555555557,
+        "median_ms": 13.625459,
+        "min_ms": 12.682176,
+        "max_ms": 14.701986
+      },
+      "wall_without_observed_gpu_ns": {
+        "count": 45,
+        "total_ms": 49.775265,
+        "mean_ms": 1.106117,
+        "median_ms": 1.064557,
+        "min_ms": 0.868322,
+        "max_ms": 1.675451
+      },
+      "sequences": [
+        6,
+        7,
+        12,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68
+      ],
+      "phases_inclusive_ms": {
+        "hyle/completion_wait": {
+          "wall_total": 582.979067,
+          "wall_mean": 12.955090377777777,
+          "GPU_union_total": 574.768272
+        },
+        "hyle/postwait_publish": {
+          "wall_total": 10.467634,
+          "wall_mean": 0.23261408888888888,
+          "GPU_union_total": 0.198847
+        },
+        "hyle/prepare": {
+          "wall_total": 24.698255,
+          "wall_mean": 0.5488501111111111,
+          "GPU_union_total": 0.269019
+        },
+        "hyle/prepare_replay": {
+          "wall_total": 10.904183,
+          "wall_mean": 0.24231517777777778,
+          "GPU_union_total": 0.0
+        },
+        "hyle/submit": {
+          "wall_total": 44.187045,
+          "wall_mean": 0.9819343333333334,
+          "GPU_union_total": 37.535909
+        },
+        "hyle/wait_publish": {
+          "wall_total": 593.662052,
+          "wall_mean": 13.192490044444444,
+          "GPU_union_total": 575.012389
+        }
+      }
+    },
+    "steady_GPU_role_subsets": {
+      "target": {
+        "hyle_scope": "Only uniquely source/correlation-supported captured subset; eager/input/output/copy outside it not assigned.",
+        "peer_scope": "Whole NVTX decode+synchronize GPU containment, including any traced input/native copies. sampled/hidden/trim after return excluded.",
+        "hyle_no_record_GraphLaunch_count": 45,
+        "peer_no_record_GraphLaunch_count": 60,
+        "hyle_T2": {
+          "count": 45,
+          "total_ms": 489.802456,
+          "mean_ms": 10.884499022222222,
+          "median_ms": 10.775504,
+          "min_ms": 10.192793,
+          "max_ms": 11.808898
+        },
+        "peer_T2": {
+          "count": 60,
+          "total_ms": 633.922343,
+          "mean_ms": 10.565372383333333,
+          "median_ms": 10.4467425,
+          "min_ms": 9.918097,
+          "max_ms": 11.700254
+        },
+        "late_context_at_least384_hyle": {
+          "count": 23,
+          "total_ms": 250.316839,
+          "mean_ms": 10.883340826086958,
+          "median_ms": 10.878087,
+          "min_ms": 10.192793,
+          "max_ms": 11.775555
+        },
+        "late_context_at_least384_peer": {
+          "count": 25,
+          "total_ms": 265.04136,
+          "mean_ms": 10.601654400000001,
+          "median_ms": 10.528366,
+          "min_ms": 9.969301,
+          "max_ms": 11.700254
+        },
+        "late_mean_difference_ms": 0.2816864260869565,
+        "qualification": "Same actualT and bounded warm context; Hyle captured subset versus peer native-call containment, BF16/F32 intermediates and copies differ. Descriptive, not matched task or recoverable time."
+      },
+      "draft": {
+        "hyle_scope": "Only uniquely source/correlation-supported captured subset; eager/input/output/copy outside it not assigned.",
+        "peer_scope": "Whole NVTX decode+synchronize GPU containment, including any traced input/native copies. sampled/hidden/trim after return excluded.",
+        "hyle_no_record_GraphLaunch_count": 45,
+        "peer_no_record_GraphLaunch_count": 49,
+        "hyle_T2": {
+          "count": 43,
+          "total_ms": 116.578832,
+          "mean_ms": 2.7111356279069767,
+          "median_ms": 2.653924,
+          "min_ms": 2.452999,
+          "max_ms": 3.530365
+        },
+        "peer_T2": {
+          "count": 49,
+          "total_ms": 132.798913,
+          "mean_ms": 2.710181897959184,
+          "median_ms": 2.524806,
+          "min_ms": 2.487431,
+          "max_ms": 3.351583
+        },
+        "late_context_at_least384_hyle": {
+          "count": 23,
+          "total_ms": 62.589692,
+          "mean_ms": 2.7212909565217394,
+          "median_ms": 2.660261,
+          "min_ms": 2.454374,
+          "max_ms": 3.530365
+        },
+        "late_context_at_least384_peer": {
+          "count": 25,
+          "total_ms": 68.459163,
+          "mean_ms": 2.73836652,
+          "median_ms": 2.524806,
+          "min_ms": 2.488359,
+          "max_ms": 3.351583
+        },
+        "late_mean_difference_ms": -0.01707556347826067,
+        "qualification": "Same actualT and bounded warm context; Hyle captured subset versus peer native-call containment, BF16/F32 intermediates and copies differ. Descriptive, not matched task or recoverable time."
+      }
+    },
+    "instantiate_groups": {
+      "first_observed_K1_family_range": {
+        "captures": 4,
+        "seq": [
+          2,
+          2,
+          3,
+          3
+        ],
+        "range_roles": [
+          "draft_captured_subset",
+          "target_captured_subset",
+          "draft_captured_subset",
+          "target_captured_subset"
+        ],
+        "instantiate_api_union_ms": 6.192219,
+        "confidence": "Direct event/role/signature grouping. Second-fill/epoch explanation is source-consistent inference; no seed/refcount/invalidation reason was logged."
+      },
+      "later_initial_signature_second_fill": {
+        "captures": 4,
+        "seq": [
+          4,
+          4,
+          8,
+          13
+        ],
+        "range_roles": [
+          "draft_captured_subset",
+          "target_captured_subset",
+          "target_captured_subset",
+          "draft_captured_subset"
+        ],
+        "instantiate_api_union_ms": 5.291903,
+        "confidence": "Direct event/role/signature grouping. Second-fill/epoch explanation is source-consistent inference; no seed/refcount/invalidation reason was logged."
+      },
+      "after_signature_epoch_refill_pattern": {
+        "captures": 5,
+        "seq": [
+          39,
+          40,
+          41,
+          44,
+          45
+        ],
+        "range_roles": [
+          "target_captured_subset",
+          "target_captured_subset",
+          "draft_captured_subset",
+          "target_captured_subset",
+          "draft_captured_subset"
+        ],
+        "instantiate_api_union_ms": 5.488193,
+        "confidence": "Direct event/role/signature grouping. Second-fill/epoch explanation is source-consistent inference; no seed/refcount/invalidation reason was logged."
+      }
+    },
+    "instantiation_conclusion": "All14 observed HyleExecUpdate return0.13Instantiate events each associate with newly observed graphId(s);9later Instantiate events have an already-seen complete observed kernel name/grid/block signature for the same family/range. Thus not failed-Update fallback and not proof that topology/arguments are identical.",
+    "source_mechanism": {
+      "anchors": [
+        {
+          "path": "src/graph/executable.cc",
+          "line": 8113,
+          "fact": "Native argument invalidation clears all launch authority/keys, retains at most ONE backend-authorized nonlaunchable seed before discarding variants."
+        },
+        {
+          "path": "src/graph/executable.cc",
+          "line": 9779,
+          "fact": "Private two-variant key matching; an empty alternate slot has no retired native executable to update. Only evicting a valid variant may recycle it."
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_backend.cc",
+          "line": 1312,
+          "fact": "Update requires same context, rebuild_only, unique, not status_busy and existing executable. Only structural Update failure permits instantiate fallback."
+        },
+        {
+          "path": "src/compute_backend_cuda/cuda_backend.cc",
+          "line": 1399,
+          "fact": "Retirement recycle rejects live/shared/busy/already-rebuild artifacts and permanently revokes launch authority."
+        }
+      ],
+      "pins": [
+        {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+            "bytes": 481504,
+            "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+          },
+          "actual_build_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\drift8\\graph--executable_cc\\identity-current.json",
+            "bytes": 19376,
+            "sha256": "59753d4f0ebe18f3dc67a360908e781469eec9b86389bf43c6883ad00ee25db6"
+          }
+        },
+        {
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda\\cuda_backend.cc",
+            "bytes": 70516,
+            "sha256": "c79c39eea9f5d07f26434de8b2a959c5f783b1a2a2503a030bdb9a2a1b0e886c"
+          },
+          "actual_build_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_backend_cuda--cuda_backend_cc\\identity-current.json",
+            "bytes": 13085,
+            "sha256": "2448fb4cef0f31ce92be2e97a684428661c46f0b5567063d50fc114ba5b485e0"
+          }
+        }
+      ],
+      "fact": "Native invalidation keepsatmostONE authorized nonlaunchable seed then clears BOTH keys/variants; cold alternate slot has no old executable. CUDA Update additionally requires samecontext,unique,!status_busy,rebuild_only. Do not remove those safety gates.",
+      "inference": "New first4 range fills, later4 initial second-key fills, then5 post-signature-epoch refill events fit the2variant/one-seed mechanism. Export lacks actual backend seed/refcount/invalidation reason; the last5 are not independently proved native-hardclear events."
+    },
+    "record_visibility": {
+      "hyle21_replay": {
+        "wall_ns": {
+          "total_ms": 71.482527,
+          "mean_ms": 3.4039298571428573,
+          "max_ms": 12.195755,
+          "count": 21
+        },
+        "visible_runtime_driver_library_union_ns": {
+          "total_ms": 40.634711,
+          "mean_ms": 1.934986238095238,
+          "max_ms": 6.529961,
+          "count": 21
+        },
+        "uncovered_by_visible_host_calls_ns": {
+          "total_ms": 30.847816,
+          "mean_ms": 1.4689436190476188,
+          "max_ms": 5.665794,
+          "count": 21
+        },
+        "library_union_ns": {
+          "total_ms": 9.332338,
+          "mean_ms": 0.44439704761904764,
+          "max_ms": 2.013653,
+          "count": 21
+        }
+      },
+      "hyle45_reuse_replay": {
+        "wall_ns": {
+          "total_ms": 10.904183,
+          "mean_ms": 0.24231517777777778,
+          "max_ms": 0.311536,
+          "count": 45
+        },
+        "visible_runtime_driver_library_union_ns": {
+          "total_ms": 0.017642,
+          "mean_ms": 0.00039204444444444444,
+          "max_ms": 0.000761,
+          "count": 45
+        },
+        "uncovered_by_visible_host_calls_ns": {
+          "total_ms": 10.886541,
+          "mean_ms": 0.24192313333333332,
+          "max_ms": 0.311076,
+          "count": 45
+        },
+        "library_union_ns": {
+          "total_ms": 0.0,
+          "mean_ms": 0.0,
+          "max_ms": 0.0,
+          "count": 45
+        }
+      },
+      "record_cublas_LtMatmul_calls": {
+        "cublasLtMatmul": 2015
+      },
+      "fact": "2015 cublasLtMatmul ranges lie inside recorded replay. No cublasLtCreate or AlgoGetHeuristic lies in those decode recording windows; their large process totals are mainly cold construction. Runtime/driver/library union40.635ms is deduplicated inside71.483ms recorded replay; remaining30.848ms is unclassified host-visible gap, not proved pure GraphCPU."
+    },
+    "next_action": {
+      "strongest": "Focus on the original recording path; steady target GPU difference only~0.282ms and draft~-0.017ms in lateT2 subsets cannot be promoted to fullMTP gap.",
+      "finite_source_candidate": "If evaluating ONE-versus-TWO nonlaunchable rebuild seeds in existing capture slots, preserve all old retirement/owner/status/permission gates and prove explicit invalidation reason. Observed5post-epoch Instantiate API windows sum only~5.49ms/66episodes; no high-ROI or net benefit established, do not broaden into address-rebind framework.",
+      "unknown": "Remaining record host gaps and newer full-role eager/copy costs need more specific existing-path evidence before promising a large speedup. This memo authorizes no experiment."
+    },
+    "limits": [
+      "All clock figures derive only from thisnewpair. No oldtrace/provider15.29 subtraction, no unprofiledTPS/baseline refresh or speedclaim.",
+      "Hyle prepare/wait_publish/episode are inclusive parents. GPU interval union counts kernels/copies/memsets once; never add nested APIs or usekernelcountascost.",
+      "No-record alone is not steady: final role subsets additionallyrequire actualGraphLaunch.14peer launchless decode calls remain listed; firstpass analysis preservedin offline-analysis1, refined inoffline-analysis2.",
+      "CUDA driver13.4 unsupported warning, software tracing and repeated originalGraph/originalNode lineage errors exist onbotharms. Driver table absent. Actualcorrelation/time/graphId used; unassigned/GPUoutside roots retained.",
+      "No exactCUDAgraph edge/argument export, no physical tensor-to-nodeparameter map; samekernel signature is insufficient proof of update eligibility.",
+      "Peer nativecall end follows synchronize but excludes later sampled/hidden/trim; Hyle endpoint includes statepublication/retirement and excludes observerreportIO. Do not subtract these CPU spans as identical stages."
+    ],
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\analyze.py",
+        "bytes": 19098,
+        "sha256": "3135057cb5a05b9eb1de3f22f288f366f15941efb2c1571f4b5e096fe16bccea"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\capture_actions.py",
+        "bytes": 8594,
+        "sha256": "b7ae352178a0475618cc1dcfeecb83954298f05a4f08a3ca9c1bd54ffc72391c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host_api_windows.py",
+        "bytes": 3831,
+        "sha256": "be63dac41a1b042f31de4063a640b88e4417920c1e650a217e79a3050ed64842"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\analysis-summary.json",
+        "bytes": 88046,
+        "sha256": "93b25abe1de547dd2bd371c8e57e70c7a9ded85b974e59d6e7acae3daabfc283"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\capture-action-summary.json",
+        "bytes": 49902,
+        "sha256": "9df0653324c04dcd1ad45a7549eb1dd2052cb60954a6fc408ea3632b03f383c5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-api-windows.json",
+        "bytes": 208769,
+        "sha256": "006a1f2c5af578940ff076c130f6cb199d56abe33d3cac9f2332783bc49ff1c8"
+      }
+    ],
+    "final_decode_window_supplement": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\decode-window-supplement.json",
+      "bytes": 25980,
+      "sha256": "be8d7d65f8a7a605a0139b59fb034f404828e62ce919fcc688abfb8c8b72ce66"
+    },
+    "final_action": "No ready net-benefit dense-kernel product patch from this evidence. Closed M2 wideLt/typedMMF/downMMVF/Top1 scopes remain closed; next stage is existing replay hostpath attribution only, not treating71.48/30.85ms as recoverable.",
+    "stream_truncation": "Peer Nsight stdout truncated at10240B; separate complete87113B consumer-result.json was used by original qualitygate and all analysis. Original logs untouched."
+  },
+  "decode_window_supplement": {
+    "arms": {
+      "hyle": {
+        "turns": [
+          {
+            "turn": 1,
+            "first_seq": 2,
+            "last_seq": 35,
+            "actual_root_count": 34,
+            "role_counts": {
+              "combined_K1": 34
+            },
+            "start_ns": 3001548467,
+            "first_root_start_ns": 3001548467,
+            "end_ns": 3538881509,
+            "start_definition": "firstdecode episode (its prepare child starts just after it)",
+            "end_definition": "lastcombined K1 episode rootend",
+            "continuous_wall_ms": 537.333042,
+            "root_wall_union_ms": 535.833072,
+            "gap_wall_ms": 1.49997,
+            "gap_count": 33,
+            "gaps_ns": [
+              [
+                3028662854,
+                3028712460
+              ],
+              [
+                3052895680,
+                3052956259
+              ],
+              [
+                3074564467,
+                3074618510
+              ],
+              [
+                3088891545,
+                3088932924
+              ],
+              [
+                3104228312,
+                3104273972
+              ],
+              [
+                3118878385,
+                3118920887
+              ],
+              [
+                3139734597,
+                3139780819
+              ],
+              [
+                3154569453,
+                3154617727
+              ],
+              [
+                3170344984,
+                3170387318
+              ],
+              [
+                3185276558,
+                3185320330
+              ],
+              [
+                3200793463,
+                3200840594
+              ],
+              [
+                3215625130,
+                3215670578
+              ],
+              [
+                3230553537,
+                3230595243
+              ],
+              [
+                3245704799,
+                3245747169
+              ],
+              [
+                3260714872,
+                3260763293
+              ],
+              [
+                3275365251,
+                3275415907
+              ],
+              [
+                3290750885,
+                3290800329
+              ],
+              [
+                3305395588,
+                3305443348
+              ],
+              [
+                3320420820,
+                3320461275
+              ],
+              [
+                3334343735,
+                3334385005
+              ],
+              [
+                3348514054,
+                3348554751
+              ],
+              [
+                3363224234,
+                3363263282
+              ],
+              [
+                3377010791,
+                3377046588
+              ],
+              [
+                3392326112,
+                3392377799
+              ],
+              [
+                3406970768,
+                3407014052
+              ],
+              [
+                3421889188,
+                3421932977
+              ],
+              [
+                3436446952,
+                3436490860
+              ],
+              [
+                3451221671,
+                3451267771
+              ],
+              [
+                3465119649,
+                3465161192
+              ],
+              [
+                3479624604,
+                3479674266
+              ],
+              [
+                3494886096,
+                3494930939
+              ],
+              [
+                3509368769,
+                3509415190
+              ],
+              [
+                3524514370,
+                3524558529
+              ]
+            ],
+            "prepare_inside_gaps_ms": 0.0,
+            "gap_outside_prepare_ms": 1.49997,
+            "continuous_gpu_union_ms": 461.187307,
+            "gpu_in_gaps_union_ms": 0.0,
+            "continuous_no_observed_gpu_ms": 76.145735,
+            "reported_JSON_decode_ms": 537.3937,
+            "JSON_note": "Shown independently. No timestamp bridge for original Clock endpoints was added; NVTX setup/end overhead and uncovered leading/trailing work prevent equating or subtracting these as exact same boundaries."
+          },
+          {
+            "turn": 2,
+            "first_seq": 37,
+            "last_seq": 68,
+            "actual_root_count": 32,
+            "role_counts": {
+              "combined_K1": 32
+            },
+            "start_ns": 3580716566,
+            "first_root_start_ns": 3580716566,
+            "end_ns": 4090023720,
+            "start_definition": "firstdecode episode (its prepare child starts just after it)",
+            "end_definition": "lastcombined K1 episode rootend",
+            "continuous_wall_ms": 509.307154,
+            "root_wall_union_ms": 507.840064,
+            "gap_wall_ms": 1.46709,
+            "gap_count": 31,
+            "gaps_ns": [
+              [
+                3601067695,
+                3601116431
+              ],
+              [
+                3621206202,
+                3621254340
+              ],
+              [
+                3641537435,
+                3641585893
+              ],
+              [
+                3661831740,
+                3661883111
+              ],
+              [
+                3677564319,
+                3677615366
+              ],
+              [
+                3692187307,
+                3692234263
+              ],
+              [
+                3712937141,
+                3712986051
+              ],
+              [
+                3734300354,
+                3734353941
+              ],
+              [
+                3748982535,
+                3749028534
+              ],
+              [
+                3764233225,
+                3764282180
+              ],
+              [
+                3778493015,
+                3778534516
+              ],
+              [
+                3792944290,
+                3792994331
+              ],
+              [
+                3809002762,
+                3809049897
+              ],
+              [
+                3823170366,
+                3823211418
+              ],
+              [
+                3838192981,
+                3838239342
+              ],
+              [
+                3852992579,
+                3853037286
+              ],
+              [
+                3868094985,
+                3868135817
+              ],
+              [
+                3882233390,
+                3882273986
+              ],
+              [
+                3897336835,
+                3897379344
+              ],
+              [
+                3911775107,
+                3911816916
+              ],
+              [
+                3926889634,
+                3926952003
+              ],
+              [
+                3941071694,
+                3941112015
+              ],
+              [
+                3956299766,
+                3956345869
+              ],
+              [
+                3970672901,
+                3970719299
+              ],
+              [
+                3985629081,
+                3985673547
+              ],
+              [
+                4000701496,
+                4000741565
+              ],
+              [
+                4015603551,
+                4015657043
+              ],
+              [
+                4029595788,
+                4029642928
+              ],
+              [
+                4045267405,
+                4045317429
+              ],
+              [
+                4059950587,
+                4060007050
+              ],
+              [
+                4074307269,
+                4074358814
+              ]
+            ],
+            "prepare_inside_gaps_ms": 0.0,
+            "gap_outside_prepare_ms": 1.46709,
+            "continuous_gpu_union_ms": 434.798167,
+            "gpu_in_gaps_union_ms": 0.0,
+            "continuous_no_observed_gpu_ms": 74.508987,
+            "reported_JSON_decode_ms": 509.36170000000004,
+            "JSON_note": "Shown independently. No timestamp bridge for original Clock endpoints was added; NVTX setup/end overhead and uncovered leading/trailing work prevent equating or subtracting these as exact same boundaries."
+          }
+        ],
+        "sum_same_clock_windows_ms": 1046.640196,
+        "sum_disjoint_root_wall_ms": 1043.6731359999999,
+        "sum_gap_wall_ms": 2.96706,
+        "reported_JSON_total_decode_ms": 1046.7554000000002,
+        "endpoint_source": {
+          "path": "engine/models/qwen35/main.cc",
+          "frozen_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\hyle\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 471323,
+            "sha256": "5eb0992521fdab8a8e94f00b6947ce98f042d8c3222abbc184f12a4562df023c"
+          },
+          "anchors": [
+            {
+              "line": 4202,
+              "meaning": "original finished Clock endpoint before NVTX range ends and observer/report IO"
+            },
+            {
+              "line": 4828,
+              "meaning": "observe_generation_commits installs record.endpoint into request/turn endpoints"
+            },
+            {
+              "line": 5966,
+              "meaning": "run_generation_sessions classifies continuous finished-minus-previousendpoint by generation/prefill bucket"
+            },
+            {
+              "line": 5636,
+              "meaning": "per-request turn decode is lastpublished turnendpoint minus prefill endpoint"
+            }
+          ],
+          "uncovered": "Leading work after prefill endpoint through caller reporting/admission/prepare preflight; gaps contain caller/observe/report/nextloop work. NVTX rootend follows original finished Clock by range-end calls, while original lastreport is outside finalendpoint."
+        }
+      },
+      "peer": {
+        "turns": [
+          {
+            "turn": 1,
+            "first_seq": 3,
+            "last_seq": 68,
+            "actual_root_count": 66,
+            "role_counts": {
+              "draft": 33,
+              "target": 33
+            },
+            "start_ns": 2163319797,
+            "first_root_start_ns": 2163322239,
+            "end_ns": 2659967642,
+            "start_definition": "earliest firstdecode Batch.fill prepare / native decode root",
+            "end_definition": "lasttarget native decode+synchronize rootend",
+            "continuous_wall_ms": 496.647845,
+            "root_wall_union_ms": 494.71547,
+            "gap_wall_ms": 1.932375,
+            "gap_count": 66,
+            "gaps_ns": [
+              [
+                2163319797,
+                2163322239
+              ],
+              [
+                2168705194,
+                2168722911
+              ],
+              [
+                2188850428,
+                2188925466
+              ],
+              [
+                2192169604,
+                2192181962
+              ],
+              [
+                2207966462,
+                2208017534
+              ],
+              [
+                2211392327,
+                2211404837
+              ],
+              [
+                2223638676,
+                2223692167
+              ],
+              [
+                2226500947,
+                2226511475
+              ],
+              [
+                2238842490,
+                2238892225
+              ],
+              [
+                2241696665,
+                2241706807
+              ],
+              [
+                2252806075,
+                2252849242
+              ],
+              [
+                2255889990,
+                2255898150
+              ],
+              [
+                2267533596,
+                2267579553
+              ],
+              [
+                2270439796,
+                2270449218
+              ],
+              [
+                2282094982,
+                2282143655
+              ],
+              [
+                2285068822,
+                2285081056
+              ],
+              [
+                2296455033,
+                2296511787
+              ],
+              [
+                2300893344,
+                2300911928
+              ],
+              [
+                2313061954,
+                2313110740
+              ],
+              [
+                2315875058,
+                2315883756
+              ],
+              [
+                2327071335,
+                2327111107
+              ],
+              [
+                2330163140,
+                2330170599
+              ],
+              [
+                2341028084,
+                2341074897
+              ],
+              [
+                2343963736,
+                2343971824
+              ],
+              [
+                2355966178,
+                2356016359
+              ],
+              [
+                2358824032,
+                2358832899
+              ],
+              [
+                2370273667,
+                2370316695
+              ],
+              [
+                2373325368,
+                2373342905
+              ],
+              [
+                2384188556,
+                2384223663
+              ],
+              [
+                2387852586,
+                2387872323
+              ],
+              [
+                2398989517,
+                2399032124
+              ],
+              [
+                2401922249,
+                2401938732
+              ],
+              [
+                2412955221,
+                2412998957
+              ],
+              [
+                2415938451,
+                2415947469
+              ],
+              [
+                2427624339,
+                2427662896
+              ],
+              [
+                2430909156,
+                2430917165
+              ],
+              [
+                2442604304,
+                2442652028
+              ],
+              [
+                2445441912,
+                2445450371
+              ],
+              [
+                2456751105,
+                2456799091
+              ],
+              [
+                2459613469,
+                2459621589
+              ],
+              [
+                2470663342,
+                2470711895
+              ],
+              [
+                2474097923,
+                2474106242
+              ],
+              [
+                2486724389,
+                2486774965
+              ],
+              [
+                2489554898,
+                2489563122
+              ],
+              [
+                2500790083,
+                2500834149
+              ],
+              [
+                2503604318,
+                2503612562
+              ],
+              [
+                2514712986,
+                2514756496
+              ],
+              [
+                2517803060,
+                2517811885
+              ],
+              [
+                2528986233,
+                2529030634
+              ],
+              [
+                2531930286,
+                2531938790
+              ],
+              [
+                2543531185,
+                2543595438
+              ],
+              [
+                2546382062,
+                2546394063
+              ],
+              [
+                2558076265,
+                2558121334
+              ],
+              [
+                2561506243,
+                2561526177
+              ],
+              [
+                2572425280,
+                2572467587
+              ],
+              [
+                2576027066,
+                2576067299
+              ],
+              [
+                2587676594,
+                2587719398
+              ],
+              [
+                2590475552,
+                2590491821
+              ],
+              [
+                2601713178,
+                2601751053
+              ],
+              [
+                2605153791,
+                2605173072
+              ],
+              [
+                2616506543,
+                2616552336
+              ],
+              [
+                2619645057,
+                2619655376
+              ],
+              [
+                2631492896,
+                2631544283
+              ],
+              [
+                2634524712,
+                2634538448
+              ],
+              [
+                2645573884,
+                2645616561
+              ],
+              [
+                2648784273,
+                2648796732
+              ]
+            ],
+            "prepare_inside_gaps_ms": 0.066284,
+            "gap_outside_prepare_ms": 1.866091,
+            "continuous_gpu_union_ms": 438.121244,
+            "gpu_in_gaps_union_ms": 0.0,
+            "continuous_no_observed_gpu_ms": 58.526601,
+            "reported_JSON_decode_ms": 496.7397,
+            "JSON_note": "Shown independently. No timestamp bridge for original Clock endpoints was added; NVTX setup/end overhead and uncovered leading/trailing work prevent equating or subtracting these as exact same boundaries."
+          },
+          {
+            "turn": 2,
+            "first_seq": 71,
+            "last_seq": 134,
+            "actual_root_count": 64,
+            "role_counts": {
+              "draft": 32,
+              "target": 32
+            },
+            "start_ns": 2689448264,
+            "first_root_start_ns": 2689450560,
+            "end_ns": 3162386575,
+            "start_definition": "earliest firstdecode Batch.fill prepare / native decode root",
+            "end_definition": "lasttarget native decode+synchronize rootend",
+            "continuous_wall_ms": 472.938311,
+            "root_wall_union_ms": 470.968305,
+            "gap_wall_ms": 1.970006,
+            "gap_count": 64,
+            "gaps_ns": [
+              [
+                2689448264,
+                2689450560
+              ],
+              [
+                2694247288,
+                2694263429
+              ],
+              [
+                2707441283,
+                2707499722
+              ],
+              [
+                2710436678,
+                2710450281
+              ],
+              [
+                2724952725,
+                2725016646
+              ],
+              [
+                2728272310,
+                2728284536
+              ],
+              [
+                2739818360,
+                2739884150
+              ],
+              [
+                2742994163,
+                2743003988
+              ],
+              [
+                2754867807,
+                2754933075
+              ],
+              [
+                2757789605,
+                2757798821
+              ],
+              [
+                2768905089,
+                2768974096
+              ],
+              [
+                2771812068,
+                2771820441
+              ],
+              [
+                2783132955,
+                2783187117
+              ],
+              [
+                2786328113,
+                2786336829
+              ],
+              [
+                2798870808,
+                2798940258
+              ],
+              [
+                2802623262,
+                2802633794
+              ],
+              [
+                2814617705,
+                2814679772
+              ],
+              [
+                2817817441,
+                2817825765
+              ],
+              [
+                2829029494,
+                2829078203
+              ],
+              [
+                2832178029,
+                2832185984
+              ],
+              [
+                2844595936,
+                2844635166
+              ],
+              [
+                2847363324,
+                2847370854
+              ],
+              [
+                2858890509,
+                2858939912
+              ],
+              [
+                2862519373,
+                2862536607
+              ],
+              [
+                2873889289,
+                2873945689
+              ],
+              [
+                2876770068,
+                2876778586
+              ],
+              [
+                2888446689,
+                2888494069
+              ],
+              [
+                2891295480,
+                2891302889
+              ],
+              [
+                2902568118,
+                2902611774
+              ],
+              [
+                2905941705,
+                2905965563
+              ],
+              [
+                2917093437,
+                2917151746
+              ],
+              [
+                2920060042,
+                2920079073
+              ],
+              [
+                2932146662,
+                2932188479
+              ],
+              [
+                2935800930,
+                2935811132
+              ],
+              [
+                2946751627,
+                2946787087
+              ],
+              [
+                2949975251,
+                2949995187
+              ],
+              [
+                2961419489,
+                2961461349
+              ],
+              [
+                2964225632,
+                2964239233
+              ],
+              [
+                2975370545,
+                2975408926
+              ],
+              [
+                2978146502,
+                2978154206
+              ],
+              [
+                2990685819,
+                2990741433
+              ],
+              [
+                2994066337,
+                2994076094
+              ],
+              [
+                3005515179,
+                3005560515
+              ],
+              [
+                3008365116,
+                3008373927
+              ],
+              [
+                3019447763,
+                3019505953
+              ],
+              [
+                3022323863,
+                3022334078
+              ],
+              [
+                3033935284,
+                3033992796
+              ],
+              [
+                3037304555,
+                3037313622
+              ],
+              [
+                3049285020,
+                3049337142
+              ],
+              [
+                3052164895,
+                3052174117
+              ],
+              [
+                3063478123,
+                3063518931
+              ],
+              [
+                3066283132,
+                3066298818
+              ],
+              [
+                3077525739,
+                3077578055
+              ],
+              [
+                3080631307,
+                3080640811
+              ],
+              [
+                3091534215,
+                3091584006
+              ],
+              [
+                3094742412,
+                3094751085
+              ],
+              [
+                3107377915,
+                3107437196
+              ],
+              [
+                3110254500,
+                3110264630
+              ],
+              [
+                3121838146,
+                3121888393
+              ],
+              [
+                3124957600,
+                3124966417
+              ],
+              [
+                3135766642,
+                3135814475
+              ],
+              [
+                3138698641,
+                3138706615
+              ],
+              [
+                3149770916,
+                3149809111
+              ],
+              [
+                3150507497,
+                3150511463
+              ]
+            ],
+            "prepare_inside_gaps_ms": 0.07001,
+            "gap_outside_prepare_ms": 1.899996,
+            "continuous_gpu_union_ms": 421.551838,
+            "gpu_in_gaps_union_ms": 0.0,
+            "continuous_no_observed_gpu_ms": 51.386473,
+            "reported_JSON_decode_ms": 473.0111,
+            "JSON_note": "Shown independently. No timestamp bridge for original Clock endpoints was added; NVTX setup/end overhead and uncovered leading/trailing work prevent equating or subtracting these as exact same boundaries."
+          }
+        ],
+        "sum_same_clock_windows_ms": 969.5861560000001,
+        "sum_disjoint_root_wall_ms": 965.683775,
+        "sum_gap_wall_ms": 3.902381,
+        "reported_JSON_total_decode_ms": 969.7508,
+        "endpoint_source": {
+          "path": "peer_multiturn.cc",
+          "frozen_source": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\source\\peer_multiturn.cc",
+            "bytes": 34610,
+            "sha256": "c42743461cbecf6be858cef6cb96f426ba9802d17b25e67dd2756575dce578a1"
+          },
+          "anchors": [
+            {
+              "line": 385,
+              "meaning": "decode_begin equals prefill_end before marker IO/whileloop setup"
+            },
+            {
+              "line": 125,
+              "meaning": "native callroot ends immediately after synchronize retired Clock, before sampling/hidden/state selection"
+            },
+            {
+              "line": 429,
+              "meaning": "per-round end after sample/hidden/trim/carry and emitted updates, then rounds JSON construction"
+            },
+            {
+              "line": 439,
+              "meaning": "wholeturn decodeendpoint after loop, so includes final sample/hidden/trim and rounds JSON tail"
+            }
+          ],
+          "uncovered": "Leading prefill-end marker and loop setup precede firstBatch.fill marker. Native-root gaps contain prepare, sampled token/hidden reads, cache trim, carry/prior construction and round JSON; final target post-synchronize sample/hidden/trim/round JSON is beyond the lastroot end but inside JSON decode."
+        }
+      }
+    },
+    "scope": "Only same new NVTX/CUPTI clock within each trace. Different root definitions and natural workloads remain; no paired speed from bags of means.",
+    "stream_limit": {
+      "peer_stdout_bytes": 10240,
+      "peer_complete_consumer_result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\trace1\\consumer-result.json",
+        "bytes": 87113,
+        "sha256": "ec9b84585285bb6d0c2480fa0152579d35966e863be8e1912ade2b76db9f388e"
+      },
+      "fact": "Nsight ProcessStreams peerstdout is truncated midJSON. Existing quality gate correctly used complete separate consumer-result.json; no rerun or rawlog alteration."
+    },
+    "next_action": {
+      "decision": "NO_READY_NET_BENEFIT_PRODUCT_PATCH_FROM_CURRENT_TARGET_KERNEL_SIGNATURES",
+      "scope": "Observed target signatures are BF16 cuBLAS/CUTLASS WMMA, existing hyle_bf16_l2 and native GDN/attention. Generic kernel/grid signatures alone do not uniquely identify every logical matrix K/N.",
+      "closed": [
+        {
+          "shape": "M2 K2048 N6144 paired gate/up; wideN12288",
+          "evidence": "docs/evidence/performance/mtp-m2-wide-lt-screen-2026-10-26.json",
+          "decision": "Closed wideLt; no reopen from this trace."
+        },
+        {
+          "shape": "M2 K2048 N6144 typedMMF",
+          "evidence": "docs/evidence/performance/mtp-m2-typed-mmf-consumer-screen-2026-10-26.json",
+          "decision": "Closed actualconsumer no stable net gain; no reopen."
+        },
+        {
+          "shape": "M2 K6144 N2048 down",
+          "evidence": "docs/evidence/performance/qwen-m2-typed-mmvf-consumer-screen-2026-10-24.json",
+          "decision": "Leaf improved but actualconsumer rejected. OlddownLt cold algorithms also closed; not an untested easy gap."
+        },
+        {
+          "shape": "head cast/Top1 suffix",
+          "evidence": "docs/evidence/performance/qwen-top1-real-suffix-2026-10-20.json",
+          "decision": "Closed directBF16 Top1; largeheadkernel time does not justify repeating it."
+        }
+      ],
+      "proposed_single_next": "Continue original replay internal hostpath attribution against this same71.48ms/30.85ms instrumented envelope, as Rootscheduled; preserve cold/steady and native/API nesting, then require an actual removable mechanism before another speedcandidate. This does not claim that envelope as recoverable.",
+      "not_proposed": "No new densekernel, generic shader/provider rewrite, same-shape MMF/MMVF retry, or largearchitecture change fromN1 gap. No new run/build authorized here."
+    }
+  },
+  "independent_review": {
+    "status": "NO_BLOCKING_FINDING_WITHIN_FINITE_OFFLINE_REVIEW",
+    "reviewer": "mtp_architecture_audit",
+    "new_trace_or_model_processes": 0,
+    "new_builds": 0,
+    "product_changes": 0,
+    "reviewed_analyzer": {
+      "path": "analyze.py",
+      "bytes": 19098,
+      "sha256": "3135057cb5a05b9eb1de3f22f288f366f15941efb2c1571f4b5e096fe16bccea"
+    },
+    "reviewed_inputs": [
+      {
+        "path": "analysis-summary.json",
+        "bytes": 88046,
+        "sha256": "93b25abe1de547dd2bd371c8e57e70c7a9ded85b974e59d6e7acae3daabfc283"
+      },
+      {
+        "path": "memo.json",
+        "bytes": 24330,
+        "sha256": "db848ed9be7ff62ba379ef1c69071adb1a70381071b13c9f123559ed6048dfb8"
+      },
+      {
+        "path": "hyle\\trace1\\quality.json",
+        "bytes": 1672,
+        "sha256": "f184e5354dd965afb681eff20b5ff7493abe4b4b5385371c44f563792d35faef"
+      },
+      {
+        "path": "peer\\trace1\\quality.json",
+        "bytes": 1562,
+        "sha256": "e31d0f6fe0300fefba7093ab270b1aafd7fbebbad17d7e853b6ec0cf28d01d0e"
+      },
+      {
+        "path": "hyle\\trace1\\trace.sqlite",
+        "bytes": 10686464,
+        "sha256": "d6241a817d96e6f7776082e8693ede34cf7e9dea0549034da62cf84cb7b11b5d"
+      },
+      {
+        "path": "peer\\trace1\\trace.sqlite",
+        "bytes": 6868992,
+        "sha256": "c7bdb4a8bd793ded540d5609e718c7a173523b645e888051616324c3248a2915"
+      }
+    ],
+    "method": "Read analyzer and frozen source; independent read-only SQLite queries with endpoint-sweep interval union, without importing or rerunning analyze.py. Recomputed root metrics/classifications, process GPU/root complement, and two Hyle plus two peer examples. This is not an exhaustive audit of every supplementary parser.",
+    "blocking_findings": [],
+    "calculations": [
+      {
+        "subject": "NVTX roots, nested phases, and GPU interval union",
+        "hyle_roots": 68,
+        "peer_roots": 134,
+        "overlapping_roots": 0,
+        "GPU_boundary_crossing_activities": 0,
+        "hyle_no_record_decode": {
+          "count": 45,
+          "wall_ns": 662661925,
+          "GPU_union_ns": 612886660,
+          "wall_without_GPU_ns": 49775265,
+          "launchless_sequences": []
+        },
+        "formula": "GPU = measure(union(clip(kernel, memcpy, memset intervals, root))); residual = root wall - GPU union. Inclusive prepare/replay and wait_publish/completion_wait/postwait_publish are not added as independent costs.",
+        "samples": {
+          "hyle_seq6": {
+            "seq": 6,
+            "wall_ns": 15295388,
+            "GPU_union_ns": 14292873,
+            "wall_without_GPU_ns": 1002515,
+            "wait_publish": {
+              "parent_ns": 13834894,
+              "children_union_ns": 13831321,
+              "children_within_parent": true,
+              "inclusive_parent_not_added_to_children": true
+            }
+          },
+          "hyle_seq13": {
+            "seq": 13,
+            "wall_ns": 14784536,
+            "GPU_union_ns": 13368692,
+            "wall_without_GPU_ns": 1415844,
+            "wait_publish": {
+              "parent_ns": 12892697,
+              "children_union_ns": 12890589,
+              "children_within_parent": true,
+              "inclusive_parent_not_added_to_children": true
+            }
+          }
+        },
+        "result": "Exact integer-ns agreement with episode rows and reported aggregate. seq6 parent wait_publish 13,834,894ns contains child union 13,831,321ns; adding their durations would double count, and the analyzer does not do that."
+      },
+      {
+        "subject": "Process/thread/correlation and outside-root complement",
+        "hyle": {
+          "root_thread_ids": [
+            281543226441920
+          ],
+          "root_process_bases": [
+            281543226425344
+          ],
+          "GPU_process_ids": [
+            281543226425344
+          ],
+          "GPU_devices": [
+            0
+          ],
+          "GPU_contexts": [
+            1
+          ],
+          "unmatched_root_activity_correlations": 0,
+          "hyle_phase_containment_or_thread_failures": [],
+          "process_GPU_union_ns": 1105597862,
+          "GPU_union_inside_roots_ns": 942007406,
+          "GPU_union_outside_roots_ns": 163590456
+        },
+        "peer": {
+          "root_thread_ids": [
+            282447317078632
+          ],
+          "root_process_bases": [
+            282447317041152
+          ],
+          "GPU_process_ids": [
+            282447317041152
+          ],
+          "GPU_devices": [
+            0
+          ],
+          "GPU_contexts": [
+            1
+          ],
+          "unmatched_root_activity_correlations": 0,
+          "process_GPU_union_ns": 1855463355,
+          "GPU_union_inside_roots_ns": 908035443,
+          "GPU_union_outside_roots_ns": 947427912
+        },
+        "peer_samples": [
+          {
+            "seq": 6,
+            "wall_ns": 15784500,
+            "GPU_union_ns": 10558771,
+            "wall_without_GPU_ns": 5225729
+          },
+          {
+            "seq": 8,
+            "wall_ns": 12233839,
+            "GPU_union_ns": 11408907,
+            "wall_without_GPU_ns": 824932
+          }
+        ],
+        "result": "All root-contained activities have a matching correlation ID in fully contained same-root-thread Runtime API events. Encoded root process bases equal the single GPU globalPid in each SQLite. Process union minus root-clipped union exactly matches retained outside-root union; it is not silently assigned to decode. Hyle phases selected by payload are all within the correct root and thread in this trace."
+      },
+      {
+        "subject": "Source-supported role subset and first/steady/work boundary",
+        "source_anchors": [
+          "hyle/source/engine/models/qwen35/main.cc:2183 full draft head; 2199 target token concat; 2208 target embedding",
+          "hyle/source/engine/models/qwen35/main.cc:3674 combined episode metadata; 4203 episode endpoint before report snapshot",
+          "analyze.py:168 conditional two-launch labeling; 224 no_record plus actual GraphLaunch steady-subset gate"
+        ],
+        "result": "seq6 and seq13 independently have exactly one GraphLaunch API per captured correlation; first group has no GDN/conv and second has 18 of each. Source dependency supports draft then target captured-subset labels for this classic K1 path. No name-only complete CPU-stage partition is invented. Peer roles derive from separate enclosing target/draft native-call roots.",
+        "peer_no_record_launchless_excluded_from_steady": [
+          3,
+          4,
+          5,
+          15,
+          17,
+          31,
+          33,
+          63,
+          65,
+          71,
+          72,
+          73,
+          133,
+          134
+        ],
+        "reported_work_boundary": "Both have two turns, 128 emitted/126 decode-emitted and 435 committed target rows. Actual target/draft rows differ: Hyle441/434, peer438/435; roots are Hyle68 combined vs peer134 separate. No cross-engine per-sequence equivalence follows.",
+        "first_scope": "first_logical_shape means first observed role/T/R geometry, not first graph topology, first preparation or absence of warm state. no_record alone is not steady; the refined subset also requires actual GraphLaunch."
+      }
+    ],
+    "nonblocking_scope_limits": [
+      "Hyle captured subsets and peer whole native decode+synchronize roots have different boundaries. Sampled/hidden/trim after peer return and Hyle publication/report boundaries are explicitly different; their CPU residuals must not be subtracted as identical stages.",
+      "Kernel name/grid/block signature equality is not CUDA edge/argument/pointer identity or proof of ExecUpdate eligibility. Actual GraphLaunch correlations support only the reported captured subsets.",
+      "wall minus GPU union is uncovered wall, not pure CPU work, GPU utilization, a recoverable speedup bound or unprofiled throughput. Name-family unions and inclusive parents cannot be freely summed.",
+      "Both traces/memo retain unsupported driver/software trace and graph-lineage limitations; no Driver table exists. Unknown native hard-clear cause or argument lineage remains unknown, not an inferred defect.",
+      "quality.json role_assignment is a pre-analysis pending checkpoint; subsequent analysis source/correlation labels are the refined result, not a new runtime observation.",
+      "Memo/source scope remains the explicit frozen CUDA consumer pair, not certification of latest CPU/team/View semantics, complete platform coverage or publisher numerical equivalence.",
+      "No review of future root-gap addendum is implied. Minor terminal boundary annotations do not alter the reviewed analyzer hash or these recomputations."
+    ],
+    "independent_recalculation": {
+      "path": "independent-recalculation.json",
+      "bytes": 5015,
+      "sha256": "088e50c14ac0ee68c4f462a22d3de82e239b059d59c70c28986bf9f851b7e386"
+    },
+    "conclusion": "No numerical or attribution blocker found in the selected formulas and actual examples. Existing limitations are necessary and appropriately prevent treating unmatched work or inclusive buckets as recoverable performance."
+  },
+  "references": {
+    "formal_performance": "inference-current-window-2026-10-26.json",
+    "current_source_build": "../research/inference-current-source-build-2026-10-26.json"
+  },
+  "limits": [
+    "identities contains historical build-ready checkpoints (BUILT_NOT_PROFILED, model_runs=0), preserved without alteration. The final two completed profile processes and their quality gates are recorded in findings.measured.",
+    "These Nsight/NVTX timings are diagnostic only. Formal prefill/decode/startup/RAM/VRAM/combined throughput results are unchanged.",
+    "Hyle combines target and draft in one Invocation; peer native-call boundaries differ. Matching emitted tokens does not make actual accepted work, intermediates or generation identical.",
+    "GPU interval unions and API intervals do not establish recoverable CPU time. Nested intervals are never added as separate costs.",
+    "The CUDA consumer inherits the explicitly frozen 2a94 closure; its Model and sampling header match current sources. New CPU team/View code is outside this CUDA validation.",
+    "Peer is the retained patched 433 closure with diagnostic-only consumer markers, not latest upstream. Weights and dependency binaries were reused, not downloaded or rebuilt.",
+    "One pre-compiler preparation-field failure is retained. Actual compiler/link stages and the two consumers completed; no model/profile retry.",
+    "Peer ProcessStreams stdout is truncated; full consumer-result.json is retained and used for full non-time equality. No report completeness claim is based on the truncated stream."
+  ],
+  "archive": {
+    "path": "inference-cuda-mtp-current-attribution-2026-10-26.zip",
+    "bytes": 5427944,
+    "sha256": "79492d187d6b3540ef1af4fb91673e794ac0fea8095986d1a1fad7248720650e",
+    "members": 122,
+    "verification": "ZIP CRC and every manifest length/SHA256 passed"
+  }
+}
