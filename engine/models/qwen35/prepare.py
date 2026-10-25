@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import struct
 
@@ -106,6 +107,15 @@ CT_MIXED_POLICY_LINE = "\t".join(("ct_mixed", "channel_token_bf16_zero_only",
     "local_nvfp4_f32", CT_MIXED_POLICY["reader"]))
 BF16_CACHE_POLICY_LINE = "kv_cache\tBF16\tomit_original_calibration"
 FLOAT8_CACHE_POLICY_LINE = "kv_cache\tE4M3FN\toriginal_kv_scales"
+# The source config selects this independent CT BF16 group128/block128
+# equation, including its local FP4 BF16 pre-rounding. It is not the canonical
+# F32-scale FP8 reader, or token/channel CT selected by a scale's shape.
+CT_BLOCK128_POLICY = dict(reader="compressed-tensors@46196ce607421d9992a47644612dc6b443f3c434",
+    block128="BF16_group128_zero_only_epsilon_and_BF16_weight_product",
+    local_nvfp4_input_rounding="BF16", cache_dtype="BF16")
+CT_BLOCK128_POLICY_LINE = "\t".join(("ct_mixed", "block128_bf16_zero_only",
+    "local_nvfp4_bf16", CT_BLOCK128_POLICY["reader"]))
+
 CT_ASYMMETRIC_POLICY = dict(reader="compressed-tensors@ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
     group_size=32, scale_dtype="BF16", zero_dtype="I32", zero_packing_axis="N",
     arithmetic="scale_dtype_subtract_then_multiply")
@@ -115,19 +125,25 @@ CT_ASYMMETRIC_POLICY_LINE = "\t".join(("ct_asymmetric_int4", "32", "BF16", "pack
 
 def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
                     reader: str | None, kv_cache_dtype: str | None) -> dict:
-    """Identify original CT groups and the explicitly selected KV interpretation."""
+    """Classify a fixed source reader before validating its physical SF axes."""
     if kv_cache_dtype not in (None, "bf16", "e4m3fn"):
         raise ValueError("unsupported explicit KV storage policy")
-    channel, local = {}, {}
+    q = config.get("quantization_config") or {}
+    block128 = (q.get("quant_method") == "compressed-tensors" and
+                q.get("version") == "0.17.2.dev32+g46196ce")
+    channel, block, local = {}, {}, {}
     for name, role in roles.items():
         if name.endswith(".weight") and role["dtype"] == "F8_E4M3" and name[:-7]+".weight_scale" in roles:
-            base = name[:-7]
-            sf = roles[base+".weight_scale"]
-            if len(role["shape"]) != 2 or sf["dtype"] != "BF16" or sf["shape"] != [role["shape"][0],1]:
-                raise ValueError("original CT channel/token FP8 geometry differs: "+base)
+            base = name[:-7]; sf = roles[base+".weight_scale"]
+            if len(role["shape"]) != 2:
+                raise ValueError("original CT FP8 projection rank differs: "+base)
+            n,k = role["shape"]
+            expected = [(n-1)//128+1,k//128] if block128 else [n,1]
+            if sf["dtype"] != "BF16" or sf["shape"] != expected or (block128 and k%128):
+                raise ValueError("original CT "+("block128" if block128 else "channel/token")+" FP8 geometry differs: "+base)
             if any(base+s in roles for s in (".weight_scale_inv", ".weight_packed", ".qweight", ".input_scale", ".weight_scale_2")):
-                raise ValueError("ambiguous original CT channel/token projection: "+base)
-            channel[base] = dict(logical_shape=list(role["shape"]))
+                raise ValueError("ambiguous original CT FP8 projection: "+base)
+            (block if block128 else channel)[base] = dict(logical_shape=list(role["shape"]))
     local_bases = {n[:-14] for n,r in roles.items() if n.endswith(".weight_packed") and r["dtype"] == "U8"}
     for suffix in (".weight_global_scale", ".input_global_scale"):
         local_bases.update(n[:-len(suffix)] for n in roles if n.endswith(suffix))
@@ -146,8 +162,7 @@ def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
         local[base] = dict(logical_shape=[n,k])
     calibration = []
     for index,kind in enumerate(model_geometry["layers"]):
-        if kind != "A":
-            continue
+        if kind != "A": continue
         names = [f"model.language_model.layers.{index}.self_attn.{which}_scale" for which in ("k","v")]
         if not any(n in roles for n in names):
             if kv_cache_dtype == "e4m3fn":
@@ -156,33 +171,65 @@ def ct_mixed_groups(roles: dict[str, dict], config: dict, model_geometry: dict,
         if any(n not in roles or roles[n]["dtype"] != "BF16" or roles[n]["shape"] != [1] for n in names):
             raise ValueError("invalid original BF16 cache calibration pair: "+names[0])
         calibration.extend(names)
-    if channel or local or calibration:
-        q = config.get("quantization_config", {})
-        if reader != CT_MIXED_READER or q.get("quant_method") != "compressed-tensors" or q.get("version") != "0.17.2.a20260716":
-            raise ValueError("CT mixed roles require explicit --fp8-reader "+CT_MIXED_READER+" and its fixed producer config")
-        groups = q.get("config_groups", {}).values()
+    if channel or block or local or calibration:
+        groups = list((q.get("config_groups") or {}).values())
         def matches(group, fmt, bits, strategy, dynamic, group_size=None):
             w,a = group.get("weights",{}), group.get("input_activations",{})
             return (group.get("format") == fmt and all(w.get(k)==v for k,v in dict(num_bits=bits,type="float",symmetric=True,dynamic=False,strategy=strategy[0],group_size=group_size).items()) and all(a.get(k)==v for k,v in dict(num_bits=bits,type="float",symmetric=True,dynamic=dynamic,strategy=strategy[1],group_size=group_size).items()))
-        if channel and not any(matches(g,"float-quantized",8,("channel","token"),True) for g in groups):
-            raise ValueError("CT channel/token reader arithmetic differs from source config")
-        if local and not any(matches(g,"nvfp4-pack-quantized",4,("tensor_group","tensor_group"),"local",16) for g in groups):
-            raise ValueError("CT local NVFP4 reader arithmetic differs from source config")
+        if block128:
+            c = config.get("text_config",config)
+            if reader is not None or q.get("format") != "mixed-precision" or c.get("dtype") != "bfloat16":
+                raise ValueError("CT block128 requires its source-derived BF16 mixed reader, not an unrelated --fp8-reader")
+            def targets(group, base):
+                values = group.get("targets") or []
+                return any(t == "Linear" or t == base or
+                    (t.startswith("re:") and re.match(t[3:],base) is not None) for t in values)
+            def block_group(g):
+                w,a = g.get("weights",{}),g.get("input_activations",{})
+                return (g.get("format") == "float-quantized" and g.get("output_activations") is None and
+                    all(w.get(k)==v for k,v in dict(num_bits=8,type="float",symmetric=True,dynamic=False,
+                        strategy="block",block_structure=[128,128],group_size=None,scale_dtype=None,actorder=None,zp_dtype=None).items()) and
+                    all(a.get(k)==v for k,v in dict(num_bits=8,type="float",symmetric=True,dynamic=True,
+                        strategy="group",block_structure=None,group_size=128,scale_dtype=None,actorder=None,zp_dtype=None).items()))
+            for base in (*block,*local):
+                if any(t == base or (t.startswith("re:") and re.match(t[3:],base) is not None)
+                        for t in q.get("ignore",[])):
+                    raise ValueError("CT quantized role is excluded by source config: "+base)
+            for base in block:
+                if not any(block_group(g) and targets(g,base) for g in groups):
+                    raise ValueError("CT block128 reader arithmetic/target differs from source config: "+base)
+            for base in local:
+                if not any(matches(g,"nvfp4-pack-quantized",4,("tensor_group","tensor_group"),"local",16)
+                        and g.get("output_activations") is None
+                        and all(g.get(side,{}).get(k) is None for side in ("weights","input_activations")
+                            for k in ("actorder","block_structure","zp_dtype"))
+                        and g.get("weights",{}).get("scale_dtype") == "torch.float8_e4m3fn"
+                        and g.get("input_activations",{}).get("scale_dtype") == "torch.float8_e4m3fn"
+                        and targets(g,base) for g in groups):
+                    raise ValueError("CT BF16 local NVFP4 arithmetic/target differs from source config: "+base)
+        else:
+            if reader != CT_MIXED_READER or q.get("quant_method") != "compressed-tensors" or q.get("version") != "0.17.2.a20260716":
+                raise ValueError("CT mixed roles require explicit --fp8-reader "+CT_MIXED_READER+" and its fixed producer config")
+            if channel and not any(matches(g,"float-quantized",8,("channel","token"),True) for g in groups):
+                raise ValueError("CT channel/token reader arithmetic differs from source config")
+            if local and not any(matches(g,"nvfp4-pack-quantized",4,("tensor_group","tensor_group"),"local",16) for g in groups):
+                raise ValueError("CT local NVFP4 reader arithmetic differs from source config")
         if calibration and kv_cache_dtype not in ("bf16", "e4m3fn"):
             raise ValueError("source KV calibration requires explicit --kv-cache-dtype bf16 or e4m3fn")
         if kv_cache_dtype == "e4m3fn":
             scheme = q.get("kv_cache_scheme") or {}
-            expected = dict(dynamic=False, num_bits=8, type="float", strategy="tensor",
-                            symmetric=True, group_size=None)
+            expected = dict(dynamic=False,num_bits=8,type="float",strategy="tensor",symmetric=True,group_size=None)
             if any(scheme.get(k) != v for k,v in expected.items()):
                 raise ValueError("original E4 cache scheme differs from static tensor float8 calibration")
     elif reader == CT_MIXED_READER:
         raise ValueError("selected CT reader has no matching original weights")
     if kv_cache_dtype == "e4m3fn" and not calibration:
         raise ValueError("selected E4 cache policy has no original calibration roles")
-    if kv_cache_dtype == "e4m3fn" and not (channel or local):
+    if kv_cache_dtype == "e4m3fn" and not (channel or block or local):
         raise ValueError("selected E4 cache policy requires original CT mixed weights")
-    return dict(channel=channel,local=local,cache_calibration=calibration)
+    return dict(channel=channel,block128=block,local=local,cache_calibration=calibration,
+        policy=CT_BLOCK128_POLICY if block128 else CT_MIXED_POLICY,
+        policy_line=CT_BLOCK128_POLICY_LINE if block128 else CT_MIXED_POLICY_LINE)
 
 
 def cache_scale_bits(raw: bytes, name: str) -> dict:
@@ -465,11 +512,13 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     other_roles = {name:role for name,role in normalized.items() if name not in static_physical}
     mixed = ct_mixed_groups(other_roles, config, model_geometry,
         None if static_fp8 else fp8_reader, kv_cache_dtype)
+    if mtp and mixed['policy_line'] == CT_BLOCK128_POLICY_LINE and (mixed['block128'] or mixed['local']):
+        raise ValueError("CT block128 mixed reader currently supports ordinary inference only")
     calibration = set(mixed["cache_calibration"])
     omitted = calibration if kv_cache_dtype == "bf16" else set()
     nf4_groups = nf4_state.groups(normalized, config, geometry.role_shapes(model_geometry))
     validate_role_geometry(normalized, model_geometry, calibration, nf4_groups)
-    channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
+    channel_physical = {base+suffix for base in (*mixed['channel'],*mixed['block128']) for suffix in ('.weight','.weight_scale')}
     fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical and name not in static_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
     ct_groups = ct_packed_groups(all_roles)
@@ -521,9 +570,9 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         identity['nf4_states'] = nf4_groups
     if asymmetric_policy:
         identity['ct_asymmetric_int4_policy'] = asymmetric_policy
-    has_mixed = bool(mixed['channel'] or mixed['local'])
+    has_mixed = bool(mixed['channel'] or mixed['block128'] or mixed['local'])
     if has_mixed:
-        identity["ct_mixed_policy"] = dict(CT_MIXED_POLICY)
+        identity["ct_mixed_policy"] = dict(mixed["policy"])
         if cache_bits:
             identity["ct_mixed_policy"]["cache_dtype"] = "E4M3FN"
     if omitted:
@@ -542,7 +591,7 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         policy_lines.extend('\t'.join(('nf4_state', name, state['original_json_sha256'], state['offset_f32_bits']))
                             for name,state in sorted(nf4_groups.items()))
     if has_mixed:
-        policy_lines.append(CT_MIXED_POLICY_LINE)
+        policy_lines.append(mixed["policy_line"])
     if asymmetric_policy:
         policy_lines.append(CT_ASYMMETRIC_POLICY_LINE)
     if omitted:
@@ -579,6 +628,7 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     if has_mixed:
         receipt['ct_mixed_policy'] = dict(identity['ct_mixed_policy'])
         receipt['ct_channel_token_groups'] = len(mixed['channel'])
+        if mixed['block128']: receipt['ct_block128_groups'] = len(mixed['block128'])
         receipt['ct_local_nvfp4_groups'] = len(mixed['local'])
     if asymmetric_policy:
         receipt['ct_asymmetric_int4_policy'] = asymmetric_policy

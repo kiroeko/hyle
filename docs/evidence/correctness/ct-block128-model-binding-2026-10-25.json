@@ -1,0 +1,301 @@
+{
+  "status": "ORDINARY_COLD_READER_ROLE_BINDING_AND_CPU_RECIPE_PASS",
+  "date": "2026-10-25",
+  "problem": "The explicit CT BF16 group128/block128 source reader and its BF16-preround local NVFP4 could not reach the ordinary Model role/binding/Recipe path; the existing F32-scale block reader and token/channel reader are different equations.",
+  "change": "Source quant config/version/targets select the typed arithmetic policy automatically. Prepared roles select independent codecs; existing IO/lease ownership carries original E4 W and BF16 SF to ProjectionBinding. Recipe calls the one shared graph body with symbolic M and returns every NodeId to original GraphAssembly placement. No new reader CLI, provider route, executor, owner table, or request/cache/state machinery.",
+  "baseline_main_sha256": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701",
+  "sources": [
+    {
+      "path": "engine/inference/ct_block128_graph.h",
+      "before": {
+        "bytes": 11361,
+        "sha256": "b2ca00717333a8f23a5377ca7739bc5c7d70c80375dafdadde5d73449163d7b2"
+      },
+      "after": {
+        "bytes": 15879,
+        "sha256": "8f08ff98defad8b8665f27a700aeb6d84f2c962f47e030be14b4b59db56f7f3e"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "bytes": 499069,
+        "sha256": "4c8f46a7affe18ad1d546a59efd3d35e5ea53830840653ab34c0ac5b325c5701"
+      },
+      "after": {
+        "bytes": 502403,
+        "sha256": "a416380bd6e7b2dbbea3e4a0451f747f4b19c791d057fc931e89f7157bbe8f31"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/precision_profile.h",
+      "before": {
+        "bytes": 2170,
+        "sha256": "3fb47d13280b00922356024e5299ced6a425976fb9fbdb5943eb2231195f4f5c"
+      },
+      "after": {
+        "bytes": 2174,
+        "sha256": "68d9c289d6cb8c092abaa4066d67d397e832fa93ce523f21a85c7c51dcf5f9c1"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/prepare.py",
+      "before": {
+        "bytes": 45883,
+        "sha256": "03d383a6ead36e8b830bcdb59cc14cfa4ab44dfd5580311bdebd2a8e17c01d09"
+      },
+      "after": {
+        "bytes": 49923,
+        "sha256": "89e2db808af5ece2b074a1a0240d4a791e14575491b35a95c30f588526766b0c"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "before": {
+        "bytes": 39007,
+        "sha256": "2194603b0b87f64044a630b682c00f746a5e8732c02d5779354e47366855ae7e"
+      },
+      "after": {
+        "bytes": 40216,
+        "sha256": "1a26deee958f5408ee9a0183a0939808017083b2c11b9304b54e88c3a1c4895f"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "before": {
+        "bytes": 3366,
+        "sha256": "155b90ec1c9bed64c269519bfdf9ddf337de79cd7fe16332525de80c37e22412"
+      },
+      "after": {
+        "bytes": 3626,
+        "sha256": "a30119cfc99ea5d965b9b759920085735ea954c202339728feab26a2edbd96b2"
+      }
+    },
+    {
+      "path": "tests/compute_models/ct_block128_qdq_fixture.h",
+      "before": {
+        "bytes": 16675,
+        "sha256": "d502807c3237dc2f3c13642ec8ff22c80ccd19b318502caadaf2f36a3a782b5b"
+      },
+      "after": {
+        "bytes": 16781,
+        "sha256": "918ab73aa6e81c648e47c957fb76fcba7c8a7d1cd106eacc8659a7da5ce198a1"
+      }
+    },
+    {
+      "path": "tests/compute_models/ct_block128_source_role_fixture.h",
+      "before": {
+        "bytes": 6346,
+        "sha256": "cdb00999a4fe0336baa9aeca2cbb201d1f7bf632f77c958b5974ee89f35eab9c"
+      },
+      "after": {
+        "bytes": 6403,
+        "sha256": "794d1c391c4f083c78a8ff3856ef850ac317485d20fbe84a7f485741af5faca9"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/ct_block128_qdq_test.cc",
+      "before": {
+        "bytes": 5472,
+        "sha256": "a1e456c56f13dd9ff2ff3e46597b44702b0ae8fa3fa0a91d43f3e537d6879077"
+      },
+      "after": {
+        "bytes": 5566,
+        "sha256": "dc1926c08f95c868463d0bdaebae389a7b79fb9948e756b89e7104ddbd8d9845"
+      }
+    },
+    {
+      "path": "tests/tooling/qwen_hf_roles_test.py",
+      "before": {
+        "bytes": 42559,
+        "sha256": "ccaa2d3b52d23da66a8134257b15e2e1700d652579605345bd48a5e4e91ed817"
+      },
+      "after": {
+        "bytes": 46591,
+        "sha256": "0adb32ed7072c64e000aa5fa8a1f15badf894c16e5bbda85c910728e2cbfb2df"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_mtp_projection_width_probe.cc",
+      "before": {
+        "bytes": 11944,
+        "sha256": "69160e59b6b1fe9910b9abd442e5f365aba8ba2db813f6cea71ce53b6754adbd"
+      },
+      "after": {
+        "bytes": 18114,
+        "sha256": "d9896a1c5fa43ae355c20febed413742664cf2623152d2ff700ab92ff2f7bf06"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_precision_profile_test.cc",
+      "before": {
+        "bytes": 4342,
+        "sha256": "99192d8863b7c843392171d464d8a2719e80c8b565890cb8d56c8a5f80890e74"
+      },
+      "after": {
+        "bytes": 4600,
+        "sha256": "64934ed2c0d65923d4e2a28fa8da519828c8aef7a728c86132fe6f67c8f8d139"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "before": {
+        "bytes": 65923,
+        "sha256": "f04d410c4cfb8ec36ca64a9dc770078238bbe047fc426e9cbcc51da8817298d2"
+      },
+      "after": {
+        "bytes": 68625,
+        "sha256": "43cd62d6db796e99f74cc257d169d3f8d274953c576101bb55ab6aa62054e0ea"
+      }
+    }
+  ],
+  "integration": {
+    "status": "INTEGRATED_CANONICAL_SOURCE_PINS_EXACT",
+    "paths": 13,
+    "main_sha256": "a416380bd6e7b2dbbea3e4a0451f747f4b19c791d057fc931e89f7157bbe8f31",
+    "additional_execution_for_integration": false
+  },
+  "arithmetic": {
+    "activation": "BF16 Abs/maximum -> BF16 divide448 -> exactly-zero epsilon1/128 -> BF16 divide -> +0 -> E4 Cast -> BF16 Cast -> -0 -> BF16 product",
+    "weight": "Original E4[N,K] and BF16[ceil(N/128),K/128]; checked I32 row/128 Gather then BF16 product. K is a positive multiple128; N need not be. Selected IDs are checked before selected W/SF decode.",
+    "contraction": "BF16 operands, F32 accumulation, BF16 output; scores explicitly widen that result to F32.",
+    "local_nvfp4": "The source-derived codec selects existing LocalNvfp4Linear(BFloat16) for the dev46196ce pre-rounding policy; the token/channel source keeps Float32. This probe checks this resolver mapping, not a new local-NVFP4 numerical execution.",
+    "separation": "Canonical F32-scale Float8BlockLinear import/code-dot, CT token/channel QDQ, and ModelOpt static FP8 remain independent. A scale shape does not choose arithmetic."
+  },
+  "checks": {
+    "python": {
+      "tests": 20,
+      "suite_seconds": 0.152,
+      "process": {
+        "exit": 0,
+        "seconds": 0.312,
+        "pid": 50616
+      }
+    },
+    "roles": {
+      "assertions": 13924,
+      "compile_link": {
+        "exit": 0,
+        "seconds": 4.312,
+        "pid": 4936
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.781,
+        "pid": 27128
+      }
+    },
+    "precision": {
+      "assertions": 18,
+      "compile_link": {
+        "exit": 0,
+        "seconds": 1.594,
+        "pid": 12340
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.046,
+        "pid": 44004
+      }
+    },
+    "recipe_projection": {
+      "status": "PASS",
+      "compile": {
+        "exit": 0,
+        "seconds": 18.734,
+        "pid": 47628
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.172,
+        "pid": 52420
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.235,
+        "pid": 10768
+      },
+      "core_SDK_provider_rebuilds": 0,
+      "HTTP": 0,
+      "scope": "generated nonzero Recipe T1/T3 N129/K256; local BF16 resolver only; not complete Model/generation/original18 values",
+      "observed": {
+        "fixture": "generated_ct_block128",
+        "recipe_calls": 2,
+        "rows": [
+          1,
+          3
+        ],
+        "columns": 129,
+        "depth": 256,
+        "checked_values": 516,
+        "old_weight_and_output_lease": true,
+        "local_bf16_resolver": true,
+        "original_payload_numeric": false
+      },
+      "strict": "One application TU, MSVC /W4 /WX; cached CPU core/native closure"
+    },
+    "shared_graph_regression": {
+      "status": "PASS",
+      "compile": {
+        "exit": 0,
+        "seconds": 3.094,
+        "pid": 40888
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.156,
+        "pid": 45108
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.328,
+        "pid": 38100
+      },
+      "xml": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "frozen_files": 51,
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "new_CPU_test_TUs": 1,
+      "core_provider_SDK_rebuilds": 0,
+      "GPU_or_model_runs": 0,
+      "HTTP": 0
+    },
+    "root_executed_all_checks": true,
+    "core_SDK_provider_rebuilds": 0,
+    "HTTP": 0,
+    "GPU_processes": 0
+  },
+  "source_qualification": {
+    "repository": "RedHatAI/Qwen3.8-2.4T-A95B-NVFP4-FP8",
+    "revision": "b94577f02dd4bcb722aad2c60f8117032411dfb5",
+    "scope": "Cached original config/header facts only, source-spans.json. No new payload read/download or original tensor numerical qualification.",
+    "producer": "compressed-tensors@46196ce607421d9992a47644612dc6b443f3c434"
+  },
+  "limits": [
+    "The two calls execute only a generated nonzero Recipe projection: T1/T3, N129/K256, BF16 SF2x2, 516 exact endpoint values, retained old output/weight leases. They do not construct a complete Model or generate tokens.",
+    "Original catalog18 W/SF/global numerical values are unqualified by this batch. Its complete MoE geometry/inventory is still outside the dense Qwen Model driver; catalog21 selected-bank/full-role composition remains separate.",
+    "The new CT policy is ordinary-only. There is no new MTP, native GPU, full-artifact quality, throughput or source-publisher equivalence claim.",
+    "The prior four CPU graph cases cover old dense/selected math, intermediate BF16 boundaries, bad-ID completion/recovery and supplied lease/span metadata. Their source-role case uses generated binding bytes, not publisher values.",
+    "This archive contains changed sources, exact patch/pins, commands/dependencies/raw and independent review; unchanged frozen engine trees, SDK, executables, objects, DLLs and model files are omitted. The implementation summary/product-pins retain their historical source-only freeze status; these actual check records establish the later CPU results."
+  ],
+  "related_evidence": [
+    "docs/evidence/correctness/ct-block128-supplied-graph-2026-10-25.json",
+    "docs/evidence/research/ct-local-nvfp4-contract-2026-10-20.json"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ct-block128-model-binding-2026-10-25.zip",
+    "bytes": 336084,
+    "sha256": "8b9b2357a5cd65d70319236bb535f6ca51cbf46f804fd1104a6f1785c9704f25",
+    "members": 99,
+    "logical_bytes": 1585865,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

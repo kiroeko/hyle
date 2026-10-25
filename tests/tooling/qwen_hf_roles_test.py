@@ -378,6 +378,58 @@ class OriginalHfRolesTest(unittest.TestCase):
         _,bf16_mtp=roles._prepare_role_records(original,True,config,authenticate,roles.CT_MIXED_READER,'bf16')
         self.assertEqual(bf16_mtp['physical_roles'],339)
 
+    def test_ct_bf16_block128_and_local_reader_follow_source_config(self):
+        config=source_config();config['text_config']['dtype']='bfloat16'
+        fp=dict(num_bits=8,type='float',symmetric=True,scale_dtype=None)
+        local=dict(num_bits=4,type='float',symmetric=True,group_size=16,
+                   strategy='tensor_group',scale_dtype='torch.float8_e4m3fn')
+        config['quantization_config']=dict(quant_method='compressed-tensors',format='mixed-precision',
+            version='0.17.2.dev32+g46196ce',config_groups=dict(
+                block=dict(format='float-quantized',targets=[r're:.*linear_attn\.in_proj_a$'],
+                    weights=dict(fp,strategy='block',block_structure=[128,128],group_size=None,dynamic=False),
+                    input_activations=dict(fp,strategy='group',group_size=128,block_structure=None,dynamic=True)),
+                local=dict(format='nvfp4-pack-quantized',targets=[r're:.*mlp\..*'],
+                    weights=dict(local,dynamic=False),input_activations=dict(local,dynamic='local'))))
+        block='model.language_model.layers.0.linear_attn.in_proj_a'
+        packed='model.language_model.layers.0.mlp.gate_proj'
+        original=dict(complete=True,repository='fixture/ct-block128',revision='d'*40,roles=[])
+        def add(name,dtype,shape):
+            count=roles.ROLE_SIZES[dtype]
+            for d in shape:count*=d
+            original['roles'].append(dict(name=name,dtype=dtype,shape=list(shape),bytes=count,
+                path='original-range.bin',offset=0,sha256='4'*64))
+        for name,shape in roles.geometry.role_shapes(roles.geometry.from_hf(config)).items():
+            if name==block+'.weight':
+                n,k=shape;add(name,'F8_E4M3',shape);add(block+'.weight_scale','BF16',[(n-1)//128+1,k//128])
+            elif name==packed+'.weight':
+                n,k=shape;add(packed+'.weight_packed','U8',[n,k//2]);add(packed+'.weight_scale','F8_E4M3',[n,k//16])
+                add(packed+'.weight_global_scale','F32',[1]);add(packed+'.input_global_scale','F32',[1])
+            else:add(name,'BF16',shape)
+        authenticate=lambda r:(Path(r['path']),None)
+        lines,receipt=roles._prepare_role_records(original,False,config,authenticate)
+        self.assertEqual(lines[3],roles.CT_BLOCK128_POLICY_LINE)
+        self.assertEqual(receipt['ct_mixed_policy']['local_nvfp4_input_rounding'],'BF16')
+        self.assertEqual((receipt['ct_block128_groups'],receipt['ct_channel_token_groups'],receipt['ct_local_nvfp4_groups']),(1,0,1))
+        self.assertNotIn('fp8_block128_policy',receipt)
+        for change in ('version','target','activation-group','f32-sf'):
+            bad=deepcopy(config);wrong=deepcopy(original)
+            if change=='version':bad['quantization_config']['version']='0.17.2.a20260716'
+            elif change=='target':bad['quantization_config']['config_groups']['block']['targets']=['unrelated.projection']
+            elif change=='activation-group':bad['quantization_config']['config_groups']['block']['input_activations']['group_size']=64
+            else:
+                sf=next(r for r in wrong['roles']if r['name']==block+'.weight_scale');sf['dtype']='F32';sf['bytes']*=2
+            with self.subTest(change=change),self.assertRaises(ValueError):
+                roles._prepare_role_records(wrong,False,bad,authenticate)
+        with self.assertRaisesRegex(ValueError,'ordinary inference only'):
+            roles._prepare_role_records(original,True,config,authenticate)
+        # The same 1x1 SF extent does not choose between channel and block math.
+        principal=dict(name=block+'.weight',dtype='F8_E4M3',shape=[1,128])
+        sf=dict(name=block+'.weight_scale',dtype='BF16',shape=[1,1])
+        pair={r['name']:r for r in (principal,sf)}
+        self.assertIn(block,roles.ct_mixed_groups(pair,config,dict(layers=''),None,None)['block128'])
+        with self.assertRaises(ValueError):
+            roles.ct_mixed_groups(pair,{},dict(layers=''),None,None)
+
     def test_geometry_comes_from_axes_and_layers_not_model_name(self):
         config=source_config();c=config['text_config']
         c.update(hidden_size=5120,intermediate_size=17408,num_attention_heads=24,

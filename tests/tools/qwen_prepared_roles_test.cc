@@ -168,24 +168,24 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
   add(roles, local + ".input_global_scale", "F32", {1});
   const std::string cache = "model.language_model.layers.3.self_attn.";
   add(roles, cache + "k_scale", "BF16", {1}); add(roles, cache + "v_scale", "BF16", {1});
-  const auto all = p::select_roles(roles, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration);
+  const auto all = p::select_roles(roles, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration);
   check_placement(all);
-  const auto text = p::select_roles(roles, identity, false, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration);
+  const auto text = p::select_roles(roles, identity, false, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration);
   require(all.selected.size() == 339 && text.selected.size() == 324 && all.cache_calibration.size() == 2,
       "CT mixed selected roles must exclude only explicit BF16 cache calibration");
   require(std::ranges::count(all.selected, p::ProjectionCodec::kCtFloat8ChannelToken, &p::Role::projection_codec) == 1 &&
       std::ranges::count(all.selected, p::ProjectionCodec::kCtLocalNvfp4, &p::Role::projection_codec) == 1,
       "CT mixed codecs must follow the original complete groups");
   rejects([&] { (void)p::select_roles(roles, identity, true, geometry); }, "fixed reader policy");
-  rejects([&] { (void)p::select_roles(roles, identity, true, geometry, {}, {true}); }, "explicit CT BF16 or E4 KV policy");
+  rejects([&] { (void)p::select_roles(roles, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}); }, "explicit CT BF16 or E4 KV policy");
   auto invalid = roles; invalid.erase(local + ".input_global_scale");
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "missing prepared role");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration); }, "missing prepared role");
   invalid = roles; invalid.at(channel + ".weight_scale").shape[1] = 2; invalid.at(channel + ".weight_scale").bytes *= 2;
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "type/shape differs");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration); }, "type/shape differs");
   invalid = roles; add(invalid, "model.language_model.layers.0.self_attn.k_scale", "BF16", {1});
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "unclaimed");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration); }, "unclaimed");
   invalid = roles; invalid.at(cache + "v_scale").shape = {2}; invalid.at(cache + "v_scale").bytes = 4;
-  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {true}, p::CachePolicy::kBFloat16OmitCalibration); }, "calibration pair");
+  rejects([&] { (void)p::select_roles(invalid, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken}, p::CachePolicy::kBFloat16OmitCalibration); }, "calibration pair");
   auto serialized = manifest(roles); const auto at = serialized.find('\n', serialized.find('\n', serialized.find('\n') + 1) + 1);
   serialized.insert(at + 1, std::string(p::ct_mixed_policy_line) + '\n' + std::string(p::bf16_cache_policy_line) + '\n');
   const auto path = directory / "ct-mixed.tsv"; write(path, serialized);
@@ -198,7 +198,7 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
     for (const auto *suffix : {"k_scale", "v_scale"})
       if (!e4.contains(prefix + suffix)) add(e4, prefix + suffix, "BF16", {1});
   }
-  const auto selected = p::select_roles(e4, identity, false, geometry, {}, {true},
+  const auto selected = p::select_roles(e4, identity, false, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
       p::CachePolicy::kFloat8OriginalCalibration);
   require(selected.selected.size() == text.selected.size() && selected.bytes == text.bytes &&
       selected.cache_policy == p::CachePolicy::kFloat8OriginalCalibration &&
@@ -212,13 +212,13 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
         "calibration order must follow actual attention slots, not lexical layer names");
     ++slot;
   }
-  rejects([&] { (void)p::select_roles(e4, identity, true, geometry, {}, {true},
+  rejects([&] { (void)p::select_roles(e4, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
       p::CachePolicy::kFloat8OriginalCalibration); }, "ordinary inference only");
   invalid = e4; invalid.erase(cache + "k_scale"); invalid.erase(cache + "v_scale");
-  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {true},
+  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
       p::CachePolicy::kFloat8OriginalCalibration); }, "missing original E4 cache calibration pair");
   invalid = e4; invalid.erase(cache + "v_scale");
-  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {true},
+  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
       p::CachePolicy::kFloat8OriginalCalibration); }, "calibration pair");
   serialized = manifest(e4);
   serialized.insert(at + 1, std::string(p::ct_mixed_policy_line) + '\n' + std::string(p::float8_cache_policy_line) + '\n');
@@ -229,6 +229,35 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
       std::string(p::bf16_cache_policy_line) + '\n');
   write(path, serialized);
   rejects([&] { (void)p::read_roles(path, false); }, "policy");
+}
+void ct_block128_and_bf16_local_policy(const fs::path &directory) {
+  auto roles = dense();
+  const std::string fp8 = "model.language_model.layers.0.linear_attn.in_proj_a";
+  auto &w = roles.at(fp8 + ".weight"); w.dtype = "F8_E4M3"; w.bytes /= 2;
+  add(roles, fp8 + ".weight_scale", "BF16", {(w.shape[0] - 1) / 128 + 1, w.shape[1] / 128});
+  const std::string local = "model.language_model.layers.0.mlp.gate_proj";
+  const auto shape = roles.at(local + ".weight").shape; roles.erase(local + ".weight");
+  add(roles, local + ".weight_packed", "U8", {shape[0], shape[1] / 2});
+  add(roles, local + ".weight_scale", "F8_E4M3", {shape[0], shape[1] / 16});
+  add(roles, local + ".weight_global_scale", "F32", {1});
+  add(roles, local + ".input_global_scale", "F32", {1});
+  const p::CtMixedPolicy policy{p::CtMixedPolicy::Kind::kBlock128};
+  const auto selected = p::select_roles(roles, identity, false, geometry, {}, policy);
+  check_placement(selected);
+  require(std::ranges::count(selected.selected, p::ProjectionCodec::kCtFloat8Block128, &p::Role::projection_codec) == 1 &&
+      std::ranges::count(selected.selected, p::ProjectionCodec::kCtLocalNvfp4Bfloat16, &p::Role::projection_codec) == 1,
+      "CT block128 policy must identify both its BF16 reader equations");
+  auto invalid = roles; invalid.at(fp8 + ".weight_scale").dtype = "F32";
+  invalid.at(fp8 + ".weight_scale").bytes *= 2;
+  rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, policy); }, "type/shape differs");
+  rejects([&] { (void)p::select_roles(roles, identity, true, geometry, {}, policy); }, "ordinary inference only");
+  rejects([&] { (void)p::select_roles(roles, identity, false, geometry); }, "fixed reader policy");
+  auto serialized = manifest(roles); const auto at = serialized.find('\n', serialized.find('\n', serialized.find('\n') + 1) + 1);
+  serialized.insert(at + 1, std::string(p::ct_block128_policy_line) + '\n');
+  const auto path = directory / "ct-block128.tsv"; write(path, serialized);
+  const auto restored = p::read_roles(path, false);
+  require(restored.ct_mixed_policy.kind == p::CtMixedPolicy::Kind::kBlock128 && restored.bytes == selected.bytes,
+      "source-derived CT block128 policy must roundtrip without widening original SF");
 }
 void check_placement(const p::Roles &roles) {
   const qwen35::FfnPlacement primary(roles, 0), mixed(roles, 2), all_ffn(roles, roles.geometry.layers.size());
@@ -737,7 +766,7 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
   require(packed.selected.size()==320 &&
       nvfp4.at("model.language_model.embed_tokens.weight").bytes==286064640 &&
       qwen35::PrecisionProfile::from_roles(packed).activation_type()==hyle::compute::DataType::kBFloat16 &&
-      !packed.nf4_policy.enabled && !packed.ct_mixed_policy.enabled &&
+      !packed.nf4_policy.enabled && !packed.ct_mixed_policy.enabled() &&
       std::ranges::all_of(packed.selected,[](const auto &role) {
         return role.projection_codec==p::ProjectionCodec::kUnspecified && !role.projection_group_size;
       }),
@@ -1015,6 +1044,7 @@ int main(int argc, char **argv) {
     source_geometry_drives_role_layout();
     fp8_blocks_and_policy(directory);
     ct_mixed_and_cache_policy(directory);
+    ct_block128_and_bf16_local_policy(directory);
     nf4_original_state_and_six_role_contract(directory);
     for (int i=2;i<argc;++i) {
       const auto all=p::read_roles(argv[i],true),text=p::read_roles(argv[i],false);

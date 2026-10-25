@@ -79,8 +79,8 @@ TEST(CpuCtBlock128QdqGraph, OriginalRoleSpanAndProvidedReadonlyBindingsStayExpli
   const math::Operand rows{f::take(b.input(row_desc), "actual block row mapping"), row_desc};
   EXPECT_FALSE(math::append_weight(b, w, short_sf, rows));
   const auto tail = f::take(math::append_weight(b, w, sf, rows), "N129 uses two SF rows");
-  EXPECT_EQ(tail.description, f::dense(f::Type::kBFloat16, {129, 256}));
+  EXPECT_EQ(f::take(tail.description.concrete_description(), "N129 output"), f::dense(f::Type::kBFloat16, {129, 256}));
   f::check(b.publish(tail.value), "publish N129 metadata result");
   const auto graph = f::take(std::move(b).finish(), "finish N129 metadata graph");
-  EXPECT_EQ(f::take(graph.output_description(), "N129 inferred output"), tail.description);
+  EXPECT_EQ(f::take(graph.output_description(), "N129 inferred output"), f::take(tail.description.concrete_description(), "N129 output"));
 }

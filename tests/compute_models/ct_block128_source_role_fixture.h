@@ -72,7 +72,7 @@ struct Case final {
     literal(5, std::as_bytes(std::span(zero)));
     const auto result = f::take(math::append_projection(b, {activation, activation_description},
         values[0], values[1], values[2], {values[3], values[4], values[5]}), "original-shaped CT projection");
-    output = result.value; output_description = result.description;
+    output = result.value; output_description = f::take(result.description.concrete_description(), "CT output description");
     f::check(b.publish(output), "publish original-shaped CT projection");
     graph = f::take(std::move(b).finish(), "finish original-shaped CT graph");
   }

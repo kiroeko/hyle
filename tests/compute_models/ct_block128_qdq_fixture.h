@@ -71,7 +71,7 @@ struct Case final {
     if(kind!=Output::kWeight)
       aq=take(math::append_activation(b,{activation,activation_description},literals),"original CT activation QDQ");
     if(kind==Output::kActivation) {
-      output=aq.value;output_description=aq.description;
+      output=aq.value;output_description=take(aq.description.concrete_description(),"CT output description");
       check(b.publish(output),"publish only activation QDQ");
       graph=take(std::move(b).finish(),"finish activation-only CT graph");return;
     }
@@ -84,7 +84,7 @@ struct Case final {
     const auto weight=take(math::append_weight(b,operand(0),operand(1),operand(2),selected_ids),"original CT BF16 weight");
     const auto result=kind==Output::kWeight ? weight
         : take(math::append_matmul(b,aq,weight,selected_ids),"ordinary CT projection");
-    output=result.value;output_description=result.description;
+    output=result.value;output_description=take(result.description.concrete_description(),"CT output description");
     check(b.publish(output),"publish requested CT result");graph=take(std::move(b).finish(),"finish CT block graph");
   }
   Data data(unsigned phase=0) const {

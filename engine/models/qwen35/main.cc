@@ -39,6 +39,7 @@
 #include "mtp_graph.h"
 #include "../../inference/mtp_acceptance.h"
 #include "../../inference/sampling_graph.h"
+#include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
@@ -263,7 +264,8 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding) {
       const auto d = value.carrier->description.dimensions(); return {d[1], d[0]};
     } else {
       static_assert(std::is_same_v<Entry, ChannelTokenFp8Projection> ||
-                    std::is_same_v<Entry, ModelOptStaticFp8Projection>,
+                    std::is_same_v<Entry, ModelOptStaticFp8Projection> ||
+                    std::is_same_v<Entry, CtBlock128Projection>,
                     "missing logical shape for projection binding");
       const auto d = value.codes->description.dimensions(); return {d[0], d[1]};
     }
@@ -304,14 +306,15 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
     return GptqProjection{&gptq->tensor, &zeros, &scales, &groups, decode};
   }
   if (packed) {
-    if (packed->codec == Codec::kCtLocalNvfp4) {
+    if (packed->codec == Codec::kCtLocalNvfp4 || packed->codec == Codec::kCtLocalNvfp4Bfloat16) {
       detail::auxiliaries(bank, base, {".weight_scale", ".weight_global_scale", ".input_global_scale"}, name);
       auto &scales = detail::require(bank, base + ".weight_scale", name);
       auto &weight_global = detail::require(bank, base + ".weight_global_scale", name);
       auto &input_global = detail::require(bank, base + ".input_global_scale", name);
       const auto k = detail::packed_width(packed->tensor.description.dimensions()[1], 2, name);
       detail::fixed_group(*packed, 16, name);
-      const ops::LocalNvfp4Linear equation{ops::Fp4InputRounding::kFloat32};
+      const ops::LocalNvfp4Linear equation{packed->codec == Codec::kCtLocalNvfp4Bfloat16 ?
+          ops::Fp4InputRounding::kBFloat16 : ops::Fp4InputRounding::kFloat32};
       detail::validate(equation, std::array{detail::activation(k, name), packed->tensor.description,
           scales.description, weight_global.description, input_global.description}, name);
       return LocalNvfp4Projection{&packed->tensor, &scales, &weight_global, &input_global, equation};
@@ -399,6 +402,19 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
     const ops::Float8BlockLinear equation{ops::Float8ScalePolicy::kDivide, prepared::Float8BlockPolicy::floor};
     detail::validate(equation, std::array{detail::activation(stored->tensor.description.dimensions()[0], name), stored->tensor.description}, name);
     return BlockFp8Projection{&stored->tensor, equation};
+  }
+  if (stored->codec == Codec::kCtFloat8Block128) {
+    detail::auxiliaries(bank, base, {".weight_scale"}, name);
+    auto &scales = detail::require(bank, base + ".weight_scale", name);
+    const auto &codes = stored->tensor.description;
+    detail::fixed_group(*stored, 128, name);
+    const auto n = codes.dimensions()[0], k = codes.dimensions()[1];
+    const auto expected = c::TensorDesc::dense(Type::kBFloat16,
+        std::array<std::int64_t, 2>{(n - 1) / 128 + 1, k / 128});
+    if (!codes.is_plain() || !codes.is_dense() || codes.data_type() != Type::kFloat8E4M3FN ||
+        k % 128 || (n - 1) / 128 > INT32_MAX || !expected || scales.description != *expected)
+      detail::fail(name, "CT block128 requires original dense E4 [N,K] and BF16 [ceil(N/128),K/128]");
+    return CtBlock128Projection{&stored->tensor, &scales};
   }
   if (stored->codec == Codec::kCtFloat8ChannelToken) {
     detail::auxiliaries(bank, base, {".weight_scale"}, name);
@@ -502,11 +518,15 @@ std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile
     } else if constexpr (std::is_same_v<Entry, ModelOptNvfp4Projection>) {
       return "nvfp4_qdq_bf16_projection_f32_logits";
     } else if constexpr (std::is_same_v<Entry, LocalNvfp4Projection>) {
-      return "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
+      return entry.equation.rounding == hyle::compute::model_ops::Fp4InputRounding::kBFloat16
+          ? "ct_local_nvfp4_bf16_preround_bf16_projection_f32_logits"
+          : "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
     } else if constexpr (std::is_same_v<Entry, ModelOptStaticFp8Projection>) {
       return "static_fp8_stored_SA_SW_f32_code_dot_bf16_projection_f32_logits";
     } else if constexpr (std::is_same_v<Entry, BlockFp8Projection>) {
       return "fp8_block128_dynamic_divide_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, CtBlock128Projection>) {
+      return "ct_block128_bf16_qdq_projection_f32_logits";
     } else {
       static_assert(std::is_same_v<Entry, ChannelTokenFp8Projection>,
                     "missing score policy for projection binding");
@@ -1010,6 +1030,28 @@ struct Recipe final {
         const auto scaled = binary(c::BinaryKind::kMultiply,
             binary(c::BinaryKind::kMultiply, dot, sa), sw);
         return cast(scaled, Type::kBFloat16);
+      } else if constexpr (std::is_same_v<P, CtBlock128Projection>) {
+        namespace math = inference::ct_block128;
+        if (activation_type() != Type::kBFloat16)
+          throw std::runtime_error("CT block128 source reader requires BF16 activation");
+        const auto raw = operand(*projection.codes), sf = operand(*projection.block_scales);
+        const auto n = projection.codes->description.dimensions()[0];
+        auto &row_map = assembly.literal(dense(Type::kInt32, {n}));
+        std::vector<std::int32_t> rows(static_cast<std::size_t>(n));
+        for (std::size_t i = 0; i < rows.size(); ++i) rows[i] = static_cast<std::int32_t>(i / 128);
+        row_map.write<std::int32_t>(rows);
+        const auto row_value = constant(row_map);
+        const auto literal = [&](std::uint16_t bits) -> math::Operand {
+          auto &value = assembly.literal(dense(Type::kBFloat16, {}));
+          value.write<std::uint16_t>(std::span(&bits, 1));
+          const auto id = constant(value); return {id, spec(id)};
+        };
+        const math::Constants literals{literal(0x43e0), literal(0x3c00), literal(0)};
+        math::Nodes nodes;
+        const auto projected = take(math::append_projection(builder, {x, spec(x)},
+            {raw, spec(raw)}, {sf, spec(sf)}, {row_value, spec(row_value)}, literals, {}, &nodes));
+        for (std::size_t i = 0; i < nodes.count; ++i) assembly.node(nodes.values[i]);
+        return remember(projected.value, projected.description);
       } else if constexpr (std::is_same_v<P, ChannelTokenFp8Projection>) {
         const auto original = operand(*projection.codes);
         // The selected channel/token reader uses typed BF16 QDQ. Only an
@@ -1545,7 +1587,7 @@ struct WeightLoadReport final {
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0;
   std::size_t canonical_bytes = 0, fp8_groups = 0, import_peak_bytes = 0;
   bool float8_policy = false;
-  std::size_t ct_channel_groups = 0, ct_local_groups = 0, omitted_cache_roles = 0;
+  std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t nf4_groups = 0, nf4_original_bytes = 0, nf4_input_copy_bytes = 0, nf4_known_group_peak_bytes = 0;
 };
 enum class WeightSelection { kText, kTextAndMtp };
@@ -1894,7 +1936,9 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       roles.selected.size() - physical_mtp_roles, physical_mtp_roles,
       canonical_bytes, fp8_groups, import_peak_bytes, roles.float8_policy.enabled,
       static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtFloat8ChannelToken, &prepared::Role::projection_codec)),
-      static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4, &prepared::Role::projection_codec)),
+      static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4, &prepared::Role::projection_codec) +
+          std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtLocalNvfp4Bfloat16, &prepared::Role::projection_codec)),
+      static_cast<std::size_t>(std::ranges::count(roles.selected, prepared::ProjectionCodec::kCtFloat8Block128, &prepared::Role::projection_codec)),
       (roles.cache_policy == prepared::CachePolicy::kBFloat16OmitCalibration ? roles.cache_calibration.size() : 0), nf4_groups, nf4_original_bytes, nf4_input_copy_bytes, nf4_known_group_peak_bytes};
 }
 
@@ -2182,7 +2226,7 @@ public:
   const FfnPlacement ffn_placement;
   std::size_t host_weight_bytes = 0, device_weight_bytes = 0;
   std::size_t physical_text_roles = 0, physical_mtp_roles = 0, canonical_weight_bytes = 0;
-  std::size_t ct_channel_groups = 0, ct_local_groups = 0, omitted_cache_roles = 0;
+  std::size_t ct_channel_groups = 0, ct_local_groups = 0, ct_block_groups = 0, omitted_cache_roles = 0;
   std::size_t fp8_weight_groups = 0, fp8_import_peak_bytes = 0;
   bool float8_weight_policy = false;
   std::array<std::size_t, 3> known_workspace_peak{}, known_workspace_limits{};
@@ -2392,6 +2436,7 @@ public:
     canonical_weight_bytes = loading.canonical_bytes; fp8_weight_groups = loading.fp8_groups;
     fp8_import_peak_bytes = loading.import_peak_bytes; float8_weight_policy = loading.float8_policy;
     ct_channel_groups = loading.ct_channel_groups; ct_local_groups = loading.ct_local_groups;
+    ct_block_groups = loading.ct_block_groups;
     omitted_cache_roles = loading.omitted_cache_roles;
     const auto weight_load_seconds = source.metadata_prepare_seconds +
         std::chrono::duration<double>(Clock::now() - weight_load_start).count();
@@ -2476,6 +2521,7 @@ public:
         "\"weight_scale_conversion\":\"bf16_to_f32_exact\",\"reader\":\"" + std::string(prepared::fp8_reader) + "\"}";
     if (ct_channel_groups || ct_local_groups) result += ",\"ct_channel_token_groups\":" + std::to_string(ct_channel_groups) +
         ",\"ct_local_nvfp4_groups\":" + std::to_string(ct_local_groups);
+    if (ct_block_groups) result += ",\"ct_block128_bf16_groups\":" + std::to_string(ct_block_groups);
     if (omitted_cache_roles) result += ",\"kv_cache_dtype\":\"BF16\",\"omitted_original_cache_calibration_roles\":" +
         std::to_string(omitted_cache_roles);
     if (resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration)

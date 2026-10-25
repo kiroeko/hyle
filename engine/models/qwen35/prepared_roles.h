@@ -54,7 +54,7 @@ enum class ParameterMeaning {
 // meaning; this discriminator describes original HF projection groups.
 enum class ProjectionCodec { kUnspecified, kDense, kGptqV1Int4, kNvfp4, kCtSymmetric4, kFloat8Block128,
                              kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4, kMlxAffine,
-                             kModelOptStaticFp8 };
+                             kModelOptStaticFp8, kCtFloat8Block128, kCtLocalNvfp4Bfloat16 };
 // This is an explicit selected-reader arithmetic contract, not a claim that
 // every reader of the HF config chooses the same activation quantization.
 inline constexpr std::string_view fp8_reader = "sglang@06992c92ad4494fe9f9636e75be3e35040512447";
@@ -66,7 +66,13 @@ struct Float8BlockPolicy final {
 };
 inline constexpr std::string_view ct_mixed_policy_line =
     "ct_mixed\tchannel_token_bf16_zero_only\tlocal_nvfp4_f32\tcompressed-tensors@0.17.2a20260716";
-struct CtMixedPolicy final { bool enabled = false; };
+inline constexpr std::string_view ct_block128_policy_line =
+    "ct_mixed\tblock128_bf16_zero_only\tlocal_nvfp4_bf16\tcompressed-tensors@46196ce607421d9992a47644612dc6b443f3c434";
+struct CtMixedPolicy final {
+  enum class Kind { kNone, kChannelToken, kBlock128 };
+  Kind kind = Kind::kNone;
+  bool enabled() const noexcept { return kind != Kind::kNone; }
+};
 inline constexpr std::string_view static_fp8_policy_line =
     "modelopt_static_fp8\tBF16\tF32\tBF16\tstored_SA_SW\tf32_recip_mul_satfinite_e4\tSA_then_SW\tsglang@234ccba7f625e12639e621044496bcc6197c3758";
 struct ModelOptStaticFp8Policy final { bool enabled = false; };
@@ -272,18 +278,20 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   result.ct_asymmetric_policy = ct_asymmetric_policy;
   result.mlx_policy = mlx_policy;
   result.static_fp8_policy = static_fp8_policy;
-  if (static_fp8_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled ||
+  if (static_fp8_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled() ||
       nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() || cache_policy != CachePolicy::kDefault))
     throw std::runtime_error("prepared static FP8 cannot mix unrelated precision policies");
-  if (mlx_policy.enabled() && (include_mtp || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
+  if (mlx_policy.enabled() && (include_mtp || float8_policy.enabled || ct_mixed_policy.enabled() || nf4_policy.enabled ||
       ct_asymmetric_policy.enabled || cache_policy != CachePolicy::kDefault || (mlx_policy.bits != 4 && mlx_policy.bits != 8)))
     throw std::runtime_error("selected MLX reader cannot mix precision or NextN policies");
-  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || cache_policy != CachePolicy::kDefault || ct_asymmetric_policy.enabled))
+  if (nf4_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled() || cache_policy != CachePolicy::kDefault || ct_asymmetric_policy.enabled))
     throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
-  if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled || cache_policy != CachePolicy::kDefault))
+  if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled() || cache_policy != CachePolicy::kDefault))
     throw std::runtime_error("prepared CT asymmetric reader cannot mix unrelated precision policies");
   if (cache_policy == CachePolicy::kFloat8OriginalCalibration && include_mtp)
     throw std::runtime_error("prepared E4 KV currently supports ordinary inference only, not MTP");
+  if (include_mtp && ct_mixed_policy.kind == CtMixedPolicy::Kind::kBlock128)
+    throw std::runtime_error("prepared CT block128 mixed reader currently supports ordinary inference only");
   if (nf4_policy.enabled != !nf4_states.empty()) throw std::runtime_error("prepared NF4 policy/state inventory differs");
   bool has_float8_block = false;
   bool has_ct_mixed = false;
@@ -363,11 +371,13 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
     } else if (parameter.linear && all.contains(base + ".weight_packed") &&
         (all.at(base + ".weight_packed").dtype == "U8" ||
          all.contains(base + ".weight_global_scale") || all.contains(base + ".input_global_scale"))) {
-      if (!ct_mixed_policy.enabled) throw std::runtime_error("prepared CT local NVFP4 requires its fixed reader policy");
+      if (!ct_mixed_policy.enabled()) throw std::runtime_error("prepared CT local NVFP4 requires its fixed reader policy");
       const auto n = parameter.shape[0], k = parameter.shape[1];
       if (k % 16 != 0) throw std::runtime_error("prepared CT local NVFP4 needs complete K groups: " + name);
       has_ct_mixed = true;
-      take(base + ".weight_packed", "U8", {n, k / 2}, ProjectionCodec::kCtLocalNvfp4, 16);
+      take(base + ".weight_packed", "U8", {n, k / 2},
+          ct_mixed_policy.kind == CtMixedPolicy::Kind::kBlock128 ?
+              ProjectionCodec::kCtLocalNvfp4Bfloat16 : ProjectionCodec::kCtLocalNvfp4, 16);
       take(base + ".weight_scale", "F8_E4M3", {n, k / 16});
       take(base + ".weight_global_scale", "F32", {1});
       take(base + ".input_global_scale", "F32", {1});
@@ -440,11 +450,17 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       }
     } else if (parameter.linear && all.contains(name) && all.at(name).dtype == "F8_E4M3" &&
                all.contains(base + ".weight_scale")) {
-      if (!ct_mixed_policy.enabled) throw std::runtime_error("prepared CT channel/token FP8 requires its fixed reader policy");
+      if (!ct_mixed_policy.enabled()) throw std::runtime_error("prepared CT channel/token FP8 requires its fixed reader policy");
       const auto n = parameter.shape[0], k = parameter.shape[1];
       has_ct_mixed = true;
-      take(name, "F8_E4M3", {n, k}, ProjectionCodec::kCtFloat8ChannelToken);
-      take(base + ".weight_scale", "BF16", {n, 1});
+      if (ct_mixed_policy.kind == CtMixedPolicy::Kind::kBlock128) {
+        if (k % 128) throw std::runtime_error("prepared CT block128 requires complete K groups: " + name);
+        take(name, "F8_E4M3", {n, k}, ProjectionCodec::kCtFloat8Block128, 128);
+        take(base + ".weight_scale", "BF16", {(n - 1) / 128 + 1, k / 128});
+      } else {
+        take(name, "F8_E4M3", {n, k}, ProjectionCodec::kCtFloat8ChannelToken);
+        take(base + ".weight_scale", "BF16", {n, 1});
+      }
     } else if (parameter.linear && (all.contains(base + ".weight_scale_inv") ||
                (all.contains(name) && all.at(name).dtype == "F8_E4M3"))) {
       const auto n = parameter.shape[0], k = parameter.shape[1];
@@ -470,7 +486,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
         throw std::runtime_error("missing original E4 cache calibration pair: " + base);
       continue;
     }
-    if (!ct_mixed_policy.enabled || cache_policy == CachePolicy::kDefault)
+    if (!ct_mixed_policy.enabled() || cache_policy == CachePolicy::kDefault)
       throw std::runtime_error("cache calibration requires explicit CT BF16 or E4 KV policy");
     for (const auto *suffix : {"k_scale", "v_scale"}) {
       const auto found = all.find(base + suffix);
@@ -483,7 +499,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   if (static_fp8_policy.enabled && !static_fp8_groups)
     throw std::runtime_error("prepared static FP8 policy has no matching groups");
   if (float8_policy.enabled && !has_float8_block) throw std::runtime_error("prepared FP8 policy has no block128 weights");
-  if (ct_mixed_policy.enabled && !has_ct_mixed) throw std::runtime_error("prepared CT reader policy has no matching weights");
+  if (ct_mixed_policy.enabled() && !has_ct_mixed) throw std::runtime_error("prepared CT reader policy has no matching weights");
   if (nf4_groups != nf4_states.size()) throw std::runtime_error("prepared NF4 per-group state inventory differs");
   if (ct_asymmetric_policy.enabled && !ct_asymmetric_groups)
     throw std::runtime_error("prepared CT asymmetric policy has no matching weights");
@@ -523,7 +539,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
     if (line.starts_with("modelopt_static_fp8")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (static_fp8_policy.enabled || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled ||
+      if (static_fp8_policy.enabled || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled() ||
           nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() ||
           line != static_fp8_policy_line)
         throw std::runtime_error("invalid or misplaced prepared static FP8 policy");
@@ -531,13 +547,13 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     }
     if (line.starts_with("mlx_affine")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (mlx_policy.enabled() || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled ||
+      if (mlx_policy.enabled() || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled() || nf4_policy.enabled || ct_asymmetric_policy.enabled ||
           (line != mlx_policy_line(4) && line != mlx_policy_line(8))) throw std::runtime_error("invalid or misplaced MLX reader policy");
       mlx_policy.bits = line == mlx_policy_line(4) ? 4u : 8u; continue;
     }
     if (line.starts_with("nf4_double_quant")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != nf4_policy_line)
+      if (nf4_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled() || ct_asymmetric_policy.enabled || !all.empty() || line != nf4_policy_line)
         throw std::runtime_error("invalid or misplaced prepared NF4 F16 policy");
       nf4_policy.enabled = true; continue;
     }
@@ -555,7 +571,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     }
     if (line.starts_with("kv_cache")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (cache_policy != CachePolicy::kDefault || !ct_mixed_policy.enabled || !all.empty() ||
+      if (cache_policy != CachePolicy::kDefault || !ct_mixed_policy.enabled() || !all.empty() ||
           (line != bf16_cache_policy_line && line != float8_cache_policy_line))
         throw std::runtime_error("invalid or misplaced prepared cache policy");
       cache_policy = line == bf16_cache_policy_line ? CachePolicy::kBFloat16OmitCalibration :
@@ -564,20 +580,22 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
     }
     if (line.starts_with("ct_asymmetric_int4")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (ct_asymmetric_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
+      if (ct_asymmetric_policy.enabled || float8_policy.enabled || ct_mixed_policy.enabled() || nf4_policy.enabled ||
           !all.empty() || line != ct_asymmetric_policy_line)
         throw std::runtime_error("invalid or misplaced prepared CT asymmetric policy");
       ct_asymmetric_policy.enabled = true; continue;
     }
     if (line.starts_with("ct_mixed")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (ct_mixed_policy.enabled || float8_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != ct_mixed_policy_line)
+      if (ct_mixed_policy.enabled() || float8_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() ||
+          (line != ct_mixed_policy_line && line != ct_block128_policy_line))
         throw std::runtime_error("invalid or misplaced prepared CT reader/cache policy");
-      ct_mixed_policy.enabled = true; continue;
+      ct_mixed_policy.kind = line == ct_mixed_policy_line ? CtMixedPolicy::Kind::kChannelToken :
+          CtMixedPolicy::Kind::kBlock128; continue;
     }
     if (line.starts_with("fp8_block128")) {
       if (line.ends_with('\r')) line.pop_back();
-      if (float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != fp8_policy_line)
+      if (float8_policy.enabled || ct_mixed_policy.enabled() || nf4_policy.enabled || ct_asymmetric_policy.enabled || !all.empty() || line != fp8_policy_line)
         throw std::runtime_error("invalid or misplaced prepared FP8 reader policy");
       float8_policy.enabled = true; continue;
     }

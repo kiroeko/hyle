@@ -12,7 +12,7 @@
 
 22的[Kimi CT INT4独立源角色组合](../evidence/correctness/kimi-ct-int4-selected-source-2026-10-25.json)已接原Q／shape／BF16 SF合同、两代选中bank和现有grouped Graph。CPU单例通过，检查实际shape正文、旧bank与输出寿命，并以双项输入区分中间BF16权重存储和仅末端舍入。数值为生成fixture；不代表原payload、完整专家FFN或整模型通过。
 
-CT BF16 block128第一批已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)：旧fixture、原header／span只读W／SF入口共用同一BF16数学。4项CPU检查通过，不代表18／21整制品已接通；Model的冷reader策略和角色分派、selected bank及原数值资格仍单列。
+CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18／21 selected bank、原数值及完整Model／MoE仍分开记录。
 
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 

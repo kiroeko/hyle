@@ -1,121 +1,44 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 20:11（北京时间）。整体暂估 **71%**。CT BF16 block128共用冷图片段、旧fixture迁移与原角色lease入口已完成，4项CPU检查首轮通过（23次成功Graph、2次预期坏ID完成失败）；Model冷策略接线继续。此前GGUF冷导入和compact E4 MLA组合已完成。选定混合／专家源组合及可控logits边界仍未闭；无新下载、GPU或完整性能对照。
+更新：2026-10-25 20:43（北京时间）。整体粗估 **72%**，上次为71%。这次完成CT BF16 block128普通冷接线与Kimi INT4有限源组合；共同架构复审和深入性能阶段尚未完成。
 
-百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
-实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
+百分比估计剩余开发工作量，不是功能覆盖率、测试通过率或分支的简单平均。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座。新增缺项继续补；MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
-执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
+## 任务树
 
-- 功能盘点与补齐：约 85%
-  - 基础普通推理：约 85%
-    - 模型／量化／算子与融合缺项盘点：约 85%
-    - GGUF NVFP4 原角色冷导入：100%
-    - GGUF BF16 原角色冷导入：100%
-    - BNB NF4 原角色、F16 精度与冷导入：100%
-    - NF4 原压缩权重驻留投影：100%
-    - 选定 MLX affine 普通绑定与有限组件：100%
-    - CT asymmetric INT4 原投影角色与零点接线：100%
-    - CT BF16 block128共享数学与原参数入口：100%
-    - CT BF16 block128 Model冷策略／角色接线：约 15%
-    - 选定混合角色／专家bank冷组合：约 25%
-    - 可控logits的自然提交前边界：约 10%
-    - compact E4 MLA编码追加组合：100%
-    - 解码／激活／计算／缓存精度合同：约 75%
-    - 普通 E4 KV 冷绑定与分页写入：100%
-    - Q8 KV 编码到分页追加的公共链路：100%
-    - 普通 F32 producer 到分页追加的公共链路：100%
-    - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
-    - GLM Pro 原组件短历史与真实 index 供给：100%
-    - Kimi 普通异构状态提交与恢复组件：100%
-    - Kimi 混合量化工作集原几何生成组件：100%
-    - Kimi 两制品原 payload 有限组件：100%
-    - KDA／Kimi MLA 外部参数构图与共用数学体：100%
-    - Kimi 原 KDA／MLA 参数绑定与数值组件：100%
-    - ModelOpt 静态 FP8 准备／投影接线：100%
-    - ModelOpt 静态 FP8 原投影 CPU／CUDA 组件：100%
-    - GLM Flash 短／空历史构图与原 FP8 启动组件：100%
-    - prefill／decode／上下文与状态：约 75%
-    - 采样／停止／预算与错误边界：约 75%
-    - 采样合法有限值范围与原 TopK 排序：100%
-    - 普通请求停止 token 政策与缓存／恢复：100%
-    - 普通随机请求的整轮地址预算接纳：100%
-    - 增量请求的整轮上下文接纳：100%
-    - 验证消费者输入边界与仅 pending 续轮：100%
-  - 多会话：约 70%
-    - 完整状态／前缀复用／隔离与恢复：约 70%
-    - 生成后前缀命中的 Text R2 suffix 接纳：100%
-    - 前缀命中提交前拒绝后的同请求重试：100%
-    - 容量／淘汰／驻留与实际退休：约 75%
-    - 本轮已确认缺项的实现与有限检查：100%
-    - 中途暂停、实际淘汰与同 key 恢复：100%
-  - 多请求与多任务：约 82%
-    - 有界槽／世代／FIFO 与等待／唤醒原语：100%
-    - 运行中有界接纳与增量续轮：约 85%
-    - 请求级取消与保留同批未提交成员：约 85%
-    - 请求局部失败与设备失败区分：约 80%
-    - 已定位采样失败的原状态隔离与重排组件：100%
-    - 输出消费／背压与完成观察：约 85%
-    - prefill／decode 调度量与公平性：约 70%
-    - 多 Model 的资源寿命与设备接纳：约 75%
-    - 容量接纳前的Session唯一性与缓存保留：100%
-    - 同预算多资源行的合计字节门禁：100%
-    - 共用 scope 的权重／IO／Graph／caller 接线：100%
-    - cache 源分配的局部／跨 Model 共同门禁：100%
-    - cache 准备失败后的同一 Model 重试：100%
-    - native 生成状态留存的第二 scope：100%
-    - frontier 未退休时的共享输入提前门禁：100%
-    - backing 实际释放与预算归还顺序：100%
-    - 同一 Model 的逐请求采样策略与缓存前沿：100%
-- 架构复审、设计与调整：约 65%
-  - 全链职责、所有权与配置合同复审：约 35%
-    - 选定异构状态角色扩展链：100%
-    - 请求恢复／Model退休所有权链：100%
-  - 按真实缺项调整共同机制：约 50%
-  - 采样共享数学与调用者装配边界复审：100%
-  - 请求提交账簿唯一化：100%
-  - 模型权重／图放置的单一冷事实：100%
-  - 缓存拓扑与存储解释的边界：100%
-    - 原元数据域与显式存储变体：100%
-    - Graph／后端真实缓存解释接线：100%
-  - Session／缓存退休事实与错误出口：100%
-  - 新模型／新后端／新请求政策扩展检查：约 50%
-    - 投影逻辑形状唯一化：100%
-    - 投影元数据类型分派穷尽保护：100%
-- 性能设施复用与参考引擎狩猎：约 18%
-  - Hyle 设施实际消费与成本盘点：约 5%
-    - 内存／容器／调度与 I/O：约 5%
-    - 冷图／融合／重放与缓存：约 5%
-    - 普通输出与整数页表暂存复用：约 25%
-  - 本地参考引擎调研与候选取舍：约 10%
-    - llama.cpp／ik_llama.cpp：约 15%
-    - vLLM／SGLang：约 15%
-    - TensorRT-LLM／Strata：约 10%
-    - ds4／DeepInfer／deepseek-recipe：约 15%
-  - 已确认热点实现与完整消费者对照：0%
-  - MTP 对 llama.cpp 差距归因与执行优化：约 65%
-    - 固定 hidden 入口候选取舍：100%
-    - 图变体扩容的完整 key 离线否证：100%
-    - 状态IO子集的完整key离线反事实：100%
-    - 对手次数、图体失效与下一改动成本：约 35%
-  - prefill／decode／内存显存／多轮多请求综合对照：0%
-- 完成前遗漏复审与记录收尾：0%
+- 功能盘点与补齐：约86%
+  - 模型／量化／算子与融合接线：约87%
+    - CT BF16 block128普通策略／角色／Recipe入口：100%
+    - Kimi CT INT4 W1独立源角色与两代bank组合：100%
+    - 其余选定混合源／专家bank组合：约25%
+  - prefill／decode／精度／上下文与完整状态复核：约75%
+  - 多会话状态／前缀复用／隔离／淘汰恢复：约70%
+  - 多请求接纳／取消／错误隔离／背压／公平性：约82%
+  - 可控logits的自然提交前边界：约10%
+- 共同架构复审与调整：约65%
+  - 全链职责／所有权／配置合同：约35%
+  - 模型／codec／后端扩展的改动范围：约50%
+  - 按真实缺项调整共同机制：约50%
+- 性能设施复用与完整消费者优化：约18%
+  - Hyle内存／容器／调度IO／图重放与缓存复用：约5%
+  - 本地参考引擎思路与可证伪候选：约10%
+  - MTP差距归因与执行优化：约65%
+  - 已确认热点实现与最新完整四项对照：0%
+- 完成前遗漏复审与收尾：0%
 
 ## 正在做
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| CT BF16 block128 Model冷接线 | 功能／量化 | 共享数学和原lease入口已通过4项CPU检查；继续接显式reader策略、角色及投影分派 | 约 15% |
-| Q24 ModelOpt混合角色冷组合 | 功能／源角色 | 核NVFP4专家尾部与后续static FP8的自然连接；缺失SA原header明确保留，不能错层填值 | 约 15% |
-| Kimi CT INT4独立专家冷组合 | 功能／专家bank | 原Q／shape／SF角色与选中bank同代绑定，保BF16 storepoint；原数值资格另列 | 约 15% |
+| Q24 ModelOpt混合角色组合 | 功能／源组合17 | 已有独立NVFP4与static FP8同图候选，准备有限CPU执行并独审；缺失SA137原header明确保留 | 约40% |
 
-先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
-不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
-只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
+## 本次完成与剩余顺序
 
-功能阶段的[剩余项分类](../evidence/research/inference-remaining-review-2026-10-25.json)是前一快照；后续GGUF冷拒绝已修，最新[反向复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)仍确认CT数学入口和混合／专家冷组合未闭，不能沿用旧“零已确认待实现缺项”。原制品／整模型、平台组合与真实native故障的未运行范围仍单列。百分比余量不能直接换算为缺失功能数量。
+CT已接源配置→显式reader策略→原W／SF角色→投影绑定→共用Graph数学；保留symbolic token行数和原placement。20项Python、两组C++元数据／精度检查、4项CPU回归和T1／T3 Recipe投影通过。Kimi INT4组合也已通过CPU用例并提交。两项均含生成fixture，不能据此宣布原payload、完整Model／MoE或其它平台通过；本次未刷新性能。
 
-最新依据：[CT原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)、[compact E4 MLA生产链](../evidence/correctness/compact-mla-e4-producer-2026-10-25.json)、[反向接线复审](../evidence/research/inference-reverse-binding-review-2026-10-25.json)、[GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)、[GLM cache边界](../evidence/research/glm-compact-cache-boundary-2026-10-25.json)、[DeepSeek GA主目录](../evidence/research/deepseek-ga-gguf-inventory-2026-10-25.json)、[GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)、[33项量化合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)、[MTP状态IO离线反事实](../evidence/performance/mtp-state-io-offline-2026-10-25.json)、[状态／请求合同后续复审](../evidence/research/inference-contract-followup-2026-10-25.json)、[功能调用链审查](../evidence/research/inference-foundation-review-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)与[模型清单](../implementation/model-operators.md)，性能基线与边界见[decode性能资料](performance/decode.md)。
+接下来完成源组合17，再处理19 fused gate_up拆分、20混合角色、18／21 selected bank及16排除角色的实际连接；可控logits补自然提交前typed输入与前沿重采样边界。然后集中复审普通推理、会话与请求的共同职责、状态和资源寿命，最后深入处理性能差距。功能阶段只做相关有限检查，明显复杂度或实质回归及时处理，不扩全库重编和组合矩阵。
+
+已有实现及资格边界见[推理设计](../architecture/inference-design.md)、[模型与算子清单](../implementation/model-operators.md)和[工程范围](../implementation/inference-roadmap.md)。未取得原值、未运行大模型或平台组合，不冒充功能通过，也不自动变成缺少新算子。
 
 ## 最新完整性能对照
 

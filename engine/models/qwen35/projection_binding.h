@@ -49,6 +49,9 @@ struct BlockFp8Projection final {
 // The source codec certifies the fixed CT BF16 token/channel QDQ reader;
 // this is not the distinct block128 FP8 scaling or a hardware FP8 dot.
 struct ChannelTokenFp8Projection final { Tensor *codes = nullptr, *channel_scales = nullptr; };
+// Original CT E4[N,K] / BF16[ceil(N/128),K/128], with group128 activation
+// QDQ and BF16 products. Keep this distinct from F32-scale code-dot FP8.
+struct CtBlock128Projection final { Tensor *codes = nullptr, *block_scales = nullptr; };
 // Selected stored-scale software reader: F32(A)*(1/SA), SATFINITE E4,
 // F32 code dot, separate *SA then *SW, BF16 output. Not producer fake-QDQ
 // or a claim that a native scaled_mm has the same intermediate arithmetic.
@@ -58,7 +61,7 @@ struct ModelOptStaticFp8Projection final {
 
 using ProjectionBinding = std::variant<StoredProjection, GptqProjection,
     CtPackedProjection, MlxAffineProjection, Nf4Projection, ModelOptNvfp4Projection, LocalNvfp4Projection,
-    BlockFp8Projection, ChannelTokenFp8Projection, ModelOptStaticFp8Projection>;
+    BlockFp8Projection, ChannelTokenFp8Projection, ModelOptStaticFp8Projection, CtBlock128Projection>;
 using ProjectionBindings = std::map<std::string, ProjectionBinding, std::less<>>;
 
 // Definitions require the complete model-private LoadedWeight. Resolve one logical

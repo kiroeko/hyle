@@ -3,6 +3,7 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "../../engine/models/qwen35/probe_geometry.h"
 #include "qwen_geometry_fixture.h"
+#include <cstring>
 namespace q=qwen35;
 namespace {
 std::vector<std::byte> exact_file(const std::filesystem::path &path,std::size_t bytes,std::uint64_t offset=0) {
@@ -59,8 +60,72 @@ int check_packed_head(const std::filesystem::path &component,const std::filesyst
   std::ofstream report(output/"observation.json");report<<"{\"score_policy\":"<<std::quoted(std::string(q::score_policy(projections.at("lm_head.weight"), q::PrecisionProfile{})))<<",\"score_dtype\":\"F32\",\"underlying_projection_dtype\":\"BF16\",\"packed_projection_nodes\":"<<packed<<",\"dense_f32_projection_nodes\":"<<dense<<",\"logical_head_shape\":[3,5120],\"original_bytes\":8648,\"checked_output_values\":6,\"whole_floating_head_bank\":false,\"missing_input_scale_rejected\":true,\"declared_graph_workspace_bytes\":"<<compiled.report.workspace_bytes()<<"}\n";
   std::cout<<"{\"packed_head_source_bytes\":8648,\"score_policy\":"<<std::quoted(std::string(q::score_policy(projections.at("lm_head.weight"), q::PrecisionProfile{})))<<",\"graph_calls\":1,\"missing_input_scale_rejected\":true}\n";return 0;
 }
+// Generated nonzero component fixture. This checks the actual cold binding and
+// Recipe entry, not catalog18 publisher values or a complete MoE model.
+int check_ct_block128() {
+  auto backend=q::take(q::Backend::create()); const auto geometry=qwen_test::q35(false);
+  std::map<std::string,q::LoadedWeight> bank;
+  const auto add=[&](const std::string &name,q::Type type,std::initializer_list<std::int64_t> dims,
+      const auto &data,q::prepared::ProjectionCodec codec=q::prepared::ProjectionCodec::kUnspecified,std::uint32_t group=0) {
+    auto &weight=bank.try_emplace(name,q::LoadedWeight{q::Tensor(backend.device(),q::dense(type,dims)),codec,group}).first->second;
+    using Element=typename std::remove_cvref_t<decltype(data)>::value_type;
+    weight.tensor.write<Element>(std::span(data));
+  };
+  const std::string name="fixture.block.weight",base="fixture.block";
+  const std::vector<std::uint8_t> codes(129*256,0x38);
+  const std::array<std::uint16_t,4> sf{0x3f80,0x3f00,0x4000,0x3f80};
+  add(name,q::Type::kFloat8E4M3FN,{129,256},codes,q::prepared::ProjectionCodec::kCtFloat8Block128,128);
+  add(base+".weight_scale",q::Type::kBFloat16,{2,2},sf);
+  q::ProjectionBindings projections;projections.emplace(name,q::resolve_projection(bank,name));
+  if(!std::holds_alternative<q::CtBlock128Projection>(projections.at(name)))throw std::runtime_error("CT block128 source codec lost its reader equation");
+  q::GraphAssembly assembly(backend);q::Recipe recipe(bank,projections,assembly,geometry,3);
+  const auto x=recipe.input(q::Recipe::dense_spec(q::Type::kBFloat16,{recipe.token_rows,q::f(256)}));
+  const auto y=recipe.linear_absolute(x,name);recipe.publish(y);const auto graph=q::take(std::move(recipe.builder).finish());
+  if(graph.node_count()!=21)throw std::runtime_error("CT block128 Recipe changed the shared QDQ node sequence");
+  auto source_read=bank.at(name).tensor.ready;
+  const std::array shapes{std::array{q::g::ShapeBinding{recipe.last_row,0}},std::array{q::g::ShapeBinding{recipe.last_row,2}}};
+  const std::array variants{q::g::ExactShapeVariant{shapes[0]},q::g::ExactShapeVariant{shapes[1]}};
+  auto compiled=q::take(backend.compile(graph,assembly.constants,assembly.options({.shape_policy=q::g::CompileShapePolicy::kFiniteExact,.exact_variants=variants,.constants=assembly.constants})));
+  q::c::ReadLease previous;std::vector<std::byte> previous_bytes;
+  const auto bf16=[](float v){auto bits=std::bit_cast<std::uint32_t>(v);bits+=0x7fffU+((bits>>16)&1U);return static_cast<std::uint16_t>(bits>>16);};
+  for(std::size_t index=0;index<2;++index) {
+    const auto rows=index?3:1;const auto child=q::take(compiled.executable.exact_variant(index));const auto report=q::take(compiled.report.exact_variant(index));
+    const auto facts=q::take(hyle::inference::prepare_output(q::g::CompiledGraph{child,report},y));
+    q::Tensor input(backend.device(),q::dense(q::Type::kBFloat16,{rows,256}));
+    std::vector<std::uint16_t> a(static_cast<std::size_t>(rows)*256);
+    for(int row=0;row<rows;++row)for(int k=0;k<256;++k)a[static_cast<std::size_t>(row)*256+k]=bf16(k%128==127?448.F:float(row+1));
+    input.write<std::uint16_t>(a);auto run=q::take(child.create_invocation());q::check(run.prepare_resources());q::check(run.bind(x,input.read()));
+    q::Tensor caller;if(facts.caller_owned()){caller=q::Tensor(q::take(backend.resource_for(facts.storage)),facts.description);q::check(run.bind(y,caller.view()));}
+    auto queues=q::take(hyle::inference::prepare_queue_bindings(backend.queue_bindings(),report));const auto bindings=hyle::inference::queue_span(queues);
+    q::check(run.prepare_replay(bindings,{.mode=q::g::ReplayMode::kCommands,.host_wait=q::g::HostWaitPolicy::kAllow}));auto done=q::take(run.submit(bindings));q::check(done.wait());
+    q::c::ReadLease result;if(facts.caller_owned()){caller.freeze(backend);result=caller.ready;}else result=q::take(hyle::inference::retain_output(run,facts));
+    std::vector<std::byte> raw(q::take(facts.description.required_bytes()));q::check(backend.read(q::take(result.view()),raw));
+    for(int row=0;row<rows;++row)for(int n=0;n<129;++n){
+      // E4 values and scale1 make A QDQ exact. All products/sums are exact F32
+      // integers or halves; only the public BF16 endpoint rounds this result.
+      const auto sum=127*(row+1)+448;const auto expected=bf16(float(sum)*(n==128?3.F:1.5F));
+      std::uint16_t actual=0;std::memcpy(&actual,raw.data()+(static_cast<std::size_t>(row)*129+n)*2,2);
+      if(actual!=expected)throw std::runtime_error("CT Recipe block-row/scale or BF16 result differs");
+    }
+    if(previous){std::vector<std::byte> held(previous_bytes.size());q::check(backend.read(q::take(previous.view()),held));if(held!=previous_bytes)throw std::runtime_error("old CT output was overwritten");}
+    previous=result;previous_bytes=raw;
+  }
+  std::vector<std::uint8_t> held_codes(codes.size());q::check(backend.read(q::take(source_read.view()),std::as_writable_bytes(std::span(held_codes))));
+  if(held_codes!=codes)throw std::runtime_error("original CT weight read lease changed");
+  const std::array<float,1> global{1.F};const std::array<std::uint8_t,16> fp4{};const std::array<std::uint8_t,2> fp4_sf{0x38,0x38};
+  add("fixture.local.weight_packed",q::Type::kUInt8,{2,8},fp4,q::prepared::ProjectionCodec::kCtLocalNvfp4Bfloat16,16);
+  add("fixture.local.weight_scale",q::Type::kFloat8E4M3FN,{2,1},fp4_sf);
+  add("fixture.local.weight_global_scale",q::Type::kFloat32,{1},global);add("fixture.local.input_global_scale",q::Type::kFloat32,{1},global);
+  const auto local=q::resolve_projection(bank,"fixture.local.weight");
+  if(std::get<q::LocalNvfp4Projection>(local).equation.rounding!=q::c::model_ops::Fp4InputRounding::kBFloat16)
+    throw std::runtime_error("CT block128 source policy lost local BF16 prerounding");
+  std::cout<<"{\"fixture\":\"generated_ct_block128\",\"recipe_calls\":2,\"rows\":[1,3],\"columns\":129,\"depth\":256,\"checked_values\":516,\"old_weight_and_output_lease\":true,\"local_bf16_resolver\":true,\"original_payload_numeric\":false}\n";
+  return 0;
+}
+
 }
 int main(int argc,char**argv){try{
+  if(argc==2&&std::string_view(argv[1])=="--ct-block128")return check_ct_block128();
   if(argc==4&&std::string_view(argv[1])=="--packed-head")return check_packed_head(argv[2],argv[3]);
   if(argc!=4)throw std::runtime_error("qwen_mtp_projection_width_probe PREPARED_Q35_INPUTS FIXED_BF16_A OUTPUT_DIRECTORY");
   const std::filesystem::path inputs=argv[1],fixed_a=argv[2],output=argv[3];std::filesystem::create_directories(output);
