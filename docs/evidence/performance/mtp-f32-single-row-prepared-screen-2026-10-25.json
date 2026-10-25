@@ -1,0 +1,3407 @@
+{
+  "date": "2026-10-25",
+  "status": "CLOSED_NOT_MERGED",
+  "scope": "F32 single ordered-row wide TopK1 changes only to the already-existing prepared two-stage tiled implementation; same BF16 model/head policy and F32 scores as original. This is distinct from the closed direct-BF16 Top1 candidate.",
+  "decision": {
+    "recommendation": "CLOSE_NOT_MERGED; stop repeating and do not start a formal comparison window",
+    "decode_relative_percent": -1.0520323168997647,
+    "combined_relative_percent": -0.6248046959421383,
+    "prefill_relative_percent": 2.5452214131977735,
+    "decode_ranges_overlap": false,
+    "combined_ranges_overlap": false,
+    "reason": "Numerics/capture behavior passed, but the same-work original real-two-turn decode and combined medians regressed in this finite screen; fewer ranges/kernels and the positive prefill observation do not establish useful decode benefit.",
+    "limits": "Only three observations per timing arm and one independent memory process per arm, not statistical significance or a latest peer comparison. Native launch/API costs and the cause of the negative result were not profiled. No additional sampling warranted by this screen."
+  },
+  "product_changes": 0,
+  "archive": {
+    "path": "docs/evidence/performance/mtp-f32-single-row-prepared-screen-2026-10-25.zip",
+    "bytes": 360690,
+    "sha256": "0b7c085fd67de8ce26a2a85c8e05678b8d1132a570c47996f384f32e3ba405ef"
+  },
+  "archive_entries": 140,
+  "zip_crc_pass": true,
+  "private_summary": {
+    "path": ".scratch/mtp-single-row-prepared-20261025/proof-summary.json",
+    "bytes": 6300,
+    "sha256": "7436d8735507c9e6ef218ee0d5296e44565eae9f14d7777ec4079002bde0410a"
+  },
+  "identity": {
+    "control": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\link2\\hyle.exe",
+      "bytes": 141402624,
+      "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+    },
+    "candidate": {
+      "path": ".scratch/mtp-single-row-prepared-20261025/link-app/hyle.exe",
+      "bytes": 141402624,
+      "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+    },
+    "clean_app_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\compile\\unit.obj",
+      "bytes": 13631555,
+      "sha256": "e4fe4b64ec1f6ec770e3420e0b3e5e8efb42ca495580a383438a52f82b90da59"
+    },
+    "runtime": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/runtime.json",
+      "bytes": 7243,
+      "sha256": "3bbee028c2e179232f4fe1404b76bee51de857836b5be289c614d5f506095a51"
+    },
+    "only_application_link_change": [
+      {
+        "old": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-batch-profile-20261022\\compile3\\native\\native.obj",
+        "new": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-single-row-prepared-20261025\\compile-native\\unit.obj"
+      }
+    ],
+    "source_before": {
+      "path": "src/compute_provider_cuda/collectives.cu",
+      "bytes": 29327,
+      "sha256": "ae85ee7e3ad863f099020785fbb3f3dbc6904a95cc3be56e5b09174dd9d0fc40"
+    },
+    "source_candidate": {
+      "path": ".scratch/mtp-single-row-prepared-20261025/source/src/compute_provider_cuda/collectives.cu",
+      "bytes": 29365,
+      "sha256": "a24619fde5097986f7760abb003272b1ce70d60c7876ca8639e079c3bbf54d71"
+    },
+    "source_patch": {
+      "path": ".scratch/mtp-single-row-prepared-20261025/source.patch",
+      "bytes": 620,
+      "sha256": "089fc58fec85a44d5444e0c7493a799a30ffd02350db3802b64611a13de8aefd"
+    },
+    "test_patch": {
+      "path": ".scratch/mtp-single-row-prepared-20261025/test-only.patch",
+      "bytes": 2528,
+      "sha256": "63551d3ac8dfdeb643a3dc56f0961308156859a04d314d032ea13009795b3e2f"
+    },
+    "unchanged": [
+      "clean c343 application object and reporting object",
+      "current native-rebuild-seed Graph objects and all remaining retained SDK closure",
+      "original argv/runtime/weights/turn schedule",
+      "F32 scores/TopK output and I32 index",
+      "ArgBest comparator and both existing tile kernels",
+      "head precision, acceptance, publication, RNG, IDs and timing endpoints"
+    ],
+    "source_and_actual_dependencies_verified_after_build": true
+  },
+  "implementation": {
+    "product_translation_units": 1,
+    "test_translation_units": 2,
+    "SDK_builds": 0,
+    "new_kernels": 0,
+    "new_public_API_or_ABI": 0,
+    "route": "configure_typed: (rows>1 || is_same_v<T,float>) && width>2048; only F32 single-row programs newly enter the existing tile path",
+    "numeric_contract": {
+      "order": "numeric values beat NaN for both largest/smallest; unequal numerics use requested direction; ties including signed zero, equal infinities and all NaNs choose smallest original index",
+      "associativity": "ArgBest selects one extremum under that index-completed order; chunking changes no arithmetic reduction or sort meaning",
+      "bits": "arg_finish rereads original T bytes after choosing the index, so comparison NaN quieting cannot rewrite the published payload/sign",
+      "tail": "arg_tiles bounds each loop by min(first+2048,width); INT32_MAX is the identity and cannot beat any valid index; every configured tile has at least one input",
+      "layout": "dense inner1 uses original byte loads; otherwise existing Layout.read maps original logical axis/strides; rows1 implies all non-axis extents have product1",
+      "workspace": "ceil(width/2048)*sizeof(ArgPair<float>), 256-byte rounded once in configure; vocabulary248320 gives122 partials/976 bytes rounded1024; caller Invocation owns it",
+      "capture": "collectives_provider runtime and capture-binding inspector already derive prepared/capturable status from arg_tiles; no provider change required"
+    }
+  },
+  "validation": {
+    "tests": {
+      "numeric": {
+        "tests": 2,
+        "failures": 0,
+        "skipped": 0,
+        "cases": [
+          "CudaCccl.SingleRowTopOneDenseAndGenericLayoutsKeepStableOriginalBits",
+          "CudaCccl.VocabularyBfloatTopOneMatchesCastFloatAcrossBlocks"
+        ],
+        "process": {
+          "exit": 0,
+          "seconds": 0.6099999999860302,
+          "timeout": false
+        }
+      },
+      "capture": {
+        "tests": 2,
+        "failures": 0,
+        "skipped": 0,
+        "cases": [
+          "CudaDefaultGraph.WideTopOnePreparedCaptureKeepsInvocationWorkspaceIsolated",
+          "CudaDefaultGraph.OtherTopKProgramsKeepManagedReplayContract"
+        ],
+        "process": {
+          "exit": 0,
+          "seconds": 0.48499999998603016,
+          "timeout": false
+        }
+      }
+    },
+    "original_behavior_process": {
+      "process": {
+        "exit": 0,
+        "seconds": 3.875,
+        "timeout": false
+      },
+      "all_non_time_report_differences": [],
+      "all_non_time_stderr_changes_classified": true,
+      "capture": {
+        "old": {
+          "calls": 68,
+          "recorded": 32,
+          "reused": 100,
+          "routes": {
+            "commands": 2,
+            "hybrid": 66
+          }
+        },
+        "candidate": {
+          "calls": 68,
+          "recorded": 21,
+          "reused": 45,
+          "routes": {
+            "commands": 2,
+            "captured": 66
+          }
+        }
+      },
+      "workspace_per_T2_slot_old": 5758720,
+      "workspace_per_T2_slot_new": 5746944,
+      "generation_labels_equal": true,
+      "work": {
+        "generated_tokens": 128,
+        "actual_graph_calls": 68,
+        "prefill_target_rows": 309,
+        "verified_target_rows": 132,
+        "actual_target_rows": 441,
+        "actual_draft_rows": 434,
+        "consumed_drafts": 60
+      }
+    },
+    "final_reports_all_non_time_difference_count": 0,
+    "stderr": "Exact same line sequence modulo original timing fields and the classified replay/range/workspace changes; no hidden unknown differences.",
+    "screen_per_arm_capture": [
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control",
+        "arm": "control",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 32,
+        "reused": 100
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate",
+        "arm": "candidate",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 21,
+        "reused": 45
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate",
+        "arm": "candidate",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 21,
+        "reused": 45
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control",
+        "arm": "control",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 32,
+        "reused": 100
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control",
+        "arm": "control",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 32,
+        "reused": 100
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate",
+        "arm": "candidate",
+        "mode": "timing",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 21,
+        "reused": 45
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control",
+        "arm": "control",
+        "mode": "memory",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 32,
+        "reused": 100
+      },
+      {
+        "folder": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate",
+        "arm": "candidate",
+        "mode": "memory",
+        "exit": 0,
+        "stderr_non_time_equal_to_own_reference": true,
+        "recorded": 21,
+        "reused": 45
+      }
+    ]
+  },
+  "capture_tradeoff": {
+    "control": {
+      "recorded": 32,
+      "reused": 100,
+      "hybrid_T2_calls": 66
+    },
+    "candidate": {
+      "recorded": 21,
+      "reused": 45,
+      "captured_T2_calls": 66
+    },
+    "actual_calls": 68,
+    "prefill_command_calls": 2,
+    "explanation": "Two old native ranges become one. Ten episodes formerly recorded only one constituent and reused the other; the merged range must rerecord whenever either constituent changes. Do not halve the old totals.",
+    "initial_message_correction": "An initial unverified32->16/100->50 inference was wrong and corrected before publication. All stored comparisons use the actual21/45 totals.",
+    "workspace_per_T2_slot_bytes": {
+      "control": 5758720,
+      "candidate": 5746944,
+      "difference": -11776
+    },
+    "native_CUDA_API_counts": "unknown: no profiler/API trace in this candidate batch"
+  },
+  "protocol": {
+    "timing_processes": 6,
+    "independent_memory_processes": 2,
+    "timing_order": [
+      "control",
+      "candidate",
+      "candidate",
+      "control",
+      "control",
+      "candidate"
+    ],
+    "memory_order": [
+      "control",
+      "candidate"
+    ],
+    "process_samples_pooled_with_history": false,
+    "peer_comparison": false,
+    "profiler": false,
+    "warmup_exclusion": false,
+    "HTTP": 0,
+    "original_command": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/two-turn-timing/02-hyle_mtp/command.json",
+      "bytes": 1178,
+      "sha256": "4a0d914b76fa3004fed94645a46bd7ac9426ce725e56158cc2d76bd6899272d3"
+    },
+    "schedule": {
+      "path": ".scratch/qwen-mtp-final-window-20261024/natural-inputs/performance64.txt",
+      "bytes": 136,
+      "sha256": "9967bf511308cd1e77d238dfa229c474ea20c3c62bc6b85f1a98d9faa3479411"
+    },
+    "inputs": [
+      {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      {
+        "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/input.json",
+        "bytes": 91533,
+        "sha256": "637d767ca08c48d153588f6c82ba0140a4bf45a9737ebee4fcb49aad9a026177"
+      }
+    ],
+    "P": 154,
+    "turns": 2,
+    "outputs_each_turn": 64,
+    "capacity": 1024,
+    "max_sessions": 1,
+    "active_sequences": 1,
+    "sampling": "greedy",
+    "K": 1,
+    "prefill_rows": 309,
+    "decode_output_count": 126,
+    "combined_output_count": 128,
+    "endpoints": "Original producer prefill_seconds + decode_seconds = session_seconds. Decode rate126/decode_seconds; combined128/session_seconds. Default stderr and waits unchanged.",
+    "memory": "Original independent PSAPI/PDH sidecar, nominal10ms; actual sample intervals, ready null and phase bracketing preserved. Dedicated/shared separate sampled peaks are never added."
+  },
+  "timing_metrics": {
+    "control": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.11196400000000001,
+        "min": 0.1105175,
+        "max": 0.11253179999999999,
+        "samples": [
+          0.11196400000000001,
+          0.1105175,
+          0.11253179999999999
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.0099907000000001,
+        "min": 1.0071203999999998,
+        "max": 1.0140727000000003,
+        "samples": [
+          1.0099907000000001,
+          1.0140727000000003,
+          1.0071203999999998
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1219547,
+        "min": 1.1196522,
+        "max": 1.1245902,
+        "samples": [
+          1.1219547,
+          1.1245902,
+          1.1196522
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2759.8156550319745,
+        "min": 2745.8904949534267,
+        "max": 2795.9372949985295,
+        "samples": [
+          2759.8156550319745,
+          2795.9372949985295,
+          2745.8904949534267
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 124.75362396901276,
+        "min": 124.25144666649636,
+        "max": 125.10917264708372,
+        "samples": [
+          124.75362396901276,
+          124.25144666649636,
+          125.10917264708372
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 114.08660260525669,
+        "min": 113.81923833232763,
+        "max": 114.32121510590521,
+        "samples": [
+          114.08660260525669,
+          113.81923833232763,
+          114.32121510590521
+        ]
+      }
+    },
+    "candidate": {
+      "prefill_seconds": {
+        "count": 3,
+        "median": 0.109185,
+        "min": 0.1082797,
+        "max": 0.1103179,
+        "samples": [
+          0.1082797,
+          0.109185,
+          0.1103179
+        ]
+      },
+      "decode_seconds": {
+        "count": 3,
+        "median": 1.0207291000000003,
+        "min": 1.0181701999999997,
+        "max": 1.0240486,
+        "samples": [
+          1.0207291000000003,
+          1.0240486,
+          1.0181701999999997
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "median": 1.1290088,
+        "min": 1.1284881,
+        "max": 1.1332336,
+        "samples": [
+          1.1290088,
+          1.1332336,
+          1.1284881
+        ]
+      },
+      "prefill_tokens_per_second": {
+        "count": 3,
+        "median": 2830.0590740486327,
+        "min": 2800.996030562583,
+        "max": 2853.7205034738736,
+        "samples": [
+          2853.7205034738736,
+          2830.0590740486327,
+          2800.996030562583
+        ]
+      },
+      "decode_output_tokens_per_second": {
+        "count": 3,
+        "median": 123.44117552835515,
+        "min": 123.04103535711099,
+        "max": 123.75141209200588,
+        "samples": [
+          123.44117552835515,
+          123.04103535711099,
+          123.75141209200588
+        ]
+      },
+      "combined_output_tokens_per_second": {
+        "count": 3,
+        "median": 113.3737841547382,
+        "min": 112.95111616881108,
+        "max": 113.426096385066,
+        "samples": [
+          113.3737841547382,
+          112.95111616881108,
+          113.426096385066
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "prefill_seconds": {
+      "candidate_relative_percent": -2.4820478010789238,
+      "ranges_overlap": false
+    },
+    "decode_seconds": {
+      "candidate_relative_percent": 1.0632177108165664,
+      "ranges_overlap": false
+    },
+    "session_seconds": {
+      "candidate_relative_percent": 0.6287330495607257,
+      "ranges_overlap": false
+    },
+    "prefill_tokens_per_second": {
+      "candidate_relative_percent": 2.5452214131977735,
+      "ranges_overlap": false
+    },
+    "decode_output_tokens_per_second": {
+      "candidate_relative_percent": -1.0520323168997647,
+      "ranges_overlap": false
+    },
+    "combined_output_tokens_per_second": {
+      "candidate_relative_percent": -0.6248046959421383,
+      "ranges_overlap": false
+    }
+  },
+  "actual_samples": [
+    {
+      "arm": "control",
+      "mode": "timing",
+      "index": 1,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control",
+      "pid": 43520,
+      "exit": 0,
+      "started_unix_ns": 1792890354764831600,
+      "finished_unix_ns": 1792890358212534200,
+      "process_wall_seconds": 3.4468564,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\link2\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+      },
+      "metrics": {
+        "prefill_seconds": 0.11196400000000001,
+        "decode_seconds": 1.0099907000000001,
+        "session_seconds": 1.1219547,
+        "prefill_tokens_per_second": 2759.8156550319745,
+        "decode_output_tokens_per_second": 124.75362396901276,
+        "combined_output_tokens_per_second": 114.08660260525669
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control/command.json",
+        "bytes": 1155,
+        "sha256": "c441d3f9b5c5d503701569fa19372e83130d8458b00372f19e7f96fefa022740"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control/result.json",
+        "bytes": 1369,
+        "sha256": "a5b68f75fdd5cc959d0653d2cb5cb000defe88b021594c43bfb66e9639d7d8e0"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control/stdout.log",
+        "bytes": 77490,
+        "sha256": "b0b88ba45407b5ce551cdf33c98d638b938512aa7c9eae750cffb719f57ca920"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-01-control/stderr.log",
+        "bytes": 26190,
+        "sha256": "37811183e4d35ca9eef1e3c8ddfb3c95a4f1538351cfa1cc24a74a95cf7555ba"
+      }
+    },
+    {
+      "arm": "candidate",
+      "mode": "timing",
+      "index": 2,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate",
+      "pid": 19296,
+      "exit": 0,
+      "started_unix_ns": 1792890358316736200,
+      "finished_unix_ns": 1792890361809123500,
+      "process_wall_seconds": 3.491578,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-single-row-prepared-20261025\\link-app\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+      },
+      "metrics": {
+        "prefill_seconds": 0.1082797,
+        "decode_seconds": 1.0207291000000003,
+        "session_seconds": 1.1290088,
+        "prefill_tokens_per_second": 2853.7205034738736,
+        "decode_output_tokens_per_second": 123.44117552835515,
+        "combined_output_tokens_per_second": 113.3737841547382
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate/command.json",
+        "bytes": 1124,
+        "sha256": "3ec448f34f41f6fec91e793eea1b024dde4e1df71b73a6fa1b8052599025f497"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate/result.json",
+        "bytes": 1337,
+        "sha256": "6df538fab013d4bfab530745861a8ae29c3207c48c2fe0b3f2ea7668813b5e12"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate/stdout.log",
+        "bytes": 77430,
+        "sha256": "b94ebd616d0c382735784ff43c00854eb6a740d4c63f0968d85e93b6ae83e594"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-02-candidate/stderr.log",
+        "bytes": 26313,
+        "sha256": "8f573b53e5ee4ce1635d4ddc1be95fbb7dd807fc2fc9c648b80e38722f7e0dfd"
+      }
+    },
+    {
+      "arm": "candidate",
+      "mode": "timing",
+      "index": 3,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate",
+      "pid": 48404,
+      "exit": 0,
+      "started_unix_ns": 1792890361917964100,
+      "finished_unix_ns": 1792890365306965700,
+      "process_wall_seconds": 3.3880398,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-single-row-prepared-20261025\\link-app\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+      },
+      "metrics": {
+        "prefill_seconds": 0.109185,
+        "decode_seconds": 1.0240486,
+        "session_seconds": 1.1332336,
+        "prefill_tokens_per_second": 2830.0590740486327,
+        "decode_output_tokens_per_second": 123.04103535711099,
+        "combined_output_tokens_per_second": 112.95111616881108
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate/command.json",
+        "bytes": 1124,
+        "sha256": "49ab211aa1e0e7cd2d8da01066f55eddee424e59a5d7e88ce31766c5196a4668"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate/result.json",
+        "bytes": 1338,
+        "sha256": "c6a42b5cdf2eb91280c170e0f5c8c6dbac310ff089ea22fee3b6f22749de729f"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate/stdout.log",
+        "bytes": 77425,
+        "sha256": "dc2ab87b544b079337e6e12ad69240d9b490b05b703e0c704a8637ba28edc63a"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-03-candidate/stderr.log",
+        "bytes": 26304,
+        "sha256": "35619750da3c9da7650de294bf1020c59fb608c8f943aa4d39a8487b58328d4d"
+      }
+    },
+    {
+      "arm": "control",
+      "mode": "timing",
+      "index": 4,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control",
+      "pid": 20216,
+      "exit": 0,
+      "started_unix_ns": 1792890365416965600,
+      "finished_unix_ns": 1792890368834548200,
+      "process_wall_seconds": 3.4167544,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\link2\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+      },
+      "metrics": {
+        "prefill_seconds": 0.1105175,
+        "decode_seconds": 1.0140727000000003,
+        "session_seconds": 1.1245902,
+        "prefill_tokens_per_second": 2795.9372949985295,
+        "decode_output_tokens_per_second": 124.25144666649636,
+        "combined_output_tokens_per_second": 113.81923833232763
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control/command.json",
+        "bytes": 1155,
+        "sha256": "d2d83c415ce1fb72c662a820c8524ce711dd9936de095139a5785b907824fb03"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control/result.json",
+        "bytes": 1369,
+        "sha256": "04904a6880b26f44f6caa95edee250e5c94fa5f9de0ae702c93ce2e0f2fc409c"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control/stdout.log",
+        "bytes": 77507,
+        "sha256": "bc727d91d08acf5941b05b43ef5abb9ddd223f10ee51ea39104dcc1f35c226f4"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-04-control/stderr.log",
+        "bytes": 26177,
+        "sha256": "bdcca9398cccb9aba90f29282e39a01743500d783ea3ba450a4d1c6334cffbe2"
+      }
+    },
+    {
+      "arm": "control",
+      "mode": "timing",
+      "index": 5,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control",
+      "pid": 43928,
+      "exit": 0,
+      "started_unix_ns": 1792890368941272700,
+      "finished_unix_ns": 1792890372364949300,
+      "process_wall_seconds": 3.4221319,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\link2\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+      },
+      "metrics": {
+        "prefill_seconds": 0.11253179999999999,
+        "decode_seconds": 1.0071203999999998,
+        "session_seconds": 1.1196522,
+        "prefill_tokens_per_second": 2745.8904949534267,
+        "decode_output_tokens_per_second": 125.10917264708372,
+        "combined_output_tokens_per_second": 114.32121510590521
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control/command.json",
+        "bytes": 1155,
+        "sha256": "05440c059fe812b8fc8563b874c6ff5406e66df38cc971dce3edf28ab53fdaf9"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control/result.json",
+        "bytes": 1369,
+        "sha256": "17a384d7208bbfef6b41a32c751efbfa50b528ccac365d7f19d606f0a7709f33"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control/stdout.log",
+        "bytes": 77463,
+        "sha256": "9d95d5c066142be3d230464b665545ad582bb098be6a34261c3deede95d225c3"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-05-control/stderr.log",
+        "bytes": 26181,
+        "sha256": "0430115ec597b4d462b8384e505ed70c44c7d9a0e171e0caf36b8dd064d0e9c4"
+      }
+    },
+    {
+      "arm": "candidate",
+      "mode": "timing",
+      "index": 6,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate",
+      "pid": 24596,
+      "exit": 0,
+      "started_unix_ns": 1792890372469085000,
+      "finished_unix_ns": 1792890375845282800,
+      "process_wall_seconds": 3.3751769,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-single-row-prepared-20261025\\link-app\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+      },
+      "metrics": {
+        "prefill_seconds": 0.1103179,
+        "decode_seconds": 1.0181701999999997,
+        "session_seconds": 1.1284881,
+        "prefill_tokens_per_second": 2800.996030562583,
+        "decode_output_tokens_per_second": 123.75141209200588,
+        "combined_output_tokens_per_second": 113.426096385066
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate/command.json",
+        "bytes": 1124,
+        "sha256": "b327068f6299f39a277b60752caf157d2355d2b93ff3f0f994939c799d991494"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate/result.json",
+        "bytes": 1338,
+        "sha256": "dc846001c40d8534e9470edb137d733cbc48ba8aceb78ace584514d4c9408445"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate/stdout.log",
+        "bytes": 77440,
+        "sha256": "ec048cc8393c0b44326b93cc151f9555d504631fe762e6e184212dc769b049c9"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/timing-06-candidate/stderr.log",
+        "bytes": 26308,
+        "sha256": "ec5a10d642f3c4349884dcf7729b5f6d572e7f7e0383a79816cf0d8a3d83c9e2"
+      }
+    },
+    {
+      "arm": "control",
+      "mode": "memory",
+      "index": 1,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control",
+      "pid": 47036,
+      "exit": 0,
+      "started_unix_ns": 1792890375950177800,
+      "finished_unix_ns": 1792890379584594000,
+      "process_wall_seconds": 3.4141536,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-native-seed-candidate-20261025\\link2\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "9d56802986c533310ddcb85c1bb86858ed59967922c192c2941abd7dec3edfda"
+      },
+      "metrics": {
+        "prefill_seconds": 0.1137183,
+        "decode_seconds": 1.004334,
+        "session_seconds": 1.1180523,
+        "prefill_tokens_per_second": 2717.2407607218893,
+        "decode_output_tokens_per_second": 125.45627251492033,
+        "combined_output_tokens_per_second": 114.48480540668804
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control/command.json",
+        "bytes": 1155,
+        "sha256": "041db3f44a4ad941aa9eeb00466a28a2fbbb3f512132204ee955f4e6bc45b1a8"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control/result.json",
+        "bytes": 2885,
+        "sha256": "245e2ece08a49862359b64019061a7f32044c75a31eb07bfbf3cfb85e8ec9800"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control/stdout.log",
+        "bytes": 77506,
+        "sha256": "458bc530b0df0b29d1f43e0328b7fde375a07bed8b7a81e0bc90d44f6668f451"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control/stderr.log",
+        "bytes": 26190,
+        "sha256": "899ad9f662384b6682a99549c0c63265300243400b7339a1f30d8bb3463dffc9"
+      }
+    },
+    {
+      "arm": "candidate",
+      "mode": "memory",
+      "index": 2,
+      "folder": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate",
+      "pid": 28824,
+      "exit": 0,
+      "started_unix_ns": 1792890379713452600,
+      "finished_unix_ns": 1792890383138259000,
+      "process_wall_seconds": 3.4207898,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-single-row-prepared-20261025\\link-app\\hyle.exe",
+        "bytes": 141402624,
+        "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+      },
+      "metrics": {
+        "prefill_seconds": 0.1093664,
+        "decode_seconds": 1.0229869000000005,
+        "session_seconds": 1.1323533,
+        "prefill_tokens_per_second": 2825.36501155748,
+        "decode_output_tokens_per_second": 123.16873265923536,
+        "combined_output_tokens_per_second": 113.0389252188341
+      },
+      "all_non_time_final_report_equal": true,
+      "exact_command": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate/command.json",
+        "bytes": 1124,
+        "sha256": "a2deb9c61be8e746ef2ffb1ec5d609e7cb3cbc4c98f7aeebed97a574bb1c494e"
+      },
+      "result": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate/result.json",
+        "bytes": 2854,
+        "sha256": "6263e4d5a62af01284fa83bef971bd3b9c1bd0d9ba7befabe0ab4ecc4481b7c8"
+      },
+      "stdout": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate/stdout.log",
+        "bytes": 77510,
+        "sha256": "3de432c424c625927d9dc3b26fa3416e81660c9acf99a9d6b1f0a294a52ac117"
+      },
+      "stderr": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate/stderr.log",
+        "bytes": 26304,
+        "sha256": "2853088706242c6185bf326e969d1f3e1383d8cc98757d964b208dedf298a9a9"
+      }
+    }
+  ],
+  "memory": {
+    "control": {
+      "path": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-01-control/memory-summary.json",
+        "bytes": 44422,
+        "sha256": "f0ec750a3cb10b73fa8faf586dc879bcc35d6fef4379833fec730e09c05ee441"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1273405440,
+        "observed_os_peak_working_set_bytes": 1273405440,
+        "sampled_max_private_commit_bytes": 6454910976,
+        "observed_os_peak_commit_bytes": 6454910976,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 327,
+      "ready_baseline": {
+        "ready_marker_ns": 217068284132600,
+        "first_prefill_marker_ns": 217068284213800,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 34,
+        "shared:no_pid_instance": 34
+      },
+      "phase_windows": {
+        "round1_prefill": {
+          "begin_ns": 217068284213800,
+          "end_ns": 217068357117500,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 7,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217068268698800,
+            "unix_time_ns": 1792890378193986700,
+            "elapsed_ns": 2021392700,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1100001280,
+            "os_peak_working_set_bytes": 1100001280,
+            "private_commit_bytes": 5817221120,
+            "os_peak_commit_bytes": 5817221120,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4124123136
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 79691776
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4124123136,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 79691776,
+            "gpu_total_bytes": 4203814912,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1100001280,
+              "os_peak_working_set_bytes": 1100001280,
+              "private_commit_bytes": 5817221120,
+              "os_peak_commit_bytes": 5817221120,
+              "gpu_dedicated_bytes": 4124123136,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4203814912
+            },
+            "sample_duration_ns": 58400
+          },
+          "boundary_after": {
+            "timestamp_ns": 217068361977800,
+            "unix_time_ns": 1792890378287419400,
+            "elapsed_ns": 2114671700,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1214033920,
+            "os_peak_working_set_bytes": 1214033920,
+            "private_commit_bytes": 6211678208,
+            "os_peak_commit_bytes": 6211678208,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4310777856
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4310777856,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4392566784,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1214033920,
+              "os_peak_working_set_bytes": 1214033920,
+              "private_commit_bytes": 6211678208,
+              "os_peak_commit_bytes": 6211678208,
+              "gpu_dedicated_bytes": 4310777856,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4392566784
+            },
+            "sample_duration_ns": 140400
+          },
+          "bracket_ages_ns": {
+            "before": 15515000,
+            "after": 4860300
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 7,
+              "min": 1134329856,
+              "median": 1171189760,
+              "max": 1207001088,
+              "samples": [
+                1134329856,
+                1155231744,
+                1155682304,
+                1171189760,
+                1197109248,
+                1198157824,
+                1207001088
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 7,
+              "min": 5933215744,
+              "median": 6088720384,
+              "max": 6200119296,
+              "samples": [
+                5933215744,
+                6070063104,
+                6070611968,
+                6088720384,
+                6191280128,
+                6191280128,
+                6200119296
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 7,
+              "min": 4151386112,
+              "median": 4287700992,
+              "max": 4310777856,
+              "samples": [
+                4151386112,
+                4287700992,
+                4287700992,
+                4287700992,
+                4310777856,
+                4310777856,
+                4310777856
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 7,
+              "min": 79691776,
+              "median": 79691776,
+              "max": 81788928,
+              "samples": [
+                79691776,
+                79691776,
+                79691776,
+                79691776,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 7,
+              "min": 4231077888,
+              "median": 4367392768,
+              "max": 4392566784,
+              "samples": [
+                4231077888,
+                4367392768,
+                4367392768,
+                4367392768,
+                4392566784,
+                4392566784,
+                4392566784
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 114032640,
+            "private_commit_bytes": 394457088,
+            "gpu_dedicated_bytes": 186654720,
+            "gpu_shared_bytes": 2097152,
+            "gpu_total_bytes": 188751872
+          }
+        },
+        "round1_decode": {
+          "begin_ns": 217068357126200,
+          "end_ns": 217068880187800,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 51,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217068346681000,
+            "unix_time_ns": 1792890378272144900,
+            "elapsed_ns": 2099374900,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1207001088,
+            "os_peak_working_set_bytes": 1207001088,
+            "private_commit_bytes": 6200119296,
+            "os_peak_commit_bytes": 6200119296,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4310777856
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4310777856,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4392566784,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1207001088,
+              "os_peak_working_set_bytes": 1207001088,
+              "private_commit_bytes": 6200119296,
+              "os_peak_commit_bytes": 6200119296,
+              "gpu_dedicated_bytes": 4310777856,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4392566784
+            },
+            "sample_duration_ns": 129300
+          },
+          "boundary_after": {
+            "timestamp_ns": 217068891665000,
+            "unix_time_ns": 1792890378817112600,
+            "elapsed_ns": 2644358900,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1270079488,
+            "os_peak_working_set_bytes": 1270079488,
+            "private_commit_bytes": 6378496000,
+            "os_peak_commit_bytes": 6378496000,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4428218368
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4428218368,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4510007296,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1270079488,
+              "os_peak_working_set_bytes": 1270079488,
+              "private_commit_bytes": 6378496000,
+              "os_peak_commit_bytes": 6378496000,
+              "gpu_dedicated_bytes": 4428218368,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4510007296
+            },
+            "sample_duration_ns": 138900
+          },
+          "bracket_ages_ns": {
+            "before": 10445200,
+            "after": 11477200
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 51,
+              "min": 1214033920,
+              "median": 1244213248,
+              "max": 1244237824,
+              "samples": [
+                1214033920,
+                1214099456,
+                1223168000,
+                1230774272,
+                1230774272,
+                1237471232,
+                1237499904,
+                1237499904,
+                1237508096,
+                1237508096,
+                1237508096,
+                1243795456,
+                1243795456,
+                1243795456,
+                1243795456,
+                1243795456,
+                1243795456,
+                1243795456,
+                1244168192,
+                1244168192,
+                1244184576,
+                1244200960,
+                1244200960,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244213248,
+                1244221440,
+                1244229632,
+                1244229632,
+                1244229632,
+                1244237824,
+                1244237824,
+                1244237824
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 51,
+              "min": 6211678208,
+              "median": 6243930112,
+              "max": 6243930112,
+              "samples": [
+                6211678208,
+                6211960832,
+                6220271616,
+                6231379968,
+                6231379968,
+                6237630464,
+                6237630464,
+                6237630464,
+                6237630464,
+                6237630464,
+                6237630464,
+                6243573760,
+                6243573760,
+                6243573760,
+                6243573760,
+                6243573760,
+                6243573760,
+                6243573760,
+                6243880960,
+                6243880960,
+                6243897344,
+                6243913728,
+                6243913728,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112,
+                6243930112
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 51,
+              "min": 4310777856,
+              "median": 4346429440,
+              "max": 4346429440,
+              "samples": [
+                4310777856,
+                4310777856,
+                4319166464,
+                4329652224,
+                4329652224,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 51,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 51,
+              "min": 4392566784,
+              "median": 4428218368,
+              "max": 4428218368,
+              "samples": [
+                4392566784,
+                4392566784,
+                4400955392,
+                4411441152,
+                4411441152,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 63078400,
+            "private_commit_bytes": 178376704,
+            "gpu_dedicated_bytes": 117440512,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 117440512
+          }
+        },
+        "round2_prefill": {
+          "begin_ns": 217068880198600,
+          "end_ns": 217068921081600,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 3,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217068876133000,
+            "unix_time_ns": 1792890378801609700,
+            "elapsed_ns": 2628826900,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1244237824,
+            "os_peak_working_set_bytes": 1244237824,
+            "private_commit_bytes": 6243930112,
+            "os_peak_commit_bytes": 6243930112,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4346429440
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4346429440,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4428218368,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1244237824,
+              "os_peak_working_set_bytes": 1244237824,
+              "private_commit_bytes": 6243930112,
+              "os_peak_commit_bytes": 6243930112,
+              "gpu_dedicated_bytes": 4346429440,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4428218368
+            },
+            "sample_duration_ns": 120600
+          },
+          "boundary_after": {
+            "timestamp_ns": 217068922603600,
+            "unix_time_ns": 1792890378847988500,
+            "elapsed_ns": 2675297500,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1272528896,
+            "os_peak_working_set_bytes": 1272528896,
+            "private_commit_bytes": 6450212864,
+            "os_peak_commit_bytes": 6450212864,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4497424384
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4497424384,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4579213312,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1272528896,
+              "os_peak_working_set_bytes": 1272528896,
+              "private_commit_bytes": 6450212864,
+              "os_peak_commit_bytes": 6450212864,
+              "gpu_dedicated_bytes": 4497424384,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4579213312
+            },
+            "sample_duration_ns": 142500
+          },
+          "bracket_ages_ns": {
+            "before": 4065600,
+            "after": 1522000
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 3,
+              "min": 1270079488,
+              "median": 1270079488,
+              "max": 1272492032,
+              "samples": [
+                1270079488,
+                1270079488,
+                1272492032
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 3,
+              "min": 6378496000,
+              "median": 6378496000,
+              "max": 6448107520,
+              "samples": [
+                6378496000,
+                6378496000,
+                6448107520
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 3,
+              "min": 4428218368,
+              "median": 4428218368,
+              "max": 4495327232,
+              "samples": [
+                4428218368,
+                4428218368,
+                4495327232
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 3,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 3,
+              "min": 4510007296,
+              "median": 4510007296,
+              "max": 4577116160,
+              "samples": [
+                4510007296,
+                4510007296,
+                4577116160
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 28291072,
+            "private_commit_bytes": 206282752,
+            "gpu_dedicated_bytes": 150994944,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 150994944
+          }
+        },
+        "round2_decode": {
+          "begin_ns": 217068921095600,
+          "end_ns": 217069402233000,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 46,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217068907407000,
+            "unix_time_ns": 1792890378832857400,
+            "elapsed_ns": 2660100900,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1272492032,
+            "os_peak_working_set_bytes": 1272492032,
+            "private_commit_bytes": 6448107520,
+            "os_peak_commit_bytes": 6448107520,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4495327232
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4495327232,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4577116160,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1272492032,
+              "os_peak_working_set_bytes": 1272492032,
+              "private_commit_bytes": 6448107520,
+              "os_peak_commit_bytes": 6448107520,
+              "gpu_dedicated_bytes": 4495327232,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4577116160
+            },
+            "sample_duration_ns": 157300
+          },
+          "boundary_after": {
+            "timestamp_ns": 217069404188600,
+            "unix_time_ns": 1792890379329657100,
+            "elapsed_ns": 3156882500,
+            "pid": 47036,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1273405440,
+            "os_peak_working_set_bytes": 1273405440,
+            "private_commit_bytes": 6454910976,
+            "os_peak_commit_bytes": 6454910976,
+            "gpu_instances": {
+              "pid_47036_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4499521536
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4499521536,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4581310464,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1273405440,
+              "os_peak_working_set_bytes": 1273405440,
+              "private_commit_bytes": 6454910976,
+              "os_peak_commit_bytes": 6454910976,
+              "gpu_dedicated_bytes": 4499521536,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4581310464
+            },
+            "sample_duration_ns": 145700
+          },
+          "bracket_ages_ns": {
+            "before": 13688600,
+            "after": 1955600
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 46,
+              "min": 1272528896,
+              "median": 1273368576.0,
+              "max": 1273384960,
+              "samples": [
+                1272528896,
+                1272594432,
+                1272602624,
+                1272684544,
+                1272684544,
+                1272700928,
+                1273352192,
+                1273352192,
+                1273356288,
+                1273356288,
+                1273356288,
+                1273356288,
+                1273364480,
+                1273364480,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273368576,
+                1273372672,
+                1273376768,
+                1273376768,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960,
+                1273384960
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 46,
+              "min": 6450212864,
+              "median": 6454910976.0,
+              "max": 6454910976,
+              "samples": [
+                6450212864,
+                6450212864,
+                6450212864,
+                6450212864,
+                6450212864,
+                6450212864,
+                6450843648,
+                6450843648,
+                6450843648,
+                6450843648,
+                6450843648,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976,
+                6454910976
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 46,
+              "min": 4497424384,
+              "median": 4499521536.0,
+              "max": 4499521536,
+              "samples": [
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 46,
+              "min": 81788928,
+              "median": 81788928.0,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 46,
+              "min": 4579213312,
+              "median": 4581310464.0,
+              "max": 4581310464,
+              "samples": [
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 913408,
+            "private_commit_bytes": 6803456,
+            "gpu_dedicated_bytes": 4194304,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 4194304
+          }
+        }
+      },
+      "actual_sample_gaps_ms": {
+        "count": 307,
+        "min": 0.1094,
+        "median": 15.0585,
+        "max": 17.9035
+      },
+      "sample_cost_ms": {
+        "count": 308,
+        "min": 0.0527,
+        "median": 0.1297,
+        "max": 0.3067
+      }
+    },
+    "candidate": {
+      "path": {
+        "path": ".scratch/mtp-single-row-prepared-20261025/screen/memory-02-candidate/memory-summary.json",
+        "bytes": 44719,
+        "sha256": "ea3014d4c02e1eb7fb1c012b6ce5e9e5fa8c2d9c192a5dbbc806cff2fe03dbae"
+      },
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1270964224,
+        "observed_os_peak_working_set_bytes": 1270984704,
+        "sampled_max_private_commit_bytes": 6450864128,
+        "observed_os_peak_commit_bytes": 6450864128,
+        "sampled_peak_gpu_dedicated_bytes": 4499521536,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4581310464
+      },
+      "sample_count": 328,
+      "ready_baseline": {
+        "ready_marker_ns": 217071826252600,
+        "first_prefill_marker_ns": 217071826262700,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 33,
+        "shared:no_pid_instance": 33
+      },
+      "phase_windows": {
+        "round1_prefill": {
+          "begin_ns": 217071826262700,
+          "end_ns": 217071893753200,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 6,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217071823204200,
+            "unix_time_ns": 1792890381748671800,
+            "elapsed_ns": 2028916100,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1126404096,
+            "os_peak_working_set_bytes": 1126404096,
+            "private_commit_bytes": 5879824384,
+            "os_peak_commit_bytes": 5879824384,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4134608896
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 79691776
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4134608896,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 79691776,
+            "gpu_total_bytes": 4214300672,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1126404096,
+              "os_peak_working_set_bytes": 1126404096,
+              "private_commit_bytes": 5879824384,
+              "os_peak_commit_bytes": 5879824384,
+              "gpu_dedicated_bytes": 4134608896,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4214300672
+            },
+            "sample_duration_ns": 145000
+          },
+          "boundary_after": {
+            "timestamp_ns": 217071900566800,
+            "unix_time_ns": 1792890381826081600,
+            "elapsed_ns": 2106278700,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1215864832,
+            "os_peak_working_set_bytes": 1215864832,
+            "private_commit_bytes": 6215151616,
+            "os_peak_commit_bytes": 6215151616,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4310777856
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4310777856,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4392566784,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1215864832,
+              "os_peak_working_set_bytes": 1215864832,
+              "private_commit_bytes": 6215151616,
+              "os_peak_commit_bytes": 6215151616,
+              "gpu_dedicated_bytes": 4310777856,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4392566784
+            },
+            "sample_duration_ns": 234000
+          },
+          "bracket_ages_ns": {
+            "before": 3058500,
+            "after": 6813600
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 6,
+              "min": 1148932096,
+              "median": 1183682560.0,
+              "max": 1206435840,
+              "samples": [
+                1148932096,
+                1149980672,
+                1169895424,
+                1197469696,
+                1198387200,
+                1206435840
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 6,
+              "min": 6067404800,
+              "median": 6141353984.0,
+              "max": 6201118720,
+              "samples": [
+                6067404800,
+                6067404800,
+                6089617408,
+                6193090560,
+                6193090560,
+                6201118720
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 6,
+              "min": 4287700992,
+              "median": 4299239424.0,
+              "max": 4310777856,
+              "samples": [
+                4287700992,
+                4287700992,
+                4287700992,
+                4310777856,
+                4310777856,
+                4310777856
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 6,
+              "min": 79691776,
+              "median": 80740352.0,
+              "max": 81788928,
+              "samples": [
+                79691776,
+                79691776,
+                79691776,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 6,
+              "min": 4367392768,
+              "median": 4379979776.0,
+              "max": 4392566784,
+              "samples": [
+                4367392768,
+                4367392768,
+                4367392768,
+                4392566784,
+                4392566784,
+                4392566784
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 89460736,
+            "private_commit_bytes": 335327232,
+            "gpu_dedicated_bytes": 176168960,
+            "gpu_shared_bytes": 2097152,
+            "gpu_total_bytes": 178266112
+          }
+        },
+        "round1_decode": {
+          "begin_ns": 217071893760000,
+          "end_ns": 217072423216300,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 50,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217071885637200,
+            "unix_time_ns": 1792890381811088800,
+            "elapsed_ns": 2091349100,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1206435840,
+            "os_peak_working_set_bytes": 1206435840,
+            "private_commit_bytes": 6201118720,
+            "os_peak_commit_bytes": 6201118720,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4310777856
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4310777856,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4392566784,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1206435840,
+              "os_peak_working_set_bytes": 1206435840,
+              "private_commit_bytes": 6201118720,
+              "os_peak_commit_bytes": 6201118720,
+              "gpu_dedicated_bytes": 4310777856,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4392566784
+            },
+            "sample_duration_ns": 133700
+          },
+          "boundary_after": {
+            "timestamp_ns": 217072423287300,
+            "unix_time_ns": 1792890382348793000,
+            "elapsed_ns": 2628999200,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1241665536,
+            "os_peak_working_set_bytes": 1241665536,
+            "private_commit_bytes": 6240677888,
+            "os_peak_commit_bytes": 6240677888,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4346429440
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4346429440,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4428218368,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1241665536,
+              "os_peak_working_set_bytes": 1241665536,
+              "private_commit_bytes": 6240677888,
+              "os_peak_commit_bytes": 6240677888,
+              "gpu_dedicated_bytes": 4346429440,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4428218368
+            },
+            "sample_duration_ns": 136500
+          },
+          "bracket_ages_ns": {
+            "before": 8122800,
+            "after": 71000
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 50,
+              "min": 1215864832,
+              "median": 1241640960.0,
+              "max": 1241665536,
+              "samples": [
+                1215864832,
+                1216249856,
+                1222189056,
+                1229066240,
+                1229066240,
+                1235570688,
+                1235611648,
+                1235611648,
+                1235619840,
+                1235619840,
+                1235619840,
+                1241600000,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241612288,
+                1241624576,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241640960,
+                1241649152,
+                1241649152,
+                1241657344,
+                1241657344,
+                1241657344,
+                1241665536
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 50,
+              "min": 6215151616,
+              "median": 6240677888.0,
+              "max": 6240677888,
+              "samples": [
+                6215151616,
+                6215507968,
+                6221344768,
+                6228021248,
+                6228021248,
+                6234566656,
+                6234566656,
+                6234566656,
+                6234566656,
+                6234566656,
+                6234566656,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240645120,
+                6240661504,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888,
+                6240677888
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 50,
+              "min": 4310777856,
+              "median": 4346429440.0,
+              "max": 4346429440,
+              "samples": [
+                4310777856,
+                4310777856,
+                4319166464,
+                4329652224,
+                4329652224,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4338040832,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440,
+                4346429440
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 50,
+              "min": 81788928,
+              "median": 81788928.0,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 50,
+              "min": 4392566784,
+              "median": 4428218368.0,
+              "max": 4428218368,
+              "samples": [
+                4392566784,
+                4392566784,
+                4400955392,
+                4411441152,
+                4411441152,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4419829760,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368,
+                4428218368
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 35229696,
+            "private_commit_bytes": 39559168,
+            "gpu_dedicated_bytes": 35651584,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 35651584
+          }
+        },
+        "round2_prefill": {
+          "begin_ns": 217072423232400,
+          "end_ns": 217072465220500,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 5,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217072408310600,
+            "unix_time_ns": 1792890382333790700,
+            "elapsed_ns": 2614022500,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1241665536,
+            "os_peak_working_set_bytes": 1241665536,
+            "private_commit_bytes": 6240677888,
+            "os_peak_commit_bytes": 6240677888,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4346429440
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4346429440,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4428218368,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1241665536,
+              "os_peak_working_set_bytes": 1241665536,
+              "private_commit_bytes": 6240677888,
+              "os_peak_commit_bytes": 6240677888,
+              "gpu_dedicated_bytes": 4346429440,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4428218368
+            },
+            "sample_duration_ns": 160000
+          },
+          "boundary_after": {
+            "timestamp_ns": 217072470063100,
+            "unix_time_ns": 1792890382395518300,
+            "elapsed_ns": 2675775000,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1270157312,
+            "os_peak_working_set_bytes": 1270157312,
+            "private_commit_bytes": 6447112192,
+            "os_peak_commit_bytes": 6447112192,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4497424384
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4497424384,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4579213312,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1270157312,
+              "os_peak_working_set_bytes": 1270157312,
+              "private_commit_bytes": 6447112192,
+              "os_peak_commit_bytes": 6447112192,
+              "gpu_dedicated_bytes": 4497424384,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4579213312
+            },
+            "sample_duration_ns": 129500
+          },
+          "bracket_ages_ns": {
+            "before": 14921800,
+            "after": 4842600
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 5,
+              "min": 1241665536,
+              "median": 1267822592,
+              "max": 1270046720,
+              "samples": [
+                1241665536,
+                1241665536,
+                1267822592,
+                1270046720,
+                1270046720
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 5,
+              "min": 6240677888,
+              "median": 6442827776,
+              "max": 6445010944,
+              "samples": [
+                6240677888,
+                6240677888,
+                6442827776,
+                6445010944,
+                6445010944
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 5,
+              "min": 4346429440,
+              "median": 4495327232,
+              "max": 4495327232,
+              "samples": [
+                4346429440,
+                4346429440,
+                4495327232,
+                4495327232,
+                4495327232
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 5,
+              "min": 81788928,
+              "median": 81788928,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 5,
+              "min": 4428218368,
+              "median": 4577116160,
+              "max": 4577116160,
+              "samples": [
+                4428218368,
+                4428218368,
+                4577116160,
+                4577116160,
+                4577116160
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": 28491776,
+            "private_commit_bytes": 206434304,
+            "gpu_dedicated_bytes": 150994944,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 150994944
+          }
+        },
+        "round2_decode": {
+          "begin_ns": 217072465233300,
+          "end_ns": 217072958705900,
+          "received_boundary_counts": {
+            "begin": 1,
+            "end": 1
+          },
+          "missing_boundary": false,
+          "ambiguous_boundary": false,
+          "invalid_boundary_order": false,
+          "sample_count": 48,
+          "exact_phase_boundary_values": false,
+          "boundary_before": {
+            "timestamp_ns": 217072454727100,
+            "unix_time_ns": 1792890382380006000,
+            "elapsed_ns": 2660439000,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1270046720,
+            "os_peak_working_set_bytes": 1270046720,
+            "private_commit_bytes": 6445010944,
+            "os_peak_commit_bytes": 6445010944,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4495327232
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4495327232,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4577116160,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1270046720,
+              "os_peak_working_set_bytes": 1270046720,
+              "private_commit_bytes": 6445010944,
+              "os_peak_commit_bytes": 6445010944,
+              "gpu_dedicated_bytes": 4495327232,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4577116160
+            },
+            "sample_duration_ns": 59000
+          },
+          "boundary_after": {
+            "timestamp_ns": 217072965756600,
+            "unix_time_ns": 1792890382891228900,
+            "elapsed_ns": 3171468500,
+            "pid": 28824,
+            "process_running": true,
+            "process_exit_code": 259,
+            "psapi_available": true,
+            "working_set_bytes": 1267613696,
+            "os_peak_working_set_bytes": 1270984704,
+            "private_commit_bytes": 6447448064,
+            "os_peak_commit_bytes": 6450864128,
+            "gpu_instances": {
+              "pid_28824_luid_0x00000000_0x000125ef_phys_0": {
+                "dedicated": {
+                  "status": 0,
+                  "bytes": 4493230080
+                },
+                "shared": {
+                  "status": 0,
+                  "bytes": 81788928
+                }
+              }
+            },
+            "gpu_dedicated_available": true,
+            "gpu_dedicated_bytes": 4493230080,
+            "gpu_shared_available": true,
+            "gpu_shared_bytes": 81788928,
+            "gpu_total_bytes": 4575019008,
+            "observed_monotonic_peaks_bytes": {
+              "working_set_bytes": 1270964224,
+              "os_peak_working_set_bytes": 1270984704,
+              "private_commit_bytes": 6450864128,
+              "os_peak_commit_bytes": 6450864128,
+              "gpu_dedicated_bytes": 4499521536,
+              "gpu_shared_bytes": 96468992,
+              "gpu_total_bytes": 4581310464
+            },
+            "sample_duration_ns": 146300
+          },
+          "bracket_ages_ns": {
+            "before": 10506200,
+            "after": 7050700
+          },
+          "values": {
+            "working_set_bytes": {
+              "count": 48,
+              "min": 1270157312,
+              "median": 1270947840.0,
+              "max": 1270964224,
+              "samples": [
+                1270157312,
+                1270231040,
+                1270231040,
+                1270239232,
+                1270267904,
+                1270267904,
+                1270939648,
+                1270939648,
+                1270939648,
+                1270939648,
+                1270939648,
+                1270939648,
+                1270939648,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270947840,
+                1270951936,
+                1270951936,
+                1270956032,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224,
+                1270964224
+              ]
+            },
+            "private_commit_bytes": {
+              "count": 48,
+              "min": 6447112192,
+              "median": 6450864128.0,
+              "max": 6450864128,
+              "samples": [
+                6447112192,
+                6447112192,
+                6447112192,
+                6447112192,
+                6447112192,
+                6447112192,
+                6447779840,
+                6447779840,
+                6447779840,
+                6447779840,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128,
+                6450864128
+              ]
+            },
+            "gpu_dedicated_bytes": {
+              "count": 48,
+              "min": 4497424384,
+              "median": 4499521536.0,
+              "max": 4499521536,
+              "samples": [
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4497424384,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536,
+                4499521536
+              ]
+            },
+            "gpu_shared_bytes": {
+              "count": 48,
+              "min": 81788928,
+              "median": 81788928.0,
+              "max": 81788928,
+              "samples": [
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928,
+                81788928
+              ]
+            },
+            "gpu_total_bytes": {
+              "count": 48,
+              "min": 4579213312,
+              "median": 4581310464.0,
+              "max": 4581310464,
+              "samples": [
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4579213312,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464,
+                4581310464
+              ]
+            }
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 0,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": 0
+          },
+          "bracket_delta_bytes": {
+            "working_set_bytes": -2433024,
+            "private_commit_bytes": 2437120,
+            "gpu_dedicated_bytes": -2097152,
+            "gpu_shared_bytes": 0,
+            "gpu_total_bytes": -2097152
+          }
+        }
+      },
+      "actual_sample_gaps_ms": {
+        "count": 309,
+        "min": 0.1034,
+        "median": 15.0091,
+        "max": 16.1547
+      },
+      "sample_cost_ms": {
+        "count": 310,
+        "min": 0.0524,
+        "median": 0.13555,
+        "max": 0.3756
+      }
+    }
+  },
+  "work": {
+    "generated_tokens": 128,
+    "actual_graph_calls": 68,
+    "prefill_target_rows": 309,
+    "verified_target_rows": 132,
+    "actual_target_rows": 441,
+    "actual_draft_rows": 434,
+    "consumed_drafts": 60
+  },
+  "failures_and_corrections": [
+    "Initial message incorrectly inferred recorded32->16/reused100->50 from two ranges becoming one. Actual per-line totals are32/100->21/45: ten episodes formerly recorded only one constituent while reusing the other; merged capture rerecords the whole range.",
+    "First offline source preparer assumed CRLF and stopped before compilation; corrected to preserve actual LF/CRLF. This is a private preparation issue, not a product failure.",
+    "First capture-test compile failed on private runtime size_t extent narrowing; source/log preserved, explicit I64 extent conversion fixed it without changing product code."
+  ],
+  "first_compile_failure": {
+    "result": {
+      "exit": 2,
+      "seconds": 1.2339999999967404,
+      "timeout": false
+    },
+    "source": {
+      "path": ".scratch/mtp-single-row-prepared-20261025/compile-graph/first-failed-source.cc",
+      "bytes": 20794,
+      "sha256": "c13e6cc5b071fe962a65011818ccf90db54f5f65ee04054da30298d44dc1cc49"
+    },
+    "classification": "PRIVATE_TEST_PARAMETERIZATION_I64_EXTENT_NARROWING",
+    "fix": "Explicit size_t-to-int64_t conversion for TensorDesc shape; no product change"
+  },
+  "limits": [
+    "Only3 observations per arm; descriptive medians/ranges, not statistical significance or fixed clocks.",
+    "Original producer P+D=session endpoints and default cerr/unitbuf preserved. Decode uses126 outputs, combined128, prefill309 original target rows.",
+    "Memory independent1process per arm, sampled PSAPI/PDH maxima are lower bounds; ready/null/phase brackets remain unknown when unavailable. Never add separate dedicated/shared peaks or CPU/private/shared memory.",
+    "Private single CUDA collectives TU only; native-seed Graph/app/report are identical. No profiler. Capture range changes21/45 versus32/100 are kept separate from final report work equivalence.",
+    "One application behavioral process, not a throughput comparison; raw timing retained but not used to claim speedup.",
+    "Correction to initial message: total21 recordings and45 reuses, not an assumed half of32/100. Ten original episodes recorded only one of two ranges; a merged range must be rerecorded when either constituent changed.",
+    "Existing replay reports prove one captured range per T2 episode; no new CUDA API trace verifies native launch counts or individual API time.",
+    "Independent stable-sort/bit oracle and original two-queue workspace replay checks cover the listed cases; no all-model or all-shape certification.",
+    "Private F32 wide single-row gate only. BF16/FP16/I32 single-row route and head precision remain unchanged.",
+    "Prefill observation is positive but this is a decode-oriented route candidate; it does not offset the actual negative decode/combined screen or justify selecting favorable metrics.",
+    "Sample ranges do not overlap in this finite screen, but three samples per arm do not establish general statistical significance or fixed clocks.",
+    "Memory has one process per arm: identical observed VRAM peaks and small host differences are not a demonstrated RAM saving.",
+    "No next formal window, profiler, new candidate or canonical CUDA merge was performed after the negative decision."
+  ],
+  "cleanup": {
+    "status": "CANDIDATE_CLOSED_REBUILDABLE_FILES_MAY_BE_REMOVED_BY_ROOT_NO_DELETION_EXECUTED",
+    "files": [
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/compile-native/unit.obj",
+        "bytes": 15369419,
+        "sha256": "620fd01c5beb25af3dab0175a41eb6da8b3050b1e31604556913bcc909dd482a"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/compile-direct/unit.obj",
+        "bytes": 1977558,
+        "sha256": "448d82036cab2305a6e2fe86fb46d8d0bcddeef1deba55bba44c6fb6b037213c"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/compile-graph2/unit.obj",
+        "bytes": 1487841,
+        "sha256": "f5694fc3238a7ba73b281b81ddb82508cf1d33cb8dcad035d6fb6d9bf55655c8"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-tests/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-tests/tests.exe",
+        "bytes": 140375040,
+        "sha256": "d49495deea2354962bcf4781c04b751b7f44bf98a8b2d443b0e195909319804a"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-tests/tests.exp",
+        "bytes": 24982,
+        "sha256": "140360ac9d0570979a339b4a1c1eae511eda30055f1eaeed286f7d7d35e993ee"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-tests/tests.lib",
+        "bytes": 41474,
+        "sha256": "eb94a4b61486dd914abc7fea7de972f2f36d30506b483ec4765f2d276d689b15"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-app/hyle.exe",
+        "bytes": 141402624,
+        "sha256": "52fe5999821e26fc9b5c7a44566aeac83eb6a2ffac106b4a8f890bcb0c920349"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-app/hyle.exp",
+        "bytes": 24979,
+        "sha256": "fd9fe7b11380eb1f5dc814b97da1c7d3563ae240280669fb94d3feedd1cc24ff"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-app/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-single-row-prepared-20261025/link-app/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "count": 11,
+    "logical_bytes": 303158869,
+    "scope": "Only11 files created in this private batch; two DLL files are hardlinks to retained runtime bytes, so logical bytes are not a physical reclaimed-byte claim. Keep original control/native-seed/c343 images, SDK, weights and all source/commands/logs/results."
+  },
+  "reproduction": {
+    "scripts_in_archive": [
+      "prepare.py",
+      "build.py",
+      "run.py",
+      "analyze.py",
+      "screen.py",
+      "package.py"
+    ],
+    "commands": [
+      "python .scratch/mtp-single-row-prepared-20261025/prepare.py",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py prepare-tests",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py native",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py direct",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py graph --attempt 2",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py link-tests --attempt 2",
+      "python .scratch/mtp-single-row-prepared-20261025/build.py link-app",
+      "python .scratch/mtp-single-row-prepared-20261025/run.py numeric",
+      "python .scratch/mtp-single-row-prepared-20261025/run.py capture",
+      "python .scratch/mtp-single-row-prepared-20261025/run.py app",
+      "python .scratch/mtp-single-row-prepared-20261025/screen.py",
+      "python .scratch/mtp-single-row-prepared-20261025/analyze.py"
+    ],
+    "note": "Historical commands only; output directories deliberately refuse overwrite. Original exact argv/compile/link commands are retained in archive. No automatic repeat or network is implied."
+  },
+  "cleanup_execution": {
+    "status": "COMPLETED_CLOSED_CANDIDATE_BINARIES_REMOVED",
+    "files": 11,
+    "logical_bytes_removed": 303158869,
+    "physical_bytes_freed_unknown": true,
+    "command_preview": ".\\test.ps1 -RemoveClosedF32TopOneBinaries",
+    "command_apply": ".\\test.ps1 -RemoveClosedF32TopOneBinaries -Apply",
+    "kept": "All source, patches, raw logs, commands, reports, memory samples, baseline seed image, SDK inputs and weights.",
+    "validation": "Resolved repository-contained exact file paths, ordinary files/no reparse ancestors, inactive process, size/SHA256 and exclusive-open checks for every item before removal.",
+    "note": "No product source changes or new build/model/profile process."
+  },
+  "root_archive_entries_after_cleanup": 145
+}
