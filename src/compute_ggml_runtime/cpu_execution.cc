@@ -79,7 +79,6 @@ struct CpuTeam::State final : util::RefCounted<State> {
     if (selected_program->initialize != &ggml_cpu_init)
       selected_program->initialize();
     auto params = ggml_threadpool_params_default(threads);
-    params.poll = 0;
     params.prio = GGML_SCHED_PRIO_NORMAL;
     int native_error = 0;
     auto *prepared = selected_program->create_pool(&params, &native_error);

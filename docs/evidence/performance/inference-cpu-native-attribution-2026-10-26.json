@@ -1,0 +1,531 @@
+{
+  "schema": "hyle.cpu-native-attribution.v1",
+  "status": "SOLE_WINDOWS_CPU_DIAGNOSTIC_COMPLETE_NOT_A_THROUGHPUT_RESULT",
+  "generated_UTC": "2026-10-25T21:05:41.062676+00:00",
+  "scope": "One normal Windows CPU P154/16/C256/N1/R1 greedy process: shared563 consumer plus only a private CpuExecution runtime OBJ. Native SDK,Model/app/provider/weights/thread4 unchanged. No repeat,warmup,profiler,peer or GPU model run.",
+  "process": {
+    "pid": 41808,
+    "exit": 0,
+    "timed_out": false,
+    "wall_seconds": 7.305529099947307
+  },
+  "behavior": {
+    "full_nontime_differences": 0,
+    "clock_keys_only_excluded": true,
+    "reference": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\behavior1\\stdout.log",
+      "bytes": 20399,
+      "sha256": "be6302aacea62637d244db480f1cc25155f8bf1c564353a7c2986b3c16e0319a"
+    },
+    "raw_comparison": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\run\\nontime-diff.json",
+      "bytes": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    },
+    "same154prompt16outputIDs169target15decode": true
+  },
+  "recorded_failures": {
+    "compile": 0,
+    "link": 0,
+    "model": 0,
+    "timeouts": 0,
+    "native_errors": 0,
+    "event_overflow": 0,
+    "graph_overflow": 0,
+    "node_overflow": 0,
+    "scope": "The sole diagnostic compiled,linked and ran successfully on its first recorded attempt. No diagnostic failure/retry is reported; older Context-team test-link failures remain separate historical evidence."
+  },
+  "measured_findings": {
+    "status": "ATTRIBUTION_COMPLETE_NO_FURTHER_RUN",
+    "strongest_fact": "The original native BF16 matrix graph envelopes dominate decode; team admission is negligible in this single serial CPU4 run.",
+    "decode": {
+      "calls": 8535,
+      "episodes": 15,
+      "native_compute_ms_per_output": 84.46007333333334,
+      "endpoint_ms_per_output": 96.62201333333333,
+      "team_admission_total_ms": 0.6421,
+      "matrix_graph_ms_per_output": 75.30545333333333,
+      "matrix_graph_fraction_of_native": 0.8916100870067916,
+      "matrix_graph_fraction_of_same_run_decode_wall": 0.7793819517457099,
+      "outside_native_compute_total_ms": 182.42909999999983,
+      "outside_native_compute_ms_per_output": 12.161939999999989,
+      "outside_native_scope": "Includes the0.6421ms team admission as well as other providers/Graph/host/observer work; not an attributed recoverable bucket.",
+      "top_matrix_graphs": [
+        {
+          "weight_type": 30,
+          "weight_ne": [
+            2048,
+            6144,
+            1,
+            1
+          ],
+          "weight_nb": [
+            2,
+            4096,
+            25165824,
+            25165824
+          ],
+          "weight_nominal_span_bytes": 25165824,
+          "activation_type": 30,
+          "activation_ne": [
+            2048,
+            1,
+            1,
+            1
+          ],
+          "output_type": 0,
+          "output_ne": [
+            6144,
+            1,
+            1,
+            1
+          ],
+          "calls": 990,
+          "native_ms": 495.4795,
+          "per_episode_native_ms": 33.03196666666666
+        },
+        {
+          "weight_type": 30,
+          "weight_ne": [
+            2048,
+            248320,
+            1,
+            1
+          ],
+          "weight_nb": [
+            2,
+            4096,
+            1017118720,
+            1017118720
+          ],
+          "weight_nominal_span_bytes": 1017118720,
+          "activation_type": 30,
+          "activation_ne": [
+            2048,
+            1,
+            1,
+            1
+          ],
+          "output_type": 0,
+          "output_ne": [
+            248320,
+            1,
+            1,
+            1
+          ],
+          "calls": 15,
+          "native_ms": 291.1422,
+          "per_episode_native_ms": 19.40948
+        },
+        {
+          "weight_type": 30,
+          "weight_ne": [
+            6144,
+            2048,
+            1,
+            1
+          ],
+          "weight_nb": [
+            2,
+            12288,
+            25165824,
+            25165824
+          ],
+          "weight_nominal_span_bytes": 25165824,
+          "activation_type": 30,
+          "activation_ne": [
+            6144,
+            1,
+            1,
+            1
+          ],
+          "output_type": 0,
+          "output_ne": [
+            2048,
+            1,
+            1,
+            1
+          ],
+          "calls": 360,
+          "native_ms": 180.6123,
+          "per_episode_native_ms": 12.04082
+        }
+      ]
+    },
+    "prefill": {
+      "calls": 569,
+      "native_compute_ms": 3434.5549,
+      "endpoint_ms": 3567.318,
+      "matrix_graph_ms": 3147.9002,
+      "tied_head_M1_graph": {
+        "weight_type": 30,
+        "weight_ne": [
+          2048,
+          248320,
+          1,
+          1
+        ],
+        "weight_nb": [
+          2,
+          4096,
+          1017118720,
+          1017118720
+        ],
+        "weight_nominal_span_bytes": 1017118720,
+        "activation_type": 30,
+        "activation_ne": [
+          2048,
+          1,
+          1,
+          1
+        ],
+        "output_type": 0,
+        "output_ne": [
+          248320,
+          1,
+          1,
+          1
+        ],
+        "calls": 1,
+        "native_ms": 19.7517,
+        "per_episode_native_ms": 19.7517
+      }
+    },
+    "priority": "If another CPU optimization is pursued, first inspect the actual same-program BF16 M1 MUL_MAT inner path / eligible existing projection provider for the 66 wide matrices and tied head. This is an unimplemented research direction, not a measured counterfactual or promise of gain. Do not lower all native threads or infer bandwidth from nominal spans.",
+    "not_conclusions": [
+      "This does not locate a13.8ms Hyle-peer difference: peer was not observed in this run.",
+      "The182ms decode endpoint remainder includes unobserved providers/host and observer overhead; it is not wholly recoverable.",
+      "BF16 arithmetic/storepoints and full output semantics remain the frozen contract; no change or reduced precision was tested."
+    ],
+    "raw": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\facts.json",
+      "bytes": 32906,
+      "sha256": "dcbf8ccdaa52e71b91d2822c3192d7f826e56e128367294e52514a1a6dba0dc6"
+    },
+    "model_processes": 1,
+    "new_builds": {
+      "runtime_TU": 1,
+      "link": 1
+    },
+    "new_GPU_runs": 0
+  },
+  "analysis_facts": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\facts.json",
+    "bytes": 32906,
+    "sha256": "dcbf8ccdaa52e71b91d2822c3192d7f826e56e128367294e52514a1a6dba0dc6"
+  },
+  "analysis_script": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\analyze.py",
+    "bytes": 10199,
+    "sha256": "2eac10cf4bc2e14ae784b9516e10335b9a2f03bd5207e96647095e51a4c20198"
+  },
+  "build": {
+    "ready": {
+      "status": "BUILT_NOT_RUN",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\link\\hyle.exe",
+        "bytes": 141496320,
+        "sha256": "c043e0eaeb217efefbb8fde9780964fd21d1073aa0b4e50042323c2071ac7ac3"
+      },
+      "compile": {
+        "exit": 0,
+        "pid": 57120,
+        "seconds": 3.088072300015483
+      },
+      "link": {
+        "exit": 0,
+        "pid": 25944,
+        "seconds": 2.0028497999883257
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+        "bytes": 15246,
+        "sha256": "3e1e733443aeb5045b09807d8968f2295318010c395d8410a99cdf383c9daf1d"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\source-pins.json",
+        "bytes": 721,
+        "sha256": "0e79db3ece55e6fef506eacbbe46c585f2548e1248c2bc25d0e48771211aa04d"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\compile\\command.json",
+        "bytes": 2577,
+        "sha256": "4ad44672cfc89114c1dc7b337f4d085df22350b8efd46dcc94f960d43d9ea297"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\compile\\actual-dependencies.json",
+        "bytes": 72715,
+        "sha256": "00f6b6761ee11cfb45a63fbb6a40d0d754c18c598e42221d2eb692963321366f"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\link-inputs.json",
+        "bytes": 56955,
+        "sha256": "21fffbaf9bf5d7d6cf6f49700b167d84a63d688655929f2c9bb587582da215e4"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\runtime.json",
+        "bytes": 8216,
+        "sha256": "de67106dbfa95f465b553fbc01a05a607ae635519b1c93f0e7f76c5bb5bc467f"
+      },
+      "original_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\ready.json",
+        "bytes": 5559,
+        "sha256": "d4ff4d0bb4d4618ffd3358de4bde193520a2c2131e2c931d02cdbdde77c6549f"
+      },
+      "replacement": {
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\unit.obj",
+          "bytes": 129449,
+          "sha256": "d845f61d1e41b0ce71eea44dd3b73cabd49f778885828fc33afe239113db07ca"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\compile\\unit.obj",
+          "bytes": 154355,
+          "sha256": "a40702ec051518bacaccf7f0dee26a014ea0a43c991c84363b8434e706a432a7"
+        }
+      },
+      "all_other_link_inputs_unchanged": true,
+      "model_runs": 0
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\runtime.json",
+      "bytes": 8216,
+      "sha256": "de67106dbfa95f465b553fbc01a05a607ae635519b1c93f0e7f76c5bb5bc467f"
+    },
+    "source": {
+      "source": "src/compute_ggml_runtime/cpu_execution.cc",
+      "before": {
+        "bytes": 7654,
+        "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+        "bytes": 15246,
+        "sha256": "3e1e733443aeb5045b09807d8968f2295318010c395d8410a99cdf383c9daf1d"
+      },
+      "limits": "Private single runtime-TU observer. No canonical change. Three ticks around team admission/native compute; fixed POD facts dumped only at process exit. First two source descriptors recorded; multiop run time is not per-node time."
+    },
+    "closure": "Exactly1runtimehostTU+link;oneold563runtimeOBJ replaced,allotherlinkinputs unchanged. Ready retains originalbuild-only status text;laterprocess record proves actualrun. NoSDK/nativeCUDA/vendor rebuild."
+  },
+  "phase_and_clock": {
+    "markers": {
+      "qpc_frequency": 10000000,
+      "markers": [
+        {
+          "line": "memory_phase=generation_default_prefill_begin",
+          "receive_perf_before_ns": 288642605257800,
+          "receive_perf_after_ns": 288642605275600,
+          "receive_qpc": 2886426052743,
+          "qpc_ok": true
+        },
+        {
+          "line": "memory_phase=generation_default_prefill_end",
+          "receive_perf_before_ns": 288646172612700,
+          "receive_perf_after_ns": 288646172623300,
+          "receive_qpc": 2886461726223,
+          "qpc_ok": true
+        },
+        {
+          "line": "memory_phase=generation_default_decode_begin",
+          "receive_perf_before_ns": 288646172629700,
+          "receive_perf_after_ns": 288646172630400,
+          "receive_qpc": 2886461726303,
+          "qpc_ok": true
+        },
+        {
+          "line": "memory_phase=generation_default_decode_end",
+          "receive_perf_before_ns": 288647621939700,
+          "receive_perf_after_ns": 288647621950200,
+          "receive_qpc": 2886476219491,
+          "qpc_ok": true
+        }
+      ],
+      "clock": "QPC bridge to perf_counter_ns; marker timestamps are receipt times, not exact producer fprintf times."
+    },
+    "limits": "Markers are parent stderr receipt timestamps,not producer/model endpoint instants. The exit steadyClock/QPC bridge brackets mapping uncertainty. Unknown pipe/scheduling delay remains. Actual graph identity,call ordering and shape support phase assignment; M1 alone is insufficient because the prefill head also has M1."
+  },
+  "instrumentation_boundaries": [
+    "Three originalrun ticks bracket team admission and actualnativecompute. Admission includes originalgate/TLS/lock work;nativecompute includes native CPU implementation,workers/synchronization,not just arithmetic.",
+    "FixedPOD graph/signature/descriptor/event recording runs after measuredcompute but still inside the originalmodelrun andheldteamgate. This overhead is not in compute buckets;remainingwall must not be called pureHyle overhead or recoverabletime.",
+    "Tensorfacts are metadata snapshots,not tensorcontent reads. Only source0/source1 descriptions/spans/addresses recorded;source_count preserves additionalunknownsources. Operandspan is not measuredDRAMtraffic.",
+    "Composite native graph elapsed stays composite. Never distribute its whole wall interval to each contained op or sum overlapping labels. The offline script verifies nonoverlapping compute intervals,so union equals sum in this run.",
+    "Dump is at normalprocess exit after originalmodelendpoints,no pernativefprintf. Counts/overflow/normalcompletion bound use;diagnosticTPS/processwall are not speed or baseline samples."
+  ],
+  "source_only_reviews": {
+    "remaining": {
+      "status": "SOURCE_ONLY_NO_CONFIRMED_LEAF_HOTSPOT",
+      "remaining_gap": {
+        "candidate_vs_peer_TPS_percent": -14.280629665172528,
+        "candidate_ms": 96.87476666666666,
+        "peer_ms": 83.04043999999999,
+        "gap_ms_per_decode": 13.83432666666667
+      },
+      "source_bytes": {
+        "manifest": {
+          "path": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/weights.tsv",
+          "bytes": 56735,
+          "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+        },
+        "ordinary_roles": 320,
+        "rank2_roles": 187,
+        "nominal_projection_bytes": 3762552832,
+        "FFN_bytes": 1811939328,
+        "head": {
+          "role": "model.language_model.embed_tokens.weight",
+          "shape": [
+            248320,
+            2048
+          ],
+          "dtype": "BF16",
+          "bytes": 1017118720,
+          "tied": true
+        },
+        "limit": "Nominal operand extents, not measured DRAM traffic, cache misses or per-leaf time. The embedding is also the score head; there is no separate lm_head bank."
+      },
+      "anchors": [
+        {
+          "path": "engine/models/qwen35/model_geometry.h",
+          "bytes": 6510,
+          "sha256": "718dab27fff7b6c3a184dadcb7773c0edc8fd4ae441bbbc85169d936a3322294",
+          "line": 59
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 470192,
+          "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6",
+          "line": 490
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "bytes": 120159,
+          "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816",
+          "line": 797
+        },
+        {
+          "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+          "bytes": 120159,
+          "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816",
+          "line": 1219
+        },
+        {
+          "path": "src/graph_ggml_shared/constant_packing.h",
+          "bytes": 11968,
+          "sha256": "57c17d5692700c8426c227af60872c985ee6f8cd997d7d7916fb389a2c55165f",
+          "line": 183
+        },
+        {
+          "path": "src/compute_provider_onednn/onednn_provider.cc",
+          "bytes": 19878,
+          "sha256": "0639510d416bc9e74714bbef35387fe26daf645947321ef8a7db735ded57f1ba",
+          "line": 287
+        },
+        {
+          "path": "src/compute_ggml_runtime/cpu_execution.cc",
+          "bytes": 7654,
+          "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196",
+          "line": 178
+        }
+      ],
+      "hypothesis": "R1 BF16 dense projection/score compute or native graph materialization is the largest byte/algorithm candidate, but it has no measured CPU leaf cost yet. Existing oneDNN MatMul requires F32; forcing it by widening changes the contract. Immutable repack artifacts already exist, so do not create another weight cache.",
+      "next": "Root assigned arch one private CpuExecution TU diagnostic: ticks before team gate, after gate, and after original native compute; fixed POD keyed by actual graph identity/op/shape; output after endpoints. One original563 P154/16 process, complete non-time comparison, no TPS claim. I do not run it.",
+      "rules": [
+        "Composite native graph time stays composite; never assign the whole elapsed interval to each contained op.",
+        "Classify actual BF16 head 1x2048x248320, FFN6144x2048/2048x6144, copies/casts and GDN using cold graph identity and first/later invocations. Prefill head is also M1; M1 alone cannot establish decode phase.",
+        "Separate team wait from native compute. First account for coverage of all15 decode intervals; overflow or incomplete phase joins stay unknown. Preserve original abort/status/order."
+      ],
+      "conditional_candidate": "Only if R1 BF16 head compute dominates: a bounded leaf comparison of current ggml DenseLinearF32 against existing Hyle SIMD dense_dot/f32_dense_linear, using the same BF16 A/W, F32 Y and actual head geometry. Existing custom dot supports BF16 pairs; current both-BF16 dispatch uses native. No implementation now; NaN/tie/rounding/lease oracles required, no gain promised.",
+      "exclusions": [
+        "mmap/private commit/direct host IO are loading tasks, not decode gains.",
+        "Shared pool is complete; thread/kernel counts are not cost attribution.",
+        "No whole-bank F32 expansion or per-step immutable repack is proved; do not duplicate the existing artifact mechanism."
+      ],
+      "limits": "Source and retained facts only; no new build, model, GPU, network or product change. The aggregate13.834ms gap is not a recoverable-time budget."
+    },
+    "loading": {
+      "status": "SOURCE_ONLY_LOADING_CANDIDATES_NOT_DECODE_HOTSPOTS",
+      "measured_inventory_bytes": 3763655360,
+      "scope": "CPU ordinary BF16 weights with source layout directly usable; no codec/scale/repack bypass. Source audit only, no new compile/model/implementation.",
+      "candidates": [
+        {
+          "name": "Own and import read-only file mapping for original CPU weight banks",
+          "fact": "Current loader allocates private backing and reads 320 selected roles. Existing FileMapping view is borrowed; direct Graph binding requires real mapping ownership and completion lifetime. StorageOwner requires a resource.ref(), ReadLease.adopt requires an owned Buffer. StreamSource.adopt(mapping) retains mapping but still copies through staging.",
+          "possible_effect": "Change about3.76GB private backing to mapped file backing; not a promised working-set or decode reduction. Reuse original Buffer/resource/lease ownership, never pretend a borrowed view is an owner.",
+          "anchors": [
+            {
+              "path": "engine/models/qwen35/weights.cc",
+              "line": 588,
+              "bytes": 47831,
+              "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+            },
+            {
+              "path": "include/hyle/compute/storage_owner.h",
+              "line": 34,
+              "bytes": 8142,
+              "sha256": "d86222a73bebeb646162b16d3aaeb59628007cc6f3648cc3a754687d780d24eb"
+            },
+            {
+              "path": "include/hyle/mem/mapping.h",
+              "line": 83,
+              "bytes": 7139,
+              "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+            }
+          ]
+        },
+        {
+          "name": "Read directly into qualified host destination instead of staging then copying",
+          "fact": "The current retained CPU load reports627 copy/native calls and3,763,655,360B copied, staging16MiB. Existing stream read fills stage, retires IO, publishes stage, copies into destination, then publishes group. Existing map_host and read_exact_at can be reused.",
+          "possible_effect": "Remove one loading-phase host memcpy over original weight bytes. Keep mapping alive through real IO retirement; close mapping successfully before publishing the entire group. Preserve cancellation, failures, padding and reports. No steady-state capacity or decode gain claimed.",
+          "anchors": [
+            {
+              "path": "src/compute_stream/file_stream.cc",
+              "line": 448,
+              "bytes": 54078,
+              "sha256": "cf6f6ea489c21ac68615b00799d8cf6a5d8d0a99594c4ebd24547f8677a361f3"
+            },
+            {
+              "path": "src/compute_stream/file_stream.cc",
+              "line": 510,
+              "bytes": 54078,
+              "sha256": "cf6f6ea489c21ac68615b00799d8cf6a5d8d0a99594c4ebd24547f8677a361f3"
+            }
+          ]
+        }
+      ],
+      "exclusions": [
+        "Current RAM WS/private commit values alone do not prove a leak or a whole-bank F32 expansion.",
+        "Loading candidates are separate from the measured14.28% CPU decode gap.",
+        "No mapped pointer is adopted as a fake resource token; follow original allocator, Context, budget and retirement semantics."
+      ]
+    },
+    "limit": "These files are independent source hypotheses/byteextents and loading proposals,not measuredperleafcosts or implementations. Loading/mmap/staging effects cannot be creditedto decode."
+  },
+  "related_public_evidence": {
+    "context_team": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-context-team-2026-10-26.json",
+      "bytes": 50091,
+      "sha256": "3a7d711483a867b088050f642610844304a881fd83da484f973c4e275f1ab9d7"
+    },
+    "CPU_AVX2_window": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-avx2-window-2026-10-26.json",
+      "bytes": 28840,
+      "sha256": "b461c262adce7599186420e7118ed96cf1a41a119cd6e16bf2fff8defd38a6aa"
+    },
+    "old_samples_pooled": false
+  },
+  "limits": [
+    "CPU only on Windows; no macOS/Linux runtime coverage.",
+    "No current peer per-op trace: this cannot assign the previous14.28% CPU throughput gap to an identical task or subtract buckets from different processes.",
+    "No whole-bank F32 expansion,leak,DRAM bandwidth,quality,bit identity or recoverable gain inferred from spans/times.",
+    "Original fa7 app predates R>1 sampling; N1 greedy here is unchanged. The private observer is not canonical product code.",
+    "No model/build during offline analysis/publication."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-native-attribution-2026-10-26.zip",
+    "bytes": 444082,
+    "sha256": "7c0ccb97399e81129b97d1db2f0f2579fe4abefeae8852d20cae0296f1caf837",
+    "members": 35,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "exclusions": "NoEXE/OBJ/LIB/DLL/map/SDK/model,fullsource/vendor tree oroldlargearchive."
+  }
+}

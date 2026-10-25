@@ -1,0 +1,749 @@
+{
+  "schema": "hyle.cpu-polling-screen.v1",
+  "status": "ADOPTED_FOR_NATIVE_CONTEXT_TEAM",
+  "generated_UTC": "2026-10-25T21:18:58.787290+00:00",
+  "scope": "One-line native threadpool polling change in an existing Context-owned team. Frozen shared563 CPU consumer versus its sole-runtime-OBJ replacement; 6 fresh timing and 2 independent memory processes, no peer, no pooling of older samples.",
+  "results": {
+    "status": "EIGHT_FRESH_PROCESSES_COMPLETE_ALL_WORK_PASS",
+    "timing": {
+      "H": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 43.06838650107002,
+          "min": 43.0353419082463,
+          "max": 43.27206009623706,
+          "samples": [
+            43.0353419082463,
+            43.27206009623706,
+            43.06838650107002
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 10.382186991078171,
+          "min": 10.351157497484841,
+          "max": 10.433561065511427,
+          "samples": [
+            10.351157497484841,
+            10.382186991078171,
+            10.433561065511427
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.19146162739131,
+          "min": 3.182453542394011,
+          "max": 3.197658866037819,
+          "samples": [
+            3.182453542394011,
+            3.197658866037819,
+            3.19146162739131
+          ]
+        }
+      },
+      "C": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 43.203388761597864,
+          "min": 43.1121942785527,
+          "max": 43.262369188922726,
+          "samples": [
+            43.1121942785527,
+            43.262369188922726,
+            43.203388761597864
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 10.611525219987527,
+          "min": 10.57479062972032,
+          "max": 10.825116348350512,
+          "samples": [
+            10.57479062972032,
+            10.825116348350512,
+            10.611525219987527
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.2140824379200983,
+          "min": 3.206063949353808,
+          "max": 3.2353677460527503,
+          "samples": [
+            3.206063949353808,
+            3.2353677460527503,
+            3.2140824379200983
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "prefill_tokens_per_second": {
+        "median_tps_percent": 0.3134602233693773,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "median_tps_percent": 2.208958758943913,
+        "ranges_overlap": false
+      },
+      "output_tokens_per_second": {
+        "median_tps_percent": 0.7087915560268998,
+        "ranges_overlap": false
+      }
+    },
+    "paired_comparison": [
+      {
+        "pair": 1,
+        "order": [
+          "H",
+          "C"
+        ],
+        "C_over_H_percent": {
+          "prefill_tokens_per_second": 0.17857966707979234,
+          "decode_output_tokens_per_second": 2.160464974953946,
+          "output_tokens_per_second": 0.7418932168303138
+        }
+      },
+      {
+        "pair": 2,
+        "order": [
+          "C",
+          "H"
+        ],
+        "C_over_H_percent": {
+          "prefill_tokens_per_second": -0.02239529916714389,
+          "decode_output_tokens_per_second": 4.266243303583028,
+          "output_tokens_per_second": 1.179265256073303
+        }
+      },
+      {
+        "pair": 3,
+        "order": [
+          "H",
+          "C"
+        ],
+        "C_over_H_percent": {
+          "prefill_tokens_per_second": 0.3134602233693773,
+          "decode_output_tokens_per_second": 1.70568948951062,
+          "output_tokens_per_second": 0.7087915560268998
+        }
+      }
+    ],
+    "timing_process_CPU": {
+      "H": {
+        "user_seconds": {
+          "count": 3,
+          "median": 19.28125,
+          "min": 18.921875,
+          "max": 19.96875,
+          "samples": [
+            19.96875,
+            18.921875,
+            19.28125
+          ]
+        },
+        "kernel_seconds": {
+          "count": 3,
+          "median": 1.828125,
+          "min": 1.703125,
+          "max": 1.921875,
+          "samples": [
+            1.703125,
+            1.921875,
+            1.828125
+          ]
+        },
+        "total_seconds": {
+          "count": 3,
+          "median": 21.109375,
+          "min": 20.84375,
+          "max": 21.671875,
+          "samples": [
+            21.671875,
+            20.84375,
+            21.109375
+          ]
+        }
+      },
+      "C": {
+        "user_seconds": {
+          "count": 3,
+          "median": 20.0,
+          "min": 19.84375,
+          "max": 20.125,
+          "samples": [
+            20.125,
+            19.84375,
+            20.0
+          ]
+        },
+        "kernel_seconds": {
+          "count": 3,
+          "median": 2.03125,
+          "min": 1.90625,
+          "max": 2.078125,
+          "samples": [
+            1.90625,
+            2.078125,
+            2.03125
+          ]
+        },
+        "total_seconds": {
+          "count": 3,
+          "median": 22.03125,
+          "min": 21.921875,
+          "max": 22.03125,
+          "samples": [
+            22.03125,
+            21.921875,
+            22.03125
+          ]
+        }
+      }
+    },
+    "total_process_CPU_C_over_H_percent": 4.367135455218363,
+    "memory": {
+      "H": {
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 5712416768,
+          "observed_os_peak_working_set_bytes": 5712445440,
+          "sampled_max_private_commit_bytes": 6511878144,
+          "observed_os_peak_commit_bytes": 6511878144,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "sample_count": 599,
+        "running_sample_count": 569,
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 599,
+          "shared:no_pid_instance": 599
+        },
+        "thread_count": {
+          "samples": 59,
+          "peak": 17,
+          "median": 17
+        },
+        "actual_sample_gaps_ms": {
+          "count": 568,
+          "min": 0.1323,
+          "median": 14.999749999999999,
+          "max": 25.3376
+        },
+        "source": "The independent memory process only; no memory-run throughput enters timing statistics."
+      },
+      "C": {
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 5712072704,
+          "observed_os_peak_working_set_bytes": 5712105472,
+          "sampled_max_private_commit_bytes": 6511296512,
+          "observed_os_peak_commit_bytes": 6511316992,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "sample_count": 591,
+        "running_sample_count": 560,
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 591,
+          "shared:no_pid_instance": 591
+        },
+        "thread_count": {
+          "samples": 58,
+          "peak": 17,
+          "median": 17.0
+        },
+        "actual_sample_gaps_ms": {
+          "count": 559,
+          "min": 0.1014,
+          "median": 15.1267,
+          "max": 28.5289
+        },
+        "source": "The independent memory process only; no memory-run throughput enters timing statistics."
+      }
+    },
+    "work": {
+      "full_non_time_report_differences": 0,
+      "prompt_rows": 154,
+      "target_rows": 169,
+      "generated_tokens": 16,
+      "decode_tokens": 15,
+      "graph_calls": 16,
+      "decode_graph_calls": 15,
+      "generated_ids": [
+        71093,
+        12305,
+        198,
+        464,
+        19298,
+        198,
+        1445,
+        18904,
+        1120,
+        5586,
+        11,
+        51338,
+        11,
+        36760,
+        11,
+        1697
+      ],
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\behavior1\\stdout.log",
+        "bytes": 20399,
+        "sha256": "be6302aacea62637d244db480f1cc25155f8bf1c564353a7c2986b3c16e0319a"
+      },
+      "normalization": "Only retained clock keys seconds/unix_ms/unix_ns/clock_unix and *_seconds/*tokens_per_second omitted recursively; all other fields compared."
+    },
+    "process_receipts": [
+      {
+        "index": 1,
+        "arm": "H",
+        "mode": "timing",
+        "pid": 46960,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 46960,
+          "after_process_wait": true,
+          "user_seconds": 19.96875,
+          "kernel_seconds": 1.703125,
+          "total_seconds": 21.671875,
+          "created_FILETIME_100ns": 134374363160069058,
+          "exited_FILETIME_100ns": 134374363226551071,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 2,
+        "arm": "C",
+        "mode": "timing",
+        "pid": 45504,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 45504,
+          "after_process_wait": true,
+          "user_seconds": 20.125,
+          "kernel_seconds": 1.90625,
+          "total_seconds": 22.03125,
+          "created_FILETIME_100ns": 134374363227990169,
+          "exited_FILETIME_100ns": 134374363294024301,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 3,
+        "arm": "C",
+        "mode": "timing",
+        "pid": 22140,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 22140,
+          "after_process_wait": true,
+          "user_seconds": 19.84375,
+          "kernel_seconds": 2.078125,
+          "total_seconds": 21.921875,
+          "created_FILETIME_100ns": 134374363295500316,
+          "exited_FILETIME_100ns": 134374363360945910,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 4,
+        "arm": "H",
+        "mode": "timing",
+        "pid": 34080,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 34080,
+          "after_process_wait": true,
+          "user_seconds": 18.921875,
+          "kernel_seconds": 1.921875,
+          "total_seconds": 20.84375,
+          "created_FILETIME_100ns": 134374363362420202,
+          "exited_FILETIME_100ns": 134374363428430237,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 5,
+        "arm": "H",
+        "mode": "timing",
+        "pid": 60572,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 60572,
+          "after_process_wait": true,
+          "user_seconds": 19.28125,
+          "kernel_seconds": 1.828125,
+          "total_seconds": 21.109375,
+          "created_FILETIME_100ns": 134374363429940438,
+          "exited_FILETIME_100ns": 134374363496185610,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 6,
+        "arm": "C",
+        "mode": "timing",
+        "pid": 49424,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 49424,
+          "after_process_wait": true,
+          "user_seconds": 20.0,
+          "kernel_seconds": 2.03125,
+          "total_seconds": 22.03125,
+          "created_FILETIME_100ns": 134374363497676637,
+          "exited_FILETIME_100ns": 134374363563378493,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 7,
+        "arm": "H",
+        "mode": "memory",
+        "pid": 55896,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 55896,
+          "after_process_wait": true,
+          "user_seconds": 19.53125,
+          "kernel_seconds": 1.90625,
+          "total_seconds": 21.4375,
+          "created_FILETIME_100ns": 134374363567020789,
+          "exited_FILETIME_100ns": 134374363633012895,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      },
+      {
+        "index": 8,
+        "arm": "C",
+        "mode": "memory",
+        "pid": 53452,
+        "exit": 0,
+        "process_CPU": {
+          "available": true,
+          "pid": 53452,
+          "after_process_wait": true,
+          "user_seconds": 19.796875,
+          "kernel_seconds": 2.109375,
+          "total_seconds": 21.90625,
+          "created_FILETIME_100ns": 134374363634654359,
+          "exited_FILETIME_100ns": 134374363700088589,
+          "error": null,
+          "scope": "GetProcessTimes while original Popen handle remains alive after wait;all process threads,startup,generation,teardown. Not decode-only CPU time,busy-thread count or energy."
+        }
+      }
+    ],
+    "decision": {
+      "status": "ADOPTED_FOR_NATIVE_CONTEXT_TEAM",
+      "rationale": "The measured short CPU decode window improves by 2.21% with nonoverlapping sample ranges. The combined endpoint improves by 0.71%; whole-process CPU time increases by 4.37%. Adopt the tested native bounded default polling policy without adding a Hyle option or scanning other poll levels.",
+      "actual_canonical_integration": {
+        "status": "EXACT_TESTED_POLL_DEFAULT_RUNTIME_INTEGRATED",
+        "path": "src/compute_ggml_runtime/cpu_execution.cc",
+        "bytes": 7633,
+        "sha256": "365aaf3b4f7622eadf61592a2c470302f38bda3124cd36f8708e44378a6810ea",
+        "tested_source_equal": true,
+        "public_default": "original native bounded hybrid polling; no new Hyle option",
+        "reference": "poll-default1/summary.json; poll-screen original6timing+2memory; no sample pooling"
+      },
+      "limit": "This is one Windows CPU N1/R1 greedy workload. No energy, multi-request, mixed CPU/GPU, macOS/Linux or broad CPU scaling claim. No old benchmark table or cross-window gain is rewritten."
+    },
+    "failures": {
+      "compile": 0,
+      "link": 0,
+      "runtime_unit": 0,
+      "initial_behavior": 0,
+      "screen_model": 0,
+      "observer_setup": 0,
+      "timeouts": 0,
+      "retries": 0,
+      "note": "This polling candidate and its fresh screen succeeded on their first recorded attempts. Earlier context-team test-link and previous AVX2-window PIPE failures are separate historical tasks, not failures or samples of this window."
+    }
+  },
+  "protocol": {
+    "order": "H,C,C,H,H,C timing; H,C independent memory",
+    "repetitions_per_arm": 3,
+    "independent_memory_processes_per_arm": 1,
+    "requested": {
+      "prompt_rows": 154,
+      "output_limit": 16,
+      "capacity": 256,
+      "max_sessions": 1,
+      "active_sequences": 1,
+      "sampling": "greedy",
+      "MTP": false,
+      "prefix_cache": "off",
+      "replay": "commands"
+    },
+    "endpoint_definitions": {
+      "prefill": "154 / original prefill_seconds",
+      "decode": "15 / original decode_seconds",
+      "combined": "16 / original session_seconds; prefill_seconds + decode_seconds"
+    },
+    "native_threads": 4,
+    "borrowed_executor_workers": 4,
+    "ATen_intraop_threads": 4,
+    "thread_limit": "These independent budgets are not a four-total-OS-thread cap.",
+    "timeout_seconds": 180,
+    "warmups": 0,
+    "profiler": false,
+    "retries": 0,
+    "offline": true,
+    "first_gate_models_excluded": true,
+    "old_samples_pooled": false,
+    "work_reference_field_note": "Shared563 behavior1 fullnon-time report;adapter field name retains historical initial_AVX2_pair spelling only."
+  },
+  "cold_source": {
+    "source": {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+        "bytes": 7654,
+        "sha256": "c49feff0ada584e437cba56ff16706893f75c27bd290e5402de39edc4d144196"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+        "bytes": 7633,
+        "sha256": "365aaf3b4f7622eadf61592a2c470302f38bda3124cd36f8708e44378a6810ea"
+      },
+      "change": "Delete only params.poll=0; retain original ggml_threadpool_params_default(threads) polling policy and explicit normal priority. No math, threads, ABI, owner, lock or lifetime change.",
+      "private_only": true
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\source.patch",
+      "bytes": 439,
+      "sha256": "72e7530ca9638fb7e44451b4a86b0ef646f362cdb29df73077f9d922f3d4d70f"
+    },
+    "change": "Delete only params.poll=0; preserve ggml_threadpool_params_default(threads) poll50 and explicit normal priority. Existing native loop uses finite 131072*poll rounds before parking. No new option, owner, threads, math, ABI or resource lifetime change.",
+    "parity_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-native-source-parity.json",
+      "bytes": 12467,
+      "sha256": "1f00eac3fa682e92efbed7acf22732b7de9998763f1a29b9844fd38f5707e74b"
+    },
+    "peer_limit": "No peer run in this screen. The source review shows the peer creates and frees a native default50 pool per whole graph; it is not a shared cross-step persistent polling team."
+  },
+  "build": {
+    "ready": {
+      "status": "BUILT_NOT_RUN",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\link\\hyle.exe",
+        "bytes": 141491712,
+        "sha256": "8ebb4d5d506ec0c468b97b175c90d8caf7990d1931959beef9bc6fb7c6d6baf3"
+      },
+      "compile": {
+        "exit": 0,
+        "pid": 34588,
+        "seconds": 0.5735162999480963
+      },
+      "link": {
+        "exit": 0,
+        "pid": 53028,
+        "seconds": 2.0499312999891117
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\source\\src\\compute_ggml_runtime\\cpu_execution.cc",
+        "bytes": 7633,
+        "sha256": "365aaf3b4f7622eadf61592a2c470302f38bda3124cd36f8708e44378a6810ea"
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\source-pins.json",
+        "bytes": 837,
+        "sha256": "0abd5f0da72f15965be112010678bbf79ec3dfc517a6c00804e23bb51643ff81"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\compile\\command.json",
+        "bytes": 2557,
+        "sha256": "859d7648b1cf6e079a61fc59f21a0df5456cd271d1ee40d4166c6cc212df749c"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\compile\\actual-dependencies.json",
+        "bytes": 34771,
+        "sha256": "c9246028fee738f584849c1ea07c41a0dea8cd6bc4e7edb6676af6203a981cd4"
+      },
+      "link_inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\link-inputs.json",
+        "bytes": 56950,
+        "sha256": "22067f7459adf7ee8592a361e458aa2ddf4c7670763e08d0de9429f724c7e722"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\runtime.json",
+        "bytes": 8211,
+        "sha256": "5de6eee287b7510ab72de3be761b49c6f4791d0a9601754c0879adbb2b31e9c7"
+      },
+      "original_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\ready.json",
+        "bytes": 5559,
+        "sha256": "d4ff4d0bb4d4618ffd3358de4bde193520a2c2131e2c931d02cdbdde77c6549f"
+      },
+      "replacement": {
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\unit.obj",
+          "bytes": 129449,
+          "sha256": "d845f61d1e41b0ce71eea44dd3b73cabd49f778885828fc33afe239113db07ca"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\compile\\unit.obj",
+          "bytes": 129456,
+          "sha256": "ad9430c19ec8405c4b44b659c732515eac1aaf3f400498ee9acee99a6d2cc846"
+        }
+      },
+      "all_other_link_inputs_unchanged": true,
+      "model_runs": 0
+    },
+    "only_runtime_object_changed": [
+      [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\runtime\\unit.obj",
+          "bytes": 129449,
+          "sha256": "d845f61d1e41b0ce71eea44dd3b73cabd49f778885828fc33afe239113db07ca"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\compile\\unit.obj",
+          "bytes": 129456,
+          "sha256": "ad9430c19ec8405c4b44b659c732515eac1aaf3f400498ee9acee99a6d2cc846"
+        }
+      ]
+    ],
+    "link_input_count": 222,
+    "all_other_link_inputs_unchanged": true,
+    "new_runtime_TUs": 1,
+    "new_test_TUs": 0,
+    "SDK_builds": 0,
+    "compiler": "MSVC 14.50.35717 /O2 /MD /W4 /WX; original macros and CPU native DLL unchanged.",
+    "note": "Ready/source-pins preserve their creation-time BUILT_NOT_RUN/private-only fields. Later unit, behavior, screen and root-integration receipts establish subsequent execution and adoption; those historical files are not rewritten."
+  },
+  "runtime_unit_and_initial_behavior": {
+    "status": "UNIT_9_AND_ONE_NORMAL_BEHAVIOR_PASS",
+    "unit": {
+      "link": {
+        "exit": 0,
+        "pid": 13572,
+        "seconds": 0.09414910001214594
+      },
+      "run": {
+        "exit": 0,
+        "pid": 57656,
+        "seconds": 0.07861239998601377
+      },
+      "tests": 9,
+      "failures": 0,
+      "skipped": 0,
+      "reused_test_object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\unit\\unit.obj",
+        "bytes": 917705,
+        "sha256": "8ca1e0be5cc1b4acb0cc38cca289bcc565094bf28995e78f3d9908d13971e053"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\unit-link\\runtime-test.exe",
+        "bytes": 1675264,
+        "sha256": "aac82f2dd6f1bcffdb5184df286f48be9ee4d69c92420116a93df520ee44c694"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\unit-run\\results.xml",
+        "bytes": 3300,
+        "sha256": "0086fe9c24f1b57bbfdc1f1eeb93edf1e9378005bbee7c1d36594083e74ba364"
+      }
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\ready.json",
+      "bytes": 2822,
+      "sha256": "9139723da07d6f56f251cc9f4febba875e5b3e2582d1398689e007d5e2f20701"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\poll-default1\\source-pins.json",
+      "bytes": 837,
+      "sha256": "0abd5f0da72f15965be112010678bbf79ec3dfc517a6c00804e23bb51643ff81"
+    },
+    "models_run": 1,
+    "new_runtime_TUs": 1,
+    "new_test_TUs": 0,
+    "GPU_runs": 0,
+    "behavior": {
+      "process": {
+        "exit": 0,
+        "pid": 50032,
+        "seconds": 7.123617799952626
+      },
+      "nontime_difference_count": 0,
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\behavior1\\stdout.log",
+        "bytes": 20399,
+        "sha256": "be6302aacea62637d244db480f1cc25155f8bf1c564353a7c2986b3c16e0319a"
+      },
+      "observed": {
+        "generated_tokens": 16,
+        "actual_target_rows": 169,
+        "actual_graph_calls": 16
+      }
+    },
+    "performance_claim": false,
+    "timing_matrix_run": false
+  },
+  "measurement_boundaries": [
+    "All six timing processes have no memory/thread monitor. GetProcessTimes is read once after terminal wait while the real Popen process handle is still alive. Counters include all target threads, startup, weights, generation and teardown; not decode CPU cost, child-process time, utilization or energy.",
+    "GetProcessTimes records user/kernel FILETIME counts at 100ns units. Post-exit query/file recording slightly extends parent process wall measurement, never the consumer generation endpoints. Startup and parent wall are not fair throughput endpoints.",
+    "PSAPI working set/private commit and PDH GPU Process Memory are sampled only in the two separate memory processes. Requested memory interval10ms, OS thread interval100ms; actual gaps and full samples retained. Peaks are observed lower bounds, not allocator totals or busy-thread counts.",
+    "Phase markers are parent stderr receipt times, not exact allocator or producer endpoint instants. Phase windows, brackets and unknown ready baselines are retained in original memory-summary.json. Missing GPU PID instances remain null, not zero.",
+    "Original CPU app predates the R>1 categorical batching change. This N1 greedy workload is unchanged; this image does not certify newer unrelated Model/API changes.",
+    "Existing local hardware inventory is Intel Core i9-13900K,24 cores/32 logical processors. No per-run affinity, CPUID, frequency, energy or sampled-kernel inventory was collected.",
+    "BF16 stored weights and activation/store policy, F32 operation boundaries and native AVX2/FMA/F16C build remain unchanged. Identical16 output IDs are not a bitwise whole-model precision or quality proof.",
+    "Only Windows CPU runtime evidence. No macOS/Linux, GPU, mixed CPU/GPU, multi-Model or multi-request performance claim. Do not multiply this short-window gain into previous CPU or CUDA reference tables."
+  ],
+  "prior_evidence_navigation": {
+    "inference-cpu-context-team-2026-10-26.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-context-team-2026-10-26.json",
+      "bytes": 50091,
+      "sha256": "3a7d711483a867b088050f642610844304a881fd83da484f973c4e275f1ab9d7"
+    },
+    "inference-cpu-avx2-window-2026-10-26.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-avx2-window-2026-10-26.json",
+      "bytes": 28840,
+      "sha256": "b461c262adce7599186420e7118ed96cf1a41a119cd6e16bf2fff8defd38a6aa"
+    },
+    "inference-cpu-native-attribution-2026-10-26.json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-native-attribution-2026-10-26.json",
+      "bytes": 24113,
+      "sha256": "6d4dca6b074ccd542f4ca18f2b4f3770b28c7ea6dbd0672f279c7e2408b98415"
+    }
+  },
+  "publication": {
+    "scope": "Offline parsing and archiving only; no additional model/build/network operation.",
+    "first_packaging_failure": {
+      "stage": "offline publication before archive creation",
+      "error": "AssertionError: retained sampler path included extra d4-windows-preparation-2026-10-21 directory",
+      "source_before": {
+        "bytes": 16764,
+        "sha256": "ec5c73a385bca17212a5c6e046bc4e689acd2d7bfbfb228fd9267538ddfd334a"
+      },
+      "model_runs": 0,
+      "builds": 0,
+      "raw_logs_modified": false,
+      "correction": "Use actual retained runner A/qwen-gpu-comparison/memory-probe/memory_probe.py; remove extra d4 directory."
+    },
+    "note": "One missing retained-sampler path assertion was corrected before ZIP creation. Original model/build receipts and logs were not changed; no process was rerun."
+  },
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-polling-screen-2026-10-26.zip",
+    "bytes": 292412,
+    "sha256": "52927e72862175b131fa0a737fcf551e33b9a2b72199c9bc55be7b12640c6778",
+    "members": 122,
+    "CRC_PASS": true,
+    "member_SHA256_PASS": true,
+    "exclusions": "No binary/EXE/OBJ/LIB/DLL/map/SDK/model, copied vendor/full source tree, old model logs or old performance samples."
+  }
+}

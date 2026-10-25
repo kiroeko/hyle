@@ -5,7 +5,7 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，已关闭；CPU预算工厂转发与冷replay配置一致性已修。Graph外准备归因已完成。最新四请求普通随机对照中，批量采样decode约＋10.76%、综合＋9.83%，已合入；Hybrid约−3.26%，关闭。CPU参考ISA已修正，Context共享池修复已合入：新短窗decode＋2.60%、综合＋1.91%，OS线程3428→17，仍比AVX2参考decode慢14.28%。这些不代表当前greedy MTP余差已消除。已关闭候选保持关闭。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入；报告改动普通decode有限筛选约+0.82%，MTP约+0.96%但范围重叠、收益未证。实际依赖变化的自有对象已刷新，并完成新的32进程对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，已关闭；CPU预算工厂转发与冷replay配置一致性已修。Graph外准备归因已完成。最新四请求普通随机对照中，批量采样decode约＋10.76%、综合＋9.83%，已合入；Hybrid约−3.26%，关闭。CPU参考ISA已修正，Context共享池修复已合入：新短窗decode＋2.60%、综合＋1.91%，OS线程3428→17。随后另窗保原生默认有限轮询，decode＋2.21%、综合＋0.71%，整进程CPU时间＋4.37%，已采用。含AVX2参考的上一同窗仍慢14.28%，不拼跨窗更新差距。这些不代表当前greedy MTP余差已消除。已关闭候选保持关闭。
 
 [量级排序原记录](../../evidence/research/mtp-next-priorities-2026-10-26.json)中的GDN双向工作IO现已筛选关闭，结果见下文。次级源审确认已有常量安装、alias索引和revision／span复用，实际剩余静态遍历占比未知，尚不支持实施；不同形状N2048／K6144 down也只在旧均值有小差、范围混杂。六层fresh native plan共享包络小且须新增寿命机制，暂不优先。无过滤R>1及随机Hybrid不影响当前greedy N1 MTP窗口。
 
@@ -18,6 +18,14 @@
 CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-window-2026-10-26.json)，不沿用generic参考库的虚假胜幅。发现每Invocation独持原生池带来3428个OS线程后，[共享Context团队修复](../../evidence/performance/inference-cpu-context-team-2026-10-26.json)保留每槽独立plan／workspace、原native T4和真实退休，由一个Context保活团队并串行执行完整native compute。两产品TU严格编译、9项runtime及真实模型通过，未增加用户配置，已合入。
 
 新的九计时＋三独立内存进程均成功，Hyle原池／共享池／AVX2参考的prefill为42.584／43.159／42.981，decode10.061／10.323／12.042，综合3.131／3.190／3.312 tok/s；共享池decode＋2.60%、综合＋1.91%，三点范围不重叠。工作集采样峰6.548／5.320／3.828GiB，private commit7.350／6.065／0.607GiB，OS线程峰3428／17／16。Hyle两臂完整非时间报告相同，参考各次报告稳定，三臂16输出及计算行数相同；线程数不是忙线程数，映射内存与private commit不直接等价。Hyle GPU计数器无PID实例，缺测不记零。该T4／P154＋16／C256／N1／greedy短窗的主要收益是资源节省，CPU decode仍慢14.28%；不扩展为多请求、跨平台、长上下文或CUDA MTP结论。后续优先核真实计算与权重存储成本，不据线程数推断剩余瓶颈。
+
+[唯一CPU原生归因](../../evidence/performance/inference-cpu-native-attribution-2026-10-26.json)在等待策略调整前仅换一个runtime对象，原工作和输出保持一致；9104事件、1144图身份及10554节点完整、0溢出。按原marker与实际冷图身份分为prefill569调用、decode8535＝15×569调用，prefill的M1 head未算入decode。decode每输出原生compute84.460ms、含单MUL_MAT的完整图包络75.305ms，占本次墙时77.94%（原生桶的89.16%）；其中66个wide投影33.032ms、tied head19.409ms、24个FFN down12.041ms为不相交组。全15轮team接纳仅0.642ms；原生外每输出12.162ms含其它provider／host及仪器，不能全称可删除开销。图包络不是纯kernel或实测DRAM流量，也尚未与参考同项对齐，不将本次诊断TPS当基线或收益。
+
+[CPU等待策略新窗](../../evidence/performance/inference-cpu-polling-screen-2026-10-26.json)先核实际源码：mixed DLL、参考AVX2和纯CPU新版的BF16点积／MUL_MAT相关核心相同，不能凭版本名指认旧内核较慢。参考每整图临时创建默认pool，Hyle则在同Context团队上执行许多小图；原强制poll0立即休眠，候选只删这一冷覆盖、保原生默认有限轮询。1TU严格编链、原9项runtime和唯一正常行为均通过，随后另跑六计时＋两独立内存进程，全成功、完整非时间工作一致。
+
+新窗prefill43.068→43.203（＋0.31%，范围重叠）、decode10.382→10.612（＋2.21%，范围不重叠）、综合3.191→3.214 tok/s（＋0.71%，范围不重叠）；整进程CPU时间中位21.109→22.031秒（＋4.37%），包含加载／退出，不是decode CPU时间或能耗。工作集各约5.320GiB、线程峰各17，GPU计数缺测；内存单样本微差不作节省结论。按速度优先采用此小收益，没有新用户选项；不与旧CPU或CUDA窗口拼样，也不据此认定整段余差主因。后续核其它provider／Graph流程及参考同项成本，不扫描更多poll参数。
+
+加载期另有两个源码候选：[原权重导入](../../../engine/models/qwen35/weights.cc)目前分配约3.76GB私有backing，[FileStream](../../../src/compute_stream/file_stream.cc)先读staging再复制。可研究复用现文件映射的合法只读导入，以及合格host目的的直接IO；须保真实mapping owner、ReadLease与IO退休／发布，不能将裸借用视图伪装成所有者。它们尚未实现，不计作decode或确定工作集节省。
 
 ## 目标与当前基线
 
