@@ -92,7 +92,9 @@ Q27／Q24共用attention、M2 head、K1接受／修复／12成员发布与纯数
 
 模型接入需声明完整续算状态，缓存目录、预算、COW、租约与退休机制共用；不为每个模型、量化仓库或后端重写缓存管理器。同一状态族可以按真实几何参数化，新的状态数学或存储格式仍须补相应原语，不能由名称推断支持。固定来源与逐项锚点见[八模型状态审查](../evidence/research/model-state-integration-2026-10-21.json)，原制品接线的当前完成与剩余范围以[MTP有限清单](../evidence/research/mtp-artifact-scope-2026-10-23.json)为准。
 
-Kimi 两个所选混合量化制品的[原 router／bias 组件](../evidence/correctness/kimi-original-router-frontier-2026-10-25.json)已通过 CUDA 独立数值检查；两份角色逐字相同后复用同一图，输入仍为生成 hidden。实际 Top16 用于确定后续专家范围，不代表原专家组件、整模型或质量／吞吐已经通过。
+Kimi 两个所选混合量化制品的[原 router／bias 组件](../evidence/correctness/kimi-original-router-frontier-2026-10-25.json)已通过 CUDA 独立数值检查；两份角色逐字相同后复用同一图。
+随后按实际相同 Top16 接入[原专家／latent／共享 FFN 组件](../evidence/correctness/kimi-original-working-set-component-2026-10-25.json)：A32 MXFP4 与 K512 W4A8 两种原编码、直接 gamma norm，以及独立 FP8 投影，两个输入共62阶段数值检查通过。
+原七 bank／两代供给保留旧读者、忙槽拒绝和失败绑定后执行合同；独立参考逐阶段使用已核对的实际前驱，输入仍为生成 hidden，不代表整模型质量或吞吐通过。
 
 | 模型／状态族 | 同一快照须保留的内容 | 当前边界 |
 | --- | --- | --- |

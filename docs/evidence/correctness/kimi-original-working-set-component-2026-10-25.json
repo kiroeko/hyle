@@ -1,0 +1,671 @@
+{
+  "schema": "hyle.correctness_evidence.v1",
+  "status": "PASS_AUTHENTIC_SELECTED_KIMI_WORKING_SET_COMPONENT",
+  "date": "2026-10-25",
+  "scope": "Original selected publisher roles and generated hidden-input boundary; not complete Kimi/model execution, quality or TPS.",
+  "source": {
+    "index": {
+      "path": ".scratch/kimi-publisher-router-20261025/source-roles.json",
+      "bytes": 215370,
+      "sha256": "39eed781e49b186a5ba86925e750368fe152ee7bbceef7931c4055e8c4d07ded"
+    },
+    "logical_roles": 261,
+    "cached_original_parts": 76,
+    "total_original_range_bytes": 1115707648,
+    "bulk_numeric_bytes": 1090009600,
+    "original_I64_shape_bytes": 768,
+    "previous_router_bias_bytes": 25697280,
+    "whole_LFS_hash_verified": false,
+    "all_acquisition_hosts": "https://hf-mirror.net",
+    "acquisition_auto_retries": 0,
+    "PAUSED_restored": true,
+    "geometry": {
+      "hidden": 7168,
+      "experts": 896,
+      "TopK": 16,
+      "latent": 3584,
+      "intermediate": 3072,
+      "shared": 6144
+    },
+    "selected_expert_ids": [
+      79,
+      156,
+      210,
+      220,
+      250,
+      260,
+      305,
+      365,
+      366,
+      404,
+      444,
+      593,
+      619,
+      634,
+      731,
+      878
+    ],
+    "same_IDs_for_two_inputs_and_artifacts": true,
+    "source_binding": "Original typed physical bytes and exact I64 logical shapes; cold byte assembly only; no dequantized persistent bank.",
+    "prior_router_proof": "docs/evidence/correctness/kimi-original-router-frontier-2026-10-25.json"
+  },
+  "execution": {
+    "native_processes": 1,
+    "native": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/process.json",
+      "bytes": 73,
+      "sha256": "9c4df6c226ff23a81731e3dd9ca1d42f01d77ddc31417af30b0b904c2f83bc77"
+    },
+    "native_seconds": 5.953000000008615,
+    "CPU_audits": 1,
+    "CPU_audit": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/audit-run1/process.json",
+      "bytes": 180,
+      "sha256": "9f4983a6dfbf0217e091e67157b949c51da6364fc1f3a46515b914af847f0e59"
+    },
+    "CPU_audit_seconds": 33.48310351371765,
+    "GPU_released": true,
+    "core": "Exact3 reviewed private cache-source core objects from source/command pins; unchanged public layout. No SDK/core rebuild in component task.",
+    "compile_attempts": 2,
+    "successful_entry_TUs": 1,
+    "compile_first_failure": "build1 strict C4456 report-loop local source shadowed source adapter; no link/native run. build2 renamed selected_source only.",
+    "successful_compile_seconds": 3.2190000000118744,
+    "successful_link_seconds": 1.672000000020489,
+    "engine_or_core_product_edits": false
+  },
+  "runtime": {
+    "status": "ONE_ENTRY_TU_COMPILED_LINKED_READY_NO_GPU_HTTP",
+    "compile": {
+      "exit": 0,
+      "seconds": 3.2190000000118744,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.672000000020489,
+      "timeout": false
+    },
+    "execution_plan": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/execution-plan2.json",
+      "bytes": 6861,
+      "sha256": "38297cf751265929785e5da4a9f546a2ca7a6beb52664b45ba477923b69b109e"
+    },
+    "source": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/frozen2/component.cc",
+      "bytes": 27824,
+      "sha256": "d90ae9b127420cf8835123f06390738e971f069a213de0babbe18f0821933e2f"
+    },
+    "image": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/build2/link/component.exe",
+      "bytes": 140231680,
+      "sha256": "4bd432b1fbedc8c6ed953ab1a4767502f96ac8058de34456feb762041f2ed43d"
+    },
+    "native": {
+      "path": ".scratch/mtp-performance-convergence-20261025/baseline/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "exact_link_replacements": {
+      "C:\\public\\project-hyle\\hyle\\.scratch\\nf4-packed-contraction-20261025\\component3\\compile\\component.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\component\\build2\\compile\\component.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\budget\\budget.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\budget\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\leases\\leases.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\leases\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\glm-quark-selected-20261024\\Q30\\graph-integration-preparation\\host1\\compute_batch--paged_arena.obj": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cache-shared-source-20261025\\attempt1\\arena\\unit.obj"
+    },
+    "GPU_started": false,
+    "SDK_rebuilt": false,
+    "compiler_TUs": 1
+  },
+  "lifecycle": {
+    "banks": 7,
+    "upload_generations_per_codec": 2,
+    "graph_submissions_per_codec": 5,
+    "Quark_slot_logical_bytes": 280759808,
+    "K512_slot_logical_bytes": 268373504,
+    "total_upload_logical_bytes": 1098266624,
+    "total_upload_staged_bytes": 1098266624,
+    "total_upload_submitted_bytes": 1098266624,
+    "total_upload_completed_bytes": 1098266624,
+    "unknown_copy_bytes": false,
+    "old_readers_unchanged": true,
+    "busy_old_slot_refused": true,
+    "rejected_last_bank_binding_preserved_original_complete_execution": true
+  },
+  "numerical": {
+    "status": "PASS_AUTHENTIC_SELECTED_COMPONENT_INDEPENDENT_CONDITIONAL_NUMERIC_AUDIT",
+    "stage_checks": 62,
+    "gate_counts": {
+      "F64_dot_arbitrary_F32_accumulation_bound": {
+        "checks": 4,
+        "values": 3584
+      },
+      "independent_sigmoid_bias_Top16_gather_normalization": {
+        "checks": 4,
+        "values": 7360
+      },
+      "BF16_RNE_endpoint_interval": {
+        "checks": 36,
+        "values": 461056
+      },
+      "inherited_independent_F32_transcendental_plus_BF16_interval": {
+        "checks": 8,
+        "values": 221184
+      },
+      "bit_exact_original_BF16_checkpoints": {
+        "checks": 10,
+        "values": 339968
+      }
+    },
+    "BF16_total_checked_values": 1022208,
+    "reference_formula_wrong_intermediate_BF16_witnesses": 93983,
+    "reference_witness_scope": "Independent full-F32 formula differs from hypothetical intermediate-BF16 reference at these positions; not an extra bitwise rejection gate on all actual outputs.",
+    "actual_audit": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/numerical-audit.json",
+      "bytes": 21731,
+      "sha256": "ccd2e22bc614f1555ccdcf263902c50e9477b5621c26d971f367af2cb3398a77"
+    },
+    "executed_reference": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/audit-run1/reference-executed.py",
+      "bytes": 21880,
+      "sha256": "8f5286d73f0911dbc96c44e5dd4d3f1209bde13271e3d77c5eb26cd6141ad724"
+    },
+    "static_reference_preparation": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/reference-prepared/summary.json",
+      "bytes": 4904,
+      "sha256": "9e66c3168bb63e6e7085d58bdc2a99cb748385ca425d67887c36deb072c25647"
+    },
+    "static_references_recomputed_after_finite_fix": false,
+    "source_equivalence": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/reference-source-equivalence2.json",
+      "bytes": 11631,
+      "sha256": "c0085d4611c09631bbf78b8aa480af48d805480ec878a2040eca6a119fdf7db3"
+    },
+    "finite_guard_checks": {
+      "path": ".scratch/kimi-publisher-router-20261025/component/finite-guard-host-check.json",
+      "bytes": 1021,
+      "sha256": "b85670ec894028439059559ddebaff6e06df34a00efb4c4288a0bf78884117f4"
+    },
+    "raw_stage_files": 78,
+    "raw_stage_bytes": 2088192,
+    "raw_stage_payloads": [
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-0.bin",
+        "bytes": 98304,
+        "sha256": "26d289a4e3a1822f8d5940cc5facd5193745186fb2ae78d371787f74ce26cec8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-1.bin",
+        "bytes": 98304,
+        "sha256": "5cdb8a1464875473ad7e4551d9edfd8abae450916d7e4a1bd7d9517e996ede70"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-10.bin",
+        "bytes": 14336,
+        "sha256": "6817a79f914616b1c9566ed2662529bd53d2307911336e215abf32194bd897d2"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-11.bin",
+        "bytes": 14336,
+        "sha256": "13ba37786f8e3f051cc9c8f4b7b92da038632bdbb2e7d8cf37ff1337e82cd17c"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-12.bin",
+        "bytes": 256,
+        "sha256": "838310cd81a75d0f2e5edc206003d7c1f6e324fa5e466c746d5cfa63ca083952"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-2.bin",
+        "bytes": 98304,
+        "sha256": "3a0cbd7214bcab22f72b646099fd6b41fd5fea628eade64e96ab95cada26da65"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-3.bin",
+        "bytes": 114688,
+        "sha256": "b16a9283d496a7672fc1190e57f08408f897eaf179ea67dd2a80a0e5064fb3d7"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-4.bin",
+        "bytes": 7168,
+        "sha256": "841b8d991f599a2fc48f0f874fa974ce031fad2df990b4da0335d68bebedecb8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-5.bin",
+        "bytes": 7168,
+        "sha256": "4099929fa3b038663a901242f7fb0acdc67d3922b1085b67718ac9eaa068a8e8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-6.bin",
+        "bytes": 14336,
+        "sha256": "f90729eef70182a71af75bcd8acc6775f1a249087b7dd3b5a626833b3c5d5127"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-7.bin",
+        "bytes": 12288,
+        "sha256": "55b05e86fe620694886f22fe7d41ca453b2dcedfaff0f985a7502d1b74395368"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-8.bin",
+        "bytes": 12288,
+        "sha256": "f8137aa1b4c17199cc8a012f53a44e29973e51a3ff207227d863a73b649e683a"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch0/output-9.bin",
+        "bytes": 12288,
+        "sha256": "1649684d3edc89a4d4e7ddc50c2b4508dfb829483513688bdfaf7ff541887943"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-0.bin",
+        "bytes": 98304,
+        "sha256": "2ad9104d5c97a10cfcd582808b9106014a6c6cee95824be7bf2431855fee8149"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-1.bin",
+        "bytes": 98304,
+        "sha256": "0f35ce81ead4398607db133ab42a6c3b52afe22054a14cbba5c0319ce5ff44de"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-10.bin",
+        "bytes": 14336,
+        "sha256": "6817a79f914616b1c9566ed2662529bd53d2307911336e215abf32194bd897d2"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-11.bin",
+        "bytes": 14336,
+        "sha256": "38c446056df6481b166f8d3fb91c1b36bfd966ed7d3162b50000804efb3ef1b2"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-12.bin",
+        "bytes": 256,
+        "sha256": "cc954feaaaf062f61f56e271f55d825202532e7cac6fd25675d46bee4a192b77"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-2.bin",
+        "bytes": 98304,
+        "sha256": "e5723bb301048f807b3a620573610f22645b437a4ffb7ec55bba155bb297c612"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-3.bin",
+        "bytes": 114688,
+        "sha256": "6de071e2c7dd1cf4b15374e5513e0ed90a2c2a33a6f18e0efb9a0def592a6645"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-4.bin",
+        "bytes": 7168,
+        "sha256": "5fb4e3546f0a5c7af1441ffb168ebb92eca8e808bab4f7cc428e825e1279683b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-5.bin",
+        "bytes": 7168,
+        "sha256": "3e65ef5936149ea6a5edce290afd231b963149efb00b5c731bc331ffedfdfac9"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-6.bin",
+        "bytes": 14336,
+        "sha256": "dad9250537ae56d92a56de488fe52777eac1f9e01cf79c04799ff7edf9402101"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-7.bin",
+        "bytes": 12288,
+        "sha256": "55b05e86fe620694886f22fe7d41ca453b2dcedfaff0f985a7502d1b74395368"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-8.bin",
+        "bytes": 12288,
+        "sha256": "f8137aa1b4c17199cc8a012f53a44e29973e51a3ff207227d863a73b649e683a"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/expert/epoch1/output-9.bin",
+        "bytes": 12288,
+        "sha256": "1649684d3edc89a4d4e7ddc50c2b4508dfb829483513688bdfaf7ff541887943"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-0.bin",
+        "bytes": 64,
+        "sha256": "c81efb347cf318e7b6d2deaf8724ee0491b20fd50d9291f3e3fba603e0c2a79b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-1.bin",
+        "bytes": 64,
+        "sha256": "679c2f1b33a6b387ef7e71af0250df0135e3270714a7ac28624c8346c9a5ea20"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-2.bin",
+        "bytes": 7168,
+        "sha256": "ed957579e21ce820016a43652a56d1f54785c5427bb54f7276e4df3f57c0e6d4"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-3.bin",
+        "bytes": 3584,
+        "sha256": "7a5b70be0d20f1c0d4986d0573382e65f47b4bd57bd19baafaff7bc08b6cd7f4"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-4.bin",
+        "bytes": 3584,
+        "sha256": "19601d58cdcb39c7e043b906eddd779674feb56429511be465e0f5dc7d05e45f"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-5.bin",
+        "bytes": 3584,
+        "sha256": "d886bafae2bcfc190c2be61e82f09a63f829544be0bcc4acc4db4237643d8c13"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch0/output-6.bin",
+        "bytes": 64,
+        "sha256": "bb47af35eefe28b6eb93e82f643359216a11b917033ba637b123f19babbe7e98"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-0.bin",
+        "bytes": 64,
+        "sha256": "c81efb347cf318e7b6d2deaf8724ee0491b20fd50d9291f3e3fba603e0c2a79b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-1.bin",
+        "bytes": 64,
+        "sha256": "5c1d08764983b39a1e67ca6fa226c6b53a8d2354e818a318f36d01b49a0d0412"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-2.bin",
+        "bytes": 7168,
+        "sha256": "77696da2a0b254601f829ceb6f8d3a03b77c0d0719d73aa4bab5e3d0487651ed"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-3.bin",
+        "bytes": 3584,
+        "sha256": "8fb26b018d1613a7e9e4fdc81876798cf77bafe9f7c65e772f669be40f232fe8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-4.bin",
+        "bytes": 3584,
+        "sha256": "1e3092498c5f77536f26e1bf23f28f05028fe6fac9a3da0e444f18763788d8d5"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-5.bin",
+        "bytes": 3584,
+        "sha256": "0c6cb5d5f6a042835a30f2a24c17060a8a4bdc87ae08c47896c927cf4dbdbb2b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog23/router/epoch1/output-6.bin",
+        "bytes": 64,
+        "sha256": "1ce0152b2c5babb47d2b2e074f3a24c5fd54ba7766e10b5efbb7446cb7f5090a"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-0.bin",
+        "bytes": 98304,
+        "sha256": "7e50a98eb0c7afe6f300c0db10fa6d82cb75d38103af055111d22e8fae4c61ad"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-1.bin",
+        "bytes": 98304,
+        "sha256": "cbf398423f0f7fe4bf7c9ac2319b2cd2fad30053828a7a883a8bc0ff88419f60"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-10.bin",
+        "bytes": 14336,
+        "sha256": "8c9d240bc795b770982c5d3e133e38aaffc6b4c263768af91a08f665c9a40e17"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-11.bin",
+        "bytes": 14336,
+        "sha256": "eb6ddf34e694b97bf8aace1fcc4ac04b0c2102d2e687863415f2668047fe0060"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-2.bin",
+        "bytes": 98304,
+        "sha256": "eebcfc7fe92f8b0e51d18f6647022b1ad5127dc816a4d250b004cb6293161a0d"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-3.bin",
+        "bytes": 114688,
+        "sha256": "55ac4b3a467c85edf0245d482b4084bd073e007ccdbbee78322aed2245d3ea4b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-4.bin",
+        "bytes": 7168,
+        "sha256": "cdf510fbd2b2e127acb7a1f0d8f3b7e22b466d9496aaa0d5cea05800e3250e76"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-5.bin",
+        "bytes": 7168,
+        "sha256": "2354504d93a3804721866866345f3dae9e9ad9e89b36d70dd3ef81938d0fd2bd"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-6.bin",
+        "bytes": 14336,
+        "sha256": "d0d6558d732b9b2be33bec6524fa26c8e15c5c59ef0db4aeb09740757b842690"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-7.bin",
+        "bytes": 12288,
+        "sha256": "70a978554d486f9a1d85cd40500e3041867c443187916627e7b539e0b9f21fb7"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-8.bin",
+        "bytes": 12288,
+        "sha256": "533a87357d92ba53e96a9aa24d4051ee1c4a1934eefabe3b289f458f84026517"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch0/output-9.bin",
+        "bytes": 12288,
+        "sha256": "45d979d855a9575c379be3d158854634f7d24615aeb0b98e297e62282e9061ea"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-0.bin",
+        "bytes": 98304,
+        "sha256": "0e586454c67d84a067dc25a5ae797d57ef9d98dd6af21562c037940b893afb72"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-1.bin",
+        "bytes": 98304,
+        "sha256": "852161cc39626cb4926d6e156b2a5879528d15353f5934a94ddb04473b460f89"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-10.bin",
+        "bytes": 14336,
+        "sha256": "b8ce5ac2e863aad166db003e92a36e8e91a43e79c130a1d191ad16ade17c0511"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-11.bin",
+        "bytes": 14336,
+        "sha256": "b4489c6031815bcfe5d24a8b9b47b55daa661cb58d21027265be591a42153435"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-2.bin",
+        "bytes": 98304,
+        "sha256": "fd5f9674ac28dc6f6c89a213b6f36157618caa0025fe97be7e69fc7ed582a829"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-3.bin",
+        "bytes": 114688,
+        "sha256": "8dadf4ad9bcdf40eafe390b7540f2ba28d424c8f4a8b6d4965b95b7bf5d49770"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-4.bin",
+        "bytes": 7168,
+        "sha256": "33e3fa1fc79e16fce398e493d441014736ab979a5c61546049c779a9aa32c5e7"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-5.bin",
+        "bytes": 7168,
+        "sha256": "a5f0f0f5c1d4ab6a5380761039abd39c24c834eed97754b7043e59fe6d42d7a8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-6.bin",
+        "bytes": 14336,
+        "sha256": "0c68d868eaf102e1da43a8cfff87f9a4643a8792e3751a857dcf3f7616437470"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-7.bin",
+        "bytes": 12288,
+        "sha256": "601d3a075b8469b337480a46afa50c333026ba0d682fa2ecf4c4c4478fdd7d26"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-8.bin",
+        "bytes": 12288,
+        "sha256": "9b0b4a15668aeeca6c65dbae4c2970b2ee57b707bd23d40ea0ec6c0b885b858a"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/expert/epoch1/output-9.bin",
+        "bytes": 12288,
+        "sha256": "67ea0b0bfb8bed1c462879a708fc01c0f2dbdfbcba670da5613797b38682ec87"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-0.bin",
+        "bytes": 64,
+        "sha256": "c81efb347cf318e7b6d2deaf8724ee0491b20fd50d9291f3e3fba603e0c2a79b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-1.bin",
+        "bytes": 64,
+        "sha256": "679c2f1b33a6b387ef7e71af0250df0135e3270714a7ac28624c8346c9a5ea20"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-2.bin",
+        "bytes": 7168,
+        "sha256": "ed957579e21ce820016a43652a56d1f54785c5427bb54f7276e4df3f57c0e6d4"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-3.bin",
+        "bytes": 3584,
+        "sha256": "7a5b70be0d20f1c0d4986d0573382e65f47b4bd57bd19baafaff7bc08b6cd7f4"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-4.bin",
+        "bytes": 3584,
+        "sha256": "19601d58cdcb39c7e043b906eddd779674feb56429511be465e0f5dc7d05e45f"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-5.bin",
+        "bytes": 3584,
+        "sha256": "d886bafae2bcfc190c2be61e82f09a63f829544be0bcc4acc4db4237643d8c13"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch0/output-6.bin",
+        "bytes": 64,
+        "sha256": "bb47af35eefe28b6eb93e82f643359216a11b917033ba637b123f19babbe7e98"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-0.bin",
+        "bytes": 64,
+        "sha256": "c81efb347cf318e7b6d2deaf8724ee0491b20fd50d9291f3e3fba603e0c2a79b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-1.bin",
+        "bytes": 64,
+        "sha256": "5c1d08764983b39a1e67ca6fa226c6b53a8d2354e818a318f36d01b49a0d0412"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-2.bin",
+        "bytes": 7168,
+        "sha256": "77696da2a0b254601f829ceb6f8d3a03b77c0d0719d73aa4bab5e3d0487651ed"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-3.bin",
+        "bytes": 3584,
+        "sha256": "8fb26b018d1613a7e9e4fdc81876798cf77bafe9f7c65e772f669be40f232fe8"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-4.bin",
+        "bytes": 3584,
+        "sha256": "1e3092498c5f77536f26e1bf23f28f05028fe6fac9a3da0e444f18763788d8d5"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-5.bin",
+        "bytes": 3584,
+        "sha256": "0c6cb5d5f6a042835a30f2a24c17060a8a4bdc87ae08c47896c927cf4dbdbb2b"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/actual-run1/results/catalog24/router/epoch1/output-6.bin",
+        "bytes": 64,
+        "sha256": "1ce0152b2c5babb47d2b2e074f3a24c5fd54ba7766e10b5efbb7446cb7f5090a"
+      }
+    ]
+  },
+  "failures_and_corrections": [
+    {
+      "kind": "PRIVATE_CONSUMER_STRICT_COMPILE_FAILURE",
+      "process": {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build1/compile/process.json",
+        "bytes": 74,
+        "sha256": "4fa85771b3804eb26a1239d82aad4aea9ec1962d3ee04f8d9ca2bd226cf672d6"
+      },
+      "logs": "component/build1/compile",
+      "correction": "Report-only local variable rename; source1/source2 frozen and preserved."
+    },
+    {
+      "kind": "SOURCE_REVIEW_FOUND_ORACLE_NONFINITE_REJECTION_GAP_BEFORE_GPU",
+      "correction": "Explicit finite(actual/expected) and finite(actual/gate/up/reference/tolerance); no finite formula/tolerance change, no numerical failure overwritten.",
+      "old_reference": {
+        "path": ".scratch/kimi-publisher-router-20261025/component/frozen/reference.py",
+        "bytes": 21650,
+        "sha256": "e34e5829f5597fb4db71bb56668117aa2472e4a6d0c5dc8fd171733678cd835b"
+      },
+      "executed_reference": {
+        "path": ".scratch/kimi-publisher-router-20261025/component/frozen2/reference.py",
+        "bytes": 21880,
+        "sha256": "8f5286d73f0911dbc96c44e5dd4d3f1209bde13271e3d77c5eb26cd6141ad724"
+      }
+    }
+  ],
+  "limitations": [
+    "Generated fixed hidden inputs and authenticated original selected source roles; not original full model or all896 experts.",
+    "Selected Top16 are identical for both inputs and artifacts; no artificial expert rotation/seed search. Two immutable generations retain the same IDs and encoded bytes with different actual activations.",
+    "A32/BF16 dense use complete F64 dots and conservative arbitrary-F32-summation bounds with final BF16 RNE endpoints; passing does not certify correct rounding or exact internal arithmetic.",
+    "Downstream independent equations are conditional on previously validated actual preceding tensors; not a bitwise whole-layer CPU trajectory.",
+    "K512 QA/internal integer/group checkpoints are independently computed, not captured native internal tensors. Exact final BF16 gates preserve the complete group equation.",
+    "FP8 token scale/quantized A/dot intermediates are not separately captured; only independent source/input equations and actual final128 BF16 outputs are checked.",
+    "Inherited nonlinear tolerance remains unchanged; no task-quality/TPS/Apple/CPU-full-component or full publisher artifact execution claim.",
+    "Only successful Completion outputs are captured; no failed native output-read contract asserted.",
+    "Large original weight bodies, tools/SDK, OBJ/EXE and prepared reference NPZ are intentionally excluded; source/receipts/SHA and reference generator suffice with the retained cache."
+  ],
+  "cleanup": {
+    "status": "EXACT_PRIVATE_REBUILDABLE_COMPONENT_BINARIES_ONLY",
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build2/compile/component.obj",
+        "bytes": 3149934,
+        "sha256": "f8e7e580ca627684c623a06ecc1996f21e5f71fc2cb9dca88e28e8e0b157e4b7"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build2/link/component.exe",
+        "bytes": 140231680,
+        "sha256": "4bd432b1fbedc8c6ed953ab1a4767502f96ac8058de34456feb762041f2ed43d"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build2/link/component.exp",
+        "bytes": 24999,
+        "sha256": "6c40e93803c4dff2e0856dfa336e0deb1c16bf296c17a456eb21507afc94c8e0"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/component/build2/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 144655223,
+    "shared_core_objects_preserved": true,
+    "source_payloads_and_raw_outputs_preserved": true,
+    "scope": "Only these private component paths; native DLL is a private hardlink, original retained. No deletion performed.",
+    "snapshot_note": "Original candidate list before root cleanup. See root_cleanup for the actual completed removal."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-original-working-set-component-2026-10-25.zip",
+    "bytes": 2322421,
+    "sha256": "660b4442a71f3124bbab3acf36f22c1c7c50f95ec4bb8d7d6ca4a28f69e539df",
+    "entries": 381,
+    "CRC_verified": true
+  },
+  "root_cleanup": {
+    "performed": true,
+    "files": 5,
+    "logical_bytes": 144655223,
+    "evidence": "archive:root-cleanup/manifest.json",
+    "shared_core_objects_and_original_DLLs_preserved": true,
+    "raw_source_oracle_commands_and_fragments_preserved": true,
+    "physical_bytes_freed_unknown": true
+  }
+}
