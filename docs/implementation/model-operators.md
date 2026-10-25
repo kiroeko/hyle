@@ -18,6 +18,8 @@
 
 CT BF16 block128已补[共享原参数冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)，随后接通[普通冷reader策略、角色与Recipe投影](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)：源配置选独立BF16数学及local NVFP4的BF16预舍入，不按SF形状猜reader；原W／SF直接借入，固定与symbolic token行共用同体。20项Python、两组C++元数据／精度、原4项CPU回归及T1／T3投影通过。仅签普通冷入口及有限Recipe组件；18／21 selected bank、原数值及完整Model／MoE仍分开记录。
 
+21的[独立源角色到selected bank](../evidence/correctness/ct21-selected-source-2026-10-25.json)已沿现CpuSupply与共享数学执行完整N3072／K3584的有限W1投影，先checked global/local映射再选中解码。两代生成fixture、缺失映射的预期完成失败，以及6→6→0 bank退休检查在CPU通过。消费者用显式12 KiB Copy导出独立旧结果；保留首跑直接导出借用view被拒的记录，不放宽Graph权限。仍不签完整FFN、原payload、其它后端或吞吐；18的local NVFP4专家组合另核。
+
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 
 来源索引：D 的 `/profile_catalog` 与 `/current_scope/added_releases` 保存身份，`/demand_units` 保存 15 个区域；[需求明细 C](tasks/compute/llm-moe-coverage-matrix.json) 的 `/requirements` 保存 64 条历史需求；[原生映射 P](tasks/compute/llm-moe-provider-map.json) 的 `/requirements` 回指 C 的具体 domain。下面保留这些来源的反向关系，不继承旧状态、通过结论或 Provider 支持声明。

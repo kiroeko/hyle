@@ -1,5 +1,6 @@
 #include "../compute_models/ct_block128_qdq_fixture.h"
 #include "../compute_models/ct_block128_source_role_fixture.h"
+#include "../compute_models/ct_block128_selected_source_fixture.h"
 #include "hyle/graph/cpu.h"
 
 namespace {
@@ -83,4 +84,81 @@ TEST(CpuCtBlock128QdqGraph, OriginalRoleSpanAndProvidedReadonlyBindingsStayExpli
   f::check(b.publish(tail.value), "publish N129 metadata result");
   const auto graph = f::take(std::move(b).finish(), "finish N129 metadata graph");
   EXPECT_EQ(f::take(graph.output_description(), "N129 inferred output"), f::take(tail.description.concrete_description(), "N129 output"));
+}
+
+
+TEST(CpuCtBlock128QdqGraph, IndependentKimiSourceBanksMapBeforeSharedProjectionAndKeepOldResults) {
+  namespace s=ct21_selected_source_test;namespace f=ct_block128_qdq_test;
+  namespace c=s::c;namespace g=s::g;namespace m=s::m;
+  auto context=f::take(g::cpu::create_context(),"CT21 selected CPU context");
+  auto queue=f::take(context.create_queue(),"CT21 selected queue");
+  struct Drain{c::Context &context;~Drain(){context.drain().IgnoreError();}}drain{context};
+  struct SystemResource{m::MemoryResourceRef ref()const noexcept{return m::system_resource();}};
+  const auto owner=f::take(c::StorageOwner::adopt(context,SystemResource{}),"CT21 source owner");
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+  const auto layout=f::take(s::supply::Layout::create(s::descriptions(),s::domain,s::capacity),"CT21 original plane layout");
+  auto supply=f::take(s::supply::CpuSupply::create(owner,layout),"existing CT21 bounded selected bank supply");
+  s::Case logical(layout);auto compiled=f::take(g::cpu::compile(logical.graph,context,
+      g::CompileOptions{.constants=logical.constants}),"compile shared actual CT21 projection");
+  ASSERT_EQ(logical.output_desc,f::dense(f::Type::kBFloat16,{1,2,s::n}));
+  auto pool=f::take(c::LeasePool::create(owner.ref(),128u<<10,{.max_blocks=10}),"CT21 finite dynamic IO");
+  const auto upload=[&](std::span<const std::byte> bytes) {
+    auto writer=f::take(pool.allocate(bytes.size(),64),"CT21 original dynamic source");
+    f::check(writer.view()->write(bytes),"CT21 dynamic write");return f::take(writer.publish(),"CT21 ready dynamic lease");
+  };
+  const auto execute=[&](const s::supply::CpuBatch &batch,std::span<const std::uint16_t> a,
+      const std::array<std::int32_t,2> &route) {
+    auto run=f::take(compiled.executable.create_invocation({.resources=g::ResourceOptions{}}),"CT21 original slot");
+    for(std::size_t p=0;p<3;++p)f::check(run.bind(logical.banks[p],p<2?layout.resident[p]:layout.map_description(),batch.banks[p]),"CT21 same-generation W/SF/map");
+    f::check(run.bind(logical.activation,logical.a_desc,upload(std::as_bytes(a))),"CT21 actual BF16 A");
+    f::check(run.bind(logical.ids,logical.ids_desc,upload(std::as_bytes(std::span(route)))),"CT21 actual global route IDs");
+    if(f::take(compiled.executable.output_ownership(),"CT21 output ownership")==g::OutputOwnership::kCaller)
+      f::check(run.bind(logical.output,logical.output_desc,f::take(pool.allocate(f::take(logical.output_desc.required_bytes(),"CT21 output bytes"),64),"CT21 output writer")),"CT21 output bind");
+    f::check(run.prepare_replay(queues),"CT21 original replay");return run;
+  };
+  std::array<s::supply::CpuBatch,2> batches;std::array<g::Invocation,2> runs;
+  std::array<c::ReadLease,2> results;std::array<std::vector<std::uint16_t>,2> saved;
+  const auto read_result=[&](const c::ReadLease &lease) {
+    std::vector<std::uint16_t> values(lease.size()/2);
+    f::check(lease.view()->read(std::as_writable_bytes(std::span(values))),"read CT21 BF16 output");return values;
+  };
+  for(unsigned phase=0;phase<2;++phase) {
+    const auto selected=s::selection(phase);auto external=s::make_source(selected,owner);
+    auto accepted=f::take(s::Source::accept(external),"accept separate cached-shape W/SF leases");external={};
+    std::array<std::vector<std::byte>,2> original;
+    for(std::size_t p=0;p<2;++p)for(const auto global:selected.globals) {
+      const auto bytes=accepted.plane_bytes(p,global);original[p].insert(original[p].end(),bytes.begin(),bytes.end());
+    }
+    batches[phase]=f::take(supply.upload(selected,accepted),"existing CT21 compressed planes/map generation");
+    f::check(accepted.close(),"close original CT21 host mappings before Graph");
+    for(std::size_t p=0;p<2;++p) {
+      std::vector<std::byte> actual(batches[phase].banks[p].size());f::check(batches[phase].banks[p].view()->read(actual),"verify original copied bank bytes");
+      EXPECT_EQ(actual,original[p]);
+    }
+    original={};
+    const auto a=s::activation(phase);const std::array route{selected.globals[1],selected.globals[0]};
+    runs[phase]=execute(batches[phase],a,route);
+    {auto done=f::take(runs[phase].submit(queues),"CT21 actual selected submit");f::check(done.wait(),"CT21 selected Completion");}
+    results[phase]=f::take(f::take(runs[phase].result(logical.output),"CT21 selected result").storage_lease(),"independent CT21 old output");
+    saved[phase]=read_result(results[phase]);ASSERT_TRUE(s::expect(saved[phase],a,route));
+    if(phase)EXPECT_EQ(read_result(results[0]),saved[0]);
+  }
+  {
+    const auto a=s::activation(1);const std::array<std::int32_t,2> absent{2,0}; // Global0 is valid but absent from generation1.
+    auto bad=execute(batches[1],a,absent);
+    {auto done=f::take(bad.submit(queues),"CT21 accepted missing-map entry");EXPECT_FALSE(done.wait().ok());}
+    EXPECT_FALSE(bad.result(logical.output));EXPECT_FALSE(bad.submit(queues));
+    EXPECT_EQ(read_result(results[0]),saved[0]);EXPECT_EQ(read_result(results[1]),saved[1]);
+  }
+  EXPECT_EQ(supply.stats().live_blocks,6u);
+  batches={};EXPECT_EQ(supply.stats().live_blocks,6u); // Original Invocations still retain W/SF/map readers.
+  runs={};EXPECT_EQ(supply.stats().live_blocks,0u);
+  logical.constants={};compiled={};
+  for(std::size_t phase=0;phase<2;++phase)EXPECT_EQ(read_result(results[phase]),saved[phase]);
+  ::testing::Test::RecordProperty("source_value_scope","generated fixture only; no original CT21 W/SF payload");
+  ::testing::Test::RecordProperty("source_repository",std::string(s::repository));
+  ::testing::Test::RecordProperty("source_revision",std::string(s::revision));
+  ::testing::Test::RecordProperty("projection_n",3072);::testing::Test::RecordProperty("projection_k",3584);
+  ::testing::Test::RecordProperty("successful_graph_submissions",2);
+  ::testing::Test::RecordProperty("expected_missing_global_map_completion_failures",1);
 }

@@ -1,0 +1,202 @@
+{
+  "status": "CT21_SELECTED_SOURCE_SHARED_PROJECTION_TWO_GENERATIONS_CPU_FIXTURE_PASS",
+  "date": "2026-10-25",
+  "base_commit": "9bf7e10f62244b98dd2a39720bd6ddc4518bad81",
+  "sources_scope": "Original baseline commit to r3 final two-path diff; r2 preparation and original failed run remain separately labelled in ZIP.",
+  "sources": [
+    {
+      "path": "tests/compute_models/ct_block128_selected_source_fixture.h",
+      "before": {
+        "exists": false,
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "after": {
+        "bytes": 13111,
+        "sha256": "1270c1efd64ffc3c4cb633f031225f6737953747feceeefb45153f55a010d703"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/ct_block128_qdq_test.cc",
+      "before": {
+        "exists": true,
+        "bytes": 5566,
+        "sha256": "dc1926c08f95c868463d0bdaebae389a7b79fb9948e756b89e7104ddbd8d9845"
+      },
+      "after": {
+        "bytes": 11545,
+        "sha256": "b27791d0004f89e943c1ff7e251611ff5d671f0f101dbd01e6b4ba537b7869c8"
+      }
+    }
+  ],
+  "change": "Finite caller-side adapter binds independent ready E4 W and BF16 SF source roles to existing same-generation CpuSupply W/SF/map banks and unchanged shared CT block128 projection. Checked global-to-local Gather precedes selected decode. No new op, owner, loader, registry or executor.",
+  "source": {
+    "repository": "RedHatAI/Kimi-K3-FP8-BLOCK",
+    "revision": "6409c37cf440abeb76f0b44ab4fb7db8c8bccb4b",
+    "shard": "model-00002-of-000096.safetensors",
+    "header": {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/kimi/21/headers/model-00002-of-000096.safetensors/header.json",
+      "bytes": 794584,
+      "sha256": "2c5e3704e8502af121eba27b9baaebdcce5bd753b89881649c531a25535ff386"
+    },
+    "roles": 8,
+    "experts": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "spans": "source/original-header-eight-role-excerpt.json in ZIP records exact original names, dtypes, shapes, data-relative and file-relative spans.",
+    "body_qualification": "Original publisher W/SF body bytes were not cached or numerically qualified; generated fixture identity remains explicit."
+  },
+  "geometry": {
+    "projection": "Layer1 expert W1 only; full N3072/K3584, E4 W[3072,3584], BF16 SF[24,28], block128.",
+    "tokens": 1,
+    "slots_per_token": 2,
+    "global_domain": 896,
+    "selected_capacity": 2,
+    "generations": [
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "output": "BF16[1,2,3072], 12288 bytes per result.",
+    "precision": "Existing activation group128 CT E4 QDQ; BF16 E4*SF weight product and original BF16 operand/store boundaries; existing projection accumulation/output policy."
+  },
+  "actual_CPU": {
+    "status": "PASS",
+    "compile": {
+      "exit": 0,
+      "seconds": 3.547,
+      "pid": 55016
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.156,
+      "pid": 18180
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.844,
+      "pid": 49716
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 61,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "candidate_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ct21-selected-source-20261025\\source-pins.json",
+      "bytes": 841,
+      "sha256": "decd991315a8cd530316bf27a84b6e23671be069af35b16ad03bfce0c67a697b"
+    },
+    "filter": "CpuCtBlock128QdqGraph.IndependentKimiSourceBanksMapBeforeSharedProjectionAndKeepOldResults",
+    "source_revision": 3,
+    "gtest_case_seconds": 0.536,
+    "successful_Graph_submissions": 2,
+    "expected_missing_global_Completion_failures": 1,
+    "compile_contract": "/W4 /WX; one existing test TU replaced, cached current core/provider/native closure reused.",
+    "numeric_oracle": "Independent scalar activation group128 reference plus per-row BF16 E4*SF, existing full-K F64 dot/F32 certificate and BF16 output interval. All28 K groups and24 N blocks participate; no whole-domain floating bank.",
+    "source_and_generation": "Exact W/SF byte equality after upload; original host mappings/roles close before execution. Each Invocation binds W/SF/map readers from one CpuBatch; reversed global IDs exercise map selection.",
+    "retirement": "Six bank blocks before release, six after CpuBatch handles drop, zero after Invocation reset; independent old/new outputs remain byte-identical after constants/compiled owners reset.",
+    "negative": "Global0 is valid in the domain but absent from generation1. Checked map yields a Completion failure, no result and no allowed resubmit; saved old results remain unchanged."
+  },
+  "first_attempt": {
+    "status": "TEST_FAILED",
+    "compile": {
+      "exit": 0,
+      "seconds": 3.531,
+      "pid": 41580
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.172,
+      "pid": 52552
+    },
+    "run": {
+      "exit": 1,
+      "seconds": 0.469,
+      "pid": 37068
+    },
+    "xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frozen_files": 61,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "new_CPU_test_TUs": 1,
+    "core_provider_SDK_rebuilds": 0,
+    "GPU_or_model_runs": 0,
+    "HTTP": 0,
+    "candidate_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ct21-selected-source-20261025\\source-pins.json",
+      "bytes": 871,
+      "sha256": "7067de34eb6e9909036fa3f9cbc995bd32ae02eb6a8a49e4feb8caaaf94b2cd7"
+    },
+    "filter": "CpuCtBlock128QdqGraph.IndependentKimiSourceBanksMapBeforeSharedProjectionAndKeepOldResults",
+    "source_revision": 2,
+    "reason": "The shared projection ends in a Graph-owned reshape; storage_lease correctly refused independent export before the numeric oracle. This was a consumer export error, not a numeric or Compute/Graph defect.",
+    "preservation": "Original r2 patch/pins, commands, raw stdout/stderr, XML, actual dependencies and frozen-project pins are retained in ZIP."
+  },
+  "r3_export_fix": {
+    "change": "One explicit terminal Copy materializes the 12KiB BF16 consumer result so an independent output lease survives bank/Invocation teardown.",
+    "scope": "Caller export boundary only. Shared mathematics, GraphOutput permissions, precision and routing are unchanged; no performance optimization or speedup claim.",
+    "delta": {
+      "path": ".scratch/inference-ct21-selected-source-20261025/r2-to-r3.patch",
+      "bytes": 985,
+      "sha256": "bb2b0910e253d295e23d90e69e599a4fa1e70afbf4325488c899f476dcb8f35e"
+    }
+  },
+  "review": {
+    "status": "SOURCE_ONLY_NO_BLOCKER_FOUND",
+    "revision": 2,
+    "pin": {
+      "path": ".scratch/inference-ct21-selected-source-20261025/independent-review-architecture.json",
+      "bytes": 3812,
+      "sha256": "3262b9807e3861aa31cc7b0cdeab8dd089680f958a1ddaa60149a3abc7322e39"
+    },
+    "scope": "Independent r2 source/shape/span/same-generation/math/ownership review. The later root-reviewed r3 delta is separately recorded as terminal Copy only; r2 review alone is not evidence of r3 execution.",
+    "shared_math_unchanged": {
+      "path": "engine/inference/ct_block128_graph.h",
+      "bytes": 15879,
+      "sha256": "8f08ff98defad8b8665f27a700aeb6d84f2c962f47e030be14b4b59db56f7f3e",
+      "changed": false
+    }
+  },
+  "not_claimed": [
+    "Original publisher numeric bodies, complete artifact/FFN/router or whole-Model qualification.",
+    "T>1, S other than2, additional source experts or new GPU/Apple/Vulkan execution.",
+    "Quality, native device faults, TPS, speedup or measured peak RAM/VRAM."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/ct21-selected-source-2026-10-25.zip",
+    "bytes": 119707,
+    "sha256": "24ff77326afd01581b3a866e26ef8d3c026f042759ed449bb91954edd68c1db7",
+    "members": 60,
+    "CRC_and_member_SHA256_verified": true,
+    "index": "member-sha256.json",
+    "no_SDK_binary_model_or_full_frozen_tree_payloads": true
+  }
+}
