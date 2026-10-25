@@ -36,6 +36,13 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 
 CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultContextOptions`，CPU主端点和显式CPU辅助端点共用原工厂。未传配置仍用原默认值；不隐式创建CPU端点，不修改全局线程设置。外部allocator／executor的支撑对象须活到全部派生制品和原生工作退休；executor并发度不等于每个Invocation的`native_threads`。Model只接收已准备的Backend，不参与线程池配置。有限CPU数值／移动／错误检查及GPU-only头检查见[配置接通依据](../evidence/research/inference-cpu-cold-options-2026-10-26.json)，尚未据此测定吞吐收益。
 
+Qwen实现内部的`create_execution(..., cpu_options=nullptr)`继续使用原有限workspace预算公式，
+再把可选配置转发给CPU主端点或显式CPU辅助端点；省略参数保持原构造调用。
+例如实现内可用`create_execution(geometry, plan, cpu_layers, selection, &cpu_options)`，
+随后将原Backend移入Model；这不是已安装SDK导出的公共引擎API。只有GPU的选择会沿原Backend入口拒绝CPU配置，
+GPU-only构建只需配置类型的前置声明。`native_threads`不配置ATen的共享线程，
+后者仍须使用原显式启动接口；没有新增线程池、全局设置或自动核心数策略。
+
 Qwen的冷制品准备已独立为`weights.h`／`weights.cc`：原Tensor存储、LoadedWeight和冷加载／投影绑定接口留在模型内，Recipe只消费绑定结果，加载器不依赖Model、Session或请求循环。绑定仍借稳定map节点，存储仍归原ColdResources，不复制权重银行或新增owner。Tensor的热读写／view／move保原inline；移出的freeze仅在冷导入和常量构图调用。同一weights源由每个实际消费者按自己的后端能力宏编译，避免把完整产品的Backend布局强加给Vulkan等factor消费者；没有新增用户构建选项。拆分后的原CPU请求流程及[工程构建检查](../evidence/correctness/inference-cold-weights-split-2026-10-25.json)已通过，不据此声称吞吐提升。
 
 KDA／Kimi NoPE MLA 组件的参数准备与数学追加已分开：调用者提供真实参数 Value，

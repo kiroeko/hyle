@@ -1,0 +1,195 @@
+{
+  "schema": "hyle-source-compile-evidence-v1",
+  "date": "2026-10-26",
+  "status": "PASS_EXTRACTED_COLD_FACTORY_CPU_COMPILE_AND_GPU_ONLY_SYNTAX",
+  "scope": "Optional CPU cold configuration forwarded by the existing Qwen implementation factory while retaining its original finite workspace formulas. One small actual-function CPU compile and GPU-only syntax check, no complete Model compile/link or inference.",
+  "implementation": {
+    "canonical_integrated": true,
+    "product_files": [
+      "engine/models/qwen35/main.cc",
+      "samples/package/graph/cpu_executor/main.cc",
+      "samples/package/graph/cpu_executor/README.md",
+      "docs/user/inference.md",
+      "docs/architecture/inference-design.md"
+    ],
+    "internal_function": "qwen35::create_execution(..., const compute::cpu::DefaultContextOptions *cpu_options = nullptr)",
+    "public_boundary": "This helper has no exported public engine declaration and is documented only as an implementation composition seam. Public DefaultContextOptions and the original CPU executor sample remain the integration references.",
+    "behavior": [
+      "Null options preserve all original Backend factory calls and existing CPU/mixed finite-workspace calculations.",
+      "Explicit options forward to the existing three-argument Backend factory for CPU-primary/CPU-assist. Without a selected CPU endpoint the original Backend validation rejects the configuration before endpoint allocation.",
+      "The GPU-only function signature needs only the existing forward declaration. No compute/cpu.h or graph/cpu.h dependency was added in that thin compilation.",
+      "No new owner, pool, mutable setting, option inventory, CLI flag or automatic thread-count policy.",
+      "The original Scheduler sample explicitly retains native_threads1. Documentation distinguishes borrowed executor lifetime, per-Invocation ggml budget, synchronous complete-program dispatch and separate ATen startup configuration."
+    ],
+    "source_pins": {
+      "files": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\before\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468204,
+            "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468556,
+            "sha256": "b47285dfbef5cf626943e22f421815424e58c11ce9122d79a56baf43c5bf5c5a"
+          }
+        },
+        {
+          "path": "samples/package/graph/cpu_executor/main.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\before\\samples\\package\\graph\\cpu_executor\\main.cc",
+            "bytes": 13826,
+            "sha256": "583d8f13501a4b2ca12615b87a2c5cec1d4e386a72ea6a137cc0b38dc795f535"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\samples\\package\\graph\\cpu_executor\\main.cc",
+            "bytes": 13847,
+            "sha256": "28ae7e826e582daa803da0eac276afe1a5679562a3b12f986f3523eafa98d588"
+          }
+        },
+        {
+          "path": "samples/package/graph/cpu_executor/README.md",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\before\\samples\\package\\graph\\cpu_executor\\README.md",
+            "bytes": 2726,
+            "sha256": "eeb56ed1d26f973223244d63fe34ed3830b658441fd344a9541c20f6955e6b5f"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\samples\\package\\graph\\cpu_executor\\README.md",
+            "bytes": 3237,
+            "sha256": "3fa56d79de6b0e194e004c05d8632ce9c043b7474e0b967e03ed6ef66e6e2f0c"
+          }
+        },
+        {
+          "path": "docs/user/inference.md",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\before\\docs\\user\\inference.md",
+            "bytes": 9978,
+            "sha256": "56c6d41cf439fb8ab626e4c90d6b0ea98f7913e095dd15cfb7e17af9b9056498"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\docs\\user\\inference.md",
+            "bytes": 10347,
+            "sha256": "0bf46b1eaba18cc8af296df1501811c0bcd30976b1aaae056bc694cb779f7b37"
+          }
+        },
+        {
+          "path": "docs/architecture/inference-design.md",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\before\\docs\\architecture\\inference-design.md",
+            "bytes": 52312,
+            "sha256": "486f3d839e6231d937e838529533f97fc55c6875ba9de36bd295b0a42141589d"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\docs\\architecture\\inference-design.md",
+            "bytes": 52965,
+            "sha256": "5e61292426ba85568ef704d9c32951623355495971220f22edd5be8549a584ba"
+          }
+        }
+      ],
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\product.patch",
+        "bytes": 7307,
+        "sha256": "95815a726a5be2fef6ede71774ab9ec8981432de63fb18a2dc1b9afe56b3d40b"
+      }
+    },
+    "docs_correction": "An initial user-guide snippet named a private implementation helper without an exported header. Removed it from user instructions; user page now has two sentences linking public CPU options/sample/design. Internal forwarding and budget explanation moved beside the existing architecture CPU paragraph. LF bytes preserved."
+  },
+  "actual_checks": {
+    "cpu": {
+      "exit": 0,
+      "pid": 42108,
+      "seconds": 2.5188762999605387
+    },
+    "GPU_only_syntax": {
+      "exit": 0,
+      "pid": 42300,
+      "seconds": 2.383946600020863
+    },
+    "extracted_actual_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\host1\\factory.cc",
+      "bytes": 4304,
+      "sha256": "b6008fea8fd2d51ee70e0c16b04df80cac51c3e74ac1e9f060fc12577ee8e5d8"
+    },
+    "source_extraction": {
+      "origin": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 468556,
+        "sha256": "b47285dfbef5cf626943e22f421815424e58c11ce9122d79a56baf43c5bf5c5a"
+      },
+      "actual_slice_begin": "void validate_mtp_source(",
+      "actual_slice_end": "// Cold graph resources",
+      "slice_bytes": 3272,
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\host1\\factory.cc",
+        "bytes": 4304,
+        "sha256": "b6008fea8fd2d51ee70e0c16b04df80cac51c3e74ac1e9f060fc12577ee8e5d8"
+      },
+      "budget_selection_and_existing_calls_literal_unchanged": true,
+      "limits": "Strict compile of actual extracted cold factory plus real headers and old/new call forms; take is declared only. No link, Model construction or runtime."
+    },
+    "scope": "The exact modified validate_mtp_source/select_execution/create_execution bodies and real current headers are compiled with old/new caller forms. take is a declaration only; no fake Backend, mirrored budget function, link, Model or runtime.",
+    "compile_time_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-options-forwarding-20261026\\revision1\\product-pins.json",
+      "bytes": 2854,
+      "sha256": "05c38d398833d2575685852e9fc4491a24aa9c32d5f987a449d08233e6af977d"
+    },
+    "compiled_code_matches_final_pins": true,
+    "docs_changes_after_checks_only": true,
+    "new_complete_Model_SDK_core_provider_builds": 0,
+    "CPU_GPU_model_runs": 0,
+    "benchmark_runs": 0,
+    "default_thread_CLI_changes": 0
+  },
+  "first_failures": [
+    {
+      "stage": "source preparation",
+      "kind": "tooling assertion/command quoting",
+      "facts": {
+        "stage": "source preparation before any output source or compilation",
+        "error": "assert counted pointer declaration as fourth occurrence; following attempted command-line replacement had quoting error and repeated unchanged assertion",
+        "fix": "count three dereference call arguments ending in closing parenthesis via apply_patch; no product semantics changed"
+      },
+      "scope": "Before candidate source or compilation; no product/runtime failure."
+    },
+    {
+      "stage": "host1/gpu-only",
+      "kind": "thin compile recipe",
+      "process": {
+        "exit": 2,
+        "pid": 3936,
+        "seconds": 1.295118400012143
+      },
+      "facts": "Original external CUDA include paths lacked /external:W0, so cl ignored them and could not find cuda.h. Only GPU-only syntax repeated with that original compiler option; CPU success reused."
+    },
+    {
+      "stage": "after host1/gpu-only2 compile passed",
+      "kind": "offline dependency assertion",
+      "facts": "After gpu-only2 compile passed, an overbroad cpu.h filename assertion also caught unrelated platform/cpu.h. Narrowed to compute/cpu.h and graph/cpu.h; reused the same successful compile, no third GPU-only compilation."
+    }
+  ],
+  "prior_options_evidence": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\research\\inference-cpu-cold-options-2026-10-26.json",
+    "bytes": 5277,
+    "sha256": "30135f1c55587ce627c979d30548227dca80f86483eba13d54d04155467f9ed8"
+  },
+  "limits": [
+    "No full Model translation unit was compiled, linked or executed. The existing CPU options Graph tests were not rerun.",
+    "The modified original Scheduler sample call explicitly spells the unchanged default1; that complete sample was not rebuilt or run in this batch.",
+    "No native_threads>1 execution, parallel scaling, optimal pure-CPU/hybrid policy, global process thread bound or throughput benefit is established.",
+    "Existing CUDA headers were reused for GPU-only host syntax; no CUDA/native/SDK code was rebuilt and no GPU work launched.",
+    "Thread/executor backings remain borrowed through all derived artifacts/native retirement. The options object itself is used only during cold construction; no new lifetime owner or process-wide ATen setter is introduced.",
+    "No new public installed engine API/header is claimed. The user guide links the public Compute configuration and existing sample; the internal factory is an architecture implementation detail."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-cpu-options-forwarding-2026-10-26.zip",
+    "bytes": 70675,
+    "sha256": "8eb100f88f242afd9f43d1396fa743db7f698bd26d54b678bc96de5b0b8ef28b",
+    "members": 36,
+    "CRC": "PASS",
+    "member_SHA256": "PASS",
+    "binaries_SDK_models": false
+  }
+}

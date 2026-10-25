@@ -140,7 +140,7 @@ struct Model {
     up.write(up_values);
     down.write(down_values);
     context = take(graph::cpu::create_context(
-        {.metadata_allocator = allocator, .executor = executor.ref()}));
+        {.metadata_allocator = allocator, .executor = executor.ref(), .native_threads = 1}));
     auto builder = take(graph::GraphBuilder::create());
     input_id = take(builder.input(matrix(kRows, kInner)));
     const auto gate_id = take(builder.constant(matrix(kInner, kHidden)));

@@ -153,12 +153,16 @@ BackendSelection select_execution(BackendSelection selection, std::size_t cpu_la
   return selection;
 }
 Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
-    std::size_t cpu_layers, BackendSelection selection) {
+    std::size_t cpu_layers, BackendSelection selection,
+    const c::cpu::DefaultContextOptions *cpu_options = nullptr) {
   geometry.validate();
   validate_mtp_source(geometry, plan.draft_cache);
   FfnPlacement::validate(cpu_layers, geometry.layers.size());
   selection = select_execution(selection, cpu_layers);
-  if (selection.primary != BackendKind::kCpu && !cpu_layers) return take(Backend::create(selection));
+  if (selection.primary != BackendKind::kCpu && !cpu_layers) {
+    if (cpu_options) return take(Backend::create(selection, {}, *cpu_options));
+    return take(Backend::create(selection));
+  }
   // Conservative finite admission for this graph's known workspace only.
   // Sum model-sized activation envelopes instead of assuming workspace reuse;
   // unknown native-private storage remains explicitly outside this bound.
@@ -171,12 +175,14 @@ Backend create_execution(const ModelGeometry &geometry, const cache::Plan &plan,
         << " scope=known_per_invocation_workspace native_private_unknown=1 physical_memory_cap=0\n";
     // CPU staging aliases its host allocation domain. Give that domain one
     // finite limit; do not count the same memory as a second staging budget.
+    if (cpu_options) return take(Backend::create(selection, {.host = compute}, *cpu_options));
     return take(Backend::create(selection, {.host = compute}));
   }
   const auto staging = cache::add(64u << 20,
       cache::multiply(cache::multiply(rows, cache::multiply(static_cast<std::size_t>(geometry.hidden), 8)), cpu_layers));
   std::cerr << "hybrid_workspace_admission device=" << compute << " host=" << compute
       << " staging=" << staging << " scope=known_per_invocation_workspace native_private_unknown=1 physical_vram_cap=0\n";
+  if (cpu_options) return take(Backend::create(selection, {compute, compute, staging}, *cpu_options));
   return take(Backend::create(selection, {compute, compute, staging}));
 }
 // Cold graph resources and placement, independent of the model equations.

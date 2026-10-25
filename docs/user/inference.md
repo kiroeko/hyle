@@ -88,6 +88,10 @@ Apple／Vulkan 另已运行 K4 随机和双用户 K2 随机完整短旅程；具
 固定 BF16 模型的 CUDA 普通、K1／K4、随机、多会话及恢复见[CUDA 分置记录](../evidence/correctness/qwen35-cpu-ffn-cuda-placement-2026-10-24.json)；
 Apple／Vulkan 的完整随机 K1 短旅程见[原生混合记录](../evidence/correctness/mtp-qwen35-cpu-native-placement-2026-10-24.json)。这些功能检查尚未刷新正式性能对照。
 
+命令行保持原 CPU 线程默认值，不增加线程参数。程序集成可复用公开的
+`compute::cpu::DefaultContextOptions`；allocator／executor 支撑对象须活到全部派生制品和原生工作退休，
+具体组合见 [CPU executor 示例](../../samples/package/graph/cpu_executor/README.md)和[架构说明](../architecture/inference-design.md)。
+
 多轮 schedule、会话数量、同时活动数、缓存预算、trace 与数值限制见[模型运行说明](../../engine/models/qwen35/README.md)。
 当前多会话以共享模型、计划和有界执行资源组织，不按用户复制模型；缓存数量和实际批次宽度是独立配置。
 普通与 MTP 共用 `prompt/generate` 自然请求文件和多轮／多会话生命周期，用 `--mtp off|on` 切换。
