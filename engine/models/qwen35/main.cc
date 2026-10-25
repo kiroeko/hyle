@@ -262,6 +262,9 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding) {
     } else if constexpr (std::is_same_v<Entry, BlockFp8Projection>) {
       const auto d = value.carrier->description.dimensions(); return {d[1], d[0]};
     } else {
+      static_assert(std::is_same_v<Entry, ChannelTokenFp8Projection> ||
+                    std::is_same_v<Entry, ModelOptStaticFp8Projection>,
+                    "missing logical shape for projection binding");
       const auto d = value.codes->description.dimensions(); return {d[0], d[1]};
     }
   }, binding);
@@ -474,28 +477,42 @@ ProjectionBindings prepare_projection_bindings(std::map<std::string, LoadedWeigh
 }
 
 std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile precision) noexcept {
-  if (const auto *stored = std::get_if<StoredProjection>(&binding)) {
-    if (!stored->weight) return "invalid_projection_binding";
-    const auto &description = stored->weight->description;
-    if (hyle::compute::gguf_quantized_type(description.storage_format()))
-      return "gguf_encoded_weight_projection_f32_logits";
-    if (precision.is_f16()) return "f16_inputs_f16_projection_f32_logits";
-    if (description.data_type() == hyle::compute::DataType::kFloat16) return "f16_weight_f32_inputs_f32_output";
-    if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
-    return "bf16_inputs_f32_output";
-  }
-  if (std::holds_alternative<MlxAffineProjection>(binding)) return "mlx_affine_f32_weight_dot_bf16_projection_f32_logits";
-  if (std::holds_alternative<Nf4Projection>(binding)) return "nf4_double_quant_f16_projection_f32_logits";
-  if (std::holds_alternative<GptqProjection>(binding)) return "gptq_f16_weight_to_bf16_projection_f32_logits";
-  if (const auto *projection = std::get_if<CtPackedProjection>(&binding))
-    return projection->decode.format == hyle::compute::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
-        ? "ct_asym4_bf16_subtract_product_projection_f32_logits" : "ct_sym4_bf16_projection_f32_logits";
-  if (std::holds_alternative<ModelOptNvfp4Projection>(binding)) return "nvfp4_qdq_bf16_projection_f32_logits";
-  if (std::holds_alternative<LocalNvfp4Projection>(binding)) return "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
-  if (std::holds_alternative<ModelOptStaticFp8Projection>(binding))
-    return "static_fp8_stored_SA_SW_f32_code_dot_bf16_projection_f32_logits";
-  if (std::holds_alternative<BlockFp8Projection>(binding)) return "fp8_block128_dynamic_divide_bf16_projection_f32_logits";
-  return "ct_channel_token_bf16_qdq_projection_f32_logits";
+  return std::visit([precision](const auto &entry) noexcept -> std::string_view {
+    using Entry = std::remove_cvref_t<decltype(entry)>;
+    if constexpr (std::is_same_v<Entry, StoredProjection>) {
+      const auto *stored = &entry;
+      if (!stored->weight) return "invalid_projection_binding";
+      const auto &description = stored->weight->description;
+      if (hyle::compute::gguf_quantized_type(description.storage_format()))
+        return "gguf_encoded_weight_projection_f32_logits";
+      if (precision.is_f16()) return "f16_inputs_f16_projection_f32_logits";
+      if (description.data_type() == hyle::compute::DataType::kFloat16) return "f16_weight_f32_inputs_f32_output";
+      if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
+      return "bf16_inputs_f32_output";
+    } else if constexpr (std::is_same_v<Entry, MlxAffineProjection>) {
+      return "mlx_affine_f32_weight_dot_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, Nf4Projection>) {
+      return "nf4_double_quant_f16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, GptqProjection>) {
+      return "gptq_f16_weight_to_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, CtPackedProjection>) {
+      const auto *projection = &entry;
+      return projection->decode.format == hyle::compute::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
+          ? "ct_asym4_bf16_subtract_product_projection_f32_logits" : "ct_sym4_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, ModelOptNvfp4Projection>) {
+      return "nvfp4_qdq_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, LocalNvfp4Projection>) {
+      return "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, ModelOptStaticFp8Projection>) {
+      return "static_fp8_stored_SA_SW_f32_code_dot_bf16_projection_f32_logits";
+    } else if constexpr (std::is_same_v<Entry, BlockFp8Projection>) {
+      return "fp8_block128_dynamic_divide_bf16_projection_f32_logits";
+    } else {
+      static_assert(std::is_same_v<Entry, ChannelTokenFp8Projection>,
+                    "missing score policy for projection binding");
+      return "ct_channel_token_bf16_qdq_projection_f32_logits";
+    }
+  }, binding);
 }
 
 struct StateSchema final {

@@ -1,0 +1,230 @@
+{
+  "status": "BOUNDED_REMAINING_WORK_CLASSIFICATION_NOT_EXHAUSTION",
+  "baseline_commit": "32fbcca91b58a1cc52d39b4390570f3ebb5972a2",
+  "source_state": "Pinned working tree on baseline_commit, including the separately reviewed projection metadata dispatch candidate e4a467f1; source pins describe the audit snapshot, not subsequent documentation edits.",
+  "scope": "Read the five foundation inventory groups plus the non-Qwen supplement, current progress/design/catalog and the cited current interfaces. Source-only: no new build, run, GPU, network, remote action, product or document edit.",
+  "conclusion": {
+    "confirmed_unimplemented_bottom_layer_gaps_in_read_inputs": 0,
+    "remaining_items_below": 6,
+    "meaning": "These inputs do not substantiate a concrete outstanding feature implementation list corresponding to the board percentage remainders. They do substantiate unfinished source audit domains and explicit evidence limits. This bounded review cannot prove that all current-hardware capabilities or all selected-role contracts have been exhausted.",
+    "percentages": "82/85/70/82 and their child percentages are workload estimates. They neither count missing mechanisms nor justify a claim of 100% feature coverage."
+  },
+  "confirmed_implementation_gaps": [],
+  "remaining_items": [
+    {
+      "id": "review-selected-role-precision-contracts",
+      "class": "UNREVIEWED_PROBLEM_DOMAIN",
+      "board": "model/quant/operator inventory ~50%; decode/activation/compute/cache contract ~55%",
+      "fact": "The catalog has eight selected families and 33 derivative entries. Its own source/header/profile descriptions explicitly are not a complete per-role GA implementation verdict. The bounded routing inventory found no new reachable routing gap in the branches inspected; static FP8, NF4/F16, MLX, CT and E4/Q8/F32 cache fixes are already implemented.",
+      "source": [
+        "docs/implementation/model-operators.md:13",
+        "docs/implementation/model-operators.md:32",
+        "engine/models/qwen35/prepared_roles.h",
+        "engine/models/qwen35/precision_profile.h",
+        "engine/models/qwen35/cache_precision.h",
+        "engine/models/qwen35/main.cc:1553"
+      ],
+      "why_bottom_layer": "A source role -> stored codec/layout -> activation/compute/output -> Graph qualification discontinuity would be a real import/math/dispatch gap; lack of every publisher payload result alone is not one.",
+      "minimum_next_step": "For each still-unclassified selected profile in the existing catalog, assign source-only implemented / known missing producer-reader connection / explicit numerical or hardware limitation / payload evidence absent. Start with an already cached header/role not covered by the recorded inventories. Open implementation only for a concrete discontinuity, without reacquiring whole models or predeclaring all precision combinations."
+    },
+    {
+      "id": "review-model-state-role-extension-boundary",
+      "class": "UNREVIEWED_PROBLEM_DOMAIN",
+      "board": "new model/state/role extension currently active; prefill/decode/context/state ~75%; complete-state reuse ~70%",
+      "fact": "Qwen has complete Snapshot plus ledger restore; GLM/Kimi/DS selected consumers have real full heterogeneous StateHead commits and explicit early-history semantics. The current inventories are bounded component-chain checks, not a finished proof that a next selected state/role adaptation touches only math/binding/state ports. No new missing common state executor or restore mechanism was established.",
+      "source": [
+        "engine/models/qwen35/main.cc:5576",
+        "engine/models/qwen35/prefix_cache.h:124",
+        "include/hyle/compute/state_versions.h",
+        "tests/compute_models/glm_pro_target_fragment.h:38",
+        "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc:253",
+        "tests/compute_models/dspark_original_target_fragment.h:263"
+      ],
+      "why_bottom_layer": "The issue under audit is whether complete model state/role adaptation forces unrelated request/cache/commit changes; necessary heterogeneous state layouts and actual positions remain model mathematics.",
+      "minimum_next_step": "Finish the already active single selected model extension source trace: list actual role/state additions and whether shared request/window/admission code changes. Require a concrete unwanted cross-layer dependency before extracting anything. Do not move functions merely to raise completion or demand a new whole-model runner."
+    },
+    {
+      "id": "review-residual-owner-contracts",
+      "class": "UNREVIEWED_PROBLEM_DOMAIN",
+      "board": "whole-chain ownership/config review ~15%; remaining capacity/retirement/cancel/backpressure percentages",
+      "fact": "The reviewed Qwen and GLM journeys already use bounded enqueue, open turns, output credit, pause/wake, whole-episode retirement, survivor requeue and immutable checkpoint/rebuild. Current source preserves actual retirement plus Status separately. The inventories expressly do not prove every callback/endpoint/config invalidation or reentry path across all selected adapters.",
+      "source": [
+        "engine/inference/request_window.h:95",
+        "engine/inference/request_progress.h:65",
+        "engine/inference/output_delivery.h:30",
+        "engine/inference/session_cache.h:143",
+        "engine/models/qwen35/main.cc:4415",
+        "engine/models/qwen35/main.cc:5883",
+        "docs/architecture/inference-design.md:60",
+        "docs/architecture/inference-design.md:104"
+      ],
+      "why_bottom_layer": "Lost commit/owner/retirement facts or a reusable resource released before an actual gate would be a bottom-layer bug. Which legal FIFO quantum, cancel policy or fail-fast policy an application chooses is not a new mechanism.",
+      "minimum_next_step": "Close the remaining responsibility audit against a named existing adapter/endpoint and one exact failure or lifetime journey at a time, using the existing source contracts. Classify source-confirmed bug separately from unexecuted native failure. No blanket poison, new manager, scheduler, registry or generic wrapper."
+    },
+    {
+      "id": "evidence-original-profile-and-whole-model",
+      "class": "EVIDENCE_SCOPE_ONLY",
+      "board": "selected quantization/profile qualification",
+      "fact": "Some publisher derivatives remain header/descriptor or selected-role numerical evidence; static FP8 audited 85 of 208 module headers and executed one original role, not all payloads. GGUF NVFP4/HF NVFP4/local dynamic and other selected expert profiles have separately documented payload limits. Large-model upstream activations and omitted layers remain explicit fixtures.",
+      "source": [
+        "docs/implementation/model-operators.md:272",
+        "docs/implementation/model-operators.md:276",
+        "docs/implementation/model-operators.md:277",
+        "docs/implementation/model-operators.md:278",
+        ".scratch/inference-foundation-inventory-20261025/model-quant-routing.json",
+        "docs/evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json"
+      ],
+      "why_not_implementation_gap": "Unrun full artifacts or more original experts do not demonstrate an absent codec/bank/permission/execution primitive. Likewise one original role must not be promoted to full-model support.",
+      "minimum_next_step": "Retain profile-specific source/payload status. Only when a concrete functionality check needs a missing role should its bounded acquisition or component run be planned; this audit neither requests downloads nor declares those profiles fully validated."
+    },
+    {
+      "id": "evidence-non-qwen-phases-and-platform-combinations",
+      "class": "EVIDENCE_SCOPE_ONLY",
+      "board": "ordinary prefill/decode/context; full-state and multi-session percentages",
+      "fact": "GLM Flash startup ran original FP8 positions0..4 on CPU; GLM Pro actual index/target ran CUDA widths1..4 while intervening bodies were fixtures; Kimi original KDA0->MLA3 skipped intervening layers; DS Flash early/SWA boundary ran but a new original Pro position0 numerical run was not in that proof. Existing mathematical support is distinct from these precise executed scopes.",
+      "source": [
+        ".scratch/inference-foundation-inventory-20261025/non-qwen-state.json",
+        "tests/compute_models/glm_flash_ordinary_startup_case.h",
+        "tests/compute_models/glm_pro_original_early_history_test.cc:517",
+        "tests/compute_models/kimi_heterogeneous_state_consumer_test.cc:294",
+        "tests/compute_models/dspark_original_early_history_test.cc:243"
+      ],
+      "why_not_implementation_gap": "Absence of fused multi-token prefill, every R/T shape, every native backend or every derivative run is not evidence that ordinary tokens or full state cannot be consumed and committed.",
+      "minimum_next_step": "Preserve the explicit executed/unexecuted boundaries; add only a finite check needed by an actual source change or an unresolved contract. Do not turn all cross-products into feature work or infer empty-history failure from a positive physical cache capacity."
+    },
+    {
+      "id": "evidence-native-faults-and-resource-scope",
+      "class": "EVIDENCE_SCOPE_ONLY",
+      "board": "multi-request failure/cancel/output; multiple Model admission/fairness",
+      "fact": "There is actual CUDA runtime arrival/credit/cancel/survivor coverage, CPU midturn eviction/restore and local participant-failure coverage, two-Model teardown-survivor coverage and known-byte shared budget coverage. Synthetic Status/NaN checks are not physical device faults; CUDA primary context is shared, opaque/private allocations are not an all-process VRAM cap, and no SLA or cross-Model throughput/fairness claim follows.",
+      "source": [
+        "tests/tools/qwen_request_lifecycle_test.cc",
+        "tests/tools/qwen_midturn_resume_case.h",
+        "tests/tools/qwen_participant_failure_case.h",
+        "tests/tools/qwen_dual_model_case.h",
+        "docs/architecture/inference-design.md:127",
+        "docs/architecture/inference-design.md:139",
+        "docs/architecture/inference-design.md:306"
+      ],
+      "why_not_implementation_gap": "Existing release/credit/queue primitives and legal serial-owner policy are functional. Arbitrary native retry/preemption, physical VRAM total control and server scheduling guarantees are not promised capabilities to invent for this goal.",
+      "minimum_next_step": "Report these limits alongside the finite evidence. A future changed native error/retirement path may justify a targeted regression; no new fault injection, mixed-placement or fairness benchmark matrix is requested here."
+    }
+  ],
+  "resolved_or_dispositioned_since_inventory": [
+    {
+      "item": "common-ownership duplicate Session before eviction",
+      "disposition": "IMPLEMENTED_AND_FINITE_RED_GREEN_CPU_CHECKED",
+      "current_source": "engine/models/qwen35/main.cc:5898",
+      "evidence": "docs/evidence/correctness/inference-duplicate-session-2026-10-25.json"
+    },
+    {
+      "item": "ten Recipe projection N derivations",
+      "disposition": "DEDUPLICATED_USING_EXISTING_TYPED_SHAPE; source equivalence plus existing BF16 CPU request case passed",
+      "current_source": "engine/models/qwen35/main.cc:878"
+    },
+    {
+      "item": "ordinary/cached-frontier selection assembly",
+      "disposition": "NO_MISSING_MATH_PRIMITIVE; shared sampling mathematics already exists, keeping short callsite port assembly avoids an unnecessary abstraction",
+      "evidence": "docs/evidence/research/inference-extension-boundaries-2026-10-25.json:selection_decision",
+      "independent_review": ".scratch/inference-selection-assembly-20261025/independent-review.json"
+    }
+  ],
+  "not_remaining_feature_tasks": [
+    "Expose every owner policy as CLI/server options",
+    "General loader/tokenizer/protocol/application API",
+    "Automatic Qwen context truncation that changes full-causal/GDN mathematics",
+    "Replace exact-T buckets with a required ragged fused dispatcher",
+    "Add grammar/penalty/beam operation names when existing Graph primitives and model-state ownership already express them",
+    "Repeat every backend/profile/shape combination solely to fill percentage remainders"
+  ],
+  "functional_finish_rule": "Do not infer completion from this zero-confirmed-gap snapshot. Finish the explicitly named unreviewed source domains, record concrete omissions and implement/check those that are current-hardware bottom-layer requirements; keep numerical/hardware limits and evidence-only rows separate. A representative pass or a fresh inventory without a bug is not an exhaustion proof.",
+  "input_pins": [
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/ordinary.json",
+      "bytes": 8112,
+      "sha256": "92b75093eb60d92693b49d79c38e65173c5aef0318b1e43d27bfd2f2fbbdf59d"
+    },
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/sessions-requests.json",
+      "bytes": 6480,
+      "sha256": "09c3661711784203407d5a5b2ba25b26e7d45f9b03ab8b5dbee349a5c674fdb6"
+    },
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/model-quant-routing.json",
+      "bytes": 7476,
+      "sha256": "91d25cebe0a86757cb233ef03f1d2dacd200c9826714d1ec107e531104ec26b2"
+    },
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/generation-capabilities.json",
+      "bytes": 8690,
+      "sha256": "1b15abe75f3845e010f09ece1484a5c31500b98ce45b469c2310e777e2ddc617"
+    },
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/common-ownership.json",
+      "bytes": 6827,
+      "sha256": "1f7036a18f7d19bc92f95acb6d41638cc25f9e2e7056c92c0b1e08e4a6859ee0"
+    },
+    {
+      "path": ".scratch/inference-foundation-inventory-20261025/non-qwen-state.json",
+      "bytes": 8041,
+      "sha256": "7826917c9afe16a066a476bbb496962fbcf203736cc6c4a1750f9fd2ce83daaf"
+    }
+  ],
+  "current_source_pins": [
+    {
+      "path": "docs/developer/inference-progress.md",
+      "bytes": 8188,
+      "sha256": "9718e7e48e9a4edc6782dc70e77dc723c5dedc80724cc106649eb72d052f5739"
+    },
+    {
+      "path": "docs/implementation/model-operators.md",
+      "bytes": 110955,
+      "sha256": "dc16fa6d8f3367b440a13619975e205ac4bd330e0f75a9b88317807bb931567c"
+    },
+    {
+      "path": "docs/architecture/inference-design.md",
+      "bytes": 47935,
+      "sha256": "37661a3aad9f1ff726140270115bbfdef91cbc2adc956a655a30953007b0a413"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 499009,
+      "sha256": "e4a467f1a01f18cc0cefdf43fb05d7dd80ecf4489c3e87905bcb65b6bc14327e"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 39007,
+      "sha256": "2194603b0b87f64044a630b682c00f746a5e8732c02d5779354e47366855ae7e"
+    },
+    {
+      "path": "engine/models/qwen35/precision_profile.h",
+      "bytes": 2170,
+      "sha256": "3fb47d13280b00922356024e5299ced6a425976fb9fbdb5943eb2231195f4f5c"
+    },
+    {
+      "path": "engine/models/qwen35/cache_precision.h",
+      "bytes": 4151,
+      "sha256": "a7f46574940ca8ca74688a558c0425e1cf2d7c3f0320a99018369dc81f22d613"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 12536,
+      "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+    },
+    {
+      "path": "engine/inference/output_delivery.h",
+      "bytes": 2599,
+      "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    {
+      "path": "engine/inference/session_cache.h",
+      "bytes": 9476,
+      "sha256": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891"
+    }
+  ]
+}

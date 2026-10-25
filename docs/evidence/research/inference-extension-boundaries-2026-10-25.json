@@ -117,5 +117,49 @@
     "sha256": "7433eef28567b666f65bb3fe11d8645408eb5237b341f36a04c3536f98c17680",
     "members": 29,
     "CRC_and_member_SHA256_verified": true
+  },
+  "followup": {
+    "status": "EXHAUSTIVE_METADATA_DISPATCH_SOURCE_REVIEW_AND_STRICT_SYNTAX_PASS",
+    "sources": [
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "before": {
+          "bytes": 498290,
+          "sha256": "69b4bdc92ed00e0bcc884d73e2e7e07e4016db485121687aaad54d1a66288ed7"
+        },
+        "after": {
+          "bytes": 499009,
+          "sha256": "e4a467f1a01f18cc0cefdf43fb05d7dd80ecf4489c3e87905bcb65b6bc14327e"
+        }
+      }
+    ],
+    "change": "Constrain logical_shape tail to the two existing FP8 variants. Replace manual score-policy tag chain with a visit over the original ProjectionBinding, constrain its tail to ChannelTokenFp8Projection. A future unhandled type must be implemented explicitly rather than silently sharing an existing format interpretation.",
+    "preserved": "All current ten types, sixteen score return strings, Stored null/GGUF/F16/F32/BF16 order, CT asymmetric rule, actual model graph/math/request/cache/commit code. No new registry, field, count gate or public API.",
+    "independent_review": {
+      "path": ".scratch/inference-selection-assembly-20261025/exhaustive/independent-review.json",
+      "bytes": 2609,
+      "sha256": "5c0f191161a7194c30ecf0adb5b2a933013b9cefd8aca4fe375771361550ec0d"
+    },
+    "compile": {
+      "process": {
+        "pid": 11936,
+        "exit": 0,
+        "seconds": 7.265
+      },
+      "mode": "MSVC /W4 /WX /Zs, one frozen app TU",
+      "frozen_files": 166,
+      "core_provider_SDK_TUs": 0,
+      "object_link_or_run": false,
+      "GPU": false,
+      "HTTP": 0
+    },
+    "limits": "Current final source has syntax-only qualification for this dispatch-only followup. The earlier actual CPU Model regression belongs to the prior source hash above; not a new execution of this source or all codecs. No negative-compilation experiment, native GPU, MTP, quality or speed claim.",
+    "archive": {
+      "path": "docs/evidence/research/inference-projection-exhaustive-2026-10-25.zip",
+      "bytes": 10466,
+      "sha256": "a7d7936ef3ef5154bca5139d1d578ee9e9e01ce9c5e175a21740cae04b1dded6",
+      "members": 12,
+      "CRC_and_member_SHA256_verified": true
+    }
   }
 }
