@@ -1,0 +1,106 @@
+{
+  "kind": "bounded_state_role_and_request_lifecycle_source_review",
+  "date": "2026-10-25",
+  "base_commit": "bd4869ae8f4354d937b4aa3eccd85c167a7e8620",
+  "source_state": "Pinned working tree including CPU-assist predicate rename; source reviews and syntax-only qualification are distinct from runtime tests.",
+  "status": "TWO_NAMED_SOURCE_CHAINS_REVIEWED_NO_NEW_CONFIRMED_PRIMITIVE_BUG",
+  "state_role_review": {
+    "actual_chain": "Kimi actual I32 MLA cursor port/output9 -> one complete schema/initial state -> previous StateVersion leases -> actual successor replace/finalize/expected-base Head -> whole-Version restore. GLM original suffix consumes common RequestProgress/Window/PrefixDirectory.",
+    "conclusion": "Necessary math, state declaration and successor binding remain local; no unrelated shared-layer edit or second state table was required for this selected extension.",
+    "limits": [
+      "Kimi component has no vocabulary pending or RequestProgress/Window. Future full ordinary token wiring still requires real head/selector/stop/RNG, not a new executor; this review does not claim that integration already exists.",
+      "GLM2request/2turn case is an original target77/NextN78 suffix after a known StateVersion, not arbitrary prompt prefill or a universal request runner; no MTP math/features are reopened.",
+      "Window N limits active slots; StateStore separately counts forks/readers/payload versions and backing. Qwen pointer-based version_admission is its own committed-version policy, not every Store quota gate. Do not conflate these explicit meanings.",
+      "Kimi withdrawal is unpublished StateDraft cancellation after KDA retirement, not native preemption. Full-engine inflight Kimi multi-request cancellation is not demonstrated; an unpromised composition is not an identified primitive defect."
+    ],
+    "report": {
+      "path": ".scratch/inference-foundation-inventory-20261025/state-role-extension.json",
+      "bytes": 6955,
+      "sha256": "98d79eb04aff9635dade7e1e3b66bc8baeb178d793283f9a9e7b540f2a9e5cd7"
+    }
+  },
+  "owner_review": {
+    "actual_chain": "Ordinary serialized Qwen request: committed output / late observer IO -> backpressure pause -> Session eviction and same-key recovery, then original Model/endpoint teardown and rejection of stale policy/ledger/checkpoint ownership during re-admission. This reviews the adapter-to-callee handoff; it does not reopen six primitive implementations or the repaired duplicate-Session case.",
+    "conclusion": "No new implementation, manager, scheduler or error-poison table justified by this finite source chain. Preserve the current owner-before-recovery checks, delayed Session installation, postcommit ledger observation and original endpoint retirement handoff.",
+    "limits": [
+      "No builds, tests, GPU work, downloads, source edits or fault injection in this pass. Existing consumer/test source was read only.",
+      "The complete composed late-IO + pause + teardown + host-address-reuse journey was not newly executed; separate existing finite consumers do not prove that combination or arbitrary physical native failure.",
+      "Recreating a different Model from old committed ledger is deliberately rejected, not an automatic model-migration feature. Application fail-fast/retry choices, transport policy and which legal waiting request to serve are not missing bottom-layer mechanisms.",
+      "This closes only the named residual source responsibility chain, not all adapters, all backend faults or global functional exhaustion."
+    ],
+    "report": {
+      "path": ".scratch/inference-foundation-inventory-20261025/owner-lifecycle-followup.json",
+      "bytes": 8838,
+      "sha256": "2afecb72cbdf77bb04561579c78dd143c995210edc9da835aba28e84665ebb6f"
+    }
+  },
+  "backend_cleanup": {
+    "problem": "has_cpu_endpoint actually meant a secondary CPU assisting a GPU primary; it returned false for an explicit CPU primary, inviting mistaken use by a new adapter.",
+    "change": "Rename to has_cpu_assist, matching BackendSelection.cpu_assist; update all eleven existing occurrences and one clarifying comment. No compatibility alias or new runtime condition.",
+    "sources": [
+      {
+        "path": "engine/inference/backend.h",
+        "before": {
+          "bytes": 23020,
+          "sha256": "fe7d3c10c3d4c1a5ac7f9243d5d9a26ca508b91391d6cb2c99707112ac1dcff6"
+        },
+        "after": {
+          "path": "engine/inference/backend.h",
+          "bytes": 23089,
+          "sha256": "b265f7f7951c57c1210981341df8e8b3ece92b8cc0c4906d537368eec7faaac8"
+        },
+        "renamed_occurrences": 4
+      },
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "before": {
+          "bytes": 499009,
+          "sha256": "e4a467f1a01f18cc0cefdf43fb05d7dd80ecf4489c3e87905bcb65b6bc14327e"
+        },
+        "after": {
+          "path": "engine/models/qwen35/main.cc",
+          "bytes": 499001,
+          "sha256": "726ba4899b47fab8fe81738a9d2ca4482ea3388ac3dc3ef7bddab267bb742be9"
+        },
+        "renamed_occurrences": 4
+      },
+      {
+        "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+        "before": {
+          "bytes": 19829,
+          "sha256": "f4b684ff04cc2d3537117149cdae7c8214ea44fd60e918006005646b052de58e"
+        },
+        "after": {
+          "path": "tests/tools/qwen_backend_cpu_cuda_test.cc",
+          "bytes": 19823,
+          "sha256": "26e5d85a12ebbef61550bee49e2d5905bd616679177c0d81411c9accea46279b"
+        },
+        "renamed_occurrences": 3
+      }
+    ],
+    "independent_comparison": "EXACT_RENAME_PLUS_ONE_EXPLANATORY_COMMENT_ONLY",
+    "actual_check": {
+      "mode": "One MSVC /W4 /WX /Zs CPU app TU, frozen own source closure",
+      "process": {
+        "pid": 43340,
+        "exit": 0,
+        "seconds": 7.375
+      },
+      "frozen_files": 166,
+      "app_TUs": 1,
+      "core_provider_SDK_TUs": 0,
+      "object_link_or_execution": false,
+      "GPU": false,
+      "HTTP": 0
+    },
+    "limits": "Syntax-only current ordinary CPU consumer; the renamed existing CPU/CUDA test assertions were source-reviewed, not executed. No new GPU/mixed/backend qualification, runtime, numeric or TPS claim."
+  },
+  "remaining": "Selected profile contract classification and broader goal/performance work remain active. These bounded source chains do not prove global functional exhaustion.",
+  "archive": {
+    "path": "docs/evidence/research/inference-contract-followup-2026-10-25.zip",
+    "bytes": 13406,
+    "sha256": "1a472569b5c0b6bb93a1113db539a019bb02bd660551c029ae79e9ce212c978e",
+    "members": 10,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

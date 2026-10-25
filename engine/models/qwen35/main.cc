@@ -551,7 +551,7 @@ struct PackedProjectionNodes final {
 using WeightMeanings = std::map<std::string, prepared::ParameterMeaning>;
 mem::MemoryResourceRef weight_resource(const Backend &backend, bool host) {
   if (!host) return backend.device();
-  if (backend.has_cpu_endpoint()) return backend.host_device();
+  if (backend.has_cpu_assist()) return backend.host_device();
   throw std::runtime_error("CPU FFN placement requires a configured CPU plus GPU endpoint");
 }
 void validate_mtp_source(const ModelGeometry &geometry, bool enabled) {
@@ -620,7 +620,7 @@ struct GraphAssembly final {
 
   explicit GraphAssembly(const Backend &environment, PrecisionProfile precision = {},
                          const c::ResourceBudget &budget = {})
-      : backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_endpoint()),
+      : backend_(environment), budget_(budget), precision_(precision), mixed_(environment.has_cpu_assist()),
         predicate_type_(environment.native_generated_storage() ? Type::kFloat32 : Type::kBool) {}
   GraphAssembly(const GraphAssembly &) = delete;
   GraphAssembly &operator=(const GraphAssembly &) = delete;
@@ -2313,7 +2313,7 @@ public:
     geometry.validate();
     validate_mtp_source(geometry, cache_plan.draft_cache);
     FfnPlacement::validate(ffn_placement.cpu_layers(), geometry.layers.size());
-    if (execution.kind() == BackendKind::kDefault || execution.has_cpu_endpoint() != (ffn_placement.cpu_layers() != 0))
+    if (execution.kind() == BackendKind::kDefault || execution.has_cpu_assist() != (ffn_placement.cpu_layers() != 0))
       throw std::runtime_error("prepared Backend differs from the model CPU placement");
     allocation_budget = std::move(shared_budget);
     if (allocation_budget) {
@@ -2321,7 +2321,7 @@ public:
       // are explicit; absent rows never become inferred/unattributed charges.
       for (const auto resource : {execution.device(), execution.staging(), mem::system_resource()})
         (void)take(allocation_budget.usage(resource));
-      if (execution.has_cpu_endpoint()) (void)take(allocation_budget.usage(execution.host_device()));
+      if (execution.has_cpu_assist()) (void)take(allocation_budget.usage(execution.host_device()));
     }
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");

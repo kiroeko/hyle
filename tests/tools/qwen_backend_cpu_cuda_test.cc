@@ -52,7 +52,7 @@ Example example(c::TensorDesc desc) {
 TEST(QwenBackendCpuCuda, ExplicitCudaRemainsOneCudaEndpoint) {
   auto created=Backend::create({.primary=BackendKind::kCuda});ASSERT_TRUE(created)<<created.error().message();
   auto backend=std::move(*created);
-  EXPECT_FALSE(backend.has_cpu_endpoint());EXPECT_FALSE(backend.host_device().valid());
+  EXPECT_FALSE(backend.has_cpu_assist());EXPECT_FALSE(backend.host_device().valid());
   auto device_domain=backend.resource_for(g::StorageDomainId{0});ASSERT_TRUE(device_domain)<<device_domain.error().message();
   EXPECT_EQ(*device_domain,backend.device());
   auto missing=backend.resource_for(g::StorageDomainId{1});ASSERT_FALSE(missing);
@@ -82,7 +82,7 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   EXPECT_FALSE(before.common_context());EXPECT_FALSE(before.common_queue());
   EXPECT_EQ(backend.kind(),BackendKind::kCpu);EXPECT_STREQ(backend.name(),"cpu");
   EXPECT_TRUE(backend.host_only());EXPECT_FALSE(backend.native_generated_storage());
-  EXPECT_FALSE(backend.has_cpu_endpoint());EXPECT_FALSE(backend.selection().cpu_assist);
+  EXPECT_FALSE(backend.has_cpu_assist());EXPECT_FALSE(backend.selection().cpu_assist);
   // The selected primary is the original CPU Context/Queue and process-lifetime
   // system resource, even though this image also contains the CUDA backend.
   EXPECT_EQ(backend.common_context().value(),*original_context);
@@ -141,7 +141,7 @@ TEST(QwenBackendCpuCuda, OriginalOwnersQueuesBorrowedReplicaAndRetirement) {
   auto before=std::move(*created);const auto staging=before.staging();
   const auto context=before.storage_owner().context_identity();ASSERT_NE(context,nullptr);
   auto backend=std::move(before);
-  ASSERT_TRUE(backend.has_cpu_endpoint());EXPECT_EQ(staging,backend.staging());
+  ASSERT_TRUE(backend.has_cpu_assist());EXPECT_EQ(staging,backend.staging());
   auto device_domain=backend.resource_for(g::StorageDomainId{0});ASSERT_TRUE(device_domain)<<device_domain.error().message();
   auto host_domain=backend.resource_for(g::StorageDomainId{1});ASSERT_TRUE(host_domain)<<host_domain.error().message();
   auto staging_domain=backend.resource_for(g::StorageDomainId{2});ASSERT_TRUE(staging_domain)<<staging_domain.error().message();

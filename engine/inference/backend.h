@@ -290,7 +290,8 @@ public:
   bool native_generated_storage() const noexcept {
     return kind() == BackendKind::kApple || kind() == BackendKind::kVulkan;
   }
-  bool has_cpu_endpoint() const noexcept { return state_ && state_->selection.cpu_assist; }
+  // A secondary CPU endpoint on a GPU primary, distinct from a CPU primary.
+  bool has_cpu_assist() const noexcept { return state_ && state_->selection.cpu_assist; }
   const char *name() const noexcept {
     switch (kind()) {
     case BackendKind::kCpu: return "cpu";
@@ -324,7 +325,7 @@ public:
   }
   Result<compute::ReadLease> adopt_buffer(mem::Buffer &&buffer,
       compute::ResourceBudget budget = {}) const noexcept {
-    if (buffer.valid() && has_cpu_endpoint() && buffer.resource() == host_device())
+    if (buffer.valid() && has_cpu_assist() && buffer.resource() == host_device())
       return compute::ReadLease::adopt(std::move(buffer), {.resource_budget = std::move(budget)});
     if (!buffer.valid() || buffer.resource() != device())
       return std::unexpected(Status::InvalidArgument("Backend buffer belongs to another backend resource"));
@@ -344,7 +345,7 @@ public:
       std::span<const graph::ConstantBinding> constants, graph::CompileOptions options = {}) const noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
     options.constants = constants;
-    if (has_cpu_endpoint() && options.resource_budget) for (const auto &domain : domains()) {
+    if (has_cpu_assist() && options.resource_budget) for (const auto &domain : domains()) {
       auto usage = options.resource_budget.usage(domain.resource);
       if (!usage) return std::unexpected(std::move(usage).error());
     }
@@ -400,7 +401,7 @@ public:
       std::span<const compute::CopyResourceSpec> targets,
       compute::FileStreamOptions options = {}) noexcept {
 #if defined(HYLE_COMPUTE_CPU)
-    if (!has_cpu_endpoint())
+    if (!has_cpu_assist())
       return std::unexpected(Status::FailedPrecondition("CPU file input requires CPU assistance on a GPU primary"));
     for (const auto &target : targets)
       if (target.resource != host_device())
