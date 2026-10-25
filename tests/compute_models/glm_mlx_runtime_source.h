@@ -1,5 +1,6 @@
 #pragma once
 #include "glm_mlx_mtp_fragment.h"
+#include "glm_original_moe_roles.h"
 #include "model_plane_resident_weights.h"
 
 namespace glm_mlx_runtime_source {

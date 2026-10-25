@@ -18,7 +18,7 @@
     "bytes": 360690,
     "sha256": "0b7c085fd67de8ce26a2a85c8e05678b8d1132a570c47996f384f32e3ba405ef"
   },
-  "archive_entries": 140,
+  "archive_entries": 145,
   "zip_crc_pass": true,
   "private_summary": {
     "path": ".scratch/mtp-single-row-prepared-20261025/proof-summary.json",

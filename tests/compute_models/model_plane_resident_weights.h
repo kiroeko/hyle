@@ -2,9 +2,15 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
-#include "glm_original_moe_roles.h"
+#include <array>
+#include <cstdint>
+#include <limits>
+#include <span>
+#include <stdexcept>
+#include <utility>
+#include "hyle/compute/tensor_desc.h"
 #include "hyle/compute/resource_leases.h"
-#if defined(HYLE_TEST_GLM_STATE_CUDA)
+#if defined(HYLE_COMPUTE_CUDA)
 #include "hyle/compute/cuda_weights.h"
 #endif
 
@@ -13,7 +19,6 @@
 // no router, tensor math, provider selection, execution loop or lookup I/O.
 namespace model_plane_resident_weights {
 namespace c=hyle::compute;namespace m=hyle::mem;
-using Selection=glm_original_moe_roles::Selection;
 struct Layout final {
   std::int64_t domain=0,capacity=0;
   std::vector<c::TensorDesc> source,resident;
@@ -48,7 +53,7 @@ struct Layout final {
     r.logical_bytes+=r.map_bytes;return r;
   }
   c::TensorDesc map_description()const{return c::TensorDesc::dense(c::DataType::kInt32,std::array{domain}).value();}
-  hyle::Status validate(const Selection &s)const {
+  template<class Selection> hyle::Status validate(const Selection &s)const {
     if(s.globals.empty()||s.globals.size()>std::size_t(capacity))return hyle::Status::InvalidArgument("actual plane selection exceeds resident capacity");
     std::vector<std::int32_t> map(std::size_t(domain),-1);std::int32_t old=-1;
     for(std::size_t i=0;i<s.globals.size();++i) {
@@ -57,7 +62,7 @@ struct Layout final {
     }
     if(map!=s.map)return hyle::Status::InvalidArgument("original plane map differs from actual IDs");return hyle::Status::Ok();
   }
-  std::int32_t global(const Selection &s,std::size_t slot)const{return slot<s.globals.size()?s.globals[slot]:s.globals.front();}
+  template<class Selection> std::int32_t global(const Selection &s,std::size_t slot)const{return slot<s.globals.size()?s.globals[slot]:s.globals.front();}
 };
 struct CpuBatch final {c::StorageOwner owner;std::vector<c::ReadLease> banks;};
 class CpuSupply final {
@@ -70,7 +75,7 @@ class CpuSupply final {
     HYLE_ASSIGN_OR_RETURN(r.pool_,c::LeasePool::create(owner.ref(),2*r.layout_.slot_bytes,
         {.max_blocks=static_cast<std::uint32_t>(2*(r.layout_.source.size()+1)),.backing_alignment=256}));return r;
   }
-  template<class Source> hyle::Result<CpuBatch> upload(const Selection &selection,const Source &source) {
+  template<class Selection,class Source> hyle::Result<CpuBatch> upload(const Selection &selection,const Source &source) {
     HYLE_RETURN_IF_ERROR(layout_.validate(selection));CpuBatch r{owner_,{}};
     std::vector<c::WriteLease> writers(layout_.source.size()+1);r.banks.resize(writers.size());
     for(std::size_t p=0;p<layout_.source.size();++p) {
@@ -89,7 +94,7 @@ class CpuSupply final {
   const Layout &layout()const noexcept{return layout_;}
   c::LeasePoolStats stats()const noexcept{return pool_.stats();}
 };
-#if defined(HYLE_TEST_GLM_STATE_CUDA)
+#if defined(HYLE_COMPUTE_CUDA)
 class CudaSupply final {
   struct State final {
     Layout layout;c::StorageOwner owner;c::cuda::MemoryResource host;c::cuda::WeightSlots slots;m::Buffer map;
@@ -110,7 +115,7 @@ class CudaSupply final {
         {.max_fragments=s.layout.source.size()*std::size_t(s.layout.capacity)+1}));
     HYLE_ASSIGN_OR_RETURN(s.map,m::Buffer::create(m::system_resource(),s.layout.map_bytes,256));return r;
   }
-  template<class Source> hyle::Result<c::cuda::WeightBatch> upload(std::size_t slot,const Selection &selection,
+  template<class Selection,class Source> hyle::Result<c::cuda::WeightBatch> upload(std::size_t slot,const Selection &selection,
       const Source &source,c::Queue &queue) {
     if(!state_)return std::unexpected(hyle::Status::FailedPrecondition("empty original plane supply"));
     auto &s=*state_;HYLE_RETURN_IF_ERROR(s.layout.validate(selection));

@@ -193,3 +193,12 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     unset(_hyle_dspark_cpu_capabilities)
   endif()
 endif()
+
+if(_HYLE_COMPUTE_HAVE_CUDA)
+  hyle_add_test(graph_route_cuda NAME kimi_mixed_working_set
+    SOURCES ../compute_models/kimi_mixed_working_set_consumer_test.cc
+    DEPS hyle_compute_backend_cuda)
+  hyle_stage_runtime(hyle_graph_route_cuda_kimi_mixed_working_set_test)
+  set_tests_properties(hyle_graph_route_cuda_kimi_mixed_working_set_test PROPERTIES
+    RUN_SERIAL TRUE TIMEOUT 60 LABELS "graph_route_cuda;quantization;working-set")
+endif()
