@@ -121,13 +121,17 @@ HYLE_GRAPH_BATCH_API Status bind(graph::Invocation &, ValueId, compute::PagedRow
 HYLE_GRAPH_BATCH_API Result<compute::Completion> submit(graph::Invocation &,
     std::span<const QueueBinding>, compute::CopyBatchUpdate &&) noexcept;
 HYLE_GRAPH_BATCH_API Result<compute::CopyBatchUpdate> take_update(graph::Invocation &) noexcept;
-// Packed new cache rows [R,KV-heads,depth]. Destinations are independent page
-// writers supplied at the cold bind boundary, never a mutable bank tensor.
+// New attention cache rows use their schema's exact physical carrier for
+// logical [R,KV-heads,depth], with blocks only inside the final depth axis.
+// Destinations are independent page writers supplied at the cold bind boundary,
+// never a mutable bank tensor.
 // Append has no tensor output and must explicitly precede every cache reader
 // with GraphBuilder::depends_on(reader, append). External writes are ordered
 // by the ordinary Graph effect rules, including between distinct append nodes.
-// R is inferred from the exact cache carrier and schema of each selected child.
-// Q8_0 uses U8[R*kv_heads, block_row_bytes], not one carrier row per token.
+// R is inferred from the canonical one-row carrier and the complete input
+// description, including strides. Q8_0 uses U8[R*kv_heads, block_row_bytes], not
+// one carrier row per token. Native copy and reader capabilities are separate;
+// this operation performs no encoding or dtype conversion and excludes RowCache.
 struct PagedAppend final {
   compute::BatchSchema schema;
   compute::BatchCacheRole role=compute::BatchCacheRole::kKey;

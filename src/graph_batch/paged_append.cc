@@ -21,16 +21,13 @@ c::CacheStorage row_storage(const PagedAppend&op)noexcept{
   return op.role==c::BatchCacheRole::kValue?cap.value_storage:cap.key_storage;
 }
 Result<c::TensorDesc> row_description(const PagedAppend&op,std::int64_t rows)noexcept{
-  if(!op.schema.valid() || op.schema.capacity().storage!=c::BatchStorage::kPaged ||
+  if(!op.schema.valid() || cd::BatchLayoutAccess::is_row_cache(op.schema) ||
+      op.schema.capacity().storage!=c::BatchStorage::kPaged ||
       (op.role!=c::BatchCacheRole::kKey && op.role!=c::BatchCacheRole::kValue && op.role!=c::BatchCacheRole::kMla) ||
       rows<=0 || rows>op.schema.capacity().max_query_rows ||
       ((op.schema.mla_layout()!=c::MlaCacheLayout::kNone)!=(op.role==c::BatchCacheRole::kMla)))
     return std::unexpected(Status::InvalidArgument("paged append needs its paged schema/role/active rows"));
   const auto cap=op.schema.capacity();const auto storage=row_storage(op);
-  if(storage!=c::CacheStorage::q8_0().value() && (!storage.format().is_plain() ||
-      (storage.data_type()!=c::DataType::kFloat16 && storage.data_type()!=c::DataType::kBFloat16 &&
-       storage.data_type()!=c::DataType::kFloat8E4M3FN)))
-    return std::unexpected(Status::Unimplemented("paged append copies exact F16/BF16/E4 or Q8_0 rows"));
   return c::cache_carrier_description(storage,std::array<std::int64_t,3>{rows,cap.kv_heads,
       op.role==c::BatchCacheRole::kValue?cap.value_head_dim:cap.qk_head_dim});
 }
@@ -42,12 +39,18 @@ std::uint32_t history(c::HostBatchLayout h,std::uint32_t request,std::uint32_t p
 Result<std::uint32_t> detail::append_query_rows(const PagedAppend&op,const c::TensorDesc&carrier)noexcept{
   if(!op.schema.valid() || !carrier.valid())
     return std::unexpected(Status::InvalidArgument("paged append needs its schema and exact row carrier"));
-  const auto cap=op.schema.capacity();
-  const bool q8=row_storage(op)==c::CacheStorage::q8_0().value();
-  if(carrier.rank()!=(q8?2u:3u) || (q8 && (!cap.kv_heads || carrier.dimensions()[0]%cap.kv_heads)))
+  HYLE_ASSIGN_OR_RETURN(auto one,row_description(op,1));
+  // CacheStorage leaves logical rows outside its final-depth encoding. The
+  // exact one-row carrier supplies the first-axis multiplier without a dtype
+  // list (Q8_0 flattens KV heads into that axis). Cross-row packing is not this
+  // contract; the full canonical description below must still match.
+  if(carrier.rank()!=one.rank() || one.dimensions().empty() ||
+      one.dimensions()[0]<=0 || carrier.dimensions()[0]<=0 ||
+      carrier.dimensions()[0]%one.dimensions()[0])
     return std::unexpected(Status::InvalidArgument("paged append carrier does not contain whole logical head rows"));
-  const auto rows=q8?carrier.dimensions()[0]/cap.kv_heads:carrier.dimensions()[0];
-  HYLE_ASSIGN_OR_RETURN(auto expected,row_description(op,rows));
+  const auto rows=carrier.dimensions()[0]/one.dimensions()[0];
+  auto expected=one;
+  if(rows!=1){HYLE_ASSIGN_OR_RETURN(expected,row_description(op,rows));}
   if(carrier!=expected)
     return std::unexpected(Status::InvalidArgument("paged append needs exact original cache carrier rows"));
   return static_cast<std::uint32_t>(rows);

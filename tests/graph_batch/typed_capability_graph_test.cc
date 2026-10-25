@@ -2,8 +2,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <exception>
+#include <limits>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -12,6 +15,7 @@
 #include "../compute_models/paged_e4_kv_fixture.h"
 #include "../compute_batch/encoded_page_codec_oracle.h"
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/graph/batch.h"
@@ -856,17 +860,13 @@ TEST(TypedCapabilityGraph, EncodedE4AppendKeepsCpuOddRowsAndFiniteCarrierContrac
   const auto bytes_desc = c::TensorDesc::dense(c::DataType::kUInt8,
       std::array<std::int64_t, 3>{2, 1, 3}).value();
   EXPECT_TRUE(append.infer_output_descriptions(std::span(&bytes_desc, 1), {}).IsInvalidArgument());
-  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16}) {
+  for (const auto type : {c::DataType::kFloat16, c::DataType::kBFloat16, c::DataType::kFloat32}) {
     const auto plain = c::CacheStorage::plain(type).value();
     const auto plain_append = gb::paged_append(schema.with_cache_storage(plain, plain).value(),
         c::BatchCacheRole::kKey).value();
     const auto plain_rows = c::TensorDesc::dense(type, std::array<std::int64_t, 3>{2, 1, 3}).value();
     EXPECT_TRUE(plain_append.infer_output_descriptions(std::span(&plain_rows, 1), {}).ok());
   }
-  const auto f32 = c::CacheStorage::plain(c::DataType::kFloat32).value();
-  const auto unsupported = gb::paged_append(schema.with_cache_storage(f32, f32).value(), c::BatchCacheRole::kKey);
-  ASSERT_FALSE(unsupported);
-  EXPECT_TRUE(unsupported.error().IsUnimplemented());
   auto blocked_capacity = capacity;
   blocked_capacity.key_storage = blocked_capacity.value_storage = c::CacheStorage::q8_0().value();
   blocked_capacity.qk_head_dim = blocked_capacity.value_head_dim = 32;
@@ -1140,6 +1140,261 @@ TEST(TypedCapabilityGraph, EncodedQ8AppendPreservesLogicalRowsAndOldReaders) {
       }
       EXPECT_FALSE(arenas[role].acquire(1));
     }
+    ASSERT_TRUE(invocation.close().ok());
+  }
+}
+
+
+TEST(TypedCapabilityGraph, Float32AppendKeepsProducerPrecisionAndOriginalReaders) {
+  using paged_e4_kv_test::take;
+  constexpr unsigned heads = 24, kv_heads = 4, depth = 256, queries = 2, page_rows = 16;
+  constexpr std::size_t row_words = kv_heads * depth, page_words = page_rows * row_words;
+  const auto resource = m::system_resource();
+  const auto storage = take(c::CacheStorage::plain(c::DataType::kFloat32), "F32 storage");
+  const c::BatchCapacity capacity{
+      .query_type = c::DataType::kFloat32, .output_type = c::DataType::kFloat32,
+      .key_storage = storage, .value_storage = storage, .max_requests = 1,
+      .max_query_rows = queries, .max_kv_rows = 32, .max_pages = 3, .max_page_refs = 2,
+      .query_heads = heads, .kv_heads = kv_heads, .qk_head_dim = depth, .value_head_dim = depth,
+      .page_size = page_rows};
+  const auto schema = take(c::BatchSchema::create(capacity), "F32 schema");
+  const auto foreign = take(c::BatchSchema::create(capacity), "foreign F32 schema");
+  const auto append = take(gb::paged_append(schema, c::BatchCacheRole::kKey), "F32 append descriptor");
+  const auto rows_desc = take(c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 3>{queries, kv_heads, depth}), "F32 new rows");
+  EXPECT_TRUE(append.infer_output_descriptions(std::span(&rows_desc, 1), {}).ok());
+  // Equal bytes, wrong rank/width and a foreign storage interpretation do not
+  // become an F32 row merely because the copy itself is byte-oriented.
+  for (const auto malformed : {
+      take(c::TensorDesc::dense(c::DataType::kUInt8, std::array<std::int64_t, 3>{queries, kv_heads, depth * 4}), "same-byte U8"),
+      take(c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 3>{queries, kv_heads, depth - 1}), "wrong F32 width"),
+      take(c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{queries * kv_heads, depth}), "wrong F32 rank")})
+    EXPECT_TRUE(append.infer_output_descriptions(std::span(&malformed, 1), {}).IsInvalidArgument());
+  EXPECT_FALSE(gb::paged_append(schema, c::BatchCacheRole::kMla));
+  const auto identity_encoder = c::infer_single_output(c::Operation::custom(c::model_ops::CacheEncode{storage}),
+      std::array{rows_desc});
+  EXPECT_FALSE(identity_encoder) << "Plain F32 uses real producer rows, not an invented identity CacheEncode";
+  const auto row_schema = take(c::RowCacheBatchSchema::create({
+      .encoding = c::RowCacheEncoding::float8_block64_tail64(), .max_requests = 1,
+      .max_query_rows = queries, .max_kv_rows = 32, .max_pages = 3, .max_page_refs = 2,
+      .page_size = page_rows}), "distinct row-cache schema");
+  EXPECT_FALSE(gb::paged_append(c::detail::BatchLayoutAccess::owner(row_schema), c::BatchCacheRole::kKey));
+  {
+    auto row_arena = take(c::PagedArena::create(row_schema, resource, {.max_backing_bytes = 1u << 20}), "row-cache arena");
+    auto writer = take(row_arena.acquire(0), "row-cache writer");
+    EXPECT_FALSE(writer.publish_appendable(1));
+    EXPECT_TRUE(writer.valid()); EXPECT_TRUE(writer.lease().valid());
+  }
+
+  // The original nonzero, head-dependent F32 generators and F64 mathematical
+  // oracle are from native_paged_test.cc::f32_paged_prefill (abs 1e-6).
+  const auto key = [](unsigned row, unsigned head, unsigned d) {
+    return float(int((row * 11 + head * 7 + d * 3) % 31) - 15) * .0137F + .000021F;
+  };
+  const auto value = [](unsigned row, unsigned head, unsigned d) {
+    return float(int((row * 5 + head * 3 + d * 7) % 29) - 14) * .031F + .000013F;
+  };
+  const auto query_value = [](unsigned row, unsigned head, unsigned d) {
+    return float(int((row * 7 + head * 11 + d * 5) % 23) - 11) * .0193F + .000017F;
+  };
+  auto context = take(c::Context::create(c::cpu::device(), c::ggml_cpu::provider({.native_threads = 2})), "F32 CPU context");
+  auto queue = take(context.create_queue(), "F32 CPU queue");
+  struct Drain { c::Context &context; ~Drain() { context.drain().IgnoreError(); } } drain{context};
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  for (const bool appendable : {false, true}) {
+    SCOPED_TRACE(appendable ? "F32 original reserved suffix" : "F32 COW partial page");
+    const std::array<std::int32_t, 2> qp{0, queries}, ptr{0, 2}, old_ids{2, 0};
+    const std::array<std::int32_t, 2> new_ids{2, appendable ? 0 : 1};
+    const std::array<std::int32_t, 1> old_tail{1}, new_tail{3};
+    const auto old_layout = take(schema.version({qp, ptr, old_ids, old_tail}), "F32 old 17 rows");
+    const auto next_layout = take(schema.version({qp, ptr, new_ids, new_tail}), "F32 new 19 rows");
+    const auto foreign_layout = take(foreign.version({qp, ptr, new_ids, new_tail}), "F32 foreign layout");
+    std::array<c::PagedArena, 2> arenas;
+    std::array<std::array<c::ReadLease, 2>, 2> old_leases;
+    std::array<std::array<std::vector<float>, 2>, 2> old_words;
+    std::array<c::PagedArenaRead, 2> previous;
+    std::array<gb::PagedAppendPages, 2> pages;
+    std::array<std::vector<float>, 2> incoming;
+    for (std::size_t role = 0; role < 2; ++role) {
+      arenas[role] = take(c::PagedArena::create(schema,
+          role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey, resource,
+          {.max_backing_bytes = 1u << 20}), "F32 original arena");
+      ASSERT_EQ(arenas[role].page_bytes(), page_words * sizeof(float));
+      incoming[role].resize(queries * row_words);
+      for (unsigned row = 0; row < queries; ++row)
+        for (unsigned head = 0; head < kv_heads; ++head)
+          for (unsigned d = 0; d < depth; ++d)
+            incoming[role][(row * kv_heads + head) * depth + d] = role ? value(17 + row, head, d) : key(17 + row, head, d);
+      std::array<c::PagedPageAppender, 1> tails;
+      for (unsigned index = 0; index < 2; ++index) {
+        auto &words = old_words[role][index];
+        words.assign(page_words, std::numeric_limits<float>::quiet_NaN());
+        const auto initialized = index ? 1u : page_rows;
+        for (unsigned row = 0; row < initialized; ++row)
+          for (unsigned head = 0; head < kv_heads; ++head)
+            for (unsigned d = 0; d < depth; ++d)
+              words[(row * kv_heads + head) * depth + d] = role ? value(index * page_rows + row, head, d) : key(index * page_rows + row, head, d);
+        auto writer = take(arenas[role].acquire(index ? 0 : 2), "F32 original page writer");
+        ASSERT_TRUE(writer.lease().view()->write(std::as_bytes(std::span(words))).ok());
+        if (appendable && index == 1) {
+          auto published = take(writer.publish_appendable(initialized), "F32 bounded old prefix");
+          old_leases[role][index] = std::move(published.prefix);
+          tails[0] = std::move(published.appender);
+          ASSERT_TRUE(tails[0].reserve_rows(queries).ok());
+          ASSERT_EQ(tails[0].view()->size(), queries * row_words * sizeof(float));
+          words.resize(row_words); // Original reader keeps only its one-row authority.
+        } else old_leases[role][index] = take(writer.publish(initialized), "F32 old page publication");
+      }
+      previous[role] = take(arenas[role].read(old_layout, old_leases[role]), "F32 old ready frame");
+      std::array<c::PagedPageWriter, 1> dirty;
+      const auto count = appendable ? std::size_t{0} : std::size_t{1};
+      if (!appendable) {
+        dirty[0] = take(arenas[role].acquire(1), "F32 COW page");
+        const std::vector<float> poison(page_words, std::numeric_limits<float>::quiet_NaN());
+        ASSERT_TRUE(dirty[0].lease().view()->write(std::as_bytes(std::span(poison))).ok());
+      }
+      auto rejected = appendable
+          ? gb::PagedAppendPages::create(arenas[role], foreign_layout, previous[role], std::span(dirty).first(count), tails)
+          : gb::PagedAppendPages::create(arenas[role], foreign_layout, previous[role], dirty);
+      ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument());
+      if (appendable) {
+        EXPECT_TRUE(tails[0].valid()); EXPECT_EQ(tails[0].reserved_rows(), queries);
+        pages[role] = take(gb::PagedAppendPages::create(arenas[role], next_layout, previous[role],
+            std::span(dirty).first(count), tails), "F32 original suffix transaction");
+      } else {
+        EXPECT_TRUE(dirty[0].valid()); EXPECT_TRUE(dirty[0].lease().valid());
+        pages[role] = take(gb::PagedAppendPages::create(arenas[role], next_layout, previous[role], dirty), "F32 original COW transaction");
+      }
+    }
+
+    auto builder = take(g::GraphBuilder::create(), "F32 Graph builder");
+    const auto qdesc = take(c::batch_query_description(capacity, queries), "F32 query desc");
+    const auto query_input = take(builder.input(qdesc), "F32 query input");
+    std::array<g::ValueId, 2> row_inputs;
+    std::array<g::NodeId, 2> writers;
+    for (std::size_t role = 0; role < 2; ++role) {
+      // Real final F32 producer rows are borrowed directly: no CacheEncode,
+      // quantization, half cast or artificial identity stage is inserted.
+      row_inputs[role] = take(builder.input(rows_desc), "F32 producer rows");
+      const auto descriptor = take(gb::paged_append(schema,
+          role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey), "F32 typed append");
+      writers[role] = take(builder.add_node(c::Operation::custom(descriptor), std::array{row_inputs[role]}), "F32 append effect");
+    }
+    ASSERT_TRUE(builder.depends_on(writers[1], writers[0]).ok());
+    std::array<std::array<g::ValueId, 2>, 2> bank_inputs;
+    std::array<g::NodeId, 2> readers;
+    std::array<g::ValueId, 2> outputs;
+    for (std::size_t branch = 0; branch < 2; ++branch) {
+      for (std::size_t role = 0; role < 2; ++role)
+        bank_inputs[branch][role] = take(builder.input(take(c::batch_cache_description(schema,
+            role ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey), "F32 bank desc")), "F32 bank input");
+      const auto metadata = take(builder.input(take(schema.metadata_description(), "F32 metadata desc")), "F32 distinct metadata input");
+      readers[branch] = take(builder.add_node(c::Operation::custom(c::PagedAttention{
+          .capacity = capacity, .scale = .0625F, .causal = true}),
+          std::array{query_input, bank_inputs[branch][0], bank_inputs[branch][1], metadata}), "F32 original reader");
+      if (branch == 1) for (const auto writer : writers) ASSERT_TRUE(builder.depends_on(readers[branch], writer).ok());
+      outputs[branch] = take(builder.result(readers[branch]), "F32 reader result");
+      ASSERT_TRUE(builder.publish(outputs[branch]).ok());
+    }
+    auto graph = take(std::move(builder).finish(), "F32 Graph");
+    const std::array domains{g::StorageDomain{resource}};
+    const std::array targets{g::ExecutionTarget{take(g::ExecutionSource::acquire(context), "F32 original CPU source"), g::StorageDomainId{0}}};
+    auto compiled = take(gb::compile(graph, {.storage_domains = domains, .targets = targets}), "F32 Graph compile");
+    auto invocation = take(compiled.executable.create_invocation(), "F32 original invocation");
+    const auto prepared = gb::prepare(invocation, queues,
+        std::array{gb::NodeLayout{readers[0], old_layout}, gb::NodeLayout{readers[1], next_layout}},
+        {.host_workspace = resource, .max_float_workspace_bytes = 8u << 20, .max_int_workspace_bytes = 64u << 10});
+    ASSERT_TRUE(prepared.ok()) << prepared.message();
+    for (std::size_t role = 0; role < 2; ++role) {
+      ASSERT_TRUE(gb::bind(invocation, bank_inputs[0][role], previous[role]).ok());
+      ASSERT_TRUE(gb::bind_append(invocation, graph, writers[role], bank_inputs[1][role], std::move(pages[role])).ok());
+    }
+    auto pool = take(c::LeasePool::create(resource, 512u << 10, {.max_blocks = 8}), "F32 caller pool");
+    const auto load = [&](std::span<const float> words) {
+      auto writer = take(pool.allocate(words.size_bytes(), 64), "F32 input allocation");
+      paged_e4_kv_test::check(writer.view()->write(std::as_bytes(words)), "F32 input bytes");
+      return take(writer.publish(), "F32 input publication");
+    };
+    std::vector<float> query_words(queries * heads * depth);
+    for (unsigned row = 0; row < queries; ++row)
+      for (unsigned head = 0; head < heads; ++head)
+        for (unsigned d = 0; d < depth; ++d)
+          query_words[(row * heads + head) * depth + d] = query_value(row, head, d);
+    ASSERT_TRUE(invocation.bind(query_input, qdesc, load(query_words)).ok());
+    for (std::size_t role = 0; role < 2; ++role)
+      ASSERT_TRUE(invocation.bind(row_inputs[role], rows_desc, load(incoming[role])).ok());
+    const auto out_desc = take(c::batch_output_description(capacity, queries), "F32 output desc");
+    ASSERT_EQ(out_desc.data_type(), c::DataType::kFloat32);
+    if (take(compiled.executable.output_ownership(), "F32 output ownership") == g::OutputOwnership::kCaller)
+      for (const auto output : outputs)
+        ASSERT_TRUE(invocation.bind(output, out_desc, take(pool.allocate(take(out_desc.required_bytes(), "F32 output bytes"), 64), "F32 caller output")).ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    { auto done = take(invocation.submit(queues), "F32 original submit"); const auto status = done.wait(); ASSERT_TRUE(status.ok()) << status.message(); }
+    bool differs_from_bf16 = false, differs_from_f16 = false;
+    for (std::size_t branch = 0; branch < 2; ++branch) {
+      auto result = take(invocation.result(outputs[branch]), "F32 completed reader");
+      const auto lease = take(result.storage_lease(), "F32 completed read lease");
+      ASSERT_EQ(lease.size(), query_words.size() * sizeof(float));
+      std::vector<float> actual(query_words.size());
+      ASSERT_TRUE(lease.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+      const unsigned length = branch ? 19u : 17u;
+      for (unsigned row = 0; row < queries; ++row) for (unsigned head = 0; head < heads; ++head) {
+        const auto end = length - queries + row + 1;
+        std::vector<double> scores(end); double maximum = -std::numeric_limits<double>::infinity();
+        for (unsigned position = 0; position < end; ++position) {
+          double dot = 0;
+          for (unsigned d = 0; d < depth; ++d)
+            dot += double(query_value(row, head, d)) * double(key(position, head / (heads / kv_heads), d));
+          scores[position] = dot * .0625; maximum = std::max(maximum, scores[position]);
+        }
+        double sum = 0;
+        for (auto &score : scores) { score = std::exp(score - maximum); sum += score; }
+        for (unsigned d = 0; d < depth; ++d) {
+          double expected = 0;
+          for (unsigned position = 0; position < end; ++position)
+            expected += scores[position] * double(value(position, head / (heads / kv_heads), d));
+          expected /= sum;
+          const auto got = actual[(row * heads + head) * depth + d];
+          ASSERT_TRUE(std::isfinite(got));
+          ASSERT_NEAR(got, expected, 1.e-6) << "branch=" << branch << " row=" << row << " head=" << head << " d=" << d;
+          differs_from_bf16 |= std::abs(expected - half_test::decode(half_test::encode<hyle::simd::bfloat16_t>(expected))) > 2.e-6;
+          differs_from_f16 |= std::abs(expected - half_test::decode(half_test::encode<hyle::simd::float16_t>(expected))) > 2.e-6;
+        }
+      }
+    }
+    EXPECT_TRUE(differs_from_bf16); EXPECT_TRUE(differs_from_f16);
+    for (std::size_t role = 0; role < 2; ++role) {
+      auto returned = take(gb::take_append(invocation, writers[role]), "F32 retired original append");
+      if (appendable) {
+        ASSERT_EQ(returned.page_count(), 0u); ASSERT_EQ(returned.appender_count(), 1u);
+        auto tail = returned.appender(0); ASSERT_TRUE(tail) << tail.error().message();
+        const auto suffix = take(tail->view(), "F32 retired original suffix");
+        std::vector<float> actual(queries * row_words);
+        ASSERT_EQ(suffix.size(), actual.size() * sizeof(float));
+        ASSERT_TRUE(suffix.read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(std::memcmp(actual.data(), incoming[role].data(), actual.size() * sizeof(float)), 0);
+      } else {
+        ASSERT_EQ(returned.page_count(), 1u); ASSERT_EQ(returned.appender_count(), 0u);
+        std::vector<float> actual(page_words), expected(page_words, std::numeric_limits<float>::quiet_NaN());
+        for (unsigned row = 0; row < 3; ++row)
+          for (unsigned head = 0; head < kv_heads; ++head)
+            for (unsigned d = 0; d < depth; ++d)
+              expected[(row * kv_heads + head) * depth + d] = role ? value(16 + row, head, d) : key(16 + row, head, d);
+        ASSERT_TRUE(returned.page(0)->lease().view()->read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(std::memcmp(actual.data(), expected.data(), actual.size() * sizeof(float)), 0);
+      }
+      const auto ready = take(returned.ready(), "F32 whole-Graph publication");
+      EXPECT_EQ(ready.layout(), next_layout); EXPECT_EQ(ready.page_count(), 2u);
+      EXPECT_FALSE(arenas[role].reframe(next_layout, std::span(&previous[role], 1)));
+      for (unsigned index = 0; index < 2; ++index) {
+        std::vector<float> actual(old_words[role][index].size());
+        ASSERT_TRUE(old_leases[role][index].view()->read(std::as_writable_bytes(std::span(actual))).ok());
+        EXPECT_EQ(std::memcmp(actual.data(), old_words[role][index].data(), actual.size() * sizeof(float)), 0);
+      }
+      EXPECT_FALSE(arenas[role].acquire(0));
+    }
+    auto stale = invocation.submit(queues); EXPECT_FALSE(stale);
+    if (stale) stale->wait().IgnoreError();
     ASSERT_TRUE(invocation.close().ok());
   }
 }

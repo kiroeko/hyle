@@ -1,0 +1,164 @@
+{
+  "status": "FINITE_CPU_PASS; NO_NEW_NATIVE_GPU_OR_MODEL_OR_TPS_RUN",
+  "base_commit": "505eb5f717fd3c09b1cf8091ae79416fee38eb6d",
+  "source": [
+    {
+      "path": "src/graph_batch/paged_append.cc",
+      "bytes": 56454,
+      "sha256": "9cd024bdd45650739d5ae63cc07b6dc11fef383ebb354d8e489a54fa14231e48"
+    },
+    {
+      "path": "src/compute_batch/paged_arena.cc",
+      "bytes": 50887,
+      "sha256": "0f22abcf67c508fdffc59fc721899aafb1dd1d458674fe84d4e2d44d4c2473d6"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_append.cc",
+      "bytes": 17710,
+      "sha256": "bbb4bd0b84ab327675d79927d3243d4ae97acf4362453d8985d994db53f88acf"
+    },
+    {
+      "path": "include/hyle/compute/paged_arena.h",
+      "bytes": 14799,
+      "sha256": "d2738657c1bc0674a80f447d60ab2d79359adf9f44824591a169f422c423eb41"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "bytes": 19042,
+      "sha256": "159c583dbcd316aa8da5ef71f27e8e48847d5a3f050578db7f9cb58834500183"
+    },
+    {
+      "path": "tests/graph_batch/typed_capability_graph_test.cc",
+      "bytes": 85866,
+      "sha256": "2ec7af0c18a26063e7aa5a6dfa3cc65a9458c994dfb90b576cecf6b270f515da"
+    }
+  ],
+  "implementation": [
+    "Use original canonical one-row cache carrier to recover logical token rows; validate the entire actual description including strides.",
+    "Explicitly exclude RowCache domain. Arena uses already validated whole attention rows; original identity, suffix permissions and actual retirement checks are unchanged.",
+    "Remove redundant Vulkan dtype list after common carrier validation; exact native range, resource and alignment gates remain.",
+    "No new CacheEncode identity, codec, owner, IR, registry, conversion, transfer or execution path."
+  ],
+  "checks": {
+    "CPU": {
+      "xml": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "run_seconds": 0.266,
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "replaced_objects": 3,
+      "cases": "Seven existing CPU graph cases plus one new F32 case with COW and appendable modes; actual case details and raw XML/logs are in the archive."
+    },
+    "new_F32_case": {
+      "sequences": 1,
+      "query_rows": 2,
+      "query_heads": 24,
+      "kv_heads": 4,
+      "depth": 256,
+      "page_size": 16,
+      "old_KV": 17,
+      "new_KV": 19,
+      "modes": [
+        "COW partial page",
+        "original reserved two-row suffix"
+      ],
+      "old_causal_ends": [
+        16,
+        17
+      ],
+      "new_causal_ends": [
+        18,
+        19
+      ],
+      "oracle": "Independent F64 dot/softmax/value, nonzero and head-dependent inputs, abs1e-6; both K/V exact bytes and old reader permissions checked.",
+      "precision_witness": "Expected outputs differ from both F16 and BF16 rounding by more than 2e-6."
+    },
+    "strict_compile": [
+      {
+        "tag": "cpu-arena",
+        "exit": 0,
+        "seconds": 1.687
+      },
+      {
+        "tag": "cpu-append",
+        "exit": 0,
+        "seconds": 2.312
+      },
+      {
+        "tag": "cpu-test",
+        "exit": 0,
+        "seconds": 4.906
+      },
+      {
+        "tag": "vk-append",
+        "exit": 0,
+        "seconds": 1.875
+      }
+    ],
+    "Vulkan": "Affected host TU strictly compiled only; no new native copy/reader execution.",
+    "Apple_CUDA_Linux": "No new build or execution in this slice.",
+    "new_Model_quality_TPS": false,
+    "SDK_rebuilt": false,
+    "HTTP_model_download": 0
+  },
+  "boundaries": [
+    "Finite CPU producer-to-Append-to-original-reader check, not a new F32 model or all geometry/format/backend certification.",
+    "Reader capability remains independent of raw byte-copy capability. No new plain-F32 GPU reader support is claimed.",
+    "Existing E4/Q8 CPU graph cases are adjacent regressions; this slice does not rerun previous full Model or native GPU checks.",
+    "The new case has two T2 episodes, no independent T1 continuation and no explicit final zero-owner/budget assertion.",
+    "Harness reuses existing toolchain/dependency/object caches; exact commands, source and native pins are retained, with no SDK or binary payload in the archive."
+  ],
+  "test_scope": {
+    "archive_member": "test-scope.json",
+    "bytes": 3172,
+    "sha256": "64484f4a8a97af4cf07daedcc4eee3ff366cc3fbf0f92004c74211fb199da575",
+    "status": "PRIVATE_TEST_SOURCE_ONLY_NOT_COMPILED_OR_RUN"
+  },
+  "source_review": {
+    "archive_member": "source-review.json",
+    "bytes": 4596,
+    "sha256": "3486959a5e37858c0d393b561f254356a90e692842e52a4abac23c33b8e03b6a",
+    "status": "SOURCE_REVIEW_NO_MUST_FIX_FOUND"
+  },
+  "test_review": {
+    "archive_member": "test-review.json",
+    "bytes": 3753,
+    "sha256": "af1511ef44627a58c448638f908be8a42a0523a4cfb70e55ccd31fcd6517713e",
+    "status": "SOURCE_REVIEW_NO_MUST_FIX_FOUND"
+  },
+  "diff_check": "PASS",
+  "archive": {
+    "path": "docs/evidence/correctness/ordinary-f32-append-2026-10-25.zip",
+    "bytes": 121612,
+    "sha256": "2f037caaeac61e6187efaa5beecf0fc0519236a58d11be87b02549ecd3c8dea5",
+    "members": 64,
+    "CRC_and_member_SHA_verified": true,
+    "SDK_binary_model_payload": false
+  },
+  "publication_note": "Archive summary predates outer archive pin and subsequent cleanup receipt; source and check facts are identical. Archive was not repacked.",
+  "cleanup": {
+    "applied": true,
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-q8-append-20261025\\cpu1\\link\\component.exe",
+        "bytes": 22457344,
+        "sha256": "060ecd693e138499e6da5c2acf7c61c9a5c48643dc28039aca9b6acc40a5309e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-q8-append-20261025\\model-regression1\\link\\component.exe",
+        "bytes": 22726144,
+        "sha256": "eb002d93ea3af1c4cdc3926e6a032ff6afd832092576210e87e0f523609ec79e"
+      }
+    ],
+    "logical_bytes": 45183488,
+    "physical_bytes_freed_unknown": true,
+    "scope": "Only two superseded Q8 executable images; all cached objects, source, raw logs, Model app object, native DLLs, SDKs and current F32 image retained."
+  }
+}

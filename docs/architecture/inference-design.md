@@ -414,11 +414,13 @@ CPU分页六项、CPU默认BF16及CPU／CUDA双层实际Model续算、分叉和�
 Vulkan本批仅严格host编译。CLI的初始化诊断另加回前移的metadata准备耗时，未把参数规划时间算成模型加载；
 该报表修正只做源码检查，实际运行的Model定义与最终源码相同。
 
-追加的逻辑token行数与物理carrier第一维分别表达：Q8_0将头数合入U8第一维，
-同一内部事实推导按schema／bank角色检查完整原carrier；普通prepare与Apple artifact缓存query_rows，
-原生绑定用同一规则检查，不再各自猜axis0。COW和独占尾权仍复制完整压缩行，保留原block与旧读者权限。
-[CPU接线及共享路径回归](../evidence/correctness/ordinary-q8-append-2026-10-25.json)分列新增Q8检查和原BF16／E4回归；
-后端reader的资格与复制对齐独立，不由一个编码器存在推导所有后端支持该缓存。
+追加的逻辑token行数与物理carrier第一维分别表达：由原`cache_carrier_description`的单token描述取得首轴倍率，
+恢复query_rows后再核完整描述和strides，不另列dtype／codec白名单；例如Q8_0将头数合入U8第一维。
+普通prepare与Apple artifact缓存query_rows，原生绑定用同一规则检查。Arena复用创建时已验证的实际整行字节；
+各block只在行内，COW和独占尾权保留原block、世代及旧读者权限。RowCache显式排除。
+F32直接复制原producer行，不为统一接口新增identity编码或转换。后端reader的资格与原生复制对齐分别检查。
+[Q8接线及共享路径回归](../evidence/correctness/ordinary-q8-append-2026-10-25.json)与
+[F32 CPU数值／字节检查](../evidence/correctness/ordinary-f32-append-2026-10-25.json)分别记录实际范围，不推导新GPU reader支持。
 
 冷图的有效历史长度不能由固定物理容量推定。GLM Flash 的原2051项选择状态保持不变，
 实际闭合池与尾窗决定参与 attention 的前缀，零池省去评分；参数／codec／排序差异仍由

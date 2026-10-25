@@ -1,23 +1,23 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 17:14（北京时间）。整体暂估 **63%**。Q8编码器到分页追加的公共链路已补通：逻辑token行数与物理carrier分开，支持原COW及可追加页尾，保留整block和旧读者权限。分页CPU七项及原普通BF16／E4 Model回归通过；Apple受影响代码严格编译并跑原E4回归，Vulkan仅严格host编译，未新增Q8原生GPU数值运行。两批证据已归档，清除29个过时二进制、合计约211MiB逻辑字节。下一批补普通F32 producer到既有分页reader的追加链路，不增加CacheEncode identity。深入性能狩猎后置。
+更新：2026-10-25 17:29（北京时间）。整体暂估 **64%**。普通F32 producer→分页追加→既有CPU reader已补通，同时移除重复格式白名单，显式隔离RowCache。CPU八项（含F32非零数值／原值字节、原E4／Q8回归）通过；Vulkan仅严格host编译，未新增GPU reader、整模型或测速结论。本批清理两个过时测试镜像、约43MiB逻辑字节。正在分别复核普通推理调用链与会话／请求底层能力，区分真实缺口、应用政策及未验证项。深入性能狩猎后置。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
 
 执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
 
-- 功能盘点与补齐：约 72%
-  - 基础普通推理：约 78%
+- 功能盘点与补齐：约 74%
+  - 基础普通推理：约 80%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
     - 选定 MLX affine 普通绑定与有限组件：100%
     - CT asymmetric INT4 原投影角色与零点接线：100%
-    - 解码／激活／计算／缓存精度合同：约 45%
+    - 解码／激活／计算／缓存精度合同：约 55%
     - 普通 E4 KV 冷绑定与分页写入：100%
     - Q8 KV 编码到分页追加的公共链路：100%
-    - 普通 F32 producer 到分页追加的公共链路：约 15%
+    - 普通 F32 producer 到分页追加的公共链路：100%
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
     - GLM Pro 原组件短历史与真实 index 供给：100%
     - Kimi 普通异构状态提交与恢复组件：100%
@@ -59,7 +59,7 @@
     - frontier 未退休时的共享输入提前门禁：100%
     - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
-- 架构复审、设计与调整：约 53%
+- 架构复审、设计与调整：约 54%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 40%
   - 请求提交账簿唯一化：100%
@@ -91,13 +91,14 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| F32追加与carrier共同规则 | 普通推理／缓存精度 | 最小设计复核：复用原carrier描述与整行事实，补真实F32 producer到已有CPU reader；尚未实现或运行 | 约 15% |
+| 普通推理调用链复核 | 普通推理／上下文与状态 | 对齐prefill／decode、上下文及完整状态的实际接口与已有证据，选择下一批真实底层缺口 | 约 20% |
+| 会话与请求底层能力复核 | 多会话／多请求 | 核前缀、淘汰恢复、接纳续轮、取消、错误及背压，不将应用政策或缺少测试组合算成缺功能 | 约 20% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[Q8分页追加](../evidence/correctness/ordinary-q8-append-2026-10-25.json)、[普通E4 KV接线与原生追加](../evidence/correctness/ordinary-e4-kv-2026-10-25.json)、[缓存拓扑／存储解释](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)、[Kimi原参数续算](../evidence/correctness/kimi-original-attention-state-2026-10-25.json)、[FFN 冷放置统一](../evidence/correctness/inference-ffn-cold-placement-2026-10-25.json)、[请求账簿统一](../evidence/correctness/inference-request-ledger-2026-10-25.json)、[整轮随机预算](../evidence/correctness/inference-turn-sampling-budget-2026-10-25.json)、[静态 FP8 原组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)、[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
+最新依据：[F32分页追加](../evidence/correctness/ordinary-f32-append-2026-10-25.json)、[Q8分页追加](../evidence/correctness/ordinary-q8-append-2026-10-25.json)、[普通E4 KV接线与原生追加](../evidence/correctness/ordinary-e4-kv-2026-10-25.json)、[缓存拓扑／存储解释](../evidence/correctness/inference-cache-topology-storage-2026-10-25.json)、[Kimi原参数续算](../evidence/correctness/kimi-original-attention-state-2026-10-25.json)、[FFN 冷放置统一](../evidence/correctness/inference-ffn-cold-placement-2026-10-25.json)、[请求账簿统一](../evidence/correctness/inference-request-ledger-2026-10-25.json)、[整轮随机预算](../evidence/correctness/inference-turn-sampling-budget-2026-10-25.json)、[静态 FP8 原组件](../evidence/correctness/qwen-static-fp8-original-component-2026-10-25.json)、[GLM 空历史启动](../evidence/correctness/glm-flash-ordinary-startup-2026-10-25.json)、[请求停止政策](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)、[Kimi 冷绑定](../evidence/correctness/kimi-original-attention-binding-2026-10-25.json)、[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)。其它依据见[推理设计](../architecture/inference-design.md)，性能基线与边界见[decode 性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 
