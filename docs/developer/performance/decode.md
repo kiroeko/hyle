@@ -25,7 +25,11 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 新窗prefill43.068→43.203（＋0.31%，范围重叠）、decode10.382→10.612（＋2.21%，范围不重叠）、综合3.191→3.214 tok/s（＋0.71%，范围不重叠）；整进程CPU时间中位21.109→22.031秒（＋4.37%），包含加载／退出，不是decode CPU时间或能耗。工作集各约5.320GiB、线程峰各17，GPU计数缺测；内存单样本微差不作节省结论。按速度优先采用此小收益，没有新用户选项；不与旧CPU或CUDA窗口拼样，也不据此认定整段余差主因。后续核其它provider／Graph流程及参考同项成本，不扫描更多poll参数。
 
-加载期另有两个源码候选：[原权重导入](../../../engine/models/qwen35/weights.cc)目前分配约3.76GB私有backing，[FileStream](../../../src/compute_stream/file_stream.cc)先读staging再复制。可研究复用现文件映射的合法只读导入，以及合格host目的的直接IO；须保真实mapping owner、ReadLease与IO退休／发布，不能将裸借用视图伪装成所有者。它们尚未实现，不计作decode或确定工作集节省。
+[CPU Graph提交诊断](../../evidence/performance/inference-cpu-graph-submission-attribution-2026-10-26.json)只替换一个submission对象，10944步／64个scope完整、0溢出、原输出和非时间工作0差异。同一run的decode每输出provider调用包络96.262ms／墙时97.181ms，约99.05%；其中ggml-cpu91.417ms、ATen4.544ms、oneDNN0.282ms。其它约0.919ms包含仪器；队列begin＋finish全15轮仅0.0264ms，不支持从Graph记账期待大幅收益。provider包络含绑定、执行器及原生计算，不能称纯kernel；不与旧native诊断相减，诊断TPS不当基线。
+
+随后[调用线程配置筛选](../../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)只换测试入口对象，native4／ATen4及Scheduler4寿命不变，原borrowed executor concurrency4改用默认empty executor concurrency1。一个正常行为及六计时＋两独立内存进程全成功，完整非时间报告0差异。prefill42.247→43.362（＋2.64%，范围重叠）、decode10.842→11.551（＋6.54%，范围不重叠）、综合3.182→3.289（＋3.36%，范围不重叠）；整进程CPU时间中位22.328→21.703秒，两边线程峰17、工作集约5.320GiB，GPU仍缺测。此延迟负载后续采用调用线程；默认executor原本为空，没有库实现或默认策略改动，也不能绕过用户的执行位置要求。通用provider分工可能改变，不把全部收益签成纯交接耗时。没有新参考进程，不跨窗拼算收益或剩余差距。
+
+加载期另有两个候选：[原权重导入](../../../engine/models/qwen35/weights.cc)目前分配约3.76GB私有backing，[FileStream](../../../src/compute_stream/file_stream.cc)先读staging再复制。合格host目的直接IO已准备私有候选，正在原suite有限检查；合法只读映射导入仍为设计。须保真实mapping owner、ReadLease与IO退休／发布，不能将裸借用视图伪装成所有者。两项均不计作decode或确定工作集节省。
 
 ## 目标与当前基线
 

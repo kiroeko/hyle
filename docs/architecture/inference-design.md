@@ -38,6 +38,8 @@ CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultCont
 
 一个CPU Provider Context拥有一个延迟创建的原生工作团队，派生Program和执行槽共同保活；每槽仍独立拥有graph、plan、workspace及取消状态。同一团队的完整原生compute串行执行，不随Invocation数复制线程池；不同Context各自独立。团队沿用原生默认的有限轮询等待，空闲超过轮询范围后休眠。执行器分发时不持团队锁，同线程重入在触及原生池前拒绝。Context关闭仍禁止新提交，已派生内部资源按原退休规则释放。外部allocator／executor须活到全部派生制品和原生工作退休，executor并发度与`native_threads`是不同预算。[有限并发、取消、分配失败及真实模型对照](../evidence/performance/inference-cpu-context-team-2026-10-26.json)支持资源调整；[等待策略对照](../evidence/performance/inference-cpu-polling-screen-2026-10-26.json)分别报告吞吐与CPU时间代价，不代表跨平台吞吐或所有并行负载均已测定。
 
+默认executor为空，回调在调用线程执行，仍可显式配置多线程原生团队。借用executor用于表达调用者需要的执行位置和分工；库必须遵守该回调，不能擅自绕过。应用自己的Scheduler并不意味着每个完整原生程序都应多一次工作线程交接；[调用线程配置对照](../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)说明这项选择有实际成本，不能从executor并发度直接推导性能。
+
 Qwen实现内部的`create_execution(..., cpu_options=nullptr)`继续使用原有限workspace预算公式，
 再把可选配置转发给CPU主端点或显式CPU辅助端点；省略参数保持原构造调用。
 例如实现内可用`create_execution(geometry, plan, cpu_layers, selection, &cpu_options)`，

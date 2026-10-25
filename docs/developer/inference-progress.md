@@ -1,6 +1,6 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-26 05:17（北京时间）。整体粗估 **86%**。四请求普通随机采样decode约＋10.8%、综合＋9.8%，已合入；单请求／MTP正式CUDA对照未刷新，原差距仍保留。CPU共享池已推送，线程峰3428→17、工作集少约1.3GB；随后保原生默认有限轮询的新窗decode另＋2.21%、综合＋0.71%，整进程CPU时间＋4.37%，已采用。含参考的上一CPU同窗仍慢约14.3%，没有用新旧窗口拼接更新差距。
+更新：2026-10-26 05:46（北京时间）。整体粗估 **86%**。四请求普通随机采样decode约＋10.8%、综合＋9.8%，已合入；单请求／MTP正式CUDA对照未刷新，原差距仍保留。CPU共享池与原生有限轮询已合入；本次调用线程配置另窗decode＋6.54%、综合＋3.36%，采用为后续同负载配置，不是新库实现。Graph自身未见大热点；host直接IO候选修复独审回退问题后正做有限检查。加载候选不计decode收益。
 
 百分比估计剩余开发工作量。范围仍为当前硬件可做的单机、多系统、CPU／单GPU／CPU＋GPU普通推理、多会话和多请求底座；发现新缺项继续补。功能完成不代表未运行的制品／平台或完整大模型质量通过。MTP／多模态不重开功能穷尽，性能包括MTP对llama.cpp的差距。
 
@@ -27,7 +27,7 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| CPU剩余耗时归因 | 性能设施复用 | 等待策略已筛选完成；继续核对其它provider／Graph流程与参考同项边界，矩阵核心代码相同尚不能解释余差 | 约10% |
+| CPU载权直接IO候选 | 性能设施复用 | 七文件私有候选已修coherent资源flush回退缺口，复用原FileStream suite检查及五个host TU刷新 | 约55% |
 
 ## 本次完成与剩余顺序
 
@@ -41,6 +41,8 @@
 - CPU：[首对照](../evidence/performance/inference-cpu-initial-pair-2026-10-26.json)ISA偏差已用同版本15个CPU TU修正；[AVX2完整短窗](../evidence/performance/inference-cpu-avx2-window-2026-10-26.json)确认decode仍落后且有3428个OS线程。[Context共享池修复与新三臂对照](../evidence/performance/inference-cpu-context-team-2026-10-26.json)已完成：每槽保私有plan／workspace，共享团队保活、完整native compute独占，9项runtime及真实模型工作一致；结果见下表。修复已合入，未重跑其它平台。
 - CPU归因：等待策略调整前的[唯一真实诊断](../evidence/performance/inference-cpu-native-attribution-2026-10-26.json)9104记录完整、0溢出、非时间工作0差异。decode每输出native84.460ms、其中矩阵图75.305ms（本次墙时77.94%）；wide投影33.032ms、tied head19.409ms为不相交组。锁接纳全15轮仅0.642ms；native外每输出12.162ms仍含其它provider／host／仪器，未归因。未测参考原生耗时，不能据此认定差距主因或可回收收益。
 - CPU等待策略：[新两臂筛选](../evidence/performance/inference-cpu-polling-screen-2026-10-26.json)8新进程全成功、工作0差异，9项runtime及先行正常行为也通过，保原生默认有限轮询已采用。BF16点积／MUL_MAT相关核心与参考相同，不能归因于旧版CPU数学；参考每整图临时创建默认pool，并非跨step常驻自旋。
+- CPU Graph归因：[单TU诊断](../evidence/performance/inference-cpu-graph-submission-attribution-2026-10-26.json)10944步及64个scope完整、0溢出、非时间工作0差异。同run decode墙时约99.05%在provider调用包络内，Graph其余每输出约0.919ms且含仪器；未见支撑大改Graph提交机制的量级，不跨run减去旧native耗时。
+- CPU调用配置：[新两臂筛选](../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)六计时＋两独立内存进程全成功、工作0差异。原生4与ATen4不变，去掉测试入口的worker-only交接后decode＋6.54%、综合＋3.36%。默认executor本来为空，未改库或绕过用户回调；通用provider分工可能改变，不能把收益全算为纯交接耗时。后续该延迟负载采用调用线程配置。
 - 载权候选：源码确认CPU原权重仍有约3.76GB私有backing及staging复制；现文件映射与直接host IO有可复用设施，合法只读导入与直读路径尚未接通。属于加载／内存优化候选，不计decode收益。
 - 剩余顺序：继续核CPU其它provider／Graph流程及参考同项成本，再按有量级依据的CPU／CUDA普通及MTP热点推进；加载候选随后处理，混合FFN放置与参考整层offload另列。当前greedy MTP仍未追平。
 
@@ -85,3 +87,12 @@ CPU资源修复的新三臂短窗：Windows i9-13900K、原生线程T4、P154＋
 | 原生默认有限轮询，已采用 | 43.203 | 10.612 | 3.214 | 5.320 | 22.031 |
 
 decode＋2.21%、综合＋0.71%，三次范围不重叠；prefill＋0.31%但范围重叠。CPU时间＋4.37%，不是decode CPU时间或能耗。两臂OS线程峰均17；内存各一次采样，不将微小差值当节省，GPU仍缺测。所有输出和非时间工作相同，未因此刷新对参考的差距或CUDA结果，也未把两次CPU收益相加。
+
+本次再单独比较执行器配置，原生4／ATen4不变，保留原Scheduler4的创建和寿命；只替换测试入口对象。六计时＋两独立内存进程全成功，不与上面窗口拼样，也没有参考进程。
+
+| CPU执行器配置 | prefill | decode | 综合 | 工作集采样峰GiB | 整进程CPU时间中位秒 |
+|---|---:|---:|---:|---:|---:|
+| 原借用Scheduler，concurrency4 | 42.247 | 10.842 | 3.182 | 5.320 | 22.328 |
+| 调用线程，concurrency1 | 43.362 | 11.551 | 3.289 | 5.320 | 21.703 |
+
+decode＋6.54%、综合＋3.36%，三次范围不重叠；prefill＋2.64%但范围重叠。两臂线程峰仍17，内存微差不称节省，GPU缺测。16输出、169 target行及完整非时间报告相同；未检查全部中间值。它是现有合法配置的选择，不是库算法或默认值改动，不据此更新对llama.cpp的差距。

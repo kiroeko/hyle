@@ -1,0 +1,308 @@
+{
+  "kind": "One-run CPU Graph submission attribution, not a throughput comparison",
+  "status": "SOURCE_AND_RAW_OFFLINE_REVIEW_PASS_ONE_INSTRUMENTED_CPU_RUN",
+  "process": {
+    "pid": 19044,
+    "exit": 0,
+    "timed_out": false,
+    "wall_seconds": 7.249941400019452
+  },
+  "work": {
+    "backend": "cpu",
+    "logical_prompt_tokens": 154,
+    "requested_output_tokens": 16,
+    "generated_tokens": 16,
+    "generated_decode_tokens": 15,
+    "prefill_graph_calls": 1,
+    "decode_graph_calls": 15,
+    "mtp": false,
+    "prefix_cache": false,
+    "replay": "commands",
+    "active_sequences": 1,
+    "max_sessions": 1,
+    "capacity": 256,
+    "sampling": "greedy"
+  },
+  "build": {
+    "product_TUs_compiled": 1,
+    "source": {
+      "path": "src/graph/submission.cc",
+      "before": {
+        "bytes": 50109,
+        "sha256": "6a4d92d0b2fac1776d71d2f4242ecca361916988dc8c13c070c13999caf20dc4"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\graph-submission-diagnostic1\\source\\src\\graph\\submission.cc",
+        "bytes": 57334,
+        "sha256": "3160ceb415dd011dee8e71c2e95081d31711104c365b8e26fc5eb2d33557db67"
+      },
+      "private_only": true,
+      "kinds": {
+        "1": "SubmissionCursor.begin",
+        "2": "submit_segment",
+        "3": "finish",
+        "4": "actual retire_invocation"
+      },
+      "limits": "Scope missing ticks/status=-1 expose early or unclassified paths. Step provider envelope is indivisible incl its existing mappings/executor/native work. Source trace arrays own no model/native resources."
+    },
+    "compile_process": {
+      "exit": 0,
+      "pid": 33464,
+      "seconds": 4.006554799969308
+    },
+    "link_process": {
+      "exit": 0,
+      "pid": 60964,
+      "seconds": 2.0029679000144824
+    },
+    "actual_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\graph-submission-diagnostic1\\link\\hyle.exe",
+      "bytes": 150933504,
+      "sha256": "1b3f764172c1a857612878ef1c27e176fbaba6b9829a41b8de7e17cf578cc2a0"
+    },
+    "replacement": {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\graph--submission_cc\\unit.obj",
+        "bytes": 628070,
+        "sha256": "00792a793801da1fe57920b923fa6af23a8e0de43d9afdc273264c58ed0cbf03"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\graph-submission-diagnostic1\\compile\\unit.obj",
+        "bytes": 10089691,
+        "sha256": "c678e7d8b6b7ddd16ebd3eddc0e33513f8412650a2efcefec372284fdda92ca7"
+      }
+    },
+    "all_other_link_inputs_unchanged": true,
+    "runtime": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/runtime.json",
+      "bytes": 8226,
+      "sha256": "3e664eb8024f363bc593bf46e1a0c54259d5c12db66c70747958517b5ce29eb1"
+    },
+    "control_poll_policy": "Native default50, from the already built poll-default1 cpu_execution.cc source365aaf3b4f7622eadf61592a2c470302f38bda3124cd36f8708e44378a6810ea; no earlier poll0 measurement is subtracted.",
+    "preparation_receipts": "ready.json remains BUILT_NOT_RUN and run/summary retains WORK_PASS_OBSERVATION_ANALYSIS_PENDING from their creation stages. Actual run/process, raw observations, facts and this final report establish the completed process and offline analysis."
+  },
+  "semantic_gate": {
+    "normal_reference": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/poll-default1/behavior1/stdout.log",
+      "bytes": 20411,
+      "sha256": "69c08fe41a5a238f9d564fb01a7dffc19cec71210c15fd65dc474b5b164a697c"
+    },
+    "full_nontime_differences": 0,
+    "independent_offline_normalization_equal": true,
+    "exclusions": "Only original clock/time/TPS fields; all IDs, state, RNG, counters, routing and non-time work retained.",
+    "model_processes": 1
+  },
+  "coverage": {
+    "scope_records": 64,
+    "scope_kinds": {
+      "begin": 16,
+      "submit_segment": 16,
+      "finish": 16,
+      "actual_retire_invocation": 16
+    },
+    "step_records": 10944,
+    "scope_overflow": false,
+    "step_overflow": false,
+    "all_step_envelopes_blocks_host": true,
+    "all_status_success_and_steps_accepted": true,
+    "all_step_spans_nonoverlapping": true,
+    "parent_relations_checked_by_original_analyzer": true,
+    "static_store_bytes": 9437240,
+    "unknown_ID_regions_total": 192,
+    "unknown_classification": "Actual empty ProviderId/instance, step kind region, one node. Preserved as UNKNOWN_ID_REGION; not classified as Transfer or native math."
+  },
+  "phases": {
+    "prefill": {
+      "episodes": 1,
+      "steps": 684,
+      "same_run_original_endpoint_ms": 3561.1343,
+      "synchronous_provider_enqueue_envelopes_ms": 3555.6213,
+      "fraction_of_same_run_endpoint": 0.9984518977562851,
+      "outside_provider_envelopes_ms": 5.513000000000375,
+      "outside_ms_per_episode": 5.513000000000375,
+      "unknown_ID_one_node_regions": 12,
+      "step_envelopes_nonoverlapping": true,
+      "providers": [
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5136147912341848065,
+          "instance": 3,
+          "name": "ggml-cpu",
+          "calls": 570,
+          "calls_per_episode": 570,
+          "span_setup_ms": 0.0182,
+          "enqueue_ms": 3433.2681,
+          "enqueue_ms_per_episode": 3433.2681,
+          "sequence_record_ms": 0.058
+        },
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 4707463712948114689,
+          "instance": 4,
+          "name": "ATen CPU programs",
+          "calls": 84,
+          "calls_per_episode": 84,
+          "span_setup_ms": 0.0033,
+          "enqueue_ms": 121.0623,
+          "enqueue_ms_per_episode": 121.0623,
+          "sequence_record_ms": 0.0114
+        },
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5714581136853565441,
+          "instance": 2,
+          "name": "onednn",
+          "calls": 18,
+          "calls_per_episode": 18,
+          "span_setup_ms": 0.0002,
+          "enqueue_ms": 0.8673,
+          "enqueue_ms_per_episode": 0.8673,
+          "sequence_record_ms": 0.0014
+        },
+        {
+          "namespace_id": 0,
+          "provider_id": 0,
+          "instance": 0,
+          "name": "UNKNOWN_ID_REGION",
+          "calls": 12,
+          "calls_per_episode": 12,
+          "span_setup_ms": 0.0003,
+          "enqueue_ms": 0.4236,
+          "enqueue_ms_per_episode": 0.4236,
+          "sequence_record_ms": 0.0004
+        }
+      ]
+    },
+    "decode": {
+      "episodes": 15,
+      "steps": 10260,
+      "same_run_original_endpoint_ms": 1457.7160999999999,
+      "synchronous_provider_enqueue_envelopes_ms": 1443.9261,
+      "fraction_of_same_run_endpoint": 0.9905399960938897,
+      "outside_provider_envelopes_ms": 13.789999999999964,
+      "outside_ms_per_episode": 0.9193333333333309,
+      "unknown_ID_one_node_regions": 180,
+      "step_envelopes_nonoverlapping": true,
+      "providers": [
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5136147912341848065,
+          "instance": 3,
+          "name": "ggml-cpu",
+          "calls": 8550,
+          "calls_per_episode": 570,
+          "span_setup_ms": 0.1635,
+          "enqueue_ms": 1371.2512,
+          "enqueue_ms_per_episode": 91.41674666666667,
+          "sequence_record_ms": 0.2755
+        },
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 4707463712948114689,
+          "instance": 4,
+          "name": "ATen CPU programs",
+          "calls": 1260,
+          "calls_per_episode": 84,
+          "span_setup_ms": 0.0266,
+          "enqueue_ms": 68.1658,
+          "enqueue_ms_per_episode": 4.544386666666667,
+          "sequence_record_ms": 0.0282
+        },
+        {
+          "namespace_id": 5213281902894514177,
+          "provider_id": 5714581136853565441,
+          "instance": 2,
+          "name": "onednn",
+          "calls": 270,
+          "calls_per_episode": 18,
+          "span_setup_ms": 0.0044,
+          "enqueue_ms": 4.2364,
+          "enqueue_ms_per_episode": 0.28242666666666666,
+          "sequence_record_ms": 0.0045
+        },
+        {
+          "namespace_id": 0,
+          "provider_id": 0,
+          "instance": 0,
+          "name": "UNKNOWN_ID_REGION",
+          "calls": 180,
+          "calls_per_episode": 12,
+          "span_setup_ms": 0.0028,
+          "enqueue_ms": 0.2727,
+          "enqueue_ms_per_episode": 0.018179999999999998,
+          "sequence_record_ms": 0.0035
+        }
+      ]
+    }
+  },
+  "decode_detail": {
+    "queue_begin_plus_finish_total_ms": 0.0264,
+    "span_setup_plus_sequence_record_total_ms": 0.509,
+    "segment_minus_step_ms_per_output": 0.4348666666666666,
+    "all_outside_provider_ms_per_output": 0.9193333333333309
+  },
+  "interpretation": "In this diagnostic run, provider enqueue envelopes cover 99.054% of the original decode endpoint. The measured queue/span/record portion does not reveal a large independent Graph-submission bucket. Provider envelopes include mappings, executor, native work and close, so this does not locate their internal cause or imply a recoverable speedup.",
+  "limits": [
+    "Provider enqueue envelope includes original prevalidated route/provider mappings/executor/compute/close. It is not native-kernel-only time.",
+    "Compound regions are timed once. Step envelope children form an exclusive partition; segment commandspan and segment totals are inclusive parents and must not be added again.",
+    "The segment-minus-step residual includes this observer metadata copying/atomic-record cost, loop work and other unchanged dispatch bookkeeping. It is not a measured pure scheduler cost.",
+    "Default-poll50 runtime365aaf is the normal baseline. The earlier poll0 native-clock run is not subtracted from this run. No peer measurement is present.",
+    "stderr phase timestamps are receipt times with unknown pipe/scheduling latency. Explicit same-QPC bridge plus all contained events/684calls per episode support phase assignment; they do not invent producer fprintf timestamps.",
+    "Only existing sharedQueue CPU Commands/N1 fixture observed; every actual step reports blocks_host1. No async/delegated retirement performance certificate.",
+    "12 one-node regions per episode have actual empty provider ID/instance. They remain UNKNOWN_ID_REGION; they are not mislabeled as transfer or native math.",
+    "No Model preparation observer was enabled; its existing cold/submit/step endpoints remain the outer facts. This instrument does not give exact separate Model layout/batch/replay times.",
+    "Fixed9437240B store and exit dump are diagnostic work. No TPS or recoverable-time claim; canonical untouched.",
+    "One instrumented process only, with no peer or uninstrumented timing screen; instrumented elapsed time/TPS are not baseline performance.",
+    "Denominators are the matching phase endpoints from this same run, not an earlier native-clock run. Inclusive segment/scope parents are never added to their exclusive step children.",
+    "The fixed diagnostic store and exit dump add work. The segment residual also contains observation and metadata-copy overhead, so it is not a pure scheduler cost.",
+    "Phase markers are stderr receipt times bridged through QPC; delivery latency is unknown. Full event containment supports phase assignment, not exact producer-side print timestamps.",
+    "No new compilation, model run or network occurred during this independent evidence review/publication; canonical product code was not edited."
+  ],
+  "records": {
+    "facts": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/facts.json",
+      "bytes": 24977,
+      "sha256": "1e0fff3aa233aa5653146c51563613d4bae86422608960ed19bcb0aef4d1a6b7"
+    },
+    "memo": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/memo.json",
+      "bytes": 3271,
+      "sha256": "bd3effd86bc5bb2219456e86ad626c8303cf3784f3016d0b2b70c62e8c36c780"
+    },
+    "analysis_script": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/analyze.py",
+      "bytes": 10675,
+      "sha256": "16804dbea529d47425686923c87e1b558eb6bd97671b834e13bbdda03d84c2c3"
+    },
+    "source_patch": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/source.patch",
+      "bytes": 11655,
+      "sha256": "7b6c5ac2b26b332fd18d0a625d4f69c9c66b7d194a326e9ca1f0cf10866029a4"
+    },
+    "source_pins": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/source-pins.json",
+      "bytes": 834,
+      "sha256": "3e8b77fde5540e5316bc7b08442b0d92fe05c8afa30bc6c2f144e0b4dd81b1db"
+    },
+    "raw_stderr": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/run/stderr.log",
+      "bytes": 4181315,
+      "sha256": "3af0a1a00ab4efa3f54d6fa4a1bcf58ba4b18684eb11cd6f65c8572341b6c627"
+    },
+    "actual_dependencies": {
+      "path": ".scratch/inference-cpu-shared-pool-20261026/graph-submission-diagnostic1/compile/actual-dependencies.json",
+      "bytes": 83416,
+      "sha256": "77a530bd563dbb726ee485f1f4e5b75add2ac16b5ed3b4df7c372a84afcadfe3"
+    }
+  },
+  "archive": {
+    "path": "docs/evidence/performance/inference-cpu-graph-submission-attribution-2026-10-26.zip",
+    "bytes": 252279,
+    "sha256": "2dcf58a6d4b038af0644267068d6fb9c039b811d8fc507753f650e3e451c969e",
+    "members": 30,
+    "CRC_verified": true,
+    "all_member_SHA256_verified": true,
+    "member_manifest": "member-pins.json",
+    "binary_model_SDK_payload_included": false
+  }
+}

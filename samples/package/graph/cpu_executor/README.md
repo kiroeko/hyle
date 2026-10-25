@@ -6,12 +6,16 @@ acquire a product dependency on Sched. It runs RMS normalization and a gated MLP
 using the ordinary CPU route and its supported mature programs with the same executor.
 
 The sample explicitly keeps `native_threads = 1`. That is the independent
-ggml budget per prepared Invocation; ggml submits its complete program as one
+ggml budget shared by one Provider Context; ggml submits its complete program as one
 executor task. Scheduler concurrency does not create ggml workers. Native
 and oneDNN work may split through the borrowed executor. ATen uses its
 separate shared runtime; configuring its threads requires the explicit
 startup `compute::cpu::configure_runtime_threads` API. None of these settings
 is a process-wide thread quota or automatic performance policy.
+
+An empty `DefaultContextOptions::executor` runs on the caller thread; it can be
+combined with `native_threads > 1` without adding a Scheduler adapter. This
+sample deliberately demonstrates execution on application-owned workers.
 
 ```powershell
 cmake -S samples/package/graph/cpu_executor -B <build-dir> -G Ninja `

@@ -55,7 +55,7 @@ struct DefaultContextOptions final {
   // executor; ggml dispatches one complete program through it.
   ParallelExecutorRef executor{};
   // ggml's independent native budget, including the submitting thread. A
-  // value above one explicitly prepares persistent workers per invocation.
+  // value above one prepares a persistent team shared by the provider Context.
   // The borrowed executor's concurrency never implicitly creates such a pool.
   std::uint32_t native_threads = 1;
 };
