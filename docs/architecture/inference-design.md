@@ -311,6 +311,12 @@ ledger 冷期值拥有同一政策，完成阶段记录 stopped，观察阶段�
 发布前拒绝，不能在 finish 首次复制配置。[host 与 CPU 旅程](../evidence/correctness/inference-request-stop-policy-2026-10-25.json)
 已检查这些边界；MTP 目前只接受默认停止合同。
 
+普通随机请求在开始 turn、前缀查找、恢复及等待窗口接纳前，用实际剩余输出证明整轮 RNG 地址可用；
+只读原 live head、原 ledger 末提交或新请求 initial cursor，不预占地址，也不另存可推进的游标。
+新请求不能借用缓存发布者的低游标；state-only 不消费，最后 pending 不另消费。raw Text 没有整轮
+额度，仍在实际 episode／输入变更前证明本次一个 draw。[有限 CPU 旅程](../evidence/correctness/inference-turn-sampling-budget-2026-10-25.json)
+已覆盖早拒、同请求重试、完整命中、后续轮、淘汰恢复及 MAX 边界；不代签 GPU 或 MTP。
+
 `OutputDelivery` 只借用原有界输出记录，保存成功交付的绝对前缀游标；重复或较旧的确认
 不重复推进。它既不观察模型 commit，也不拥有第二队列；模型 turn 完成后仍可保留最终
 未交付输出。owner 先核 request key，再用当前记录的实际长度计算 credit，不能采信晚事件

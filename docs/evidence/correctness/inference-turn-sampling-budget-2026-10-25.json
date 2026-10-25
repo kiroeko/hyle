@@ -1,0 +1,153 @@
+{
+  "status": "FINITE_ACTUAL_ORDINARY_CPU_PASS",
+  "date": "2026-10-25",
+  "base_commit": "b5650705ae2f59c66975570a6626ae201b5fa8ed",
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 495181,
+      "sha256": "c7fa995914c3258cef15cf05352d72db56579f184893b077ee7fd3eccbc0b3eb"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 20377,
+      "sha256": "17687960fc69304cb1f53b1a293cd618a87efb23d5b06f51532ee12e6d556a4f"
+    },
+    {
+      "path": "tests/tools/qwen_sampling_budget_case.h",
+      "bytes": 13610,
+      "sha256": "851897f1314a540da56e88de6c96688ebde835b240ee600a240ad9ed491c2857"
+    }
+  ],
+  "changes": {
+    "scope": "Model-local ordinary random turn admission and raw Text output preflight; no math, Graph, lease, retirement, precision or mutable cursor owner changes",
+    "interface": "qwen35::preflight_generation_sampling(const Model&,const GenerationRequest&)",
+    "placement": [
+      "prepare_generation_call before begin_turn/bind/input",
+      "restore_generation_session before lookup/rebuild",
+      "finite waiting owner before eviction/restore/begin/Window.admitted",
+      "raw Text EmitNext advanced(1) in original full member preflight, before exact-family/StepState/carrier/input"
+    ],
+    "cursor_authority": [
+      "live idle head",
+      "otherwise committed original ledger.last.after",
+      "otherwise initial_sampling, never cached publisher"
+    ],
+    "before_begin": "Read immutable current turn quota, rather than stale previous turn_output_begin; started turns use remaining_outputs. O(1), no new allocation."
+  },
+  "execution": {
+    "attempts": [
+      {
+        "attempt": "app1",
+        "compile": {
+          "exit": 0,
+          "seconds": 30.312000000005355,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.2179999999934807,
+          "timeout": false
+        },
+        "run": {
+          "exit": 1,
+          "seconds": 0.28099999998812564,
+          "timeout": false
+        }
+      },
+      {
+        "attempt": "app2",
+        "compile": {
+          "exit": 0,
+          "seconds": 29.812999999994645,
+          "timeout": false
+        },
+        "link": {
+          "exit": 0,
+          "seconds": 1.4839999999967404,
+          "timeout": false
+        },
+        "run": {
+          "exit": 0,
+          "seconds": 0.26500000001396984,
+          "timeout": false
+        }
+      }
+    ],
+    "result": {
+      "status": "PASS",
+      "backend": "cpu",
+      "ordinary": true,
+      "initial_rejection_atomic": true,
+      "same_request_cursor_retry": true,
+      "MAX_minus_1_quota_1": true,
+      "full_hit_request_cursor": true,
+      "later_head_budget": true,
+      "evicted_ledger_budget": true,
+      "state_only_no_draw": true,
+      "raw_draw_preflight": true,
+      "greedy_unchanged": true,
+      "pending_only_single_consumption": true,
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": 0
+    },
+    "retained_common_inputs": 129,
+    "total_link_inputs": 130,
+    "SDK_TUs": 0,
+    "core_TUs": 0,
+    "provider_TUs": 0,
+    "GPU": false,
+    "HTTP": 0
+  },
+  "first_failure": {
+    "status": "ACTUAL_CPU_TEST_ASSERTION_FAILURE",
+    "reason": "Second-turn pending-only input is an ordinary prefill, whose actual token is record.ids()[0], not generation-only pending_input. All original raw retained; numeric values were not changed.",
+    "failed_source": ".scratch\\inference-turn-sampling-budget-20261025\\app1\\failed-source\\tests\\tools\\qwen_sampling_budget_case.h",
+    "sha256": "31ee2e52cfa177cbc2230c61c73cc35efb56532e7e64bb13362ebb8305336a3d",
+    "run": "app1/run/process.json",
+    "product_main_unchanged": true
+  },
+  "correction": "Only helper assertion changed: pending-only later turn is prefill, so inspect actual record.ids()[0], not generation-only pending_input. Product main unchanged between both actual apps.",
+  "actual_dependencies": {
+    "actual": "app2/compile/repository-inputs.json",
+    "no_canonical_engine_or_tests_leak": true,
+    "first_attempt_verified_using_preserved_failed_helper": true,
+    "current_headers": [
+      {
+        "path": ".scratch/inference-turn-sampling-budget-20261025/source/engine/inference/sampling_graph.h",
+        "bytes": 18479,
+        "sha256": "ac43b9cb30ca502a0a614eb3d0869386333f19a54cdc264f1e9b70f2cebbb9ce"
+      },
+      {
+        "path": ".scratch/inference-turn-sampling-budget-20261025/source/engine/inference/request_progress.h",
+        "bytes": 12536,
+        "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+      },
+      {
+        "path": ".scratch/inference-turn-sampling-budget-20261025/source/engine/inference/request_stop_policy.h",
+        "bytes": 2117,
+        "sha256": "4ef583043217d86fa013f684b3f5a656f19adcd88a097658038d65c6cddf06ae"
+      },
+      {
+        "path": ".scratch/inference-turn-sampling-budget-20261025/source/engine/inference/retirement_observation.h",
+        "bytes": 942,
+        "sha256": "984af01e375f8d7f9b2b44862fd341b84928dac43f85b3c53c68d09e57c7fafe"
+      }
+    ]
+  },
+  "source_bridge": "Formal helper compiled in actual thin driver. Full lifecycle --sampling-budget dispatch source-adapted only, no CUDA-heavy TU rebuild or CTest run. CTest registration added under the existing CPU-route guard; CMake configure/CTest not run in this batch.",
+  "limits": [
+    "Cached untrained A/H64/FFN128/V64 CPU only",
+    "No pretrained/GPU certification or throughput claim",
+    "No MTP rerun; original MTP proof/order unchanged, greedy skips RNG bound",
+    "No actual native fault injection"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-turn-sampling-budget-2026-10-25.zip",
+    "bytes": 95758,
+    "sha256": "168909656e43959485bafd9d5c9913627a8013baaba571953a56e0f5668584f8",
+    "members": 51,
+    "contents": "Exact patch, finite thin consumer, original and corrected helper, actual source/link identities, commands and raw failure/pass. No binaries, model payload or SDK."
+  }
+}

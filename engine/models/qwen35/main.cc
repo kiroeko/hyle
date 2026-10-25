@@ -4147,6 +4147,10 @@ public:
           throw std::runtime_error("batch repeats a mutable session");
       for (auto id : request.ids) if (id < 0 || id >= vocabulary)
         throw std::runtime_error("token ID outside vocabulary");
+      // Raw Text callers have no turn quota. Still reject their actual draw
+      // before creating an episode, borrowing the carrier or writing inputs.
+      if (role == GraphRole::kText && completion == TextCompletion::kEmitNext && selected_sampler.enabled)
+        (void)session.head->sampling.advanced(1);
     }
     if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
         !find_family(requests.size(), tokens, role, false, completion, sampling_index))
@@ -4186,7 +4190,7 @@ public:
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
         for (const auto &member : step.members) {
-          (void)member.base->sampling.advanced(drafts_token(role) ? 3 : 1);
+          if (role != GraphRole::kText) (void)member.base->sampling.advanced(drafts_token(role) ? 3 : 1);
           for (std::size_t draw = 0; draw < 3; ++draw) {
             // Non-round roles bind three stable slots but consume only slot0.
             const auto identity = member.base->sampling.identity(drafts_token(role) ? draw : 0);
@@ -5496,6 +5500,45 @@ bool checkpoint_covers_generation_ledger(const cache::Checkpoint &checkpoint,
   return offset == last.after.length;
 }
 
+// Prove the whole remaining ordinary turn against its authoritative cursor.
+// This is admission arithmetic only: no RNG reservation or mutable copy. A new
+// prefix hit must start from this request, never from its cached publisher.
+void preflight_generation_sampling(const Model &model, const GenerationRequest &request) {
+  if (model.cache_plan.draft_cache ||
+      !model.sampling_configuration(request.sampling_index).configuration.enabled) return;
+  const auto &progress = request.progress;
+  std::size_t outputs = 0;
+  if (progress.turn_started()) outputs = progress.remaining_outputs();
+  else {
+    if (progress.generated.size() > progress.maximum_outputs())
+      throw std::runtime_error("request outputs exceed its prepared output limit");
+    const auto turns = progress.turns();
+    if (turns.empty()) outputs = progress.maximum_outputs() - progress.generated.size();
+    else {
+      if (progress.turn_index >= turns.size())
+        throw std::runtime_error("request turn is outside its prepared schedule");
+      outputs = turns[progress.turn_index].max_outputs;
+      if (outputs > progress.maximum_outputs() - progress.generated.size())
+        throw std::runtime_error("request turn exceeds its prepared output limit");
+    }
+  }
+  if (!outputs) return;
+  auto cursor = progress.initial_sampling;
+  if (request.session) {
+    if (!request.session->head || request.session->stopping || request.session->failed || request.session->pending)
+      throw std::runtime_error("ordinary sampling admission requires a live idle Session head");
+    cursor = request.session->head->sampling;
+  }
+  else if (request.ledger && request.ledger->committed_count) {
+    if (request.ledger->committed_count > request.ledger->records.size())
+      throw std::runtime_error("request recovery exceeds its original committed ledger");
+    cursor = request.ledger->records[request.ledger->committed_count - 1].after.sampling;
+  }
+  // Includes the prefill/full-hit output; the last pending token needs no
+  // additional draw. State-only chunks do not consume this checked budget.
+  (void)cursor.advanced(outputs);
+}
+
 // Only restore the original Session. Request progress, turn input/offset,
 // output delivery and its key remain with the serialized owner. In particular,
 // this function never begins a turn or observes/emits historical output again.
@@ -5516,6 +5559,7 @@ void restore_generation_session(Model &model, GenerationRequest &request,
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
   if (model.sampling_index(*request.ledger) != request.sampling_index)
     throw std::runtime_error("request recovery sampling differs from its committed ledger");
+  preflight_generation_sampling(model, request);
   if (model.active_step || model.carrier_borrowed)
     throw std::runtime_error("request recovery requires the original idle execution carrier");
   const auto &ledger = *request.ledger;
@@ -5599,6 +5643,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
   if (steps != request.progress.output_limit())
     throw std::runtime_error("generation call quota differs from its prepared request turn");
+  preflight_generation_sampling(model, request);
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
   if (request.progress.turn_done) throw std::runtime_error("MTP request has already completed");
   if (request.ledger && request.round_emitted.size() < steps - 1)
@@ -6269,6 +6314,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   while (completed != requests.size()) {
     while (const auto next = window.waiting_front()) {
       const auto index = next->slot; auto &request = requests[index];
+      preflight_generation_sampling(model, request);
       request.admission_start = Clock::now();
       if (!request.session) {
         // Earlier new requests in this wave have no head until prepare below.

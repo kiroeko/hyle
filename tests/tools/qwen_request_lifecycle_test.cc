@@ -11,6 +11,7 @@
 #include "qwen_midturn_resume_case.h"
 #include "qwen_participant_failure_case.h"
 #include "qwen_request_stop_case.h"
+#include "qwen_sampling_budget_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
@@ -74,8 +75,9 @@ int main(int argc,char **argv){
   const bool midturn=argc>1 && std::string_view(argv[1])=="--midturn-resume";
   const bool participant_failure=argc>1 && std::string_view(argv[1])=="--participant-failure";
   const bool stop_policy=argc>1 && std::string_view(argv[1])=="--stop-policies";
-  const int argument=(chunked||dual||sampling||turn_context||retirement||midturn||participant_failure||stop_policy)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies] [prepared_input_directory]");
+  const bool sampling_budget=argc>1 && std::string_view(argv[1])=="--sampling-budget";
+  const int argument=(chunked||dual||sampling||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget] [prepared_input_directory]");
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment();
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set HYLE_QWEN_REQUEST_INPUTS\n";return 77;}
   const std::filesystem::path input=input_directory;
@@ -87,6 +89,7 @@ int main(int argc,char **argv){
   if(midturn)return qwen_midturn_resume_case::run(input);
   if(participant_failure)return qwen_participant_failure_case::run(input);
   if(stop_policy)return qwen_request_stop_case::run(input);
+  if(sampling_budget)return qwen_sampling_budget_case::run(input);
   const auto geometry=q::read_weight_geometry(input/"weights.tsv");
   const auto prompt=q::read_ids(input/"prompt.ids",geometry.vocabulary,192);require(prompt.size()==154,"expected original P154 prompt");
   const auto plan=q::cache::plan(geometry,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
