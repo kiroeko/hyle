@@ -27,6 +27,10 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 `engine/inference`，模型数学及实际状态布局留在模型目录。复用现有 Graph／Compute，
 不另造 IR、执行器、通用 registry 或第二份端口表。
 
+`SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
+它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，
+模型适配器保证完整状态，原状态池管理物理版本。三个容量与寿命不同，不合成第二套缓存所有者。
+
 模型给出数学，Graph 根据真实能力冷选 Provider 和等价融合。模型驱动无需逐算子指定
 实现；新增后端融合不应要求修改请求循环。共享机制也不能反向依赖 Qwen 的字段或平台宏。
 

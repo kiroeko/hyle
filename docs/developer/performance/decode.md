@@ -73,6 +73,8 @@ Hyle 的 66 次 decode 在 `prepare_replay` 累计 107.037ms，该范围内实�
 
 该候选把每次 T2 的两段 hybrid 合成一段 captured，但实际录制／复用总计是 32／100→21／45，并非简单减半：原先十次只需重录其中一段，合并后须重录整段。没有新 API trace，不能据范围数推导原生 launch 数或断言退化根因。两臂 dedicated／shared VRAM 峰分别相同；单次 RAM 差不作节省结论。保留原 F32 路线，停止补样或扩展正式对照；源码、首个私有测试编译错误及全部样本均保留。
 
+[M2 同输入双原权重投影候选](../../evidence/performance/mtp-m2-two-original-weight-pair-screen-2026-10-25.json)也已关闭、未合入。原 BF16 A／W／Y、F32 累加下，复用既有归约主体同时计算 gate／up；两臂 direct 和首次 captured 结果均先通过独立固定数值门，再测五次交错叶图。每图 64 对投影，节点 128→64，耗时中位 116.224→118.992µs／对（+2.38%），范围重叠；两份输出相对 Lt 有 13／12 个 BF16 位差，不声称位级等价。四对 bank 共192MiB，A 为原 prefill trace 首两行，未测当前 verifier 输入或完整消费者；停止追加样本，不从节点数推断 decode 收益。
+
 自然请求循环的单成员桶现交给 `execute_generation_calls` 原有权威门禁检查，省去外层一次相同的全请求预算查询；多成员桶仍按原规则缩批。合并接口已严格检查，未开新吞吐窗口，不把少一次扫描换算为 tok/s。
 
 [绑定诊断](../../evidence/performance/mtp-capture-binding-diagnostics-2026-10-25.json)进一步分开两种重录：132 次范围决策中录制 32、复用 100；58 个已记录的首不等端口全部只改变同 backing 的 offset，hidden 出现至少三种地址组合，两份变体遇到淘汰后回访。另有两次 prepare 之间明确失效后重新录制，不能据相同指纹删除该边界。首次诊断溢出及一次修正均保留，修正版零溢出、全部非时间工作与基线一致；只细记各 Invocation 前 20 次准备，不把首不等端口当作全部差异，也未观测 native GraphExecUpdate 结果。

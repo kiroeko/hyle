@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace qwen35::benchmark {
+namespace hyle::inference {
 
 struct SessionCacheLimits {
   std::size_t max_sessions;
@@ -213,4 +213,4 @@ public:
   }
 };
 
-} // namespace qwen35::benchmark
+} // namespace hyle::inference

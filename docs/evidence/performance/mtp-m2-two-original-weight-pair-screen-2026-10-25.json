@@ -1,0 +1,428 @@
+{
+  "status": "CLOSED_NOT_MERGED",
+  "decision": "Numeric leaf gates passed, but candidate median pair latency is higher and sample ranges overlap. Stop after this one authorized leaf process.",
+  "scope": "One fixed M2/K2048/N6144 two-original-W leaf; no full FFN/SwiGLU, Model, provider admission, API/ABI or product mutation",
+  "actual_processes": {
+    "CUDA_compile_TUs": 1,
+    "host_compile_TUs": 1,
+    "links": 1,
+    "native_leaf_processes": 1,
+    "trials_per_arm": 5,
+    "pair_banks": 4,
+    "Model_processes": 0,
+    "profilers": 0,
+    "SDK_builds": 0,
+    "HTTP": 0
+  },
+  "source_pins": {
+    "relative_repository_path": ".scratch/mtp-m2-pair-20261025/source-pins.json",
+    "bytes": 3269,
+    "sha256": "c4ac140ef7a70c9380402b6559ffd26b2ea301edc4f540ddd0c1303acc16f7bc"
+  },
+  "actual_compilation_sources": {
+    "relative_repository_path": ".scratch/mtp-m2-pair-20261025/actual-native-source-pins.json",
+    "bytes": 3345,
+    "sha256": "db8f76a58ee496ca628eaaddf6705e4ea60f39fb4381243d0f346087d5d3e585"
+  },
+  "plan": {
+    "relative_repository_path": ".scratch/mtp-m2-pair-20261025/plan.json",
+    "bytes": 17585,
+    "sha256": "7c812d337350a88391f193ce4869fb88478067d2de64ff33e79f130824a3cf15"
+  },
+  "hardware_toolchain": {
+    "relative_repository_path": ".scratch/mtp-m2-pair-20261025/toolchain.json",
+    "bytes": 1302,
+    "sha256": "599aa12bd3a52a98b35532f4fa50ad1229e818e78637c56e7a35ca2af27fdf69"
+  },
+  "original_inputs": {
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "roles": [
+      {
+        "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "source_file_bytes": 4548221488,
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1084498960,
+          "bytes": 25165824,
+          "sha256": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42"
+        }
+      },
+      {
+        "name": "model.language_model.layers.0.mlp.up_proj.weight",
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "source_file_bytes": 4548221488,
+        "range": {
+          "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+          "offset": 1109664784,
+          "bytes": 25165824,
+          "sha256": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e"
+        }
+      }
+    ],
+    "activation": {
+      "full_trace": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\candidate\\prefill\\07-post-attn-norm.bf16",
+        "bytes": 94208,
+        "sha256": "545902e287c560ae81cac441c679e73effaf13c9dd1b9f03824f803348989a4f"
+      },
+      "trace_shape": [
+        23,
+        2048
+      ],
+      "selected_shape": [
+        2,
+        2048
+      ],
+      "selected_byte_range": [
+        0,
+        8191
+      ],
+      "selected_sha256": "394e94f2aa1eddf2820e132cfb8615de3a1b54fd80f64571207446bd9811df0a",
+      "role": "Actual original BF16 model layer0 post_attention_layernorm output, directly consumed by both gate/up projections.",
+      "limitation": "Retained T23 prefill first2 rows, not freshly captured current T2 verifier activations. Leaf exploration cannot claim current model/decode performance.",
+      "trace_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\ffn-slice\\01-main.cc",
+        "bytes": 31390,
+        "sha256": "819d99e2cffb5cc54a10c9360f94356be56c6add2545c235d5b7581b0f803fed"
+      },
+      "trace_summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\compute-execution-refactor-2026-10-18\\qwen35-layer0-probe\\summary.json",
+        "bytes": 4183,
+        "sha256": "62fd14c5ce68cb6111501902936575714dfd29d3bb0d688959c99ea6310b85bf"
+      }
+    },
+    "build_verification": {
+      "state": "PASS",
+      "bounded_original_role_bytes_hashed": 50331648,
+      "selected_activation_bytes": 8192,
+      "full_model_hash_claimed": false
+    }
+  },
+  "math": {
+    "inputs_weights_outputs": "BF16 A/W0/W1/Y0/Y1",
+    "dot_accumulators": "F32",
+    "oracle": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\m2-wide-leaf\\m2_wide_leaf.cc",
+        "bytes": 15148,
+        "sha256": "b89e18d56690e16847339ed62ea35d60d1cff1261b9f632fd5d908b417c9d718"
+      },
+      "block_sha256": "8977332cf5451954859f3c3498fd734a991f59fc0dfa216def4071ecc6534e56",
+      "new_block_sha256": "8977332cf5451954859f3c3498fd734a991f59fc0dfa216def4071ecc6534e56",
+      "normalized_source_text_equal": true,
+      "hash_normalization": "UTF8 source text with newline normalization; original math operators and interval constants unchanged",
+      "per_choice_outputs": 24576,
+      "per_original_role_outputs": 12288,
+      "formula": "Independent F64 dot + original fixed gamma(2K+4) F32/FTZ bound + outward BF16 RNE endpoints; no baseline oracle/tolerance tuning.",
+      "calls": "same independent helper separately for W0 and W1; no baseline-output oracle/tolerance adjustment",
+      "domain": "Original finite normal/zero BF16 operands; bounded F32 partials and finite non-subnormal BF16 final interval, as original oracle"
+    },
+    "direct_and_captured_checks_each_before_any_timing": true,
+    "distinct_values_per_role": 12288,
+    "roles": 2,
+    "baseline_vs_candidate_BF16_different": [
+      13,
+      12
+    ],
+    "bitwise_equal_claimed": false,
+    "new_tolerance_or_oracle_used": false,
+    "max_absolute_error": null,
+    "max_absolute_error_reason": "Original unchanged oracle reports pass/fail intervals only, not maximum error."
+  },
+  "numeric_sequence_correction": {
+    "before": {
+      "relative_repository_path": ".scratch/mtp-m2-pair-20261025/before-pretime-numeric/pins.json",
+      "bytes": 1161,
+      "sha256": "5bdf7b93ddafa40a567bb899e4c0774cc35c90f029b0d9789c9947c80eea1f17"
+    },
+    "after": {
+      "relative_repository_path": ".scratch/mtp-m2-pair-20261025/source-pins.json",
+      "bytes": 3269,
+      "sha256": "c4ac140ef7a70c9380402b6559ffd26b2ea301edc4f540ddd0c1303acc16f7bc"
+    },
+    "delta": {
+      "relative_repository_path": ".scratch/mtp-m2-pair-20261025/pretime-numeric.patch",
+      "bytes": 9176,
+      "sha256": "585ca888833b3f89c8135b9da5e480bd0297e6b1225e3699975068cd3b683e43"
+    },
+    "change": "First captured replay plus both-role readback now occurs before every timed trial. Adds one explicit untimed 64-pair graph replay per arm; five timed replays per arm unchanged.",
+    "oracle_text_normalized_equal": true
+  },
+  "results": {
+    "all_trials": [
+      {
+        "kind": "two_Lt_production_request1_M2",
+        "device_ms_per_pair": {
+          "all": [
+            0.12296000123023987,
+            0.11460799723863602,
+            0.11449600011110306,
+            0.12809599936008453,
+            0.11622399836778641
+          ],
+          "median": 0.11622399836778641,
+          "min": 0.11449600011110306,
+          "max": 0.12809599936008453
+        },
+        "host_ms_per_pair": {
+          "all": [
+            0.12325625,
+            0.116775,
+            0.114990625,
+            0.1284359375,
+            0.1164046875
+          ],
+          "median": 0.116775,
+          "min": 0.114990625,
+          "max": 0.1284359375
+        }
+      },
+      {
+        "kind": "paired_two_original_W_M2",
+        "device_ms_per_pair": {
+          "all": [
+            0.1276959925889969,
+            0.11715199798345566,
+            0.11168000102043152,
+            0.12547199428081512,
+            0.11899200081825256
+          ],
+          "median": 0.11899200081825256,
+          "min": 0.11168000102043152,
+          "max": 0.1276959925889969
+        },
+        "host_ms_per_pair": {
+          "all": [
+            0.12841875,
+            0.117971875,
+            0.1122,
+            0.125659375,
+            0.11925
+          ],
+          "median": 0.11925,
+          "min": 0.1122,
+          "max": 0.12841875
+        }
+      }
+    ],
+    "candidate_device_median_latency_change_percent": 2.3816100713614397,
+    "device_sample_ranges_overlap": true,
+    "same_trial_latency_change_percent": [
+      3.85165200989952,
+      2.2197410356299407,
+      -2.4594737702094305,
+      -2.048467627699435,
+      2.3816100713614397
+    ],
+    "baseline_graph_nodes": 128,
+    "candidate_graph_nodes": 64,
+    "raw": {
+      "passed": true,
+      "scope": "four-pair working-set leaf only; no model, PMU miss or full-decode claim",
+      "m": 2,
+      "k": 2048,
+      "n": 6144,
+      "outputs": 2,
+      "workspace_cap": 33554432,
+      "cublasLt_version": 130600,
+      "cublasLt_dll_path_known": false,
+      "pair_bank_count": 4,
+      "weight_working_set_bytes": 201326592,
+      "actual_L2_bytes": 37748736,
+      "pair_jobs_per_graph": 64,
+      "projections_per_pair": 2,
+      "trials": 5,
+      "oracle": "unchanged independent F64/fixed F32 FTZ gamma/BF16 RNE gate, separately for both original W",
+      "choices": [
+        {
+          "kind": "two_Lt_production_request1_M2",
+          "workspace_bytes": 0,
+          "captured_graph_nodes": 128,
+          "BF16_outputs_checked_per_role": 12288,
+          "BF16_values_different_from_baseline": [
+            0,
+            0
+          ],
+          "device_ms_per_pair": [
+            0.12296000123023987,
+            0.11460799723863602,
+            0.11449600011110306,
+            0.12809599936008453,
+            0.11622399836778641
+          ],
+          "host_ms_per_pair": [
+            0.12325625,
+            0.116775,
+            0.114990625,
+            0.1284359375,
+            0.1164046875
+          ],
+          "device_ms_median_per_pair": 0.11622399836778641
+        },
+        {
+          "kind": "paired_two_original_W_M2",
+          "workspace_bytes": 0,
+          "captured_graph_nodes": 64,
+          "BF16_outputs_checked_per_role": 12288,
+          "BF16_values_different_from_baseline": [
+            13,
+            12
+          ],
+          "device_ms_per_pair": [
+            0.1276959925889969,
+            0.11715199798345566,
+            0.11168000102043152,
+            0.12547199428081512,
+            0.11899200081825256
+          ],
+          "host_ms_per_pair": [
+            0.12841875,
+            0.117971875,
+            0.1122,
+            0.125659375,
+            0.11925
+          ],
+          "device_ms_median_per_pair": 0.11899200081825256
+        }
+      ],
+      "unchanged_request1_algorithm_key": [
+        21,
+        5,
+        1,
+        0,
+        0,
+        0,
+        19,
+        0,
+        0
+      ]
+    },
+    "process": {
+      "exit": 0,
+      "seconds": 0.5309999999881256,
+      "timeout": false
+    }
+  },
+  "warnings": {
+    "host": {
+      "msvc_warning_occurrences": {},
+      "original_stdout": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/host/stdout.log",
+        "bytes": 17,
+        "sha256": "8f8fe451250b425064664eef1bd73485cf2976c855eccd4fbe7f200c1032514c"
+      },
+      "original_stderr": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/host/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "native": {
+      "msvc_warning_occurrences": {
+        "C4819": 90
+      },
+      "original_stdout": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/native/stdout.log",
+        "bytes": 60,
+        "sha256": "0a6f97c6ea23c4b4a261d6622c97f222e357ee5c52f7787af75f5bb043a0d83b"
+      },
+      "original_stderr": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/native/stderr.log",
+        "bytes": 17800,
+        "sha256": "7ab48b257b675afcef5b4140356849e347a58a9d61c8eb7866d734bda3c63d08"
+      }
+    },
+    "link": {
+      "msvc_warning_occurrences": {},
+      "original_stdout": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/link/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original_stderr": {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "preparation_failures": [
+    {
+      "stage": "offline source preparation, before any build/run",
+      "detail": "First original/new helper text equality assertion differed at a newline slicing boundary. Slice boundary corrected; F64 oracle arithmetic/operators/constants unchanged and normalized source hash equal.",
+      "native_or_compile_failure": false
+    }
+  ],
+  "native_compile_or_runtime_failures": [],
+  "boundaries": [
+    "A is the retained real-model layer0 post-attention normalization first two prefill rows, not a freshly captured current verifier T2.",
+    "Four pair rotations are 192MiB bounded leaf copies and exceed twice actual 36MiB L2; no PMU/cache-miss/DRAM-saving claim.",
+    "cuBLASLt version is observed as 130600; loaded DLL absolute path is not established.",
+    "Independent original fixed F64/F32-FTZ/BF16-RNE interval oracle passes; 13 gate and 12 up outputs differ in BF16 bits from Lt.",
+    "Current Graph/provider/native pair eligibility remains M1/small-N; no capability/owner/capture/public ABI admission is implemented.",
+    "No Model IDs, continuation quality, end-to-end speed, or public capture/owner authority is certified.",
+    "Fewer graph nodes alone are not a performance result. Negative/overlapping leaf closes without further experiments."
+  ],
+  "cleanup": {
+    "state": "RECORDED_BINARIES_REMOVED",
+    "count": 4,
+    "logical_bytes": 1533885,
+    "files": [
+      {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/host/probe.obj",
+        "bytes": 385345,
+        "sha256": "18cc455b42435d76c1c9083521ac88aacd1703bb4c3a68452470976257f68add"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/native/pair.obj",
+        "bytes": 84557,
+        "sha256": "6d8d235932da7466113f3b0a2748833ab6980cb599ef6700a437c01a093aa7c4"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/link/paired-leaf.exe",
+        "bytes": 494592,
+        "sha256": "2bc7ba6bfdc4ca9488b17f1eca8c4aeb4a5f7e33aa77183fa2a8e82853a87a7c"
+      },
+      {
+        "relative_repository_path": ".scratch/mtp-m2-pair-20261025/link/paired-leaf.map",
+        "bytes": 569391,
+        "sha256": "54bb947e6689689d3f8fed0e4436b9277994654a6984935988b20219f7223c7e"
+      }
+    ],
+    "preserve": "All source, original inputs/weights, retained SDK/cache, commands, results and logs.",
+    "performed": true,
+    "original_sources_raw_oracles_and_shared_caches_preserved": true,
+    "combined_cleanup_logical_bytes": 144653020,
+    "physical_bytes_freed_unknown": true,
+    "archived_receipt": "root-cleanup/removed.json"
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-m2-two-original-weight-pair-screen-2026-10-25.zip",
+    "bytes": 88498,
+    "sha256": "08956983103aaf9960e956e0762dd938171c35067d2e6824a809e9767f940f39",
+    "entries": 52,
+    "CRC_verified": true,
+    "original_entries": 47,
+    "root_cleanup_members": 5
+  },
+  "root_review": {
+    "source_and_fixed_oracle_reviewed": true,
+    "direct_and_captured_numeric_before_timing": true,
+    "raw_five_trial_results_reviewed": true,
+    "decision": "Close without product integration, extra samples or Model profiling.",
+    "full_consumer_speedup_claimed": false
+  }
+}

@@ -176,7 +176,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   const std::array<std::size_t, 3> calls{128, 1, 1};
   model.prepare_family(calls);
   model.plan_execution(calls);
-  cb::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
+  hyle::inference::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
   auto session = model.create_session(calls);
   auto admission = directory.admit(0, 0, [](std::size_t) { return false; });
   require(admission.accepted(), "initial owner was not admitted");
@@ -288,8 +288,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           "blocked owner returned managed bytes before native retirement");
   const auto same_id = directory.admit(0, 0, [](std::size_t) { return true; });
   const auto other_id = directory.admit(1, 0, [](std::size_t) { return true; });
-  require(same_id.status == cb::CacheAdmissionStatus::kRetirementUnproven &&
-          other_id.status == cb::CacheAdmissionStatus::kRetirementUnproven,
+  require(same_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
+          other_id.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "resident limit1 readmitted a still-retiring owner or another owner");
   auto forbidden = model.page_inventory.keys[0].acquire(dirty_page);
   require(!forbidden && forbidden.error().IsUnavailable(),
@@ -444,7 +444,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   const auto logical_bytes = head_lease_bytes(*old_prefix, model);
   auto waiting = model.create_session(catchup_calls, old_prefix, catchup_role);
   auto idle = model.create_session(catchup_calls, old_prefix, catchup_role);
-  cb::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
+  hyle::inference::SessionCache directory({1, (std::numeric_limits<std::size_t>::max)()});
   require(directory.admit(0, 0, [](std::size_t) { return false; }).accepted(), "MTP owner admission failed");
   auto pin = directory.pin(0); require(static_cast<bool>(pin), "MTP owner pin failed");
   const auto pending = old_prefix->next_id;
@@ -516,8 +516,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
           model.snapshot_versions.live == 2 && model.carrier_borrowed && directory.retained_sessions() == 1 &&
           q::take(model.cache_budget.usage(model.execution.device())).live_bytes == native_pending_bytes,
           "dropping MTP Completion returned candidate, permissions or budget before retirement");
-  require(directory.admit(0, 0, [](std::size_t) { return true; }).status == cb::CacheAdmissionStatus::kRetirementUnproven &&
-          directory.admit(1, 0, [](std::size_t) { return true; }).status == cb::CacheAdmissionStatus::kRetirementUnproven,
+  require(directory.admit(0, 0, [](std::size_t) { return true; }).status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven &&
+          directory.admit(1, 0, [](std::size_t) { return true; }).status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven,
           "MTP retiring directory slot was readmitted");
   for (std::size_t i = 0; i < model.page_inventory.keys.size(); ++i)
     require(!model.page_inventory.keys[i].acquire(target_page) && !model.page_inventory.values[i].acquire(target_page),

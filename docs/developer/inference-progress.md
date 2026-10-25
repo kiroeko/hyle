@@ -1,10 +1,10 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 09:25（北京时间）。整体暂估 **41%**，当前阶段：cache 局部／跨 Model 总额共同约束、Kimi 原角色组件与 MTP 双投影候选。共享预算首批引擎接线、释放顺序修复及 Kimi 生成组件已合入；F32 TopK1 捕获候选因实测退化关闭。
+更新：2026-10-25 09:42（北京时间）。整体暂估 **41%**，当前阶段：cache 局部／跨 Model 总额共同约束、Kimi 原角色组件与 MTP 后续热点归因。Kimi 真实 router 已通过；F32 TopK1 与 M2 双投影两个性能候选均已关闭，未合入产品。
 百分比只表示本轮工作完成度，不是现有引擎的功能覆盖率；盘点后按实际缺项调整。
 本轮基线为 `c950466ec`，已提交并推送；上一轮 MTP 范围与结果保留在[工程说明](../implementation/inference-roadmap.md)及所属证据。
 已完成并归档：NF4 六输入驻留、MLX 普通绑定及有限组件、普通请求独立采样、MTP 逻辑调用及重建来源归因、共享预算基础门禁。
-此前还有原 F16 导入、整数暂存、分块 prefill、Kimi 异构状态及双 Model 寿命；共享预算的引擎接线仍待补。
+此前还有原 F16 导入、整数暂存、分块 prefill、Kimi 异构状态及双 Model 寿命；共享预算首批引擎接线已完成，cache 的两种限额仍待共同接线。
 单成员桶重复预算查询已移除，相关接口严格检查通过；尚未测吞吐收益。
 
 范围：单机、多系统，CPU／单 GPU／CPU＋GPU；基础普通推理、多会话、多请求／多任务。
@@ -28,7 +28,7 @@
     - GLM Pro 原组件短历史与真实 index 供给：100%
     - Kimi 普通异构状态提交与恢复组件：100%
     - Kimi 混合量化工作集原几何生成组件：100%
-    - Kimi 两制品原 payload 有限组件：约 10%
+    - Kimi 两制品原 payload 有限组件：约 20%
     - prefill／decode／上下文与状态：约 20%
     - 采样／停止／预算与错误边界：约 5%
     - 验证消费者输入边界与仅 pending 续轮：100%
@@ -47,7 +47,7 @@
     - 多 Model 的资源寿命与设备接纳：约 55%
     - 同预算多资源行的合计字节门禁：100%
     - 共用 scope 的权重／IO／Graph／caller 接线：100%
-    - cache 局部／跨 Model 总额共同门禁：约 10%
+    - cache 局部／跨 Model 总额共同门禁：约 15%
     - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
 - 架构复审、设计与调整：约 30%
@@ -73,9 +73,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| cache 两种限额共同约束 | 功能／架构 | 首批权重／IO／Graph／caller 接线及最终 host、双 Model CUDA 回归已通过并合入；正设计如何同时保留 cache 局部限额与跨 Model 总额，避免对同 backing 重复计账 | 约 10% |
-| Kimi 原角色组件 | 功能／基础推理 | 两制品 router／bias 四个精确范围共 25,697,280B 已取得，全部 206、同镜像 host、零重试；正准备真实路由与独立参考，专家范围尚待实际 IDs，不下载整模 | 约 10% |
-| MTP M2 双投影候选审查 | 性能／实现候选 | 检查 verifier 的 gate／up 能否沿既有双输出合同共享实际工作，保两份原权重、BF16 边界及 F32 累加；仅私有源码与最小可证伪方案，尚未编译或运行 | 约 8% |
+| cache 两种限额共同约束 | 功能／架构 | 正实现原 LeasePool／PagedArena 的冷重载和 cache 分配点，同时修原 reservation 转移后 metadata 分配器身份丢失；保留局部限额、同 backing 去重及实际释放后退费 | 约 15% |
+| Kimi 原角色组件 | 功能／基础推理 | 原 router／bias 已通过；所选48组原I64 shape也已核符。正获取实际Top16及必需静态角色的约1.09GB精确范围，随后核真实 dense 组件，不下载整模 | 约 20% |
+| MTP 后续热点取舍 | 性能／实现候选 | 双投影叶筛选因耗时中位增加、范围重叠而关闭；正结合既有 trace 和本地参考实现寻找其它机制，不追加该候选的样本 | 约 40% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -106,12 +106,14 @@
 | [GLM Pro 真实 index 短历史](../evidence/correctness/glm-pro-ordinary-short-history-real-index-2026-10-25.json) | 原 layer74 的 7 个角色供给 target77，CUDA 连续可见 1／2／3／4 行、完整状态提交、4 次 stale 及 11 个非法索引拒绝通过；74 上游输入及 76 hidden 是明确 fixture，不代表完整 78 层生成 |
 | [Kimi 普通异构状态](../evidence/correctness/kimi-ordinary-heterogeneous-state-2026-10-25.json) | 原几何、合成权重的 KDA→MLA CUDA 组件通过两会话／恢复分支、6 次完整提交、1 次取消候选、6 次 stale 拒绝与最终回收；Epoch 另有 CPU 实际回读。不是原权重或完整 Kimi 推理，后加 GPU 回读断言仅编译 |
 | [Kimi 混合量化工作集](../evidence/correctness/kimi-mixed-selected-working-set-2026-10-25.json) | 两制品不同 codec 的原几何生成组件通过：两代真实 Top16、七 bank、旧 reader、忙 slot 拒绝及绑定末项失败后旧绑定继续执行。772,352 个 BF16 精确值和 249,856 个非线性区间值通过；正式独立入口及原 GLM 消费者严格检查通过。原首轮 oracle 符号零失败保留；不是 publisher payload、完整模型或吞吐结论 |
+| [Kimi 原 router 前沿](../evidence/correctness/kimi-original-router-frontier-2026-10-25.json) | 两制品原 router／bias 已核逐字相同；生成 hidden 的两次 CUDA 提交通过独立参考，共检查1,792 logits、32 IDs及权重，1,791 logits保留非BF16网格信息。两次实际Top16相同；专家／静态原角色组件仍待完成，不签整模型或吞吐 |
 | [控制传输归因](../evidence/performance/inference-control-transfer-2026-10-25.json) | 既有 trace 的直接 H2D＋显式同步 API 约占普通／MTP warm 窗 0.528%／0.531%，尚未确认约 10% 差距主因 |
 | [整数暂存复用](../evidence/performance/inference-integer-scratch-reuse-2026-10-25.json) | 原 MTP 两轮行为检查的全部非时间字段相同；复用原 InputScratch／SmallVector，保留所有页与版本 owner。被计数子集原累计约 0.1071ms，不能解释 10% 余差；未开测速窗、不宣称 TPS 改善，合并新精度后仅严格语法检查 |
 | [MTP 逻辑调用归因](../evidence/performance/mtp-logical-call-attribution-2026-10-25.json) | 两端各一条新 trace，全部原非时间工作一致；Hyle 66 次 decode 的 replay CPU 范围合计 107.037ms、范围内 GPU union 为零。19 次实例化没有尝试 Update；13 次更新成功，没有实例化回退。优先追 seed／首录与显式失效，不将该时长当作可回收收益或新 TPS |
 | [MTP 重建来源归因](../evidence/performance/mtp-capture-seed-attribution-2026-10-25.json) | 627 事件、零溢出，全部非时间工作与原基线一致；19 次无 seed 分为 4 次首次、9 次第二变体填充、6 次显式清除后的首录，9 次中有 5 次也是清除后的重填。首轮未输出事件的仪器失败保留；本项不是吞吐结果 |
 | [MTP 原生重建存储复用](../evidence/performance/mtp-native-rebuild-seed-2026-10-25.json) | 原 host 合同及两轮行为通过，独立复审后合入；API 对照中实例化 19→13、成功更新 13→19，工作与输出相同。三对计时 decode 124.10→125.12 tok/s，所有范围重叠，吞吐收益未证实；dedicated／shared VRAM 峰各自相同，不刷新完整引擎对照。首个保留 seed 后又被重验清除的真实失败及修正保留 |
 | [MTP F32 TopK1 捕获筛选](../evidence/performance/mtp-f32-single-row-prepared-screen-2026-10-25.json) | 数值与捕获四项、原两轮行为通过；三对计时及两个内存进程工作相同，decode 124.754→123.441、综合 114.087→113.374 tok/s，候选关闭且未合入。两臂 dedicated／shared VRAM 峰分别相同；范围合并未换来实际 decode 提速，不替换完整参考对照 |
+| [MTP M2 双原权重投影筛选](../evidence/performance/mtp-m2-two-original-weight-pair-screen-2026-10-25.json) | 两臂 direct／captured 数值先通过，再测唯一叶进程五次交错试验；节点128→64，耗时116.224→118.992µs／对，范围重叠。候选关闭且未合入，没有新的整模型速度结论 |
 
 ## 最新完整性能对照
 

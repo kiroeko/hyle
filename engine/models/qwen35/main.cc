@@ -32,7 +32,7 @@
 
 #include "schedule.h"
 #include "session_schedule.h"
-#include "session_cache.h"
+#include "../../inference/session_cache.h"
 #include "session_state.h"
 #include "prefix_cache.h"
 #include "batch_schedule.h"
@@ -6560,13 +6560,13 @@ int qwen35::run(int argc, char **argv) {
     // Count/idle policy only. Actual shared arena and state-pool backings own
     // the byte reservations; charging this directory per Session would double
     // count shared pages and immutable snapshots.
-    qwen35::benchmark::SessionCache resident_cache({cache_slots, (std::numeric_limits<std::size_t>::max)()});
+    hyle::inference::SessionCache resident_cache({cache_slots, (std::numeric_limits<std::size_t>::max)()});
     // Destroy runs (and their real slots) before this directory and Model.
     auto prefix_cache = prefix_enabled ? std::make_unique<qwen35::cache::PrefixCache>(cache_slots) : nullptr;
     struct SessionRun {
       struct RecomputedDecision { std::size_t chunk; std::int32_t previous, actual; };
       std::shared_ptr<qwen35::Session> session;
-      qwen35::benchmark::SessionCache::Pin pin;
+      hyle::inference::SessionCache::Pin pin;
       std::vector<std::size_t> chunks;
       std::shared_ptr<qwen35::cache::ReplayHistory> history;
       std::vector<PhaseSummary> summaries;
@@ -6761,7 +6761,7 @@ int qwen35::run(int argc, char **argv) {
         return true;
       });
       if (!admission.accepted())
-        throw std::runtime_error(admission.status == qwen35::benchmark::CacheAdmissionStatus::kRetirementUnproven
+        throw std::runtime_error(admission.status == hyle::inference::CacheAdmissionStatus::kRetirementUnproven
             ? "session cache cannot prove retirement; the original owner remains charged"
             : "session cache admission exhausted; reduce --active-sequences or increase --max-sessions/--cache-bytes");
       run.pin = resident_cache.pin(s);

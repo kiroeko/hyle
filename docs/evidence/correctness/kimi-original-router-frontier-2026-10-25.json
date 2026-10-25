@@ -1,0 +1,652 @@
+{
+  "status": "PASS_AUTHENTIC_PUBLISHER_ROUTER_FRONTIER_ONLY",
+  "scope": "Source-bound authentic router+bias for selected Kimi23/24; generated BF16 hidden inputs, one shared CUDA Graph and two actual submissions. No selected-expert numerical operands acquired or executed.",
+  "source": {
+    "acquisition": {
+      "status": "FOUR_RANGES_TERMINAL_EXIT0_PAUSED_RESTORED",
+      "entry_command": [
+        "powershell",
+        "-File",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\fetch.ps1"
+      ],
+      "exec_command_exit": 0,
+      "exec_command_wall_seconds": 7.5598305,
+      "parts": [
+        {
+          "catalog": 23,
+          "role": "language_model.model.layers.1.block_sparse_moe.gate.weight",
+          "bytes": 12845056,
+          "budget_request_id": 14767,
+          "host": "hf-mirror.net",
+          "status": 206,
+          "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957"
+        },
+        {
+          "catalog": 23,
+          "role": "language_model.model.layers.1.block_sparse_moe.gate.e_score_correction_bias",
+          "bytes": 3584,
+          "budget_request_id": 14768,
+          "host": "hf-mirror.net",
+          "status": 206,
+          "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d"
+        },
+        {
+          "catalog": 24,
+          "role": "language_model.model.layers.1.block_sparse_moe.gate.weight",
+          "bytes": 12845056,
+          "budget_request_id": 14769,
+          "host": "hf-mirror.net",
+          "status": 206,
+          "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957"
+        },
+        {
+          "catalog": 24,
+          "role": "language_model.model.layers.1.block_sparse_moe.gate.e_score_correction_bias",
+          "bytes": 3584,
+          "budget_request_id": 14770,
+          "host": "hf-mirror.net",
+          "status": 206,
+          "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d"
+        }
+      ],
+      "actual_received_bytes": 25697280,
+      "attempt_count": 4,
+      "retry_count": 0,
+      "PAUSED_restored": true,
+      "PAUSED_sha256": "46ef59fa9ad46801deab59ce30d5ec14643a6e4aba7dffea939e5dfeda2ebea7",
+      "Phase2_fetched": false,
+      "GPU_started": false
+    },
+    "four_source_parts": [
+      {
+        "ordinal": 0,
+        "catalog_index": 23,
+        "role": "language_model.model.layers.1.block_sparse_moe.gate.weight",
+        "path": ".scratch/kimi-publisher-router-20261025/payload/catalog-23-router.bf16",
+        "dtype": "BF16",
+        "shape": [
+          896,
+          7168
+        ],
+        "range": [
+          1129720,
+          13974775
+        ],
+        "bytes": 12845056,
+        "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957",
+        "budget_request_id": 14767,
+        "response": {
+          "status": 206,
+          "final_url": "https://hf-mirror.net/amd/Kimi-K3-Quark-MXFP4-AttnFP8/resolve/398ecc22db3722ed6e416d22f8ddb491da32d566/model-00002-of-000096.safetensors",
+          "etag": "\"3d86ba7d7c097659eddad01c3669914e0cf498c681fcf7f58c07717b63570a04\"",
+          "content_range": "bytes 1129720-13974775/16353241336",
+          "content_length": "12845056",
+          "source_revision": null,
+          "content_encoding": null,
+          "bytes": 12845056,
+          "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957"
+        },
+        "whole_LFS_hash_verified": false
+      },
+      {
+        "ordinal": 1,
+        "catalog_index": 23,
+        "role": "language_model.model.layers.1.block_sparse_moe.gate.e_score_correction_bias",
+        "path": ".scratch/kimi-publisher-router-20261025/payload/catalog-23-bias.f32",
+        "dtype": "F32",
+        "shape": [
+          896
+        ],
+        "range": [
+          800632,
+          804215
+        ],
+        "bytes": 3584,
+        "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d",
+        "budget_request_id": 14768,
+        "response": {
+          "status": 206,
+          "final_url": "https://hf-mirror.net/amd/Kimi-K3-Quark-MXFP4-AttnFP8/resolve/398ecc22db3722ed6e416d22f8ddb491da32d566/model-00002-of-000096.safetensors",
+          "etag": "\"3d86ba7d7c097659eddad01c3669914e0cf498c681fcf7f58c07717b63570a04\"",
+          "content_range": "bytes 800632-804215/16353241336",
+          "content_length": "3584",
+          "source_revision": null,
+          "content_encoding": null,
+          "bytes": 3584,
+          "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d"
+        },
+        "whole_LFS_hash_verified": false
+      },
+      {
+        "ordinal": 2,
+        "catalog_index": 24,
+        "role": "language_model.model.layers.1.block_sparse_moe.gate.weight",
+        "path": ".scratch/kimi-publisher-router-20261025/payload/catalog-24-router.bf16",
+        "dtype": "BF16",
+        "shape": [
+          896,
+          7168
+        ],
+        "range": [
+          15030566528,
+          15043411583
+        ],
+        "bytes": 12845056,
+        "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957",
+        "budget_request_id": 14769,
+        "response": {
+          "status": 206,
+          "final_url": "https://hf-mirror.net/open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024/resolve/dabd12ab69bf9c71fd219bae4c49a34f00249bd2/quant-layer-001.safetensors",
+          "etag": "\"f6c33f1122aa29b6ff228a2edafc5f6a90b36b170a5e30b4c5fc5ba05c1443b6\"",
+          "content_range": "bytes 15030566528-15043411583/16297667200",
+          "content_length": "12845056",
+          "source_revision": null,
+          "content_encoding": null,
+          "bytes": 12845056,
+          "sha256": "25ebb27dfe797648f0d815f433fb2cf36f5617987bc2208e01d071588e79a957"
+        },
+        "whole_LFS_hash_verified": false
+      },
+      {
+        "ordinal": 3,
+        "catalog_index": 24,
+        "role": "language_model.model.layers.1.block_sparse_moe.gate.e_score_correction_bias",
+        "path": ".scratch/kimi-publisher-router-20261025/payload/catalog-24-bias.f32",
+        "dtype": "F32",
+        "shape": [
+          896
+        ],
+        "range": [
+          232418432,
+          232422015
+        ],
+        "bytes": 3584,
+        "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d",
+        "budget_request_id": 14770,
+        "response": {
+          "status": 206,
+          "final_url": "https://hf-mirror.net/open-inference/Kimi-K3-W4A8-K512-GPTQ-Mixed-Cal72-Seq1024/resolve/dabd12ab69bf9c71fd219bae4c49a34f00249bd2/quant-layer-001.safetensors",
+          "etag": "\"f6c33f1122aa29b6ff228a2edafc5f6a90b36b170a5e30b4c5fc5ba05c1443b6\"",
+          "content_range": "bytes 232418432-232422015/16297667200",
+          "content_length": "3584",
+          "source_revision": null,
+          "content_encoding": null,
+          "bytes": 3584,
+          "sha256": "853727cc546c18e82efe23f124519049f001feb3d429123876ba8ec5484e5a1d"
+        },
+        "whole_LFS_hash_verified": false
+      }
+    ],
+    "source_identities": [
+      {
+        "catalog_index": 23,
+        "source_total": 16353241336,
+        "ETag": "\"3d86ba7d7c097659eddad01c3669914e0cf498c681fcf7f58c07717b63570a04\"",
+        "header": {
+          "entry": "artifact/23/model-00002-of-000096.safetensors/header.json",
+          "bytes": 800624,
+          "sha256": "a16e187c26dc2869675e86f159b4b16e78fa76c668d655bdccd99b549df4b7f6",
+          "data_base": 800632
+        },
+        "archive": {
+          "path": "docs/evidence/research/quark-mxfp4-contract-2026-10-20.zip",
+          "bytes": 2552239,
+          "sha256": "fdcd57ba1b03dce500404d37167acd6eef9021617e3067ba23eedd0666ae1ede"
+        },
+        "publisher_manifest_whole_sha256": null,
+        "whole_source_hash_verified": false,
+        "identity_basis": "Previously pinned original response strong ETag+total and authenticated header/length; catalog23 original API repo/revision/file list or catalog24 publisher manifest total. No new API/tree fetch or claim."
+      },
+      {
+        "catalog_index": 24,
+        "source_total": 16297667200,
+        "ETag": "\"f6c33f1122aa29b6ff228a2edafc5f6a90b36b170a5e30b4c5fc5ba05c1443b6\"",
+        "header": {
+          "entry": "kimi/24/headers/quant-layer-001.safetensors/header.json",
+          "bytes": 1164408,
+          "sha256": "e3429eb8f76f23f8ec7dd3dff18429d3bfb524a1e2a8a0fe4f08145c01199ada",
+          "data_base": 1164416
+        },
+        "archive": {
+          "path": "docs/evidence/research/fixed-role-binding-2026-10-21.zip",
+          "bytes": 3235093,
+          "sha256": "afc43569ab74af8b94fbba9a1f93265e687498cbc943c92f43804d56533268fd"
+        },
+        "publisher_manifest_whole_sha256": "d22412733751f8b2c5bafa74cfce734afe23a05a31d5f64051e29b87e1822bde",
+        "whole_source_hash_verified": false,
+        "identity_basis": "Previously pinned original response strong ETag+total and authenticated header/length; catalog23 original API repo/revision/file list or catalog24 publisher manifest total. No new API/tree fetch or claim."
+      }
+    ],
+    "numeric_roles_identical_between_catalogs": true,
+    "original_complete_file_hash_verified": false,
+    "expert_body_bytes": 0,
+    "Phase2_bulk_fetched": false,
+    "weight_payloads_in_archive": false,
+    "weight_payloads_retained_in_cache": true
+  },
+  "oracle": {
+    "description": "All896 CUDA logits vs F64 with predeclared gamma_(K-1)*sumabs bound; sigmoid checked independently at validated actual F32 logits with abs<=2e-7; corrected scores exact F32 addition; TopK exact stable order from validated actual F32 corrected scores, normalized raw sigmoid weights abs<=2e-7. F64-final-round reference IDs are reported separately, not used to demand an unjustified F32 reduction order.",
+    "source": {
+      "path": ".scratch/kimi-publisher-router-20261025/prepare-oracle.py",
+      "bytes": 4262,
+      "sha256": "7e24387ea23e44cc209470a70c1bc36e8b2739c7023c89b1e273201f9dbcff00"
+    },
+    "manifest": {
+      "path": ".scratch/kimi-publisher-router-20261025/oracle/manifest.json",
+      "bytes": 9793,
+      "sha256": "507eb9c75b0675d18bf4adb2f47bb4489efb6707d900b8831309a652716ff633"
+    },
+    "F64_product_sum": true,
+    "generated_inputs": true,
+    "observed_top16_order_checked_from_validated_actual_F32_scores": true,
+    "descriptive_F64_final_round_IDs_are_not_a_required_reduction_order": true
+  },
+  "actual": {
+    "process": {
+      "exit": 0,
+      "seconds": 1.0780000000086147,
+      "timeout": false
+    },
+    "rows": [
+      {
+        "epoch": 0,
+        "status": "PASS_AUTHENTIC_ROUTER",
+        "source_catalogs": [
+          23,
+          24
+        ],
+        "input_generated": true,
+        "GPU_graph_submissions": 1,
+        "checked_logits": 896,
+        "checked_sigmoid": 896,
+        "checked_corrected": 896,
+        "checked_IDs": 16,
+        "checked_selected_probabilities": 16,
+        "checked_weights": 16,
+        "maximum_logit_absolute_error": 2.16998e-06,
+        "maximum_fraction_of_predeclared_dot_bound": 1.0372e-05,
+        "maximum_sigmoid_absolute_error": 5.96046e-08,
+        "maximum_normalized_weight_error": 7.45058e-09,
+        "actual_IDs": [
+          220,
+          210,
+          79,
+          156,
+          404,
+          593,
+          444,
+          305,
+          365,
+          731,
+          634,
+          250,
+          366,
+          260,
+          878,
+          619
+        ]
+      },
+      {
+        "epoch": 1,
+        "status": "PASS_AUTHENTIC_ROUTER",
+        "source_catalogs": [
+          23,
+          24
+        ],
+        "input_generated": true,
+        "GPU_graph_submissions": 1,
+        "checked_logits": 896,
+        "checked_sigmoid": 896,
+        "checked_corrected": 896,
+        "checked_IDs": 16,
+        "checked_selected_probabilities": 16,
+        "checked_weights": 16,
+        "maximum_logit_absolute_error": 1.83284e-06,
+        "maximum_fraction_of_predeclared_dot_bound": 1.2613e-05,
+        "maximum_sigmoid_absolute_error": 5.96046e-08,
+        "maximum_normalized_weight_error": 7.45058e-09,
+        "actual_IDs": [
+          220,
+          210,
+          79,
+          156,
+          404,
+          593,
+          444,
+          305,
+          365,
+          731,
+          634,
+          250,
+          366,
+          260,
+          878,
+          619
+        ]
+      },
+      {
+        "status": "PASS",
+        "catalog_numeric_roles_identical": true,
+        "GPU_graph_submissions": 2,
+        "old_reader_unchanged": true,
+        "expert_payloads_acquired": 0,
+        "full_model": false
+      }
+    ],
+    "F32_frontier_witness": {
+      "status": "ACTUAL_F32_FRONTIER_WITNESS_FROM_RETIRED_RAW_OUTPUTS",
+      "rows": [
+        {
+          "epoch": 0,
+          "actual_logit_pin": {
+            "path": ".scratch/kimi-publisher-router-20261025/actual-0/logits.f32",
+            "bytes": 3584,
+            "sha256": "7a5b70be0d20f1c0d4986d0573382e65f47b4bd57bd19baafaff7bc08b6cd7f4"
+          },
+          "count": 896,
+          "finite": 896,
+          "not_on_BF16_grid": 896,
+          "on_BF16_grid": 0,
+          "different_from_independent_F64_final_BF16": 896,
+          "actual_F32_maximum_absolute_error": 2.169981598854065e-06,
+          "hypothetical_BF16_final_maximum_absolute_error": 0.05981236696243286,
+          "actual_IDs": [
+            220,
+            210,
+            79,
+            156,
+            404,
+            593,
+            444,
+            305,
+            365,
+            731,
+            634,
+            250,
+            366,
+            260,
+            878,
+            619
+          ],
+          "F64_final_round_reference_IDs": [
+            220,
+            210,
+            79,
+            156,
+            404,
+            593,
+            444,
+            305,
+            365,
+            731,
+            634,
+            250,
+            366,
+            260,
+            878,
+            619
+          ],
+          "first_non_grid_witness": {
+            "index": 0,
+            "actual_F32": -9.962944030761719,
+            "actual_F32_bits": 3240060984,
+            "F64_reference": -9.96294379234314,
+            "hypothetical_BF16": -9.9375,
+            "BF16_code": 49439
+          }
+        },
+        {
+          "epoch": 1,
+          "actual_logit_pin": {
+            "path": ".scratch/kimi-publisher-router-20261025/actual-1/logits.f32",
+            "bytes": 3584,
+            "sha256": "8fb26b018d1613a7e9e4fdc81876798cf77bafe9f7c65e772f669be40f232fe8"
+          },
+          "count": 896,
+          "finite": 896,
+          "not_on_BF16_grid": 895,
+          "on_BF16_grid": 1,
+          "different_from_independent_F64_final_BF16": 895,
+          "actual_F32_maximum_absolute_error": 1.8328428268432617e-06,
+          "hypothetical_BF16_final_maximum_absolute_error": 0.05979079008102417,
+          "actual_IDs": [
+            220,
+            210,
+            79,
+            156,
+            404,
+            593,
+            444,
+            305,
+            365,
+            731,
+            634,
+            250,
+            366,
+            260,
+            878,
+            619
+          ],
+          "F64_final_round_reference_IDs": [
+            220,
+            210,
+            79,
+            156,
+            404,
+            593,
+            444,
+            305,
+            365,
+            731,
+            634,
+            250,
+            366,
+            260,
+            878,
+            619
+          ],
+          "first_non_grid_witness": {
+            "index": 0,
+            "actual_F32": -9.960426330566406,
+            "actual_F32_bits": 3240058344,
+            "F64_reference": -9.960426688194275,
+            "hypothetical_BF16": -9.9375,
+            "BF16_code": 49439
+          }
+        }
+      ],
+      "total_not_on_BF16_grid": 1791,
+      "interpretation": "Nonzero low16 F32 mantissa bits are measured evidence that these published logits were not universally narrowed to BF16 then widened. The conservative gamma7167 bound alone cannot establish that fact. This output witness does not certify every internal accumulation algorithm or upstream runtime bitwise equivalence.",
+      "independent_BF16_reference": "Scalar enumeration of neighboring mathematical BF16 values with nearest/even on the original F64 dot; no product BF16 converter.",
+      "GPU_rerun": false
+    },
+    "logits_checked": 1792,
+    "sigmoid_checked": 1792,
+    "corrected_scores_checked": 1792,
+    "IDs_checked": 32,
+    "selected_probabilities_checked": 32,
+    "normalized_weights_checked": 32,
+    "CUDA_contexts": 1,
+    "compiled_graphs": 1,
+    "completed_graph_submissions": 2,
+    "GPU_released": true,
+    "actual_ID_sets_equal": true
+  },
+  "closure": {
+    "status": "ACTUAL_ROUTER_ENTRY_COMPILED_LINKED_NOT_YET_EXECUTED",
+    "compile": {
+      "exit": 0,
+      "seconds": 2.64000000001397,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.6410000000032596,
+      "timeout": false
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\build1\\source\\router.cc",
+      "bytes": 12824,
+      "sha256": "b679b1b0a9ef8e9a34a184395d136479101782a377b89f3b2358982b197754a1"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\build1\\link\\router.exe",
+      "bytes": 140061696,
+      "sha256": "b01674e12217bca157da37801b6db271a84f5af3011b88bea710e3e14b3e8cd5"
+    },
+    "exact_link_replacements": [
+      {
+        "before": "C:\\public\\project-hyle\\hyle\\.scratch\\nf4-packed-contraction-20261025\\component3\\compile\\component.obj",
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\build1\\compile\\router.obj",
+          "bytes": 1784111,
+          "sha256": "7e1329840aaab2b6f7f74f26dba0383a395630468c3c5f5605ebc8bc6b33fd22"
+        }
+      },
+      {
+        "before": "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\budget\\budget.obj",
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\budget\\unit.obj",
+          "bytes": 243196,
+          "sha256": "4c434358cd6807490401d4c38b3cf0912ac93b99f84d4a6396988be16bd227b9"
+        }
+      },
+      {
+        "before": "C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\leases\\leases.obj",
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\lease-budget-deallocation-order-20261025\\implementation\\attempt1\\leases\\unit.obj",
+          "bytes": 446666,
+          "sha256": "97c3079899d4c9cf599bfbaa6693f4e178e568c0a7a8b1e8a9247fee5a94e3fd"
+        }
+      }
+    ],
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\kimi-publisher-router-20261025\\build1\\source-pins.json",
+      "bytes": 12281,
+      "sha256": "ca8aa64ea7fb577d666d78388a7f47656372ded3029e3fd33aa6a759851ab481"
+    },
+    "GPU_started": false,
+    "SDK_rebuilt": false
+  },
+  "execution_accounting": {
+    "download_attempts": 4,
+    "received_body_bytes": 25697280,
+    "automatic_retries": 0,
+    "successful_GPU_processes": 1,
+    "failed_GPU_processes": 0,
+    "new_entry_TUs": 1,
+    "CUDA_kernel_or_SDK_rebuilds": 0,
+    "profilers": 0,
+    "throughput_measurement": false,
+    "PAUSED_restored": true
+  },
+  "preparation_notes": [
+    "The first orchestrator JavaScript tool wrapper had an unmatched parenthesis and executed no command/network/process.",
+    "The first offline BF16-grid analysis Python source missed a space in an else expression; it failed before reading data and was corrected. No CUDA or math/oracle bound was changed.",
+    "The four-range fetch ran through the retained guarded budget helper and exact source identity checks. Its tool execution returned exit0/7.5598s; fetch-summary records this as an exec_command result, not a fabricated native process supervisor log."
+  ],
+  "next_stage": {
+    "plan": {
+      "path": ".scratch/kimi-publisher-router-20261025/phase2-derived-plan.json",
+      "bytes": 240798,
+      "sha256": "2ab5b4a501b2da92e40bc47cdea20b8bdb4c5234b913491d5755056e2c8fff2c"
+    },
+    "status": "UNAUTHORIZED_BULK_PLAN_ONLY",
+    "logical_roles": 257,
+    "exact_adjacent_ranges": 65,
+    "remaining_body_bytes": 1090010368,
+    "only_actual_16_ID_union": true,
+    "I64_shape_plan": {
+      "path": ".scratch/kimi-publisher-router-20261025/phase2-k512-shapes-only-plan.json",
+      "bytes": 30915,
+      "sha256": "70dcbea0be2bb82541be2a01a36c8b9335b8f86f6eaea2db53938c64d8dfa7ac"
+    },
+    "shape_only_bytes": 768
+  },
+  "limits": [
+    "This is an authentic original numerical router frontier, not the original expert/shared/latent component or complete93-layer Kimi model.",
+    "The two artifacts have byte-identical router+bias payloads; one Graph covers this shared numerical content after both source identities and byte equality were independently verified.",
+    "Two generated hidden inputs happen to select the same original16IDs. No input/seed search, ID overwrite, alternate-expert prefetch or false changing-selection claim.",
+    "The worst-case gamma7167 dot bound is conservative. Measured F32-vs-F64 maximum errors and1791/1792 non-BF16-grid outputs are separate observations; they do not certify all internal accumulation paths or upstream bitwise equality.",
+    "No expert/bulk Phase2 download, full-file LFS verification, task quality, tokenizer/server, MTP, backend matrix, VRAM peak or TPS claim."
+  ],
+  "cleanup": {
+    "performed": true,
+    "files": [
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/build1/compile/router.obj",
+        "bytes": 1784111,
+        "sha256": "7e1329840aaab2b6f7f74f26dba0383a395630468c3c5f5605ebc8bc6b33fd22"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/build1/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/build1/link/router.exe",
+        "bytes": 140061696,
+        "sha256": "b01674e12217bca157da37801b6db271a84f5af3011b88bea710e3e14b3e8cd5"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/build1/link/router.exp",
+        "bytes": 24984,
+        "sha256": "46302adfa0e069e555a0634429f06d4130c6fc17e2b097a2a65489dc3c5ef96c"
+      },
+      {
+        "path": ".scratch/kimi-publisher-router-20261025/build1/link/router.lib",
+        "bytes": 41560,
+        "sha256": "3237dacf4d99a44f228e8152c371102063b7b8511605985cc3ac3773ff02c4e3"
+      }
+    ],
+    "logical_bytes": 143119135,
+    "scope": "Only the new router entry/image/link products and private DLL hardlink; original baseline/DLL, reused SDK/5NF4leaves/new2coreOBJ, actual payloads and all source/raw/oracles retained.",
+    "state": "RECORDED_BINARIES_REMOVED",
+    "original_sources_raw_oracles_and_shared_caches_preserved": true,
+    "combined_cleanup_logical_bytes": 144653020,
+    "physical_bytes_freed_unknown": true,
+    "archived_receipt": "root-cleanup/removed.json"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/kimi-original-router-frontier-2026-10-25.zip",
+    "bytes": 273437,
+    "sha256": "cc68448f0a07913123e76377884b82e9139a20cc2e8ee5ecb46e8dc3786ca75b",
+    "CRC_verified": true,
+    "payload_count": 118,
+    "logical_path_references": 119,
+    "payload_resolution": "proof-payloads.json/source-payload-aliases.json",
+    "original_payload_count": 113,
+    "root_cleanup_members": 5
+  },
+  "root_review": {
+    "source_and_independent_oracle_reviewed": true,
+    "source_configs_confirm_sigmoid_normalize_and_routed_scale_1": true,
+    "archive_member_hashes_CRC_verified": true,
+    "next_range_review": {
+      "plan": {
+        "bytes": 240798,
+        "sha256": "2ab5b4a501b2da92e40bc47cdea20b8bdb4c5234b913491d5755056e2c8fff2c"
+      },
+      "shape_plan": {
+        "bytes": 30915,
+        "sha256": "70dcbea0be2bb82541be2a01a36c8b9335b8f86f6eaea2db53938c64d8dfa7ac"
+      },
+      "source_headers_independently_authenticated": true,
+      "exact_contiguous_required_byte_coverage": true,
+      "unrelated_gap_bytes": 0,
+      "original_selected_expert_count": 16,
+      "logical_roles": 257,
+      "bulk_payload_bytes": 1090010368,
+      "preliminary_I64_shape_bytes": 768,
+      "preliminary_I64_shape_roles": 48,
+      "scope": "Offline range review only; no new download, GPU run, dense numeric reference or full-model claim."
+    },
+    "closure_snapshot_note": "closure and source.acquisition are retained pre-run/fetch snapshots, including their original GPU_started=false. actual.process and actual.rows record the later terminal CUDA run.",
+    "publication_scope": "Original numerical router frontier only. No selected-expert payload, full model, task quality or performance claim."
+  }
+}

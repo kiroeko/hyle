@@ -92,6 +92,8 @@ Q27／Q24共用attention、M2 head、K1接受／修复／12成员发布与纯数
 
 模型接入需声明完整续算状态，缓存目录、预算、COW、租约与退休机制共用；不为每个模型、量化仓库或后端重写缓存管理器。同一状态族可以按真实几何参数化，新的状态数学或存储格式仍须补相应原语，不能由名称推断支持。固定来源与逐项锚点见[八模型状态审查](../evidence/research/model-state-integration-2026-10-21.json)，原制品接线的当前完成与剩余范围以[MTP有限清单](../evidence/research/mtp-artifact-scope-2026-10-23.json)为准。
 
+Kimi 两个所选混合量化制品的[原 router／bias 组件](../evidence/correctness/kimi-original-router-frontier-2026-10-25.json)已通过 CUDA 独立数值检查；两份角色逐字相同后复用同一图，输入仍为生成 hidden。实际 Top16 用于确定后续专家范围，不代表原专家组件、整模型或质量／吞吐已经通过。
+
 | 模型／状态族 | 同一快照须保留的内容 | 当前边界 |
 | --- | --- | --- |
 | 三个Qwen | 各attention层KV、各线性层conv历史／GDN状态、有效长度与位置 | Qwen3.5-2B已有完整分页状态和四会话淘汰重建；Q27／Q24原完整NextN／词表及六资源接受后续算已CPU／CUDA核，另接原末target63／91、全V verifier及target-conditioned缓存修复，12资源同Head发布；完整上游主干、初始历史及其它原制品仍保边界 |
