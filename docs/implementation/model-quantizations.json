@@ -2390,10 +2390,10 @@
       "config_url": "https://huggingface.co/unsloth/Qwen3.8-27B-unsloth-bnb-4bit/blob/8aa5f05d26b7205477066e1449e0af13f762a299/config.json",
       "notes": "do not equate NF4 to INT4/E2M1; ignored module list is part of artifact",
       "provider_coverage": {
-        "review": "all_original_states_typed_F16_import_and_finite_ordinary_target",
+        "review": "all_original_states_and_source_resident_F16_ordinary_components",
         "artifact_execution_verified": false,
-        "review_scope": "2026-10-25: all352 original QuantStates audited; complete original k_proj importer matches5242880 independent F16 values and ordinary M1/M2 projections. The common typed F16 target/loader passes finite untrained CPU/CUDA state, restore and retirement checks; these use different valid fixtures, not a cross-backend numeric comparison. No complete original27B execution or quality claim.",
-        "mapping_status": "Common cold importer and source-selected F16 activation/state execution are available as an expanded F16 functional fallback. NF4 packed resident contraction remains open.",
+        "review_scope": "2026-10-25: all352 original QuantStates audited; complete original k_proj cold decode matches5242880 independent F16 values. CPU/CUDA packed M1/M2 each match3072 original projection values. Source-retaining F16 target/loader passes finite untrained CPU/CUDA state, restore and retirement checks, with same-backend old output dumps unchanged. CPU C192 and CUDA C256 are different valid fixtures, not a cross-backend numeric comparison. No complete original27B execution or quality claim.",
+        "mapping_status": "Original six numeric operands remain in the shared weight bank; JSON is authenticated metadata and exact F32 offset is an operand. Existing Decode/View/MatMul planning selects a packed contraction or the original decomposition with actual workspace. No eager whole-bank F16 expansion; not every backend/row shape is claimed packed.",
         "required_format_domain": "All352 original QuantStates independently declare group64, nested256, F16 decode and nested F32; configured compute is independently F16. Each original shape/offset/JSON SHA is retained, not inferred from one group.",
         "ordinary_metadata_followup": {
           "evidence": "../evidence/correctness/nf4-original-cold-metadata-2026-10-25.json",
@@ -2435,6 +2435,23 @@
           "packed_resident": false,
           "decoder_private_storage_unknown": true,
           "whole_model_execution": false
+        },
+        "packed_ordinary_followup": {
+          "component_evidence": "../evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.json",
+          "consumer_evidence": "../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json",
+          "status": "PASS_SOURCE_RESIDENT_FINITE_ORDINARY_CPU_CUDA",
+          "original_kproj_shape": [1024, 5120],
+          "original_kproj_output_values_per_backend": 3072,
+          "source_numeric_operands": 6,
+          "whole_bank_preexpanded": false,
+          "CPU_default_plan": "P2 decomposed, T1 packed; original preferences unchanged",
+          "CUDA_default_plan": "P2 and T1 packed; no complete floating W intermediate in selected contraction",
+          "state_consumers": ["untrained_CPU_C192", "untrained_CUDA_C256"],
+          "same_backend_prior_output_files_equal": [22, 22],
+          "workspace_scope": "Actual whole Graph, including other operators; not NF4 private storage alone",
+          "Apple_Vulkan_packed": "Unsupported format rejected before lowerer arrays; original public decomposition remains available, not newly executed here",
+          "whole_model_execution": false,
+          "throughput_measured": false
         },
         "reachable_entry_points": [
           {

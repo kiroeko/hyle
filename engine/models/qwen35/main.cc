@@ -184,10 +184,12 @@ void auxiliaries(std::map<std::string, LoadedWeight> &bank, const std::string &b
                  std::initializer_list<std::string_view> allowed, std::string_view name) {
   // Recognized auxiliaries of another representation must not silently select
   // the first matching branch. Source inventory validation owns unknown names.
-  constexpr std::array<std::string_view, 11> known{
+  constexpr std::array<std::string_view, 16> known{
       ".qzeros", ".scales", ".g_idx", ".weight_scale", ".weight_shape",
       ".weight_global_scale", ".input_global_scale", ".weight_scale_2",
-      ".input_scale", ".weight_scale_inv", ".weight_zero_point"};
+      ".input_scale", ".weight_scale_inv", ".weight_zero_point",
+      ".weight.absmax", ".weight.nested_absmax", ".weight.nested_quant_map",
+      ".weight.nf4_offset", ".weight.quant_map"};
   for (const auto suffix : known) if (bank.contains(base + std::string(suffix)) &&
       std::ranges::find(allowed, suffix) == allowed.end())
     fail(name, "unexpected physical auxiliary " + base + std::string(suffix));
@@ -211,6 +213,8 @@ std::array<std::int64_t, 2> logical_shape(const ProjectionBinding &binding) {
       const auto d = value.weight->description.dimensions(); return {d[0], d[1]};
     } else if constexpr (std::is_same_v<Entry, GptqProjection>) {
       const auto d = value.codes->description.dimensions(); return {d[1], d[0] * 8};
+    } else if constexpr (std::is_same_v<Entry, Nf4Projection>) {
+      const auto d = value.original[0]->description.dimensions(); return {d[0], d[1] * 2};
     } else if constexpr (std::is_same_v<Entry, CtPackedProjection>) {
       const auto d = value.codes->description.dimensions(); return {d[0], d[1] * 8};
     } else if constexpr (std::is_same_v<Entry, ModelOptNvfp4Projection> ||
@@ -330,15 +334,20 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
     return ChannelTokenFp8Projection{&stored->tensor, &scales};
   }
   if (stored->codec == Codec::kNf4DoubleQuant) {
-    // Only the common cold importer may replace an authenticated raw group
-    // with this F16 fallback. The original source codec remains explicit.
-    detail::auxiliaries(bank, base, {}, name);
+    detail::auxiliaries(bank, base, {".weight.absmax", ".weight.nested_absmax",
+        ".weight.nested_quant_map", ".weight.nf4_offset", ".weight.quant_map"}, name);
     detail::fixed_group(*stored, 64, name);
-    const auto &decoded = stored->tensor.description;
-    if (!decoded.is_plain() || !decoded.is_dense() || decoded.rank() != 2 ||
-        decoded.data_type() != Type::kFloat16)
-      detail::fail(name, "NF4 principal requires completed cold F16 import");
-    return StoredProjection{&stored->tensor};
+    std::array<Tensor *, 6> original{&stored->tensor,
+        &detail::require(bank, name + ".absmax", name),
+        &detail::require(bank, name + ".nested_absmax", name),
+        &detail::require(bank, name + ".nested_quant_map", name),
+        &detail::require(bank, name + ".nf4_offset", name),
+        &detail::require(bank, name + ".quant_map", name)};
+    const ops::ArtifactWeightDecode decode{ops::WeightArtifactFormat::kNf4DoubleQuant, 64, Type::kFloat16};
+    std::array<detail::Desc, 6> descriptions;
+    for (std::size_t i = 0; i < original.size(); ++i) descriptions[i] = original[i]->description;
+    detail::validate(decode, descriptions, name);
+    return Nf4Projection{original, decode};
   }
   if (stored->codec != Codec::kDense && stored->codec != Codec::kUnspecified)
     detail::fail(name, "stored principal has an incompatible source codec");
@@ -396,6 +405,7 @@ std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile
     if (description.data_type() == hyle::compute::DataType::kFloat32) return "f32_weight_f32_inputs_f32_output";
     return "bf16_inputs_f32_output";
   }
+  if (std::holds_alternative<Nf4Projection>(binding)) return "nf4_double_quant_f16_projection_f32_logits";
   if (std::holds_alternative<GptqProjection>(binding)) return "gptq_f16_weight_to_bf16_projection_f32_logits";
   if (const auto *projection = std::get_if<CtPackedProjection>(&binding))
     return projection->decode.format == hyle::compute::model_ops::WeightArtifactFormat::kCompressedTensorsAsymmetric4
@@ -817,6 +827,20 @@ struct Recipe final {
         constexpr std::array<std::int32_t, 2> axes{1, 0};
         const auto rhs = one(take(c::View::permute(axes)), {original});
         return one(c::MatMul{}, {x, rhs}, dense_spec(Type::kBFloat16, dimensions));
+      } else if constexpr (std::is_same_v<P, Nf4Projection>) {
+        if (activation_type() != Type::kFloat16) throw std::runtime_error("NF4 source equation requires F16 activation");
+        PackedProjectionNodes nodes; nodes.count = 3;
+        const auto decoded = one(c::Operation::custom(projection.decode),
+            {operand(*projection.original[0]), operand(*projection.original[1]),
+             operand(*projection.original[2]), operand(*projection.original[3]),
+             operand(*projection.original[4]), operand(*projection.original[5])}, &nodes.chain[0]);
+        constexpr std::array<std::int32_t, 2> axes{1, 0};
+        const auto rhs = one(take(c::View::permute(axes)), {decoded}, &nodes.chain[1]);
+        dimensions.back() = spec(decoded).dimensions()[0];
+        const auto output = one(c::MatMul{.accumulation_type = Type::kFloat32}, {x, rhs},
+            dense_spec(Type::kFloat16, dimensions), &nodes.chain[2]);
+        packed_projection_nodes.push_back(nodes);
+        return output;
       } else if constexpr (std::is_same_v<P, GptqProjection>) {
         if (activation_type() != Type::kBFloat16) throw std::runtime_error("GPTQ source equation requires BF16 activation");
         const auto codes = operand(*projection.codes), zeros = operand(*projection.zeros);
@@ -958,7 +982,7 @@ struct Recipe final {
 // The latter has per-projection Invocation workspace and may use managed
 // provider temporaries; it does not replace the original constant weight bank.
 void report_packed_projections(const g::Graph &graph, const g::CompileReport &report,
-                               std::span<const PackedProjectionNodes> projections) {
+                               std::span<const PackedProjectionNodes> projections, std::size_t graph_workspace_bytes) {
   std::size_t packed = 0;
   for (const auto &projection : projections) {
     if (projection.count != 3 && projection.count != 4)
@@ -990,7 +1014,8 @@ void report_packed_projections(const g::Graph &graph, const g::CompileReport &re
   if (!projections.empty())
     std::cerr << "original_quantized_projections=" << projections.size()
               << " packed_contractions=" << packed
-              << " decomposed_projections=" << projections.size() - packed << '\n';
+              << " decomposed_projections=" << projections.size() - packed
+              << " graph_workspace_bytes=" << graph_workspace_bytes << '\n';
 }
 
 enum class GraphRole { kText, kVerify, kMtpPrefill, kMtpRound, kMtpCatchupRound,
@@ -1450,8 +1475,8 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
   if (roles.selected.empty() || roles.selected.size() > UINT32_MAX)
     throw std::runtime_error("invalid prepared physical role count");
   // Source groups borrow existing checkpoint/cache/run files. No stitched
-  // checkpoint or duplicate packed bank is created. NF4 is an explicit F16
-  // functional fallback below; its canonical bank is larger than source NF4.
+  // checkpoint or duplicate packed bank is created. NF4 keeps its six typed
+  // decoder operands; the ordinary cold planner decides contraction or decode.
   std::map<std::pair<std::filesystem::path, bool>, std::vector<std::size_t>> sources;
   std::array<std::size_t, 2> largest{}, largest_group{}, source_counts{}, domain_bytes{};
   std::set<std::string> fp8_roles, nf4_roles;
@@ -1643,18 +1668,23 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       inputs.ready[i] = take(backend.adopt_buffer(std::move(buffer)));
       copied_bytes = cache::add(copied_bytes, payloads[i].size());
     }
-    auto imported = take(import_nf4_weight(backend, role.nf4_state, inputs, domain));
-    Tensor tensor; tensor.description = imported.description; tensor.ready = std::move(imported.ready);
-    if (!weights.emplace(role.name, LoadedWeight{std::move(tensor), role.projection_codec, 64}).second)
-      throw std::runtime_error("duplicate selected NF4 projection: " + role.name);
+    (void)take(validate_nf4_decode_inputs(backend, role.nf4_state, inputs, domain));
+    constexpr std::array<std::string_view, 6> binding_suffixes{
+        "", ".absmax", ".nested_absmax", ".nested_quant_map", ".nf4_offset", ".quant_map"};
+    for (std::size_t i = 0; i < inputs.ready.size(); ++i) {
+      Tensor tensor; tensor.description = inputs.descriptions[i]; tensor.ready = std::move(inputs.ready[i]);
+      const auto name = role.name + std::string(binding_suffixes[i]);
+      if (!weights.emplace(name, LoadedWeight{std::move(tensor), i == 0 ? role.projection_codec :
+          prepared::ProjectionCodec::kUnspecified, i == 0 ? 64u : 0u}).second)
+        throw std::runtime_error("duplicate selected NF4 operand: " + name);
+    }
     loaded = cache::add(loaded, group_bytes);
     nf4_original_bytes = cache::add(nf4_original_bytes, group_bytes);
     nf4_input_copy_bytes = cache::add(nf4_input_copy_bytes, copied_bytes);
-    nf4_known_group_peak_bytes = (std::max)(nf4_known_group_peak_bytes,
-        cache::add(cache::add(group_bytes, copied_bytes), cache::add(imported.canonical_bytes, imported.graph_workspace_bytes)));
+    nf4_known_group_peak_bytes = (std::max)(nf4_known_group_peak_bytes, cache::add(group_bytes, copied_bytes));
     ++nf4_groups;
-  } // Each original packed group and its decode inputs retire before the next.
-  if (loaded != roles.bytes || weights.size() + fp8_groups + 5 * nf4_groups != roles.selected.size())
+  } // Original mappings retire here; the six owned numeric inputs remain resident.
+  if (loaded != roles.bytes || weights.size() + fp8_groups != roles.selected.size())
     throw std::runtime_error("selected model weight inventory differs");
   for (const auto &role : roles.selected) if (role.name.ends_with(".weight_shape")) {
     const auto principal_name = role.name.substr(0, role.name.rfind('.')) + ".weight_packed";
@@ -2144,11 +2174,11 @@ public:
         << physical_text_roles + physical_mtp_roles << " original_bytes=" << loading.bytes
         << " canonical_tensors=" << weights.size() << " canonical_bytes=" << canonical_weight_bytes
         << " groups=" << fp8_weight_groups << " temporary_group_peak_bytes=" << fp8_import_peak_bytes << '\n';
-    if (loading.nf4_groups) std::cerr << "nf4_cold_import groups=" << loading.nf4_groups
+    if (loading.nf4_groups) std::cerr << "nf4_source_operands groups=" << loading.nf4_groups
         << " original_group_bytes=" << loading.nf4_original_bytes << " canonical_bank_bytes=" << canonical_weight_bytes
         << " input_copy_bytes=" << loading.nf4_input_copy_bytes
         << " known_group_peak_bytes=" << loading.nf4_known_group_peak_bytes
-        << " decoder_private_storage_unknown=true packed_resident=false functional_F16_fallback=true\n";
+        << " source_operands_resident=true decode_precision=F16 selected_plan_reports_packed_or_decomposed=true\n";
     std::cerr << "weights_load_seconds=" << weight_load_seconds << '\n';
     if (cpu_ffn_layers) std::cerr << "weight_placement cpu_ffn_layers=" << cpu_ffn_layers
         << " original_host_weight_bytes=" << host_weight_bytes
@@ -2850,7 +2880,8 @@ public:
       child->compiled.executable = take(definition.compiled.executable.exact_variant(index));
       child->compiled.report = take(definition.compiled.report.exact_variant(index));
       record_execution_plan(child->compiled.report, assembly.constants);
-      report_packed_projections(definition.graph, child->compiled.report, r.packed_projection_nodes);
+      report_packed_projections(definition.graph, child->compiled.report, r.packed_projection_nodes,
+          child->compiled.executable.workspace_bytes());
       child->outputs.resize(child->compiled.executable.output_count());
       child->output_indices.resize(definition.specs.size());
       check(inference::prepare_outputs(child->compiled, child->outputs, child->output_indices));

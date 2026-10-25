@@ -1,0 +1,287 @@
+{
+  "status": "PASS_SOURCE_RETAINING_NF4_ORDINARY_CONSUMER",
+  "scope": "One existing ordinary Qwen target path with original six-operand NF4 binding, F16 activation/state profile, actual planner-selected packed/decomposed routes and original state/lease/retirement machinery. Both executed models are small untrained GA fixtures, not the original full27B artifact or a generation-quality test.",
+  "implementation": {
+    "changed_files": [
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 466866,
+        "sha256": "7ac7ae01c4b56632822689f2456fc46eed8f9003c7a7ba0e2ba852e647a18fca"
+      },
+      {
+        "path": "engine/models/qwen35/projection_binding.h",
+        "bytes": 2813,
+        "sha256": "0e2a06e7f6634f3b7bb05b820c418e0a93693c5b792627087f487c22c06f9e4c"
+      },
+      {
+        "path": "engine/models/qwen35/nf4_weight_import.h",
+        "bytes": 8024,
+        "sha256": "8532c00f881a6136c3586d0b9160ffc264e98d0faf3f886ed090e88a71c20e25"
+      },
+      {
+        "path": "engine/models/qwen35/prepare.py",
+        "bytes": 33483,
+        "sha256": "ed96b4c2e588089c0b3ed1208d8aa552dd54a66fdc2476e1bf03ea0ba5632f45"
+      },
+      {
+        "path": "tests/tooling/qwen_hf_roles_test.py",
+        "bytes": 29834,
+        "sha256": "676d98ee762b62e2ac3a47247f511fd96f9a52bc5a682eb8ca3d6ff301334acf"
+      }
+    ],
+    "private_actual_patch": {
+      "path": ".scratch/nf4-packed-contraction-20261025/consumer/consumer-changes.patch",
+      "bytes": 17292,
+      "sha256": "176b6601f2ab2108007289ab4d5673eee32db1e9da07ae0fbf8b8632b3da5a28"
+    },
+    "source_bank": "Same LoadedWeight map owns original codes, absmax, nested_absmax, nested_quant_map, exact F32 offset and quant_map; authenticated JSON remains metadata and source accounting only. No decoded full-bank cache/second loader.",
+    "cold_validation": "Single validate_nf4_decode_inputs checks authenticated JSON SHA/values, source shape, all real Ready leases/resource and exact F32 offset. Explicit standalone cold import delegates to it; source-retaining loader invokes it without Decode.",
+    "projection": "Nf4Projection borrows six stable Tensor children; same public Decode(F16)->transpose View->F32-accumulation F16 MatMul recipe. Engine constructs no private packed op and checks no provider names.",
+    "fallback": "Cold Graph selects contraction or original decomposition. Default CPU multirow policy remains unchanged. Its Graph workspace and provider-private unknown bounds are not hidden behind compressed source bytes.",
+    "retirement": "Original ColdResources/Backend/Graph domains retain the six source Ready owners and actual output leases until original terminal retirement; no additional state/resource executor."
+  },
+  "actual": {
+    "cpu": {
+      "status": "PASS",
+      "backend": "CPU",
+      "source": "untrained_tiny_GA_with_one_NF4_group",
+      "fixture_bytes": 186383,
+      "activation": "F16",
+      "GDN_history": "F16",
+      "GDN_recurrent": "F32",
+      "ordinary_ids": [
+        2,
+        45
+      ],
+      "actual_decode_replay_same_request": true,
+      "fresh_prefix_own_stream": true,
+      "old_snapshot_unchanged": true,
+      "sampling_draw": 2,
+      "cache_peak": 164917,
+      "full_original_model": false,
+      "source_operands_resident": true,
+      "resident_NF4_numeric_bytes": 3208,
+      "GPU_runs": 0
+    },
+    "cuda": {
+      "status": "PASS",
+      "backend": "CUDA",
+      "source": "untrained_tiny_GA_with_one_NF4_group",
+      "fixture_bytes": 211731,
+      "activation": "F16",
+      "GDN_history": "F16",
+      "GDN_recurrent": "F32",
+      "ordinary_ids": [
+        36,
+        8
+      ],
+      "actual_decode_replay_same_request": true,
+      "fresh_prefix_own_stream": true,
+      "old_snapshot_unchanged": true,
+      "sampling_draw": 2,
+      "cache_peak": 228741,
+      "full_original_model": false,
+      "source_operands_resident": true,
+      "resident_NF4_numeric_bytes": 3208,
+      "GPU_runs": 1
+    }
+  },
+  "actual_default_plans": {
+    "cpu": [
+      {
+        "projections": 1,
+        "packed": 0,
+        "decomposed": 1,
+        "whole_graph_workspace_bytes": 26508
+      },
+      {
+        "projections": 1,
+        "packed": 1,
+        "decomposed": 0,
+        "whole_graph_workspace_bytes": 14668
+      }
+    ],
+    "cuda": [
+      {
+        "projections": 1,
+        "packed": 1,
+        "decomposed": 0,
+        "whole_graph_workspace_bytes": 64512
+      },
+      {
+        "projections": 1,
+        "packed": 1,
+        "decomposed": 0,
+        "whole_graph_workspace_bytes": 55808
+      }
+    ]
+  },
+  "actual_weight_inventory": {
+    "resident_Tensors_per_fixture": 32,
+    "NF4_original_source_group_bytes": 3339,
+    "NF4_numeric_ready_bytes": 3208,
+    "generated_offset_bytes": 4,
+    "JSON_not_uploaded": true,
+    "CPU_source_fixture_bytes": 186383,
+    "CPU_resident_canonical_bank_bytes": 186252,
+    "CUDA_source_fixture_bytes": 211731,
+    "CUDA_resident_canonical_bank_bytes": 211600,
+    "group_known_mapping_plus_copy_bytes": 6547,
+    "source_group_fields_not_global_peak_measurement": true,
+    "full_original27B_canonical_packed_bank_estimate": null,
+    "full_model_memory_measured": false
+  },
+  "actual_state_and_sampling": {
+    "prefill_rows": 2,
+    "decode_rows": 1,
+    "same_request_pending_and_RNG_restore_replays_exact_state": true,
+    "new_request_prefix_own_stream_sampling": true,
+    "nonzero_GDN_history_and_recurrent": true,
+    "old_Snapshot_bytes_unchanged": true,
+    "actual_retirement_and_bounded_cache": true,
+    "state_types": "F16 activation/history/KV/hidden and F32 recurrent/gates/convolution",
+    "offline_same_geometry_old_cold_import_comparison": [
+      {
+        "backend": "cpu",
+        "old_folder": ".scratch/nf4-typed-profile-20261025/ga2/state-output",
+        "new_folder": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/cpu/state-output",
+        "old_files": 22,
+        "new_files": 22,
+        "common_files": 22,
+        "byte_identical_files": 22,
+        "different_files": [],
+        "only_old": [],
+        "only_new": [],
+        "scope": "Offline same-geometry comparison to earlier already-executed cold-F16 tiny outputs; no new run and no cross-device numerical comparison."
+      },
+      {
+        "backend": "cuda",
+        "old_folder": ".scratch/nf4-typed-profile-20261025/ga-cuda2/state-output",
+        "new_folder": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/cuda/state-output",
+        "old_files": 22,
+        "new_files": 22,
+        "common_files": 22,
+        "byte_identical_files": 22,
+        "different_files": [],
+        "only_old": [],
+        "only_new": [],
+        "scope": "Offline same-geometry comparison to earlier already-executed cold-F16 tiny outputs; no new run and no cross-device numerical comparison."
+      }
+    ],
+    "offline_file_pins": {
+      "path": ".scratch/nf4-packed-contraction-20261025/consumer/same-geometry-comparison-pins.json",
+      "bytes": 22045,
+      "sha256": "44c3b6c0ba3b481419dc1bab4d57ffc2000e72cb7937794775534aa99aa4aa3a"
+    },
+    "no_cross_device_numeric_comparison": true
+  },
+  "source_versions": {
+    "actual_private_main_sha256": "c67ad669a63849813eea526122dca843ea67196ccf64346d2459cb1933543c79",
+    "actual_baseline_main_sha256": "2da022c6a43b3d37f4ad85524a47933d386cfc89b77683a89aa2de399a99ef43",
+    "canonical_post_merge_main_sha256": "7ac7ae01c4b56632822689f2456fc46eed8f9003c7a7ba0e2ba852e647a18fca",
+    "canonical_merge_followup": {
+      "status": "NF4_LOCAL_PATCH_APPLIED_OVER_SAMPLING_CANDIDATE",
+      "sampling_main_sha256": "2a261e1a34f367128809c79154a1a96d91f2759b30346d7806994c5feca018bb",
+      "NF4_private_main_sha256": "c67ad669a63849813eea526122dca843ea67196ccf64346d2459cb1933543c79",
+      "combined_main_sha256": "7ac7ae01c4b56632822689f2456fc46eed8f9003c7a7ba0e2ba852e647a18fca",
+      "bytes": 466866,
+      "header_equivalence": "Both changed headers exactly equal their actual-run private sources after CRLF-to-LF normalization.",
+      "initial_post_apply_check": "Patch check and application succeeded. Initial post-apply raw header hash assertion failed because private headers had CRLF and canonical patch has LF; normalized source is identical. No reapplication or rollback occurred.",
+      "scope": "Only the three reviewed NF4 files differ from committed sampling implementation; combined source compilation remains separate."
+    },
+    "canonical_followup_strict": {
+      "status": "STRICT_NF4_SOURCE_OPERANDS_AND_SAMPLING_INTERFACE_PASS",
+      "source_files": 42,
+      "source_bytes": 782045,
+      "source_pins": "source-pins.json",
+      "process": "strict-final/process.json",
+      "scope": "Combined current source, CPU/CUDA consumer interface and canonical lifecycle/chunked/dual/sampling cases. Syntax only, no object/link, model/GPU run, SDK rebuild or CMake configure."
+    },
+    "followup_scope": "Canonical merged sampling+NF4 source passed CPU/CUDA lifecycle/chunked/dual/sampling interface strict syntax. No extra GPU inference after merging; changed header bodies equal actual-run private headers after newline normalization."
+  },
+  "metadata_receipt": {
+    "description": "Preparation is metadata-only; runtime consumer retains source operands and reports actual packed/decomposition/workspace; full artifact remains unverified.",
+    "source_pins": {
+      "path": ".scratch/nf4-packed-contraction-20261025/consumer/metadata-receipt/pins.json",
+      "bytes": 525,
+      "sha256": "316177ef4002762d4b5ec441a1fb320133eb29d6439c06c08b18e2423634385f"
+    },
+    "host_cases": 16,
+    "host_process": {
+      "exit": 0,
+      "seconds": 0.26500000001396984,
+      "timeout": false
+    }
+  },
+  "execution_accounting": {
+    "private_syntax_processes": 1,
+    "consumer_compile_TUs": 1,
+    "consumer_links": 1,
+    "actual_CPU_model_processes": 1,
+    "actual_CUDA_model_processes": 1,
+    "host_metadata_test_processes": 1,
+    "full_original_model_runs": 0,
+    "HTTP_requests": 0,
+    "SDK_rebuilds": 0,
+    "all_actual_processes_terminal": true,
+    "GPU_released": true
+  },
+  "boundaries": [
+    "CPU C192 and CUDA C256 are distinct original already-used tiny geometries; each is compared only with its own earlier fixture.",
+    "CPU P2 legitimately selects decomposition; packed source residency does not mean every backend/row shape executes a packed kernel.",
+    "CUDA P2/T1 real packed plans have no Graph dense-W intermediate, per the existing cold report check.",
+    "Opaque provider temporaries are not independently measured. Whole Graph workspace includes all GDN/attention work.",
+    "No MTP functionality, full27B execution, throughput, whole-model quality or all-backend completion claim.",
+    "The standalone F16 import API still exists, but this engine path does not eagerly create that decoded resident bank."
+  ],
+  "related_evidence": [
+    {
+      "path": "docs/evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.zip",
+      "sha256": "72c5a0c1a6c2914e7176d1651f98af8ff2e55ab10c0242ba526790b113de478b"
+    },
+    {
+      "path": "docs/evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.zip",
+      "sha256": "a000f80c35b0185bc67ab69331e3129a6afdc4fb9f38bf46c723b6ab7b93b913"
+    }
+  ],
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/compile/unit.obj",
+        "bytes": 14507029,
+        "sha256": "46e6e2ae6c5006f7b4c46d838fdf621ac269057d3a3a565c4dd3752f5086c184"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/link/ga.exe",
+        "bytes": 141199360,
+        "sha256": "e7286ccc24b21739d3d40eb4b087a93bebbe8e1610633252e54bbbc239e75efd"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/link/ga.exp",
+        "bytes": 24983,
+        "sha256": "a03e72621e7f91934597522b92244d259b81c8147577fcdfe0abf1b35104341e"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/link/ga.lib",
+        "bytes": 41208,
+        "sha256": "d1f093d80a37e145dfa545627348b70e9fae24991adfec4aac1bf329ad3d86e2"
+      },
+      {
+        "path": ".scratch/nf4-packed-contraction-20261025/consumer/ga1/link/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "logical_bytes": 156979364,
+    "scope": "Only this private consumer entry/image/hardlink. The five new low-level NF4 leaves and original SDK/clean baseline are excluded and remain reusable."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.zip",
+    "bytes": 827044,
+    "sha256": "7778f3f95fa9843b70c9a9ba2949b82e77ecf93b0e02e16b4259126fdbf4c523",
+    "CRC_verified": true,
+    "payloads": 199,
+    "path_mapping": ".scratch/nf4-packed-contraction-20261025/consumer/payload-manifest.json"
+  }
+}

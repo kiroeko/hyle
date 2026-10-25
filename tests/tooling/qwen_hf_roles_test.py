@@ -161,6 +161,9 @@ class OriginalHfRolesTest(unittest.TestCase):
         self.assertEqual(len(seen),345) # Each state is checked once, including unselected MTP.
         self.assertEqual(receipt['nf4_double_quant_policy']['compute_dtype'],'F16')
         self.assertIn('metadata preparation only',receipt['nf4_execution_scope'])
+        self.assertIn('retains six original NF4 operands',receipt['nf4_execution_scope'])
+        self.assertIn('cold planner selects',receipt['nf4_execution_scope'])
+        self.assertIn('reported workspace',receipt['nf4_execution_scope'])
         self.assertIn('full artifact execution is not verified',receipt['nf4_execution_scope'])
         ordinary=deepcopy(original);ordinary['roles']=[r for r in ordinary['roles']if not r['name'].startswith('mtp.')]
         _,plain=roles._prepare_role_records(ordinary,False,config,authenticate)

@@ -36,17 +36,14 @@ struct ImportedNf4Weight final {
   std::size_t canonical_bytes = 0, graph_workspace_bytes = 0;
 };
 
-// Exactly one explicit F16 decode on the selected original Backend. The IO
-// caller keeps its Backend until the import finishes and retains the returned
-// owner (or the same Backend) while using ready. There is no hidden CPU route,
-// hot decode, dense full-bank cache or permission promotion of source readers.
-inline hyle::Result<ImportedNf4Weight> import_nf4_weight(
-    hyle::inference::Backend &backend, const prepared::Nf4State &state,
+// The original metadata, typed operands and selected resource are validated
+// once during cold preparation. Both source-retaining projections and explicit
+// dense import use this same contract; this function performs no Decode.
+inline hyle::Result<hyle::compute::TensorDesc> validate_nf4_decode_inputs(
+    const hyle::inference::Backend &backend, const prepared::Nf4State &state,
     const Nf4DecodeInputs &inputs,
-    hyle::graph::StorageDomainId storage = hyle::graph::StorageDomainId{0},
-    const hyle::compute::ResourceBudget &budget = {}) noexcept {
+    hyle::graph::StorageDomainId storage = hyle::graph::StorageDomainId{0}) noexcept {
   namespace c = hyle::compute;
-  namespace g = hyle::graph;
   namespace inf = hyle::inference;
   try {
     if (inputs.original_json.empty() || inputs.original_json.size() > prepared::maximum_nf4_state_bytes ||
@@ -55,7 +52,6 @@ inline hyle::Result<ImportedNf4Weight> import_nf4_weight(
     prepared::validate_nf4_state_values(std::string_view(
         reinterpret_cast<const char *>(inputs.original_json.data()), inputs.original_json.size()), state);
     HYLE_ASSIGN_OR_RETURN(auto resource, backend.resource_for(storage));
-    HYLE_ASSIGN_OR_RETURN(auto owner, backend.storage_owner_for(resource));
     const c::model_ops::ArtifactWeightDecode decode{
         c::model_ops::WeightArtifactFormat::kNf4DoubleQuant, 64, c::DataType::kFloat16};
     std::array<c::TensorDesc, 1> inferred;
@@ -73,6 +69,33 @@ inline hyle::Result<ImportedNf4Weight> import_nf4_weight(
     HYLE_RETURN_IF_ERROR(backend.read(views[4].storage(), offset));
     if (std::bit_cast<std::uint32_t>(offset) != state.offset_f32_bits)
       return std::unexpected(hyle::Status::InvalidArgument("NF4 offset operand differs from original F32 bits"));
+    return inferred[0];
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(hyle::Status::ResourceExhausted("NF4 cold validation metadata allocation failed"));
+  } catch (const std::exception &) {
+    return std::unexpected(hyle::Status::InvalidArgument("invalid original NF4 decode metadata"));
+  }
+}
+
+// Exactly one explicit F16 decode on the selected original Backend. The IO
+// caller keeps its Backend until the import finishes and retains the returned
+// owner (or the same Backend) while using ready. There is no hidden CPU route,
+// hot decode, dense full-bank cache or permission promotion of source readers.
+inline hyle::Result<ImportedNf4Weight> import_nf4_weight(
+    hyle::inference::Backend &backend, const prepared::Nf4State &state,
+    const Nf4DecodeInputs &inputs,
+    hyle::graph::StorageDomainId storage = hyle::graph::StorageDomainId{0},
+    const hyle::compute::ResourceBudget &budget = {}) noexcept {
+  namespace c = hyle::compute;
+  namespace g = hyle::graph;
+  namespace inf = hyle::inference;
+  try {
+    HYLE_ASSIGN_OR_RETURN(auto description, validate_nf4_decode_inputs(backend, state, inputs, storage));
+    HYLE_ASSIGN_OR_RETURN(auto resource, backend.resource_for(storage));
+    HYLE_ASSIGN_OR_RETURN(auto owner, backend.storage_owner_for(resource));
+    const c::model_ops::ArtifactWeightDecode decode{
+        c::model_ops::WeightArtifactFormat::kNf4DoubleQuant, 64, c::DataType::kFloat16};
+    const std::array inferred{description};
     HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
     std::array<g::ValueId, 6> ports;
     std::array<g::ExternalResourceContract, 7> external;

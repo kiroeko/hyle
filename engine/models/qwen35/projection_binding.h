@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <map>
 #include <string>
@@ -26,6 +27,10 @@ struct CtPackedProjection final {
   Tensor *codes = nullptr, *zeros = nullptr, *scales = nullptr;
   hyle::compute::model_ops::ArtifactWeightDecode decode;
 };
+struct Nf4Projection final {
+  std::array<Tensor *, 6> original{};
+  hyle::compute::model_ops::ArtifactWeightDecode decode;
+};
 struct ModelOptNvfp4Projection final {
   Tensor *codes = nullptr, *scales = nullptr, *weight_global = nullptr, *input_global = nullptr;
 };
@@ -42,7 +47,7 @@ struct BlockFp8Projection final {
 struct ChannelTokenFp8Projection final { Tensor *codes = nullptr, *channel_scales = nullptr; };
 
 using ProjectionBinding = std::variant<StoredProjection, GptqProjection,
-    CtPackedProjection, ModelOptNvfp4Projection, LocalNvfp4Projection,
+    CtPackedProjection, Nf4Projection, ModelOptNvfp4Projection, LocalNvfp4Projection,
     BlockFp8Projection, ChannelTokenFp8Projection>;
 using ProjectionBindings = std::map<std::string, ProjectionBinding, std::less<>>;
 

@@ -1,9 +1,10 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 08:06（北京时间）。整体暂估 **33%**，当前阶段：NF4 驻留接线收尾、多会话遗漏复审与 MTP 图复用成本。
+更新：2026-10-25 08:17（北京时间）。整体暂估 **34%**，当前阶段：MLX 原量化接线、多 Model 资源接纳与 MTP 图复用成本。
 百分比只表示本轮工作完成度，不是现有引擎的功能覆盖率；盘点后按实际缺项调整。
 本轮基线为 `c950466ec`，已提交并推送；上一轮 MTP 范围与结果保留在[工程说明](../implementation/inference-roadmap.md)及所属证据。
-最近完成批次已推送：`d9f3b3227`（NF4 CPU／CUDA 压缩投影基础路径；此前含原 F16 导入、整数暂存、分块 prefill、Kimi 异构状态及双 Model 寿命）。
+最近完成批次已推送：`f8b56f186`（普通请求独立采样及 MTP 逻辑调用归因；此前含 NF4 压缩投影基础路径、原 F16 导入、整数暂存、分块 prefill、Kimi 异构状态及双 Model 寿命）。
+NF4 六输入驻留消费者已完成检查与归档，正在提交；不是完整 27B 推理或吞吐结论。
 
 范围：单机、多系统，CPU／单 GPU／CPU＋GPU；基础普通推理、多会话、多请求／多任务。
 实现重心在 Compute／Graph、状态与缓存、内存／资源寿命、调度／I/O 和共用推理原语。
@@ -14,12 +15,12 @@
 功能完成标准是当前硬件能实现、能检查的相关底层功能全部完成；新增缺项继续纳入。
 首批清单、代表样例或盘点完成都不作为功能穷尽完成。本轮性能查明普通／MTP 落后原因，寻找反超机会和更好的基础设计，CUDA 重点参考 TensorRT-LLM；不以只整理旧对照作为完成。
 
-- 功能盘点与补齐：约 43%
-  - 基础普通推理：约 49%
+- 功能盘点与补齐：约 44%
+  - 基础普通推理：约 50%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
-    - NF4 原压缩权重驻留投影：约 90%
-    - MLX affine 普通投影／embedding／head：0%
+    - NF4 原压缩权重驻留投影：100%
+    - MLX affine 普通投影／embedding／head：约 5%
     - CT asymmetric INT4 原投影角色与零点接线：100%
     - 解码／激活／计算／缓存精度合同：约 20%
     - DeepSeek 原 target 空／短历史与 SWA 阶段：100%
@@ -66,9 +67,9 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| NF4 压缩驻留投影 | 功能／基础推理 | 私有六输入驻留的 CPU／CUDA 小状态链已通过，默认 CPU P2 分解、T1 融合，CUDA 两者融合；正合并与归档，不代表完整 27B | 约 90% |
-| 多会话与资源遗漏复审 | 功能／架构 | 检查已完成请求机制之外的真实缓存、淘汰恢复及多 Model 接纳缺项；先核现有所有权与预算设施 | 约 5% |
-| MTP 图复用成本 | 性能／归因 | 已测到 replay 准备累计约 107ms；19 次实例化无 Update 尝试，13 次 Update 成功，正查首录／seed 资格与显式失效 | 约 25% |
+| MLX 原量化接线 | 功能／基础推理 | 已备原 4／8bit 投影与 embedding 所需的 63,232B 片段；先核线性、embedding 及 tied head 的精度合同，再复用既有算子接线 | 约 5% |
+| 多 Model 资源接纳 | 功能／架构 | 已发现独立预算不能限制合计占用，且部分直接 Buffer／文件导入未计账；正在确定真实字节的共用接纳切点，另修单成员桶重复预算检查 | 约 8% |
+| MTP 图复用成本 | 性能／归因 | 正查首录／seed 资格及显式失效；首轮诊断进程正常但未输出事件，保留为仪器失败，仅修诊断收尾后重采一次 | 约 25% |
 
 先形成可落实的缺项清单，再补功能、调整对应架构、验证性能候选。
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
@@ -87,8 +88,9 @@
 | [两个 Model 的寿命隔离](../evidence/correctness/qwen-dual-model-lifetime-2026-10-25.json) | 同一 CUDA 设备的独立 Backend／队列／资源通过：A 取消、退休、销毁后，B 已提交工作及新续算正常；两者实际共享 CUDA primary context。正式入口随后通过与新精度／暂存组合的严格语法检查，未重跑 GPU，不代表物理显存总额接纳、线程安全或并发吞吐 |
 | [普通请求独立采样](../evidence/correctness/ordinary-request-sampling-policies-2026-10-25.json) | 同 Model 三策略、N2／R2 六请求十二轮 CUDA 合成权重检查通过：30 输出、15 个真实 R2 桶、4 次 ledger 恢复；自然目录无命中，另外直接用真实 Snapshot 检查新请求前沿重选和历史 pending／RNG。host 检查弱身份、过期／foreign 及失败前置；正式入口仅严格语法检查，不是原权重、质量或吞吐结论 |
 | [Linux](../evidence/correctness/request-host-linux-portability-2026-10-25.json)／[macOS 主机原语检查](../evidence/correctness/request-host-macos-portability-2026-10-25.json) | WSL／GCC13、指定 Air／Apple Clang21 三套严格编译及运行通过；测试分配钩子修正后 Windows 两套复验通过；不是 Linux／Apple GPU 推理检查 |
-| [NF4 F16 导入与状态链](../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json) | 352 份原 state、完整 k_proj 的 524 万个解码值及原投影通过；未训练 CPU C192／CUDA C256 各自的 prefill、decode、恢复及退休通过，不作两几何跨平台数值对照。首 CUDA C192 受原生通道限制而拒绝，记录保留；完整 27B 未跑，冷 F16 展开估计约 50.1 GiB，压缩驻留未完成 |
+| [NF4 F16 导入与状态链](../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json) | 352 份原 state、完整 k_proj 的 524 万个解码值及原投影通过；未训练 CPU C192／CUDA C256 各自的 prefill、decode、恢复及退休通过，不作两几何跨平台数值对照。首 CUDA C192 受原生通道限制而拒绝，记录保留；完整 27B 未跑，约 50.1 GiB 是旧冷 F16 展开的估计，后续驻留方案见下项 |
 | [NF4 压缩投影基础路径](../evidence/correctness/nf4-packed-ordinary-cpu-cuda-2026-10-25.json) | 原 k_proj 的 CPU／CUDA 各 3,072 个 F16 输出逐位符合独立 reader，三节点融合且图中无完整 F16 权重；CPU M2 用既有 Prepared 合同选取，默认排序未变。正式小图两后端各一项通过，含 nested256 边界与修改 offset 后重算；不是完整模型、吞吐或 Apple／Vulkan 融合通过 |
+| [NF4 六输入驻留消费者](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json) | 同一 loader／Recipe 保留六个压缩输入，默认 CPU P2 分解、T1 融合，CUDA P2／T1 均融合；两后端小状态链各 22 个输出文件与各自旧冷展开结果逐字相同。合并逐请求采样后的正式接口严格检查通过；完整 27B、质量及吞吐未测 |
 | [CT asymmetric INT4 metadata](../evidence/correctness/ct-asymmetric-qwen-cold-metadata-2026-10-25.json)／[原投影](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json) | 同一原 loader／Recipe 的 28 角色、七组投影及 178,176 值通过 CPU 独立原值检查；M1 七组 packed，M2 按既有策略分解。不是完整 27B 或性能／其它原权重后端结果 |
 | [DeepSeek 普通短历史](../evidence/correctness/deepseek-ordinary-early-history-2026-10-25.json) | 原三层 target CUDA 组件通过空启动、ratio4／ratio128 首压缩及 SWA 回绕；给定 126 前缀不是实际执行前 126 行；旧 Flash／Pro 消费者仅语法检查 |
 | [GLM Pro 真实 index 短历史](../evidence/correctness/glm-pro-ordinary-short-history-real-index-2026-10-25.json) | 原 layer74 的 7 个角色供给 target77，CUDA 连续可见 1／2／3／4 行、完整状态提交、4 次 stale 及 11 个非法索引拒绝通过；74 上游输入及 76 hidden 是明确 fixture，不代表完整 78 层生成 |

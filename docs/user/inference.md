@@ -7,7 +7,7 @@ HYLE 正在由真实模型路径形成完整推理引擎，入口位于 `engine/
 CPU 入口的普通／MTP 短旅程已完整通过，缓存元数据计费已修复，见[检查记录](../evidence/correctness/qwen-mtp-cpu-layout-budget-2026-10-24.json)；已检查范围及各项边界见[推理工程范围](../implementation/inference-roadmap.md)。
 官方 BF16 及固定 GPTQ、NVFP4、Unsloth MTP GGUF Q4 制品已有完整模型短旅程；
 量化输入通过显式原角色清单借入文件范围，具体边界见[实现范围](../implementation/inference-roadmap.md)。这不代表可以直接加载任意量化模型目录。
-NF4 已接原量化状态校验、冷 F16 导入及 F16 激活／缓存路径，[完整原投影与小型状态链检查](../evidence/correctness/nf4-f16-profile-and-cold-import-2026-10-25.json)通过；完整 27B 模型未运行。目前会展开为 F16 常驻权重，该制品估计约 50.1 GiB，尚未接压缩 NF4 常驻投影，不能按 4bit 文件大小估算运行空间。
+NF4 已接原量化状态校验、F16 激活／缓存及六输入压缩权重驻留，[CPU／CUDA 有限状态链](../evidence/correctness/nf4-source-resident-ordinary-consumer-2026-10-25.json)通过；完整 27B 模型未运行。加载器不预先展开整库，实际计划会报告压缩融合、分解及 workspace；CPU 多行仍可能选择分解，不能仅按 4bit 文件大小估算运行空间。
 CT asymmetric INT4 已接原零点角色和同一加载／投影流程，[原 CPU 组件](../evidence/correctness/ct-asymmetric-qwen-original-projections-2026-10-25.json)的七组投影通过；完整 27B 模型及该原权重路径的其它后端尚未验证。
 
 目前使用准备后的本地权重清单和 token IDs，输出 JSON 中的生成 IDs 与计时。
