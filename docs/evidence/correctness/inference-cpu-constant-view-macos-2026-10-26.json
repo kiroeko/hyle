@@ -1,0 +1,212 @@
+{
+  "status": "PASS_FINITE_MACOS_CPU_NATIVE_GRAPH_VALIDATION",
+  "date": "2026-10-26",
+  "machine": {
+    "host": "MacBook Air Mac16,12",
+    "cpu": "Apple M4",
+    "logical_cpus": 10,
+    "memory_bytes": 17179869184,
+    "os": "macOS 27.0.1 (26A434)",
+    "toolchain": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "architecture": "arm64",
+    "workspace": "/Users/kiro/hyle-scratch/compute-unified",
+    "checkout": "Retained source snapshots; no Git HEAD/clean state claimed"
+  },
+  "scope": {
+    "current_products": [
+      "src/compute_ggml_runtime/cpu_execution.cc",
+      "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "src/graph_route_cpu/ggml_region.cc",
+      "src/compute/resource_budget.cc",
+      "src/compute/resource_leases.cc"
+    ],
+    "consumer": "One standalone own-main CPU consumer; no GoogleTest/shim/new test framework",
+    "native_threads": 4,
+    "executor": "existing default caller executor",
+    "compile": "5 products + 1 thin TU, clang++ C++23 O3 arm64, original native macros, -Werror",
+    "synchronization": {
+      "files": 19,
+      "source_bytes": 349979,
+      "archive_bytes": 90229,
+      "archive_sha256": "74f21a8836fecfe224650c478a70adce083192281fab526246961748084233c0"
+    },
+    "frozen_dependencies": "Retained pure-CPU Graph executable/archive, base SDK, native ggml ffa4e8b80930029a35991f94e7c8a93cd67730ab with recorded Hyle patches, and ATen/Accelerate. Not an entirely current macOS build.",
+    "SDK_native_model_builds": 0,
+    "HTTP_downloads": 0,
+    "performance_samples": 0
+  },
+  "results": {
+    "compile": [
+      {
+        "tag": "src/compute_ggml_runtime/cpu_execution.cc",
+        "pid": 20253,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.330445084
+      },
+      {
+        "tag": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+        "pid": 20254,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 1.582598709
+      },
+      {
+        "tag": "src/graph_route_cpu/ggml_region.cc",
+        "pid": 20258,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 1.1701720409999998
+      },
+      {
+        "tag": "src/compute/resource_budget.cc",
+        "pid": 20261,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.3211079160000001
+      },
+      {
+        "tag": "src/compute/resource_leases.cc",
+        "pid": 20263,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.6301006250000001
+      },
+      {
+        "tag": "consumer",
+        "pid": 20265,
+        "exit_code": 0,
+        "timed_out": false,
+        "seconds": 0.690179292
+      }
+    ],
+    "link": {
+      "tag": "link",
+      "pid": 20270,
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.14985020800000015
+    },
+    "run": {
+      "pid": 20281,
+      "exit_code": 0,
+      "timed_out": false,
+      "seconds": 0.785932041
+    },
+    "image": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/cpu-region-views-20261026/attempt1/consumer",
+      "bytes": 6638392,
+      "sha256": "5ca981d1d873e5b968b319a9bd28d369654cc3bc74a82ad3bf2b7015bf8a4b7a"
+    },
+    "submissions": 7,
+    "constant_View_bridge": {
+      "regions": 1,
+      "steps": 2,
+      "slots": 2,
+      "submissions": 2,
+      "packed_constant_count": 0,
+      "packed_constant_bytes": 0,
+      "members": [
+        "Neg",
+        "MatMul"
+      ],
+      "Graph_metadata_View_retained": true
+    },
+    "published_View_fence": {
+      "regions": 0,
+      "steps": 3,
+      "slots": 2,
+      "submissions": 2,
+      "published_alias_description_resource_handle_offset_unchanged": true
+    },
+    "control_View_fence": {
+      "regions": 0,
+      "steps": 3,
+      "slots": 2,
+      "submissions": 2
+    },
+    "per_node_BF16_store": {
+      "regions": 1,
+      "nodes": 2,
+      "submissions": 1,
+      "operations": "BF16(BF16(a+b)-a)",
+      "actual_bits": [
+        "0000",
+        "3c00"
+      ],
+      "omitted_intermediate_store_would_give": [
+        "3b80",
+        "3b80"
+      ]
+    },
+    "old_results_and_constant_weights_unchanged": true,
+    "actual_self_dependency_files": 124,
+    "current_LF_dependency_mismatches": [],
+    "first_failures": "None: first strict build, link and sole run all passed"
+  },
+  "limitations": [
+    "Two Invocation slots were submitted sequentially, not concurrently; no new reentrancy/Context-close/cancellation test.",
+    "Current resource_budget/resource_leases were compiled and linked; this consumer does not newly certify every quota/rollback/deallocation scenario.",
+    "Frozen Graph has older capture-seed invalidation and rejected-search diagnostics; no entirely current Graph/native/SDK or full-platform certification.",
+    "No model, original model payload, model quality, throughput, Apple GPU/Metal, CUDA or full macOS suite was run.",
+    "No SDK/native rebuild, download, complete source-tree copy, or cleanup was performed. Remote artifacts remain for root-managed cleanup."
+  ],
+  "provenance": {
+    "actual_source_pins": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/source-pins.json",
+      "bytes": 58238,
+      "sha256": "478c0884835ae98bdcdeb3c1d1606f6752d3b47fee2acf54a26efa2f50ffc248"
+    },
+    "actual_plan": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/actual/plan.json",
+      "bytes": 36914,
+      "sha256": "d635237478d69038910a0a0b78ea956d4f641dcf197404cbe24f7c5858cf53eb"
+    },
+    "actual_dependencies": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/actual/actual-dependencies.json",
+      "bytes": 72733,
+      "sha256": "a1b0d80dc38b097bcf8a04201a7ca1977d04c734e977a95c255735ee3180e60e"
+    },
+    "runtime": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/actual/runtime.json",
+      "bytes": 2208,
+      "sha256": "ad4c947e9d7a69a1d7e7e6dc99e00f47f20f4e8e0397820e2eb0aeb80f58f9f8"
+    },
+    "consumer": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/source/consumer.cc",
+      "bytes": 9020,
+      "sha256": "1a061471a533d0b3053a38e0771b6e686cef0ddc263429a10fa5f7e8f8dcde7e"
+    },
+    "region_product_patch": {
+      "path": ".scratch/inference-cpu-region-views-20261026/product.patch",
+      "bytes": 4100,
+      "sha256": "21d387bd8940e3f3c73a64379f1821f91c79a6d50b923fe6881ed8830f6b00b2"
+    },
+    "region_product_pins": {
+      "path": ".scratch/inference-cpu-region-views-20261026/product-pins.json",
+      "bytes": 816,
+      "sha256": "5fb8788b63d921d095378f25f24d78bcda3919e3b19f98cab7c1ecffb7e854e7"
+    }
+  },
+  "remote_artifacts": {
+    "manifest": {
+      "path": ".scratch/inference-cpu-region-views-20261026/mac-validation/remote-artifacts.json",
+      "bytes": 13512,
+      "sha256": "f0a4a232e9e5de16790e54b66408e064d6a01473e04e4791acccf60b3b59a157"
+    },
+    "files": 72,
+    "bytes": 9925862,
+    "binary_files": 7,
+    "binary_bytes": 7234192,
+    "deleted": false
+  },
+  "archive": {
+    "file": "inference-cpu-constant-view-macos-2026-10-26.zip",
+    "bytes": 170676,
+    "sha256": "4ffea179a248d741af17c254c347afad872bbb480e5a91cf4b825b7a2d3aed53",
+    "crc32": "c441f29a",
+    "members": 76,
+    "all_member_CRCs_verified": true,
+    "contents": "Only changed source/headers, consumer, actual commands/dependencies/pins/runtime/raw, frozen cache metadata, and reproduction scripts. No binaries/SDK/model."
+  }
+}

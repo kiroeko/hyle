@@ -1,0 +1,1103 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "decision": "ADOPTED_AS_RESOURCE_AND_PREFILL_OPTIMIZATION_NO_DECODE_GAIN_CLAIM",
+  "change": "Only CPU ggml region discovery: constant-root, no-effect/no-control, nonpublished View chains can connect discovery; Views are filtered out of native members and retain original Graph metadata, bindings and permissions.",
+  "source": {
+    "product": {
+      "status": "PRIVATE_FROZEN_UNCOMPILED",
+      "files": [
+        {
+          "path": "src/graph_route_cpu/ggml_region.cc",
+          "before": {
+            "bytes": 18477,
+            "sha256": "3f765811abae2e5df2790959d9cd54595b1bbefe2834176fe4585c126033ff37"
+          },
+          "after": {
+            "bytes": 21780,
+            "sha256": "5213250b4aea87eb2c43966a49500dc8a48138eb1ea949f217c6ad2863412d1a"
+          }
+        }
+      ],
+      "patch": {
+        "bytes": 4100,
+        "sha256": "21d387bd8940e3f3c73a64379f1821f91c79a6d50b923fe6881ed8830f6b00b2"
+      },
+      "canonical_unchanged": true,
+      "initial_LF_patch": {
+        "bytes": 4028,
+        "sha256": "1da059535629ddfa8f1dd1ebe737c62952a9a1d012750cfec70f4196c4b81231"
+      },
+      "patch_format": "Context and added lines retain source CRLF; source after SHA unchanged from all tests/screens."
+    },
+    "view_helper": {
+      "status": "PRIVATE_FROZEN_UNCOMPILED",
+      "path": "tests/graph_ggml_constant_view_test.h",
+      "after": {
+        "bytes": 7138,
+        "sha256": "44d46ef1eb0bcf7a663bf8a1b91ea2861b62fbe5ddef9dcb3542e7f45a1ca8a1"
+      },
+      "entry": "ggml_constant_view_test::exercise(context,resource)",
+      "modes": [
+        "constantWpermute bridge:one region covering exactly Neg+MatMul,originalView remainsGraphmetadata",
+        "publishedconstantView:originalroute+exactaliasmetadata",
+        "controlView:originalroute",
+        "dynamicinputView:originalroute"
+      ],
+      "journey": "Two invocations/separateoutputs,nonzerointegerBF16exactoracle,oldoutputandoriginalWunchanged;packedbytes0",
+      "not_claims": [
+        "No Model/joinedgraphcount/throughput result",
+        "Not the separateexactBF16roundingwitness"
+      ]
+    },
+    "BF16_helper": {
+      "status": "PRIVATE_FROZEN_UNCOMPILED",
+      "path": "tests/graph_ggml_bf16_store_test.h",
+      "after": {
+        "bytes": 3882,
+        "sha256": "fa7d3aeaa3491e67e0f08aa628cc8ea94c1b7c488e52a6ed4b7d76e81b317ee5"
+      },
+      "entry": "ggml_bf16_store_test::exercise()",
+      "files": [
+        {
+          "path": "tests/graph_ggml_bf16_store_test.h",
+          "before": null,
+          "after": {
+            "bytes": 3882,
+            "sha256": "fa7d3aeaa3491e67e0f08aa628cc8ea94c1b7c488e52a6ed4b7d76e81b317ee5"
+          }
+        }
+      ]
+    },
+    "independent_review": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\independent-review-sampling.json",
+      "bytes": 2993,
+      "sha256": "1716b6176cff5d3f56f26d534420e66ebf23993349fff8d10c3deb9d2f5bf352"
+    },
+    "stage_note": "The nested source freeze statuses and canonical_unchanged flags record the initial preparation stage. Final tested and integrated state is reported in correctness and integration; source hashes remained identical through validation and canonical application."
+  },
+  "identities": {
+    "H": {
+      "name": "caller217e_control",
+      "producer": "hyle",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\ready.json",
+        "bytes": 3084,
+        "sha256": "64cbc325158641a4d1db01a3c81e70425716572e52a8673f8bbb617fea6cda80"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\runtime.json",
+        "bytes": 8214,
+        "sha256": "f4f7af47be71b12230538bd2a4557101b2a2bb10330ed138b3f8c87045fbf5c0"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\link\\hyle.exe",
+        "bytes": 141483008,
+        "sha256": "217ed76d90430b3dd0eec6944ec0d257b2c80e26fe736f5349ac2ca32f42c39a"
+      },
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\link\\hyle.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+        "--backend",
+        "cpu",
+        "--capacity",
+        "256",
+        "--steps",
+        "16",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off",
+        "--sampling",
+        "greedy"
+      ],
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\behavior1\\stdout.log",
+        "bytes": 20401,
+        "sha256": "de95d7f63cb453d3515dc901f272b5af6d0151a051220525fe088a5c2ed5a900"
+      }
+    },
+    "C": {
+      "name": "constant_View_region_candidate",
+      "producer": "hyle",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\ready.json",
+        "bytes": 108574,
+        "sha256": "5a395149dbbb00253d99cbd324f9a2bfecdbb5c1da44bbc2eea89f835f106ac0"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\runtime.json",
+        "bytes": 8214,
+        "sha256": "f4f7af47be71b12230538bd2a4557101b2a2bb10330ed138b3f8c87045fbf5c0"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\link-model\\model.exe",
+        "bytes": 141488640,
+        "sha256": "7e53ba106be4728e2a874014eb035211c6379e7cbfa3bcec3167d7f0d61954bc"
+      },
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\link-model\\model.exe",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original",
+        "--backend",
+        "cpu",
+        "--capacity",
+        "256",
+        "--steps",
+        "16",
+        "--max-sessions",
+        "1",
+        "--active-sequences",
+        "1",
+        "--prefix-cache",
+        "off",
+        "--progress",
+        "direct",
+        "--replay",
+        "commands",
+        "--mtp",
+        "off",
+        "--sampling",
+        "greedy"
+      ],
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\behavior1\\stdout.log",
+        "bytes": 20442,
+        "sha256": "3e2ff4dc5a021404f807445316e792a24fbb719e91338565f419565c4dcce2d0"
+      }
+    },
+    "P": {
+      "name": "same_version_AVX2_peer",
+      "producer": "peer",
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\ready.json",
+        "bytes": 3982,
+        "sha256": "24202e2a094cccc7508a6fcd7898543bdce4526faab30f4aa652d983682737b2"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\runtime.json",
+        "bytes": 5845,
+        "sha256": "377e06cb754eda171c409e153079a0f51cc65ea4139383cab8f91d0a10bea955"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\link\\peer-avx2.exe",
+        "bytes": 35860992,
+        "sha256": "27a49a73fdafccde9528bda413aee69f2e2d755b7705fa60bbd60fc8a8ca5404"
+      },
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\link\\peer-avx2.exe",
+        "--model",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\Qwen3.5-2B-text-BF16.gguf",
+        "--inputs",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs",
+        "--capacity",
+        "256",
+        "--steps",
+        "16",
+        "--mtp",
+        "off",
+        "--memory-snapshots",
+        "off",
+        "--output",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\future-run\\peer-result.json"
+      ],
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\future-run\\peer-result.json",
+        "bytes": 24122,
+        "sha256": "2756469d581fb6bacaf840299e07a0252e975cc43b1a7a3a79c8292d4aec2ca9"
+      }
+    }
+  },
+  "frozen_scope": "Only ggml_region object changes versus caller217e. Test-only refresh does not change the tested7e53 Model image. The retained CPU Model consumer predates R>1 sampling work; N1 greedy remains the same path. Not a current-full-canonical or latest-upstream benchmark claim.",
+  "results": {
+    "timing": {
+      "H": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 43.45331998883757,
+          "min": 43.291070379024006,
+          "max": 43.485525235822145,
+          "samples": [
+            43.291070379024006,
+            43.45331998883757,
+            43.485525235822145
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 11.479104853281354,
+          "min": 11.277106781570861,
+          "max": 11.486429778707036,
+          "samples": [
+            11.277106781570861,
+            11.486429778707036,
+            11.479104853281354
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.2990222646476486,
+          "min": 3.273694798344492,
+          "max": 3.300241264137615,
+          "samples": [
+            3.273694798344492,
+            3.2990222646476486,
+            3.300241264137615
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 3.544033,
+          "min": 3.5414083,
+          "max": 3.5573156,
+          "samples": [
+            3.5573156,
+            3.544033,
+            3.5414083
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.3067220999999998,
+          "min": 1.3058888000000002,
+          "max": 1.3301284,
+          "samples": [
+            1.3301284,
+            1.3058888000000002,
+            1.3067220999999998
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 4.8499218,
+          "min": 4.8481304,
+          "max": 4.887444,
+          "samples": [
+            4.887444,
+            4.8499218,
+            4.8481304
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.0203565,
+          "min": 1.0064269,
+          "max": 1.0322477,
+          "samples": [
+            1.0203565,
+            1.0064269,
+            1.0322477
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 5.8804293,
+          "min": 5.8564106,
+          "max": 5.9078462,
+          "samples": [
+            5.9078462,
+            5.8564106,
+            5.8804293
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.906962,
+          "min": 0.895429,
+          "max": 0.925979,
+          "samples": [
+            0.906962,
+            0.895429,
+            0.925979
+          ]
+        }
+      },
+      "C": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 43.95257642582443,
+          "min": 43.669289971656646,
+          "max": 44.010225461527234,
+          "samples": [
+            43.95257642582443,
+            43.669289971656646,
+            44.010225461527234
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 11.436553925372216,
+          "min": 11.048390625131201,
+          "max": 11.624726847980888,
+          "samples": [
+            11.436553925372216,
+            11.048390625131201,
+            11.624726847980888
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.322700484115384,
+          "min": 3.275889585732027,
+          "max": 3.3406132952609204,
+          "samples": [
+            3.322700484115384,
+            3.275889585732027,
+            3.3406132952609204
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 3.5037764,
+          "min": 3.4991868,
+          "max": 3.5265057,
+          "samples": [
+            3.5037764,
+            3.5265057,
+            3.4991868
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.3115839,
+          "min": 1.2903529000000002,
+          "max": 1.3576637999999999,
+          "samples": [
+            1.3115839,
+            1.3576637999999999,
+            1.2903529000000002
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 4.8153603,
+          "min": 4.7895397,
+          "max": 4.8841695,
+          "samples": [
+            4.8153603,
+            4.8841695,
+            4.7895397
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 1.0273293,
+          "min": 0.9937879,
+          "max": 1.0377809,
+          "samples": [
+            1.0273293,
+            0.9937879,
+            1.0377809
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 5.8427373,
+          "min": 5.8273643,
+          "max": 5.8780144,
+          "samples": [
+            5.8427373,
+            5.8780144,
+            5.8273643
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.918769,
+          "min": 0.884273,
+          "max": 0.929758,
+          "samples": [
+            0.918769,
+            0.884273,
+            0.929758
+          ]
+        }
+      },
+      "P": {
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 42.93731375243126,
+          "min": 42.85515991152469,
+          "max": 43.00955747773522,
+          "samples": [
+            43.00955747773522,
+            42.85515991152469,
+            42.93731375243126
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 12.026710843715458,
+          "min": 11.985037878712214,
+          "max": 12.391059866827497,
+          "samples": [
+            12.026710843715458,
+            12.391059866827497,
+            11.985037878712214
+          ]
+        },
+        "output_tokens_per_second": {
+          "count": 3,
+          "median": 3.3141229506059178,
+          "min": 3.3070256002018943,
+          "max": 3.330523343034454,
+          "samples": [
+            3.3141229506059178,
+            3.330523343034454,
+            3.3070256002018943
+          ]
+        },
+        "prefill_seconds": {
+          "count": 3,
+          "median": 3.586624,
+          "min": 3.5805995,
+          "max": 3.5934996,
+          "samples": [
+            3.5805995,
+            3.5934996,
+            3.586624
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.2472238,
+          "min": 1.2105502,
+          "max": 1.2515605,
+          "samples": [
+            1.2472238,
+            1.2105502,
+            1.2515605
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 4.8278233,
+          "min": 4.8040498,
+          "max": 4.8381845,
+          "samples": [
+            4.8278233,
+            4.8040498,
+            4.8381845
+          ]
+        },
+        "startup_to_ready_seconds": {
+          "count": 3,
+          "median": 0.5798188,
+          "min": 0.5725035,
+          "max": 0.5968776,
+          "samples": [
+            0.5968776,
+            0.5725035,
+            0.5798188
+          ]
+        },
+        "startup_to_endpoint_seconds": {
+          "count": 3,
+          "median": 5.4181092,
+          "min": 5.3766562,
+          "max": 5.4248044,
+          "samples": [
+            5.4248044,
+            5.3766562,
+            5.4181092
+          ]
+        },
+        "weights_load_seconds": {
+          "count": 3,
+          "median": 0.5495544,
+          "min": 0.542982,
+          "max": 0.566331,
+          "samples": [
+            0.566331,
+            0.542982,
+            0.5495544
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "C_vs_H": {
+        "prefill_tokens_per_second": {
+          "median_percent": 1.1489488884051102,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_percent": -0.3706815858291801,
+          "ranges_overlap": true
+        },
+        "output_tokens_per_second": {
+          "median_percent": 0.7177344548859654,
+          "ranges_overlap": true
+        },
+        "prefill_seconds": {
+          "median_percent": -1.1358980009497754,
+          "ranges_overlap": false
+        },
+        "decode_seconds": {
+          "median_percent": 0.37206074650457666,
+          "ranges_overlap": true
+        },
+        "session_seconds": {
+          "median_percent": -0.7126197374976218,
+          "ranges_overlap": true
+        },
+        "startup_to_ready_seconds": {
+          "median_percent": 0.683368998972389,
+          "ranges_overlap": true
+        },
+        "startup_to_endpoint_seconds": {
+          "median_percent": -0.6409736105491559,
+          "ranges_overlap": true
+        },
+        "weights_load_seconds": {
+          "median_percent": 1.3018185987946573,
+          "ranges_overlap": true
+        }
+      },
+      "P_vs_H": {
+        "prefill_tokens_per_second": {
+          "median_percent": -1.1874955389803765,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_percent": 4.770458998617544,
+          "ranges_overlap": false
+        },
+        "output_tokens_per_second": {
+          "median_percent": 0.457732162649771,
+          "ranges_overlap": false
+        },
+        "prefill_seconds": {
+          "median_percent": 1.201766462106857,
+          "ranges_overlap": false
+        },
+        "decode_seconds": {
+          "median_percent": -4.553248161946588,
+          "ranges_overlap": false
+        },
+        "session_seconds": {
+          "median_percent": -0.45564652197070954,
+          "ranges_overlap": false
+        },
+        "startup_to_ready_seconds": {
+          "median_percent": -43.17488054420197,
+          "ranges_overlap": false
+        },
+        "startup_to_endpoint_seconds": {
+          "median_percent": -7.862012727540158,
+          "ranges_overlap": false
+        },
+        "weights_load_seconds": {
+          "median_percent": -39.4071195926621,
+          "ranges_overlap": false
+        }
+      },
+      "P_vs_C": {
+        "prefill_tokens_per_second": {
+          "median_percent": -2.3099048018415003,
+          "ranges_overlap": false
+        },
+        "decode_output_tokens_per_second": {
+          "median_percent": 5.160268750484076,
+          "ranges_overlap": false
+        },
+        "output_tokens_per_second": {
+          "median_percent": -0.25814946458376786,
+          "ranges_overlap": true
+        },
+        "prefill_seconds": {
+          "median_percent": 2.3645230329195632,
+          "ranges_overlap": false
+        },
+        "decode_seconds": {
+          "median_percent": -4.907051695282327,
+          "ranges_overlap": false
+        },
+        "session_seconds": {
+          "median_percent": 0.25881760083457106,
+          "ranges_overlap": true
+        },
+        "startup_to_ready_seconds": {
+          "median_percent": -43.56057011125838,
+          "ranges_overlap": false
+        },
+        "startup_to_endpoint_seconds": {
+          "median_percent": -7.267622660358175,
+          "ranges_overlap": false
+        },
+        "weights_load_seconds": {
+          "median_percent": -40.18579207613665,
+          "ranges_overlap": false
+        }
+      }
+    },
+    "interleaved_triplets": [
+      {
+        "order": [
+          "H",
+          "C",
+          "P"
+        ],
+        "C_vs_H": {
+          "prefill_tokens_per_second": 1.52804271414122,
+          "decode_output_tokens_per_second": 1.4139011617937847,
+          "output_tokens_per_second": 1.4969534055427003
+        }
+      },
+      {
+        "order": [
+          "P",
+          "C",
+          "H"
+        ],
+        "C_vs_H": {
+          "prefill_tokens_per_second": 0.49701606890923955,
+          "decode_output_tokens_per_second": -3.8135361641077448,
+          "output_tokens_per_second": -0.7011980235329562
+        }
+      },
+      {
+        "order": [
+          "C",
+          "H",
+          "P"
+        ],
+        "C_vs_H": {
+          "prefill_tokens_per_second": 1.206608918392127,
+          "decode_output_tokens_per_second": 1.2685831914664325,
+          "output_tokens_per_second": 1.2233054462415183
+        }
+      }
+    ],
+    "memory": {
+      "H": {
+        "pid": 41704,
+        "peaks": {
+          "sampled_max_working_set_bytes": 5712134144,
+          "observed_os_peak_working_set_bytes": 5712154624,
+          "sampled_max_private_commit_bytes": 6511714304,
+          "observed_os_peak_commit_bytes": 6511714304,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "memory_samples": 581,
+        "running_samples": 550,
+        "OS_threads": {
+          "count": 57,
+          "peak": 17,
+          "min": 4,
+          "max": 17,
+          "requested_interval_seconds": 0.1
+        },
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 581,
+          "shared:no_pid_instance": 581
+        },
+        "limits": "Sampled memory/thread lower bounds;OSthreads not busythreads. Peer small GPU registry allocation is not GPU inference."
+      },
+      "C": {
+        "pid": 36988,
+        "peaks": {
+          "sampled_max_working_set_bytes": 5370851328,
+          "observed_os_peak_working_set_bytes": 5370871808,
+          "sampled_max_private_commit_bytes": 6162894848,
+          "observed_os_peak_commit_bytes": 6162894848,
+          "sampled_peak_gpu_dedicated_bytes": null,
+          "sampled_peak_gpu_shared_bytes": null,
+          "sampled_peak_gpu_total_bytes": null
+        },
+        "memory_samples": 577,
+        "running_samples": 548,
+        "OS_threads": {
+          "count": 56,
+          "peak": 17,
+          "min": 4,
+          "max": 17,
+          "requested_interval_seconds": 0.1
+        },
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 577,
+          "shared:no_pid_instance": 577
+        },
+        "limits": "Sampled memory/thread lower bounds;OSthreads not busythreads. Peer small GPU registry allocation is not GPU inference."
+      },
+      "P": {
+        "pid": 27800,
+        "peaks": {
+          "sampled_max_working_set_bytes": 4110626816,
+          "observed_os_peak_working_set_bytes": 4110626816,
+          "sampled_max_private_commit_bytes": 650883072,
+          "observed_os_peak_commit_bytes": 650891264,
+          "sampled_peak_gpu_dedicated_bytes": 24576,
+          "sampled_peak_gpu_shared_bytes": 0,
+          "sampled_peak_gpu_total_bytes": 24576
+        },
+        "memory_samples": 528,
+        "running_samples": 526,
+        "OS_threads": {
+          "count": 54,
+          "peak": 15,
+          "min": 4,
+          "max": 15,
+          "requested_interval_seconds": 0.1
+        },
+        "GPU_unavailable_reasons": {
+          "dedicated:no_pid_instance": 9,
+          "shared:no_pid_instance": 9
+        },
+        "limits": "Sampled memory/thread lower bounds;OSthreads not busythreads. Peer small GPU registry allocation is not GPU inference."
+      }
+    }
+  },
+  "interpretation": [
+    "Candidate/control prefill median+1.14895% with nonoverlapping3sample ranges; decode median-0.37068% and combined+0.71773% have overlapping ranges. No stable decode or combined gain established.",
+    "Independent candidate memory process has341282816 fewer sampled working-set bytes and348819456 fewer private-commit bytes. Threads peak17/17 for H/C; these are whole-process sampled facts,not decode allocation accounting.",
+    "Compiled plans have1195->1039 steps perT, placement_attempts1368->1056, known workspace T154:22920576->16029056 and T1:438464->185536 bytes. Family known compiled storage119552->1893344 increases; native private storage is still unknown. Do not infer physical allocation solely from these logical reports.",
+    "Peer has matched same-version AVX2/FMA/F16C archive and T4 CPU placement/nooffload. Its F32 intermediate operations differ from Hyle BF16 storepoints; identical16greedy IDs are not intermediate-bit/math/quality equivalence.",
+    "Startup clocks omit different outer setup work and are not ranked across engines. Memory runs are separate from timing. Missing H/C GPU counters are null; peer24KiB registry observation is not GPU inference."
+  ],
+  "correctness": {
+    "initial_build": {
+      "product_TUs": 1,
+      "test_TUs": 1,
+      "links": 2,
+      "compile": {
+        "region": {
+          "exit": 0,
+          "pid": 62140,
+          "seconds": 2.148378200014122
+        },
+        "test": {
+          "exit": 0,
+          "pid": 61000,
+          "seconds": 2.663778399990406
+        }
+      }
+    },
+    "initial_suite": {
+      "process": {
+        "exit": 0,
+        "pid": 21712,
+        "seconds": 0.419712700007949
+      },
+      "counts": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\ready.json",
+        "bytes": 108574,
+        "sha256": "5a395149dbbb00253d99cbd324f9a2bfecdbb5c1da44bbc2eea89f835f106ac0"
+      }
+    },
+    "default_native_threads1": {
+      "status": "PASS",
+      "compile": {
+        "exit": 0,
+        "pid": 49528,
+        "seconds": 2.71575929998653
+      },
+      "link": {
+        "exit": 0,
+        "pid": 41336,
+        "seconds": 1.945627200009767
+      },
+      "run": {
+        "exit": 0,
+        "pid": 47352,
+        "seconds": 0.41964869998628274
+      },
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_pins": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\default1\\source-pins.json",
+        "bytes": 1761,
+        "sha256": "91d7e207f6e618c30054eb6ba3520548dc791b8998a3befd7fd4afb31497aecb"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\default1\\compile-test\\actual-dependencies.json",
+        "bytes": 57272,
+        "sha256": "ae7e1f22c333aa1c92dcc47fc1e55ff49aa72dbbad9066a08e3398e8fd83d137"
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\default1\\link-suite\\suite.exe",
+        "bytes": 139955712,
+        "sha256": "7d11638c63de61709b53464c546acadc4001d74ec30da49699cf37566dd2c735"
+      },
+      "reused_product": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\compile-region\\unit.obj",
+        "bytes": 1519765,
+        "sha256": "8a94d6ae48d51e850dd924c1b7cacd9f372056503c08b10ab16228145bc37c4b"
+      },
+      "product_TUs": 0,
+      "test_TUs": 1,
+      "model_links": 0,
+      "model_runs": 0,
+      "SDK_builds": 0,
+      "GPU_runs": 0
+    },
+    "single_behavior": {
+      "status": "BEHAVIOR_RECORDED_REQUIRES_FIELD_REVIEW",
+      "process": {
+        "exit": 0,
+        "pid": 58600,
+        "seconds": 6.923002599971369
+      },
+      "reference": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\inline-executor1\\behavior1\\stdout.log",
+        "bytes": 20401,
+        "sha256": "de95d7f63cb453d3515dc901f272b5af6d0151a051220525fe088a5c2ed5a900"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\ready.json",
+        "bytes": 108574,
+        "sha256": "5a395149dbbb00253d99cbd324f9a2bfecdbb5c1da44bbc2eea89f835f106ac0"
+      },
+      "nontime_differences": 2,
+      "normalization": {
+        "clock_keys": [
+          "clock_unix",
+          "seconds",
+          "unix_ms",
+          "unix_ns"
+        ],
+        "suffixes": [
+          "_seconds",
+          "tokens_per_second"
+        ],
+        "structural_fields_ignored": []
+      },
+      "model_runs": 1,
+      "GPU_runs": 0,
+      "performance_claim": false
+    },
+    "behavior_difference": [
+      {
+        "path": "$.sessions[0].result.workspace_domains[0].known_peak_bytes",
+        "before": 22920576,
+        "after": 16029056
+      },
+      {
+        "path": "$.workspace_domains[0].known_peak_bytes",
+        "before": 22920576,
+        "after": 16029056
+      }
+    ],
+    "work": {
+      "all12_within_arm_complete_non_time_reports_equal_own_reference": true,
+      "H_reference": "caller217e behavior1",
+      "C_reference": "candidate7e53 behavior1 with exactly2 explicit workspace changes",
+      "P_reference": "same-versionAVX2 original own report",
+      "cross_arm_prompt_rows": 154,
+      "target_rows": 169,
+      "target_calls": 16,
+      "decode_calls": 15,
+      "output_tokens": 16,
+      "all16_ids_same": true,
+      "greedy": true,
+      "N": 1,
+      "R": 1,
+      "C": 256,
+      "MTP": false,
+      "logical_state_and_ledgers_unchanged": true,
+      "ignored_fields": "Only original clock/time-derived fields;no structure ignored. H/C workspace peak22920576/16029056 fixed and checked in everyprocess."
+    },
+    "generated_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198,
+      1445,
+      18904,
+      1120,
+      5586,
+      11,
+      51338,
+      11,
+      36760,
+      11,
+      1697
+    ],
+    "numerical_boundary": "Independent Add/Subtract BF16 witness requires exact[0000,3c00],distinct from omitting intermediate store[3b80,3b80]. Viewhelper4modes/twoinvocations also retains oldoutput/originalW,exactalias and packedbytes0.",
+    "formal_registered_TU_compile_only": {
+      "status": "CANONICAL_REGISTERED_TEST_TU_STRICT_COMPILE_PASS",
+      "process": {
+        "exit": 0,
+        "pid": 42968,
+        "seconds": 6.073969000019133
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\graph_test.cc",
+        "bytes": 93892,
+        "sha256": "aeee590535c74e805306512d33f1c98bfd741ae9b7590426c62f8735ea267813"
+      },
+      "helpers": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_ggml_constant_view_test.h",
+          "bytes": 7138,
+          "sha256": "44d46ef1eb0bcf7a663bf8a1b91ea2861b62fbe5ddef9dcb3542e7f45a1ca8a1"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_ggml_bf16_store_test.h",
+          "bytes": 3882,
+          "sha256": "fa7d3aeaa3491e67e0f08aa628cc8ea94c1b7c488e52a6ed4b7d76e81b317ee5"
+        }
+      ],
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\formal1\\actual-dependencies.json",
+        "bytes": 63493,
+        "sha256": "d8866ebf48056241c513b5a7f4a727f3667e3b2d309ee9c685a9ebd4da5777d1"
+      },
+      "dependency_count": 283,
+      "product_pin": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ggml_region.cc",
+        "bytes": 21780,
+        "sha256": "5213250b4aea87eb2c43966a49500dc8a48138eb1ea949f217c6ad2863412d1a"
+      },
+      "target_macros": [
+        "HYLE_TEST_GGML_CPU=1",
+        "HYLE_TEST_GRAPH_ROUTE_CPU=1"
+      ],
+      "link": false,
+      "run": false,
+      "SDK_builds": 0
+    },
+    "failures": {
+      "compile_link_runtime": 0,
+      "integration_patch_format": 1
+    },
+    "scope": "WindowsCPU only. 3 initial tests then4default-inclusive tests,1Model behavior,12newscreen processes. Current registered graph_test.cc strictly compiled with bothtargetmacros and canonicalhelpers;not linked/run. No nativeGPU/Mac/Linux/multirequest Model runtime claim."
+  },
+  "integration": {
+    "product_source_identical_to_all_runs": true,
+    "sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_cpu\\ggml_region.cc",
+        "bytes": 21780,
+        "sha256": "5213250b4aea87eb2c43966a49500dc8a48138eb1ea949f217c6ad2863412d1a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_ggml_constant_view_test.h",
+        "bytes": 7138,
+        "sha256": "44d46ef1eb0bcf7a663bf8a1b91ea2861b62fbe5ddef9dcb3542e7f45a1ca8a1"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_ggml_bf16_store_test.h",
+        "bytes": 3882,
+        "sha256": "fa7d3aeaa3491e67e0f08aa628cc8ea94c1b7c488e52a6ed4b7d76e81b317ee5"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cpu\\graph_test.cc",
+        "bytes": 93892,
+        "sha256": "aeee590535c74e805306512d33f1c98bfd741ae9b7590426c62f8735ea267813"
+      }
+    ],
+    "formal_wrapper_before": {
+      "bytes": 93390,
+      "sha256": "31698b5f11df33550eddb935c740f4a2ab7ea1231e5d8f44a7aef7030501c6b8"
+    },
+    "formal_wrapper_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\formal1\\graph-test.patch",
+      "bytes": 1495,
+      "sha256": "d9f2532850344db22d9c4193ff5123e6fdda3b19b9dbe4500b15ce264667f6da"
+    },
+    "format_failure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\integration-first-failure.json",
+      "bytes": 466,
+      "sha256": "9d568e0b081190cc55f2b6d2988bc875f77bef4fd316429b047d19afbba5ab6c"
+    },
+    "final_applicable_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\product.patch",
+      "bytes": 4100,
+      "sha256": "21d387bd8940e3f3c73a64379f1821f91c79a6d50b923fe6881ed8830f6b00b2"
+    },
+    "final_product_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\product-pins.json",
+      "bytes": 816,
+      "sha256": "5fb8788b63d921d095378f25f24d78bcda3919e3b19f98cab7c1ecffb7e854e7"
+    },
+    "historical_LF_patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\product-initial-lf.patch",
+      "bytes": 4028,
+      "sha256": "1da059535629ddfa8f1dd1ebe737c62952a9a1d012750cfec70f4196c4b81231"
+    },
+    "historical_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\product-initial-lf-pins.json",
+      "bytes": 566,
+      "sha256": "9d606281480e2b1c18189eb66cd3694f4d4c5e2546fc63e6607f7f4b8290ea80"
+    },
+    "scope": "Root integrated identical tested product/helpers plus14line formal TEST wrappers;this records source and1strict /c only,not new Model/runtime/performance. Patchformatrepair has no source/math/ABI/owner change."
+  },
+  "patch_format_repair": "Initial LF-only diff could not apply against tracked CRLF with core.autocrlf=false; Root retained thefailure then regenerated finalproduct.patch preservingCRLF. Finalpatch is21d387bd.../4100bytes; source afterSHA5213250b is identical to every check/window. OldLFdiff/pins are historical only; finalproduct.patch/product-pins.json are authoritative. No Model rerun or source/math/lifetime change.",
+  "protocol": {
+    "timing_order": "H,C,P,P,C,H,C,H,P",
+    "memory_order": "H,C,P",
+    "timing_each": 3,
+    "memory_each": 1,
+    "watchdog_seconds": 180,
+    "warmups": 0,
+    "retries": 0,
+    "old_samples_pooled": false,
+    "work_gate": "Every complete report equals its own frozen reference except only originalclock fields. H/C reference pair has exactly2 explicitly checked workspace peak differences;no structural fields discarded.",
+    "endpoints": {
+      "prefill": "154/prefill_seconds",
+      "decode": "15/decode_seconds",
+      "combined": "16/session_seconds"
+    },
+    "fixed_work": "P154/16outputs/C256/N1/R1/greedy/noMTP,169targetrows/16calls/15decode; all16IDs same."
+  },
+  "source_findings_reference": {
+    "memo": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-small-graph-review1\\memo.json",
+      "bytes": 6885,
+      "sha256": "760a85b10b19bde3f8aa890b0ef62d08de62e51bbdfd697bfa27704e81c607f4"
+    },
+    "counts": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-small-graph-review1\\counts.json",
+      "bytes": 2209,
+      "sha256": "cc59f663b85a10508f45ea2d0b5c0acb4d5cf7790c0cc7c30b7a38ec3be5194f"
+    },
+    "prior_archive": "docs/evidence/performance/inference-cpu-graph-submission-attribution-2026-10-26.zip",
+    "limit": "Old570callbacks/207regions and569native calls are separate prior diagnostics,not a new candidatecatalog. Defaultprovider extension and hardpolicy wiring were intact;511nonemitting remainder was not identified solely as Views."
+  },
+  "limits": [
+    "CPU-only Windows, original P154/16/C256/N1/R1/greedy/noMTP endpoints. Requested native4/ATen4 and peer4 are not processwide thread caps.",
+    "Each arm checked against its complete own fixed semantic reference. Candidate differs from control only at2 specified workspace peak fields; no structural field is removed.",
+    "Peer matched AVX2/FMA/F16C same-version archive; F32 intermediate operations differ from Hyle BF16 storepoints. Matching greedy IDs is not intermediatebit/math/quality equivalence or latest-upstream claim.",
+    "Startup clock excludes different outer ATen/Scheduler setups, so no fair cross-engine coldstart ranking.",
+    "Memory processes do not enter timing statistics. PSAPI/PDH/100ms OS-thread peaks are sampled lower bounds, not busy threads or energy. Missing GPU counters remain null. No GPU model.",
+    "Only3 short timing samples perarm. No stable deployment/scaling/general model claim or cross-window gain attribution."
+  ],
+  "canonical_changes_by_publisher": false,
+  "new_builds_or_runs_by_publisher": 0,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-constant-view-regions-2026-10-26.zip",
+    "bytes": 529715,
+    "sha256": "dcc029a4c18f1753dd6ae47678206fdebbe3a37f838d19e84a7abcc793845b39"
+  },
+  "archive_verification": {
+    "CRC_and_member_SHA256": "PASS",
+    "members": 179,
+    "manifest_sha256": "51d4dc120011848adcab3b9fdc68683813e4125500b5f8df1d2b958e4b292814",
+    "verified_once": true,
+    "no_binary_SDK_model": true
+  }
+}

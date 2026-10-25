@@ -31,6 +31,8 @@ TEST(CpuDefaultGraph, PreparedCastKeepsIncomingControlForDataOnlyConsumer) {
 #include "../compute_models/batched_rope_fixture.h"
 #include "../graph_ggml_constant_test.h"
 #include "../graph_ggml_discovery_test.h"
+#include "../graph_ggml_constant_view_test.h"
+#include "../graph_ggml_bf16_store_test.h"
 #include "../graph_batched_sink_test.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "../model_fragment_test_support.h"
@@ -56,6 +58,18 @@ TEST(CpuDefaultGraph, SelectedKvSetsFeedOneBatchedSinkAttention) {
 TEST(CpuDefaultGraph, NativeRegionsSurviveOtherProviderBoundaries) {
   auto context = graph::cpu::create_context().value();
   ggml_discovery_test::exercise(context, hyle::mem::system_resource());
+}
+
+TEST(CpuDefaultGraph, ConstantViewsKeepNativeRegionsConnected) {
+  for (const auto threads : {1U, 4U}) {
+    SCOPED_TRACE(threads);
+    auto context = graph::cpu::create_context({.native_threads = threads}).value();
+    ggml_constant_view_test::exercise(context, hyle::mem::system_resource());
+  }
+}
+
+TEST(CpuDefaultGraph, NativeRegionsPreserveBfloatIntermediateRounding) {
+  ggml_bf16_store_test::exercise();
 }
 
 TEST(CpuDefaultGraph, BatchedRopePositionsAndFrequenciesUseOriginalNativeOps) {

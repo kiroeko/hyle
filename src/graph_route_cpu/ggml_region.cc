@@ -156,7 +156,65 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
     return Status::InvalidArgument("ggml CPU discovery mask size differs");
   if (graph.node_count() == 0)
     return Status::Ok();
+  // Constant-only metadata Views stay original Graph aliases. They may bridge
+  // discovery because they cannot depend on work in a proposed native region,
+  // but they are never native members or copied/packed by this adapter.
+  container::SmallVector<std::uint8_t, 16, mem::AllocatorRef>
+      published_views(allocator), constant_views(allocator);
+  container::SmallVector<NodeId, 16, mem::AllocatorRef> members(allocator);
+  if (!published_views.try_resize(graph.node_count()) ||
+      !constant_views.try_resize(graph.node_count()) ||
+      !members.try_resize(graph.node_count()))
+    return Status::ResourceExhausted("ggml CPU constant View discovery metadata");
+  std::fill(published_views.begin(), published_views.end(), std::uint8_t{0});
+  std::fill(constant_views.begin(), constant_views.end(), std::uint8_t{0});
+  for (std::size_t port = 0; port < graph.output_count(); ++port) {
+    HYLE_ASSIGN_OR_RETURN(auto value, graph.output_id(port));
+    if (value.kind() != ValueKind::kNodeOutput) continue;
+    HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(value));
+    HYLE_ASSIGN_OR_RETURN(auto kind, graph.operation_kind(producer));
+    if (kind == compute::OperationKind::kView)
+      published_views[producer.ordinal()] = 1;
+  }
+  // Propagate the publication fence through View ancestors once, backwards.
+  for (std::size_t i = graph.node_count(); i != 0; --i) {
+    if (!published_views[i - 1]) continue;
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i - 1));
+    HYLE_ASSIGN_OR_RETURN(auto inputs, graph.node_input_count(node));
+    if (inputs != 1) continue;
+    HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, 0));
+    if (value.kind() != ValueKind::kNodeOutput) continue;
+    HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(value));
+    HYLE_ASSIGN_OR_RETURN(auto kind, graph.operation_kind(producer));
+    if (kind == compute::OperationKind::kView)
+      published_views[producer.ordinal()] = 1;
+  }
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    if (published_views[i] ||
+        (!request.allowed_nodes.empty() && !request.allowed_nodes[i]))
+      continue;
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    auto operation = graph.operation(node);
+    if (!operation || !operation->get_if<compute::View>()) continue;
+    HYLE_ASSIGN_OR_RETURN(auto inputs, graph.node_input_count(node));
+    HYLE_ASSIGN_OR_RETURN(auto outputs, graph.node_output_count(node));
+    HYLE_ASSIGN_OR_RETURN(auto effects, graph.node_resource_count(node));
+    HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(node));
+    if (inputs != 1 || outputs != 1 || effects != 0 || dependencies != 0)
+      continue;
+    HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, 0));
+    if (value.kind() == ValueKind::kConstant) {
+      constant_views[i] = 1;
+    } else if (value.kind() == ValueKind::kNodeOutput) {
+      HYLE_ASSIGN_OR_RETURN(auto producer, graph.producer(value));
+      constant_views[i] = constant_views[producer.ordinal()];
+    }
+  }
   const auto emit = [&](std::span<const NodeId> nodes) -> Result<bool> {
+    std::size_t count = 0;
+    for (const auto node : nodes)
+      if (!constant_views[node.ordinal()]) members[count++] = node;
+    nodes = std::span(members).first(count);
     if (nodes.empty() || (nodes.size() == 1 && !single_constant_expert(graph, nodes[0])))
       return true;
     auto repack = matmul_repack_bytes(graph, nodes);
@@ -180,6 +238,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
       [&](NodeId node) -> Result<bool> {
         if (!request.allowed_nodes.empty() && !request.allowed_nodes[node.ordinal()])
           return false;
+        if (constant_views[node.ordinal()]) return true;
         return supported_node(context, graph, node);
       }, emit);
 }

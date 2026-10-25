@@ -40,6 +40,8 @@ CPU线程和executor配置在冷建Backend时传入原`compute::cpu::DefaultCont
 
 默认executor为空，回调在调用线程执行，仍可显式配置多线程原生团队。借用executor用于表达调用者需要的执行位置和分工；库必须遵守该回调，不能擅自绕过。应用自己的Scheduler并不意味着每个完整原生程序都应多一次工作线程交接；[调用线程配置对照](../evidence/performance/inference-cpu-caller-executor-screen-2026-10-26.json)说明这项选择有实际成本，不能从executor并发度直接推导性能。
 
+CPU原生region冷发现允许无副作用、无控制依赖且未发布的常量View链连接数学节点，避免独立的权重视图切断已有聚合。View不进入原生数学成员，仍沿原Graph的alias、offset、租约和拓扑排序执行；动态、发布及受控View保留原边界。聚合保留每节点声明的存储精度，不删除BF16舍入点。[有限数值与模型对照](../evidence/performance/inference-cpu-constant-view-regions-2026-10-26.json)支持该规则的资源收益，不承诺聚合节点越多就越快。
+
 Qwen实现内部的`create_execution(..., cpu_options=nullptr)`继续使用原有限workspace预算公式，
 再把可选配置转发给CPU主端点或显式CPU辅助端点；省略参数保持原构造调用。
 例如实现内可用`create_execution(geometry, plan, cpu_layers, selection, &cpu_options)`，
