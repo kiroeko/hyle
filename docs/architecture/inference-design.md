@@ -359,6 +359,12 @@ CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定
 与 channel／token 差异，以及 dense／GGUF 直接 F32 head 和部分量化 BF16→F32 head 的原数学。
 共享采样规则不表示可改写各家族的 RNG 地址排布。
 
+ModelOpt 静态 FP8 的准备器、角色选择和投影绑定保留原 E4 权重及独立 F32 SA／SW；
+Recipe 仅发出现有十二节点公开链，融合或分解仍由冷图选择。所选软件 reader 的
+倒数／量化／两次 scale 乘法顺序写入源身份，producer 版本只作出处。
+[有限冷链检查](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)已通过元数据、
+准备器及 CPU 分解数值／租约；原制品数值、packed 与 GPU 路径仍待检查。
+
 Qwen 分页 COW Snapshot 与 GLM／DeepSeek StateHead 不强制换成同一容器；共用的是
 完整选择、提交和退休协议。原 state entries／端口仍是唯一声明，不加同义映射表。
 Qwen 的整批预检／无抛发布与 StateHead 的单头原子发布保留各自原子范围。

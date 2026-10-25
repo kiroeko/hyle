@@ -357,6 +357,23 @@ ProjectionBinding resolve_projection(std::map<std::string, LoadedWeight> &bank,
         scales.description, biases.description}, name);
     return MlxAffineProjection{&stored->tensor, &scales, &biases, equation};
   }
+  if (stored->codec == Codec::kModelOptStaticFp8) {
+    detail::auxiliaries(bank, base, {".weight_scale", ".input_scale"}, name);
+    auto &sa = detail::require(bank, base + ".input_scale", name);
+    auto &sw = detail::require(bank, base + ".weight_scale", name);
+    const auto &codes = stored->tensor.description;
+    const auto scalar = [](const Tensor &value) {
+      const auto &d = value.description;
+      return d.is_plain() && d.is_dense() && d.data_type() == Type::kFloat32 &&
+          (d.rank() == 0 || (d.rank() == 1 && d.dimensions()[0] == 1));
+    };
+    if (!codes.is_plain() || !codes.is_dense() || codes.data_type() != Type::kFloat8E4M3FN ||
+        stored->group_size || !scalar(sa) || !scalar(sw))
+      detail::fail(name, "static FP8 requires original dense E4 [N,K] and separate F32 scalar SA/SW");
+    // Metadata/explicit reader chooses this codec; never inspect scalar values
+    // or infer this math just because a weight has an FP8 storage name.
+    return ModelOptStaticFp8Projection{&stored->tensor, &sa, &sw};
+  }
   if (stored->codec == Codec::kNvfp4) {
     detail::auxiliaries(bank, base, {".weight_scale", ".weight_scale_2", ".input_scale"}, name);
     auto &scales = detail::require(bank, base + ".weight_scale", name);
@@ -472,6 +489,8 @@ std::string_view score_policy(const ProjectionBinding &binding, PrecisionProfile
         ? "ct_asym4_bf16_subtract_product_projection_f32_logits" : "ct_sym4_bf16_projection_f32_logits";
   if (std::holds_alternative<ModelOptNvfp4Projection>(binding)) return "nvfp4_qdq_bf16_projection_f32_logits";
   if (std::holds_alternative<LocalNvfp4Projection>(binding)) return "ct_local_nvfp4_f32_preround_bf16_projection_f32_logits";
+  if (std::holds_alternative<ModelOptStaticFp8Projection>(binding))
+    return "static_fp8_stored_SA_SW_f32_code_dot_bf16_projection_f32_logits";
   if (std::holds_alternative<BlockFp8Projection>(binding)) return "fp8_block128_dynamic_divide_bf16_projection_f32_logits";
   return "ct_channel_token_bf16_qdq_projection_f32_logits";
 }
@@ -967,6 +986,31 @@ struct Recipe final {
         const auto carrier = operand(*projection.carrier);
         dimensions.back() = spec(carrier).dimensions()[1];
         return one(c::Operation::custom(projection.equation), {x, carrier}, dense_spec(Type::kBFloat16, dimensions));
+      } else if constexpr (std::is_same_v<P, ModelOptStaticFp8Projection>) {
+        if (activation_type() != Type::kBFloat16)
+          throw std::runtime_error("selected static FP8 source reader requires BF16 activation");
+        const auto original = operand(*projection.codes);
+        const auto sa = operand(*projection.activation_scale), sw = operand(*projection.weight_scale);
+        // This exact 12-node public graph is the existing StaticFloat8Pattern.
+        // Cold selection owns contraction or decomposition; no provider switch,
+        // decoded bank, second executor or private Compute operation is added.
+        const auto a = cast(x, Type::kFloat32);
+        const auto one_value = one(c::Fill{
+            .output_shape = take(c::TensorShape::create(projection.activation_scale->description.dimensions())),
+            .output_type = Type::kFloat32, .value = c::ScalarValue(1.F)}, {}, spec(sa));
+        const auto inverse = binary(c::BinaryKind::kDivide, one_value, sa);
+        const auto normalized = binary(c::BinaryKind::kMultiply, a, inverse);
+        const auto encoded = cast(normalized, Type::kFloat8E4M3FN);
+        const auto q = cast(encoded, Type::kFloat32);
+        const auto w = cast(original, Type::kFloat32);
+        constexpr std::array<std::int32_t, 2> axes{1, 0};
+        const auto rhs = one(take(c::View::permute(axes)), {w});
+        dimensions.back() = spec(original).dimensions()[0];
+        const auto dot = one(c::MatMul{.accumulation_type = Type::kFloat32},
+            {q, rhs}, dense_spec(Type::kFloat32, dimensions));
+        const auto scaled = binary(c::BinaryKind::kMultiply,
+            binary(c::BinaryKind::kMultiply, dot, sa), sw);
+        return cast(scaled, Type::kBFloat16);
       } else if constexpr (std::is_same_v<P, ChannelTokenFp8Projection>) {
         const auto original = operand(*projection.codes);
         // The selected channel/token reader uses typed BF16 QDQ. Only an

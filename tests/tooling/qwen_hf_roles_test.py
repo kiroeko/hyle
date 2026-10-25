@@ -57,6 +57,69 @@ def source_fixture():
 
 
 class OriginalHfRolesTest(unittest.TestCase):
+    def test_modelopt_static_fp8_has_one_explicit_reader_and_three_original_roles(self):
+        config=source_config();config['text_config']['dtype']='bfloat16'
+        base='model.language_model.layers.0.linear_attn.in_proj_qkv'
+        nv='model.language_model.layers.0.mlp.gate_proj'
+        config['quantization_config']=dict(quant_method='modelopt',quant_algo='MIXED_PRECISION',
+            producer=dict(name='modelopt',version='0.47.0.dev80+g913f5e224'),
+            quantized_layers={base:dict(quant_algo='FP8'),nv:dict(quant_algo='NVFP4',group_size=16)},
+            config_groups=dict(group_0=dict(weights=dict(dynamic=False,num_bits=8,type='float'),
+                input_activations=dict(dynamic=False,num_bits=8,type='float'),targets=[base])))
+        model=roles.geometry.from_hf(config);physical=[]
+        for name,shape in roles.geometry.role_shapes(model).items():
+            if name==base+'.weight':
+                entries=((name,'F8_E4M3',shape),(base+'.input_scale','F32',[]),(base+'.weight_scale','F32',[]))
+            elif name==nv+'.weight':
+                n,k=shape
+                entries=((name,'U8',[n,k//2]),(nv+'.weight_scale','F8_E4M3',[n,k//16]),
+                    (nv+'.weight_scale_2','F32',[]),(nv+'.input_scale','F32',[]))
+            else:entries=((name,'BF16',shape),)
+            for key,dtype,dims in entries:
+                count=roles.ROLE_SIZES[dtype]
+                for dim in dims:count*=dim
+                physical.append(dict(name=key,dtype=dtype,shape=list(dims),bytes=count,
+                    path='original static scales.bin',offset=0,sha256='8'*64))
+        source=dict(complete=True,repository='test/modelopt-static',revision='c'*40,roles=physical)
+        authenticated=[]
+        def authenticate(role):
+            authenticated.append(role['name'])
+            return Path(role['path']),None
+        for mtp in (False,True):
+            lines,receipt=roles._prepare_role_records(source,mtp,config,authenticate,roles.STATIC_FP8_READER)
+            self.assertIn(roles.STATIC_FP8_POLICY_LINE,lines)
+            self.assertEqual(receipt['modelopt_static_fp8_groups'],1)
+            self.assertEqual(receipt['modelopt_static_fp8_policy'],roles.STATIC_FP8_POLICY)
+            self.assertNotIn('ct_mixed_policy',receipt);self.assertNotIn('fp8_block128_policy',receipt)
+            self.assertEqual(receipt['physical_roles'],len(roles.geometry.role_shapes(model,include_mtp=mtp))+5)
+            self.assertTrue(any(line.startswith(base+'.weight\tF8_E4M3\t2')for line in lines))
+            self.assertTrue(any(line.startswith(nv+'.weight\tU8\t2')for line in lines))
+        _,old_receipt=roles._prepare_role_records(source,False,config,authenticate,roles.STATIC_FP8_READER)
+        future=deepcopy(config);future['quantization_config']['producer']['version']='future_same_physical_contract'
+        _,future_receipt=roles._prepare_role_records(source,False,future,authenticate,roles.STATIC_FP8_READER)
+        self.assertNotEqual(old_receipt['source_id'],future_receipt['source_id'])
+        self.assertEqual(future_receipt['modelopt_static_fp8_source']['producer']['version'],'future_same_physical_contract')
+        self.assertEqual(future_receipt['modelopt_static_fp8_policy'],old_receipt['modelopt_static_fp8_policy'])
+        authenticated.clear()
+        with self.assertRaisesRegex(ValueError,'explicit --fp8-reader'):
+            roles._prepare_role_records(source,False,config,authenticate)
+        self.assertFalse(authenticated)
+        for change in ('missing','dtype','axis','ambiguous','source_dtype','dynamic','targets'):
+            bad,policy=deepcopy(source),deepcopy(config)
+            if change=='missing':bad['roles']=[r for r in bad['roles']if r['name']!=base+'.input_scale']
+            elif change=='dtype':
+                row=next(r for r in bad['roles']if r['name']==base+'.weight_scale');row.update(dtype='BF16',bytes=2)
+            elif change=='axis':next(r for r in bad['roles']if r['name']==base+'.input_scale')['shape']=[1,1]
+            elif change=='ambiguous':
+                row=deepcopy(next(r for r in bad['roles']if r['name']==base+'.weight_scale'));row['name']=base+'.weight_scale_2';bad['roles'].append(row)
+            elif change=='source_dtype':policy['text_config']['dtype']='float16'
+            elif change=='dynamic':policy['quantization_config']['config_groups']['group_0']['input_activations']['dynamic']=True
+            else:policy['quantization_config']['config_groups']['group_0']['targets']=[]
+            authenticated.clear()
+            with self.subTest(change=change),self.assertRaises(ValueError):
+                roles._prepare_role_records(bad,False,policy,authenticate,roles.STATIC_FP8_READER)
+            self.assertFalse(authenticated)
+
     def test_mlx_original_affine_reader_preserves_provenance_and_tied_head_math(self):
         for bits,tied in ((4,True),(8,False)):
             config=source_config();config['text_config']['tie_word_embeddings']=tied

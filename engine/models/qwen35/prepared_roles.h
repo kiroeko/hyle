@@ -52,7 +52,8 @@ enum class ParameterMeaning {
 // GGUF conversion retains its independent storage descriptor and parameter
 // meaning; this discriminator describes original HF projection groups.
 enum class ProjectionCodec { kUnspecified, kDense, kGptqV1Int4, kNvfp4, kCtSymmetric4, kFloat8Block128,
-                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4, kMlxAffine };
+                             kCtFloat8ChannelToken, kCtLocalNvfp4, kNf4DoubleQuant, kCtAsymmetric4, kMlxAffine,
+                             kModelOptStaticFp8 };
 // This is an explicit selected-reader arithmetic contract, not a claim that
 // every reader of the HF config chooses the same activation quantization.
 inline constexpr std::string_view fp8_reader = "sglang@06992c92ad4494fe9f9636e75be3e35040512447";
@@ -65,6 +66,9 @@ struct Float8BlockPolicy final {
 inline constexpr std::string_view ct_mixed_policy_line =
     "ct_mixed\tchannel_token_bf16_zero_only\tlocal_nvfp4_f32\tcompressed-tensors@0.17.2a20260716";
 struct CtMixedPolicy final { bool enabled = false; };
+inline constexpr std::string_view static_fp8_policy_line =
+    "modelopt_static_fp8\tBF16\tF32\tBF16\tstored_SA_SW\tf32_recip_mul_satfinite_e4\tSA_then_SW\tsglang@234ccba7f625e12639e621044496bcc6197c3758";
+struct ModelOptStaticFp8Policy final { bool enabled = false; };
 inline constexpr std::string_view bf16_cache_policy_line = "kv_cache\tBF16\tomit_original_calibration";
 struct Bf16CachePolicy final { bool omit_calibration = false; };
 inline constexpr std::string_view ct_asymmetric_policy_line =
@@ -162,6 +166,7 @@ struct Roles final {
   Nf4Policy nf4_policy{};
   CtAsymmetricPolicy ct_asymmetric_policy{};
   MlxAffinePolicy mlx_policy{};
+  ModelOptStaticFp8Policy static_fp8_policy{};
 };
 inline Roles read_gguf_roles(const std::filesystem::path &path, bool include_mtp);
 inline bool is_role_signature(std::string_view signature) noexcept {
@@ -244,7 +249,8 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
                           Float8BlockPolicy float8_policy = {}, CtMixedPolicy ct_mixed_policy = {},
                           Bf16CachePolicy bf16_cache_policy = {}, Nf4Policy nf4_policy = {},
                           const std::map<std::string, Nf4State> &nf4_states = {},
-                          CtAsymmetricPolicy ct_asymmetric_policy = {}, MlxAffinePolicy mlx_policy = {}) {
+                          CtAsymmetricPolicy ct_asymmetric_policy = {}, MlxAffinePolicy mlx_policy = {},
+                          ModelOptStaticFp8Policy static_fp8_policy = {}) {
   geometry.validate();
   if (geometry.gdn_layout != GdnHeadLayout::kGrouped) throw std::runtime_error("HF roles require their original grouped GDN layout");
   const auto maximum_hf_physical_roles = parameter_inventory(geometry.mtp_layers != 0, geometry).size() * maximum_physical_components;
@@ -257,6 +263,10 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   result.nf4_policy = nf4_policy;
   result.ct_asymmetric_policy = ct_asymmetric_policy;
   result.mlx_policy = mlx_policy;
+  result.static_fp8_policy = static_fp8_policy;
+  if (static_fp8_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled ||
+      nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() || bf16_cache_policy.omit_calibration))
+    throw std::runtime_error("prepared static FP8 cannot mix unrelated precision policies");
   if (mlx_policy.enabled() && (include_mtp || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled ||
       ct_asymmetric_policy.enabled || bf16_cache_policy.omit_calibration || (mlx_policy.bits != 4 && mlx_policy.bits != 8)))
     throw std::runtime_error("selected MLX reader cannot mix precision or NextN policies");
@@ -283,7 +293,7 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
   std::set<std::string> consumed;
   std::size_t nf4_groups = 0;
   std::size_t ct_asymmetric_groups = 0;
-  std::size_t mlx_groups = 0;
+  std::size_t mlx_groups = 0, static_fp8_groups = 0;
   for (const auto &[name, parameter] : inventory) {
     const bool selected = include_mtp || !name.starts_with("mtp.");
     const auto take = [&](const std::string &physical, std::string_view dtype,
@@ -392,6 +402,19 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       take(base + ".qzeros", "I32", {groups, n / 8});
       take(base + ".scales", "F16", {groups, n});
       take(base + ".g_idx", "I32", {k});
+    } else if (parameter.linear && all.contains(name) && all.at(name).dtype == "F8_E4M3" &&
+               (static_fp8_policy.enabled || all.contains(base + ".input_scale"))) {
+      if (!static_fp8_policy.enabled) throw std::runtime_error("prepared static FP8 requires its explicit stored-scale reader policy");
+      take(name, "F8_E4M3", parameter.shape, ProjectionCodec::kModelOptStaticFp8);
+      for (const auto *suffix : {".input_scale", ".weight_scale"}) {
+        const auto found = all.find(base + suffix);
+        if (found == all.end()) throw std::runtime_error("missing prepared role: " + base + suffix);
+        const auto &scalar = found->second;
+        if (!scalar.shape.empty() && scalar.shape != std::vector<std::int64_t>{1})
+          throw std::runtime_error("prepared static FP8 scale requires an independent F32 scalar: " + base + suffix);
+        take(base + suffix, "F32", scalar.shape);
+      }
+      ++static_fp8_groups;
     } else if (parameter.linear && all.contains(base + ".weight_scale") &&
                (all.contains(base + ".weight_scale_2") || all.contains(base + ".input_scale"))) {
       const auto n = parameter.shape[0], k = parameter.shape[1];
@@ -443,6 +466,8 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
       result.omitted_cache_calibration.push_back(found->second);
     }
   }
+  if (static_fp8_policy.enabled && !static_fp8_groups)
+    throw std::runtime_error("prepared static FP8 policy has no matching groups");
   if (float8_policy.enabled && !has_float8_block) throw std::runtime_error("prepared FP8 policy has no block128 weights");
   if (ct_mixed_policy.enabled && !has_ct_mixed) throw std::runtime_error("prepared CT reader policy has no matching weights");
   if (nf4_groups != nf4_states.size()) throw std::runtime_error("prepared NF4 per-group state inventory differs");
@@ -475,10 +500,19 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
   Nf4Policy nf4_policy;
   CtAsymmetricPolicy ct_asymmetric_policy;
   MlxAffinePolicy mlx_policy;
+  ModelOptStaticFp8Policy static_fp8_policy;
   std::map<std::string, Nf4State> nf4_states;
   std::string line;
   while (read_manifest_line(input, line)) {
     if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
+    if (line.starts_with("modelopt_static_fp8")) {
+      if (line.ends_with('\r')) line.pop_back();
+      if (static_fp8_policy.enabled || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled ||
+          nf4_policy.enabled || ct_asymmetric_policy.enabled || mlx_policy.enabled() ||
+          line != static_fp8_policy_line)
+        throw std::runtime_error("invalid or misplaced prepared static FP8 policy");
+      static_fp8_policy.enabled = true; continue;
+    }
     if (line.starts_with("mlx_affine")) {
       if (line.ends_with('\r')) line.pop_back();
       if (mlx_policy.enabled() || !all.empty() || float8_policy.enabled || ct_mixed_policy.enabled || nf4_policy.enabled || ct_asymmetric_policy.enabled ||
@@ -559,7 +593,7 @@ inline Roles read_roles(const std::filesystem::path &path, bool include_mtp) {
       throw std::runtime_error("duplicate prepared role");
   }
   if (!input.eof()) throw std::runtime_error("failed reading prepared role manifest");
-  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy);
+  return select_roles(all, std::move(identity), include_mtp, geometry, float8_policy, ct_mixed_policy, bf16_cache_policy, nf4_policy, nf4_states, ct_asymmetric_policy, mlx_policy, static_fp8_policy);
 }
 } // namespace qwen35::prepared
 

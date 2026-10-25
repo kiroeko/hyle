@@ -28,6 +28,75 @@ FP8_POLICY = dict(reader="sglang@06992c92ad4494fe9f9636e75be3e35040512447",
     weight_scale_conversion="bf16_to_f32_exact", block_size=[128,128])
 FP8_POLICY_LINE = "\t".join(("fp8_block128", "divide", "2edbe6ff", "BF16", "F32", "BF16",
                               "bf16_to_f32_exact", FP8_POLICY["reader"]))
+STATIC_FP8_READER = "sglang-static-fp8-234ccba7"
+STATIC_FP8_POLICY = dict(reader="sglang@234ccba7f625e12639e621044496bcc6197c3758",
+    input_dtype="BF16", accumulation_dtype="F32", output_dtype="BF16",
+    scales="original_independent_F32_scalars_SA_SW",
+    activation="F32_reciprocal_multiply_SATFINITE_RNE_E4M3",
+    epilogue="F32_code_dot_times_SA_then_SW")
+STATIC_FP8_POLICY_LINE = "\t".join(("modelopt_static_fp8", "BF16", "F32", "BF16",
+    "stored_SA_SW", "f32_recip_mul_satfinite_e4", "SA_then_SW", STATIC_FP8_POLICY["reader"]))
+
+
+def modelopt_static_fp8_groups(roles, config, reader):
+    """One explicit source-policy classification; no values/amax reconstruction."""
+    quant = config.get("quantization_config", {})
+    if reader != STATIC_FP8_READER and (quant.get("quant_method") != "modelopt" or
+            quant.get("quant_algo") != "MIXED_PRECISION"):
+        return {}
+    layers = quant.get("quantized_layers", {})
+    if not isinstance(layers, dict):
+        raise ValueError("original ModelOpt quantized layer inventory differs")
+    declared = {base for base, rule in layers.items() if isinstance(rule, dict) and rule.get("quant_algo") == "FP8"}
+    if not declared and reader != STATIC_FP8_READER:
+        return {}
+    if (reader != STATIC_FP8_READER or quant.get("quant_method") != "modelopt" or
+            quant.get("quant_algo") != "MIXED_PRECISION"):
+        raise ValueError("ModelOpt static FP8 requires explicit --fp8-reader " + STATIC_FP8_READER + " and its source policy")
+    dtypes = [part[key] for part in (config, config.get("text_config", config))
+              for key in ("dtype", "torch_dtype") if key in part]
+    if not dtypes or any(value != "bfloat16" for value in dtypes):
+        raise ValueError("selected ModelOpt static FP8 reader requires original BF16 compute")
+    configured = quant.get("config_groups", {})
+    if not isinstance(configured, dict):
+        raise ValueError("original ModelOpt static FP8 config groups differ")
+    targets = set()
+    for group in configured.values():
+        if not isinstance(group, dict):
+            raise ValueError("original ModelOpt static FP8 config group differs")
+        weight, activation = group.get("weights", {}), group.get("input_activations", {})
+        if not isinstance(weight, dict) or not isinstance(activation, dict):
+            raise ValueError("original ModelOpt static FP8 quantizer fields differ")
+        if weight.get("num_bits") != 8:
+            continue
+        if (weight != dict(dynamic=False, num_bits=8, type="float") or
+                activation != dict(dynamic=False, num_bits=8, type="float") or
+                any(type(row.get("num_bits")) is not int or type(row.get("dynamic")) is not bool
+                    for row in (weight, activation)) or
+                not isinstance(group.get("targets"), list) or
+                any(not isinstance(base, str) or not base for base in group["targets"])):
+            raise ValueError("original ModelOpt static activation/weight policy differs")
+        targets.update(group["targets"])
+    if not declared or targets != declared:
+        raise ValueError("original ModelOpt static FP8 target sets differ")
+    observed = {name[:-7] for name, role in roles.items() if name.endswith(".weight") and role["dtype"] == "F8_E4M3"}
+    if observed != declared:
+        raise ValueError("original ModelOpt static FP8 physical/configured groups differ")
+    groups = {}
+    for base in sorted(declared):
+        names = [base + suffix for suffix in (".weight", ".input_scale", ".weight_scale")]
+        if any(name not in roles for name in names):
+            raise ValueError("incomplete original ModelOpt static FP8 group: " + base)
+        weight, sa, sw = (roles[name] for name in names)
+        if (weight["dtype"] != "F8_E4M3" or len(weight["shape"]) != 2 or
+                any(row["dtype"] != "F32" or row["shape"] not in ([], [1]) for row in (sa, sw))):
+            raise ValueError("original ModelOpt static FP8 requires E4[N,K] and separate F32 scalar SA/SW: " + base)
+        if any(base + suffix in roles for suffix in (".weight_scale_2", ".weight_scale_inv", ".weight_packed", ".qweight", ".weight_global_scale", ".input_global_scale")):
+            raise ValueError("ambiguous original ModelOpt static FP8 group: " + base)
+        groups[base] = dict(logical_shape=list(weight["shape"]))
+    return groups
+
+
 CT_MIXED_READER = "compressed-tensors-0.17.2a20260716"
 CT_MIXED_POLICY = dict(reader="compressed-tensors@0.17.2a20260716",
     channel_token="BF16_typed_divide_zero_only_epsilon_and_per_weight_product",
@@ -333,7 +402,7 @@ def prepare_role_files(path: Path, mtp: bool, config: dict, fp8_reader: str | No
 
 
 def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, kv_cache_dtype=None):
-    if fp8_reader not in (None, FP8_READER, CT_MIXED_READER):
+    if fp8_reader not in (None, FP8_READER, CT_MIXED_READER, STATIC_FP8_READER):
         raise ValueError("unknown fixed FP8 reference reader")
     model_geometry = geometry.from_hf(config)
     if mtp and not model_geometry['mtp_layers']:
@@ -359,12 +428,18 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         raise ValueError('source has no original NextN roles')
     normalized, mlx_policy = mlx_affine_roles(all_roles, config, model_geometry)
     if mlx_policy and (mtp or fp8_reader or kv_cache_dtype): raise ValueError('MLX reader cannot mix NextN or other precision policies')
-    mixed = ct_mixed_groups(normalized, config, model_geometry, fp8_reader, kv_cache_dtype)
+    static_fp8 = modelopt_static_fp8_groups(normalized, config, fp8_reader)
+    static_physical = {base+suffix for base in static_fp8 for suffix in ('.weight','.input_scale','.weight_scale')}
+    # Classify this source once; existing readers must not reinterpret the same
+    # E4 principal/scalars as CT token/channel, block128 or NVFP4 scales.
+    other_roles = {name:role for name,role in normalized.items() if name not in static_physical}
+    mixed = ct_mixed_groups(other_roles, config, model_geometry,
+        None if static_fp8 else fp8_reader, kv_cache_dtype)
     omitted = set(mixed["omitted_cache_calibration"])
     nf4_groups = nf4_state.groups(normalized, config, geometry.role_shapes(model_geometry))
     validate_role_geometry(normalized, model_geometry, omitted, nf4_groups)
     channel_physical = {base+suffix for base in mixed['channel'] for suffix in ('.weight','.weight_scale')}
-    fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical},
+    fp8_groups = float8_block_groups({name:role for name,role in all_roles.items() if name not in channel_physical and name not in static_physical},
         config, fp8_reader if fp8_reader == FP8_READER else None)
     ct_groups = ct_packed_groups(all_roles)
     asymmetric_policy = ct_asymmetric_policy(ct_groups, config)
@@ -394,6 +469,12 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         identities.append({key: role[key] for key in ("name", "dtype", "shape", "bytes", "sha256")})
     identity = dict(repository=original["repository"], revision=original["revision"],
                     geometry=model_geometry, roles=sorted(identities, key=lambda item: item["name"]))
+    if static_fp8:
+        identity["modelopt_static_fp8_policy"] = dict(STATIC_FP8_POLICY)
+        identity["modelopt_static_fp8_source"] = dict(
+            quant_method=config["quantization_config"]["quant_method"],
+            quant_algo=config["quantization_config"]["quant_algo"],
+            producer=config["quantization_config"].get("producer"))
     if fp8_groups:
         identity["fp8_block128_policy"] = dict(FP8_POLICY)
     if mlx_policy:
@@ -411,6 +492,8 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     chosen = [item for item in identities if item['name'] not in omitted and (mtp or not item['name'].startswith('mtp.'))]
     policy_lines = [FP8_POLICY_LINE] if fp8_groups else []
+    if static_fp8:
+        policy_lines.append(STATIC_FP8_POLICY_LINE)
     if mlx_policy:
         policy_lines.append("\t".join(("mlx_affine",str(mlx_policy["bits"]),"64","BF16","F32","BF16","sanitized_norm_conv",MLX_READER)))
     if nf4_groups:
@@ -431,6 +514,12 @@ def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, 
         text_weight_bytes=sum(item["bytes"] for item in identities if item['name'] not in omitted and not item["name"].startswith("mtp.")),
         mtp_weight_bytes=sum(item["bytes"] for item in identities if item["name"].startswith("mtp.")),
         original_role_records=identity["roles"], storage="borrowed original cached files/ranges; no copied checkpoint")
+    if static_fp8:
+        receipt["modelopt_static_fp8_policy"] = dict(STATIC_FP8_POLICY)
+        receipt["modelopt_static_fp8_source"] = identity["modelopt_static_fp8_source"]
+        receipt["modelopt_static_fp8_groups"] = sum(mtp or not name.startswith("mtp.") for name in static_fp8)
+        receipt["metadata_modelopt_static_fp8_groups"] = len(static_fp8)
+        receipt["modelopt_static_fp8_scope"] = "selected stored-scale software reader; source codes/scalars retained; planner selects contraction or decomposition; full artifact execution unverified"
     if mlx_policy:
         receipt["mlx_affine_policy"] = mlx_policy
         receipt["mlx_execution_scope"] = "selected current-reader parameter convention; component execution requires separate verification; full source/model execution unverified"
@@ -522,7 +611,7 @@ def main() -> None:
                         help="prepared fixed-source text role record; borrow original quantized files/ranges")
     weight_source.add_argument("--gguf-role-files", type=Path,
                         help="complete acquired GGUF payload-source record; preserve original codec and converted parameters")
-    parser.add_argument("--fp8-reader", choices=[FP8_READER, CT_MIXED_READER],
+    parser.add_argument("--fp8-reader", choices=[FP8_READER, CT_MIXED_READER, STATIC_FP8_READER],
                         help="explicit fixed reference-reader arithmetic for original FP8/CT sources")
     parser.add_argument("--kv-cache-dtype", choices=['bf16'],
                         help="explicit BF16 KV storage; source cache calibration remains authenticated but is omitted from weight IO")

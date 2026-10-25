@@ -1,0 +1,178 @@
+{
+  "status": "FOCUSED_COLD_CHAIN_AND_SYNTHETIC_CPU_PASS",
+  "date": "2026-10-25",
+  "base_commit": "a73542229b2f0fcc854269c97cc363714a65460f",
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 488105,
+      "sha256": "0626e50feee31408e97d2459738bbc11288d6499021979c65e778b94189abaa1"
+    },
+    {
+      "path": "engine/models/qwen35/precision_profile.h",
+      "bytes": 2186,
+      "sha256": "1c8aeb1ebcc9d7008521dd1b229d284e9fe7de291d53166a2bf798b53546ee32"
+    },
+    {
+      "path": "engine/models/qwen35/prepare.py",
+      "bytes": 43055,
+      "sha256": "d61fa7fea04c81638a64eb6aa2e1a70245f620a8ea15437aa4c1548b10b4efb2"
+    },
+    {
+      "path": "engine/models/qwen35/prepared_roles.h",
+      "bytes": 37613,
+      "sha256": "71cac8e6404b65b1dbc8668c2c91d3d08c4835952dc6ea92e7d2e919ad0e1e38"
+    },
+    {
+      "path": "engine/models/qwen35/projection_binding.h",
+      "bytes": 3366,
+      "sha256": "155b90ec1c9bed64c269519bfdf9ddf337de79cd7fe16332525de80c37e22412"
+    },
+    {
+      "path": "tests/tooling/qwen_hf_roles_test.py",
+      "bytes": 37203,
+      "sha256": "94c552cc5169dd0de9168d96daa366422b4a071b260c3214ffa068729a131d1e"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 52790,
+      "sha256": "f4ed1ee638c6398690612161102468fdc0fb1242778750b2615ce668901ea8e9"
+    }
+  ],
+  "changes": [
+    "Prepare classifies the selected original E4 weight and independent F32 SA/SW once; V2 policy, source identity and receipt preserve the explicit software arithmetic.",
+    "Cold role selection and ProjectionBinding retain all three original tensors. Recipe emits the existing twelve public StaticFloat8Pattern nodes, with no new Compute operation, provider switch or decoded persistent weight bank.",
+    "Producer version is provenance rather than a support whitelist. Physical/source-policy mismatches reject before payload authentication; existing NVFP4 groups keep their separate codec."
+  ],
+  "execution": {
+    "python_tests": {
+      "status": "PASS",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "imports": [
+        {
+          "module": "engine.models.qwen35.prepare",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\source\\engine\\models\\qwen35\\prepare.py",
+          "bytes": 43055,
+          "sha256": "d61fa7fea04c81638a64eb6aa2e1a70245f620a8ea15437aa4c1548b10b4efb2"
+        },
+        {
+          "module": "engine.models.qwen35.geometry",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\source\\engine\\models\\qwen35\\geometry.py",
+          "bytes": 8542,
+          "sha256": "43b93b3ee48902caba25657c4fc938ab31ef804ecb33b10a4b9cb63f7744ae7f"
+        },
+        {
+          "module": "engine.models.qwen35.nf4_state",
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\source\\engine\\models\\qwen35\\nf4_state.py",
+          "bytes": 5365,
+          "sha256": "318c164936a1e4d79bd0ff14b97f4c753c4b21faac63a22fbb155e7d2ba60653"
+        }
+      ],
+      "GPU": false,
+      "HTTP": 0
+    },
+    "host_checks": 383,
+    "CPU_component": {
+      "status": "PASS",
+      "scope": "synthetic_static_fp8_V2_loader_binding_recipe_Graph",
+      "physical_roles": 16,
+      "graph_nodes": 13,
+      "graph_calls": 2,
+      "checked_values": 12,
+      "max_abs_error": 0,
+      "old_output_lease_preserved": true,
+      "caller_owned": true,
+      "workspace_bytes": 704,
+      "original_artifact_payload_bytes": 0,
+      "full_model": false,
+      "GPU": false,
+      "HTTP": 0
+    },
+    "actual_route": "ordinary_CPU_decomposition_ggml_cpu_and_ATen_casts_not_packed_static_fp8_region",
+    "packed_region_selected": false,
+    "new_application_TUs": 1,
+    "new_host_TUs": 1,
+    "new_core_provider_SDK_TUs": 0,
+    "GPU_processes": 0,
+    "HTTP_bytes": 0
+  },
+  "source_evidence": {
+    "static_groups_in_original_index": 208,
+    "groups_with_actual_complete_cached_headers": 85,
+    "groups_header_unavailable": 123,
+    "authenticated_original_numeric_payload_bytes": 0,
+    "actual_header_audit": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\header-source-audit.json",
+      "bytes": 210639,
+      "sha256": "e5a3f7c39d17ce6fc96185f02362a2c499de610d0ed5d9ba5fb5f9cbe482fdc0"
+    },
+    "software_reader": "sglang-static-fp8-234ccba7",
+    "equation": "BF16 A->F32 reciprocal(SA) multiply->SATFINITE RNE E4->F32 code dot E4 W->separate F32 *SA *SW->BF16 store; scores widen F32"
+  },
+  "failures": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\verification\\python1",
+      "stage": "private_runner_syntax",
+      "cause": "else1 missing separator",
+      "tests_run": 0,
+      "model_run": false,
+      "preserved_failed_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\verification\\python1\\failed-runner.py",
+        "bytes": 1266,
+        "sha256": "3fbfeb05034c9ca34eef4d61df87276578470992c79e1aeaee12b26112e81d87"
+      },
+      "process": {
+        "exit": 1,
+        "seconds": 0.031000000017229468,
+        "timeout": false
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\verification\\host1",
+      "stage": "private_source_closure_compile",
+      "cause": "original prepared_gguf_roles.h omitted from private quoted include closure",
+      "tests_run": 0,
+      "model_run": false,
+      "process": {
+        "exit": 2,
+        "seconds": 0.7969999999913853,
+        "timeout": false
+      }
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\verification\\app1",
+      "stage": "private_fixture_output_binding",
+      "cause": "bare caller Tensor buffer has no independently retainable storage lease; original Graph refused capture",
+      "numeric_comparisons_completed": 0,
+      "product_failure": false,
+      "preserved_failed_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-qwen-static-fp8-20261025\\verification\\app1\\failed-helper.h",
+        "bytes": 8391,
+        "sha256": "22ce080a267c90a861b4d0185d9ce1bc06f8211c7b07d5c9ae4af72f8ce9b8d1"
+      },
+      "process": {
+        "exit": 1,
+        "seconds": 0.7339999999967404,
+        "timeout": false
+      },
+      "correction": "bind actual LeasePool WriteLease per original static_fp8_reference_fixture caller path; no product/precision/oracle/tolerance changes"
+    }
+  ],
+  "limits": [
+    "synthetic CPU component only; not original artifact numeric or full model support proof",
+    "default CPU decomposition passed; packed CPU/CUDA contraction and GPU compressed residency not executed in this batch",
+    "no GPU, HTTP, SDK/core/provider build, performance or quality claims",
+    "private reusable helper includes original gtest reference fixture; canonical lifecycle bridge not added to avoid introducing gtest dependency",
+    "unknown producer scale semantics remain failclosed; producer version is provenance rather than permanent supported-version whitelist"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.zip",
+    "bytes": 80951,
+    "sha256": "2fe77520e3fb5cc2b9dd131923ac7ff0f2e1aaefe7020067088774eb112ab071",
+    "members": 65,
+    "contents": "Exact patch, pins, bounded source audit, helper and commands, dependency identities, raw passes and initial runner/closure/lease-fixture failures. No binaries, SDK or model payload."
+  }
+}

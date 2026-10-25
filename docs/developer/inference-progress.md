@@ -1,14 +1,14 @@
 # 基础推理、多会话与多任务进度
 
-更新：2026-10-25 13:39（北京时间）。整体暂估 **52%**。四项修复及相关有限检查已提交。并行扫描又确认 ModelOpt 静态 FP8 接线和 GLM Flash 普通短／空历史两项缺口，已开始处理；Kimi 原参数同步推进。深入性能狩猎后置。
+更新：2026-10-25 13:58（北京时间）。整体暂估 **53%**。静态 FP8 准备／投影接线及有限 CPU 冷链检查已完成；GLM Flash 短／空历史、Kimi 原参数与普通推理边界扫描并行推进。深入性能狩猎后置。
 
 百分比表示本轮任务完成度，不是现有功能覆盖率。范围为当前硬件可做的单机、多系统、CPU／单 GPU／CPU＋GPU基础推理、多会话和多请求；新增缺项继续纳入。MTP／多模态不新增功能，性能包含 MTP 对 llama.cpp 约10%的差距。
 实现边界见[推理设计](../architecture/inference-design.md)，模型与量化范围见[模型／算子清单](../implementation/model-operators.md)。实际模型入口用于检查底座，服务器不作为前置；组件通过不代表整模型或其它平台通过。
 
 执行顺序：先补当前硬件可做的普通推理、多会话和多请求功能，按实际缺项同时调整共同架构；随后统一复审职责、状态与资源寿命、模型／后端扩展接线；最后集中做完整性能对照和深入优化。前两阶段保留必要的正确性与性能回归检查，及时处理明显复杂度、重复分配／搬运及实质回归，不追逐小幅吞吐差异，不扩验证矩阵。
 
-- 功能盘点与补齐：约 63%
-  - 基础普通推理：约 66%
+- 功能盘点与补齐：约 64%
+  - 基础普通推理：约 67%
     - 模型／量化／算子与融合缺项盘点：约 10%
     - BNB NF4 原角色、F16 精度与冷导入：100%
     - NF4 原压缩权重驻留投影：100%
@@ -22,7 +22,8 @@
     - Kimi 两制品原 payload 有限组件：100%
     - KDA／Kimi MLA 外部参数构图与共用数学体：100%
     - Kimi 原 KDA／MLA 参数绑定与数值组件：0%
-    - ModelOpt 混合制品静态 FP8 原投影接线：0%
+    - ModelOpt 静态 FP8 准备／投影接线：100%
+    - ModelOpt 静态 FP8 原 payload 组件与 GPU 路线：0%
     - GLM Flash 普通 target43 短／空历史：0%
     - prefill／decode／上下文与状态：约 20%
     - 采样／停止／预算与错误边界：约 15%
@@ -53,7 +54,7 @@
     - frontier 未退休时的共享输入提前门禁：100%
     - backing 实际释放与预算归还顺序：100%
     - 同一 Model 的逐请求采样策略与缓存前沿：100%
-- 架构复审、设计与调整：约 42%
+- 架构复审、设计与调整：约 43%
   - 全链职责、所有权与配置合同复审：约 5%
   - 按真实缺项调整共同机制：约 40%
   - Session／缓存退休事实与错误出口：100%
@@ -80,7 +81,7 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| ModelOpt 静态 FP8 的投影接线 | 普通推理／模型接线 | 低层算子已有，准备接原 E4 权重及独立 SA／SW；已核85组原 header，不把整个208组都写成逐项核过 | 约 20% |
+| 普通推理功能边界扫描 | 普通推理／上下文与采样 | 继续查 prefill／decode、停止与预算的真实缺项；静态 FP8 冷接线已完成，原 payload／GPU 数值待办 | 约 10% |
 | GLM Flash 普通 target43 短／空历史 | 普通推理／上下文状态 | 修复共享 MLX／GGUF 与官方 FP8 路径固定 Top512／2048 的启动限制，保原状态和成熟路径 | 约 10% |
 | Kimi 原注意力参数绑定与必需片段 | 普通推理／模型接线 | 23角色已与原头部逐项核对；准备 conv／decay／KV-b 映射，只取约1.35GB必要范围 | 约 20% |
 
@@ -88,7 +89,7 @@
 不为统一接口新增热分配、搬运、动态路由或第二套执行器；不强制替换本来合适的容器。
 只运行改动相关的必要检查，复用工具链和依赖缓存，不重复全库构建。
 
-最新依据：[请求局部采样失败](../evidence/correctness/inference-request-sampling-failure-2026-10-25.json)、[Kimi 外部参数入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)、[采样范围与中途恢复](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)。职责与已有功能证据见[推理设计](../architecture/inference-design.md)，性能基线、已关闭候选及数据见[decode 性能资料](performance/decode.md)。
+最新依据：[静态 FP8 冷链](../evidence/correctness/qwen-static-fp8-cold-chain-2026-10-25.json)、[请求局部采样失败](../evidence/correctness/inference-request-sampling-failure-2026-10-25.json)、[Kimi 外部参数入口](../evidence/correctness/kimi-supplied-parameters-2026-10-25.json)、[采样范围与中途恢复](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)。职责与已有功能证据见[推理设计](../architecture/inference-design.md)，性能基线、已关闭候选及数据见[decode 性能资料](performance/decode.md)。
 
 ## 最新完整性能对照
 

@@ -1,6 +1,7 @@
 // Standard-library-only metadata regression: no weight body, SDK or device IO.
 #include "../../engine/models/qwen35/prepared_roles.h"
 #include "qwen_geometry_fixture.h"
+#include "../../engine/models/qwen35/precision_profile.h"
 
 #include <cstdio>
 #include <array>
@@ -749,6 +750,60 @@ void mlx_original_affine_names_and_effective_parameters(const fs::path &director
     write(path,manifest);rejects([&]{(void)p::read_roles(path,true);},"MLX reader cannot mix");
   }
 }
+void modelopt_static_fp8_preserves_original_scalar_roles(const fs::path &directory) {
+  const std::string base="model.language_model.layers.0.linear_attn.in_proj_qkv";
+  const std::string nv="model.language_model.layers.0.mlp.gate_proj";
+  auto all=dense();
+  const auto shape=all.at(base+".weight").shape;
+  all.erase(base+".weight");add(all,base+".weight","F8_E4M3",shape);
+  add(all,base+".input_scale","F32",{});add(all,base+".weight_scale","F32",{});
+  const auto nv_shape=all.at(nv+".weight").shape;
+  all.erase(nv+".weight");add(all,nv+".weight","U8",{nv_shape[0],nv_shape[1]/2});
+  add(all,nv+".weight_scale","F8_E4M3",{nv_shape[0],nv_shape[1]/16});
+  add(all,nv+".input_scale","F32",{});add(all,nv+".weight_scale_2","F32",{});
+  const auto select=[&](const Inventory &source,bool mtp=false) {
+    return p::select_roles(source,identity,mtp,geometry,{}, {}, {}, {}, {}, {}, {}, {true});
+  };
+  const auto text_roles=select(all),full_roles=select(all,true);
+  require(text_roles.static_fp8_policy.enabled &&
+      text_roles.selected.size()==p::parameter_inventory(false,geometry).size()+5 &&
+      full_roles.selected.size()==p::parameter_inventory(true,geometry).size()+5,
+      "static FP8 ordinary/MTP selection lost its exact physical inventory");
+  const auto principal=std::ranges::find(text_roles.selected,base+".weight",&p::Role::name);
+  const auto nv_principal=std::ranges::find(text_roles.selected,nv+".weight",&p::Role::name);
+  require(principal!=text_roles.selected.end() && principal->shape==shape &&
+      principal->projection_codec==p::ProjectionCodec::kModelOptStaticFp8 && !principal->projection_group_size &&
+      nv_principal!=text_roles.selected.end() && nv_principal->projection_codec==p::ProjectionCodec::kNvfp4,
+      "static FP8 and NVFP4 principals must retain different typed equations");
+  require(qwen35::PrecisionProfile::from_roles(text_roles).activation_type()==hyle::compute::DataType::kBFloat16,
+      "stored-scale static FP8 must retain real BF16 activation/cache policy");
+  rejects([&]{(void)p::select_roles(all,identity,false,geometry);},"static FP8 requires");
+  auto bad=all;bad.erase(base+".input_scale");
+  rejects([&]{(void)select(bad);},"missing prepared role");
+  bad=all;bad.at(base+".input_scale").shape={1,1};
+  rejects([&]{(void)select(bad);},"independent F32 scalar");
+  bad=all;bad.at(base+".weight_scale").dtype="BF16";bad.at(base+".weight_scale").bytes=2;
+  rejects([&]{(void)select(bad);},"type/shape differs");
+  rejects([&]{(void)p::select_roles(all,identity,false,geometry,{}, {}, {}, {true}, {}, {}, {}, {true});},
+      "cannot mix unrelated precision policies");
+  auto typed=text_roles;typed.static_fp8_policy.enabled=false;
+  rejects([&]{(void)qwen35::PrecisionProfile::from_roles(typed);},"selected stored-scale reader");
+  const auto header=std::string(p::role_signature)+'\n'+identity+'\n'+qwen_test::geometry_line(geometry)+'\n';
+  std::string body;for(const auto &[name,role]:all){(void)name;body+=row(role);}
+  const auto path=directory/"static-fp8.tsv";
+  const auto policy=std::string(p::static_fp8_policy_line)+'\n';
+  write(path,header+policy+body);
+  require(p::read_roles(path,false).selected.size()==text_roles.selected.size(),
+      "static FP8 V2 policy/physical roles must roundtrip without payload IO");
+  write(path,header+policy+policy+body);
+  rejects([&]{(void)p::read_roles(path,false);},"static FP8 policy");
+  write(path,header+body+policy);
+  rejects([&]{(void)p::read_roles(path,false);},"static FP8 policy");
+  auto wrong=policy;const auto at=wrong.find("SA_then_SW");wrong.replace(at,10,"SW_then_SA");
+  write(path,header+wrong+body);
+  rejects([&]{(void)p::read_roles(path,false);},"static FP8 policy");
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -756,6 +811,7 @@ int main(int argc, char **argv) {
     if (argc < 2) throw std::runtime_error("pass the scratch fixture directory");
     const fs::path directory = argv[1];
     fs::create_directories(directory);
+    modelopt_static_fp8_preserves_original_scalar_roles(directory);
     mlx_original_affine_names_and_effective_parameters(directory);
     full_inventory_and_selection(directory);
     complete_validation_also_applies_when_mtp_is_off(directory);
