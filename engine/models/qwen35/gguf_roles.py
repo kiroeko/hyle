@@ -26,7 +26,8 @@ ROLE_SIGNATURE = 'HYLE_QWEN_GGUF_ROLE_FILES_V2'
 ROOT = Path(__file__).resolve().parents[3]
 # Original physical formats carried by the local text consumer.
 # They describe original storage, not activation precision or a Provider.
-CODECS = {0: ('F32', 1, 4), 1: ('F16', 1, 2), 8: ('Q8_0', 32, 34), 12: ('Q4_K', 256, 144),
+CODECS = {0: ('F32', 1, 4), 1: ('F16', 1, 2), 30: ('BF16', 1, 2),
+          8: ('Q8_0', 32, 34), 12: ('Q4_K', 256, 144),
           13: ('Q5_K', 256, 176), 14: ('Q6_K', 256, 210), 11: ('Q3_K', 256, 110),
           23: ('IQ4_XS', 256, 136), 20: ('IQ4_NL', 32, 18), 21: ('IQ3_S', 256, 110),
           40: ('NVFP4', 64, 36)}
@@ -123,7 +124,7 @@ def typed_inventory(header, source, *, header_sha256):
         require(type(code) is int and code in CODECS, 'unsupported physical GGUF codec: '+row['name'])
         codec, block_elements, block_bytes = CODECS[code]
         shape = spec['logical_shape']
-        require(spec['semantic'] in ('linear_weight','embedding_rows') or code in (0,1),
+        require(spec['semantic'] in ('linear_weight','embedding_rows') or block_elements == 1,
                 'GGUF scalar/norm/convolution must preserve its plain floating representation: '+row['name'])
         require(row['shape'][0] % block_elements == 0, 'GGUF role has an incomplete physical K block')
         count = math.prod(row['shape'])

@@ -6,7 +6,7 @@
 
 这是当前模型与量化版本到权重角色、计算子图、Hyle custom descriptor 的现行人读入口。模型范围由[需求目录 D](tasks/compute/llm-moe-provider-demand-matrix.json) 的 `/current_scope` 定义：六个既有模型，加 DeepSeek V4 Pro-0813、Flash-0731 两个正式版，共 **8 个模型**；下表的 **24 个 profile 是本轮已锁基线，不是量化支持范围上限**。旧 `deepseek_v4_pro`、`deepseek_v4_flash` preview 及其量化衍生制品不再属于当前范围；正式版属于单独锁定的身份，不自动扩大到 V4.1。
 
-[33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。
+[33项派生目录的逐合同复核](../evidence/research/inference-selected-profile-contracts-2026-10-25.json)按18类共享物理／数值合同回指真实consumer，区分已有reader、缺冷绑定、未决源解释及原值证据范围，不是整制品支持名单。已补[Q27 GGUF NVFP4冷映射](../evidence/correctness/qwen-gguf-nvfp4-binding-2026-10-25.json)：原type40／64值36字节沿现有Stored投影与Gather路径，不套HF group16数学；本次host元数据检查不代签原payload或整模型。另补[Q27 fidelity GGUF BF16冷映射](../evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.json)，原type30按plain 1值2字节承载，计算路径与精度策略不变。
 
 目标模型的 Unsloth 量化制品及 Hugging Face 上的主流量化制品也属于后续覆盖范围，不能用“每模型三个profile”排除其他实际发布的格式。新增制品按 D 的 `/current_scope/quantization_scope` 核定真实仓库、固定revision、对应GA base model、逐角色格式与数值合同后扩充本表；尚未核实的格式不写成某个模型已经发布或Hyle已经支持。
 
@@ -33,7 +33,7 @@ Qwen3.5-2B官方BF16、全CUDA、单序列R1的已有实际编译报告中，普
 
 ## 模型与量化身份
 
-`official`、`primary`、`fidelity` 分别对应目录键 `official`、`primary_gguf`、`fidelity_gguf`。身份 pointer 均相对 D；variant 链接指向已锁 revision 的 Hugging Face 制品目录。GA GGUF 的发布者与 `base_model` 已核对，主文件逐 tensor header 尚未核定，因此精确混合 codec 继续留空，不由 variant 名推断。
+`official`、`primary`、`fidelity` 分别对应目录键 `official`、`primary_gguf`、`fidelity_gguf`。身份 pointer 均相对 D；variant 链接指向已锁 revision 的 Hugging Face 制品目录。GA GGUF 的发布者与 `base_model` 已核对，固定revision的主文件解析目录已覆盖Pro两组各20分片／1,894个唯一角色、Flash两组各5分片／1,328个唯一角色。下表列实际混合类型，不由variant名推断，也不是Hyle支持白名单。
 
 | 模型 | Profile | 具体 variant（HF） | 记录的 formats / 未核项 | 身份 pointer（D） |
 | --- | --- | --- | --- | --- |
@@ -56,11 +56,11 @@ Qwen3.5-2B官方BF16、全CUDA、单序列R1的已有实际编译报告中，普
 | GLM-5.3-Flash | primary | [UD-Q4_K_XL](https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9) | Q4_K；Q5_K；Q6_K；Q8_0；F32 | `/profile_catalog/7/primary_gguf` |
 | GLM-5.3-Flash | fidelity | [Q8_0](https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9) | Q8_0；F32 | `/profile_catalog/7/fidelity_gguf` |
 | DeepSeek-V4-Pro-0813 | official | [official-fp4-fp8-dspark](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-0813/tree/72e1d3230f6c080a530b0a1d46f8eb4602340597) | packed FP4 expert；FP8 E4M3；UE8M0 scale；BF16；F32；I64 | `/current_scope/added_releases/0/official` |
-| DeepSeek-V4-Pro-0813 | primary | [UD-Q4_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/tree/6d053616d152293da72569f56b861466f10ace7d) | 主 GGUF 逐角色 codec / DSpark 打包待核 | `/current_scope/added_releases/0/primary_gguf` |
-| DeepSeek-V4-Pro-0813 | fidelity | [UD-Q8_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/tree/6d053616d152293da72569f56b861466f10ace7d) | 主 GGUF 逐角色 codec / DSpark 打包待核 | `/current_scope/added_releases/0/fidelity_gguf` |
+| DeepSeek-V4-Pro-0813 | primary | [UD-Q4_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/tree/6d053616d152293da72569f56b861466f10ace7d) | Q8_0 dense／词表；BF16 router；MXFP4 expert；F32；I32 | `/current_scope/added_releases/0/primary_gguf` |
+| DeepSeek-V4-Pro-0813 | fidelity | [UD-Q8_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/tree/6d053616d152293da72569f56b861466f10ace7d) | BF16 dense／词表／router；MXFP4 expert；F32；I32 | `/current_scope/added_releases/0/fidelity_gguf` |
 | DeepSeek-V4-Flash-0731 | official | [official-fp4-fp8-dspark](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash-0731/tree/7872f01b1d1fe23eabc4c98b48bffcef5a386062) | packed FP4 expert；FP8 E4M3；UE8M0 scale；BF16；F32；I64 | `/current_scope/added_releases/1/official` |
-| DeepSeek-V4-Flash-0731 | primary | [UD-Q4_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768) | 主 GGUF 逐角色 codec / DSpark 打包待核 | `/current_scope/added_releases/1/primary_gguf` |
-| DeepSeek-V4-Flash-0731 | fidelity | [UD-Q8_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768) | 主 GGUF 逐角色 codec / DSpark 打包待核 | `/current_scope/added_releases/1/fidelity_gguf` |
+| DeepSeek-V4-Flash-0731 | primary | [UD-Q4_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768) | Q8_0 dense／词表；BF16 router；MXFP4 expert；F32；I32 | `/current_scope/added_releases/1/primary_gguf` |
+| DeepSeek-V4-Flash-0731 | fidelity | [UD-Q8_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/tree/fbbb5b93fb787c21338159b0af3318bb3f4d9768) | BF16 dense／词表／router；MXFP4 expert；F32；I32 | `/current_scope/added_releases/1/fidelity_gguf` |
 
 Variant 名称不表示所有权重采用同一精度。例如 Kimi 的 `UD-Q4_K_XL` 目录仍记录 MXFP4/Q8_0/F32；`IQ3`、`IQ4` 仍是宽泛名称，不能补写成已确定 codec。Qwen3.5-2B 两个 GGUF profile 明确排除 R13（MTP）。官方、GGUF、历史人工量化样例不能互相替代。
 
@@ -76,7 +76,9 @@ CPU／CUDA各5次Graph保完整cap6 KV、normalized hidden、pending、cursor与
 
 完整512域softmax Top10沿实际ID供给E10原压缩bank与I32 map，每槽283,117,568B，双槽；只有10个调度ID读回host，激活和状态保实际producer租约。一次冷图切分生成两份普通Graph，成功后六项状态原子发布。CPU／CUDA新用例各10次Graph，首轮各核435,201个投影值（含全V248320 head）；Q4／Q5参考区分实际M1 MMVQ与未用MMQ的minimum算术，不增加native参考提交。相关8项50次Graph无失败／跳过，实际反馈均为3,321,3,321,328；这是夹具输入的数值／状态结果，不是自然文本质量。声明槽容量不是物理峰；真实target／初始历史、其它量化、自然接受率及TPS未据此完成。旧C5两profile及[单次完整head](../evidence/correctness/mtp-full-packed-head-2026-10-23.json)依据保留。
 
-Pro GA GGUF 固定为 [Unsloth Pro-0813][pro-gguf] `6d053616d152293da72569f56b861466f10ace7d`，两种 variant 各20分片；Flash GA GGUF 固定为 [Unsloth Flash-0731][flash-gguf] `fbbb5b93fb787c21338159b0af3318bb3f4d9768`，各5分片。[Flash GGUF DSpark 说明][flash-dspark]将其列为独立 optional add-on；不能把主 profile 自动解释成启用 DSpark，也不额外增加上述24个主 profile。发布者关于 MXFP4 passthrough、Q8_0/BF16 转换的声明仍须与实际选定文件的 tensor header 对照。
+Pro GA GGUF 固定为 [Unsloth Pro-0813][pro-gguf] `6d053616d152293da72569f56b861466f10ace7d`，两种 variant 各20分片；Flash GA GGUF 固定为 [Unsloth Flash-0731][flash-gguf] `fbbb5b93fb787c21338159b0af3318bb3f4d9768`，各5分片。[Flash GGUF DSpark 说明][flash-dspark]将其列为独立 optional add-on；不能把主 profile 自动解释成启用 DSpark，也不额外增加上述24个主 profile。已存主目录与发布者的MXFP4 passthrough、Q8_0／BF16转换声明相符：primary的普通dense、词表、attention、compressor、indexer与shared FFN为Q8_0，router为BF16；fidelity对应dense角色改为BF16，两者expert仍是MXFP4，另保F32及I32查表。四组目录均无显式MTP／DSpark角色名；独立sidecar仍另列，不据此主目录自动启用DSpark。
+
+[四组GA主目录核定记录](../evidence/research/deepseek-ga-gguf-inventory-2026-10-25.json)保留固定身份、角色计数及来源哈希。Pro的来源为已固定身份的`.scratch/gguf-weight-audit.json`中两组`deepseek_v4_pro_0813_*`完整解析表，保name／shape／codec标签／shard，但该汇总未保原始头字节、tensor offset或逐片header范围。Flash的`.scratch/validation/cpu-quant-mtp-c1/headers.json`保逐片numeric type／offset／split与header extent，原始prefix已由当时的解析脚本删除。解析目录足以核定上述角色类型；缺失原始字节留存与原payload数值／完整模型未验证单列，不将它们写成角色codec未知。
 
 [大packed词表head双行接线](../evidence/correctness/mtp-packed-head-m2-2026-10-23.json)已由Q27／Q24的两个实际normalized-hidden租约构成M2，一次普通MatMul读取同一份完整原Q6_K／Q4_K head；稳定TopK产生的两份独立I32 pending租约直接进入原embedding Gather。四项CPU／CUDA消费者保留原M1接受／状态续算，逐行全核原248320词表，共每项496,640个logits；加3项descriptor边界，共7项38次Graph，0失败／0跳过。
 

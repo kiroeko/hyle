@@ -1,0 +1,102 @@
+{
+  "status": "BF16_COLD_BINDING_FIXED_BOUNDED_HOST_CHECKS_PASS",
+  "date": "2026-10-25",
+  "base_commit": "99c86d296c624787cd3ff81728aa67bbec816741",
+  "problem": "The selected Q27 UD-Q8_K_XL fidelity GGUF contains49 ordinary BF16 roles rejected by both cold codec maps, despite existing BF16 runtime role and math support.",
+  "change": "Admit original tensor type30 as plain BF16, block1/2B, in Python and prepared metadata. Scalar/norm/convolution roles use the same plain-block check as C++. Main, operators, precision policy and native readers are unchanged.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/gguf_roles.py",
+      "before": {
+        "bytes": 15589,
+        "sha256": "30ab0d3e97c19f490bc6205e8aef1fd0cc84055a2161df6ba406bd627f8fd189"
+      },
+      "after": {
+        "bytes": 15626,
+        "sha256": "367ffb3a00d248ee947711b21b9dc1c60c5d2277fec4bf88181b4d3a50aa1cc2"
+      }
+    },
+    {
+      "path": "engine/models/qwen35/prepared_gguf_roles.h",
+      "before": {
+        "bytes": 12771,
+        "sha256": "afb5d669d8b788e3cf5c0e68deb4b2f009b7c733d4847158d25c890612e9905e"
+      },
+      "after": {
+        "bytes": 12790,
+        "sha256": "9e9b72024611e262cf8debf68e89f96034d41beb3bc858a40dd4d7bdf9d84938"
+      }
+    },
+    {
+      "path": "tests/tooling/qwen_gguf_roles_test.py",
+      "before": {
+        "bytes": 14682,
+        "sha256": "592ac8161ebb13bbff818ff42fa352732de4c85a27574a0326f7bea2a62efaba"
+      },
+      "after": {
+        "bytes": 18280,
+        "sha256": "2f23e720dc8e454e164b31e9a7e10a4e21b6d600c0e277046efc717dfbcbca02"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "before": {
+        "bytes": 60786,
+        "sha256": "c9f826739c38818b89a413858d28dffe1b294f8d34332b8fba86834f49e27db7"
+      },
+      "after": {
+        "bytes": 65923,
+        "sha256": "f04d410c4cfb8ec36ca64a9dc770078238bbe047fc426e9cbcc51da8817298d2"
+      }
+    }
+  ],
+  "publisher_header": {
+    "repository": "unsloth/Qwen3.8-27B-GGUF",
+    "revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+    "variant": "UD-Q8_K_XL",
+    "tensors": 866,
+    "ordinary_roles": 851,
+    "BF16_total": 53,
+    "BF16_ordinary": 49,
+    "ordinary_BF16_roles": "The output head plus Q/K/V in16 attention layers; the four other BF16 roles belong to NextN. Actual publisher norms remain F32."
+  },
+  "checks": {
+    "python": {
+      "tests": 12,
+      "process": {
+        "pid": 31704,
+        "exit": 0,
+        "seconds": 0.28100000001722947
+      },
+      "frozen_files": 4
+    },
+    "metadata": {
+      "assertions": 13570,
+      "compile": {
+        "pid": 48880,
+        "exit": 0,
+        "seconds": 4.342999999993481
+      },
+      "run": {
+        "pid": 22924,
+        "exit": 0,
+        "seconds": 0.75
+      },
+      "frozen_files": 18,
+      "scope": "Existing standard-library-only complete metadata suites, including geometry/roundtrip/physical extent/plain-vs-packed rejection; no weight bodies opened."
+    },
+    "new_app_compile": false,
+    "core_provider_SDK_rebuilds": 0,
+    "model_or_GPU_runs": 0,
+    "downloads": 0
+  },
+  "precision": "Existing RMS widens the stored gamma to F32; existing GDN multiplies using its source norm dtype. Generic BF16 norm fixtures check legal metadata, not publisher BF16 norms or new numeric execution. Other roles in the new complete synthetic inventory are F32 fixtures rather than the exact publisher mixed inventory.",
+  "limits": "No new original BF16 payload, whole Q27 generation, MTP acceptance, numerical quality, Linux/native GPU or TPS qualification. The prior NVFP4 app syntax check is separate and was not rerun for this header-only followup.",
+  "archive": {
+    "path": "docs/evidence/correctness/qwen-gguf-bf16-binding-2026-10-25.zip",
+    "bytes": 22386,
+    "sha256": "f1c20166d133a3e1a47c2632254e3b5ae09b4ff05a6b00092b4f2111242b2358",
+    "members": 23,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

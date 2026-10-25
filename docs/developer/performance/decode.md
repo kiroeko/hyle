@@ -55,6 +55,10 @@
 
 [状态IO离线反事实](../../evidence/performance/mtp-state-io-offline-2026-10-25.json)已先逐条复现原15次录制／51次命中。仅规范化有实际外部状态来源的GDN端口offset后为12／54，再包括独立发布的carry端口为5／61；所有真实hard-clear及其它端口保留，未合并ValueId或授予别名权限。剩五次为两个首录及三个图体hard-clear后首录。固定地址的实际搬运、额外存储、旧reader与退休仍待实现设计；此结果没有测速或收益结论。
 
+源码实现审查表明，自然K1路径在`finish_mtp_rounds`中先选择接受前缀，再由`finish_selected_evaluations`导出选定状态，可沿现有CopyBatch和真实Completion实现固定IO。代价并非只有地址改动：18层GDN加carry的额外输入／选定输出搬运约37.27MiB／轮；若独立保留两候选则约55.91MiB／轮，两个phase的完整固定工作块可另占111.81MiB。以上是源码几何核算，未测耗时，不包含控制块和对齐等成本。
+
+旧Snapshot仍须持有独立的canonical状态，不能指向下一轮会覆写的固定scratch；任意Graph输出reader外逃时仍保原存储合同。copy写入成功且真实退休后才能发布状态，失败／取消由原保活与退休链承载；新增工作块须经过既有资源接纳，不能暗中提高cache或workspace上限。功能／架构复审后再决定是否实现有限候选，不以15→5直接推导提速。
+
 本次612个 NVTX 阶段完整；Nsight stderr 实际截断，后60条 POD metadata 标为未知。所有时间属于插桩诊断，不能与旧无插桩1.5423ms差额硬相减，也不把嵌套 replay 或 wall 减 GPU union 当作可回收收益；未刷新 TPS。
 
 当前 CLI／report 与本 BF16 路径实际变化的 4 个 Graph／batch／CUDA region 对象已刷新，复用兼容的 native 数学；不是全 SDK 或其它量化组合的重新认证。V2 清单 335 个角色与旧窗口逐项匹配原 dtype、形状和源范围，普通仅选择 320 个文本角色。本窗是优化前同窗基线，与 [10 月 24 日窗口](../../evidence/performance/qwen-mtp-single-and-multiturn-2026-10-24.json)分开，不据跨日差值宣布架构收益或回归。

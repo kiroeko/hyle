@@ -800,6 +800,77 @@ void gguf_inventory_and_source_semantics(const fs::path &directory) {
   write(path,invalid);
   rejects([&]{(void)p::read_roles(path,false);},"parameter meaning");
 }
+void gguf_bf16_source_metadata(const fs::path &directory) {
+  // The49 ordinary BF16 head/QKV role pattern is from the fixed Q27 fidelity
+  // inventory. Other roles below are synthetic metadata, with no payload IO.
+  const auto larger=qwen_test::q27();
+  Inventory values;
+  std::uint64_t cursor=4096;
+  for (const auto &[name,parameter]:p::parameter_inventory(true,larger)) {
+    const auto source=p::gguf_parameter(name,larger);
+    const bool bf16=name=="lm_head.weight" || name=="mtp.fc.weight" ||
+        name.ends_with("self_attn.q_proj.weight") || name.ends_with("self_attn.k_proj.weight") ||
+        name.ends_with("self_attn.v_proj.weight");
+    p::Role role{name,bf16?"BF16":"F32",parameter.shape,"borrowed BF16 payload.bin",0,0};
+    role.physical_name=source.physical;role.meaning=source.meaning;
+    role.bytes=p::gguf_physical_bytes(role.dtype,role.shape);
+    cursor=(cursor+31)/32*32;role.original_offset=cursor;role.offset=cursor-4096;
+    cursor+=role.bytes;values.emplace(name,std::move(role));
+  }
+  const p::OriginalSource source{"test/Qwen3.8-27B-GGUF",std::string(40,'b'),"metadata.gguf",
+      std::string(64,'c'),std::string(64,'d'),std::string(64,'e'),cursor,4096};
+  const auto complete=p::select_gguf_roles(values,identity,source,true,larger);
+  const auto text=p::select_gguf_roles(values,identity,source,false,larger);
+  require(complete.selected.size()==866 && text.selected.size()==851 &&
+      std::ranges::count(complete.selected,std::string("BF16"),&p::Role::dtype)==53 &&
+      std::ranges::count(text.selected,std::string("BF16"),&p::Role::dtype)==49,
+      "Q27 fidelity metadata must retain all49 ordinary BF16 head/QKV roles and its complete inventory");
+  require(p::gguf_storage_block("BF16").elements==1 && p::gguf_storage_block("BF16").bytes==2 &&
+      values.at("lm_head.weight").bytes==2542796800ULL &&
+      values.at("model.language_model.layers.3.self_attn.q_proj.weight").bytes==125829120 &&
+      values.at("model.language_model.layers.3.self_attn.k_proj.weight").bytes==10485760 &&
+      values.at("model.language_model.layers.3.self_attn.v_proj.weight").bytes==10485760,
+      "BF16 GGUF roles are plain2-byte scalars with original logical[N,K] extents");
+  require(qwen35::PrecisionProfile::from_roles(text).activation_type()==hyle::compute::DataType::kBFloat16 &&
+      std::ranges::all_of(text.selected,[](const auto &role) {
+        return role.projection_codec==p::ProjectionCodec::kUnspecified && !role.projection_group_size;
+      }),"BF16 source storage must not select a new codec or activation policy");
+  const auto serialize=[&](const Inventory &inventory) {
+    std::ostringstream out;
+    out<<p::gguf_role_signature<<'\n'<<identity<<'\n'<<qwen_test::geometry_line(larger)<<"\nsource "<<std::quoted(source.repository)<<' '
+       <<source.revision<<' '<<std::quoted(source.file)<<' '<<source.bytes<<' '<<source.lfs_sha256
+       <<' '<<std::quoted(source.xet_hash)<<' '<<source.header_sha256<<' '<<source.header_bytes<<'\n';
+    for (const auto &[name,role]:inventory) {
+      out<<name<<' '<<role.physical_name<<' '<<role.dtype<<' '<<p::meaning_name(role.meaning)<<' '<<role.shape.size();
+      for (const auto dim:role.shape) out<<' '<<dim;
+      out<<' '<<std::quoted(role.source.string())<<' '<<role.offset<<' '<<role.bytes<<' '<<role.original_offset<<'\n';
+    }
+    return out.str();
+  };
+  const auto path=directory/"gguf-bf16.tsv";
+  write(path,serialize(values));
+  const auto parsed=p::read_roles(path,false);
+  require(parsed.selected.size()==851 && parsed.bytes==text.bytes && parsed.geometry==larger &&
+      std::ranges::count(parsed.selected,std::string("BF16"),&p::Role::dtype)==49 &&
+      p::read_roles(path,true).selected.size()==866,
+      "complete BF16 GGUF inventory and ordinary selection must roundtrip without weight IO");
+  auto normalized=values;
+  for (const auto *name:{"model.language_model.norm.weight","model.language_model.layers.0.linear_attn.norm.weight"}) {
+    auto &role=normalized.at(name);role.dtype="BF16";role.bytes/=2;
+  }
+  const auto generic=p::select_gguf_roles(normalized,identity,source,false,larger);
+  require(generic.selected.size()==851 &&
+      normalized.at("model.language_model.norm.weight").meaning==p::ParameterMeaning::kRmsEffectiveGamma &&
+      normalized.at("model.language_model.layers.0.linear_attn.norm.weight").meaning==p::ParameterMeaning::kGdnEffectiveGamma,
+      "generic BF16 effective gamma keeps source meaning just as the existing F16 case");
+  write(path,serialize(normalized));
+  require(p::read_roles(path,false).bytes==generic.bytes,
+      "plain BF16 norm metadata must roundtrip without adding one or decoding source values");
+  auto invalid=values;invalid.at("lm_head.weight").bytes+=1;
+  rejects([&]{(void)p::select_gguf_roles(invalid,identity,source,false,larger);},"byte range");
+  invalid=normalized;invalid.at("model.language_model.norm.weight").dtype="NVFP4";
+  rejects([&]{(void)p::select_gguf_roles(invalid,identity,source,false,larger);},"scalar/norm/source");
+}
 void source_geometry_drives_role_layout() {
   const auto larger = qwen_test::q27();
   const auto inventory = p::parameter_inventory(true, larger);
@@ -940,6 +1011,7 @@ int main(int argc, char **argv) {
     ct_asymmetric_zero_points_keep_the_original_output_axis(directory);
     malformed_input_and_shared_entrypoint_are_bounded(directory);
     gguf_inventory_and_source_semantics(directory);
+    gguf_bf16_source_metadata(directory);
     source_geometry_drives_role_layout();
     fp8_blocks_and_policy(directory);
     ct_mixed_and_cache_policy(directory);

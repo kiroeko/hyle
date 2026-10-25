@@ -30,15 +30,26 @@
           "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
           "revision": "6d053616d152293da72569f56b861466f10ace7d",
           "variant": "UD-Q4_K_XL",
-          "formats": null,
-          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+          "formats": [
+            "Q8_0",
+            "BF16",
+            "MXFP4",
+            "F32",
+            "I32"
+          ],
+          "format_note": "Fixed-revision Pro0813 main parsed inventory: 1894 unique roles. Q8_0 dense/vocabulary/attention/compressor/indexer/shared-FFN matrices, BF16 router, MXFP4 routed experts, F32 parameters and I32 lookup tables. Source: .scratch/gguf-weight-audit.json. The aggregate retains names/shapes/codec labels/shards but not raw header bytes, tensor offsets or per-shard header ranges. This is a source-format inventory, not a support whitelist or original-payload/numerical/full-model qualification. DSpark sidecars remain independent."
         },
         "fidelity_gguf": {
           "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
           "revision": "6d053616d152293da72569f56b861466f10ace7d",
           "variant": "UD-Q8_K_XL",
-          "formats": null,
-          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+          "formats": [
+            "BF16",
+            "MXFP4",
+            "F32",
+            "I32"
+          ],
+          "format_note": "Fixed-revision Pro0813 main parsed inventory: 1894 unique roles. BF16 dense/vocabulary/attention/compressor/indexer/shared-FFN matrices and router, MXFP4 routed experts, F32 parameters and I32 lookup tables. Source: .scratch/gguf-weight-audit.json. The aggregate retains names/shapes/codec labels/shards but not raw header bytes, tensor offsets or per-shard header ranges. This is a source-format inventory, not a support whitelist or original-payload/numerical/full-model qualification. DSpark sidecars remain independent."
         }
       },
       {
@@ -55,15 +66,26 @@
           "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
           "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
           "variant": "UD-Q4_K_XL",
-          "formats": null,
-          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+          "formats": [
+            "Q8_0",
+            "BF16",
+            "MXFP4",
+            "F32",
+            "I32"
+          ],
+          "format_note": "Fixed-revision Flash0731 main parsed inventory: 1328 unique roles. Q8_0 dense/vocabulary/attention/compressor/indexer/shared-FFN matrices, BF16 router, MXFP4 routed experts, F32 parameters and I32 lookup tables. Source: .scratch/validation/cpu-quant-mtp-c1/headers.json. Per-shard numeric types, offsets, split metadata and header extents are retained; successful-parser raw prefixes were later removed. This is a source-format inventory, not a support whitelist or original-payload/numerical/full-model qualification. DSpark sidecars remain independent."
         },
         "fidelity_gguf": {
           "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
           "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
           "variant": "UD-Q8_K_XL",
-          "formats": null,
-          "format_note": "Matching GA base model and variant identity verified. Exact per-role GGUF codecs and DSpark inclusion still require tensor-header inspection."
+          "formats": [
+            "BF16",
+            "MXFP4",
+            "F32",
+            "I32"
+          ],
+          "format_note": "Fixed-revision Flash0731 main parsed inventory: 1328 unique roles. BF16 dense/vocabulary/attention/compressor/indexer/shared-FFN matrices and router, MXFP4 routed experts, F32 parameters and I32 lookup tables. Source: .scratch/validation/cpu-quant-mtp-c1/headers.json. Per-shard numeric types, offsets, split metadata and header extents are retained; successful-parser raw prefixes were later removed. This is a source-format inventory, not a support whitelist or original-payload/numerical/full-model qualification. DSpark sidecars remain independent."
         }
       }
     ],

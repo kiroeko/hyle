@@ -1,0 +1,464 @@
+{
+  "status": "SOURCE_ONLY_EXISTING_MAIN_TENSOR_INVENTORIES_FOUND_4_OF_4",
+  "date": "2026-10-25",
+  "scope": "Only formal DeepSeek V4 Pro0813/Flash0731 primary/fidelity main GGUF; no preview, official/MTP safetensors tiles or DSpark sidecar substitution. Local reads only; no new network/build/native/model execution.",
+  "conclusion": "The four main per-role codec classifications are already recoverable from fixed-revision parsed header caches. Prior blanket main-header-unknown statement is stale. No header download is necessary for this classification. Original payload/math/full-Model qualification does not follow.",
+  "profiles": [
+    {
+      "model": "Pro-0813",
+      "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "revision": "6d053616d152293da72569f56b861466f10ace7d",
+      "variant": "UD-Q4_K_XL",
+      "shard_count": 20,
+      "unique_tensor_count": 1894,
+      "codec_tensors": {
+        "Q8_0": 732,
+        "F32": 915,
+        "MXFP4": 183,
+        "BF16": 61,
+        "I32": 3
+      },
+      "source": {
+        "path": ".scratch/gguf-weight-audit.json",
+        "pointer": "/deepseek_v4_pro_0813_ud_q4_k_xl",
+        "representation": "decoded original all-shard name/shape/dtype-label/shard table; no offsets or raw header bytes retained in this aggregate",
+        "acquisition_source": ".scratch/hf-gguf-headers.mjs",
+        "reused_by": ".scratch/validation/cpu-quant-mtp-c1/reused.json",
+        "shards_with_tensors": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "first_file": {
+        "path": "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00001-of-00020.gguf",
+        "size": 5257647,
+        "sha256": "0c6e411bf23282b5f149b3f0d7e0ae37f26bd23c6a3fbe52841437a4016736be"
+      },
+      "stored_first_file_uri": "https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00001-of-00020.gguf",
+      "mirror_equivalent_first_file_uri": "https://hf-mirror.net/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00001-of-00020.gguf",
+      "uri_note": "huggingface URI is stored historical provenance; mirror form is deterministic future target only, not requested here",
+      "known_exact_header_ranges": null,
+      "explicit_mtp_dspark_name_matches": [],
+      "unknown_main_role_codecs": [],
+      "exact_role_table": "Source pointer/selector below contains every name/shape/dtype; shared role families summarized once in shared_contract.",
+      "role_examples": {
+        "token_embd.weight": [
+          "Q8_0"
+        ],
+        "output.weight": [
+          "Q8_0"
+        ],
+        "blk.*.ffn_gate_exps.weight": [
+          "MXFP4"
+        ],
+        "blk.*.ffn_gate_inp.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_down_shexp.weight": [
+          "Q8_0"
+        ],
+        "blk.*.attn_q_a.weight": [
+          "Q8_0"
+        ],
+        "blk.*.ffn_gate_tid2eid.weight": [
+          "I32"
+        ]
+      }
+    },
+    {
+      "model": "Pro-0813",
+      "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "revision": "6d053616d152293da72569f56b861466f10ace7d",
+      "variant": "UD-Q8_K_XL",
+      "shard_count": 20,
+      "unique_tensor_count": 1894,
+      "codec_tensors": {
+        "BF16": 793,
+        "F32": 915,
+        "MXFP4": 183,
+        "I32": 3
+      },
+      "source": {
+        "path": ".scratch/gguf-weight-audit.json",
+        "pointer": "/deepseek_v4_pro_0813_ud_q8_k_xl",
+        "representation": "decoded original all-shard name/shape/dtype-label/shard table; no offsets or raw header bytes retained in this aggregate",
+        "acquisition_source": ".scratch/hf-gguf-headers.mjs",
+        "reused_by": ".scratch/validation/cpu-quant-mtp-c1/reused.json",
+        "shards_with_tensors": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ]
+      },
+      "first_file": {
+        "path": "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00001-of-00020.gguf",
+        "size": 5257647,
+        "sha256": "0c6e411bf23282b5f149b3f0d7e0ae37f26bd23c6a3fbe52841437a4016736be"
+      },
+      "stored_first_file_uri": "https://huggingface.co/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00001-of-00020.gguf",
+      "mirror_equivalent_first_file_uri": "https://hf-mirror.net/unsloth/DeepSeek-V4-Pro-0813-GGUF/resolve/6d053616d152293da72569f56b861466f10ace7d/UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00001-of-00020.gguf",
+      "uri_note": "huggingface URI is stored historical provenance; mirror form is deterministic future target only, not requested here",
+      "known_exact_header_ranges": null,
+      "explicit_mtp_dspark_name_matches": [],
+      "unknown_main_role_codecs": [],
+      "exact_role_table": "Source pointer/selector below contains every name/shape/dtype; shared role families summarized once in shared_contract.",
+      "role_examples": {
+        "token_embd.weight": [
+          "BF16"
+        ],
+        "output.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_gate_exps.weight": [
+          "MXFP4"
+        ],
+        "blk.*.ffn_gate_inp.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_down_shexp.weight": [
+          "BF16"
+        ],
+        "blk.*.attn_q_a.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_gate_tid2eid.weight": [
+          "I32"
+        ]
+      }
+    },
+    {
+      "model": "Flash-0731",
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant": "UD-Q4_K_XL",
+      "shard_count": 5,
+      "unique_tensor_count": 1328,
+      "codec_tensors": {
+        "Q8_0": 512,
+        "F32": 641,
+        "MXFP4": 129,
+        "BF16": 43,
+        "I32": 3
+      },
+      "source": {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/headers.json",
+        "representation": "decoded original per-shard name/shape/numeric dtype/offset plus split metadata and tensor-data-offset",
+        "tensor_table_checksums_verified_offline": true,
+        "acquisition_source": [
+          ".scratch/cpu-c1-gguf-headers.mjs",
+          ".scratch/cpu-c1-final-prefix.mjs"
+        ],
+        "raw_prefix_retention": ".scratch/validation/cpu-quant-mtp-c1/last-prefixes is currently empty; final-prefix script explicitly unlinks successful raw prefix",
+        "entry_selector": {
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "variant": "UD-Q4_K_XL",
+          "branch": "main"
+        }
+      },
+      "first_file": {
+        "path": "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00001-of-00005.gguf",
+        "size": 5257408,
+        "sha256": "d13ce8f90855547bdaebe7312f531a1f2c4f822178d3103951f27fe884395cfa"
+      },
+      "stored_first_file_uri": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00001-of-00005.gguf",
+      "mirror_equivalent_first_file_uri": "https://hf-mirror.net/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00001-of-00005.gguf",
+      "uri_note": "huggingface URI is stored historical provenance; mirror form is deterministic future target only, not requested here",
+      "known_exact_header_ranges": [
+        {
+          "shard": 1,
+          "range_half_open": [
+            0,
+            5257408
+          ],
+          "tensors": 0
+        },
+        {
+          "shard": 2,
+          "range_half_open": [
+            0,
+            26560
+          ],
+          "tensors": 414
+        },
+        {
+          "shard": 3,
+          "range_half_open": [
+            0,
+            28096
+          ],
+          "tensors": 432
+        },
+        {
+          "shard": 4,
+          "range_half_open": [
+            0,
+            26816
+          ],
+          "tensors": 412
+        },
+        {
+          "shard": 5,
+          "range_half_open": [
+            0,
+            4704
+          ],
+          "tensors": 70
+        }
+      ],
+      "explicit_mtp_dspark_name_matches": [],
+      "unknown_main_role_codecs": [],
+      "exact_role_table": "Source pointer/selector below contains every name/shape/dtype; shared role families summarized once in shared_contract.",
+      "role_examples": {
+        "token_embd.weight": [
+          "Q8_0"
+        ],
+        "output.weight": [
+          "Q8_0"
+        ],
+        "blk.*.ffn_gate_exps.weight": [
+          "MXFP4"
+        ],
+        "blk.*.ffn_gate_inp.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_down_shexp.weight": [
+          "Q8_0"
+        ],
+        "blk.*.attn_q_a.weight": [
+          "Q8_0"
+        ],
+        "blk.*.ffn_gate_tid2eid.weight": [
+          "I32"
+        ]
+      }
+    },
+    {
+      "model": "Flash-0731",
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "variant": "UD-Q8_K_XL",
+      "shard_count": 5,
+      "unique_tensor_count": 1328,
+      "codec_tensors": {
+        "BF16": 555,
+        "F32": 641,
+        "MXFP4": 129,
+        "I32": 3
+      },
+      "source": {
+        "path": ".scratch/validation/cpu-quant-mtp-c1/headers.json",
+        "representation": "decoded original per-shard name/shape/numeric dtype/offset plus split metadata and tensor-data-offset",
+        "tensor_table_checksums_verified_offline": true,
+        "acquisition_source": [
+          ".scratch/cpu-c1-gguf-headers.mjs",
+          ".scratch/cpu-c1-final-prefix.mjs"
+        ],
+        "raw_prefix_retention": ".scratch/validation/cpu-quant-mtp-c1/last-prefixes is currently empty; final-prefix script explicitly unlinks successful raw prefix",
+        "entry_selector": {
+          "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "variant": "UD-Q8_K_XL",
+          "branch": "main"
+        }
+      },
+      "first_file": {
+        "path": "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00001-of-00005.gguf",
+        "size": 5257408,
+        "sha256": "d13ce8f90855547bdaebe7312f531a1f2c4f822178d3103951f27fe884395cfa"
+      },
+      "stored_first_file_uri": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00001-of-00005.gguf",
+      "mirror_equivalent_first_file_uri": "https://hf-mirror.net/unsloth/DeepSeek-V4-Flash-0731-GGUF/resolve/fbbb5b93fb787c21338159b0af3318bb3f4d9768/UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00001-of-00005.gguf",
+      "uri_note": "huggingface URI is stored historical provenance; mirror form is deterministic future target only, not requested here",
+      "known_exact_header_ranges": [
+        {
+          "shard": 1,
+          "range_half_open": [
+            0,
+            5257408
+          ],
+          "tensors": 0
+        },
+        {
+          "shard": 2,
+          "range_half_open": [
+            0,
+            24608
+          ],
+          "tensors": 384
+        },
+        {
+          "shard": 3,
+          "range_half_open": [
+            0,
+            27840
+          ],
+          "tensors": 428
+        },
+        {
+          "shard": 4,
+          "range_half_open": [
+            0,
+            26592
+          ],
+          "tensors": 408
+        },
+        {
+          "shard": 5,
+          "range_half_open": [
+            0,
+            7136
+          ],
+          "tensors": 108
+        }
+      ],
+      "explicit_mtp_dspark_name_matches": [],
+      "unknown_main_role_codecs": [],
+      "exact_role_table": "Source pointer/selector below contains every name/shape/dtype; shared role families summarized once in shared_contract.",
+      "role_examples": {
+        "token_embd.weight": [
+          "BF16"
+        ],
+        "output.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_gate_exps.weight": [
+          "MXFP4"
+        ],
+        "blk.*.ffn_gate_inp.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_down_shexp.weight": [
+          "BF16"
+        ],
+        "blk.*.attn_q_a.weight": [
+          "BF16"
+        ],
+        "blk.*.ffn_gate_tid2eid.weight": [
+          "I32"
+        ]
+      }
+    }
+  ],
+  "shared_contract": {
+    "primary": "All learned dense/vocab/attention/compressor/indexer/shared-FFN matrix roles are Q8_0; router BF16; routed expert banks MXFP4; F32 scalar/norm/mHC/bias and I32 token-to-expert tables. Read exact suffix map, not variant labels.",
+    "fidelity": "Corresponding Q8_0 dense roles become BF16; routed expert banks remain MXFP4, other F32/I32 roles remain. No Q4_K tensor occurs in these four parsed inventories despite primary variant name.",
+    "numeric_type_boundary": "Flash raw decoded numeric dtype codes are 0 F32 / 8 Q8_0 / 26 I32 / 30 BF16 / 39 MXFP4. Pro aggregate stores parser-decoded labels, not numeric codes; do not manufacture original numeric records.",
+    "main_vs_sidecar": "No explicit mtp/nextn/dspark/markov/confidence role name occurs in these four tables. This is a tensor-name inventory fact; does not execute or certify a DSpark branch. Flash sidecars remain separately identified."
+  },
+  "remaining_unknowns": [
+    "No original weight payload is decoded or run here. Parsed inventory is not full-file hash verification or full-model support.",
+    "Pro aggregate omits tensor offsets, per-shard raw-header extents, HTTP receipts and raw bytes; exact fresh original role-range acquisition requires recovering those structural facts first. Flash has all parsed offsets/extents but current referenced last-prefixes raw files were removed by historical successful-parser script.",
+    "A source/profile adapter must preserve actual orientation/activation and compressed MXFP4 block semantics. Existing descriptor/consumer availability alone does not establish all main-role bindings for these source files."
+  ],
+  "minimal_next_step": {
+    "missing_bytes_for_codec_classification": 0,
+    "new_network_requests": 0,
+    "action": "Reconcile the four profile rows with these pinned existing tables, then select one exact ordinary role only if a real reader/consumer connection gap is found. Do not fetch whole GGUF or all experts.",
+    "if_raw_reparse_is_later_required": "Do not guess a fixed 8MiB prefix or infer all-shard headers from shard1 (both first shards hold zero tensors). Flash exact parsed structural ranges are listed. Pro structural range lengths remain unknown; begin with only missing per-shard preamble/metadata grammar through current bounded parser and source-identity guards in an explicitly authorized later acquisition. No such acquisition is proposed as necessary now."
+  },
+  "reusable_reader": {
+    "structural": "engine/models/qwen35/gguf_header.py: MetadataReader/scan and parse_header preserve arbitrary numeric tensor dtype; bounded CachedReader supports cached bytes. scan/_parse permit tensor_count0; read_local_header convenience currently requires count>0, so do not call it on zero-tensor split1.",
+    "descriptors": "include/hyle/compute/low_precision.h gguf_weight_description/gguf_grouped_weight_description; src/compute_ops/low_precision.cc kMxfp4 32 values/17 bytes. Q8_0 and plain BF16/F32/I32 already exist; do not reinterpret GGUF MXFP4 as HF group16 NVFP4 or original packed FP4 tensor bytes.",
+    "consumer": "tests/compute_models/d5_deepseek_official_fragments.h: PackedProjectionParameter, projection_description, expert_weight_description, shared_weight_description already accept supplied immutable Q8_0/BF16 projection and MXFP4 expert descriptors. Existing finite fragments are not evidence that all GA original main payloads have run."
+  },
+  "source_pins": [
+    {
+      "path": ".scratch/gguf-weight-audit.json",
+      "bytes": 4823061,
+      "sha256": "cc69c6fbb4e41f10d7d0135bb1fcb7748776e0b491b5f66009fcb0b6f17b8555"
+    },
+    {
+      "path": ".scratch/validation/cpu-quant-mtp-c1/headers.json",
+      "bytes": 26636221,
+      "sha256": "bded8af0909a524f3516e3a53ba77996ba664793fe815c58c16e4fbbe18460d0"
+    },
+    {
+      "path": ".scratch/validation/cpu-quant-mtp-c1/reused.json",
+      "bytes": 3894422,
+      "sha256": "c720a229267e827124be5924dd73b749842722fa6e3d3bdff9e819dddbab9655"
+    },
+    {
+      "path": ".scratch/hf-gguf-headers.mjs",
+      "bytes": 5930,
+      "sha256": "bbdbc4de8d68fde1ed78a7672ea006f02b2c15c6f9c37e14502997bf04d4a245"
+    },
+    {
+      "path": ".scratch/cpu-c1-gguf-headers.mjs",
+      "bytes": 7165,
+      "sha256": "8fad1ebd156175e5be522ef62234e2411686c7ec47a1e2bdbfed12cb1c298007"
+    },
+    {
+      "path": ".scratch/cpu-c1-final-prefix.mjs",
+      "bytes": 2373,
+      "sha256": "8e5b4013377de443247a5d4c4f2028b4a3126111711c980652d381ee2a88b1aa"
+    },
+    {
+      "path": "engine/models/qwen35/gguf_header.py",
+      "bytes": 8746,
+      "sha256": "73fadc2e814dcc3871e4356f4fe801c931db615f082d4e1922b40f51f696fb02"
+    },
+    {
+      "path": "include/hyle/compute/low_precision.h",
+      "bytes": 10591,
+      "sha256": "71f17f2b191fe7d00166e29fc84a44cf6ac2211aba5fed42b7df1f08f00f56fd"
+    },
+    {
+      "path": "src/compute_ops/low_precision.cc",
+      "bytes": 15424,
+      "sha256": "faa7cb8f1b75d98f0fb80b1b8093ffc5da239f37f1e5ace1a2de5a10c7023994"
+    },
+    {
+      "path": "tests/compute_models/d5_deepseek_official_fragments.h",
+      "bytes": 22365,
+      "sha256": "5b73088c74a3e1461b396738edc26f9a9198ed480c1436033de2dcdc638675ee"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/llm-moe-provider-demand-matrix.json",
+      "bytes": 25575,
+      "sha256": "3a803704977def58bba3202652f27380e0a72197752ff3989eab42b2d68a1fd3"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/spark-coding-models-2026-10-21/DeepSeek-V4-Pro-0813-metadata.json",
+      "bytes": 8992,
+      "sha256": "595fb353ff738626b46fef0d9c95c44555b538aa2da1a50cb57651953b9c77c3"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/d4-windows-preparation-2026-10-21/first-decode-startup-2026-10-21/spark-coding-models-2026-10-21/DeepSeek-V4-Flash-0731-metadata.json",
+      "bytes": 11226,
+      "sha256": "b349099df5fcfb2f94abccd72c99771406bed98df8a4859f6849b825737372c1"
+    }
+  ],
+  "source_search_limits": "Narrow named cache/public evidence paths plus filename lookup; one irrelevant .scratch/environment subdirectory was unreadable and is not claimed scanned. No exhaustive absence claim is needed because complete parsed inventories were found."
+}

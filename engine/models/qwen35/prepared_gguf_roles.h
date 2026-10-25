@@ -7,7 +7,7 @@ namespace qwen35::prepared {
 struct StorageBlock final { std::size_t elements, bytes; };
 inline StorageBlock gguf_storage_block(std::string_view dtype) {
   if (dtype == "F32") return {1,4};
-  if (dtype == "F16") return {1,2};
+  if (dtype == "F16" || dtype == "BF16") return {1,2};
   if (dtype == "Q8_0") return {32,34};
   if (dtype == "NVFP4") return {64,36};
   if (dtype == "Q3_K" || dtype == "IQ3_S") return {256,110};

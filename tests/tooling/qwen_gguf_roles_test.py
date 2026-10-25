@@ -117,6 +117,61 @@ class QwenGgufInputTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'plain floating representation'):
             inventory(bad,source)
 
+    def test_q27_fidelity_bf16_head_and_attention_stay_plain(self):
+        # Same49 ordinary BF16 role pattern as the fixed Q27 fidelity header;
+        # other roles here are a complete synthetic metadata fixture, not payload.
+        header,source=fixture();m=header['metadata']
+        m.update({'qwen35.block_count':65,'qwen35.embedding_length':5120,
+            'qwen35.feed_forward_length':17408,'qwen35.attention.head_count':24,
+            'qwen35.attention.head_count_kv':4,'qwen35.ssm.time_step_rank':48,
+            'qwen35.ssm.inner_size':6144})
+        g=roles.geometry.from_gguf(m,[dict(name='token_embd.weight',shape=[5120,248320]),
+                                     dict(name='output.weight',shape=[5120,248320])])
+        tensors,offset=[],0
+        for name,spec in roles.role_specs(g).items():
+            shape=roles._shape_ne(spec)
+            code=30 if name=='output.weight' or name.endswith((
+                'attn_q.weight','attn_k.weight','attn_v.weight','nextn.eh_proj.weight')) else 0
+            _,block,width=roles.CODECS[code]
+            count=1
+            for dimension in shape:count*=dimension
+            offset=(offset+31)//32*32
+            tensors.append(dict(name=name,shape=shape,dtype_code=code,offset=offset))
+            offset+=count//block*width
+        header.update(tensor_count=len(tensors),tensors=tensors)
+        source['size']=header['tensor_data_offset']+offset
+        result=inventory(header,source);by_name={r['physical_name']:r for r in result['roles']}
+        self.assertEqual((result['physical_role_count'],result['main_role_count'],result['mtp_role_count']),(866,851,15))
+        self.assertEqual(result['physical_codecs']['BF16'],53)
+        self.assertEqual(sum(r['storage']['dtype']=='BF16' and not r['logical_name'].startswith('mtp.')
+                             for r in result['roles']),49)
+        for name,shape,extent in (('output.weight',[248320,5120],2542796800),
+                ('blk.3.attn_q.weight',[12288,5120],125829120),
+                ('blk.3.attn_k.weight',[1024,5120],10485760),
+                ('blk.3.attn_v.weight',[1024,5120],10485760)):
+            row=by_name[name]
+            self.assertEqual(row['dtype_code'],30)
+            self.assertEqual(row['storage'],dict(kind='plain',dtype='BF16',logical_dtype='BF16',
+                logical_shape=shape,original_ne=list(reversed(shape))))
+            self.assertEqual(row['bytes'],extent)
+
+    def test_bf16_effective_gamma_remains_plain_and_packed_norm_is_rejected(self):
+        # Generic legal metadata, not a claim that the selected Q27 norms are BF16.
+        header,source=fixture()
+        for name in ('output_norm.weight','blk.0.ssm_norm.weight'):
+            next(row for row in header['tensors'] if row['name']==name)['dtype_code']=30
+        result=inventory(header,source);by_name={r['physical_name']:r for r in result['roles']}
+        for name,meaning,extent in (('output_norm.weight','rms_effective_gamma',4096),
+                ('blk.0.ssm_norm.weight','gdn_effective_gamma',256)):
+            row=by_name[name]
+            self.assertEqual(row['semantic'],meaning)
+            self.assertEqual((row['storage']['kind'],row['storage']['dtype'],row['bytes']),('plain','BF16',extent))
+            self.assertNotIn('block_axis',row['storage'])
+        bad=deepcopy(header)
+        next(row for row in bad['tensors'] if row['name']=='output_norm.weight')['dtype_code']=40
+        with self.assertRaisesRegex(ValueError,'plain floating representation'):
+            inventory(bad,source)
+
     def test_payload_preparation_is_distinct_complete_and_uses_borrowed_ranges(self):
         header,source = fixture(1)
         typed = inventory(header,source)
