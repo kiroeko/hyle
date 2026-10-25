@@ -96,6 +96,12 @@ constexpr D f(std::int64_t value) noexcept { return D::fixed(value); }
 using Type = c::DataType;
 using Clock = std::chrono::steady_clock;
 enum class ReplayPolicy { kAuto, kCommands, kPreferCapture };
+constexpr g::ReplayMode select_replay_mode(ReplayPolicy policy,
+    std::size_t known_uses, bool sampling_enabled) noexcept {
+  return sampling_enabled || policy == ReplayPolicy::kCommands
+      || (policy == ReplayPolicy::kAuto && known_uses <= 1)
+      ? g::ReplayMode::kCommands : g::ReplayMode::kPreferCapture;
+}
 constexpr bool is_end_of_generation(std::int32_t token) noexcept {
   return token == 248044 || token == 248046; // Original endoftext and tokenizer im_end.
 }
@@ -1300,6 +1306,7 @@ struct DraftProgram final {
   inference::QueueBindings queues;
   std::size_t rows = 0;
   bool head = false;
+  g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::vector<Tensor> literals;
   g::Graph graph;
   g::CompiledGraph compiled;
@@ -2559,6 +2566,8 @@ public:
     prepare_cache();
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
     program.rows = rows; program.head = head;
+    // No reliable auxiliary-use hint: Auto retains the original Commands path.
+    program.replay_mode = select_replay_mode(replay_policy, 1, default_sampler.enabled);
     GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
@@ -2747,7 +2756,7 @@ public:
         else check(g::batch::bind_append(run, program.graph, guard.nodes[bank], std::move(guard.appends[bank])));
         guard.bound[bank] = true;
       }
-      check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+      check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
       if (head) {
@@ -3322,9 +3331,8 @@ public:
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
     phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion, sampling_index});
     for (std::size_t slot = 0; slot < phase.replay_modes.size(); ++slot) {
-      phase.replay_modes[slot] = selected_sampler.enabled || replay_policy == ReplayPolicy::kCommands
-          || (replay_policy == ReplayPolicy::kAuto && phase.planned_slot_uses[slot] <= 1)
-          ? g::ReplayMode::kCommands : g::ReplayMode::kPreferCapture;
+      phase.replay_modes[slot] = select_replay_mode(
+          replay_policy, phase.planned_slot_uses[slot], selected_sampler.enabled);
     }
     phase.attention_schema = definition.attention_schema;
     phase.child = definition.children.at(index).get();

@@ -1,0 +1,147 @@
+{
+  "schema": "hyle-source-compile-evidence-v1",
+  "date": "2026-10-26",
+  "status": "PASS_REPLAY_CONFIGURATION_CONSISTENCY_SOURCE_AND_ONE_MODEL_SYNTAX",
+  "scope": "Existing main Phase and auxiliary NextN DraftProgram now share one pure cold replay selector. One full current Model implementation TU strict syntax check only; no link, executable, SDK build, CPU/GPU inference or benchmark.",
+  "implementation": {
+    "canonical_integrated": true,
+    "product_paths": [
+      "engine/models/qwen35/main.cc",
+      "engine/models/qwen35/README.md"
+    ],
+    "source_pins": {
+      "files": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\before\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468556,
+            "sha256": "b47285dfbef5cf626943e22f421815424e58c11ce9122d79a56baf43c5bf5c5a"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\source\\engine\\models\\qwen35\\main.cc",
+            "bytes": 468967,
+            "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+          }
+        },
+        {
+          "path": "engine/models/qwen35/README.md",
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\before\\engine\\models\\qwen35\\README.md",
+            "bytes": 41644,
+            "sha256": "a4e5f6c61e2d192a3f1f51fc76c5e29256245f4b593fe3439c0fb3112bf7bc16"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\source\\engine\\models\\qwen35\\README.md",
+            "bytes": 42097,
+            "sha256": "03a8d83cf844e9e395c6a26ebd6bf77c77ac8ffdc1656d12359a75f554ffbd2b"
+          }
+        }
+      ],
+      "patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\product.patch",
+        "bytes": 6847,
+        "sha256": "7e43dd91c2834aa425a064097891de33916cc09eac99ddb4713cfeb07b5510f8"
+      }
+    },
+    "helper": "qwen35::select_replay_mode(policy, known_uses, sampling_enabled)",
+    "Phase": "Uses the original planned_slot_uses and selected sampler through the same unchanged logical condition.",
+    "DraftProgram": "Stores a selected replay_mode once during prepare_draft_program; execute_draft passes the stored mode to the original Invocation::prepare_replay. No hot policy choice.",
+    "no_new_layer": "No new header, policy inventory, owner, pool, scheduler, Graph IR or retirement path.",
+    "LF_preserved": true
+  },
+  "mode_contract": {
+    "commands": "Main Phase and auxiliary NextN use Commands.",
+    "auto_main": "Preserves the original known-use condition: uses<=1 Commands, otherwise PreferCapture, except original sampler restriction.",
+    "auto_auxiliary": "No reliable auxiliary-use hint is available. known_uses=1 deliberately keeps the original Commands path and does not enable the closed forced-Auto pilot.",
+    "explicit_prefer": "The newly honored auxiliary preference reaches the original Graph PreferCapture fallback; unsupported regions may remain Commands. This new explicit-prefer path was syntax-checked, not runtime-tested in this batch.",
+    "sampler": "Random-enabled main Phase and DraftProgram still force Commands even with explicit prefer. Existing recursive acceptance and complete-prefix/frontier resampling helpers remain Commands.",
+    "not_capture_guarantee": "PreferCapture is an original Graph preference, not a guarantee of full capture or no re-recording."
+  },
+  "actual_check": {
+    "process": {
+      "exit": 0,
+      "pid": 6604,
+      "seconds": 7.2119467000011355
+    },
+    "command": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\command.json",
+      "bytes": 2482,
+      "sha256": "1c07199947a0fa92f6495dd12110dbcff1ac2a46d6a3a754ea0cc1f9fadda1a6"
+    },
+    "original_recipe": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\model\\command.json",
+      "bytes": 2715,
+      "sha256": "cd50c8ec15e4367448f77cff78111891c242884179ca7e7754db17c95be0d96a"
+    },
+    "compile_flags": "Retained current Model recipe /W4 /WX /O2 /MD with /c replaced by /Zs; same CPU+CUDA capability macros and cached external include paths.",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468967,
+      "sha256": "b346d408cdf8226b2df464f757483cc3aecd5b7c2f2d7f290751c7115d3cc44c"
+    },
+    "actual_project_dependencies": {
+      "count": 144,
+      "pin": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\actual-project-dependencies.json",
+        "bytes": 28542,
+        "sha256": "46916a7ddb3292a21f0f734f179ef58496b916a9c433cb3de5f148542886e98d"
+      }
+    },
+    "actual_all_dependencies": {
+      "count": 338,
+      "pin": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\actual-dependencies.json",
+        "bytes": 73990,
+        "sha256": "591b859eb3ccb936620d04b829fbdc5f45c91221279bc73988a11cf13c0ee93e"
+      }
+    },
+    "raw_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\dependencies.json",
+      "bytes": 36552,
+      "sha256": "1a568449b77160b29d162da36c1c472cd85a774ac0ebec3669d2fc36042a7d58"
+    },
+    "stdout": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    "stderr": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-replay-policy-20261026\\syntax1\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "syntax_TUs": 1,
+    "link_processes": 0,
+    "new_binary": 0,
+    "SDK_core_provider_rebuilds": 0,
+    "CPU_Model_runs": 0,
+    "GPU_runs": 0,
+    "performance_runs": 0,
+    "first_failures": []
+  },
+  "source_checks": [
+    "One selector definition and two cold call sites; no duplicated selection condition.",
+    "Original Phase condition moved with only parameter-name substitution. Auto auxiliary constant1 resolves Commands.",
+    "Sampler acceptance and frontier functions retain their original literal Commands boundary.",
+    "Only main cold selector/enum field/cold assignment/replay argument plus README changed; no model equations, input/acceptance rules, RNG, resource permissions or retirement order changed."
+  ],
+  "documentation": "README now states main and auxiliary cold selection, missing auxiliary-use hint, sampler exceptions and Graph fallback. CLI flags and defaults are unchanged.",
+  "reproduction": "Archive includes the narrow patch, exact before/after pins, preparation and syntax scripts, actual /W4 /WX /Zs command/raw output and all144 project/338 total dependency identities. Requires the original local compiler and header cache; no binary or SDK is archived.",
+  "limits": [
+    "Default Auto is source-equivalent and deliberately preserves auxiliary Commands; no default capture optimization is enabled.",
+    "Explicit prefer auxiliary behavior is new configuration wiring and has no new runtime, capture-count, numerical, memory or throughput certification here.",
+    "The earlier closed K2 forced-Auto pilot remains a different private experiment; its behavior/performance records are not evidence for this product batch and no samples are included.",
+    "A full Model implementation /Zs checks the modified call sites and types but produces no executable and proves no native capture success or backend fallback execution.",
+    "Actual dependency pins describe this syntax TU, not a newly linked current engine closure or all-platform certification."
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-replay-policy-consistency-2026-10-26.zip",
+    "bytes": 52185,
+    "sha256": "7bc675225a679694a49c7b74292feb8215f2838790549541884eb08420a35894",
+    "members": 20,
+    "CRC": "PASS",
+    "member_SHA256": "PASS",
+    "binary_SDK_model_payloads": false
+  }
+}
