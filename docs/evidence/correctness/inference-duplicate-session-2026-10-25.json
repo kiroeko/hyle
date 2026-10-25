@@ -1,0 +1,257 @@
+{
+  "schema": "hyle.correctness.duplicate-session-rejection.v1",
+  "date": "2026-10-25",
+  "status": "FINITE_CPU_RED_GREEN_PASS",
+  "base_commit": "3d66e16fa0a7967734a50de65e06615bc5f2662a",
+  "problem": "Invalid direct generation batch repeating one mutable Session could evict an unrelated prefix before the later Model duplicate guard rejected it.",
+  "change": "Reject duplicate actual Session objects in the existing read-only full-member preflight, before version admission/eviction, proposal work or ledger mutation. Distinct Sessions sharing one immutable base remain legal; original Model guard stays.",
+  "scope": "One existing tiny ordinary CPU A/H64/FFN128/V64 Model, N2/R2, Q1/Q2 families. Same new formal ledger case with old/current main only. No new executor or error policy.",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "before": {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 498476,
+        "sha256": "a3062a3a696c757d725a2aaed6112995043778b8bca33106fabd6d9a0a9e6bd1"
+      },
+      "after": {
+        "bytes": 498747,
+        "sha256": "1dd4f8c8ad1beb2b1927de96ef8d5b4d3dfb441d64008c89638fe9e5b49eafc0"
+      }
+    },
+    {
+      "path": "tests/tools/qwen_request_ledger_case.h",
+      "before": {
+        "bytes": 9441,
+        "sha256": "f6e4fa616b017fe9473ebff796d57516a51b44ffed3b810b4535c39067aa91fa"
+      },
+      "after": {
+        "bytes": 16262,
+        "sha256": "1ad36aeddee338177167ac3232b7bc1d22130ad611b74df487493f39d9e0dbc7"
+      }
+    }
+  ],
+  "review": {
+    "path": "review.json",
+    "bytes": 3141,
+    "sha256": "65cbcda9d0a8a138527be446aa5b9ae024fe9dfe1ffe619d2a73cc85029ef1e7"
+  },
+  "counterfactual": {
+    "actual_repository_dependency_count_each": 146,
+    "actual_dependency_key_sets_equal": true,
+    "different_actual_source": [
+      "source/engine/models/qwen35/main.cc"
+    ],
+    "frozen_files_each": 166,
+    "only_frozen_difference": [
+      "engine/models/qwen35/main.cc"
+    ],
+    "same_new_case_both_phases": {
+      "bytes": 16262,
+      "sha256": "1ad36aeddee338177167ac3232b7bc1d22130ad611b74df487493f39d9e0dbc7"
+    },
+    "main_before": {
+      "bytes": 498476,
+      "sha256": "a3062a3a696c757d725a2aaed6112995043778b8bca33106fabd6d9a0a9e6bd1"
+    },
+    "main_current": {
+      "bytes": 498747,
+      "sha256": "1dd4f8c8ad1beb2b1927de96ef8d5b4d3dfb441d64008c89638fe9e5b49eafc0"
+    },
+    "same_common_link_inputs": 129,
+    "same_native_fixture_and_raw_bodies": true,
+    "before": {
+      "source/engine/models/qwen35/main.cc": {
+        "bytes": 498476,
+        "sha256": "a3062a3a696c757d725a2aaed6112995043778b8bca33106fabd6d9a0a9e6bd1"
+      }
+    },
+    "current": {
+      "source/engine/models/qwen35/main.cc": {
+        "bytes": 498747,
+        "sha256": "1dd4f8c8ad1beb2b1927de96ef8d5b4d3dfb441d64008c89638fe9e5b49eafc0"
+      }
+    },
+    "note": "Actual compiler dependency hashes are rechecked offline. Source trees are retained privately, excluded from the ZIP. Recipes retain complete link input pins. No binaries or payloads were read into the archive."
+  },
+  "facts_columns": [
+    "prefix_before",
+    "prefix_after",
+    "evictions_before",
+    "evictions_after",
+    "live_before",
+    "live_after",
+    "B_strong_owners_after"
+  ],
+  "before": {
+    "status": "EXPECTED_OLD_REJECTION_SIDE_EFFECT_REPRODUCED",
+    "phase": "before",
+    "process": {
+      "pid": 52080,
+      "exit": 1,
+      "seconds": 0.25
+    },
+    "duplicate_rejection_message": "batch repeats a mutable session",
+    "duplicate_facts": [
+      1,
+      0,
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    "results": [],
+    "compile": {
+      "pid": 52812,
+      "exit": 0,
+      "seconds": 20.016
+    },
+    "link": {
+      "pid": 51964,
+      "exit": 0,
+      "seconds": 1.187
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-duplicate-session-20261025\\before1\\link\\component.exe",
+      "bytes": 22710784,
+      "sha256": "6896697755a9af92823f1735d488c22d1e23879c5ea3c3f344956abf71ead30a"
+    },
+    "app_TUs": 1,
+    "common_link_inputs": 129,
+    "core_provider_SDK_TUs": 0,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    },
+    "GPU": false,
+    "HTTP": 0
+  },
+  "current": {
+    "status": "FINITE_CPU_LEDGER_AND_DUPLICATE_REJECTION_PASS",
+    "phase": "current",
+    "process": {
+      "pid": 19540,
+      "exit": 0,
+      "seconds": 0.25
+    },
+    "duplicate_rejection_message": "generation batch requires distinct Session owners",
+    "duplicate_facts": [
+      1,
+      1,
+      0,
+      0,
+      2,
+      2,
+      1
+    ],
+    "results": [
+      {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "missing_prepare_atomic": true,
+        "missing_later_execute_member_atomic": true,
+        "duplicate_Session_before_prefix_eviction": true,
+        "same_request_retry": true,
+        "real_R2_late_trace_error": true,
+        "both_ledgers_observed": true,
+        "duplicate_observation_noop": true,
+        "both_pending_continuations": true,
+        "raw_Session_without_request_ledger": true,
+        "A_ids": [
+          2,
+          8
+        ],
+        "B_ids": [
+          2,
+          8
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      }
+    ],
+    "compile": {
+      "pid": 14248,
+      "exit": 0,
+      "seconds": 19.938
+    },
+    "link": {
+      "pid": 56584,
+      "exit": 0,
+      "seconds": 1.187
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-duplicate-session-20261025\\current1\\link\\component.exe",
+      "bytes": 22710784,
+      "sha256": "e0fe0bcf9a343f8fcced9574ac62638bc9bffbf07fd2fe2762f299a1cf2cf2d5"
+    },
+    "app_TUs": 1,
+    "common_link_inputs": 129,
+    "core_provider_SDK_TUs": 0,
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+      "bytes": 1359360,
+      "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+    },
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original\\weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    },
+    "GPU": false,
+    "HTTP": 0
+  },
+  "work": "Current retains prefix-only B and all A head/RNG/ledger/turn/output facts on rejection, then retries the original A call. Original ledger neighbors, real R2 late trace failure observation, pending continuation, raw Session API and final0 versions all pass in that same run.",
+  "validation": {
+    "app_TUs": 2,
+    "CPU_processes": 2,
+    "core_provider_SDK_TUs": 0,
+    "GPU": false,
+    "HTTP": 0,
+    "watchdog_seconds_each": 120,
+    "expected_old_failure_retained": true,
+    "new_compile_link_failures": 0,
+    "reproduction": "Use archived check_cpu.py with the two recipe.json/frozen-source manifests and exact source.patch at the base commit. prepare only freezes; build and run are explicit per before1/current1. Original private source trees, inputs and caches remain outside ZIP."
+  },
+  "boundaries": [
+    "Invalid direct-helper batch only: natural RequestWindow already selects unique participants.",
+    "Finite synthetic-weight CPU fixture, not full-model quality or a GPU/native-fault injection.",
+    "Times are validation durations, not throughput or latency benchmarks.",
+    "No MTP, backend matrix, new SDK or model acquisition was performed."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-duplicate-session-2026-10-25.zip",
+    "bytes": 102690,
+    "sha256": "c45036dab3cc7f308796306548d7d8cac96987bf7da2587fd7a524ed1abf092d",
+    "files": 49,
+    "CRC": "PASS_ALL_MEMBERS",
+    "member_SHA256": "PASS_ALL_MEMBERS"
+  },
+  "publication_note": "Archive summary predates the public archive path and subsequent cleanup receipt; source and execution facts are identical. Archive was not repacked.",
+  "cleanup": {
+    "applied": true,
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-duplicate-session-20261025\\before1\\link\\component.exe",
+        "bytes": 22710784,
+        "sha256": "6896697755a9af92823f1735d488c22d1e23879c5ea3c3f344956abf71ead30a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-duplicate-session-20261025\\before1\\compile\\unit.obj",
+        "bytes": 14620884,
+        "sha256": "4cfdcefd592531b750f04542bfe100c38833d7b477a83e5597c693525ccf5929"
+      }
+    ],
+    "logical_bytes": 37331668,
+    "physical_bytes_freed_unknown": true,
+    "scope": "Old negative-control image and app object only; current objects/image, source, red/green records, native dependencies and SDK retained."
+  }
+}

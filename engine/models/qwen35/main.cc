@@ -5893,13 +5893,17 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   if (calls.empty()) return;
   // Validate every request's cold metadata before prefix eviction, proposal
   // work or preparing even the first uncommitted ledger slot.
-  for (const auto &call : calls) {
+  for (std::size_t member = 0; member < calls.size(); ++member) {
+    const auto &call = calls[member];
     if (!call.request || !call.request->ledger)
       throw std::runtime_error("generation request requires its cold-prepared commit ledger");
     const auto &request = *call.request;
     if (!request.session || !request.session->head || request.session->stopping ||
         request.session->failed || request.session->pending)
       throw std::runtime_error("generation batch requires live idle Session heads");
+    for (const auto &prior : calls.first(member))
+      if (prior.request->session.get() == request.session.get())
+        throw std::runtime_error("generation batch requires distinct Session owners");
     const auto &sampling = model.sampling_configuration(request.sampling_index);
     if (&request.session->sampling_configuration() != &sampling)
       throw std::runtime_error("request sampling cannot change after Session admission");

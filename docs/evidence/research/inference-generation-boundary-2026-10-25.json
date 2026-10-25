@@ -1,0 +1,141 @@
+{
+  "kind": "bounded_source_only_generation_capabilities_review",
+  "hyle_head": "3d66e16fa0a7967734a50de65e06615bc5f2662a",
+  "conclusion": {
+    "new_required_compute_primitive_gaps": 0,
+    "model_assembly_couplings_for_architecture_review": 1,
+    "implementation_requested_or_performed": false
+  },
+  "references": [
+    {
+      "repository": "C:/public/project-hyle/llama.cpp",
+      "head": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "read": [
+        "include/llama.h:764 (sequence copy/removal)",
+        "include/llama.h:1135 (published per-token logits)",
+        "include/llama.h:1475 (draw/filters)",
+        "include/llama.h:1559 (penalties)",
+        "include/llama.h:1603 (bias)",
+        "common/sampling.cpp:331 (application sampler assembly)"
+      ],
+      "boundary": "Local checkout only; inspected API/sampler files have no working-tree modifications. Its ready grammar/Beam/application policies do not establish a requirement for corresponding Hyle Compute operation names."
+    },
+    {
+      "repository": "C:/public/project-hyle/vllm",
+      "head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "read": [
+        "vllm/v1/sample/sampler.py:85 (raw/processed logprob separation)",
+        "vllm/v1/sample/sampler.py:377 (allowed IDs, bad words and processors)",
+        "vllm/v1/sample/sampler.py:425 (penalties)",
+        "vllm/v1/sample/ops/penalties.py:10",
+        "vllm/v1/sample/metadata.py:25"
+      ],
+      "boundary": "Local source, no execution or current-online-version claim; inspected sampler/metadata/penalties files are unmodified."
+    }
+  ],
+  "existing_foundation": [
+    {
+      "need": "Bias and externally computed allowed/banned-token masks",
+      "already_available": "F32 Add plus Select(mask,logit,-Inf), or checked Scatter updates; dynamic mask/bias can be ordinary bounded Graph input tensors. Grammar parsing, stop-word automata and tokenizer matching remain owners of those masks.",
+      "refs": [
+        "include/hyle/compute/operation.h:75",
+        "include/hyle/compute/operation.h:305",
+        "include/hyle/compute/operation.h:378",
+        "include/hyle/graph/graph.h:419"
+      ]
+    },
+    {
+      "need": "History-dependent frequency/presence/repetition penalties",
+      "already_available": "Host owner may provide bounded counts, or Scatter(kind=Add) can accumulate repeated IDs. Add/Multiply/Divide/Relu/Cast-to-Bool/Select express count/presence/sign rules; no mandatory special penalties operator. Exact history window, distinct prompt/output counting and commit/rollback state remain engine policy.",
+      "refs": [
+        "include/hyle/compute/operation.h:57",
+        "include/hyle/compute/operation.h:75",
+        "include/hyle/compute/operation.h:107",
+        "include/hyle/compute/operation.h:378"
+      ]
+    },
+    {
+      "need": "Greedy, sampling, nucleus, min-p/typical-style filters and selected logprob",
+      "already_available": "Stable TopK, Reduce, Log/Exp, Scan, Gather/Scatter and Select compose finite filters. Categorical accepts log-weights directly, supports -Inf zero mass and optional normalized selected logprob; RandomBits is separately counter addressed. Existing shared distribution implements its declared temperature/top-k/top-p order; it is intentionally not a complete sampler-chain policy API.",
+      "refs": [
+        "include/hyle/compute/operation.h:307",
+        "include/hyle/compute/operation.h:318",
+        "include/hyle/compute/operation.h:411",
+        "include/hyle/compute/sampling_ops.h:21",
+        "include/hyle/compute/sampling_ops.h:51",
+        "engine/inference/sampling_graph.h:58"
+      ]
+    },
+    {
+      "need": "Raw logits, raw versus processed logprobs, Top-N and selected-ID scoring",
+      "already_available": "Graph publish/output/result preserve typed values/owners; LogSoftmax plus TopK or GatherElements supplies normalized probabilities/ranks as needed. Model already publishes logits and provides optional synchronous completed tensor capture. Selected-logprob is not a missing Categorical output. Model currently favors selected last rows; prompt-all-row convenience/scoring wiring is not a missing Graph capability.",
+      "refs": [
+        "include/hyle/graph/graph.h:470",
+        "include/hyle/graph/executable.h:1062",
+        "include/hyle/compute/model_ops.h:21",
+        "engine/models/qwen35/main.cc:3086",
+        "engine/models/qwen35/main.cc:1951",
+        "engine/models/qwen35/main.cc:4723"
+      ]
+    },
+    {
+      "need": "Branching from actual evaluated states and safe commit/rollback",
+      "already_available": "StateStore.begin/finalize and expected-base StateHead.publish, original ReadLease/COW cloning, plus Qwen sampling_fork/create_session give explicit immutable branches. Owner can choose candidates with existing TopK/Categorical; Beam search algorithm itself is not a missing bottom-layer primitive. No claim of arbitrary middle-history truncation without an actual stored boundary/rebuild.",
+      "refs": [
+        "src/compute_state/state_versions.cc:388",
+        "src/compute_state/state_versions.cc:504",
+        "src/compute_state/state_versions.cc:537",
+        "engine/models/qwen35/main.cc:3589",
+        "engine/models/qwen35/main.cc:3707",
+        "engine/models/qwen35/main.cc:3798"
+      ]
+    }
+  ],
+  "architecture_review_item": {
+    "name": "Ordinary model selection assembly and precommit access boundary",
+    "status": "Source-confirmed model wiring coupling, not a missing Compute primitive or newly demonstrated numerical bug.",
+    "facts": [
+      "Family construction assembles batched greedy TopK, stochastic draw identities and validity outputs around shared sampling::distribution (main.cc:3051-3086).",
+      "The cached full-hit frontier assembles the same kinds of endpoints independently (main.cc:3602-3646), also calling that one shared distribution. Temperature/top-k/top-p mathematics are NOT duplicated.",
+      "CompletedEvaluationView is intentionally postcommit; it supports diagnostics/scoring but cannot be substituted for precommit selection (main.cc:1951,4670-4731).",
+      "finish_selected_evaluations already offers a prepublication Select callback, so arbitrary caller selection is not mathematically impossible. Its current arguments expose sampled IDs and full StepState rather than a narrow typed logits-selection contract; an external processor must understand Phase/run/output retention and the model has already run its fixed selection graph (main.cc:4423,4496-4512)."
+    ],
+    "minimal_direction": "When architecture work reaches this boundary, unify only ordinary greedy/draw/valid endpoint assembly and its explicit input/output contract around the existing shared distribution/public Graph values. Keep ownership, native execution and retirement in their current mechanisms. Do not introduce a callback framework, registry, second executor or new sampling feature for this audit.",
+    "must_preserve": [
+      "One batched greedy TopK fast path rather than per-request expansion",
+      "Stochastic validity gate and exact owner draw/commit rules",
+      "Cached full-hit resampling from real retained hidden under the new request policy",
+      "Default Graph and no-capture fast path; no mandatory logprob normalization or tensor readback"
+    ],
+    "non_claim": "Absence of a CLI penalty/grammar flag is not a core capability gap; current fixed Model policy does not promise every reference-engine application sampler."
+  },
+  "verification_boundary": "Read-only local source comparison; no builds, native runs, GPU work, downloads, policy quality benchmark, new framework or product edits. Existing sampling tests were read, not newly executed. Mathematical expressibility does not claim every composition is qualified/performance-optimal on every backend.",
+  "source_pins": [
+    {
+      "path": "engine/inference/sampling_graph.h",
+      "bytes": 18479,
+      "sha256": "ac43b9cb30ca502a0a614eb3d0869386333f19a54cdc264f1e9b70f2cebbb9ce"
+    },
+    {
+      "path": "include/hyle/compute/sampling_ops.h",
+      "bytes": 3673,
+      "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+    },
+    {
+      "path": "include/hyle/compute/operation.h",
+      "bytes": 28771,
+      "sha256": "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 498747,
+      "sha256": "1dd4f8c8ad1beb2b1927de96ef8d5b4d3dfb441d64008c89638fe9e5b49eafc0"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "bytes": 41194,
+      "sha256": "1d344d6c0c37cd1e18b7ee765a56bb58e1ab9aa24095208f453a4c3065b5fe99"
+    }
+  ],
+  "source_state": "Pinned working tree after the duplicate-Session preflight fix; hyle_head records the underlying Git HEAD, not a claim of an unchanged tree."
+}

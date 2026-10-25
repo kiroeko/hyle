@@ -1,0 +1,75 @@
+{
+  "status": "BOUNDED_SOURCE_REVIEW_WITH_ONE_VERIFIED_FIX; OBJECTIVE_NOT_COMPLETE",
+  "date": "2026-10-25",
+  "reviewed_commit": "3d66e16fa0a7967734a50de65e06615bc5f2662a",
+  "review_kind": "Read-only source and existing finite evidence; no new coverage or model/backend execution from these inventories.",
+  "reviewed_areas": [
+    "Ordinary prefill/decode, positions, chunk completion, context admission and complete-state recovery.",
+    "Runtime request slots, input continuation, cancellation, participant failure, output credit/ACK and finite scheduling.",
+    "Typed prefix identity, LRU/pins, eviction versus actual retirement and multi-Model known-resource admission.",
+    "Selected non-Qwen GLM Pro/Flash, Kimi KDA/MLA and formal DeepSeek V4 ordinary state components.",
+    "Current model/quantization/fusion table against implemented route seams; shared API rejection ordering and ownership."
+  ],
+  "confirmed_gap": {
+    "name": "Repeated actual Session admitted to version-capacity query before rejection.",
+    "resolution": "Early actual-Session uniqueness check; preserve raw Model guard and legal shared immutable state.",
+    "evidence": "../correctness/inference-duplicate-session-2026-10-25.json",
+    "actual_old": "B-only prefix evicted: size1->0, eviction0->1, live2->1, then duplicate error.",
+    "actual_current": "Prefix/head/RNG/ledger unchanged; original single request retries, old neighbors pass and final versions are zero."
+  },
+  "not_missing_primitives": [
+    "Finite CLI whole-turn FIFO/fail-fast is an owner policy; shared runtime enqueue/requeue/pause/credit APIs and finite actual consumers already exist.",
+    "Different input lengths execute through exact-shape buckets; missing one mixed-T dispatch is a batching/performance question.",
+    "Qwen full-causal attention plus recurrent state does not promise transparent context truncation merely because core window attention exists.",
+    "An unrun grouped-FP8 WeightSlots composition does not itself prove missing generic slice upload, atomic bank/map binding or retirement."
+  ],
+  "preserved_limits": [
+    "This is not whole-family/artifact/backend/fault-injection exhaustion; direct scope limitations remain in each raw review.",
+    "DeepSeek Pro position0 was source-reviewed, not a new independent numerical execution.",
+    "CUDA grouped-F32 power2 still rejects; dense F32 capability does not override grouped qualification.",
+    "No new raw GPU reader, physical VRAM cap, native preemption, server, tokenizer or general loader claim."
+  ],
+  "architecture_followup": [
+    "Keep canonical operator/carrier inference distinct from native reader/copy qualification.",
+    "Check new model/codec binding through typed operands without changing request/cache/commit owners.",
+    "Review cold selection assembly and precommit generation-policy boundaries using existing sampling mathematics."
+  ],
+  "performance_candidate": "Existing grouped FP8 FUSE_SWIGLU branch is disabled; vendor fast-math/storepoints require a same-math candidate, not a flag flip. No speed claim.",
+  "documentation": "Correct obsolete pending language for shared request primitives and original Kimi/E4 bindings; preserve finite evidence boundaries.",
+  "baseline_pin_occurrences_verified": 46,
+  "records": [
+    {
+      "archive_member": "ordinary.json",
+      "bytes": 8112,
+      "sha256": "92b75093eb60d92693b49d79c38e65173c5aef0318b1e43d27bfd2f2fbbdf59d"
+    },
+    {
+      "archive_member": "sessions-requests.json",
+      "bytes": 6480,
+      "sha256": "09c3661711784203407d5a5b2ba25b26e7d45f9b03ab8b5dbee349a5c674fdb6"
+    },
+    {
+      "archive_member": "non-qwen-state.json",
+      "bytes": 8041,
+      "sha256": "7826917c9afe16a066a476bbb496962fbcf203736cc6c4a1750f9fd2ce83daaf"
+    },
+    {
+      "archive_member": "model-quant-routing.json",
+      "bytes": 7476,
+      "sha256": "91d25cebe0a86757cb233ef03f1d2dacd200c9826714d1ec107e531104ec26b2"
+    },
+    {
+      "archive_member": "common-ownership.json",
+      "bytes": 6827,
+      "sha256": "1f7036a18f7d19bc92f95acb6d41638cc25f9e2e7056c92c0b1e08e4a6859ee0"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-foundation-review-2026-10-25.zip",
+    "bytes": 18454,
+    "sha256": "51dd4047108151610a822ba7c61408fe86ac0a48b16fea457dbc10ce1a1a5508",
+    "members": 7,
+    "CRC_and_member_SHA_verified": true,
+    "binary_SDK_model_payload": false
+  }
+}
