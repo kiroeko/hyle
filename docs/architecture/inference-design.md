@@ -64,6 +64,15 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 完整缓存命中的输出不伪造 Graph 提交；导入历史只接纳真实已提交记录，不重新发射旧输出。
 模型仍负责把自身 ledger／StateHead 投影为这些事实，不把模型修复或随机游标交给请求进度。
 
+前缀命中的历史、已消费偏移和 Session 只在实际资源接纳及 frontier 成功后一起发布；
+先预检原账簿与进度，再局部准备，最后写入原预留记录。提交前资源拒绝后可重试同一请求，
+不重建账簿或重置随机流；turn 启动、计时和目录 LRU 仍可保留幂等准备的变化。
+[有限 CPU 检查](../evidence/correctness/inference-prefix-admission-retry-2026-10-25.json)覆盖真实字节门拒绝、
+同请求重试与无拒绝对照，以及原快照／随机游标保留；不代签其它 native 路线。
+共享 frontier 的可写输入也须先检查原退休保留节点；到 submit 才拒绝，不能保护前面的 identity 写入。
+[提前门禁检查](../evidence/correctness/inference-frontier-retirement-gate-2026-10-25.json)保留旧 owner；
+host 用例覆盖 pending 时不写入，未注入原生设备故障。
+
 当前驱动接收有限 schedule，按 FIFO 接纳，在完整 turn 结束后让出；已接纳的 turn 逐波推进。
 它预留全部输入和输出账簿，N／R／缓存字节预算不限制等待输入或主机输出积压。
 未来在线服务须在请求层明确排队请求数、输入字节和未交付输出上限及背压／公平策略；

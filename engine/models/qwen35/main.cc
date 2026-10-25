@@ -3554,6 +3554,8 @@ public:
     const auto next_cursor = selected_sampler.enabled ? cursor.advanced(1) : cache::SamplingCursor{};
     const auto started = Clock::now();
     auto &frontier = *selected.frontier;
+    if (frontier.retirement.pending())
+      throw std::runtime_error("original sampling frontier resource scope is still retained");
     // This is the same Graph execution API/runtime as target/draft. It reads
     // the original immutable hidden lease and returns only two scalar results.
     auto run = take(frontier.compiled.executable.create_invocation(
@@ -5066,14 +5068,31 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
   return record;
 }
 
+void preflight_generation_prompt_ledger(const GenerationLedger &ledger, const cache::ReplayPrefix &prefix) {
+  if (ledger.committed_count || !prefix.history || !prefix.chunks ||
+      prefix.chunks > prefix.history->chunks.size() || prefix.chunks > ledger.records.size())
+    throw std::runtime_error("MTP initial prompt import requires an empty bounded ledger");
+  std::size_t covered = 0;
+  for (std::size_t i = 0; i < prefix.chunks; ++i) {
+    const auto &part = prefix.history->chunks[i];
+    if (ledger.records[i].committed || ledger.records[i].emitted.capacity() < 2 ||
+        !part.input || !part.count || part.first != covered || part.first > part.input->ids.size() ||
+        part.count > part.input->ids.size() - part.first || covered > prefix.length ||
+        part.count > prefix.length - covered || (part.state_only ? part.next_id != -1 : part.next_id < 0))
+      throw std::runtime_error("prompt import requires complete original ranges and uncommitted reserved records");
+    covered += part.count;
+  }
+  if (covered != prefix.length)
+    throw std::runtime_error("prompt import history does not cover its complete boundary");
+}
+
 void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::ReplayPrefix &prefix,
                               bool full_hit, bool draft_cache) {
-  if (ledger.committed_count || !prefix.history || prefix.chunks > ledger.records.size())
-    throw std::runtime_error("MTP initial prompt import requires an empty bounded ledger");
+  preflight_generation_prompt_ledger(ledger, prefix);
   std::int32_t previous = -1;
   for (std::size_t i = 0; i < prefix.chunks; ++i) {
     const auto &part = prefix.history->chunks[i];
-    auto &record = ledger.next();
+    auto &record = ledger.records[i];
     record.role = !draft_cache ? GraphRole::kText
         : part.count == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
     record.input_owner = part.input;
@@ -5087,10 +5106,14 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
     record.stopped = is_end_of_generation(part.next_id);
     record.user_output = full_hit && i + 1 == prefix.chunks;
-    record.imported = true; record.committed = true; ++ledger.committed_count;
+    record.imported = true;
     record.requests = 0; // Role-only source history does not claim original batch geometry.
     previous = part.next_id;
   }
+  // All ranges/capacities were checked before population. shared_ptr/span and
+  // scalar writes, including the two inline emitted IDs, allocate nothing.
+  for (std::size_t i = 0; i < prefix.chunks; ++i) ledger.records[i].committed = true;
+  ledger.committed_count = prefix.chunks;
 }
 
 // Consume committed host facts even when a subsequent diagnostic write threw.
@@ -5396,7 +5419,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         throw std::runtime_error("token ID outside vocabulary");
       request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
     }
-    if (request.ledger) request.ledger->bind_sampling(prepared_sampling, model.resources_);
+    if (request.ledger) request.ledger->validate_sampling(prepared_sampling, model.resources_);
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_begin\n";
     if (!request.turn_input_consumed) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
         : std::exchange(request.admission_start, Clock::time_point{});
@@ -5407,52 +5430,63 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         if (hit.payload.snapshot->draft.has_value() != model.cache_plan.draft_cache)
           throw std::runtime_error("prefix directory contains a different target/draft state contract");
         const auto cached_lag = hit.payload.snapshot->draft ? hit.payload.snapshot->draft->lag : 0;
-        request.reused_tokens = hit.payload.snapshot->length; request.prefix_hits = 1;
-        request.prefix_full_hits = request.reused_tokens == request.prompt.size() ? 1 : 0;
-        request.history = cache::copy_history(hit.payload.replay, model.capacity);
+        const auto reused_tokens = hit.payload.snapshot->length;
+        const bool full_hit = reused_tokens == request.prompt.size();
+        auto history = cache::copy_history(hit.payload.replay, model.capacity);
         if (request.ledger) {
-          import_generation_prompt_ledger(*request.ledger, hit.payload.replay, request.prefix_full_hits != 0, model.cache_plan.draft_cache);
-          request.progress.adopt_committed_history(request.ledger->committed_count);
+          preflight_generation_prompt_ledger(*request.ledger, hit.payload.replay);
+          request.progress.preflight_adopt_committed_history();
         }
-        const auto suffix = request.prompt.size() - request.reused_tokens;
-        request.turn_input_consumed = request.reused_tokens;
+        const auto suffix = request.prompt.size() - reused_tokens;
         const auto suffix_rows = (std::min)(suffix, max_prefill_rows);
         const auto suffix_completion = suffix > suffix_rows ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
+        std::string hit_name = "prefill";
+        if (suffix > suffix_rows) hit_name += "_chunk" + std::to_string(reused_tokens);
         const std::array chunks{suffix_rows};
         const auto prior_sampling_seconds = model.frontier_sampling_seconds;
         const auto suffix_role = !model.cache_plan.draft_cache ? GraphRole::kText : (suffix == 1 || request.prompt.size() == 1)
             ? (cached_lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
             : (cached_lag ? GraphRole::kMtpCatchupPrefill : GraphRole::kMtpPrefill);
-        // A full hit executes no prefill role at all. Its ordinary prefill
-        // family is already present; a real suffix admits only its exact child.
+        // Keep every new request fact local until the actual Session/frontier
+        // succeeds. Failed native/resource admission must permit the same retry.
         const auto admission_role = !model.cache_plan.draft_cache ? GraphRole::kText
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
-        request.session = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
-            std::move(hit.payload.snapshot), admission_role,
+        auto adopted = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
+            hit.payload.snapshot, admission_role,
             request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index);
-        if (sampler.enabled || model.sampling_configuration_count() > 1) {
-          request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
-          request.prefix_sampling_seconds = model.frontier_sampling_seconds - prior_sampling_seconds;
-          if (request.ledger) {
+        if (!suffix) history->chunks.back().next_id = adopted->head->next_id;
+        // Only original reserved metadata remains. Preconditions are unchanged
+        // since preflight; no allocation or native work follows this commit.
+        if (request.ledger) {
+          import_generation_prompt_ledger(*request.ledger, hit.payload.replay, full_hit, model.cache_plan.draft_cache);
+          if (sampler.enabled || model.sampling_configuration_count() > 1) {
             for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
               auto &record = request.ledger->records[i];
               record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
               record.after.sampling = record.before.sampling;
               record.emitted_count = 0; record.emitted = {-1, -1};
             }
-            auto &last = request.ledger->records[request.ledger->committed_count - 1];
-            last.after.sampling = request.session->head->sampling;
+            request.ledger->records[request.ledger->committed_count - 1].after.sampling = adopted->head->sampling;
           }
-        }
-        if (!suffix) {
-          request.history->chunks.back().next_id = request.session->head->next_id;
-          if (request.ledger) {
+          if (!suffix) {
             auto &last = request.ledger->records[request.ledger->committed_count - 1];
-            last.after.sampling = request.session->head->sampling;
-            last.after.next_id = request.session->head->next_id;
+            last.after.sampling = adopted->head->sampling;
+            last.after.next_id = adopted->head->next_id;
             last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
             last.emitted_count = 1; last.stopped = is_end_of_generation(last.after.next_id);
           }
+          request.ledger->bind_sampling(prepared_sampling, model.resources_);
+          request.progress.adopt_committed_history(request.ledger->committed_count);
+        }
+        request.history = std::move(history);
+        request.session = std::move(adopted);
+        request.reused_tokens = reused_tokens; request.prefix_hits = 1;
+        request.prefix_full_hits = full_hit ? 1 : 0;
+        request.turn_input_consumed = reused_tokens;
+        call.name = std::move(hit_name);
+        if (sampler.enabled || model.sampling_configuration_count() > 1) {
+          request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
+          request.prefix_sampling_seconds = model.frontier_sampling_seconds - prior_sampling_seconds;
         }
         hit.reset();
       } else { request.prefix_misses = 1; request.history = std::make_shared<cache::ReplayHistory>(model.capacity); }
@@ -5471,13 +5505,16 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       make_generation_room(model, prefix, nullptr, requests);
       const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling, false, call.completion, request.sampling_index);
     }
+    if (request.ledger && !request.ledger->sampling) request.ledger->bind_sampling(prepared_sampling, model.resources_);
     if (!request.turn_observations.empty() &&
         call.input_begin == (request.progress.turn_index ? 0 : request.reused_tokens))
       request.turn_observations[request.progress.turn_index].context_before = request.session->length();
     call.full_hit = call.prompt.empty();
-    call.name = request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_prefill" : "prefill";
-    if (!call.prefill_complete || call.input_begin > request.reused_tokens)
-      call.name += "_chunk" + std::to_string(call.input_begin);
+    if (call.name.empty()) {
+      call.name = request.progress.turn_index ? "round" + std::to_string(request.progress.turn_index + 1) + "_prefill" : "prefill";
+      if (!call.prefill_complete || call.input_begin > request.reused_tokens)
+        call.name += "_chunk" + std::to_string(call.input_begin);
+    }
   } else {
     call.quota = (std::min)(request.progress.remaining_outputs(), output_credit);
     call.pending = request.session->head->next_id;

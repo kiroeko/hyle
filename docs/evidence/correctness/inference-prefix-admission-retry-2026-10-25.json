@@ -1,0 +1,256 @@
+{
+  "status": "PASS_ORDINARY_PREFIX_ADMISSION_RETRY_CANONICAL_INTEGRATED",
+  "date": "2026-10-25",
+  "problem": "Initial prefix hit imported history/observed cursor and input offset before fallible Session/frontier admission, making a resource-refused live request non-retryable.",
+  "change": "Read-only history/record/progress preflight, local history/name/Session, bounded original-ledger population, then request publication. No second ledger, new executor, route, math or budget limit.",
+  "current_sources": [
+    {
+      "path": "engine/inference/request_progress.h",
+      "bytes": 12536,
+      "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 479257,
+      "sha256": "eb156fd61abe34acae23d466f30ca6d8d5dfcb45ee03e5242347282affdb90d4"
+    }
+  ],
+  "actual": {
+    "status": "PASS",
+    "ordinary": true,
+    "backend": "cpu",
+    "fixture": "cached_untrained_A_H64_FFN128_V64",
+    "real_resource_refusals": 1,
+    "frontier_graph_calls": 2,
+    "fresh_direct_control": true,
+    "same_request_retry": true,
+    "turn_started_after_refusal": true,
+    "prefix_history_adopted_after_refusal": false,
+    "single_new_draw": true,
+    "output": 45,
+    "old_hidden_digest": 12304682563387857250,
+    "final_versions": 0,
+    "GPU": false,
+    "HTTP": false
+  },
+  "actual_process": {
+    "exit": 0,
+    "seconds": 0.26600000000325963,
+    "timeout": false
+  },
+  "actual_work": {
+    "target_prefill_graphs": 1,
+    "completed_frontier_graphs": 2,
+    "refused_frontier_submissions": 0,
+    "cold_same_model": true,
+    "fixture_original_publisher_weights": false,
+    "fixture": "cached untrained A-only H64 FFN128 V64 BF16, ordinary Text selection (13 roles/98944 selected bytes); existing full fixture body includes unused NextN roles",
+    "source_fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+      "bytes": 5308,
+      "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+    },
+    "source_body": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+      "bytes": 206336,
+      "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+    }
+  },
+  "refusal": {
+    "message": "graph invocation allocation failed",
+    "status_source": "src/graph/executable.cc:51-52, invocation_allocation_failure returns ResourceExhausted",
+    "cause": "The original shared requested-byte scope is exhausted by a normal Reservation; typed reserve(resource,1) also returns ResourceExhausted. The same prepared frontier succeeds without pressure and after reservation release.",
+    "allocation_path": "Compiled graph resource_budget.metadata_allocator -> original plan/storage runtime allocator -> Executable::create_invocation allocation failure. No per-allocation call stack was instrumented.",
+    "current_source_anchors": [
+      "src/graph/executable.cc:8912-8914",
+      "src/graph/executable.cc:10187-10189",
+      "src/compute/resource_budget.cc:245-248"
+    ],
+    "compiled_graph_object": {
+      "path": ".scratch/graph-system-constant-lease-20261024/executable/executable.obj",
+      "bytes": 5131528,
+      "sha256": "25a1011922c00651e57e0defab10293bc168886a5cdf245839f95650b394419b"
+    },
+    "compiled_graph_source_identity": "closure/graph-executable-identity.json (retained older Graph source hash; current anchors are source-level explanation, not a claim that this old object was rebuilt)",
+    "current_explanatory_source": {
+      "path": "src/graph/executable.cc",
+      "bytes": 481504,
+      "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+    }
+  },
+  "assertions": [
+    "After refusal: no Session/history, no imported ledger records/count/sampling binding, no progress history adoption/output, no consumed-prefix offset/hit counters/frontier call.",
+    "Original begin_turn may legitimately mark the turn started; retry then uses the same already started request. Input validation marker, timing and cache LRU are not rolled back.",
+    "After releasing only the unrelated Reservation: same request full hit succeeds, canonical state shared, one fresh stream draw/output, imported history observed once.",
+    "Retry and direct same-stream control match emitted IDs, full GenerationBoundary, pending/cursor, ledger.same_result, history length/chunk count and observed cursor.",
+    "Old producer Snapshot/boundary/pending/cursor, actual carry-hidden byte digest, KV ready-reader validity/page counts unchanged. This does not claim every KV backing byte was independently read.",
+    "Evicting the directory alias preserves original escaped ready readers. Explicit stop/drain/try_retire releases all request state; final version count 0."
+  ],
+  "attempts": [
+    {
+      "name": "attempt1",
+      "consumer_compile": {
+        "exit": 0,
+        "seconds": 18.07799999997951,
+        "timeout": false
+      },
+      "link": {
+        "exit": 1120,
+        "seconds": 0.7339999999967404,
+        "timeout": false
+      },
+      "runtime": "NOT_STARTED",
+      "failure": "Historical CPU closure lacked the already implemented two-scope GraphOutput::storage_lease. Fixed by reusing the canonical-matching retained resources object; no product change."
+    },
+    {
+      "name": "attempt2",
+      "link": {
+        "exit": 0,
+        "seconds": 1.1719999999913853,
+        "timeout": false
+      },
+      "runtime": {
+        "exit": 1,
+        "seconds": 0.3129999999946449,
+        "timeout": false
+      },
+      "failure": "Private consumer wrongly required the caught error string to contain budget/quota before printing it. Original caught text was not captured in this attempt and remains unknown; this failure is not retroactively labeled a numerical/state pass."
+    },
+    {
+      "name": "attempt3",
+      "consumer_compile": {
+        "exit": 0,
+        "seconds": 18.01600000000326,
+        "timeout": false
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.1719999999913853,
+        "timeout": false
+      },
+      "runtime": {
+        "exit": 0,
+        "seconds": 0.26600000000325963,
+        "timeout": false
+      },
+      "correction": "Print actual refusal before checks; separately assert typed public reserve(1) ResourceExhausted. All state, output/control, cursor and retirement gates retained.",
+      "result": "PASS"
+    }
+  ],
+  "totals": {
+    "actual_consumer_processes": 2,
+    "strict_consumer_TU_compiles": 2,
+    "links": 3,
+    "SDK_builds": 0,
+    "core_builds": 0,
+    "GPU_processes": 0,
+    "HTTP": 0
+  },
+  "integration": {
+    "status": "INTEGRATED_AFTER_FINITE_CPU_JOURNEY",
+    "sources": [
+      {
+        "path": "engine/inference/request_progress.h",
+        "bytes": 12536,
+        "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+      },
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 479257,
+        "sha256": "eb156fd61abe34acae23d466f30ca6d8d5dfcb45ee03e5242347282affdb90d4"
+      }
+    ],
+    "actual": {
+      "status": "PASS",
+      "ordinary": true,
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "real_resource_refusals": 1,
+      "frontier_graph_calls": 2,
+      "fresh_direct_control": true,
+      "same_request_retry": true,
+      "turn_started_after_refusal": true,
+      "prefix_history_adopted_after_refusal": false,
+      "single_new_draw": true,
+      "output": 45,
+      "old_hidden_digest": 12304682563387857250,
+      "final_versions": 0,
+      "GPU": false,
+      "HTTP": false
+    },
+    "actual_process": {
+      "exit": 0,
+      "seconds": 0.26600000000325963,
+      "timeout": false
+    },
+    "real_error_source": "src/graph/executable.cc:51 ResourceExhausted invocation metadata allocation",
+    "scope": "Prefix admission publication only; original turn start, timing and LRU preparation may advance.",
+    "extra_build_or_process": false
+  },
+  "limits": [
+    "Common ordinary/MTP source correction; this new runtime check covers ordinary pure CPU only, not a new MTP or native GPU matrix.",
+    "The original defect was established by source order; no old-binary negative-control model run was added.",
+    "Only prefix admission publication is made retry safe. No promise of whole-function rollback for begin_turn/input markers/timing/LRU.",
+    "Pre-submit requested-byte refusal is covered. Unknown or accepted native work still requires the existing actual-retirement gate; no gate is reset for retry.",
+    "Cached untrained tiny fixture, not full artifact/model quality, server, tokenizer, physical-memory cap or performance evidence."
+  ],
+  "cleanup": {
+    "performed": false,
+    "files": [
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt1/compile/unit.obj",
+        "bytes": 14081953,
+        "sha256": "05f8b31c46491d2c01ce2c21ba9f904ab719b80bd155c592338abd93bcad3c56"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt1/link/component.exp",
+        "bytes": 24996,
+        "sha256": "c420deec981bd6bae929c8ca2ea9bea47c31049093b3639fafb14cc27b8f74a7"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt1/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt2/link/component.exe",
+        "bytes": 22632448,
+        "sha256": "117bf637fa7bfd05b29f0c0daa078cd6921f52001595d4d9c20ca6d6642a0f4c"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt2/link/component.exp",
+        "bytes": 24996,
+        "sha256": "4972e705cd19310474161135715a6e0e0cbbc9c2b8556f9ae355df910c3e0d70"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt2/link/component.lib",
+        "bytes": 41826,
+        "sha256": "d980b798f4153ceba1d2535492b834bcbc113aaf83476d5f67533df8ba3121bf"
+      },
+      {
+        "path": ".scratch/inference-prefix-admission-20261025/attempt2/link/hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      }
+    ],
+    "logical_bytes": 38207405,
+    "retained": "attempt3 current ready app/entry/native hardlink; all shared Graph/resources/core/SDK objects; source/commands/raw/cache fixture"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-prefix-admission-retry-2026-10-25.zip",
+    "bytes": 506483,
+    "sha256": "9b73d7a2008fb7b25f15c9ba92f9bc4839fa127efbc34e723a1eed026c1f0e32",
+    "entries": 156,
+    "crc_verified": true,
+    "excludes": "No OBJ/EXE/LIB/EXP/DLL/SDK or fixture weight bodies; actual source/dependency pins identify retained inputs."
+  },
+  "root_cleanup": {
+    "performed": true,
+    "files": 7,
+    "logical_bytes": 38207405,
+    "physical_bytes_freed_unknown": true,
+    "current_images_and_shared_cores_resources_preserved": true,
+    "evidence": "archive:root-followup/manifest.json",
+    "snapshot_note": "Original candidate list is retained as historical; this field records completed root removal."
+  }
+}

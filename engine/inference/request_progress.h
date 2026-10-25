@@ -160,9 +160,12 @@ struct RequestProgress final {
 
   // Adopt only initial, already committed input history. Its old outputs do
   // not belong to the new request; a full hit applies its new pending below.
-  void adopt_committed_history(std::size_t count) {
+  void preflight_adopt_committed_history() const {
     if (history_adopted_ || observed_commits_ || !generated.empty() || turn_index || prefilled || turn_done)
       throw std::logic_error("request can adopt committed history only before its first output");
+  }
+  void adopt_committed_history(std::size_t count) {
+    preflight_adopt_committed_history();
     observed_commits_ = count; history_adopted_ = true;
   }
 
