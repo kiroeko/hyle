@@ -1,0 +1,708 @@
+{
+  "status": "EXISTING_TRACE_SOURCE_CAUSE_REVIEW_NO_SPEED_RESULT",
+  "generated_UTC": "2026-10-25T14:39:44.936038+00:00",
+  "scope": "Reanalysis of prior Oct25 frozen-source direct binding observations and aligned earlier profiler API windows. Not a current-HEAD run or throughput measurement.",
+  "new_model_GPU_profile_build_HTTP_processes": 0,
+  "meaning": "15 body captures, not weight reloads; existing backing offsets change while all observed dtype/shape/bytes/resource/handles agree.",
+  "body_queries": 66,
+  "key_ports_per_body": 2031,
+  "body_capture_records": 15,
+  "body_capture_and_following_native_API_window_ms": 78.431404,
+  "reason_groups": {
+    "first_role_record": {
+      "count": 2,
+      "seq": [
+        2,
+        3
+      ],
+      "window_ms": 18.186282,
+      "native_API_ms": 6.514087
+    },
+    "valid_key_address_miss_GDN_present": {
+      "count": 6,
+      "seq": [
+        4,
+        8,
+        16,
+        39,
+        40,
+        44
+      ],
+      "window_ms": 33.293684,
+      "native_API_ms": 11.448910999999999
+    },
+    "valid_key_address_miss_hidden_outputs_only": {
+      "count": 4,
+      "seq": [
+        13,
+        14,
+        15,
+        41
+      ],
+      "window_ms": 15.35424,
+      "native_API_ms": 1.186168
+    },
+    "native_plan_invalidation": {
+      "count": 3,
+      "seq": [
+        37,
+        38,
+        43
+      ],
+      "window_ms": 11.597198,
+      "native_API_ms": 1.173731
+    }
+  },
+  "body_records": [
+    {
+      "seq": 2,
+      "range_begin": 57,
+      "role": 3,
+      "context": 154,
+      "lag": 0,
+      "accepted_inputs": 2,
+      "reason": "first_role_record",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 7.952085,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 3.045781,
+      "capture_through_native_API_end_ms": 10.99856,
+      "closest_variant_recorded_at_seq": null,
+      "closest_variant_changed_port_classes": null
+    },
+    {
+      "seq": 3,
+      "range_begin": 55,
+      "role": 4,
+      "context": 156,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "first_role_record",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.718788,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 3.468306,
+      "capture_through_native_API_end_ms": 7.187722,
+      "closest_variant_recorded_at_seq": null,
+      "closest_variant_changed_port_classes": null
+    },
+    {
+      "seq": 4,
+      "range_begin": 55,
+      "role": 4,
+      "context": 158,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.677333,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 2.998696,
+      "capture_through_native_API_end_ms": 6.676489,
+      "closest_variant_recorded_at_seq": 3,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 18,
+        "input_recurrent": 18,
+        "output_recurrent": 18,
+        "output_hidden": 2
+      }
+    },
+    {
+      "seq": 8,
+      "range_begin": 57,
+      "role": 3,
+      "context": 165,
+      "lag": 0,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.645973,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 2.94678,
+      "capture_through_native_API_end_ms": 6.593432,
+      "closest_variant_recorded_at_seq": 2,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 18,
+        "input_recurrent": 18,
+        "output_recurrent": 18
+      }
+    },
+    {
+      "seq": 13,
+      "range_begin": 57,
+      "role": 3,
+      "context": 173,
+      "lag": 0,
+      "accepted_inputs": 1,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.506985,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.32276,
+      "capture_through_native_API_end_ms": 3.830324,
+      "closest_variant_recorded_at_seq": 2,
+      "closest_variant_changed_port_classes": {
+        "output_hidden": 2
+      }
+    },
+    {
+      "seq": 14,
+      "range_begin": 57,
+      "role": 3,
+      "context": 174,
+      "lag": 0,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.716595,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.244541,
+      "capture_through_native_API_end_ms": 3.961606,
+      "closest_variant_recorded_at_seq": 8,
+      "closest_variant_changed_port_classes": {
+        "output_hidden": 2
+      }
+    },
+    {
+      "seq": 15,
+      "range_begin": 55,
+      "role": 4,
+      "context": 176,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.701048,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.38594,
+      "capture_through_native_API_end_ms": 4.087818,
+      "closest_variant_recorded_at_seq": 3,
+      "closest_variant_changed_port_classes": {
+        "output_hidden": 1
+      }
+    },
+    {
+      "seq": 16,
+      "range_begin": 55,
+      "role": 4,
+      "context": 178,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.680971,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.438286,
+      "capture_through_native_API_end_ms": 4.119761,
+      "closest_variant_recorded_at_seq": 3,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 18,
+        "input_recurrent": 18,
+        "output_recurrent": 18,
+        "output_hidden": 1
+      }
+    },
+    {
+      "seq": 37,
+      "range_begin": 57,
+      "role": 3,
+      "context": 372,
+      "lag": 0,
+      "accepted_inputs": 2,
+      "reason": "native_plan_invalidation",
+      "native_invalidated_steps": [
+        255,
+        465,
+        675,
+        885,
+        1095,
+        1305
+      ],
+      "capture_span_ms": 3.68886,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.432214,
+      "capture_through_native_API_end_ms": 4.121719,
+      "closest_variant_recorded_at_seq": null,
+      "closest_variant_changed_port_classes": null
+    },
+    {
+      "seq": 38,
+      "range_begin": 55,
+      "role": 4,
+      "context": 374,
+      "lag": 1,
+      "accepted_inputs": 1,
+      "reason": "native_plan_invalidation",
+      "native_invalidated_steps": [
+        253,
+        463,
+        673,
+        883,
+        1093,
+        1303
+      ],
+      "capture_span_ms": 3.4381,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.362247,
+      "capture_through_native_API_end_ms": 3.800894,
+      "closest_variant_recorded_at_seq": null,
+      "closest_variant_changed_port_classes": null
+    },
+    {
+      "seq": 39,
+      "range_begin": 57,
+      "role": 3,
+      "context": 375,
+      "lag": 0,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.369922,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 1.835205,
+      "capture_through_native_API_end_ms": 5.205887,
+      "closest_variant_recorded_at_seq": 37,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 36,
+        "input_recurrent": 18,
+        "output_recurrent": 36
+      }
+    },
+    {
+      "seq": 40,
+      "range_begin": 55,
+      "role": 4,
+      "context": 377,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.622825,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 1.573195,
+      "capture_through_native_API_end_ms": 5.196732,
+      "closest_variant_recorded_at_seq": 38,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 18,
+        "input_recurrent": 18,
+        "output_recurrent": 18
+      }
+    },
+    {
+      "seq": 41,
+      "range_begin": 55,
+      "role": 4,
+      "context": 379,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.240873,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.232927,
+      "capture_through_native_API_end_ms": 3.474492,
+      "closest_variant_recorded_at_seq": 38,
+      "closest_variant_changed_port_classes": {
+        "output_hidden": 2
+      }
+    },
+    {
+      "seq": 43,
+      "range_begin": 55,
+      "role": 4,
+      "context": 383,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "native_plan_invalidation",
+      "native_invalidated_steps": [
+        253,
+        463,
+        673,
+        883,
+        1093,
+        1303
+      ],
+      "capture_span_ms": 3.29466,
+      "native_API": "cudaGraphExecUpdate_v10020",
+      "native_API_ms": 0.37927,
+      "capture_through_native_API_end_ms": 3.674585,
+      "closest_variant_recorded_at_seq": null,
+      "closest_variant_changed_port_classes": null
+    },
+    {
+      "seq": 44,
+      "range_begin": 55,
+      "role": 4,
+      "context": 385,
+      "lag": 1,
+      "accepted_inputs": 2,
+      "reason": "valid_key_address_miss",
+      "native_invalidated_steps": [],
+      "capture_span_ms": 3.842834,
+      "native_API": "cudaGraphInstantiateWithFlags_v11040",
+      "native_API_ms": 1.656749,
+      "capture_through_native_API_end_ms": 5.501383,
+      "closest_variant_recorded_at_seq": 43,
+      "closest_variant_changed_port_classes": {
+        "input_history": 18,
+        "output_history": 18,
+        "input_recurrent": 18,
+        "output_recurrent": 18,
+        "output_hidden": 2
+      }
+    }
+  ],
+  "allocation_cause": {
+    "GDN_layers": 18,
+    "all_logged_varying_classes_have_identical_offset_sets_across_each_layer_pool": true,
+    "literal_unknown_positions_by_seq": {
+      "2": 36,
+      "8": 36,
+      "12": 36,
+      "13": 36,
+      "14": 36,
+      "28": 36,
+      "37": 2,
+      "39": 2
+    },
+    "conclusion": "No observed per-layer allocation drift. Reversed GDN prefix allocation and selected-prefix retention yield synchronized state pool offset patterns.",
+    "address_fills": {
+      "second_initial_role_variant": [
+        4,
+        8
+      ],
+      "after_real_native_clear": [
+        39,
+        40,
+        44
+      ]
+    },
+    "hidden_output_pair_changes": [
+      13,
+      14,
+      15,
+      41
+    ],
+    "indirect_variant_displacement": [
+      16
+    ],
+    "first_turn_reject_chain": [
+      7,
+      11,
+      12,
+      13
+    ],
+    "mechanism": "Hidden pool has four slots for N1/R1/K1. Accepted two retains carry+prior, accepted one retains one. Fixed original per-row allocation therefore observes changing free interval pairs; old-reader/native guards still determine when intervals are genuinely reusable.",
+    "no_simple_pool_reorder_candidate": "LeasePool.allocate does not request a selected offset. Changing allocation order was already screened negatively; no new slot manager/forced reuse is proposed."
+  },
+  "native_invalidation_cause": {
+    "same_trace_direct": "seq37/38/43: NativeArguments invalidation at six target attention steps; both complete variant keys discarded, nonlaunchable seed retained.",
+    "prior_same_work_input": {
+      "path": ".scratch/mtp-native-plan-diagnostics-20261025/native-slot-sequences.json",
+      "bytes": 370060,
+      "sha256": "b29340a53794610b290c3382b8feefdb5e3260396871af8ea08697ffb596dc25"
+    },
+    "source_inference": [
+      {
+        "seq": 37,
+        "role": 3,
+        "kind": "prior native detailed query directly records this same-work call",
+        "page_refs": [
+          13,
+          24
+        ],
+        "chunk_rows": 128,
+        "chunks": [
+          2,
+          3
+        ]
+      },
+      {
+        "seq": 38,
+        "role": 4,
+        "kind": "source/layout inference; native predicate not individually logged in this trace",
+        "context_before": [
+          215,
+          374
+        ],
+        "target_T": 2,
+        "page_refs": [
+          14,
+          24
+        ],
+        "chunks": [
+          2,
+          3
+        ]
+      },
+      {
+        "seq": 43,
+        "role": 4,
+        "kind": "source/layout inference; native predicate not individually logged in this trace",
+        "context_before": [
+          381,
+          383
+        ],
+        "target_T": 2,
+        "page_refs": [
+          24,
+          25
+        ],
+        "chunks": [
+          3,
+          4
+        ]
+      }
+    ],
+    "not_caused_by": [
+      "weight load/import",
+      "new source weights",
+      "observed tensor shape/dtype/required-byte/resource/handle mismatch"
+    ],
+    "qualification": "Old native aggregate proves exactly2 chunk_count rejections in each role4 slot and no other predicate rejection. The seq38/43 placement uses deterministic same-work layouts, not a newly observed native return reason."
+  },
+  "hidden_output_counterfactual": {
+    "complete_stream_other_keys_and_actual_clears_preserved": true,
+    "body_records_before_after": [
+      15,
+      10
+    ],
+    "removed_seq": [
+      13,
+      14,
+      15,
+      16,
+      41
+    ],
+    "direct_hidden_output_only_seq": [
+      13,
+      14,
+      15,
+      41
+    ],
+    "replacement_cascade_seq": [
+      16
+    ],
+    "observed_joined_removed_window_ms": 19.474001,
+    "not_executed": true,
+    "speed_or_recoverable_time_claim": null,
+    "candidate": "Stable hidden OUTPUT work storage plus existing canonical selected-copy/retirement path; independent from rejected hidden INPUT ingress and reverse-allocation candidates.",
+    "permission": "Ignoring offsets, overwriting old readers, relaxing budgets, or treating a cached native seed as launchable remains forbidden."
+  },
+  "peer": {
+    "capture_by_role": {
+      "target_decode": {
+        "count": 2,
+        "wall_ms": 8.222699,
+        "seqs": [
+          6,
+          74
+        ]
+      },
+      "draft_decode": {
+        "count": 5,
+        "wall_ms": 0.951869,
+        "seqs": [
+          7,
+          19,
+          35,
+          67,
+          75
+        ]
+      }
+    },
+    "all_decode_API": {
+      "capture": {
+        "count": 7,
+        "API_wall_ms": 0.027781,
+        "return_values": {
+          "0": 7
+        }
+      },
+      "instantiate": {
+        "count": 2,
+        "API_wall_ms": 2.557674,
+        "return_values": {
+          "0": 2
+        }
+      },
+      "update": {
+        "count": 7,
+        "API_wall_ms": 1.310339,
+        "return_values": {
+          "0": 7
+        }
+      },
+      "graphLaunch": {
+        "count": 116,
+        "API_wall_ms": 40.829172,
+        "return_values": {
+          "0": 116
+        }
+      }
+    },
+    "boundary": "7 capture windows include2 initial Instantiate+Update windows and5 Update-only; not9 recordings. First target T2 in each turn executes eager, next stable call captures. No free warmup outside original endpoints.",
+    "limits": [
+      "Peer target/draft are separate native graph boundaries; Hyle body is not a certified identical graph.",
+      "No separate consumer warmup exists. Initial eager decodes and stability-reset eager calls remain inside original P/D endpoints.",
+      "Per-peer-capture changed property was not recorded; physical state I/O stability is a source mechanism, not a per-event causal proof.",
+      "Peer 65 target calls/129 rows and Hyle66 target calls/132 rows, distinct continuations/acceptance and activation stores, remain unequal work."
+    ]
+  },
+  "source_pins": [
+    {
+      "path": ".scratch/mtp-finish-phase-20261025/source/engine/models/qwen35/main.cc",
+      "bytes": 452729,
+      "sha256": "71c9e0b8f06d1f1cf43b20374d2f53e835d4a992635db971c922dd19280d6494"
+    },
+    {
+      "path": ".scratch/mtp-finish-phase-20261025/source/engine/models/qwen35/session_state.h",
+      "bytes": 14335,
+      "sha256": "2ebcc76d89fbeba6943b2c245f8102241f6ec7d48aedab098777b6b9955fd5e3"
+    },
+    {
+      "path": ".scratch/mtp-complete-binding-diff-20261025/source2/src/graph/executable.cc",
+      "bytes": 483278,
+      "sha256": "c91560c05a11864688c2f982d37ab9e0feb480c8c3100c106126f7d3c452bb12"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 458382,
+      "sha256": "15d43f87182446fec8696d95142fa41a8c4b367ce8b83f927e6a286d3be64e9f"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 14709,
+      "sha256": "8ee8e6cc07eee1e89fdb048aad0109381205fc0bb126829df7e376d3107b2361"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 46499,
+      "sha256": "af0cbff2555cc9615678dcc9e1ef69df0ed67668eac269d77b1f6688bc53f18d"
+    },
+    {
+      "path": "src/mem/range_allocator.cc",
+      "bytes": 21276,
+      "sha256": "93afdc4799f68459fa3ef789f5a6da05d4a8a1cd90eac0ebf6a2d504030673df"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "bytes": 64570,
+      "sha256": "7e7e2a8f694df5a55d88c0cd7879158fa06694d21dce2f2129b91587e8a90045"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "bytes": 46746,
+      "sha256": "23ae88731ea36a4ad73a288ccd825fe72a4e0f8ef84d484512e2be702b332109"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "bytes": 94468,
+      "sha256": "5cbdd7fbad88d8f68b9a87414cf7dc462b7d7d3121c7b99e941f57cf3d2f3151"
+    },
+    {
+      "path": "src/graph/region_access.cc",
+      "bytes": 12864,
+      "sha256": "ac4853957e32bd479c37e01e2ce2b366a4632f729dc554869613f85ba9938fbb"
+    },
+    {
+      "path": ".scratch/qwen-mtp-final-window-20261024/source/peer_multiturn.cc",
+      "bytes": 33292,
+      "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+    },
+    {
+      "path": ".scratch/architecture-refactor-2026-10-18/llama-matched-consumer/source/src/llama-memory-recurrent.cpp",
+      "bytes": 44839,
+      "sha256": "35903c832ba321aad3fca8b2adf2d481f6ba41196478c6c8f248ffe2bd7d9d51"
+    },
+    {
+      "path": ".scratch/legacy-root/hyle-scratch/ggml-native-static/src/compute_ggml_runtime/source-4e1a7b2f39afe15d/src/ggml-cuda/ggml-cuda.cu",
+      "bytes": 238225,
+      "sha256": "766f024a0439fc6f5a28f2ad2930e341bdffea48503ce3b7136c706f7ce85974"
+    }
+  ],
+  "input_archives": [
+    {
+      "archive": {
+        "path": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.zip",
+        "bytes": 905310,
+        "sha256": "f4dda318293be7b2b8ab2269727a6a472260a3b04a7bb1771b82f97d8b5964e1"
+      },
+      "member": "records.json",
+      "member_bytes": 7191322,
+      "member_sha256": "40b823e7a1b9490c817785074d0d0ca48559f8b0254d150101a8ce2951317ba8",
+      "restore_repository_path_for_analyzer": ".scratch/mtp-complete-binding-diff-20261025/records.json"
+    },
+    {
+      "archive": {
+        "path": "docs/evidence/performance/mtp-complete-binding-diff-2026-10-25.zip",
+        "bytes": 905310,
+        "sha256": "f4dda318293be7b2b8ab2269727a6a472260a3b04a7bb1771b82f97d8b5964e1"
+      },
+      "member": "root-followup/offline-join/eligible-record-api-windows.json",
+      "member_bytes": 53797,
+      "member_sha256": "9b3c1abc55569405336cf3d5c8ac309e4d278f305de157129a430085eb61855e",
+      "restore_repository_path_for_analyzer": ".scratch/mtp-complete-binding-diff-20261025/eligible-record-api-windows.json"
+    },
+    {
+      "archive": {
+        "path": "docs/evidence/performance/mtp-body-replay-design-2026-10-25.zip",
+        "bytes": 267149,
+        "sha256": "aea65cb875c5d0b056361c07667f23d5b52a2fffb925d484284ea626d171dae8"
+      },
+      "member": "reconstruct_keys.py",
+      "member_bytes": 7359,
+      "member_sha256": "a00e7082a6ffef4d8c13132a93c5100c64bb19698708176b8db42107f5a27403",
+      "restore_repository_path_for_analyzer": ".scratch/mtp-body-variant-design-20261025/reconstruct_keys.py"
+    },
+    {
+      "archive": {
+        "path": "docs/evidence/performance/mtp-body-replay-design-2026-10-25.zip",
+        "bytes": 267149,
+        "sha256": "aea65cb875c5d0b056361c07667f23d5b52a2fffb925d484284ea626d171dae8"
+      },
+      "member": "opponent-counts.json",
+      "member_bytes": 245179,
+      "member_sha256": "eadd8b63842c69a2303c16f7f5677f145162e9fd692168e2a013ac2a6081b9e7",
+      "restore_repository_path_for_analyzer": ".scratch/mtp-body-variant-design-20261025/opponent-counts.json"
+    },
+    {
+      "archive": {
+        "path": "docs/evidence/performance/mtp-native-plan-diagnostics-2026-10-25.zip",
+        "bytes": 143331,
+        "sha256": "debd8eb42f031d0a80ed7e4d66817b81365dac7ffd6b0f1e420e51f30ae74ce8"
+      },
+      "member": "native-slot-sequences.json",
+      "member_bytes": 370060,
+      "member_sha256": "b29340a53794610b290c3382b8feefdb5e3260396871af8ea08697ffb596dc25",
+      "restore_repository_path_for_analyzer": ".scratch/mtp-native-plan-diagnostics-20261025/native-slot-sequences.json"
+    }
+  ],
+  "limits": [
+    "Offset units use each exact tensor required_bytes; this is not a lease-generation or ownership proof.",
+    "Projected categories are theoretical stable-address conditions, not permission to ignore capture keys.",
+    "Every logged explicit discard is retained; addresses are reconstructed from existing complete comparisons.",
+    "API timings are from the separate prior trace joined only after all32 record seq/order/range/signature alignment.",
+    "No GPU/model/compile/network operation was run.",
+    "Seq37 chunk-change query was directly recorded only in a prior same-work native diagnostic. Seq38/43 exact placement is source/layout inference, not a native reason recorded in this trace.",
+    "No per-layer scattered-offset cause was observed; unknown invariant literals remain explicit.",
+    "Native plan/layout invalidation is a safety contract; this review does not authorize ignoring it.",
+    "No current full-window refresh, peer recapture-property proof, GPU graph-lineage certification, or performance improvement."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/mtp-body-recapture-cause-2026-10-25.zip",
+    "bytes": 22387,
+    "sha256": "ae25785ec906b7339f1d06b7d2dd235db3fc1e08e4aff1c9bb120462e63e7868"
+  },
+  "archive_verification": {
+    "members": 7,
+    "CRC": "PASS",
+    "member_SHA256": "PASS",
+    "SDK_models_binaries_or_original_large_archives_included": false
+  }
+}
