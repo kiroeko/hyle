@@ -56,6 +56,9 @@
 #include "ffn_placement.h"
 #include "projection_binding.h"
 #include "weights.h"
+#include "hyle/compute/batch_transfer.h"
+#include "hyle/compute/detail/copy_stream_access.h"
+#include "hyle/core/assert.h"
 #include "precision_profile.h"
 #include "cache_precision.h"
 #include "hyle/simd/dtype.h"
@@ -983,6 +986,50 @@ struct Family final : FamilyPorts {
 // readback. Batch width and retained state boundaries do not add in-flight work.
 constexpr std::size_t execution_slot_count = 1;
 using ResourceRetention = inference::RetainedResources<ColdResources>;
+struct HiddenOutputCopy final {
+  std::vector<Tensor> scratch;
+  std::vector<c::ReadLease> readers;
+  std::vector<c::CopyRange> ranges;
+  c::CopyBatchProgram program;
+  c::CopyBatchInvocation invocation;
+  c::CopyBatchUpdate update;
+  ResourceRetention retirement;
+
+  // Copy controls borrow the original Queue. Their accepted Completion, not
+  // a lease or observed error, retains ColdResources until actual retirement.
+  hyle::Result<bool> recover(hyle::Status &terminal) noexcept {
+    bool failed = false;
+    if (update.valid()) {
+      const auto observed = update.observe();
+      inference::record_retirement_status(terminal, observed);
+      if (update.in_flight()) return false;
+      failed = !observed.ok();
+      HYLE_ASSIGN_OR_RETURN(invocation, update.release_invocation());
+    }
+    if (invocation.valid()) {
+      if (invocation.in_flight()) return false;
+      HYLE_RETURN_IF_ERROR(invocation.reset());
+      // reset cannot reopen a closed failed slot. Recreate only after the
+      // original controls and every accepted native use actually retire.
+      if (failed) invocation = {};
+    }
+    return !retirement.pending();
+  }
+  // Call only after original Graph unbind/reset AND copy binding withdrawal.
+  // A native/escaped alias rejects promotion instead of exposing a writer.
+  hyle::Status restore_writers() noexcept {
+    for (std::size_t i = 0; i < scratch.size(); ++i) if (!scratch[i].writer) {
+      if (readers[i]) {
+        HYLE_ASSIGN_OR_RETURN(scratch[i].writer, readers[i].try_write());
+      } else {
+        // Abort before result export: Graph reset returned the original range.
+        HYLE_ASSIGN_OR_RETURN(const auto bytes, scratch[i].description.required_bytes());
+        HYLE_ASSIGN_OR_RETURN(scratch[i].writer, scratch[i].pool.allocate(bytes, cache::state_pool_alignment));
+      }
+    }
+    return hyle::Status::Ok();
+  }
+};
 struct Phase final : FamilyPorts {
   inference::QueueBindings queues;
   std::size_t query_rows = 0;
@@ -994,6 +1041,7 @@ struct Phase final : FamilyPorts {
   std::size_t variant_index = 0;
   std::array<g::Invocation, execution_slot_count> slots;
   std::array<ResourceRetention, execution_slot_count> retirement;
+  std::array<HiddenOutputCopy, execution_slot_count> hidden_output;
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
   std::array<g::ReplayMode, execution_slot_count> replay_modes{};
@@ -1083,6 +1131,7 @@ struct StepState final {
   // retired. Return it only after publication and final result reads, or after
   // complete abort cleanup.
   bool *candidate_admission = nullptr;
+  HiddenOutputCopy *hidden_output = nullptr;
   void release_admission() noexcept {
     if (candidate_admission) *std::exchange(candidate_admission, nullptr) = false;
   }
@@ -1093,6 +1142,10 @@ struct StepState final {
       if (observed && *observed == c::CompletionPoll::kPending) return false;
       if (!observed) inference::record_retirement_status(terminal, observed.error());
       completion = {}; // Error/abandonment keeps actual native guards retained.
+    }
+    if (hidden_output) {
+      HYLE_ASSIGN_OR_RETURN(auto retired, hidden_output->recover(terminal));
+      if (!retired) return false;
     }
     if (run) {
       if (run->in_flight()) return false;
@@ -1105,6 +1158,12 @@ struct StepState final {
         appends[i] = std::move(*recovered); bound[i] = false;
       }
       *run = {}; // Release failed state-output writers and old input bindings.
+    }
+    if (hidden_output) {
+      const auto restored = hidden_output->restore_writers();
+      if (restored.IsUnavailable()) return false;
+      HYLE_RETURN_IF_ERROR(restored);
+      hidden_output = nullptr;
     }
     const auto recover = [](c::PagedPageWriter &page) noexcept -> hyle::Status {
       if (!page.valid()) return hyle::Status::Ok(); // Already successfully published.
@@ -1356,6 +1415,7 @@ struct ColdResources final {
       for (const auto &[shape, phase] : *cache) {
         (void)shape;
         for (const auto &pin : phase->retirement) if (pin.pending()) return true;
+        for (const auto &copy : phase->hidden_output) if (copy.retirement.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
       (void)shape; if (program->retirement.pending()) return true;
@@ -1374,6 +1434,7 @@ struct ColdResources final {
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[shape, phase] : *cache) {
         (void)shape; for (auto &run : phase->slots) run = {};
+        for (auto &copy : phase->hidden_output) { copy.update = {}; copy.invocation = {}; }
       }
     for (auto &[shape, program] : draft_programs) { (void)shape; program->run = {}; }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->run = {}; }
@@ -3083,6 +3144,64 @@ public:
     session.head = std::move(replacement);
   }
 
+  void copy_selected_hidden_outputs(StepState &step) {
+    if (!step.hidden_output) return;
+    auto &copy = *step.hidden_output; auto &phase = *step.phase; auto &run = *step.run;
+    const auto count = copy.scratch.size();
+    copy.ranges.clear();
+    // Export ALL fixed outputs before take_append revokes results. The unused
+    // rows are retained only until Graph withdrawal to recover their writer.
+    for (std::size_t j = 0; j < step.members.size(); ++j)
+      for (std::size_t row = 0; row < phase.prefix_rows; ++row) {
+        const auto index = j * phase.prefix_rows + row;
+        copy.readers[index] = take(inference::retain_output(run, phase.child->output(phase.carry_ports[j][row])));
+      }
+    for (std::size_t j = 0; j < step.members.size(); ++j) {
+      const auto last = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
+      const auto bind = [&](std::size_t row) {
+        const auto index = j * phase.prefix_rows + row;
+        const auto bytes = take(copy.scratch[index].description.required_bytes());
+        check(copy.invocation.bind_source({static_cast<std::uint32_t>(index)}, copy.readers[index]));
+        check(copy.invocation.bind_mutable({static_cast<std::uint32_t>(count + index)},
+            take(hidden_pool.allocate(bytes, cache::state_pool_alignment))));
+        copy.ranges.push_back({{static_cast<std::uint32_t>(index)}, {static_cast<std::uint32_t>(count + index)}, {0}, 0, 0, bytes});
+      };
+      bind(last);
+      if (verifies_prefix(phase.family->role) && step.members[j].accepted_tokens > 1) bind(last - 1);
+    }
+    constexpr std::array<c::CopyPhase, 1> copy_phases{};
+    check(copy.invocation.prepare_replay(copy_phases, copy.ranges));
+    check(copy.retirement.reserve(resources_));
+    auto submitted = copy.invocation.submit();
+    if (!submitted) { copy.retirement.reject(); (void)take(std::move(submitted)); }
+    // One original phase, no producer bindings, sole move-only observer:
+    // these accepted-control attachments are capacity-proven and nonallocating.
+    auto update = c::CopyBatchUpdate::take(std::move(copy.invocation), std::move(*submitted));
+    HYLE_FATAL_ASSERT(update.has_value()); copy.update = std::move(*update);
+    std::array<c::Completion *, 1> original;
+    const auto sources = c::detail::CopyStreamAccess::retirement_sources(copy.update, original);
+    HYLE_FATAL_ASSERT(sources && *sources == 1);
+    HYLE_FATAL_ASSERT(copy.retirement.attach(*original[0]).ok());
+    check(copy.update.wait());
+    for (std::size_t j = 0; j < step.members.size(); ++j) {
+      auto &member = step.members[j];
+      const auto last = verifies_prefix(phase.family->role) ? member.accepted_tokens - 1 : 0;
+      const auto ready = [&](std::size_t row) {
+        auto writer = take(copy.update.take_mutable({static_cast<std::uint32_t>(count + j * phase.prefix_rows + row)}));
+        // The exact full row was copied and actually retired; no padding or
+        // untouched half is published as initialized canonical state.
+        return take(writer.publish());
+      };
+      member.next->carry_hidden = ready(last);
+      if (verifies_prefix(phase.family->role) && member.accepted_tokens > 1) member.next->prior_hidden = ready(last - 1);
+    }
+    hyle::Status terminal;
+    if (!take(copy.recover(terminal))) throw std::runtime_error("fixed hidden output copy retirement is pending");
+    check(terminal);
+    // readers stay readonly until original Graph unbind below. In particular,
+    // copy completion alone does not permit their promotion/reuse.
+  }
+
   void validate_mtp_snapshot(const cache::Snapshot &head) const {
     if (cache_plan.draft_cache != head.draft.has_value())
       throw std::runtime_error("snapshot does not contain the configured complete MTP state");
@@ -3095,7 +3214,52 @@ public:
       throw std::runtime_error("inconsistent MTP frontier, catch-up token or owned target hidden state");
   }
 
+  void initialize_hidden_output(Phase &phase, std::size_t slot) {
+    if (!drafts_token(phase.family->role) ||
+        recursive_mtp() || max_drafts() != 1 ||
+        phase.replay_modes[slot] != g::ReplayMode::kPreferCapture) return;
+    auto &copy = phase.hidden_output[slot];
+    // Gate before touching a writer or a Graph binding, even on recovery.
+    if (copy.retirement.pending() || copy.update.in_flight() || copy.invocation.in_flight())
+      throw std::runtime_error("fixed hidden output still retains original copy work");
+    if (!copy.program.valid()) {
+      const auto description = dense(precision.activation_type(), {1, hidden});
+      const auto bytes = take(description.required_bytes());
+      const auto count = cache::multiply(phase.family->requests, phase.prefix_rows);
+      if (!count || count > UINT32_MAX / 2) throw std::runtime_error("fixed hidden output capacity overflow");
+      // Ownership and actual resource are compiled facts, not backend names.
+      for (const auto &ports : phase.carry_ports) for (auto port : ports) {
+        const auto &output = phase.child->output(port);
+        if (!output.caller_owned()) return;
+        validate_state_output(output, description);
+      }
+      auto context = execution.common_context(); auto queue = execution.common_queue();
+      if (!context || !queue) return; // No selected common CopyBatch endpoint.
+      std::vector<Tensor> scratch; std::vector<c::CopyResourceSpec> specs;
+      scratch.reserve(count); specs.reserve(count * 2);
+      for (std::size_t i = 0; i < count; ++i) {
+        Tensor value; value.description = description;
+        value.pool = take(c::LeasePool::create(execution.device(), bytes,
+            {.max_blocks = 1, .backing_alignment = cache::state_pool_alignment,
+             .resource_budget = execution_budget}));
+        value.writer = take(value.pool.allocate(bytes, cache::state_pool_alignment));
+        scratch.push_back(std::move(value)); specs.push_back({execution.device(), bytes});
+      }
+      for (std::size_t i = 0; i < count; ++i) specs.push_back({execution.device(), bytes});
+      auto program = take(c::CopyBatchProgram::prepare(**context, specs,
+          {.max_resources = static_cast<std::uint32_t>(count * 2),
+           .max_copies = static_cast<std::uint32_t>(count), .max_phases = 1,
+           .max_bytes = cache::multiply(count, bytes), .resource_budget = execution_budget}));
+      auto invocation = take(c::CopyBatchInvocation::create(program, **queue));
+      copy.readers.resize(count); copy.ranges.reserve(count);
+      copy.scratch = std::move(scratch); copy.program = std::move(program); copy.invocation = std::move(invocation);
+    } else if (!copy.invocation.valid())
+      copy.invocation = take(c::CopyBatchInvocation::create(copy.program, *take(execution.common_queue())));
+    check(copy.restore_writers());
+  }
+
   void initialize_slot(Phase &phase, std::size_t slot) {
+    initialize_hidden_output(phase, slot);
     if (phase.slots[slot].valid()) return;
     const auto &definition = *phase.family;
     const auto &selected_sampler = definition.sampling->configuration;
@@ -3635,10 +3799,18 @@ public:
             bind_state(ports.recurrent_prefix[row - 1], state_pools[i].recurrent);
           }
         }
+      auto &fixed_output = phase.hidden_output[slot];
+      if (fixed_output.program.valid()) step.hidden_output = &fixed_output;
+      std::size_t carry_index = 0;
       if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) for (const auto &ports : phase.carry_ports)
-        for (std::size_t i = 0; i < phase.prefix_rows; ++i)
-          if (const auto &output = phase.child->output(ports[i]); output.caller_owned())
-            check(run.bind(output.value, output.description, take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment))));
+        for (std::size_t i = 0; i < phase.prefix_rows; ++i, ++carry_index)
+          if (const auto &output = phase.child->output(ports[i]); output.caller_owned()) {
+            // Still a leased Graph OUTPUT: original write/native-use admission
+            // owns it until retirement/publication. Never bind writer.view().
+            auto writer = fixed_output.program.valid() ? std::move(fixed_output.scratch[carry_index].writer)
+                : take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
+            check(run.bind(output.value, output.description, std::move(writer)));
+          }
       std::vector<g::batch::NodeLayout> layouts;
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
       for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], phase.attention_layout});
@@ -3822,7 +3994,8 @@ public:
           step.members[j].next->state[i].history = retain_state_storage(run, phase.child->output(ports.history_prefix.at(row)));
           step.members[j].next->state[i].recurrent = retain_state_storage(run, phase.child->output(ports.recurrent_prefix.at(row)));
         }
-      if (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || retains_sampling_frontier())
+      copy_selected_hidden_outputs(step);
+      if (!step.hidden_output && (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || retains_sampling_frontier()))
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
           const auto &ports = phase.carry_ports[j];
@@ -3950,6 +4123,10 @@ public:
           member.next_tails[bank] = std::move(tail);
         }
       check(run.unbind(phase.state_resource_ports));
+      if (step.hidden_output) {
+        check(step.hidden_output->restore_writers());
+        step.hidden_output = nullptr;
+      }
       for (const auto &member : step.members)
         if (member.session->head != member.base || member.session->pending != &step || member.session->stopping)
           throw std::runtime_error("batch snapshot expected-base conflict");

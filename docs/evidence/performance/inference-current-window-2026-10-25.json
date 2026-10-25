@@ -1,0 +1,2171 @@
+{
+  "status": "CURRENT_CANONICAL_FULL32_WINDOW_COMPLETE_STABLE_WITHIN_ARM",
+  "date": "2026-10-25",
+  "current_image": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\link\\hyle.exe",
+      "bytes": 141614080,
+      "sha256": "be3c210ea954e97f7109783baf4b22345c4b4140c7d0d0d12af606807241c22a"
+    },
+    "instrumented": false,
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\runtime.json",
+      "bytes": 8126,
+      "sha256": "4918754b95670073c54ae263c37e88e493ccb05a142635ddc059d344764add3b"
+    }
+  },
+  "source_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.h",
+      "bytes": 5994,
+      "sha256": "673addac0e87c072b8d9bd42985f349ea16d8c2367d46fad8ace4259f45fc467"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+      "bytes": 47831,
+      "sha256": "24ba66aef25fc05103f1401651790dbcb4dd8c48319028ad1d20298f3d2d29ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\backend.h",
+      "bytes": 23089,
+      "sha256": "b265f7f7951c57c1210981341df8e8b3ece92b8cc0c4906d537368eec7faaac8"
+    }
+  ],
+  "binding": {
+    "current_image": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\link\\hyle.exe",
+        "bytes": 141614080,
+        "sha256": "be3c210ea954e97f7109783baf4b22345c4b4140c7d0d0d12af606807241c22a"
+      },
+      "instrumented": false,
+      "canonical_main": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 468204,
+        "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+      },
+      "runtime_environment": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\runtime.json",
+        "bytes": 8126,
+        "sha256": "4918754b95670073c54ae263c37e88e493ccb05a142635ddc059d344764add3b"
+      }
+    },
+    "integrated_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\ready.json",
+      "bytes": 6020,
+      "sha256": "6398be33aa1c6f25622148bf7775d7c4c0a6ebfd075d181bc478f7f3019b080b"
+    },
+    "current_runtime_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-cuda-20261025\\smoke-runtime.json",
+      "bytes": 7507,
+      "sha256": "5676536d451bb5df3107399079433e6e69d59540a603aedd5d983ace33b2fd5d"
+    },
+    "runtime_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\runtime.json",
+      "bytes": 8126,
+      "sha256": "4918754b95670073c54ae263c37e88e493ccb05a142635ddc059d344764add3b"
+    },
+    "source_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "adapter": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window.py",
+      "bytes": 7728,
+      "sha256": "bc035ed59157119c8c4599539b469ed1c345803d7cf3f0a5f80359d8163e579e"
+    },
+    "input": {
+      "V2_manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "V2_prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "original_protocol_input": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\input.json",
+        "bytes": 8361,
+        "sha256": "e768036a9ea28c234b49fc3510da144d11d099109e753d2a989e49fc87990ea2"
+      },
+      "original_prompt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\inputs\\prompt.ids",
+        "bytes": 733,
+        "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+      },
+      "two_turn_schedule": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\natural-inputs\\performance64.txt",
+        "bytes": 136,
+        "sha256": "9967bf511308cd1e77d238dfa229c474ea20c3c62bc6b85f1a98d9faa3479411"
+      },
+      "role_mapping_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\current-cuda\\input-adaptation.json",
+        "bytes": 806,
+        "sha256": "22476894c0bb632118dcb9f383d308b40e59f146b23f34286cca18a1acb80cea"
+      }
+    },
+    "retained_peer": {
+      "peer_plain": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\peer-ready.json",
+          "bytes": 1842,
+          "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+          "bytes": 35830272,
+          "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+        }
+      },
+      "peer_mtp": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\peer-ready.json",
+          "bytes": 1842,
+          "sha256": "ec3a6b31960c9c94a12da712192069e4dbb17708704f28c69f846eb398dbf994"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+          "bytes": 35830272,
+          "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+        }
+      }
+    },
+    "protocol_only": {
+      "window_adapter": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\window.py",
+        "bytes": 7079,
+        "sha256": "7a99bf3ccedc3ed958fabc6832cbf9e12d0cb8ee92a0c09090a4f18f262bb361"
+      },
+      "arms": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-performance-convergence-20261025\\baseline\\arms.json",
+        "bytes": 2584,
+        "sha256": "3f7857b41160257993581e3fab744ce0c06c8140dd6d51bb3a84d7dfb593d285"
+      },
+      "window": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-window-20261022\\window.py",
+        "bytes": 28770,
+        "sha256": "04bac7276acf48bf8b68b63f9adbd92bd3381432aee86b6f35059d8877c485dc"
+      },
+      "turns": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\turns.py",
+        "bytes": 9301,
+        "sha256": "a0fbb0250b996b6241e67ac0a065afbb9b1f0efe9c618648cbebc70b7ff93269"
+      },
+      "statistics": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-window\\performance.py",
+        "bytes": 7952,
+        "sha256": "c18106e6dc3b590be000194c3c26220e6579ee955949c5b054d09150d4d42f58"
+      },
+      "runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\d4-windows-preparation-2026-10-21\\first-decode-startup-2026-10-21\\multiturn\\multiturn_run.py",
+        "bytes": 26658,
+        "sha256": "aaca35030839ad8a6bb501e776315ab1298e3e52910f8f185140600512cf245d"
+      },
+      "observer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\shared-execution-20261021\\observer.py",
+        "bytes": 5933,
+        "sha256": "a93b569ddaaae32669aac95d056ebeb76887d02108c6b5101d85878e77db7862"
+      }
+    },
+    "scope": "Fresh current-image/runtime/input binding only. Old baseline is protocol, not current performance identity. Original plan/parse/normalize/analyze, arm order, flags, clocks, endpoints and independent memory observer remain unchanged. No old samples pooled, warmup, profiler or architecture causal-speed claim.",
+    "process_order": [
+      {
+        "workload": "single",
+        "mode": "timing",
+        "processes": 12
+      },
+      {
+        "workload": "single",
+        "mode": "memory",
+        "processes": 4
+      },
+      {
+        "workload": "two-turn",
+        "mode": "timing",
+        "processes": 12
+      },
+      {
+        "workload": "two-turn",
+        "mode": "memory",
+        "processes": 4
+      }
+    ]
+  },
+  "protocol": "Unchanged retained plan/parse/normalize/analyze; 12 unmonitored timing +4 independent memory processes per workload. No old performance samples included.",
+  "table": [
+    {
+      "workload": "single",
+      "policy": "plain",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2218.3169600414853,
+          "full_decode_tokens_per_second": 93.297438007925,
+          "session_output_tokens_per_second": 86.14162895166311,
+          "weights_load_seconds": 0.844203,
+          "startup_to_ready_seconds": 1.1819485,
+          "first_token_elapsed_seconds": 1.2514289,
+          "startup_to_endpoint_seconds": 1.926075
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2218.3169600414853,
+            "min": 2184.8093328244904,
+            "max": 2274.647429648405
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 93.297438007925,
+            "min": 93.2210537530352,
+            "max": 93.8833926537288
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 86.14162895166311,
+            "min": 85.87895093494,
+            "max": 86.30781764075152
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.844203,
+            "min": 0.83482,
+            "max": 0.845886
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.1819485,
+            "min": 1.1751755,
+            "max": 1.1844872
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.2514289,
+            "min": 1.2429302,
+            "max": 1.2550298
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 1.926075,
+            "min": 1.9181899,
+            "max": 1.9272419
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1130733568,
+          "observed_os_peak_working_set_bytes": 1130770432,
+          "sampled_max_private_commit_bytes": 5918150656,
+          "observed_os_peak_commit_bytes": 5918150656,
+          "sampled_peak_gpu_dedicated_bytes": 4174458880,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4256247808
+        },
+        "memory_measurement": {
+          "sample_count": 229,
+          "running_sample_count": 211,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 210,
+            "min": 0.1252,
+            "median": 15.1567,
+            "max": 18.0925
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 33,
+            "shared:no_pid_instance": 33
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 1516.233046988456,
+          "full_decode_tokens_per_second": 96.94309194298268,
+          "session_output_tokens_per_second": 85.1705667023274,
+          "weights_load_seconds": 1.7795682,
+          "startup_to_ready_seconds": 1.8089065,
+          "first_token_elapsed_seconds": 1.9105912,
+          "startup_to_endpoint_seconds": 2.560457
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1516.233046988456,
+            "min": 1396.3884317379143,
+            "max": 1520.5971799834117
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 96.94309194298268,
+            "min": 96.75869134945047,
+            "max": 97.71759614713477
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 85.1705667023274,
+            "min": 84.0569233484916,
+            "max": 85.79191974165909
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.7795682,
+            "min": 1.6482944,
+            "max": 1.9904096
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.8089065,
+            "min": 1.6775256,
+            "max": 2.0201597
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.9105912,
+            "min": 1.7789003,
+            "max": 2.1305438
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.560457,
+            "min": 2.4236153,
+            "max": 2.7816481
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4371628032,
+          "observed_os_peak_working_set_bytes": 4371738624,
+          "sampled_max_private_commit_bytes": 5013815296,
+          "observed_os_peak_commit_bytes": 5013913600,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "memory_measurement": {
+          "sample_count": 291,
+          "running_sample_count": 284,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 283,
+            "min": 0.1094,
+            "median": 15.1767,
+            "max": 16.2712
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 12,
+            "gpu_shared_bytes": 12,
+            "gpu_total_bytes": 12
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 12,
+            "shared:no_pid_instance": 12
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      }
+    },
+    {
+      "workload": "single",
+      "policy": "mtp",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2135.8986308057606,
+          "full_decode_tokens_per_second": 116.53649108995283,
+          "session_output_tokens_per_second": 104.04835907608958,
+          "weights_load_seconds": 0.868094,
+          "startup_to_ready_seconds": 1.6653837,
+          "first_token_elapsed_seconds": 1.7442224,
+          "startup_to_endpoint_seconds": 2.2848256
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2135.8986308057606,
+            "min": 1954.6669577512698,
+            "max": 2274.0495506537154
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 116.53649108995283,
+            "min": 116.02256952053948,
+            "max": 117.87964824712962
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 104.04835907608958,
+            "min": 103.32763416851124,
+            "max": 106.28333809394118
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.868094,
+            "min": 0.863676,
+            "max": 0.872371
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6653837,
+            "min": 1.6458273,
+            "max": 1.6900153
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.7442224,
+            "min": 1.7136091,
+            "max": 1.7621809
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.2848256,
+            "min": 2.2480525,
+            "max": 2.3051787
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1236176896,
+          "observed_os_peak_working_set_bytes": 1236217856,
+          "sampled_max_private_commit_bytes": 6218735616,
+          "observed_os_peak_commit_bytes": 6218735616,
+          "sampled_peak_gpu_dedicated_bytes": 4346429440,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4428218368
+        },
+        "memory_measurement": {
+          "sample_count": 263,
+          "running_sample_count": 244,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 243,
+            "min": 0.1346,
+            "median": 15.1402,
+            "max": 16.5754
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 34,
+            "gpu_shared_bytes": 34,
+            "gpu_total_bytes": 34
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 34,
+            "shared:no_pid_instance": 34
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 1422.3634323292124,
+          "full_decode_tokens_per_second": 129.2951117828072,
+          "session_output_tokens_per_second": 107.1843671600497,
+          "weights_load_seconds": 1.7225052,
+          "startup_to_ready_seconds": 1.7568272,
+          "first_token_elapsed_seconds": 1.865197,
+          "startup_to_endpoint_seconds": 2.3540285
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1422.3634323292124,
+            "min": 1298.913804417319,
+            "max": 1470.0716325813694
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 129.2951117828072,
+            "min": 128.87876497320653,
+            "max": 129.79588052598234
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 107.1843671600497,
+            "min": 105.64228860812985,
+            "max": 108.44989013517771
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.7225052,
+            "min": 1.6951412,
+            "max": 2.1591567
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7568272,
+            "min": 1.7281029,
+            "max": 2.1941529
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.865197,
+            "min": 1.8329572,
+            "max": 2.3128101
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.3540285,
+            "min": 2.3183347,
+            "max": 2.8000675
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4532006912,
+          "observed_os_peak_working_set_bytes": 4532047872,
+          "sampled_max_private_commit_bytes": 5457252352,
+          "observed_os_peak_commit_bytes": 5457289216,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "memory_measurement": {
+          "sample_count": 276,
+          "running_sample_count": 267,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 266,
+            "min": 0.1223,
+            "median": 15.05125,
+            "max": 16.3801
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 12,
+            "gpu_shared_bytes": 12,
+            "gpu_total_bytes": 12
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 12,
+            "shared:no_pid_instance": 12
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "plain",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2829.740295776544,
+          "full_decode_tokens_per_second": 92.51577485742841,
+          "session_output_tokens_per_second": 87.00811187503025,
+          "weights_load_seconds": 0.835221,
+          "startup_to_ready_seconds": 1.1921973,
+          "first_token_elapsed_seconds": 1.2608861,
+          "startup_to_endpoint_seconds": 2.6633747
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2829.740295776544,
+            "min": 2792.80378519814,
+            "max": 2881.7503135885254
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 92.51577485742841,
+            "min": 92.39767342658313,
+            "max": 92.84603607112713
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 87.00811187503025,
+            "min": 86.82014569234386,
+            "max": 87.41307094478984
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.835221,
+            "min": 0.834261,
+            "max": 0.837621
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.1921973,
+            "min": 1.190504,
+            "max": 1.1965788
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.2608861,
+            "min": 1.2606157,
+            "max": 1.2642445
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.6633747,
+            "min": 2.6609445,
+            "max": 2.6648651
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1165418496,
+          "observed_os_peak_working_set_bytes": 1165447168,
+          "sampled_max_private_commit_bytes": 6102863872,
+          "observed_os_peak_commit_bytes": 6102863872,
+          "sampled_peak_gpu_dedicated_bytes": 4319166464,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4400955392
+        },
+        "memory_measurement": {
+          "sample_count": 304,
+          "running_sample_count": 286,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 285,
+            "min": 0.1026,
+            "median": 15.1516,
+            "max": 16.5973
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 33,
+            "gpu_shared_bytes": 33,
+            "gpu_total_bytes": 33
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 33,
+            "shared:no_pid_instance": 33
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2483.555486969773,
+          "full_decode_tokens_per_second": 96.95407985461199,
+          "session_output_tokens_per_second": 89.86299123288234,
+          "weights_load_seconds": 1.6233629,
+          "startup_to_ready_seconds": 1.6523435,
+          "first_token_elapsed_seconds": 1.7542037,
+          "startup_to_endpoint_seconds": 3.0768329
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2483.555486969773,
+            "min": 2434.669696477845,
+            "max": 2501.975670108435
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 96.95407985461199,
+            "min": 96.54789181548196,
+            "max": 97.11177256731156
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 89.86299123288234,
+            "min": 89.54366449891715,
+            "max": 89.94532799723305
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6233629,
+            "min": 1.6101823,
+            "max": 1.633179
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6523435,
+            "min": 1.6391007,
+            "max": 1.6632687
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.7542037,
+            "min": 1.7358967,
+            "max": 1.7626413
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 3.0768329,
+            "min": 3.0622848,
+            "max": 3.0928389
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4375748608,
+          "observed_os_peak_working_set_bytes": 4376031232,
+          "sampled_max_private_commit_bytes": 4996845568,
+          "observed_os_peak_commit_bytes": 4997120000,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "memory_measurement": {
+          "sample_count": 351,
+          "running_sample_count": 344,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 343,
+            "min": 0.0997,
+            "median": 15.1375,
+            "max": 16.1884
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 10,
+            "gpu_shared_bytes": 10,
+            "gpu_total_bytes": 10
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 10,
+            "shared:no_pid_instance": 10
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "mtp",
+      "hyle": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2732.4675508424666,
+          "full_decode_tokens_per_second": 120.41910435710723,
+          "session_output_tokens_per_second": 110.40995994447414,
+          "weights_load_seconds": 0.858785,
+          "startup_to_ready_seconds": 1.7493013,
+          "first_token_elapsed_seconds": 1.8212453,
+          "startup_to_endpoint_seconds": 2.9093993
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2732.4675508424666,
+            "min": 2717.742637687966,
+            "max": 2774.0869752576577
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 120.41910435710723,
+            "min": 120.33501267528804,
+            "max": 120.43228307780181
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 110.40995994447414,
+            "min": 110.34074688099896,
+            "max": 110.49105678480693
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.858785,
+            "min": 0.857377,
+            "max": 0.86207
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7493013,
+            "min": 1.7407032,
+            "max": 1.7661468
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8212453,
+            "min": 1.8132911,
+            "max": 1.8347655
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.9093993,
+            "min": 2.900077,
+            "max": 2.9246687
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1280020480,
+          "observed_os_peak_working_set_bytes": 1280053248,
+          "sampled_max_private_commit_bytes": 6451838976,
+          "observed_os_peak_commit_bytes": 6451838976,
+          "sampled_peak_gpu_dedicated_bytes": 4499521536,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4581310464
+        },
+        "memory_measurement": {
+          "sample_count": 331,
+          "running_sample_count": 312,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 311,
+            "min": 0.12,
+            "median": 15.1852,
+            "max": 23.6603
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 34,
+            "gpu_shared_bytes": 34,
+            "gpu_total_bytes": 34
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 34,
+            "shared:no_pid_instance": 34
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      },
+      "llama_cpp": {
+        "timing_median": {
+          "prefill_tokens_per_second": 2317.380654896273,
+          "full_decode_tokens_per_second": 133.16895070793566,
+          "session_output_tokens_per_second": 118.57267768694719,
+          "weights_load_seconds": 1.7121266,
+          "startup_to_ready_seconds": 1.744753,
+          "first_token_elapsed_seconds": 1.8446758,
+          "startup_to_endpoint_seconds": 2.8093956
+        },
+        "timing_ranges": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2317.380654896273,
+            "min": 2282.120289157196,
+            "max": 2415.621330639928
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 133.16895070793566,
+            "min": 132.87594480333254,
+            "max": 134.52545664719642
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 118.57267768694719,
+            "min": 118.11895926492357,
+            "max": 120.23937781382453
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.7121266,
+            "min": 1.6922404,
+            "max": 1.7410703
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.744753,
+            "min": 1.7269621,
+            "max": 1.7745568
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8446758,
+            "min": 1.8325092,
+            "max": 1.8799317
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.8093956,
+            "min": 2.8065675,
+            "max": 2.8583095
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4535889920,
+          "observed_os_peak_working_set_bytes": 4535889920,
+          "sampled_max_private_commit_bytes": 5460389888,
+          "observed_os_peak_commit_bytes": 5460389888,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "memory_measurement": {
+          "sample_count": 323,
+          "running_sample_count": 316,
+          "requested_interval_seconds": 0.01,
+          "actual_sample_gaps_ms": {
+            "count": 315,
+            "min": 0.0803,
+            "median": 15.294,
+            "max": 22.0172
+          },
+          "null_sample_counts": {
+            "working_set_bytes": 0,
+            "private_commit_bytes": 0,
+            "gpu_dedicated_bytes": 9,
+            "gpu_shared_bytes": 9,
+            "gpu_total_bytes": 9
+          },
+          "unavailable_reasons": {
+            "dedicated:no_pid_instance": 9,
+            "shared:no_pid_instance": 9
+          },
+          "setup_error": null,
+          "thread_error": null,
+          "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+        }
+      }
+    }
+  ],
+  "processes": [
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 52632,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\01-hyle_plain\\result.json",
+        "bytes": 1248,
+        "sha256": "92ce2d8d94d98eaa2483a475a50fdd79fada3303ac569260b1990d53edd56bd7"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\01-hyle_plain\\observation.json",
+        "bytes": 134581,
+        "sha256": "854d0a87f9f5400fc2874fe8868184e2e7b58544b9536ce41a4c55a54e835817"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 53968,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1280,
+        "sha256": "8e195a706eb799e60772e413fdd95f32ff39aa34f11022be0d227dde03260318"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\02-hyle_mtp\\observation.json",
+        "bytes": 102043,
+        "sha256": "a965c856c426a9e87f24b59699adaf21343d070d1c0c00548cd5617f4e94ac00"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 57160,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\03-peer_plain\\result.json",
+        "bytes": 1327,
+        "sha256": "028c8970265a76713265f90921a1568e8c46748df1594560656a3bff79438487"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\03-peer_plain\\observation.json",
+        "bytes": 78721,
+        "sha256": "910f7996dfa389e4566afc701c8c3ec0f79a6248a8b57df1c7c6b04086067ee9"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 54524,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\04-peer_mtp\\result.json",
+        "bytes": 1326,
+        "sha256": "fbfe62a85cac533f51210f3f99de810539f17f25ae0baef49fd30d3bb08064f4"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\04-peer_mtp\\observation.json",
+        "bytes": 55529,
+        "sha256": "4dd9bb12e0568e87da915120ea48697e6d6b83b92d9b3e4f5137fdda30a13105"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 55644,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1280,
+        "sha256": "6fe07ca112827c988276ba92451000d249891cd4d92e64d346f365f230f5267b"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\05-hyle_mtp\\observation.json",
+        "bytes": 102078,
+        "sha256": "508068a3b72ae7907bdd52d8cab77e802509f95d7e7b37e8a7e1afbc67158fe8"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 53848,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\06-peer_plain\\result.json",
+        "bytes": 1327,
+        "sha256": "e140807787e0b40e73e2ef9255ef4150894f921b11722520a6928c98795c21c3"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\06-peer_plain\\observation.json",
+        "bytes": 78715,
+        "sha256": "66a620fa23a8baf0e452c48537435a17d67ad0c15e6091ac8bbbfecd43d1a780"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 53820,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\07-peer_mtp\\result.json",
+        "bytes": 1326,
+        "sha256": "cabb57ebb19bf205af4278972869efb5f3b76cef0fccb53bbc35f2037bd3a5da"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\07-peer_mtp\\observation.json",
+        "bytes": 55528,
+        "sha256": "78b1f9167b335dce2332e1aba27b1833425b0ea419e091025b2efbf3f8b5c534"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 48684,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\08-hyle_plain\\result.json",
+        "bytes": 1248,
+        "sha256": "d59af6e32f1ee318c3a81fe1232fc803d989220e2360d137650a4b51fc0c939f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\08-hyle_plain\\observation.json",
+        "bytes": 134546,
+        "sha256": "101262c240b4723fb46287567493d5219cb4c2cac5236a40fbde36cf10ee1e93"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 53360,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\09-peer_plain\\result.json",
+        "bytes": 1327,
+        "sha256": "e00ad8e2415fa00bde637d4816109712e6d2571ede782da4f48cf71cd92cbd59"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\09-peer_plain\\observation.json",
+        "bytes": 78714,
+        "sha256": "8c3c7997fec44db34db6bc421423eb8c809def5f3a76b7ba02896e4779ab5086"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 48984,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\10-peer_mtp\\result.json",
+        "bytes": 1326,
+        "sha256": "6c3ef0820d6a74ae735841aab73e1f1a17115f0c012b4b0c519170171f360118"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\10-peer_mtp\\observation.json",
+        "bytes": 55524,
+        "sha256": "ec3ddd7089cb44aad6396a371d193a2bc31c5489e5caa5d47ccc4e201abbe9c8"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 35872,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\11-hyle_plain\\result.json",
+        "bytes": 1248,
+        "sha256": "41e9c6f65c3cfe5ad8742b7f125919670b05e9bded501d90efb6067b9d51cb16"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\11-hyle_plain\\observation.json",
+        "bytes": 134575,
+        "sha256": "e73c7c9cab930738421ef42ee7034f0b9887dd7a6b9e41e295035ce854df9a9b"
+      }
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 49292,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1280,
+        "sha256": "8e40196dd5a398630f42a7d782a5665e01e181a9fa8ef3c86f9ded3abc7b9bea"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\12-hyle_mtp\\observation.json",
+        "bytes": 102054,
+        "sha256": "3589cac7c20622d4c057ae6c274c09e64efc1229d7f539edc296f498ac481281"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_plain",
+      "pid": 51792,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\01-hyle_plain\\result.json",
+        "bytes": 2148,
+        "sha256": "c27b61af46a64d83ab02151d60ca5dd4d3dcb45d14ec773be065c756337dec6c"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\01-hyle_plain\\observation.json",
+        "bytes": 134627,
+        "sha256": "4092ae6bc5e5474f440078d6a8433b5b7f35c7352eb61591ebd0a2a06465c0ca"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_mtp",
+      "pid": 32576,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2180,
+        "sha256": "473061f972dc462a62abfbd577917353636b6d651b4ebf3a8975f181616437af"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\02-hyle_mtp\\observation.json",
+        "bytes": 102063,
+        "sha256": "8a9fb96620fc76e54680262891eeb0df3bce032d462c6a3428daa14e2460eba1"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_plain",
+      "pid": 57172,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\03-peer_plain\\result.json",
+        "bytes": 2306,
+        "sha256": "45fba1e932ef7f1baba0708094b97eaf1b30a72d30e69ed74bfbd4f60cee2a30"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\03-peer_plain\\observation.json",
+        "bytes": 78712,
+        "sha256": "fc83e0d3e93aadb5e1b2df0a5d503c01aaa23e7c8b89d1e011609391092bc44d"
+      }
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_mtp",
+      "pid": 41608,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\04-peer_mtp\\result.json",
+        "bytes": 2307,
+        "sha256": "cb0ba79bcdaa0554bdb4d174fa92cad9e8ba02305f9acba984e8484ee77c16c5"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\04-peer_mtp\\observation.json",
+        "bytes": 55518,
+        "sha256": "0ab22ff4b113b841b90a8d720faa1ae8da299fc33a6915ad48be8d9c7d20df81"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 51084,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\01-hyle_plain\\result.json",
+        "bytes": 1355,
+        "sha256": "d4ea2539581d7d567f98c3c4961fa5848ad65df834f3d86235c0d4ee0ea2d6f6"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\01-hyle_plain\\observation.json",
+        "bytes": 522853,
+        "sha256": "08aaaa391665905d8d33bf99e0c78ca768d857470b1d81f3f1e00bf360ac1e37"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 55704,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\02-hyle_mtp\\result.json",
+        "bytes": 1388,
+        "sha256": "a427616ef70edc6f7f0a2cf90f87bc1de3463c6d8383d278e23162fcad6ebfdf"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\02-hyle_mtp\\observation.json",
+        "bytes": 228969,
+        "sha256": "9a89f300bcf5effb212df12b7d1774d6ca51bb46b0c13c0f5852af550000331a"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 3744,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\03-peer_plain\\result.json",
+        "bytes": 1436,
+        "sha256": "914c70f4411b054e14fb074e6295298da96e47d1df319dd231ed7be60c13520f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\03-peer_plain\\observation.json",
+        "bytes": 311482,
+        "sha256": "d179c803ef99445285f370c24063169e3999ee57c0ff9705f2453980cf7a45f9"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 54076,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\04-peer_mtp\\result.json",
+        "bytes": 1436,
+        "sha256": "e040d43529505c12a873a0c49f22e28ce186d1700831f2eb6b6a3e241c78440d"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\04-peer_mtp\\observation.json",
+        "bytes": 216118,
+        "sha256": "dfd0a3adb1d402d38999b89b6650197a46697a3cb582a62fab8a90f2165728f3"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 54704,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\05-hyle_mtp\\result.json",
+        "bytes": 1388,
+        "sha256": "571c168637793f24890e49180acc610c525ce2d7528c132931c8e639bbeb55c9"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\05-hyle_mtp\\observation.json",
+        "bytes": 228943,
+        "sha256": "0820a3847bba0d9657c730179711f1f71f9b72c14b697ca0dfff6e94573f3d2b"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 22108,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\06-peer_plain\\result.json",
+        "bytes": 1437,
+        "sha256": "de07927dcbe0b07a789907565f185d389434de7bb7114940f4f91cfe01d38b3f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\06-peer_plain\\observation.json",
+        "bytes": 311467,
+        "sha256": "b6b2aa9bcdc9ab5b3bb0c8543d6be4c6b6561ecc7b34c43ec1e18174c36c7f53"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 41496,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\07-peer_mtp\\result.json",
+        "bytes": 1436,
+        "sha256": "4dc55cb0b8391f8de3616df9b846cd7d7d90e9460c874647c4125bf6dd21cf3f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\07-peer_mtp\\observation.json",
+        "bytes": 216153,
+        "sha256": "d0d789b2a6b45e4cd6d15022ea23cce89ea7b6003f6cac172c3f36904b6a4a27"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 42324,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\08-hyle_plain\\result.json",
+        "bytes": 1356,
+        "sha256": "95b8a355689c50789a43c6e3af9c526ba1f467930cdd49f177cd30e7d7840db5"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\08-hyle_plain\\observation.json",
+        "bytes": 522881,
+        "sha256": "a371bf0b29b94fbf405436dddaeda15286e382c6927df4e2aefbe8956e5afb20"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 55608,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\09-peer_plain\\result.json",
+        "bytes": 1437,
+        "sha256": "ce4f5338872de1531136bfbffd7be5777404d36d23e3e362089cd2bd72c8ed8f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\09-peer_plain\\observation.json",
+        "bytes": 311427,
+        "sha256": "a3fc430477df600f8308949701b8bfb2b8de42cd1148f0d922daca685f342350"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 56040,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\10-peer_mtp\\result.json",
+        "bytes": 1436,
+        "sha256": "03227412ffb58c14f55cd6badfb7084e4bb2a2dffa54e6f3302cb773fe40c2ab"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\10-peer_mtp\\observation.json",
+        "bytes": 216129,
+        "sha256": "e96d942968e0a28fdd725daab3cd1b3fec77be96cc058247ec8bed335b557245"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 17564,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\11-hyle_plain\\result.json",
+        "bytes": 1356,
+        "sha256": "29361c05a747462385ec4966780f23b004da59bde3dfc81554afff5e3dc909e3"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\11-hyle_plain\\observation.json",
+        "bytes": 522912,
+        "sha256": "910f0b8a2d6802df5d0e82f37d17da7439591e9489d20a54582b8557d556e116"
+      }
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 48116,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\12-hyle_mtp\\result.json",
+        "bytes": 1388,
+        "sha256": "f9b8476cd5b4c17db9c3ea0ec6cb3d5c78a72cae82db0140042f76a24c1ecc8b"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\12-hyle_mtp\\observation.json",
+        "bytes": 229011,
+        "sha256": "9e99c1d896bbff2a3f3fd86ce87aab08bf59c7f65350835d3d2c9fea4667afc1"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_plain",
+      "pid": 56892,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\01-hyle_plain\\result.json",
+        "bytes": 2872,
+        "sha256": "6a2a271217b9fc6a45d1068d8bf0ef5bda933958b05998954727e434588c573a"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\01-hyle_plain\\observation.json",
+        "bytes": 522861,
+        "sha256": "efa25e2beaee131e40c3d9dd70fb2ecb0d7482527ed36c22bf2e3245db19cbd1"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_mtp",
+      "pid": 43936,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\02-hyle_mtp\\result.json",
+        "bytes": 2904,
+        "sha256": "75cad3a3997b7278b377fb01d730183d65a21cbdc92a534c3d5755423ac6b404"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\02-hyle_mtp\\observation.json",
+        "bytes": 228980,
+        "sha256": "611b93e6ba64c8a9c915f890d333e8d8b2a6364d7f69ef514078539065c44566"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_plain",
+      "pid": 44296,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\03-peer_plain\\result.json",
+        "bytes": 3137,
+        "sha256": "e7b7812d7b21c76b6b47652875af7da9c806debc93419e16eda88c54b53fcdf5"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\03-peer_plain\\observation.json",
+        "bytes": 311487,
+        "sha256": "ebe326e3182aa33e4f7a9704ff05f370008c96fda3973019986f6bb6e6bfaaad"
+      }
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_mtp",
+      "pid": 51036,
+      "exit": 0,
+      "result": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\04-peer_mtp\\result.json",
+        "bytes": 3137,
+        "sha256": "bf14a16c6cfe2bf9e13f871e36cd2c0aa093983d276bee08633140d177be642f"
+      },
+      "observation": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\04-peer_mtp\\observation.json",
+        "bytes": 216141,
+        "sha256": "ac73d6bc79838122c68e3c0c560b6db623b73b1d8f36155e2e4fd92abdfd0342"
+      }
+    }
+  ],
+  "process_count": 32,
+  "fairness_and_work": {
+    "single": {
+      "within_arm_timing": {
+        "hyle_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64,
+            64,
+            64
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        }
+      },
+      "within_arm_memory": {
+        "hyle_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            64
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        }
+      },
+      "between_arm_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18
+        }
+      },
+      "actual_first_process_work": {
+        "hyle_plain": {
+          "actual_graph_calls": 64,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 0,
+          "draft_decode_rows": null,
+          "draft_rounds": null,
+          "agreements": null,
+          "accepted_drafts": null,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408,
+          "shared_model_objects": null,
+          "native_contexts": null
+        },
+        "hyle_mtp": {
+          "actual_graph_calls": 35,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 222,
+          "actual_draft_rows": 216,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 217,
+          "verified_target_rows": 68,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 62,
+          "draft_decode_rows": null,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "accepted_drafts": 29,
+          "proposals": null,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "shared_model_objects": null,
+          "native_contexts": null
+        },
+        "peer_plain": {
+          "actual_graph_calls": null,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 64,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 63,
+          "draft_decode_calls": 0,
+          "draft_rows": null,
+          "draft_decode_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 1
+        },
+        "peer_mtp": {
+          "actual_graph_calls": null,
+          "actual_graph_tokens": null,
+          "actual_target_rows": 220,
+          "actual_draft_rows": 216,
+          "target_compute_calls": 34,
+          "draft_compute_calls": 34,
+          "committed_target_rows": 217,
+          "verified_target_rows": 66,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 33,
+          "draft_decode_calls": 33,
+          "draft_rows": null,
+          "draft_decode_rows": 62,
+          "draft_rounds": null,
+          "agreements": 30,
+          "accepted_drafts": 30,
+          "proposals": 33,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 2
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    },
+    "two-turn": {
+      "within_arm_timing": {
+        "hyle_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 3,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128,
+            128,
+            128
+          ],
+          "stopped_on_EOS": [
+            false,
+            false,
+            false
+          ],
+          "stable": true
+        }
+      },
+      "within_arm_memory": {
+        "hyle_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "hyle_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_plain": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        },
+        "peer_mtp": {
+          "processes": 1,
+          "identical_IDs": true,
+          "identical_exported_work": true,
+          "identical_non_time_round_decisions": true,
+          "actual_output_lengths": [
+            128
+          ],
+          "stopped_on_EOS": [
+            false
+          ],
+          "stable": true
+        }
+      },
+      "between_arm_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18
+        }
+      },
+      "actual_first_process_work": {
+        "hyle_plain": {
+          "actual_graph_calls": 128,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 0,
+          "draft_decode_rows": null,
+          "draft_rounds": null,
+          "agreements": null,
+          "accepted_drafts": null,
+          "proposals": null,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408,
+          "shared_model_objects": null,
+          "native_contexts": null,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "hyle_mtp": {
+          "actual_graph_calls": 68,
+          "actual_target_rows": 441,
+          "actual_draft_rows": 434,
+          "target_compute_calls": null,
+          "draft_compute_calls": null,
+          "committed_target_rows": 435,
+          "verified_target_rows": 132,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": null,
+          "draft_decode_calls": null,
+          "draft_rows": 124,
+          "draft_decode_rows": null,
+          "draft_rounds": 66,
+          "agreements": 60,
+          "accepted_drafts": 60,
+          "proposals": null,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 434,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": null,
+          "draft_cache_backing_bytes": null,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "shared_model_objects": null,
+          "native_contexts": null,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "peer_plain": {
+          "actual_graph_calls": null,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 128,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 126,
+          "draft_decode_calls": 0,
+          "draft_rows": null,
+          "draft_decode_rows": 0,
+          "draft_rounds": null,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "draft_frontier": null,
+          "draft_lag": null,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 1,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": null
+        },
+        "peer_mtp": {
+          "actual_graph_calls": null,
+          "actual_target_rows": 438,
+          "actual_draft_rows": 435,
+          "target_compute_calls": 67,
+          "draft_compute_calls": 67,
+          "committed_target_rows": 435,
+          "verified_target_rows": 129,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 65,
+          "draft_decode_calls": 65,
+          "draft_rows": null,
+          "draft_decode_rows": 125,
+          "draft_rounds": null,
+          "agreements": 61,
+          "accepted_drafts": 61,
+          "proposals": 64,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 435,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "cache_live_requested_bytes": null,
+          "cache_peak_requested_bytes": null,
+          "shared_model_objects": 1,
+          "native_contexts": 2,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": null
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    }
+  },
+  "summary_pins": {
+    "single-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-timing\\summary.json",
+      "bytes": 36163,
+      "sha256": "29e8c923dc70fee1848cd6400381a6ce09c0fed97703617ad7a0b90cdd2b9c27"
+    },
+    "single-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\single-memory\\summary.json",
+      "bytes": 153616,
+      "sha256": "c79328ee56f1d0cf7a349665802fe84eac324d211fabfbf8af413bf69543b8c5"
+    },
+    "two-turn-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-timing\\summary.json",
+      "bytes": 60687,
+      "sha256": "ed8b316066a11834c42e33606377c768b0f2ae2dc2dd3ba463b5fadb0e41f959"
+    },
+    "two-turn-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\full-window\\two-turn-memory\\summary.json",
+      "bytes": 262977,
+      "sha256": "b914daf083f951909718d574aca67e3515f246c499412f84597f86613a7d128d"
+    }
+  },
+  "original_timing_and_memory_limits": {
+    "single-timing": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints."
+    ],
+    "single-memory": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints."
+    ],
+    "two-turn-timing": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints."
+    ],
+    "two-turn-memory": [
+      "Three fresh timing processes per arm; descriptive median/min/max only, no significance claim.",
+      "TPS is computed per process from actual counts and full endpoints, then summarized. Never pool windows or average phase TPS.",
+      "Different natural IDs/EOS lengths mean different follow-up token work. Same prompt/quota is not a promise of identical output or quality.",
+      "Memory uses four separate monitored processes,10ms requested cadence with actual gaps/cost/nulls. Never use their timing as throughput.",
+      "Dedicated/shared peaks are separate; simultaneous total uses same-sample addition only. CPU commit/WS/GPU shared overlap, not physical allocation sums.",
+      "No exclusive GPU control, fixed clocks, killed desktop apps, page-cache clearing, warmup, profiler or synthetic acceptance.",
+      "Current clean canonical CLI and scoped refreshed BF16 CUDA/Graph closure; other quant modes not blanket current-certified.",
+      "Producer default cerr/unitbuf remains; continuous natural wall includes prior step post-endpoint reporting. No private clocks or GPU profiler.",
+      "V2 input describes exact original335 physical ranges; ordinary selects original320 only. Current per-session result spelling normalized without changing endpoints."
+    ]
+  },
+  "timer": {
+    "parent_clock": "time.perf_counter_ns",
+    "implementation": "QueryPerformanceCounter()",
+    "advertised_resolution_seconds": 1e-07,
+    "monotonic": true,
+    "QueryPerformanceFrequency_Hz": 10000000,
+    "endpoint_scope": "Consumer high-resolution host endpoints determine TPS; parent QPC brackets process/received stderr only."
+  },
+  "limits": [
+    "Timing values are original per-arm medians, not ratios of pooled samples. Memory has one separate process per arm/workload and never enters timing denominators.",
+    "Same source family/prompt/context/output quota does not mean equal generated IDs, accepted-draft work or subsequent attention history. Natural per-arm differences and actual work are preserved; no task-quality conclusion.",
+    "Dedicated GPU/WS/private sampled peaks are lower-bound observations. PDH/PSAPI and actual gaps/nulls are retained; this is not exact physical allocation accounting or allocator peak attribution.",
+    "Loading/ready and complete-session endpoints retain their original producer scopes; OS file caches are not purged. Default reporting/IO remains in its original natural boundaries.",
+    "This is a new current be3c/peer433e full window, not an isolated before/after candidate experiment. No old-sample regression, causal optimization benefit, multi-user throughput, other model/codec/backend or quality claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-current-window-2026-10-25.zip",
+    "bytes": 1531468,
+    "sha256": "2643c088e37fd2fc1de20a9722a788a9da63c572c57be1503e5b77684c1cff68",
+    "members": 276,
+    "CRC_and_member_SHA256_verified": true,
+    "index": "member-sha256.json",
+    "no_binaries_SDK_source_tree_or_model_payload": true
+  }
+}

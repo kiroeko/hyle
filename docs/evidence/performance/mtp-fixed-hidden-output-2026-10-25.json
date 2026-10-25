@@ -1,0 +1,825 @@
+{
+  "status": "BOUNDED_SCREEN_PASS_CANONICAL_BUILD_PASS",
+  "generated_UTC": "2026-10-25T15:22:21.143491+00:00",
+  "scope": "One current Hyle K1 real-two-turn before/after candidate screen: 6 unprofiled timing and 2 independent memory processes. No peer/new profiler run. Final canonical bridge has its own strict compile/link evidence. The root-owned current 32-process full window is separate and excluded from this report.",
+  "implementation": {
+    "control_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-cuda-20261025\\link\\hyle.exe",
+      "bytes": 141597696,
+      "sha256": "9d5bee3b9a633c29578b50343ee6002207ca8e85328a32663b1a20b22a9c8165"
+    },
+    "screened_candidate_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\candidate2\\link\\hyle.exe",
+      "bytes": 141613568,
+      "sha256": "f4fc1f5745cb375bd854f47b6bf8723f2e4663c07749a6ae5d46068c547eca38"
+    },
+    "screened_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468367,
+      "sha256": "38a216c3d78b1834fb41808451ad195076023bf8c0aa0b5aaf2d40489cdfd7ad"
+    },
+    "canonical_final_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 468204,
+      "sha256": "1892e2d13dc7b77cf58043d3099eb59377ea722f540155d64b2de3a4be7ef33c"
+    },
+    "canonical_final_image_build_only": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\link\\hyle.exe",
+      "bytes": 141614080,
+      "sha256": "be3c210ea954e97f7109783baf4b22345c4b4140c7d0d0d12af606807241c22a"
+    },
+    "canonical_build": {
+      "app": {
+        "exit": 0,
+        "seconds": 18.86,
+        "pid": 57008
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.718,
+        "pid": 54240
+      }
+    },
+    "canonical_bridge": {
+      "path": ".scratch/mtp-fixed-hidden-output-20261025/integrated/screened-to-final.patch",
+      "bytes": 935,
+      "sha256": "6df1f339103555e0891b0bd95832a669896256edd6ecf44f0eb24040d25b8687"
+    },
+    "mechanism": "Only eligible captured K1 body caller-owned hidden OUTPUTs use fixed work leases. After original selection, CopyBatch copies selected carry/prior full rows into original canonical hidden_pool; actual completion+binding withdrawal+Graph unbind precede unique try_write. GDN/ingress/selection/math unchanged.",
+    "cost": "Original terminal Graph copies remain. Additional scratch payload16KiB for the two prepared R1/H2048/BF16 roles plus control metadata; additional selected4/8KiB copy/submit/wait remains inside endpoints.",
+    "default_route_scope": "Ordinary, prefill, T1 tail, Verify, generated outputs and Commands sampling do not enter this finite candidate route."
+  },
+  "first_failure": {
+    "status": "ACTUAL_STRICT_COMPILE_FAILED_NO_LINK_OR_GPU",
+    "reason": "C4458 /W4 /WX: local phases shadows Model::phases.",
+    "evidence": {
+      "path": ".scratch/mtp-fixed-hidden-output-20261025/candidate1/summary.json",
+      "bytes": 1013,
+      "sha256": "0a9e782ab9c8f2a4d981f5a57162f7c6db76fc65a561f56b451900d1cdfa8b8a"
+    },
+    "correction": "Only rename to copy_phases; exact reverse replacement reproduces r1 source SHA. candidate2 strict app compile and original closure link passed."
+  },
+  "screen": {
+    "status": "BOUNDED_SCREEN_COMPLETE_ALL_WORK_EQUAL",
+    "timing_processes": 6,
+    "independent_memory_processes": 2,
+    "all_exit0": true,
+    "source_work_equal": true,
+    "metrics": {
+      "control": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.117226,
+          "min": 0.1158806,
+          "max": 0.1180753,
+          "samples": [
+            0.1180753,
+            0.1158806,
+            0.117226
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0596052000000002,
+          "min": 1.0573917000000002,
+          "max": 1.0624373999999996,
+          "samples": [
+            1.0573917000000002,
+            1.0596052000000002,
+            1.0624373999999996
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1754858,
+          "min": 1.175467,
+          "max": 1.1796634,
+          "samples": [
+            1.175467,
+            1.1754858,
+            1.1796634
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2635.934007813966,
+          "min": 2616.974083487402,
+          "max": 2666.5377983890317,
+          "samples": [
+            2616.974083487402,
+            2666.5377983890317,
+            2635.934007813966
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 118.91221371884545,
+          "min": 118.59522264558838,
+          "max": 119.16113962309329,
+          "samples": [
+            119.16113962309329,
+            118.91221371884545,
+            118.59522264558838
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 108.89114951452413,
+          "min": 108.50552793279847,
+          "max": 108.89289108073642,
+          "samples": [
+            108.89289108073642,
+            108.89114951452413,
+            108.50552793279847
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_seconds": {
+          "count": 3,
+          "median": 0.11426910000000001,
+          "min": 0.1142117,
+          "max": 0.1189994,
+          "samples": [
+            0.1142117,
+            0.1189994,
+            0.11426910000000001
+          ]
+        },
+        "decode_seconds": {
+          "count": 3,
+          "median": 1.0461353000000002,
+          "min": 1.0421782,
+          "max": 1.0496495000000001,
+          "samples": [
+            1.0421782,
+            1.0461353000000002,
+            1.0496495000000001
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "median": 1.1639186,
+          "min": 1.1563899,
+          "max": 1.1651347,
+          "samples": [
+            1.1563899,
+            1.1651347,
+            1.1639186
+          ]
+        },
+        "prefill_tokens_per_second": {
+          "count": 3,
+          "median": 2704.1431148053143,
+          "min": 2596.6517478239384,
+          "max": 2705.5021508304317,
+          "samples": [
+            2705.5021508304317,
+            2596.6517478239384,
+            2704.1431148053143
+          ]
+        },
+        "decode_output_tokens_per_second": {
+          "count": 3,
+          "median": 120.44331168253282,
+          "min": 120.04007051877792,
+          "max": 120.90062908627336,
+          "samples": [
+            120.90062908627336,
+            120.44331168253282,
+            120.04007051877792
+          ]
+        },
+        "combined_output_tokens_per_second": {
+          "count": 3,
+          "median": 109.97332631336934,
+          "min": 109.85854253589734,
+          "max": 110.68930989452606,
+          "samples": [
+            110.68930989452606,
+            109.85854253589734,
+            109.97332631336934
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_seconds": {
+        "candidate_relative_percent": -2.522392643270255,
+        "ranges_overlap": true
+      },
+      "decode_seconds": {
+        "candidate_relative_percent": -1.271218752040859,
+        "ranges_overlap": false
+      },
+      "session_seconds": {
+        "candidate_relative_percent": -0.9840357067690597,
+        "ranges_overlap": false
+      },
+      "prefill_tokens_per_second": {
+        "candidate_relative_percent": 2.587663681607699,
+        "ranges_overlap": true
+      },
+      "decode_output_tokens_per_second": {
+        "candidate_relative_percent": 1.2875867968512367,
+        "ranges_overlap": false
+      },
+      "combined_output_tokens_per_second": {
+        "candidate_relative_percent": 0.9938152032281211,
+        "ranges_overlap": false
+      }
+    },
+    "work": {
+      "generated_tokens": 128,
+      "actual_graph_calls": 68,
+      "prefill_target_rows": 309,
+      "verified_target_rows": 132,
+      "actual_target_rows": 441,
+      "actual_draft_rows": 434,
+      "consumed_drafts": 60
+    },
+    "historical_samples_pooled": false,
+    "latest_llama_comparison": false,
+    "profiler": false,
+    "memory": {
+      "control": {
+        "path": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\screen\\memory-01-control\\memory-summary.json",
+          "bytes": 45460,
+          "sha256": "e7155a87ff14a7def07334baf0b2d43ee22c13b7332279b4232120187d7a8359"
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1280864256,
+          "observed_os_peak_working_set_bytes": 1281028096,
+          "sampled_max_private_commit_bytes": 6453694464,
+          "observed_os_peak_commit_bytes": 6453837824,
+          "sampled_peak_gpu_dedicated_bytes": 4499521536,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4581310464
+        },
+        "sample_count": 337,
+        "ready_baseline": {
+          "ready_marker_ns": 267610666838000,
+          "first_prefill_marker_ns": 267610666913900,
+          "sample": null,
+          "unknown": true,
+          "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+        },
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 35,
+          "gpu_shared_bytes": 35,
+          "gpu_total_bytes": 35
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 35,
+          "shared:no_pid_instance": 35
+        },
+        "actual_sample_gaps_ms": {
+          "count": 317,
+          "min": 0.1219,
+          "median": 15.1693,
+          "max": 16.4624
+        },
+        "sample_cost_ms": {
+          "count": 318,
+          "min": 0.0571,
+          "median": 0.1377,
+          "max": 0.3193
+        },
+        "phase_windows": {
+          "round1_prefill": {
+            "begin_ns": 267610666913900,
+            "end_ns": 267610739690900,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 7,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 12158900,
+              "after": 8414700
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 108912640,
+              "private_commit_bytes": 378589184,
+              "gpu_dedicated_bytes": 176168960,
+              "gpu_shared_bytes": 2097152,
+              "gpu_total_bytes": 178266112
+            }
+          },
+          "round1_decode": {
+            "begin_ns": 267610739698800,
+            "end_ns": 267611287219800,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 52,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 7645600,
+              "after": 6768500
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 48513024,
+              "private_commit_bytes": 115286016,
+              "gpu_dedicated_bytes": 83886080,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 83886080
+            }
+          },
+          "round2_prefill": {
+            "begin_ns": 267611287231400,
+            "end_ns": 267611330568900,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 5,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 8589000,
+              "after": 11536900
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 28442624,
+              "private_commit_bytes": 206745600,
+              "gpu_dedicated_bytes": 150994944,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 150994944
+            }
+          },
+          "round2_decode": {
+            "begin_ns": 267611330574700,
+            "end_ns": 267611839984900,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 49,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 4430900,
+              "after": 15327900
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": -48926720,
+              "private_commit_bytes": -42491904,
+              "gpu_dedicated_bytes": -77594624,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": -77594624
+            }
+          }
+        }
+      },
+      "candidate": {
+        "path": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\screen\\memory-02-candidate\\memory-summary.json",
+          "bytes": 45069,
+          "sha256": "6d0e7e46559ad9d5f02b8ee9782886def2204faf61874418edf876e9a191b523"
+        },
+        "sampled_peaks": {
+          "sampled_max_working_set_bytes": 1279762432,
+          "observed_os_peak_working_set_bytes": 1279770624,
+          "sampled_max_private_commit_bytes": 6450769920,
+          "observed_os_peak_commit_bytes": 6450769920,
+          "sampled_peak_gpu_dedicated_bytes": 4499521536,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4581310464
+        },
+        "sample_count": 336,
+        "ready_baseline": {
+          "ready_marker_ns": 267614339070100,
+          "first_prefill_marker_ns": 267614339080800,
+          "sample": null,
+          "unknown": true,
+          "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+        },
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 36,
+          "gpu_shared_bytes": 36,
+          "gpu_total_bytes": 36
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 36,
+          "shared:no_pid_instance": 36
+        },
+        "actual_sample_gaps_ms": {
+          "count": 316,
+          "min": 0.1296,
+          "median": 15.1845,
+          "max": 21.7464
+        },
+        "sample_cost_ms": {
+          "count": 317,
+          "min": 0.0586,
+          "median": 0.1405,
+          "max": 0.7618
+        },
+        "phase_windows": {
+          "round1_prefill": {
+            "begin_ns": 267614339080800,
+            "end_ns": 267614407715700,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 8,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 13336300,
+              "after": 11128000
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 116985856,
+              "private_commit_bytes": 394645504,
+              "gpu_dedicated_bytes": 192946176,
+              "gpu_shared_bytes": 2097152,
+              "gpu_total_bytes": 195043328
+            }
+          },
+          "round1_decode": {
+            "begin_ns": 267614407721600,
+            "end_ns": 267614938417100,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 50,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 4689200,
+              "after": 8143000
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 52686848,
+              "private_commit_bytes": 124788736,
+              "gpu_dedicated_bytes": 83886080,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 83886080
+            }
+          },
+          "round2_prefill": {
+            "begin_ns": 267614938430000,
+            "end_ns": 267614981762600,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 4,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 6649600,
+              "after": 12032400
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 27852800,
+              "private_commit_bytes": 206118912,
+              "gpu_dedicated_bytes": 150994944,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 150994944
+            }
+          },
+          "round2_decode": {
+            "begin_ns": 267614981768900,
+            "end_ns": 267615489166200,
+            "received_boundary_counts": {
+              "begin": 1,
+              "end": 1
+            },
+            "missing_boundary": false,
+            "ambiguous_boundary": false,
+            "invalid_boundary_order": false,
+            "sample_count": 48,
+            "exact_phase_boundary_values": false,
+            "null_sample_counts": {
+              "working_set_bytes": 0,
+              "private_commit_bytes": 0,
+              "gpu_dedicated_bytes": 0,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 0
+            },
+            "bracket_ages_ns": {
+              "before": 3744700,
+              "after": 1471100
+            },
+            "bracket_delta_bytes": {
+              "working_set_bytes": 905216,
+              "private_commit_bytes": 4976640,
+              "gpu_dedicated_bytes": 4194304,
+              "gpu_shared_bytes": 0,
+              "gpu_total_bytes": 4194304
+            }
+          }
+        }
+      }
+    },
+    "raw_summary": {
+      "path": ".scratch/mtp-fixed-hidden-output-20261025/screen/summary.json",
+      "bytes": 107846,
+      "sha256": "9bc31aeeddd5cb080a1e7a072006b186a5e6e7b7adc42b3556c1ceb7173f6412"
+    },
+    "actual_processes": [
+      {
+        "arm": "control",
+        "memory_only": false,
+        "started_unix_ns": 1792940895867070200,
+        "finished_unix_ns": 1792940899394944800,
+        "process_wall_seconds": 3.5266528,
+        "exit": 0
+      },
+      {
+        "arm": "candidate",
+        "memory_only": false,
+        "started_unix_ns": 1792940899503006800,
+        "finished_unix_ns": 1792940903347526900,
+        "process_wall_seconds": 3.8440701,
+        "exit": 0
+      },
+      {
+        "arm": "candidate",
+        "memory_only": false,
+        "started_unix_ns": 1792940903449961400,
+        "finished_unix_ns": 1792940906926038500,
+        "process_wall_seconds": 3.4748331,
+        "exit": 0
+      },
+      {
+        "arm": "control",
+        "memory_only": false,
+        "started_unix_ns": 1792940907033328500,
+        "finished_unix_ns": 1792940910550408000,
+        "process_wall_seconds": 3.5164325,
+        "exit": 0
+      },
+      {
+        "arm": "control",
+        "memory_only": false,
+        "started_unix_ns": 1792940910659915800,
+        "finished_unix_ns": 1792940914162986600,
+        "process_wall_seconds": 3.5020372,
+        "exit": 0
+      },
+      {
+        "arm": "candidate",
+        "memory_only": false,
+        "started_unix_ns": 1792940914265061800,
+        "finished_unix_ns": 1792940917747945600,
+        "process_wall_seconds": 3.4814771,
+        "exit": 0
+      },
+      {
+        "arm": "control",
+        "memory_only": true,
+        "started_unix_ns": 1792940917852794800,
+        "finished_unix_ns": 1792940922016091400,
+        "process_wall_seconds": 3.5280867,
+        "exit": 0
+      },
+      {
+        "arm": "candidate",
+        "memory_only": true,
+        "started_unix_ns": 1792940922142821700,
+        "finished_unix_ns": 1792940925672136800,
+        "process_wall_seconds": 3.5258807,
+        "exit": 0
+      }
+    ],
+    "non_time_comparison": {
+      "all8_differences": 0,
+      "reference": "First actual current control report; complete recursive JSON comparison.",
+      "excluded_field_name_substrings": [
+        "seconds",
+        "tokens_per_second",
+        "clock_unix",
+        "unix_ns",
+        "unix_ms"
+      ],
+      "new_cache_state_work_metadata_exclusions": [],
+      "capture_counts_source": "Original stderr formatter, separately compared in capture-counts.json."
+    },
+    "protocol": {
+      "timing_order": [
+        "control",
+        "candidate",
+        "candidate",
+        "control",
+        "control",
+        "candidate"
+      ],
+      "memory_order": [
+        "control",
+        "candidate"
+      ],
+      "warmup": false,
+      "fixed_clocks": false,
+      "endpoints": "Original P+D=session reporting endpoints; prefill309 rows, decode126 output tokens, combined128 output tokens. Process wall is retained but not used as reported TPS.",
+      "sampling": "Original PSAPI RAM and process-PDH dedicated/shared VRAM; requested10ms interval, actual gaps and unavailable samples retained."
+    }
+  },
+  "actual_mechanism_counts": {
+    "source": {
+      "path": ".scratch/mtp-fixed-hidden-output-20261025/capture-counts.json",
+      "bytes": 27896,
+      "sha256": "111edf4df20a16a6b0e878f9990d1c00fe2086b2ff51e2c8ebf6928450f1a3cb"
+    },
+    "all8_actual_stderr": true,
+    "each_arm4_sequences_identical": true,
+    "control_record_reuse": [
+      32,
+      100
+    ],
+    "candidate_record_reuse": [
+      27,
+      105
+    ],
+    "logical_calls": 68,
+    "range_decisions": 132,
+    "changed_calls": [
+      {
+        "seq": 13,
+        "T": 2,
+        "visible": 174,
+        "control": {
+          "recorded": 2,
+          "reused": 0
+        },
+        "candidate": {
+          "recorded": 1,
+          "reused": 1
+        }
+      },
+      {
+        "seq": 14,
+        "T": 2,
+        "visible": 176,
+        "control": {
+          "recorded": 2,
+          "reused": 0
+        },
+        "candidate": {
+          "recorded": 1,
+          "reused": 1
+        }
+      },
+      {
+        "seq": 15,
+        "T": 2,
+        "visible": 178,
+        "control": {
+          "recorded": 2,
+          "reused": 0
+        },
+        "candidate": {
+          "recorded": 1,
+          "reused": 1
+        }
+      },
+      {
+        "seq": 16,
+        "T": 2,
+        "visible": 180,
+        "control": {
+          "recorded": 2,
+          "reused": 0
+        },
+        "candidate": {
+          "recorded": 1,
+          "reused": 1
+        }
+      },
+      {
+        "seq": 41,
+        "T": 2,
+        "visible": 381,
+        "control": {
+          "recorded": 2,
+          "reused": 0
+        },
+        "candidate": {
+          "recorded": 1,
+          "reused": 1
+        }
+      }
+    ],
+    "not_directly_recorded": [
+      "range_begin/count and body-only total",
+      "CUDA Instantiate/ExecUpdate and physical copy counts"
+    ],
+    "no_new_API_trace_needed": true
+  },
+  "peer_mechanism": {
+    "source": {
+      "path": ".scratch/mtp-body-recapture-cause-20261025/peer-state-dataflow.json",
+      "bytes": 9630,
+      "sha256": "1dda217b31ea866c0a1acbe25997851a764e6b7bb20b73e735763f564f405655"
+    },
+    "fact": "Matched llama persistent state banks+index gathers+snapshot copyback and bounded rollback; normalized carry workspace is D2H exported, selected onhost and uploaded to fixed draft input. TRT fixed pools/spec intermediate also gather/promote; vLLM graph buckets/persistent buffers reuse nonowning outputs.",
+    "limit": "Source mechanisms and distinct lifetime/math contracts, not a new peer benchmark or proof all capture property changes are known."
+  },
+  "independent_review": {
+    "path": ".scratch/mtp-fixed-hidden-output-20261025/independent-review-performance.json",
+    "bytes": 4435,
+    "sha256": "cdea6072b92b3db72200c6d599939bc34f6cde4306aafa145a7f281fe0436089"
+  },
+  "throughput_interpretation": "Decode+1.288% and combined+.994% descriptive medians for3 samples per arm; decode ranges did not overlap in this one screen. Prefill ranges overlap. No statistical-significance claim, historical pooling, or new llama performance conclusion.",
+  "canonical_full_window": {
+    "path": "docs/evidence/performance/inference-current-window-2026-10-25.json",
+    "bytes": 82623,
+    "sha256": "92a3d05144eb7dfe7068cdf11019ffecd7ac7160e25843467ebae5651aa1dd6f"
+  },
+  "canonical_full_window_scope": "Separate subsequent final-canonical ordinary/MTP single/two-turn four-arm32-process window. No samples or peer claims are pooled into this candidate/control screen; consult that evidence for current whole-consumer results.",
+  "limits": [
+    "The 8 actual processes used private source38a216 and imagef4fc1f57; final source1892e2d1/imagebe3c210e only removes the true experiment gate/comment and has separate strict build evidence. No final-image runtime is claimed by this package.",
+    "No new arbitrary old-output fault/cancellation matrix or physical VRAM hard-cap proof.",
+    "Memory1process per arm PSAPI/PDH sampled peaks are lower bounds; ready null/gaps retained, not zeroed.",
+    "No time is subtracted from earlier profiler1.5423ms/episode or19.474001ms candidate window to claim recoverable speed."
+  ],
+  "archive": {
+    "path": "docs/evidence/performance/mtp-fixed-hidden-output-2026-10-25.zip",
+    "bytes": 343687,
+    "sha256": "1900112cd17b912b5dbba88b4b270de79a58f045ee08e64deaaa572dd53d54cd"
+  },
+  "archive_verification": {
+    "members": 106,
+    "CRC": "PASS",
+    "member_SHA256": "PASS",
+    "binary_SDK_model_or_full_main_tree_included": false
+  },
+  "private_origin": ".scratch/mtp-fixed-hidden-output-20261025/archive-draft"
+}
