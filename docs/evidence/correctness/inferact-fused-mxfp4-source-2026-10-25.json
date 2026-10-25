@@ -1,0 +1,173 @@
+{
+  "status": "ORDINARY_FUSED_SOURCE_COMPOSITION_CPU_PASS",
+  "date": "2026-10-25",
+  "problem": "Original fused gate_up codes and independent F32 scale roles lacked the ordinary selected-bank/map/lease composition beyond the already qualified MTP down tile.",
+  "change": "One model-private cold source adapter validates exact cached role metadata and existing ready leases, selects each original half by its own row stride, converts only selected SF prefixes through the existing importer, and feeds the existing four-plane resident-bank/map supply and BF16 weight-only Graph reader.",
+  "sources": [
+    {
+      "path": "tests/compute_models/inferact_mxfp4_source_roles.h",
+      "before": null,
+      "after": {
+        "bytes": 8767,
+        "sha256": "e9d290aed5623a54cadcbeca1bfbbdcc314c2562aa0e1a881ff1158cfbdc9e0f"
+      }
+    },
+    {
+      "path": "tests/graph_route_cpu/mxfp4_reference_test.cc",
+      "before": {
+        "bytes": 7779,
+        "sha256": "5794291848edfb92dc56e51257e935a9a1a7063425b572d5248369b2eeb578c4"
+      },
+      "after": {
+        "bytes": 17413,
+        "sha256": "06196cb1172c5e00c27d9f1b31e438090c035575371af60bd1cadebe8d47c4d3"
+      }
+    }
+  ],
+  "integration": "Both checked source paths are integrated in canonical; no additional build/run during packaging.",
+  "source_qualification": {
+    "repository": "Inferact/Qwen3.8-2.4T-A95B-MXFP4",
+    "revision": "98b8fd6c5dec37c28ff28e7a0f577677ccbdc49f",
+    "shard": "mxfp4_experts-00001-of-00092.safetensors",
+    "header": {
+      "path": ".scratch/architecture-refactor-2026-10-18/fixed-role-binding-2026-10-21/inferact/mxfp4_experts-00001-of-00092.safetensors/header.json",
+      "bytes": 262480,
+      "sha256": "00027b6b5afd1cebe5a8b76d09727eabb40ccd2b2e8b99d32e0ad4aed6fbf808"
+    },
+    "data_base": 262488,
+    "original_file_bytes": 16106389848,
+    "original_numeric_payload_bytes": 0,
+    "source_roles": "Eight exact cached header W/F32-SF roles for global IDs 0/1/17/511; actual new numerical bodies are explicitly generated full-original-shape fixtures. Source identity metadata does not authenticate fixture bytes."
+  },
+  "geometry": {
+    "full_fused_rows": 4096,
+    "original_half_rows": 2048,
+    "prefix_rows_per_half": 3,
+    "depth": 8192,
+    "original_weight_row_bytes": 4096,
+    "original_F32_SF_row_bytes": 1024,
+    "up_weight_byte_offset": 8388608,
+    "up_F32_SF_byte_offset": 2097152,
+    "selected_experts": 2,
+    "global_domain": 512,
+    "planes": [
+      "gate_W",
+      "gate_E8_SF",
+      "up_W",
+      "up_E8_SF"
+    ],
+    "map": "I32 global to local, checked before selected projection",
+    "generations": [
+      [
+        0,
+        17
+      ],
+      [
+        1,
+        511
+      ]
+    ],
+    "resident_logical_bytes_per_generation": 54272,
+    "converted_E8_SF_bytes_per_generation": 3072
+  },
+  "checks": {
+    "filter": "CpuMxfp4ReferenceGraph.InferactFusedHalvesKeepOriginalScaleImportAndSelectedBankGeneration",
+    "actual": {
+      "status": "PASS",
+      "compile": {
+        "exit": 0,
+        "seconds": 3.922,
+        "pid": 55540
+      },
+      "link": {
+        "exit": 0,
+        "seconds": 1.203,
+        "pid": 43772
+      },
+      "run": {
+        "exit": 0,
+        "seconds": 0.984,
+        "pid": 57328
+      },
+      "xml": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "frozen_files": 60,
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-q27-fp8-20261024\\engine-cpu-current2\\bin\\hyle_ggml_cpu_pure_ffa4_current.dll",
+        "bytes": 1359360,
+        "sha256": "1066e80261cc58d1c0ea57e50475e2e38b7675b666eb2b639969e01e85916a46"
+      },
+      "new_CPU_test_TUs": 1,
+      "core_provider_SDK_rebuilds": 0,
+      "GPU_or_model_runs": 0,
+      "HTTP": 0,
+      "scope": "generated full-source fused gate/up halves, strict SF import, selected-bank map and old-reader lifetime; no original publisher values"
+    },
+    "endpoint_values": 48,
+    "numerical": "Non-FP4 BF16 activation values remain unchanged. Signed E2M1 times imported E8 scales is rounded to BF16 W; a two-term F64 sum is rounded to the expected BF16 endpoint. Independent GRS-RNE examples assert 1.25->E8(1) and 1.5->E8(2).",
+    "cold_rejection": [
+      "Wrong original W span",
+      "Invalid up-SF after gate conversion returns no prepared Source or new generation; no clamp"
+    ],
+    "lifetime": "Two bound generations hold 10 bank blocks; a third upload is rejected. Dropping batches preserves 10 Invocation-held blocks, dropping Invocations retires all 10, and independent old result leases remain readable after compiled graph release.",
+    "strict": "One existing CPU test TU with MSVC /W4 /WX and sourceDependencies; cached original CPU core/native closure.",
+    "first_attempt_pass": true,
+    "root_executed": true
+  },
+  "reader": {
+    "version": "vLLM 7b569ec8953cf8099638a6d2ee1e915b75867c3a",
+    "archive": "docs/evidence/research/inferact-micro32-contract-2026-10-21.zip",
+    "member": "runtime/routed_experts.py",
+    "full_member": {
+      "bytes": 60895,
+      "sha256": "31e77226425db7eea658e1f273627dca8fb3d423119c3857f8aa5fc6b0d3bd07"
+    },
+    "selected_lines": [
+      {
+        "line": 1074,
+        "text": "                elif is_per_expert_fused_w13:"
+      },
+      {
+        "line": 1075,
+        "text": "                    shard_index = 0 if shard_id == \"w1\" else 1"
+      },
+      {
+        "line": 1076,
+        "text": "                    experts_shard = loaded_weight.chunk(2, dim=0)["
+      },
+      {
+        "line": 1077,
+        "text": "                        shard_index"
+      },
+      {
+        "line": 1078,
+        "text": "                    ].unsqueeze(0)"
+      }
+    ],
+    "meaning": "The original loaded fused W/SF is split along full dim0 into contiguous halves, before this finite per-half prefix is selected.",
+    "numerical_reference": "Unchanged positive-finite F32 to E8M0 GRS RNE importer, then BF16 weight-only reader; no producer-OAS or native reduction equivalence."
+  },
+  "limits": [
+    "This is each original half first N3 rows/full K8192, not the full fused bank, complete FFN/down/router, complete Model, or generation.",
+    "No ordinary original fused publisher W/SF numeric payload was fetched or executed. Generated bodies carry the exact descriptor/span metadata solely to exercise the real lease boundary; authenticity remains the original supplier responsibility.",
+    "The existing importer selected GRS RNE and its strict positive-finite/code0..254 domain remain unchanged. Original exporter OAS and native arithmetic equivalence are not established.",
+    "No GPU/native platform run, full-artifact quality, throughput or performance claim. No SDK/core/provider rebuild, HTTP or new executor/registry.",
+    "The historical source-only scope/product-pins records are preserved; cpu1 command/process/XML/raw establish the later actual CPU result. Unchanged frozen trees, models, SDK and binaries are omitted."
+  ],
+  "related_evidence": [
+    "docs/evidence/research/inferact-micro32-contract-2026-10-21.json",
+    "docs/evidence/correctness/mtp-original-source-format-tiles-2026-10-24.json"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inferact-fused-mxfp4-source-2026-10-25.zip",
+    "bytes": 109808,
+    "sha256": "0b79d3d4af7b5c4c28a66f257f143da3fd769722a50c9e2b1347777cd428e6de",
+    "members": 37,
+    "logical_bytes": 593585,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
