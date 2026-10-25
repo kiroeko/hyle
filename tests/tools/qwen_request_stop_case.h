@@ -37,14 +37,14 @@ inline int run(const std::filesystem::path &input) {
   requests.emplace_back("stop-A",a_turns[0].prompt,std::filesystem::path{},3,0,i::RequestStopPolicy(stop_two));
   requests.emplace_back("resume-B",b_turns[0].prompt,std::filesystem::path{},4,0,i::RequestStopPolicy(stop_fortyseven));
   requests.emplace_back("new-policy-hit",hit_turns[0].prompt,std::filesystem::path{},2,0,i::RequestStopPolicy({},true));
-  requests.emplace_back("legacy-hit",hit_turns[0].prompt,std::filesystem::path{},2,0,i::RequestStopPolicy(stop_two));
+  requests.emplace_back("stopped-policy-hit",hit_turns[0].prompt,std::filesystem::path{},2,0,i::RequestStopPolicy(stop_two));
   requests.emplace_back("invalid-stop",hit_turns[0].prompt,std::filesystem::path{},2,0,i::RequestStopPolicy(invalid_stop));
   for(std::size_t index=0;index<requests.size();++index) {
     auto &request=requests[index];
     const auto turns=index==0?std::span<const i::GenerationTurn>(a_turns):index==1?
         std::span<const i::GenerationTurn>(b_turns):std::span<const i::GenerationTurn>(hit_turns);
     request.progress.bind_turns(turns);request.progress.initial_sampling={123,10,0};
-    if(index!=3)request.ledger=std::make_unique<q::GenerationLedger>(q::generation_record_capacity(turns),1);
+    request.ledger=std::make_unique<q::GenerationLedger>(q::generation_record_capacity(turns),1);
     request.round_emitted.resize(request.progress.maximum_outputs()-1);
     for(auto &emitted:request.round_emitted)emitted.reserve(1);
     request.turn_observations.resize(turns.size());
@@ -96,9 +96,9 @@ inline int run(const std::filesystem::path &input) {
       "full-prefix import retained the publisher's request stop decision");
   retire(c);
   begin(d);execute(d,&prefix);
-  require(d.prefix_full_hits==1 && !d.ledger && d.progress.generated==std::vector<std::int32_t>{2} &&
+  require(d.prefix_full_hits==1 && d.ledger && d.progress.generated==std::vector<std::int32_t>{2} &&
       d.progress.turn_done && d.progress.generated.size()<d.progress.output_limit(),
-      "legacy no-ledger full hit lost its ordinary request stop policy");
+      "ledger-backed full hit lost its new request stop policy");
   retire(d);
   require(window.waiting_front()==key_b,"finished peer changed B's original FIFO/key");
   window.admitted(key_b);begin(b);i::OutputDelivery delivery(1);
@@ -166,7 +166,7 @@ inline int run(const std::filesystem::path &input) {
   require(!model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed &&
       window.active().empty() && !window.waiting_front(),"stop-policy EOF retained a request/version/carrier");
   std::cout<<"{\"status\":\"PASS\",\"backend\":\"cpu\",\"same_model_R2_distinct_stops\":true,"
-      "\"new_policy_full_hit\":true,\"legacy_no_ledger_full_hit\":true,\"pause_rebuild_preserved_policy\":true,"
+      "\"new_policy_full_hit\":true,\"ledger_full_hit_new_stop_policy\":true,\"pause_rebuild_preserved_policy\":true,"
       "\"unbound_direct_ledger_refused_before_publish\":true,\"same_session_cold_bind_retry\":true,"
       "\"invalid_stop_ID_preflight\":true,\"B_ids\":[2,10,47],\"B_draw\":3,\"final_versions\":0,"
       "\"GPU\":false,\"HTTP\":0}\n";

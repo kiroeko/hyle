@@ -5224,7 +5224,7 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
 // Consume committed host facts even when a subsequent diagnostic write threw.
 // The authoritative ledger was installed by the original head-swap transaction.
 void observe_generation_commits(GenerationRequest &request) {
-  if (!request.ledger) return;
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   while (request.progress.observed_commits() < request.ledger->committed_count) {
     const auto ordinal = request.progress.observed_commits();
     const auto &record = request.ledger->records[ordinal];
@@ -5273,7 +5273,7 @@ void observe_generation_commits(GenerationRequest &request) {
       request.prefill_step_seconds += record.step_seconds;
     }
     request.visible_tokens = record.after.length; request.draft_frontier = record.after.frontier;
-    request.draft_lag = record.after.lag;
+    request.draft_lag = record.after.lag; request.fresh_next_id = record.after.next_id;
     if (!record.imported) request.endpoint = record.endpoint;
     if (prefill_complete) {
       request.prefill_endpoint = record.endpoint;
@@ -5504,6 +5504,7 @@ bool checkpoint_covers_generation_ledger(const cache::Checkpoint &checkpoint,
 // This is admission arithmetic only: no RNG reservation or mutable copy. A new
 // prefix hit must start from this request, never from its cached publisher.
 void preflight_generation_sampling(const Model &model, const GenerationRequest &request) {
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   if (model.cache_plan.draft_cache ||
       !model.sampling_configuration(request.sampling_index).configuration.enabled) return;
   const auto &progress = request.progress;
@@ -5529,7 +5530,7 @@ void preflight_generation_sampling(const Model &model, const GenerationRequest &
       throw std::runtime_error("ordinary sampling admission requires a live idle Session head");
     cursor = request.session->head->sampling;
   }
-  else if (request.ledger && request.ledger->committed_count) {
+  else if (request.ledger->committed_count) {
     if (request.ledger->committed_count > request.ledger->records.size())
       throw std::runtime_error("request recovery exceeds its original committed ledger");
     cursor = request.ledger->records[request.ledger->committed_count - 1].after.sampling;
@@ -5545,17 +5546,18 @@ void preflight_generation_sampling(const Model &model, const GenerationRequest &
 void restore_generation_session(Model &model, GenerationRequest &request,
     cache::PrefixCache *prefix = nullptr, bool trace_states = true,
     std::span<const GenerationRequest> requests = {}) {
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   request.stop_policy.validate(model.vocabulary);
   if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
     throw std::runtime_error("nondefault request stop policy is ordinary Text only");
-  if (request.ledger) request.ledger->validate_stop_policy(request.stop_policy);
+  request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (request.session) {
     if (&request.session->sampling_configuration() != &prepared_sampling)
       throw std::runtime_error("request sampling cannot change after Session admission");
     return;
   }
-  if (!request.ledger || !request.ledger->committed_count) return;
+  if (!request.ledger->committed_count) return;
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
   if (model.sampling_index(*request.ledger) != request.sampling_index)
     throw std::runtime_error("request recovery sampling differs from its committed ledger");
@@ -5623,21 +5625,20 @@ struct PreparedGenerationCall final {
 PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &request, std::size_t steps,
     cache::PrefixCache *prefix, std::span<const GenerationRequest> requests,
     std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   request.stop_policy.validate(model.vocabulary);
   if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
     throw std::runtime_error("nondefault request stop policy is ordinary Text only");
-  if (request.ledger) request.ledger->validate_stop_policy(request.stop_policy);
+  request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (model.cache_plan.draft_cache && request.sampling_index)
     throw std::runtime_error("nondefault request sampling is ordinary Text only");
   if (request.session && &request.session->sampling_configuration() != &prepared_sampling)
     throw std::runtime_error("request sampling cannot change after Session admission");
-  if (request.ledger) request.ledger->validate_sampling(prepared_sampling, model.resources_);
+  request.ledger->validate_sampling(prepared_sampling, model.resources_);
   const auto &sampler = prepared_sampling.configuration;
   if (!max_prefill_rows || (model.cache_plan.draft_cache && max_prefill_rows != SIZE_MAX))
     throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
-  if (max_prefill_rows != SIZE_MAX && !request.ledger)
-    throw std::runtime_error("chunked prefill requires the original committed generation ledger");
   // Credit belongs to this episode, not the turn's immutable output quota.
   // Reject before prefix lookup, session creation or any other admission work.
   if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
@@ -5646,9 +5647,9 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   preflight_generation_sampling(model, request);
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
   if (request.progress.turn_done) throw std::runtime_error("MTP request has already completed");
-  if (request.ledger && request.round_emitted.size() < steps - 1)
+  if (request.round_emitted.size() < steps - 1)
     throw std::runtime_error("MTP observer slots must be reserved for every turn before execution");
-  if (request.ledger) request.ledger->bind_stop_policy(request.stop_policy, model.vocabulary);
+  request.ledger->bind_stop_policy(request.stop_policy, model.vocabulary);
   PreparedGenerationCall call; call.request = &request; call.steps = steps;
   call.generation = request.progress.prefilled;
   if (!call.generation) {
@@ -5665,7 +5666,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         throw std::runtime_error("token ID outside vocabulary");
       request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
     }
-    if (request.ledger) request.ledger->validate_sampling(prepared_sampling, model.resources_);
+    request.ledger->validate_sampling(prepared_sampling, model.resources_);
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_begin\n";
     if (!request.turn_input_consumed) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
         : std::exchange(request.admission_start, Clock::time_point{});
@@ -5679,10 +5680,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         const auto reused_tokens = hit.payload.snapshot->length;
         const bool full_hit = reused_tokens == request.prompt.size();
         auto history = cache::copy_history(hit.payload.replay, model.capacity);
-        if (request.ledger) {
-          preflight_generation_prompt_ledger(*request.ledger, hit.payload.replay);
-          request.progress.preflight_adopt_committed_history();
-        }
+        preflight_generation_prompt_ledger(*request.ledger, hit.payload.replay);
+        request.progress.preflight_adopt_committed_history();
         const auto suffix = request.prompt.size() - reused_tokens;
         const auto suffix_rows = (std::min)(suffix, max_prefill_rows);
         const auto suffix_completion = suffix > suffix_rows ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
@@ -5703,29 +5702,27 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         if (!suffix) history->chunks.back().next_id = adopted->head->next_id;
         // Only original reserved metadata remains. Preconditions are unchanged
         // since preflight; no allocation or native work follows this commit.
-        if (request.ledger) {
-          import_generation_prompt_ledger(*request.ledger, hit.payload.replay, full_hit, model.cache_plan.draft_cache);
-          if (sampler.enabled || model.sampling_configuration_count() > 1) {
-            for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
-              auto &record = request.ledger->records[i];
-              record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
-              record.after.sampling = record.before.sampling;
-              record.emitted_count = 0; record.emitted = {-1, -1};
-            }
-            request.ledger->records[request.ledger->committed_count - 1].after.sampling = adopted->head->sampling;
+        import_generation_prompt_ledger(*request.ledger, hit.payload.replay, full_hit, model.cache_plan.draft_cache);
+        if (sampler.enabled || model.sampling_configuration_count() > 1) {
+          for (std::size_t i = 0; i < request.ledger->committed_count; ++i) {
+            auto &record = request.ledger->records[i];
+            record.before.sampling = sampler.enabled ? request.progress.initial_sampling : cache::SamplingCursor{};
+            record.after.sampling = record.before.sampling;
+            record.emitted_count = 0; record.emitted = {-1, -1};
           }
-          if (!suffix) {
-            auto &last = request.ledger->records[request.ledger->committed_count - 1];
-            last.after.sampling = adopted->head->sampling;
-            last.after.next_id = adopted->head->next_id;
-            last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
-            last.emitted_count = 1; last.stopped = !model.cache_plan.draft_cache
-                ? request.stop_policy.stopped(last.after.next_id, is_end_of_generation(last.after.next_id))
-                : is_end_of_generation(last.after.next_id);
-          }
-          request.ledger->bind_sampling(prepared_sampling, model.resources_);
-          request.progress.adopt_committed_history(request.ledger->committed_count);
+          request.ledger->records[request.ledger->committed_count - 1].after.sampling = adopted->head->sampling;
         }
+        if (!suffix) {
+          auto &last = request.ledger->records[request.ledger->committed_count - 1];
+          last.after.sampling = adopted->head->sampling;
+          last.after.next_id = adopted->head->next_id;
+          last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
+          last.emitted_count = 1; last.stopped = !model.cache_plan.draft_cache
+              ? request.stop_policy.stopped(last.after.next_id, is_end_of_generation(last.after.next_id))
+              : is_end_of_generation(last.after.next_id);
+        }
+        request.ledger->bind_sampling(prepared_sampling, model.resources_);
+        request.progress.adopt_committed_history(request.ledger->committed_count);
         request.history = std::move(history);
         request.session = std::move(adopted);
         request.reused_tokens = reused_tokens; request.prefix_hits = 1;
@@ -5753,7 +5750,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       make_generation_room(model, prefix, nullptr, requests);
       const std::array chunks{call.prompt.size()}; request.session = model.create_session(chunks, {}, call.role, request.progress.initial_sampling, false, call.completion, request.sampling_index);
     }
-    if (request.ledger && !request.ledger->sampling) request.ledger->bind_sampling(prepared_sampling, model.resources_);
+    if (!request.ledger->sampling) request.ledger->bind_sampling(prepared_sampling, model.resources_);
     if (!request.turn_observations.empty() &&
         call.input_begin == (request.progress.turn_index ? 0 : request.reused_tokens))
       request.turn_observations[request.progress.turn_index].context_before = request.session->length();
@@ -5770,7 +5767,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       throw std::runtime_error("generation pending differs from its last observed output");
     const auto remaining = model.capacity - request.session->length();
     if (!remaining) throw std::runtime_error("MTP has exhausted the configured context capacity");
-    if (request.ledger) request.ledger->bind_sampling(prepared_sampling, model.resources_);
+    request.ledger->bind_sampling(prepared_sampling, model.resources_);
     call.maximum = model.cache_plan.draft_cache
         ? (std::min)({model.max_drafts(), call.quota - 1, remaining - 1}) : 0;
     const bool one = call.maximum == 0;
@@ -5803,38 +5800,21 @@ bool make_generation_batch_room(Model &model, cache::PrefixCache *prefix,
   return true;
 }
 
-void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRoundResult *result) {
+void finish_generation_call(Model &model, PreparedGenerationCall &call) {
   auto &request = *call.request;
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   if (call.full_hit && request.progress.prefilled) return; // A committed cache hit is observed once.
-  const auto next_id = request.session->head->next_id;
-  const bool apply_output = call.full_hit || !request.ledger;
-  const auto emitted = !apply_output ? std::span<const std::int32_t>{}
-      : !call.generation ? std::span<const std::int32_t>(&next_id, 1)
-      : std::span<const std::int32_t>(result->emitted);
-  const bool stopped = call.role == GraphRole::kText
-      ? request.stop_policy.stopped(next_id, is_end_of_generation(next_id)) : is_end_of_generation(next_id);
-  if (apply_output) request.progress.preflight_outputs(emitted, true, !call.generation, stopped);
-  if (!request.ledger && call.generation && request.rounds.size() == request.rounds.capacity())
-    throw std::runtime_error("generation observer requires its original cold-reserved round storage");
   if (call.full_hit) {
+    const auto next_id = request.session->head->next_id;
+    const auto emitted = std::span<const std::int32_t>(&next_id, 1);
+    const bool stopped = call.role == GraphRole::kText
+        ? request.stop_policy.stopped(next_id, is_end_of_generation(next_id)) : is_end_of_generation(next_id);
+    request.progress.preflight_outputs(emitted, true, true, stopped);
+    // The imported request ledger already adopted source history. The new
+    // frontier output is observed directly, without inventing a model ordinal.
     request.progress.apply_outputs(emitted, true, true, stopped);
     request.prefill_endpoint = Clock::now(); request.endpoint = request.prefill_endpoint;
-    std::cerr << "prefix_hit name=prefill reused_tokens=" << request.reused_tokens
-              << " prompt_graph_calls=0 frontier_sampling_graph_calls=" << request.prefix_sampling_calls
-              << " visible=" << request.session->length() << '\n';
-  } else if (request.ledger) observe_generation_commits(request);
-  else if (!call.generation) {
-    request.prefill_step_seconds += call.step_seconds;
-    ++request.prefill_graph_calls; request.prefill_graph_tokens += call.ids().size();
-    if (model.cache_plan.draft_cache) request.prefill_draft_rows += cache::add(call.ids().size(), draft_lag(call.role));
-  } else {
-    request.decode_step_sum_seconds += call.step_seconds;
-    request.verified_rows += result->verified_rows; request.draft_rows += result->processed_draft;
-    request.draft_rounds += call.maximum ? 1 : 0; request.agreements += result->agreed ? 1 : 0;
-    request.accepts += result->consumed_drafts;
-    request.auxiliary_graph_calls += result->auxiliary_graph_calls;
-    request.rounds.push_back(std::move(*result));
-  }
+  } else observe_generation_commits(request);
   if (!call.generation && call.prefill_complete) {
     request.endpoint = request.prefill_endpoint;
   }
@@ -5846,12 +5826,13 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
     auto &turn = request.turn_observations[request.progress.turn_index];
     if (!call.generation && call.prefill_complete) { turn.start = request.prefill_start; turn.prefill_endpoint = request.prefill_endpoint; }
     turn.endpoint = request.endpoint;
-    turn.output_end = request.progress.generated.size() + (apply_output && !call.full_hit ? emitted.size() : 0);
+    turn.output_end = request.progress.generated.size();
     turn.context_after = request.visible_tokens;
   }
-  // Full hits and legacy callers without a ledger use the same output rules,
-  // without manufacturing a model commit ordinal for the cache hit.
-  if (apply_output && !call.full_hit) request.progress.apply_outputs(emitted, true, !call.generation, stopped);
+  if (call.full_hit)
+    std::cerr << "prefix_hit name=prefill reused_tokens=" << request.reused_tokens
+              << " prompt_graph_calls=0 frontier_sampling_graph_calls=" << request.prefix_sampling_calls
+              << " visible=" << request.session->length() << '\n';
   if (!call.generation && call.prefill_complete)
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_end\n"
               << "memory_phase=" << request.memory_name << "_decode_begin\n";
@@ -5872,7 +5853,37 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call, MtpRound
 void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> calls, bool trace_states,
     cache::PrefixCache *prefix = nullptr, std::span<const GenerationRequest> requests = {}) {
   if (calls.empty()) return;
-  if (calls.size() == 1 && calls[0].full_hit) { finish_generation_call(model, calls[0], nullptr); return; }
+  // Validate every request's cold metadata before prefix eviction, proposal
+  // work or preparing even the first uncommitted ledger slot.
+  for (const auto &call : calls) {
+    if (!call.request || !call.request->ledger)
+      throw std::runtime_error("generation request requires its cold-prepared commit ledger");
+    const auto &request = *call.request;
+    if (!request.session || !request.session->head || request.session->stopping ||
+        request.session->failed || request.session->pending)
+      throw std::runtime_error("generation batch requires live idle Session heads");
+    const auto &sampling = model.sampling_configuration(request.sampling_index);
+    if (&request.session->sampling_configuration() != &sampling)
+      throw std::runtime_error("request sampling cannot change after Session admission");
+    request.ledger->validate_sampling(sampling, model.resources_);
+    if (request.ledger->stop_policy() != request.stop_policy)
+      throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
+    if ((call.full_hit && calls.size() != 1) ||
+        call.request->sampling_index != calls[0].request->sampling_index || call.role != calls[0].role ||
+        call.completion != calls[0].completion || call.generation != calls[0].generation ||
+        (call.role != GraphRole::kVerify && call.ids().size() != calls[0].ids().size()))
+      throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
+    if (!call.full_hit) {
+      if (call.completion == TextCompletion::kStateOnly &&
+          (call.role != GraphRole::kText || call.generation || call.prefill_complete))
+        throw std::runtime_error("state-only ledger entry requires an incomplete ordinary prefill");
+      if (call.ids().empty() || (call.role == GraphRole::kVerify && !call.generation))
+        throw std::runtime_error("generation call requires its actual prepared input");
+      (void)request.ledger->next();
+      if (!call.generation) (void)request.warm_inputs.at(request.progress.turn_index);
+    }
+  }
+  if (calls.size() == 1 && calls[0].full_hit) { finish_generation_call(model, calls[0]); return; }
   if (!make_generation_batch_room(model, prefix, calls, requests)) throw std::runtime_error("MTP batch exceeds committed head budget");
   const std::array<std::int32_t, 2> eos{248044, 248046};
   if (calls[0].role == GraphRole::kVerify) {
@@ -5901,25 +5912,23 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     }
   }
   const auto role = calls[0].role; const auto generation = calls[0].generation;
-  const bool needs_results = generation && (role != GraphRole::kText ||
-      std::ranges::any_of(calls, [](const auto &call) { return !call.request->ledger; }));
   hyle::container::SmallVector<EvaluationRequest, 2> inputs;
   hyle::container::SmallVector<EvaluationOutput, 2> outputs;
   hyle::container::SmallVector<MtpGenerationSelection, 2> selections;
   hyle::container::SmallVector<MtpRoundResult, 2> results;
   hyle::container::SmallVector<std::int32_t, 2> next;
   if (!inputs.try_reserve(calls.size()) || !outputs.try_reserve(calls.size()) ||
-      !selections.try_reserve(calls.size()) || !results.try_resize(needs_results ? calls.size() : 0) || !next.try_resize(calls.size()))
+      !selections.try_reserve(calls.size()) || !results.try_resize(generation && role != GraphRole::kText ? calls.size() : 0) || !next.try_resize(calls.size()))
     throw std::bad_alloc{};
   for (auto &call : calls) {
     auto &request = *call.request;
-    if (call.full_hit || call.request->sampling_index != calls[0].request->sampling_index || call.role != role || call.completion != calls[0].completion || call.generation != generation || call.ids().size() != calls[0].ids().size())
+    // Recursive proposals may have shortened since the initial metadata pass.
+    if (role == GraphRole::kVerify && call.ids().size() != calls[0].ids().size())
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
-    if (request.ledger) prepare_generation_record(*request.ledger, *request.session, role,
+    prepare_generation_record(*request.ledger, *request.session, role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
         call.quota, request.progress.turn_index, generation ? std::shared_ptr<const void>{} : std::shared_ptr<const void>(request.warm_inputs.at(request.progress.turn_index)), call.maximum, call.completion, call.input_begin, call.prefill_complete);
-    inputs.push_back({request.session, call.ids(), request.ledger
-        ? &request.ledger->stop_policy() : &request.stop_policy});
+    inputs.push_back({request.session, call.ids(), &request.ledger->stop_policy()});
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
         nullptr, nullptr, request.ledger.get()));
@@ -5937,20 +5946,12 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
     else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
     for (std::size_t j = 0; j < calls.size(); ++j) {
-      // Ledger-backed requests observe the committed record below. Only the
-      // legacy no-ledger caller consumes this separate ordinary result.
-      if (generation && role == GraphRole::kText && !calls[j].request->ledger) {
-        auto &result = results[j];
-        result.pending = calls[j].pending; result.target_first = next[j]; result.next_id = next[j];
-        result.processed_target = 1; result.verified_rows = 1;
-        result.emitted = {next[j]}; result.stopped = calls[j].request->stop_policy.stopped(next[j], is_end_of_generation(next[j]));
-      }
       calls[j].step_seconds += calls[j].proposal_seconds;
-      if (calls[j].request->ledger && calls[j].proposal_seconds) {
+      if (calls[j].proposal_seconds) {
         auto &ledger = *calls[j].request->ledger;
         ledger.records[ledger.committed_count - 1].step_seconds += calls[j].proposal_seconds;
       }
-      finish_generation_call(model, calls[j], needs_results ? &results[j] : nullptr);
+      finish_generation_call(model, calls[j]);
     }
   } catch (...) {
     for (auto &call : calls) observe_generation_commits(*call.request);
@@ -5961,19 +5962,16 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
   if (!call.initial_prefix || call.full_hit || !call.prefill_complete) return;
   auto &request = *call.request;
-  if (!request.ledger) request.history->append(request.input, request.reused_tokens,
-      call.ids().size(), request.session->head->next_id);
-  else {
-    for (const auto &record : std::span(request.ledger->records).first(request.ledger->committed_count)) {
-      if (record.imported || record.generation || record.turn != 0) continue;
-      if (record.input_begin != request.history->length)
-        throw std::runtime_error("complete prompt is missing its actual committed prefill chunk");
-      request.history->append(request.input, record.input_begin, record.accepted, record.after.next_id,
-          record.completion == TextCompletion::kStateOnly);
-    }
-    if (request.history->length != request.prompt.size())
-      throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
+  for (const auto &record : std::span(request.ledger->records).first(request.ledger->committed_count)) {
+    if (record.imported || record.generation || record.turn != 0) continue;
+    if (record.input_begin != request.history->length)
+      throw std::runtime_error("complete prompt is missing its actual committed prefill chunk");
+    request.history->append(request.input, record.input_begin, record.accepted, record.after.next_id,
+        record.completion == TextCompletion::kStateOnly);
   }
+  if (request.history->length != request.prompt.size())
+    throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
   if (request.session->head->draft && request.session->head->draft->lag)
     throw std::runtime_error("only a complete lag0 MTP prompt may enter the directory");
   prefix->publish(request.input, request.session->head, {request.history, request.history->chunks.size(), request.prompt.size()});
@@ -5981,7 +5979,8 @@ void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache
 }
 
 void publish_generation_completed(Model &model, GenerationRequest &request, cache::PrefixCache *prefix) {
-  if (!prefix || !request.progress.turn_done || !request.ledger || !request.session || !request.session->head)
+  if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
+  if (!prefix || !request.progress.turn_done || !request.session || !request.session->head)
     return;
   std::vector<cache::ConsumedChunk> chunks;
   chunks.reserve(request.ledger->committed_count);

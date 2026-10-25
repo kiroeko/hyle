@@ -96,7 +96,7 @@ inline int run(const std::filesystem::path &input){try{
       "A teardown invalidated B original carrier/head/ledger/RNG/endpoint");
   std::cerr<<"dual_model_stage=finish_B_submitted_before_A_destruction\n";
   (void)q::finish_evaluation(*model_b,*b.session,"Bdecode1",{},false,&b_call.step_seconds,&b.endpoint,nullptr,nullptr,{},b.ledger.get());
-  q::finish_generation_call(*model_b,b_call,nullptr);
+  q::finish_generation_call(*model_b,b_call);
   require(b.ledger->committed_count==2&&b.progress.observed_commits()==2&&b.progress.generated.size()==2&&b.session->head->sampling.draw==2&&
       b.ledger->records[1].pending_input==b_boundary.next_id&&b.session->length()==16,"B original submitted episode failed after A destruction");
   const auto pending=b.session->head->next_id;std::cerr<<"dual_model_stage=B_new_submission_after_A_destruction\n";execute(*model_b,b);

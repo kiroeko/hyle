@@ -1,0 +1,135 @@
+{
+  "status": "FINITE_REQUEST_LEDGER_UNIFICATION_CPU_PASS",
+  "date": "2026-10-25",
+  "base_commit": "2af3380c8ca0d10f7ab713300a8b5a666ea727f8",
+  "source_pins": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 495140,
+      "sha256": "b081c749f980f46c13dd614bff5f83486cfee73779c9eaec91564d438314a474"
+    },
+    {
+      "path": "tests/tools/qwen_request_stop_case.h",
+      "bytes": 12322,
+      "sha256": "f05e5eac9e407e72b7b36a7c7e415d92a805355afb880c1a903c5453bbdc6b76"
+    },
+    {
+      "path": "tests/tools/qwen_dual_model_case.h",
+      "bytes": 10447,
+      "sha256": "1cf190f687dd4c05bbb85468450706733f77af9549baefc4a9252c065064771a"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 20598,
+      "sha256": "53cbbc7feea5ff627d57b0dc1c4f26d81f6325f0dab8fe75bd011a5e0ef1514e"
+    },
+    {
+      "path": "tests/tools/qwen_request_ledger_case.h",
+      "bytes": 9039,
+      "sha256": "3bd62ef68ec8ffdd588337dd7740620e5ec865666b38d9170b6d9ce3f7558006"
+    }
+  ],
+  "contract": [
+    "GenerationRequest requires its cold-prepared original commit ledger; missing-ledger rejection precedes turn/session/prefix work. Existing raw Model/Session optional-ledger APIs remain unchanged.",
+    "All execute members are checked before prefix eviction, proposals or writing any reserved record. No secondary observer, cursor, history or executor is added.",
+    "Remove request no-ledger result/history branches and obsolete finish result argument. Observe committed records on success or late entry IO failure, including fresh_next_id.",
+    "Full hits apply their new output once after adopting actual imported history; no fabricated model commit ordinal. Host facts precede diagnostic output."
+  ],
+  "execution": {
+    "compile": {
+      "exit": 0,
+      "seconds": 30.70299999997951,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.2189999999827705,
+      "timeout": false
+    },
+    "run": {
+      "exit": 0,
+      "seconds": 0.28099999998812564,
+      "timeout": false
+    },
+    "first_failure": null,
+    "skipped": 0,
+    "actual_processes": 1,
+    "actual_app_TUs": 1,
+    "finite_cases": 2,
+    "common_inputs": 129,
+    "total_link_inputs": 130,
+    "SDK_TUs": 0,
+    "core_TUs": 0,
+    "provider_TUs": 0,
+    "GPU": false,
+    "HTTP": 0
+  },
+  "result": {
+    "status": "PASS",
+    "finite_cases": [
+      {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": true,
+        "missing_prepare_atomic": true,
+        "missing_later_execute_member_atomic": true,
+        "real_R2_late_trace_error": true,
+        "both_ledgers_observed": true,
+        "duplicate_observation_noop": true,
+        "both_pending_continuations": true,
+        "raw_Session_without_request_ledger": true,
+        "A_ids": [
+          2,
+          8
+        ],
+        "B_ids": [
+          2,
+          8
+        ],
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      },
+      {
+        "status": "PASS",
+        "backend": "cpu",
+        "same_model_R2_distinct_stops": true,
+        "new_policy_full_hit": true,
+        "ledger_full_hit_new_stop_policy": true,
+        "pause_rebuild_preserved_policy": true,
+        "unbound_direct_ledger_refused_before_publish": true,
+        "same_session_cold_bind_retry": true,
+        "invalid_stop_ID_preflight": true,
+        "B_ids": [
+          2,
+          10,
+          47
+        ],
+        "B_draw": 3,
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": 0
+      }
+    ]
+  },
+  "actual_dependencies": {
+    "path": ".scratch/inference-request-ledger-20261025/app1/compile/repository-inputs.json",
+    "bytes": 31140,
+    "sha256": "9894f33d6eb88d8ae85ea3867a57cba1bf321e208f2822389fdc0cf340480fcd"
+  },
+  "limits": [
+    "One retained untrained A/H64/FFN128/V64 CPU fixture, two finite ordinary model journeys in one process",
+    "Real Graph R2 publication then expected filesystem_error at original regular weights.tsv; no synthetic native failure",
+    "Original stop helper now has fourth ledger-backed fullhit; its raw Model no-cold-bind negative remains valid and passed",
+    "No MTP test matrix, native backend fault injection, pretrained model/GPU or throughput claim",
+    "Lifecycle --request-ledger dispatch and dual finish signature source migrated only; full heavy lifecycle exe/CTest not built here",
+    "New CPU-guarded CTest registration is source-only in this batch; CMake/CTest and heavy lifecycle/dual consumer were not rebuilt."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-request-ledger-2026-10-25.zip",
+    "bytes": 65017,
+    "sha256": "4ae7e5680aa18e69b7b152615f67abca097d47b675b571f9eaa85e1265a1ee12",
+    "members": 31,
+    "contents": "Exact patch and source pins, finite consumer and runner, canonical caller scans, actual dependencies/link identities and raw compile/link/two-case CPU pass. No model payload, binary or SDK."
+  }
+}

@@ -218,6 +218,8 @@ K512发布源码还确认另一条BF16 W4A8数学，已补四后端，见下表�
 [固定部署reader](../evidence/research/inferact-micro32-contract-2026-10-21.json)确认F32 SF先数值转E8M0、低偶高奇码序与gate/up连续二半，
 并支持BF16 A不QDQ的W4A16。Hyle已补该有限域参考；原exporter／OAS生成规则仍未取得，不能按名称套Quark W4A4。
 CT BF16 block128普通图、grouped power2 A规则、普通分页E4 KV及E8M0 macroblock128冷导入已四端闭环，见下表；uniform compact MLA E4也已四端接通；具体制品的精确producer／scalar绑定仍分开记录。
+Qwen 消费者目前只接受显式 BF16 KV 校准省略；原 K/V scale 尚未绑定到逐层缓存解释，
+其 Graph 分页 append 也仍限 F16／BF16。下表 E4 编码／读取通过不代表该普通会话路径已接通。
 
 [compact MLA来源复核](../evidence/research/compact-mla-e4-contract-2026-10-21.json)分开记录producer QDQ与运行时缓存：
 固定ModelOpt recipe只量化展开后的K/V，不能推出CKV/KPE物理格式。独立runtime源码及GLM Flash发布卡的TRTLLM选项
