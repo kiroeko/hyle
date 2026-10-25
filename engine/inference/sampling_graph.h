@@ -79,16 +79,28 @@ DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
     const auto nonfinite = r.cast(r.binary(c::BinaryKind::kSubtract, mass, mass), Type::kBool);
     return select(r.cast(mass, Type::kBool), select(nonfinite, no, yes), no);
   };
-  // Shift before temperature to avoid overflowing large, finite positive
-  // logits. The original full row is checked before any TopK/Select masks it.
-  const auto centered = r.binary(c::BinaryKind::kSubtract, logits, reduce(c::ReductionKind::kMaximum, logits));
+  // Center first for small temperatures. For larger temperatures, halve
+  // both logits and temperature before centering: opposite finite F32 ends
+  // then have a representable difference. Unlike dividing by temperature
+  // first, exact binary scaling also preserves nearby logits with a large
+  // common offset. The default temperature keeps its original graph.
+  const bool halve = policy.temperature > 1.F;
+  const auto bounded = halve ? r.binary(c::BinaryKind::kMultiply, logits, r.scalar(.5F)) : logits;
+  const auto centered = r.binary(c::BinaryKind::kSubtract, bounded, reduce(c::ReductionKind::kMaximum, bounded));
+  // Check the full row before TopK/Select can mask any nonfinite input.
   const auto input_valid = valid_mass(centered);
-  auto selected = r.binary(c::BinaryKind::kDivide, select(input_valid, centered, zero), r.scalar(policy.temperature));
+  auto selected = r.binary(c::BinaryKind::kDivide, select(input_valid, centered, zero),
+      r.scalar(halve ? policy.temperature * .5F : policy.temperature));
   if ((policy.top_k && policy.top_k < vocabulary_size) || policy.top_p < 1) {
     const auto count = policy.top_k ? policy.top_k : vocabulary_size;
-    const auto ranked = r.op(c::Operation(c::TopK{.count = count}), {selected});
+    // Positive temperature preserves the original order. Half scaling can
+    // round tiny distinct logits to a tie, so retain raw ranking and gather
+    // its scaled weights only on this cold-selected wider-range path.
+    const auto ranked = r.op(c::Operation(c::TopK{.count = count}),
+        {halve ? select(input_valid, logits, zero) : selected});
     auto values = ranked.at(0);
     const auto indices = r.copy(r.reshape(ranked.at(1), {fixed(static_cast<std::int64_t>(count))}));
+    if (halve) values = r.one(c::Gather{.axis = 1}, {selected, indices});
     if (policy.top_p < 1) {
       const auto probabilities = r.one(c::Softmax{.axis = 1}, {values});
       const auto prior = r.one(c::Scan{.axis = 1, .exclusive = true}, {probabilities});

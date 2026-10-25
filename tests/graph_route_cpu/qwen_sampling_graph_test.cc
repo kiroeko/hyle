@@ -432,6 +432,35 @@ TEST(QwenSamplingGraph, PolicyCannotHideBadUnselectedColumnsAndCentersLargeLogit
   expect_probabilities(large.log_probabilities(), std::array{.5, .5, 0.});
 }
 
+TEST(QwenSamplingGraph, PolicyPreservesWideFiniteRangeAndNearbyLargeLogits) {
+  Session wide(2, s::Policy{.temperature = 3e38F});
+  const std::array opposite{-3e38F, 3e38F};
+  const auto actual = wide.run(opposite, opposite, opposite, 1, key(0), key(0, true));
+  ASSERT_TRUE(actual.valid);
+  EXPECT_TRUE(actual.accepted);
+  const double small = 1. / (1. + std::exp(2.));
+  expect_probabilities(wide.log_probabilities(), std::array{small, 1. - small});
+
+  // Dividing the large common offset by T before subtracting can erase the
+  // original adjacent-F32 gap. Form the independent reference in F64.
+  const float high = 3e38F, low = std::nextafter(high, 0.F), temperature = 1e32F;
+  Session nearby(2, s::Policy{.temperature = temperature});
+  const std::array neighbours{low, high};
+  ASSERT_TRUE(nearby.run(neighbours, neighbours, neighbours, 1, key(0), key(0, true)).valid);
+  const double gap = (double(high) - double(low)) / double(temperature);
+  const double nearby_small = 1. / (1. + std::exp(gap));
+  expect_probabilities(nearby.log_probabilities(), std::array{nearby_small, 1. - nearby_small});
+}
+
+TEST(QwenSamplingGraph, PolicyTemperaturePreservesTinyLogitRanking) {
+  Session session(2, s::Policy{.temperature = std::nextafter(1.F, 2.F), .top_k = 1});
+  const std::array logits{0.F, (std::numeric_limits<float>::denorm_min)()};
+  const auto actual = session.run(logits, logits, logits, 1, key(0), key(0, true));
+  ASSERT_TRUE(actual.valid);
+  EXPECT_TRUE(actual.accepted);
+  expect_probabilities(session.log_probabilities(), std::array{0., 1.});
+}
+
 TEST(QwenSamplingGraph, PolicyParametersFailClearlyAtColdConstruction) {
   Recipe r;
   const auto p = r.input(dense(Type::kFloat32, {1, 3}));

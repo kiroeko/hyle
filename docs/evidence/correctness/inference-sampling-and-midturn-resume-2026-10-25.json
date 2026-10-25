@@ -1,0 +1,124 @@
+{
+  "status": "FINITE_WINDOWS_CPU_PASS",
+  "date": "2026-10-25",
+  "baseline_commit": "7d2628628ea6b18876cffb0a8ad571d1da91914e",
+  "changes": [
+    "Finite F32 logits with T>1 are half-scaled before centering; raw TopK ranking preserves tiny distinctions. T<=1 retains its original graph.",
+    "The original Session can be restored during an already-started turn without resetting request key, input offset, RNG, observation or output delivery.",
+    "A complete-turn checkpoint is a recovery shortcut only when it covers the current committed ledger; stale or state-only boundaries rebuild through the original model."
+  ],
+  "source_pins": [
+    {
+      "path": "engine/inference/sampling_graph.h",
+      "bytes": 18479,
+      "sha256": "ac43b9cb30ca502a0a614eb3d0869386333f19a54cdc264f1e9b70f2cebbb9ce"
+    },
+    {
+      "path": "tests/graph_route_cpu/qwen_sampling_graph_test.cc",
+      "bytes": 32987,
+      "sha256": "05c098303b75bb93bd8964a3736bc39172833c9bdde429efec1ad672c09d07aa"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 483972,
+      "sha256": "a59100a79778cc0d59cb9cc0fc51962fcc9e8e760f615e6b62edd017460b3c39"
+    },
+    {
+      "path": "tests/tools/qwen_chunked_prefill_case.h",
+      "bytes": 11030,
+      "sha256": "fdd8bba370a46e9c3c64f600a6ed2fbe64edb68b2c866a9d1d79d537747a6929"
+    },
+    {
+      "path": "tests/tools/qwen_midturn_resume_case.h",
+      "bytes": 10852,
+      "sha256": "92d21d5b7a793eae7dfc65d8183f620855685e93d0041bed27df2ab8608c7177"
+    },
+    {
+      "path": "tests/tools/qwen_request_lifecycle_test.cc",
+      "bytes": 19687,
+      "sha256": "57885aef5eb391ee37cd96a09b8c0d9f64e365001cbef75f01878a89359d390d"
+    }
+  ],
+  "sampling": {
+    "old_result": {
+      "logits": [
+        -3e+38,
+        3e+38
+      ],
+      "temperature": 3e+38,
+      "probabilities": [
+        0,
+        1
+      ],
+      "expected": [
+        0.11920292202211755,
+        0.8807970779778824
+      ],
+      "process_exit": 1
+    },
+    "final_tests": 6,
+    "final_failures": 0,
+    "process_exit": 0,
+    "reference": "F64 logistic oracle, probability absolute tolerance 3e-6; raw subnormal TopK winner separately checked.",
+    "process_history": "Two initial DLL-discovery failures are retained as environment failures, not numerical evidence. Baseline wide case failed after DLL discovery was corrected; old candidate passed 5 tests; final candidate passed all 6.",
+    "limitation": "The baseline test TU predates the final tiny-ranking case. Its wide-range test body is unchanged; final source and baseline source are both archived."
+  },
+  "midturn_resume": {
+    "result": {
+      "status": "PASS",
+      "backend": "cpu",
+      "fixture": "cached_untrained_A_H64_FFN128_V64",
+      "same_key": true,
+      "checkpoint_hits": 1,
+      "obsolete_checkpoint_misses": 2,
+      "actual_evictions": 2,
+      "ledger_rebuilds": 2,
+      "final_sampling_draw": 3,
+      "final_versions": 0,
+      "ids": [
+        2,
+        10,
+        47
+      ],
+      "GPU": false,
+      "HTTP": false
+    },
+    "EOF_observed": {
+      "snapshot_versions_live": 0,
+      "active_step_present": false,
+      "carrier_borrowed": false,
+      "original_A_key_matches": false,
+      "basis": "All four facts are asserted before the PASS line; window state beyond the asserted original key is not separately serialized."
+    },
+    "checked": [
+      "exact complete checkpoint adopts original scalar cursor despite peer RNG wrapper",
+      "mid-state-only pause, actual Session retirement, idle victim A, C work, same-key wake and immutable-ledger reconstruction",
+      "second pause with pending delivery, actual A eviction, D work, ACK and same-key reconstruction",
+      "original started turn buffer/offset/output base and contiguous observation preserved",
+      "historical pending consumed once, final draw3, final output drained before key release"
+    ],
+    "fixture": "Cached untrained A/H64/FFN128/V64; context16, N2/R1.",
+    "limitation": "The thin CPU consumer executes the formal helper. The complete dispatcher TU, other state families, CUDA chunked caller and native fault paths were not run."
+  },
+  "build_scope": {
+    "new_application_TUs": 4,
+    "new_core_provider_SDK_TUs": 0,
+    "CPU_processes": 6,
+    "GPU_processes": 0,
+    "HTTP_bytes": 0,
+    "note": "Sampling: baseline, initial candidate, final candidate; resume: one app. Six CPU processes include two initial DLL failures."
+  },
+  "not_claimed": [
+    "Whole-model quality",
+    "Other platforms or GPU correctness",
+    "New throughput or memory comparison",
+    "Exhaustion of all inference functions"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.zip",
+    "bytes": 143010,
+    "sha256": "ed4ec9323e9dfa3780cf9b88487798c2a670ee0f18995f1e6c96d19a0a5cf7ce",
+    "members": 82,
+    "contents": "Source patches/pins, exact baseline/final source, commands, raw logs, dependency identities and thin resume consumer; no binaries, SDK or weights."
+  }
+}

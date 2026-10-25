@@ -67,7 +67,7 @@ inline int run(const std::filesystem::path &input){try{
   const auto first_boundary=q::generation_boundary(*a.session->head);const auto digest=gdn_digest(model,*a.session->head);window.requeue(key_a);
   require(window.waiting_front()==key_b,"ready decode did not precede prefill survivor");window.admitted(key_b);execute(1);require(b.progress.generated.size()==2,"ready short decode was starved");window.requeue(key_b);
   require(window.waiting_front()==key_a,"chunk continuation lost FIFO");window.admitted(key_a);
-  retire(a);q::GenerationRestoreStats restored;a.session=q::rebuild_generation_session(model,*a.ledger,{},false,&restored,nullptr,requests);
+  retire(a);q::restore_generation_session(model,a,nullptr,false,requests);const auto &restored=a.restored;
   require(q::generation_boundary(*a.session->head)==first_boundary&&gdn_digest(model,*a.session->head)==digest&&restored.target_rows==64&&a.turn_input_consumed==64&&a.progress.generated.empty(),"partial state-only rebuild changed state/cursor/offset");
   const auto *cancel_base=a.session->head.get();const auto before_b=q::generation_boundary(*b.session->head);auto cancelled=prepare(0);
   q::prepare_generation_record(*a.ledger,*a.session,cancelled.role,cancelled.ids(),false,0,0,a.warm_inputs[0],0,cancelled.completion,cancelled.input_begin,cancelled.prefill_complete);

@@ -110,6 +110,11 @@ Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生�
 中间块提交完整状态，pending 为 -1，不构造词表投影、采样或主机 token 读回；最后一块才生成下一 token。
 输入偏移只在真实 ledger 提交被观察后推进。同一请求通过原窗口重新排到队尾，让就绪 decode 有机会执行。
 历史记录保留每块的输出模式，恢复时按原分段重放；只有具有有效 pending 的完整前缀可以发布到缓存目录。
+中途因调度量或输出背压暂停的请求可以淘汰 Session，再用原 key 唤醒；恢复只重建模型状态，
+不重新开始 turn、消费输入、观察输出或重置交付游标。完整 turn 的旧检查点必须覆盖当前已提交 ledger，
+否则沿原重建路径恢复；同 key 的目录命中也须恢复该请求自己的 pending／RNG，并核对完整物理边界。
+[有限 CPU 旅程](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)
+覆盖真实淘汰、其它请求推进、状态块及未 ACK 输出后的恢复；其它状态家族与 CUDA 调用未在本批重跑。
 [原 BF16 P154／Q64 检查](../evidence/correctness/qwen-ordinary-chunked-prefill-2026-10-25.json)
 覆盖状态恢复、取消后重试和 pending-only 续轮；目前是有限底层消费者，不宣称 CLI 已提供调度量选项或性能收益。
 
@@ -216,6 +221,11 @@ Session 借用一个稳定配置，Family／Phase 的身份包含该选择，兼
 同请求恢复按 ledger 的历史 pending／RNG 续算。Ledger 用原资源 owner 的弱身份拒绝跨 Model、
 过期或地址复用，不为一份历史记录保活整份权重。
 纯 greedy 单配置保留原来不保存 hidden、不另执行前沿 head 的快路；本轮多策略仅适用于普通 Text，MTP 沿原默认策略。
+
+采样政策在冷期决定数值路径。T>1 时，合法 F32 两端先按二进制缩放再居中，避免差值溢出；
+TopK 仍按原 logits 排序，避免缩放使极小不同值变成并列。T≤1 保留原图。
+[六项 CPU 检查](../evidence/correctness/inference-sampling-and-midturn-resume-2026-10-25.json)
+覆盖宽有限范围、巨大共同偏移、极小值排序及原无效输入政策，不代签 GPU 或完整生成质量。
 
 完整命中可跳过模型前缀计算；部分命中只执行真实后缀。未命中恢复使用已消费输入重建，
 不重新向用户返回历史输出，也不冒称跨批宽逐位重放。

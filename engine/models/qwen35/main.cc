@@ -5363,6 +5363,87 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
   return session;
 }
 
+// A completed checkpoint is only a possible recovery shortcut. A newer
+// mid-turn commit leaves that old complete key behind; compare it with the
+// actual immutable ledger at this cold recovery boundary, without a new key.
+bool checkpoint_covers_generation_ledger(const cache::Checkpoint &checkpoint,
+                                         const GenerationLedger &ledger) noexcept {
+  if (!checkpoint.input || !checkpoint.replay.history || !ledger.committed_count ||
+      ledger.committed_count > ledger.records.size()) return false;
+  const auto &last = ledger.records[ledger.committed_count - 1];
+  if (last.after.next_id < 0 || checkpoint.input->ids.size() != last.after.length ||
+      checkpoint.replay.length != last.after.length || checkpoint.replay.chunks != ledger.committed_count ||
+      checkpoint.replay.chunks > checkpoint.replay.history->chunks.size() ||
+      checkpoint.replay.history->chunks[checkpoint.replay.chunks - 1].next_id != last.after.next_id)
+    return false;
+  std::size_t offset = 0;
+  for (std::size_t i = 0; i < ledger.committed_count; ++i) {
+    const auto &record = ledger.records[i]; const auto ids = record.committed_ids();
+    if (!record.committed || ids.empty() || ids.size() != record.accepted || record.before.length != offset ||
+        offset > checkpoint.input->ids.size() || ids.size() > checkpoint.input->ids.size() - offset ||
+        !std::equal(ids.begin(), ids.end(), checkpoint.input->ids.begin() + static_cast<std::ptrdiff_t>(offset)))
+      return false;
+    offset += ids.size();
+    if (record.after.length != offset) return false;
+  }
+  return offset == last.after.length;
+}
+
+// Only restore the original Session. Request progress, turn input/offset,
+// output delivery and its key remain with the serialized owner. In particular,
+// this function never begins a turn or observes/emits historical output again.
+void restore_generation_session(Model &model, GenerationRequest &request,
+    cache::PrefixCache *prefix = nullptr, bool trace_states = true,
+    std::span<const GenerationRequest> requests = {}) {
+  const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
+  if (request.session) {
+    if (&request.session->sampling_configuration() != &prepared_sampling)
+      throw std::runtime_error("request sampling cannot change after Session admission");
+    return;
+  }
+  if (!request.ledger || !request.ledger->committed_count) return;
+  request.ledger->validate_sampling(prepared_sampling, model.resources_);
+  if (model.sampling_index(*request.ledger) != request.sampling_index)
+    throw std::runtime_error("request recovery sampling differs from its committed ledger");
+  if (model.active_step || model.carrier_borrowed)
+    throw std::runtime_error("request recovery requires the original idle execution carrier");
+  const auto &ledger = *request.ledger;
+  if (ledger.committed_count > ledger.records.size())
+    throw std::runtime_error("request recovery exceeds its original committed ledger");
+  const auto &last = ledger.records[ledger.committed_count - 1];
+  std::shared_ptr<Session> restored;
+  if (prefix && request.completed_checkpoint.input) {
+    if (ledger.sampling == &prepared_sampling &&
+        checkpoint_covers_generation_ledger(request.completed_checkpoint, ledger)) {
+      const auto length = request.completed_checkpoint.input->ids.size();
+      auto hit = prefix->lookup(*request.completed_checkpoint.input, length, length, &model, model.math_identity());
+      if (hit) {
+        // A peer may have published the same consumed key with another pending
+        // or RNG cursor. Restore only those historical scalar facts; the fork
+        // cannot repair an old physical length/frontier/lag/catchup boundary.
+        auto head = model.sampling_fork(std::move(hit.payload.snapshot), last.after.sampling, last.after.next_id);
+        hit.reset();
+        if (generation_boundary(*head) == last.after &&
+            bool(head->draft) == model.cache_plan.draft_cache) {
+          restored = model.create_session({}, std::move(head),
+              model.cache_plan.draft_cache ? GraphRole::kMtpSingle : GraphRole::kText,
+              {}, false, TextCompletion::kEmitNext, request.sampling_index);
+          ++request.checkpoint_resume_hits;
+        }
+      }
+    }
+    if (!restored) ++request.checkpoint_resume_misses;
+  }
+  if (!restored) {
+    const auto trace = request.trace.empty() ? request.trace
+        : request.trace / "restores" / ("restore" + std::to_string(request.restore_count));
+    restored = rebuild_generation_session(model, ledger, trace, trace_states, &request.restored, prefix, requests);
+    ++request.restore_count;
+  }
+  // All fallible recovery precedes installing the new original Session owner.
+  request.session = std::move(restored);
+}
+
 struct PreparedGenerationCall final {
   GenerationRequest *request = nullptr;
   GraphRole role = GraphRole::kText;
@@ -6080,33 +6161,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           if (!retired.retired)
             throw std::runtime_error("idle generation request still retains an in-flight episode");
         }
-        if (request.ledger->committed_count) {
-          if (prefix && request.completed_checkpoint.input) {
-            const auto length = request.completed_checkpoint.input->ids.size();
-            auto hit = prefix->lookup(*request.completed_checkpoint.input, length, length, &model, model.math_identity());
-            if (hit) {
-              const auto &last = request.ledger->records[request.ledger->committed_count - 1];
-              // Exact state reuse is not another user sampling event. Preserve
-              // this request's cursor and pending even if an identical token
-              // key was most recently published by a different request.
-              auto restored = model.sampling_fork(std::move(hit.payload.snapshot), last.after.sampling, last.after.next_id);
-              hit.reset();
-              request.session = model.create_session({}, std::move(restored), prompt_role(1), {}, false, TextCompletion::kEmitNext, request.sampling_index);
-              ++request.checkpoint_resume_hits;
-            } else ++request.checkpoint_resume_misses;
-          }
-          if (!request.session) {
-            const auto restore_trace = request.trace.empty() ? request.trace : request.trace / "restores" / ("restore" + std::to_string(request.restore_count));
-            request.session = rebuild_generation_session(model, *request.ledger, restore_trace, trace_states, &request.restored, prefix.get(), requests);
-            ++request.restore_count;
-          }
-        }
+        restore_generation_session(model, request, prefix.get(), trace_states, requests);
       }
       if (request.progress.turn_index && !request.session)
         throw std::runtime_error("later generation turn requires its rebuilt complete head");
-      request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
-          request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
-      request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
+      if (!request.progress.turn_started()) {
+        request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
+            request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
+        request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
+      }
       window.admitted(*next); ++admitted;
     }
     const auto active = window.active();
