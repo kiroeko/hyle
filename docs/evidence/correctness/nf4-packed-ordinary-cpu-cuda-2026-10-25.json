@@ -524,5 +524,17 @@
     "CRC_verified": true,
     "payloads": 232,
     "path_mapping": ".scratch/nf4-packed-contraction-20261025/payload-manifest.json"
+  },
+  "cleanup_followup": {
+    "performed": true,
+    "files_removed": 20,
+    "logical_bytes_removed": 574008678,
+    "combined_cleanup_files": 25,
+    "combined_cleanup_logical_bytes": 730988042,
+    "physical_bytes_freed": null,
+    "method": "Exact recorded binary paths written to repository test.ps1, previewed and then removed using native PowerShell literal paths.",
+    "retained": "All source, commands, independent oracle, cached model ranges, process logs, public archives, original SDK/clean baseline and five reusable new low-level leaf objects remain.",
+    "archive_unchanged": true,
+    "scope": "Completed private consumer/component/regression binaries only. DLL entries include hardlinks; logical size is not measured physical free space."
   }
 }

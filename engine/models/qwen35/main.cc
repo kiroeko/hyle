@@ -5931,8 +5931,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;
       if (!bucket.try_reserve(selected.size())) throw std::bad_alloc{};
       for (auto j : selected) bucket.push_back(calls[j]);
-      while (!bucket[0].full_hit && !make_generation_batch_room(model, prefix.get(), std::span(bucket.data(), bucket.size()), requests)) {
-        if (bucket.size() == 1) throw std::runtime_error("MTP committed budget cannot advance its selected request");
+      while (bucket.size() > 1 && !bucket[0].full_hit && !make_generation_batch_room(model, prefix.get(), std::span(bucket.data(), bucket.size()), requests)) {
         bucket.pop_back();
       }
       std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()

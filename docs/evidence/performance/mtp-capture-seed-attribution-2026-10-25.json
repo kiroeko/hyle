@@ -1,0 +1,269 @@
+{
+  "status": "ONE_CORRECTED_DIAGNOSTIC_PASS_OFFLINE_CLASSIFIED",
+  "process": {
+    "exit": 0,
+    "seconds": 3.7809999999881256,
+    "timeout": false
+  },
+  "scope": "One Hyle original greedy K1 real-two-turn process. No Nsight, peer, TPS or numerical/quality claim. No product edits.",
+  "inputs_and_image": {
+    "path": ".scratch/mtp-capture-seed-20261025/ready4.json",
+    "bytes": 19263,
+    "sha256": "f48b8945191b517cd5857f0dd0394bb6f2c8c50b491c7d8eaac1af5c05e2c44c"
+  },
+  "event_header": {
+    "events": 627,
+    "capacity": 8192,
+    "overflow": 0,
+    "logical_sequence": 68
+  },
+  "event_kinds": {
+    "10": 122,
+    "12": 32,
+    "14": 32,
+    "30": 32,
+    "31": 32,
+    "2": 118,
+    "20": 112,
+    "11": 90,
+    "1": 57
+  },
+  "recording_calls": 32,
+  "actual_rebuild_seed": {
+    "0": 19,
+    "1": 13
+  },
+  "classification": {
+    "first_record_for_invocation_range": 4,
+    "unfilled_selected_variant_no_rebuild_seed": 9,
+    "retired_rebuild_seed_available": 13,
+    "previous_record_cleared_by_explicit_invalidation": 6
+  },
+  "no_seed_subclasses": {
+    "first_range_records": 4,
+    "second_variant_fill_before_any_explicit_loss": 4,
+    "first_record_after_explicit_loss": 6,
+    "second_variant_refill_after_explicit_loss": 5,
+    "calculation": "The 9 unfilled variants split 4 initial fills and 5 refills after a native invalidation. The current window therefore has 8 initial two-variant fills and 11 seedless records following explicit clears; this is not a recoverable-time estimate."
+  },
+  "selected_work": {
+    "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+    "text_tensors": 320,
+    "mtp_tensors": 15,
+    "original_device_weight_bytes": 3885311680,
+    "generated_tokens": 128,
+    "actual_graph_calls": 68,
+    "prefill_graph_calls": 2,
+    "decode_graph_calls": 66,
+    "prefill_target_rows": 309,
+    "verified_target_rows": 132,
+    "actual_target_rows": 441,
+    "committed_target_rows": 435,
+    "prefill_draft_rows": 310,
+    "actual_draft_rows": 434,
+    "draft_rounds": 66,
+    "consumed_drafts": 60
+  },
+  "non_time_work_comparison": {
+    "formal_clean_baseline": {
+      "path": {
+        "path": ".scratch/mtp-performance-convergence-20261025/baseline/two-turn-timing/02-hyle_mtp/stdout.log",
+        "bytes": 77468,
+        "sha256": "f8f37d984aada89589e0745af16ea9b797ec477ad7f59eb565484920ff538e39"
+      },
+      "non_time_differences": []
+    },
+    "previous_NVTX_Hyle_run": {
+      "path": {
+        "path": ".scratch/mtp-logical-call-trace-20261025/hyle/trace1/native-stdout.log",
+        "bytes": 77503,
+        "sha256": "ecdb6bacde0fe37c9f22258a61ce17553f92fb31591c6bfc4d168376a2399b5a"
+      },
+      "non_time_differences": []
+    }
+  },
+  "raw_report": {
+    "path": ".scratch/mtp-capture-seed-20261025/run2/stdout.log",
+    "bytes": 77501,
+    "sha256": "35905d754a9dbf175ee72811930a3476e6ea44951ba169ba0d0bd452c36e479d"
+  },
+  "raw_events": {
+    "path": ".scratch/mtp-capture-seed-20261025/run2/stderr.log",
+    "bytes": 138680,
+    "sha256": "3f0a894129f7f43af6f1ed881aad300340a47c68a695c193815c636695bc5c0b"
+  },
+  "classification_details": {
+    "path": ".scratch/mtp-capture-seed-20261025/records.json",
+    "bytes": 95815,
+    "sha256": "159614bb32b6cc9eb5e8e11422a4b86803f39664072a7c80b4dc6b145f4791fd"
+  },
+  "limitations": [
+    "No CUDA API result hook in this process. Prior separate NVTX run had 13 successful updates and 19 instantiate-without-update records; exact counts can agree but native object identity is not cross-run joined.",
+    "The events identify Graph invalidation/variant/rebuild-storage decisions, not which provider native plan field changed.",
+    "A missing seed after explicit invalidation is not proof that retaining it across provider mutable-resource release is safe.",
+    "Diagnostic process wall time is not a performance sample."
+  ],
+  "preserved_failures": [
+    {
+      "path": "compile",
+      "outcome": "Strict compile failed: private NVTX include leaked Windows interface macro; fixed with push/pop macro."
+    },
+    {
+      "path": "run1",
+      "outcome": "Actual model exit0 but inline Dumper emitted no events; instrument failure, not zero events."
+    },
+    {
+      "path": "compile3",
+      "outcome": "Strict C4335 warning from private helper CRCRLF encoding; fixed raw-byte newline normalization."
+    }
+  ],
+  "created_at": "2026-10-25T00:22:06.247748+00:00",
+  "throughput_evidence": false,
+  "quality_evidence": false,
+  "numerical_evidence": false,
+  "actual_model_processes": 2,
+  "corrected_diagnostic_processes": 1,
+  "GPU_released": true,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "product_edits": 0,
+  "canonical_Graph_unchanged": {
+    "path": "src/graph/executable.cc",
+    "bytes": 479069,
+    "sha256": "8652cbd963069623860074e3bf874bb8574a31e27b1f3f6a945f7b37484b95bc"
+  },
+  "private_Graph": {
+    "path": ".scratch/mtp-capture-seed-20261025/source/executable.cc",
+    "bytes": 481072,
+    "sha256": "ac163d2d0bd515036c8825ce4e9262aec17cf63d42b42e9ff1927ebf9aa78c96"
+  },
+  "dump_helper": {
+    "path": ".scratch/mtp-capture-seed-20261025/seed_probe.h",
+    "bytes": 1650,
+    "sha256": "645ab022e6c504225d08084e29c6b0849423ea477b2f1210becd965b1b08b02e"
+  },
+  "source_equivalence": {
+    "canonical_sha256": "8652cbd963069623860074e3bf874bb8574a31e27b1f3f6a945f7b37484b95bc",
+    "private_sha256": "ac163d2d0bd515036c8825ce4e9262aec17cf63d42b42e9ff1927ebf9aa78c96",
+    "insertion_only": true,
+    "stripped_full_source_equal": true,
+    "capacity": 8192,
+    "hot_allocation": false,
+    "no_refs_retained": true,
+    "no_device_or_math_change": true,
+    "events": {
+      "1": "explicitreset_before_clear",
+      "2": "active_range_invalidation_before_action_aux=ordinary",
+      "10": "saved_before_variant_selection",
+      "11": "variant_hit",
+      "12": "selected_eviction_before_recycle",
+      "14": "after_optional_eviction_recycle_before_keyclear",
+      "20": "ordinary_parked_commands",
+      "21": "ordinary_recycle_result",
+      "30": "before_nativeend_aux=actual_rebuild.valid",
+      "31": "recorded_native_range"
+    }
+  },
+  "final_build": {
+    "compile": {
+      "exit": 0,
+      "seconds": 6.514999999984866,
+      "timeout": false
+    },
+    "link": {
+      "exit": 0,
+      "seconds": 1.75,
+      "timeout": false
+    }
+  },
+  "original_compile_failures": {
+    "first_macro": {
+      "exit": 2,
+      "seconds": 2.4219999999913853,
+      "timeout": false
+    },
+    "private_newline": {
+      "exit": 2,
+      "seconds": 3.1719999999913853,
+      "timeout": false
+    }
+  },
+  "first_no_dump_process": {
+    "exit": 0,
+    "seconds": 3.7969999999913853,
+    "timeout": false
+  },
+  "previous_logical_call_evidence": {
+    "path": "docs/evidence/performance/mtp-logical-call-attribution-2026-10-25.json",
+    "bytes": 184324,
+    "sha256": "1b7fc5129fb0b0909ed698f1d46a163c7fa6ae453809c6d5cb6fc44f8b252b48"
+  },
+  "API_claim_scope": "This run observed Graph rebuild-seed validity, not CUDA API return codes. The earlier independent NVTX run is the source of 13 successful Update / 19 Instantiate-without-Update observations. No time from the two processes is subtracted.",
+  "cleanup": {
+    "files": [
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/compile2/unit.obj",
+        "bytes": 5201751,
+        "sha256": "cdb0ec07b6d9b0cae20c4d0e8894d83248233ec8505062f917b32c5bee926d9f"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link2/hyle.exe",
+        "bytes": 141426688,
+        "sha256": "11cac327f1bef741679d5ff8fc72d9eece39cb37259c0e692e915ec8907dfc41"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link2/hyle.exp",
+        "bytes": 24969,
+        "sha256": "8ed7594b74dc4cec961e851ca059d2d6bba2bc4fc6090ad5d956168630459959"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link2/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link2/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/compile4/unit.obj",
+        "bytes": 5201750,
+        "sha256": "098f1f356b9e8003b23d911fd7126576e1a452e4213b6995996ce3cf55f646e5"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link4/hyle.exe",
+        "bytes": 141427712,
+        "sha256": "4a87dc36d0d67ef7ad9a57a4a5e22a534d11d4ba6c27e37037787e28dfc26b59"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link4/hyle.exp",
+        "bytes": 24969,
+        "sha256": "ee58a4d25c8c8ddb81c8776897bfe913fcf43e14774f37a3ce980a089a6b0993"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link4/hyle.lib",
+        "bytes": 41384,
+        "sha256": "ae54ffd7ca5047708021f268dd932d4da434681c51c0e852ac94a5c9df8551db"
+      },
+      {
+        "path": ".scratch/mtp-capture-seed-20261025/link4/hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      }
+    ],
+    "count": 10,
+    "logical_bytes": 295804175,
+    "deletion_executed": false,
+    "scope": "This private batch only. No source/logs, models, SDK, shared closure or original app objects."
+  },
+  "archive": {
+    "path": "docs/evidence/performance/mtp-capture-seed-attribution-2026-10-25.zip",
+    "bytes": 233147,
+    "sha256": "839ea04c46444087c90f792a3c86567232130515224c57d9e0b34c24b16116b9",
+    "entries": 75,
+    "CRC_pass": true,
+    "binaries_included": false,
+    "weights_or_SDK_included": false
+  }
+}
