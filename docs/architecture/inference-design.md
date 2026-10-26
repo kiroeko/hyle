@@ -228,6 +228,13 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 这些机制复用原页池、tail、Completion及Graph权限，每步真实页权限接纳仍不可省略。
 接口与控制边界见[工作帧指南](../user/batch-attention.md#连续追加的工作帧)，实际检查范围见进度看板。
 
+自然生成入口现将 `--prefill-chunk-tokens` 接到已有真实分块原语：冷形状、ledger及dispatch元数据、
+最大query行数和实际 `prepare_generation_call` 使用同一量子。冷键区分中间StateOnly与末块EmitNext；
+每块返回原RequestLoop，不在模型内部循环独占完整prompt。未知prefix尾长仍走原有界exact接纳，
+后续turn的pending只进入首块一次，取消／重建保留真实分块和采样边界。
+[有限CLI检查](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)覆盖三条CUDA旅程及参数拒绝；
+当前仅普通自然生成，不是MTP分块、全模型varlen或设备执行预热。
+
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
 新`shape_admission_seconds`记录该次同步接纳并计入`step_seconds`；后者从成功输入预检后计到主机发布完成，

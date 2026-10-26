@@ -1,0 +1,214 @@
+{
+  "status": "PASS_BOUNDED_ORDINARY_PREFILL_CLI",
+  "date": "2026-10-27",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 491700,
+    "sha256": "2709af3dc68494634b106cc2d0b7bce6efcde0de4ff023838a6f10080b469a42"
+  },
+  "source_snapshot": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\main.cc",
+    "bytes": 491700,
+    "sha256": "2709af3dc68494634b106cc2d0b7bce6efcde0de4ff023838a6f10080b469a42"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\link\\hyle.exe",
+    "bytes": 142049280,
+    "sha256": "217bad1bb6eb6bc1412fa093eb33fabb5f2f2d352c6b76491af4ac74a5541b59"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\ready.json",
+    "bytes": 2027,
+    "sha256": "7226d14d7db14f38e34a96d891184b9e6b09cf45cbe90b1eddfe3e2d0c5fd7d7"
+  },
+  "actual_dependencies": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\compile\\actual-dependencies.json",
+    "bytes": 76565,
+    "sha256": "3de86c0ec5177f2676fd1d44aa2ea59b246dfbb7e88aff52fa079db63e698113"
+  },
+  "reuse": {
+    "retained_inputs": 223,
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\retained-inputs.json",
+      "bytes": 57744,
+      "sha256": "eb2b80f958228e46b01379ee9232769310b3a95a782f72fc76f896f5187877cd"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal3-ready.json",
+      "bytes": 2091,
+      "sha256": "777cb55545200da53e307087e53fa9457050b1b52e467aee2d866e39c4897607"
+    },
+    "scope": "All retained223 link inputs unchanged; only current main Model TU recompiled. No SDK, weights, report, native/NVCC or third-party rebuild."
+  },
+  "counts": {
+    "CXX_compile_processes": 1,
+    "link_processes": 1,
+    "successful_real_CUDA_inference_processes": 3,
+    "parser_refusal_processes": 3,
+    "recipe_capacity_refusal_processes": 1,
+    "total_native_CLI_processes": 7,
+    "Python_bookkeeping_failure_before_link": 1,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "model_payload_copies": 0
+  },
+  "builds": {
+    "compile": {
+      "exit": 0,
+      "pid": 26672,
+      "seconds": 20.564473300008103
+    },
+    "link": {
+      "exit": 0,
+      "pid": 53848,
+      "seconds": 1.764359099965077
+    }
+  },
+  "completed": [
+    {
+      "name": "single",
+      "pid": 10996,
+      "exit": 0,
+      "kind": "actual_tiny_CUDA_inference"
+    },
+    {
+      "name": "b2-multiturn",
+      "pid": 43568,
+      "exit": 0,
+      "kind": "actual_tiny_CUDA_inference"
+    },
+    {
+      "name": "prefix-evict",
+      "pid": 59128,
+      "exit": 0,
+      "kind": "actual_tiny_CUDA_inference"
+    },
+    {
+      "name": "parser-zero",
+      "pid": 55828,
+      "exit": 1,
+      "kind": "pre_Model_parser_refusal"
+    },
+    {
+      "name": "parser-mtp",
+      "pid": 59344,
+      "exit": 1,
+      "kind": "pre_Model_parser_refusal"
+    },
+    {
+      "name": "parser-fixed",
+      "pid": 23760,
+      "exit": 1,
+      "kind": "pre_Model_parser_refusal"
+    }
+  ],
+  "first_capacity_refusal": {
+    "pid": 33784,
+    "exit": 1,
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\runs\\single\\process.json",
+      "bytes": 70,
+      "sha256": "fe87cb00b8635b564a9aa0632721aadd0d8b8ea2c097061294e556ad91e8df95"
+    },
+    "scope": "Original recipe --capacity32 exceeded unchanged tiny fixture maximum16. Metadata preparation occurred, but Model was not constructed and no inference was performed; corrected recipe uses16 without a new build, fixture, seed or token input."
+  },
+  "results": {
+    "single": {
+      "default": {
+        "state_only_records": 1,
+        "rows": 5,
+        "ledger_records": 4,
+        "visible": 5,
+        "draws": 3,
+        "generated": [
+          40,
+          0,
+          37
+        ]
+      }
+    },
+    "b2-multiturn": {
+      "A": {
+        "state_only_records": 3,
+        "rows": 11,
+        "ledger_records": 7,
+        "visible": 11,
+        "draws": 4,
+        "generated": [
+          8,
+          8,
+          3,
+          40
+        ]
+      },
+      "B": {
+        "state_only_records": 1,
+        "rows": 7,
+        "ledger_records": 5,
+        "visible": 7,
+        "draws": 4,
+        "generated": [
+          0,
+          34,
+          10,
+          10
+        ]
+      }
+    },
+    "prefix-evict": {
+      "prefix_hits": 2,
+      "prefix_full_hits": 1,
+      "reused_tokens": 8,
+      "idle_evictions": 1,
+      "restore_count": 1,
+      "restored_target_rows": 3,
+      "live_committed_versions": 1
+    }
+  },
+  "source_review": [
+    "Cold note_prefill and actual prepare_generation_call both use min(remaining,max_prefill_rows), with StateOnly exactly while rows remain and EmitNext on the final actual block",
+    "PromptKey carries role and completion, and the Family/planned replay calls retain width and sampling identity; the existing batch compatibility predicate separates StateOnly from EmitNext",
+    "Ledger capacity and dispatch metadata now use the same quantum; pending is included once on later turns, and maximum planned query rows bounds each real block",
+    "MTP/fixed replay combinations and zero are explicitly rejected before Model construction; no silent ignored quantum",
+    "No definite product defect found in this bounded review; all three real cases had zero cold_exact_admissions/evictions, so the observed actual blocks were already represented in cold planning"
+  ],
+  "offline_ledger_check": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\offline-ledger-check.json",
+    "bytes": 4832,
+    "sha256": "3ec12c05792282271042343bb8d421b2d04c5b46e8d99571034df3f572ee3f64"
+  },
+  "setup_failures": [
+    {
+      "record": "build-failure.json",
+      "classification": "Script log-directory creation collision after successful compile; link.exe had not started; link-only.py reused that object"
+    },
+    {
+      "record": "runs/single/process.json",
+      "pid": 33784,
+      "classification": "Recipe capacity32 exceeded original tiny fixture context16; refused before Model construction; run-plan2 only corrects capacity to16 and parser expected wording; unchanged binary, source, token input, Q2, random policy and seed"
+    }
+  ],
+  "design_reference": {
+    "file": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\design.md",
+      "bytes": 9567,
+      "sha256": "6cef2282374442fce2a96597876627579f3c8b804a617ed0abaf3cd924865e9b"
+    },
+    "scope": "Read-only local design study preceding this patch; explanatory reference, not project instructions or an instruction to execute its future recommendations."
+  },
+  "boundary": [
+    "Ordinary natural generation only. Finite Q with MTP/fixed replay and zero are explicitly rejected before Model construction.",
+    "Actual token chunks; no whole-model varlen, fake padding, preferred ceiling-bucket policy or device execution warmup/capture claim.",
+    "Tiny cached untrained GA weights, original math/seed and real public CLI. Not task quality, cross-chunk-width bitwise equivalence, speed, memory peak, complete model/backend matrix or all-state byte correctness.",
+    "Prefix case ends with one intentionally retained directory version within N1; not asserted zero or treated as a leak. Original failures and corrected recipe scope are retained.",
+    "All three real journeys used only preplanned exact shapes: cold_exact_admissions=0 and cold_exact_evictions=0. Broader unknown-shape eviction and warmup are outside this test."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-prefill-chunk-cli-2026-10-27.zip",
+    "bytes": 244427,
+    "sha256": "3ce9605ff06b4206c810969bb98931b8856df92b3b3aad519a82ed27eae02f79",
+    "members": 90,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

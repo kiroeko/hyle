@@ -1,0 +1,1593 @@
+{
+  "status": "COMPLETE32_STABLE_WITHIN_ARM",
+  "date": "2026-10-27",
+  "process_count": 32,
+  "timing_processes": 24,
+  "independent_memory_processes": 8,
+  "actual_window": {
+    "started_unix_ns": 1793047974639119700,
+    "finished_unix_ns": 1793048081465368800,
+    "started_UTC": "2026-10-26T20:52:54.639120+00:00",
+    "finished_UTC": "2026-10-26T20:54:41.465369+00:00",
+    "started_Asia_Shanghai": "2026-10-27T04:52:54.639120+08:00",
+    "finished_Asia_Shanghai": "2026-10-27T04:54:41.465369+08:00"
+  },
+  "retained_protocol_baseline_date": "2026-10-25",
+  "date_note": "The old protocol baseline_date is an unchanged label, not this window date. Original clock fields/files are preserved.",
+  "hyle": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal-cuda3\\hyle.exe",
+      "bytes": 142047232,
+      "sha256": "d1cbcff43e554b8fd69d4e55566ae43dbbb22f62331d3595909f2635480620d7"
+    },
+    "instrumented": false,
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 489961,
+      "sha256": "3b1a2c6996a8c7a3cd3c654526abd1bbb9a033a0a809e68ff6063ede8b61812f"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal3-runtime.json",
+      "bytes": 21205,
+      "sha256": "3386fac7104741184f1a2b5d1379a22a373818c5436dc8e8667475da625eecca"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal3-link-inputs.json",
+      "bytes": 57989,
+      "sha256": "b130fc204204b0ec9787465644c81276a2eb857fdcc4c8b943dc02b70860c66c"
+    },
+    "build": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal3-ready.json",
+      "bytes": 2091,
+      "sha256": "777cb55545200da53e307087e53fa9457050b1b52e467aee2d866e39c4897607"
+    }
+  },
+  "retained_peer": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe",
+      "bytes": 35830272,
+      "sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\source\\peer_multiturn.cc",
+      "bytes": 33292,
+      "sha256": "0a6ce1d98fb66c7e74a5f56ecb26470c83aa043c8cd7814ded0afafb532e9132"
+    },
+    "compiled_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\compile1\\peer\\identity.json",
+      "bytes": 68001,
+      "sha256": "42d1da4148f7c081fed7c28bb8f56e1322f2c96fedcf4bd94c820cad1013c189"
+    },
+    "runtime_environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\runtime-environment.json",
+      "bytes": 5854,
+      "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+    },
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\link-plan.json",
+      "bytes": 4801,
+      "sha256": "f175f3c5480d7eec90d15f86bdc7a99a6ab064cb384e8fb57196c607d917d963"
+    },
+    "original_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\peer-link1\\ready.json",
+      "bytes": 237,
+      "sha256": "782a8ffbdddd00bc59d852ab8e82a457563f6e50d03bf2ac6dde8e4aa1ad05c0"
+    },
+    "current_entry": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\build_turns.py",
+      "bytes": 5041,
+      "sha256": "4fea5b858f0b07eff0eb8a351a7cf1ea38d64d3eb72ce8f8ab26d8b6148532da"
+    },
+    "note": "Same fixed native llama core; one new consumer adds genuine natural turns without clearing/rebuilding contexts."
+  },
+  "binding": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\full-window\\binding.json",
+    "bytes": 5500,
+    "sha256": "deae9e8d12a84ccebe8cb0c7cd345943f150ef7351ddf1c913dcacef6c7a0cf7"
+  },
+  "protocol": "Same retained four-arm single/two-turn plan, parser, original producer endpoints and independent observer; three unmonitored timing samples and one memory process per arm/workload. No old samples pooled.",
+  "timer": {
+    "parent_clock": "time.perf_counter_ns",
+    "implementation": "QueryPerformanceCounter()",
+    "advertised_resolution_seconds": 1e-07,
+    "monotonic": true,
+    "QueryPerformanceFrequency_Hz": 10000000,
+    "endpoint_scope": "Consumer high-resolution host endpoints determine TPS; parent QPC brackets process/received stderr only."
+  },
+  "table": [
+    {
+      "workload": "single",
+      "policy": "plain",
+      "hyle": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2160.111989182608,
+            "min": 2089.6061092484065,
+            "max": 2182.6788839991214
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 91.48268603040502,
+            "min": 91.3648869946869,
+            "max": 92.68012382064542
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 84.19963575763819,
+            "min": 83.95061080628004,
+            "max": 85.2140336861727
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.832955,
+            "min": 0.831759,
+            "max": 0.871725
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.2177458,
+            "min": 1.2102021,
+            "max": 1.2677893
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.2914996,
+            "min": 1.2808177,
+            "max": 1.3391339
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 1.9801545,
+            "min": 1.9703605,
+            "max": 2.0188913
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1129897984,
+          "observed_os_peak_working_set_bytes": 1129926656,
+          "sampled_max_private_commit_bytes": 5914710016,
+          "observed_os_peak_commit_bytes": 5914710016,
+          "sampled_peak_gpu_dedicated_bytes": 4161875968,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4243664896
+        },
+        "generated_tokens": 64,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_graph_calls": 64,
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "draft_rows": 0,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408
+        },
+        "unreported_work_counters": [
+          "actual_graph_tokens",
+          "target_compute_calls",
+          "draft_compute_calls",
+          "target_decode_calls",
+          "draft_decode_calls",
+          "draft_decode_rows",
+          "draft_rounds",
+          "agreements",
+          "accepted_drafts",
+          "proposals",
+          "draft_frontier",
+          "draft_lag",
+          "target_cache_backing_bytes",
+          "draft_cache_backing_bytes",
+          "shared_model_objects",
+          "native_contexts"
+        ]
+      },
+      "llama_cpp": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1559.773245432346,
+            "min": 1515.2752536856117,
+            "max": 1587.5224856066347
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 96.72321699577381,
+            "min": 95.68190595926654,
+            "max": 98.25503732521715
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 85.32475535126203,
+            "min": 84.20350197101979,
+            "max": 86.6979592113195
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6787665,
+            "min": 1.6588106,
+            "max": 1.6861895
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7086003,
+            "min": 1.6876128,
+            "max": 1.7161501
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8057059,
+            "min": 1.7864437,
+            "max": 1.8178819
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.4468944,
+            "min": 2.4377868,
+            "max": 2.4763136
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4371517440,
+          "observed_os_peak_working_set_bytes": 4371906560,
+          "sampled_max_private_commit_bytes": 5016006656,
+          "observed_os_peak_commit_bytes": 5016387584,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "generated_tokens": 64,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_target_rows": 217,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 64,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 217,
+          "verified_target_rows": 63,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 63,
+          "draft_decode_calls": 0,
+          "draft_decode_rows": 0,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 217,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "shared_model_objects": 1,
+          "native_contexts": 1
+        },
+        "unreported_work_counters": [
+          "actual_graph_calls",
+          "actual_graph_tokens",
+          "draft_rows",
+          "draft_rounds",
+          "draft_frontier",
+          "draft_lag",
+          "cache_live_requested_bytes",
+          "cache_peak_requested_bytes"
+        ]
+      },
+      "hyle_relative_to_llama_percent": {
+        "prefill_tokens_per_second": 38.48884736985323,
+        "full_decode_tokens_per_second": -5.418069340681431,
+        "session_output_tokens_per_second": -1.3186320769300597
+      }
+    },
+    {
+      "workload": "single",
+      "policy": "mtp",
+      "hyle": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2055.844204388293,
+            "min": 1884.8341835485799,
+            "max": 2161.527891429542
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 120.14343982491859,
+            "min": 118.93452786390569,
+            "max": 121.60514154259405
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 105.85307989459679,
+            "min": 105.59696936697917,
+            "max": 108.60046077139246
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.863804,
+            "min": 0.854309,
+            "max": 0.874291
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.8022778,
+            "min": 1.8001953,
+            "max": 1.8152202
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8751553,
+            "min": 1.8735806,
+            "max": 1.896988
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.4048585,
+            "min": 2.3916508,
+            "max": 2.4213612
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1212469248,
+          "observed_os_peak_working_set_bytes": 1212469248,
+          "sampled_max_private_commit_bytes": 6167339008,
+          "observed_os_peak_commit_bytes": 6167339008,
+          "sampled_peak_gpu_dedicated_bytes": 4308680704,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4390469632
+        },
+        "generated_tokens": 64,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_graph_calls": 35,
+          "actual_target_rows": 222,
+          "actual_draft_rows": 216,
+          "committed_target_rows": 217,
+          "verified_target_rows": 68,
+          "committed_target_decode_rows": 63,
+          "draft_rows": 62,
+          "draft_rounds": 34,
+          "agreements": 29,
+          "accepted_drafts": 29,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635
+        },
+        "unreported_work_counters": [
+          "actual_graph_tokens",
+          "target_compute_calls",
+          "draft_compute_calls",
+          "target_decode_calls",
+          "draft_decode_calls",
+          "draft_decode_rows",
+          "proposals",
+          "target_cache_backing_bytes",
+          "draft_cache_backing_bytes",
+          "shared_model_objects",
+          "native_contexts"
+        ]
+      },
+      "llama_cpp": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 1476.6488126401139,
+            "min": 1277.1212029486571,
+            "max": 1516.878225213077
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 129.83017183126282,
+            "min": 128.31364906909465,
+            "max": 130.6303765804202
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 109.07102841709306,
+            "min": 104.64901619296364,
+            "max": 109.10944529780913
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6840095,
+            "min": 1.6693104,
+            "max": 2.0805848
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7173433,
+            "min": 1.7028956,
+            "max": 2.1160193
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8189652,
+            "min": 1.8072818,
+            "max": 2.2366999
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.3042145,
+            "min": 2.2895586,
+            "max": 2.7276843
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4531937280,
+          "observed_os_peak_working_set_bytes": 4531941376,
+          "sampled_max_private_commit_bytes": 5455917056,
+          "observed_os_peak_commit_bytes": 5455917056,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "generated_tokens": 64,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_target_rows": 220,
+          "actual_draft_rows": 216,
+          "target_compute_calls": 34,
+          "draft_compute_calls": 34,
+          "committed_target_rows": 217,
+          "verified_target_rows": 66,
+          "committed_target_decode_rows": 63,
+          "target_decode_calls": 33,
+          "draft_decode_calls": 33,
+          "draft_decode_rows": 62,
+          "agreements": 30,
+          "accepted_drafts": 30,
+          "proposals": 33,
+          "generated_decode_tokens": 63,
+          "prefill_target_rows": 154,
+          "prefill_draft_rows": 154,
+          "visible_tokens": 217,
+          "draft_frontier": 216,
+          "draft_lag": 1,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "shared_model_objects": 1,
+          "native_contexts": 2
+        },
+        "unreported_work_counters": [
+          "actual_graph_calls",
+          "actual_graph_tokens",
+          "draft_rows",
+          "draft_rounds",
+          "cache_live_requested_bytes",
+          "cache_peak_requested_bytes"
+        ]
+      },
+      "hyle_relative_to_llama_percent": {
+        "prefill_tokens_per_second": 39.223638470451895,
+        "full_decode_tokens_per_second": -7.461079246612911,
+        "session_output_tokens_per_second": -2.9503238111872165
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "plain",
+      "hyle": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2613.7996780543176,
+            "min": 2587.120660293475,
+            "max": 2615.8464421948725
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 92.0566171574977,
+            "min": 91.9726222321624,
+            "max": 92.17467041520077
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 86.08273519282803,
+            "min": 86.01577677185612,
+            "max": 86.11365508938093
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.836989,
+            "min": 0.832001,
+            "max": 0.83737
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.2566474,
+            "min": 1.255134,
+            "max": 1.2577694
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.3279133,
+            "min": 1.327549,
+            "max": 1.3283272
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.7436471,
+            "min": 2.7415933,
+            "max": 2.7459278
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1165869056,
+          "observed_os_peak_working_set_bytes": 1165897728,
+          "sampled_max_private_commit_bytes": 6090293248,
+          "observed_os_peak_commit_bytes": 6090293248,
+          "sampled_peak_gpu_dedicated_bytes": 4304486400,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4386275328
+        },
+        "generated_tokens": 128,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_graph_calls": 128,
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "draft_rows": 0,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "cache_live_requested_bytes": 51855408,
+          "cache_peak_requested_bytes": 51855408,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "unreported_work_counters": [
+          "target_compute_calls",
+          "draft_compute_calls",
+          "target_decode_calls",
+          "draft_decode_calls",
+          "draft_decode_rows",
+          "draft_rounds",
+          "agreements",
+          "accepted_drafts",
+          "proposals",
+          "draft_frontier",
+          "draft_lag",
+          "target_cache_backing_bytes",
+          "draft_cache_backing_bytes",
+          "shared_model_objects",
+          "native_contexts"
+        ]
+      },
+      "llama_cpp": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2422.222361580574,
+            "min": 2400.895090985377,
+            "max": 2542.659490167972
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 96.53650761715183,
+            "min": 95.9583632092589,
+            "max": 96.60509752897961
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 89.39497619788919,
+            "min": 88.77967139730534,
+            "max": 89.71551770059129
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6713546,
+            "min": 1.6599342,
+            "max": 1.6853822
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.6995593,
+            "min": 1.6894939,
+            "max": 1.7139124
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8021109,
+            "min": 1.7891223,
+            "max": 1.8085766
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 3.1407406,
+            "min": 3.1214404,
+            "max": 3.1414295
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4375232512,
+          "observed_os_peak_working_set_bytes": 4375707648,
+          "sampled_max_private_commit_bytes": 5018624000,
+          "observed_os_peak_commit_bytes": 5019119616,
+          "sampled_peak_gpu_dedicated_bytes": 4002504704,
+          "sampled_peak_gpu_shared_bytes": 85983232,
+          "sampled_peak_gpu_total_bytes": 4088487936
+        },
+        "generated_tokens": 128,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_target_rows": 435,
+          "actual_draft_rows": 0,
+          "target_compute_calls": 128,
+          "draft_compute_calls": 0,
+          "committed_target_rows": 435,
+          "verified_target_rows": 126,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 126,
+          "draft_decode_calls": 0,
+          "draft_decode_rows": 0,
+          "agreements": 0,
+          "accepted_drafts": 0,
+          "proposals": 0,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 0,
+          "visible_tokens": 435,
+          "target_cache_backing_bytes": 32784384,
+          "draft_cache_backing_bytes": 0,
+          "shared_model_objects": 1,
+          "native_contexts": 1,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2
+        },
+        "unreported_work_counters": [
+          "actual_graph_calls",
+          "draft_rows",
+          "draft_rounds",
+          "draft_frontier",
+          "draft_lag",
+          "cache_live_requested_bytes",
+          "cache_peak_requested_bytes",
+          "restore_count"
+        ]
+      },
+      "hyle_relative_to_llama_percent": {
+        "prefill_tokens_per_second": 7.909154812225139,
+        "full_decode_tokens_per_second": -4.640617907393807,
+        "session_output_tokens_per_second": -3.7051757782551764
+      }
+    },
+    {
+      "workload": "two-turn",
+      "policy": "mtp",
+      "hyle": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2481.770233053485,
+            "min": 2424.8740281866103,
+            "max": 2520.1222381621537
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 123.70592313777917,
+            "min": 123.68016818932335,
+            "max": 124.73842056211886
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 112.14594954238319,
+            "min": 111.69538852499171,
+            "max": 112.81293139378525
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 0.866625,
+            "min": 0.858908,
+            "max": 0.871528
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.9601024,
+            "min": 1.9474494,
+            "max": 1.9624723
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 2.0327126,
+            "min": 2.0235327,
+            "max": 2.0418431
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 3.1015385,
+            "min": 3.08213,
+            "max": 3.1085062
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 1255559168,
+          "observed_os_peak_working_set_bytes": 1255559168,
+          "sampled_max_private_commit_bytes": 6382350336,
+          "observed_os_peak_commit_bytes": 6382350336,
+          "sampled_peak_gpu_dedicated_bytes": 4457578496,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4539367424
+        },
+        "generated_tokens": 128,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_graph_calls": 68,
+          "actual_target_rows": 441,
+          "actual_draft_rows": 434,
+          "committed_target_rows": 435,
+          "verified_target_rows": 132,
+          "committed_target_decode_rows": 126,
+          "draft_rows": 124,
+          "draft_rounds": 66,
+          "agreements": 60,
+          "accepted_drafts": 60,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 434,
+          "draft_lag": 1,
+          "cache_live_requested_bytes": 73539635,
+          "cache_peak_requested_bytes": 73539635,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2,
+          "restore_count": 0
+        },
+        "unreported_work_counters": [
+          "target_compute_calls",
+          "draft_compute_calls",
+          "target_decode_calls",
+          "draft_decode_calls",
+          "draft_decode_rows",
+          "proposals",
+          "target_cache_backing_bytes",
+          "draft_cache_backing_bytes",
+          "shared_model_objects",
+          "native_contexts"
+        ]
+      },
+      "llama_cpp": {
+        "timing": {
+          "prefill_tokens_per_second": {
+            "count": 3,
+            "median": 2297.1569523194967,
+            "min": 2201.02871380857,
+            "max": 2339.5160154635196
+          },
+          "full_decode_tokens_per_second": {
+            "count": 3,
+            "median": 132.99085022950422,
+            "min": 132.5440161846763,
+            "max": 133.5046006638993
+          },
+          "session_output_tokens_per_second": {
+            "count": 3,
+            "median": 117.95694516209265,
+            "min": 117.66625529440695,
+            "max": 118.97389108665269
+          },
+          "weights_load_seconds": {
+            "count": 3,
+            "median": 1.6776451,
+            "min": 1.6683202,
+            "max": 1.6802791
+          },
+          "startup_to_ready_seconds": {
+            "count": 3,
+            "median": 1.7115184,
+            "min": 1.7017884,
+            "max": 1.7130501
+          },
+          "first_token_elapsed_seconds": {
+            "count": 3,
+            "median": 1.8155976,
+            "min": 1.8130372,
+            "max": 1.8181381
+          },
+          "startup_to_endpoint_seconds": {
+            "count": 3,
+            "median": 2.7897097,
+            "min": 2.7874889,
+            "max": 2.7982905
+          }
+        },
+        "independent_memory_bytes": {
+          "sampled_max_working_set_bytes": 4536115200,
+          "observed_os_peak_working_set_bytes": 4536115200,
+          "sampled_max_private_commit_bytes": 5461962752,
+          "observed_os_peak_commit_bytes": 5461962752,
+          "sampled_peak_gpu_dedicated_bytes": 4182888448,
+          "sampled_peak_gpu_shared_bytes": 98566144,
+          "sampled_peak_gpu_total_bytes": 4281454592
+        },
+        "generated_tokens": 128,
+        "stopped_on_EOS": false,
+        "work": {
+          "actual_target_rows": 438,
+          "actual_draft_rows": 435,
+          "target_compute_calls": 67,
+          "draft_compute_calls": 67,
+          "committed_target_rows": 435,
+          "verified_target_rows": 129,
+          "committed_target_decode_rows": 126,
+          "target_decode_calls": 65,
+          "draft_decode_calls": 65,
+          "draft_decode_rows": 125,
+          "agreements": 61,
+          "accepted_drafts": 61,
+          "proposals": 64,
+          "generated_decode_tokens": 126,
+          "prefill_target_rows": 309,
+          "prefill_draft_rows": 310,
+          "visible_tokens": 435,
+          "draft_frontier": 435,
+          "draft_lag": 0,
+          "target_cache_backing_bytes": 52985856,
+          "draft_cache_backing_bytes": 2097152,
+          "shared_model_objects": 1,
+          "native_contexts": 2,
+          "pending_flushed_tokens": 1,
+          "turn_count": 2
+        },
+        "unreported_work_counters": [
+          "actual_graph_calls",
+          "draft_rows",
+          "draft_rounds",
+          "cache_live_requested_bytes",
+          "cache_peak_requested_bytes",
+          "restore_count"
+        ]
+      },
+      "hyle_relative_to_llama_percent": {
+        "prefill_tokens_per_second": 8.036598480899592,
+        "full_decode_tokens_per_second": -6.981628492262382,
+        "session_output_tokens_per_second": -4.926370051143813
+      }
+    }
+  ],
+  "fairness_and_work": {
+    "single": {
+      "within_arm_timing": true,
+      "within_arm_memory": true,
+      "between_arm_first_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 44
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 44
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null,
+          "overlapping_mismatches": 0
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": true,
+          "first_divergence": null,
+          "overlapping_mismatches": 0
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 44
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 64,
+          "right_tokens": 64,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 44
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    },
+    "two-turn": {
+      "within_arm_timing": true,
+      "within_arm_memory": true,
+      "between_arm_first_outputs": {
+        "hyle_plain__hyle_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 104
+        },
+        "hyle_plain__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 104
+        },
+        "hyle_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null,
+          "overlapping_mismatches": 0
+        },
+        "hyle_mtp__peer_plain": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": true,
+          "first_divergence": null,
+          "overlapping_mismatches": 0
+        },
+        "hyle_mtp__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 104
+        },
+        "peer_plain__peer_mtp": {
+          "left_tokens": 128,
+          "right_tokens": 128,
+          "equal": false,
+          "first_divergence": 18,
+          "overlapping_mismatches": 104
+        }
+      },
+      "memory_matches_timing_first": {
+        "hyle_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_plain": {
+          "IDs": true,
+          "work": true
+        },
+        "hyle_mtp": {
+          "IDs": true,
+          "work": true
+        },
+        "peer_mtp": {
+          "IDs": true,
+          "work": true
+        }
+      }
+    }
+  },
+  "old_window_nonclock_comparison": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\offline-comparison\\summary.json",
+      "bytes": 19501,
+      "sha256": "26279f632028418b0c60c4128142be63f75128ebc93eb89daa521e8f7ec5ea1d"
+    },
+    "comparisons": 16,
+    "differences_total": 0,
+    "IDs_equal": true,
+    "work_counters_equal": true,
+    "reference_window": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\full-window",
+    "normalization": "Exact old behavior.normalize/differences; no additional telemetry/plan/work exclusions."
+  },
+  "memory_measurement_quality": {
+    "single/hyle_plain": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 241,
+      "running_sample_count": 222,
+      "actual_sample_gaps_ms": {
+        "count": 221,
+        "median": 15.1602,
+        "min": 0.1186,
+        "max": 19.6908
+      },
+      "sample_cost_ms": {
+        "count": 222,
+        "median": 0.13485,
+        "min": 0.0622,
+        "max": 0.3629
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 34,
+        "shared:no_pid_instance": 34
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "single/peer_plain": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 287,
+      "running_sample_count": 280,
+      "actual_sample_gaps_ms": {
+        "count": 279,
+        "median": 15.1805,
+        "min": 0.1079,
+        "max": 16.5499
+      },
+      "sample_cost_ms": {
+        "count": 280,
+        "median": 0.12940000000000002,
+        "min": 0.0617,
+        "max": 0.5945
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 11,
+        "gpu_shared_bytes": 11,
+        "gpu_total_bytes": 11
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 11,
+        "shared:no_pid_instance": 11
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "single/hyle_mtp": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 277,
+      "running_sample_count": 258,
+      "actual_sample_gaps_ms": {
+        "count": 257,
+        "median": 15.1491,
+        "min": 0.116,
+        "max": 24.7146
+      },
+      "sample_cost_ms": {
+        "count": 258,
+        "median": 0.13665,
+        "min": 0.0595,
+        "max": 0.2988
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 32,
+        "gpu_shared_bytes": 32,
+        "gpu_total_bytes": 32
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 32,
+        "shared:no_pid_instance": 32
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "single/peer_mtp": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 274,
+      "running_sample_count": 267,
+      "actual_sample_gaps_ms": {
+        "count": 266,
+        "median": 15.08015,
+        "min": 0.1094,
+        "max": 16.1647
+      },
+      "sample_cost_ms": {
+        "count": 267,
+        "median": 0.1432,
+        "min": 0.0614,
+        "max": 0.4333
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 11,
+        "gpu_shared_bytes": 11,
+        "gpu_total_bytes": 11
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 11,
+        "shared:no_pid_instance": 11
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "two-turn/hyle_plain": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 314,
+      "running_sample_count": 297,
+      "actual_sample_gaps_ms": {
+        "count": 296,
+        "median": 15.18,
+        "min": 0.1186,
+        "max": 21.3562
+      },
+      "sample_cost_ms": {
+        "count": 297,
+        "median": 0.1342,
+        "min": 0.061,
+        "max": 0.482
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 33,
+        "shared:no_pid_instance": 33
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "two-turn/peer_plain": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 347,
+      "running_sample_count": 340,
+      "actual_sample_gaps_ms": {
+        "count": 339,
+        "median": 15.205,
+        "min": 0.1044,
+        "max": 16.6131
+      },
+      "sample_cost_ms": {
+        "count": 340,
+        "median": 0.12885000000000002,
+        "min": 0.0598,
+        "max": 0.3205
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 11,
+        "gpu_shared_bytes": 11,
+        "gpu_total_bytes": 11
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 11,
+        "shared:no_pid_instance": 11
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "two-turn/hyle_mtp": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 348,
+      "running_sample_count": 329,
+      "actual_sample_gaps_ms": {
+        "count": 328,
+        "median": 15.1753,
+        "min": 0.1102,
+        "max": 16.4569
+      },
+      "sample_cost_ms": {
+        "count": 329,
+        "median": 0.138,
+        "min": 0.0596,
+        "max": 0.3743
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 33,
+        "shared:no_pid_instance": 33
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    },
+    "two-turn/peer_mtp": {
+      "requested_interval_seconds": 0.01,
+      "sample_count": 320,
+      "running_sample_count": 312,
+      "actual_sample_gaps_ms": {
+        "count": 311,
+        "median": 15.1546,
+        "min": 0.11,
+        "max": 16.3267
+      },
+      "sample_cost_ms": {
+        "count": 312,
+        "median": 0.13635,
+        "min": 0.0608,
+        "max": 0.5687
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 11,
+        "gpu_shared_bytes": 11,
+        "gpu_total_bytes": 11
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 11,
+        "shared:no_pid_instance": 11
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "counter_source": "Windows PSAPI and PDH GPU Process Memory (WDDM); not direct DXGI allocator enumeration"
+    }
+  },
+  "processes": [
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 52540,
+      "exit": 0,
+      "started_unix_ns": 1793047974639119700,
+      "finished_unix_ns": 1793047977148347700,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 47044,
+      "exit": 0,
+      "started_unix_ns": 1793047977272412200,
+      "finished_unix_ns": 1793047980171232300,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 47828,
+      "exit": 0,
+      "started_unix_ns": 1793047980234091600,
+      "finished_unix_ns": 1793047983557562900,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 49792,
+      "exit": 0,
+      "started_unix_ns": 1793047983588289900,
+      "finished_unix_ns": 1793047986855656400,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 49248,
+      "exit": 0,
+      "started_unix_ns": 1793047986958158800,
+      "finished_unix_ns": 1793047989917951700,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 43176,
+      "exit": 0,
+      "started_unix_ns": 1793047989973460800,
+      "finished_unix_ns": 1793047993025765600,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 24860,
+      "exit": 0,
+      "started_unix_ns": 1793047993055767400,
+      "finished_unix_ns": 1793047995871462500,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 55092,
+      "exit": 0,
+      "started_unix_ns": 1793047995975893400,
+      "finished_unix_ns": 1793047998486549200,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_plain",
+      "pid": 46336,
+      "exit": 0,
+      "started_unix_ns": 1793047998551179900,
+      "finished_unix_ns": 1793048001550546300,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "peer_mtp",
+      "pid": 52356,
+      "exit": 0,
+      "started_unix_ns": 1793048001587056700,
+      "finished_unix_ns": 1793048004420728900,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_plain",
+      "pid": 47084,
+      "exit": 0,
+      "started_unix_ns": 1793048004528864700,
+      "finished_unix_ns": 1793048007017346300,
+      "memory_only": false
+    },
+    {
+      "window": "single-timing",
+      "arm": "hyle_mtp",
+      "pid": 50968,
+      "exit": 0,
+      "started_unix_ns": 1793048007147193200,
+      "finished_unix_ns": 1793048010096637300,
+      "memory_only": false
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_plain",
+      "pid": 5036,
+      "exit": 0,
+      "started_unix_ns": 1793048010948182200,
+      "finished_unix_ns": 1793048013695470000,
+      "memory_only": true
+    },
+    {
+      "window": "single-memory",
+      "arm": "hyle_mtp",
+      "pid": 54752,
+      "exit": 0,
+      "started_unix_ns": 1793048013822822900,
+      "finished_unix_ns": 1793048016723136100,
+      "memory_only": true
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_plain",
+      "pid": 12092,
+      "exit": 0,
+      "started_unix_ns": 1793048016776145700,
+      "finished_unix_ns": 1793048019764270800,
+      "memory_only": true
+    },
+    {
+      "window": "single-memory",
+      "arm": "peer_mtp",
+      "pid": 59064,
+      "exit": 0,
+      "started_unix_ns": 1793048019795132300,
+      "finished_unix_ns": 1793048022644832000,
+      "memory_only": true
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 19696,
+      "exit": 0,
+      "started_unix_ns": 1793048023907563700,
+      "finished_unix_ns": 1793048027155570300,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 56580,
+      "exit": 0,
+      "started_unix_ns": 1793048027290611900,
+      "finished_unix_ns": 1793048030924975500,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 56644,
+      "exit": 0,
+      "started_unix_ns": 1793048030979900900,
+      "finished_unix_ns": 1793048034647107000,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 45908,
+      "exit": 0,
+      "started_unix_ns": 1793048034677753900,
+      "finished_unix_ns": 1793048038005510700,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 19208,
+      "exit": 0,
+      "started_unix_ns": 1793048038107166600,
+      "finished_unix_ns": 1793048041719310300,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 55864,
+      "exit": 0,
+      "started_unix_ns": 1793048041778308500,
+      "finished_unix_ns": 1793048045455898100,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 33464,
+      "exit": 0,
+      "started_unix_ns": 1793048045486898500,
+      "finished_unix_ns": 1793048048812328900,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 49124,
+      "exit": 0,
+      "started_unix_ns": 1793048048912737700,
+      "finished_unix_ns": 1793048052182292200,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_plain",
+      "pid": 37856,
+      "exit": 0,
+      "started_unix_ns": 1793048052248635100,
+      "finished_unix_ns": 1793048055943773200,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "peer_mtp",
+      "pid": 45344,
+      "exit": 0,
+      "started_unix_ns": 1793048055974335600,
+      "finished_unix_ns": 1793048059306165600,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_plain",
+      "pid": 58876,
+      "exit": 0,
+      "started_unix_ns": 1793048059413412500,
+      "finished_unix_ns": 1793048062656869100,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-timing",
+      "arm": "hyle_mtp",
+      "pid": 58740,
+      "exit": 0,
+      "started_unix_ns": 1793048062788423000,
+      "finished_unix_ns": 1793048066414110600,
+      "memory_only": false
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_plain",
+      "pid": 54612,
+      "exit": 0,
+      "started_unix_ns": 1793048067364038500,
+      "finished_unix_ns": 1793048070637260100,
+      "memory_only": true
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "hyle_mtp",
+      "pid": 22464,
+      "exit": 0,
+      "started_unix_ns": 1793048070765572100,
+      "finished_unix_ns": 1793048074402405300,
+      "memory_only": true
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_plain",
+      "pid": 22260,
+      "exit": 0,
+      "started_unix_ns": 1793048074458029100,
+      "finished_unix_ns": 1793048078103089600,
+      "memory_only": true
+    },
+    {
+      "window": "two-turn-memory",
+      "arm": "peer_mtp",
+      "pid": 61744,
+      "exit": 0,
+      "started_unix_ns": 1793048078133226600,
+      "finished_unix_ns": 1793048081465368800,
+      "memory_only": true
+    }
+  ],
+  "hardware_after_window": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\hardware-after-window.txt",
+    "bytes": 44,
+    "sha256": "31d4e2a9c839ea4de2404461f48358d5e209f3c8af6ef68b91ff82fecd16e174"
+  },
+  "hardware_observation": "Post-window hardware identity only; no exclusive GPU, fixed frequency or thermal-control claim.",
+  "original_summary_pins": {
+    "single-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\full-window\\single-timing\\summary.json",
+      "bytes": 36180,
+      "sha256": "0491173acebbac5474c6124f9b2006d17dd02d3bd73f5bf5a9378082a883eff5"
+    },
+    "single-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\full-window\\single-memory\\summary.json",
+      "bytes": 154887,
+      "sha256": "c8e51294538cab9925838bb6607e96043074ffd8a93a00ee65701fa641991e73"
+    },
+    "two-turn-timing": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\full-window\\two-turn-timing\\summary.json",
+      "bytes": 60762,
+      "sha256": "338f28da5b6cc23371bf94fa8efc0d1e5cbd18ba2963188f920255ac917aa0d5"
+    },
+    "two-turn-memory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-followup-20261027\\full-window\\two-turn-memory\\summary.json",
+      "bytes": 264045,
+      "sha256": "c31e03bb4e4b2d8fc882314af1baea86cc8baaa1276d8c72cd791cb9019da212"
+    }
+  },
+  "limits": [
+    "Named retained peer433e version; no latest-upstream assertion.",
+    "Natural generated IDs, accepted drafts, target/draft rows and later histories differ across arms. These are complete natural consumer observations, not equal-mathematical-work speed or task-quality rankings.",
+    "Rates are per-arm medians of3. All original samples/ranges and clocks are archived; no statistical-significance claim.",
+    "Memory uses1 independent process per arm/workload, excluded from throughput medians. PDH/PSAPI sampled peaks are observations/lower bounds; dedicated/shared maxima and RAM/commit must not be summed as physical memory.",
+    "Loading/ready retain original producer boundaries and existing OS file caches. Default report/IO cost remains inside its natural boundaries.",
+    "Old-window nonclock equality does not make cross-day TPS deltas causal. No isolated optimization attribution, B2/multi-user throughput, other-model/backend/quantization or quality claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-indexed-current-window-2026-10-27.zip",
+    "bytes": 1605240,
+    "sha256": "ce8cb8590d1af33076cb62611a0452e6919519ca177dc4c10b6c1419e65f9d87",
+    "members": 297,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

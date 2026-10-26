@@ -70,6 +70,13 @@ local NVFP4 保留原独立全局乘数和 F32 输入预舍入；它们不套用
 Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-dir>` 是脚本报告的目录。
 输入不足、模型身份不符、上下文容量不足或不支持的参数组合会明确失败。
 
+普通自然生成可加 `--prefill-chunk-tokens 256`，限制每次 prefill 实际消费的 token 行数，
+让请求调度在块间继续服务其它请求；默认不限制块长。中间块只推进真实 KV／递归状态，
+最后一块才生成首 token、推进采样游标。后续轮的 pending 输入仍只消费一次，
+`--capacity` 继续限制完整上下文，分块不会扩大它。当前该选项不支持 MTP 或固定 `prompt/decode` 重放，
+不支持的组合会直接报错；它不做 padding，也不代表设备执行预热或全模型 varlen 合批。
+
+
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。
 每个会话有独立随机流，提交失败或取消不推进已发布的随机数位置；前缀命中保留当前会话的随机流。
