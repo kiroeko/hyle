@@ -246,6 +246,14 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 [有限CLI检查](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)覆盖三条CUDA旅程及参数拒绝；
 当前仅普通自然生成，不是MTP分块、全模型varlen或设备执行预热。
 
+分片事实归共同层`PrefillPolicy`：`next(total, consumed)`返回原输入起点、实际行数及末块标志，
+`parts`计算剩余片数；零量子／越界游标明确拒绝，整前缀命中返回零行且完成，计数避免SIZE_MAX加法溢出。
+冷形状、ledger容量、query上界、modifier输出预检、prefix后缀及实际切片共用它。
+模型适配仍负责pending入turn、prefix查找、阶段／completion映射和成功后推进原游标；共同策略只保存量子，
+不拥有会话或第二份进度。普通和MTP保留各自实际可支持的分块边界。
+[有限检查](../evidence/correctness/inference-prefill-facts-2026-10-27.json)覆盖四组纯主机边界与原Q2／B2多轮CUDA非时间报告一致，
+不把这一算法抽离记作吞吐提升或其它平台运行结果。
+
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
 `--warmup-shapes planned`只遍历原`planned_slot_uses`中有实际用途的完整形状键，在ready前调用同一准备入口；

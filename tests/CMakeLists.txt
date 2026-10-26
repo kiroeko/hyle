@@ -215,6 +215,18 @@ if(TARGET hyle_mem)
     LABELS "tooling;generation;batch" TIMEOUT 30)
 endif()
 
+add_executable(hyle_inference_prefill_plan_test tools/inference_prefill_plan_test.cc)
+target_link_libraries(hyle_inference_prefill_plan_test PRIVATE hyle_build_contract)
+target_compile_features(hyle_inference_prefill_plan_test PRIVATE cxx_std_23)
+hyle_apply_warnings(hyle_inference_prefill_plan_test)
+hyle_apply_sanitizer(hyle_inference_prefill_plan_test)
+set_target_properties(hyle_inference_prefill_plan_test PROPERTIES
+  FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+add_dependencies(hyle_tests hyle_inference_prefill_plan_test)
+add_test(NAME hyle_inference_prefill_plan_test COMMAND hyle_inference_prefill_plan_test)
+set_tests_properties(hyle_inference_prefill_plan_test PROPERTIES
+  LABELS "tooling;generation;prefill" TIMEOUT 30)
+
 add_executable(hyle_inference_request_progress_test tools/inference_request_progress_test.cc)
 target_link_libraries(hyle_inference_request_progress_test PRIVATE hyle_build_contract)
 target_compile_features(hyle_inference_request_progress_test PRIVATE cxx_std_23)

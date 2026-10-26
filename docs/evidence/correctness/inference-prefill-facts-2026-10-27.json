@@ -1,0 +1,171 @@
+{
+  "status": "PASS_FINITE_SHARED_PREFILL_FACTS",
+  "date": "2026-10-27",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 493765,
+    "sha256": "3d85397362f767f7c9516faf1927086d1bf087afeb0ff856783dc8cab048a67d"
+  },
+  "header": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\prefill_plan.h",
+    "bytes": 1449,
+    "sha256": "fb5f0afd618ed4af6dae02ae48d11b0de2fe9dcebb68392e9286823892e2f707"
+  },
+  "test": {
+    "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+    "bytes": 4118,
+    "sha256": "78cb2992e30390ae6333cecc595771b3826c88fcf0678051690aef5a8473d5d7"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\image\\hyle.exe",
+    "bytes": 142050816,
+    "sha256": "125271caa8f4ecd141126d1d5cd1971ad2979e2d4770f8f3d6037dc03fe10b98"
+  },
+  "standalone": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\host\\image\\prefill-plan-test.exe",
+    "bytes": 12800,
+    "sha256": "a2f0fb7bf2db1c9d44ee4912a3c2b1844fde4bc0b90d8afd3b8048e99c5c1b99"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\ready.json",
+    "bytes": 3026,
+    "sha256": "47dfa6a3ba14fabbf1ee43ced64f76ab8050796b3229b8bc8a4aa12d76a8cc91"
+  },
+  "counts": {
+    "CXX_TUs": 2,
+    "links": 2,
+    "host_processes": 1,
+    "host_groups": 4,
+    "CUDA_model_processes": 1,
+    "baseline_reruns": 0,
+    "MTP_reruns": 0,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "changes": [
+    "One pure engine PrefillPolicy supplies next(begin/rows/complete) and overflow-safe parts facts.",
+    "Existing cold episode/shape/first-carrier planning and actual ordinary/prefix suffix slicing now use the same facts; caller still commits its cursor."
+  ],
+  "results": {
+    "host": {
+      "process": {
+        "exit": 0,
+        "pid": 50560,
+        "seconds": 0.042909600015264004
+      },
+      "groups": 4,
+      "scope": "Invalid/finished input, chunk remainder, borrowed consumed offsets, SIZE_MAX no-overflow."
+    },
+    "ordinary_planned_Q2_B2": {
+      "process": {
+        "exit": 0,
+        "pid": 62088,
+        "seconds": 1.196234600036405
+      },
+      "ledger": {
+        "A": {
+          "state_only_records": 3,
+          "rows": 11,
+          "ledger_records": 7,
+          "visible": 11,
+          "draws": 4,
+          "generated": [
+            8,
+            8,
+            3,
+            40
+          ]
+        },
+        "B": {
+          "state_only_records": 1,
+          "rows": 7,
+          "ledger_records": 5,
+          "visible": 7,
+          "draws": 4,
+          "generated": [
+            0,
+            34,
+            10,
+            10
+          ]
+        }
+      },
+      "eligible_planned_shapes": 6,
+      "complete_nontime_report_differences": 0,
+      "control": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\runs\\planned\\report.json",
+        "bytes": 29221,
+        "sha256": "f15ff50a41d1336fb4e2c45856d9e0903222b50e25a55f91303ca877662872b3"
+      },
+      "differences": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\nontime-differences.json",
+        "bytes": 4,
+        "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+      }
+    }
+  },
+  "build": {
+    "model": {
+      "exit": 0,
+      "pid": 40160,
+      "seconds": 20.650443200021982
+    },
+    "CLI_link": {
+      "exit": 0,
+      "pid": 52260,
+      "seconds": 1.788528300006874
+    },
+    "standalone_compile": {
+      "exit": 0,
+      "pid": 62100,
+      "seconds": 0.29644379997625947
+    },
+    "standalone_link": {
+      "exit": 0,
+      "pid": 59644,
+      "seconds": 0.03879690001485869
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\compile\\actual-dependencies.json",
+      "bytes": 76760,
+      "sha256": "d707b8ca34f3de437b7c2adcdcd932b4e718aab5abc8b5229ec7fa8b224d0e2d"
+    },
+    "standalone_actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\host\\compile\\actual-dependencies.json",
+      "bytes": 21274,
+      "sha256": "1079b62b3b2e5943dc324c1c53e44950fb7d22d739aeb3f6b006bd7cf656d67f"
+    },
+    "retained_CLI_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\retained-inputs.json",
+      "bytes": 57744,
+      "sha256": "eb2b80f958228e46b01379ee9232769310b3a95a782f72fc76f896f5187877cd"
+    },
+    "failed_compile_link_or_native_processes": 0
+  },
+  "reuse": {
+    "previous_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-warmup-shapes-2026-10-27.json",
+      "bytes": 9151,
+      "sha256": "536861c7b73ace7e6734975e78a1c3ed184b0dda4c3f292d8d83ef3bb1f8ee92"
+    },
+    "baseline_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\image\\hyle.exe",
+      "bytes": 142050304,
+      "sha256": "a1ba07f344162bc4cdb7907c9dd09b8fcb066ad6049a3655f3d0dbebe6fb9f9f"
+    },
+    "scope": "223 prior CLI inputs and exact runtime reused. No SDK/native/NVCC/weights/report rebuild; no baseline or MTP re-execution."
+  },
+  "limits": [
+    "One cached untrained tiny CUDA ordinary Q2/B2 multi-turn journey and four standalone host groups only.",
+    "All prior nonclock JSON fields, ledger/RNG/IDs/cache/resource/work facts compared without new exclusions. Clock/rate normalization uses the recorded existing pure functions.",
+    "No device-capture warmup, varlen/padding, cross-chunk bitwise quality, performance gain, full-model or all-platform claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-prefill-facts-2026-10-27.zip",
+    "bytes": 228387,
+    "sha256": "074a22c6ab0dd3f90f3a331af78e912026cfae22cdddd778d0421883448c0731",
+    "members": 70,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

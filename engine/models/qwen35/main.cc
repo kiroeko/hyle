@@ -51,6 +51,7 @@
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
 #include "../../inference/request_loop.h"
+#include "../../inference/prefill_plan.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
 #include "../../inference/execution_observation.h"
@@ -4969,12 +4970,12 @@ struct GenerationRequest {
 // Cold episode count; imported source chunks have their own explicit bound.
 std::size_t generation_record_capacity(std::span<const inference::GenerationTurn> turns,
     std::size_t max_prefill_rows = SIZE_MAX, std::size_t imported_records = 0) {
-  if (!max_prefill_rows) throw std::runtime_error("prefill quantum must be positive");
+  const inference::PrefillPolicy prefill(max_prefill_rows);
   auto count = imported_records;
   for (std::size_t turn = 0; turn < turns.size(); ++turn) {
     const auto rows = cache::add(turns[turn].prompt.size(), turn ? 1u : 0u);
     if (!rows || !turns[turn].max_outputs) throw std::runtime_error("generation requires nonempty turn input and positive quota");
-    const auto chunks = rows / max_prefill_rows + (rows % max_prefill_rows != 0);
+    const auto chunks = prefill.parts(rows);
     count = cache::add(count, cache::add(chunks, turns[turn].max_outputs - 1));
   }
   return count;
@@ -5490,6 +5491,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   const auto &sampler = prepared_sampling.configuration;
   if (!max_prefill_rows || (model.cache_plan.draft_cache && max_prefill_rows != SIZE_MAX))
     throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
+  const inference::PrefillPolicy prefill(max_prefill_rows);
   // Credit belongs to this episode, not the turn's immutable output quota.
   // Reject before prefix lookup, session creation or any other admission work.
   if (!output_credit) throw std::runtime_error("generation must wait for output credit before preparation");
@@ -5507,7 +5509,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         // pure length preview and the original pinned lookup below.
         consumed = prefix->match_length(*request.input, request.prompt.size(), 1, &model, model.math_identity());
       }
-      emits = request.prompt.size() - consumed <= max_prefill_rows;
+      emits = prefill.next(request.prompt.size(), consumed).complete;
     }
     if (emits) validate_logits_inputs(sampler, request.logits, model.vocabulary);
   }
@@ -5548,11 +5550,12 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         auto history = cache::copy_history(hit.payload.replay, model.capacity);
         preflight_generation_prompt_ledger(*request.ledger, hit.payload.replay);
         request.progress.preflight_adopt_committed_history();
-        const auto suffix = request.prompt.size() - reused_tokens;
-        const auto suffix_rows = (std::min)(suffix, max_prefill_rows);
-        const auto suffix_completion = suffix > suffix_rows ? TextCompletion::kStateOnly : TextCompletion::kEmitNext;
+        const auto suffix_part = prefill.next(request.prompt.size(), reused_tokens);
+        const auto suffix = request.prompt.size() - suffix_part.begin;
+        const auto suffix_rows = suffix_part.rows;
+        const auto suffix_completion = suffix_part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
         std::string hit_name = "prefill";
-        if (suffix > suffix_rows) hit_name += "_chunk" + std::to_string(reused_tokens);
+        if (!suffix_part.complete) hit_name += "_chunk" + std::to_string(reused_tokens);
         const std::array chunks{suffix_rows};
         const auto prior_sampling_seconds = model.frontier_sampling_seconds;
         const auto suffix_role = !model.cache_plan.draft_cache ? GraphRole::kText : (suffix == 1 || request.prompt.size() == 1)
@@ -5603,11 +5606,10 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       } else { request.prefix_misses = 1; request.history = std::make_shared<cache::ReplayHistory>(model.capacity); }
     }
     call.input_begin = request.turn_input_consumed;
-    const auto remaining_input = request.prompt.size() - call.input_begin;
-    const auto rows = (std::min)(remaining_input, max_prefill_rows);
-    call.prefill_complete = rows == remaining_input;
+    const auto part = prefill.next(request.prompt.size(), call.input_begin);
+    call.prefill_complete = part.complete;
     call.completion = call.prefill_complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-    call.prompt = request.prompt.subspan(call.input_begin, rows);
+    call.prompt = request.prompt.subspan(part.begin, part.rows);
     const auto lag = request.session && request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
         : call.prompt.size() == 1 ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
@@ -6112,6 +6114,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   if (!max_prefill_rows || (mtp && max_prefill_rows != SIZE_MAX))
     throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
+  const inference::PrefillPolicy prefill(max_prefill_rows);
   if (!stop_policies.empty() && stop_policies.size() != schedules.size())
     throw std::runtime_error("one immutable stop policy is required per request");
   for (const auto &policy : stop_policies) {
@@ -6186,11 +6189,11 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
   };
   const auto note_prefill = [&](std::size_t tokens, std::size_t member, bool lag = false) {
-    while (tokens) {
-      const auto rows = (std::min)(tokens, max_prefill_rows);
-      const auto completion = rows == tokens ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-      note_prompt(prompt_role(rows, lag), rows, member, completion);
-      tokens -= rows;
+    for (std::size_t consumed = 0; consumed < tokens;) {
+      const auto part = prefill.next(tokens, consumed);
+      const auto completion = part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
+      note_prompt(prompt_role(part.rows, lag), part.rows, member, completion);
+      consumed = part.begin + part.rows;
     }
   };
   for (std::size_t i = 0; i < requests.size(); ++i) {
@@ -6261,9 +6264,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::cerr << "shape_warmup policy=planned shapes=" << shapes
               << " seconds=" << std::chrono::duration<double>(Clock::now() - begin).count() << '\n';
   }
-  const std::array first_prefill{(std::min)(requests.front().prompt.size(), max_prefill_rows)};
-  const auto first_completion = first_prefill[0] == requests.front().prompt.size()
-      ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
+  const auto first_part = prefill.next(requests.front().prompt.size());
+  const std::array first_prefill{first_part.rows};
+  const auto first_completion = first_part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
   model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]), first_completion, requests.front().sampling_index);
   if constexpr (!mtp) if (decode_bound) {
     const std::array decode{std::size_t{1}};
@@ -6721,13 +6724,14 @@ int qwen35::run(int argc, char **argv) {
         throw std::runtime_error("prompt, continuation and requested generation exceed --capacity");
     }
     if (natural_single) generation_schedules.push_back({"default", {{prompt, steps}}});
+    const inference::PrefillPolicy prefill(max_prefill_rows);
     std::vector<std::size_t> planned_chunks;
     std::size_t mtp_schema_rows = 0;
     bool mtp_has_decode = !scheduled && steps > 1;
     if (natural_generation) {
       for (const auto &request : generation_schedules) for (std::size_t i = 0; i < request.turns.size(); ++i) {
         const auto tokens = qwen35::cache::add(request.turns[i].prompt.size(), i ? 1 : 0);
-        planned_chunks.push_back((std::min)(tokens, max_prefill_rows));
+        planned_chunks.push_back(prefill.next(tokens).rows);
         if (mtp_enabled) mtp_schema_rows = (std::max)(mtp_schema_rows, qwen35::cache::add(tokens, i ? 1 : 0));
         mtp_has_decode = mtp_has_decode || request.turns[i].max_outputs > 1;
       }
