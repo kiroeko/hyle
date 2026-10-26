@@ -68,7 +68,7 @@ std::array<std::vector<float>, 2> dense_reference(c::Context &context,
   return {half_test::read<float>(buffers[0]), half_test::read<float>(buffers[1])};
 }
 
-void exercise(bool publish_activation) {
+void exercise(bool publish_activation, bool projected_fallback = false) {
   auto created = g::cuda::create_context();
   ASSERT_TRUE(created) << created.error().message();
   auto context = std::move(*created);
@@ -211,26 +211,36 @@ void exercise(bool publish_activation) {
   const auto store = *store_result;
   // Store has no mathematical result; its original external effect is the root.
   if (publish_activation) ASSERT_TRUE(builder.publish(activation).ok());
+  // A legitimate escaping Gather result prevents the exact five-node indexed
+  // fusion. It must remain usable through checked selected-row projection.
+  if (projected_fallback) ASSERT_TRUE(builder.publish(gathered).ok());
   const auto graph_result = std::move(builder).finish();
   ASSERT_TRUE(graph_result) << graph_result.error().message();
   const auto &graph = *graph_result;
   auto compiled = g::cuda::compile(graph, context, memory.ref());
   ASSERT_TRUE(compiled) << compiled.error().message();
-  // Do not let a correct fallback Store/Gather masquerade as indexed fusion.
-  ASSERT_EQ(compiled->report.step_count(), 1u);
-  const auto step = compiled->report.step(0).value();
-  EXPECT_EQ(step.kind, g::CompileStepKind::kProviderRegion);
-  EXPECT_EQ(step.policy, (c::RoutePolicyId{0x48594c4547474355ULL, 6, 1}));
-  EXPECT_EQ(step.implementation, c::ProviderImplementationId{7});
-  EXPECT_EQ(step.dispatch_count, 1u);
-  ASSERT_EQ(step.node_count, 5u);
-  const std::array expected_nodes{graph.producer(gathered).value(),
-      graph.producer(initial).value(), gdn, graph.producer(rows).value(), store};
-  for (const auto expected : expected_nodes) {
-    bool found = false;
-    for (std::size_t i = 0; i < step.node_count; ++i)
-      found |= compiled->report.step_node(0, i).value() == expected;
-    EXPECT_TRUE(found);
+  if (projected_fallback) {
+    ASSERT_GT(compiled->report.step_count(), 1u);
+    for (std::size_t i = 0; i < compiled->report.step_count(); ++i)
+      EXPECT_NE(compiled->report.step(i)->policy,
+          (c::RoutePolicyId{0x48594c4547474355ULL, 6, 1}));
+  } else {
+    // Do not let a correct fallback Store/Gather masquerade as indexed fusion.
+    ASSERT_EQ(compiled->report.step_count(), 1u);
+    const auto step = compiled->report.step(0).value();
+    EXPECT_EQ(step.kind, g::CompileStepKind::kProviderRegion);
+    EXPECT_EQ(step.policy, (c::RoutePolicyId{0x48594c4547474355ULL, 6, 1}));
+    EXPECT_EQ(step.implementation, c::ProviderImplementationId{7});
+    EXPECT_EQ(step.dispatch_count, 1u);
+    ASSERT_EQ(step.node_count, 5u);
+    const std::array expected_nodes{graph.producer(gathered).value(),
+        graph.producer(initial).value(), gdn, graph.producer(rows).value(), store};
+    for (const auto expected : expected_nodes) {
+      bool found = false;
+      for (std::size_t i = 0; i < step.node_count; ++i)
+        found |= compiled->report.step_node(0, i).value() == expected;
+      EXPECT_TRUE(found);
+    }
   }
 
   auto invocation = compiled->executable.create_invocation().value();
@@ -248,14 +258,38 @@ void exercise(bool publish_activation) {
     ASSERT_TRUE(invocation.bind(activation, c::TensorView::create(fixture.inputs[2],
         activation_buffer.view()).value()).ok());
   }
-  ASSERT_TRUE(s::prepare(invocation, queues, {.host_workspace = staging.ref()}).ok());
+  m::Buffer gathered_buffer;
+  if (projected_fallback) {
+    const auto gathered_description = graph.value_description(gathered).value();
+    gathered_buffer = output_buffer(memory.ref(), gathered_description);
+    ASSERT_TRUE(invocation.bind(gathered, c::TensorView::create(gathered_description,
+        gathered_buffer.view()).value()).ok());
+  }
+  const std::array source_bindings{s::SourceBinding{store, graph.producer(gathered).value()}};
+  const auto prepared = s::prepare(invocation, graph, queues, source_bindings,
+      {.host_workspace = staging.ref()});
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
   auto transaction = s::SlotBindings::create(layout, sources, destinations);
   ASSERT_TRUE(transaction) << transaction.error().message();
   for (std::size_t i = 0; i < kBatches; ++i)
     ASSERT_EQ(transaction->source_addresses()[i].index, kSources[i]);
   for (std::size_t i = 0; i < kBatches * kSnapshots; ++i)
     ASSERT_EQ(transaction->destination_addresses()[i].index, kDestinations[i]);
-  ASSERT_TRUE(s::bind(invocation, graph, store, std::move(*transaction)).ok());
+  g::CompileStepReport gather_step;
+  bool found_gather_step = false;
+  const auto original_gather = graph.producer(gathered).value();
+  for (std::size_t i = 0; i < compiled->report.step_count(); ++i) {
+    const auto candidate = compiled->report.step(i).value();
+    for (std::size_t node = 0; node < candidate.node_count; ++node) {
+      if (compiled->report.step_node(i, node).value() != original_gather) continue;
+      gather_step = candidate;
+      found_gather_step = true;
+    }
+  }
+  ASSERT_TRUE(found_gather_step);
+  const auto bound = s::bind(invocation, graph, store, std::move(*transaction));
+  ASSERT_TRUE(bound.ok()) << bound.message() << "; Gather provider=" << gather_step.provider.name
+      << ", step kind=" << static_cast<unsigned>(gather_step.kind);
   ASSERT_TRUE(invocation.prepare_replay(queues, {.mode = g::ReplayMode::kCommands}).ok());
   auto done = invocation.submit(queues);
   ASSERT_TRUE(done) << done.error().message();
@@ -263,6 +297,8 @@ void exercise(bool publish_activation) {
   ASSERT_TRUE(status.ok()) << status.message();
   *done = {};
   if (publish_activation) expect_bits(half_test::read<float>(activation_buffer), reference[0]);
+  if (projected_fallback)
+    expect_bits(half_test::read<float>(gathered_buffer), fixture.data[5]);
   auto returned = s::take(invocation, store);
   ASSERT_TRUE(returned) << returned.error().message();
   ASSERT_EQ(returned->source_count(), kBatches);
@@ -338,5 +374,8 @@ TEST(GgmlCudaIndexedStateGraph, PublishedActivationAndCandidateSlotsMatchDenseGd
 }
 TEST(GgmlCudaIndexedStateGraph, EffectRootWritesCandidatesWithoutPublishedActivation) {
   exercise(false);
+}
+TEST(GgmlCudaIndexedStateGraph, EscapingGatherUsesCheckedProjectedFallback) {
+  exercise(true, true);
 }
 } // namespace

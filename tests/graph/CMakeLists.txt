@@ -2,9 +2,10 @@ find_package(Threads REQUIRED)
 
 hyle_add_header_self_contained_test(graph)
 hyle_add_test(graph SOURCES graph_test.cc lease_submission_test.cc native_analysis_test.cc effect_preflight_test.cc slot_bindings_test.cc)
-if(TARGET hyle_graph_route_cpu AND TARGET hyle_compute_backend_cpu)
+if(TARGET hyle_graph_route_cpu AND TARGET hyle_compute_backend_cpu
+   AND TARGET hyle_compute_provider_native)
   hyle_add_test(graph NAME slots SOURCES slots_execution_test.cc
-    DEPS hyle_graph_route_cpu hyle_compute_backend_cpu)
+    DEPS hyle_graph_route_cpu hyle_compute_backend_cpu hyle_compute_provider_native)
   hyle_stage_runtime(hyle_graph_slots_test)
 endif()
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_graph_route_cuda

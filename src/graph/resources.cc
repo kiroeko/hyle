@@ -701,6 +701,25 @@ Status RegionAccess::bind_pending_projected(Invocation&invocation,ValueId value,
     compute::ConstTensorView tensor,std::span<const ProjectedReader> readers)noexcept{
   return bind_projected_impl(invocation,value,tensor,{},readers,true);
 }
+Result<bool> RegionAccess::has_input_binding(const InvocationState*state,
+    ValueId value,compute::ConstTensorView expected)noexcept{
+  if(!state || !state->plan)
+    return std::unexpected(Status::FailedPrecondition("input-binding parent invocation is empty"));
+  const auto&plan=*state->plan;
+  if(!value.valid() || GraphIdentity::generation(value)!=plan.generation ||
+      value.kind()!=ValueKind::kInput || value.ordinal()>=plan.binding_roles.size() ||
+      !(plan.binding_roles[value.ordinal()]&kExternalInput) || !expected.valid())
+    return std::unexpected(Status::InvalidArgument("input-binding query needs its original input and tensor"));
+  const auto physical=plan.external_instances[value.ordinal()];
+  if(physical==kNoWorkspaceRequest || physical>=state->bound.size() ||
+      physical>=state->readable.size())
+    return std::unexpected(Status::Internal("original input has no physical binding"));
+  if(!state->bound[physical] || !state->readable[physical].valid())return false;
+  const auto actual=state->readable[physical];
+  const auto left=actual.storage(),right=expected.storage();
+  return actual.description()==expected.description() && left.resource()==right.resource() &&
+      left.native_handle()==right.native_handle() && left.offset()==right.offset() && left.size()==right.size();
+}
 Result<bool> RegionAccess::has_read_projection(const InvocationState*state,
     ValueId value,std::span<const compute::ReadLease>pages)noexcept{
   if(!state || !state->plan)

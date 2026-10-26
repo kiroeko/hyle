@@ -1174,11 +1174,22 @@ CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed�
 
 Store 不授予整池读写权限。普通 rows 不得与任意目标重叠；源槽、未选择槽和 padding
 保持原权限。reset 撤回权限后不能继续执行旧事务，但实际退休后仍可 take 回收 owner。
-独立Store的fallback只处理写回，不自动绑定投影Gather，也不支持capture；冷索引上传可能等待。
+独立Store的fallback只处理写回，不自动推断源Gather，也不支持capture；冷索引上传可能等待。
+需要从同一池读取源槽时，在第1步用原图声明逻辑关联，后续bind／执行／take顺序相同：
+
+```cpp
+const std::array sources{graph::slots::SourceBinding{store_node, gather_node}};
+auto status = graph::slots::prepare(run, logical_graph, queues, sources, options);
+```
+
+源Gather须是checked axis0读取完整同类型槽，池和两组ID输入保持私有。共同绑定按真实source leases
+生成源ID，并核实际选中reader的读取资格；调用者不再自行绑定池或ID。准备／seal会重新核实际输入，
+替换池或ID不能沿用原权限执行。这个关联只描述逻辑资源，不选择Provider；尚无资格的实现会明确拒绝，
+不能以整池ReadLease代替。当前Apple／Vulkan的原生Store及部分普通Gather资格仍待接通。
 CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合：若实际选中该region，
 同一`slots::bind`从事务的B个source readers和B×K个writers生成一块私有索引载体，
 同时绑定原池的准确读写权限；普通GDN的K1与最后K个候选状态遵守同一接口。
-这不授予整池读取权限，也不替代其它后端或拒绝融合时的源绑定。当前只支持无逃逸稠密状态的
+这不授予整池读取权限；拒绝融合时用上述SourceBinding接普通Gather和Store。融合当前只支持无逃逸稠密状态的
 F32数学链；Y可正常发布，也可只有状态写入。完整引擎和conv尚未接此路径，未证明速度收益。
 实际使用见[CPU](../../tests/graph/slots_execution_test.cc)和
 [CUDA](../../tests/graph/slots_cuda_execution_test.cc)Store消费者及

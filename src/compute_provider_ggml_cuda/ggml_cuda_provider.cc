@@ -14,6 +14,7 @@
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include <ggml-backend.h>
 #include <ggml-backend-impl.h>
@@ -28,6 +29,7 @@
 #include "hyle/mem/std_allocator.h"
 #include "hyle/compute/model_ops.h"
 #include "metadata_arena.h"
+#include "operation_cold.h"
 #include "index_guard.h"
 #include "native_bridge.h"
 #include "native_context.h"
@@ -1345,11 +1347,63 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
       value.runtime.workspace_owner == ProviderWorkspaceOwner::kCaller;
   return Status::Ok();
 }
+Status inspect_projected_input(const detail::ProviderPrepared &value,
+    detail::OperationPreparedAccess *access) noexcept {
+  if (!access)
+    return Status::InvalidArgument("ggml CUDA prepared access output is null");
+  *access = {};
+  if (value.vtable != &kPrepared || !value.state)
+    return Status::Unimplemented("foreign ggml CUDA prepared implementation");
+  const auto &program = *static_cast<const Program *>(value.state);
+  const auto &recipe = program.recipe;
+  // Only the original public single-operation factory qualifies. In particular
+  // this is not a generic recipe analyzer, a packed table or an indexed GDN.
+  if (!program.primary || program.device < 0 || program.transpose_constant ||
+      recipe.nodes.size() != 1 || recipe.inputs.size() != 2 ||
+      recipe.outputs.size() != 1 || recipe.values.size() != 3 ||
+      !recipe.constants.empty() || !recipe.effect_roots.empty() ||
+      recipe.inputs[0] != 0 || recipe.inputs[1] != 1 || recipe.outputs[0] != 2 ||
+      program.index_checks.size() != 1)
+    return Status::Unimplemented("ggml CUDA projection needs its original checked Gather leaf");
+  const auto &node = recipe.nodes[0];
+  const auto *gather = node.operation.get_if<Gather>();
+  if (!gather || node.indexed_state || node.inputs.size() != 2 || node.outputs.size() != 1 ||
+      node.inputs[0] != 0 || node.inputs[1] != 1 || node.outputs[0] != 2 ||
+      gather->bounds != IndexBoundsPolicy::kChecked ||
+      (gather->axis != 0 && gather->axis != -2))
+    return Status::Unimplemented("ggml CUDA projection is not a checked axis-zero Gather");
+  const auto &table = recipe.values[0], &ids = recipe.values[1], &output = recipe.values[2];
+  const auto type = table.data_type();
+  if (!table.is_plain() || table.rank() != 2 || table.dimensions()[0] <= 0 ||
+      table.dimensions()[1] <= 0 ||
+      (type != DataType::kFloat32 && type != DataType::kFloat16 && type != DataType::kBFloat16) ||
+      !ids.is_dense() || ids.rank() != 1 || ids.data_type() != DataType::kInt32 ||
+      ids.dimensions()[0] <= 0 || !output.is_dense() || output.rank() != 2 ||
+      output.data_type() != type || output.dimensions()[0] != ids.dimensions()[0] ||
+      output.dimensions()[1] != table.dimensions()[1])
+    return Status::Unimplemented("ggml CUDA projection needs exact typed selected-row storage");
+  const auto unit = static_cast<std::int64_t>(data_type_size(type));
+  const auto &check = program.index_checks[0];
+  if (table.dimensions()[1] > INT64_MAX / unit || table.byte_strides()[1] != unit ||
+      table.byte_strides()[0] < table.dimensions()[1] * unit ||
+      check.input != 1 || check.node != 0 || check.extent != table.dimensions()[0] ||
+      !std::cmp_equal(check.count, ids.dimensions()[0]))
+    return Status::Unimplemented("ggml CUDA projection differs from its actual indexed reader");
+  // Native typed GET_ROWS keeps nb[1] and never converts/CONT-copies the bank.
+  // The typed adapter must separately prove the private IDs match the actual
+  // retained row leases; a bounds check alone does not establish that coverage.
+  *access = {.projected_input = 0};
+  return Status::Ok();
+}
 const void *query_extension(void *value, ProviderExtensionId id) noexcept {
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
   if (id == detail::kCaptureBindingsExtensionId)
     return &capture;
+  static constexpr detail::OperationAccessVTable projected{
+      .inspect = &inspect_projected_input};
+  if (id == detail::kProjectedInputReadExtensionId)
+    return &projected;
   const auto &extension = static_cast<Context *>(value)->extension;
   return id == extension.id ? extension.table : nullptr;
 }

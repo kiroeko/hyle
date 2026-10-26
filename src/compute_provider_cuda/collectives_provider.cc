@@ -9,6 +9,7 @@
 #include "hyle/compute/detail/capture_bindings.h"
 #include "collectives.h"
 #include "native_context.h"
+#include "operation_cold.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::cuda_native {
@@ -385,10 +386,49 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value,
         program.arg_tiles != 0));
   return Status::Ok();
 }
+Status inspect_projected_input(const detail::ProviderPrepared &value,
+    detail::OperationPreparedAccess *access) noexcept {
+  if (!access)
+    return Status::InvalidArgument("CCCL prepared access output is null");
+  *access = {};
+  if (value.vtable != &kPrepared || !value.state)
+    return Status::Unimplemented("foreign CCCL prepared implementation");
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  const auto &program = prepared.program;
+  // Qualify the actual fixed row map, not only the original operation name.
+  // For this shape GatherMap is IDs[b]*E+e; GatherInput uses the original
+  // byte strides. The one-cell degenerate axis choice is the same row map.
+  if (!prepared.primary || program.kind != collectives::Kind::kGather ||
+      !program.checked || program.rank != 2 || !program.dimensions[0] ||
+      !program.dimensions[1] || program.width != program.dimensions[0] ||
+      program.inner != program.dimensions[1] || program.index_i64 ||
+      program.index_rank != 1 || !program.index_count ||
+      program.index_dimensions[0] != program.index_count ||
+      program.index_strides[0] != sizeof(std::int32_t) ||
+      (program.element_bytes != 1 && program.element_bytes != 2 &&
+       program.element_bytes != 4 && program.element_bytes != 8))
+    return Status::Unimplemented("CCCL projection needs its original checked selected-row Gather");
+  if (program.dimensions[1] > SIZE_MAX / program.element_bytes ||
+      program.strides[1] != program.element_bytes ||
+      program.strides[0] < program.dimensions[1] * program.element_bytes ||
+      (program.dense && program.strides[0] != program.dimensions[1] * program.element_bytes) ||
+      program.inner > SIZE_MAX / program.index_count ||
+      program.count != program.index_count * program.inner || program.workspace_bytes != 0)
+    return Status::Unimplemented("CCCL projection differs from its exact row strides/count");
+  // The existing check kernel precedes every typed output load. Invalid IDs
+  // suppress all reads/writes; valid IDs select only these original row bytes.
+  // Guard coverage and immutable private-ID ownership are separately proved
+  // by the typed adapter and original Graph admission, never by this query.
+  *access = {.projected_input = 0};
+  return Status::Ok();
+}
 const void *query_extension(void *, ProviderExtensionId id) noexcept {
   static constexpr detail::CaptureBindingsVTable capture{
       .inspect = &inspect_capture_bindings};
-  return id == detail::kCaptureBindingsExtensionId ? &capture : nullptr;
+  if (id == detail::kCaptureBindingsExtensionId) return &capture;
+  static constexpr detail::OperationAccessVTable projected{
+      .inspect = &inspect_projected_input};
+  return id == detail::kProjectedInputReadExtensionId ? &projected : nullptr;
 }
 const detail::ProviderVTable kProvider{
     .identity = {.id = kCcclProviderId,

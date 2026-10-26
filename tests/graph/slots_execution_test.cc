@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/graph.h"
@@ -289,6 +290,183 @@ TEST(GraphSlotsExecution, ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner) {
     EXPECT_EQ(recovered->destinations()[i].generation(), generations[i]);
     EXPECT_EQ(read_item(recovered->destinations()[i]), kUntouched);
   }
+  EXPECT_EQ(read_item(storage.sentinel), kSentinel);
+}
+
+// A single logical Graph is used with the ordinary native Gather and fallback
+// Store. Only the real initialized source items are readable; the [P,E] pool
+// description does not manufacture initialized storage for the other slots.
+struct SourceProgram final {
+  c::Context context = c::Context::create(c::cpu::device(), c::native::provider()).value();
+  c::Queue queue = context.create_queue().value();
+  s::Schema schema;
+  c::TensorDesc ids_description;
+  g::ValueId pool, source_ids, destination_ids, gathered;
+  g::NodeId gather, store;
+  g::Graph graph;
+  g::CompiledGraph compiled;
+  m::Buffer gathered_buffer;
+  g::Invocation invocation;
+  const std::array<g::QueueBinding, 1> queues{{{g::ExecutionLaneId{0}, &queue}}};
+
+  explicit SourceProgram(std::size_t stride) {
+    schema = s::Schema::create(item_description(), 5, stride).value();
+    ids_description = c::TensorDesc::dense(c::DataType::kInt32,
+        std::array<std::int64_t, 1>{2}).value();
+    auto builder = g::GraphBuilder::create().value();
+    pool = builder.input(schema.capacity_description().value()).value();
+    source_ids = builder.input(ids_description).value();
+    destination_ids = builder.input(ids_description).value();
+    gather = builder.add_node(c::Operation(c::Gather{.axis = 0,
+        .bounds = c::IndexBoundsPolicy::kChecked}), std::array{pool, source_ids}).value();
+    gathered = builder.result(gather, 0).value();
+    store = builder.add_node(c::Operation::custom(s::Store{schema}),
+        std::array{gathered, destination_ids}).value();
+    EXPECT_TRUE(builder.publish(gathered).ok());
+    graph = std::move(builder).finish().value();
+    compiled = g::cpu::compile(graph, context).value();
+    invocation = compiled.executable.create_invocation().value();
+    const auto description = graph.value_description(gathered).value();
+    gathered_buffer = m::Buffer::create(m::system_resource(), description.required_bytes().value(), 64).value();
+    EXPECT_TRUE(invocation.bind(gathered,
+        c::TensorView::create(description, gathered_buffer.view()).value()).ok());
+  }
+};
+
+struct SourceStorage final {
+  c::LeasePool pool;
+  c::LeaseSlotLayout layout;
+  std::array<c::ReadLease, 2> sources;
+  std::array<c::WriteLease, 2> destinations;
+  c::ReadLease sentinel;
+  explicit SourceStorage(std::size_t stride) {
+    pool = c::LeasePool::create(m::system_resource(), 5 * stride,
+        {.max_blocks = 5, .backing_alignment = 64}).value();
+    layout = c::LeaseSlotLayout::create(pool, item_description(), 5, stride).value();
+    std::array<c::WriteLease, 5> blocks;
+    for (std::size_t i = 0; i < blocks.size(); ++i) {
+      blocks[i] = pool.allocate(kItemBytes, stride).value();
+      EXPECT_EQ(layout.locate(blocks[i])->index, i);
+    }
+    constexpr std::array<float, 4> first{1, 2, 3, 4}, second{11, 12, 13, 14};
+    EXPECT_TRUE(blocks[1].view()->write(std::as_bytes(std::span(first))).ok());
+    EXPECT_TRUE(blocks[3].view()->write(std::as_bytes(std::span(second))).ok());
+    EXPECT_TRUE(blocks[2].view()->write(std::as_bytes(std::span(kSentinel))).ok());
+    sources[0] = blocks[1].publish().value(); sources[1] = blocks[3].publish().value();
+    sentinel = blocks[2].publish().value();
+    destinations[0] = std::move(blocks[0]); destinations[1] = std::move(blocks[4]);
+    for (auto &writer : destinations)
+      EXPECT_TRUE(writer.view()->write(std::as_bytes(std::span(kUntouched))).ok());
+  }
+};
+
+void exercise_source_gather(std::size_t stride) {
+  SourceProgram program(stride);
+  SourceStorage storage(stride);
+  const std::array associations{s::SourceBinding{program.store, program.gather}};
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
+  auto bindings = s::SlotBindings::create(storage.layout, storage.sources,
+      storage.destinations).value();
+  ASSERT_EQ(bindings.source_addresses()[0].index, 1u);
+  ASSERT_EQ(bindings.source_addresses()[1].index, 3u);
+  ASSERT_EQ(bindings.destination_addresses()[0].index, 0u);
+  ASSERT_EQ(bindings.destination_addresses()[1].index, 4u);
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, program.store, std::move(bindings)).ok());
+  const auto prepared = program.invocation.prepare_replay(program.queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  auto done = program.invocation.submit(program.queues);
+  ASSERT_TRUE(done) << done.error().message();
+  EXPECT_FALSE(s::take(program.invocation, program.store));
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  {
+    auto output = program.invocation.result(program.gathered).value();
+    std::array<float, 8> actual{};
+    ASSERT_TRUE(output.tensor()->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, (std::array<float, 8>{1, 2, 3, 4, 11, 12, 13, 14}));
+    EXPECT_FALSE(s::take(program.invocation, program.store));
+  }
+  auto taken = s::take(program.invocation, program.store);
+  ASSERT_TRUE(taken) << taken.error().message();
+  auto low = taken->destinations()[0].publish().value();
+  auto high = taken->destinations()[1].publish().value();
+  EXPECT_EQ(read_item(low), (std::array<float, 4>{1, 2, 3, 4}));
+  EXPECT_EQ(read_item(high), (std::array<float, 4>{11, 12, 13, 14}));
+  EXPECT_EQ(read_item(storage.sources[0]), read_item(low));
+  EXPECT_EQ(read_item(storage.sources[1]), read_item(high));
+  EXPECT_EQ(read_item(storage.sentinel), kSentinel);
+  *taken = {};
+  // No Graph-owned source guard or private ID reader may survive take. The
+  // original source can become writable again without resetting the Graph.
+  auto source_writer = storage.sources[0].try_write();
+  ASSERT_TRUE(source_writer) << source_writer.error().message();
+  constexpr std::array<float, 4> updated{21, 22, 23, 24};
+  ASSERT_TRUE(source_writer->view()->write(std::as_bytes(std::span(updated))).ok());
+  storage.sources[0] = source_writer->publish().value();
+  std::swap(storage.sources[0], storage.sources[1]);
+  storage.destinations[0] = high.try_write().value();
+  storage.destinations[1] = low.try_write().value();
+  bindings = s::SlotBindings::create(storage.layout, storage.sources, storage.destinations).value();
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, program.store, std::move(bindings)).ok());
+  ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+  done = program.invocation.submit(program.queues);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  taken = s::take(program.invocation, program.store);
+  ASSERT_TRUE(taken) << taken.error().message();
+  high = taken->destinations()[0].publish().value(); low = taken->destinations()[1].publish().value();
+  EXPECT_EQ(read_item(high), (std::array<float, 4>{11, 12, 13, 14}));
+  EXPECT_EQ(read_item(low), updated);
+  EXPECT_EQ(read_item(storage.sentinel), kSentinel);
+}
+
+TEST(GraphSlotsExecution, SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices) {
+  exercise_source_gather(kItemBytes);
+}
+TEST(GraphSlotsExecution, SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices) {
+  exercise_source_gather(kStride);
+}
+
+TEST(GraphSlotsExecution, InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners) {
+  SourceProgram program(kStride);
+  SourceStorage storage(kStride);
+  const std::array invalid{s::SourceBinding{program.store, program.store}};
+  EXPECT_TRUE(s::prepare(program.invocation, program.graph, program.queues, invalid).IsInvalidArgument());
+  const std::array duplicate{s::SourceBinding{program.store, program.gather},
+      s::SourceBinding{program.store, program.gather}};
+  EXPECT_TRUE(s::prepare(program.invocation, program.graph, program.queues, duplicate).IsInvalidArgument());
+  const std::array associations{s::SourceBinding{program.store, program.gather}};
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
+  auto bindings = s::SlotBindings::create(storage.layout, std::span(storage.sources).first(1),
+      storage.destinations).value();
+  const std::array generations{bindings.destinations()[0].generation(), bindings.destinations()[1].generation()};
+  EXPECT_TRUE(s::bind(program.invocation, program.graph, program.store, std::move(bindings)).IsInvalidArgument());
+  ASSERT_TRUE(bindings.valid());
+  for (std::size_t i = 0; i < storage.destinations.size(); ++i) {
+    EXPECT_EQ(bindings.destinations()[i].generation(), generations[i]);
+    EXPECT_EQ(read_item(bindings.destinations()[i]), kUntouched);
+    storage.destinations[i] = std::move(bindings.destinations()[i]);
+  }
+  bindings = {};
+  bindings = s::SlotBindings::create(storage.layout, storage.sources, storage.destinations).value();
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, program.store, std::move(bindings)).ok());
+  const auto valid = program.invocation.prepare_replay(program.queues);
+  ASSERT_TRUE(valid.ok()) << valid.message();
+  auto arbitrary = m::Buffer::create(m::system_resource(), 2 * sizeof(std::int32_t), 16).value();
+  constexpr std::array<std::int32_t, 2> unowned_sources{2, 2};
+  ASSERT_TRUE(arbitrary.view().write(std::as_bytes(std::span(unowned_sources))).ok());
+  auto tensor = c::ConstTensorView::create(program.ids_description, arbitrary.view()).value();
+  const auto replacement = program.invocation.bind(program.source_ids, tensor);
+  if (replacement.ok()) EXPECT_FALSE(program.invocation.prepare_replay(program.queues).ok());
+  else EXPECT_TRUE(replacement.IsFailedPrecondition());
+  EXPECT_FALSE(program.invocation.submit(program.queues));
+  auto recovered = s::take(program.invocation, program.store);
+  ASSERT_TRUE(recovered) << recovered.error().message();
+  for (std::size_t i = 0; i < recovered->destination_count(); ++i) {
+    EXPECT_EQ(recovered->destinations()[i].generation(), generations[i]);
+    EXPECT_EQ(read_item(recovered->destinations()[i]), kUntouched);
+  }
+  EXPECT_EQ(read_item(storage.sources[0]), (std::array<float, 4>{1, 2, 3, 4}));
+  EXPECT_EQ(read_item(storage.sources[1]), (std::array<float, 4>{11, 12, 13, 14}));
   EXPECT_EQ(read_item(storage.sentinel), kSentinel);
 }
 

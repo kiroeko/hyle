@@ -125,6 +125,8 @@ struct StoreBindingData final {
   ResourceOptions options;
   std::vector<const c::WriteLease *, mem::StdAllocator<const c::WriteLease *>> writer_pointers;
   StoreRegionFacts facts;
+  StoreSource artifact_source;
+  bool logical_source = false;
   StoreConfiguration configuration;
   StoreConfiguration last_configuration;
   // Stable original state, not the movable public Invocation wrapper.
@@ -165,7 +167,14 @@ Status StoreBinding::validate_authority() const noexcept {
       gd::RegionAccess::has_write_effect(data_->owner, data_->writer, data_->writer_pointers));
   if (!bound)
     return Status::FailedPrecondition("slot store original write permissions were reset or withdrawn");
+  const auto input = [&](ValueId value, c::ConstTensorView expected) noexcept -> Status {
+    HYLE_ASSIGN_OR_RETURN(auto matches, gd::RegionAccess::has_input_binding(data_->owner, value, expected));
+    return matches ? Status::Ok() : Status::FailedPrecondition("slot store original pool/IDs input was replaced or withdrawn");
+  };
+  HYLE_RETURN_IF_ERROR(input(data_->facts.destination_indices, data_->configuration.destination_indices));
   if (data_->facts.source.count) {
+    HYLE_RETURN_IF_ERROR(input(data_->facts.source.capacity, data_->configuration.capacity));
+    HYLE_RETURN_IF_ERROR(input(data_->facts.source.indices, data_->configuration.source_indices));
     HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::has_read_projection(
         data_->owner, data_->facts.source.capacity, data_->bindings.sources()));
     if (!source)
@@ -248,7 +257,7 @@ const detail::StoreRegionVTable store_binding{
     .configure = [](const ProviderRegionPrepared &prepared, void *invocation,
         const detail::StoreConfiguration &configuration) noexcept -> Status {
       const auto &p = *static_cast<Prepared *>(prepared.state);
-      if (!configuration.capacity.valid() || configuration.source_indices.valid() ||
+      if (!configuration.capacity.valid() ||
           configuration.destination_indices.description() != p.ids)
         return Status::InvalidArgument("slot store private configuration differs");
       auto &s = *static_cast<Slot *>(invocation);
@@ -438,6 +447,93 @@ struct Find final {
   gd::ProjectedWriter proof{};
   ExecutionLaneId lane;
 };
+struct LogicalSource final {
+  NodeId store;
+  Schema schema;
+  ValueId destination_indices;
+  std::size_t destination_count = 0;
+  detail::StoreSource source;
+};
+bool same_source(const detail::StoreSource &a, const detail::StoreSource &b) noexcept {
+  return a.gather == b.gather && a.capacity == b.capacity && a.indices == b.indices &&
+      a.count == b.count && a.capacity_input_port == b.capacity_input_port &&
+      a.permission_changes_preserve_commands == b.permission_changes_preserve_commands;
+}
+bool same_logical_source(const detail::StoreSource &a, const detail::StoreSource &b) noexcept {
+  return a.gather == b.gather && a.capacity == b.capacity && a.indices == b.indices && a.count == b.count;
+}
+Status private_input(const Graph &graph, ValueId value, NodeId reader,
+    std::size_t reader_port) noexcept {
+  if (!value.valid() || value.kind() != ValueKind::kInput)
+    return Status::InvalidArgument("slot pool and controls need original Graph inputs");
+  for (std::size_t i = 0; i < graph.output_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto output, graph.output_id(i));
+    if (output == value) return Status::InvalidArgument("slot pool/control cannot be published");
+  }
+  bool consumed = false;
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    HYLE_ASSIGN_OR_RETURN(auto count, graph.node_input_count(node));
+    for (std::size_t port = 0; port < count; ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(node, port));
+      if (input != value) continue;
+      if (node != reader || port != reader_port)
+        return Status::InvalidArgument("slot pool/control has an unrelated logical consumer");
+      consumed = true;
+    }
+  }
+  return consumed ? Status::Ok() : Status::InvalidArgument("slot pool/control has no original reader");
+}
+Result<LogicalSource> describe_source(const Graph &graph, SourceBinding binding) noexcept {
+  if (!graph.valid() || !binding.store.valid() || !binding.gather.valid() || binding.store == binding.gather)
+    return std::unexpected(Status::InvalidArgument("slot source association needs its original Graph and distinct nodes"));
+  HYLE_ASSIGN_OR_RETURN(auto store_operation, graph.operation(binding.store));
+  const auto store = store_operation.custom_as<Store>();
+  if (!store) return std::unexpected(Status::InvalidArgument("slot source association needs an original Store"));
+  HYLE_ASSIGN_OR_RETURN(auto gather_operation, graph.operation(binding.gather));
+  const auto *gather = gather_operation.get_if<c::Gather>();
+  if (!gather || (gather->axis != 0 && gather->axis != -2) ||
+      gather->bounds != c::IndexBoundsPolicy::kChecked)
+    return std::unexpected(Status::InvalidArgument("slot source needs a checked axis-zero Gather"));
+  HYLE_ASSIGN_OR_RETURN(auto pool, graph.node_input(binding.gather, 0));
+  HYLE_ASSIGN_OR_RETURN(auto source_ids, graph.node_input(binding.gather, 1));
+  HYLE_ASSIGN_OR_RETURN(auto destination_ids, graph.node_input(binding.store, 1));
+  if (pool == source_ids || pool == destination_ids || source_ids == destination_ids)
+    return std::unexpected(Status::InvalidArgument("slot source and destination controls must be distinct"));
+  HYLE_RETURN_IF_ERROR(private_input(graph, pool, binding.gather, 0));
+  HYLE_RETURN_IF_ERROR(private_input(graph, source_ids, binding.gather, 1));
+  HYLE_RETURN_IF_ERROR(private_input(graph, destination_ids, binding.store, 1));
+  HYLE_ASSIGN_OR_RETURN(auto capacity_description, graph.value_description(pool));
+  HYLE_ASSIGN_OR_RETURN(auto expected_capacity, store->schema.capacity_description());
+  HYLE_ASSIGN_OR_RETURN(auto ids_description, graph.value_description(source_ids));
+  HYLE_ASSIGN_OR_RETURN(auto gathered, graph.result(binding.gather, 0));
+  HYLE_ASSIGN_OR_RETURN(auto gathered_description, graph.value_description(gathered));
+  if (capacity_description != expected_capacity ||
+      !ids_description.is_plain() || !ids_description.is_dense() ||
+      ids_description.data_type() != c::DataType::kInt32 || ids_description.rank() != 1 ||
+      ids_description.dimensions()[0] <= 0 || ids_description.dimensions()[0] > INT32_MAX)
+    return std::unexpected(Status::InvalidArgument("slot Gather pool/IDs differ from Store geometry"));
+  const auto source_count = static_cast<std::size_t>(ids_description.dimensions()[0]);
+  HYLE_ASSIGN_OR_RETURN(auto expected_gathered, c::TensorDesc::dense(store->schema.type(),
+      std::array<std::int64_t, 2>{static_cast<std::int64_t>(source_count), store->schema.item_elements()}));
+  if (gathered_description != expected_gathered)
+    return std::unexpected(Status::InvalidArgument("slot Gather must materialize same-type whole rows"));
+  HYLE_ASSIGN_OR_RETURN(auto rows, graph.node_input(binding.store, 0));
+  HYLE_ASSIGN_OR_RETURN(auto rows_description, graph.value_description(rows));
+  HYLE_ASSIGN_OR_RETURN(auto destination_description, graph.value_description(destination_ids));
+  const std::array inputs{rows_description, destination_description};
+  HYLE_RETURN_IF_ERROR(store->infer_output_descriptions(inputs, {}));
+  return LogicalSource{binding.store, store->schema, destination_ids,
+      static_cast<std::size_t>(rows_description.dimensions()[0]),
+      {.gather = binding.gather, .capacity = pool, .indices = source_ids, .count = source_count}};
+}
+Status matches(const detail::StoreRegionFacts &facts, const LogicalSource &logical) noexcept {
+  if (facts.store != logical.store || facts.schema != logical.schema ||
+      facts.destination_indices != logical.destination_indices || facts.destination_count != logical.destination_count ||
+      (facts.source.count && !same_logical_source(facts.source, logical.source)))
+    return Status::InvalidArgument("slot logical association differs from its selected Store/source artifact");
+  return Status::Ok();
+}
 const detail::StoreRegionVTable *store_interface(const gd::RegionAccessView &view) noexcept {
   return view.prepared_vtable && view.prepared_vtable->query_extension
       ? static_cast<const detail::StoreRegionVTable *>(view.prepared_vtable->query_extension(
@@ -491,18 +587,49 @@ namespace detail {
 const RegionProviderVTable *store_provider() noexcept { return &provider_table; }
 } // namespace detail
 
-Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
+namespace {
+Status prepare_impl(Invocation &invocation, const Graph *graph,
+    std::span<const QueueBinding> queues, std::span<const SourceBinding> sources,
     PrepareOptions options) noexcept {
   if (!options.allocator.valid() || !options.host_workspace.valid())
     return Status::InvalidArgument("slot preparation needs allocator and host workspace");
+  // Reject foreign/duplicate logical associations before replacing any slot's
+  // existing carriers. Selected arithmetic remains owned by its original plan.
+  for (std::size_t i = 0; i < sources.size(); ++i) {
+    if (!graph) return Status::InvalidArgument("slot source associations need their original Graph");
+    HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*graph, sources[i]));
+    Find selected{sources[i].store};
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, sources[i].store, &find, &selected));
+    if (!selected.binding) return Status::Unimplemented("associated Store has no selected slot implementation");
+    HYLE_RETURN_IF_ERROR(matches(selected.facts, logical));
+    for (std::size_t j = 0; j < i; ++j) {
+      if (sources[i].store == sources[j].store || sources[i].gather == sources[j].gather)
+        return Status::InvalidArgument("slot source association duplicates a Store, reader or pool");
+      HYLE_ASSIGN_OR_RETURN(auto previous_pool, graph->node_input(sources[j].gather, 0));
+      if (logical.source.capacity == previous_pool)
+        return Status::InvalidArgument("slot source association duplicates a Store, reader or pool");
+    }
+  }
   const ResourceOptions resources{options.allocator, options.resource_budget};
   HYLE_RETURN_IF_ERROR(invocation.prepare_resources(resources));
-  struct Call final { Invocation *invocation; std::span<const QueueBinding> queues; PrepareOptions options; } call{&invocation, queues, options};
+  struct Call final {
+    Invocation *invocation; const Graph *graph;
+    std::span<const QueueBinding> queues; std::span<const SourceBinding> sources;
+    PrepareOptions options;
+  } call{&invocation, graph, queues, sources, options};
   return gd::RegionAccess::visit(invocation, [](void *opaque, const gd::RegionAccessView &view) noexcept -> Status {
     const auto *interface = store_interface(view);
     if (!interface) return Status::Ok();
     const auto &call = *static_cast<Call *>(opaque);
     HYLE_ASSIGN_OR_RETURN(auto facts, inspect(view, *interface));
+    const auto artifact_source = facts.source;
+    bool logical_source = false;
+    const auto association = std::ranges::find(call.sources, facts.store, &SourceBinding::store);
+    if (association != call.sources.end()) {
+      HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*call.graph, *association));
+      HYLE_RETURN_IF_ERROR(matches(facts, logical));
+      if (!facts.source.count) { facts.source = logical.source; logical_source = true; }
+    }
     auto *binding = interface->binding(view.invocation);
     if (!binding) return Status::InvalidArgument("slot store has no original binding owner");
     if (binding->valid()) return Status::FailedPrecondition("take original slot bindings before preparation");
@@ -537,9 +664,21 @@ Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
     interface->clear_configuration({.vtable = view.prepared_vtable, .state = view.prepared}, view.invocation);
     data->indices = std::move(indices); data->queue = std::move(queue);
     data->options = resources; data->facts = facts;
+    data->artifact_source = artifact_source; data->logical_source = logical_source;
     *binding = std::move(next);
     return Status::Ok();
   }, &call);
+}
+} // namespace
+
+Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
+    PrepareOptions options) noexcept {
+  return prepare_impl(invocation, nullptr, queues, {}, options);
+}
+Status prepare(Invocation &invocation, const Graph &graph,
+    std::span<const QueueBinding> queues, std::span<const SourceBinding> sources,
+    PrepareOptions options) noexcept {
+  return prepare_impl(invocation, &graph, queues, sources, options);
 }
 
 Status bind(Invocation &invocation, const Graph &graph, NodeId node,
@@ -549,13 +688,24 @@ Status bind(Invocation &invocation, const Graph &graph, NodeId node,
   auto *data = detail::StoreBindingAccess::get(*found.binding);
   if (!data || !data->queue.is_open() || data->bindings.valid() || !bindings.valid())
     return Status::FailedPrecondition("slot bind needs its prepared open Queue and untaken original transaction");
-  auto &s = *data; const auto &p = found.facts;
+  auto &s = *data; const auto &p = s.facts;
+  if (found.facts.store != p.store || found.facts.schema != p.schema ||
+      found.facts.destination_indices != p.destination_indices ||
+      found.facts.destination_count != p.destination_count || found.facts.resource != p.resource ||
+      !same_source(found.facts.source, s.artifact_source))
+    return Status::InvalidArgument("slot preparation differs from its selected artifact");
+  if (s.logical_source) {
+    // Graph identities name immutable nodes. Preparation already checked the
+    // complete logical association; a cold bind only checks this same Graph,
+    // without rescanning every layer for every decode step.
+    HYLE_ASSIGN_OR_RETURN(auto operation, graph.operation(p.source.gather));
+    (void)operation;
+  }
   const auto layout = bindings.layout();
   HYLE_ASSIGN_OR_RETURN(auto schema, Schema::create(layout.description(), layout.slot_count(), layout.stride_bytes()));
   if (schema != p.schema || bindings.destination_count() != p.destination_count ||
       (p.source.count && bindings.source_count() != p.source.count) ||
-      s.facts.store != p.store || s.facts.schema != p.schema ||
-      s.facts.source.count != p.source.count || s.writer_pointers.size() != p.destination_count ||
+      s.writer_pointers.size() != p.destination_count ||
       bindings.source_addresses().size() != bindings.source_count() ||
       bindings.destination_addresses().size() != bindings.destination_count())
     return Status::InvalidArgument("slot transaction differs from its selected Store geometry");
@@ -620,11 +770,17 @@ Status bind(Invocation &invocation, const Graph &graph, NodeId node,
     HYLE_RETURN_IF_ERROR(invocation.bind(p.destination_indices, configuration.destination_indices));
     if (p.source.count) {
       HYLE_RETURN_IF_ERROR(invocation.bind(p.source.indices, configuration.source_indices));
-      const std::array readers{gd::ProjectedReader{found.proof.step, found.proof.implementation,
-          found.proof.prepared, p.source.capacity_input_port,
-          p.source.permission_changes_preserve_commands}};
-      HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_projected(invocation, p.source.capacity,
-          capacity, bindings.sources(), readers));
+      if (s.logical_source) {
+        const std::array readers{p.source.gather};
+        HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_read_projection(invocation,
+            {p.source.capacity, {}, readers}, capacity, bindings.sources()));
+      } else {
+        const std::array readers{gd::ProjectedReader{found.proof.step, found.proof.implementation,
+            found.proof.prepared, p.source.capacity_input_port,
+            p.source.permission_changes_preserve_commands}};
+        HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_projected(invocation, p.source.capacity,
+            capacity, bindings.sources(), readers));
+      }
       source_bound = true;
     }
     // Indexed sources already belong to the original projected input. The

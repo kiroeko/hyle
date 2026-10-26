@@ -264,6 +264,13 @@ struct RegionAccess final {
   // subview bounds. The stable state survives public Invocation moves.
   HYLE_GRAPH_API static Result<bool> has_read_projection(const InvocationState*,
       ValueId,std::span<const compute::ReadLease>) noexcept;
+  // Cold fact query of the original external input, under the caller's normal
+  // Invocation synchronization. Checks the current description and exact
+  // storage range, independently of lease authority. False after unbind/reset
+  // or replacement; a foreign/non-input ValueId is an error. Does not grant
+  // permission or prove submission success/retirement.
+  HYLE_GRAPH_API static Result<bool> has_input_binding(const InvocationState*,
+      ValueId,compute::ConstTensorView) noexcept;
   // Same-Graph write then read. Checks the original Graph control edges and
   // exact selected artifacts; only the supplied independent page writers are
   // admitted to the original resource episode. No whole-bank write is granted.

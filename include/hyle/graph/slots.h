@@ -116,10 +116,23 @@ struct PrepareOptions final {
 // automatically. No tensor payload is copied and no second executor is made.
 HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
     PrepareOptions = {}) noexcept;
+// Logical resource association, independent of the selected providers. The
+// checked axis-zero Gather reads this Store's original pool through private
+// source IDs. The arithmetic between Gather and Store remains ordinary Graph
+// math and may execute as separate operations or as a fused region.
+struct SourceBinding final { NodeId store, gather; };
+// Prepares one private [source IDs | destination IDs] carrier per associated
+// Store. The original Graph establishes geometry and input identities; actual
+// selected readers still prove their bounded access during binding. Duplicate
+// Stores/readers/pools and shared or published control inputs are rejected.
+HYLE_GRAPH_API Status prepare(Invocation &, const Graph &,
+    std::span<const QueueBinding>, std::span<const SourceBinding>,
+    PrepareOptions = {}) noexcept;
 // Cold binding for the selected Store. Its private destination-ID input comes
 // from actual writer coordinates. A qualified fused source reader also gets
 // private source IDs and the capacity's exact original ready guards; an
-// independent fallback Store leaves ordinary rows/source bindings to callers.
+// independent fallback Store uses a prepared SourceBinding for its reader;
+// without that association ordinary source bindings remain caller-owned.
 // Preparation/binding may wait for a metadata-only upload on the original
 // Queue. Failure never consumes the caller's transaction. No executor or
 // provider selection is created here.

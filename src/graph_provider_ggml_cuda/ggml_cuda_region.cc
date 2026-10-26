@@ -1294,6 +1294,67 @@ Status resources(void *context, const RegionCompileRequest &request,
   return Status::Ok();
 }
 
+struct ProjectedGather final {
+  NodeId node;
+  std::uint32_t input_port = UINT32_MAX;
+};
+// The final native recipe is the authority for this qualification. A direct
+// typed GET_ROWS preserves the real leading row stride and reads selected rows;
+// a View, CONT, conversion, pack, constant or another bank consumer does not
+// inherit this permission. Decline multiple consumers even if each is Gather:
+// one logical SourceBinding proves one actual private index set, not a union.
+std::vector<ProjectedGather> projected_gathers(
+    const RegionCompileRequest &request, const native::Recipe &recipe) {
+  std::vector<ProjectedGather> result;
+  for (std::size_t port = 0; port < recipe.inputs.size(); ++port) {
+    if (port >= request.inputs.size() || request.inputs[port].kind() != ValueKind::kInput)
+      continue;
+    const auto id = recipe.inputs[port];
+    if (id >= recipe.values.size() ||
+        std::ranges::find(recipe.outputs, id) != recipe.outputs.end() ||
+        std::ranges::any_of(recipe.constants, [id](const auto &entry) { return entry.value == id; }) ||
+        std::ranges::any_of(request.constants, [&](const auto &entry) { return entry.value == request.inputs[port]; }))
+      continue;
+    const auto &table = recipe.values[id];
+    const auto type = table.data_type();
+    if (!table.is_plain() || table.rank() != 2 || table.dimensions()[0] <= 0 ||
+        table.dimensions()[1] <= 0 ||
+        (type != compute::DataType::kFloat32 && type != compute::DataType::kFloat16 &&
+         type != compute::DataType::kBFloat16)) continue;
+    const auto unit = static_cast<std::int64_t>(compute::data_type_size(type));
+    if (table.dimensions()[1] > INT64_MAX / unit || table.byte_strides()[1] != unit ||
+        table.byte_strides()[0] < table.dimensions()[1] * unit) continue;
+    const native::Node *consumer = nullptr;
+    std::size_t uses = 0;
+    for (const auto &node : recipe.nodes)
+      for (const auto input : node.inputs) if (input == id) { ++uses; consumer = &node; }
+    if (uses != 1 || !consumer || consumer->indexed_state ||
+        consumer->inputs.size() != 2 || consumer->outputs.size() != 1 ||
+        consumer->inputs[0] != id) continue;
+    const auto *gather = consumer->operation.get_if<compute::Gather>();
+    if (!gather || gather->bounds != compute::IndexBoundsPolicy::kChecked ||
+        (gather->axis != 0 && gather->axis != -2) ||
+        std::ranges::find(recipe.inputs, consumer->inputs[1]) == recipe.inputs.end()) continue;
+    const auto &ids = recipe.values[consumer->inputs[1]];
+    const auto &output = recipe.values[consumer->outputs[0]];
+    if (!ids.is_dense() || ids.rank() != 1 || ids.data_type() != compute::DataType::kInt32 ||
+        !output.is_dense() || output.rank() != 2 || output.data_type() != type) continue;
+    NodeId original;
+    uses = 0;
+    for (const auto node : request.nodes) {
+      const auto count = request.graph->node_input_count(node).value();
+      for (std::size_t input = 0; input < count; ++input) {
+        if (request.graph->node_input(node, input).value() != request.inputs[port]) continue;
+        ++uses;
+        const auto operation = request.graph->operation(node);
+        if (input == 0 && operation && operation->get_if<compute::Gather>()) original = node;
+      }
+    }
+    if (uses == 1 && original.valid())
+      result.push_back({original, static_cast<std::uint32_t>(port)});
+  }
+  return result;
+}
 struct Artifact final {
   compute::detail::ProviderPrepared native;
   std::optional<IndexedStatePattern> indexed;
@@ -1301,6 +1362,7 @@ struct Artifact final {
   // Exact original Graph boundary ports, never a second native input map.
   std::array<std::uint32_t, 3> indexed_ports{};
   std::array<compute::TensorDesc, 3> indexed_descriptions{};
+  std::vector<ProjectedGather> gathers;
   // The special route does no constant folding/packing. Retain the real
   // physical constant owners/leases, without copying their tensor payload.
   std::vector<ConstantBinding> constants;
@@ -1476,7 +1538,9 @@ const detail::RegionProjectedReadVTable projected_read{
       if (!prepared.state || !lane)
         return Status::InvalidArgument("indexed GDN projection needs its original artifact/slot");
       const auto &region = *static_cast<const Artifact *>(prepared.state);
-      if (!region.indexed || port != region.indexed_ports[0])
+      const bool ordinary = std::ranges::any_of(region.gathers,
+          [port](const ProjectedGather &gather) { return gather.input_port == port; });
+      if ((!region.indexed || port != region.indexed_ports[0]) && !ordinary)
         return Status::Unimplemented("indexed GDN does not project this boundary port");
       // The native program reads this capacity only through private source IDs.
       // Real ready slot guards and exclusive destinations remain Graph's duty.
@@ -1487,9 +1551,22 @@ const detail::RegionProjectedReadVTable projected_read{
         std::uint32_t ordinal, compute::ProviderExtensionId capability,
         detail::RegionNodeAccess *out) noexcept -> Status {
       *out = {};
-      if (!prepared.state || capability != slots::detail::kStoreBindingExtensionId)
+      if (!prepared.state)
         return Status::Unimplemented("indexed GDN source capability differs");
       const auto &region = *static_cast<const Artifact *>(prepared.state);
+      if (!region.indexed) {
+        if (capability != slots::detail::kStoreBindingExtensionId &&
+            capability != compute::detail::kProjectedInputReadExtensionId)
+          return Status::Unimplemented("checked Gather source capability differs");
+        const auto found = std::ranges::find_if(region.gathers,
+            [ordinal](const ProjectedGather &gather) { return gather.node.ordinal() == ordinal; });
+        if (found == region.gathers.end())
+          return Status::Unimplemented("node is not this exact lowered checked Gather");
+        out->access.projected_input = found->input_port;
+        return Status::Ok();
+      }
+      if (capability != slots::detail::kStoreBindingExtensionId)
+        return Status::Unimplemented("indexed GDN source capability differs");
       if (!region.indexed || !std::ranges::any_of(region.indexed->nodes,
           [&](NodeId node) noexcept { return node.ordinal() == ordinal; }))
         return Status::Unimplemented("node is not in this exact indexed GDN state chain");
@@ -1530,6 +1607,8 @@ const void *binding_release_extension(void *prepared, compute::ProviderExtension
     if (id == detail::kRegionProjectedReadExtensionId) return &projected_read;
     if (id == detail::kRegionProjectedWriteExtensionId) return &projected_write;
   }
+  if (id == detail::kRegionProjectedReadExtensionId && !region.gathers.empty())
+    return &projected_read;
   if (id == detail::kRegionCaptureBindingsExtensionId)
     return &capture_bindings;
   // This shared carrier passes only borrowed TensorViews to the original
@@ -1724,12 +1803,14 @@ compile(void *context, const RegionCompileRequest &request,
         if (!add_checked_copy(recipe.values[id]))
           return compute::ProviderPrepareOutcome::error(
               Status::OutOfRange("ggml CUDA checked output cost overflows"));
+    auto gathers = projected_gathers(request, recipe);
     void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
     if (!storage)
       return compute::ProviderPrepareOutcome::error(
           Status::ResourceExhausted(
               "ggml CUDA region artifact allocation failed"));
     auto *artifact = ::new (storage) Artifact;
+    artifact->gathers = std::move(gathers);
     if (recipe.nodes.empty()) {
       // All original outputs have ready artifact bindings. Keep a metadata
       // region for the logical producer/control edges, with no native program,

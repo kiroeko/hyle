@@ -96,7 +96,7 @@ packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1�
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
 槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA Store已接通，
-原生索引计算、整段融合及引擎接线仍待完成。
+CUDA窄链索引GDN另有下述有限集成结果，conv、跨后端源绑定及引擎接线仍待完成。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
@@ -131,6 +131,13 @@ Y发布与仅写状态、reset撤权回收及原13项Store／投影合同；实�
 当前一次上传针对一个region，尚须消除引擎逐层metadata等待并接conv；
 CPU／Vulkan／Apple及CUDA拒绝融合时的合法投影绑定也须在统一引擎接线前补齐，
 不能让模型按Provider分叉构图或伪造整池ReadLease。
+可移植接线由冷准备关联原Graph的Store与源Gather，不包含Provider身份；
+共同层核checked axis0读取、池几何和私有ID，再由实际选中实现证明只读选中行。
+跨region时还须在准备／seal核原父Invocation实际绑定的池与源ID载体，
+不能只保留合法guards、却允许调用方替换索引读取未授权槽。融合与fallback复用同一事务和退休回收。
+CPU ggml的padding读取、Vulkan可能的整池物化及Apple导入必须分别核实际lowering，不能只放宽资格；
+Apple／Vulkan还缺原生Source上的Store装配，应走各自原Completion和传输路径，不伪造Compute Queue。
+history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 GDN各用自己的池和槽号。
 私有CUDA索引GDN沿原内核的F32运算体寻址：pool保留真实`[S,S,H,P]`及槽stride，
 源为I32`[B]`，目的为batch-major I32`[B,K]`，K>1写最后K个边界的时间升序状态。
 它保留原op／tensor／backend及旧fused-cache布局，冷接线须核真实native契约符号；
