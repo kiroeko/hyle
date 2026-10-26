@@ -391,3 +391,21 @@ The indexed C++ lowering must also check the real linked native
 ggml_hyle_cuda_gdn_indexed_state_contract symbol, not infer kernel support from
 a header or a provider name. Indexed ID reads observe the original CUDA PDL
 producer before touching tables; the legacy synchronization position remains.
+
+### Indexed convolution history (2026-10-27)
+
+The private SSM_CONV mode retains the original short float ring, long-token
+shared tile, coefficient order and F32 MAC/activation calculations. Its loader
+selects samples from the original typed history slot or actual new chunk;
+last-K chronological history windows copy original F32/F16/BF16 payload bits
+directly to independently owned slots. F16 is added only to this indexed mode.
+Legacy F32/BF16 convolution, bias and SiLU fusion domains remain unchanged.
+
+The mode uses op-parameter zero for K and private parameter four for its marker,
+without changing ggml op/tensor/backend layouts. It has explicit metadata,
+device-buffer and dispatch qualification and declines old dense SSM bias/SiLU
+fusion. Metadata cannot validate device index values or authorize pool writes:
+the admitted caller retains exact lease-to-I32 encodings, source/destination
+guards and the original Graph Store effect. Arbitrary device IDs do not grant
+a generic Gather exemption. Cold lowering checks the actual linked
+ggml_hyle_cuda_conv_indexed_state_contract symbol before using this mode.

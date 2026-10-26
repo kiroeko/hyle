@@ -1,6 +1,7 @@
 #include "tensor_program.h"
 #include "gated_delta_scale.h"
 #include "indexed_state.h"
+#include "indexed_conv.h"
 
 #include <algorithm>
 #include <array>
@@ -1075,6 +1076,27 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
   } else if (const auto clamp = node.operation.custom_as<model_ops::Clamp>()) {
     result = ggml_clamp(context, input(0), clamp->minimum, clamp->maximum);
   } else if (node.operation.custom_as<model_ops::CausalConv1d>()) {
+    if (node.indexed_state) {
+      // A private same-build carrier, preserving the original pool and chunk
+      // strides. No history Gather/Concat or dense state output is allocated.
+      auto *chunk = values[node.inputs[0]];
+      auto *pool = values[node.inputs[2]];
+      auto *destinations = values[node.inputs[4]];
+      const auto channels = chunk->ne[0], tokens = chunk->ne[1], batches = chunk->ne[2];
+      const auto taps = values[node.inputs[1]]->ne[0];
+      const auto snapshots = destinations->ne[0] / batches;
+      result = ggml_new_tensor_3d(context, GGML_TYPE_F32, channels, tokens, batches);
+      result->op = GGML_OP_SSM_CONV;
+      result->src[0] = ggml_permute(context, chunk, 1, 0, 2, 3);
+      result->src[1] = values[node.inputs[1]];
+      result->src[2] = ggml_view_3d(context, pool, channels, taps - 1, pool->ne[1],
+          static_cast<std::size_t>(channels) * ggml_type_size(pool->type), pool->nb[1], 0);
+      result->src[3] = values[node.inputs[3]];
+      result->src[4] = ggml_reshape_2d(context, destinations, snapshots, batches);
+      result->op_params[0] = static_cast<std::int32_t>(snapshots);
+      result->op_params[kIndexedConvParameter] = kIndexedConvContract;
+      return {as_output(context, result, output)};
+    }
     auto *wide = values[node.inputs[0]];
     auto *source = forms.private_bfloat_widen_source(node.inputs[0], values);
     // The source is the real BF16 tensor/view, including row/batch padding.

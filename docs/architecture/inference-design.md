@@ -89,22 +89,24 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
 固定槽不自动消除provider复制：CUDA ggml的K1闭合片段已有GDN直接状态输出，不能再把旧的
 packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
-计算需独立承载：私有CUDA GDN已通过下述原生检查，Graph、conv和引擎仍未接完，
+计算需独立承载：私有CUDA GDN／conv及Graph融合已通过下述有限检查，引擎仍未接完，
 不能把K1承载或地址复用记成整段能力已完成。
 
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
 槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA／Apple／Vulkan Store已接通，
-CUDA窄链索引GDN另有下述有限集成结果，conv、部分读取／尾部承载及引擎接线仍待完成。
+CUDA窄链索引GDN／conv另有下述有限集成结果，部分尾部承载、批量控制及引擎接线仍待完成。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
 GDN融合从源槽读取，按时间升序直接写各候选槽。conv的普通图由原精度history Gather、
 与新chunk的Concat、Cast F32及CausalConv组成；每个前缀的history直接Slice原精度samples，
 沿候选轴Concat后reshape为batch-major `[B*K,L*C]`，交原Store，不从F32结果反向降精度。
-原生conv融合应只替换寻址：从history槽或新chunk取样并直接写候选history，保留原F32计算顺序，
-避免整段拼接和窗口物化。普通K1与MTP的差别是候选槽数量；此conv融合尚待实现。
+原生conv融合只替换寻址：从history槽或新chunk取样并直接写候选history，保留原F32计算顺序，
+避免整段拼接和窗口物化。普通K1与MTP的差别是候选槽数量；CUDA两者共用此融合。
+原精度F32／F16／BF16载荷与history同类型，系数和数学结果保持F32；history从原码取样，
+不经F32结果回转。B>1且K1的普通图窗口可有batch间隙，须沿原Copy等合法物化再交稠密Store。
 有普通稠密观察者时仍须物化该结果，不能静默删掉公开值；无索引能力的实现保留合法原路径。
 外部写资格仍对应精确原节点和所选artifact，先支持纯节点与一个外部写节点，
 GDN和history各保独立写区域。所有目标与源及保留快照不重叠，仍走原接纳、Completion、
@@ -131,7 +133,10 @@ fallback与融合region只各持一个实例；selected-artifact冷扩展交回�
 Y发布与仅写状态、reset撤权回收及原13项Store／投影合同；实际选择一个融合region，
 候选状态与原稠密GDN逐位一致，源槽、未选槽及padding不变。普通与MTP共享同一K参数，
 但这不代表MTP接受／回滚或完整引擎已经接通。带逃逸状态／别名、其它图形及跨后端读绑定另计。
-当前一次上传针对一个region，尚须消除引擎逐层metadata等待并接conv；
+conv复用相同Artifact、Invocation、StoreBinding与退休回调，不另建执行器或公开模型专用算子。
+[7项有限GPU检查](../evidence/correctness/inference-indexed-conv-graph-2026-10-27.json)覆盖conv与原GDN回归，
+包括更换目标ID后的真实录制复用；未代签引擎接受／回滚或完整吞吐。
+当前一次上传针对一个region，尚须在共同层合并逐层metadata等待、复用事务并接引擎；
 拒绝融合时仍须由实际reader证明合法投影，不能让模型按Provider分叉构图或伪造整池ReadLease。
 可移植接线由冷准备关联原Graph的Store与源Gather，不包含Provider身份；
 共同层核checked axis0读取、池几何和私有ID，再由实际选中实现证明只读选中行。

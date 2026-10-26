@@ -35,6 +35,7 @@
 #include "native_context.h"
 #include "tensor_program.h"
 #include "indexed_state.h"
+#include "indexed_conv.h"
 #include "sink_mask.h"
 
 namespace hyle::compute::ggml_cuda {
@@ -1686,8 +1687,72 @@ bool supports(void *value, Operation operation,
       static_cast<Context *>(value)->device);
 }
 
+namespace {
+bool supports_indexed_conv(void *value, const Node &node,
+                           std::span<const TensorDesc> values) noexcept {
+  if (!value || !node.indexed_state ||
+      !node.operation.custom_as<model_ops::CausalConv1d>() ||
+      node.inputs.size() != 5 || node.outputs.size() != 1 ||
+      std::ranges::any_of(node.inputs, [&](auto id) { return id >= values.size(); }) ||
+      node.outputs[0] >= values.size() ||
+      ggml_hyle_cuda_conv_indexed_state_contract() != kIndexedConvContract)
+    return false;
+  const auto &chunk = values[node.inputs[0]], &weights = values[node.inputs[1]];
+  const auto &pool = values[node.inputs[2]], &sources = values[node.inputs[3]];
+  const auto &destinations = values[node.inputs[4]];
+  const auto type = chunk.data_type();
+  if (!chunk.valid() || !chunk.is_plain() || chunk.rank() != 3 ||
+      (type != DataType::kFloat32 && type != DataType::kFloat16 &&
+       type != DataType::kBFloat16) ||
+      !weights.valid() || !weights.is_plain() || !weights.is_dense() ||
+      weights.rank() != 2 || weights.data_type() != DataType::kFloat32 ||
+      !pool.valid() || !pool.is_plain() || pool.rank() != 2 || pool.data_type() != type ||
+      pool.dimensions()[0] <= 0 || pool.dimensions()[0] > INT32_MAX ||
+      !sources.valid() || !sources.is_dense() || sources.rank() != 1 ||
+      sources.data_type() != DataType::kInt32 ||
+      !destinations.valid() || !destinations.is_dense() || destinations.rank() != 1 ||
+      destinations.data_type() != DataType::kInt32)
+    return false;
+  const auto batches = chunk.dimensions()[0], tokens = chunk.dimensions()[1];
+  const auto channels = chunk.dimensions()[2], taps = weights.dimensions()[1];
+  const auto unit = static_cast<std::int64_t>(data_type_size(type));
+  if (batches <= 0 || tokens <= 0 || channels <= 0 || taps <= 1 ||
+      weights.dimensions()[0] != channels || sources.dimensions()[0] != batches ||
+      destinations.dimensions()[0] <= 0 || destinations.dimensions()[0] % batches ||
+      destinations.dimensions()[0] / batches > tokens ||
+      channels > INT64_MAX / unit || channels > INT64_MAX / (taps - 1) ||
+      pool.dimensions()[1] != (taps - 1) * channels ||
+      pool.dimensions()[1] > INT64_MAX / unit ||
+      pool.byte_strides()[1] != unit ||
+      pool.byte_strides()[0] < pool.dimensions()[1] * unit || pool.byte_strides()[0] % unit ||
+      chunk.byte_strides()[2] != unit || chunk.byte_strides()[1] < channels * unit ||
+      chunk.byte_strides()[1] % unit || chunk.byte_strides()[0] % unit ||
+      tokens - 1 > (INT64_MAX - channels * unit) / chunk.byte_strides()[1] ||
+      chunk.byte_strides()[0] < (tokens - 1) * chunk.byte_strides()[1] + channels * unit ||
+      tokens > INT64_MAX - (taps - 1))
+    return false;
+  for (const auto id : node.inputs) {
+    const auto bytes = values[id].required_bytes();
+    if (!bytes || *bytes > static_cast<std::uint64_t>(INT64_MAX)) return false;
+  }
+  // Qualify the original public F32 mathematics, not a newly invented mixed
+  // precision operation. The native loader widens each original sample where
+  // the old Cast did; history is separately written from its original bytes.
+  const auto samples = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 3>{batches, tokens + (taps - 1), channels});
+  if (!samples) return false;
+  const std::array original{*samples, weights};
+  std::array<TensorDesc, 1> output;
+  return infer_output_descriptions(node.operation, original, output).ok() &&
+      output[0] == values[node.outputs[0]] &&
+      supports(value, node.operation, original, output);
+}
+} // namespace
+
 bool supports_indexed_state(void *value, const Node &node,
                              std::span<const TensorDesc> values) noexcept {
+  if (node.operation.custom_as<model_ops::CausalConv1d>())
+    return supports_indexed_conv(value, node, values);
   const auto *gdn = node.operation.get_if<GatedDeltaNet>();
   const auto recurrent = node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
   if (!value || !node.indexed_state || (!gdn && !recurrent) ||

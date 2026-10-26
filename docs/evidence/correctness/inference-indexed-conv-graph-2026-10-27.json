@@ -1,0 +1,496 @@
+{
+  "schema": 1,
+  "batch": "inference-indexed-conv-graph-20261027",
+  "status": "PASS",
+  "recorded_at": "2026-10-27T03:36:58.087180+08:00",
+  "scope": "One RTX4070 Windows CUDA consumer image, seven Graph cases: four indexed causal-convolution cases and the three existing indexed GDN cases. No full inference-engine/model/performance conclusion.",
+  "actual_results": {
+    "distinct_TUs": 6,
+    "native_NVCC_TUs": 2,
+    "product_CXX_TUs": 3,
+    "test_CXX_TUs": 1,
+    "compiler_processes_for_build": 7,
+    "compile_failures": 0,
+    "link_processes": 2,
+    "built_images": 2,
+    "first_image_status": "BUILT_NOT_RUN; superseded before any GPU run to strengthen capture assertions",
+    "final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link2\\indexed-conv-test.exe",
+      "bytes": 143585792,
+      "sha256": "32ba04ed17ed35bcd69f129833b0c7b7f6b08b0388bf2a0c036ae53fa4176501"
+    },
+    "final_test_processes": 1,
+    "tests": 7,
+    "failures": 0,
+    "processes": [
+      {
+        "stage": "compile/conv",
+        "kind": "NVCC",
+        "exit": 0,
+        "pid": 39832,
+        "seconds": 7.570101199962664
+      },
+      {
+        "stage": "compile/dispatcher",
+        "kind": "NVCC",
+        "exit": 0,
+        "pid": 50944,
+        "seconds": 4.406534600013401
+      },
+      {
+        "stage": "compile/provider",
+        "kind": "CXX",
+        "exit": 0,
+        "pid": 35764,
+        "seconds": 2.6827017999603413
+      },
+      {
+        "stage": "compile/tensor",
+        "kind": "CXX",
+        "exit": 0,
+        "pid": 53204,
+        "seconds": 1.6744137999485247
+      },
+      {
+        "stage": "compile/graph",
+        "kind": "CXX",
+        "exit": 0,
+        "pid": 53112,
+        "seconds": 4.619689900020603
+      },
+      {
+        "stage": "compile/test",
+        "kind": "CXX first test, unrun image",
+        "exit": 0,
+        "pid": 21180,
+        "seconds": 3.010715899989009
+      },
+      {
+        "stage": "compile2/test",
+        "kind": "CXX final capture assertions",
+        "exit": 0,
+        "pid": 62456,
+        "seconds": 3.353090599994175
+      },
+      {
+        "stage": "link",
+        "kind": "first unrun image",
+        "exit": 0,
+        "pid": 16948,
+        "seconds": 2.081150499987416
+      },
+      {
+        "stage": "link2",
+        "kind": "final image",
+        "exit": 0,
+        "pid": 4380,
+        "seconds": 2.097704000014346
+      },
+      {
+        "stage": "run1",
+        "kind": "sole GPU test process",
+        "exit": 0,
+        "pid": 22676,
+        "seconds": 0.5810734000406228
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "PublishedActivationAndCandidateSlotsMatchDenseGdn",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+      "line": "372",
+      "status": "run",
+      "result": "completed",
+      "time": "0.098",
+      "timestamp": "2026-10-27T03:31:30.089",
+      "classname": "GgmlCudaIndexedStateGraph"
+    },
+    {
+      "name": "EffectRootWritesCandidatesWithoutPublishedActivation",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+      "line": "375",
+      "status": "run",
+      "result": "completed",
+      "time": "0.005",
+      "timestamp": "2026-10-27T03:31:30.187",
+      "classname": "GgmlCudaIndexedStateGraph"
+    },
+    {
+      "name": "EscapingGatherUsesCheckedProjectedFallback",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+      "line": "378",
+      "status": "run",
+      "result": "completed",
+      "time": "0.004",
+      "timestamp": "2026-10-27T03:31:30.193",
+      "classname": "GgmlCudaIndexedStateGraph"
+    },
+    {
+      "name": "Float32BatchedFinalWindowUsesOriginalStateAndReset",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+      "line": "290",
+      "status": "run",
+      "result": "completed",
+      "time": "0.008",
+      "timestamp": "2026-10-27T03:31:30.198",
+      "classname": "GgmlCudaIndexedConvGraph"
+    },
+    {
+      "name": "Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+      "line": "293",
+      "status": "run",
+      "result": "completed",
+      "time": "0.006",
+      "timestamp": "2026-10-27T03:31:30.206",
+      "classname": "GgmlCudaIndexedConvGraph"
+    },
+    {
+      "name": "Float16HistoryPreservesOriginalBitsForEveryPrefix",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+      "line": "296",
+      "status": "run",
+      "result": "completed",
+      "time": "0.006",
+      "timestamp": "2026-10-27T03:31:30.213",
+      "classname": "GgmlCudaIndexedConvGraph"
+    },
+    {
+      "name": "EscapingGatherKeepsLegalProjectedFallback",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+      "line": "299",
+      "status": "run",
+      "result": "completed",
+      "time": "0.006",
+      "timestamp": "2026-10-27T03:31:30.219",
+      "classname": "GgmlCudaIndexedConvGraph"
+    }
+  ],
+  "verified": [
+    "The four new cases use the existing public Graph slots prepare/bind/take API and its original permissions/retirement owner; existing indexed GDN three-case public-binding regressions remain passing.",
+    "F32 B2/C128/D4/T1/K1 uses one selected indexed-conv region/dispatch. Two real RequireCapture submissions pass: first record1/reuse0, then record0/reuse1 after exchanging destination slot IDs. A third prepared episode is reset and cannot execute with withdrawn authority.",
+    "BF16 B2/C128/D4/T35/K3 covers the long-token path, chronological last-prefix history, actual source/unused-slot/padding preservation.",
+    "F16 B2/C128/D4/T2/K2 preserves raw history bytes including NaN payloads/negative zero; finite activation bits match the original dense explicit-Cast-plus-convolution path, NaN activations are compared by classification.",
+    "Publishing the BF16 Gather result legally rejects the fusion while the ordinary checked projected-read fallback still executes and returns the same history/activation results.",
+    "Original Completion and result/lease retirement gates, exact destination recovery and reset invalidation remain checked. No full pool is presented as an initialized read lease."
+  ],
+  "capture": {
+    "case": "GgmlCudaIndexedConvGraph.Float32BatchedFinalWindowUsesOriginalStateAndReset",
+    "actual_submissions": 2,
+    "required_mode": "RequireCapture",
+    "first": {
+      "recorded": 1,
+      "reused": 0
+    },
+    "second": {
+      "recorded": 0,
+      "reused": 1,
+      "destination_IDs_changed": true
+    },
+    "third_preparation_reset_without_submission": true,
+    "fallback_to_Commands": false
+  },
+  "source_identity": {
+    "native_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\source-freeze.json",
+      "bytes": 5009,
+      "sha256": "df6845a7c24f1046b2b038633c0eeba7fcb76bd8774eb4c6f6b84ae6e42d6a9a"
+    },
+    "root_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\root-freeze.json",
+      "bytes": 731,
+      "sha256": "2d943e9928e44d95239e0439b0315136dd635d89cd3a51958c6b861f755e3a3b"
+    },
+    "native_actual_snapshots": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\native\\src\\ggml-cuda\\ssm-conv.cu",
+        "bytes": 22795,
+        "sha256": "9edc221706ec2bb4dbf7297d7eff701d8646b9df50f1a01fecb5d5456189cf8a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\native\\src\\ggml-cuda\\ssm-conv.cuh",
+        "bytes": 2009,
+        "sha256": "6af2100b908f672c259c5763765155b64dff3fd4dd9a92321e280ae8813b1637"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\native\\src\\ggml-cuda\\ggml-cuda.cu",
+        "bytes": 329670,
+        "sha256": "bb611c3271401fc69234350f0cf6d5e87e4b66a1ec79fab0a9f9997244f3460f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\native\\src\\ggml-cuda\\gated_delta_net.cuh",
+        "bytes": 2855,
+        "sha256": "77e2440062d4bdef69430688e8ad00fcd47e7edaa4f7f8cd5c5ce9ebab4f62e3"
+      }
+    ],
+    "final_cpp_actual_sources": [
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\program.h",
+          "bytes": 5576,
+          "sha256": "7cde1744d6084a4d9b6b751f2fb41af48ebcfe291dc27f4338883b81ff1173a9"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\src\\compute_provider_ggml_cuda\\program.h",
+          "bytes": 5576,
+          "sha256": "7cde1744d6084a4d9b6b751f2fb41af48ebcfe291dc27f4338883b81ff1173a9"
+        }
+      },
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+          "bytes": 93860,
+          "sha256": "da650697a308699c5d2e4af60b015816a4f1e503b6eae2e8418f8dd75297ddae"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+          "bytes": 93860,
+          "sha256": "da650697a308699c5d2e4af60b015816a4f1e503b6eae2e8418f8dd75297ddae"
+        }
+      },
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+          "bytes": 66780,
+          "sha256": "5ea72d68c8b3bbf3dfab81380aa0ef592ce3dcb032db32529b0fe5bb95162737"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+          "bytes": 66780,
+          "sha256": "5ea72d68c8b3bbf3dfab81380aa0ef592ce3dcb032db32529b0fe5bb95162737"
+        }
+      },
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+          "bytes": 119959,
+          "sha256": "ba42101c043a68bd7666466afe68e199cc92338157bc419c18f450e780a409fa"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+          "bytes": 119959,
+          "sha256": "ba42101c043a68bd7666466afe68e199cc92338157bc419c18f450e780a409fa"
+        }
+      },
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "bytes": 18385,
+          "sha256": "0dc275d842b87900f61e7c29c00aee5cf87ae161101d1a2d36fff08227ea14e0"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source2\\cxx\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "bytes": 18385,
+          "sha256": "0dc275d842b87900f61e7c29c00aee5cf87ae161101d1a2d36fff08227ea14e0"
+        }
+      },
+      {
+        "canonical": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\CMakeLists.txt",
+          "bytes": 792,
+          "sha256": "01bbce9891f45ed14a92254430e70565ed63ed6f663fa2014c8cbd6fb8361ab1"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\tests\\graph_provider_ggml_cuda\\CMakeLists.txt",
+          "bytes": 792,
+          "sha256": "01bbce9891f45ed14a92254430e70565ed63ed6f663fa2014c8cbd6fb8361ab1"
+        }
+      }
+    ],
+    "initial_test_snapshot": {
+      "canonical": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+        "bytes": 15427,
+        "sha256": "495e92b198be974485fed80f6f3582c7557b35a43a781d7e214ac1f22792c1c6"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\build-source\\cxx\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+        "bytes": 15427,
+        "sha256": "495e92b198be974485fed80f6f3582c7557b35a43a781d7e214ac1f22792c1c6"
+      }
+    },
+    "private_ABI": "Node/Recipe layouts unchanged; program.h is comment-only; existing indexed_state flag reused. New private indexed-conv declarations/marker do not change GGML enums/tensor/backend/legacy fused-state layouts.",
+    "generated_source": "Exact locked base→CPU→CUDA→IQ1 composition includes the existing indexed GDN and new indexed conv dispatcher. Retained GDN normalized sources match current canonical GDN math/header.",
+    "canonical": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+        "bytes": 626400,
+        "sha256": "871bcdf3bc0001c188fcd5a7cbde4163e3e3ff05dd772795c59725b5088b55bb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\indexed_conv.h",
+        "bytes": 467,
+        "sha256": "c9ef0dfa7feea2e360ddd918c982dfdee4d37ddf800480e457466dd78400c835"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\NOTICE.md",
+        "bytes": 28186,
+        "sha256": "26bda4954e2c07573023b888aeb2997c9a0d9e7309fa4f770be8a583be5bb356"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "896cc287284fcc7d86ec71a4e113a1ce15823b3a47c7de67d5b786b5f629da07"
+      }
+    ],
+    "provider_version": {
+      "source": "src/compute_ggml_runtime/CMakeLists.txt:58,83,176-189",
+      "selected_native_flavor": "Original CPU+CUDA source composition, no Metal/Vulkan native source patches in this NVCC closure.",
+      "concatenated_inputs": [
+        {
+          "name": "ggml_runtime_patches vendored tree",
+          "sha256": "b4902aa81192cfa8b1ec8d33f1c7974049014f266256347b27e4f4463e5556b6"
+        },
+        {
+          "name": "ggml_cpu_runtime_patches vendored tree",
+          "sha256": "697291fdd451dd785010f3d047714c060650d21b010b132043933c2a7f1a27ad"
+        },
+        {
+          "name": "prepare_mixed_cpu_manifest.py raw SHA256",
+          "sha256": "76a9dc57758008ca0ad6041cfcff282fefa104c292a57a278557715f14e34dd1"
+        },
+        {
+          "name": "prepare_cuda_iq1_manifest.py raw SHA256",
+          "sha256": "f0a923427a1616c548640eacddb33a3c5e94bd7dfdd7d997ada3f7e3c4a49b4a"
+        },
+        {
+          "name": "ggml_cuda_runtime_patches vendored tree",
+          "sha256": "b3a28c26c6f2fca6b5fc448a4abd20a00f5d677623ae14f7bc9d77e7276e139a"
+        },
+        {
+          "name": "gated_delta_scale.h raw SHA256",
+          "sha256": "53a26f36b92f63ed52f250e1e29c5173e541d6a4ad45bc3114dbc8c6a6f861d4"
+        }
+      ],
+      "formula": "SHA256(concatenate the six lower-case hex strings in this order), first16; prefix 456172ec+iq1-46cbf0e9-resource-",
+      "actual_version": "456172ec+iq1-46cbf0e9-resource-f51f1a77e1c4b1a6",
+      "actual_forced_include": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\provider-version.h",
+        "bytes": 105,
+        "sha256": "f5060616a8b711e9990b79957e86f4b2c8eeeb63b521532a826d12b0fafd3196"
+      },
+      "actual_provider_dependency": "compile/provider/actual-dependencies.json"
+    }
+  },
+  "hardware": {
+    "system": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "gpu_query": {
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,driver_version,memory.total,uuid,compute_cap",
+        "--format=csv,noheader"
+      ],
+      "exit": 0,
+      "stdout": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 8.9\n",
+      "stderr": ""
+    }
+  },
+  "compiler_versions": [
+    {
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe"
+      ],
+      "exit": 0,
+      "stdout": "usage: cl [ option... ] filename... [ /link linkoption... ]\n",
+      "stderr": "Microsoft (R) C/C++ Optimizing Compiler Version 19.50.35728 for x64\nCopyright (C) Microsoft Corporation.  All rights reserved.\n\n",
+      "binary": {
+        "path": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "bytes": 682568,
+        "sha256": "194ddf4aafcb74452218a982309a97de30e0adb33edf4af02904ee107213e782"
+      }
+    },
+    {
+      "command": [
+        "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun__9_14:30:19_Pacific_Daylight_Time_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0\n",
+      "stderr": "",
+      "binary": {
+        "path": "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\nvcc.exe",
+        "bytes": 20017264,
+        "sha256": "92d993c6e7025e1597d0d895e65e8658f5f1d41576a477656647a7eece2cd35f"
+      }
+    }
+  ],
+  "runtime_provenance": {
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\runtime2.json",
+      "bytes": 20923,
+      "sha256": "2933982d1eab9bf242ed705531810221c101c1201e47edac829a817374dc59c6"
+    },
+    "DLL_origin_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\engine-check\\ready-cuda.json",
+      "bytes": 7425,
+      "sha256": "1204b5aa545f986d27c79f3bf7a32c3f2ca05ad41fc76d967ef801c4a1dd1c8d"
+    },
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\f32-paged-check\\attempt3\\native-link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "native_cpu": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cpu-vulkan-20261024\\smoke-attempt6\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "native_cpu_final_hardlink": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link2\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "source": "All DLLs/toolkits reuse the prior qualified closure or original installed CUDA/MSVC paths. No SDK/model download or rebuild."
+  },
+  "reuse": {
+    "baseline_inputs": 227,
+    "final_inputs": 228,
+    "replaced_objects": 5,
+    "new_test_object": 1,
+    "prior_public_receipt": {
+      "path": "docs/evidence/correctness/inference-cpu-storage-gather-2026-10-27.json",
+      "bytes": 31551,
+      "sha256": "579279e5fe3021c8a90682142c06714d7bf2e860a9aafbb23a9bdd5da28d13bf"
+    },
+    "prior_public_archive": {
+      "path": "docs/evidence/correctness/inference-cpu-storage-gather-2026-10-27.zip",
+      "bytes": 116013,
+      "sha256": "05be137f3faaa8b0c77236ca564b31c3908ead19b16c0bc0de9d8cf1e6744936"
+    },
+    "retained_GDN_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile\\gdn\\unit.obj",
+      "bytes": 1518528,
+      "sha256": "814c6e2e34a5b7ebdde14aa712ed3c26cb8bb70e799335cdb4b77b4d2a0b72bf"
+    },
+    "retained_common40d4_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-vulkan\\compile\\common\\unit.obj",
+      "bytes": 1061830,
+      "sha256": "01eee01961615cbde056f5821291d15cabf96146446c0e9cb514a4f5ece7fc33"
+    },
+    "source_closure": "The previous public evidence supplies the unchanged SDK/source/dependency closure; it is referenced, not recopied."
+  },
+  "retained_failures": [],
+  "test_strengthening": "The initial Commands-only test object and first built image were never executed. The same existing F32 case was strengthened before the sole GPU run; only that test was recompiled/relinked. This is not a failed experiment.",
+  "limits": [
+    "Only the recorded C128/D4/B2 shapes/dtypes and one RTX4070/driver617.14 were exercised; no all-GPU/all-shape claim.",
+    "No full engine/model or engine state-pool integration was run in this batch.",
+    "No native GPU fault injection, concurrent cancellation or new performance measurement; no speedup is inferred from these timings."
+  ],
+  "SDK_shader_rebuilds": 0,
+  "model_runs": 0,
+  "engine_runs": 0,
+  "HTTP": 0,
+  "native_fault_injection": false,
+  "performance_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-indexed-conv-graph-2026-10-27.zip",
+    "bytes": 484521,
+    "sha256": "0331bcee2978624da0b50029c497bacf84c191a3afae74023957b329902782f8",
+    "members": 106,
+    "all_member_bytes_verified": true,
+    "included": "Necessary native/CXX snapshots (including initial unrun test), canonical patch pins, recipes, logs, actual dependencies, XML, version formula and compact receipt.",
+    "excluded": "EXE/OBJ/PDB/DLL/static SDK/shader/model payload, full 63MB MAP, previous 900-header closure."
+  }
+}

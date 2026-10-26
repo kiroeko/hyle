@@ -1194,12 +1194,20 @@ CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合�
 同一`slots::bind`从事务的B个source readers和B×K个writers生成一块私有索引载体，
 同时绑定原池的准确读写权限；普通GDN的K1与最后K个候选状态遵守同一接口。
 这不授予整池读取权限；拒绝融合时用上述SourceBinding接普通Gather和Store。融合当前只支持无逃逸稠密状态的
-F32数学链；Y可正常发布，也可只有状态写入。完整引擎和conv尚未接此路径，未证明速度收益。
+F32数学链；Y可正常发布，也可只有状态写入。
+
+CUDA还可把同一池的history Gather、原精度Concat、可选Cast F32、CausalConv与最后K个
+history窗口的Store融合。history保持F32／F16／BF16原码，卷积系数及结果仍为F32；
+窗口从Cast之前的samples取时间升序的最后K个边界，按`[B*K,E]`写入真实目标槽。
+K1可用原Copy物化带batch间隙的窗口。普通稠密history或别名有外部读者时仍物化并自然fallback；
+不用Provider分叉数学图。有限GPU检查已覆盖计算、原码历史及改变目标槽后的录制复用，
+完整引擎尚未接此路径，未证明速度收益。
 实际使用见[CPU](../../tests/graph/slots_execution_test.cc)、
 [CUDA](../../tests/graph/slots_cuda_execution_test.cc)、
 [Apple](../../tests/graph_route_apple/slot_store_test.cc)、
 [Vulkan](../../tests/graph_route_vulkan/slot_store_test.cc)Store消费者及
-[索引GDN融合](../../tests/graph_provider_ggml_cuda/indexed_state_test.cc)消费者。
+[索引GDN融合](../../tests/graph_provider_ggml_cuda/indexed_state_test.cc)与
+[索引卷积融合](../../tests/graph_provider_ggml_cuda/indexed_conv_test.cc)消费者。
 
 ### 原生后端的租约绑定
 

@@ -46,10 +46,12 @@ struct Node final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
   std::vector<std::uint32_t> outputs;
-  // Trusted cold Graph lowering only. The original GDN math is unchanged;
-  // its final dense state input is replaced by the real [P,E] pool followed
-  // by private source I32[B] and destination I32[B*K] controls. Only Y is a
-  // tensor output. Actual pool permissions belong to the outer Graph effect.
+  // Trusted cold Graph lowering only. GDN replaces its final dense state by
+  // the original pool and private source/destination IDs. CausalConv uses
+  // [chunk, weights, history pool, source IDs, destination IDs], retaining
+  // original sample precision for history and F32 convolution mathematics.
+  // Destination IDs are batch-major [B*K]; only Y is a tensor output. Actual
+  // pool permissions belong to the outer Graph effect, never these integers.
   bool indexed_state = false;
 };
 struct Recipe final {

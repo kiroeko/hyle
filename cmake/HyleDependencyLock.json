@@ -1296,7 +1296,7 @@
       "name": "ggml_cuda_runtime_patches",
       "class": "in_tree",
       "repository": "https://github.com/ggml-org/ggml.git",
-      "version": "hyle-ggml-cuda-resource-iq1-inference-v37",
+      "version": "hyle-ggml-cuda-resource-iq1-inference-v38",
       "revision": "456172ec733a135778adcd32d00e576a58232e45",
       "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
       "archive": {
@@ -1305,7 +1305,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_cuda_runtime",
-        "tree_sha256": "7f25e5549eedb0ae52301abf2e4a6e86a8c0bc55338535da5a2700a74e81182e"
+        "tree_sha256": "b3a28c26c6f2fca6b5fc448a4abd20a00f5d677623ae14f7bc9d77e7276e139a"
       },
       "license": {
         "expression": "MIT",
@@ -1318,7 +1318,7 @@
           {
             "root": "hyle",
             "path": "third_party/ggml_cuda_runtime/NOTICE.md",
-            "sha256": "bc519d944b9619fe19133f1721e4f89d6c08cf23c8d4a910fe655bbcde9e8f32"
+            "sha256": "5a4606c59d311627e9199205a660ad9fb7e7ee2e1d159cdae871215357d592a2"
           }
         ]
       }

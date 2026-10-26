@@ -38,6 +38,8 @@ inline constexpr compute::RoutePolicyId kGgmlCudaPairedProjectionPolicy{
 inline constexpr std::uint32_t kGgmlCudaPairedProjectionPreference = 201;
 inline constexpr compute::RoutePolicyId kGgmlCudaIndexedStatePolicy{
     0x48594c4547474355ULL, 6, 1};
+inline constexpr compute::RoutePolicyId kGgmlCudaIndexedConvPolicy{
+    0x48594c4547474355ULL, 7, 1};
 
 Result<bool> supported_node(void *context, const Graph &graph,
                             NodeId node) noexcept {
@@ -173,6 +175,20 @@ struct IndexedStatePattern final {
   slots::Schema schema;
   std::uint32_t source_count = 0, destination_count = 0;
 };
+
+// Only immutable cold identities are shared between the indexed math routes.
+// Both use the same StoreBinding, permissions, native slot and retirement.
+struct IndexedChain final {
+  std::vector<NodeId> nodes;
+  NodeId gather, math, store;
+  ValueId pool, source_ids, destination_ids, scores;
+  slots::Schema schema;
+  std::uint32_t source_count = 0, destination_count = 0;
+};
+struct IndexedConvPattern final {
+  IndexedChain chain;
+  ValueId chunk, weights;
+};
 template<class Private>
 Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
     IndexedStatePattern &out, Private private_value) noexcept {
@@ -269,6 +285,231 @@ Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
          scores, store->schema, static_cast<std::uint32_t>(batches),
          static_cast<std::uint32_t>(batches * snapshots)};
   return true;
+}
+
+// Gather -> original-precision samples -> checked last-K history windows ->
+// Store. The only escaping mathematical value may be the original F32 conv.
+// No model identity or native-only mathematical operation appears in this DAG.
+Result<bool> match_indexed_conv(const Graph &graph, NodeId store_node,
+    IndexedConvPattern &out) noexcept try {
+  const auto store_operation = graph.operation(store_node);
+  const auto store = store_operation ? store_operation->custom_as<slots::Store>() : std::nullopt;
+  if (!store || graph.node_input_count(store_node).value() != 2 ||
+      graph.node_output_count(store_node).value() != 0) return false;
+  IndexedConvPattern result;
+  auto &chain = result.chain;
+  chain.store = store_node; chain.schema = store->schema;
+  HYLE_ASSIGN_OR_RETURN(chain.destination_ids, graph.node_input(store_node, 1));
+  HYLE_ASSIGN_OR_RETURN(auto rows, graph.node_input(store_node, 0));
+  if (rows.kind() != ValueKind::kNodeOutput || chain.destination_ids.kind() != ValueKind::kInput) return false;
+  const auto reshape_input = [&](ValueId value, NodeId &node) -> std::optional<ValueId> {
+    if (value.kind() != ValueKind::kNodeOutput) return std::nullopt;
+    const auto producer = graph.producer(value);
+    if (!producer) return std::nullopt;
+    const auto operation = graph.operation(*producer);
+    const auto *view = operation ? operation->get_if<compute::View>() : nullptr;
+    if (!view || view->kind() != compute::ViewKind::kReshape) return std::nullopt;
+    node = *producer;
+    return graph.node_input(node, 0).value();
+  };
+  NodeId flattened;
+  auto stack = reshape_input(rows, flattened);
+  if (!stack) return false;
+  chain.nodes = {flattened, store_node};
+  // A B>1 window retains the samples' batch pitch. Its ordinary Store needs
+  // an explicit materialization; these exact byte copies belong to the same
+  // private proof rather than requiring a fictitious dense slice.
+  const auto materialized_input = [&](ValueId value) -> Result<ValueId> {
+    while (value.kind() == ValueKind::kNodeOutput) {
+      HYLE_ASSIGN_OR_RETURN(auto node, graph.producer(value));
+      const auto operation = graph.operation(node);
+      if (!operation || (!operation->get_if<compute::Copy>() &&
+          !operation->get_if<compute::Concat>())) break;
+      if (graph.node_input_count(node).value() != 1 || graph.node_output_count(node).value() != 1) break;
+      chain.nodes.push_back(node); value = graph.node_input(node, 0).value();
+    }
+    return value;
+  };
+  HYLE_ASSIGN_OR_RETURN(auto stack_value, materialized_input(*stack));
+  stack = stack_value;
+  HYLE_ASSIGN_OR_RETURN(auto rows_description, graph.value_description(rows));
+  HYLE_ASSIGN_OR_RETURN(auto destination_description, graph.value_description(chain.destination_ids));
+  if (!rows_description.is_dense() || rows_description.rank() != 2 ||
+      !destination_description.is_dense() || destination_description.rank() != 1 ||
+      destination_description.data_type() != compute::DataType::kInt32) return false;
+  std::vector<ValueId> windows;
+  if (stack->kind() != ValueKind::kNodeOutput) return false;
+  HYLE_ASSIGN_OR_RETURN(auto stack_node, graph.producer(*stack));
+  const auto stack_operation = graph.operation(stack_node);
+  const auto *concat = stack_operation ? stack_operation->get_if<compute::Concat>() : nullptr;
+  if (concat) {
+    HYLE_ASSIGN_OR_RETURN(auto stacked, graph.value_description(*stack));
+    if (stacked.rank() != 4 || (concat->axis != 1 && concat->axis != -3)) return false;
+    HYLE_ASSIGN_OR_RETURN(auto count, graph.node_input_count(stack_node));
+    if (count < 2 || count > UINT32_MAX) return false;
+    chain.nodes.push_back(stack_node);
+    for (std::size_t i = 0; i < count; ++i)
+      windows.push_back(graph.node_input(stack_node, i).value());
+  } else windows.push_back(*stack);
+  ValueId samples;
+  std::vector<std::int64_t> starts;
+  std::int64_t batches = 0, history = 0, channels = 0;
+  for (const auto original_window : windows) {
+    HYLE_ASSIGN_OR_RETURN(auto window, materialized_input(original_window));
+    HYLE_ASSIGN_OR_RETURN(auto description, graph.value_description(window));
+    auto sliced = window;
+    if (description.rank() == 4) {
+      if (description.dimensions()[1] != 1) return false;
+      NodeId expanded;
+      const auto source = reshape_input(window, expanded);
+      if (!source) return false;
+      chain.nodes.push_back(expanded); sliced = *source;
+    } else if (windows.size() != 1 || description.rank() != 3) return false;
+    HYLE_ASSIGN_OR_RETURN(sliced, materialized_input(sliced));
+    HYLE_ASSIGN_OR_RETURN(auto sliced_description, graph.value_description(sliced));
+    if (!sliced_description.is_plain() || sliced_description.rank() != 3 ||
+        sliced.kind() != ValueKind::kNodeOutput) return false;
+    const auto shape = sliced_description.dimensions();
+    if (!batches) { batches = shape[0]; history = shape[1]; channels = shape[2]; }
+    if (batches <= 0 || history <= 0 || channels <= 0 || shape[0] != batches ||
+        shape[1] != history || shape[2] != channels ||
+        (description.rank() == 4 && (description.dimensions()[0] != batches ||
+          description.dimensions()[2] != history || description.dimensions()[3] != channels))) return false;
+    HYLE_ASSIGN_OR_RETURN(auto slice_node, graph.producer(sliced));
+    const auto operation = graph.operation(slice_node);
+    const auto *slice = operation ? operation->get_if<compute::View>() : nullptr;
+    if (!slice || slice->kind() != compute::ViewKind::kSlice ||
+        (slice->axis() != 1 && slice->axis() != -2) || slice->count() != history ||
+        slice->step() != 1 || slice->start() <= 0) return false;
+    HYLE_ASSIGN_OR_RETURN(auto original, graph.node_input(slice_node, 0));
+    if (samples.valid() && samples != original) return false;
+    samples = original; starts.push_back(slice->start()); chain.nodes.push_back(slice_node);
+  }
+  if (samples.kind() != ValueKind::kNodeOutput || batches > UINT32_MAX ||
+      windows.size() > UINT32_MAX / static_cast<std::uint64_t>(batches)) return false;
+  HYLE_ASSIGN_OR_RETURN(auto samples_description, graph.value_description(samples));
+  const auto type = samples_description.data_type();
+  if (!samples_description.is_dense() || samples_description.rank() != 3 ||
+      (type != compute::DataType::kFloat32 && type != compute::DataType::kFloat16 &&
+       type != compute::DataType::kBFloat16) || samples_description.dimensions()[0] != batches ||
+      samples_description.dimensions()[2] != channels) return false;
+  const auto tokens = samples_description.dimensions()[1] - history;
+  if (tokens <= 0 || windows.size() > static_cast<std::uint64_t>(tokens)) return false;
+  for (std::size_t i = 0; i < starts.size(); ++i)
+    if (starts[i] != tokens - static_cast<std::int64_t>(starts.size()) + 1 + static_cast<std::int64_t>(i)) return false;
+  HYLE_ASSIGN_OR_RETURN(auto samples_node, graph.producer(samples));
+  const auto samples_operation = graph.operation(samples_node);
+  const auto *join = samples_operation ? samples_operation->get_if<compute::Concat>() : nullptr;
+  if (!join || (join->axis != 1 && join->axis != -2) ||
+      graph.node_input_count(samples_node).value() != 2) return false;
+  HYLE_ASSIGN_OR_RETURN(auto initial, graph.node_input(samples_node, 0));
+  HYLE_ASSIGN_OR_RETURN(result.chunk, graph.node_input(samples_node, 1));
+  NodeId initial_node;
+  const auto gathered = reshape_input(initial, initial_node);
+  if (!gathered || gathered->kind() != ValueKind::kNodeOutput) return false;
+  HYLE_ASSIGN_OR_RETURN(chain.gather, graph.producer(*gathered));
+  const auto gather_operation = graph.operation(chain.gather);
+  const auto *gather = gather_operation ? gather_operation->get_if<compute::Gather>() : nullptr;
+  if (!gather || (gather->axis != 0 && gather->axis != -2) ||
+      gather->bounds != compute::IndexBoundsPolicy::kChecked) return false;
+  HYLE_ASSIGN_OR_RETURN(chain.pool, graph.node_input(chain.gather, 0));
+  HYLE_ASSIGN_OR_RETURN(chain.source_ids, graph.node_input(chain.gather, 1));
+  if (chain.pool.kind() != ValueKind::kInput || chain.source_ids.kind() != ValueKind::kInput ||
+      chain.pool == chain.source_ids || chain.pool == chain.destination_ids ||
+      chain.source_ids == chain.destination_ids) return false;
+  HYLE_ASSIGN_OR_RETURN(auto pool_description, graph.value_description(chain.pool));
+  HYLE_ASSIGN_OR_RETURN(auto expected_pool, chain.schema.capacity_description());
+  HYLE_ASSIGN_OR_RETURN(auto initial_description, graph.value_description(initial));
+  HYLE_ASSIGN_OR_RETURN(auto chunk_description, graph.value_description(result.chunk));
+  HYLE_ASSIGN_OR_RETURN(auto source_description, graph.value_description(chain.source_ids));
+  if (pool_description != expected_pool || pool_description.data_type() != type ||
+      initial_description.data_type() != type || !initial_description.is_dense() ||
+      initial_description.rank() != 3 || initial_description.dimensions()[0] != batches ||
+      initial_description.dimensions()[1] != history || initial_description.dimensions()[2] != channels ||
+      !chunk_description.is_plain() || chunk_description.rank() != 3 ||
+      chunk_description.data_type() != type || chunk_description.dimensions()[0] != batches ||
+      chunk_description.dimensions()[1] != tokens || chunk_description.dimensions()[2] != channels ||
+      !source_description.is_dense() || source_description.rank() != 1 ||
+      source_description.data_type() != compute::DataType::kInt32 || source_description.dimensions()[0] != batches ||
+      history > INT64_MAX / channels || chain.schema.item_elements() != history * channels ||
+      rows_description.data_type() != type || rows_description.dimensions()[0] != batches * static_cast<std::int64_t>(windows.size()) ||
+      rows_description.dimensions()[1] != history * channels ||
+      destination_description.dimensions()[0] != rows_description.dimensions()[0]) return false;
+  chain.nodes.insert(chain.nodes.end(), {chain.gather, initial_node, samples_node});
+  // Locate the actual original convolution, with an optional F32 identity Cast.
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    const auto operation = graph.operation(node);
+    if (!operation || !operation->custom_as<compute::model_ops::CausalConv1d>()) continue;
+    HYLE_ASSIGN_OR_RETURN(auto input, graph.node_input(node, 0));
+    NodeId cast_node;
+    if (input != samples && input.kind() == ValueKind::kNodeOutput) {
+      const auto producer = graph.producer(input).value();
+      const auto cast_operation = graph.operation(producer);
+      const auto *cast = cast_operation ? cast_operation->get_if<compute::Cast>() : nullptr;
+      if (cast && cast->output_type == compute::DataType::kFloat32 &&
+          graph.node_input(producer, 0).value() == samples) cast_node = producer;
+    }
+    if (!cast_node.valid() && (input != samples || type != compute::DataType::kFloat32)) continue;
+    if (chain.math.valid()) return false;
+    chain.math = node; chain.scores = graph.result(node, 0).value();
+    result.weights = graph.node_input(node, 1).value();
+    chain.nodes.push_back(node);
+    if (cast_node.valid()) chain.nodes.push_back(cast_node);
+  }
+  if (!chain.math.valid()) return false;
+  HYLE_ASSIGN_OR_RETURN(auto weights_description, graph.value_description(result.weights));
+  if (!weights_description.is_dense() || weights_description.rank() != 2 ||
+      weights_description.data_type() != compute::DataType::kFloat32 ||
+      weights_description.dimensions()[0] != channels || weights_description.dimensions()[1] != history + 1) return false;
+  std::ranges::sort(chain.nodes, {}, &NodeId::ordinal);
+  if (std::adjacent_find(chain.nodes.begin(), chain.nodes.end()) != chain.nodes.end()) return false;
+  const auto inside = [&](NodeId node) { return std::ranges::find(chain.nodes, node) != chain.nodes.end(); };
+  for (const auto node : chain.nodes) {
+    if (graph.node_resource_count(node).value() != 0) return false;
+    if (node != store_node && compute::operation_traits(graph.operation(node).value()).effect != compute::EffectKind::kPure) return false;
+  }
+  // Check every reader, including metadata aliases and explicit control edges.
+  // A use counter cannot express samples' legitimate multiple private slices.
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i));
+    for (std::size_t port = 0; port < graph.node_input_count(node).value(); ++port) {
+      const auto value = graph.node_input(node, port).value();
+      if ((value == chain.pool && (node != chain.gather || port != 0)) ||
+          (value == chain.source_ids && (node != chain.gather || port != 1)) ||
+          (value == chain.destination_ids && (node != store_node || port != 1))) return false;
+      if (value.kind() == ValueKind::kNodeOutput && value != chain.scores &&
+          inside(graph.producer(value).value()) && !inside(node)) return false;
+    }
+    for (std::size_t d = 0; d < graph.node_dependency_count(node).value(); ++d) {
+      const auto before = graph.node_dependency(node, d).value();
+      if (before != store_node && inside(before) && !inside(node)) return false;
+    }
+  }
+  for (std::size_t i = 0; i < graph.output_count(); ++i) {
+    const auto value = graph.output_id(i).value();
+    if (value == chain.pool || value == chain.source_ids || value == chain.destination_ids ||
+        (value.kind() == ValueKind::kNodeOutput && value != chain.scores &&
+         inside(graph.producer(value).value()))) return false;
+  }
+  chain.source_count = static_cast<std::uint32_t>(batches);
+  chain.destination_count = static_cast<std::uint32_t>(rows_description.dimensions()[0]);
+  out = std::move(result);
+  return true;
+} catch (const std::bad_alloc &) {
+  return std::unexpected(Status::ResourceExhausted("indexed convolution cold pattern metadata"));
+}
+
+Result<bool> supported_indexed_conv(void *context, const Graph &graph,
+    const IndexedConvPattern &pattern) noexcept try {
+  const auto &p = pattern.chain;
+  const std::array values{pattern.chunk, pattern.weights, p.pool, p.source_ids, p.destination_ids, p.scores};
+  std::vector<compute::TensorDesc> descriptions;
+  for (const auto value : values) descriptions.push_back(graph.value_description(value).value());
+  const native::Node node{graph.operation(p.math).value(), {0, 1, 2, 3, 4}, {5}, true};
+  return native::supports_indexed_state(context, node, descriptions);
+} catch (const std::bad_alloc &) {
+  return std::unexpected(Status::ResourceExhausted("indexed convolution qualification metadata"));
 }
 
 // This private implementation preserves the public BF16 Cast boundary in
@@ -690,6 +931,28 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
     if (!more) return Status::Ok();
   }
 
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto terminal, graph.node_id(i));
+    IndexedConvPattern pattern;
+    HYLE_ASSIGN_OR_RETURN(auto matches, match_indexed_conv(graph, terminal, pattern));
+    if (!matches || (!request.allowed_nodes.empty() &&
+        std::ranges::any_of(pattern.chain.nodes, [&](NodeId node) noexcept {
+          return !request.allowed_nodes[node.ordinal()];
+        }))) continue;
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_indexed_conv(context, graph, pattern));
+    if (!supported) continue;
+    HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, pattern.chain.nodes, allocator));
+    if (!contractible) continue;
+    HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = pattern.chain.nodes,
+        .cost = {.workspace = std::nullopt, .persistent_bytes = std::nullopt,
+                 .copy_bytes = 0, .repack_bytes = 0,
+                 .synchronization_count = 2, .dispatch_count = 1},
+        .route = 7, .replay_class = compute::ProviderReplayClass::kManaged,
+        .implementation = compute::ProviderImplementationId{8},
+        .policy = kGgmlCudaIndexedConvPolicy, .preference = 200}));
+    if (!more) return Status::Ok();
+  }
+
   // A distinct no-copy implementation may cover two otherwise preferred BLAS
   // leaves. Their ordinary ranks and all nonmatching regions are unchanged.
   for (std::size_t i = 0; i < graph.node_count(); ++i) {
@@ -1106,6 +1369,27 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
 
 Status qualify(void *context, const RegionCompileRequest &request,
                mem::AllocatorRef allocator) noexcept {
+  if (request.graph && request.route == 7) {
+    if (request.nodes.empty() || !request.has_unknown_effects ||
+        !request.effect_accesses.empty() || !request.effect_bindings.empty())
+      return Status::Unimplemented("indexed convolution requires its original Store effect");
+    NodeId store;
+    for (const auto node : request.nodes) {
+      const auto operation = request.graph->operation(node);
+      if (!operation || !operation->custom_as<slots::Store>()) continue;
+      if (store.valid()) return Status::Unimplemented("indexed convolution has multiple Store effects");
+      store = node;
+    }
+    if (!store.valid()) return Status::Unimplemented("indexed convolution has no original Store");
+    IndexedConvPattern pattern;
+    HYLE_ASSIGN_OR_RETURN(auto matches, match_indexed_conv(*request.graph, store, pattern));
+    if (!matches || !std::ranges::equal(request.nodes, pattern.chain.nodes) ||
+        request.outputs.size() > 1 || (!request.outputs.empty() && request.outputs.front() != pattern.chain.scores))
+      return Status::Unimplemented("indexed convolution sample/history boundary escapes");
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_indexed_conv(context, *request.graph, pattern));
+    return supported ? Status::Ok()
+        : Status::Unimplemented("linked native indexed convolution does not support this geometry");
+  }
   if (request.graph && request.route == 6) {
     if (request.nodes.size() != 5 || !request.has_unknown_effects ||
         !request.effect_accesses.empty() || !request.effect_bindings.empty())
@@ -1250,7 +1534,7 @@ Status resources(void *context, const RegionCompileRequest &request,
     binding.resource.minimum_alignment = 1;
   for (auto &binding : outputs)
     binding.resource.minimum_alignment = 1;
-  if (request.route == 6) {
+  if (request.route == 6 || request.route == 7) {
     // The indexed kernel uses the original scalar state/ID addressing; a
     // Store descriptor is not a vectorized reader of its private I32 slice.
     for (std::size_t port = 0; port < request.inputs.size(); ++port) {
@@ -1355,9 +1639,13 @@ std::vector<ProjectedGather> projected_gathers(
   }
   return result;
 }
+struct IndexedBinding final {
+  std::vector<NodeId> nodes;
+  NodeId gather;
+};
 struct Artifact final {
   compute::detail::ProviderPrepared native;
-  std::optional<IndexedStatePattern> indexed;
+  std::optional<IndexedBinding> indexed;
   slots::detail::StoreRegionFacts store_facts;
   // Exact original Graph boundary ports, never a second native input map.
   std::array<std::uint32_t, 3> indexed_ports{};
@@ -1434,14 +1722,14 @@ submit(void *value, void *lane, compute::detail::QueueSequence &sequence,
     if (!invocation.sealed || !invocation.store_binding.same_queue(sequence) ||
         inputs.size() != invocation.input_bindings.size())
       return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
-          "indexed GDN needs its original sealed slot transaction and Queue"));
+          "indexed state needs its original sealed slot transaction and Queue"));
     for (std::size_t i = 0; i < inputs.size(); ++i) {
       const auto a = inputs[i].storage(), b = invocation.input_bindings[i].storage();
       if (inputs[i].description() != invocation.input_bindings[i].description() ||
           a.resource() != b.resource() || a.native_handle() != b.native_handle() ||
           a.offset() != b.offset() || a.size() != b.size())
         return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
-            "indexed GDN inputs differ from their admitted original spans"));
+            "indexed state inputs differ from their admitted original spans"));
     }
   }
   return artifact.vtable->shared_submit(artifact.state,
@@ -1459,7 +1747,7 @@ Status prepare_bindings(void *value, void *lane,
   if (region.indexed) {
     for (const auto port : region.indexed_ports)
       if (port >= inputs.size())
-        return Status::InvalidArgument("indexed GDN original boundary changed");
+        return Status::InvalidArgument("indexed state original boundary changed");
     const slots::detail::StoreConfiguration actual{
         inputs[region.indexed_ports[0]].tensor,
         inputs[region.indexed_ports[1]].tensor,
@@ -1499,10 +1787,10 @@ const slots::detail::StoreRegionVTable store_binding{
     .inspect = [](const ProviderRegionPrepared &prepared, void *lane) noexcept
         -> Result<slots::detail::StoreRegionFacts> {
       if (!prepared.state || !lane)
-        return std::unexpected(Status::InvalidArgument("indexed GDN needs its original artifact/slot"));
+        return std::unexpected(Status::InvalidArgument("indexed state needs its original artifact/slot"));
       const auto &region = *static_cast<const Artifact *>(prepared.state);
       if (!region.indexed)
-        return std::unexpected(Status::Unimplemented("not an indexed GDN Store region"));
+        return std::unexpected(Status::Unimplemented("not an indexed state Store region"));
       return region.store_facts;
     },
     .binding = [](void *lane) noexcept -> slots::detail::StoreBinding * {
@@ -1511,16 +1799,16 @@ const slots::detail::StoreRegionVTable store_binding{
     .configure = [](const ProviderRegionPrepared &prepared, void *lane,
         const slots::detail::StoreConfiguration &configuration) noexcept -> Status {
       if (!prepared.state || !lane)
-        return Status::InvalidArgument("indexed GDN needs its original artifact/slot");
+        return Status::InvalidArgument("indexed state needs its original artifact/slot");
       const auto &region = *static_cast<const Artifact *>(prepared.state);
       if (!region.indexed)
-        return Status::Unimplemented("not an indexed GDN Store region");
+        return Status::Unimplemented("not an indexed state Store region");
       const std::array views{configuration.capacity, configuration.source_indices,
                              configuration.destination_indices};
       for (std::size_t i = 0; i < views.size(); ++i)
         if (!views[i].valid() || views[i].description() != region.indexed_descriptions[i] ||
             views[i].storage().resource() != region.store_facts.resource)
-          return Status::InvalidArgument("indexed GDN private capacity/ID configuration differs");
+          return Status::InvalidArgument("indexed state private capacity/ID configuration differs");
       auto &invocation = *static_cast<Invocation *>(lane);
       invocation.configuration = configuration;
       invocation.sealed = false;
@@ -1536,12 +1824,12 @@ const detail::RegionProjectedReadVTable projected_read{
         std::uint32_t port, compute::detail::OperationPreparedAccess *out) noexcept -> Status {
       *out = {};
       if (!prepared.state || !lane)
-        return Status::InvalidArgument("indexed GDN projection needs its original artifact/slot");
+        return Status::InvalidArgument("indexed state projection needs its original artifact/slot");
       const auto &region = *static_cast<const Artifact *>(prepared.state);
       const bool ordinary = std::ranges::any_of(region.gathers,
           [port](const ProjectedGather &gather) { return gather.input_port == port; });
       if ((!region.indexed || port != region.indexed_ports[0]) && !ordinary)
-        return Status::Unimplemented("indexed GDN does not project this boundary port");
+        return Status::Unimplemented("indexed state does not project this boundary port");
       // The native program reads this capacity only through private source IDs.
       // Real ready slot guards and exclusive destinations remain Graph's duty.
       *out = {.projected_input = port};
@@ -1552,7 +1840,7 @@ const detail::RegionProjectedReadVTable projected_read{
         detail::RegionNodeAccess *out) noexcept -> Status {
       *out = {};
       if (!prepared.state)
-        return Status::Unimplemented("indexed GDN source capability differs");
+        return Status::Unimplemented("indexed state source capability differs");
       const auto &region = *static_cast<const Artifact *>(prepared.state);
       if (!region.indexed) {
         if (capability != slots::detail::kStoreBindingExtensionId &&
@@ -1566,10 +1854,10 @@ const detail::RegionProjectedReadVTable projected_read{
         return Status::Ok();
       }
       if (capability != slots::detail::kStoreBindingExtensionId)
-        return Status::Unimplemented("indexed GDN source capability differs");
+        return Status::Unimplemented("indexed state source capability differs");
       if (!region.indexed || !std::ranges::any_of(region.indexed->nodes,
           [&](NodeId node) noexcept { return node.ordinal() == ordinal; }))
-        return Status::Unimplemented("node is not in this exact indexed GDN state chain");
+        return Status::Unimplemented("node is not in this exact indexed state chain");
       if (region.indexed->gather.ordinal() == ordinal)
         out->access.projected_input = region.indexed_ports[0];
       return Status::Ok();
@@ -1635,6 +1923,70 @@ const ProviderRegionPreparedVTable kPrepared{
     .seal_bindings = &seal_bindings,
     .query_extension = &binding_release_extension};
 
+compute::ProviderPrepareOutcome compile_indexed_chain(void *context,
+    const RegionCompileRequest &request, mem::AllocatorRef allocator,
+    const IndexedChain &pattern, std::span<const ValueId> math_inputs,
+    ProviderRegionPrepared *output) {
+  using Outcome = compute::ProviderPrepareOutcome;
+  native::Recipe recipe;
+  std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
+  for (std::uint32_t i = 0; i < values.size(); ++i) {
+    recipe.inputs.push_back(i);
+    recipe.values.push_back(request.graph->value_description(values[i]).value());
+  }
+  const auto local = [&](ValueId value) -> std::uint32_t {
+    return static_cast<std::uint32_t>(std::ranges::find(values, value) - values.begin());
+  };
+  native::Node node{request.graph->operation(pattern.math).value(), {}, {}, true};
+  for (const auto value : math_inputs) node.inputs.push_back(local(value));
+  if (std::ranges::any_of(node.inputs, [&](std::uint32_t id) { return id >= values.size(); }))
+    return Outcome::unsupported(Status::Unimplemented("indexed math needs its original external boundary"));
+  const auto score = static_cast<std::uint32_t>(recipe.values.size());
+  recipe.values.push_back(request.graph->value_description(pattern.scores).value());
+  node.outputs.push_back(score);
+  if (!native::supports_indexed_state(context, node, recipe.values))
+    return Outcome::unsupported(Status::Unimplemented("linked native indexed math does not support this geometry"));
+  recipe.nodes.push_back(std::move(node)); recipe.effect_roots.push_back(score);
+  if (!request.outputs.empty()) recipe.outputs.push_back(score);
+  const std::array indexed_ports{local(pattern.pool), local(pattern.source_ids), local(pattern.destination_ids)};
+  if (request.input_resources.size() != request.inputs.size() ||
+      !request.input_resources[indexed_ports[0]].valid())
+    return Outcome::error(Status::InvalidArgument("indexed math needs its original input resource assignments"));
+  const auto resource = request.input_resources[indexed_ports[0]];
+  for (const auto port : indexed_ports)
+    if (request.input_resources[port] != resource)
+      return Outcome::unsupported(Status::Unimplemented("indexed capacity/IDs need the same original native resource"));
+  void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
+  if (!storage) return Outcome::error(Status::ResourceExhausted("indexed region artifact metadata"));
+  auto *artifact = ::new (storage) Artifact;
+  // Finish allocating cold metadata before transferring the native program.
+  try {
+    artifact->indexed = IndexedBinding{pattern.nodes, pattern.gather};
+    artifact->constants.assign(request.constants.begin(), request.constants.end());
+  } catch (...) {
+    artifact->~Artifact(); allocator.deallocate(artifact, sizeof(Artifact), alignof(Artifact)); throw;
+  }
+  artifact->indexed_ports = indexed_ports;
+  for (std::size_t i = 0; i < indexed_ports.size(); ++i)
+    artifact->indexed_descriptions[i] = recipe.values[indexed_ports[i]];
+  artifact->store_facts = {.store = pattern.store, .schema = pattern.schema,
+      .destination_indices = pattern.destination_ids, .destination_input_port = indexed_ports[2],
+      .destination_count = pattern.destination_count, .resource = resource,
+      .source = {.gather = pattern.gather, .capacity = pattern.pool, .indices = pattern.source_ids,
+          .capacity_input_port = indexed_ports[0], .count = pattern.source_count,
+          .permission_changes_preserve_commands = true}};
+  const auto outcome = native::compile(context, std::move(recipe), allocator, &artifact->native);
+  if (!artifact->native.state) {
+    artifact->~Artifact(); allocator.deallocate(artifact, sizeof(Artifact), alignof(Artifact)); return outcome;
+  }
+  *output = {.vtable = &kPrepared, .state = artifact,
+      .properties = {.workspace = artifact->native.workspace, .persistent_bytes = std::nullopt,
+          .copy_bytes = 0, .synchronization_count = 2, .dispatch_count = 1,
+          .runtime = artifact->native.runtime, .preserves_effects = true,
+          .invocation_private_bytes = std::nullopt}};
+  return outcome;
+}
+
 compute::ProviderPrepareOutcome
 compile(void *context, const RegionCompileRequest &request,
         mem::AllocatorRef allocator, ProviderRegionPrepared *output) noexcept {
@@ -1645,91 +1997,47 @@ compile(void *context, const RegionCompileRequest &request,
         ? compute::ProviderPrepareOutcome::unsupported(std::move(status))
         : compute::ProviderPrepareOutcome::error(std::move(status));
   try {
-    if (request.route == 6) {
-      FusionUses uses(allocator);
-      const auto initialized = uses.initialize(*request.graph);
-      if (!initialized.ok()) return compute::ProviderPrepareOutcome::error(initialized);
-      IndexedStatePattern pattern;
-      const auto matched = match_indexed_state(*request.graph,
-          request.nodes.back(), pattern,
-          [&](NodeId producer, ValueId value, std::span<const NodeId> nodes) noexcept {
-            if (uses.uses[value.ordinal()] != 1) return false;
-            if (!producer.valid()) return true;
-            const auto control = uses.control_readers[producer.ordinal()];
-            return control == FusionUses::kNone || std::ranges::any_of(nodes,
-                [&](NodeId node) noexcept { return node.ordinal() == control; });
-          });
-      if (!matched) return compute::ProviderPrepareOutcome::error(matched.error());
-      if (!*matched) return compute::ProviderPrepareOutcome::unsupported(
-          Status::Unimplemented("indexed GDN exact state chain changed"));
-      native::Recipe recipe;
-      std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
-      for (std::uint32_t i = 0; i < values.size(); ++i) {
-        recipe.inputs.push_back(i);
-        recipe.values.push_back(request.graph->value_description(values[i]).value());
+    if (request.route == 6 || request.route == 7) {
+      IndexedChain chain;
+      std::vector<ValueId> math_inputs;
+      if (request.route == 6) {
+        FusionUses uses(allocator);
+        const auto initialized = uses.initialize(*request.graph);
+        if (!initialized.ok()) return compute::ProviderPrepareOutcome::error(initialized);
+        IndexedStatePattern pattern;
+        const auto matched = match_indexed_state(*request.graph, request.nodes.back(), pattern,
+            [&](NodeId producer, ValueId value, std::span<const NodeId> nodes) noexcept {
+              if (uses.uses[value.ordinal()] != 1) return false;
+              if (!producer.valid()) return true;
+              const auto control = uses.control_readers[producer.ordinal()];
+              return control == FusionUses::kNone || std::ranges::any_of(nodes,
+                  [&](NodeId node) noexcept { return node.ordinal() == control; });
+            });
+        if (!matched) return compute::ProviderPrepareOutcome::error(matched.error());
+        if (!*matched) return compute::ProviderPrepareOutcome::unsupported(
+            Status::Unimplemented("indexed GDN exact state chain changed"));
+        chain = {{pattern.nodes.begin(), pattern.nodes.end()}, pattern.gather, pattern.gdn,
+            pattern.store, pattern.pool, pattern.source_ids, pattern.destination_ids,
+            pattern.scores, pattern.schema, pattern.source_count, pattern.destination_count};
+        const auto operation = request.graph->operation(pattern.gdn).value();
+        const bool recurrent = operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>().has_value();
+        for (std::size_t port = 0; port < (recurrent ? 7U : 5U); ++port)
+          math_inputs.push_back(request.graph->node_input(pattern.gdn, port).value());
+        math_inputs.insert(math_inputs.end(), {pattern.pool, pattern.source_ids, pattern.destination_ids});
+      } else {
+        NodeId store;
+        for (const auto node : request.nodes)
+          if (request.graph->operation(node)->custom_as<slots::Store>()) store = node;
+        IndexedConvPattern pattern;
+        const auto matched = match_indexed_conv(*request.graph, store, pattern);
+        if (!matched) return compute::ProviderPrepareOutcome::error(matched.error());
+        if (!*matched) return compute::ProviderPrepareOutcome::unsupported(
+            Status::Unimplemented("indexed convolution exact history chain changed"));
+        math_inputs = {pattern.chunk, pattern.weights, pattern.chain.pool,
+            pattern.chain.source_ids, pattern.chain.destination_ids};
+        chain = std::move(pattern.chain);
       }
-      const auto local = [&](ValueId value) -> std::uint32_t {
-        return static_cast<std::uint32_t>(std::ranges::find(values, value) - values.begin());
-      };
-      const auto math = request.graph->operation(pattern.gdn).value();
-      const bool recurrent = math.custom_as<compute::model_ops::RecurrentGatedDeltaNet>().has_value();
-      native::Node node{math, {}, {}, true};
-      for (std::size_t port = 0; port < (recurrent ? 7U : 5U); ++port)
-        node.inputs.push_back(local(request.graph->node_input(pattern.gdn, port).value()));
-      for (const auto value : {pattern.pool, pattern.source_ids, pattern.destination_ids})
-        node.inputs.push_back(local(value));
-      if (std::ranges::any_of(node.inputs, [&](std::uint32_t id) { return id >= values.size(); }))
-        return compute::ProviderPrepareOutcome::unsupported(
-            Status::Unimplemented("indexed GDN math needs an original external boundary"));
-      const auto score = static_cast<std::uint32_t>(recipe.values.size());
-      recipe.values.push_back(request.graph->value_description(pattern.scores).value());
-      node.outputs.push_back(score);
-      if (!native::supports_indexed_state(context, node, recipe.values))
-        return compute::ProviderPrepareOutcome::unsupported(
-            Status::Unimplemented("linked native indexed GDN does not support this exact state geometry"));
-      recipe.nodes.push_back(std::move(node));
-      recipe.effect_roots.push_back(score);
-      if (!request.outputs.empty()) recipe.outputs.push_back(score);
-      std::vector<ConstantBinding> constants(request.constants.begin(), request.constants.end());
-      const std::array indexed_ports{local(pattern.pool), local(pattern.source_ids),
-                                     local(pattern.destination_ids)};
-      if (request.input_resources.size() != request.inputs.size() ||
-          !request.input_resources[indexed_ports[0]].valid())
-        return compute::ProviderPrepareOutcome::error(Status::InvalidArgument(
-            "indexed GDN needs its exact original input resource assignments"));
-      const auto resource = request.input_resources[indexed_ports[0]];
-      for (const auto port : indexed_ports)
-        if (request.input_resources[port] != resource)
-          return compute::ProviderPrepareOutcome::unsupported(Status::Unimplemented(
-              "indexed GDN capacity/IDs need the same original native resource"));
-      void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
-      if (!storage) return compute::ProviderPrepareOutcome::error(
-          Status::ResourceExhausted("indexed GDN artifact metadata"));
-      auto *artifact = ::new (storage) Artifact;
-      artifact->indexed = pattern; artifact->constants = std::move(constants);
-      artifact->indexed_ports = indexed_ports;
-      for (std::size_t i = 0; i < indexed_ports.size(); ++i)
-        artifact->indexed_descriptions[i] = recipe.values[indexed_ports[i]];
-      artifact->store_facts = {.store = pattern.store, .schema = pattern.schema,
-          .destination_indices = pattern.destination_ids,
-          .destination_input_port = indexed_ports[2],
-          .destination_count = pattern.destination_count, .resource = resource,
-          .source = {.gather = pattern.gather, .capacity = pattern.pool,
-              .indices = pattern.source_ids, .capacity_input_port = indexed_ports[0],
-              .count = pattern.source_count,
-              .permission_changes_preserve_commands = true}};
-      const auto outcome = native::compile(context, std::move(recipe), allocator, &artifact->native);
-      if (!artifact->native.state) {
-        artifact->~Artifact(); allocator.deallocate(artifact, sizeof(Artifact), alignof(Artifact));
-        return outcome;
-      }
-      *output = {.vtable = &kPrepared, .state = artifact,
-          .properties = {.workspace = artifact->native.workspace,
-              .persistent_bytes = std::nullopt, .copy_bytes = 0,
-              .synchronization_count = 2, .dispatch_count = 1,
-              .runtime = artifact->native.runtime, .preserves_effects = true,
-              .invocation_private_bytes = std::nullopt}};
-      return outcome;
+      return compile_indexed_chain(context, request, allocator, chain, math_inputs, output);
     }
     native::Recipe recipe;
     std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
