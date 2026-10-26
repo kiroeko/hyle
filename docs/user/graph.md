@@ -451,6 +451,9 @@ readonly 原生导入只能作源。Vulkan 冷能力支持主机上传、下载�
 真实 resource/handle/子范围。CUDA 简单入口也接受 `compile(graph, context, owner, options)`。
 默认采用系统 metadata allocator；自定义 allocator 传其真实 `std::shared_ptr<Allocator>` 给
 `StorageOwner::adopt` 的第三参数，`.ref()` 必须与原 Context allocator 完整匹配。
+已有 `LeasePool` 的完整独占 writer 可交给 `owner.freeze(pool, std::move(writer))`，
+零拷贝取得保活真实资源及 allocator 的只读 lease；成功后 pool／writer 均为空，失败均保持。
+该入口拒绝不同资源、无法保活的 allocator 和已经附有 lifetime owner 的 pool。
 手工构造 ready lease 时，其 metadata 或 ResourceBudget 的实际 allocator 必须由该 owner 持有，
 或为进程系统 allocator；仅保留不拥有 allocator 对象的 AllocatorRef 不足以满足异步寿命。
 

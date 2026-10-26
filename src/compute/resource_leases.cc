@@ -184,6 +184,18 @@ mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
   // the primary payload charge, which can already have been adopted.
   return ResourceBudgetAccess::original_allocator(domain->allocator);
 }
+Result<mem::AllocatorRef> LeaseAccess::freeze_owner_allocator(
+    const LeasePool &pool, const WriteLease &writer) noexcept {
+  if (!pool.state_ || !writer.block_ || writer.block_->domain != pool.state_)
+    return std::unexpected(Status::InvalidArgument(
+        "storage owner freeze requires the original pool writer"));
+  auto &domain = *pool.state_;
+  std::lock_guard guard(domain.lock);
+  if (domain.resource_owner || domain.release_resource_owner || domain.allocator_owner)
+    return std::unexpected(Status::FailedPrecondition(
+        "storage owner freeze cannot replace an existing lifetime owner"));
+  return ResourceBudgetAccess::original_allocator(domain.allocator);
+}
 bool LeaseAccess::unique_read_owner(const ReadLease &lease) noexcept {
   if (!lease.block_) return false;
   std::lock_guard guard(lease.block_->domain->lock);

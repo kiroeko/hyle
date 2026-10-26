@@ -730,6 +730,113 @@ TEST(StorageOwner, ReadyLeaseRetainsMovedResourceAfterOriginalHandlesDie) {
   EXPECT_EQ(lifetime.resource_destroys, 1U);
 }
 
+TEST(StorageOwner, FreezePoolIsZeroCopyAndLastReadonlyAliasRetainsResource) {
+  StorageOwnerLifetime lifetime;
+  auto context = c::Context::create(c::cpu::device()).value();
+  OwnedTrackedResource original(lifetime);
+  auto *tracked = original.resource.get();
+  auto owner = c::StorageOwner::adopt(context, std::move(original)).value();
+  auto pool = c::LeasePool::create(owner.ref(), 64, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(64).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+  const auto generation = writer.generation();
+  const auto handle = writer.view()->native_handle();
+  const auto allocations = tracked->allocations;
+  tracked->fail_allocation = true; // Freeze must not allocate/copy payload.
+  auto frozen = owner.freeze(pool, std::move(writer));
+  ASSERT_TRUE(frozen) << frozen.error().message();
+  EXPECT_FALSE(pool.valid()); EXPECT_FALSE(writer.valid());
+  auto ready = std::move(*frozen);
+  EXPECT_EQ(ready.generation(), generation);
+  EXPECT_EQ(ready.view()->native_handle(), handle);
+  EXPECT_EQ(tracked->allocations, allocations);
+  EXPECT_FALSE(ready.try_write());
+  auto alias = ready.subview(8, 16).value();
+  owner = {}; context = {}; ready.reset();
+  EXPECT_EQ(lifetime.resource_destroys, 0U);
+  std::array<std::byte, 16> bytes{};
+  ASSERT_TRUE(alias.view()->read(bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{37});
+  alias.reset();
+  EXPECT_EQ(lifetime.resource_destroys, 1U);
+}
+
+TEST(StorageOwner, FreezeBudgetedPoolRetainsActualAllocatorThroughFinalMetadataFree) {
+  StorageOwnerLifetime lifetime;
+  auto metadata = std::make_shared<OwnedMetadataAllocator>(lifetime);
+  std::weak_ptr<OwnedMetadataAllocator> observer = metadata;
+  auto context = c::Context::create(c::cpu::device(),
+      {.metadata_allocator = metadata->ref()}).value();
+  auto owner = c::StorageOwner::adopt(context, OwnedTrackedResource(lifetime), metadata).value();
+  const std::array limits{c::ResourceBudgetLimit{m::system_resource()},
+                        c::ResourceBudgetLimit{owner.ref(), 64}};
+  auto budget = c::ResourceBudget::create({.limits = limits, .allocator = metadata->ref()}).value();
+  auto pool = c::LeasePool::create(owner.ref(), 64,
+      {.max_blocks = 1, .resource_budget = budget}).value();
+  auto writer = pool.allocate(64).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  metadata->fail_allocation = true; // Original pool freeze needs no new metadata.
+  auto frozen = owner.freeze(pool, std::move(writer));
+  ASSERT_TRUE(frozen) << frozen.error().message();
+  auto ready = std::move(*frozen);
+  auto alias = ready;
+  budget = {}; owner = {}; context = {}; metadata.reset(); ready.reset();
+  EXPECT_FALSE(observer.expired());
+  EXPECT_EQ(lifetime.resource_destroys, 0U);
+  EXPECT_EQ(lifetime.allocator_destroys, 0U);
+  EXPECT_TRUE(alias.view().has_value());
+  alias.reset();
+  EXPECT_EQ(lifetime.resource_destroys, 1U);
+  EXPECT_EQ(lifetime.allocator_destroys, 1U);
+  EXPECT_EQ(lifetime.live_metadata_at_allocator_destroy, 0U);
+  EXPECT_EQ(lifetime.live_metadata, 0U);
+  EXPECT_TRUE(observer.expired());
+}
+
+TEST(StorageOwner, FreezeRejectsForeignResourceAllocatorAndExistingOwnerWithoutConsumption) {
+  StorageOwnerLifetime lifetime, foreign_lifetime;
+  auto context = c::Context::create(c::cpu::device()).value();
+  auto owner = c::StorageOwner::adopt(context, OwnedTrackedResource(lifetime)).value();
+  const auto rejected_unchanged = [&](c::LeasePool &pool, c::WriteLease &writer, bool already_owned = false) {
+    const auto generation = writer.generation();
+    const auto before = pool.stats();
+    ASSERT_TRUE(writer.view()->fill(std::byte{71}).ok());
+    auto rejected = owner.freeze(pool, std::move(writer));
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(already_owned ? rejected.error().IsFailedPrecondition()
+                              : rejected.error().IsInvalidArgument()) << rejected.error().message();
+    EXPECT_TRUE(pool.valid()); EXPECT_TRUE(writer.valid());
+    EXPECT_EQ(writer.generation(), generation);
+    EXPECT_EQ(pool.stats().live_blocks, before.live_blocks);
+    EXPECT_EQ(pool.stats().allocated_bytes, before.allocated_bytes);
+    std::array<std::byte, 64> bytes{};
+    ASSERT_TRUE(writer.view()->read(bytes).ok());
+    for (auto byte : bytes) EXPECT_EQ(byte, std::byte{71});
+  };
+  TrackedHostResource foreign_resource;
+  auto foreign_pool = c::LeasePool::create(m::MemoryResourceRef(foreign_resource), 64,
+      {.max_blocks = 1}).value();
+  auto foreign_writer = foreign_pool.allocate(64).value();
+  rejected_unchanged(foreign_pool, foreign_writer);
+  auto metadata = std::make_shared<OwnedMetadataAllocator>(foreign_lifetime);
+  const std::array limits{c::ResourceBudgetLimit{m::system_resource()},
+                        c::ResourceBudgetLimit{owner.ref(), 64}};
+  auto foreign_budget = c::ResourceBudget::create({.limits = limits, .allocator = metadata->ref()}).value();
+  auto pool = c::LeasePool::create(owner.ref(), 64,
+      {.max_blocks = 1, .resource_budget = foreign_budget}).value();
+  auto writer = pool.allocate(64).value();
+  rejected_unchanged(pool, writer);
+  auto retained_pool = c::LeasePool::create(owner.ref(), 64, {.max_blocks = 1}).value();
+  auto retained_writer = retained_pool.allocate(64).value();
+  std::size_t releases = 0;
+  c::detail::LeaseAccess::retain_resource_owner(retained_pool, &releases,
+      +[](void *value) noexcept { ++*static_cast<std::size_t *>(value); });
+  rejected_unchanged(retained_pool, retained_writer, true);
+  EXPECT_EQ(releases, 0U);
+  retained_writer.reset(); retained_pool = {};
+  EXPECT_EQ(releases, 1U);
+}
+
 TEST(StorageOwner, CustomAllocatorOutlivesResourceContextAndLastLeaseMetadataFree) {
   StorageOwnerLifetime lifetime;
   auto metadata = std::make_shared<OwnedMetadataAllocator>(lifetime);

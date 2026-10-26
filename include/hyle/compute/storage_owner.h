@@ -129,6 +129,40 @@ public:
     }
   }
 
+  // Zero-copy freeze of the original full pool writer from this exact
+  // resource. Retains this resource/Context and the real metadata allocator
+  // through all escaped readers/native uses. Rejects a foreign allocator or
+  // an already attached owner before transfer; every failure keeps both handles.
+  Result<ReadLease> freeze(LeasePool &pool, WriteLease &&writer) const noexcept {
+    if (!state_)
+      return std::unexpected(Status::InvalidArgument("storage owner is empty"));
+    HYLE_ASSIGN_OR_RETURN(const auto backing, detail::LeaseAccess::backing(writer));
+    if (backing.resource != ref())
+      return std::unexpected(Status::InvalidArgument(
+          "storage owner pool resource differs"));
+    HYLE_ASSIGN_OR_RETURN(const auto actual,
+        detail::LeaseAccess::freeze_owner_allocator(pool, writer));
+    if (!owns_allocator(actual) &&
+        !same_allocator(actual, mem::system_allocator()))
+      return std::unexpected(Status::InvalidArgument(
+          "storage owner cannot retain the pool metadata allocator"));
+    try {
+      // This is the only new allocation. It precedes consumption, so neither
+      // allocation failure nor the original freeze's rejection changes bytes,
+      // writer authority or pool ownership.
+      auto retained = std::make_unique<StorageOwner>(*this);
+      auto lease = pool.freeze(std::move(writer));
+      if (!lease) return std::unexpected(std::move(lease).error());
+      detail::LeaseAccess::retain_allocator_owner(*lease, state_->allocator_owner);
+      detail::LeaseAccess::retain_resource_owner(*lease, retained.release(),
+          +[](void *owner) noexcept { delete static_cast<StorageOwner *>(owner); });
+      return std::move(*lease);
+    } catch (...) {
+      return std::unexpected(
+          Status::ResourceExhausted("storage owner pool freeze allocation failed"));
+    }
+  }
+
 private:
   struct State {
     State(detail::ContextRef retained_context, mem::AllocatorRef selected,

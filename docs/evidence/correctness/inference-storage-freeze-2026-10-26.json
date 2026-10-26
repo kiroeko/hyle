@@ -1,0 +1,241 @@
+{
+  "date": "2026-10-26",
+  "status": "BOUNDED_STORAGE_OWNER_AND_CUDA_CONSUMER_PASSED",
+  "baseline_commit": "c5f1b0047",
+  "sources": [
+    {
+      "path": "include/hyle/compute/storage_owner.h",
+      "bytes": 10001,
+      "sha256": "34cee5f14b875819b89495a4ebcfa47d1a4405b8ba727568bb1e6b7456a7f1ad"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 7980,
+      "sha256": "8b58434d934295921074ef26d9a490b509af783365fa0eda253acfd82a61aa42"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 47183,
+      "sha256": "156fac0085bc95b3ebefe8ecd604cc397447c3997b4aa99261ffcd5cee95a933"
+    },
+    {
+      "path": "engine/models/qwen35/weights.cc",
+      "bytes": 47589,
+      "sha256": "f3fbb604f31a0e5b7b495a3b0f50641b3ac99822905197ae6a5826cd711b9db3"
+    },
+    {
+      "path": "tests/graph/constant_artifact_cache_test.cc",
+      "bytes": 58438,
+      "sha256": "47ff59e24a7bbec8c3e035a853b978ccda2c5f1962f1a4d8ef55830373c715c9"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-storage-freeze-2026-10-26.zip",
+    "bytes": 140984,
+    "sha256": "d2c262fa02a432c4135c8d022c9f29af072ddd1df7e61313f276fa6dabed7332"
+  },
+  "changes": [
+    "Public StorageOwner::freeze consumes the original full LeasePool/WriteLease only on success, zero payload copy.",
+    "Preflight exact resource, original pool/writer, absent attached owners and actual metadata allocator behind budgets; allocate owner before original freeze.",
+    "Original readonly domain retains real resource/Context and allocator through escaped readers, native uses and final metadata deallocation.",
+    "Qwen weight loading calls the public method, removing its direct LeaseAccess dependency."
+  ],
+  "build": {
+    "record": {
+      "path": ".scratch/inference-storage-freeze-20261026/ready.json",
+      "bytes": 7324,
+      "sha256": "5a293e8921f5656a2aa588b90e2047530c488fe938e91ea10d2e0e110d2f308a"
+    },
+    "product_TUs": 2,
+    "test_TUs": 1,
+    "first_compile_and_link_attempts_passed": true,
+    "Model_native_report_SDK_recompiles": 0,
+    "archive_rewrites": 0,
+    "images": {
+      "cli": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-storage-freeze-20261026\\cli\\link\\hyle.exe",
+        "bytes": 141566464,
+        "sha256": "29da931c01e46bfb241a208d802336f6d1c8be439f96231355432c020b00d8a6"
+      },
+      "case": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-storage-freeze-20261026\\case\\link\\host-image-lagged-consumer.exe",
+        "bytes": 141243904,
+        "sha256": "a964f455d93dac622210425fc345ca0e51aaea59747bf88bf718cfd1b647dccd"
+      },
+      "test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-storage-freeze-20261026\\test\\link\\storage-freeze-test.exe",
+        "bytes": 139539968,
+        "sha256": "a0189280b56fdeed6067beea29caa2914ec3dd35211718a1729afe2db615dd77"
+      }
+    },
+    "scope": "Replace exact core resource_leases and macro-consistent CUDA weights direct OBJ inputs; reuse current Model consumer and native provider closure. CLI linked only."
+  },
+  "tests": {
+    "process": {
+      "path": ".scratch/inference-storage-freeze-20261026/test/run1/process.json",
+      "bytes": 1253,
+      "sha256": "b500ff5d4929775027a4be3a0a41e7857f4b371abecce1d5a4fdb3e75701e1d4"
+    },
+    "xml": {
+      "path": ".scratch/inference-storage-freeze-20261026/test/run1/result.xml",
+      "bytes": 2570,
+      "sha256": "440c610863261f24aebb7926af1b383e91c06014c37d57567aa42c09dd791586"
+    },
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "new_contracts": [
+      "Zero payload allocation/copy; same handle/generation; final readonly alias retains actual resource.",
+      "Custom ResourceBudget actual allocator survives resource and final domain metadata deallocation.",
+      "Foreign resource, foreign allocator and pre-existing lifetime owner reject without consuming pool/writer or changing initialized bytes."
+    ]
+  },
+  "consumer": {
+    "process": {
+      "path": ".scratch/inference-storage-freeze-20261026/case/run1/process.json",
+      "bytes": 1456,
+      "sha256": "d96c586cb07609754632122b0fe581eb011ed2709d37ddebd939c961ac398eff"
+    },
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "result": {
+      "status": "PASS",
+      "backend": "cuda",
+      "ordinary": {
+        "hidden": 2048,
+        "target_layers": 24,
+        "payloads": 49,
+        "bytes": 19578880,
+        "byte_limit_at_factory": true,
+        "adapter_parking": true,
+        "allocation_failure_applicable": true,
+        "pre_submit_failure_preserved": true,
+        "continuation_lag": 0,
+        "roles": {
+          "target_key": {
+            "payloads": 6,
+            "bytes": 18432,
+            "nonzero_bytes": 18383
+          },
+          "target_value": {
+            "payloads": 6,
+            "bytes": 18432,
+            "nonzero_bytes": 18394
+          },
+          "conv": {
+            "payloads": 18,
+            "bytes": 663552,
+            "nonzero_bytes": 662092
+          },
+          "gdn": {
+            "payloads": 18,
+            "bytes": 18874368,
+            "nonzero_bytes": 18807043
+          },
+          "carry": {
+            "payloads": 1,
+            "bytes": 4096,
+            "nonzero_bytes": 4090
+          },
+          "prior": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_key": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_value": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          }
+        }
+      },
+      "mtp": {
+        "hidden": 2048,
+        "target_layers": 24,
+        "payloads": 51,
+        "bytes": 19585024,
+        "byte_limit_at_factory": true,
+        "adapter_parking": false,
+        "allocation_failure_applicable": true,
+        "pre_submit_failure_preserved": true,
+        "continuation_lag": 0,
+        "roles": {
+          "target_key": {
+            "payloads": 6,
+            "bytes": 18432,
+            "nonzero_bytes": 18383
+          },
+          "target_value": {
+            "payloads": 6,
+            "bytes": 18432,
+            "nonzero_bytes": 18394
+          },
+          "conv": {
+            "payloads": 18,
+            "bytes": 663552,
+            "nonzero_bytes": 662092
+          },
+          "gdn": {
+            "payloads": 18,
+            "bytes": 18874368,
+            "nonzero_bytes": 18807043
+          },
+          "carry": {
+            "payloads": 1,
+            "bytes": 4096,
+            "nonzero_bytes": 4090
+          },
+          "prior": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_key": {
+            "payloads": 1,
+            "bytes": 3072,
+            "nonzero_bytes": 3067
+          },
+          "draft_value": {
+            "payloads": 1,
+            "bytes": 3072,
+            "nonzero_bytes": 3067
+          }
+        }
+      },
+      "all_initialized_bytes_equal": true,
+      "historical_wrapper_preserved": true,
+      "same_shape_continuation_equal": true,
+      "old_alias_unchanged": true,
+      "cold_resources_expired": true,
+      "final_images": 0,
+      "final_versions": 0,
+      "quality_claim": false,
+      "performance_claim": false
+    },
+    "scope": "Current new weights/public freeze plus original CUDA Model executes ordinary and MTP sequential complete HostImage checks; original cached Qwen3.5-2B weights, no downloads."
+  },
+  "cleanup": {
+    "record": {
+      "path": ".scratch/inference-storage-freeze-20261026/cleanup-result.json",
+      "bytes": 1601,
+      "sha256": "7d136b21fa432623f0d2780bde377bcead1de7959e8f7103cb0c2b6760c7d944"
+    },
+    "files": 4,
+    "logical_bytes": 563525632,
+    "scope": "Superseded three CUDA images and completed GTest image removed. Current CLI/canonical case, all reusable objects, CPU image, native/model caches and logs retained."
+  },
+  "limitations": [
+    "New integration consumer is CUDA lag0; lag1 evidence is the preceding separate batch.",
+    "No new complete task-quality, throughput, memory-peak, Apple/Vulkan or native pending/fault-injection claim.",
+    "Existing typed Apple/Vulkan no-StorageOwner loading path retains original LeasePool::freeze behavior.",
+    "Build artifact records depend on retained local cache; archive excludes binaries, SDKs and weights."
+  ]
+}

@@ -19,7 +19,6 @@
 #include "../../inference/backend.h"
 #include "fp8_weight_import.h"
 #include "nf4_weight_import.h"
-#include "hyle/compute/detail/lease_access.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
 #include "hyle/sched/blocking.h"
@@ -38,10 +37,8 @@ using Clock = std::chrono::steady_clock;
 void Tensor::freeze(const Backend &backend) {
     if (!writer) { check(backend.freeze(buffer, ready)); return; }
     auto owner = take(backend.storage_owner_for(storage().resource()));
-    auto retained = owner ? std::make_unique<c::StorageOwner>(std::move(owner)) : nullptr;
-    ready = take(pool.freeze(std::move(writer)));
-    if (retained) c::detail::LeaseAccess::retain_resource_owner(ready, retained.release(),
-        +[](void *value) noexcept { delete static_cast<c::StorageOwner *>(value); });
+    ready = owner ? take(owner.freeze(pool, std::move(writer)))
+                  : take(pool.freeze(std::move(writer)));
   }
 namespace projection_detail {
 using Desc = hyle::compute::TensorDesc;

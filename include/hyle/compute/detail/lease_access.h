@@ -64,6 +64,11 @@ struct LeaseAccess final {
   // allocator. This ref borrows the allocator object; it does not retain it.
   static HYLE_COMPUTE_API mem::AllocatorRef
   metadata_backing_allocator(const ReadLease &lease) noexcept;
+  // Cold StorageOwner freeze preflight: the original pool/writer pair must
+  // not already retain another resource/allocator owner. No permission is
+  // consumed; the returned allocator is the actual heap behind budget wrappers.
+  static HYLE_COMPUTE_API Result<mem::AllocatorRef>
+  freeze_owner_allocator(const LeasePool &, const WriteLease &) noexcept;
   // The stream's retained ready record can be reclaimed only after every
   // exported reader/native use returns. This does not promote write permission
   // or require its caller-owned LeasePool to remain open.

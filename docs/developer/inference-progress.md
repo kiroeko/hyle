@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **41%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
+更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **42%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
 
 ## 任务树
 
@@ -14,7 +14,7 @@
 - 模型无关的共同引擎核心：约60%（实现中）
   - 请求／兼容合批／接纳与缓存编排：约80%（共同循环与取消／交付已实现，有限检查通过）
   - 模型适配、错误类别与输出合同：约60%（取消／交付已接线，有限检查通过）
-  - SDK／Provider／依赖与诊断组织：约20%（已补公开页导出，待其它调整）
+  - SDK／Provider／依赖与诊断组织：约30%（已补公开页导出与零拷贝冻结，待退休附件等调整）
 - 稳态状态协议：约30%（实现中）
   - 持续工作态与按需导出不可变快照：约80%（已实现，有限检查通过）
   - 原生 GDN／conv 的版本化双缓冲与索引状态：约5%（设计中）
@@ -32,7 +32,7 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| SDK 零拷贝冻结与资源保活接口 | 共同引擎核心／SDK边界 | 将已有pool冻结后的resource／allocator保活收进受检公开接口，减少模型层直接使用detail | 约30% |
+| 原生平台主机镜像搬运 | 其它底层功能／完整会话搬运 | 已核实现有Apple／Vulkan typed复制与寿命边界，补独立host owner及原退休接线 | 约10% |
 
 ## 本批结果与下一步
 
@@ -40,9 +40,9 @@
 
 完整主机镜像已接CPU／CUDA，带独立数量／字节预算、真实CopyBatch退休和全状态恢复；普通／MTP的完整字节、同形状续算、旧快照、历史pending／RNG与失败后资源回收通过有限检查，见[镜像实现](../evidence/correctness/inference-host-image-2026-10-26.json)。新增CUDA小模型与原始Qwen权重的lag1／非零prior往返和原catchup续算均通过，见[lag1边界](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)。这使用明确验证前缀形成状态，不冒充自然draft接受或完整质量；CPU lag1、原生故障／pending及Apple／Vulkan搬运仍待补。固定bank归还槽不代表显存下降。
 
-CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。只做相关增量编译，并清理已替代验证二进制约422MB。本轮没有新完整性能结果。
+CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。本轮只做相关增量编译，累计清理已替代验证二进制约986MB，没有新完整性能结果。
 
-正在补SDK冻结／保活接口；之后继续原生平台搬运、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
+SDK现提供受检零拷贝`StorageOwner::freeze`，权重层已移除直接LeaseAccess调用；8项所有权检查及新权重入口的原始Qwen普通／MTP CUDA消费者通过，见[SDK边界](../evidence/correctness/inference-storage-freeze-2026-10-26.json)。正在补原生平台搬运，之后继续退休附件公共边界、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
 
 单carrier不是落后主因。[同设置CPU诊断](../evidence/performance/inference-b2-peer-cpu-critical-2026-10-26.json)的共同90稳态根，GPU／CUDA API外运行区间为99.701／14.365ms；差85.337ms支持减少主机协议工作，但不是全额可删成本。架构合同见[整体设计](../architecture/inference-design.md)，范围见[工程计划](../implementation/inference-roadmap.md)，口径和关闭候选见[性能资料](performance/decode.md)。
 
