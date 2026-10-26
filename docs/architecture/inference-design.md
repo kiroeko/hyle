@@ -109,6 +109,20 @@ caller-owned的GDN／conv状态现另用共享R容量的FIFO保留原`WriteLease
 消费同一缓存，不增加原N+K×R载荷容量；缓存不是额外不可用的占位。此项不改变KV帧发布、
 原生索引计算或MTP接受前缀合同，有限结果见[回收与定位](../evidence/correctness/inference-reusable-state-2026-10-26.json)。
 
+同一Graph的多个append可用`batch::take_appends`一次取回：先检查全部原节点、目的及真实退休，
+再按原writer／reader资格撤回权限、压缩一次匿名绑定表，最后移出原事务。完整成功事实仍只
+标记一次；失败和取消不授予ready页。部分取回后仍可用单项接口取其它原事务。普通、MTP target
+和独立NextN共用此接口；它不改变`ready()`或快照布局。有限检查及直接A/B见
+[批量取回](../evidence/performance/inference-bulk-append-2026-10-26.json)，未证明吞吐收益。
+
+下一项KV持续工作帧仍在设计，尚未实现。当前`WorkingState`复用主机对象后，KV仍每步创建、
+合并和拆分整帧；不能靠原地改`PagedArenaRead`消除这些成本。拟由Compute在原arena／页权限上
+维护有界的工作布局、guard表及epoch，Graph完成原append后提供本次变化；引擎完成K/V、GDN、
+采样和expected-base全部预检后，才无失败地一起推进提交边界。checkpoint／fork／换出再通过
+原read／reframe导出独立不可变帧，旧前缀权限不扩大。失败不推进旧边界，未知退休继续保活；
+MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW，或在此提交点才发布。它复用
+原页池、tail、Completion及Graph权限，不另造执行器；每步真实页权限接纳仍不可省略。
+
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
 新`shape_admission_seconds`记录该次同步接纳并计入`step_seconds`；后者从成功输入预检后计到主机发布完成，

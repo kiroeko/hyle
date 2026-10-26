@@ -212,6 +212,13 @@ HYLE_GRAPH_BATCH_API Status bind_append(Invocation&,const Graph&,NodeId append,
 // Retired success, failure or cancellation; no implicit wait. Revokes this
 // binding/preparation before returning the real original page reservations.
 HYLE_GRAPH_BATCH_API Result<PagedAppendPages> take_append(Invocation&,NodeId)noexcept;
+// Atomically withdraw these original append transactions after actual whole-
+// Graph retirement. Both spans have equal length and destinations are empty.
+// Every node/owner is checked before any transaction is consumed. Failure or
+// cancellation returns original reservations but never grants ready pages.
+// Revokes replay/output observation exactly as take_append; no implicit wait.
+HYLE_GRAPH_BATCH_API Status take_appends(Invocation&,std::span<const NodeId>,
+    std::span<PagedAppendPages>)noexcept;
 // Mathematical policy and an owned initial layout of one ordinary Graph node.
 // This layout-only form uses its origin schema's cache interpretation.
 // Storage variants use the typed compute::PagedAttention/PagedMlaAttention

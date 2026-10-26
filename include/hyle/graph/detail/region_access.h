@@ -272,6 +272,12 @@ struct RegionAccess final {
   // Actual retirement, including failed/closed recovery. Withdraws only this
   // original node's anonymous uses, after revoking its current preparation.
   HYLE_GRAPH_API static Status release_write_effect(Invocation&,NodeId) noexcept;
+  // One retired permission withdrawal for original projected writes and
+  // writer-only effects. Nodes must be distinct, selected original writers.
+  // Validate all before revoking preparation, then compact anonymous guards
+  // once. Uses the existing cold ResourceEpisode scratch; no caller cache.
+  HYLE_GRAPH_API static Status release_projected_writes(Invocation&,
+      std::span<const NodeId>) noexcept;
   HYLE_GRAPH_API static bool successful_outcome(const Invocation&) noexcept;
   HYLE_GRAPH_API static Result<compute::Completion> submit(Invocation&,
       std::span<const QueueBinding>,OrderedGraphSubmission) noexcept;
@@ -298,6 +304,7 @@ private:
       ProjectedWriter) noexcept;
   static Status qualify_ordered_writer(InvocationState&,std::uint32_t,
       const compute::detail::CompletionEndpoint*) noexcept;
+  static bool writer_preserves_commands(const InvocationState&,std::uint32_t) noexcept;
   static Status release_writer_preparation(Invocation&,std::uint32_t) noexcept;
   static Result<RegionNodeAccess>
   inspect_projection_node(const PlanState &, const InvocationState *, NodeId,

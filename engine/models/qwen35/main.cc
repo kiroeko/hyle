@@ -2818,9 +2818,9 @@ public:
         if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
         output.hidden = retain_state_storage(run, program.hidden_output);
       }
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-        guard.appends[bank] = take(g::batch::take_append(run, guard.nodes[bank])); guard.bound[bank] = false;
-      }
+      check(g::batch::take_appends(run, std::span(guard.nodes.data() + draft_bank, 2),
+          std::span(guard.appends.data() + draft_bank, 2)));
+      std::fill_n(guard.bound.begin() + draft_bank, 2, std::uint8_t{});
       next.key = take(guard.appends[draft_bank].ready()); next.value = take(guard.appends[draft_bank + 1].ready());
       std::array<c::PagedPageAppender, 2> tails;
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) for (std::size_t i = 0; i < guard.appends[bank].appender_count(); ++i) {
@@ -4131,10 +4131,11 @@ public:
             probe_views[i] = take(probe_owners[i].tensor(output.description));
           }
         }
+      const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
+      check(g::batch::take_appends(run, std::span(step.nodes.data(), append_banks),
+          std::span(step.appends.data(), append_banks)));
+      std::fill_n(step.bound.begin(), append_banks, std::uint8_t{});
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
-        for (const auto bank : {layer * 2, layer * 2 + 1}) {
-          step.appends[bank] = take(g::batch::take_append(run, step.nodes[bank])); step.bound[bank] = false;
-        }
         auto key = take(step.appends[layer * 2].ready()), value = take(step.appends[layer * 2 + 1].ready());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
@@ -4145,9 +4146,6 @@ public:
         }
       }
       if (has_mtp(phase.family->role)) {
-        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-          step.appends[bank] = take(g::batch::take_append(run, step.nodes[bank])); step.bound[bank] = false;
-        }
         auto key = take(step.appends[draft_bank].ready()), value = take(step.appends[draft_bank + 1].ready());
         std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
         for (std::size_t j = 0; j < outputs.size(); ++j) {

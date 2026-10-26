@@ -42,6 +42,31 @@ std::uint16_t word(float x,bool bf){return bf?hyle::simd::f32_to_bf16(x).bits:hy
 float number(std::uint16_t x,bool bf){return bf?std::bit_cast<float>(std::uint32_t(x)<<16):hyle::simd::f16_to_f32({x});}
 Result<c::ReadLease>load(c::LeasePool&pool,std::span<const std::uint16_t>data){
  HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(data.size_bytes(),64));HYLE_RETURN_IF_ERROR(writer.view()->write(std::as_bytes(data)));return writer.publish();}
+Status take_pair(g::Invocation&invocation,g::NodeId key,g::NodeId value,
+ gb::PagedAppendPages&returned_key,gb::PagedAppendPages&returned_value,bool subset=false){
+ const std::array nodes{key,value};std::array<gb::PagedAppendPages,2>outputs;
+ const auto short_output=gb::take_appends(invocation,nodes,std::span(outputs).first(1));
+ HYLE_RETURN_IF_ERROR(check(short_output.IsInvalidArgument() && !outputs[0].valid() && !outputs[1].valid(),
+  "bulk append count rejection consumed an original transaction"));
+ const std::array duplicate{key,key};const auto duplicated=gb::take_appends(invocation,duplicate,outputs);
+ HYLE_RETURN_IF_ERROR(check(duplicated.IsInvalidArgument() && !outputs[0].valid() && !outputs[1].valid(),
+  "bulk append duplicate rejection consumed an original transaction"));
+ HYLE_ASSIGN_OR_RETURN(auto foreign_builder,g::GraphBuilder::create());
+ HYLE_ASSIGN_OR_RETURN(auto foreign,foreign_builder.add_node(c::Operation::custom(Reject{}),{}));
+ const std::array foreign_tail{key,foreign};const auto invalid=gb::take_appends(invocation,foreign_tail,outputs);
+ HYLE_RETURN_IF_ERROR(check(invalid.IsInvalidArgument() && !outputs[0].valid() && !outputs[1].valid(),
+  "bulk append foreign tail consumed its valid earlier transaction"));
+ if(subset){
+  HYLE_RETURN_IF_ERROR(gb::take_appends(invocation,std::span(nodes).first(1),std::span(outputs).first(1)));
+  HYLE_RETURN_IF_ERROR(check(outputs[0].valid() && !outputs[1].valid(),"bulk subset did not return only its selected original key"));
+  const auto nonempty=gb::take_appends(invocation,nodes,outputs);
+  HYLE_RETURN_IF_ERROR(check(nonempty.IsInvalidArgument() && outputs[0].valid() && !outputs[1].valid(),
+   "nonempty bulk destination consumed the remaining original value transaction"));
+  HYLE_ASSIGN_OR_RETURN(outputs[1],gb::take_append(invocation,value));
+ }else HYLE_RETURN_IF_ERROR(gb::take_appends(invocation,nodes,outputs));
+ HYLE_RETURN_IF_ERROR(check(outputs[0].valid() && outputs[1].valid(),"bulk append lost original transactions"));
+ returned_key=std::move(outputs[0]);returned_value=std::move(outputs[1]);return Status::Ok();
+}
 Status writer_only(c::Context&context,c::Queue&queue,c::BatchSchema schema,c::TensorDesc rows,
  c::BatchLayoutVersion layout,c::PagedArena&keys,c::PagedArena&values,
  const c::PagedArenaRead&previous_k,const c::PagedArenaRead&previous_v,
@@ -80,8 +105,7 @@ Status writer_only(c::Context&context,c::Queue&queue,c::BatchSchema schema,c::Te
  HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues));HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit(queues));
  const auto terminal=done.wait();done={};
  HYLE_RETURN_IF_ERROR(check(failure?!terminal.ok():terminal.ok(),"writer-only whole Graph terminal differs"));
- HYLE_ASSIGN_OR_RETURN(auto returned_k,gb::take_append(invocation,kw));
- HYLE_ASSIGN_OR_RETURN(auto returned_v,gb::take_append(invocation,vw));
+ gb::PagedAppendPages returned_k,returned_v;HYLE_RETURN_IF_ERROR(take_pair(invocation,kw,vw,returned_k,returned_v,true));
  auto stale=invocation.submit(queues);
  if(stale){stale->wait().IgnoreError();return Status::Internal("taken writer-only pages were resubmitted without rebind");}
  HYLE_RETURN_IF_ERROR(check(stale.error().IsFailedPrecondition(),"writer-only stale submit has unexpected rejection"));
@@ -242,11 +266,15 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
  HYLE_RETURN_IF_ERROR(check(failure?!terminal.ok():terminal.ok(),"append Graph terminal differs"));
  bool actual_correct=true;
  if(!failure){HYLE_ASSIGN_OR_RETURN(auto actual,invocation.result(output));HYLE_ASSIGN_OR_RETURN(auto lease,actual.storage_lease());
+  const std::array nodes{kw,vw};std::array<gb::PagedAppendPages,2>blocked;
+  const auto retained=gb::take_appends(invocation,nodes,blocked);
+  HYLE_RETURN_IF_ERROR(check(retained.IsUnavailable() && !blocked[0].valid() && !blocked[1].valid() && lease.valid(),
+   "bulk append withdrew transactions while a real result/storage observation remained live"));
   std::vector<std::uint16_t>words(std::size_t(query_rows)*128);HYLE_RETURN_IF_ERROR(lease.view()->read(std::as_writable_bytes(std::span(words))));
   for(std::size_t i=0;i<words.size();++i){const auto expected=expected_rows[i/128];if(std::abs(number(words[i],bf)-expected)>=.003f)
       std::fprintf(stderr,"append oracle index=%zu actual=%.8g expected=%.8g type=%s\n",i,double(number(words[i],bf)),double(expected),bf?"BF16":"F16");
     actual_correct=actual_correct && std::abs(number(words[i],bf)-expected)<.003f;}}
- HYLE_ASSIGN_OR_RETURN(auto returned_k,gb::take_append(invocation,kw));HYLE_ASSIGN_OR_RETURN(auto returned_v,gb::take_append(invocation,vw));
+ gb::PagedAppendPages returned_k,returned_v;HYLE_RETURN_IF_ERROR(take_pair(invocation,kw,vw,returned_k,returned_v));
  if(permuted_shared)for(std::size_t i=0;i<dirty_pages.size();++i){
   HYLE_ASSIGN_OR_RETURN(auto&k,returned_k.page(i));HYLE_ASSIGN_OR_RETURN(auto&v,returned_v.page(i));
   HYLE_RETURN_IF_ERROR(check(k.page()==dirty_pages[i] && v.page()==dirty_pages[i],"append returned a different original writer ordinal"));

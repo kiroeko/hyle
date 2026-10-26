@@ -739,6 +739,47 @@ Result<PagedAppendPages>PagedAppendAccess::take(Invocation&invocation,NodeId nod
   else HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_written_projection(invocation,f.slot->cache));
   auto result=std::move(f.slot->pages);f.slot->cache={};f.slot->writer_only=false;f.slot->writer_queue={};return result;
 }
+struct TakeSelection final {NodeId node;PagedAppendPages*pages=nullptr;Slot*slot=nullptr;};
+Status inspect_take(void*opaque,const gd::RegionAccessView&view)noexcept{
+  auto&selected=*static_cast<TakeSelection*>(opaque);
+  NativeFind native{selected.node};HYLE_RETURN_IF_ERROR(find_native(&native,view));
+  if(native.region.table){
+    selected.pages=native.region.table->pages(native.region.invocation);
+  }else{
+    Find shared{selected.node};HYLE_RETURN_IF_ERROR(find(&shared,view));
+    if(!shared.slot || !shared.slot->selected_first)
+      return Status::InvalidArgument("paged append has no original selected-slot owner");
+    selected.slot=shared.slot;selected.pages=&shared.slot->pages;
+  }
+  if(!selected.pages || !selected.pages->valid())
+    return Status::InvalidArgument("paged append has no retained original transaction");
+  return Status::Ok();
+}
+Status take_many(Invocation&invocation,std::span<const NodeId>nodes,
+    std::span<PagedAppendPages>outputs)noexcept{
+  if(nodes.size()!=outputs.size())return Status::InvalidArgument("append node and output counts differ");
+  if(nodes.empty())return gd::RegionAccess::release_projected_writes(invocation,nodes);
+  // Each selected region is directly indexed by its full original NodeId. The
+  // second lookup below observes the same idle owner; no temporary cache or
+  // allocation is needed to remember transaction addresses across withdrawal.
+  for(std::size_t i=0;i<nodes.size();++i){
+    if(outputs[i].valid())return Status::InvalidArgument("append destination already owns a transaction");
+    TakeSelection selected{nodes[i]};
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit_retired(invocation,nodes[i],&inspect_take,&selected));
+  }
+  const bool successful=gd::RegionAccess::successful_outcome(invocation);
+  // Recording the original whole-Graph success is truthful even if a later
+  // withdrawal rejects. It neither consumes a reservation nor publishes bytes.
+  if(successful)HYLE_RETURN_IF_ERROR(latch_append_success(invocation));
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_projected_writes(invocation,nodes));
+  for(std::size_t i=0;i<nodes.size();++i){
+    TakeSelection selected{nodes[i]};
+    HYLE_FATAL_ASSERT(gd::RegionAccess::visit_retired(invocation,nodes[i],&inspect_take,&selected).ok());
+    outputs[i]=std::move(*selected.pages);
+    if(selected.slot){selected.slot->cache={};selected.slot->writer_only=false;selected.slot->writer_queue={};}
+  }
+  return Status::Ok();
+}
 Status PagedAppendAccess::reset(Invocation&invocation)noexcept{
   return gd::RegionAccess::visit(invocation,[](void*,const gd::RegionAccessView&view)noexcept->Status{
     if(view.prepared_vtable==&table && static_cast<Slot*>(view.invocation)->pages.valid())
@@ -753,4 +794,6 @@ Status PagedAppendAccess::reset(Invocation&invocation)noexcept{
   },nullptr);
 }
 } // namespace detail
+Status take_appends(Invocation&invocation,std::span<const NodeId>nodes,
+    std::span<PagedAppendPages>outputs)noexcept{return detail::take_many(invocation,nodes,outputs);}
 } // namespace hyle::graph::batch

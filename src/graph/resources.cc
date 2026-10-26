@@ -878,22 +878,23 @@ Status RegionAccess::visit_retired(Invocation&invocation,NodeId node,RegionAcces
     step.region.prepared_.state,state->invocations[index].region.state_,step.lane,{}, {},step.region.prepared_.vtable};
   return callback(user,view);
 }
+bool RegionAccess::writer_preserves_commands(const InvocationState&state,std::uint32_t writer_index)noexcept{
+  const auto&writer=state.plan->steps[writer_index];
+  if(state.closed || state.phase.load(std::memory_order_acquire)!=InvocationPhase::kIdle ||
+      !state.step_bindings[writer_index].stable_binding_identity || writer.kind!=PlanStepKind::kRegion)
+    return false;
+  const auto&prepared=writer.region.prepared_;
+  const auto*table=prepared.vtable->query_extension?
+      static_cast<const RegionProjectedWriteVTable*>(prepared.vtable->query_extension(
+          prepared.state,kRegionProjectedWriteExtensionId)):nullptr;
+  return table && table->preserves_commands &&
+      table->preserves_commands(prepared,state.invocations[writer_index].region.state_);
+}
 Status RegionAccess::release_writer_preparation(Invocation&invocation,std::uint32_t writer_index)noexcept{
   auto*state=InvocationAccess::state(invocation);
   if(!state || writer_index>=state->plan->steps.size() || writer_index>=state->step_bindings.size() ||
       writer_index>=state->invocations.size())return Status::InvalidArgument("write effect selected step is invalid");
-  const auto&writer=state->plan->steps[writer_index];
-  bool preserve_writer=false;
-  if(!state->closed && state->phase.load(std::memory_order_acquire)==InvocationPhase::kIdle &&
-      state->step_bindings[writer_index].stable_binding_identity && writer.kind==PlanStepKind::kRegion){
-    const auto&prepared=writer.region.prepared_;
-    const auto*table=prepared.vtable->query_extension?
-        static_cast<const RegionProjectedWriteVTable*>(prepared.vtable->query_extension(
-            prepared.state,kRegionProjectedWriteExtensionId)):nullptr;
-    preserve_writer=table && table->preserves_commands &&
-        table->preserves_commands(prepared,state->invocations[writer_index].region.state_);
-  }
-  if(preserve_writer)HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
+  if(writer_preserves_commands(*state,writer_index))HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
   else invalidate_step_recording(*state,writer_index);
   return Status::Ok();
 }
@@ -938,6 +939,79 @@ Status RegionAccess::release_written_projection(Invocation&invocation,ValueId va
   episode.bindings.erase(std::remove_if(first,episode.bindings.end(),[&](const auto&entry){return entry.projection==value;}),episode.bindings.end());
   binding=find_binding(state,value);const auto physical=state->plan->external_instances[value.ordinal()];
   state->readable[physical]={};state->bound[physical]=0;clear_binding_owner(*binding);
+  return Status::Ok();
+}
+Status RegionAccess::release_projected_writes(Invocation&invocation,
+    std::span<const NodeId>nodes)noexcept{
+  auto*state=InvocationAccess::state(invocation);
+  if(!outcome_available(invocation))
+    return Status::Unavailable("projected writes still have native work/results/observations");
+  if(nodes.empty())return Status::Ok();
+  if(!state->resources)return Status::InvalidArgument("projected writes have no original resource episode");
+  const auto&plan=*state->plan;auto&episode=*state->resources.get();
+  auto&marks=episode.unbind_steps;
+  HYLE_FATAL_ASSERT(marks.size()==plan.steps.size());
+  constexpr std::uint8_t selected=1,bound=2,invalidate=4;
+  std::fill(marks.begin(),marks.end(),std::uint8_t{});
+  // Scratch marks index original selected steps, never addresses or retained
+  // authorities. Reject the complete list before touching native preparation.
+  for(const auto node:nodes){
+    if(GraphIdentity::generation(node)!=plan.generation || node.ordinal()>=plan.node_steps.size())
+      return Status::InvalidArgument("projected writer belongs to another Graph/plan");
+    const auto step=plan.node_steps[node.ordinal()];
+    if(step>=marks.size() || step>=state->invocations.size() || step>=state->step_bindings.size() ||
+        plan.steps[step].kind!=PlanStepKind::kRegion || !plan.steps[step].region.valid())
+      return Status::InvalidArgument("projected writer has no original selected region");
+    const auto&writer=plan.steps[step];
+    if(writer.node_count!=1 || writer.node_set_begin>=plan.step_nodes.size() ||
+        plan.step_nodes[writer.node_set_begin]!=node.ordinal())
+      return Status::InvalidArgument("projected writer is not its original singleton node");
+    if(marks[step]&selected)return Status::InvalidArgument("projected writer is duplicated");
+    marks[step]|=selected;
+  }
+  for(const auto&entry:episode.bindings)
+    if((entry.scope==BindingScope::kWrittenProjection && entry.value.valid()) ||
+        entry.scope==BindingScope::kWriteEffect)
+      if(entry.writer_step<marks.size() && (marks[entry.writer_step]&selected))
+        marks[entry.writer_step]|=bound;
+  bool revoke=false;
+  for(const auto node:nodes){
+    const auto step=plan.node_steps[node.ordinal()];
+    if(!(marks[step]&bound))return Status::InvalidArgument("node has no original projected write binding");
+    // Qualify before invalidation through the same helper as single release.
+    if(writer_preserves_commands(*state,step))revoke=true;else marks[step]|=invalidate;
+  }
+  for(std::size_t i=0;i<episode.fixed_binding_count;++i){
+    const auto&entry=episode.bindings[i];
+    if(entry.scope!=BindingScope::kWrittenProjection || entry.writer_step>=marks.size() ||
+        !(marks[entry.writer_step]&selected))continue;
+    for(const auto&consumer:projected_input_consumers(plan,entry.value.ordinal()))
+      if(!entry.permission_changes_preserve_commands ||
+          !state->step_bindings[consumer.step].stable_binding_identity)
+        marks[consumer.step]|=invalidate;
+  }
+  if(revoke)HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
+  // No rejecting operation remains. Preserve only recordings qualified by
+  // the original writer/reader and actual capture backend, as in single take.
+  for(std::size_t i=0;i<marks.size();++i)
+    if(marks[i]&invalidate)invalidate_step_recording(*state,static_cast<std::uint32_t>(i));
+  episode.input_lease_candidates.clear();
+  const auto first=episode.bindings.begin()+episode.fixed_binding_count;
+  episode.bindings.erase(std::remove_if(first,episode.bindings.end(),[&](const auto&entry){
+    if(entry.scope==BindingScope::kWriteEffect)
+      return entry.writer_step<marks.size() && (marks[entry.writer_step]&selected);
+    if(!entry.projection.valid())return false;
+    const auto*owner=find_binding(state,entry.projection);
+    return owner && owner->scope==BindingScope::kWrittenProjection &&
+        owner->writer_step<marks.size() && (marks[owner->writer_step]&selected);
+  }),episode.bindings.end());
+  for(std::size_t i=0;i<episode.fixed_binding_count;++i){
+    auto&entry=episode.bindings[i];
+    if(entry.scope!=BindingScope::kWrittenProjection || entry.writer_step>=marks.size() ||
+        !(marks[entry.writer_step]&selected))continue;
+    const auto physical=plan.external_instances[entry.value.ordinal()];
+    state->readable[physical]={};state->bound[physical]=0;clear_binding_owner(entry);
+  }
   return Status::Ok();
 }
 bool RegionAccess::outcome_available(const Invocation&invocation)noexcept{
