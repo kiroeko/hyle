@@ -76,6 +76,11 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 `--capacity` 继续限制完整上下文，分块不会扩大它。当前该选项不支持 MTP 或固定 `prompt/decode` 重放，
 不支持的组合会直接报错；它不做 padding，也不代表设备执行预热或全模型 varlen 合批。
 
+`--warmup-shapes planned` 在 ready 前准备已有计划中会使用的执行载体，默认 `lazy` 保持按需准备。
+该选项保留实际批宽、行数、阶段和采样配置，不枚举所有上下文长度，不接纳会话或推进 RNG。
+它可增加启动时间与持久载体内存；`--cache-bytes` 不是这些资源的总显存上限。
+这不是设备执行／CUDA capture 预热，首次真实绑定仍可能准备 replay，未计划的前缀尾长仍需有界冷接纳。
+
 
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。

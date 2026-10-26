@@ -3672,6 +3672,22 @@ public:
     }
   }
 
+  // Prepare the existing cold plan, not every possible context length. This
+  // creates carriers only: no Session, state transition, sampling or submit.
+  // Native capture still needs actual bindings and remains a measured cost.
+  std::size_t prepare_planned_execution() {
+    if (active_step || carrier_borrowed)
+      throw std::runtime_error("cannot prepare planned shapes during an active episode");
+    std::size_t count = 0;
+    for (const auto &[shape, uses] : planned_slot_uses) {
+      if (std::ranges::none_of(uses, [](auto planned_uses) { return planned_uses != 0; })) continue;
+      const std::array rows{shape.tokens};
+      prepare_execution(rows, shape.requests, shape.role, shape.completion, shape.sampling_index);
+      ++count;
+    }
+    return count;
+  }
+
   void detach_episode() noexcept {
     if (!active_step) return;
     // Only a caller-requested, actually retired shared cancellation is local
@@ -6092,7 +6108,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     const std::filesystem::path &trace, bool trace_states, Clock::time_point startup,
     Clock::time_point constructed, bool prefix_enabled, std::span<const cache::TokenPlanRef> token_plans,
     std::span<const std::size_t> sampling_indices = {}, std::span<const inference::RequestStopPolicy> stop_policies = {},
-    std::size_t max_prefill_rows = SIZE_MAX) {
+    std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
   if (!max_prefill_rows || (mtp && max_prefill_rows != SIZE_MAX))
     throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
@@ -6239,6 +6255,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   }
   if (mtp && decode_bound && model.recursive_mtp()) model.prepare_recursive_round_programs();
+  if (warmup_planned_shapes) {
+    const auto begin = Clock::now();
+    const auto shapes = model.prepare_planned_execution();
+    std::cerr << "shape_warmup policy=planned shapes=" << shapes
+              << " seconds=" << std::chrono::duration<double>(Clock::now() - begin).count() << '\n';
+  }
   const std::array first_prefill{(std::min)(requests.front().prompt.size(), max_prefill_rows)};
   const auto first_completion = first_prefill[0] == requests.front().prompt.size()
       ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
@@ -6474,6 +6496,7 @@ int qwen35::run(int argc, char **argv) {
         "  --steps N                   Maximum output tokens (default: 4)\n"
         "  --capacity N                Total context capacity (default: 128)\n"
         "  --prefill-chunk-tokens N    Maximum real rows per ordinary prefill episode\n"
+        "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
         "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
         "  --session-schedules FILE    Multiple named session schedules\n"
@@ -6490,6 +6513,7 @@ int qwen35::run(int argc, char **argv) {
     std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
+    bool warmup_planned_shapes = false;
     bool progress = false, trace_states = true, explicit_steps = false;
     bool mtp_enabled = false;
     bool explicit_mtp_drafts = false;
@@ -6515,6 +6539,11 @@ int qwen35::run(int argc, char **argv) {
       const std::string value = argv[++i];
       if (option == "--inputs") input = value;
       else if (option == "--prefill-chunk-tokens") max_prefill_rows = positive_size(option, value);
+      else if (option == "--warmup-shapes") {
+        if (value != "lazy" && value != "planned")
+          throw std::runtime_error("--warmup-shapes requires lazy or planned");
+        warmup_planned_shapes = value == "planned";
+      }
       else if (option == "--backend") {
         if (value == "cpu") backend_selection.primary = qwen35::BackendKind::kCpu;
         else if (value == "cuda") backend_selection.primary = qwen35::BackendKind::kCuda;
@@ -6773,9 +6802,9 @@ int qwen35::run(int argc, char **argv) {
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {
       if (mtp_enabled) return qwen35::run_generation_sessions<qwen35::GenerationMode::kMtp>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, SIZE_MAX, warmup_planned_shapes);
       return qwen35::run_generation_sessions<qwen35::GenerationMode::kText>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes);
     }
 
     // These owners are declared after Model, including on exception paths.
@@ -7042,6 +7071,12 @@ int qwen35::run(int argc, char **argv) {
       (void)model.cache_usage();
       run.cache_prepare_seconds += std::chrono::duration<double>(qwen35::Clock::now() - begin).count();
     };
+    if (warmup_planned_shapes) {
+      const auto begin = qwen35::Clock::now();
+      const auto shapes = model.prepare_planned_execution();
+      std::cerr << "shape_warmup policy=planned shapes=" << shapes
+                << " seconds=" << std::chrono::duration<double>(qwen35::Clock::now() - begin).count() << '\n';
+    }
     // Prefix mode admits at the timed request boundary, before any initial
     // state allocation. A full hit must not create or evaluate an empty state.
     if (scheduled && !prefix_enabled) {

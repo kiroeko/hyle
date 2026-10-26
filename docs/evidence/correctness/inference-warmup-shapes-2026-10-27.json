@@ -1,0 +1,244 @@
+{
+  "status": "PASS_FINITE_PLANNED_CARRIER_PREPARATION",
+  "date": "2026-10-27",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 493574,
+    "sha256": "45b124b0febe4bf32e31c7ab207877696379f224d71461ce905dcb61ccb71cff"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\image\\hyle.exe",
+    "bytes": 142050304,
+    "sha256": "a1ba07f344162bc4cdb7907c9dd09b8fcb066ad6049a3655f3d0dbebe6fb9f9f"
+  },
+  "source_snapshot": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\main.cc",
+    "bytes": 493574,
+    "sha256": "45b124b0febe4bf32e31c7ab207877696379f224d71461ce905dcb61ccb71cff"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\ready.json",
+    "bytes": 1881,
+    "sha256": "fe2aa601571d360e608e602253f784b3295160c560b9214229ceb4072463f556"
+  },
+  "actual_dependencies": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\compile\\actual-dependencies.json",
+    "bytes": 76565,
+    "sha256": "2dc66984fada1b5e9c66553e80027427b55cc57db3d142ecf876522a3669d2e0"
+  },
+  "counts": {
+    "CXX_TUs": 1,
+    "link_processes": 1,
+    "reused_link_inputs": 223,
+    "tiny_CUDA_model_processes": 4,
+    "parser_refusals": 1,
+    "pre_build_source_pin_guards": 1,
+    "failed_CXX_or_link_processes": 0,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "implementation": "prepare_planned_execution traverses existing positive-use ExecutionShape keys with original B/T/role/completion/sampling identity. planned runs before ready; default lazy preserves existing minimum carrier setup. No second executor, Session, fake input, submit or state/RNG/cache publication in the warmup method.",
+  "cold_source_review": [
+    "All family/replay plans precede carrier preparation; known keys use original idempotent prepare_execution.",
+    "The logged shapes count is eligible complete keys, including already-initialized carriers, not necessarily new allocations.",
+    "Unknown suffixes remain subject to the existing idle bounded exact admission; this batch does not claim every context length is prewarmed."
+  ],
+  "results": {
+    "lazy": {
+      "pid": 30728,
+      "exit": 0,
+      "facts": {
+        "ready_line": 17,
+        "first_request_line": 19,
+        "compiled_before_ready": 2,
+        "compiled_after_ready": 2,
+        "ledger": {
+          "A": {
+            "state_only_records": 3,
+            "rows": 11,
+            "ledger_records": 7,
+            "visible": 11,
+            "draws": 4,
+            "generated": [
+              8,
+              8,
+              3,
+              40
+            ]
+          },
+          "B": {
+            "state_only_records": 1,
+            "rows": 7,
+            "ledger_records": 5,
+            "visible": 7,
+            "draws": 4,
+            "generated": [
+              0,
+              34,
+              10,
+              10
+            ]
+          }
+        }
+      }
+    },
+    "planned": {
+      "pid": 32716,
+      "exit": 0,
+      "facts": {
+        "ready_line": 26,
+        "first_request_line": 28,
+        "compiled_before_ready": 6,
+        "compiled_after_ready": 0,
+        "planned_shapes": 6,
+        "ledger": {
+          "A": {
+            "state_only_records": 3,
+            "rows": 11,
+            "ledger_records": 7,
+            "visible": 11,
+            "draws": 4,
+            "generated": [
+              8,
+              8,
+              3,
+              40
+            ]
+          },
+          "B": {
+            "state_only_records": 1,
+            "rows": 7,
+            "ledger_records": 5,
+            "visible": 7,
+            "draws": 4,
+            "generated": [
+              0,
+              34,
+              10,
+              10
+            ]
+          }
+        }
+      }
+    },
+    "mtp-k2-planned": {
+      "pid": 57704,
+      "exit": 0,
+      "facts": {
+        "ready_line": 30,
+        "first_request_line": 32,
+        "compiled_before_ready": 6,
+        "compiled_after_ready": 0,
+        "planned_shapes": 6,
+        "generated_ids": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "actual_target_rows": 21,
+        "actual_graph_calls": 25
+      }
+    },
+    "fixed-planned": {
+      "pid": 42896,
+      "exit": 0,
+      "facts": {
+        "planned_shapes": 2,
+        "compiled_before_ready": 2,
+        "compiled_after_ready": 0,
+        "ready_line": 12,
+        "warmup_line": 11,
+        "generated_ids": [
+          37,
+          41,
+          42
+        ],
+        "decode_input_ids": [
+          4,
+          5
+        ],
+        "actual_graph_calls": 3,
+        "actual_target_rows": 5,
+        "cold_exact_admissions": 0,
+        "sampling_draw_cursor": 0
+      }
+    }
+  },
+  "lazy_planned": {
+    "complete_nonclock_report_differences": 0,
+    "includes": "All original nonclock work, generated IDs, ledger, RNG, route/cache/resource report fields; no extra memory/counter exclusions.",
+    "normalizer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\behavior.py",
+      "bytes": 4362,
+      "sha256": "697c7afb67027ef9398544f888a1081beedc308ee153052cde6584c22a68cf38"
+    },
+    "difference_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\lazy-planned-nontime-differences.json",
+      "bytes": 4,
+      "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+    }
+  },
+  "invalid_policy": {
+    "pid": 46044,
+    "exit": 1,
+    "scope": "eager rejected before Model construction"
+  },
+  "pre_build_guard": {
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\pre-freeze-guard.json",
+      "bytes": 618,
+      "sha256": "10a159ea97b87dd08303dc3c7292faa9259473f98b0eb99235f3631b88ec7b65"
+    },
+    "scope": "Root replaced the freeze pin while the script was checking the previous hash. Python guard stopped before any compiler or linker; the final frozen source was compiled once."
+  },
+  "reuse": {
+    "input_record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\retained-inputs.json",
+      "bytes": 57744,
+      "sha256": "eb2b80f958228e46b01379ee9232769310b3a95a782f72fc76f896f5187877cd"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\cli\\ready.json",
+      "bytes": 2027,
+      "sha256": "7226d14d7db14f38e34a96d891184b9e6b09cf45cbe90b1eddfe3e2d0c5fd7d7"
+    },
+    "prior_prefill_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-prefill-chunk-cli-2026-10-27.json",
+      "bytes": 8331,
+      "sha256": "82b65d5794cf77476b9c549cad9df4a8b8958f12239c03649204e811d5db7af0"
+    }
+  },
+  "fixed_branch": {
+    "scope": "One separately authorized fixed-replay planned journey on the same built image; input IDs [4,5], one prefill and two decode calls. No prior run repeated.",
+    "original_three_run_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\summary.json",
+      "bytes": 2957,
+      "sha256": "fe97450b4bfde8dc81ee5c91bdc831fe051b14b9a7607835fc0b4780da538f89"
+    },
+    "final_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-shape-policy-20261027\\warmup\\final-summary.json",
+      "bytes": 1091,
+      "sha256": "67647e5bba84fb71dacfca256cf97f624f7191a22b9ec42b4cfc77ffda2c9741"
+    }
+  },
+  "limits": [
+    "Four tiny cached untrained CUDA functional journeys plus one parser refusal, not a benchmark/quality/full-model or all-platform matrix.",
+    "This is carrier preparation, not device execution or CUDA capture warmup. Dynamic layouts, real lease bindings and prepare_replay still use the original execution path.",
+    "No varlen or padding semantics are added. Ordinary Q2 real blocks remain separate StateOnly/EmitNext; finite Q with MTP remains explicitly unsupported.",
+    "planned may retain additional Phase IO/readback/Invocation resources. Existing allocation/execution budgets are reused; --cache-bytes is not a total warmup VRAM cap. No physical-memory or speed equality/benefit claim.",
+    "The source, dependencies and recorded limits describe this fixed configuration only; no assertion of latest third-party versions."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-warmup-shapes-2026-10-27.zip",
+    "bytes": 241933,
+    "sha256": "3a89e0fcbfb5d2b0e7dd7338bac96cd7d7b3f006eaffb984049430bf6ebc8c8a",
+    "members": 80,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
