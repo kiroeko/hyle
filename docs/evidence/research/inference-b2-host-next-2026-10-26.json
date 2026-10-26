@@ -1,0 +1,300 @@
+{
+  "schema": "hyle.research.evidence.v1",
+  "date": "2026-10-26",
+  "status": "OFFLINE_REVIEW_NO_NEW_SOURCE_PROVEN_LARGE_REMOVABLE_ITEM",
+  "existing_trace": "../../evidence/performance/inference-b2-host-phases-2026-10-26.json",
+  "conclusion": "Do not treat the full60.961ms replay bucket as steady-state overhead:6 recording roots account for37.772ms and90 nonrecording roots for23.189ms. Existing binding, span, qualification and retained-range reuse are effective in the reviewed source. No new large redundant native operation or justified cache/rebinding mechanism was established.",
+  "phase_priority": {
+    "status": "FROZEN_OFFLINE_SAME_RUN_PHASE_PRIORITY",
+    "work_gate_status": "PHASE_INTERVAL_FACTS_WITH_INCOMPLETE_STDIO_WORK_GATE",
+    "method": "Reuse existing aggregate facts; independently sum the existing per-root fact rows for all5 interval metrics across the exact12 children and validate96=6+90. No SQLite re-export, model, build or profiler invocation was needed.",
+    "sources": {
+      "facts": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\facts.json",
+        "bytes": 477508,
+        "sha256": "76caa63ff8deea2db2b18a86ade43be3bca199325f6fdccb6b3b9826c4a9ec6d"
+      },
+      "summary": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\summary.json",
+        "bytes": 4302,
+        "sha256": "cb11d216f25bab37c9682475e67543360ac4874cd7db0ba0f10444e6fe492bf8"
+      },
+      "SQLite_path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\hyle\\trace1\\trace.sqlite",
+      "quality_path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\hyle\\trace1\\quality.json",
+      "stdio_review_path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\stream-extraction-review.json",
+      "independent_phase_wall_path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\independent-phase-wall.json"
+    },
+    "same_run_groups": {
+      "decode_roots": 96,
+      "recording_roots": 6,
+      "nonrecording_roots": 90,
+      "recording_seqs": [
+        2,
+        3,
+        35,
+        36,
+        68,
+        69
+      ],
+      "nonrecording_definition": "All remaining decode facts rows in this same single process; no prior run is used.",
+      "all_closed_intervals": 1782,
+      "physical_roots": 99,
+      "distinct_phase_labels": 17
+    },
+    "units": "Integer nanoseconds are authoritative. Derived *_ms values are nanoseconds/1e6; mean/median are descriptive of this sole instrumented run.",
+    "twelve_disjoint_children": [
+      {
+        "phase": "hyle/prep/setup_inputs",
+        "all96_wall_ns": 8480044,
+        "record6_wall_ns": 902033,
+        "nonrecord90_wall_ns": 7578011
+      },
+      {
+        "phase": "hyle/prep/snapshot_layout_reframe",
+        "all96_wall_ns": 13904802,
+        "record6_wall_ns": 925463,
+        "nonrecord90_wall_ns": 12979339
+      },
+      {
+        "phase": "hyle/prep/state_bindings",
+        "all96_wall_ns": 3862801,
+        "record6_wall_ns": 349783,
+        "nonrecord90_wall_ns": 3513018
+      },
+      {
+        "phase": "hyle/prep/batch_prepare",
+        "all96_wall_ns": 25062186,
+        "record6_wall_ns": 7700313,
+        "nonrecord90_wall_ns": 17361873
+      },
+      {
+        "phase": "hyle/prepare_replay",
+        "all96_wall_ns": 60961127,
+        "record6_wall_ns": 37771949,
+        "nonrecord90_wall_ns": 23189178
+      },
+      {
+        "phase": "hyle/prep/replay_report",
+        "all96_wall_ns": 156990,
+        "record6_wall_ns": 14218,
+        "nonrecord90_wall_ns": 142772
+      },
+      {
+        "phase": "hyle/post/readback_select",
+        "all96_wall_ns": 4766136,
+        "record6_wall_ns": 377241,
+        "nonrecord90_wall_ns": 4388895
+      },
+      {
+        "phase": "hyle/post/gdn_state_retain",
+        "all96_wall_ns": 3506648,
+        "record6_wall_ns": 231914,
+        "nonrecord90_wall_ns": 3274734
+      },
+      {
+        "phase": "hyle/post/page_frame_export",
+        "all96_wall_ns": 21130328,
+        "record6_wall_ns": 1401678,
+        "nonrecord90_wall_ns": 19728650
+      },
+      {
+        "phase": "hyle/post/ledger_tails",
+        "all96_wall_ns": 151425,
+        "record6_wall_ns": 11780,
+        "nonrecord90_wall_ns": 139645
+      },
+      {
+        "phase": "hyle/post/unbind",
+        "all96_wall_ns": 2288060,
+        "record6_wall_ns": 154683,
+        "nonrecord90_wall_ns": 2133377
+      },
+      {
+        "phase": "hyle/post/head_publish_detach",
+        "all96_wall_ns": 3613730,
+        "record6_wall_ns": 232931,
+        "nonrecord90_wall_ns": 3380799
+      }
+    ],
+    "focus_metrics": {
+      "hyle/prepare_replay": {
+        "decode_record": {
+          "GPU_union_ns": 0,
+          "API_library_union_ns": 23691054,
+          "wall_outside_API_library_ns": 14080895
+        },
+        "decode_nonrecord": {
+          "GPU_union_ns": 0,
+          "API_library_union_ns": 47784,
+          "wall_outside_API_library_ns": 23141394
+        }
+      },
+      "hyle/prep/batch_prepare": {
+        "decode_record": {
+          "GPU_union_ns": 47424,
+          "API_library_union_ns": 5838936,
+          "wall_outside_API_library_ns": 1861377
+        },
+        "decode_nonrecord": {
+          "GPU_union_ns": 216383,
+          "API_library_union_ns": 4515225,
+          "wall_outside_API_library_ns": 12846648
+        }
+      }
+    },
+    "inclusive_parent_context_do_not_add_to_children": {
+      "hyle/prepare": {
+        "all96_wall_ns": 112649030,
+        "record6_wall_ns": 47686907,
+        "nonrecord90_wall_ns": 64962123
+      },
+      "hyle/postwait_publish": {
+        "all96_wall_ns": 35658274,
+        "record6_wall_ns": 2424430,
+        "nonrecord90_wall_ns": 33233844
+      }
+    },
+    "priority": [
+      {
+        "target": "hyle/prepare_replay nonrecord path",
+        "same_run_fact": "Total60.961127ms splits37.771949ms in6 recording roots and23.189178ms in90 nonrecord roots. The entire61ms must not be described as hot-path recurring work.",
+        "substantial_remaining_envelope": "Nonrecord23.189178ms (mean0.257657533ms/root);0 observed GPU overlap,0.047784ms visible API/library union and23.141394ms outside those API/library intervals. This remains the largest of the12 nonrecord child buckets.",
+        "next_scope": "If selecting a next bounded source investigation, inspect actual repeated nonrecord preparation/validation/retained-capture matching inside prepare_replay. No implementation or new experiment is authorized by this memo; preserve native readiness and capture-resource contracts.",
+        "recording_share_of_prepare_replay_total_pct": 61.96071309508435
+      },
+      {
+        "target": "hyle/prep/batch_prepare nonrecord path",
+        "same_run_fact": "Total25.062186ms splits7.700313ms record6 and17.361873ms nonrecord90. Most of this bucket remains in nonrecord roots.",
+        "substantial_remaining_envelope": "Nonrecord17.361873ms (mean0.192909700ms/root), including4.515225ms visible API/library union and12.846648ms outside those intervals;0.216383ms observed GPU overlap.",
+        "next_scope": "Treat the existing batch prepare plus append-binding envelope as a second substantial scope. It has not been attributed to one shared primitive by these labels."
+      },
+      {
+        "target": "hyle/prep/snapshot_layout_reframe context",
+        "same_run_fact": "Nonrecord12.979339ms of13.904802ms total remains outside recording.",
+        "limit": "A distinct shared single-source reframe candidate has just completed its full screen with no net throughput gain, per Root; that candidate is closing without refill. This aggregate bucket neither reopens it nor proves the whole phase complete."
+      }
+    ],
+    "joint_nonrecord_prepare_replay_and_batch_prepare_wall_ns": 40551051,
+    "selection_limits": [
+      "The12 child buckets are disjoint siblings, but prepare and postwait_publish are inclusive parents. Never add parents to their children. Submit/completion-wait and root wall remain separate context, not missing time assigned to these12.",
+      "Post page_frame_export remains19.728650ms in90 nonrecord roots. It is a larger named envelope than many micros, but the just-screened reframe change had no net throughput gain; do not treat phase wall as a proven optimization.",
+      "Complete stdout/stderr and all198 IDs/full waves work gate remain unavailable in this sole diagnostic.99 roots,17 labels and1782 closed intervals support finite interval facts only; no full-work pass or TPS result is claimed.",
+      "Legacy software-instrumented Nsight trace with unsupported13.4 driver falling back to13.3 libraries; instrumentation/NVTX/driver effects remain. No visible GPU/API overlap does not establish pure CPU work or recoverable time.",
+      "No cross-run clock subtraction, no causal speedup, no extra profile/build/model, no broad inventory or follow-on validation matrix."
+    ],
+    "decode_root_context_wall_ns": {
+      "decode": 1297582936,
+      "decode_record": 124239262,
+      "decode_nonrecord": 1173343674
+    }
+  },
+  "source_review": {
+    "status": "NO_NEW_CONCRETE_SUBSTANTIAL_IMPLEMENTATION_CANDIDATE_IN_REVIEWED_CHAIN",
+    "scope": "Finite source-only prepare_replay/prepare_invocation_bindings plus immediate callbacks. No product edits/builds/models/profiles/network. Existing trace facts reused, no new analysis of SQLite.",
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 481504,
+        "sha256": "6476518eaf59eef59d46fc1b0ad770024c0bee99a616663b1032ea33c2d8cf59"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 102920,
+        "sha256": "235b5fcbf478231b68b2b3ccc81e55dc43e50e455c8e912048d52b9dcd252c47"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.cc",
+        "bytes": 22954,
+        "sha256": "0b2b241cc6677aa4fc69c13a7e68e4b00d15edd889bfe936424db030cca8ebe8"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+        "bytes": 94468,
+        "sha256": "5cbdd7fbad88d8f68b9a87414cf7dc462b7d7d3121c7b99e941f57cf3d2f3151"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+        "bytes": 56454,
+        "sha256": "9cd024bdd45650739d5ae63cc07b6dc11fef383ebb354d8e489a54fa14231e48"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda\\cuda_backend.cc",
+        "bytes": 70516,
+        "sha256": "c79c39eea9f5d07f26434de8b2a959c5f783b1a2a2503a030bdb9a2a1b0e886c"
+      }
+    ],
+    "existing_same_run_scope": {
+      "facts": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-host-phases-20261026\\facts.json",
+        "bytes": 477508,
+        "sha256": "76caa63ff8deea2db2b18a86ade43be3bca199325f6fdccb6b3b9826c4a9ec6d"
+      },
+      "decode_roots": 96,
+      "roots_with_any_recording": 6,
+      "roots_without_recording": 90,
+      "prepare_replay_wall_ns": 60961127,
+      "record_root_replay_wall_ns": 37771949,
+      "nonrecord_root_replay_wall_ns": 23189178,
+      "mean_nonrecord_replay_ns": 257657.53333333333,
+      "same_run_decode_root_wall_ns": 1297582936,
+      "nonrecord_replay_fraction_of_same_run_decode_wall": 0.017871056528752007,
+      "interpretation": "The nonrecord23.189178ms is a legal-work/instrumentation envelope, not recoverable time. Recording roots are not asserted to equal native record call count. Full stdout/198ID gate was incomplete due truncated stdio."
+    },
+    "checked_existing_shortcuts": [
+      {
+        "anchor": "src/graph/executable.cc:1468",
+        "fact": "bindings_prepared returns via selected seal_binding_steps, without rebuilding all spans. On configuration-only reset reuse_spans iterates steps but runs prepare_command_bindings only for unproven or revision-changed entries. Same physical tuple avoids provider cold hook; tensor-view-only artifacts avoid input-lease candidate scans."
+      },
+      {
+        "anchor": "src/graph/executable.cc:1135",
+        "fact": "qualify_capture_variants returns immediately when qualification_valid. This is already cached, not a new optimization proposal."
+      },
+      {
+        "anchor": "src/graph/executable.cc:9764",
+        "fact": "Retained same-range artifact is accepted before variant-key lookup or any capture backend query/begin/end/finish-wait. Only a removed active range enters bounded variant matching and actual miss recording. Thus the90 no-record roots do not inherently pay native recording."
+      },
+      {
+        "anchor": "src/compute_backend_cuda/cuda_backend.cc:264",
+        "fact": "reserve_completions re-enters native context/query/allocation only when capacity grows; adequate capacity returns after the original lock. completion_endpoint at1211 returns the actual QueueState identity, not a device query."
+      }
+    ],
+    "remaining_loops_and_why_not_a_new_big_item": [
+      {
+        "anchors": [
+          "src/graph/executable.cc:1331",
+          "src/graph/executable.cc:6533",
+          "src/graph_batch/batch.cc:107",
+          "src/graph_batch/paged_append.cc:384"
+        ],
+        "fact": "Seal iteration is already a compiled list of actual sealing steps, not all providers. It validates the fresh batch token/native episode and exact append transaction rows. validate_native_rows repeats range/alias checks after prepare_bindings when that hook runs, but it is a narrow host loop, with no native planning call in the inspected callback. Fresh page ranges can change while packed input address stays stable, so cannot remove the seal based only on address equality. No measured subcost establishes a large redundant component."
+      },
+      {
+        "anchors": [
+          "src/graph/executable.cc:1524",
+          "src/graph/executable.cc:1351"
+        ],
+        "fact": "A full physical invalidation can still resolve all view metadata and visit command ports. Descriptor/physical equality and stable revision proofs already skip factories/native hooks where qualified. This review does not know the actual full-path versus reuse_spans frequency or constant/dynamic fraction, so it does not re-propose a new constant cache or claim all those traversals are redundant."
+      },
+      {
+        "anchors": [
+          "src/graph/executable.cc:1626",
+          "src/graph/executable.cc:1680",
+          "src/graph/input_sources.cc:238"
+        ],
+        "fact": "Transfer/dependency route loops validate actual nominated queues/resources; same queue/endpoint uses ordered route before import query. Optional immutable InputSource work returns immediately without its allocated state. No InputSource binding use was found in the ordinary Model/inference/batch caller path searched; no source-state count is claimed from the trace."
+      }
+    ],
+    "failure_and_lifetime_boundaries": [
+      "Original queue validation/acquisition and endpoint ownership checks precede replacement publication. A failed seal invalidates binding/replay readiness. Failed preparation abandons optional configuration spans rather than leaving permission facts cached.",
+      "Input bind, output bind, unbind/revoke, reset and configuration callbacks invalidate physical/replay state as originally required. Captured artifacts remain dormant until exact preparation commits; old leases/native owners are not proven by matching addresses.",
+      "Miss recording retains and waits the real preparation Completion, including error paths. No wait, failure-before-mutation, source guard or retirement may be skipped to chase the whole prepare_replay bucket."
+    ],
+    "conclusion": "No new source-proven duplicated native call or substantial unnecessary batch loop suitable for a small implementation was identified. Do not implement a new cache/dirty bit/framework or claim the60.961ms bucket as savings. Recording cost and257.658us nonrecord envelope are distinct; any narrower optimization would need an already-supported actual-path/subcost fact, not this source inference."
+  },
+  "limits": [
+    "No build, model or profiler process was added by this offline review.",
+    "The existing trace has incomplete captured stdio and no complete report/198IDs quality gate. Phase intervals do not substitute for that missing gate.",
+    "A profiled wall envelope is neither pure CPU cost nor a recoverable benefit. No throughput or memory result is refreshed.",
+    "Finite source exclusions apply to the inspected immediate replay/binding callees only; they do not prove that all inference overhead or all possible optimizations are exhausted."
+  ]
+}

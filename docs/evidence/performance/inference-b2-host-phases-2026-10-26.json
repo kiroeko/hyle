@@ -1,0 +1,240 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "INTERVAL_ATTRIBUTION_AVAILABLE_COMPLETE_STDIO_WORK_GATE_NOT_COMPLETED",
+  "source_git": "498c6e3466e679301b7c407132d77b5a1759a2a6",
+  "protocol": {
+    "new_host_Model_TUs": 1,
+    "other_product_or_SDK_builds": 0,
+    "actual_profiles": 1,
+    "profile_exit": 0,
+    "timed_out": false,
+    "repeat_profiles": 0,
+    "workload": "Ordinary CUDA B2 fixed-input three-turn P256+32/request, C1024 N2/R2, prefix off, no MTP",
+    "baseline": "f36bda5e: retained image41 closure plus adopted resources publication fact; only private NVTX Model changed",
+    "prelaunch_error": "First runner call failed to create a missing parent directory before starting any process. Fixed mkdir(parents=True); only one actual model/profile ran."
+  },
+  "quality": {
+    "status": "PARTIAL_TRACE_SCOPE_VALID_FULL_REPORT_GATE_NOT_COMPLETED",
+    "profile_process": {
+      "exit": 0,
+      "nsys_pid": 42424,
+      "seconds": 6.43902910000179,
+      "timeout": false
+    },
+    "physical_roots": 99,
+    "prefill": 3,
+    "decode": 96,
+    "R": 2,
+    "rows": 1728,
+    "full_non_time_report_comparison": "NOT_COMPLETED_STDOUT_TRUNCATED",
+    "all198_output_ID_comparison": "UNAVAILABLE",
+    "stdout_complete_prefix_non_time_differences": [],
+    "actual_completed_Hyle_NVTX_ranges": 1782,
+    "expected_ranges": 1782,
+    "terminal_stderr_marker": "UNAVAILABLE_STDERR_TRUNCATED",
+    "phase_counts": {
+      "hyle/prepare": 99,
+      "hyle/prep/setup_inputs": 99,
+      "hyle/prep/snapshot_layout_reframe": 99,
+      "hyle/prep/state_bindings": 99,
+      "hyle/prep/batch_prepare": 99,
+      "hyle/prepare_replay": 99,
+      "hyle/prep/replay_report": 99,
+      "hyle/submit": 99,
+      "hyle/wait_publish": 99,
+      "hyle/completion_wait": 99,
+      "hyle/postwait_publish": 99,
+      "hyle/post/readback_select": 99,
+      "hyle/post/gdn_state_retain": 99,
+      "hyle/post/page_frame_export": 99,
+      "hyle/post/ledger_tails": 99,
+      "hyle/post/unbind": 99,
+      "hyle/post/head_publish_detach": 99
+    },
+    "host_bucket_check": {
+      "status": "PASS_DISJOINT_CHILDREN_WITHIN_ORIGINAL_PARENTS",
+      "groups": {
+        "hyle/prepare": {
+          "roots": 99,
+          "parent_wall_ns": 181020638,
+          "child_union_ns": 180788745,
+          "parent_uncovered_ns": 231893
+        },
+        "hyle/postwait_publish": {
+          "roots": 99,
+          "parent_wall_ns": 37091368,
+          "child_union_ns": 36880801,
+          "parent_uncovered_ns": 210567
+        }
+      },
+      "scope": "NVTX inclusive wall only; children are not added again to parents. Prelude before original prepare remains outside these buckets; instrumentation gaps remain uncovered."
+    },
+    "model_failure_claim": false,
+    "new_runs_or_rebuilds": 0
+  },
+  "interval_facts": {
+    "status": "PHASE_INTERVAL_FACTS_WITH_INCOMPLETE_STDIO_WORK_GATE",
+    "quality": "hyle/trace1/quality.json",
+    "stdio_review": "stream-extraction-review.json",
+    "decode_roots": 96,
+    "decode_root": {
+      "wall_ms": 1297.582936,
+      "GPU_union_ms": 1039.369648,
+      "wall_without_observed_GPU_ms": 258.213288,
+      "API_library_union_ms": 1183.28851,
+      "wall_outside_API_library_ms": 114.294426
+    },
+    "decode_twelve_disjoint_children": {
+      "hyle/prep/setup_inputs": {
+        "wall_ms": 8.480044,
+        "GPU_union_ms": 0.057023,
+        "wall_without_observed_GPU_ms": 8.423021,
+        "API_library_union_ms": 7.169702,
+        "wall_outside_API_library_ms": 1.310342
+      },
+      "hyle/prep/snapshot_layout_reframe": {
+        "wall_ms": 13.904802,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 13.904802,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 13.904802
+      },
+      "hyle/prep/state_bindings": {
+        "wall_ms": 3.862801,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 3.862801,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 3.862801
+      },
+      "hyle/prep/batch_prepare": {
+        "wall_ms": 25.062186,
+        "GPU_union_ms": 0.263807,
+        "wall_without_observed_GPU_ms": 24.798379,
+        "API_library_union_ms": 10.354161,
+        "wall_outside_API_library_ms": 14.708025
+      },
+      "hyle/prepare_replay": {
+        "wall_ms": 60.961127,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 60.961127,
+        "API_library_union_ms": 23.738838,
+        "wall_outside_API_library_ms": 37.222289
+      },
+      "hyle/prep/replay_report": {
+        "wall_ms": 0.15699,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 0.15699,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 0.15699
+      },
+      "hyle/post/readback_select": {
+        "wall_ms": 4.766136,
+        "GPU_union_ms": 0.106911,
+        "wall_without_observed_GPU_ms": 4.659225,
+        "API_library_union_ms": 4.17871,
+        "wall_outside_API_library_ms": 0.587426
+      },
+      "hyle/post/gdn_state_retain": {
+        "wall_ms": 3.506648,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 3.506648,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 3.506648
+      },
+      "hyle/post/page_frame_export": {
+        "wall_ms": 21.130328,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 21.130328,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 21.130328
+      },
+      "hyle/post/ledger_tails": {
+        "wall_ms": 0.151425,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 0.151425,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 0.151425
+      },
+      "hyle/post/unbind": {
+        "wall_ms": 2.28806,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 2.28806,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 2.28806
+      },
+      "hyle/post/head_publish_detach": {
+        "wall_ms": 3.61373,
+        "GPU_union_ms": 0.0,
+        "wall_without_observed_GPU_ms": 3.61373,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 3.61373
+      }
+    },
+    "decode_inclusive_parents_do_not_add": {
+      "hyle/prepare": {
+        "wall_ms": 112.64903,
+        "GPU_union_ms": 0.32083,
+        "wall_without_observed_GPU_ms": 112.3282,
+        "API_library_union_ms": 41.262701,
+        "wall_outside_API_library_ms": 71.386329
+      },
+      "hyle/postwait_publish": {
+        "wall_ms": 35.658274,
+        "GPU_union_ms": 0.106911,
+        "wall_without_observed_GPU_ms": 35.551363,
+        "API_library_union_ms": 4.17871,
+        "wall_outside_API_library_ms": 31.479564
+      }
+    },
+    "recording_decode_roots": 6,
+    "nonrecording_decode_roots": 90,
+    "limits": [
+      "No new profile/model/build; only the sole existing trace is read.",
+      "Complete output/IDs work gate is unavailable because original captured streams are truncated; this is not a model-failure claim.",
+      "GPU activity/API/library are interval unions clipped to each scope, never nested duration sums.",
+      "Wall outside observed GPU/API is not proved pure CPU or recoverable cost. Profiling/NVTX overhead remains.",
+      "Do not subtract previous trace phase clocks or infer speed gain; parents are inclusive of these children."
+    ]
+  },
+  "independent_wall_check": "Independent direct SQLite grouped wall-ns totals match all twelve decode buckets exactly; no complete work/ID claim from this check.",
+  "source_action": "Investigate PagedArena single-source, one-request reframing using immutable canonical page metadata, retaining original live identity, row authority, allocator and independently reclaimable guards. This is a candidate, not a measured saving.",
+  "graph_launch_review": {
+    "scope": "Offline review of the preceding paired B2 trace and actual retained source; not another run.",
+    "matched_hot_launches": 90,
+    "hyle_per_launch": {
+      "kernels": 757,
+      "device_copies": 132,
+      "device_memset": 1
+    },
+    "peer_per_launch": {
+      "kernels": 709,
+      "device_copies": 0,
+      "device_memset": 0
+    },
+    "finding": "No observed instantiate flag, stream blocking or priority mismatch. Peer uses copy/writeback kernels; zero memcpy API activities does not mean zero state movement.",
+    "limits": "State copies preserve independently retained session state. Private GGML workspace cannot become an owned snapshot by replacing Copy with View. Stride-aware BF16 L2 is only an unimplemented source-supported fallback candidate."
+  },
+  "limits": [
+    "Nsight retained only 20480 stdout characters and 33585 stderr characters. Full report, terminal stderr marker and all198 output IDs are unavailable; their gates are NOT completed, not PASS.",
+    "Complete retained prefix fields and all99 physical batch records match their own reference non-time fields. This does not replace the missing complete report/ID gate.",
+    "All99 roots, seventeen child-label occurrences per root and1782 completed NVTX ranges are present. Twelve sibling buckets are disjoint inside their original parents.",
+    "The page/frame-export21.130ms bucket includes take_append, ready and reframing; it is not exclusively reframe or recoverable CPU cost.",
+    "Intervals include profiling/instrumentation effects; outside-GPU/API time is not pure CPU self-time. Do not subtract earlier runs or refresh throughput/memory tables.",
+    "The captured process ended successfully; incomplete stream collection alone does not establish a model-computation failure."
+  ],
+  "cleanup": {
+    "status": "COMPLETED_AFTER_ARCHIVE_VERIFICATION",
+    "files": 4,
+    "logical_bytes": 154382375,
+    "method": "Exact targets resolved and hash-checked within the diagnostic directory by root test.ps1, then removed with Remove-Item -LiteralPath.",
+    "preserved": "Source, commands, failure records, raw SQLite, original incomplete streams and nsys-rep. Baseline/candidate/model/SDK caches unchanged; archived ready metadata describes removed rebuildable diagnostic binaries."
+  },
+  "archive": {
+    "path": "inference-b2-host-phases-2026-10-26.zip",
+    "bytes": 3264468,
+    "sha256": "0dd29197d665b37b3ccbff860d2002d1f0787b7a5b73169dd40f872c598f0c79",
+    "members": 57,
+    "verification": "ZIP CRC and every member byte length/SHA256 verified"
+  }
+}

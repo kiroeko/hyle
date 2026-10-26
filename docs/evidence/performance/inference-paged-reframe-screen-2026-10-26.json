@@ -1,0 +1,1150 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "CLOSED_NOT_MERGED",
+  "decision": "No net full-consumer benefit: candidate prefill, decode and combined medians fell; decode and combined ranges overlap. Canonical source and tests are restored. Close without sample refill or a larger fast-path mechanism.",
+  "source_git_before_commit": "498c6e3466e679301b7c407132d77b5a1759a2a6",
+  "change": "A validated single-source specialization in the existing PagedArena::reframe. Exact source and eight contract cases are retained; no new cache, decoder, owner or executor.",
+  "decision_boundary": "Decision is supplied explicitly after the completed screen. A positive overlapping median is not a stable throughput result, and deterministic redundant work alone does not require adopting this fast path.",
+  "build": {
+    "new_product_TUs": 1,
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\source\\paged_arena.cc",
+      "bytes": 54568,
+      "sha256": "ca02d868ae7cdc602c5603365ebd8b919584ab4eaf8ea4fc1e614d9717bc98c5"
+    },
+    "candidate_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\link\\hyle.exe",
+      "bytes": 141464576,
+      "sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0"
+    },
+    "control_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\candidate\\link\\hyle.exe",
+      "bytes": 141462016,
+      "sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4"
+    },
+    "link_delta": {
+      "index": 68,
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-f32-append-20261025\\cpu1\\compile\\cpu-arena\\unit.obj",
+        "bytes": 1141954,
+        "sha256": "1fa0ed4642dff3d28e8b5400d448fb3fc7d8e097c018ac4ba28e930bbd679223"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\compile\\unit.obj",
+        "bytes": 1153743,
+        "sha256": "cc2149bfd2bde7ca652445d37072cb5cd3745ee87a43e5c78456032f23f577bf"
+      },
+      "unchanged_inputs": 221
+    },
+    "SDK_or_device_builds": 0,
+    "scope": "Control f36 retains the previous ResourceEpisode publication change. Only its original cpu-arena.obj is replaced; all other221 link inputs, including the resources object, are identical."
+  },
+  "validation": {
+    "cpu_contract3": {
+      "status": "PASS_8_CPU_REFRAME_TESTS",
+      "process": {
+        "exit": 0,
+        "pid": 61808,
+        "seconds": 0.4287159999948926
+      },
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "names": [
+        "PagedArena.ReframeCannotExpandASourcesLogicalPrefixThroughItsWholePageGuard",
+        "PagedArena.ReframeComposesHistoriesAndRetainsOnlyItsExactPagePermissions",
+        "PagedArena.ReframeEmptyTargetPinsNoPageAndStillValidatesEverySuppliedSource",
+        "PagedArena.ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances",
+        "PagedArena.ReframeMetadataFailureLeavesSourcesReadyForRetry",
+        "PagedArena.ReframeRejectsInvalidForeignAndMissingSourcesWithoutChangingSnapshots",
+        "PagedArena.ReframeSingleSourceCombinesLogicalAuthorityAcrossRequestsWhenNeeded",
+        "PagedArena.ReframeSingleSourceProjectsARequestWithIndependentCanonicalGuards"
+      ],
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract3\\ready.json",
+        "bytes": 2991,
+        "sha256": "646c04b71fddf49b94d9328e468386a41cc211a4de5dad520e29cb913babf876"
+      },
+      "model_runs": 0,
+      "GPU_runs": 0,
+      "full_graph_suite_run": false
+    },
+    "first_cpu_contract_compile": {
+      "exit": 2,
+      "pid": 58420,
+      "seconds": 1.2169516999856569
+    },
+    "second_cpu_contract_run": {
+      "exit": 1,
+      "pid": 46324,
+      "seconds": 0.41213360003894195
+    },
+    "separate_test_correction": {
+      "status": "TEST_ONLY_CORRECTION_FROZEN_NOT_BUILT_OR_RUN",
+      "reason": "Root strict test compile failed before link with C2593: ASSERT_TRUE(shorter); shorter={} was ambiguous for Result assignment. No model or benchmark sample was run by this correction.",
+      "change": "Only put the temporary shorter Result inside a lexical scope; its ReadLease/frame owner is destroyed at the same intended point. Product ca02d868 is byte-identical and original test logic/assertions/work bounds remain.",
+      "original_handoff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\handoff.json",
+        "bytes": 7355,
+        "sha256": "f327f905e5556b1237f67af353325f9269bcb25a40cf9c5ad33bdb41a97c69a0"
+      },
+      "unchanged_product": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_arena.cc",
+        "bytes": 54568,
+        "sha256": "ca02d868ae7cdc602c5603365ebd8b919584ab4eaf8ea4fc1e614d9717bc98c5"
+      },
+      "original_frozen_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\source\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52568,
+        "sha256": "16c11ddf5e42ac9b0e155f4a2ab6d61712679109a0cbc0917fdee3e75f38a8f8"
+      },
+      "corrected_current_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52569,
+        "sha256": "ee403679dc8aae3b3d457409a25307d993b344a031f284799e9c6d2512f4cc24"
+      },
+      "corrected_frozen_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction\\source\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52569,
+        "sha256": "ee403679dc8aae3b3d457409a25307d993b344a031f284799e9c6d2512f4cc24"
+      },
+      "test_correction_patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction\\test-only-correction.patch",
+        "bytes": 917,
+        "sha256": "f694db0aa4085806357ec6cfd2dd724e1ac766514a0d7af1d0812795e833a696"
+      },
+      "runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\check.py",
+        "bytes": 8444,
+        "sha256": "24e818d5fc4d4e85eb3026091236e15f16f8285868c643e3f5b92423cd9bcc48"
+      },
+      "preserved_failure_runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\before-test-correction\\check.py",
+        "bytes": 7593,
+        "sha256": "a3993878ec9a401b7fd82b18d2339377e772e5a587b04d0bafbd0653ce6a06d4"
+      },
+      "preserved_failed_compile_process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract1\\compile\\process.json",
+        "bytes": 70,
+        "sha256": "de5db8b6234b67a4c547e237b19927e00068af883f69c39feb102595becc174f"
+      },
+      "preserved_failed_compile_stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract1\\compile\\stdout.log",
+        "bytes": 2254,
+        "sha256": "ada3fc520df6bc14aaabcca5d34bc66926dfbe081236389d748e83b437cb94d0"
+      },
+      "preserved_failed_compile_stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract1\\compile\\stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runner_gates": [
+        "Explicit new output directory cpu-contract2; cpu-contract1 is never overwritten or reused as output. Existing unrelated baseline C still intentionally points to inference-result-publication-screen/cpu-contract1.",
+        "Build verifies exact original handoff and original product current pin; preserves and checks old frozen test instead of demanding its superseded current-test pin.",
+        "Build verifies corrected current/frozen test and final runner pins from this receipt; source pin must equal corrected test pin.",
+        "New plan/ready retain exact correction receipt and original handoff pins; run verifies them alongside built image, source, resource object, link inputs and runtime.",
+        "Original eight expected PagedArena.Reframe* cases and no-automatic-retry gates remain."
+      ],
+      "offline_checks": [
+        "Exact authorized test text replacement only",
+        "Product ca02d868 and original handoff f327f905 remain exact",
+        "check.py AST parses without import/execute",
+        "cpu-contract2 absent; no build/test/model/profile process launched"
+      ],
+      "next_root_commands": [
+        "python -B .scratch/inference-paged-reframe-screen-20261026/check.py build",
+        "python -B .scratch/inference-paged-reframe-screen-20261026/check.py run"
+      ],
+      "performance_boundary": "This receipt corrects a test compiler failure only; no contract pass, full-work pass or speedup is claimed."
+    },
+    "separate_test_correction2": {
+      "status": "SECOND_TEST_ONLY_CORRECTION_FROZEN_NOT_BUILT_OR_RUN",
+      "reason": "Root cpu-contract2 strict compile/link succeeded;7 of8 CPU tests passed. The new attention-with-query/no-KV assertion called value() on a correctly rejected BatchSchema::version Result, producing Bad expected access. This is a test boundary error, not an Arena result failure.",
+      "change": "Only assert the actual InvalidArgument Result returned by BatchSchema::version; do not fabricate an invalid layout or call reframe with a layout that cannot be constructed. Earlier lexical scope correction remains unchanged.",
+      "source_guard": {
+        "path": "src/compute_batch/batch_layout.cc",
+        "version_call_line": 292,
+        "validator_rejection_line": 59,
+        "condition": "if(!row_cache && q && !kv) return InvalidArgument(nonempty batch query requires KV rows)",
+        "pin": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\batch_layout.cc",
+          "bytes": 28192,
+          "sha256": "8f062760b6b190efbcd90fc07daf9baeef7071fe4f373d2e1c9f57e195c430c4"
+        }
+      },
+      "original_handoff": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\handoff.json",
+        "bytes": 7355,
+        "sha256": "f327f905e5556b1237f67af353325f9269bcb25a40cf9c5ad33bdb41a97c69a0"
+      },
+      "unchanged_product": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_arena.cc",
+        "bytes": 54568,
+        "sha256": "ca02d868ae7cdc602c5603365ebd8b919584ab4eaf8ea4fc1e614d9717bc98c5"
+      },
+      "prior_correction": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction\\receipt.json",
+        "bytes": 4856,
+        "sha256": "854d3e5c271948a8dde0d6d3bfd6228740204430dede4a44ab2e28494576a402"
+      },
+      "prior_frozen_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction\\source\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52569,
+        "sha256": "ee403679dc8aae3b3d457409a25307d993b344a031f284799e9c6d2512f4cc24"
+      },
+      "corrected_current_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52578,
+        "sha256": "ee798183de7c85f8c55e1d03c0281ae52d51cb78e1f1eb2472a556a3fa345645"
+      },
+      "corrected_frozen_test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction2\\source\\tests\\compute_batch\\paged_arena_test.cc",
+        "bytes": 52578,
+        "sha256": "ee798183de7c85f8c55e1d03c0281ae52d51cb78e1f1eb2472a556a3fa345645"
+      },
+      "test_correction_patch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction2\\test-only-correction.patch",
+        "bytes": 1181,
+        "sha256": "69551e91825167f26094f049194ca6cd506b5f693414655aec4242c9ab2afb91"
+      },
+      "runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\check.py",
+        "bytes": 8490,
+        "sha256": "5abd8525d9147c7513aa582fa8bac7332a2b51886fc3f5846cb47e49fddf9c6c"
+      },
+      "preserved_cpu_contract2_runner": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\before-test-correction2\\check.py",
+        "bytes": 8444,
+        "sha256": "24e818d5fc4d4e85eb3026091236e15f16f8285868c643e3f5b92423cd9bcc48"
+      },
+      "preserved_cpu_contract2": {
+        "compile_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract2\\compile\\process.json",
+          "bytes": 69,
+          "sha256": "7a3baccf2ccb50f26ce7f874dfa0749d6edcb69ac45badd71aaf4bfcfb84aa8b"
+        },
+        "link_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract2\\link\\process.json",
+          "bytes": 70,
+          "sha256": "fadb9e6c0dfea889451c325be59cf92ed6b6738184c04ebd22881a1745b74826"
+        },
+        "run_process": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract2\\run\\process.json",
+          "bytes": 71,
+          "sha256": "e0d82a88c94900fe1f2ecc55d9243291793e00233749bfa1584c5be333d37ab0"
+        },
+        "test_xml": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract2\\run\\results.xml",
+          "bytes": 2816,
+          "sha256": "c02457daa06582bdc269453657ee075e54c500c0fb2e903abf4faa786f52398a"
+        },
+        "count": 8,
+        "passed": 7,
+        "failed": 1,
+        "failed_case": "ReframeEmptyTargetPinsNoPageAndStillValidatesEverySuppliedSource"
+      },
+      "runner_gates": [
+        "New output directory is explicitly cpu-contract3; no prior output/receipt/failure recipe is overwritten.",
+        "Build verifies exact prior correction receipt, original handoff/product and original frozen pre-correction test; it verifies corrected current/frozen test and runner against this separate receipt.",
+        "Plan/ready/run bind the second correction receipt and unchanged original handoff. Original eight expected tests, strict compile flags and no-automatic-retry guard remain unchanged."
+      ],
+      "offline_checks": [
+        "Only the exact three-line test boundary correction differs from correction1 frozen source",
+        "Product ca02d868, original handoff f327f905 and first correction854d3e5c remain exact",
+        "check.py AST parses without import/execute;cpu-contract3 absent",
+        "Parsed preserved cpu-contract2 XML offline:8 cases,7 pass,1 expected test exception; no corrected test execution"
+      ],
+      "next_root_commands": [
+        "python -B .scratch/inference-paged-reframe-screen-20261026/check.py build",
+        "python -B .scratch/inference-paged-reframe-screen-20261026/check.py run"
+      ],
+      "performance_boundary": "No corrected contract pass, full-report work pass, model run or speedup is claimed. Root has run only these eight CPU tests; model count remains0."
+    },
+    "frozen_corrected_test": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-reframe-single-source-20261026\\test-correction2\\source\\tests\\compute_batch\\paged_arena_test.cc",
+      "bytes": 52578,
+      "sha256": "ee798183de7c85f8c55e1d03c0281ae52d51cb78e1f1eb2472a556a3fa345645"
+    },
+    "source_validation": "Frozen candidate snapshot and corrected private test match actual compiled source hashes. Mutable canonical originals may be restored without changing this evidence.",
+    "source_review": "implementation/independent-review-architecture.json",
+    "full_non_time_differences": 0,
+    "output_ID_differences": 0,
+    "processes": 8,
+    "unmonitored_timing": 6,
+    "independent_memory": 2,
+    "workload": "Ordinary greedy CUDA B2 teacher-forced C1024/N2/R2, prefix off and MTP off; three P256+32 turns per request,99 physical episodes,1728 input rows,198 decisions.",
+    "extra_behavior_or_warmup_processes": 0,
+    "old_samples_pooled": false
+  },
+  "metrics": {
+    "control": {
+      "prefill_tps": {
+        "count": 3,
+        "min": 7577.659914031054,
+        "median": 7698.7657414948935,
+        "max": 7704.697407539868,
+        "samples": [
+          7698.7657414948935,
+          7577.659914031054,
+          7704.697407539868
+        ]
+      },
+      "full_decode_tps": {
+        "count": 3,
+        "min": 156.2888687160479,
+        "median": 159.67571193536858,
+        "max": 159.83213629885213,
+        "samples": [
+          159.67571193536858,
+          156.2888687160479,
+          159.83213629885213
+        ]
+      },
+      "session_output_tps": {
+        "count": 3,
+        "min": 138.3448257358268,
+        "median": 141.23125119475932,
+        "max": 141.3653104521441,
+        "samples": [
+          141.23125119475932,
+          138.3448257358268,
+          141.3653104521441
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "min": 1.4006265,
+        "median": 1.401956,
+        "max": 1.4312064,
+        "samples": [
+          1.401956,
+          1.4312064,
+          1.4006265
+        ]
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "min": 2.7062825,
+        "median": 2.7394443,
+        "max": 2.7509529,
+        "samples": [
+          2.7062825,
+          2.7509529,
+          2.7394443
+        ]
+      },
+      "load_seconds": {
+        "count": 3,
+        "min": 0.819909,
+        "median": 0.828377,
+        "max": 0.837981,
+        "samples": [
+          0.828377,
+          0.837981,
+          0.819909
+        ]
+      },
+      "ready_seconds": {
+        "count": 3,
+        "min": 1.30414,
+        "median": 1.31961,
+        "max": 1.33867,
+        "samples": [
+          1.30414,
+          1.31961,
+          1.33867
+        ]
+      },
+      "model_seconds": {
+        "count": 3,
+        "min": 0.908985,
+        "median": 0.924614,
+        "max": 0.939708,
+        "samples": [
+          0.908985,
+          0.924614,
+          0.939708
+        ]
+      },
+      "shape_prepare_seconds": {
+        "count": 3,
+        "min": 0.394009,
+        "median": 0.394257,
+        "max": 0.397986,
+        "samples": [
+          0.394257,
+          0.394009,
+          0.397986
+        ]
+      }
+    },
+    "candidate": {
+      "prefill_tps": {
+        "count": 3,
+        "min": 7111.769608297065,
+        "median": 7247.7410970984965,
+        "max": 7421.265016465933,
+        "samples": [
+          7247.7410970984965,
+          7111.769608297065,
+          7421.265016465933
+        ]
+      },
+      "full_decode_tps": {
+        "count": 3,
+        "min": 135.0474607419845,
+        "median": 142.70331208441377,
+        "max": 157.38503453576865,
+        "samples": [
+          135.0474607419845,
+          142.70331208441377,
+          157.38503453576865
+        ]
+      },
+      "session_output_tps": {
+        "count": 3,
+        "min": 121.20011620520232,
+        "median": 126.80600084422056,
+        "max": 138.760397306058,
+        "samples": [
+          121.20011620520232,
+          126.80600084422056,
+          138.760397306058
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "min": 1.4269201,
+        "median": 1.5614403,
+        "max": 1.6336618,
+        "samples": [
+          1.6336618,
+          1.5614403,
+          1.4269201
+        ]
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "min": 2.7498666,
+        "median": 2.9147686,
+        "max": 2.941263,
+        "samples": [
+          2.941263,
+          2.9147686,
+          2.7498666
+        ]
+      },
+      "load_seconds": {
+        "count": 3,
+        "min": 0.830823,
+        "median": 0.837176,
+        "max": 0.849547,
+        "samples": [
+          0.830823,
+          0.849547,
+          0.837176
+        ]
+      },
+      "ready_seconds": {
+        "count": 3,
+        "min": 1.30746,
+        "median": 1.3228,
+        "max": 1.35318,
+        "samples": [
+          1.30746,
+          1.35318,
+          1.3228
+        ]
+      },
+      "model_seconds": {
+        "count": 3,
+        "min": 0.908889,
+        "median": 0.917618,
+        "max": 0.936528,
+        "samples": [
+          0.908889,
+          0.936528,
+          0.917618
+        ]
+      },
+      "shape_prepare_seconds": {
+        "count": 3,
+        "min": 0.397605,
+        "median": 0.404328,
+        "max": 0.415735,
+        "samples": [
+          0.397605,
+          0.415735,
+          0.404328
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "prefill_tps": {
+      "candidate_relative_to_control_percent": -5.858401976896888,
+      "ranges_overlap": false
+    },
+    "full_decode_tps": {
+      "candidate_relative_to_control_percent": -10.629293362928404,
+      "ranges_overlap": true
+    },
+    "session_output_tps": {
+      "candidate_relative_to_control_percent": -10.21392236385854,
+      "ranges_overlap": true
+    },
+    "session_seconds": {
+      "candidate_relative_to_control_percent": 11.375842037838545,
+      "ranges_overlap": true
+    },
+    "startup_total_seconds": {
+      "candidate_relative_to_control_percent": 6.3999950646924875,
+      "ranges_overlap": true
+    },
+    "load_seconds": {
+      "candidate_relative_to_control_percent": 1.0621975260056704,
+      "ranges_overlap": true
+    },
+    "ready_seconds": {
+      "candidate_relative_to_control_percent": 0.24173808928396046,
+      "ranges_overlap": true
+    },
+    "model_seconds": {
+      "candidate_relative_to_control_percent": -0.7566400681798036,
+      "ranges_overlap": true
+    },
+    "shape_prepare_seconds": {
+      "candidate_relative_to_control_percent": 2.55442515922355,
+      "ranges_overlap": true
+    }
+  },
+  "memory": {
+    "control": {
+      "sample_count": 319,
+      "running_sample_count": 299,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1160634368,
+        "observed_os_peak_working_set_bytes": 1160638464,
+        "sampled_max_private_commit_bytes": 6039515136,
+        "observed_os_peak_commit_bytes": 6039515136,
+        "sampled_peak_gpu_dedicated_bytes": 4294000640,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4375789568
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 32,
+        "gpu_shared_bytes": 32,
+        "gpu_total_bytes": 32
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 306569528920300,
+        "first_prefill_marker_ns": 306569528963000,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "actual_sample_gaps_ms": {
+        "count": 298,
+        "min": 0.1245,
+        "median": 15.06005,
+        "max": 19.2669
+      }
+    },
+    "candidate": {
+      "sample_count": 319,
+      "running_sample_count": 300,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1159151616,
+        "observed_os_peak_working_set_bytes": 1159159808,
+        "sampled_max_private_commit_bytes": 6039834624,
+        "observed_os_peak_commit_bytes": 6039834624,
+        "sampled_peak_gpu_dedicated_bytes": 4294000640,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4375789568
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 32,
+        "gpu_shared_bytes": 32,
+        "gpu_total_bytes": 32
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 306573003036300,
+        "first_prefill_marker_ns": 306573003077700,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "setup_error": null,
+      "thread_error": null,
+      "actual_sample_gaps_ms": {
+        "count": 299,
+        "min": 0.1382,
+        "median": 14.9843,
+        "max": 16.3394
+      }
+    }
+  },
+  "independent_result_review": {
+    "status": "INDEPENDENT_OFFLINE_RECALCULATION_PASS",
+    "decision": "CLOSED_NOT_MERGED",
+    "scope": "Eight retained fresh processes only. Recomputed from original stdout/stderr, terminal process records and raw MemoryProbe samples; no model/build/profile.",
+    "checks": {
+      "processes": 8,
+      "timing": 6,
+      "independent_memory": 2,
+      "all_summary_metrics_and_samples_exact": true,
+      "all_comparisons_exact": true,
+      "full_non_time_differences": 0,
+      "output_ID_differences": 0,
+      "serial_nonoverlapping_processes": true,
+      "old_samples_pooled": false
+    },
+    "timing": {
+      "control": {
+        "prefill_tps": {
+          "count": 3,
+          "min": 7577.659914031054,
+          "median": 7698.7657414948935,
+          "max": 7704.697407539868,
+          "samples": [
+            7698.7657414948935,
+            7577.659914031054,
+            7704.697407539868
+          ]
+        },
+        "full_decode_tps": {
+          "count": 3,
+          "min": 156.2888687160479,
+          "median": 159.67571193536858,
+          "max": 159.83213629885213,
+          "samples": [
+            159.67571193536858,
+            156.2888687160479,
+            159.83213629885213
+          ]
+        },
+        "session_output_tps": {
+          "count": 3,
+          "min": 138.3448257358268,
+          "median": 141.23125119475932,
+          "max": 141.3653104521441,
+          "samples": [
+            141.23125119475932,
+            138.3448257358268,
+            141.3653104521441
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.4006265,
+          "median": 1.401956,
+          "max": 1.4312064,
+          "samples": [
+            1.401956,
+            1.4312064,
+            1.4006265
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.7062825,
+          "median": 2.7394443,
+          "max": 2.7509529,
+          "samples": [
+            2.7062825,
+            2.7509529,
+            2.7394443
+          ]
+        },
+        "load_seconds": {
+          "count": 3,
+          "min": 0.819909,
+          "median": 0.828377,
+          "max": 0.837981,
+          "samples": [
+            0.828377,
+            0.837981,
+            0.819909
+          ]
+        },
+        "ready_seconds": {
+          "count": 3,
+          "min": 1.30414,
+          "median": 1.31961,
+          "max": 1.33867,
+          "samples": [
+            1.30414,
+            1.31961,
+            1.33867
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 0.908985,
+          "median": 0.924614,
+          "max": 0.939708,
+          "samples": [
+            0.908985,
+            0.924614,
+            0.939708
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.394009,
+          "median": 0.394257,
+          "max": 0.397986,
+          "samples": [
+            0.394257,
+            0.394009,
+            0.397986
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_tps": {
+          "count": 3,
+          "min": 7111.769608297065,
+          "median": 7247.7410970984965,
+          "max": 7421.265016465933,
+          "samples": [
+            7247.7410970984965,
+            7111.769608297065,
+            7421.265016465933
+          ]
+        },
+        "full_decode_tps": {
+          "count": 3,
+          "min": 135.0474607419845,
+          "median": 142.70331208441377,
+          "max": 157.38503453576865,
+          "samples": [
+            135.0474607419845,
+            142.70331208441377,
+            157.38503453576865
+          ]
+        },
+        "session_output_tps": {
+          "count": 3,
+          "min": 121.20011620520232,
+          "median": 126.80600084422056,
+          "max": 138.760397306058,
+          "samples": [
+            121.20011620520232,
+            126.80600084422056,
+            138.760397306058
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.4269201,
+          "median": 1.5614403,
+          "max": 1.6336618,
+          "samples": [
+            1.6336618,
+            1.5614403,
+            1.4269201
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.7498666,
+          "median": 2.9147686,
+          "max": 2.941263,
+          "samples": [
+            2.941263,
+            2.9147686,
+            2.7498666
+          ]
+        },
+        "load_seconds": {
+          "count": 3,
+          "min": 0.830823,
+          "median": 0.837176,
+          "max": 0.849547,
+          "samples": [
+            0.830823,
+            0.849547,
+            0.837176
+          ]
+        },
+        "ready_seconds": {
+          "count": 3,
+          "min": 1.30746,
+          "median": 1.3228,
+          "max": 1.35318,
+          "samples": [
+            1.30746,
+            1.35318,
+            1.3228
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 0.908889,
+          "median": 0.917618,
+          "max": 0.936528,
+          "samples": [
+            0.908889,
+            0.936528,
+            0.917618
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.397605,
+          "median": 0.404328,
+          "max": 0.415735,
+          "samples": [
+            0.397605,
+            0.415735,
+            0.404328
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_tps": {
+        "candidate_relative_to_control_percent": -5.858401976896888,
+        "ranges_overlap": false
+      },
+      "full_decode_tps": {
+        "candidate_relative_to_control_percent": -10.629293362928404,
+        "ranges_overlap": true
+      },
+      "session_output_tps": {
+        "candidate_relative_to_control_percent": -10.21392236385854,
+        "ranges_overlap": true
+      },
+      "session_seconds": {
+        "candidate_relative_to_control_percent": 11.375842037838545,
+        "ranges_overlap": true
+      },
+      "startup_total_seconds": {
+        "candidate_relative_to_control_percent": 6.3999950646924875,
+        "ranges_overlap": true
+      },
+      "load_seconds": {
+        "candidate_relative_to_control_percent": 1.0621975260056704,
+        "ranges_overlap": true
+      },
+      "ready_seconds": {
+        "candidate_relative_to_control_percent": 0.24173808928396046,
+        "ranges_overlap": true
+      },
+      "model_seconds": {
+        "candidate_relative_to_control_percent": -0.7566400681798036,
+        "ranges_overlap": true
+      },
+      "shape_prepare_seconds": {
+        "candidate_relative_to_control_percent": 2.55442515922355,
+        "ranges_overlap": true
+      }
+    },
+    "memory": {
+      "control": {
+        "peaks_bytes": {
+          "sampled_max_working_set_bytes": 1160634368,
+          "observed_os_peak_working_set_bytes": 1160638464,
+          "sampled_max_private_commit_bytes": 6039515136,
+          "observed_os_peak_commit_bytes": 6039515136,
+          "sampled_peak_gpu_dedicated_bytes": 4294000640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4375789568
+        },
+        "total_samples": 319,
+        "running_samples": 299,
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 32,
+          "gpu_shared_bytes": 32,
+          "gpu_total_bytes": 32
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 32,
+          "shared:no_pid_instance": 32
+        },
+        "sample_gaps_ms": {
+          "count": 298,
+          "min": 0.1245,
+          "median": 15.06005,
+          "max": 19.2669
+        },
+        "requested_interval_ms": 10.0,
+        "ready_baseline_unknown": true,
+        "ready_to_first_prefill_received_gap_ns": 42700,
+        "ready_interval_samples": 0,
+        "phase_windows": 12,
+        "phase_zero_samples": [],
+        "phase_bad_boundaries": [],
+        "setup_error": null,
+        "thread_error": null
+      },
+      "candidate": {
+        "peaks_bytes": {
+          "sampled_max_working_set_bytes": 1159151616,
+          "observed_os_peak_working_set_bytes": 1159159808,
+          "sampled_max_private_commit_bytes": 6039834624,
+          "observed_os_peak_commit_bytes": 6039834624,
+          "sampled_peak_gpu_dedicated_bytes": 4294000640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4375789568
+        },
+        "total_samples": 319,
+        "running_samples": 300,
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 32,
+          "gpu_shared_bytes": 32,
+          "gpu_total_bytes": 32
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 32,
+          "shared:no_pid_instance": 32
+        },
+        "sample_gaps_ms": {
+          "count": 299,
+          "min": 0.1382,
+          "median": 14.9843,
+          "max": 16.3394
+        },
+        "requested_interval_ms": 10.0,
+        "ready_baseline_unknown": true,
+        "ready_to_first_prefill_received_gap_ns": 41400,
+        "ready_interval_samples": 0,
+        "phase_windows": 12,
+        "phase_zero_samples": [],
+        "phase_bad_boundaries": [],
+        "setup_error": null,
+        "thread_error": null
+      }
+    },
+    "processes": [
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 46308,
+        "exit": 0,
+        "image_sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 60236,
+        "exit": 0,
+        "image_sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 61160,
+        "exit": 0,
+        "image_sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 61172,
+        "exit": 0,
+        "image_sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 55620,
+        "exit": 0,
+        "image_sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 57028,
+        "exit": 0,
+        "image_sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "memory",
+        "pid": 41512,
+        "exit": 0,
+        "image_sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "memory",
+        "pid": 52932,
+        "exit": 0,
+        "image_sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0",
+        "full_non_time_differences": 0,
+        "output_ID_differences": 0
+      }
+    ],
+    "source_and_build": {
+      "control": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\candidate\\link\\hyle.exe",
+        "bytes": 141462016,
+        "sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4"
+      },
+      "candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\link\\hyle.exe",
+        "bytes": 141464576,
+        "sha256": "0b657fa62d754f75a796b9be06e7926c6798a42f8f74a3bb6380b5fb8fb208f0"
+      },
+      "frozen_candidate_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\source\\paged_arena.cc",
+        "bytes": 54568,
+        "sha256": "ca02d868ae7cdc602c5603365ebd8b919584ab4eaf8ea4fc1e614d9717bc98c5"
+      },
+      "actual_link_delta": [
+        {
+          "index": 68,
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-f32-append-20261025\\cpu1\\compile\\cpu-arena\\unit.obj",
+            "bytes": 1141954,
+            "sha256": "1fa0ed4642dff3d28e8b5400d448fb3fc7d8e097c018ac4ba28e930bbd679223"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\candidate\\compile\\unit.obj",
+            "bytes": 1153743,
+            "sha256": "cc2149bfd2bde7ca652445d37072cb5cd3745ee87a43e5c78456032f23f577bf"
+          }
+        }
+      ],
+      "unchanged_inputs": 221,
+      "mutable_canonical_not_used_to_validate_tested_source": true
+    },
+    "contract_attempts": {
+      "cpu_contract1_compile": {
+        "exit": 2,
+        "pid": 58420,
+        "seconds": 1.2169516999856569
+      },
+      "cpu_contract2_run": {
+        "exit": 1,
+        "pid": 46324,
+        "seconds": 0.41213360003894195
+      },
+      "cpu_contract2_XML_counts": {
+        "tests": 8,
+        "failures": 1,
+        "errors": 0
+      },
+      "cpu_contract3": {
+        "status": "PASS_8_CPU_REFRAME_TESTS",
+        "process": {
+          "exit": 0,
+          "pid": 61808,
+          "seconds": 0.4287159999948926
+        },
+        "counts": {
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "names": [
+          "PagedArena.ReframeCannotExpandASourcesLogicalPrefixThroughItsWholePageGuard",
+          "PagedArena.ReframeComposesHistoriesAndRetainsOnlyItsExactPagePermissions",
+          "PagedArena.ReframeEmptyTargetPinsNoPageAndStillValidatesEverySuppliedSource",
+          "PagedArena.ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances",
+          "PagedArena.ReframeMetadataFailureLeavesSourcesReadyForRetry",
+          "PagedArena.ReframeRejectsInvalidForeignAndMissingSourcesWithoutChangingSnapshots",
+          "PagedArena.ReframeSingleSourceCombinesLogicalAuthorityAcrossRequestsWhenNeeded",
+          "PagedArena.ReframeSingleSourceProjectsARequestWithIndependentCanonicalGuards"
+        ],
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-reframe-screen-20261026\\cpu-contract3\\ready.json",
+          "bytes": 2991,
+          "sha256": "646c04b71fddf49b94d9328e468386a41cc211a4de5dad520e29cb913babf876"
+        },
+        "model_runs": 0,
+        "GPU_runs": 0,
+        "full_graph_suite_run": false
+      }
+    },
+    "judgment": "No net throughput gain. Candidate medians prefill-5.858%,decode-10.629%,combined-10.214%; decode/combined ranges overlap and prefill ranges do not. Close without adoption or refill. This finite window does not establish the cause of the slower observations.",
+    "limits": [
+      "Three timing samples per arm; monitored memory processes do not enter throughput statistics.",
+      "The21.130ms earlier diagnostic interval is not this candidate cost, not a same-run endpoint and not recoverable speed.",
+      "Both ready intervals have zero samples; GPU null counters are no_pid_instance. Peaks are lower bounds and separate maxima are not additive.",
+      "Contract failures/corrections are test-fixture facts, separate from the unchanged ca02 product source and the complete CUDA work gate.",
+      "No peer/model/backend matrix or quality inference. Source is checked from the frozen compiled copy; canonical may be withdrawn without losing tested source."
+    ]
+  },
+  "prior_phase_scope": {
+    "same_instrumented_run": {
+      "page_frame_export_ms": 21.130328,
+      "decode_roots": 96,
+      "root_wall_ms": 1297.582936,
+      "per_root_page_frame_ms": 0.22010758333333333,
+      "interval_fraction_of_root_percent": 1.6284375675544485,
+      "ideal_speedup_if_entire_interval_disappeared_percent": 1.6553946356933524
+    },
+    "independent_unprofiled_B2_window": {
+      "hyle_decode_tps": 163.45160759763934,
+      "peer_decode_tps": 181.1111451742605,
+      "hyle_lower_rate_relative_to_peer_percent": 9.750663085714361,
+      "peer_rate_relative_to_hyle_percent": 10.804138201009783,
+      "rows": 192,
+      "hyle_decode_endpoint_seconds": 1.1746596,
+      "peer_decode_endpoint_seconds": 1.0601225,
+      "time_gap_seconds": 0.11453709999999995
+    },
+    "limits": [
+      "The21.130ms interval contains all take_append/ready/reframe exports; this candidate removes only redundant checks, not the whole interval.",
+      "The1.628% wall fraction and1.655% idealized speedup are only ceilings within this instrumented trace assuming zero replacement cost and no shifted work. They are not unprofiled TPS predictions.",
+      "The diagnostic root and formal B2 endpoint are different instrumented runs/boundaries; do not subtract21.130ms from the formal endpoint or claim a percentage of the measured engine gap is recoverable.",
+      "The diagnostic full report/198IDs gate is incomplete from stream truncation. This fresh screen will require the full uninstrumented report/IDs, without relying on that diagnostic quality status.",
+      "Source-matched sole-object reuse verified; no claim that every newer canonical CPU/SDK path is certified."
+    ]
+  },
+  "limits": [
+    "Three fresh timing samples per arm and one independent memory process each; no sample refill or peer run.",
+    "Memory peaks are sampled lower bounds. Ready/phase gaps or unavailable counters remain unknown, and separate peaks are not additive.",
+    "The older21.130ms page/frame-export interval is a profiled wall envelope, not the cost of this fast path or its recoverable benefit. Do not subtract it from these unprofiled endpoints.",
+    "The host-phase diagnostic had truncated captured stdout; its full report/198IDs gate did not complete. This screen requires complete uninstrumented reports independently.",
+    "Observed lower medians in this finite screen do not identify a cause. No new profiling, replacement samples or sweep was used.",
+    "This does not refresh the reference table, certify other backends/models, or prove that the major B2 gap has been fixed."
+  ],
+  "archive": {
+    "path": "inference-paged-reframe-screen-2026-10-26.zip",
+    "bytes": 506598,
+    "sha256": "9f8833b1d8804648dfc2bea3e95c4bbbe334d4f154ffca794fcb7c8c25220f78",
+    "members": 186,
+    "verification": "ZIP CRC and every member length/SHA256 verified once"
+  },
+  "cleanup": {
+    "status": "REMOVED_14_EXACT_REBUILDABLE_FILES",
+    "files": 14,
+    "logical_bytes": 541726707,
+    "method": "Exact files were first written to repository-root test.ps1; resolved paths, byte lengths and hashes verified before nonrecursive Remove-Item.",
+    "keep": "All candidate source, diffs, original failures, raw results, XML and verified evidence archives; control f36, models, native SDK and dependency caches untouched.",
+    "archive_verified_before_cleanup": true
+  }
+}
