@@ -5,6 +5,8 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
+管理员权限下的[一次CPU栈／线程调度诊断](../../evidence/performance/inference-b2-cpu-critical-2026-10-26.json)已正常结束：仅一个Model TU补`/Z7`并重链本地PDB，其他221输入不变，完整原报告、198个ID及99根／1782区间通过。96个decode墙时1346.646ms，导出调度重建运行1340.863ms、离CPU5.783ms；6个样本CPU编号不一致，已发现问题的运行片段与decode重叠2.706ms，保留不确定性。完成等待1144.970ms中96次`cudaEventSynchronize`占1141.378ms、GPU图区间重叠1135.763ms，不能将这些重叠时间算作独立可回收CPU成本。CPU运行且位于GPU／CUDA API之外共122.228ms仍待参考同设置对齐；稳态replay全桶26.016ms仅占稳态根约2.13%。符号覆盖有限，稀疏公共符号还会跨真实函数边界错误归名，不能从`position_index`标签判断容器热点。当前消费者每Phase单槽、Model episode串行属实，但实际peer也decode→synchronize→采样／发布后才下一episode，尚无“单槽差异直接致慢”的证据。此次无peer新profile或吞吐表，不跨新graph／旧node诊断归因收益。
+
 本轮[12阶段诊断](../../evidence/performance/inference-b2-host-phases-2026-10-26.json)在同次96个decode中记录replay准备60.961ms、batch准备25.062ms、页导出21.130ms。页导出含take_append／ready／reframe，占根墙时约1.63%，不是可全部删掉的CPU成本。99个根及1782个NVTX区间完整，但工具截断stdio，完整报告和198个ID门未完成；仅用于区间定位，不刷新速度表或代签工作通过。现有原生图的132个D2D事件也不能直接当额外工作：参考通过kernel更新cache／状态，须按实际搬运语义对齐。
 
 [同次离线分组与有限源审](../../evidence/research/inference-b2-host-next-2026-10-26.json)进一步确认replay中6个录制根37.772ms、90个非录制根23.189ms（均值257.658µs／根，约占该次decode根总墙时1.79%）。非录制batch准备另17.362ms；两者是独立子桶，不把总61ms当热路径成本。命中现有capture-range时会跳过原生重录；binding/span/qualification已有缓存，seal仍需当前权限，队列容量足时不重复原生分配。此限定链未找到新的可直接实现的大额冗余调用，不新增缓存／参数重绑机制。仍需定位batch等剩余成本，不据此宣称性能已穷尽。

@@ -1,0 +1,4405 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "FULL_WORK_AND_BOUNDED_SCHEDULING_CHECKS_PASS_PARTIAL_SYMBOL_ATTRIBUTION",
+  "source_git_before_commit": "fd5f21da2166d7ec73e51679cf7b99bd77973c6c",
+  "activity": {
+    "profiles": 1,
+    "native_model_processes": 1,
+    "private_Model_TUs": 1,
+    "Graph_or_SDK_or_device_builds": 0,
+    "extra_model_runs": 0,
+    "throughput_measurement": false,
+    "sampling": "1000Hz CPU IP/backtrace + process-tree context switches; graph-level CUDA/NVTX",
+    "streams": "Native stdout/stderr independently captured; no Nsight ProcessStreams extraction"
+  },
+  "identity": {
+    "status": "CPU_CRITICAL_BUILT_NOT_PROFILED",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\link\\consumer.exe",
+      "bytes": 141489664,
+      "sha256": "43549cb269bc19e751df3d5251a28381b0f85ad8825784a2c29d885491d0138f"
+    },
+    "app": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\compile\\unit.obj",
+      "bytes": 32960204,
+      "sha256": "419345582198d7b30fef7c37e9e6e4acf31a76252f79d2b1a4fdc43a9a037153"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 473122,
+      "sha256": "ebc9b9bd7bd0b315cec0c8f99c769643f1b17c1425a9b7170cd2000a6428af87"
+    },
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\logical_trace.h",
+      "bytes": 2565,
+      "sha256": "85fdaa4efa4f00e49ad193f6a713355007666c101783112a1974840ea6c8521d"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\source-pins.json",
+      "bytes": 2535,
+      "sha256": "4d5aa6e1865496f7a4453c34e659f77ab9b88bd9dc84ec03929a14bc978c2e43"
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\compile\\actual-dependencies.json",
+      "bytes": 103458,
+      "sha256": "b230e25c4b0cae1e849eae4cca1532d719b28f9371aa76bdb4006268038a6fde"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\runtime.json",
+      "bytes": 8196,
+      "sha256": "f10ca39dfedf273a8e73e0449f7ace6c537f07589fd60127d5bbcc543afc337a"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\link-inputs.json",
+      "bytes": 56974,
+      "sha256": "874bc74f45de05e2e98dc83d9b277d13eecd9ad38506ea93faef9a9a8dc3f098"
+    },
+    "pdb": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\link\\consumer.pdb",
+      "bytes": 27430912,
+      "sha256": "8ab716a789ba3ae192761df33fbcb060cf2086ec5958207a2ea04c67b2981666"
+    },
+    "map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\link\\consumer.map",
+      "bytes": 60686257,
+      "sha256": "768fecd9bb700e2f6e4b7f6b81d834b953717f8830e4c85a8ed462c97241a1e8"
+    },
+    "symbol_contract": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\symbol-contract.json",
+      "bytes": 7312,
+      "sha256": "2162680259a96ea05f8e18b44270e30dad1872d50ee6f4c49fbcd5124e5a5c42"
+    },
+    "compile": {
+      "exit": 0,
+      "pid": 56648,
+      "seconds": 20.105183799983934
+    },
+    "link": {
+      "exit": 0,
+      "pid": 54740,
+      "seconds": 2.220691099995747
+    },
+    "baseline_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\candidate\\ready.json",
+      "bytes": 2691,
+      "sha256": "96638d2429344688b2bbc84e7837ec53215c900aecd38579c8b989fd8a2716ad"
+    },
+    "replaced": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\batch\\compile\\unit.obj",
+      "bytes": 12694737,
+      "sha256": "465d3f9c8126e0bd012d8f5a80843ec8afd1ed4c3fb5b6093b80c7f5d311edfa"
+    },
+    "unchanged_inputs": 221,
+    "new_host_TUs": 1,
+    "SDK_Graph_native_device_builds": 0,
+    "model_runs": 0,
+    "limitations": [
+      "Not a benchmark image; instrumentation/debug-info/link layout may perturb timing.",
+      "Other retained TUs may lack private symbols/source lines/inlined-frame information.",
+      "ICF/inlining may merge or eliminate functions; an attributed public frame is not proof of exclusive source cost.",
+      "No SDK/native/device/Graph rebuild and no promise of complete CPU or CUDA stack symbolization."
+    ]
+  },
+  "work": {
+    "status": "PASS_COMPLETE_ORIGINAL_REPORT_AND_198_IDS",
+    "native_process": {
+      "exit": 0,
+      "native_pid": 62400,
+      "wrapper_pid": 57868,
+      "timeout": false,
+      "seconds": 4.360967900021933,
+      "config": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\wrapper-config.json",
+        "bytes": 1040,
+        "sha256": "d7541b026c1c4763567862c47606bcfa633c7b9149e9dda0b4b6e62afc2922d2"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\native-stdout.log",
+        "bytes": 33959,
+        "sha256": "f3829b7d72baed77792356df501a9a4841386053b0c685e887e854b879b171e9"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\native-stderr.log",
+        "bytes": 49443,
+        "sha256": "4db26176ab87d14cfc137462b2864485f3ed3ea108a64d04449e7b505d100cdb"
+      },
+      "authoritative_streams": "Independent binary file handles; Nsight ProcessStreams is not used"
+    },
+    "complete_nontime_report_equal": true,
+    "complete_ids_equal": true,
+    "decisions": 198,
+    "physical_episodes": 99,
+    "prefill": 3,
+    "decode": 96,
+    "rows": 1728,
+    "R": 2,
+    "complete_marker": [
+      "99",
+      "1782",
+      "0"
+    ],
+    "reference": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\runs\\timing-02-candidate\\complete-nontime-report.json",
+      "bytes": 47439,
+      "sha256": "8e00515a8a45ca0ab5b23528c297b1a355c66cdad173c43b320141e441553b03"
+    },
+    "scope": "Original full B2 work gate; no added normalization exclusions"
+  },
+  "trace_quality": {
+    "status": "PASS_99_CLOSED_ORIGINAL_NATIVE_ROOTS_CPU_QUALITY_PENDING_ANALYSIS",
+    "native_pid": 62400,
+    "wrapper_pid": 57868,
+    "roots": 99,
+    "ranges": 1782,
+    "runtime_activity_rows": 39886,
+    "raw_relevant_table_counts": {
+      "CUPTI_ACTIVITY_KIND_GRAPH_TRACE": 99,
+      "DIAGNOSTIC_EVENT": 19,
+      "ENUM_DIAGNOSTIC_SEVERITY_LEVEL": 5,
+      "ENUM_DIAGNOSTIC_SOURCE_TYPE": 4,
+      "ENUM_DIAGNOSTIC_TIMESTAMP_SOURCE": 3,
+      "ENUM_SAMPLING_THREAD_STATE": 11,
+      "ENUM_SCHEDULING_THREAD_BLOCK": 62,
+      "PROCESSES": 521,
+      "ProcessStreams": 3,
+      "SAMPLING_CALLCHAINS": 7250647,
+      "SCHED_EVENTS": 793850,
+      "TARGET_INFO_CUDA_CONTEXT_INFO": 1,
+      "ThreadNames": 4110
+    },
+    "sampling_and_loss_status": "Not inferred from successful profiler exit; raw sample/backtrace/ctxsw/loss tables require independent offline analysis",
+    "limits": "One instrumented Hyle diagnostic; not a throughput measurement, not a peer comparison. Wrapper samples must be excluded by actual native PID/TID."
+  },
+  "phase_summary": {
+    "decode": {
+      "ROOT": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 1346.646315,
+          "running_ms": 1340.863315,
+          "off_cpu_ms": 5.783,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1139.549168,
+          "cuda_api_union_ms": 1223.136507,
+          "running_inside_cuda_api_ms": 1217.965207,
+          "running_overlapping_gpu_ms": 1135.402868,
+          "running_outside_gpu_and_cuda_api_ms": 122.228109
+        },
+        "positive_samples": 1340,
+        "unresolved_leaf_samples": 1247
+      },
+      "hyle/prepare": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 119.166763,
+          "running_ms": 117.720363,
+          "off_cpu_ms": 1.4464,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.345984,
+          "cuda_api_union_ms": 41.485441,
+          "running_inside_cuda_api_ms": 40.541241,
+          "running_overlapping_gpu_ms": 0.345984,
+          "running_outside_gpu_and_cuda_api_ms": 77.163635
+        },
+        "positive_samples": 116,
+        "unresolved_leaf_samples": 62
+      },
+      "hyle/prepare_replay": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 61.168803,
+          "running_ms": 60.535003,
+          "off_cpu_ms": 0.6338,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 18.845007,
+          "running_inside_cuda_api_ms": 18.565007,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 41.969996
+        },
+        "positive_samples": 66,
+        "unresolved_leaf_samples": 36
+      },
+      "hyle/submit": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 43.231199,
+          "running_ms": 43.171099,
+          "off_cpu_ms": 0.0601,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 3.141075,
+          "cuda_api_union_ms": 35.537115,
+          "running_inside_cuda_api_ms": 35.484815,
+          "running_overlapping_gpu_ms": 3.130975,
+          "running_outside_gpu_and_cuda_api_ms": 7.237896
+        },
+        "positive_samples": 37,
+        "unresolved_leaf_samples": 36
+      },
+      "hyle/wait_publish": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 1183.883389,
+          "running_ms": 1179.606889,
+          "off_cpu_ms": 4.2765,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1135.965196,
+          "cuda_api_union_ms": 1146.113951,
+          "running_inside_cuda_api_ms": 1141.939151,
+          "running_overlapping_gpu_ms": 1131.828996,
+          "running_outside_gpu_and_cuda_api_ms": 37.558527
+        },
+        "positive_samples": 1187,
+        "unresolved_leaf_samples": 1149
+      },
+      "hyle/completion_wait": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 1144.969804,
+          "running_ms": 1140.812604,
+          "off_cpu_ms": 4.1572,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1135.763108,
+          "cuda_api_union_ms": 1141.377989,
+          "running_inside_cuda_api_ms": 1137.239189,
+          "running_overlapping_gpu_ms": 1131.626908,
+          "running_outside_gpu_and_cuda_api_ms": 3.527862
+        },
+        "positive_samples": 1141,
+        "unresolved_leaf_samples": 1139
+      },
+      "hyle/postwait_publish": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 38.131575,
+          "running_ms": 38.012275,
+          "off_cpu_ms": 0.1193,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.13843,
+          "cuda_api_union_ms": 4.735962,
+          "running_inside_cuda_api_ms": 4.699962,
+          "running_overlapping_gpu_ms": 0.13843,
+          "running_outside_gpu_and_cuda_api_ms": 33.312313
+        },
+        "positive_samples": 46,
+        "unresolved_leaf_samples": 10
+      },
+      "hyle/prep/setup_inputs": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 11.184093,
+          "running_ms": 11.154293,
+          "off_cpu_ms": 0.0298,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.056608,
+          "cuda_api_union_ms": 10.101885,
+          "running_inside_cuda_api_ms": 10.072085,
+          "running_overlapping_gpu_ms": 0.056608,
+          "running_outside_gpu_and_cuda_api_ms": 1.082083
+        },
+        "positive_samples": 10,
+        "unresolved_leaf_samples": 10
+      },
+      "hyle/prep/snapshot_layout_reframe": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 14.226505,
+          "running_ms": 14.197405,
+          "off_cpu_ms": 0.0291,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 14.197405
+        },
+        "positive_samples": 11,
+        "unresolved_leaf_samples": 2
+      },
+      "hyle/prep/state_bindings": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 4.135964,
+          "running_ms": 4.114564,
+          "off_cpu_ms": 0.0214,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 4.114564
+        },
+        "positive_samples": 5,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/prep/batch_prepare": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 27.983841,
+          "running_ms": 27.251541,
+          "off_cpu_ms": 0.7323,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.289376,
+          "cuda_api_union_ms": 12.538549,
+          "running_inside_cuda_api_ms": 11.904149,
+          "running_overlapping_gpu_ms": 0.289376,
+          "running_outside_gpu_and_cuda_api_ms": 15.33203
+        },
+        "positive_samples": 24,
+        "unresolved_leaf_samples": 14
+      },
+      "hyle/prep/replay_report": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 0.17998,
+          "running_ms": 0.17998,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.17998
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/readback_select": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 5.406042,
+          "running_ms": 5.362942,
+          "off_cpu_ms": 0.0431,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.13843,
+          "cuda_api_union_ms": 4.735962,
+          "running_inside_cuda_api_ms": 4.699962,
+          "running_overlapping_gpu_ms": 0.13843,
+          "running_outside_gpu_and_cuda_api_ms": 0.66298
+        },
+        "positive_samples": 8,
+        "unresolved_leaf_samples": 7
+      },
+      "hyle/post/gdn_state_retain": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 3.79752,
+          "running_ms": 3.79752,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 3.79752
+        },
+        "positive_samples": 5,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/page_frame_export": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 22.042008,
+          "running_ms": 21.969608,
+          "off_cpu_ms": 0.0724,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 21.969608
+        },
+        "positive_samples": 29,
+        "unresolved_leaf_samples": 3
+      },
+      "hyle/post/ledger_tails": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 0.170993,
+          "running_ms": 0.170993,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.170993
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/unbind": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 2.685057,
+          "running_ms": 2.685057,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 2.685057
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/head_publish_detach": {
+        "count": 96,
+        "milliseconds": {
+          "wall_ms": 3.810823,
+          "running_ms": 3.807023,
+          "off_cpu_ms": 0.0038,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 3.807023
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 0
+      }
+    },
+    "nonrecording_decode": {
+      "ROOT": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 1223.208763,
+          "running_ms": 1218.680163,
+          "off_cpu_ms": 4.5286,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1069.461576,
+          "cuda_api_union_ms": 1122.461677,
+          "running_inside_cuda_api_ms": 1118.327177,
+          "running_overlapping_gpu_ms": 1065.435776,
+          "running_outside_gpu_and_cuda_api_ms": 99.701301
+        },
+        "positive_samples": 1218,
+        "unresolved_leaf_samples": 1134
+      },
+      "hyle/prepare": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 72.798559,
+          "running_ms": 72.480759,
+          "off_cpu_ms": 0.3178,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.294496,
+          "cuda_api_union_ms": 14.796049,
+          "running_inside_cuda_api_ms": 14.762849,
+          "running_overlapping_gpu_ms": 0.294496,
+          "running_outside_gpu_and_cuda_api_ms": 57.703185
+        },
+        "positive_samples": 71,
+        "unresolved_leaf_samples": 23
+      },
+      "hyle/prepare_replay": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 26.015711,
+          "running_ms": 25.857411,
+          "off_cpu_ms": 0.1583,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.055346,
+          "running_inside_cuda_api_ms": 0.055346,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 25.802065
+        },
+        "positive_samples": 29,
+        "unresolved_leaf_samples": 4
+      },
+      "hyle/submit": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 40.140554,
+          "running_ms": 40.085754,
+          "off_cpu_ms": 0.0548,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 3.091838,
+          "cuda_api_union_ms": 32.979121,
+          "running_inside_cuda_api_ms": 32.932121,
+          "running_overlapping_gpu_ms": 3.081738,
+          "running_outside_gpu_and_cuda_api_ms": 6.714235
+        },
+        "positive_samples": 35,
+        "unresolved_leaf_samples": 34
+      },
+      "hyle/wait_publish": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 1109.944333,
+          "running_ms": 1105.788333,
+          "off_cpu_ms": 4.156,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1065.981425,
+          "cuda_api_union_ms": 1074.686507,
+          "running_inside_cuda_api_ms": 1070.632207,
+          "running_overlapping_gpu_ms": 1061.965725,
+          "running_outside_gpu_and_cuda_api_ms": 35.052381
+        },
+        "positive_samples": 1112,
+        "unresolved_leaf_samples": 1077
+      },
+      "hyle/completion_wait": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 1073.556527,
+          "running_ms": 1069.519827,
+          "off_cpu_ms": 4.0367,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 1065.791721,
+          "cuda_api_union_ms": 1070.263688,
+          "running_inside_cuda_api_ms": 1066.245388,
+          "running_overlapping_gpu_ms": 1061.776021,
+          "running_outside_gpu_and_cuda_api_ms": 3.23032
+        },
+        "positive_samples": 1070,
+        "unresolved_leaf_samples": 1068
+      },
+      "hyle/postwait_publish": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 35.660107,
+          "running_ms": 35.540807,
+          "off_cpu_ms": 0.1193,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.130078,
+          "cuda_api_union_ms": 4.422819,
+          "running_inside_cuda_api_ms": 4.386819,
+          "running_overlapping_gpu_ms": 0.130078,
+          "running_outside_gpu_and_cuda_api_ms": 31.153988
+        },
+        "positive_samples": 42,
+        "unresolved_leaf_samples": 9
+      },
+      "hyle/prep/setup_inputs": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 10.071752,
+          "running_ms": 10.041952,
+          "off_cpu_ms": 0.0298,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.053152,
+          "cuda_api_union_ms": 9.07389,
+          "running_inside_cuda_api_ms": 9.04409,
+          "running_overlapping_gpu_ms": 0.053152,
+          "running_outside_gpu_and_cuda_api_ms": 0.997737
+        },
+        "positive_samples": 9,
+        "unresolved_leaf_samples": 9
+      },
+      "hyle/prep/snapshot_layout_reframe": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 13.347826,
+          "running_ms": 13.318726,
+          "off_cpu_ms": 0.0291,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 13.318726
+        },
+        "positive_samples": 11,
+        "unresolved_leaf_samples": 2
+      },
+      "hyle/prep/state_bindings": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 3.836563,
+          "running_ms": 3.824763,
+          "off_cpu_ms": 0.0118,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 3.824763
+        },
+        "positive_samples": 5,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/prep/batch_prepare": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 19.104005,
+          "running_ms": 19.015205,
+          "off_cpu_ms": 0.0888,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.241344,
+          "cuda_api_union_ms": 5.666813,
+          "running_inside_cuda_api_ms": 5.663413,
+          "running_overlapping_gpu_ms": 0.241344,
+          "running_outside_gpu_and_cuda_api_ms": 13.337192
+        },
+        "positive_samples": 17,
+        "unresolved_leaf_samples": 8
+      },
+      "hyle/prep/replay_report": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 0.162931,
+          "running_ms": 0.162931,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.162931
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/readback_select": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 5.048813,
+          "running_ms": 5.005713,
+          "off_cpu_ms": 0.0431,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.130078,
+          "cuda_api_union_ms": 4.422819,
+          "running_inside_cuda_api_ms": 4.386819,
+          "running_overlapping_gpu_ms": 0.130078,
+          "running_outside_gpu_and_cuda_api_ms": 0.618894
+        },
+        "positive_samples": 7,
+        "unresolved_leaf_samples": 7
+      },
+      "hyle/post/gdn_state_retain": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 3.544221,
+          "running_ms": 3.544221,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 3.544221
+        },
+        "positive_samples": 4,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/page_frame_export": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 20.622987,
+          "running_ms": 20.550587,
+          "off_cpu_ms": 0.0724,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 20.550587
+        },
+        "positive_samples": 27,
+        "unresolved_leaf_samples": 2
+      },
+      "hyle/post/ledger_tails": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 0.160906,
+          "running_ms": 0.160906,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.160906
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/unbind": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 2.509557,
+          "running_ms": 2.509557,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 2.509557
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/head_publish_detach": {
+        "count": 90,
+        "milliseconds": {
+          "wall_ms": 3.567374,
+          "running_ms": 3.563574,
+          "off_cpu_ms": 0.0038,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 3.563574
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 0
+      }
+    },
+    "recording_decode": {
+      "ROOT": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 123.437552,
+          "running_ms": 122.183152,
+          "off_cpu_ms": 1.2544,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 70.087592,
+          "cuda_api_union_ms": 100.67483,
+          "running_inside_cuda_api_ms": 99.63803,
+          "running_overlapping_gpu_ms": 69.967092,
+          "running_outside_gpu_and_cuda_api_ms": 22.526808
+        },
+        "positive_samples": 122,
+        "unresolved_leaf_samples": 113
+      },
+      "hyle/prepare": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 46.368204,
+          "running_ms": 45.239604,
+          "off_cpu_ms": 1.1286,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.051488,
+          "cuda_api_union_ms": 26.689392,
+          "running_inside_cuda_api_ms": 25.778392,
+          "running_overlapping_gpu_ms": 0.051488,
+          "running_outside_gpu_and_cuda_api_ms": 19.46045
+        },
+        "positive_samples": 45,
+        "unresolved_leaf_samples": 39
+      },
+      "hyle/prepare_replay": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 35.153092,
+          "running_ms": 34.677592,
+          "off_cpu_ms": 0.4755,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 18.789661,
+          "running_inside_cuda_api_ms": 18.509661,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 16.167931
+        },
+        "positive_samples": 37,
+        "unresolved_leaf_samples": 32
+      },
+      "hyle/submit": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 3.090645,
+          "running_ms": 3.085345,
+          "off_cpu_ms": 0.0053,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.049237,
+          "cuda_api_union_ms": 2.557994,
+          "running_inside_cuda_api_ms": 2.552694,
+          "running_overlapping_gpu_ms": 0.049237,
+          "running_outside_gpu_and_cuda_api_ms": 0.523661
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 2
+      },
+      "hyle/wait_publish": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 73.939056,
+          "running_ms": 73.818556,
+          "off_cpu_ms": 0.1205,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 69.983771,
+          "cuda_api_union_ms": 71.427444,
+          "running_inside_cuda_api_ms": 71.306944,
+          "running_overlapping_gpu_ms": 69.863271,
+          "running_outside_gpu_and_cuda_api_ms": 2.506146
+        },
+        "positive_samples": 75,
+        "unresolved_leaf_samples": 72
+      },
+      "hyle/completion_wait": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 71.413277,
+          "running_ms": 71.292777,
+          "off_cpu_ms": 0.1205,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 69.971387,
+          "cuda_api_union_ms": 71.114301,
+          "running_inside_cuda_api_ms": 70.993801,
+          "running_overlapping_gpu_ms": 69.850887,
+          "running_outside_gpu_and_cuda_api_ms": 0.297542
+        },
+        "positive_samples": 71,
+        "unresolved_leaf_samples": 71
+      },
+      "hyle/postwait_publish": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 2.471468,
+          "running_ms": 2.471468,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.008352,
+          "cuda_api_union_ms": 0.313143,
+          "running_inside_cuda_api_ms": 0.313143,
+          "running_overlapping_gpu_ms": 0.008352,
+          "running_outside_gpu_and_cuda_api_ms": 2.158325
+        },
+        "positive_samples": 4,
+        "unresolved_leaf_samples": 1
+      },
+      "hyle/prep/setup_inputs": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 1.112341,
+          "running_ms": 1.112341,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.003456,
+          "cuda_api_union_ms": 1.027995,
+          "running_inside_cuda_api_ms": 1.027995,
+          "running_overlapping_gpu_ms": 0.003456,
+          "running_outside_gpu_and_cuda_api_ms": 0.084346
+        },
+        "positive_samples": 1,
+        "unresolved_leaf_samples": 1
+      },
+      "hyle/prep/snapshot_layout_reframe": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.878679,
+          "running_ms": 0.878679,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.878679
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/prep/state_bindings": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.299401,
+          "running_ms": 0.289801,
+          "off_cpu_ms": 0.0096,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.289801
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/prep/batch_prepare": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 8.879836,
+          "running_ms": 8.236336,
+          "off_cpu_ms": 0.6435,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.048032,
+          "cuda_api_union_ms": 6.871736,
+          "running_inside_cuda_api_ms": 6.240736,
+          "running_overlapping_gpu_ms": 0.048032,
+          "running_outside_gpu_and_cuda_api_ms": 1.994838
+        },
+        "positive_samples": 7,
+        "unresolved_leaf_samples": 6
+      },
+      "hyle/prep/replay_report": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.017049,
+          "running_ms": 0.017049,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.017049
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/readback_select": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.357229,
+          "running_ms": 0.357229,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.008352,
+          "cuda_api_union_ms": 0.313143,
+          "running_inside_cuda_api_ms": 0.313143,
+          "running_overlapping_gpu_ms": 0.008352,
+          "running_outside_gpu_and_cuda_api_ms": 0.044086
+        },
+        "positive_samples": 1,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/gdn_state_retain": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.253299,
+          "running_ms": 0.253299,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.253299
+        },
+        "positive_samples": 1,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/page_frame_export": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 1.419021,
+          "running_ms": 1.419021,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 1.419021
+        },
+        "positive_samples": 2,
+        "unresolved_leaf_samples": 1
+      },
+      "hyle/post/ledger_tails": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.010087,
+          "running_ms": 0.010087,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.010087
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/unbind": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.1755,
+          "running_ms": 0.1755,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.1755
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      },
+      "hyle/post/head_publish_detach": {
+        "count": 6,
+        "milliseconds": {
+          "wall_ms": 0.243449,
+          "running_ms": 0.243449,
+          "off_cpu_ms": 0.0,
+          "unknown_ms": 0.0,
+          "observed_gpu_union_ms": 0.0,
+          "cuda_api_union_ms": 0.0,
+          "running_inside_cuda_api_ms": 0.0,
+          "running_overlapping_gpu_ms": 0.0,
+          "running_outside_gpu_and_cuda_api_ms": 0.243449
+        },
+        "positive_samples": 0,
+        "unresolved_leaf_samples": 0
+      }
+    }
+  },
+  "findings": [
+    "All96 decode roots:1346.646315ms wall,1340.863315ms reconstructed scheduled-onCPU,5.783ms offCPU(0.4294%). Six sample CPU-ID discrepancies affect observed slices overlapping2.7062ms decode; excluding those slices leaves1338.157115ms inferred running. This is finite sensitivity, not a universal ETW error bound. OS descheduling is not supported as the dominant cost.",
+    "Completion wait:1144.969804ms wall,1135.763108ms overlaps observed GPU graph intervals and1141.377989ms CUDA APIs. These are overlapping intervals, not additive or recoverable CPU overhead.",
+    "The90 nonrecording replay-preparation scopes total26.015711ms,2.12684% of their1223.208763ms root wall. This bounds the whole bucket, not a removable or exclusive function cost.",
+    "Driver-module leaves dominate decode samples; most leaf frames remain unresolved. Public-symbol names can cover gaps outside their real PE function boundaries, so SmallVector position_index sample labels do not establish an expensive container loop.",
+    "The Qwen consumer has one Invocation per shape Phase and one active Model episode, with realR2 batching. The exact peer consumer also serializes decode/synchronize/sample/publication before the next episode; a one-slot difference is not established as the cause."
+  ],
+  "symbol_coverage": {
+    "status": "LOCAL_ONLY_RESOLUTION_COVERAGE_COUNTS",
+    "native_pid": 62400,
+    "root_global_tid": 282521875041380,
+    "raw": {
+      "native_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 14469,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4155,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 394227,
+        "unresolved_frames": 394227,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 18624,
+        "leaf_frames": 18624,
+        "unresolved_leaf_frames": 18624,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "native_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4155,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 86061,
+        "unresolved_frames": 86061,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4155,
+        "leaf_frames": 4155,
+        "unresolved_leaf_frames": 4155,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 8297,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 2814,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 278080,
+        "unresolved_frames": 278080,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 11111,
+        "leaf_frames": 11111,
+        "unresolved_leaf_frames": 11111,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 2814,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 59533,
+        "unresolved_frames": 59533,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 2814,
+        "leaf_frames": 2814,
+        "unresolved_leaf_frames": 2814,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "table_counts": {
+        "COMPOSITE_EVENTS": 476937,
+        "SAMPLING_CALLCHAINS": 7250647,
+        "SCHED_EVENTS": 793850,
+        "NVTX_EVENTS": 1783
+      }
+    },
+    "resolved": {
+      "native_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 14469,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4155,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 394227,
+        "unresolved_frames": 310590,
+        "resolved_frames": 83637,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 18624,
+        "leaf_frames": 18624,
+        "unresolved_leaf_frames": 18266,
+        "resolved_leaf_frames": 358,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "native_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4155,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 86061,
+        "unresolved_frames": 56734,
+        "resolved_frames": 29327,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4155,
+        "leaf_frames": 4155,
+        "unresolved_leaf_frames": 3797,
+        "resolved_leaf_frames": 358,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 8297,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 2814,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 278080,
+        "unresolved_frames": 218643,
+        "resolved_frames": 59437,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 11111,
+        "leaf_frames": 11111,
+        "unresolved_leaf_frames": 10899,
+        "resolved_leaf_frames": 212,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 2814,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 59533,
+        "unresolved_frames": 37486,
+        "resolved_frames": 22047,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 2814,
+        "leaf_frames": 2814,
+        "unresolved_leaf_frames": 2602,
+        "resolved_leaf_frames": 212,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "table_counts": {
+        "COMPOSITE_EVENTS": 476937,
+        "SAMPLING_CALLCHAINS": 7250647,
+        "SCHED_EVENTS": 793850,
+        "NVTX_EVENTS": 1783
+      }
+    },
+    "interpretation": "Frame counts are coverage, not CPU time. cpuCycles=0 state samples kept separate from positive-weight periodic samples. All frames in one sample may contain multiple unresolved entries; frame and leaf fractions must not be substituted for time fractions.",
+    "servers": [],
+    "model_runs": 0,
+    "profile_runs": 0,
+    "preserved_counts": {
+      "COMPOSITE_EVENTS": true,
+      "SAMPLING_CALLCHAINS": true,
+      "SCHED_EVENTS": true,
+      "NVTX_EVENTS": true
+    }
+  },
+  "sample_schedule_quality": {
+    "status": "TIMESTAMP_RUNNING_COVERAGE_PASS_WITH_SIX_CPU_ID_DISCREPANCIES",
+    "root_tid": 282521875041380,
+    "root_window_positive_samples": 1569,
+    "decode_positive_samples": 1340,
+    "CPU_or_running_mismatches": [
+      {
+        "sample": {
+          "id": 139691,
+          "start": 3150770200,
+          "cpu": 4,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 144304,
+          "start": 3149870100,
+          "cpu": 0,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 144321,
+          "start": 3150822400,
+          "cpu": 0,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 26,
+          "index": 25,
+          "T": 1,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 1,
+          "p1": 1,
+          "c0": 280,
+          "c1": 280,
+          "kind": "decode"
+        }
+      },
+      {
+        "sample": {
+          "id": 139785,
+          "start": 3303919100,
+          "cpu": 4,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 444483,
+          "start": 3303246800,
+          "cpu": 10,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 444486,
+          "start": 3303957400,
+          "cpu": 10,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 2,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 35,
+          "index": 34,
+          "T": 1,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 3,
+          "p1": 3,
+          "c0": 544,
+          "c1": 544,
+          "kind": "decode"
+        }
+      },
+      {
+        "sample": {
+          "id": 145976,
+          "start": 3841593200,
+          "cpu": 4,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 786149,
+          "start": 3841264900,
+          "cpu": 1,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 786150,
+          "start": 3841646300,
+          "cpu": 1,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 2,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 69,
+          "index": 68,
+          "T": 1,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 5,
+          "p1": 5,
+          "c0": 833,
+          "c1": 833,
+          "kind": "decode"
+        }
+      },
+      {
+        "sample": {
+          "id": 224967,
+          "start": 3873630900,
+          "cpu": 2,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 345086,
+          "start": 3872972700,
+          "cpu": 14,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 345088,
+          "start": 3873634600,
+          "cpu": 14,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 71,
+          "index": 70,
+          "T": 1,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 5,
+          "p1": 5,
+          "c0": 835,
+          "c1": 835,
+          "kind": "decode"
+        }
+      },
+      {
+        "sample": {
+          "id": 424907,
+          "start": 2730676000,
+          "cpu": 3,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 370272,
+          "start": 2727411200,
+          "cpu": 4,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 370283,
+          "start": 2730717700,
+          "cpu": 4,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 2,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 1,
+          "index": 0,
+          "T": 256,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 0,
+          "p1": 0,
+          "c0": 0,
+          "c1": 0,
+          "kind": "prefill"
+        }
+      },
+      {
+        "sample": {
+          "id": 474790,
+          "start": 3761469200,
+          "cpu": 1,
+          "threadState": 1,
+          "globalTid": 282521875041380,
+          "cpuCycles": 1
+        },
+        "predecessor": {
+          "rowid": 383848,
+          "start": 3760716000,
+          "cpu": 4,
+          "isSchedIn": 1,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": null
+        },
+        "successor": {
+          "rowid": 383853,
+          "start": 3761515800,
+          "cpu": 4,
+          "isSchedIn": 0,
+          "globalTid": 282521875041380,
+          "threadState": 1,
+          "threadBlock": 0
+        },
+        "root_meta": {
+          "seq": 67,
+          "index": 66,
+          "T": 256,
+          "R": 2,
+          "m0": 0,
+          "m1": 1,
+          "p0": 4,
+          "p1": 4,
+          "c0": 576,
+          "c1": 576,
+          "kind": "prefill"
+        }
+      }
+    ],
+    "affected_scheduled_intervals": [
+      [
+        2727411200,
+        2730717700
+      ],
+      [
+        3149870100,
+        3150822400
+      ],
+      [
+        3303246800,
+        3303957400
+      ],
+      [
+        3760716000,
+        3761515800
+      ],
+      [
+        3841264900,
+        3841646300
+      ],
+      [
+        3872972700,
+        3873634600
+      ]
+    ],
+    "affected_interval_total_ns": 6812500,
+    "affected_decode_root_running_ns": 2706200,
+    "affected_prefill_root_running_ns": 4106300,
+    "source_sqlite": ".scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\native-scope-resolved.sqlite",
+    "interpretation": "Allpositiveweight samples fallinside a valid scheduledrunning interval;6sampleCPUids differfrom thatintervalCPU. Exportedtiming arithmetic is retained, but theseaffected intervals are suspect for preciseCPUidentity/continuity, not certified exactCPUselftime. Excludingalltheir decode overlap conservatively leaves mostcompletionpolling conclusion unchanged. No cause for discrepancy asserted andno rerun.",
+    "policy": "CPU id is checked against actualpreceding SCHED event, not merely wall-timecoverage. Zero-weighttransition stacks excluded."
+  },
+  "cuda_api_costs": {
+    "status": "ORIGINAL_SIBLING_BUCKETS_DISJOINT_AND_CUDA_API_WALL_COUNTS",
+    "source_sqlite": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\native-scope-resolved.sqlite",
+    "roots_checked": 99,
+    "disjoint_prepare_and_postwait_children_each_root": "PASS",
+    "groups": {
+      "all_decode": {
+        "roots": 96,
+        "phases": {
+          "hyle/prepare": [
+            {
+              "api": "cudaGraphInstantiateWithFlags_v11040",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 9463771
+            },
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 198,
+              "clipped_API_wall_sum_ns": 6456089
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 192,
+              "clipped_API_wall_sum_ns": 3850165
+            },
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 3146255
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 690,
+              "clipped_API_wall_sum_ns": 2672389
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 2671628
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 3348,
+              "clipped_API_wall_sum_ns": 2577936
+            },
+            {
+              "api": "cuKernelGetFunction",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 1373201
+            },
+            {
+              "api": "cuMemFree_v2",
+              "overlapping_call_count": 24,
+              "clipped_API_wall_sum_ns": 1146688
+            },
+            {
+              "api": "cuMemAlloc_v2",
+              "overlapping_call_count": 43,
+              "clipped_API_wall_sum_ns": 1107286
+            },
+            {
+              "api": "cudaGraphExecDestroy_v10000",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 981995
+            },
+            {
+              "api": "cudaGraphDestroy_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 974316
+            },
+            {
+              "api": "cudaThreadExchangeStreamCaptureMode_v10010",
+              "overlapping_call_count": 4860,
+              "clipped_API_wall_sum_ns": 852980
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 756071
+            },
+            {
+              "api": "cuLaunchKernel",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 667949
+            },
+            {
+              "api": "cudaGraphExecUpdate_v10020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 559901
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 2442,
+              "clipped_API_wall_sum_ns": 477698
+            },
+            {
+              "api": "cudaStreamEndCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 474410
+            },
+            {
+              "api": "cuKernelGetName",
+              "overlapping_call_count": 3096,
+              "clipped_API_wall_sum_ns": 300101
+            },
+            {
+              "api": "cudaMemcpy2DAsync_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 159398
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 120351
+            },
+            {
+              "api": "cuStreamGetGreenCtx",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 114993
+            },
+            {
+              "api": "cuMemHostAlloc",
+              "overlapping_call_count": 25,
+              "clipped_API_wall_sum_ns": 110501
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 78472
+            },
+            {
+              "api": "cudaLaunchKernelExC_v11060",
+              "overlapping_call_count": 72,
+              "clipped_API_wall_sum_ns": 74672
+            },
+            {
+              "api": "cuMemsetD8_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 70452
+            },
+            {
+              "api": "cuMemFreeHost",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 64166
+            },
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 58542
+            },
+            {
+              "api": "cudaStreamBeginCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 39506
+            },
+            {
+              "api": "cudaEventCreateWithFlags_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 33700
+            },
+            {
+              "api": "cudaHostAlloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 22643
+            },
+            {
+              "api": "cuLibraryGetKernel",
+              "overlapping_call_count": 3,
+              "clipped_API_wall_sum_ns": 15684
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 9360
+            },
+            {
+              "api": "cuGetProcAddress_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 2172
+            }
+          ],
+          "hyle/prepare_replay": [
+            {
+              "api": "cudaGraphInstantiateWithFlags_v11040",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 9463771
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 3348,
+              "clipped_API_wall_sum_ns": 2577936
+            },
+            {
+              "api": "cuKernelGetFunction",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 1373201
+            },
+            {
+              "api": "cudaGraphDestroy_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 974316
+            },
+            {
+              "api": "cudaThreadExchangeStreamCaptureMode_v10010",
+              "overlapping_call_count": 4860,
+              "clipped_API_wall_sum_ns": 852980
+            },
+            {
+              "api": "cuLaunchKernel",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 667949
+            },
+            {
+              "api": "cudaGraphExecUpdate_v10020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 559901
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 576,
+              "clipped_API_wall_sum_ns": 486241
+            },
+            {
+              "api": "cudaStreamEndCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 474410
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 2436,
+              "clipped_API_wall_sum_ns": 471586
+            },
+            {
+              "api": "cuKernelGetName",
+              "overlapping_call_count": 3096,
+              "clipped_API_wall_sum_ns": 300101
+            },
+            {
+              "api": "cudaMemcpy2DAsync_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 159398
+            },
+            {
+              "api": "cuStreamGetGreenCtx",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 114993
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 94033
+            },
+            {
+              "api": "cudaLaunchKernelExC_v11060",
+              "overlapping_call_count": 72,
+              "clipped_API_wall_sum_ns": 74672
+            },
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 58542
+            },
+            {
+              "api": "cudaStreamBeginCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 39506
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 33573
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 21981
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 20873
+            },
+            {
+              "api": "cuLibraryGetKernel",
+              "overlapping_call_count": 3,
+              "clipped_API_wall_sum_ns": 15684
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 9360
+            }
+          ],
+          "hyle/submit": [
+            {
+              "api": "cudaGraphLaunch_v10000",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 28373227
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 3538831
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 2032435
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 1353068
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 239554
+            }
+          ],
+          "hyle/wait_publish": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 1141377989
+            },
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 4735962
+            }
+          ],
+          "hyle/completion_wait": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 1141377989
+            }
+          ],
+          "hyle/postwait_publish": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 4735962
+            }
+          ],
+          "hyle/prep/setup_inputs": [
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 192,
+              "clipped_API_wall_sum_ns": 6251720
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 192,
+              "clipped_API_wall_sum_ns": 3850165
+            }
+          ],
+          "hyle/prep/snapshot_layout_reframe": [],
+          "hyle/prep/state_bindings": [],
+          "hyle/prep/batch_prepare": [
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 3146255
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 210,
+              "clipped_API_wall_sum_ns": 2650755
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 114,
+              "clipped_API_wall_sum_ns": 2186148
+            },
+            {
+              "api": "cuMemFree_v2",
+              "overlapping_call_count": 24,
+              "clipped_API_wall_sum_ns": 1146688
+            },
+            {
+              "api": "cuMemAlloc_v2",
+              "overlapping_call_count": 43,
+              "clipped_API_wall_sum_ns": 1107286
+            },
+            {
+              "api": "cudaGraphExecDestroy_v10000",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 981995
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 210,
+              "clipped_API_wall_sum_ns": 722498
+            },
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 204369
+            },
+            {
+              "api": "cuMemHostAlloc",
+              "overlapping_call_count": 25,
+              "clipped_API_wall_sum_ns": 110501
+            },
+            {
+              "api": "cuMemsetD8_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 70452
+            },
+            {
+              "api": "cuMemFreeHost",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 64166
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 56491
+            },
+            {
+              "api": "cudaEventCreateWithFlags_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 33700
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 26318
+            },
+            {
+              "api": "cudaHostAlloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 22643
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 6112
+            },
+            {
+              "api": "cuGetProcAddress_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 2172
+            }
+          ],
+          "hyle/prep/replay_report": [],
+          "hyle/post/readback_select": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 4735962
+            }
+          ],
+          "hyle/post/gdn_state_retain": [],
+          "hyle/post/page_frame_export": [],
+          "hyle/post/ledger_tails": [],
+          "hyle/post/unbind": [],
+          "hyle/post/head_publish_detach": []
+        }
+      },
+      "nonrecording_decode": {
+        "roots": 90,
+        "phases": {
+          "hyle/prepare": [
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 5455603
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 3618287
+            },
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 2927208
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1759531
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 646550
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 333524
+            },
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 55346
+            }
+          ],
+          "hyle/prepare_replay": [
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 55346
+            }
+          ],
+          "hyle/submit": [
+            {
+              "api": "cudaGraphLaunch_v10000",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 26308391
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 3310876
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1927103
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1209601
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 223150
+            }
+          ],
+          "hyle/wait_publish": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1070263688
+            },
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 4422819
+            }
+          ],
+          "hyle/completion_wait": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1070263688
+            }
+          ],
+          "hyle/postwait_publish": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 4422819
+            }
+          ],
+          "hyle/prep/setup_inputs": [
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 5455603
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 3618287
+            }
+          ],
+          "hyle/prep/snapshot_layout_reframe": [],
+          "hyle/prep/state_bindings": [],
+          "hyle/prep/batch_prepare": [
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 2927208
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 1759531
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 646550
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 180,
+              "clipped_API_wall_sum_ns": 333524
+            }
+          ],
+          "hyle/prep/replay_report": [],
+          "hyle/post/readback_select": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 90,
+              "clipped_API_wall_sum_ns": 4422819
+            }
+          ],
+          "hyle/post/gdn_state_retain": [],
+          "hyle/post/page_frame_export": [],
+          "hyle/post/ledger_tails": [],
+          "hyle/post/unbind": [],
+          "hyle/post/head_publish_detach": []
+        }
+      },
+      "recording_decode": {
+        "roots": 6,
+        "phases": {
+          "hyle/prepare": [
+            {
+              "api": "cudaGraphInstantiateWithFlags_v11040",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 9463771
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 3348,
+              "clipped_API_wall_sum_ns": 2577936
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 36,
+              "clipped_API_wall_sum_ns": 2338104
+            },
+            {
+              "api": "cuKernelGetFunction",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 1373201
+            },
+            {
+              "api": "cuMemFree_v2",
+              "overlapping_call_count": 24,
+              "clipped_API_wall_sum_ns": 1146688
+            },
+            {
+              "api": "cuMemAlloc_v2",
+              "overlapping_call_count": 43,
+              "clipped_API_wall_sum_ns": 1107286
+            },
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 18,
+              "clipped_API_wall_sum_ns": 1000486
+            },
+            {
+              "api": "cudaGraphExecDestroy_v10000",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 981995
+            },
+            {
+              "api": "cudaGraphDestroy_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 974316
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 600,
+              "clipped_API_wall_sum_ns": 912858
+            },
+            {
+              "api": "cudaThreadExchangeStreamCaptureMode_v10010",
+              "overlapping_call_count": 4860,
+              "clipped_API_wall_sum_ns": 852980
+            },
+            {
+              "api": "cuLaunchKernel",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 667949
+            },
+            {
+              "api": "cudaGraphExecUpdate_v10020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 559901
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 2442,
+              "clipped_API_wall_sum_ns": 477698
+            },
+            {
+              "api": "cudaStreamEndCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 474410
+            },
+            {
+              "api": "cuKernelGetName",
+              "overlapping_call_count": 3096,
+              "clipped_API_wall_sum_ns": 300101
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 231878
+            },
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 219047
+            },
+            {
+              "api": "cudaMemcpy2DAsync_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 159398
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 120351
+            },
+            {
+              "api": "cuStreamGetGreenCtx",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 114993
+            },
+            {
+              "api": "cuMemHostAlloc",
+              "overlapping_call_count": 25,
+              "clipped_API_wall_sum_ns": 110501
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 36,
+              "clipped_API_wall_sum_ns": 109521
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 78472
+            },
+            {
+              "api": "cudaLaunchKernelExC_v11060",
+              "overlapping_call_count": 72,
+              "clipped_API_wall_sum_ns": 74672
+            },
+            {
+              "api": "cuMemsetD8_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 70452
+            },
+            {
+              "api": "cuMemFreeHost",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 64166
+            },
+            {
+              "api": "cudaStreamBeginCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 39506
+            },
+            {
+              "api": "cudaEventCreateWithFlags_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 33700
+            },
+            {
+              "api": "cudaHostAlloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 22643
+            },
+            {
+              "api": "cuLibraryGetKernel",
+              "overlapping_call_count": 3,
+              "clipped_API_wall_sum_ns": 15684
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 9360
+            },
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 3196
+            },
+            {
+              "api": "cuGetProcAddress_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 2172
+            }
+          ],
+          "hyle/prepare_replay": [
+            {
+              "api": "cudaGraphInstantiateWithFlags_v11040",
+              "overlapping_call_count": 4,
+              "clipped_API_wall_sum_ns": 9463771
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 3348,
+              "clipped_API_wall_sum_ns": 2577936
+            },
+            {
+              "api": "cuKernelGetFunction",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 1373201
+            },
+            {
+              "api": "cudaGraphDestroy_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 974316
+            },
+            {
+              "api": "cudaThreadExchangeStreamCaptureMode_v10010",
+              "overlapping_call_count": 4860,
+              "clipped_API_wall_sum_ns": 852980
+            },
+            {
+              "api": "cuLaunchKernel",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 667949
+            },
+            {
+              "api": "cudaGraphExecUpdate_v10020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 559901
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 576,
+              "clipped_API_wall_sum_ns": 486241
+            },
+            {
+              "api": "cudaStreamEndCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 474410
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 2436,
+              "clipped_API_wall_sum_ns": 471586
+            },
+            {
+              "api": "cuKernelGetName",
+              "overlapping_call_count": 3096,
+              "clipped_API_wall_sum_ns": 300101
+            },
+            {
+              "api": "cudaMemcpy2DAsync_v3020",
+              "overlapping_call_count": 216,
+              "clipped_API_wall_sum_ns": 159398
+            },
+            {
+              "api": "cuStreamGetGreenCtx",
+              "overlapping_call_count": 1122,
+              "clipped_API_wall_sum_ns": 114993
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 94033
+            },
+            {
+              "api": "cudaLaunchKernelExC_v11060",
+              "overlapping_call_count": 72,
+              "clipped_API_wall_sum_ns": 74672
+            },
+            {
+              "api": "cudaStreamBeginCapture_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 39506
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 33573
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 21981
+            },
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 20873
+            },
+            {
+              "api": "cuLibraryGetKernel",
+              "overlapping_call_count": 3,
+              "clipped_API_wall_sum_ns": 15684
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 9360
+            },
+            {
+              "api": "cudaGetDeviceProperties_v12000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 3196
+            }
+          ],
+          "hyle/submit": [
+            {
+              "api": "cudaGraphLaunch_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 2064836
+            },
+            {
+              "api": "cudaMemsetAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 227955
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 143467
+            },
+            {
+              "api": "cudaLaunchKernel_v7000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 105332
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 16404
+            }
+          ],
+          "hyle/wait_publish": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 71114301
+            },
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 313143
+            }
+          ],
+          "hyle/completion_wait": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 71114301
+            }
+          ],
+          "hyle/postwait_publish": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 313143
+            }
+          ],
+          "hyle/prep/setup_inputs": [
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 796117
+            },
+            {
+              "api": "cuMemcpyHtoD_v2",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 231878
+            }
+          ],
+          "hyle/prep/snapshot_layout_reframe": [],
+          "hyle/prep/state_bindings": [],
+          "hyle/prep/batch_prepare": [
+            {
+              "api": "cudaEventSynchronize_v3020",
+              "overlapping_call_count": 30,
+              "clipped_API_wall_sum_ns": 2317231
+            },
+            {
+              "api": "cuMemFree_v2",
+              "overlapping_call_count": 24,
+              "clipped_API_wall_sum_ns": 1146688
+            },
+            {
+              "api": "cuMemAlloc_v2",
+              "overlapping_call_count": 43,
+              "clipped_API_wall_sum_ns": 1107286
+            },
+            {
+              "api": "cudaGraphExecDestroy_v10000",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 981995
+            },
+            {
+              "api": "cudaMemcpyAsync_v3020",
+              "overlapping_call_count": 24,
+              "clipped_API_wall_sum_ns": 426617
+            },
+            {
+              "api": "cuMemcpyBatchAsync_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 219047
+            },
+            {
+              "api": "cuStreamSynchronize",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 204369
+            },
+            {
+              "api": "cuMemHostAlloc",
+              "overlapping_call_count": 25,
+              "clipped_API_wall_sum_ns": 110501
+            },
+            {
+              "api": "cudaEventRecord_v3020",
+              "overlapping_call_count": 30,
+              "clipped_API_wall_sum_ns": 75948
+            },
+            {
+              "api": "cuMemsetD8_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 70452
+            },
+            {
+              "api": "cuMemFreeHost",
+              "overlapping_call_count": 12,
+              "clipped_API_wall_sum_ns": 64166
+            },
+            {
+              "api": "cudaFree_v3020",
+              "overlapping_call_count": 2,
+              "clipped_API_wall_sum_ns": 56491
+            },
+            {
+              "api": "cudaEventCreateWithFlags_v3020",
+              "overlapping_call_count": 96,
+              "clipped_API_wall_sum_ns": 33700
+            },
+            {
+              "api": "cudaMalloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 26318
+            },
+            {
+              "api": "cudaHostAlloc_v3020",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 22643
+            },
+            {
+              "api": "cudaStreamIsCapturing_v10000",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 6112
+            },
+            {
+              "api": "cuGetProcAddress_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 2172
+            }
+          ],
+          "hyle/prep/replay_report": [],
+          "hyle/post/readback_select": [
+            {
+              "api": "cuMemcpyDtoH_v2",
+              "overlapping_call_count": 6,
+              "clipped_API_wall_sum_ns": 313143
+            }
+          ],
+          "hyle/post/gdn_state_retain": [],
+          "hyle/post/page_frame_export": [],
+          "hyle/post/ledger_tails": [],
+          "hyle/post/unbind": [],
+          "hyle/post/head_publish_detach": []
+        }
+      }
+    },
+    "limits": [
+      "API wall spans can include active polling, GPU wait, driver work and profiler interception; never equal exclusive CPUselftime or recoverable overhead.",
+      "These are runtime API rows; sums may overlap when nested. The main analyzer uses interval unions for its CPU/GPU/API metrics.",
+      "Function symbols from sparse COFF public records have independently documented ambiguous extents: see symbol-attribution-limits.json.",
+      "One Hyle graph-level run, not a new reference comparison or throughput gain."
+    ]
+  },
+  "symbol_name_limit": {
+    "status": "RESOLVED_PUBLIC_SYMBOL_NAME_IS_NOT_A_FUNCTION_SELF_TIME_PROOF",
+    "position_index": {
+      "source": {
+        "path": "include\\hyle\\container\\small_vector.h",
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee",
+        "lines": [
+          553,
+          562
+        ]
+      },
+      "source_algorithm": "O(1): null check, bounded pointer assertions, pointer difference; no scan or traversal",
+      "preferred_start": "0x1400dc680",
+      "same_start_MAP_symbols": [
+        "0001:000db680       ?position_index@?$SmallVector@I$0A@VAllocatorRef@mem@hyle@@@container@hyle@@AEBA_KPEBI_N@Z 00000001400dc680 f i unit.obj"
+      ],
+      "PE_exception_runtime_bounds": [
+        {
+          "begin_RVA": "0xdc680",
+          "end_RVA": "0xdc80e",
+          "bytes": 398,
+          "unwind_RVA": "0x2b35f3c"
+        }
+      ],
+      "next_public_symbol_in_model_object_map": [
+        {
+          "preferred_address": "0x1400e9570",
+          "line": "0001:000e8570       ?prepare_replay@Invocation@graph@hyle@@QEAA?AVStatus@3@V?$span@$$CBUQueueBinding@graph@hyle@@$0?0@std@@UReplayOptions@23@@Z 00000001400e9570 f   unit.obj",
+          "gap_from_position_index_start": 52976
+        }
+      ],
+      "positive_leaf_samples": [
+        {
+          "id": 39406,
+          "start": 2965601400,
+          "originalIP": 140701415103692,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799dddccc"
+        },
+        {
+          "id": 139817,
+          "start": 3320001700,
+          "originalIP": 140701415099187,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddcb33"
+        },
+        {
+          "id": 221190,
+          "start": 3426117000,
+          "originalIP": 140701415103866,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799dddd7a"
+        },
+        {
+          "id": 450955,
+          "start": 3441919400,
+          "originalIP": 140701415098772,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddc994"
+        },
+        {
+          "id": 141812,
+          "start": 3485688100,
+          "originalIP": 140701415103866,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799dddd7a"
+        },
+        {
+          "id": 451318,
+          "start": 3594433000,
+          "originalIP": 140701415105752,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799dde4d8"
+        },
+        {
+          "id": 451399,
+          "start": 3608204300,
+          "originalIP": 140701415099187,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddcb33"
+        },
+        {
+          "id": 144386,
+          "start": 3745648400,
+          "originalIP": 140701415099187,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddcb33"
+        },
+        {
+          "id": 145673,
+          "start": 3819933900,
+          "originalIP": 140701415105791,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799dde4ff"
+        },
+        {
+          "id": 146931,
+          "start": 3953019400,
+          "originalIP": 140701415099202,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddcb42"
+        },
+        {
+          "id": 42346,
+          "start": 4086591500,
+          "originalIP": 140701415099187,
+          "symbol": "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const ",
+          "originalIP_hex": "0x7ff799ddcb33"
+        }
+      ],
+      "originalIP_span_bytes": 7019
+    },
+    "conclusion": "The11 positive leaf samples bearing position_index span7019actualIPbytes, exceeding the PE runtime function extent at that public start. They cannot all be exclusively executing that small function. Existing linked objects lack full private function/line records; nearest public symbol attribution and code folding can give misleading Hyle function labels even when unresolved=0.",
+    "limitations": [
+      "No actual runtime load base is assumed or inferred here, so individualsampleRVA/function remapping is not claimed.",
+      "No same-start publicalias exists at this one MAP address; this does not prove all other frames uniquely attributed.",
+      "Do not propose a SmallVector scan optimization, convert9steady samples to9ms, or treat BufferView::fill/LeaseAccess label frequency as exact function CPUselftime.",
+      "Module identity, originalphase timestamps, validated schedulingintervals andCUDAAPIwall attribution remain supported. Exact native functions require bounded symbols/line/extent mapping when needed."
+    ]
+  },
+  "single_slot_review": {
+    "status": "BOUNDED_READ_ONLY_SOURCE_REVIEW_COMPLETE",
+    "scope": "Current Qwen3.5 Model consumer dfaa, f36 ordinary B2 run, retained peer632 ordinary B2 consumer and its current NVTX-instrumented diagnostic variant only. No claims about all models, future server scheduling or all backend concurrency.",
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 470192,
+        "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer-batch.cc",
+        "bytes": 35025,
+        "sha256": "5d3b839a853e0b9fc9caa1325262489094f72df88b36b0094e696db8f4f6bb25"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-attribution-20261026\\peer\\source\\peer-batch.cc",
+        "bytes": 36639,
+        "sha256": "3e76849d9bc4309ef4fff45d22befaac61279268742d4ff246786187816f448c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\pins.json",
+        "bytes": 17270,
+        "sha256": "8ab4e72d2d28e2fdd88db2b8b5d64371283deeea2e3e5a5d0e707bb329a34712"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-attribution-20261026\\source-pins.json",
+        "bytes": 3765,
+        "sha256": "8c41adbbb5cf730df47f9f26d45581bab63a5e53ebc572f9d70f40dde36aa887"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\runs\\timing-02-candidate\\stderr.log",
+        "bytes": 49744,
+        "sha256": "8091b181b0ba8d2296e8bc83f8a108f1c512f0506f82620edd40b3d05c036c93"
+      }
+    ],
+    "runtime_slot_evidence": [
+      {
+        "line": 10,
+        "text": "planned_replay T=256 slot_count=1 slot0_uses=3 slot0=prefer-capture"
+      },
+      {
+        "line": 12,
+        "text": "planned_replay T=1 slot_count=1 slot0_uses=96 slot0=prefer-capture"
+      }
+    ],
+    "findings": [
+      {
+        "claim": "Each current Model has a single execution slot",
+        "assessment": "TRUE_FOR_THIS_CURRENT_QWEN_MODEL_BUT_MORE_PRECISELY_ONE_SLOT_PER_PREPARED_PHASE_AND_ONE_GLOBAL_ACTIVE_EPISODE",
+        "evidence": [
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 998,
+            "last": 1001,
+            "lines": [
+              {
+                "line": 998,
+                "text": "// Model admission holds the whole carrier through native retirement and final"
+              },
+              {
+                "line": 999,
+                "text": "// readback. Batch width and retained state boundaries do not add in-flight work."
+              },
+              {
+                "line": 1000,
+                "text": "constexpr std::size_t execution_slot_count = 1;"
+              },
+              {
+                "line": 1001,
+                "text": "using ResourceRetention = inference::RetainedResources<ColdResources>;"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 1046,
+            "last": 1060,
+            "lines": [
+              {
+                "line": 1046,
+                "text": "struct Phase final : FamilyPorts {"
+              },
+              {
+                "line": 1047,
+                "text": "  inference::QueueBindings queues;"
+              },
+              {
+                "line": 1048,
+                "text": "  std::size_t query_rows = 0;"
+              },
+              {
+                "line": 1049,
+                "text": "  c::BatchSchema attention_schema;"
+              },
+              {
+                "line": 1050,
+                "text": "  c::BatchLayoutVersion attention_layout;"
+              },
+              {
+                "line": 1051,
+                "text": "  // The selected child is shared immutable model data, not copied per session."
+              },
+              {
+                "line": 1052,
+                "text": "  const FamilyChild *child = nullptr;"
+              },
+              {
+                "line": 1053,
+                "text": "  const Family *family = nullptr;"
+              },
+              {
+                "line": 1054,
+                "text": "  std::size_t variant_index = 0;"
+              },
+              {
+                "line": 1055,
+                "text": "  std::array<g::Invocation, execution_slot_count> slots;"
+              },
+              {
+                "line": 1056,
+                "text": "  std::array<ResourceRetention, execution_slot_count> retirement;"
+              },
+              {
+                "line": 1057,
+                "text": "  std::array<HiddenOutputCopy, execution_slot_count> hidden_output;"
+              },
+              {
+                "line": 1058,
+                "text": "  std::array<std::size_t, execution_slot_count> planned_slot_uses{};"
+              },
+              {
+                "line": 1059,
+                "text": "  std::array<std::size_t, execution_slot_count> preparation_uses{};"
+              },
+              {
+                "line": 1060,
+                "text": "  std::array<g::ReplayMode, execution_slot_count> replay_modes{};"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 1535,
+            "last": 1548,
+            "lines": [
+              {
+                "line": 1535,
+                "text": "  cache::VersionCount &snapshot_versions;"
+              },
+              {
+                "line": 1536,
+                "text": "  bool &carrier_borrowed;"
+              },
+              {
+                "line": 1537,
+                "text": "  static constexpr std::size_t slot_index = 0;"
+              },
+              {
+                "line": 1538,
+                "text": "  cache::PageInventory &page_inventory, &draft_inventory;"
+              },
+              {
+                "line": 1539,
+                "text": "  std::vector<cache::StatePools> &state_pools;"
+              },
+              {
+                "line": 1540,
+                "text": "  c::LeasePool &hidden_pool;"
+              },
+              {
+                "line": 1541,
+                "text": "  // Family/child owners are shared by sessions; no session addresses enter compile."
+              },
+              {
+                "line": 1542,
+                "text": "  std::map<FamilyKey, std::unique_ptr<Family>> &families, &probe_families;"
+              },
+              {
+                "line": 1543,
+                "text": "  std::vector<FamilyKey> admitted_exact_keys;"
+              },
+              {
+                "line": 1544,
+                "text": "  std::size_t exact_admissions = 0, exact_evictions = 0;"
+              },
+              {
+                "line": 1545,
+                "text": "  // One carrier per actually prepared finite shape. Serial admission borrows"
+              },
+              {
+                "line": 1546,
+                "text": "  // its one slot and shared IO through native retirement and all result reads."
+              },
+              {
+                "line": 1547,
+                "text": "  std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;"
+              },
+              {
+                "line": 1548,
+                "text": "  std::map<ExecutionShape, std::array<std::size_t, execution_slot_count>> planned_slot_uses;"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 1566,
+            "last": 1569,
+            "lines": [
+              {
+                "line": 1566,
+                "text": "  // Destroy episode pins/borrowed links before carriers and the raw policy"
+              },
+              {
+                "line": 1567,
+                "text": "  // owners referenced by Snapshot/PageRef, including exceptional shutdown."
+              },
+              {
+                "line": 1568,
+                "text": "  InputPreparationScratch input_scratch;"
+              },
+              {
+                "line": 1569,
+                "text": "  std::unique_ptr<StepState> active_step;"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3622,
+            "last": 3625,
+            "lines": [
+              {
+                "line": 3622,
+                "text": "    if (requests.empty() || requests.size() > cache_plan.active_sequences)"
+              },
+              {
+                "line": 3623,
+                "text": "      throw std::runtime_error(\"batch width exceeds the configured active sequence capacity\");"
+              },
+              {
+                "line": 3624,
+                "text": "    if (carrier_borrowed || active_step)"
+              },
+              {
+                "line": 3625,
+                "text": "      throw std::runtime_error(\"the original execution carrier has not retired\");"
+              }
+            ]
+          }
+        ],
+        "interpretation": "There can be several finite-shape Phase instances with one Invocation each. A Model-global carrier_borrowed/active_step forbids more than one admitted episode even across Phase instances."
+      },
+      {
+        "claim": "Therefore requests are each evaluated serially, not truly batched",
+        "assessment": "FALSE_FOR_MATCHED_R2_EPISODES",
+        "evidence": [
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3638,
+            "last": 3652,
+            "lines": [
+              {
+                "line": 3638,
+                "text": "    for (std::size_t j = 0; j < requests.size(); ++j) {"
+              },
+              {
+                "line": 3639,
+                "text": "      const auto &request = requests[j];"
+              },
+              {
+                "line": 3640,
+                "text": "      if (!request.session || request.session->model_ != this)"
+              },
+              {
+                "line": 3641,
+                "text": "        throw std::runtime_error(\"batch session belongs to another model\");"
+              },
+              {
+                "line": 3642,
+                "text": "      const auto &session = *request.session;"
+              },
+              {
+                "line": 3643,
+                "text": "      const auto &stop_policy = inference::request_stop_policy(request.stop_policy);"
+              },
+              {
+                "line": 3644,
+                "text": "      stop_policy.validate(vocabulary);"
+              },
+              {
+                "line": 3645,
+                "text": "      if (role != GraphRole::kText && !stop_policy.is_default())"
+              },
+              {
+                "line": 3646,
+                "text": "        throw std::runtime_error(\"nondefault request stop policy is ordinary Text only\");"
+              },
+              {
+                "line": 3647,
+                "text": "      if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error(\"batch requires one cold sampling configuration\");"
+              },
+              {
+                "line": 3648,
+                "text": "      if (completion == TextCompletion::kEmitNext) validate_logits_inputs(selected_sampler, request.logits, vocabulary);"
+              },
+              {
+                "line": 3649,
+                "text": "      if (session.stopping || session.failed || session.pending)"
+              },
+              {
+                "line": 3650,
+                "text": "        throw std::runtime_error(\"batch session is stopped, failed or already pending\");"
+              },
+              {
+                "line": 3651,
+                "text": "      if (!supplied_tokens || request.ids.size() != supplied_tokens || tokens > capacity - session.length())"
+              },
+              {
+                "line": 3652,
+                "text": "        throw std::runtime_error(\"batch requires equal nonempty chunks within each remaining context\");"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3682,
+            "last": 3705,
+            "lines": [
+              {
+                "line": 3682,
+                "text": "    active_step = std::move(candidate);"
+              },
+              {
+                "line": 3683,
+                "text": "    auto &step = *active_step;"
+              },
+              {
+                "line": 3684,
+                "text": "    carrier_borrowed = true; step.candidate_admission = &carrier_borrowed;"
+              },
+              {
+                "line": 3685,
+                "text": "    step.step_start = step_start; step.input_tokens = tokens;"
+              },
+              {
+                "line": 3686,
+                "text": "    for (auto &member : step.members) member.session->pending = &step;"
+              },
+              {
+                "line": 3687,
+                "text": "    try {"
+              },
+              {
+                "line": 3688,
+                "text": "      const auto width = requests.size(), slot = slot_index;"
+              },
+              {
+                "line": 3689,
+                "text": "      if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);"
+              },
+              {
+                "line": 3690,
+                "text": "      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion, sampling_index);"
+              },
+              {
+                "line": 3691,
+                "text": "      auto &run = phase.slots[slot];"
+              },
+              {
+                "line": 3692,
+                "text": "      step.phase = &phase; step.run = &run; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());"
+              },
+              {
+                "line": 3693,
+                "text": "      initialize_slot(phase, slot);"
+              },
+              {
+                "line": 3694,
+                "text": "      auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;"
+              },
+              {
+                "line": 3695,
+                "text": "      packed_ids.clear(); positions.clear();"
+              },
+              {
+                "line": 3696,
+                "text": "      for (const auto &request : requests) {"
+              },
+              {
+                "line": 3697,
+                "text": "        if (width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());"
+              },
+              {
+                "line": 3698,
+                "text": "        for (std::size_t row = 0; row < tokens; ++row)"
+              },
+              {
+                "line": 3699,
+                "text": "          positions.push_back(static_cast<std::int32_t>(request.session->length() + row));"
+              },
+              {
+                "line": 3700,
+                "text": "      }"
+              },
+              {
+                "line": 3701,
+                "text": "      for (std::size_t j = 0; j < width; ++j) {"
+              },
+              {
+                "line": 3702,
+                "text": "        if (!phase.logits_bias_ports.empty()) check(run.bind(phase.logits_bias_ports[j], requests[j].logits.bias.description, requests[j].logits.bias.lease));"
+              },
+              {
+                "line": 3703,
+                "text": "        if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));"
+              },
+              {
+                "line": 3704,
+                "text": "      }"
+              },
+              {
+                "line": 3705,
+                "text": "      phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 6878,
+            "last": 6901,
+            "lines": [
+              {
+                "line": 6878,
+                "text": "            requests.push_back({run.session, work.ids});"
+              },
+              {
+                "line": 6879,
+                "text": "            owners.push_back(run.session.get()); members.push_back(call.session);"
+              },
+              {
+                "line": 6880,
+                "text": "            outputs.push_back(qwen35::evaluation_output(model, run.session,"
+              },
+              {
+                "line": 6881,
+                "text": "                {run.observations[call.call].name, &run.trace, trace_states,"
+              },
+              {
+                "line": 6882,
+                "text": "                    multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}},"
+              },
+              {
+                "line": 6883,
+                "text": "                &work.complete_seconds, &run.endpoint, &run.observations[call.call],"
+              },
+              {
+                "line": 6884,
+                "text": "                preparation_diagnostics ? &run.preparation[call.call] : nullptr));"
+              },
+              {
+                "line": 6885,
+                "text": "          }"
+              },
+              {
+                "line": 6886,
+                "text": "          const auto batch_start = qwen35::Clock::now();"
+              },
+              {
+                "line": 6887,
+                "text": "          make_batch_room(owners);"
+              },
+              {
+                "line": 6888,
+                "text": "          inference::PreparationObservation preparation;"
+              },
+              {
+                "line": 6889,
+                "text": "          model.prepare_evaluations(requests, preparation_diagnostics ? &preparation : nullptr);"
+              },
+              {
+                "line": 6890,
+                "text": "          if (preparation_diagnostics) for (const auto j : selected)"
+              },
+              {
+                "line": 6891,
+                "text": "            runs[wave.calls[j].session].preparation[wave.calls[j].call] = preparation;"
+              },
+              {
+                "line": 6892,
+                "text": "          model.submit_evaluations();"
+              },
+              {
+                "line": 6893,
+                "text": "          model.finish_evaluations(outputs, next_ids, [&](std::size_t at, const qwen35::CompletedEvaluationView &view) {"
+              },
+              {
+                "line": 6894,
+                "text": "            const auto &call = wave.calls[selected[at]]; const auto &run = runs[call.session];"
+              },
+              {
+                "line": 6895,
+                "text": "            qwen35::observe_completed_evaluation(model, outputs[at],"
+              },
+              {
+                "line": 6896,
+                "text": "                {run.observations[call.call].name, &run.trace, trace_states,"
+              },
+              {
+                "line": 6897,
+                "text": "                    multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}}, view);"
+              },
+              {
+                "line": 6898,
+                "text": "          });"
+              },
+              {
+                "line": 6899,
+                "text": "          const auto batch_endpoint = runs[members.front()].endpoint;"
+              },
+              {
+                "line": 6900,
+                "text": "          record_batch(kind, query_rows, members, false,"
+              },
+              {
+                "line": 6901,
+                "text": "              std::chrono::duration<double>(batch_endpoint - batch_start).count());"
+              }
+            ]
+          }
+        ],
+        "interpretation": "One admitted episode carries a span of distinct sessions; width R is passed into the prepared child and packed token/position inputs. Actual B2 journey uses R2; slot count is not batch width."
+      },
+      {
+        "claim": "Steps of this Model consumer are serial through the host publication endpoint",
+        "assessment": "TRUE",
+        "evidence": [
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3892,
+            "last": 3902,
+            "lines": [
+              {
+                "line": 3892,
+                "text": "  void submit_evaluations() {"
+              },
+              {
+                "line": 3893,
+                "text": "    if (!active_step || !active_step->prepared || active_step->submitted || active_step->cancelled || !active_step->run)"
+              },
+              {
+                "line": 3894,
+                "text": "      throw std::runtime_error(\"batch is not prepared or was already submitted/cancelled\");"
+              },
+              {
+                "line": 3895,
+                "text": "    for (const auto &member : active_step->members)"
+              },
+              {
+                "line": 3896,
+                "text": "      if (member.session->stopping || member.session->failed)"
+              },
+              {
+                "line": 3897,
+                "text": "        throw std::runtime_error(\"batch participant stopped before submission\");"
+              },
+              {
+                "line": 3898,
+                "text": "    const auto queues = inference::queue_span(active_step->phase->queues);"
+              },
+              {
+                "line": 3899,
+                "text": "    auto &step = *active_step;"
+              },
+              {
+                "line": 3900,
+                "text": "    step.start = Clock::now(); step.submitted = true;"
+              },
+              {
+                "line": 3901,
+                "text": "    step.completion = submit_retained(*step.run, queues, step.phase->retirement[slot_index]);"
+              },
+              {
+                "line": 3902,
+                "text": "    step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3911,
+            "last": 3920,
+            "lines": [
+              {
+                "line": 3911,
+                "text": "  template<class Select, class Complete, class Observe>"
+              },
+              {
+                "line": 3912,
+                "text": "  void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,"
+              },
+              {
+                "line": 3913,
+                "text": "                                  std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe) {"
+              },
+              {
+                "line": 3914,
+                "text": "    if (!active_step || outputs.size() != active_step->members.size() || next_ids.size() != outputs.size() ||"
+              },
+              {
+                "line": 3915,
+                "text": "        active_step->cancelled || !active_step->submitted || !active_step->completion.valid())"
+              },
+              {
+                "line": 3916,
+                "text": "      throw std::runtime_error(\"finish requires its original complete noncancelled batch\");"
+              },
+              {
+                "line": 3917,
+                "text": "    for (std::size_t j = 0; j < outputs.size(); ++j)"
+              },
+              {
+                "line": 3918,
+                "text": "      if (outputs[j].session != active_step->members[j].session || outputs[j].session->stopping || outputs[j].session->failed)"
+              },
+              {
+                "line": 3919,
+                "text": "        throw std::runtime_error(\"finish participant does not match the original active batch\");"
+              },
+              {
+                "line": 3920,
+                "text": "    auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 3953,
+            "last": 3958,
+            "lines": [
+              {
+                "line": 3953,
+                "text": "      check(step.completion.wait()); step.completion = {};"
+              },
+              {
+                "line": 3954,
+                "text": "      // Trace storage must be pinned before take_append/unbind revoke Graph"
+              },
+              {
+                "line": 3955,
+                "text": "      // output observation. Generated arrays keep their actual native owner."
+              },
+              {
+                "line": 3956,
+                "text": "      if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {"
+              },
+              {
+                "line": 3957,
+                "text": "        if (!state_only && !phase.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));"
+              },
+              {
+                "line": 3958,
+                "text": "        if (!phase.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 4154,
+            "last": 4180,
+            "lines": [
+              {
+                "line": 4154,
+                "text": "      check(run.unbind(phase.state_resource_ports));"
+              },
+              {
+                "line": 4155,
+                "text": "      if (step.hidden_output) {"
+              },
+              {
+                "line": 4156,
+                "text": "        check(step.hidden_output->restore_writers());"
+              },
+              {
+                "line": 4157,
+                "text": "        step.hidden_output = nullptr;"
+              },
+              {
+                "line": 4158,
+                "text": "      }"
+              },
+              {
+                "line": 4159,
+                "text": "      for (const auto &member : step.members)"
+              },
+              {
+                "line": 4160,
+                "text": "        if (member.session->head != member.base || member.session->pending != &step || member.session->stopping)"
+              },
+              {
+                "line": 4161,
+                "text": "          throw std::runtime_error(\"batch snapshot expected-base conflict\");"
+              },
+              {
+                "line": 4162,
+                "text": "      // All fallible native/export/metadata work is complete. The head swaps"
+              },
+              {
+                "line": 4163,
+                "text": "      // below cannot throw and publish the whole batch in this host transaction."
+              },
+              {
+                "line": 4164,
+                "text": "      for (std::size_t j = 0; j < step.members.size(); ++j) {"
+              },
+              {
+                "line": 4165,
+                "text": "        auto &member = step.members[j]; member.next->next_id = next_ids[j];"
+              },
+              {
+                "line": 4166,
+                "text": "        member.session->tails = std::move(member.next_tails);"
+              },
+              {
+                "line": 4167,
+                "text": "        member.session->draft_tails = std::move(member.next_draft_tails);"
+              },
+              {
+                "line": 4168,
+                "text": "        member.session->head = std::move(member.next);"
+              },
+              {
+                "line": 4169,
+                "text": "        member.session->tail_head = member.session->head.get();"
+              },
+              {
+                "line": 4170,
+                "text": "        member.session->draft_tail_head = member.session->head.get();"
+              },
+              {
+                "line": 4171,
+                "text": "      }"
+              },
+              {
+                "line": 4172,
+                "text": "      // Every bound and expected decision was checked before publication."
+              },
+              {
+                "line": 4173,
+                "text": "      // The reserved host slot is now authoritative even if trace/report IO"
+              },
+              {
+                "line": 4174,
+                "text": "      // below throws. No callback, allocation or permission is acquired here."
+              },
+              {
+                "line": 4175,
+                "text": "      for (auto &member : step.members) if (member.commit_record) {"
+              },
+              {
+                "line": 4176,
+                "text": "        member.commit_record->committed = true;"
+              },
+              {
+                "line": 4177,
+                "text": "        ++member.commit_ledger->committed_count;"
+              },
+              {
+                "line": 4178,
+                "text": "      }"
+              },
+              {
+                "line": 4179,
+                "text": "      return_readback.admission = std::exchange(step.candidate_admission, nullptr);"
+              },
+              {
+                "line": 4180,
+                "text": "      detach_episode(); // Old states/transactions retire inside the host endpoint."
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "first": 4185,
+            "last": 4194,
+            "lines": [
+              {
+                "line": 4185,
+                "text": "    const auto finished = Clock::now();"
+              },
+              {
+                "line": 4186,
+                "text": "    for (const auto &output : outputs) if (output.generation_ledger) {"
+              },
+              {
+                "line": 4187,
+                "text": "      auto &record = output.generation_ledger->records[output.generation_ledger->committed_count - 1];"
+              },
+              {
+                "line": 4188,
+                "text": "      record.endpoint = finished;"
+              },
+              {
+                "line": 4189,
+                "text": "      record.step_seconds = std::chrono::duration<double>(finished - step_start).count();"
+              },
+              {
+                "line": 4190,
+                "text": "    }"
+              },
+              {
+                "line": 4191,
+                "text": "    for (std::size_t j = 0; j < outputs.size(); ++j) {"
+              },
+              {
+                "line": 4192,
+                "text": "      const auto &output = outputs[j]; const auto &session = *output.session; const auto next = next_ids[j];"
+              },
+              {
+                "line": 4193,
+                "text": "      if (output.complete_seconds) *output.complete_seconds = std::chrono::duration<double>(finished - step_start).count();"
+              },
+              {
+                "line": 4194,
+                "text": "      if (output.host_endpoint) *output.host_endpoint = finished;"
+              }
+            ]
+          }
+        ],
+        "interpretation": "prepare acquires global carrier, submit accepts original native completion, finish waits then retains/exports/unbinds/commits/detaches. Admission release uses ReturnReadback on finish return; incrementing execution_slot_count alone does not make the shared Phase IO, input_scratch, output scratch and Model active_step independently usable."
+      },
+      {
+        "claim": "llama.cpp reference is faster because it overlaps these episode steps or rotates equivalent execution slots",
+        "assessment": "NOT_SUPPORTED_AND_OUTER_CONSUMER_FLOW_CONTRADICTS_EPISODE_OVERLAP",
+        "evidence": [
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer-batch.cc",
+            "first": 216,
+            "last": 232,
+            "lines": [
+              {
+                "line": 216,
+                "text": "    auto cp = llama_context_default_params();"
+              },
+              {
+                "line": 217,
+                "text": "    cp.n_ctx = static_cast<uint32_t>(pool_tokens); cp.n_seq_max = static_cast<uint32_t>(native_sequences); cp.kv_unified = true;"
+              },
+              {
+                "line": 218,
+                "text": "    cp.n_batch = static_cast<uint32_t>(batch_capacity); cp.n_ubatch = static_cast<uint32_t>(batch_capacity);"
+              },
+              {
+                "line": 219,
+                "text": "    cp.n_threads = 24; cp.n_threads_batch = 24;"
+              },
+              {
+                "line": 220,
+                "text": "    cp.type_k = GGML_TYPE_BF16; cp.type_v = GGML_TYPE_BF16; cp.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;"
+              },
+              {
+                "line": 221,
+                "text": "    cp.samplers = configs.data(); cp.n_samplers = configs.size();"
+              },
+              {
+                "line": 222,
+                "text": "    using Context = std::unique_ptr<llama_context, decltype(&llama_free)>;"
+              },
+              {
+                "line": 223,
+                "text": "    const auto context_start = Clock::now();"
+              },
+              {
+                "line": 224,
+                "text": "    Context context(llama_init_from_model(model.get(), cp), &llama_free);"
+              },
+              {
+                "line": 225,
+                "text": "    const auto context_end = Clock::now();"
+              },
+              {
+                "line": 226,
+                "text": "    if (!context || llama_n_ctx_seq(context.get()) < capacity || llama_n_seq_max(context.get()) != native_sequences ||"
+              },
+              {
+                "line": 227,
+                "text": "            llama_n_batch(context.get()) < batch_capacity || llama_n_ubatch(context.get()) < batch_capacity)"
+              },
+              {
+                "line": 228,
+                "text": "        throw std::runtime_error(\"native unified context failed per-request context/version quota\");"
+              },
+              {
+                "line": 229,
+                "text": "    const auto native_bytes = cache_bytes(context.get());"
+              },
+              {
+                "line": 230,
+                "text": "    if (byte_limit && native_bytes > byte_limit) throw std::runtime_error(\"KV+R/S backing exceeds requested byte limit\");"
+              },
+              {
+                "line": 231,
+                "text": "    Batch batch(static_cast<int32_t>(batch_capacity));"
+              },
+              {
+                "line": 232,
+                "text": "    Pool pool(context.get(), native_sequences); Directory directory(committed);"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer-batch.cc",
+            "first": 258,
+            "last": 264,
+            "lines": [
+              {
+                "line": 258,
+                "text": "        for (const auto & wave : waves) {"
+              },
+              {
+                "line": 259,
+                "text": "            completed_phases.clear();"
+              },
+              {
+                "line": 260,
+                "text": "            const auto wave_start = Clock::now();"
+              },
+              {
+                "line": 261,
+                "text": "            const auto graphs_before = graph_calls, tokens_before = graph_tokens;"
+              },
+              {
+                "line": 262,
+                "text": "            if (observations.empty()) journey_start = wave_start;"
+              },
+              {
+                "line": 263,
+                "text": "            std::vector<Pending> pending; pending.reserve(wave.size());"
+              },
+              {
+                "line": 264,
+                "text": "            double lookup_total = 0;"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer-batch.cc",
+            "first": 294,
+            "last": 302,
+            "lines": [
+              {
+                "line": 294,
+                "text": "            // Stable equal actual-T + phase-kind buckets. No padding/extra"
+              },
+              {
+                "line": 295,
+                "text": "            // prompt evaluation, and a full hit is absent from all decode calls."
+              },
+              {
+                "line": 296,
+                "text": "            for (std::size_t first = 0; first < pending.size(); ++first) {"
+              },
+              {
+                "line": 297,
+                "text": "                if (pending[first].consumed) continue;"
+              },
+              {
+                "line": 298,
+                "text": "                std::vector<std::size_t> members; members.reserve(width);"
+              },
+              {
+                "line": 299,
+                "text": "                const auto t = pending[first].count; const auto prompt = observations[pending[first].observation].prompt;"
+              },
+              {
+                "line": 300,
+                "text": "                for (std::size_t i = first; i < pending.size(); ++i)"
+              },
+              {
+                "line": 301,
+                "text": "                    if (!pending[i].consumed && pending[i].count == t && observations[pending[i].observation].prompt == prompt) members.push_back(i);"
+              },
+              {
+                "line": 302,
+                "text": "                const auto begin = Clock::now();"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer-batch.cc",
+            "first": 340,
+            "last": 389,
+            "lines": [
+              {
+                "line": 340,
+                "text": "                batch.value.n_tokens = static_cast<int32_t>(members.size() * t);"
+              },
+              {
+                "line": 341,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 342,
+                "text": "                    auto & p = pending[members[j]]; auto & run = runs[p.call.session]; const auto & o = observations[p.observation];"
+              },
+              {
+                "line": 343,
+                "text": "                    for (std::size_t k = 0; k < t; ++k) {"
+              },
+              {
+                "line": 344,
+                "text": "                        const auto at = j * t + k;"
+              },
+              {
+                "line": 345,
+                "text": "                        batch.value.token[at] = run.tokens[p.call.first + o.reused + k];"
+              },
+              {
+                "line": 346,
+                "text": "                        batch.value.pos[at] = static_cast<llama_pos>(run.visible + o.reused + k);"
+              },
+              {
+                "line": 347,
+                "text": "                        batch.value.n_seq_id[at] = 1; batch.value.seq_id[at][0] = p.candidate->id;"
+              },
+              {
+                "line": 348,
+                "text": "                        batch.value.logits[at] = k + 1 == t;"
+              },
+              {
+                "line": 349,
+                "text": "                    }"
+              },
+              {
+                "line": 350,
+                "text": "                }"
+              },
+              {
+                "line": 351,
+                "text": "                const auto prepared = Clock::now(); pool.native_inflight = true;"
+              },
+              {
+                "line": 352,
+                "text": "                const auto status = llama_decode(context.get(), batch.value); const auto decoded = Clock::now();"
+              },
+              {
+                "line": 353,
+                "text": "                if (status != 0) throw std::runtime_error(\"llama_decode failed: \" + std::to_string(status));"
+              },
+              {
+                "line": 354,
+                "text": "                llama_synchronize(context.get()); pool.native_inflight = false; const auto synchronized = Clock::now();"
+              },
+              {
+                "line": 355,
+                "text": "                std::vector<llama_token> next_ids(members.size());"
+              },
+              {
+                "line": 356,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 357,
+                "text": "                    auto & p = pending[members[j]]; auto & o = observations[p.observation];"
+              },
+              {
+                "line": 358,
+                "text": "                    const auto output_index = static_cast<int32_t>(j * t + t - 1);"
+              },
+              {
+                "line": 359,
+                "text": "                    const auto native_next = llama_get_sampled_token_ith(context.get(), output_index);"
+              },
+              {
+                "line": 360,
+                "text": "                    if (native_next == LLAMA_TOKEN_NULL) throw std::runtime_error(\"per-sequence GPU greedy missing; no CPU fallback\");"
+              },
+              {
+                "line": 361,
+                "text": "                    const auto next = llama_sampler_sample(samplers[static_cast<std::size_t>(p.candidate->id)].get(), context.get(), output_index);"
+              },
+              {
+                "line": 362,
+                "text": "                    if (next != native_next || next < 0 || next >= vocabulary) throw std::runtime_error(\"native/public greedy mismatch\");"
+              },
+              {
+                "line": 363,
+                "text": "                    if (llama_memory_seq_pos_max(llama_get_memory(context.get()), p.candidate->id) != static_cast<llama_pos>(p.target) - 1)"
+              },
+              {
+                "line": 364,
+                "text": "                        throw std::runtime_error(\"batch output sequence position mismatch\");"
+              },
+              {
+                "line": 365,
+                "text": "                    next_ids[j] = next; o.sampled_logits = llama_get_sampled_logits_count_ith(context.get(), output_index);"
+              },
+              {
+                "line": 366,
+                "text": "                }"
+              },
+              {
+                "line": 367,
+                "text": "                const auto sampled = Clock::now();"
+              },
+              {
+                "line": 368,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 369,
+                "text": "                    auto & p = pending[members[j]]; auto & run = runs[p.call.session]; auto & o = observations[p.observation];"
+              },
+              {
+                "line": 370,
+                "text": "                    p.candidate->tokens = &run.tokens; p.candidate->length = p.target; p.candidate->next = next_ids[j];"
+              },
+              {
+                "line": 371,
+                "text": "                    run.head = std::move(p.candidate); o.next = next_ids[j];"
+              },
+              {
+                "line": 372,
+                "text": "                    o.prepare = seconds(prepared, begin); o.decode = seconds(decoded, prepared);"
+              },
+              {
+                "line": 373,
+                "text": "                    o.synchronize = seconds(synchronized, decoded); o.sample = seconds(sampled, synchronized);"
+              },
+              {
+                "line": 374,
+                "text": "                }"
+              },
+              {
+                "line": 375,
+                "text": "                if (pool.live > committed) throw std::runtime_error(\"post-batch committed versions exceed N\");"
+              },
+              {
+                "line": 376,
+                "text": "                for (auto i : members) publish(pending[i]);"
+              },
+              {
+                "line": 377,
+                "text": "                const auto end = Clock::now(); const auto elapsed = seconds(end, begin);"
+              },
+              {
+                "line": 378,
+                "text": "                (prompt ? prefill_service : decode_service) += elapsed;"
+              },
+              {
+                "line": 379,
+                "text": "                json episode; episode[\"index\"] = graph_calls; episode[\"requests\"] = members.size(); episode[\"T\"] = t;"
+              },
+              {
+                "line": 380,
+                "text": "                episode[\"kind\"] = prompt ? \"prefill\" : \"decode\"; episode[\"input_tokens\"] = members.size() * t;"
+              },
+              {
+                "line": 381,
+                "text": "                episode[\"seconds\"] = elapsed; episode[\"input_prepare_seconds\"] = seconds(prepared, begin);"
+              },
+              {
+                "line": 382,
+                "text": "                episode[\"decode_return_seconds\"] = seconds(decoded, prepared); episode[\"synchronize_seconds\"] = seconds(synchronized, decoded);"
+              },
+              {
+                "line": 383,
+                "text": "                episode[\"sampling_seconds\"] = seconds(sampled, synchronized); episode[\"members\"] = json::array();"
+              },
+              {
+                "line": 384,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 385,
+                "text": "                    const auto & p = pending[members[j]]; const auto & o = observations[p.observation];"
+              },
+              {
+                "line": 386,
+                "text": "                    episode[\"members\"].push_back({{\"session\", o.session}, {\"name\", o.name}, {\"target_seq\", o.target_seq},"
+              },
+              {
+                "line": 387,
+                "text": "                        {\"position_first\", p.target - t}, {\"position_end\", p.target}, {\"output_input_index\", j * t + t - 1}, {\"predicted_id\", o.next}});"
+              },
+              {
+                "line": 388,
+                "text": "                }"
+              },
+              {
+                "line": 389,
+                "text": "                episodes.push_back(std::move(episode)); ++graph_calls; graph_tokens += members.size() * t; graph_requests += members.size();"
+              }
+            ]
+          },
+          {
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-attribution-20261026\\peer\\source\\peer-batch.cc",
+            "first": 365,
+            "last": 398,
+            "lines": [
+              {
+                "line": 365,
+                "text": "                const auto prepared = Clock::now(); pool.native_inflight = true;"
+              },
+              {
+                "line": 366,
+                "text": "                trace_prepare.finish();"
+              },
+              {
+                "line": 367,
+                "text": "                logical_trace::Range trace_decode(\"peer/llama_decode\", logical_trace::sequence);"
+              },
+              {
+                "line": 368,
+                "text": "                const auto status = llama_decode(context.get(), batch.value); const auto decoded = Clock::now();"
+              },
+              {
+                "line": 369,
+                "text": "                trace_decode.finish();"
+              },
+              {
+                "line": 370,
+                "text": "                if (status != 0) throw std::runtime_error(\"llama_decode failed: \" + std::to_string(status));"
+              },
+              {
+                "line": 371,
+                "text": "                logical_trace::Range trace_synchronize(\"peer/synchronize\", logical_trace::sequence);"
+              },
+              {
+                "line": 372,
+                "text": "                llama_synchronize(context.get()); pool.native_inflight = false; const auto synchronized = Clock::now();"
+              },
+              {
+                "line": 373,
+                "text": "                trace_synchronize.finish();"
+              },
+              {
+                "line": 374,
+                "text": "                logical_trace::Range trace_publish(\"peer/sample_publish\", logical_trace::sequence);"
+              },
+              {
+                "line": 375,
+                "text": "                std::vector<llama_token> next_ids(members.size());"
+              },
+              {
+                "line": 376,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 377,
+                "text": "                    auto & p = pending[members[j]]; auto & o = observations[p.observation];"
+              },
+              {
+                "line": 378,
+                "text": "                    const auto output_index = static_cast<int32_t>(j * t + t - 1);"
+              },
+              {
+                "line": 379,
+                "text": "                    const auto native_next = llama_get_sampled_token_ith(context.get(), output_index);"
+              },
+              {
+                "line": 380,
+                "text": "                    if (native_next == LLAMA_TOKEN_NULL) throw std::runtime_error(\"per-sequence GPU greedy missing; no CPU fallback\");"
+              },
+              {
+                "line": 381,
+                "text": "                    const auto next = llama_sampler_sample(samplers[static_cast<std::size_t>(p.candidate->id)].get(), context.get(), output_index);"
+              },
+              {
+                "line": 382,
+                "text": "                    if (next != native_next || next < 0 || next >= vocabulary) throw std::runtime_error(\"native/public greedy mismatch\");"
+              },
+              {
+                "line": 383,
+                "text": "                    if (llama_memory_seq_pos_max(llama_get_memory(context.get()), p.candidate->id) != static_cast<llama_pos>(p.target) - 1)"
+              },
+              {
+                "line": 384,
+                "text": "                        throw std::runtime_error(\"batch output sequence position mismatch\");"
+              },
+              {
+                "line": 385,
+                "text": "                    next_ids[j] = next; o.sampled_logits = llama_get_sampled_logits_count_ith(context.get(), output_index);"
+              },
+              {
+                "line": 386,
+                "text": "                }"
+              },
+              {
+                "line": 387,
+                "text": "                const auto sampled = Clock::now();"
+              },
+              {
+                "line": 388,
+                "text": "                for (std::size_t j = 0; j < members.size(); ++j) {"
+              },
+              {
+                "line": 389,
+                "text": "                    auto & p = pending[members[j]]; auto & run = runs[p.call.session]; auto & o = observations[p.observation];"
+              },
+              {
+                "line": 390,
+                "text": "                    p.candidate->tokens = &run.tokens; p.candidate->length = p.target; p.candidate->next = next_ids[j];"
+              },
+              {
+                "line": 391,
+                "text": "                    run.head = std::move(p.candidate); o.next = next_ids[j];"
+              },
+              {
+                "line": 392,
+                "text": "                    o.prepare = seconds(prepared, begin); o.decode = seconds(decoded, prepared);"
+              },
+              {
+                "line": 393,
+                "text": "                    o.synchronize = seconds(synchronized, decoded); o.sample = seconds(sampled, synchronized);"
+              },
+              {
+                "line": 394,
+                "text": "                }"
+              },
+              {
+                "line": 395,
+                "text": "                if (pool.live > committed) throw std::runtime_error(\"post-batch committed versions exceed N\");"
+              },
+              {
+                "line": 396,
+                "text": "                for (auto i : members) publish(pending[i]);"
+              },
+              {
+                "line": 397,
+                "text": "                const auto end = Clock::now(); const auto elapsed = seconds(end, begin);"
+              },
+              {
+                "line": 398,
+                "text": "                trace_publish.finish(); logical_trace::episode.finish();"
+              }
+            ]
+          }
+        ],
+        "interpretation": "Retained peer632 uses one llama_context and one batch, llama_decode then explicit llama_synchronize, all per-member GPU greedy/sample checks and head publication, then advances to the next episode/wave. Its current NVTX variant preserves those exact decode/sync/sample/publication statements. No next episode is prepared/submitted while this one is in flight in these consumers. Native implementation can still have internal asynchronous work; explicit synchronize makes that complete before the outer episode advances."
+      },
+      {
+        "claim": "Single-slot serialization is already proven to be the direct current B2 performance bottleneck",
+        "assessment": "UNPROVEN",
+        "interpretation": "It is a real architectural concurrency limit for independent future episodes, but both matched consumers serialize these dependent steps. Source existence does not allocate the measured excess host wall to this choice. A direct-cause claim needs current off-CPU/on-CPU critical-path evidence or an equal-work end-to-end candidate. Actual profiling is owned by Root."
+      }
+    ],
+    "dependencies_and_opportunity": [
+      "Autoregressive natural decode of a session depends on the previous sampled token and committed recurrent/KV state. The teacher-forced B2 tape knows future token IDs, but the next step still consumes preceding recurrent/KV results. A second slot cannot remove these mathematical dependencies.",
+      "Independent sessions already share a true R2 episode. Overlapping CPU preparation of independent next episodes or different ready buckets may be an opportunity if the measured critical path warrants it, but requires separating the currently shared input/output/workspace ownership and preserving original state publication, cancellation, completion and native retirement. It is not established here as a required change or a speed gain.",
+      "A one-slot carrier is not evidence that Compute/Graph cannot support multiple invocations or that every current/future model consumer uses the same strategy. This review deliberately does not generalize to those claims."
+    ],
+    "operations": {
+      "source_edits": 0,
+      "builds": 0,
+      "consumer_runs": 0,
+      "profiles": 0,
+      "network": 0
+    },
+    "limits": [
+      "Read-only source and existing log review; no fresh benchmark, profiling or concurrency experiment.",
+      "Formal peer632 is the actually retained B2 reference, not claimed latest upstream llama.cpp.",
+      "The historical peer source leading comment says not yet compiled/run; actual frozen source identity, compile/link receipts and completed B2 results override that stale comment."
+    ]
+  },
+  "independent_review": {
+    "status": "INDEPENDENT_KEY_CPU_CLAIMS_RECONSTRUCTED_AND_MATCHED",
+    "scope": "Own read-only SQLite queries/state-machine and interval sweeps; no import of analyze.py and no new consumer/profile/network/build.",
+    "identity": {
+      "native_pid": 62400,
+      "native_thread_id": 52324,
+      "globalTid": 282521875041380,
+      "globalPid": 282521874989056
+    },
+    "range_gate": {
+      "roots": 99,
+      "decode_roots": 96,
+      "closed_hyle_ranges": 1782,
+      "ranges_per_root": 18,
+      "distinct_child_labels_per_root": 17
+    },
+    "measurements": {
+      "decode_roots": 96,
+      "decode_wall_ns": 1346646315,
+      "decode_running_ns": 1340863315,
+      "decode_off_cpu_ns": 5783000,
+      "wait_wall_ns": 1144969804,
+      "wait_gpu_union_overlap_ns": 1135763108,
+      "wait_cuda_api_union_overlap_ns": 1141377989,
+      "nonrecord_roots": 90,
+      "nonrecord_root_wall_ns": 1223208763,
+      "nonrecord_replay_wall_ns": 26015711,
+      "decode_off_cpu_percent": 0.42943718299188305,
+      "nonrecord_replay_whole_root_percent": 2.126841450693564,
+      "nonrecord_replay_positive_samples": 29,
+      "nonrecord_replay_SmallVector_position_index_inclusive_samples": 25,
+      "nonrecord_replay_SmallVector_position_index_leaf_samples": 9
+    },
+    "raw_resolved_global_row_counts_equal": {
+      "COMPOSITE_EVENTS": 476937,
+      "SAMPLING_CALLCHAINS": 7250647,
+      "SCHED_EVENTS": 793850,
+      "NVTX_EVENTS": 1783
+    },
+    "native_raw_resolved_structure_digests_equal": {
+      "native_composite_events": {
+        "rows": 11111,
+        "sha256": "0c0869ec283290d4bc5c91345b78bc7cfa4e4dc3b0731f2563c9185d210ac6e4"
+      },
+      "native_scheduler_events": {
+        "rows": 7761,
+        "sha256": "34944cca10b5011c985db4f27f5ff45005e96d388088cc9ae1539e8c70a9cdce"
+      },
+      "native_stack_identity": {
+        "rows": 278080,
+        "sha256": "9148b712ca7e06a0828378305be38c24d1bbd924187717519ddfa6699e65bd5e"
+      }
+    },
+    "export_id_policy": "Re-export renumbers SQLite-local COMPOSITE/SAMPLING IDs (e.g188732 becomes205725). Compare actual event fields and join each export stacks through its own event id; timestamps,CPU,weights and original stack IP/depth/flags, not export IDs, establish preserved observations.",
+    "positive_replay_samples": {
+      "all": 29,
+      "position_index_leaf_unique": 9,
+      "position_index_inclusive_unique": 25,
+      "symbols": [
+        "hyle::container::SmallVector<unsigned int,0,class hyle::mem::AllocatorRef>::position_index(unsigned int const *,bool)const "
+      ],
+      "meaning": "Observations, not CPU milliseconds. Inclusive frames can overlap; 9 leaf/25 inclusive among29 small samples do not estimate9ms or a stable cost fraction."
+    },
+    "map_function_check": {
+      "position_index_public_rva": "0xdc680",
+      "next_public_rva": "0xdc810",
+      "next_public_gap_bytes": 400,
+      "same_address_public_aliases": [
+        "?position_index@?$SmallVector@I$0A@VAllocatorRef@mem@hyle@@@container@hyle@@AEBA_KPEBI_N@Z"
+      ],
+      "x64_runtime_function_begin_end_rva": [
+        "0xdc680",
+        "0xdc80e"
+      ],
+      "x64_runtime_function_bytes": 398,
+      "source_algorithm": "Current SmallVector position_index checks null/range and subtracts pointers, with no loop.",
+      "limits": "No duplicate public alias found at this exact address. Sparse public names leave a much larger gap than this function bounds. Retained Graph TUs have no private debug/source information; a resolved nearest public/ICF name is not proof samples executed position_index. Runtime module base and exact private function ownership are not independently reconstructed here."
+    },
+    "warnings": [
+      {
+        "timestamp": 1112859447,
+        "timestampType": 1,
+        "source": 1,
+        "severity": 2,
+        "text": "Installed CUDA driver version (13.4) is not supported by this build of Nsight Systems. CUDA trace will be collected using libraries for driver version 13.3",
+        "globalPid": 282521874989056
+      },
+      {
+        "timestamp": 9165901500,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "Not all NVTX events might have been collected.",
+        "globalPid": 282445840646144
+      },
+      {
+        "timestamp": 9165902200,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "No NVTX events collected. Does the process use NVTX?",
+        "globalPid": 282445840646144
+      },
+      {
+        "timestamp": 9165904800,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "CUDA profiling might have not been started correctly.",
+        "globalPid": 282445840646144
+      },
+      {
+        "timestamp": 9165905900,
+        "timestampType": 2,
+        "source": 3,
+        "severity": 2,
+        "text": "No CUDA events collected. Does the process use CUDA?",
+        "globalPid": 282445840646144
+      }
+    ],
+    "explicit_loss_word_diagnostics": [],
+    "interpretation": [
+      "Running is Windows scheduled-onCPU, including driver polling, kernel and interrupt time; it is not exclusive Hyle application CPU cost.",
+      "Completion wait, CUDA API and GPU graph intervals overlap. Their measured times must not be added or treated as independently removable host overhead.",
+      "5.783ms offCPU among96decode roots rejects scheduler descheduling as a large observed cause in this capture. It does not prove no scheduling problem in all runs.",
+      "Steady replay whole bucket is26.016ms/1223.209ms=2.13%. Even deleting it cannot explain the full current gap; SmallVector observations are not evidence of a large recoverable bottleneck.",
+      "The single-slot architecture limit is real for this Model consumer, but measured direct-cause attribution is unsupported because matched peer632 also explicitly synchronizes and publishes each episode before the next. See single-slot-review.json.",
+      "Driver13.4/collector13.3 mismatch and legacy CUDA software instrumentation are retained limitations. Python wrapper warnings name its process, while native62400 has1782closed ranges and actual CUDA events. No explicit lost/dropped/overflow diagnostic is a limited negative observation, not proof of zero ETW loss.",
+      "One Hyle-only diagnostic; no new peer arm or throughput result. Symbol resolution changes names only; native scheduler/sample structure and row counts are independently verified unchanged."
+    ],
+    "source_files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\independent-check.py",
+        "bytes": 15804,
+        "sha256": "462204afa1fa66d88bd461ae6c99b9ef532ddcd72d0fba90fa0976f6020389be"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\resolved-cpu-summary.json",
+        "bytes": 154466,
+        "sha256": "1b5d0bf3ed99a5d2d754cfb3573e613f712adf0ccee8a2194201c082ea013eea"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\single-slot-review.json",
+        "bytes": 56022,
+        "sha256": "c965550629be80961b78ea2ad787d6e2ee64f9606c68b189d5df1e7c85f2b7d5"
+      }
+    ],
+    "reviewer_correction": "Initial own checker first expected9 inclusive rather than9leaf/25inclusive, then required stable export-local sample IDs across re-export. Both assumptions were corrected from direct raw SQLite field checks; failed checks stopped without issuing a PASS review. Original first checker is retained as independent-check-before-leaf-clarification.py. No new consumer/profile or changed trace.",
+    "unverified": [
+      "Whole goal or all functional/platform coverage",
+      "Exact source-line exclusive times",
+      "Fresh llama.cpp performance or causal speedup",
+      "Absence of unreported ETW/profiler loss"
+    ],
+    "quality_addendum": {
+      "status": "SIX_SAMPLE_CPU_ID_DISCREPANCIES_INDEPENDENTLY_REPRODUCED",
+      "source_sqlite": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\hyle\\trace1\\native-scope-resolved.sqlite",
+      "native_root_window_positive_samples": 1569,
+      "samples_outside_reconstructed_running": 0,
+      "CPU_ID_discrepancies": [
+        {
+          "sample_start_ns": 2730676000,
+          "sample_cpu": 3,
+          "scheduled_cpu": 4,
+          "slice_start_ns": 2727411200,
+          "slice_end_ns": 2730717700,
+          "root_seq": 1,
+          "kind": "prefill"
+        },
+        {
+          "sample_start_ns": 3150770200,
+          "sample_cpu": 4,
+          "scheduled_cpu": 0,
+          "slice_start_ns": 3149870100,
+          "slice_end_ns": 3150822400,
+          "root_seq": 26,
+          "kind": "decode"
+        },
+        {
+          "sample_start_ns": 3303919100,
+          "sample_cpu": 4,
+          "scheduled_cpu": 10,
+          "slice_start_ns": 3303246800,
+          "slice_end_ns": 3303957400,
+          "root_seq": 35,
+          "kind": "decode"
+        },
+        {
+          "sample_start_ns": 3761469200,
+          "sample_cpu": 1,
+          "scheduled_cpu": 4,
+          "slice_start_ns": 3760716000,
+          "slice_end_ns": 3761515800,
+          "root_seq": 67,
+          "kind": "prefill"
+        },
+        {
+          "sample_start_ns": 3841593200,
+          "sample_cpu": 4,
+          "scheduled_cpu": 1,
+          "slice_start_ns": 3841264900,
+          "slice_end_ns": 3841646300,
+          "root_seq": 69,
+          "kind": "decode"
+        },
+        {
+          "sample_start_ns": 3873630900,
+          "sample_cpu": 2,
+          "scheduled_cpu": 14,
+          "slice_start_ns": 3872972700,
+          "slice_end_ns": 3873634600,
+          "root_seq": 71,
+          "kind": "decode"
+        }
+      ],
+      "decode_discrepancies": 4,
+      "prefill_discrepancies": 2,
+      "all_affected_slices_ns": 6812500,
+      "affected_decode_running_overlap_ns": 2706200,
+      "reconstructed_decode_running_ns": 1340863315,
+      "sensitivity_excluding_detected_affected_decode_slices_ns": 1338157115,
+      "sensitivity_excluding_detected_affected_decode_slices_ms": 1338.157115,
+      "meaning": [
+        "Timing arithmetic remains the reconstructed schedule estimate; six sample CPU IDs disagree with containing SCHED CPU. Therefore0.43%offCPU is not certified exact scheduler/selfCPU time.",
+        "Discarding the entire detected suspect slices removes2.7062ms from decode scheduled-running, leaving1338.157115ms. This finite sensitivity check still does not support a large OS descheduling cause in this capture.",
+        "This is a check of the six detected discrepancies, not a universal bound on unreported ETW loss, clock/CPU-identity errors or all runtime uncertainty. Cause not asserted; no rerun."
+      ],
+      "named_api_costs_independently_verified": {
+        "cudaEventSynchronize_v3020": {
+          "overlapping_call_count": 96,
+          "clipped_API_wall_sum_ns": 1141377989
+        },
+        "cudaGraphLaunch_v10000": {
+          "overlapping_call_count": 96,
+          "clipped_API_wall_sum_ns": 28373227
+        }
+      },
+      "sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\sample-schedule-cpu-check.json",
+          "bytes": 6831,
+          "sha256": "4e9a719549a91a97b2ec1e613ec0d53d3f40bbbacadce49926674a0c729d5bbd"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\cpu-call-costs.json",
+          "bytes": 34830,
+          "sha256": "842e0f75ecb3ae22aa6e6fd8b32291c2729ba496066504d72f94caabb8c9a67b"
+        }
+      ]
+    }
+  },
+  "native_filter_reproduction": {
+    "status": "FILTERED_NATIVE_DATASETS_EXACTLY_REPRODUCE_ALL_ANALYSIS",
+    "checks": [
+      {
+        "original": "raw-cpu-facts.json",
+        "filtered": "native-scope-raw-cpu-facts.json",
+        "all_values_except_source_path_size": "EXACT_EQUAL"
+      },
+      {
+        "original": "resolved-cpu-facts.json",
+        "filtered": "native-scope-resolved-cpu-facts.json",
+        "all_values_except_source_path_size": "EXACT_EQUAL"
+      }
+    ],
+    "preserved": "All4388native-process root-window sampleevents/94228linkedframes;1321rootTID schedinclpred+suc; originalCUDA/NVTX timestamps andsource IDs; native-only referencedStringIds",
+    "source_untouched": true,
+    "archive_inputs": [
+      "hyle/trace1/native-scope-raw.sqlite",
+      "hyle/trace1/native-scope-raw.filter.json",
+      "hyle/trace1/native-scope-resolved.sqlite",
+      "hyle/trace1/native-scope-resolved.filter.json",
+      "analyze.py",
+      "filter-native.py"
+    ],
+    "superseded_partial_or_root_only_datasets_not_for_archive": [
+      "hyle/trace1/native-root-raw.sqlite",
+      "hyle/trace1/native-root-raw-v2.sqlite",
+      "hyle/trace1/native-root-resolved.sqlite"
+    ],
+    "offline_corrections": [
+      "Initialfilter Python-decoding META_DATA_EXPORT value failed due original malformedlocale bytes; firstpartialSQLite retained. Finalfilter copies SQLite-to-SQLite and verifies bothdirection EXCEPT.",
+      "Initialanalyzer used pidkey beforeactualnative_pid corrected; no runtime collected.",
+      "Ranked inclusive-symbol ties sorted deterministically before exact reproduction; no measurement changed."
+    ]
+  },
+  "quality_limits": [
+    "One Hyle graph-level diagnostic only; no peer profile or new tokens/s table. Never subtract old node-level timings as an optimization gain.",
+    "Scheduled-onCPU is not exclusive user CPU; it includes driver polling, kernel and interrupts while scheduled. Running overlapping GPU work is not independently recoverable.",
+    "CPU sample observations are statistical locations, not exact self milliseconds. Unresolved/nearest-public/ICF and sparse-public ambiguities remain explicit.",
+    "No CPU loss/overflow diagnostic was found; this is not a certificate of zero ETW loss. All reconstructed root boundaries passed the finite scheduling checks.",
+    "Six positive samples disagree with the reconstructed scheduled CPU ID. The percentage is a reconstruction estimate, not certified precise CPU time; the entire affected observed slices and sensitivity are retained.",
+    "Nsight warned about driver13.4 with CUPTI13.3 and used software tracing. Wrapper has no NVTX/CUDA; its corresponding warnings do not invalidate independently checked native1782ranges.",
+    "Native-only filtered datasets preserve queried raw relationships and exactly reproduce analysis. Full unrelated system samples are omitted."
+  ],
+  "archive": {
+    "path": "inference-b2-cpu-critical-2026-10-26.zip",
+    "bytes": 5982095,
+    "sha256": "124099e679bc28874779b2b33f2c9ecc219af828f19ec65834d0967560c62783",
+    "members": 125,
+    "verification": "ZIP CRC and every member length/SHA256 checked",
+    "raw_scope": "Only two valid native-scope SQLite datasets; original whole-system databases/ETL/reports and superseded partial datasets are excluded"
+  },
+  "cleanup": {
+    "files": 7,
+    "logical_bytes": 851619165,
+    "method": "Exact targets were written to test.ps1, resolved absolute paths/lengths/hashes checked before nonrecursive deletion.",
+    "keep": "Original32MB nsys-rep, useful Model object/EXE/PDB/MAP, two verified native-scope SQLite files, sources/commands/logs/results and verified archive; baseline f36, models and SDK untouched.",
+    "archive_verified_before_cleanup": true
+  }
+}
