@@ -1103,6 +1103,89 @@ TEST(GgmlCudaTensor, NativeQ4KMatMulImportsGgufBytesAndReplays) {
   }
 }
 
+template <class Bits> void plain_gather_rows(DataType type) {
+  constexpr std::int64_t rows = 3, width = 17;
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto ids_desc = dense(DataType::kInt32, {3});
+  const auto output_desc = dense(type, {3, width});
+  const auto patterns = [&] {
+    if constexpr (sizeof(Bits) == 4)
+      return std::array<Bits, 8>{0, 0x80000000u, 0x7f800000u, 0xff800000u,
+          0x7fc01234u, 0x7f801234u, 0x3f800000u, 1};
+    else
+      return type == DataType::kBFloat16
+          ? std::array<Bits, 8>{0, 0x8000u, 0x7f80u, 0xff80u, 0x7fc1u, 0x7f81u, 0x3f80u, 1}
+          : std::array<Bits, 8>{0, 0x8000u, 0x7c00u, 0xfc00u, 0x7e01u, 0x7c01u, 0x3c00u, 1};
+  }();
+  for (const bool padded : {false, true}) {
+    SCOPED_TRACE(padded);
+    const auto stride = padded ? 256 : width * static_cast<std::int64_t>(sizeof(Bits));
+    const auto table_desc = TensorDesc::strided_bytes(type, std::array{rows, width},
+        std::array{stride, static_cast<std::int64_t>(sizeof(Bits))}).value();
+    const auto row_elements = static_cast<std::size_t>(stride) / sizeof(Bits);
+    std::vector<Bits> table_values(table_desc.required_bytes().value() / sizeof(Bits), Bits{0x1234});
+    for (std::size_t row = 0; row < static_cast<std::size_t>(rows); ++row)
+      for (std::size_t column = 0; column < static_cast<std::size_t>(width); ++column)
+        table_values[row * row_elements + column] = patterns[(row + column) % patterns.size()];
+    auto table = upload<Bits>(memory.ref(), table_values);
+    std::array<std::int32_t, 3> selected{2, 0, 2};
+    auto ids = upload<std::int32_t>(memory.ref(), selected);
+    auto output = output_buffer(memory.ref(), output_desc);
+    const std::array inputs{
+        ConstTensorView::create(table_desc, table.view()).value(),
+        ConstTensorView::create(ids_desc, ids.view()).value()};
+    auto output_view = TensorView::create(output_desc, output.view()).value();
+    const std::array descriptions{table_desc, ids_desc};
+    auto prepared = prepare(ctx, Operation(Gather{.axis = padded ? -2 : 0}),
+        descriptions, std::span(&output_desc, 1), memory.ref());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    auto workspace = ggml_cuda_test::workspace_buffer(*prepared, memory.ref());
+    auto invocation = prepared->create_invocation(workspace.view()).value();
+    auto queue = ctx.create_queue().value();
+    for (int replay = 0; replay < 2; ++replay) {
+      ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+      auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
+      ASSERT_TRUE(done) << done.error().message();
+      ASSERT_TRUE(done->wait().ok());
+      const auto actual = half_test::read<Bits>(output);
+      ASSERT_EQ(actual.size(), 3 * width);
+      for (std::size_t row = 0; row < selected.size(); ++row)
+        for (std::size_t column = 0; column < static_cast<std::size_t>(width); ++column)
+          EXPECT_EQ(actual[row * width + column],
+              table_values[static_cast<std::size_t>(selected[row]) * row_elements + column]);
+      selected = {1, 2, 0};
+    }
+    const auto before = half_test::read<Bits>(output);
+    selected = {0, -1, 2};
+    ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(selected))).ok());
+    auto failed = invocation.submit(queue, inputs, std::span(&output_view, 1));
+    ASSERT_TRUE(failed) << failed.error().message();
+    EXPECT_TRUE(failed->wait().IsOutOfRange());
+    EXPECT_EQ(half_test::read<Bits>(output), before);
+    EXPECT_EQ(half_test::read<Bits>(table), table_values);
+  }
+}
+
+TEST(GgmlCudaTensor, PlainGatherPreservesBitsPaddedRowsAndCheckedBounds) {
+  plain_gather_rows<std::uint32_t>(DataType::kFloat32);
+  plain_gather_rows<std::uint16_t>(DataType::kFloat16);
+  plain_gather_rows<std::uint16_t>(DataType::kBFloat16);
+}
+
+TEST(GgmlCudaTensor, PlainGatherDeclinesInnerStrides) {
+  auto ctx = context();
+  auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
+  const auto table = TensorDesc::strided_bytes(DataType::kFloat32,
+      std::array<std::int64_t, 2>{3, 17}, std::array<std::int64_t, 2>{17 * 8, 8}).value();
+  const std::array inputs{table, dense(DataType::kInt32, {2})};
+  const auto output = dense(DataType::kFloat32, {2, 17});
+  auto prepared = prepare(ctx, Operation(Gather{}), inputs, std::span(&output, 1), memory.ref());
+  ASSERT_FALSE(prepared);
+  EXPECT_TRUE(prepared.error().IsUnimplemented());
+}
+
 TEST(GgmlCudaTensor, NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds) {
   d5_gguf_test::QuantizerCleanup cleanup;
   constexpr std::int64_t rows = 3;

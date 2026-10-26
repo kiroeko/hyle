@@ -111,8 +111,10 @@ struct ProjectedReader final {
   // must still invalidate through the original before-command-change gate.
   bool permission_changes_preserve_commands = false;
 };
-// An exact selected singleton implementation with an external write. Typed
-// adapters retain its original page writers in that Invocation's real slot.
+// An exact original external-write node in its selected implementation. A
+// region may also contain pure nodes, but no second effect/resource access.
+// Typed adapters retain its original writers in that Invocation's real slot;
+// one region can have only one nominated binding and retired withdrawal.
 struct ProjectedWriter final {
   NodeId node;
   std::uint32_t step=0;

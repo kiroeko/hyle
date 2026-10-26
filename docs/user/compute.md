@@ -223,6 +223,10 @@ CUDA默认图已接通CCCL TopK→ggml GatherElements；带校验的ggml专家/e
 safe IDs并在原Completion报告错误，避免读回整组ID。具体路线仍可能观察少量完成状态，不能据此推导整图完全异步。
 默认CUDA路线的普通`Gather`也在GPU校验索引，越界由`Completion`终态报告；
 调用方无需为了避免索引上下界回读而关闭边界检查。
+ggml CUDA现可对普通F32／F16／BF16二维表按axis0（或−2）选行，支持连续行和leading row padding，
+输出保持原类型及存储位；行内stride仍不在该实现范围。它仍检查任意输入ID，
+不授予整个状态池的读取权限；[有限检查](../evidence/correctness/inference-cuda-slot-gather-2026-10-26.json)
+覆盖NaN／零符号、重复选行、重放、padding及越界不改输出。
 
 ## 普通、block 与 opaque storage
 

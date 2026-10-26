@@ -740,10 +740,17 @@ bool tensor_operation_supports(Operation operation,
     return inputs.size() == 2 &&
            gather->bounds == IndexBoundsPolicy::kChecked &&
            (gather->axis == 0 || gather->axis == -2) &&
-           native_embedding_table(inputs[0]) && inputs[1].rank() == 1 &&
+           (native_embedding_table(inputs[0]) ||
+            (inputs[0].is_plain() && inputs[0].rank() == 2 &&
+             floating(inputs[0].data_type()) &&
+             inputs[0].byte_strides()[1] ==
+                 static_cast<std::int64_t>(data_type_size(inputs[0].data_type())) &&
+             inputs[0].byte_strides()[0] >= inputs[0].dimensions()[1] *
+                 static_cast<std::int64_t>(data_type_size(inputs[0].data_type())))) &&
+           inputs[1].rank() == 1 &&
            inputs[1].is_dense() && inputs[1].data_type() == DataType::kInt32 &&
            output.rank() == 2 && output.is_dense() &&
-           output.data_type() == DataType::kFloat32;
+           output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
     if (inputs.size() != 2)
       return false;
@@ -1038,8 +1045,20 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
       result = parts.front();
     }
   } else if (node.operation.get_if<Gather>()) {
-    result =
-        ggml_get_rows(context, values[node.inputs[0]], values[node.inputs[1]]);
+    auto *data = values[node.inputs[0]];
+    auto *ids = values[node.inputs[1]];
+    if (recipe.values[node.inputs[0]].is_plain()) {
+      // Same-type selection preserves storage bits, including half/bfloat NaNs.
+      // The C builder defaults to F32; use the original typed CUDA GET_ROWS
+      // path directly, as for GatherElements. Leading row padding is retained
+      // in data->nb[1], never gathered as part of an item's logical row.
+      result = ggml_new_tensor_2d(context, data->type, data->ne[0], ids->ne[0]);
+      result->op = GGML_OP_GET_ROWS;
+      result->src[0] = data;
+      result->src[1] = ids;
+    } else {
+      result = ggml_get_rows(context, data, ids);
+    }
   } else if (node.operation.custom_as<model_ops::GatherElements>()) {
     auto *data = values[node.inputs[0]];
     auto *ids = values[node.inputs[1]];

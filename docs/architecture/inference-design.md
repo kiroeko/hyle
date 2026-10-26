@@ -104,6 +104,8 @@ GDN融合从源槽读取，按时间升序直接写各候选槽；conv按窗口�
 外部写资格仍对应精确原节点和所选artifact，先支持纯节点与一个外部写节点，
 GDN和history各保独立写区域。所有目标与源及保留快照不重叠，仍走原接纳、Completion、
 真实退休及联合发布；失败和取消不覆盖旧head，不增加原`N+K×R`载荷容量。
+Graph对一个指定外部写加纯节点的资格与单次／批量撤回已通过[有限组件检查](../evidence/correctness/inference-fused-writer-2026-10-26.json)，
+CUDA普通浮点选行也已接通；这两项是前提，尚不等于整个索引状态region已经实现。
 
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。

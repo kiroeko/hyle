@@ -104,6 +104,7 @@ enum class ProposalMode : std::uint8_t {
   kAsyncRejectSecond,
   kResourceSingletons,
   kResourcePairs,
+  kProjectedWriteRegion,
   kBoundaryWindows,
   kEquivalentRoutes,
 };
@@ -353,6 +354,7 @@ struct RegionPlan final {
   RegionProbe *probe = nullptr;
   std::uint32_t negation_count = 0;
   bool bounded_unary = false;
+  std::uint32_t external_effects = 0;
 };
 
 struct RegionRun final {
@@ -792,6 +794,12 @@ Result<bool> discover_test_regions(RegionProbe &probe, const Graph &graph,
     }
     return true;
   }
+  if (probe.mode == ProposalMode::kProjectedWriteRegion) {
+    if (graph.node_count() > 3) return std::unexpected(Status::InvalidArgument("projected test region extent"));
+    std::array<NodeId, 3> nodes{};
+    for (std::size_t i = 0; i < graph.node_count(); ++i) nodes[i] = graph.node_id(i).value();
+    return add_node_set_proposal(writer, std::span(nodes).first(graph.node_count()));
+  }
   if (probe.mode == ProposalMode::kResourceSingletons ||
       probe.mode == ProposalMode::kResourcePairs) {
     const std::size_t width =
@@ -1061,6 +1069,7 @@ Status execute_region(void *prepared, void *invocation,
   if (terminal.ok() && !input_close.ok())
     terminal = input_close;
   ++plan.probe->submit_count;
+  plan.probe->effect_submit_count += plan.external_effects;
   return terminal;
 }
 
@@ -1899,16 +1908,20 @@ Status compile_region_checked(void *context,
     return Status::InvalidArgument(
         "region compile resources do not match the proposed route");
   }
+  std::uint32_t negations = 0, external_effects = 0;
   for (NodeId node : request.nodes) {
-    if (!is_negation(*request.graph, node.ordinal()))
-      return Status::InvalidArgument("region contains a non-negation node");
+    if (is_negation(*request.graph, node.ordinal())) ++negations;
+    else if (probe.mode == ProposalMode::kProjectedWriteRegion &&
+        request.graph->operation(node)->custom_as<ExternalEffect>()) ++external_effects;
+    else return Status::InvalidArgument("region contains a non-negation node");
   }
   void *storage = allocator.allocate(sizeof(RegionPlan), alignof(RegionPlan));
   if (storage == nullptr)
     return Status::ResourceExhausted("region plan allocation failed");
   auto *plan = ::new (storage) RegionPlan{
       .probe = &probe,
-      .negation_count = static_cast<std::uint32_t>(request.nodes.size())};
+      .negation_count = negations,
+      .external_effects = external_effects};
   *output = ProviderRegionPrepared{
       .vtable = probe.artifact_properties.runtime.mode ==
                         hyle::compute::ProviderRuntimeMode::kDelegated
@@ -3120,6 +3133,125 @@ TEST(GraphResources, FixedBindingIndexKeepsRebindGenerationAndResultLeaseGuards)
     ASSERT_TRUE(writable) << writable.error().message();
     selected[0] = writable->publish().value();
   }
+}
+
+struct ProjectedWriteGraph final {
+  Graph graph;
+  ValueId input, output;
+  NodeId pure, writer, second;
+};
+ProjectedWriteGraph make_projected_write_graph(bool two_effects = false) {
+  ProjectedWriteGraph result;
+  auto builder = GraphBuilder::create().value();
+  result.input = builder.input(row(8)).value();
+  result.pure = builder.add_node(Operation(Unary{UnaryKind::kNeg}), std::array{result.input}).value();
+  result.output = builder.result(result.pure).value();
+  EXPECT_TRUE(builder.publish(result.output).ok());
+  result.writer = builder.add_node(Operation::custom(ExternalEffect{}), {}).value();
+  EXPECT_TRUE(builder.depends_on(result.writer, result.pure).ok());
+  if (two_effects) {
+    result.second = builder.add_node(Operation::custom(ExternalEffect{}), {}).value();
+    EXPECT_TRUE(builder.depends_on(result.second, result.writer).ok());
+  }
+  result.graph = std::move(builder).finish().value();
+  return result;
+}
+hyle::graph::detail::ProjectedWriter selected_projected_writer(
+    hyle::graph::Invocation &run, NodeId writer) {
+  hyle::graph::detail::ProjectedWriter result;
+  const auto status = hyle::graph::detail::RegionAccess::visit(run,
+      [](void *opaque, const hyle::graph::detail::RegionAccessView &view) noexcept {
+        auto &selected = *static_cast<hyle::graph::detail::ProjectedWriter *>(opaque);
+        selected.step = view.step; selected.implementation = view.prepared_vtable;
+        selected.prepared = view.prepared;
+        return Status::Ok();
+      }, &result);
+  EXPECT_TRUE(status.ok()) << status.message();
+  result.node = writer; return result;
+}
+
+TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
+  using Access = hyle::graph::detail::RegionAccess;
+  const auto logical = make_projected_write_graph();
+  RegionProbe probe{.mode = ProposalMode::kProjectedWriteRegion};
+  probe.artifact_properties.preserves_effects = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  ASSERT_EQ(compiled.report.step(0)->node_count, 2u);
+  auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+  const auto selected = selected_projected_writer(run, logical.writer);
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(32).value();
+  const auto capacity = writer.tensor(row(8))->as_const();
+  const std::array<const hyle::compute::WriteLease *, 1> writers{&writer};
+  // Rejected empty effects install no authority and cannot block a later valid bind.
+  EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, {}, {}, selected, {}, {}).IsInvalidArgument());
+  EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, {}, {}, selected, {}, {}).IsInvalidArgument());
+  EXPECT_TRUE(Access::release_write_effect(run, logical.writer).IsInvalidArgument());
+  auto foreign_graph = make_projected_write_graph();
+  for (int change = 0; change < 4; ++change) {
+    auto wrong = selected;
+    if (change == 0) wrong.node = logical.pure;
+    if (change == 1) wrong.node = foreign_graph.writer;
+    if (change == 2) wrong.implementation = &kResourceRegionVTable;
+    if (change == 3) wrong.prepared = &probe;
+    EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, wrong, {}, {}).IsInvalidArgument());
+    EXPECT_TRUE(writer.view());
+  }
+  ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
+  EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).IsFailedPrecondition());
+  auto input = make_tensor(row(8)); auto output = make_tensor(row(8));
+  const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8}; write(input, values);
+  ASSERT_TRUE(run.bind(logical.input, input.view.as_const()).ok());
+  ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+  auto queue = context.create_queue().value();
+  auto done = run.submit(queue); ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  EXPECT_EQ(probe.effect_submit_count, 1u);
+  const auto observed = read(output, values.size());
+  for (std::size_t i = 0; i < values.size(); ++i) EXPECT_EQ(observed[i], -values[i]);
+  EXPECT_TRUE(Access::release_write_effect(run, logical.pure).IsInvalidArgument());
+  const std::array mixed{logical.writer, logical.pure};
+  EXPECT_TRUE(Access::release_projected_writes(run, mixed).IsInvalidArgument());
+  ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
+  EXPECT_TRUE(Access::release_write_effect(run, logical.writer).IsInvalidArgument());
+  ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
+  const std::array duplicate{logical.writer, logical.writer};
+  EXPECT_TRUE(Access::release_projected_writes(run, duplicate).IsInvalidArgument());
+  const std::array single{logical.writer};
+  ASSERT_TRUE(Access::release_projected_writes(run, single).ok());
+  EXPECT_TRUE(Access::release_projected_writes(run, single).IsInvalidArgument());
+  ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
+  ASSERT_TRUE(run.reset().ok());
+  ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
+  ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
+}
+
+TEST(GraphRouteBoundary, ProjectedWriteRejectsASecondRegionEffectBeforeBinding) {
+  using Access = hyle::graph::detail::RegionAccess;
+  const auto logical = make_projected_write_graph(true);
+  RegionProbe probe{.mode = ProposalMode::kProjectedWriteRegion};
+  probe.artifact_properties.preserves_effects = true;
+  probe.artifact_properties.runtime = kEffectRuntime;
+  auto context = make_context(probe);
+  auto compiled = hyle::graph::compile(logical.graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  ASSERT_EQ(compiled.report.region_count(), 1u);
+  ASSERT_EQ(compiled.report.step(0)->node_count, 3u);
+  auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+  auto selected = selected_projected_writer(run, logical.writer);
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(32).value();
+  const auto capacity = writer.tensor(row(8))->as_const();
+  const std::array<const hyle::compute::WriteLease *, 1> writers{&writer};
+  EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).IsInvalidArgument());
+  selected.node = logical.second;
+  EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).IsInvalidArgument());
+  EXPECT_TRUE(Access::release_write_effect(run, logical.writer).IsInvalidArgument());
+  EXPECT_TRUE(writer.view()); EXPECT_EQ(probe.submit_count, 0u);
 }
 
 TEST(GraphRouteBoundary, ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort) {

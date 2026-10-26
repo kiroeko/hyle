@@ -1,0 +1,128 @@
+{
+  "status": "FOUR_TARGETED_GRAPH_TESTS_PASS",
+  "recorded_at": "2026-10-27T00:03:07.394012+08:00",
+  "task": "Allow a selected multi-node Graph region to retain exactly one original nominated external-write effect, with only pure companions.",
+  "changes": [
+    "Validate exact graph generation, nominated member, selected plan/artifact and original region node traits. Pure companion nodes do not become writable authorities.",
+    "Keep one cold nominated-node ordinal per selected step; the original binding records retain actual permissions. Reset, replacement, single release and bulk release clear the corresponding nomination.",
+    "Reject a second effect, a pure sibling nomination, foreign node/artifact/prepared state, duplicate release and repeated live binding before consuming authority.",
+    "Preserve the existing empty-input rejection. Repeated empty rejection leaves no nomination or binding residue before a valid writer binding."
+  ],
+  "final_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 111892,
+      "sha256": "60df445357d9b7f146dd880721da469043e259f193d355cf80112310b239ef6a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 19762,
+      "sha256": "e381ce58457a6dd503c78058eb2622bc55f2e7f32fe63283d3b8280b25e7c68b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+      "bytes": 634929,
+      "sha256": "dd8b4980033c0bb3f3a8cd8dca7d2a1529d669600fd1a2fe2380c14b6d1ca328"
+    }
+  ],
+  "actual_results": {
+    "final_process": {
+      "exit": 0,
+      "pid": 17648,
+      "seconds": 0.2420836000237614
+    },
+    "final_tests": [
+      {
+        "name": "ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3173",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:02:01.121",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3233",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:02:01.122",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3257",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:02:01.123",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedInputRetainsAllReadersAndLivePageGuards",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3344",
+        "status": "run",
+        "result": "completed",
+        "time": "0.004",
+        "timestamp": "2026-10-27T00:02:01.123",
+        "classname": "GraphRouteBoundary"
+      }
+    ],
+    "unique_TUs": 2,
+    "actual_compile_invocations": 5,
+    "actual_link_invocations": 3,
+    "test_processes": 4,
+    "final_incremental_compile_invocations": 1,
+    "final_resources_object_reused_from_first_passing_build": true
+  },
+  "retained_failures": [
+    {
+      "stage": "Initial run",
+      "process": {
+        "exit": 1,
+        "pid": 16596,
+        "seconds": 0.24481620005099103
+      },
+      "outcome": "Three tests passed; the adjacent projected-input test failed while loading the existing ggml CPU plugin.",
+      "cause": "The new executable directory lacked the pinned plugin hardlink. LOAD_LIBRARY_SEARCH_DEFAULT_DIRS does not search PATH.",
+      "correction": "Add the same pinned DLL as a hardlink beside the unchanged executable; same four tests then passed without rebuilding."
+    },
+    {
+      "stage": "Incorrect empty-effect test expectation",
+      "process": {
+        "exit": 1,
+        "pid": 39600,
+        "seconds": 0.23924419999821112
+      },
+      "outcome": "Three tests passed; the new empty-input success assertion failed.",
+      "cause": "The original validate_write_ranges already rejects missing writers and appenders. The suspected ghost nomination was unreachable.",
+      "correction": "Withdraw the claim and redundant product condition, restore the first passing resources.cc/object, and assert the original InvalidArgument contract. Recompile only the test; same four tests pass."
+    }
+  ],
+  "scope": [
+    "Windows x64, cached MSVC 14.50, /O2 /W4 /WX. Actual original selected Graph RegionProbe artifacts and real LeasePool/Invocation/Queue/Completion paths.",
+    "Exactly two new ProjectedWrite tests plus the existing ProjectedRegion and ProjectedInput neighbors; no full Graph suite.",
+    "Existing singleton-reader restrictions, actual lease admission, COW/tail permissions and retirement protocols are preserved; this batch does not introduce indexed-state kernels."
+  ],
+  "not_claimed": [
+    "No CUDA/Apple/Vulkan kernel validation, model inference, SDK/native rebuild, network transfer or performance measurement.",
+    "No empty-binding product defect was demonstrated or fixed.",
+    "No release_read_projection implementation or validation is included."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-fused-writer-2026-10-26.zip",
+    "bytes": 570197,
+    "sha256": "c8cd6e7237fee3e57710323a0bd7215b18aeb86f8d2f88f0ffda5c5b45c20aef"
+  },
+  "archive_entries": 103,
+  "final_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\empty-rejection-final\\summary.json",
+    "bytes": 3242,
+    "sha256": "53c08edb24cebf02d7f3a6dc693f120ee69c82a68ff5978b04225224e2663e4f"
+  }
+}

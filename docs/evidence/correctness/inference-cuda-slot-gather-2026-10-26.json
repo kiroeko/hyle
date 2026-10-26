@@ -1,0 +1,391 @@
+{
+  "schema": 1,
+  "batch": "inference-cuda-slot-gather-20261026",
+  "status": "THREE_CASES_PASS",
+  "published_at": "2026-10-27T00:02:27.734587+08:00",
+  "test_started_at": "2026-10-26T23:56:13.554",
+  "test_timestamp_timezone": "Asia/Shanghai (UTC+08:00); original GTest timestamp has no offset",
+  "scope": "Plain row Gather carrier only: same-type F32/F16/BF16 rows, padded row storage, raw-bit preservation and checked row IDs; inner-stride refusal; existing target GGUF embedding formats/bounds regression.",
+  "hardware": {
+    "command": [
+      "nvidia-smi",
+      "--query-gpu=name,uuid,driver_version",
+      "--format=csv,noheader"
+    ],
+    "output": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "source_identity": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 64055,
+      "sha256": "21c8e824f28837b765512254f74f61a5dd2b418f1d2a11741953b6c91a1538b5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+      "bytes": 93270,
+      "sha256": "663caf8eb3ba42293368b9bc75567afb1357782ab0104d93150aec0070710fed"
+    }
+  ],
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-slot-gather-20261026\\link2\\cuda-gather-test.exe",
+    "bytes": 140062208,
+    "sha256": "839b30d52ffe196772c6d02ecb756eb67b639558fc1b28baf49af5f907fe9435"
+  },
+  "process_stages": [
+    {
+      "stage": "compile/program",
+      "exit": 0,
+      "pid": 47448,
+      "seconds": 1.6187904000398703
+    },
+    {
+      "stage": "compile/test",
+      "exit": 2,
+      "pid": 42212,
+      "seconds": 0.04008959996281192
+    },
+    {
+      "stage": "compile2/test",
+      "exit": 0,
+      "pid": 32868,
+      "seconds": 4.95430809998652
+    },
+    {
+      "stage": "link2",
+      "exit": 0,
+      "pid": 54300,
+      "seconds": 1.7231343000312336
+    },
+    {
+      "stage": "run1",
+      "exit": 0,
+      "pid": 11656,
+      "seconds": 21.132952699961606
+    }
+  ],
+  "test_cases": [
+    {
+      "name": "PlainGatherPreservesBitsPaddedRowsAndCheckedBounds",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+      "line": "1171",
+      "status": "run",
+      "result": "completed",
+      "time": "0.099",
+      "timestamp": "2026-10-26T23:56:13.554",
+      "classname": "GgmlCudaTensor"
+    },
+    {
+      "name": "PlainGatherDeclinesInnerStrides",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+      "line": "1177",
+      "status": "run",
+      "result": "completed",
+      "time": "0.001",
+      "timestamp": "2026-10-26T23:56:13.654",
+      "classname": "GgmlCudaTensor"
+    },
+    {
+      "name": "NativeEmbeddingRowsUseTargetGgufFormatsAndCheckBounds",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\tensor_test.cc",
+      "line": "1189",
+      "status": "run",
+      "result": "completed",
+      "time": "20.587",
+      "timestamp": "2026-10-26T23:56:13.655",
+      "classname": "GgmlCudaTensor"
+    }
+  ],
+  "tests": 3,
+  "failures": 0,
+  "skipped": 0,
+  "compile_contract": "Original CUDA/GGML_CUDA /O2 /W4 /WX CXX flags and pinned native header/source closure. No NVCC invocation.",
+  "successful_distinct_TUs": 2,
+  "compile_processes": 3,
+  "link_processes": 1,
+  "test_processes": 1,
+  "recipe_failure": {
+    "stage": "compile/test",
+    "exit": 2,
+    "message": "fatal error C1083: cannot open include file ggml.h",
+    "cause": "Reused bfloat test recipe did not need ggml.h, while the full tensor test TU does.",
+    "correction": "plan2 adds only the same cached native-source/include and native-source/src external include flags from the already successful product recipe; keeps product source/object unchanged and recompiles only the failed test TU.",
+    "record": "records/compile/test/stdout.log",
+    "product_recompiles": 0,
+    "product_changes_for_failure": 0,
+    "runtime_retries": 0
+  },
+  "reuse": {
+    "original_inputs": 223,
+    "result_inputs": 221,
+    "baseline": {
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\engine\\cuda\\link\\command.json",
+        "bytes": 31641,
+        "sha256": "9357321f4b01ce0be0f48a89121dd98db2f59da3a4f4e1e370c67182594721ea"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\engine\\cuda\\link-inputs.json",
+        "bytes": 58057,
+        "sha256": "b72fcd6667eb3450a0ff1b09f208b5618e944b5b49adddc06af865bb5a358239"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\engine\\cuda\\runtime.json",
+        "bytes": 8230,
+        "sha256": "c1778b09b3ed74bd39e0f5f3d845e1ccc70fb39ba17f7a2e1280a199d9fae67a"
+      }
+    },
+    "replaced_program": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-causal-conv-20261026\\compile\\ggml-supports\\unit.obj",
+      "bytes": 816389,
+      "sha256": "22fffb542258252318f8e6c598d0db0f14f430ca217fcdb5f27deb97e3862051"
+    },
+    "reused_current_LeaseSlots_core": {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-storage-freeze-20261026\\compile\\core\\unit.obj",
+        "bytes": 468504,
+        "sha256": "d0f983a6ccc0d1790e00812a5a624e3697e009105acd9bfce11c110cef4cbe9f"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-lease-slots-20261026\\compile\\core\\unit.obj",
+        "bytes": 509574,
+        "sha256": "0b948494bdf254b09cb7c4d5945897ea10ddadcb8573d8724462584c92fb51ab"
+      },
+      "source_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-lease-slots-20261026\\compile\\core\\actual-dependencies.json",
+        "bytes": 38229,
+        "sha256": "79a37b02e641163ec71c2286c9ded130c7f1e3a57aaeda45cb7c908ca12b302b"
+      }
+    },
+    "removed_engine_objects": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\engine\\compile\\cuda\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\report\\unit.obj",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-reusable-state-20261026\\cuda2\\compile\\weights\\unit.obj"
+    ],
+    "retained": "Existing ggml CUDA native objects/libraries, GPU dependencies, core Compute and GoogleTest. No archive rewrite or third-party update.",
+    "runtime_adaptation": "Use the original runtime PATH plus the existing baseline image directory for its retained native alias; no SDK or native DLL copy."
+  },
+  "limits": [
+    "This finite result does not establish complete-model speedup, decode throughput, or task quality.",
+    "Projected-read resource permission and whole-engine slot-index wiring are outside this plain row Gather check.",
+    "Only the three listed cases ran on the recorded RTX 4070; no other GPU/platform matrix was run."
+  ],
+  "quality_claim": false,
+  "performance_claim": false,
+  "SDK_builds": 0,
+  "NVCC_builds": 0,
+  "model_runs": 0,
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cuda-slot-gather-2026-10-26.zip",
+    "bytes": 103412,
+    "sha256": "f70cddb813b36bebd5d1e9a7fd42113414c6aa31545ff1d90a54b25fd5e0a2ab",
+    "file_count": 41,
+    "files": [
+      {
+        "path": "records/build.py",
+        "bytes": 9084,
+        "sha256": "492083b355f10194cd09fa4cd7603ea606ddd78c23c8518c2d9c6bdd81d582d2"
+      },
+      {
+        "path": "records/compile/program/actual-dependencies.json",
+        "bytes": 37540,
+        "sha256": "162eb68c968f14a4954f9b0b3abc6ea64d72c745069ac04275bfd4c007ae63ab"
+      },
+      {
+        "path": "records/compile/program/command.json",
+        "bytes": 2781,
+        "sha256": "3661679dc642878b4c30d2294dcd3a30dd46fa6c02d8f5ea587bf2596a1cc7ba"
+      },
+      {
+        "path": "records/compile/program/dependencies.json",
+        "bytes": 18783,
+        "sha256": "03b09fea4218dc8a5a737acf7605806adb9cf124c8693c5ec9e0893f01517c94"
+      },
+      {
+        "path": "records/compile/program/process.json",
+        "bytes": 70,
+        "sha256": "f024211ab529722c37681947f31eaff8d789d2f477d83839dc01fb2bfaa49ad1"
+      },
+      {
+        "path": "records/compile/program/running.json",
+        "bytes": 22,
+        "sha256": "633bd3cc0ecca5092b4923c4b54442564042de24c3f7f308dd39b2679133664c"
+      },
+      {
+        "path": "records/compile/program/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/program/stdout.log",
+        "bytes": 19,
+        "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+      },
+      {
+        "path": "records/compile/test/command.json",
+        "bytes": 1745,
+        "sha256": "7e52d11f69b3af0bff26289754189ef65703aabe2829ddde27f8268dce37c3d4"
+      },
+      {
+        "path": "records/compile/test/process.json",
+        "bytes": 71,
+        "sha256": "caf5829947d7e12a7a55415656ec7646a473622c04e62c3a487134173af062d6"
+      },
+      {
+        "path": "records/compile/test/running.json",
+        "bytes": 22,
+        "sha256": "efc94b31f309ad616dd0962c7d55b61a6af5ea9e2328862174ad822fa5ae202a"
+      },
+      {
+        "path": "records/compile/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/test/stdout.log",
+        "bytes": 198,
+        "sha256": "5ce687c93c24d22753583cfbdf0deb752287e492f8a512f4c04c6bb28cdc1d82"
+      },
+      {
+        "path": "records/compile2/test/actual-dependencies.json",
+        "bytes": 59717,
+        "sha256": "b2aa9005883908843a59bd5d10d185de951ae2082a3e68d88d264383d082324d"
+      },
+      {
+        "path": "records/compile2/test/command.json",
+        "bytes": 2026,
+        "sha256": "7dcd4c0f9b5f2289f6f96983e406f51ba2fe7dfdd6e3c19e21daabcc049186d9"
+      },
+      {
+        "path": "records/compile2/test/dependencies.json",
+        "bytes": 31553,
+        "sha256": "3af8629c55cdbc8c9e106865710cbeb39af0a082488dfc47909e04756c30ca92"
+      },
+      {
+        "path": "records/compile2/test/process.json",
+        "bytes": 68,
+        "sha256": "e68853308e52d44bfcceaf694bd9dced0e6473c1c39279517397a296cbf295fd"
+      },
+      {
+        "path": "records/compile2/test/running.json",
+        "bytes": 22,
+        "sha256": "33db3edd93af8c39fd21a631d0ff17b9ef0421c09185eea6b19fcbba82d588fa"
+      },
+      {
+        "path": "records/compile2/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile2/test/stdout.log",
+        "bytes": 16,
+        "sha256": "14139b27868f7c81174fe41aab59cbda5dc4d9bfc4984c5a163767e5e0e9562e"
+      },
+      {
+        "path": "records/link-inputs.json",
+        "bytes": 57574,
+        "sha256": "1e3c38a8bae706dabdcd1c1797408db6ae81e5bee2d68d562e2ecffd098028cd"
+      },
+      {
+        "path": "records/link2/command.json",
+        "bytes": 31384,
+        "sha256": "0e4f6e494ddf77d522a4503a23b50a4d5266801ed6198c1c11baafa23e1724d0"
+      },
+      {
+        "path": "records/link2/process.json",
+        "bytes": 70,
+        "sha256": "f4fdc6927a7165d8163e7bb341e4b53ea28acb4c15c52d9eb870e9f9fcb8b32d"
+      },
+      {
+        "path": "records/link2/running.json",
+        "bytes": 22,
+        "sha256": "67334efd68f270f6aef466af9fd74e1506fe19698189217d60e9d67e3e69e49e"
+      },
+      {
+        "path": "records/link2/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link2/stdout.log",
+        "bytes": 221,
+        "sha256": "06011206fd5184cd8ab7f17b370124c742bf10b1957454e94551a76929b4914c"
+      },
+      {
+        "path": "records/plan.json",
+        "bytes": 9236,
+        "sha256": "c6f4f204681a6ca6981e02ab4f0361c80e24e206366c3f4f411132cff191e54b"
+      },
+      {
+        "path": "records/plan2.json",
+        "bytes": 10030,
+        "sha256": "ab5701c299983b12b2b30817e020cee7e83df7381322c64e32e4ef4f0f98f9d9"
+      },
+      {
+        "path": "records/publish.py",
+        "bytes": 5894,
+        "sha256": "c3c95bc4361ec76b353b8f58068c123f4ef5264602fa22574d5efbbb99f3cd04"
+      },
+      {
+        "path": "records/ready2.json",
+        "bytes": 3091,
+        "sha256": "67bed52bc721905da3f2a30ab46fcab8bea28a2950fbf88f61721cab747b53de"
+      },
+      {
+        "path": "records/results.xml",
+        "bytes": 1166,
+        "sha256": "9c7abefdffbb7e774d18b6eeca935db88653c901b12e64eb37e465f1b6073c28"
+      },
+      {
+        "path": "records/run1/command.json",
+        "bytes": 474,
+        "sha256": "1e82fa7e5dbffa141263a04a49f23a535c87635ddf1572f986e779c69ff2b337"
+      },
+      {
+        "path": "records/run1/process.json",
+        "bytes": 70,
+        "sha256": "a62c6727f227219721f08d2cf31d50cb7cc57ba3c5a8e942e2460c3ca56d3235"
+      },
+      {
+        "path": "records/run1/running.json",
+        "bytes": 22,
+        "sha256": "a8a34ca3dd976054079262cb8e0fc70220b6fe90d1cadba3e045700b72956fe2"
+      },
+      {
+        "path": "records/run1/stderr.log",
+        "bytes": 1615,
+        "sha256": "8d25a146c0829281e058b502dc6eaeb076d39b84518c93095833a49ea75a52ae"
+      },
+      {
+        "path": "records/run1/stdout.log",
+        "bytes": 1074,
+        "sha256": "9ad023b4798197ec1dacfe86f79ded88dfd9ad2c4405ba17443761c14df1176e"
+      },
+      {
+        "path": "records/runtime.json",
+        "bytes": 8447,
+        "sha256": "d022b7032a847499c1d8e58308a9ad029e95b1fe9324495747b03d8d7233ef1b"
+      },
+      {
+        "path": "records/source-freeze.json",
+        "bytes": 13154,
+        "sha256": "4a01afeadba42e4a607a4e47567784012b5a308ccebaa611370b7ace9fc032ec"
+      },
+      {
+        "path": "records/summary.json",
+        "bytes": 1079,
+        "sha256": "7782793839e5d883f34083f5e344928b4aea7aed88a12ef3adf89345b9be6006"
+      },
+      {
+        "path": "source/src/compute_provider_ggml_cuda/tensor_program.cc",
+        "bytes": 64055,
+        "sha256": "21c8e824f28837b765512254f74f61a5dd2b418f1d2a11741953b6c91a1538b5"
+      },
+      {
+        "path": "source/tests/compute_provider_ggml_cuda/tensor_test.cc",
+        "bytes": 93270,
+        "sha256": "663caf8eb3ba42293368b9bc75567afb1357782ab0104d93150aec0070710fed"
+      }
+    ]
+  }
+}

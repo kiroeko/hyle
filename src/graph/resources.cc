@@ -50,6 +50,7 @@ struct ResourceEpisode final {
         input_lease_candidates(mem::StdAllocator<std::uint32_t>(selected)),
         unbind_steps(mem::StdAllocator<std::uint8_t>(selected)),
         unbind_instances(mem::StdAllocator<std::uint8_t>(selected)),
+        nominated_writers(mem::StdAllocator<std::uint32_t>(selected)),
         permissions(selected) {}
   ~ResourceEpisode() {
     if (payload) payload_table->destroy(payload);
@@ -67,6 +68,11 @@ struct ResourceEpisode final {
   // InvocationState/PreparedRegion layout in other modules.
   std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> unbind_steps;
   std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> unbind_instances;
+  // One bound original external-write NodeId ordinal per selected region.
+  // Permissions remain solely in bindings; this identity lets retired release
+  // reject a pure sibling without retaining the whole source Graph or scanning
+  // every permission once per nominated node.
+  std::vector<std::uint32_t, mem::StdAllocator<std::uint32_t>> nominated_writers;
   std::size_t fixed_binding_count = 0;
   // Publication stays lazy at the first successful result(). Later ports in
   // the same episode need not rescan writers already converted to reads.
@@ -357,6 +363,7 @@ void reset_resource_bindings(InvocationState &state) noexcept {
   // All extra records are anonymous page guards; fixed ValueId slots never
   // move. Shrinking releases exactly the old projected permission suffix.
   episode.bindings.resize(episode.fixed_binding_count);
+  std::fill(episode.nominated_writers.begin(), episode.nominated_writers.end(), UINT32_MAX);
   for (auto &binding : episode.bindings) clear_binding_owner(binding);
 }
 std::span<const ExternalInputConsumer>
@@ -427,6 +434,7 @@ void reset_configuration_bindings(InvocationState &state) noexcept {
       clear_binding_owner(binding);
     }
     episode.bindings.resize(episode.fixed_binding_count);
+    std::fill(episode.nominated_writers.begin(), episode.nominated_writers.end(), UINT32_MAX);
     episode.configuration_spans = reusable;
   }
   // Sources remain bound; dependency routes and readiness belong to the old
@@ -435,14 +443,18 @@ void reset_configuration_bindings(InvocationState &state) noexcept {
 }
 void note_borrowed_binding(InvocationState &state, ValueId value) noexcept {
   const auto *previous = find_binding(&state, value);
+  const auto previous_writer=previous?previous->writer_step:UINT32_MAX;
   if (state.input_sources || (previous &&
       (previous->read.valid() || previous->write.valid() ||
        previous->scope != BindingScope::kCaller)))
     invalidate_native_input_bindings(state, value);
   note_borrowed_input_source(state, value);
   if (!state.resources) return;
-  auto &bindings = state.resources.get()->bindings;
-  const auto extras = bindings.begin() + state.resources.get()->fixed_binding_count;
+  auto &episode = *state.resources.get();
+  if (previous_writer < episode.nominated_writers.size())
+    episode.nominated_writers[previous_writer] = UINT32_MAX;
+  auto &bindings = episode.bindings;
+  const auto extras = bindings.begin() + episode.fixed_binding_count;
   bindings.erase(std::remove_if(extras, bindings.end(), [&](const auto &binding) {
     return binding.projection == value;
   }), bindings.end());
@@ -731,14 +743,27 @@ Status RegionAccess::validate_projected_writer(InvocationState&state,const Graph
       writer.step>=plan.steps.size() || writer.step>=state.invocations.size() ||
       !state.invocations[writer.step].region.valid())
     return Status::InvalidArgument("projected writer belongs to another Graph/plan or has no original slot");
-  HYLE_ASSIGN_OR_RETURN(auto logical_writer,graph.node_id(writer.node.ordinal()));
-  HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(logical_writer));
+  const auto*logical=GraphAccess::state(graph);
   const auto&selected=plan.steps[writer.step];
-  if(logical_writer!=writer.node || compute::operation_traits(operation).effect!=compute::EffectKind::kExternalSideEffect ||
-      selected.kind!=PlanStepKind::kRegion || selected.node_count!=1 ||
-      selected.node_set_begin>=plan.step_nodes.size() || plan.step_nodes[selected.node_set_begin]!=writer.node.ordinal() ||
+  if(!logical || logical->generation!=plan.generation || selected.kind!=PlanStepKind::kRegion ||
+      !selected.node_count || selected.node_set_begin>plan.step_nodes.size() ||
+      selected.node_count>plan.step_nodes.size()-selected.node_set_begin ||
       !selected.region.matches_artifact(writer.implementation,writer.prepared))
     return Status::InvalidArgument("projected write lacks its actual selected external-write implementation");
+  bool nominated=false;
+  const auto nodes=std::span<const std::uint32_t>(plan.step_nodes).subspan(selected.node_set_begin,selected.node_count);
+  for(const auto node:nodes){
+    if(node>=logical->nodes.size() || node>=plan.node_steps.size() || plan.node_steps[node]!=writer.step)
+      return Status::InvalidArgument("projected writer region contains a foreign original node");
+    const auto traits=logical->nodes[node].traits();
+    if(node==writer.node.ordinal()){
+      if(nominated || traits.effect!=compute::EffectKind::kExternalSideEffect)
+        return Status::InvalidArgument("projected writer is not the original external-write node");
+      nominated=true;
+    }else if(traits.effect!=compute::EffectKind::kPure || traits.resource_count!=0)
+      return Status::InvalidArgument("projected writer region contains another effect or resource access");
+  }
+  if(!nominated)return Status::InvalidArgument("projected writer is outside its selected original region");
   if(selected.runtime_properties().mode!=compute::ProviderRuntimeMode::kSharedQueue)
     HYLE_RETURN_IF_ERROR(qualify_ordered_writer(state,writer.step,nullptr));
   return Status::Ok();
@@ -752,10 +777,8 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
   auto*state=InvocationAccess::state(invocation);HYLE_ASSIGN_OR_RETURN(auto*episode,require_resources(state));
   const auto&plan=*state->plan;
   HYLE_RETURN_IF_ERROR(validate_projected_writer(*state,graph,writer));
-  for(const auto&binding:episode->bindings)
-    if((binding.scope==BindingScope::kWriteEffect || binding.scope==BindingScope::kWrittenProjection) &&
-        binding.writer_step==writer.step)
-      return Status::FailedPrecondition("original projected writer needs release before rebinding");
+  if(episode->nominated_writers[writer.step]!=UINT32_MAX)
+    return Status::FailedPrecondition("original projected writer needs release before rebinding");
   for(const auto&reader:readers){
     if(reader.step>=plan.steps.size() || reader.step<=writer.step)
       return Status::InvalidArgument("projected write must precede every selected reader");
@@ -804,6 +827,7 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
   // These are original prepared-program control buffers, never arena pages or
   // write authority. The same episode admits/retains their actual read uses.
   for(const auto&control:controls)episode->bindings.push_back({.projection=value,.read=control,.borrowed=false,.scope=BindingScope::kWrittenProjection});
+  episode->nominated_writers[writer.step]=writer.node.ordinal();
   return Status::Ok();
 }
 Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
@@ -813,10 +837,8 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
     std::span<const compute::ReadLease>controls,ResourceOptions options)noexcept{
   auto*state=InvocationAccess::state(invocation);HYLE_ASSIGN_OR_RETURN(auto*episode,require_resources(state));
   HYLE_RETURN_IF_ERROR(validate_projected_writer(*state,graph,writer));
-  for(const auto&binding:episode->bindings)
-    if((binding.scope==BindingScope::kWriteEffect || binding.scope==BindingScope::kWrittenProjection) &&
-        binding.writer_step==writer.step)
-      return Status::FailedPrecondition("original write effect needs release before rebinding");
+  if(episode->nominated_writers[writer.step]!=UINT32_MAX)
+    return Status::FailedPrecondition("original write effect needs release before rebinding");
   HYLE_RETURN_IF_ERROR(validate_write_ranges(tensor,pages,writers,appenders,controls));
   const auto storage=tensor.storage();
   for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
@@ -840,6 +862,7 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
   for(const auto*page:writers)episode->bindings.push_back({.projected_writer=page,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
   for(const auto*append:appenders)episode->bindings.push_back({.projected_appender=append,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
   for(const auto&control:controls)episode->bindings.push_back({.read=control,.writer_step=writer.step,.borrowed=false,.scope=BindingScope::kWriteEffect});
+  episode->nominated_writers[writer.step]=writer.node.ordinal();
   return Status::Ok();
 }
 bool RegionAccess::successful_outcome(const Invocation&invocation)noexcept{
@@ -906,6 +929,8 @@ Status RegionAccess::release_write_effect(Invocation&invocation,NodeId node)noex
     return Status::InvalidArgument("write effect belongs to another Graph/plan");
   const auto writer_index=plan.node_steps[node.ordinal()];
   auto&episode=*state->resources.get();
+  if(writer_index>=episode.nominated_writers.size() || episode.nominated_writers[writer_index]!=node.ordinal())
+    return Status::InvalidArgument("node is not the original bound external writer");
   if(std::none_of(episode.bindings.begin(),episode.bindings.end(),[&](const auto&binding){
       return binding.scope==BindingScope::kWriteEffect && binding.writer_step==writer_index;
     }))return Status::InvalidArgument("node has no original write-effect binding");
@@ -915,6 +940,7 @@ Status RegionAccess::release_write_effect(Invocation&invocation,NodeId node)noex
   episode.bindings.erase(std::remove_if(first,episode.bindings.end(),[&](const auto&binding){
     return binding.scope==BindingScope::kWriteEffect && binding.writer_step==writer_index;
   }),episode.bindings.end());
+  episode.nominated_writers[writer_index]=UINT32_MAX;
   return Status::Ok();
 }
 Status RegionAccess::release_written_projection(Invocation&invocation,ValueId value)noexcept{
@@ -923,7 +949,11 @@ Status RegionAccess::release_written_projection(Invocation&invocation,ValueId va
   auto*binding=find_binding(state,value);
   if(!binding || binding->scope!=BindingScope::kWrittenProjection)
     return Status::InvalidArgument("input has no original projected write binding");
-  HYLE_RETURN_IF_ERROR(release_writer_preparation(invocation,binding->writer_step));
+  const auto writer_index=binding->writer_step;
+  auto&episode=*state->resources.get();
+  if(writer_index>=episode.nominated_writers.size() || episode.nominated_writers[writer_index]==UINT32_MAX)
+    return Status::InvalidArgument("input has no original nominated projected writer");
+  HYLE_RETURN_IF_ERROR(release_writer_preparation(invocation,writer_index));
   for(const auto&consumer:projected_input_consumers(*state->plan,value.ordinal())){
     // Keep only physical recordings qualified by BOTH the selected reader
     // and the actual capture backend. They remain dormant: the writer above
@@ -934,9 +964,9 @@ Status RegionAccess::release_written_projection(Invocation&invocation,ValueId va
        !state->step_bindings[consumer.step].stable_binding_identity)
       invalidate_step_recording(*state,consumer.step);
   }
-  auto&episode=*state->resources.get();
   const auto first=episode.bindings.begin()+episode.fixed_binding_count;
   episode.bindings.erase(std::remove_if(first,episode.bindings.end(),[&](const auto&entry){return entry.projection==value;}),episode.bindings.end());
+  episode.nominated_writers[writer_index]=UINT32_MAX;
   binding=find_binding(state,value);const auto physical=state->plan->external_instances[value.ordinal()];
   state->readable[physical]={};state->bound[physical]=0;clear_binding_owner(*binding);
   return Status::Ok();
@@ -963,9 +993,13 @@ Status RegionAccess::release_projected_writes(Invocation&invocation,
         plan.steps[step].kind!=PlanStepKind::kRegion || !plan.steps[step].region.valid())
       return Status::InvalidArgument("projected writer has no original selected region");
     const auto&writer=plan.steps[step];
-    if(writer.node_count!=1 || writer.node_set_begin>=plan.step_nodes.size() ||
-        plan.step_nodes[writer.node_set_begin]!=node.ordinal())
-      return Status::InvalidArgument("projected writer is not its original singleton node");
+    if(!writer.node_count || writer.node_set_begin>plan.step_nodes.size() ||
+        writer.node_count>plan.step_nodes.size()-writer.node_set_begin)
+      return Status::InvalidArgument("projected writer region node extent is invalid");
+    const auto members=std::span<const std::uint32_t>(plan.step_nodes).subspan(writer.node_set_begin,writer.node_count);
+    if(std::ranges::find(members,node.ordinal())==members.end() ||
+        step>=episode.nominated_writers.size() || episode.nominated_writers[step]!=node.ordinal())
+      return Status::InvalidArgument("projected writer is not its original nominated region member");
     if(marks[step]&selected)return Status::InvalidArgument("projected writer is duplicated");
     marks[step]|=selected;
   }
@@ -1012,6 +1046,7 @@ Status RegionAccess::release_projected_writes(Invocation&invocation,
     const auto physical=plan.external_instances[entry.value.ordinal()];
     state->readable[physical]={};state->bound[physical]=0;clear_binding_owner(entry);
   }
+  for(const auto node:nodes)episode.nominated_writers[plan.node_steps[node.ordinal()]]=UINT32_MAX;
   return Status::Ok();
 }
 bool RegionAccess::outcome_available(const Invocation&invocation)noexcept{
@@ -1655,6 +1690,7 @@ Status Invocation::prepare_resources(ResourceOptions options) noexcept {
     episode->fixed_binding_count = episode->bindings.size();
     episode->input_lease_candidates.reserve(episode->bindings.capacity());
     episode->unbind_steps.resize(state_->plan->steps.size());
+    episode->nominated_writers.assign(state_->plan->steps.size(), UINT32_MAX);
     episode->unbind_instances.resize(state_->readable.size());
     if (episode->fixed_binding_count != 0) {
       episode->binding_slots.assign(state_->plan->descriptions.size(), UINT32_MAX);
