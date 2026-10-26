@@ -110,6 +110,10 @@ CUDA普通浮点选行也已接通；这两项是前提，尚不等于整个索�
 预分配元数据、整批检查后才移交原writer，并保存generation。它不执行或发布状态，
 已通过[6组资源事务检查](../evidence/correctness/inference-slot-bindings-2026-10-27.json)。
 实际Store region将持有该事务，避免另占KV已使用的Invocation资源payload。
+原生工作真实退休后，集成层可用`release_read_projection`只撤回指定ready容量及其guard和透明alias，
+使旧源槽有机会重新取得写权；其它绑定、payload与pending来源不被重置。
+原生导入沿原反向释放链清理，只有精确reader和实际backend同时证明时才保留录制。
+[11项有限检查](../evidence/correctness/inference-projected-read-release-2026-10-27.json)覆盖两类投影、失败／关闭、alias、录制资格及原unbind合同。
 
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。

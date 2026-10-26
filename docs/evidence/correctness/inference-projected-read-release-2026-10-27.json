@@ -1,0 +1,217 @@
+{
+  "status": "ELEVEN_TARGETED_GRAPH_TESTS_PASS",
+  "recorded_at": "2026-10-27T00:21:29.416843+08:00",
+  "task": "Withdraw one ready projected input after actual retirement without resetting other Graph bindings.",
+  "API": "detail::RegionAccess::release_read_projection(Invocation&,ValueId) noexcept",
+  "changes": [
+    "The new narrow entry and original caller unbind share the existing native input closure, complete native validation and reverse binding-release sequence.",
+    "Withdraw only the nominated ready projected input and its anonymous page guards; reject pending inputs, foreign values, unrelated configuration/caller ports, and repeated withdrawal.",
+    "Clear all concrete transparent aliases of that input and mark the external alias index dirty. Other fixed bindings and resource payload/source owners remain installed.",
+    "Use the original outcome plus preparation gate. Actually retired failed/closed invocations can release their original ready guards without reopening execution or source admission.",
+    "Keep a recording only with the exact selected reader permission-change proof and actual backend stable-binding identity; otherwise invalidate before dropping guards. General inspected ReadProjection has no invented preservation proof."
+  ],
+  "final_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 115586,
+      "sha256": "2b656725d339f395bfad97800a1101f8dc0040a2fc5819848067c3a2dc8f4314"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 20269,
+      "sha256": "0e76e728941927c6fc49ff02d2b49cd790ce3125d8fd9f5da79ad9f94ea88018"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+      "bytes": 647460,
+      "sha256": "2c0039d8f23357297112a168e00ae4b007beb1c5cd3eff14a64f2ac6d5c21823"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\invocation_unbind_test.cc",
+      "bytes": 20879,
+      "sha256": "5ce114b0fd97777f7a20e1b809c0dc00a50234442725c6d989f5918fe304c0ee"
+    }
+  ],
+  "verification": {
+    "tests": [
+      {
+        "name": "ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3185",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.713",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3245",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.713",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedRegionRequiresItsSelectedArtifactAndPhysicalPort",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3269",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.714",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedInputRetainsAllReadersAndLivePageGuards",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3356",
+        "status": "run",
+        "result": "completed",
+        "time": "0.004",
+        "timestamp": "2026-10-27T00:20:18.714",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedReadReleaseKeepsOtherBindingsAndRejectsPending",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3486",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.718",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedReadReleaseClearsTransparentAliasViews",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3542",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.718",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedReadReleaseRequiresActualRetirementAndRecoversTerminalSlots",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3596",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.718",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "ProjectedReadReleasePreservesOnlyDoublyQualifiedRecordings",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "line": "3629",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.718",
+        "classname": "GraphRouteBoundary"
+      },
+      {
+        "name": "OwnedPortsReleaseTheirActualPoolsAndKeepOtherBindings",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\invocation_unbind_test.cc",
+        "line": "93",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.719",
+        "classname": "InvocationUnbind"
+      },
+      {
+        "name": "InvalidTailLeavesEarlierPortsAndPreparationUnchanged",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\invocation_unbind_test.cc",
+        "line": "128",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.719",
+        "classname": "InvocationUnbind"
+      },
+      {
+        "name": "CompletionAndResultRetirementGatesRemainRequired",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\invocation_unbind_test.cc",
+        "line": "376",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:20:18.719",
+        "classname": "InvocationUnbind"
+      }
+    ],
+    "process": {
+      "exit": 0,
+      "pid": 50324,
+      "seconds": 0.23602289997506887
+    },
+    "unique_TUs": 3,
+    "compiled_sources": [
+      "src/graph/resources.cc",
+      "tests/graph/region_provider_test.cc",
+      "tests/graph/invocation_unbind_test.cc"
+    ],
+    "actual_compile_attempts": 5,
+    "actual_link_attempts": 2,
+    "test_processes": 2,
+    "first_resources_object_reused": true,
+    "final_unbind_object_reused": true,
+    "cached_link_input_count": 138,
+    "compiler": "MSVC 14.50 x64 /O2 /W4 /WX",
+    "final_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-projected-read-release-20261027\\ready3.json",
+      "bytes": 3003,
+      "sha256": "13fc5230c7dc772a6cbe840a46c638349036a3989aa0260e3353f11dbe8fc643"
+    },
+    "final_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-projected-read-release-20261027\\summary.json",
+      "bytes": 5138,
+      "sha256": "8f0a6b50759c26d23866004d65f54cce464f83a50858056ca38ce89cc82b7350"
+    }
+  },
+  "retained_failures": [
+    {
+      "stage": "First region test compilation",
+      "process": {
+        "exit": 2,
+        "pid": 52144,
+        "seconds": 3.389579899958335
+      },
+      "cause": "Two SCOPED_TRACE macros on the same source line expanded to the same generated variable name.",
+      "correction": "Split the macros onto separate lines. Reuse the passing resources object; no product change."
+    },
+    {
+      "stage": "First 11-test execution",
+      "process": {
+        "exit": 1,
+        "pid": 29628,
+        "seconds": 0.23926569998729974
+      },
+      "passed": 9,
+      "failed": 2,
+      "cause": "Two new test paths incorrectly expected a completed wait to retain the Completion observation while the wrapper remained alive. The original successful wait already retires that use; an independent live GraphOutput still blocks withdrawal.",
+      "correction": "Correct only these test expectations to the original Completion contract. Recompile only region_provider_test.cc, reuse resources and unbind objects, and run the same 11 tests once. No product gate was weakened."
+    }
+  ],
+  "scope": [
+    "Four new ready-read release contracts, four original neighboring projection contracts, and three original InvocationUnbind contracts in one final Windows host GTest process.",
+    "Real original Graph/LeasePool/Invocation/Queue/Completion and prepared test artifact paths; asynchronous/capture behavior uses the existing original mock backend, not a new executor.",
+    "The checks cover guard-to-writer recovery, unrelated bindings, pending/wrong/double rejection, live GraphOutput and running gates, actual terminal failed/closed cleanup, transparent aliases, and both recording qualifications."
+  ],
+  "not_claimed": [
+    "No model inference, native GPU/Apple/Vulkan execution, real device failure injection, SDK/native rebuild, network download, full Graph suite or performance conclusion.",
+    "The first observed failures were test implementation/expectation errors; they do not demonstrate a product Completion-retirement defect.",
+    "This batch provides an internal resource-release capability. The future indexed-state kernels and engine integration are separate work."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-projected-read-release-2026-10-27.zip",
+    "bytes": 548821,
+    "sha256": "9934c83e8647751ef275e968e7432aa48dc77e6951110f7f08a5c117fd11ac24"
+  },
+  "archive_entries": 80
+}

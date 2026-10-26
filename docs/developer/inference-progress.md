@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 00:12（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **59%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 00:25（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **59%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -35,7 +35,7 @@
 
 ## 正在做
 
-- GDN／conv索引状态：约40%（所属：稳态状态协议；Store描述与槽绑定事务6组检查通过，正在补读权限撤回和实际Store region，随后接原生索引执行；完整路径尚未接通）。
+- GDN／conv索引状态：约40%（所属：稳态状态协议；读权限撤回11项检查通过，正在接实际Store region与CPU／CUDA默认装配，随后接原生索引执行；完整路径尚未接通）。
 
 剩余大项仍包括原生GDN／conv稳定状态、MTP稳定状态槽、形状政策及重叠执行，不能以KV完成代签这些工作。
 
@@ -43,6 +43,7 @@
 
 索引状态的三个前提已落地：[原池槽资源](../evidence/correctness/inference-lease-slots-2026-10-26.json)25项、[融合写资格](../evidence/correctness/inference-fused-writer-2026-10-26.json)4项、[CUDA浮点Gather](../evidence/correctness/inference-cuda-slot-gather-2026-10-26.json)3组有限检查通过。后者保持F32／F16／BF16原码并支持行padding；未完成GDN／conv整段融合，也未重测完整模型性能。
 模型无关的Store描述及[槽绑定事务](../evidence/correctness/inference-slot-bindings-2026-10-27.json)另有6组检查通过，覆盖元数据失败不消费writer、寿命、真实地址与预算；这些资源类型不代表实际Store执行已接通。
+[读权限撤回](../evidence/correctness/inference-projected-read-release-2026-10-27.json)11项检查通过：真实退休后只撤回指定源及其alias与guard，旧源可重获写权，其它绑定仍保留；包含三项原unbind回归。实际Store执行与索引GDN／conv仍是剩余实现的大头。
 
 KV工作帧已接通Compute、Graph及引擎：41项页存储检查、23组前缀／工作态检查、7个CPU／Vulkan／CUDA功能进程和4个递归MTP对照进程通过。Apple复用缓存增量编译11个单元，tiny普通／MTP及lag1两次运行通过，状态字节、续算、旧快照及最终资源归零一致。旧快照、失败边界、封存失败与较短接受前缀均有有限覆盖；[Windows功能记录](../evidence/correctness/inference-paged-frame-2026-10-26.json)和[Apple功能记录](../evidence/correctness/inference-paged-frame-macos-2026-10-26.json)保留原失败和未验证项。本批没有新Linux运行，4个诊断probe虽已适配但未单独编译；有限检查不代表全平台与模型质量穷尽。
 

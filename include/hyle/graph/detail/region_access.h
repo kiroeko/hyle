@@ -251,6 +251,11 @@ struct RegionAccess final {
   // pending frame and supplies all exact guards in OrderedGraphSubmission.
   HYLE_GRAPH_API static Status bind_pending_projected(Invocation&,ValueId,
       compute::ConstTensorView,std::span<const ProjectedReader>) noexcept;
+  // Actual retired outcome only, including failed/closed cleanup. Withdraws
+  // this ready projected input, its transparent aliases and page guards;
+  // pending/source controls and all other caller/configuration bindings stay.
+  // Native input owners use the same qualified reverse release as unbind.
+  HYLE_GRAPH_API static Status release_read_projection(Invocation&,ValueId) noexcept;
   // Same-Graph write then read. Checks the original Graph control edges and
   // exact selected artifacts; only the supplied independent page writers are
   // admitted to the original resource episode. No whole-bank write is granted.
@@ -302,6 +307,8 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
       Invocation&,ValueId caller_output) noexcept;
 private:
+  static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
+      bool ready_projection) noexcept;
   static Status validate_projected_writer(InvocationState&,const Graph&,
       ProjectedWriter) noexcept;
   static Status qualify_ordered_writer(InvocationState&,std::uint32_t,

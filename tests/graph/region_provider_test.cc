@@ -203,6 +203,7 @@ struct RegionProbe final {
   bool require_cold_bindings = false;
   bool cold_bindings_capture_compatible = false;
   std::optional<std::size_t> required_capture_destroys_before_submit{};
+  bool projected_region_read = false;
   bool configurable_region = false;
   std::size_t configuration_count = 0;
   std::size_t capture_destroys_at_configuration = 0;
@@ -1180,7 +1181,18 @@ Result<bool> configure_region_revision(
   return true;
 }
 
+Status inspect_projected_region_input(
+    const ProviderRegionPrepared &prepared, void *, std::uint32_t port,
+    hyle::compute::detail::OperationPreparedAccess *access) noexcept {
+  const auto &probe = *static_cast<RegionPlan *>(prepared.state)->probe;
+  if (!probe.projected_region_read || port != 0 || !access)
+    return Status::Unimplemented("test region does not project this input");
+  *access = {}; access->projected_input = port;
+  return Status::Ok();
+}
+
 const hyle::graph::detail::RegionProjectedReadVTable kConfigurationVTable{
+    .inspect = &inspect_projected_region_input,
     .inspect_node = &inspect_region_configuration,
     .configure_node = &configure_region_revision,
 };
@@ -1209,7 +1221,7 @@ const void *query_region_configuration(
         .borrows_tensor_views_only = true};
     return &release;
   }
-  return probe.configurable_region &&
+  return (probe.configurable_region || probe.projected_region_read) &&
           id == hyle::graph::detail::kRegionProjectedReadExtensionId
       ? &kConfigurationVTable : nullptr;
 }
@@ -3455,6 +3467,196 @@ TEST(GraphRouteBoundary, ProjectedInputRetainsAllReadersAndLivePageGuards) {
       copied_run, bank, tensor, pages, std::span(copied_readers.values).first(1));
   EXPECT_TRUE(copied_rejection.IsInvalidArgument()) << copied_rejection.message();
   EXPECT_EQ(copied_rejection.message(), "projected capacity has an unqualified physical reader");
+}
+
+hyle::graph::detail::ProjectedReader selected_projected_reader(
+    hyle::graph::Invocation &run, NodeId node, bool preserves = false) {
+  hyle::graph::detail::ProjectedReader selected;
+  const auto status = hyle::graph::detail::RegionAccess::visit(run, node,
+      [](void *opaque, const hyle::graph::detail::RegionAccessView &view) noexcept {
+        *static_cast<hyle::graph::detail::ProjectedReader *>(opaque) = {
+            view.step, view.prepared_vtable, view.prepared, 0};
+        return Status::Ok();
+      }, &selected);
+  EXPECT_TRUE(status.ok()) << status.message();
+  selected.permission_changes_preserve_commands = preserves;
+  return selected;
+}
+
+TEST(GraphRouteBoundary, ProjectedReadReleaseKeepsOtherBindingsAndRejectsPending) {
+  using Access = hyle::graph::detail::RegionAccess;
+  auto builder = GraphBuilder::create().value();
+  const auto bank = builder.input(row(8)).value(), other = builder.input(row(8)).value();
+  const auto output = builder.add(Unary{UnaryKind::kNeg}, bank).value();
+  const auto other_output = builder.add(Unary{UnaryKind::kNeg}, other).value();
+  ASSERT_TRUE(builder.publish(output).ok()); ASSERT_TRUE(builder.publish(other_output).ok());
+  const auto graph = std::move(builder).finish().value();
+  RegionProbe first{.mode = ProposalMode::kSingleton}, second{.mode = ProposalMode::kSingleton, .singleton_node = 1};
+  auto context = make_context(first, second);
+  auto compiled = hyle::graph::compile(graph, context,
+      {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+  auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+  ASSERT_TRUE(Access::reserve_reads(run, 2, {}).ok());
+  auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto input_writer = pool.allocate(32).value(), other_writer = pool.allocate(32).value();
+  ASSERT_TRUE(input_writer.view()->fill(std::byte{0}).ok());
+  ASSERT_TRUE(other_writer.view()->fill(std::byte{0}).ok());
+  auto input = input_writer.publish().value(), other_input = other_writer.publish().value();
+  const auto capacity = input.tensor(row(8)).value();
+  std::array pages{input.subview(0, 16).value(), input.subview(16, 16).value()};
+  const std::array readers{selected_projected_reader(run, graph.node_id(0).value())};
+  ASSERT_TRUE(Access::bind_projected(run, bank, capacity, pages, readers).ok());
+  ASSERT_TRUE(Access::bind_configuration(run, other, row(8), other_input).ok());
+  auto result = make_tensor(row(8)), other_result = make_tensor(row(8));
+  ASSERT_TRUE(run.bind(output, result.view).ok()); ASSERT_TRUE(run.bind(other_output, other_result.view).ok());
+  const auto foreign = make_negations(1);
+  EXPECT_TRUE(Access::release_read_projection(run, foreign.input).IsInvalidArgument());
+  EXPECT_TRUE(Access::release_read_projection(run, other).IsInvalidArgument());
+  EXPECT_TRUE(Access::release_read_projection(run, output).IsInvalidArgument());
+  pages = {};
+  EXPECT_FALSE(input.try_write()); EXPECT_FALSE(other_input.try_write());
+  auto queue = context.create_queue().value();
+  auto completion = run.submit(queue).value(); ASSERT_TRUE(completion.wait().ok());
+  {
+    auto retained_result = run.result(output).value();
+    EXPECT_TRUE(Access::release_read_projection(run, bank).IsUnavailable());
+  }
+  // wait() already retires the Completion's original use. Its wrapper can
+  // stay alive; only the independent GraphOutput above delayed withdrawal.
+  ASSERT_TRUE(Access::release_read_projection(run, bank).ok());
+  completion = {};
+  EXPECT_TRUE(Access::release_read_projection(run, bank).IsInvalidArgument());
+  auto writable = input.try_write(); ASSERT_TRUE(writable) << writable.error().message();
+  input = writable->publish().value();
+  EXPECT_FALSE(other_input.try_write());
+  EXPECT_TRUE(run.bind(other, capacity).IsFailedPrecondition());
+  // Only the released input is missing. Neither the other cold binding nor
+  // either caller output needs rebinding before this next real submission.
+  ASSERT_TRUE(Access::bind_pending_projected(run, bank, input.tensor(row(8)).value(), readers).ok());
+  EXPECT_TRUE(Access::release_read_projection(run, bank).IsInvalidArgument());
+  auto replacement = make_tensor(row(8));
+  ASSERT_TRUE(run.bind(bank, replacement.view.as_const()).ok());
+  ASSERT_TRUE(run.submit(queue)->wait().ok());
+}
+
+TEST(GraphRouteBoundary, ProjectedReadReleaseClearsTransparentAliasViews) {
+  using Access = hyle::graph::detail::RegionAccess;
+  for (bool alias : {false, true}) {
+    SCOPED_TRACE(alias);
+    auto builder = GraphBuilder::create().value();
+    const auto bank = builder.input(row(8)).value();
+    const auto view = alias ? builder.add(hyle::compute::View::slice(0, 2, 4).value(), bank).value() : bank;
+    const auto output = builder.add(Unary{UnaryKind::kNeg}, view).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    const auto graph = std::move(builder).finish().value();
+    RegionProbe probe{.mode = ProposalMode::kSingleton, .singleton_node = alias ? 1u : 0u};
+    probe.projected_region_read = true;
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(graph, context,
+        {.operation_fallback = OperationFallbackPolicy::kReject}).value();
+    auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+    ASSERT_TRUE(Access::reserve_reads(run, 2, {}).ok());
+    auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 1}).value();
+    auto input_writer = pool.allocate(32).value();
+    const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8};
+    ASSERT_TRUE(input_writer.view()->write(std::as_bytes(std::span(values))).ok());
+    auto input = input_writer.publish().value();
+    std::array pages{input.subview(0, 16).value(), input.subview(16, 16).value()};
+    const std::array aliases{view};
+    const std::array reader_nodes{graph.node_id(alias ? 1u : 0u).value()};
+    const hyle::graph::detail::ReadProjection projection{bank,
+        alias ? std::span<const ValueId>(aliases) : std::span<const ValueId>{}, reader_nodes};
+    ASSERT_TRUE(Access::bind_read_projection(run, projection, input.tensor(row(8)).value(), pages).ok());
+    auto result = make_tensor(row(alias ? 4 : 8));
+    ASSERT_TRUE(run.bind(output, result.view).ok());
+    auto queue = context.create_queue().value();
+    auto completion = run.submit(queue).value(); ASSERT_TRUE(completion.wait().ok()); completion = {};
+    pages = {};
+    ASSERT_TRUE(Access::release_read_projection(run, bank).ok());
+    const auto *state = hyle::graph::detail::InvocationAccess::state(run);
+    const auto physical = state->plan->external_instances[bank.ordinal()];
+    EXPECT_FALSE(state->readable[physical].valid()); EXPECT_EQ(state->bound[physical], 0u);
+    if (alias) {
+      bool found = false;
+      for (std::size_t i = 0; i < state->plan->instance_values.size(); ++i) {
+        if (state->plan->instance_values[i] != view.ordinal()) continue;
+        found = true; EXPECT_FALSE(state->readable[i].valid()); EXPECT_EQ(state->bound[i], 0u);
+      }
+      EXPECT_TRUE(found);
+    }
+    auto writable = input.try_write(); ASSERT_TRUE(writable) << writable.error().message();
+    ASSERT_TRUE(writable->view()->fill(std::byte{0}).ok()); input = writable->publish().value();
+    pages = {input.subview(0, 16).value(), input.subview(16, 16).value()};
+    ASSERT_TRUE(Access::bind_read_projection(run, projection, input.tensor(row(8)).value(), pages).ok());
+    ASSERT_TRUE(run.submit(queue)->wait().ok());
+    EXPECT_EQ(read(result, alias ? 4 : 8), std::vector<float>(alias ? 4 : 8, 0.F));
+  }
+}
+
+TEST(GraphRouteBoundary, ProjectedReadReleaseRequiresActualRetirementAndRecoversTerminalSlots) {
+  using Access = hyle::graph::detail::RegionAccess;
+  for (bool failed : {false, true}) {
+    SCOPED_TRACE(failed);
+    RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+    const auto logical = make_negations(2);
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context).value();
+    auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+    auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 1}).value();
+    auto input_writer = pool.allocate(32).value();
+    ASSERT_TRUE(input_writer.view()->fill(std::byte{0}).ok());
+    auto input = input_writer.publish().value();
+    const std::array readers{selected_projected_reader(run, logical.graph.node_id(0).value())};
+    ASSERT_TRUE(Access::bind_projected(run, logical.input, input.tensor(row(8)).value(), std::span(&input, 1), readers).ok());
+    auto output = make_tensor(row(8)); ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    auto completion = run.submit(queue).value();
+    ASSERT_TRUE(run.in_flight());
+    EXPECT_TRUE(Access::release_read_projection(run, logical.input).IsUnavailable());
+    EXPECT_FALSE(input.try_write());
+    probe.terminal_failure = failed;
+    const auto terminal = completion.wait();
+    EXPECT_EQ(terminal.IsInternal(), failed);
+    completion = {};
+    if (!failed) ASSERT_TRUE(run.close().ok());
+    ASSERT_TRUE(Access::release_read_projection(run, logical.input).ok());
+    auto writable = input.try_write(); EXPECT_TRUE(writable);
+    EXPECT_TRUE(Access::release_read_projection(run, logical.input).IsInvalidArgument());
+    EXPECT_TRUE(run.submit(queue).error().IsFailedPrecondition());
+  }
+}
+
+TEST(GraphRouteBoundary, ProjectedReadReleasePreservesOnlyDoublyQualifiedRecordings) {
+  using Access = hyle::graph::detail::RegionAccess;
+  for (const auto qualifiers : {std::pair{false, true}, std::pair{true, false}, std::pair{true, true}}) {
+    SCOPED_TRACE(qualifiers.first);
+    SCOPED_TRACE(qualifiers.second);
+    RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+    probe.capture_supported = true;
+    probe.capture_preserves_binding_identity = qualifiers.second;
+    probe.artifact_properties.runtime.capture_compatible = true;
+    const auto logical = make_negations(2);
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(logical.graph, context).value();
+    auto run = compiled.executable.create_invocation({.resources = hyle::graph::ResourceOptions{}}).value();
+    auto pool = hyle::compute::LeasePool::create(hyle::mem::system_resource(), 256, {.max_blocks = 1}).value();
+    auto input_writer = pool.allocate(32).value();
+    ASSERT_TRUE(input_writer.view()->fill(std::byte{0}).ok());
+    auto input = input_writer.publish().value();
+    const std::array readers{selected_projected_reader(run, logical.graph.node_id(0).value(), qualifiers.first)};
+    ASSERT_TRUE(Access::bind_projected(run, logical.input, input.tensor(row(8)).value(), std::span(&input, 1), readers).ok());
+    auto output = make_tensor(row(8)); ASSERT_TRUE(run.bind(logical.output, output.view).ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{hyle::graph::QueueBinding{hyle::graph::ExecutionLaneId{0}, &queue}};
+    ASSERT_TRUE(run.prepare_replay(queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}).ok());
+    auto completion = run.submit(queues).value(); ASSERT_TRUE(completion.wait().ok()); completion = {};
+    const auto destroyed = probe.capture_destroy_count;
+    ASSERT_TRUE(Access::release_read_projection(run, logical.input).ok());
+    EXPECT_EQ(probe.capture_destroy_count, destroyed + (qualifiers.first && qualifiers.second ? 0u : 1u));
+    auto writable = input.try_write(); ASSERT_TRUE(writable);
+    // Dormant qualified commands still cannot execute without fresh bindings.
+    EXPECT_FALSE(run.submit(queues));
+  }
 }
 
 TEST(GraphRouteBoundary, ContextRoutesKeepExactOwnersAndResourceChecks) {

@@ -249,14 +249,33 @@ bool RegionAccess::borrows_tensor_views_only(const PreparedRegion &region) noexc
 }
 Status RegionAccess::withdraw_bindings(Invocation &invocation,
     std::span<const ValueId> values) noexcept {
+  return withdraw_bindings_impl(invocation, values, false);
+}
+Status RegionAccess::release_read_projection(Invocation &invocation,
+    ValueId value) noexcept {
+  return withdraw_bindings_impl(invocation, std::span(&value, 1), true);
+}
+std::span<const ExternalInputConsumer>
+projected_input_consumers(const PlanState &, std::uint32_t) noexcept;
+Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
+    std::span<const ValueId> values, bool ready_projection) noexcept {
   auto *state = InvocationAccess::state(invocation);
-  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (ready_projection) {
+    if (!outcome_available(invocation) ||
+        state->preparation_uses.load(std::memory_order_acquire) != 0)
+      return Status::Unavailable("read projection still has native work/results/observations/preparation");
+  } else {
+    HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  }
   if (values.empty()) return Status::Ok();
-  HYLE_ASSIGN_OR_RETURN(auto *episode, require_resources(state));
+  if (!state->resources)
+    return Status::FailedPrecondition("unbind requires its original resource episode");
+  auto *episode = state->resources.get();
   const auto &plan = *state->plan;
   // Untaken original write/pending page owners are not ordinary caller ports.
   // Reject without asking the payload to reset or returning any source control.
   for (const auto &binding : episode->bindings) {
+    if (ready_projection) break;
     if (binding.scope == BindingScope::kWrittenProjection ||
         (binding.scope == BindingScope::kProjected && !binding.read.valid() &&
          !binding.permissionless))
@@ -265,9 +284,17 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
   for (auto value : values) {
     const auto *binding = find_binding(state, value);
     if (!binding) return Status::InvalidArgument("unbind needs this executable's caller input or output");
-    if (binding->scope != BindingScope::kCaller || binding->projection.valid() ||
-        binding->projected_writer || binding->projected_appender || has_input_source(*state, value))
+    if (ready_projection) {
+      if (!binding->input || binding->scope != BindingScope::kProjected || binding->borrowed ||
+          (!binding->read.valid() && !binding->permissionless) ||
+          binding->projected_writer || binding->projected_appender || has_input_source(*state, value))
+        return Status::InvalidArgument("input has no original ready read projection");
+      if (projected_input_consumers(plan, value.ordinal()).empty())
+        return Status::InvalidArgument("read projection has no original physical consumer");
+    } else if (binding->scope != BindingScope::kCaller || binding->projection.valid() ||
+        binding->projected_writer || binding->projected_appender || has_input_source(*state, value)) {
       return Status::FailedPrecondition("unbind cannot withdraw a configuration or source-owned port");
+    }
   }
   auto &steps = episode->unbind_steps;
   auto &instances = episode->unbind_instances;
@@ -280,6 +307,17 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
     return instance;
   };
   for (auto value : values) instances[root(plan.external_instances[value.ordinal()])] = 1;
+  constexpr std::uint8_t release_native = 1, discard_recording = 2;
+  const bool idle = !state->closed &&
+      state->phase.load(std::memory_order_acquire) == InvocationPhase::kIdle;
+  if (ready_projection) {
+    const auto *binding = find_binding(state, values.front());
+    for (const auto &consumer : projected_input_consumers(plan, values.front().ordinal())) {
+      if (!idle || !binding->permission_changes_preserve_commands ||
+          !state->step_bindings[consumer.step].stable_binding_identity)
+        steps[consumer.step] |= discard_recording;
+    }
+  }
   // Only native binding owners propagate through generated output carriers.
   // Materialized caller-buffer results do not retain their mathematical inputs.
   bool changed;
@@ -287,14 +325,14 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
     changed = false;
     for (std::size_t index = 0; index < plan.steps.size(); ++index) {
       const auto &step = plan.steps[index];
-      if (steps[index] || !step.region.valid() || !step.region.prepares_bindings()) continue;
+      if ((steps[index] & release_native) || !step.region.valid() || !step.region.prepares_bindings()) continue;
       bool affected = false;
       for (std::size_t port = 0; port < step.input_count; ++port)
         affected |= instances[root(plan.node_inputs[step.input_begin + port])] != 0;
       for (std::size_t port = 0; port < step.output_count; ++port)
         affected |= instances[root(plan.node_outputs[step.output_begin + port])] != 0;
       if (!affected) continue;
-      steps[index] = 1;
+      steps[index] |= release_native;
       changed = true;
       for (std::size_t port = 0; port < step.output_count; ++port)
         if (step.region.output_kind(port) != RegionOutputKind::kCaller)
@@ -309,22 +347,27 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
   };
   // Every fallible native check precedes all recording, binding and owner changes.
   for (std::size_t index = 0; index < steps.size(); ++index) {
-    if (!steps[index]) continue;
+    if (!(steps[index] & release_native)) continue;
     const auto *table = release_table(index);
     if (!table || !table->validate || !table->release)
       return Status::Unimplemented("selected native region has no binding-release contract");
     HYLE_RETURN_IF_ERROR(table->validate(plan.steps[index].region.prepared_.state,
         state->invocations[index].region.state_));
   }
-  HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
+  // Failed/closed episodes cannot pass the ordinary admission gate. They are
+  // already actually retired; invalidate their affected recordings directly,
+  // which also revokes binding/replay readiness without reopening admission.
+  if (idle) HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
   for (std::size_t index = 0; index < steps.size(); ++index)
-    if (steps[index] && (!release_table(index)->borrows_tensor_views_only ||
-                        !state->step_bindings[index].stable_binding_identity))
+    if ((steps[index] & discard_recording) ||
+        ((steps[index] & release_native) &&
+         (!idle || !release_table(index)->borrows_tensor_views_only ||
+          !state->step_bindings[index].stable_binding_identity)))
       invalidate_step_recording(*state, static_cast<std::uint32_t>(index));
   // The selected physical plan emits producer-before-consumer steps. Release
   // native borrowed references in reverse order before their upstream owners.
   for (std::size_t index = steps.size(); index-- != 0;) {
-    if (!steps[index]) continue;
+    if (!(steps[index] & release_native)) continue;
     release_table(index)->release(plan.steps[index].region.prepared_.state,
         state->invocations[index].region.state_);
     state->step_bindings[index].native_inputs = false;
@@ -340,6 +383,26 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
   episode->input_lease_candidates.clear();
   episode->permissions.reset();
   episode->writer_publication_complete = false;
+  if (ready_projection) {
+    const auto value = values.front();
+    const auto physical = root(plan.external_instances[value.ordinal()]);
+    // bind_read_projection may expose declared transparent aliases. Clear all
+    // of that original root's concrete views before releasing any ready lease;
+    // a future cold prepare must regenerate them from a newly bound input.
+    const bool aliases = std::binary_search(plan.external_input_aliases.begin(),
+        plan.external_input_aliases.end(), value.ordinal());
+    if (aliases) {
+      for (std::size_t i = 0; i < plan.alias_sources.size(); ++i) {
+        if (root(static_cast<std::uint32_t>(i)) != physical) continue;
+        state->readable[i] = {}; state->writable[i] = {}; state->bound[i] = 0;
+      }
+    } else {
+      state->readable[physical] = {}; state->writable[physical] = {}; state->bound[physical] = 0;
+    }
+    const auto extras = episode->bindings.begin() + episode->fixed_binding_count;
+    episode->bindings.erase(std::remove_if(extras, episode->bindings.end(),
+        [&](const auto &binding) { return binding.projection == value; }), episode->bindings.end());
+  }
   for (auto value : values) {
     const auto physical = plan.external_instances[value.ordinal()];
     state->readable[physical] = {};
@@ -621,6 +684,8 @@ Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
   binding->permissionless=pages.empty()&&!pending;
   binding->projection=pending?ValueId{}:value;
   binding->scope=BindingScope::kProjected;
+  binding->permission_changes_preserve_commands=std::all_of(readers.begin(),readers.end(),
+      [](const auto&reader){return reader.permission_changes_preserve_commands;});
   for(std::size_t i=1;i<pages.size();++i)episode->bindings.push_back({.projection=value,.read=pages[i],.borrowed=false,.scope=BindingScope::kProjected});
   return Status::Ok();
 }
