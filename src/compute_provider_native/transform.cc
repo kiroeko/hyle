@@ -53,8 +53,13 @@ detail::EnqueueResult submit_copy(const NativePlan &,
 
   // Dense materialization is exactly Mem's range-copy contract. Preserve that
   // optimized resource seam instead of remapping and reimplementing memcpy.
-  if (input_desc.is_dense())
-    return completed(output.copy_from(input));
+  if (input_desc.is_dense()) {
+    const auto bytes = input_desc.required_bytes();
+    if (!bytes) return completed(std::move(bytes).error());
+    const auto logical = input.subview(0, *bytes);
+    if (!logical) return completed(std::move(logical).error());
+    return completed(output.copy_from(*logical));
+  }
 
   const mem::MemoryProperties input_properties = input.resource().properties();
   const mem::MemoryProperties output_properties =

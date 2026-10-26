@@ -15,6 +15,7 @@
 #include "../../src/compute/context_state.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/storage_owner.h"
 
 namespace {
@@ -126,6 +127,127 @@ void expect_contents(const m::Buffer &buffer) {
   std::array<float, 4> actual{};
   ASSERT_TRUE(buffer.view().read(std::as_writable_bytes(std::span(actual))).ok());
   EXPECT_EQ(actual, (std::array{1.0F, -2.0F, 3.0F, -4.0F}));
+}
+
+TEST(CanonicalConstantCache, CommonMaterializationCopiesDescriptionWithoutInitializedPadding) {
+  const auto description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 1>{1}).value();
+  auto source = m::Buffer::create(m::system_resource(), 8, 64).value();
+  const std::array values{3.25F, 99.0F};
+  ASSERT_TRUE(source.write(0, std::as_bytes(std::span(values))).ok());
+  const auto binding = c::ConstTensorView::from_initialized_storage(description, source.view()).value();
+  ASSERT_EQ(binding.description().required_bytes().value(), 4u);
+  ASSERT_EQ(binding.storage().size(), 8u);
+  auto builder = g::GraphBuilder::create().value();
+  const auto value = builder.constant(description).value();
+  ASSERT_TRUE(builder.publish(value).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = c::Context::create(c::cpu::device()).value();
+  const std::array constants{g::ConstantBinding{
+      value, binding, g::ConstantPolicy::kMaterialize}};
+  auto compiled = g::compile(graph, context, {.constants = constants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  EXPECT_EQ(compiled->report.materialized_constant_bytes(), 4u);
+  auto invocation = compiled->executable.create_invocation().value();
+  auto submitted = invocation.submit();
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  auto output = invocation.output(value);
+  ASSERT_TRUE(output) << output.error().message();
+  EXPECT_EQ(output->storage().size(), 4u);
+  float actual = 0;
+  ASSERT_TRUE(output->storage().read(std::as_writable_bytes(std::span(&actual, 1))).ok());
+  EXPECT_EQ(actual, values[0]);
+  std::array<float, 2> unchanged{};
+  ASSERT_TRUE(source.view().read(std::as_writable_bytes(std::span(unchanged))).ok());
+  EXPECT_EQ(unchanged, values);
+}
+
+TEST(CanonicalConstantCache, NativeDenseCopyExcludesInitializedInputPadding) {
+  const auto description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 1>{1}).value();
+  auto source = m::Buffer::create(m::system_resource(), 8, 64).value();
+  auto destination = m::Buffer::create(m::system_resource(), 8, 64).value();
+  const std::array source_values{3.25F, 99.0F};
+  const std::array destination_values{0.0F, -77.0F};
+  ASSERT_TRUE(source.write(0, std::as_bytes(std::span(source_values))).ok());
+  ASSERT_TRUE(destination.write(0, std::as_bytes(std::span(destination_values))).ok());
+  const auto input = c::ConstTensorView::from_initialized_storage(description, source.view()).value();
+  const auto output = c::TensorView::create(description, destination.view()).value();
+  auto context = c::Context::create(c::cpu::device(), c::native::provider()).value();
+  auto queue = context.create_queue().value();
+  auto prepared = c::prepare(context, c::Copy{}, description);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto invocation = prepared->create_invocation().value();
+  auto submitted = invocation.submit(queue, input, output);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  std::array<float, 2> observed{};
+  ASSERT_TRUE(destination.view().read(std::as_writable_bytes(std::span(observed))).ok());
+  EXPECT_EQ(observed, (std::array{source_values[0], destination_values[1]}));
+}
+
+TEST(CanonicalConstantCache, BorrowedViewRetainsOnlyItsInitializedParentSuffixAcrossReplay) {
+  const auto root_description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 1>{2}).value();
+  auto source = m::Buffer::create(m::system_resource(), 12, 64).value();
+  const std::array values{1.0F, 7.0F, 99.0F};
+  ASSERT_TRUE(source.write(0, std::as_bytes(std::span(values))).ok());
+  auto builder = g::GraphBuilder::create().value();
+  const auto root = builder.constant(root_description).value();
+  const auto view = builder.add(c::View::slice(0, 1, 1).value(), root).value();
+  ASSERT_TRUE(builder.publish(view).ok());
+  const auto graph = std::move(builder).finish().value();
+  const auto binding = c::ConstTensorView::from_initialized_storage(root_description, source.view()).value();
+  const std::array constants{g::ConstantBinding{root, binding}};
+  auto context = c::Context::create(c::cpu::device(), c::native::provider()).value();
+  auto compiled = g::compile(graph, context, {.constants = constants});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto invocation = compiled->executable.create_invocation().value();
+  for (unsigned replay = 0; replay != 2; ++replay) {
+    if (replay) ASSERT_TRUE(invocation.reset().ok());
+    auto submitted = invocation.submit();
+    ASSERT_TRUE(submitted) << submitted.error().message();
+    ASSERT_TRUE(submitted->wait().ok());
+    auto output = invocation.output(view);
+    ASSERT_TRUE(output) << output.error().message();
+    EXPECT_EQ(output->description().required_bytes().value(), 4u);
+    EXPECT_EQ(output->storage().size(), 8u);
+    EXPECT_EQ(output->storage().offset(), source.view().offset() + 4);
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(output->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, (std::array{values[1], values[2]}));
+    EXPECT_FALSE(output->storage().subview(8, 1).has_value());
+  }
+}
+
+TEST(CanonicalConstantCache, ReadyInputLeasePreservesItsDeclaredInitializedRange) {
+  const auto description = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 1>{1}).value();
+  auto source = m::Buffer::create(m::system_resource(), 8, 64).value();
+  const std::array values{3.25F, 99.0F};
+  ASSERT_TRUE(source.write(0, std::as_bytes(std::span(values))).ok());
+  auto lease = c::ReadLease::adopt(std::move(source)).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  ASSERT_TRUE(builder.publish(input).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto context = c::Context::create(c::cpu::device()).value();
+  auto compiled = g::compile(graph, context);
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.prepare_resources().ok());
+  ASSERT_TRUE(invocation.bind(input, description, lease).ok());
+  auto submitted = invocation.submit();
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  auto output = invocation.output(input);
+  ASSERT_TRUE(output) << output.error().message();
+  EXPECT_EQ(output->description().required_bytes().value(), 4u);
+  EXPECT_EQ(output->storage().size(), 8u);
+  std::array<float, 2> actual{};
+  ASSERT_TRUE(output->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, values);
 }
 
 TEST(CanonicalConstantCache, ReadyOwnersKeepExactResourcesAndDescriptions) {

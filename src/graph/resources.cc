@@ -463,7 +463,9 @@ Status RegionAccess::bind_configuration(Invocation &invocation, ValueId value,
   auto *binding = find_binding(state, value);
   if (!binding || !binding->input)
     return Status::InvalidArgument("cold configuration must bind a graph input");
-  HYLE_ASSIGN_OR_RETURN(auto tensor, lease.tensor(description));
+  HYLE_ASSIGN_OR_RETURN(auto storage, lease.view());
+  HYLE_ASSIGN_OR_RETURN(auto tensor,
+      compute::ConstTensorView::from_initialized_storage(description, storage));
   bool same_spans = episode->configuration_spans;
   if (same_spans) {
     bool consumed = false;
@@ -1574,7 +1576,9 @@ Status Invocation::bind(ValueId value, compute::TensorDesc description,
   HYLE_RETURN_IF_ERROR(detail::check_binding_replacement(*state_, value));
   auto *binding = detail::find_binding(state_, value);
   if (!binding || !binding->input) return Status::InvalidArgument("read lease must bind a graph input");
-  HYLE_ASSIGN_OR_RETURN(auto tensor, lease.tensor(description));
+  HYLE_ASSIGN_OR_RETURN(auto storage, lease.view());
+  HYLE_ASSIGN_OR_RETURN(auto tensor,
+      compute::ConstTensorView::from_initialized_storage(description, storage));
   HYLE_RETURN_IF_ERROR(bind(value, tensor));
   binding = detail::find_binding(state_, value);
   binding->read = std::move(lease); binding->description = description;

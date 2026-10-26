@@ -157,6 +157,67 @@ TEST(FileStream, RetainedReadyAndExportedLeaseKeepRequestAndBackingCapacity) {
   EXPECT_EQ(empty.result().total_groups, 0u); EXPECT_EQ(runtime.pipeline.report().active_backing_bytes, 64u);
 }
 
+TEST(FileStream, InitializedStorageExportsOnlyPaddedRangeAndBothAliasesDelayCollect) {
+  for (const bool keep_physical : {false, true}) {
+    Runtime runtime({.max_requests = 1});
+    const std::array input{std::byte{0x3a}, std::byte{0x7c}};
+    auto source = runtime.file(input); // No file bytes exist for the padding.
+    auto pool = LeasePool::create(m::system_resource(), 64).value();
+    std::array<StreamReadRange, 1> ranges;
+    ranges[0].destination = pool.allocate(16, 4).value();
+    const auto original_offset = ranges[0].destination.view()->offset();
+    ranges[0].resource_offset = 4; ranges[0].bytes = 2; ranges[0].physical_bytes = 4;
+    ranges[0].description = TensorDesc::dense(DataType::kFloat16, std::array<std::int64_t, 1>{1}).value();
+    std::array<StreamReadGroup, 1> groups{{{1, ranges}}};
+    auto ticket = runtime.pipeline.read(StreamSource::file(source), groups).value();
+    auto ready = ticket.wait_next_ready().value();
+    auto logical = ready.output(0).value(); auto physical = ready.initialized_storage(0).value();
+    const auto result = ticket.wait(); ASSERT_TRUE(result.status.ok()); EXPECT_TRUE(result.retirement_proven);
+    EXPECT_EQ(result.read_bytes, 2u); EXPECT_EQ(result.copied_bytes, 2u);
+    EXPECT_EQ(runtime.pipeline.report().copied_physical_bytes, 4u);
+    EXPECT_EQ(logical.size(), 2u); EXPECT_EQ(physical.size(), 4u);
+    EXPECT_EQ(physical.view()->offset(), original_offset + 4);
+    expect_bytes(logical, input);
+    const std::array padded{input[0], input[1], std::byte{0}, std::byte{0}};
+    expect_bytes(physical, padded);
+    EXPECT_FALSE(logical.subview(2, 1).has_value());
+    EXPECT_FALSE(physical.subview(4, 1).has_value()); // The writer has an uninitialized suffix.
+    EXPECT_FALSE(ready.initialized_storage(1).has_value());
+    ticket = {}; ready = {};
+    ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(runtime.pipeline.report().live_requests, 1u);
+    if (keep_physical) logical.reset(); else physical.reset();
+    ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(runtime.pipeline.report().live_requests, 1u);
+    logical.reset(); physical.reset();
+    ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(runtime.pipeline.report().live_requests, 0u);
+    EXPECT_EQ(pool.stats().live_blocks, 0u);
+    auto empty = runtime.pipeline.read({}, {}).value(); EXPECT_TRUE(empty.wait().complete);
+  }
+}
+
+TEST(FileStream, InvalidPhysicalRangeKeepsWriterAndEmptyReadyExportsRemainSuccessful) {
+  Runtime runtime;
+  const std::array input{std::byte{1}, std::byte{2}}; auto source = runtime.file(input);
+  auto pool = LeasePool::create(m::system_resource(), 64).value();
+  std::array<StreamReadRange, 1> ranges;
+  ranges[0].destination = pool.allocate(16, 4).value();
+  ranges[0].resource_offset = 4; ranges[0].bytes = 2;
+  std::array<StreamReadGroup, 1> groups{{{1, ranges}}};
+  for (const auto physical : {std::size_t{1}, std::size_t{16}}) {
+    ranges[0].physical_bytes = physical;
+    EXPECT_FALSE(runtime.pipeline.read(StreamSource::file(source), groups).has_value());
+    EXPECT_TRUE(ranges[0].destination.valid()); EXPECT_EQ(ranges[0].destination.size(), 16u);
+  }
+  EXPECT_EQ(runtime.pipeline.report().io_calls, 0u); EXPECT_EQ(runtime.pipeline.report().native_calls, 0u);
+  std::array<StreamReadRange, 1> empty_ranges;
+  std::array<StreamReadGroup, 1> empty_groups{{{2, empty_ranges}}};
+  auto ticket = runtime.pipeline.read(StreamSource::file(source), empty_groups).value();
+  ASSERT_TRUE(ticket.wait().status.ok());
+  auto ready = ticket.next_ready().value();
+  const auto logical = ready.output(0); const auto physical = ready.initialized_storage(0);
+  ASSERT_TRUE(logical.has_value()); EXPECT_FALSE(logical->valid());
+  ASSERT_TRUE(physical.has_value()); EXPECT_FALSE(physical->valid());
+}
+
 TEST(FileStream, LaterEofPreservesEarlierReadyAndActualPartialProgress) {
   Runtime runtime({.in_flight_slots = 1}); const auto input = bytes(); auto source = runtime.file(std::span(input).first(138), 256);
   auto pool = LeasePool::create(m::system_resource(), 1024).value();

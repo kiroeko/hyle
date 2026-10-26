@@ -1537,19 +1537,21 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
         }
         const auto &description = physical_description(invocation, output);
         const auto &previous_projection = invocation.readable[output];
-        // TensorView factories clip storage to the descriptor's exact extent.
-        // Reuse only that immutable metadata, never a lease or readiness fact.
+        // Initialized readonly storage may include native padding. Only the
+        // descriptor determines this alias's mathematical byte extent.
         const bool same_description = previous_projection.valid() &&
             previous_projection.description() == description;
-        auto bytes = same_description
-            ? Result<std::size_t>{previous_projection.storage().size()}
-            : description.required_bytes();
+        auto bytes = description.required_bytes();
         if (!bytes)
           return std::move(bytes).error();
         HYLE_ASSIGN_OR_RETURN(const auto offset,
                               bound_alias_offset(invocation, output));
-        auto storage =
-            invocation.readable[source].storage().subview(offset, *bytes);
+        const auto source_storage = invocation.readable[source].storage();
+        const bool immutable = (plan.instance_roles[output] & detail::kConstant) != 0;
+        if (offset > source_storage.size())
+          return Status::OutOfRange("graph View exceeds initialized source storage");
+        auto storage = source_storage.subview(offset,
+            immutable ? source_storage.size() - offset : *bytes);
         if (!storage)
           return std::move(storage).error();
         const auto previous_storage = previous_projection.storage();
@@ -1560,7 +1562,9 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
             previous_storage.size() == storage->size();
         auto derived = same_projection
             ? Result<compute::ConstTensorView>{previous_projection}
-            : compute::ConstTensorView::create(description, *storage);
+            : immutable
+                ? compute::ConstTensorView::from_initialized_storage(description, *storage)
+                : compute::ConstTensorView::create(description, *storage);
         if (!derived)
           return std::move(derived).error();
         HYLE_RETURN_IF_ERROR(validate_known_binding_alignment(invocation, output, derived->storage()));
@@ -1572,8 +1576,12 @@ prepare_invocation_bindings(detail::InvocationState &invocation) noexcept {
           invocation.readable[output] = *derived;
         } else if ((plan.instance_roles[output] & detail::kExternalOutput) !=
                    0) {
-          if (!equal_range(byte_range(derived->storage()),
-                           byte_range(invocation.writable[output].storage()))) {
+          HYLE_ASSIGN_OR_RETURN(const auto logical_source,
+              derived->storage().subview(0, *bytes));
+          HYLE_ASSIGN_OR_RETURN(const auto logical_destination,
+              invocation.writable[output].storage().subview(0, *bytes));
+          if (!equal_range(byte_range(logical_source),
+                           byte_range(logical_destination))) {
             return Status::InvalidArgument(
                 "published graph view does not bind its inferred storage");
           }
@@ -1646,9 +1654,15 @@ Status validate_transfer_routes(detail::InvocationState &invocation,
     }
     const std::uint32_t input = plan.node_inputs[step.input_begin];
     const std::uint32_t output = plan.node_outputs[step.output_begin];
-    auto properties = compute::transfer_properties(
-        *queue, invocation.writable[output].storage(),
-        invocation.readable[input].storage());
+    HYLE_ASSIGN_OR_RETURN(const auto input_bytes,
+        invocation.readable[input].description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(const auto source,
+        invocation.readable[input].storage().subview(0, input_bytes));
+    HYLE_ASSIGN_OR_RETURN(const auto output_bytes,
+        invocation.writable[output].description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(const auto destination,
+        invocation.writable[output].storage().subview(0, output_bytes));
+    auto properties = compute::transfer_properties(*queue, destination, source);
     if (!properties) {
       return std::move(properties)
           .error()
@@ -1664,8 +1678,6 @@ Status validate_transfer_routes(detail::InvocationState &invocation,
     else
       ++report.queued_transfer_count;
     report.peer_transfer_count += properties->peer ? 1u : 0u;
-    const auto source = invocation.readable[input].storage();
-    const auto destination = invocation.writable[output].storage();
     const bool no_op = destination.size() == 0 ||
         (destination.resource() == source.resource() &&
          destination.native_handle() == source.native_handle() &&
@@ -2307,8 +2319,16 @@ Status materialize_constants(detail::PlanState &plan,
             return std::unexpected(std::move(queue).error());
           queues[target] = std::move(*queue);
         }
+        HYLE_ASSIGN_OR_RETURN(const auto source_bytes,
+            transfer.source.description().required_bytes());
+        HYLE_ASSIGN_OR_RETURN(const auto source_storage,
+            transfer.source.storage().subview(0, source_bytes));
+        HYLE_ASSIGN_OR_RETURN(const auto destination_bytes,
+            transfer.destination.description().required_bytes());
+        HYLE_ASSIGN_OR_RETURN(const auto destination_storage,
+            transfer.destination.storage().subview(0, destination_bytes));
         auto properties = compute::transfer_properties(queues[target],
-            transfer.destination.storage(), transfer.source.storage());
+            destination_storage, source_storage);
         if (!properties) {
           auto status = std::move(properties).error();
           if (status.IsUnimplemented())
@@ -2427,8 +2447,20 @@ Status materialize_constants(detail::PlanState &plan,
     for (const auto &copy : pending) {
       if (copy.target != target)
         continue;
-      sequence->record(compute::detail::TransferAccess::enqueue_copy(*sequence,
-          copy.transfer.destination.storage(), copy.transfer.source.storage()));
+      const auto enqueue = [&]() noexcept -> compute::detail::EnqueueResult {
+        auto source_bytes = copy.transfer.source.description().required_bytes();
+        if (!source_bytes) return compute::detail::EnqueueResult::rejected(std::move(source_bytes).error());
+        auto source_storage = copy.transfer.source.storage().subview(0, *source_bytes);
+        if (!source_storage) return compute::detail::EnqueueResult::rejected(std::move(source_storage).error());
+        auto destination_bytes = copy.transfer.destination.description().required_bytes();
+        if (!destination_bytes) return compute::detail::EnqueueResult::rejected(std::move(destination_bytes).error());
+        auto destination_storage = copy.transfer.destination.storage().subview(0, *destination_bytes);
+        if (!destination_storage) return compute::detail::EnqueueResult::rejected(std::move(destination_storage).error());
+        return compute::detail::TransferAccess::enqueue_copy(*sequence, *destination_storage, *source_storage);
+      };
+      // A rejecting suffix still records its error and retires any already
+      // accepted prefix through the original sequence/retention path below.
+      sequence->record(enqueue());
       if (!sequence->terminal().ok()) break;
     }
     auto completion = sequence->finish();
@@ -5456,14 +5488,14 @@ Status prepare_placed_steps_attempt(
         const auto *owned = plan.owned_instance_constant(root);
         auto binding = plan.constant_bindings[slot];
         if (owned != nullptr) {
-          HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::create(
+          HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::from_initialized_storage(
               plan.instance_descriptions[root], owned->view()));
         }
-        HYLE_ASSIGN_OR_RETURN(const auto bytes,
-            plan.instance_descriptions[instance].required_bytes());
+        if (offset > binding.storage().size())
+          return Status::OutOfRange("region constant alias exceeds initialized storage");
         HYLE_ASSIGN_OR_RETURN(const auto storage,
-            binding.storage().subview(offset, bytes));
-        HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::create(
+            binding.storage().subview(offset, binding.storage().size() - offset));
+        HYLE_ASSIGN_OR_RETURN(binding, compute::ConstTensorView::from_initialized_storage(
             plan.instance_descriptions[instance], storage));
         if (owned && plan.instance_storage[root] >= plan.storage_domains.size())
           return Status::Internal("region constant physical storage is invalid");
@@ -9106,11 +9138,13 @@ Result<Invocation> Executable::create_invocation(
       if (parent >= instance || !invocation->readable[parent].valid())
         return Status::Internal("immutable View has no ready physical parent");
       HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(*invocation, instance));
-      HYLE_ASSIGN_OR_RETURN(const auto bytes,
-          physical_description(*invocation, instance).required_bytes());
-      HYLE_ASSIGN_OR_RETURN(auto storage, invocation->readable[parent].storage().subview(offset, bytes));
+      const auto parent_storage = invocation->readable[parent].storage();
+      if (offset > parent_storage.size())
+        return Status::OutOfRange("immutable View exceeds initialized parent storage");
+      HYLE_ASSIGN_OR_RETURN(auto storage,
+          parent_storage.subview(offset, parent_storage.size() - offset));
       HYLE_ASSIGN_OR_RETURN(invocation->readable[instance],
-          compute::ConstTensorView::create(physical_description(*invocation, instance), storage));
+          compute::ConstTensorView::from_initialized_storage(physical_description(*invocation, instance), storage));
       // Provider port alignment remains part of prepare_replay, alongside
       // all other bindings. This merely resolves the immutable byte range.
       invocation->bound[instance] = 1;

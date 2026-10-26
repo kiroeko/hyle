@@ -511,7 +511,9 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
       auto ready = range.writer.publish(); if (!ready) co_return ready.error(); range.reader = std::move(*ready);
     }
     if (!range.reader.valid() && !range.bytes) continue;
-    auto output = range.reader.subview(range.offset, range.bytes); if (!output) co_return output.error();
+    // Keep exactly one internal ready owner. It covers only the initialized
+    // transfer extent; output() narrows that same owner to the logical range.
+    auto output = range.reader.subview(range.offset, range.physical_bytes); if (!output) co_return output.error();
     range.output = std::move(*output); range.reader.reset();
   }
   co_return Status::Ok();
@@ -832,6 +834,14 @@ std::uint32_t StreamReadyGroup::range_count() const noexcept {
   return state_->group(request_, group_).count;
 }
 Result<ReadLease> StreamReadyGroup::output(std::uint32_t index) const noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("stream ready group is empty"));
+  std::lock_guard guard(state_->lock);
+  if (index >= state_->group(request_, group_).count) return std::unexpected(Status::OutOfRange("stream output index exceeds group"));
+  const auto &range = state_->range(request_, group_, index);
+  if (!range.output.valid()) return range.output;
+  return range.output.subview(0, range.bytes);
+}
+Result<ReadLease> StreamReadyGroup::initialized_storage(std::uint32_t index) const noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("stream ready group is empty"));
   std::lock_guard guard(state_->lock);
   if (index >= state_->group(request_, group_).count) return std::unexpected(Status::OutOfRange("stream output index exceeds group"));

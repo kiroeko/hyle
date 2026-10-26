@@ -1,0 +1,482 @@
+{
+  "status": "FINITE_SCOPE_PASSED_WITH_PRESERVED_FAILURES",
+  "date": "2026-10-26",
+  "source_base": "33d488abe6f4c6b03e4f51d3e1d88328e21ca99b",
+  "source_patch": "records/product.patch",
+  "purpose": "Load non-four-byte original weight ranges through existing F3 padding and preserve only explicitly ready readonly storage through Tensor/Graph/Vulkan.",
+  "contract": [
+    "L remains the original file bytes and TensorDesc extent. Streamed carriers reserve checked P=ceil(L/4)*4 on every route; actual stream backing budgets use P.",
+    "F3 reads L only and initializes the tail. output() remains L; initialized_storage() exposes exactly P and shares the original retirement lifetime.",
+    "Existing ConstTensorView::create still clips L. Additive from_initialized_storage preserves the supplied initialized span without a member/layout change.",
+    "Readonly Graph bindings and immutable aliases retain the declared ready span only. CPU/common mathematical copies use L; writable tensor views are not enlarged.",
+    "Vulkan lease binding proves four-byte carrier capacity inside the original ReadLease span, never by assuming the rest of an allocation is initialized."
+  ],
+  "fixture_inventory": [
+    {
+      "manifest": ".scratch/mtp-state-ports-20261024/gdn-regression/shared-fixture/weights.tsv",
+      "manifest_sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515",
+      "include_mtp": false,
+      "roles": 27,
+      "logical_bytes": 191236.0,
+      "initialized_bytes": 191240.0,
+      "padded_roles": [
+        {
+          "role": "model.language_model.layers.0.linear_attn.A_log",
+          "bytes": 2,
+          "padded_bytes": 4
+        },
+        {
+          "role": "model.language_model.layers.0.linear_attn.dt_bias",
+          "bytes": 2,
+          "padded_bytes": 4
+        }
+      ]
+    },
+    {
+      "manifest": ".scratch/mtp-state-ports-20261024/gdn-regression/shared-fixture/weights.tsv",
+      "manifest_sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515",
+      "include_mtp": true,
+      "roles": 42,
+      "logical_bytes": 298628.0,
+      "initialized_bytes": 298632.0,
+      "padded_roles": [
+        {
+          "role": "model.language_model.layers.0.linear_attn.A_log",
+          "bytes": 2,
+          "padded_bytes": 4
+        },
+        {
+          "role": "model.language_model.layers.0.linear_attn.dt_bias",
+          "bytes": 2,
+          "padded_bytes": 4
+        }
+      ]
+    },
+    {
+      "manifest": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/weights.tsv",
+      "manifest_sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1",
+      "include_mtp": false,
+      "roles": 320,
+      "logical_bytes": 3763655360.0,
+      "initialized_bytes": 3763655360.0,
+      "padded_roles": []
+    },
+    {
+      "manifest": ".scratch/qwen35-unsloth-mtp-20261024/geometry-v2-check/original/weights.tsv",
+      "manifest_sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1",
+      "include_mtp": true,
+      "roles": 335,
+      "logical_bytes": 3885311680.0,
+      "initialized_bytes": 3885311680.0,
+      "padded_roles": []
+    }
+  ],
+  "build_and_runs": {
+    "status": "FINITE_SCOPE_PASSED_WITH_PRESERVED_FAILURES",
+    "baseline_commit": "33d488abe",
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\ready2.json",
+      "bytes": 16275,
+      "sha256": "d5997e45aa5577e9d08729d961be3f4ebbd1e8496c1dd8940266ffb869831d85"
+    },
+    "final_source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\final-source-freeze.json",
+      "bytes": 51889,
+      "sha256": "1f4ed9d32b642bb22d6bb4bebfcef01deb842d2e550df151096d27f2716f89d5"
+    },
+    "compiled_TUs": 14,
+    "product_TUs": 9,
+    "test_compile_invocations": 5,
+    "compile_failures": 0,
+    "link_invocations": 4,
+    "link_failures": 1,
+    "link_correction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\link-correction.json",
+      "bytes": 1878,
+      "sha256": "4f336f94f63c04da1bb65b06aec873200f668e61fa4dff6ad912050921e3d08c"
+    },
+    "graph_test_correction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\graph-test2-plan.json",
+      "bytes": 2537,
+      "sha256": "a5c0f2b326485197d007b3f6d0004021b001c44d179031c0537d68f572a8e735"
+    },
+    "cpu_runtime_correction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\cpu-runtime-correction.json",
+      "bytes": 1578,
+      "sha256": "bce51f629c0474c15836d6b23a5d07feb2293f69203cea299050a13c6f2e4e5d"
+    },
+    "focused_tests": {
+      "initial_pass": 53,
+      "initial_fail": 3,
+      "final_pass": 56,
+      "final_fail": 0
+    },
+    "runs": {
+      "focused_initial": {
+        "process": {
+          "exit": 1,
+          "pid": 36712,
+          "seconds": 0.7615892000030726
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run1\\command.json",
+          "bytes": 384,
+          "sha256": "2c8ec322a1266083c2966b16c17118b953d13f6d03007d6cfb8057557f54c008"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run1\\stdout.log",
+          "bytes": 12215,
+          "sha256": "f78eb0918afab60f644fd1032bd326134659dffa6a6f32bdec4e0a646576ec6d"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run1\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "focused_final": {
+        "process": {
+          "exit": 0,
+          "pid": 3404,
+          "seconds": 0.7466989000095055
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run2\\command.json",
+          "bytes": 384,
+          "sha256": "18147220a1b9fe3161642476f3ad985a5cc8ad693a8ca195fc08c8d01b3657a1"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run2\\stdout.log",
+          "bytes": 11254,
+          "sha256": "a4a28ebb82d22a6bc44388e5910a2236ebfb26c744ad917726209f2b78434482"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\test\\run2\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "vulkan_ordinary_and_mtp": {
+        "process": {
+          "exit": 0,
+          "pid": 16976,
+          "seconds": 2.980231099994853
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-tiny\\command.json",
+          "bytes": 344,
+          "sha256": "8d4062ef4a0b376dd29b0257246006759163b4b3f0a42c78a0ad37492e226e12"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-tiny\\stdout.log",
+          "bytes": 1649,
+          "sha256": "c3f6eceb445c0bf753493529e9cd2a3224ee80000495521946a5fe93573e7dd3"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-tiny\\stderr.log",
+          "bytes": 4456,
+          "sha256": "de1477bc7e94cdcd2157a4520b4db128b6fd1344962777d0ecad44c205e0f8af"
+        },
+        "result": {
+          "status": "PASS",
+          "backend": "vulkan",
+          "ordinary": {
+            "hidden": 64,
+            "target_layers": 2,
+            "payloads": 5,
+            "bytes": 18432,
+            "byte_limit_at_factory": true,
+            "adapter_parking": true,
+            "allocation_failure_applicable": true,
+            "pre_submit_failure_preserved": true,
+            "continuation_lag": 0,
+            "roles": {
+              "target_key": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 384
+              },
+              "target_value": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 383
+              },
+              "conv": {
+                "payloads": 1,
+                "bytes": 1152,
+                "nonzero_bytes": 1149
+              },
+              "gdn": {
+                "payloads": 1,
+                "bytes": 16384,
+                "nonzero_bytes": 16337
+              },
+              "carry": {
+                "payloads": 1,
+                "bytes": 128,
+                "nonzero_bytes": 128
+              },
+              "prior": {
+                "payloads": 0,
+                "bytes": 0,
+                "nonzero_bytes": 0
+              },
+              "draft_key": {
+                "payloads": 0,
+                "bytes": 0,
+                "nonzero_bytes": 0
+              },
+              "draft_value": {
+                "payloads": 0,
+                "bytes": 0,
+                "nonzero_bytes": 0
+              }
+            }
+          },
+          "mtp": {
+            "hidden": 64,
+            "target_layers": 2,
+            "payloads": 7,
+            "bytes": 19200,
+            "byte_limit_at_factory": true,
+            "adapter_parking": false,
+            "allocation_failure_applicable": true,
+            "pre_submit_failure_preserved": true,
+            "continuation_lag": 0,
+            "roles": {
+              "target_key": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 384
+              },
+              "target_value": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 383
+              },
+              "conv": {
+                "payloads": 1,
+                "bytes": 1152,
+                "nonzero_bytes": 1149
+              },
+              "gdn": {
+                "payloads": 1,
+                "bytes": 16384,
+                "nonzero_bytes": 16337
+              },
+              "carry": {
+                "payloads": 1,
+                "bytes": 128,
+                "nonzero_bytes": 128
+              },
+              "prior": {
+                "payloads": 0,
+                "bytes": 0,
+                "nonzero_bytes": 0
+              },
+              "draft_key": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 384
+              },
+              "draft_value": {
+                "payloads": 1,
+                "bytes": 384,
+                "nonzero_bytes": 383
+              }
+            }
+          },
+          "all_initialized_bytes_equal": true,
+          "historical_wrapper_preserved": true,
+          "same_shape_continuation_equal": true,
+          "old_alias_unchanged": true,
+          "cold_resources_expired": true,
+          "final_images": 0,
+          "final_versions": 0,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "copied_physical_bytes": [
+          191240,
+          298632
+        ]
+      },
+      "vulkan_lag1": {
+        "process": {
+          "exit": 0,
+          "pid": 61452,
+          "seconds": 0.9961194999632426
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-lagged\\command.json",
+          "bytes": 363,
+          "sha256": "39898658a577afa26bc1d9c200e069f555a3a8663dbe22f1043fad0f017a2756"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-lagged\\stdout.log",
+          "bytes": 520,
+          "sha256": "6cbe21dea8ddc62fbc2f4a583d76c29187f851806c7497b131cb5dcad8eb8cf8"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-lagged\\stderr.log",
+          "bytes": 2952,
+          "sha256": "eaa4b356c863541196bc9b50052267bf3f4acdee3028a1c1e8336c66dce0908e"
+        },
+        "result": {
+          "status": "PASS",
+          "backend": "vulkan",
+          "seed_contract": "explicit_verified_prefix",
+          "natural_acceptance_claim": false,
+          "seed_lag": 1,
+          "seed_length": 5,
+          "seed_frontier": 4,
+          "seed_catchup_token": 1,
+          "prior_payloads": 1,
+          "prior_bytes": 128,
+          "prior_nonzero_bytes": 127,
+          "payloads": 8,
+          "bytes": 20096,
+          "continuation_lag": 0,
+          "processed_draft": 2,
+          "processed_target": 1,
+          "all_initialized_bytes_equal": true,
+          "same_shape_catchup_round_equal": true,
+          "old_alias_unchanged": true,
+          "final_images": 0,
+          "final_versions": 0,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "copied_physical_bytes": [
+          298632
+        ]
+      },
+      "cpu_lag1_initial": {
+        "process": {
+          "exit": 1,
+          "pid": 21388,
+          "seconds": 0.2162555999821052
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged\\command.json",
+          "bytes": 360,
+          "sha256": "880a609dca4de8bb678211fcc6b5ce5cb5e3cab9f5ed0d8da6b65363820e6d88"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged\\stdout.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged\\stderr.log",
+          "bytes": 1622,
+          "sha256": "43590f069942b48eaee54b62bf617b8a67405bda4317304459c470b32c98c523"
+        },
+        "copied_physical_bytes": [
+          298632
+        ]
+      },
+      "cpu_lag1_final": {
+        "process": {
+          "exit": 0,
+          "pid": 55616,
+          "seconds": 0.3316902000224218
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged2\\command.json",
+          "bytes": 360,
+          "sha256": "880a609dca4de8bb678211fcc6b5ce5cb5e3cab9f5ed0d8da6b65363820e6d88"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged2\\stdout.log",
+          "bytes": 517,
+          "sha256": "fbffebf4902f44aa2517605170078ae5d2caacd37bf754c96d0196c98c739ddd"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\case\\run-cpu-lagged2\\stderr.log",
+          "bytes": 3866,
+          "sha256": "fcc5877f30bdc667705e9e3c345da7dfb9f23e68817d80f2095a49ec0fd04f60"
+        },
+        "result": {
+          "status": "PASS",
+          "backend": "cpu",
+          "seed_contract": "explicit_verified_prefix",
+          "natural_acceptance_claim": false,
+          "seed_lag": 1,
+          "seed_length": 5,
+          "seed_frontier": 4,
+          "seed_catchup_token": 1,
+          "prior_payloads": 1,
+          "prior_bytes": 128,
+          "prior_nonzero_bytes": 128,
+          "payloads": 8,
+          "bytes": 20096,
+          "continuation_lag": 0,
+          "processed_draft": 2,
+          "processed_target": 1,
+          "all_initialized_bytes_equal": true,
+          "same_shape_catchup_round_equal": true,
+          "old_alias_unchanged": true,
+          "final_images": 0,
+          "final_versions": 0,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "copied_physical_bytes": [
+          298632
+        ]
+      }
+    },
+    "scope": [
+      "Unchanged tiny GA/H64 BF16 fixture; full byte/lifetime resource roundtrips, not trained quality.",
+      "Vulkan ordinary+MTP combined, Vulkan verified-prefix lag1, CPU verified-prefix lag1 use identical current case image.",
+      "Existing full335 had P=L and was not rerun in this batch."
+    ],
+    "not_run": [
+      "Full335 all-backend regression",
+      "Performance measurement",
+      "Full SDK/native/dependency rebuild",
+      "Downloads"
+    ],
+    "archive_rewrites": 0,
+    "sdk_copies": 0,
+    "same_fixture_unchanged": true,
+    "model_or_case_compilation_repeats": 0
+  },
+  "preserved_failures": [
+    "First link used both the old direct shadow graph.obj and the new complete executable TU; exact direct replacement fixed it without suppressing duplicate definitions.",
+    "Three new zero-lane tests initially used submit(queue). Tests now use the existing submit() overload; product submit policy was unchanged.",
+    "CPU first run lacked its already cached variant DLL beside the executable. The same DLL was hardlinked to the app directory required by LoadLibraryEx; no source change, SDK copy or rebuild."
+  ],
+  "cleanup": {
+    "status": "REMOVED_TWO_EXACT_SUPERSEDED_IMAGES",
+    "command": "& .\\test.ps1 -Delete",
+    "executed_script_sha256": "a5e23a3f94e60985ab1d35d3d76cfe61830f3c8ef45dd4b405ec69b6f3b33110",
+    "logical_bytes": 138616832,
+    "targets": [
+      {
+        "sha256": "61883bce7a2317021d81e919523bd89adc8b5a863c754a448e3b16d9356afacb",
+        "bytes": 69542400,
+        "path": ".scratch/inference-native-host-image-20261026/vulkan-model-attempt7/link/host-image-vulkan-test.exe"
+      },
+      {
+        "sha256": "9f8a5d98a1e36fbb0b41c66f8aad99e17868b48016f4e5ea7fe7b37ccfb614c4",
+        "bytes": 69074432,
+        "path": ".scratch/inference-stream-padding-20261026/test2/link/padding-focused-test.exe"
+      }
+    ],
+    "current_case_present": true,
+    "current_focused_present": true
+  },
+  "limits": [
+    "The tiny GA/H64 fixture is unchanged and untrained. These are finite byte, continuation, snapshot, RNG and retirement checks; no task-quality or natural-MTP-acceptance claim.",
+    "The full335 source has P=L and was not rerun in this batch. New Apple/CUDA odd-range consumers and device-failure injection were not run.",
+    "No new throughput, peak-memory or load-speed comparison; no model download or SDK rebuild."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-stream-padding-2026-10-26.zip",
+    "bytes": 391958,
+    "sha256": "596601be1c9542587b4b21b1f4ee8338930aa4a8a9a598d1e236cee3b81de011",
+    "entries": 199
+  }
+}

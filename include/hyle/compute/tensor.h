@@ -18,6 +18,15 @@ class ConstTensorView final {
 
   HYLE_COMPUTE_API static Result<ConstTensorView>
   create(TensorDesc description, mem::ConstBufferView storage) noexcept;
+  // Keeps the explicitly supplied initialized storage range, including any
+  // private carrier tail beyond description.required_bytes(). The caller
+  // guarantees every supplied byte is ready and immutable for this view's
+  // lifetime. No authority is granted to the allocation outside this range;
+  // mathematical shape and byte extent still come only from description.
+  // create() instead narrows storage to the exact description extent.
+  HYLE_COMPUTE_API static Result<ConstTensorView>
+  from_initialized_storage(TensorDesc description,
+                           mem::ConstBufferView storage) noexcept;
 
   bool valid() const noexcept { return description_.valid(); }
   explicit operator bool() const noexcept { return valid(); }

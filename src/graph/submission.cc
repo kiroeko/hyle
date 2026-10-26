@@ -397,8 +397,18 @@ detail::enqueue_segment_steps(detail::InvocationState &invocation,
               invocation.invocations[step_index].operation, sequence,
               step_inputs, step_outputs);
     } else if (step.kind == detail::PlanStepKind::kCopy) {
-      enqueued = compute::detail::TransferAccess::enqueue_prevalidated_copy(
-          sequence, step_outputs[0].storage(), step_inputs[0].storage());
+      const auto enqueue = [&]() noexcept -> compute::detail::EnqueueResult {
+        auto source_bytes = step_inputs[0].description().required_bytes();
+        if (!source_bytes) return compute::detail::EnqueueResult::rejected(std::move(source_bytes).error());
+        auto source = step_inputs[0].storage().subview(0, *source_bytes);
+        if (!source) return compute::detail::EnqueueResult::rejected(std::move(source).error());
+        auto destination_bytes = step_outputs[0].description().required_bytes();
+        if (!destination_bytes) return compute::detail::EnqueueResult::rejected(std::move(destination_bytes).error());
+        auto destination = step_outputs[0].storage().subview(0, *destination_bytes);
+        if (!destination) return compute::detail::EnqueueResult::rejected(std::move(destination).error());
+        return compute::detail::TransferAccess::enqueue_prevalidated_copy(sequence, *destination, *source);
+      };
+      enqueued = enqueue();
     } else {
       enqueued = compute::detail::EnqueueResult::rejected(
           Status::Internal("compiled graph step kind is invalid"));

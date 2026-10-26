@@ -42,6 +42,13 @@ Result<ConstTensorView> ConstTensorView::create(
   return ConstTensorView(description, *exact);
 }
 
+Result<ConstTensorView> ConstTensorView::from_initialized_storage(
+    TensorDesc description, mem::ConstBufferView storage) noexcept {
+  auto logical = create(description, storage);
+  if (!logical) return std::unexpected(std::move(logical).error());
+  return ConstTensorView(description, storage);
+}
+
 Result<TensorView> TensorView::create(TensorDesc description,
                                       mem::BufferView storage) noexcept {
   if (!description.valid()) {

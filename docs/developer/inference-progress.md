@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **43%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
+更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **44%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
 
 ## 任务树
 
@@ -19,10 +19,10 @@
   - 持续工作态与按需导出不可变快照：约80%（已实现，有限检查通过）
   - 原生 GDN／conv 的版本化双缓冲与索引状态：约5%（设计中）
   - MTP 稳定状态槽及接受／回滚接线：0%（待实现）
-- 其它底层功能补齐：约40%（实现中）
+- 其它底层功能补齐：约45%（实现中）
   - 长度分桶、启动预热政策与异长批次：0%（待实现）
-  - 完整会话主机换出／换入：约90%（CPU及三类GPU普通／MTP已检查，三类GPU lag1／prior已检查，故障边界待补）
-  - Vulkan非4字节权重片段接入：约10%（新发现，核查原F3尾部padding复用）
+  - 完整会话主机换出／换入：约90%（CPU及三类GPU普通／MTP、lag1／prior已有限检查，故障边界待补）
+  - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
 - 重叠执行与完整性能对照：约5%（设计中）
   - 提前准备、设备 token 接力与有序发布：约5%（设计中）
@@ -31,19 +31,19 @@
 
 ## 正在做
 
-| 任务 | 所属 | 简述 | 进度 |
-|---|---|---|---|
-| Vulkan非4字节权重片段接入 | 其它底层功能／权重接入 | 原tiny输入因流对齐拒绝，正在核查既有显式尾部padding，保留原有效字节与预算 | 约10% |
+本批已完成，下一批尚未启动。下一项为受控pending／原生故障与SDK退休附件边界。
 
 ## 本批结果与下一步
 
 已补形状预热／接纳计时、EOS配置、普通合批单成员取消、输出credit／ACK、共同请求循环与持续工作态。有限检查和保留的失败见[工作态迁移](../evidence/correctness/inference-working-state-2026-10-26.json)、[共同循环](../evidence/correctness/inference-request-loop-2026-10-26.json)及[取消与交付](../evidence/correctness/inference-request-controls-2026-10-26.json)。原生状态导出、KV reframe和复制仍在；不据元数据复用宣称提速。
 
-完整主机镜像已接CPU／CUDA／Apple／Vulkan，带独立数量／字节预算、真实CopyBatch退休和全状态恢复；见[镜像实现](../evidence/correctness/inference-host-image-2026-10-26.json)、[lag1边界](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)及[原生平台检查](../evidence/correctness/inference-native-host-image-2026-10-26.json)。三类GPU原始335角色的普通／MTP、lag1／非零prior、同形状续算、旧快照和资源释放均通过有限检查。lag1使用明确验证前缀，不冒充自然接受或任务质量；CPU lag1、受控pending／原生故障仍待补。原tiny Vulkan输入在加载时被流对齐拒绝，保留为新缺项，不能把原335通过写成所有输入通过。固定bank归还槽不代表显存下降。
+完整主机镜像已接CPU／CUDA／Apple／Vulkan，带独立数量／字节预算、真实CopyBatch退休和全状态恢复；见[镜像实现](../evidence/correctness/inference-host-image-2026-10-26.json)、[lag1边界](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)及[原生平台检查](../evidence/correctness/inference-native-host-image-2026-10-26.json)。前批三类GPU原始335角色的普通／MTP、lag1／非零prior、同形状续算、旧快照和资源释放均通过有限检查。lag1使用明确验证前缀，不冒充自然接受或任务质量；受控pending／原生故障仍待补。固定bank归还槽不代表显存下降。
 
-CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。本轮只做相关增量编译，累计经`test.ps1`清理已替代验证二进制约1.27GB，没有新完整性能结果。
+原tiny Vulkan加载失败已修：复用F3显式padding，原文件字节／形状不变，实际载体与预算按四字节补齐；Tensor／Graph保留原已初始化的只读范围，普通数学复制仍按逻辑长度。56项定向检查及原tiny Vulkan普通／MTP／lag1、同一程序CPU lag1通过；见[片段接入](../evidence/correctness/inference-stream-padding-2026-10-26.json)。仅两个BF16单元素角色各补2B，普通／MTP实际传输为191240／298632B。首次链接重复输入、3个测试误用提交入口、CPU测试缺DLL位置均保留原记录并修正；没有放宽产品提交、所有权或设备对齐合同。本批未重跑原335或Apple／CUDA新片段消费者，未测性能。
 
-SDK现提供受检零拷贝`StorageOwner::freeze`，权重层已移除直接LeaseAccess调用；8项所有权检查及新权重入口的原始Qwen普通／MTP CUDA消费者通过，见[SDK边界](../evidence/correctness/inference-storage-freeze-2026-10-26.json)。原生平台搬运本批检查完成；下一步先补新发现的Vulkan片段接入，再处理故障／退休附件公共边界、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
+CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。本轮只做相关增量编译，累计经`test.ps1`清理已替代验证二进制约1.41GB，没有新完整性能结果。
+
+SDK现提供受检零拷贝`StorageOwner::freeze`，权重层已移除直接LeaseAccess调用；8项所有权检查及新权重入口的原始Qwen普通／MTP CUDA消费者通过，见[SDK边界](../evidence/correctness/inference-storage-freeze-2026-10-26.json)。下一步处理故障／退休附件公共边界、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
 
 单carrier不是落后主因。[同设置CPU诊断](../evidence/performance/inference-b2-peer-cpu-critical-2026-10-26.json)的共同90稳态根，GPU／CUDA API外运行区间为99.701／14.365ms；差85.337ms支持减少主机协议工作，但不是全额可删成本。架构合同见[整体设计](../architecture/inference-design.md)，范围见[工程计划](../implementation/inference-roadmap.md)，口径和关闭候选见[性能资料](performance/decode.md)。
 

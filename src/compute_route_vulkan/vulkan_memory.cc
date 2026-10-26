@@ -709,7 +709,9 @@ Result<Tensor> detail::MemoryAccess::lease_tensor(const std::shared_ptr<Runtime>
   HYLE_RETURN_IF_ERROR(validate_resource(runtime,resource));
   if (!options.allocator.valid() || static_cast<const MemoryState&>(resource.resource()).kind != MemoryKind::kDevice)
     return std::unexpected(Status::InvalidArgument("Vulkan lease binding requires a device resource/allocator"));
-  HYLE_ASSIGN_OR_RETURN(auto tensor, source.tensor(description));
+  HYLE_ASSIGN_OR_RETURN(auto initialized, source.view());
+  HYLE_ASSIGN_OR_RETURN(auto tensor,
+      ConstTensorView::from_initialized_storage(description, initialized));
   const auto storage = tensor.storage();
   if (storage.resource() != resource)
     return std::unexpected(Status::InvalidArgument("Vulkan lease belongs to another resource"));

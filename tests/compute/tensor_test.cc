@@ -302,6 +302,49 @@ TEST(TensorView, BorrowsAndNarrowsMemStorageWithoutTakingOwnership) {
   EXPECT_EQ(direct_const->description(), description);
 }
 
+TEST(TensorView, InitializedStoragePreservesOnlyTheSuppliedCarrierRange) {
+  const auto description = TensorDesc::dense(DataType::kBFloat16, {}).value();
+  Buffer buffer = Buffer::create(system_resource(), 64).value();
+  ASSERT_TRUE(buffer.view().fill(std::byte{0x5a}).ok());
+  const auto carrier = buffer.view().subview(4, 4).value();
+
+  const auto exact = ConstTensorView::create(description, carrier).value();
+  EXPECT_EQ(exact.storage().size(), 2u);
+  const auto initialized =
+      ConstTensorView::from_initialized_storage(description, carrier).value();
+  EXPECT_EQ(initialized.description(), description);
+  EXPECT_EQ(initialized.description().element_count().value(), 1u);
+  EXPECT_EQ(initialized.description().required_bytes().value(), 2u);
+  EXPECT_EQ(initialized.storage().native_handle(), buffer.native_handle());
+  EXPECT_EQ(initialized.storage().offset(), 4u);
+  EXPECT_EQ(initialized.storage().size(), 4u);
+  std::array<std::byte, 4> observed{};
+  ASSERT_TRUE(initialized.storage().read(observed).ok());
+  EXPECT_TRUE(std::ranges::all_of(observed,
+      [](std::byte byte) { return byte == std::byte{0x5a}; }));
+
+  // A smaller explicit range never gains its root's remaining carrier bytes.
+  const auto logical = carrier.subview(0, 2).value();
+  const auto narrow =
+      ConstTensorView::from_initialized_storage(description, logical).value();
+  EXPECT_EQ(narrow.storage().size(), 2u);
+}
+
+TEST(TensorView, InitializedStorageRejectsInvalidExtentAndAlignment) {
+  const auto description = TensorDesc::dense(DataType::kBFloat16, {}).value();
+  Buffer buffer = Buffer::create(system_resource(), 8).value();
+  EXPECT_TRUE(ConstTensorView::from_initialized_storage({}, buffer.view())
+                  .error().IsInvalidArgument());
+  EXPECT_TRUE(ConstTensorView::from_initialized_storage(description, {})
+                  .error().IsInvalidArgument());
+  EXPECT_TRUE(ConstTensorView::from_initialized_storage(description,
+                  buffer.view().subview(0, 1).value())
+                  .error().IsOutOfRange());
+  EXPECT_TRUE(ConstTensorView::from_initialized_storage(description,
+                  buffer.view().subview(1, 4).value())
+                  .error().IsInvalidArgument());
+}
+
 TEST(TensorView, RejectsMissingOrShortStorageAndSupportsOwnedEmptyBuffers) {
   const std::array<std::int64_t, 1> shape{4};
   const TensorDesc description =

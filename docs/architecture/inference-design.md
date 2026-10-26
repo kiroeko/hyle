@@ -167,6 +167,11 @@ GPU-only构建只需配置类型的前置声明。`native_threads`不配置ATen�
 
 Qwen的冷制品准备已独立为`weights.h`／`weights.cc`：原Tensor存储、LoadedWeight和冷加载／投影绑定接口留在模型内，Recipe只消费绑定结果，加载器不依赖Model、Session或请求循环。绑定仍借稳定map节点，存储仍归原ColdResources，不复制权重银行或新增owner。Tensor的热读写／view／move保原inline；移出的freeze仅在冷导入和常量构图调用。同一weights源由每个实际消费者按自己的后端能力宏编译，避免把完整产品的Backend布局强加给Vulkan等factor消费者；没有新增用户构建选项。拆分后的原CPU请求流程及[工程构建检查](../evidence/correctness/inference-cold-weights-split-2026-10-25.json)已通过，不据此声称吞吐提升。
 
+流式权重的文件范围与TensorDesc保留逻辑长度L；载体按四字节补齐为P，实际分配和背书预算计P。
+F3只读L并初始化尾部；`output()`返回L，`initialized_storage()`返回明确完成的P，二者共享原租约。
+`ConstTensorView::from_initialized_storage`显式保留这段只读范围，旧`create`仍裁L；Graph常量和不可变别名
+只传递原授权范围，普通数学复制仍取L。更大的根分配本身不构成读取尾部的权限。
+
 KDA／Kimi NoPE MLA 组件的参数准备与数学追加已分开：调用者提供真实参数 Value，
 同一个 append 返回原端口；测试权重工厂也调用这一个数学体。来源变换、只读租约及完整状态发布
 仍归调用者，append 不创建另一份 owner 或状态表。普通 BF16 投影与 F32／量化 MatMul 的

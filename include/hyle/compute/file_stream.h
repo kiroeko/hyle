@@ -143,7 +143,13 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_COMPUTE_STREAM_API std::uint64_t tag() const noexcept;
   HYLE_COMPUTE_STREAM_API std::uint32_t range_count() const noexcept;
+  // The exact logical file range, excluding explicit native transfer padding.
   HYLE_COMPUTE_STREAM_API Result<ReadLease> output(std::uint32_t index) const noexcept;
+  // The same successfully completed range including its explicit initialized
+  // native padding. Starts at resource_offset and covers physical_bytes (or
+  // bytes when no padding was requested), never the whole destination writer.
+  // Both exports share the original lease/backing and its retirement lifetime.
+  HYLE_COMPUTE_STREAM_API Result<ReadLease> initialized_storage(std::uint32_t index) const noexcept;
 private:
   friend class StreamTicket;
   StreamReadyGroup(detail::FileStreamState *, std::uint32_t request, std::uint32_t group) noexcept;

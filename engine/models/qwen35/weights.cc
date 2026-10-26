@@ -476,6 +476,14 @@ c::TensorDesc role_description(const prepared::Role &role) {
   if (role.shape.size() != 2) throw std::runtime_error("encoded original role must be [N,K]: " + role.name);
   return take(take(c::gguf_weight_description(*codec, Type::kFloat32, role.shape[1], role.shape[0])).transposed());
 }
+namespace {
+// Apple/Vulkan copies require complete four-byte words. Keep the same owned
+// carrier on every route; the file range and tensor descriptor remain logical.
+// Only the stream initializes the extra tail, without reading a neighbour role.
+std::size_t streamed_weight_capacity(std::size_t bytes) {
+  return cache::add(bytes, (4 - bytes % 4) % 4);
+}
+} // namespace
 // The complete model wrapper validates its full source inventory first. A
 // source-bound component may select an explicit subset of those same roles;
 // both paths use this one IO/lease/shape-authentication implementation.
@@ -493,7 +501,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
   // checkpoint or duplicate packed bank is created. NF4 keeps its six typed
   // decoder operands; the ordinary cold planner decides contraction or decode.
   std::map<std::pair<std::filesystem::path, bool>, std::vector<std::size_t>> sources;
-  std::array<std::size_t, 2> largest{}, largest_group{}, source_counts{}, domain_bytes{};
+  std::array<std::size_t, 2> largest{}, largest_group{}, source_counts{}, domain_bytes{}, stream_domain_bytes{};
   std::set<std::string> fp8_roles, nf4_roles;
   for (const auto &role : roles.selected) if (role.projection_codec == prepared::ProjectionCodec::kFloat8Block128) {
     fp8_roles.insert(role.name);
@@ -512,7 +520,9 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
     // FP8 pairs enter one bounded cold import at a time below. Do not first
     // allocate their original codes/scales across the complete model bank.
     if (fp8_roles.contains(role.name) || nf4_roles.contains(role.name)) continue;
-    sources[{role.source, host}].push_back(i); largest[host] = (std::max)(largest[host], role.bytes);
+    const auto capacity = streamed_weight_capacity(role.bytes);
+    stream_domain_bytes[host] = cache::add(stream_domain_bytes[host], capacity);
+    sources[{role.source, host}].push_back(i); largest[host] = (std::max)(largest[host], capacity);
   }
   for (const auto &[key, indices] : sources) {
     const auto &[path, host] = key;
@@ -549,7 +559,7 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
         .max_requests = static_cast<std::uint32_t>(source_counts[domain]),
         .max_groups_per_request = static_cast<std::uint32_t>(largest_group[domain]),
         .max_ranges_per_group = 1, .in_flight_slots = slots, .staging_bytes_per_slot = staging_per_slot,
-        .max_active_backing_bytes = cache::add(domain_bytes[domain], slots * staging_per_slot)};
+        .max_active_backing_bytes = cache::add(stream_domain_bytes[domain], slots * staging_per_slot)};
     if (!domain) pipelines[domain] = take(backend.create_file_pipeline(io, targets, options));
     else {
       pipelines[domain] = take(backend.create_host_file_pipeline(io, targets, options));
@@ -582,14 +592,13 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
       const auto description = role_description(role);
       if (take(description.required_bytes()) != role.bytes)
         throw std::runtime_error("physical weight extent differs: " + role.name);
-      Tensor tensor(weight_resource(backend, host), description, !budget);
-      auto pool = budget
-          ? take(c::LeasePool::create(weight_resource(backend, host), role.bytes,
-                {.max_blocks = 1, .resource_budget = budget}))
-          : take(c::LeasePool::adopt(std::move(tensor.buffer), {.max_blocks = 1}));
-      auto writer = take(pool.allocate(role.bytes));
+      const auto capacity = streamed_weight_capacity(role.bytes);
+      Tensor tensor(weight_resource(backend, host), description, false);
+      auto pool = take(c::LeasePool::create(weight_resource(backend, host), capacity,
+          {.max_blocks = 1, .resource_budget = budget}));
+      auto writer = take(pool.allocate(capacity));
       ranges.push_back({.file_offset = role.offset, .destination = std::move(writer),
-          .bytes = role.bytes, .description = description});
+          .bytes = role.bytes, .physical_bytes = capacity, .description = description});
       weight_pools.push_back(std::move(pool));
       if (!weights.emplace(role.name, LoadedWeight{std::move(tensor), role.projection_codec, role.projection_group_size}).second)
         throw std::runtime_error("duplicate selected weight: " + role.name);
@@ -606,8 +615,8 @@ WeightLoadReport load_selected_weight_roles(const prepared::Roles &roles,
         throw std::runtime_error("weight stream returned an unexpected group");
       const auto index = static_cast<std::size_t>(group.tag());
       if (delivered[index]) throw std::runtime_error("weight stream returned a duplicate group");
-      auto ready = take(group.output(0));
-      if (ready.size() != ranges[index].bytes) throw std::runtime_error("incomplete original weight tensor");
+      auto ready = take(group.initialized_storage(0));
+      if (ready.size() != ranges[index].physical_bytes) throw std::runtime_error("incomplete initialized weight storage");
       weights.at(roles.selected[indices[index]].name).tensor.ready = std::move(ready);
       delivered[index] = true;
     }

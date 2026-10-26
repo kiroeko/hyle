@@ -73,7 +73,8 @@ struct Tensor final {
   hyle::compute::TensorView view() { return take(hyle::compute::TensorView::create(description, storage())); }
   void freeze(const hyle::inference::Backend &backend);
   hyle::compute::ConstTensorView read() {
-    return ready ? take(ready.tensor(description)) : view().as_const();
+    return ready ? take(hyle::compute::ConstTensorView::from_initialized_storage(
+                       description, take(ready.view()))) : view().as_const();
   }
   void zero() { check(storage().fill(std::byte{})); }
   template<class T> void write(std::span<const T> values) {
