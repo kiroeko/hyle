@@ -1,0 +1,466 @@
+{
+  "date": "2026-10-26",
+  "status": "FINITE_CPU_VULKAN_CUDA_CHECKS_PASS",
+  "git_before_commit": "217f243c730a006e2d69a35c6d8af8b66bd1e68e",
+  "changes": [
+    "Bounded FIFO reuse of original retired successful output writers; shared active R, no additional payload pool.",
+    "Decode, cold Session creation and host restore use the same original state-writer inventory.",
+    "Exact physical external-instance lookup for caller-owned Graph output storage, retaining range fallback and original budget checks.",
+    "CUDA-only conditional unused parameter annotation in StateTransfer; no runtime behavior change."
+  ],
+  "sources": [
+    {
+      "path": "engine/inference/reusable_output_storage.h",
+      "bytes": 3624,
+      "sha256": "6d45bf680315df595fba704cd5785cc0ba2928157da691dcdec56653ebf732a2"
+    },
+    {
+      "path": "engine/inference/state_transfer.h",
+      "bytes": 17405,
+      "sha256": "69575bdc41253c9136329f0b4785d44caba5f7d3070362488725854c65af40d4"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "bytes": 19190,
+      "sha256": "c692900c3c17c76d06d7f7220789cceb3c3b762caf3c0dd4cc6a74aac9a9ad0b"
+    },
+    {
+      "path": "engine/models/qwen35/session_transfer.h",
+      "bytes": 15366,
+      "sha256": "91d1c543019ad27c38bdb2f15695f3ff49e3a48ca865cc3dda3f1380466d47f2"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 480924,
+      "sha256": "bd2de52fd7c40addde9244987153581b0b9d8ebb9d6cff91828d571cfa71a079"
+    },
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 104791,
+      "sha256": "e73da87e599f20fe23faffcb384cba30f8cf722c5c21f0b60115e9dad4250cd8"
+    },
+    {
+      "path": "tests/graph/invocation_unbind_test.cc",
+      "bytes": 20879,
+      "sha256": "5ce114b0fd97777f7a20e1b809c0dc00a50234442725c6d989f5918fe304c0ee"
+    },
+    {
+      "path": "tests/tools/qwen_prefix_cache_test.cc",
+      "bytes": 66499,
+      "sha256": "cdf6011cc8a41b9769d4b915c91de05758c4f96c2cbad5fff2329349d6320043"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_test.cc",
+      "bytes": 2242,
+      "sha256": "eee798acb44152885042b9a0aa80a3d400990a6d0b92223626e7052c025f30f1"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_case.h",
+      "bytes": 27646,
+      "sha256": "be217e3ad21d3123c32964d0e9fa48d67cedd9b8600bdca88eb21f993ea90540"
+    },
+    {
+      "path": "tests/tools/qwen_state_reuse_case.h",
+      "bytes": 11963,
+      "sha256": "a6b0e1c195b42706b9c4b0ef8a89238283fbea36b77eceff0e2f36cfe93fb996"
+    }
+  ],
+  "windows": {
+    "status": "EIGHT_FINITE_PROCESSES_EXIT_ZERO",
+    "processes": [
+      {
+        "name": "graph",
+        "process": {
+          "exit": 0,
+          "pid": 56376,
+          "seconds": 0.24445709999417886
+        }
+      },
+      {
+        "name": "prefix",
+        "process": {
+          "exit": 0,
+          "pid": 25200,
+          "seconds": 0.24661299999570474
+        }
+      },
+      {
+        "name": "cpu",
+        "process": {
+          "exit": 0,
+          "pid": 42504,
+          "seconds": 0.2850260999985039
+        }
+      },
+      {
+        "name": "cpu-lag1",
+        "process": {
+          "exit": 0,
+          "pid": 51432,
+          "seconds": 0.2567799999960698
+        }
+      },
+      {
+        "name": "vulkan",
+        "process": {
+          "exit": 0,
+          "pid": 24992,
+          "seconds": 1.2829869000124745
+        }
+      },
+      {
+        "name": "vulkan-lag1",
+        "process": {
+          "exit": 0,
+          "pid": 55312,
+          "seconds": 0.9286389999906532
+        }
+      },
+      {
+        "name": "cpu-state-reuse",
+        "process": {
+          "exit": 0,
+          "pid": 43892,
+          "seconds": 0.23476650001248345
+        }
+      },
+      {
+        "name": "vulkan-state-reuse",
+        "process": {
+          "exit": 0,
+          "pid": 22668,
+          "seconds": 0.7394568999879993
+        }
+      }
+    ],
+    "quality_claim": false,
+    "performance_claim": false,
+    "full335": "NOT_RUN"
+  },
+  "cuda": {
+    "status": "THREE_FINITE_PROCESSES_EXIT_ZERO",
+    "processes": [
+      {
+        "name": "state-reuse",
+        "process": {
+          "exit": 0,
+          "pid": 48060,
+          "seconds": 2.930813200015109
+        }
+      },
+      {
+        "name": "ordinary-mtp",
+        "process": {
+          "exit": 0,
+          "pid": 49276,
+          "seconds": 0.8977109999977984
+        }
+      },
+      {
+        "name": "lag1",
+        "process": {
+          "exit": 0,
+          "pid": 50764,
+          "seconds": 0.7859819000004791
+        }
+      }
+    ],
+    "fixture": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+      "bytes": 7861,
+      "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+    },
+    "quality_claim": false,
+    "performance_claim": false,
+    "full335": false
+  },
+  "graph_tests": 8,
+  "prefix_standalone_pass_lines": 23,
+  "actual_reuse_consumers": {
+    "cpu": {
+      "status": "PASS",
+      "backend": "cpu",
+      "mode": "state_reuse",
+      "hidden": 64,
+      "layers": 2,
+      "applicable": true,
+      "resident_sessions": 2,
+      "active_sequences": 1,
+      "state_slots": 3,
+      "prefill_tokens": 3,
+      "decode_steps": 8,
+      "final_length": 11,
+      "unfrozen_decode_steps": 6,
+      "cold_acquire_pressure_roles": 2,
+      "host_restore_pressure_roles": 2,
+      "checkpoint_epoch": 8,
+      "outputs": [
+        {
+          "layer": 0,
+          "role": "conv",
+          "caller_owned": true,
+          "pool_max_blocks": 3,
+          "cache_peak": 1,
+          "blocks": [
+            {
+              "generation": 4,
+              "native_handle": 2274188242944,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274188242944,
+              "offset": 1280
+            },
+            {
+              "generation": 4,
+              "native_handle": 2274188242944,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274188242944,
+              "offset": 1280
+            },
+            {
+              "generation": 4,
+              "native_handle": 2274188242944,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274188242944,
+              "offset": 1280
+            }
+          ]
+        },
+        {
+          "layer": 0,
+          "role": "gdn",
+          "caller_owned": true,
+          "pool_max_blocks": 3,
+          "cache_peak": 1,
+          "blocks": [
+            {
+              "generation": 4,
+              "native_handle": 2274202075136,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274202075136,
+              "offset": 16384
+            },
+            {
+              "generation": 4,
+              "native_handle": 2274202075136,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274202075136,
+              "offset": 16384
+            },
+            {
+              "generation": 4,
+              "native_handle": 2274202075136,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 2274202075136,
+              "offset": 16384
+            }
+          ]
+        }
+      ],
+      "checkpoint_bytes_unchanged": true,
+      "final_versions": 0,
+      "performance_claim": false
+    },
+    "vulkan": {
+      "status": "PASS",
+      "backend": "vulkan",
+      "mode": "state_reuse",
+      "hidden": 64,
+      "layers": 2,
+      "applicable": false,
+      "resident_sessions": 2,
+      "active_sequences": 1,
+      "state_slots": 3,
+      "prefill_tokens": 3,
+      "decode_steps": 8,
+      "final_length": 11,
+      "unfrozen_decode_steps": 6,
+      "cold_acquire_pressure_roles": 0,
+      "host_restore_pressure_roles": 0,
+      "checkpoint_epoch": 8,
+      "outputs": [
+        {
+          "layer": 0,
+          "role": "conv",
+          "caller_owned": false,
+          "pool_max_blocks": 2,
+          "cache_peak": 0,
+          "blocks": []
+        },
+        {
+          "layer": 0,
+          "role": "gdn",
+          "caller_owned": false,
+          "pool_max_blocks": 2,
+          "cache_peak": 0,
+          "blocks": []
+        }
+      ],
+      "checkpoint_bytes_unchanged": true,
+      "final_versions": 0,
+      "performance_claim": false
+    },
+    "cuda": {
+      "status": "PASS",
+      "backend": "cuda",
+      "mode": "state_reuse",
+      "hidden": 64,
+      "layers": 2,
+      "applicable": true,
+      "resident_sessions": 2,
+      "active_sequences": 1,
+      "state_slots": 3,
+      "prefill_tokens": 3,
+      "decode_steps": 8,
+      "final_length": 11,
+      "unfrozen_decode_steps": 6,
+      "cold_acquire_pressure_roles": 2,
+      "host_restore_pressure_roles": 2,
+      "checkpoint_epoch": 8,
+      "outputs": [
+        {
+          "layer": 0,
+          "role": "conv",
+          "caller_owned": true,
+          "pool_max_blocks": 3,
+          "cache_peak": 1,
+          "blocks": [
+            {
+              "generation": 4,
+              "native_handle": 81743105536,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743105536,
+              "offset": 1280
+            },
+            {
+              "generation": 4,
+              "native_handle": 81743105536,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743105536,
+              "offset": 1280
+            },
+            {
+              "generation": 4,
+              "native_handle": 81743105536,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743105536,
+              "offset": 1280
+            }
+          ]
+        },
+        {
+          "layer": 0,
+          "role": "gdn",
+          "caller_owned": true,
+          "pool_max_blocks": 3,
+          "cache_peak": 1,
+          "blocks": [
+            {
+              "generation": 4,
+              "native_handle": 81743109632,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743109632,
+              "offset": 16384
+            },
+            {
+              "generation": 4,
+              "native_handle": 81743109632,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743109632,
+              "offset": 16384
+            },
+            {
+              "generation": 4,
+              "native_handle": 81743109632,
+              "offset": 0
+            },
+            {
+              "generation": 2,
+              "native_handle": 81743109632,
+              "offset": 16384
+            }
+          ]
+        }
+      ],
+      "checkpoint_bytes_unchanged": true,
+      "final_versions": 0,
+      "performance_claim": false
+    }
+  },
+  "retained_failures": [
+    "Graph test compile: test used nonexistent BufferView.as_const; corrected test conversion.",
+    "Graph test run: two mismatched write extents and invalid zero-budget construction; corrected fixtures, unchanged product checks.",
+    "Capacity review: cold creation and restore bypassed cached writers; unified acquisition and added pressure checks before final run.",
+    "CUDA-only compile: StateTransfer owner used only by Apple/Vulkan branches; added maybe_unused without lowering warnings."
+  ],
+  "limits": [
+    "Finite local tiny Model fixture and component checks; not full-model task quality or throughput evidence.",
+    "Vulkan provider-owned outputs do not exercise caller-owned writer reuse.",
+    "Apple not run for this batch; no new SDK or device kernel build, download or profiler.",
+    "Windows run predates only the no-behavior maybe_unused parameter annotation; it was not rerun.",
+    "Per-step KV frame export, reframe, binding and publication remain; indexed multi-prefix MTP slots and overlap are not implemented by this change."
+  ],
+  "performance_claim": false,
+  "cleanup": {
+    "status": "REMOVED_THREE_SUPERSEDED_BATCH_IMAGES",
+    "command": "& .\\test.ps1 -Delete",
+    "executed_script_sha256": "135c4e73899017c09a8fd2b8eff51fc8536a00d8f654a7c2938c25fbd1d48a91",
+    "logical_bytes": 205374464.0,
+    "targets": [
+      {
+        "path": ".scratch/inference-reusable-state-20261026/test/link/graph-test.exe",
+        "sha256": "4a30ed2efc5ec8e9ee10c3282a5f709d6c68429b85e443b16eb53cce070c20c2",
+        "bytes": 68322304
+      },
+      {
+        "path": ".scratch/inference-reusable-state-20261026/prefix/link/prefix-test.exe",
+        "sha256": "f6cb7c00845d6fd4997f9bc923472bde92abf96b66727a6fd8f3df04975cd9f8",
+        "bytes": 67480576
+      },
+      {
+        "path": ".scratch/inference-reusable-state-20261026/case/link/host-image-test.exe",
+        "sha256": "e9c4726cec65da59cb8273ac7b616a9abe61afb5ad6805b21dabf0dc5c3c9071",
+        "bytes": 69571584
+      }
+    ],
+    "current_images_present": true,
+    "all_objects_libraries_models_and_logs_retained": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-reusable-state-2026-10-26.zip",
+    "bytes": 615423,
+    "sha256": "9e94e4de5976a0ff80b3958a48821702726bc4f7d5c52a7ede3985ecb222a8c5"
+  }
+}

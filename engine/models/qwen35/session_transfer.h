@@ -210,15 +210,16 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
     copy.source = scope->image->payload(i); copy.bytes = part.bytes;
     if (scope->pages[i].valid()) copy.destination = std::move(scope->pages[i].lease());
     else {
-      c::LeasePool *pool = nullptr;
       switch (part.role) {
-      case cache::HostPayloadRole::kConvHistory: pool = &state_pools[part.layer].history; break;
-      case cache::HostPayloadRole::kGdnState: pool = &state_pools[part.layer].recurrent; break;
+      case cache::HostPayloadRole::kConvHistory:
+        copy.destination = take(state_pools[part.layer].acquire_history(part.bytes)); break;
+      case cache::HostPayloadRole::kGdnState:
+        copy.destination = take(state_pools[part.layer].acquire_recurrent(part.bytes)); break;
       case cache::HostPayloadRole::kCarryHidden:
-      case cache::HostPayloadRole::kPriorHidden: pool = &hidden_pool; break;
+      case cache::HostPayloadRole::kPriorHidden:
+        copy.destination = take(hidden_pool.allocate(part.bytes, cache::state_pool_alignment)); break;
       default: throw std::runtime_error("host image page role has no original page writer");
       }
-      copy.destination = take(pool->allocate(part.bytes, cache::state_pool_alignment));
     }
   }
   auto transfer = take(inference::StateTransfer::prepare(execution, copies, scope, allocation_budget));

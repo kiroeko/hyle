@@ -1265,10 +1265,37 @@ bool submission_admission_enabled(const InvocationState &state) noexcept {
 }
 
 Result<compute::ReadLease> output_storage(InvocationState &state,
-    compute::ConstTensorView tensor) noexcept {
+    compute::ConstTensorView tensor, std::uint32_t instance) noexcept {
   if (state.resources) {
     const auto wanted = tensor.storage();
     HYLE_ASSIGN_OR_RETURN(const auto bytes, tensor.description().required_bytes());
+    const auto &plan = *state.plan;
+    // A physical value may be a replica or an alias of a different external
+    // binding. Only its exact external instance can name that binding directly;
+    // the live storage/range checks below remain the authority for its lease.
+    if (instance < plan.instance_values.size()) {
+      const auto logical = plan.instance_values[instance];
+      if (logical < plan.external_instances.size() && logical < plan.binding_roles.size() &&
+          plan.external_instances[logical] == instance) {
+        const auto role = plan.binding_roles[logical];
+        const auto kind = (role & kExternalInput) != 0 ? ValueKind::kInput
+            : ((role & kConstant) != 0 ? ValueKind::kConstant : ValueKind::kNodeOutput);
+        const auto value = GraphIdentity::value(plan.generation, kind, logical);
+        if (const auto *binding = find_binding(&state, value);
+            binding && binding->read.valid() && binding->description == tensor.description()) {
+          HYLE_ASSIGN_OR_RETURN(auto source, binding->read.view());
+          if (source.resource() == wanted.resource() &&
+              source.native_handle() == wanted.native_handle() &&
+              wanted.offset() >= source.offset()) {
+            const auto offset = wanted.offset() - source.offset();
+            if (offset <= source.size() && bytes <= source.size() - offset)
+              return binding->read.subview(offset, bytes);
+          }
+        }
+      }
+    }
+    // Borrowed outputs, aliases and projected/native carriers still resolve
+    // their actual owner by the original qualified range search.
     for (auto &binding : state.resources.get()->bindings) {
       if (!binding.read.valid()) continue;
       HYLE_ASSIGN_OR_RETURN(auto source, binding.read.view());
@@ -1404,7 +1431,7 @@ Result<compute::ReadLease> output_storage(InvocationState &state,
   // only required/native aliases need that fallback projection. The original
   // range lookup still requires the same resource, handle and covered bytes.
   if (state.readable[instance].valid()) {
-    auto bound = output_storage(state, state.readable[instance]);
+    auto bound = output_storage(state, state.readable[instance], instance);
     if (bound) { HYLE_RETURN_IF_ERROR(retain(*bound, instance)); return bound; }
     if (!bound.error().IsFailedPrecondition()) return bound;
   }
@@ -1435,7 +1462,7 @@ Result<compute::ReadLease> output_storage(InvocationState &state,
   if ((plan.instance_roles[root] & kGeneratedOutput) == 0) {
     if (!state.readable[instance].valid())
       return std::unexpected(Status::Unimplemented("graph output has no memory storage projection"));
-    HYLE_ASSIGN_OR_RETURN(auto lease, output_storage(state, state.readable[instance]));
+    HYLE_ASSIGN_OR_RETURN(auto lease, output_storage(state, state.readable[instance], instance));
     HYLE_RETURN_IF_ERROR(retain(lease, instance));
     return lease;
   }

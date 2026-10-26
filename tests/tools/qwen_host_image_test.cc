@@ -1,13 +1,15 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "qwen_host_image_case.h"
+#include "qwen_state_reuse_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
   try {
     const bool lagged = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-lag1";
-    const auto input_argc = argc - static_cast<int>(lagged);
+    const bool state_reuse = argc >= 3 && std::string_view(argv[argc - 1]) == "--state-reuse";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -35,7 +37,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return lagged ? qwen_host_image_case::run_lagged(input, backend)
+    return state_reuse ? qwen_state_reuse_case::run(input, backend)
+           : lagged ? qwen_host_image_case::run_lagged(input, backend)
                   : qwen_host_image_case::run(input, backend);
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

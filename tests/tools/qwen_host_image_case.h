@@ -160,6 +160,10 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
       auto &pool = model.state_pools[part->layer].history;
       std::vector<hyle::compute::WriteLease> blockers;
       blockers.reserve(pool.stats().max_blocks);
+      // Cached writers occupy the same finite pool. Retain them too, rather
+      // than letting the import consume that still-available original slot.
+      while (auto writer = model.state_pools[part->layer].history_reuse.take())
+        blockers.push_back(std::move(*writer));
       bool exhausted = false;
       const auto bound = std::size_t(pool.stats().max_blocks) + 1;
       for (std::size_t attempt = 0; attempt < bound; ++attempt) {

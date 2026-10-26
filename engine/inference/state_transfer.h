@@ -257,7 +257,7 @@ public:
   }
 
 private:
-  static Status select_control(Backend &backend, Scope &owner) noexcept {
+  static Status select_control(Backend &backend, [[maybe_unused]] Scope &owner) noexcept {
     switch (backend.kind()) {
     case BackendKind::kCpu:
     case BackendKind::kCuda: {

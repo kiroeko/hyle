@@ -3,6 +3,7 @@
 #include "../../engine/models/qwen35/prefix_cache.h"
 #include "../../engine/models/qwen35/batch_schedule.h"
 #include "../../engine/inference/mtp_acceptance.h"
+#include "../../engine/inference/reusable_output_storage.h"
 #include "qwen_geometry_fixture.h"
 
 #include <cstdio>
@@ -388,6 +389,185 @@ void recycled_candidate_releases_permissions_and_owners() {
   require(reused.get() == metadata && reused->pages.capacity() >= 8 && reused->pages.empty() && reused->state.empty() &&
       !reused->state_origin && !reused->resource_owner && !reused->carry_hidden && !reused->prior_hidden && !reused->draft,
       "candidate reuse lost metadata capacity or revived old permissions");
+}
+
+struct ReusePayloadResource final : hyle::mem::MemoryResource {
+  std::size_t allocations = 0, mappings = 0;
+  std::string_view name() const noexcept override { return "reusable-output-test"; }
+  hyle::mem::MemoryProperties properties() const noexcept override {
+    return hyle::mem::system_resource().resource().properties();
+  }
+  hyle::Result<hyle::mem::ResourceAllocation> allocate(
+      std::size_t bytes, std::size_t alignment) noexcept override {
+    ++allocations;
+    return hyle::mem::system_resource().resource().allocate(bytes, alignment);
+  }
+  void deallocate(hyle::mem::ResourceAllocation allocation) noexcept override {
+    hyle::mem::system_resource().resource().deallocate(allocation);
+  }
+  hyle::Result<hyle::mem::ResourceHostMapping> map_host(void *handle,
+      std::size_t offset, std::size_t bytes, hyle::mem::HostAccess access) noexcept override {
+    ++mappings;
+    return hyle::mem::system_resource().resource().map_host(handle, offset, bytes, access);
+  }
+  hyle::Status unmap_host(void *handle, void *token, std::size_t offset,
+      std::size_t bytes, hyle::mem::HostAccess access) noexcept override {
+    return hyle::mem::system_resource().resource().unmap_host(handle, token, offset, bytes, access);
+  }
+};
+
+void reusable_output_storage_is_bounded_and_preserves_rejected_readers() {
+  namespace c = hyle::compute;
+  hyle::inference::ReusableOutputStorage cache;
+  require(cache.prepare(1, 128).ok() && cache.capacity() == 1 && cache.bytes() == 128 && !cache.take(),
+      "cold reusable output storage must begin empty with its explicit limit");
+  auto pool = c::LeasePool::create(hyle::mem::system_resource(), 769, {.max_blocks = 3}).value();
+  const auto ready = [&](std::size_t bytes) {
+    auto writer = pool.allocate(bytes).value();
+    require(writer.view()->fill(std::byte{17}).ok(), "reusable output fixture fill failed");
+    return writer.publish().value();
+  };
+  auto wrong_size = ready(64), first = ready(128), second = ready(128);
+  const auto wrong_generation = wrong_size.generation(), second_generation = second.generation();
+  require(!cache.recycle(wrong_size) && wrong_size.valid() && wrong_size.generation() == wrong_generation && !cache.size(),
+      "a different output extent must remain caller-owned");
+  auto shared = first;
+  require(!cache.recycle(first) && first.valid() && shared.valid() && !cache.size(),
+      "a retained snapshot reader must prevent writer recovery without consumption");
+  shared.reset();
+  auto uses = c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto admitted = uses.begin().value();
+  require(admitted.read(first).ok(), "original output read admission failed");
+  require(!cache.recycle(first) && first.valid() && !cache.size(),
+      "an original admitted native reader must prevent recycling");
+  admitted = {};
+  require(cache.recycle(first) && !first.valid() && cache.size() == 1,
+      "the same output should promote only after its final reader withdraws");
+  require(!cache.recycle(second) && second.valid() && second.generation() == second_generation && cache.size() == 1,
+      "a full reusable output cache must leave a rejected lease unchanged");
+  require(!cache.prepare(2, 128).ok() && cache.capacity() == 1 && cache.size() == 1,
+      "cold reconfiguration must not discard cached writer permissions");
+  cache.clear();
+  require(!cache.size() && !cache.take() && pool.stats().live_blocks == 2,
+      "clearing cached writers must release their original blocks without replacing them");
+  require(cache.prepare(0, 128).ok() && !cache.capacity() && !cache.recycle(second) && second.valid(),
+      "zero capacity must disable recycling without consuming the offered output");
+  require(!cache.prepare(1, 0).ok() && !cache.capacity() && cache.bytes() == 128,
+      "invalid cold preparation must preserve the previous configuration");
+  hyle::inference::ReusableOutputStorage ordered;
+  require(ordered.prepare(2, 128).ok(), "ordered state cache preparation failed");
+  auto third = ready(128);
+  const auto third_generation = third.generation();
+  require(ordered.recycle(second) && ordered.recycle(third), "ordered state rows did not recycle");
+  auto older = ordered.take(), newer = ordered.take();
+  require(older && newer && older->generation() == second_generation && newer->generation() == third_generation,
+      "state reuse must preserve stable batch member order instead of reversing its address tuple");
+}
+
+void reusable_output_storage_reuses_generation_and_address_without_payload_work() {
+  namespace c = hyle::compute;
+  ReusePayloadResource resource;
+  auto pool = c::LeasePool::create(hyle::mem::MemoryResourceRef(resource), 257, {.max_blocks = 1}).value();
+  hyle::inference::ReusableOutputStorage cache;
+  require(cache.prepare(1, 128).ok(), "reusable output metadata preparation failed");
+  auto writer = pool.allocate(128).value();
+  require(writer.view()->fill(std::byte{29}).ok(), "original output fill failed");
+  const auto generation = writer.generation();
+  const auto original = writer.view().value();
+  auto ready = writer.publish().value();
+  const auto allocations = resource.allocations, mappings = resource.mappings;
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+  reject_allocations = true;
+#endif
+  try {
+    for (std::size_t step = 0; step < 64; ++step) {
+      require(cache.recycle(ready) && !ready.valid(), "successful recycle did not transfer its original output");
+      auto recovered = cache.take();
+      require(recovered && !cache.size() && recovered->generation() == generation,
+          "reusable output changed generation or retained duplicate write permission");
+      const auto storage = recovered->view().value();
+      require(storage.native_handle() == original.native_handle() && storage.offset() == original.offset() &&
+          storage.size() == original.size(), "reusable output moved or resized its physical storage");
+      ready = recovered->publish().value();
+    }
+    require(cache.recycle(ready), "final original output recycle failed");
+    hyle::inference::ReusableOutputStorage moved(std::move(cache));
+    require(!cache.size() && !cache.take() && moved.size() == 1,
+        "moving the cache retained a live source counter or lost a writer");
+    cache = std::move(moved);
+    require(!moved.size() && !moved.take() && cache.size() == 1,
+        "move assignment duplicated cached write permission");
+    auto recovered = cache.take();
+    ready = recovered->publish().value();
+    require(resource.allocations == allocations && resource.mappings == mappings &&
+        pool.stats().live_blocks == 1 && !pool.stats().reclaimed_blocks,
+        "recycle/take must not allocate, map, copy or reallocate original payload storage");
+  } catch (...) {
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+    reject_allocations = false;
+#endif
+    throw;
+  }
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+  reject_allocations = false;
+#endif
+  std::array<std::byte, 128> bytes{};
+  require(ready.view()->read(bytes).ok() && std::ranges::all_of(bytes, [](auto byte) { return byte == std::byte{29}; }),
+      "writer reuse modified the original successfully retired output bytes");
+}
+
+void working_state_recycles_only_successfully_superseded_unique_heads() {
+  namespace c = hyle::compute;
+  auto pool = c::LeasePool::create(hyle::mem::system_resource(), 769, {.max_blocks = 3}).value();
+  hyle::inference::ReusableOutputStorage cache;
+  require(cache.prepare(1, 128).ok(), "commit-hook cache metadata preparation failed");
+  p::VersionCount versions{0, 3}; p::PageInventory pages; pages.prepare(1, 0);
+  p::WorkingState working;
+  auto token = std::make_shared<int>(23); std::weak_ptr<const void> old_owner = token;
+  const auto candidate = [&](std::size_t length) {
+    auto next = working.acquire_candidate();
+    next->version = p::VersionRef::acquire(versions).value(); next->length = length;
+    require(next->state.try_resize(1), "commit-hook state metadata preparation failed");
+    auto writer = pool.allocate(128).value();
+    require(writer.view()->fill(std::byte(length)).ok(), "commit-hook original output fill failed");
+    next->state[0].history = writer.publish().value();
+    return next;
+  };
+  auto first = candidate(1);
+  const auto generation = first->state[0].history.generation();
+  auto page = pages.acquire().value(); const auto page_id = page.reference.page();
+  first->pages.push_back(std::move(page.reference)); first->resource_owner = token; token.reset();
+  std::size_t callbacks = 0; bool hook_valid = true;
+  const auto recycle = [&](p::State &previous) noexcept {
+    ++callbacks;
+    hook_valid = hook_valid && previous.length == 1 && versions.live == 2 &&
+        previous.pages.size() == 1 && pages.owners[page_id] == 1 && !old_owner.expired();
+    hook_valid = hook_valid && cache.recycle(previous.state[0].history);
+  };
+  working.commit(std::move(first), recycle);
+  require(!callbacks && !cache.size() && versions.live == 1 && pages.owners[page_id] == 1,
+      "initial commit must not recycle a nonexistent previous head");
+  working.commit(candidate(2), recycle);
+  require(callbacks == 1 && hook_valid && cache.size() == 1 && versions.live == 1 &&
+      old_owner.expired() && pages.owners[page_id] == 0 && pages.free_ids.size() == 1,
+      "successful old-head recycling must not retain its VersionRef, page policy or resource owner");
+  auto frozen = working.checkpoint();
+  const auto frozen_generation = frozen->state[0].history.generation();
+  auto failed = candidate(99);
+  working.recycle_candidate(std::move(failed));
+  require(callbacks == 1 && cache.size() == 1 && versions.live == 1 && working.get() == frozen.get(),
+      "discarding a failed candidate must not recycle it or disturb a committed frozen head");
+  working.commit(candidate(3), recycle);
+  require(callbacks == 1 && cache.size() == 1 && versions.live == 2 && frozen->length == 2 &&
+      frozen->state[0].history.generation() == frozen_generation && frozen->state[0].history.view(),
+      "a frozen previous boundary must not reach the unique-old-head hook");
+  auto recovered = cache.take();
+  require(recovered && recovered->generation() == generation, "the hook did not retain the original successful old output");
+  recovered.reset(); working.reset();
+  require(callbacks == 1 && versions.live == 1 && pool.stats().live_blocks == 1,
+      "cache and working reset must leave only the explicitly escaped frozen version");
+  frozen.reset();
+  require(!versions.live && !pool.stats().live_blocks, "the output cache retained a frozen version after final release");
 }
 
 void completed_consumed_checkpoints() {
@@ -797,6 +977,9 @@ int main() {
     working_state_reuses_metadata_and_freezes_explicitly(); std::puts("PASS working-state metadata reuse and explicit checkpoint allocation failure");
     working_state_adopts_sampling_origin_without_another_version(); std::puts("PASS working-state adoption, canonical sampling origin and shared version accounting");
     recycled_candidate_releases_permissions_and_owners(); std::puts("PASS recycled candidate releases actual lease, owner and versions");
+    reusable_output_storage_is_bounded_and_preserves_rejected_readers(); std::puts("PASS bounded output reuse preserves pinned readers and rejected leases");
+    reusable_output_storage_reuses_generation_and_address_without_payload_work(); std::puts("PASS original output generation/address reuse without payload work or hot allocation");
+    working_state_recycles_only_successfully_superseded_unique_heads(); std::puts("PASS successful unique-old-head recycling preserves frozen states and releases versions/pages");
     completed_consumed_checkpoints(); std::puts("PASS complete generated/multiturn consumed keys, lag/RNG retention, pins and retirement");
     completed_checkpoint_validation(); std::puts("PASS rejected unconsumed pending, missing inputs and invalid completed checkpoints");
     bounded_tree_reuse(); std::puts("PASS split/prune/internal-boundary churn against linear oracle");
@@ -821,6 +1004,9 @@ TEST(QwenPrefixCache, SamplingWrappersShareOneStateVersion) { sampling_wrappers_
 TEST(QwenSessionState, WorkingMetadataReuseAndExplicitCheckpoint) { working_state_reuses_metadata_and_freezes_explicitly(); }
 TEST(QwenSessionState, WorkingStateSharesCanonicalSamplingVersion) { working_state_adopts_sampling_origin_without_another_version(); }
 TEST(QwenSessionState, RecycledCandidateReleasesPermissionsAndOwners) { recycled_candidate_releases_permissions_and_owners(); }
+TEST(InferenceReusableOutputStorage, BoundedAndPreservesRejectedReaders) { reusable_output_storage_is_bounded_and_preserves_rejected_readers(); }
+TEST(InferenceReusableOutputStorage, OriginalGenerationAndAddressWithoutPayloadWork) { reusable_output_storage_reuses_generation_and_address_without_payload_work(); }
+TEST(QwenSessionState, RecyclesOnlySuccessfulUniqueOldHeads) { working_state_recycles_only_successfully_superseded_unique_heads(); }
 TEST(QwenPrefixCache, CompletedConsumedCheckpoints) { completed_consumed_checkpoints(); }
 TEST(QwenPrefixCache, CompletedCheckpointValidation) { completed_checkpoint_validation(); }
 TEST(QwenPrefixCache, BoundedTreeReuse) { bounded_tree_reuse(); }

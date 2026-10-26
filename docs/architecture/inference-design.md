@@ -87,8 +87,9 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
 旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
-固定槽不自动消除provider复制：现有ggml GDN仍生成packed结果再拆分，Apple也仍分配packed输出；
-直接状态输出及非连续多请求索引计算需分别补原生能力，不能把地址复用记成这些能力已完成。
+固定槽不自动消除provider复制：CUDA ggml的K1闭合片段已有GDN直接状态输出，不能再把旧的
+packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
+计算尚未补齐原生能力，不能把K1承载或地址复用记成这些能力已完成。
 
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。
@@ -98,9 +99,15 @@ Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前�
 
 expected-base及可追加尾权同时核对epoch，避免元数据地址轮换造成身份复用。采样恢复仍从冻结的
 canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fork、旧读者和未知退休继续持有真实
-权限与预算。逐层结果导出、KV帧reframe及GDN／conv原生复制尚未消除；版本化原生状态槽和有界捕获
+权限与预算。逐层结果导出、KV帧reframe及部分provider状态复制尚未消除；原生索引状态槽和MTP有界捕获
 复用仍待实现，不能从主机元数据复用推导吞吐收益。[有限主机、CPU 与 CUDA 普通／MTP 对照](../evidence/correctness/inference-working-state-2026-10-26.json)
 记录了这次迁移的实际检查范围和保留边界。
+
+caller-owned的GDN／conv状态现另用共享R容量的FIFO保留原`WriteLease`：只在完整成功、原生
+读者撤回后，从独占的旧工作态调用`try_write`回收，保留原generation和地址。未冻结的普通K1
+可轮换两块原状态；共享旧Snapshot、失败候选及未知退休均不回收。decode、冷创建和镜像恢复
+消费同一缓存，不增加原N+K×R载荷容量；缓存不是额外不可用的占位。此项不改变KV帧发布、
+原生索引计算或MTP接受前缀合同，有限结果见[回收与定位](../evidence/correctness/inference-reusable-state-2026-10-26.json)。
 
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。

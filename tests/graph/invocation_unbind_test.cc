@@ -208,6 +208,171 @@ TEST(InvocationResults, LazyPublicationCoversAllWritersAndRearmsAfterRejectedReu
   expect_retained(fixture.outputs[1], {3, 5, 7, 9});
 }
 
+TEST(InvocationResults, CallerOwnedOutputsRetainExactLogicalRangesAfterRebinding) {
+  custom_test::Probe probe;
+  auto context = make_context(probe);
+  auto queue = context.create_queue().value();
+  g::test::Environment environment{{&context, hyle::mem::system_resource()}};
+  const std::array queues{g::QueueBinding{environment.lane(0), &queue}};
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(custom_test::description()).value();
+  std::array<g::ValueId, 24> outputs;
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    outputs[i] = builder.add(c::Operation::custom(custom_test::Affine{
+        static_cast<float>(i)}), input).value();
+    ASSERT_TRUE(builder.publish(outputs[i]).ok());
+  }
+  auto graph = std::move(builder).finish().value();
+  g::CompileOptions options;
+  options.region_selection = g::RegionSelectionPolicy::kDisabled;
+  auto compiled = g::compile(graph, environment.environment(), options).value();
+  auto invocation = compiled.executable.create_invocation(
+      {.resources = g::ResourceOptions{}}).value();
+  auto storage = c::LeasePool::create(hyle::mem::system_resource(), 8192,
+      {.max_blocks = 26}).value();
+  auto input_writer = storage.allocate(64, 64).value();
+  const std::array<float, 4> values{1, 2, 3, 4};
+  ASSERT_TRUE(input_writer.view()->fill(std::byte{}).ok());
+  ASSERT_TRUE(input_writer.view()->subview(0, sizeof(values))->write(
+      std::as_bytes(std::span(values))).ok());
+  auto input_owner = input_writer.publish().value();
+  ASSERT_TRUE(invocation.bind(input, custom_test::description(), input_owner).ok());
+  std::array<hyle::mem::ConstBufferView, 24> backing;
+  for (std::size_t i = 0; i < outputs.size(); ++i) {
+    auto writer = storage.allocate(64, 64).value();
+    ASSERT_TRUE(writer.view()->fill(std::byte{0x6d}).ok());
+    backing[i] = writer.view().value();
+    ASSERT_TRUE(invocation.bind(outputs[i], custom_test::description(), std::move(writer)).ok());
+  }
+  const auto submit = [&]() -> Status {
+    HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues));
+    HYLE_ASSIGN_OR_RETURN(auto completion, invocation.submit(queues));
+    return completion.wait();
+  };
+  ASSERT_TRUE(submit().ok());
+  // Read in reverse binding order, including a port near the end of a large
+  // binding table. A larger initialized block must still export only its
+  // logical tensor, retaining the exact owner rather than another same-shape IO.
+  for (std::size_t i = outputs.size(); i != 0; --i) {
+    auto result = invocation.result(outputs[i - 1]).value();
+    auto lease = result.storage_lease().value();
+    const auto view = lease.view().value();
+    EXPECT_EQ(lease.size(), 16u);
+    EXPECT_EQ(view.native_handle(), backing[i - 1].native_handle());
+    EXPECT_EQ(view.offset(), backing[i - 1].offset());
+    std::array<float, 4> actual;
+    ASSERT_TRUE(view.read(std::as_writable_bytes(std::span(actual))).ok());
+    for (std::size_t j = 0; j < actual.size(); ++j)
+      EXPECT_EQ(actual[j], 2 * values[j] + static_cast<float>(i - 1));
+    std::array<std::byte, 48> suffix;
+    ASSERT_TRUE(backing[i - 1].subview(16, suffix.size())->read(suffix).ok());
+    for (const auto byte : suffix) EXPECT_EQ(byte, std::byte{0x6d});
+  }
+  c::ReadLease old;
+  {
+    auto result = invocation.result(outputs.back()).value();
+    old = result.storage_lease().value();
+  }
+  auto replacement = storage.allocate(64, 64).value();
+  ASSERT_TRUE(replacement.view()->fill(std::byte{0x6d}).ok());
+  const hyle::mem::ConstBufferView next_backing = replacement.view().value();
+  ASSERT_TRUE(invocation.bind(outputs.back(), custom_test::description(), std::move(replacement)).ok());
+  ASSERT_TRUE(submit().ok());
+  auto result = invocation.result(outputs.back()).value();
+  auto fresh = result.storage_lease().value();
+  EXPECT_EQ(fresh.view()->native_handle(), next_backing.native_handle());
+  EXPECT_EQ(fresh.view()->offset(), next_backing.offset());
+  EXPECT_NE(fresh.view()->offset(), old.view()->offset());
+  result.reset(); invocation = {};
+  std::array<float, 4> old_values;
+  ASSERT_TRUE(old.view()->read(std::as_writable_bytes(std::span(old_values))).ok());
+  EXPECT_EQ(old_values, (std::array<float, 4>{25, 27, 29, 31}));
+}
+
+TEST(InvocationResults, CallerOwnedStorageStillAppliesRetentionBudget) {
+  Fixture fixture;
+  auto reads = pool(), writes = pool();
+  ASSERT_TRUE(bind_owned(fixture, reads, writes, {1, 2, 3, 4}).ok());
+  ASSERT_TRUE(fixture.invocation.prepare_replay(fixture.queues).ok());
+  {
+    auto completion = fixture.invocation.submit(fixture.queues).value();
+    ASSERT_TRUE(completion.wait().ok());
+  }
+  const auto resource = hyle::mem::system_resource();
+  const std::array limits{c::ResourceBudgetLimit{resource, 4096}};
+  auto prepared_budget = c::ResourceBudget::create({.limits = limits});
+  ASSERT_TRUE(prepared_budget) << prepared_budget.error().message();
+  auto denied = std::move(*prepared_budget);
+  // Budget creation charges its own control metadata. Fill the remaining
+  // valid scope here, so rejection exercises output retention, not create().
+  auto usage = denied.usage(resource);
+  ASSERT_TRUE(usage) << usage.error().message();
+  auto occupied = denied.reserve(resource, usage->limit_bytes - usage->live_bytes);
+  ASSERT_TRUE(occupied) << occupied.error().message();
+  auto result = fixture.invocation.result(fixture.outputs[0]).value();
+  auto rejected = result.storage_lease(denied);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted());
+  auto retained = result.storage_lease();
+  ASSERT_TRUE(retained) << retained.error().message();
+  EXPECT_EQ(retained->size(), 16u);
+  std::array<float, 4> actual;
+  ASSERT_TRUE(retained->view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array<float, 4>{7, 11, 15, 19}));
+}
+
+TEST(InvocationResults, PublishedInputAndSliceRetainTheirActualSharedOwner) {
+  custom_test::Probe probe;
+  auto context = make_context(probe);
+  g::test::Environment environment{{&context, hyle::mem::system_resource()}};
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(custom_test::description()).value();
+  const auto slice = builder.add(c::View::slice(0, 1, 2).value(), input).value();
+  ASSERT_TRUE(builder.publish(input).ok());
+  ASSERT_TRUE(builder.publish(slice).ok());
+  auto graph = std::move(builder).finish().value();
+  auto compiled = g::compile(graph, environment.environment()).value();
+  auto invocation = compiled.executable.create_invocation(
+      {.resources = g::ResourceOptions{}}).value();
+  auto storage = pool();
+  auto writer = storage.allocate(64, 64).value();
+  const std::array<float, 4> values{1, 2, 3, 4};
+  ASSERT_TRUE(writer.view()->fill(std::byte{}).ok());
+  ASSERT_TRUE(writer.view()->subview(0, sizeof(values))->write(
+      std::as_bytes(std::span(values))).ok());
+  auto owner = writer.publish().value();
+  const auto original = owner.view().value();
+  const auto generation = owner.generation();
+  ASSERT_TRUE(invocation.bind(input, custom_test::description(), owner).ok());
+  owner.reset();
+  const std::span<const g::QueueBinding> queues{}; // Metadata-only aliases need no Queue.
+  ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+  {
+    auto completion = invocation.submit(queues).value();
+    ASSERT_TRUE(completion.wait().ok());
+  }
+  c::ReadLease alias;
+  {
+    auto result = invocation.result(input).value();
+    auto exact = result.storage_lease().value();
+    EXPECT_EQ(exact.size(), 16u);
+    EXPECT_EQ(exact.generation(), generation);
+    auto sliced = invocation.result(slice).value();
+    alias = sliced.storage_lease().value();
+    EXPECT_EQ(alias.generation(), generation);
+    EXPECT_EQ(alias.size(), 8u);
+    EXPECT_EQ(alias.view()->native_handle(), original.native_handle());
+    EXPECT_EQ(alias.view()->offset(), original.offset() + sizeof(float));
+  }
+  invocation = {};
+  EXPECT_EQ(storage.stats().live_blocks, 1u);
+  std::array<float, 2> actual;
+  ASSERT_TRUE(alias.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, (std::array<float, 2>{2, 3}));
+  alias.reset();
+  EXPECT_EQ(storage.stats().live_blocks, 0u);
+}
+
 TEST(InvocationUnbind, CompletionAndResultRetirementGatesRemainRequired) {
   Fixture fixture;
   auto reads = pool(), writes = pool();

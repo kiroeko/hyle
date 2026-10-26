@@ -2030,6 +2030,10 @@ public:
       pools.recurrent = take(c::LeasePool::create(execution.device(), recurrent_bytes,
           {.max_blocks = recurrent_slots, .backing_alignment = cache::state_pool_alignment,
            .resource_budget = cache_budget}, allocation_budget));
+      check(pools.history_reuse.prepare(history_writers[i] ? cache_plan.active_sequences : 0,
+          take(description.history.required_bytes())));
+      check(pools.recurrent_reuse.prepare(recurrent_writers[i] ? cache_plan.active_sequences : 0,
+          take(description.recurrent.required_bytes())));
       prepared_bytes = cache::add(prepared_bytes, cache::add(history_bytes, recurrent_bytes));
     }
     if (cache_plan.hidden_bytes) {
@@ -3174,8 +3178,8 @@ public:
         check(zero.view()->fill(std::byte{})); initial->carry_hidden = take(zero.publish());
       }
       for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i)) {
-        auto history = take(state_pools[i].history.allocate(take(state_schema[i].history.required_bytes()), cache::state_pool_alignment));
-        auto recurrent = take(state_pools[i].recurrent.allocate(take(state_schema[i].recurrent.required_bytes()), cache::state_pool_alignment));
+        auto history = take(state_pools[i].acquire_history(take(state_schema[i].history.required_bytes())));
+        auto recurrent = take(state_pools[i].acquire_recurrent(take(state_schema[i].recurrent.required_bytes())));
         check(history.view()->fill(std::byte{})); check(recurrent.view()->fill(std::byte{}));
         initial->state[i].history = take(history.publish());
         initial->state[i].recurrent = take(recurrent.publish());
@@ -3866,14 +3870,18 @@ public:
           const auto &ports = phase.layers[i].sequences[j]; const auto &descriptions = state_schema[i];
           check(run.bind(ports.history, descriptions.history, step.members[j].base->state[i].history));
           check(run.bind(ports.recurrent, descriptions.recurrent, step.members[j].base->state[i].recurrent));
-          const auto bind_state = [&](V port, c::LeasePool &pool) {
+          const auto bind_state = [&](V port, bool recurrent) {
             const auto &output = phase.child->output(port);
-            if (output.caller_owned())
-              check(run.bind(output.value, output.description, take(pool.allocate(take(output.description.required_bytes()), cache::state_pool_alignment))));
+            if (output.caller_owned()) {
+              const auto bytes = take(output.description.required_bytes());
+              auto &pools = state_pools[i];
+              check(run.bind(output.value, output.description, take(recurrent
+                  ? pools.acquire_recurrent(bytes) : pools.acquire_history(bytes))));
+            }
           };
           for (auto row = phase.prefix_rows; row != 0; --row) {
-            bind_state(ports.history_prefix[row - 1], state_pools[i].history);
-            bind_state(ports.recurrent_prefix[row - 1], state_pools[i].recurrent);
+            bind_state(ports.history_prefix[row - 1], false);
+            bind_state(ports.recurrent_prefix[row - 1], true);
           }
         }
       auto &fixed_output = phase.hidden_output[slot];
@@ -4245,7 +4253,16 @@ public:
         member.next->next_id = next_ids[j];
         member.session->tails = std::move(member.next_tails);
         member.session->draft_tails = std::move(member.next_draft_tails);
-        member.session->head.commit(std::move(member.next));
+        member.session->head.commit(std::move(member.next), [&](cache::State &previous) noexcept {
+          // Only an exclusively owned successful old working head reaches
+          // here, after Graph withdrawal. Frozen checkpoints stay untouched;
+          // try_write also rejects escaped readers and original native uses.
+          const auto count = (std::min)(previous.state.size(), state_pools.size());
+          for (std::size_t i = 0; i < count; ++i) {
+            state_pools[i].history_reuse.recycle(previous.state[i].history);
+            state_pools[i].recurrent_reuse.recycle(previous.state[i].recurrent);
+          }
+        });
         member.session->tail_epoch = member.session->head.epoch();
         member.session->draft_tail_epoch = member.session->head.epoch();
       }

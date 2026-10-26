@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -15,6 +16,7 @@
 #include "hyle/container/small_vector.h"
 #include "model_geometry.h"
 #include "../../inference/sampling_cursor.h"
+#include "../../inference/reusable_output_storage.h"
 
 namespace qwen35::cache {
 namespace c = hyle::compute;
@@ -219,7 +221,26 @@ inline PageRef &PageRef::operator=(const PageRef &other) noexcept {
 inline PageRef::~PageRef() { if (owner_) owner_->release(page_); }
 
 struct Recurrent final { c::ReadLease history, recurrent; };
-struct StatePools final { c::LeasePool history, recurrent; };
+struct StatePools final {
+  c::LeasePool history, recurrent;
+  // Shared by the Model's R active members, never a second state per each of
+  // N resident sessions. Destroy cached writers before their original pools.
+  hyle::inference::ReusableOutputStorage history_reuse, recurrent_reuse;
+
+  hyle::Result<c::WriteLease> acquire_history(std::size_t bytes) noexcept {
+    return acquire(history, history_reuse, bytes);
+  }
+  hyle::Result<c::WriteLease> acquire_recurrent(std::size_t bytes) noexcept {
+    return acquire(recurrent, recurrent_reuse, bytes);
+  }
+private:
+  static hyle::Result<c::WriteLease> acquire(c::LeasePool &pool,
+      hyle::inference::ReusableOutputStorage &reuse, std::size_t bytes) noexcept {
+    if (bytes == reuse.bytes())
+      if (auto writer = reuse.take()) return std::move(*writer);
+    return pool.allocate(bytes, state_pool_alignment);
+  }
+};
 // Counts distinct immutable versions, not shared_ptr aliases or users. An
 // explicitly retained prefix consumes the same finite capacity as an old head.
 struct VersionCount final { std::uint32_t live = 0, capacity = 0; };
@@ -321,9 +342,18 @@ public:
   // All fallible metadata/permission work and epoch preflight precede commit.
   // The old committed boundary survives until this whole-success point.
   void commit(std::unique_ptr<State> candidate) noexcept {
+    commit(std::move(candidate), [](State &) noexcept {});
+  }
+  // Only the exclusively owned previous successful head may yield retired
+  // payloads. Frozen checkpoints and failed candidates never enter this hook;
+  // the caller has already withdrawn the original episode's native readers.
+  template<class Recycle>
+  void commit(std::unique_ptr<State> candidate, Recycle &&recycle) noexcept {
+    static_assert(std::is_nothrow_invocable_v<Recycle &, State &>);
     assert(candidate && epoch_ != (std::numeric_limits<std::uint64_t>::max)());
     auto previous = std::move(current_);
     current_ = std::move(candidate); frozen_.reset(); ++epoch_;
+    if (previous) recycle(*previous);
     recycle_candidate(std::move(previous));
   }
   void adopt(SnapshotRef checkpoint) {
