@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 05:15（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **77%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 05:27（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **77%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -25,6 +25,7 @@
   - 完整会话主机换出／换入：约95%（普通／MTP／lag1及受控组件故障已有限检查，原生驱动故障未查）
   - 状态搬运非阻塞观察／取消：100%（CPU受控合同及CPU／Vulkan／Apple实际关闭后回收通过有限检查）
   - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
+  - Vulkan精确半字同步I/O：约10%（短租约D2H实际拒绝，精确搬运设计中）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
 - 重叠执行与完整性能对照：约15%（设计中）
   - 提前准备、设备 token 接力与有序发布：约5%（设计中）
@@ -35,17 +36,19 @@
 
 ## 正在做
 
-- Vulkan 16位状态尾部：约50%（所属：稳态状态协议／原生索引状态；精确Store及pipeline保活已完成，正在准备原码16位Gather承载）。
+- Vulkan精确半字同步I/O：约10%（所属：其它底层功能；原码Gather→Store已完成，正在设计不越读padding的短租约同步读写；原4字节门仍保留）。
 
 剩余大项包括索引状态的其它平台尾部、形状／预热政策、共同核心边界及重叠执行，不能以本批CUDA通过代签这些工作。
 
 ## 本批结果与下一步
 
+[Vulkan原码16位Gather](../evidence/correctness/inference-vulkan-raw16-gather-2026-10-27.json)本批4项通过分属两个实际镜像：BF16 E1／F16 E3的部分源到Store、越界ID阻断发布、原F32回归。仅新增1个shader、5个不同C++单元，测试因首次额外短租约读回失败补编一次；保留2通过／2失败的原进程和后续两项通过。短租约同步D2H仍缺支持，新case只用已初始化完整诊断buffer核原source字节，没有放宽Graph投影；此缺口已纳入上方待办。
+
 [普通prefill分块CLI](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)三条tiny CUDA旅程通过：中间块不采样、异长B2多轮合批／pending保真、prefix复用及N1淘汰重建；三个非法组合明确拒绝。只编一个Model单元、复用223输入，无SDK重建。默认保持无限块长；MTP有限块长明确拒绝，不称已实现varlen、完整预热或吞吐提升。
 
 [新32进程四臂窗口](../evidence/performance/inference-indexed-current-window-2026-10-27.json)已完成，普通decode单轮／两轮慢5.42%／4.64%，MTP慢7.46%／6.98%；最新完整表在下方。仅更新本窗，不把跨日速度变化归因某次优化。
 [MTP异成员检查](../evidence/correctness/inference-mtp-batch-slots-2026-10-27.json)两轮B2/K3分别取1／3、3／1前缀，CPU／CUDA均通过；原Store候选字节、KV／draft续算、旧快照和未接受槽回收符合原合同，第二轮两池目的ID实际不同。受控接受不是自然质量证明。
-[Vulkan半字Store](../evidence/correctness/inference-vulkan-halfword-store-2026-10-27.json)五项有限检查通过：精确2／6字节、原码／gap、换序／reset及外壳先释放；Completion沿原Run保活pipeline。非4字节Gather仍缺原生承载，不称整链完成。
+[Vulkan半字Store](../evidence/correctness/inference-vulkan-halfword-store-2026-10-27.json)五项有限检查通过：精确2／6字节、原码／gap、换序／reset及外壳先释放；Completion沿原Run保活pipeline。当时未包含上述非4字节Gather；两批合起来仍不代表任意半字同步I/O完成。
 
 [引擎原池状态接线](../evidence/correctness/inference-engine-slot-state-2026-10-27.json)已完成本批CPU／CUDA有限检查：tiny正式CLI普通／MTP各生成8 token；两后端的镜像、lag1、状态复用共6进程通过。原N2／R1三槽容量内两块交替，旧冻结快照字节不变；真实Qwen3.5-2B另通过17个接受前缀、7组后缀扰动，五种冷子图各选中18个索引GDN及18个索引卷积融合。实际6次C++编译、4个不同TU配置、4次链接；复用SDK及原生内核，无下载。保留一次源码并发变化的不确定编译、一次参数拒绝和一次真实append取回顺序失败；后者修正后另冻源码重新编译。没有模型质量或全平台完成结论。
 

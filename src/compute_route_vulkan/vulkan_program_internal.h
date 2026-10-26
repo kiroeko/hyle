@@ -21,6 +21,9 @@ struct Pipeline final {
   VkPipeline handle = VK_NULL_HANDLE;
   std::uint32_t bindings = 0;
   std::uint32_t push_bytes = 0;
+  // Actual shader access, never inferred from the mathematical dtype. Only
+  // qualified raw16 load/store pipelines may describe an exact halfword tail.
+  std::uint32_t storage_granularity = 4;
   ~Pipeline();
 };
 
@@ -89,6 +92,7 @@ struct DescriptorBinding final {
   std::uint32_t value = 0;
   std::uint32_t input_port = 0;
   bool byte_origin = false;
+  std::uint32_t storage_granularity = 4;
   VkDescriptorBufferInfo buffer{};
   VkWriteDescriptorSet write{};
 };
@@ -134,6 +138,10 @@ struct RecorderState final {
 Result<std::shared_ptr<Pipeline>>
 create_pipeline(const std::shared_ptr<Device> &device,
                 const SpirvDescription &description) noexcept;
+Result<std::shared_ptr<Pipeline>>
+create_halfword_pipeline(const std::shared_ptr<Device> &device,
+                         const SpirvDescription &description) noexcept;
+namespace shaders { std::span<const std::uint32_t> raw16_gather() noexcept; }
 Status
 record(const std::shared_ptr<Run> &run, std::span<const PlanValue> values,
        std::span<const Dispatch> dispatches,
@@ -143,6 +151,10 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept;
 Result<VkDescriptorBufferInfo>
 descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
                   bool byte_origin, VkDeviceSize relative_offset = 0) noexcept;
+Result<VkDescriptorBufferInfo>
+descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
+                  bool byte_origin, VkDeviceSize relative_offset,
+                  std::uint32_t storage_granularity) noexcept;
 Status encode_commands(Run &run, std::span<const Dispatch> dispatches) noexcept;
 // Cold only, with the original Run retired. Refresh all original descriptor
 // sets, including statically bound outputs/intermediates; do not rebuild Run.

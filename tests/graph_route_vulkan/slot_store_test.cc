@@ -26,11 +26,13 @@ template<class T> T take(hyle::Result<T> result, const char *what) {
   if (!result) throw std::runtime_error(std::string(what) + ": " + std::string(result.error().message()));
   return std::move(*result);
 }
-void exercise(c::DataType type, std::size_t item_bytes, std::size_t stride) {
+void exercise(c::DataType type, std::size_t item_bytes, std::size_t stride,
+              std::size_t elements = 8) {
   auto context = take(v::Context::create(), "Vulkan Context");
   auto device = take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "device storage");
   auto staging = take(v::MemoryResource::create(context, v::MemoryKind::kStaging), "host staging");
-  const auto item = take(c::TensorDesc::dense(type, std::array<std::int64_t, 1>{8}), "item");
+  const auto item = take(c::TensorDesc::dense(type,
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(elements)}), "item");
   const auto schema = take(s::Schema::create(item, 5, stride), "schema");
   std::vector<std::byte> original(5 * stride, std::byte{0xa5});
   // Raw words include signed zero/NaN-like payloads. No floating arithmetic or
@@ -38,15 +40,22 @@ void exercise(c::DataType type, std::size_t item_bytes, std::size_t stride) {
   for (const auto slot : {1u, 3u})
     for (std::size_t byte = 0; byte < item_bytes; ++byte)
       original[slot * stride + byte] = static_cast<std::byte>((slot * 47 + byte * 13) & 255u);
+  if (elements != 8) {
+    original[stride] = std::byte{0x81};
+    original[stride+1] = type == c::DataType::kBFloat16 ? std::byte{0x7f} : std::byte{0x7c};
+    original[3*stride] = std::byte{0}; original[3*stride+1] = std::byte{0x80};
+  }
   auto backing = take(m::Buffer::create(device.ref(), original.size(), 64), "pool backing");
   ASSERT_TRUE(backing.view().write(original).ok());
   const m::ConstBufferView diagnostic_backing = backing.view();
-  auto pool = take(c::LeasePool::adopt(std::move(backing), {.max_blocks = 5}), "pool adopt");
+  auto pool = take(c::LeasePool::adopt(std::move(backing), {.max_blocks = 10}), "pool adopt");
   const auto layout = take(c::LeaseSlotLayout::create(pool, item, 5, stride), "layout");
-  std::array<c::WriteLease, 5> blocks;
+  std::array<c::WriteLease, 5> blocks, gaps;
   for (std::size_t i = 0; i < blocks.size(); ++i) {
-    blocks[i] = take(pool.allocate(item_bytes, stride), "exact item");
+    blocks[i] = take(pool.allocate(item_bytes, item.required_alignment()), "exact item");
     ASSERT_EQ(take(layout.locate(blocks[i]), "item address").index, i);
+    if (stride > item_bytes)
+      gaps[i] = take(pool.allocate(stride-item_bytes, item.required_alignment()), "unread row padding");
   }
   const std::array sources{take(blocks[3].publish(), "source3"), take(blocks[1].publish(), "source1")};
   const auto sentinel = take(blocks[2].publish(), "unused source");
@@ -115,7 +124,22 @@ void exercise(c::DataType type, std::size_t item_bytes, std::size_t stride) {
   ASSERT_TRUE(diagnostic_backing.read(observed).ok()); EXPECT_EQ(observed, expected);
   for (std::size_t i = 0; i < 2; ++i) {
     std::vector<std::byte> unchanged(item_bytes);
-    ASSERT_TRUE(sources[i].view()->read(unchanged).ok());
+    const auto source_view = sources[i].view();
+    ASSERT_TRUE(source_view) << source_view.error().message();
+    EXPECT_EQ(source_view->size(), item_bytes);
+    const auto slot = i == 0 ? 3u : 1u;
+    EXPECT_EQ(take(layout.locate(sources[i]), "retained exact source").index, slot);
+    if (item_bytes % 4 || stride % 4) {
+      // This fixture independently initialized and retained the complete pool
+      // before lease adoption. Its diagnostic read is not a Graph projection
+      // or an enlarged source lease. The existing synchronous partial D2H path
+      // still requires word ranges; inspect these same exact source bytes in
+      // the full, already-authorized diagnostic image instead.
+      std::copy_n(observed.begin()+slot*stride, item_bytes, unchanged.begin());
+    } else {
+      const auto status = source_view->read(unchanged);
+      ASSERT_TRUE(status.ok()) << status.message();
+    }
     EXPECT_EQ(unchanged, (i == 0 ? std::vector<std::byte>(original.begin()+3*stride,original.begin()+3*stride+item_bytes)
                                 : std::vector<std::byte>(original.begin()+stride,original.begin()+stride+item_bytes)));
   }
@@ -138,6 +162,52 @@ TEST(VulkanSlotStore, Float32DenseGeneratedRowsKeepExactOwnersAcrossReset) {
 }
 TEST(VulkanSlotStore, Bfloat16PaddedGeneratedRowsDoNotReadOrWriteGaps) {
   exercise(c::DataType::kBFloat16, 16, 64);
+}
+TEST(VulkanSlotStore, Bfloat16ScalarGatherReadsOnlyExactSelectedHalfwords) {
+  exercise(c::DataType::kBFloat16, 2, 6, 1);
+}
+TEST(VulkanSlotStore, Float16ThreeElementGatherKeepsRawBitsAndOriginalPitch) {
+  exercise(c::DataType::kFloat16, 6, 10, 3);
+}
+TEST(VulkanSlotStore, Raw16GatherInvalidIdsRejectPublication) {
+  auto context = take(v::Context::create(), "Vulkan Context");
+  auto device = take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "device");
+  const auto description = take(c::TensorDesc::strided_bytes(c::DataType::kBFloat16,
+      std::array<std::int64_t, 2>{5, 3}, std::array<std::int64_t, 2>{10, 2}), "padded bank");
+  const auto ids_description = take(c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}), "one index");
+  auto builder = take(g::GraphBuilder::create(), "builder");
+  const auto bank = take(builder.input(description), "bank");
+  const auto ids = take(builder.input(ids_description), "IDs");
+  const auto selected = take(builder.add_node(c::Operation(c::Gather{.axis=0,
+      .bounds=c::IndexBoundsPolicy::kChecked}), std::array{bank,ids}), "checked Gather");
+  const auto rows = take(builder.result(selected), "rows");
+  ASSERT_TRUE(builder.publish(rows).ok());
+  const auto graph = take(std::move(builder).finish(), "Graph");
+  const auto source = take(g::vulkan::execution_source(context), "execution source");
+  const std::array domains{g::StorageDomain{device.ref()}};
+  const std::array targets{g::ExecutionTarget{source,g::StorageDomainId{0}}};
+  auto compiled = take(g::compile(graph, {.storage_domains=domains,.targets=targets}), "compile");
+  auto invocation = take(compiled.executable.create_invocation(), "Invocation");
+  auto input = take(m::Buffer::create(device.ref(), take(description.required_bytes(), "bank bytes"), 2), "bank storage");
+  ASSERT_TRUE(input.view().fill(std::byte{0x81}).ok());
+  auto positions = take(m::Buffer::create(device.ref(), sizeof(std::int32_t), 4), "ID storage");
+  ASSERT_TRUE(invocation.bind(bank, take(c::ConstTensorView::create(description,input.view()), "bank tensor")).ok());
+  const std::array<std::int32_t,1> valid{3};
+  ASSERT_TRUE(positions.view().write(std::as_bytes(std::span(valid))).ok());
+  const auto id_tensor = take(c::ConstTensorView::create(ids_description,positions.view()), "ID tensor");
+  ASSERT_TRUE(invocation.bind(ids,id_tensor).ok());
+  auto status = invocation.prepare_replay({}); ASSERT_TRUE(status.ok()) << status.message();
+  auto done = invocation.submit(); ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  { auto output = invocation.result(rows); ASSERT_TRUE(output) << output.error().message(); }
+  const std::array<std::int32_t,1> invalid{5};
+  ASSERT_TRUE(positions.view().write(std::as_bytes(std::span(invalid))).ok());
+  ASSERT_TRUE(invocation.bind(ids,id_tensor).ok());
+  status = invocation.prepare_replay({}); ASSERT_TRUE(status.ok()) << status.message();
+  done = invocation.submit(); ASSERT_TRUE(done) << done.error().message();
+  status = done->wait(); EXPECT_TRUE(status.IsOutOfRange()) << status.message(); *done = {};
+  EXPECT_FALSE(invocation.result(rows));
 }
 void exercise_halfword_store(std::size_t elements) {
   auto context = take(v::Context::create(), "Vulkan Context");

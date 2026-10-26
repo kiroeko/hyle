@@ -1316,7 +1316,7 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
           detail::descriptor_buffer(
               detail::Access::buffer(inputs[binding.input_port]).get(),
               state_->program->values[binding.value].description,
-              binding.byte_origin, alias.byte_offset));
+              binding.byte_origin, alias.byte_offset, binding.storage_granularity));
     }
     for (const auto &binding : state_->region_inputs) {
       const auto &buffer = detail::Access::buffer(inputs[binding.input_port]);

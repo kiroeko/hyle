@@ -161,9 +161,27 @@ TensorByteOrigins origins(const Run &run,
 }
 } // namespace
 
+Result<std::shared_ptr<Pipeline>>
+create_halfword_pipeline(const std::shared_ptr<Device> &device,
+                         const SpirvDescription &description) noexcept {
+  if (!device->provider.native().storage_buffer16)
+    return std::unexpected(Status::Unimplemented("Vulkan raw16 shader needs enabled storage16"));
+  HYLE_ASSIGN_OR_RETURN(auto pipeline, create_pipeline(device, description));
+  pipeline->storage_granularity = 2;
+  return pipeline;
+}
+
 Result<VkDescriptorBufferInfo>
 descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
                   bool byte_origin, VkDeviceSize relative_offset) noexcept {
+  return descriptor_buffer(buffer, description, byte_origin, relative_offset, 4);
+}
+Result<VkDescriptorBufferInfo>
+descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
+                  bool byte_origin, VkDeviceSize relative_offset,
+                  std::uint32_t storage_granularity) noexcept {
+  if (storage_granularity != 2 && storage_granularity != 4)
+    return std::unexpected(Status::InvalidArgument("Vulkan shader storage granularity"));
   HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
   VkDescriptorBufferInfo result{};
   VkDeviceSize prefix = 0;
@@ -185,7 +203,13 @@ descriptor_buffer(const Buffer *buffer, const TensorDesc &description,
       return std::unexpected(
           Status::InvalidArgument("Vulkan view exceeds its native buffer"));
   }
-  HYLE_ASSIGN_OR_RETURN(result.range, buffer_capacity(prefix + bytes));
+  if (storage_granularity == 2) {
+    if (prefix % 2 || bytes % 2 || bytes > UINT64_MAX - prefix)
+      return std::unexpected(Status::InvalidArgument("Vulkan raw16 descriptor is not an exact halfword range"));
+    result.range = (std::max)(VkDeviceSize{2}, prefix + bytes);
+  } else {
+    HYLE_ASSIGN_OR_RETURN(result.range, buffer_capacity(prefix + bytes));
+  }
   if (buffer &&
       (result.range > buffer->device->properties.limits.maxStorageBufferRange ||
        (buffer->handle != VK_NULL_HANDLE &&
@@ -372,11 +396,12 @@ Status record(const std::shared_ptr<Run> &run,
         DescriptorBinding entry;
         entry.value = value;
         entry.byte_origin = dispatch.tensor_byte_origins && binding < dispatch.push.size()/sizeof(std::uint32_t);
+        entry.storage_granularity = dispatch.pipeline->storage_granularity;
         const auto &buffer = run->retained_buffers[value];
         HYLE_ASSIGN_OR_RETURN(entry.buffer,
                               descriptor_buffer(buffer.get(),
                                                 values[value].description,
-                                                entry.byte_origin));
+                                                entry.byte_origin, 0, entry.storage_granularity));
         entry.write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         entry.write.dstSet = descriptor;
         entry.write.dstBinding = binding;
@@ -420,7 +445,8 @@ Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
       const bool byte_origin = dispatch.tensor_byte_origins &&
           port < dispatch.push.size() / sizeof(std::uint32_t);
       HYLE_ASSIGN_OR_RETURN(auto prospective,
-          descriptor_buffer(buffer.get(), description(value), byte_origin));
+          descriptor_buffer(buffer.get(), description(value), byte_origin, 0,
+              dispatch.pipeline->storage_granularity));
       (void)prospective;
     }
   }
@@ -432,7 +458,8 @@ Status rebind_descriptors(Run &run, std::span<const PlanValue> values,
       const bool byte_origin = dispatch.tensor_byte_origins &&
           port < dispatch.push.size() / sizeof(std::uint32_t);
       HYLE_ASSIGN_OR_RETURN(auto buffer,
-          descriptor_buffer(run.retained_buffers[value].get(), description(value), byte_origin));
+          descriptor_buffer(run.retained_buffers[value].get(), description(value), byte_origin, 0,
+              dispatch.pipeline->storage_granularity));
       VkWriteDescriptorSet write{};
       write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
       write.dstSet = run.descriptor_sets[index];

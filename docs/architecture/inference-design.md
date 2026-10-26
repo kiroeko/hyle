@@ -173,7 +173,11 @@ Vulkan的整行与pitch均4字节对齐时，原lowering已可按I32字别名选
 不会经浮点数值转换。Store的精确偶数字节复制现沿原Run使用原码16位shader，4字节对齐范围仍走transfer；
 先验全部真实范围、feature与dispatch，Completion通过原Run保活pipeline，不能依赖外壳仍在。
 [五项有限检查](../evidence/correctness/inference-vulkan-halfword-store-2026-10-27.json)分属两实际镜像，包含2／6字节及外壳先释放。
-非4字节行或pitch的Gather仍缺原码16位承载，不能只放宽transfer或投影资格。
+非4字节行或pitch现有[原码16位Gather](../evidence/correctness/inference-vulkan-raw16-gather-2026-10-27.json)：
+原checked-index先生成安全ID，实际uint16 shader只读选中行，精确描述符资格来自所选pipeline，不按数学dtype猜。
+BF16／F16部分源租约到Store、越界拒绝及原word路径已有有限检查；SPIR-V不含浮点转换。
+同步短租约D2H仍被原MemoryResource的4字节门拒绝，通用ready租约导入门也未放宽；
+不能把这条Graph索引链的通过推广为任意2字节同步I/O或导入。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，

@@ -6,6 +6,7 @@ The dependency lock authenticates inputs before CMake reaches this command.
 
 import argparse
 from pathlib import Path
+import re
 import struct
 import subprocess
 
@@ -16,7 +17,11 @@ def main():
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--tensor-source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--variant', action='append', help='Compile only these named variants')
+    parser.add_argument('--output-stem', default='vulkan_shaders')
     args = parser.parse_args()
+    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', args.output_stem):
+        parser.error('output stem must be a C++ header basename')
     args.output.mkdir(parents=True, exist_ok=True)
     variants = [
         ('cache_encode_e4', str((args.tensor_source / 'cache_encode_e4.comp').resolve()), {}, {1}),
@@ -63,10 +68,16 @@ def main():
          dict(HYLE_TENSOR_CONCAT='1'), {1}),
         ('reduction', str((args.tensor_source / 'tensor.comp').resolve()),
          dict(HYLE_TENSOR_REDUCTION='1'), {1}),
+        ('raw16_gather', str((args.tensor_source / 'raw16_gather.comp').resolve()), {}, {1, 4433}),
     ]
+    if args.variant:
+        unknown = set(args.variant) - {variant[0] for variant in variants}
+        if unknown:
+            parser.error('unknown shader variants: ' + ', '.join(sorted(unknown)))
+        variants = [variant for variant in variants if variant[0] in args.variant]
     header = ['#pragma once', '#include <cstdint>', '#include <span>',
               'namespace hyle::compute::vulkan::detail::shaders {']
-    source = ['#include "vulkan_shaders.h"',
+    source = ['#include "' + args.output_stem + '.h"',
               'namespace hyle::compute::vulkan::detail::shaders {']
     for name, filename, defines, allowed_capabilities in variants:
         if name in ('cache_encode_e4', 'nvfp4', 'nvfp4_grouped', 'nvfp4_local', 'nvfp4_grouped_local',
@@ -125,7 +136,7 @@ def main():
         source.append('std::span<const std::uint32_t> ' + name + '() noexcept { return ' + name + '_words; }')
     header.append('} // namespace hyle::compute::vulkan::detail::shaders')
     source.append('} // namespace hyle::compute::vulkan::detail::shaders')
-    for filename, lines in [('vulkan_shaders.h', header), ('vulkan_shaders.cc', source)]:
+    for filename, lines in [(args.output_stem + '.h', header), (args.output_stem + '.cc', source)]:
         (args.output / filename).write_bytes(('\n'.join(lines) + '\n').encode('utf-8'))
 
 

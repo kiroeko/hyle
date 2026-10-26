@@ -978,8 +978,9 @@ bool direct_gather_rows(Operation operation, const TensorDesc &input,
   if (!size || input.byte_strides()[1] != static_cast<std::int64_t>(size) ||
       input.dimensions()[1] > INT64_MAX / static_cast<std::int64_t>(size)) return false;
   const auto row = input.dimensions()[1] * static_cast<std::int64_t>(size);
-  return row % 4 == 0 && input.byte_strides()[0] >= row &&
-      input.byte_strides()[0] % 4 == 0;
+  if (input.byte_strides()[0] < row) return false;
+  return (row % 4 == 0 && input.byte_strides()[0] % 4 == 0) ||
+      (size == 2 && input.byte_strides()[0] % 2 == 0);
 }
 Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
   try {
@@ -1046,10 +1047,40 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
       HYLE_RETURN_IF_ERROR(lower_region(program, local, 0, 1, last_uses));
       return lower_checked_copy(program, provider_output, step.outputs[0]);
     }
+    const auto size = data_type_size(input.data_type());
+    if (direct_rows && size == 2 &&
+        (input.dimensions()[1] % 2 || input.byte_strides()[0] % 4)) {
+      // This checked native branch reads only selected original halfword rows.
+      // It precedes the old word-padding/Concat adapter: packing the complete
+      // bank would require rights not granted by a projected ready footprint.
+      HYLE_ASSIGN_OR_RETURN(auto source_bytes, input.required_bytes());
+      HYLE_ASSIGN_OR_RETURN(auto output_bytes, output.required_bytes());
+      HYLE_ASSIGN_OR_RETURN(auto elements, output.element_count());
+      if (!output.is_plain() || !output.is_dense() || output.data_type() != input.data_type() ||
+          elements > UINT32_MAX || source_bytes > limits.maxStorageBufferRange ||
+          output_bytes > limits.maxStorageBufferRange || input.byte_strides()[0] / 2 > UINT32_MAX ||
+          limits.maxComputeWorkGroupInvocations < 128 || limits.maxComputeWorkGroupSize[0] < 128)
+        return Status::Unimplemented("Vulkan raw16 Gather exceeds storage/dispatch domain");
+      const std::array<SpecializationConstant, 3> specialization{{
+          {0, static_cast<std::uint32_t>(input.dimensions()[1])},
+          {1, static_cast<std::uint32_t>(input.byte_strides()[0] / 2)},
+          {2, static_cast<std::uint32_t>(elements)}}};
+      Dispatch dispatch;
+      HYLE_ASSIGN_OR_RETURN(dispatch.pipeline, create_halfword_pipeline(program.runtime->device,
+          {shaders::raw16_gather(), 4, 16, specialization}));
+      dispatch.values = {step.inputs[0], safe, *program.status_value, step.outputs[0]};
+      dispatch.tensor_byte_origins = true; dispatch.push.resize(16); dispatch.checked_status = true;
+      const auto groups = (elements + 127) / 128;
+      const auto x = (std::min)(groups, static_cast<std::uint64_t>(limits.maxComputeWorkGroupCount[0]));
+      if (!x || (groups + x - 1) / x > limits.maxComputeWorkGroupCount[1])
+        return Status::Unimplemented("Vulkan raw16 Gather workgroup grid exceeds domain");
+      dispatch.groups = {static_cast<std::uint32_t>(x), static_cast<std::uint32_t>((groups + x - 1) / x), 1};
+      program.dispatches.push_back(std::move(dispatch));
+      return Status::Ok();
+    }
     if (limits.maxComputeWorkGroupInvocations < 512 ||
         limits.maxComputeWorkGroupSize[0] < 512)
       return Status::Unimplemented("ggml Vulkan GetRows requires 512 lanes");
-    const auto size = data_type_size(input.data_type());
     const auto row_elements = *input.element_count() / extent;
     const auto row_bytes = row_elements * size;
     const auto padded_bytes = (row_bytes + 3) / 4 * 4;
