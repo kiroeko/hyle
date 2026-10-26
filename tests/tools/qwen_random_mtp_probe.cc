@@ -33,7 +33,7 @@ q::MtpRoundResult round(q::Model &model, const std::shared_ptr<q::Session> &sess
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role); model.submit_evaluation(*session);
   const q::EvaluationIO output_io{.name = "random_round", .trace_states = false};
   const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr, &ledger, expected);
-  return q::finish_mtp_round(model, *session, pending, 2, std::array<std::int32_t, 2>{248044, 248046}, &output, output_io);
+  return q::finish_mtp_round(model, *session, pending, 2, q::model_eos_tokens, &output, output_io);
 }
 void run(const std::filesystem::path &input) {
   const auto source = q::read_ids(input / "prompt.ids");
@@ -136,7 +136,7 @@ void run(const std::filesystem::path &input) {
       q::MtpGenerationSelection{sessions[1], ids[1], 2}};
   std::array<q::MtpRoundResult, 2> results;
   model.prepare_evaluations(requests, nullptr, q::GraphRole::kMtpRound); model.submit_evaluations();
-  model.finish_mtp_rounds(selections, std::array<std::int32_t, 2>{248044, 248046}, outputs, results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
+  model.finish_mtp_rounds(selections, q::model_eos_tokens, outputs, results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
         q::observe_completed_evaluation(model, outputs[j], outputs_io[j], view);
       });
   for (std::size_t i = 0; i < sessions.size(); ++i) {

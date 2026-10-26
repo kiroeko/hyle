@@ -9,6 +9,8 @@
 自然请求循环；后端装配、输出事实、读回和退休保活已共享。
 `RequestProgress` 已共用主机进度、turn 输入、额度／停止和提交观察；版本接纳查询和执行观察事实已共用，
 CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共同的请求窗口、目录和进度规则。
+这不代表完整引擎调度已经模型无关：自然请求循环、合批与恢复编排仍在Qwen实现中，
+GLM／DeepSeek／Kimi仍为组件消费者，尚无第二个完整引擎模型验证整套编排复用。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 职责与依赖
@@ -26,6 +28,36 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 这些是职责边界，不要求每行变成新库、抽象基类或目录。共同机制逐步归入
 `engine/inference`，模型数学及实际状态布局留在模型目录。复用现有 Graph／Compute，
 不另造 IR、执行器、通用 registry 或第二份端口表。
+
+## 当前调整的边界
+
+共同调度接下来按真实调用提取：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
+`engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
+优先静态分派和已有类型，不为搬出Qwen循环先造大`ModelOps`接口。组件复用与第二个完整模型接入
+分别记录，不能用前者代签后者。CLI的`run(argc, argv)`也不冒充可安装的引擎服务API。
+Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停止策略仍由`RequestStopPolicy`管理。
+
+当前控制由单owner串行驱动；这与设备执行并发是两个维度。未来应用可向owner投递请求、取消和输出额度，
+观察有序事件，不能直接并发改Session。已有错误事实包括底层`Status`和带成员／退休信息的`EvaluationFailure`，
+尚未统一全部引擎异常。后续API需同时保留错误类别、影响范围（成员／批次／模型）和真实原生退休事实；
+不靠异常字符串区分容量可重试、输入无效、取消与设备故障。
+
+当前Model仍每Phase单Invocation、同时一个episode。普通B2参考也逐episode同步，单槽不是已证实的差距原因。
+CPU提前准备下一步仍值得独立设计：元数据准备与设备提交分别推进；设备token接力需要真实生产者、
+依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
+停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
+索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
+它与已撤回的固定IO复制方案不同，尚未实现，也没有完整提速结论。
+
+`Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
+不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
+新`shape_admission_seconds`记录该次同步接纳并计入`step_seconds`；后者从成功输入预检后计到主机发布完成，
+不含输入预检、初始加载和失败接纳。原`seconds`仍是提交到完成的区间，不把CUDA Graph重录耗时当新形状编译延迟。
+长度分桶／预热和异长合批仍需分别接入；已有变长页表能力不能自动消除Qwen当前等T密集计算的约束。
+
+会话淘汰后的完整恢复当前仍可重算已消费输入；已有页复制／传输不等于完整会话换出。
+待补的主机状态镜像须涵盖KV、递归／卷积状态、pending、RNG和来源配置，分别计量主机／设备预算，
+保留共享页、旧版本及真实退休，恢复时不复用失效设备指针。此项属于底层状态能力，HTTP不是前置条件。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，
@@ -127,7 +159,7 @@ host 用例覆盖 pending 时不写入，未注入原生设备故障。
 | 共同机制 | 现有实现与所有权 |
 |---|---|
 | 有界运行中接纳 | `RequestWindow`固定槽和FIFO，世代拒绝旧身份；owner先准备payload，再在合法波次边界接纳。`RequestProgress`借用稳定输入，open turns按turn数、累计prompt token及输出额度接纳；传输字节和输入所有权仍归调用者 |
-| 请求级取消与失败 | 等待撤回不触及设备；在途沿原整批取消和真实退休，幸存成员由未发布的旧head／ledger／RNG重新排队。已定位的参与者失败与设备失败分别处理；提交后交付失败保留已提交事实 |
+| 请求级取消与失败 | 等待撤回不触及设备；已提交普通多成员批次可只丢弃停止成员，幸存者提交原候选。其它模式或明确放弃整批沿原中止／退休；已定位参与者失败与设备失败分别处理，交付失败保留已提交事实 |
 | 输出消费与背压 | `OutputDelivery`的credit／ACK与提交观察分开。提交前检查episode最大输出；满时由原窗口暂停该请求，让其它就绪任务推进。owner保留未交付输出，异步交接不让`CompletedEvaluationView`／原生租约逃逸 |
 | 有界prefill工作量 | 原`TextCompletion`表达state-only中间块与最终输出；ledger保真正已消费偏移，中间块不投影词表、发token或消费RNG。原窗口的队尾重排允许其它ready decode推进，quantum由owner选择 |
 | 多Model资源与调度 | 每个Model保原端点、队列和单在途合同；共用`ResourceBudget`按指定真实资源行接纳已知权重／缓存／workspace。未知私有分配仍标未知；跨Model优先级归owner，不把共享计数称为物理显存上限 |
@@ -226,7 +258,13 @@ EOS、额度和上下文边界共同限制实际接受前缀，不先消费末�
 所有可失败的选择、状态捕获、修复及合法性检查先完成，再以不抛异常的 head 交换发布整个 batch。
 提交前失败保留旧状态和游标；提交后 trace／报告失败不能重抽样或重复返回。
 提交记录是权威事实，观察序号保证幂等；异常本身不能代表“模型没有前进”。
-当前停止任一参与者会取消整批；独立取消单成员需要另有清楚的提交合同。
+MTP、提交前及最后一个成员停止仍走整批中止。已提交且无draft状态的普通多成员批次，
+停止一个成员只撤回其发布，设备计算正常完成，幸存者不重算；原生／导出失败仍不能部分发布。
+停止成员不改head／RNG，不提交其账簿、不调用成功观察函数；`EvaluationDisposition`区分未发布、已发布和已取消。
+`stop()`确认请求被接纳，不能把这次成功撤回伪装成原生退休错误。等待幸存者完成期间，任一成员的退休／drain
+返回尚未退休，不隐式撤销整批；原owner仍可明确中止整个episode。输出观察的局部掩码仅在撤回时准备，
+普通R>2不增加每步缓冲分配。当前[有限CPU检查](../evidence/correctness/inference-review-fixes-2026-10-26.json)
+覆盖greedy R2、空账簿、原候选发布／继续和全部取消；不代签GPU物理在途、随机取消或设备故障。
 
 普通／MTP 和固定回放共用模型无关的执行观察记录。模型完成接口只接收原提交目标、事实
 目的地和明确的捕获需求；名字、路径、默认打印及 trace 写入由入口处理。CLI formatter 只读取
@@ -305,7 +343,7 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 活动名额就回收设备字节。上述[状态检查](../evidence/correctness/request-window-suspension-2026-10-25.json)
 已通过主机用例。
 
-同批取消的正常终态只属于被取消的 episode。确认所有原生工作实际退休后，存活成员保留
+整批中止的正常终态只属于被中止的 episode。确认所有原生工作实际退休后，存活成员保留
 未发布的 head、ledger、pending 和 RNG，再用原 key 归队；不能把 peer 的正常取消永久写入
 它的 Session 退休错误。被停止成员仍保留取消事实；其它错误、原生错误及退休不明不能
 按这一例外丢弃。[真实 Qwen 普通 CUDA 用例](../evidence/correctness/qwen-live-request-lifecycle-2026-10-25.json)
@@ -318,7 +356,8 @@ R 继续交现有分桶及真实执行容量处理。模型提供容量查询、
 Session、Model、冷资源与逻辑缓存统一返回 `RetirementObservation { retired, status }`，
 没有 bool 转换或旧兼容出口。owner 遇错仍沿原收集流程；确认退休后归还旧会话、窗口槽或
 目录费用，再报告原错，失败的接纳不继续装入新任务。单纯尚未退休不写成持久故障。
-未停止 Session 的 `drain` 只驱动原执行并观察错误，不退休其 head，也不固化 peer 的纯取消；
+等待普通部分撤回的幸存者发布时，成员`drain`不代替原owner完成或中止，返回尚未退休。
+其它路径中未停止 Session 的 `drain`只驱动原执行并观察错误，不退休其head，也不固化peer的纯取消；
 停止后的观察持续保留第一条真实错误。实际释放权限仍来自原 Graph／页／原生保留门。
 [有限检查](../evidence/correctness/inference-retirement-observation-2026-10-25.json)已通过三组缓存
 host 合同及 Windows CPU 的真实 Session／R2 准备与续算；合成状态不代签设备故障。

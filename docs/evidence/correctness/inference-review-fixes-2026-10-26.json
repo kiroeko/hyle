@@ -1,0 +1,404 @@
+{
+  "status": "BOUNDED_REVIEW_FIXES_CPU_FIXTURE_PASS",
+  "scope": "Cold exact-shape accounting and idle preparation, ordinary shared-batch member cancellation, and model-local EOS policy consolidation.",
+  "fixes": [
+    "Synchronous unseen-shape admission is included in step_seconds and separately reported as shape_admission_seconds; CUDA Graph recording is a different event.",
+    "Idle prepare_execution may admit a bounded ordinary/MTP-prefill exact family using the existing admission mechanism.",
+    "Submitted ordinary Text R>1 without a draft cache may withdraw one member publication while surviving members finish their original candidate. Cancelled member head/RNG and uncommitted ledger remain unpublished; typed disposition and observer suppression distinguish the outcome.",
+    "All-cancel, pre-submit, R1 and MTP retain whole-episode cancellation. Native completion/export errors still use the whole-episode failure path.",
+    "Qwen EOS identifiers live in one model-local header, with consumer/probe call sites updated."
+  ],
+  "final_product_build": {
+    "status": "REVIEW_PRODUCT_BUILT_NOT_RUN",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\link\\hyle.exe",
+      "bytes": 141470720,
+      "sha256": "8c19bca934096c43647312da9af38617642ff068b0e8b8d22f785499cc72d6b3"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\runtime2.json",
+      "bytes": 8227,
+      "sha256": "708b71fa992f280ce9e2a1241ea172c8e9d6ff449c46db9b5452f9421d548785"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\link2-inputs.json",
+      "bytes": 58090,
+      "sha256": "a40d5923d963df078a7b178846c533f69036fff5b2b945db25d4efcac7c6c653"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\source2-freeze.json",
+      "bytes": 33143,
+      "sha256": "5822640bd53fa0fae708bdcc3f77f29dadc91978415b94161776c66afbc3d75b"
+    },
+    "units": [
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 475252,
+          "sha256": "6ac6884e3beb956cace06f1b623f4451d3ef3c9d2e49c3bb6ed1f5066066beb5"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\model\\unit.obj",
+          "bytes": 12740783,
+          "sha256": "489226752caa66fefa71efa9ea1001616aa9b93bce9720733d591530b4ce6dc6"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 40880,
+          "seconds": 18.53431489999639
+        }
+      },
+      {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\reporting\\execution_report.cc",
+          "bytes": 5291,
+          "sha256": "dd5d706f2c02d53ac2baed06e8023344ac20a54ee506bc615fa3e85fd47491a3"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\report\\unit.obj",
+          "bytes": 106268,
+          "sha256": "8b42988100e5de37df4298576226fbb42ed63b031b348996908fa0bd5a1cb144"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 52852,
+          "seconds": 1.3961060000001453
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 10128,
+      "seconds": 1.7272537000244483
+    },
+    "compiled_host_TUs": 2,
+    "unchanged_inputs": 220,
+    "model_runs": 0,
+    "SDK_device_Graph_provider_builds": 0,
+    "limits": [
+      "Incremental build of these review changes against retained f36 CUDA closure; no claim every retained native/provider implementation is current for unrelated changes.",
+      "StepObservation direct include and selected per-object dependency scan identify Model/report readers. Existing entry/weights do not include this header. 182/195 selected objects have matched dependency evidence; 13 retained native/third-party objects remain explicitly outside its complete per-object header proof.",
+      "default_rules.cc current diff is a comment only; no selected provider rebuild for that edit.",
+      "No full model, SDK, native/device, Graph or provider build. Build commands never execute consumers."
+    ]
+  },
+  "final_probe_build": {
+    "status": "FINITE_E4_CPU_PROBE_BUILT_NOT_RUN",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\e4-consumer.exe",
+      "bytes": 141078016,
+      "sha256": "03b9ee2087f4ef998078a79dbe090fa4d8ce5edad622fd8535037edd32334f30"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\runtime.json",
+      "bytes": 8225,
+      "sha256": "4a80a770bcc431f8d49547805c2828bcb5341488d5f3764a9c444299a233e3ab"
+    },
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3-plan.json",
+      "bytes": 37947,
+      "sha256": "4a3e5cc805fa81fbd609bdd815e110a0d755893a57be47f31e7f62fe7230ed67"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link-inputs.json",
+      "bytes": 57817,
+      "sha256": "af8950d7613f237fa4fb609fb1a57294e6909682b4c7102b521b74dd05948a48"
+    },
+    "compile": {
+      "exit": 0,
+      "pid": 55368,
+      "seconds": 18.804778499994427
+    },
+    "link": {
+      "exit": 0,
+      "pid": 61340,
+      "seconds": 1.7087059999466874
+    },
+    "run": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\e4-consumer.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+    ],
+    "native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "fixture_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+      "bytes": 5889,
+      "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+    },
+    "current_report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\report\\unit.obj",
+      "bytes": 106268,
+      "sha256": "8b42988100e5de37df4298576226fbb42ed63b031b348996908fa0bd5a1cb144"
+    },
+    "compiled_probe_TUs": 1,
+    "SDK_device_builds": 0,
+    "model_runs": 0
+  },
+  "runs": {
+    "run1": {
+      "pid": 20444,
+      "exit": 1,
+      "timeout": false,
+      "seconds": 0.950268899963703,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe\\link\\e4-consumer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe\\link\\e4-consumer.exe",
+        "bytes": 141078016,
+        "sha256": "b61ce53cc9a4f02a8a421ef96a400726b5d1ce7dccd2edbdfffbed708d0f2d87"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "One cached generated AA/E4 ordinary CPU fixture, greedy; no trained-model quality, GPU pending or performance claim."
+    },
+    "run2": {
+      "pid": 11820,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 0.8235341000254266,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe2\\link\\e4-consumer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe2\\link\\e4-consumer.exe",
+        "bytes": 141078016,
+        "sha256": "2f4391a65d2eff6205f81689a888f309c9075814d8c0af1e4bd1594b354a1b2e"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe2\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "One cached generated AA/E4 ordinary CPU fixture, greedy; no trained-model quality, GPU pending or performance claim."
+    },
+    "run3": {
+      "pid": 57696,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 0.8102439999929629,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\e4-consumer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\e4-consumer.exe",
+        "bytes": 141078016,
+        "sha256": "03b9ee2087f4ef998078a79dbe090fa4d8ce5edad622fd8535037edd32334f30"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\probe3\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "One cached generated AA/E4 ordinary CPU fixture, greedy; no trained-model quality, GPU pending or performance claim."
+    }
+  },
+  "fixture_results": {
+    "run2": {
+      "status": "PASS",
+      "backend": "cpu",
+      "generated_AA_fixture": true,
+      "original_scale_roles": 4,
+      "physical_row_bytes": 64,
+      "activation": "BF16",
+      "prefill_rows": 2,
+      "decode_rows": 1,
+      "fork_equal": true,
+      "old_readers_unchanged": true,
+      "single_member_discard": true,
+      "all_cancel_abort": true,
+      "idle_shape_warmup": true,
+      "admission_in_step": true,
+      "final_versions": 0,
+      "model_quality": false,
+      "HTTP": 0
+    },
+    "run3": {
+      "status": "PASS",
+      "backend": "cpu",
+      "generated_AA_fixture": true,
+      "original_scale_roles": 4,
+      "physical_row_bytes": 64,
+      "activation": "BF16",
+      "prefill_rows": 2,
+      "decode_rows": 1,
+      "fork_equal": true,
+      "old_readers_unchanged": true,
+      "single_member_discard": true,
+      "all_cancel_abort": true,
+      "idle_shape_warmup": true,
+      "admission_in_step": true,
+      "final_versions": 0,
+      "model_quality": false,
+      "HTTP": 0
+    }
+  },
+  "first_failure": {
+    "kind": "FIXTURE_SETUP_ORDER_ERROR",
+    "explanation": "run1 attempted replay-use planning after carrier preparation and failed before the new arithmetic checks. Only fixture ordering was corrected before run2. Original failure logs are retained.",
+    "correction": "The final normal-path mask allocation change was subsequently rebuilt and run3 passed."
+  },
+  "final_delta": {
+    "status": "FINAL_DELTA_SOURCE_CHECK_AND_RUN3_REPLAY_NOT_ALLOCATION_MEASUREMENT",
+    "main": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 475252,
+      "sha256": "6ac6884e3beb956cace06f1b623f4451d3ef3c9d2e49c3bb6ed1f5066066beb5"
+    },
+    "points": [
+      {
+        "line": 3965,
+        "text": "hyle::container::SmallVector<std::uint8_t, 2> published_members;"
+      },
+      {
+        "line": 3968,
+        "text": "if (step.discard_stopped_members &&\n          !published_members.try_resize(outputs.size(), std::uint8_t{1}))"
+      },
+      {
+        "line": 4252,
+        "text": "if (!published_members.empty() && !published_members[j]) continue;"
+      },
+      {
+        "line": 4245,
+        "text": "if ((published_members.empty() || published_members[j]) && outputs[j].generation_ledger)"
+      }
+    ],
+    "statement": "The local SmallVector stays empty on normal publication, including R>2; try_resize is guarded by actual partial withdrawal. The mask remains stack-owned after detach and throughout observers. This introduces no normal-path mask heap allocation; it does not claim the entire step has zero allocations.",
+    "verification": "Final source matches product2/probe3 and run3 receipts. The independent cancellation review predates this final allocation delta; its old source hash is retained honestly as historical basis."
+  },
+  "source_pins": [
+    {
+      "path": "engine/inference/execution_observation.h",
+      "bytes": 1174,
+      "sha256": "79d974007f00939bb27890a24adc54bf4beb1132d8a60075fbddc461e8747f0f"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 475252,
+      "sha256": "6ac6884e3beb956cace06f1b623f4451d3ef3c9d2e49c3bb6ed1f5066066beb5"
+    },
+    {
+      "path": "engine/models/qwen35/generation_tokens.h",
+      "bytes": 487,
+      "sha256": "c6278e5f9a07525ed0e5b436cb2dce042b9c413b7f9ad4fb048e69f17570014b"
+    },
+    {
+      "path": "engine/models/qwen35/batch_probe.cc",
+      "bytes": 28584,
+      "sha256": "69ec8a394321f2732de65575b3fba00ae26a1bfc838f2dae74c1799bd7cebf70"
+    },
+    {
+      "path": "engine/models/qwen35/mtp_session_probe.cc",
+      "bytes": 116003,
+      "sha256": "610a784a54c3fad560355e1237bd5225882c37d613e108899ef5dacb947ddf7e"
+    },
+    {
+      "path": "engine/models/qwen35/retained_budget_probe.cc",
+      "bytes": 20368,
+      "sha256": "4129735e907a54a47738928fdbd95e11c483981292ca6f3e124e45e2c631823a"
+    },
+    {
+      "path": "engine/reporting/execution_report.cc",
+      "bytes": 5291,
+      "sha256": "dd5d706f2c02d53ac2baed06e8023344ac20a54ee506bc615fa3e85fd47491a3"
+    },
+    {
+      "path": "tests/tools/qwen_e4_cache_case.h",
+      "bytes": 13786,
+      "sha256": "484f0e04a2657a9e0bba2628edbcb21e142f4dc2ff5a0049ebc6e9082dc3b6d1"
+    },
+    {
+      "path": "tests/tools/qwen_mtp_prefix_value_probe.cc",
+      "bytes": 13166,
+      "sha256": "aa4ee3bdb416d84a67b87ec7f37b3f8edb49ae6fde53ff198a264a38c28a2ccb"
+    },
+    {
+      "path": "tests/tools/qwen_random_mtp_probe.cc",
+      "bytes": 10561,
+      "sha256": "f4a2cdad139ce0753e76c03dc204c2eb70e38c5d148a72ec987d0229c53dba5d"
+    },
+    {
+      "path": "src/compute_provider_native/default_rules.cc",
+      "bytes": 11652,
+      "sha256": "fbd2437d340753566bab26dc1ef3fb1038ae2876e50c001af1a4159c23be6679"
+    },
+    {
+      "path": "include/hyle/container/small_vector.h",
+      "bytes": 30022,
+      "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+    }
+  ],
+  "basis": [
+    {
+      "file": "boundaries.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\boundaries.json",
+      "bytes": 23705,
+      "sha256": "8768dbb763f86e824b06614927f5b551549fa62985a251285b731de01fe00e6e"
+    },
+    {
+      "file": "policies.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\policies.json",
+      "bytes": 26571,
+      "sha256": "464670ee0ab292d67cd2335d41e718ba7fb42bcffb61d97d4c02af0abcfb219f"
+    },
+    {
+      "file": "execution-performance.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\execution-performance.json",
+      "bytes": 15279,
+      "sha256": "e3323e93b85f8c76ebbd89c70297cb4f530c8ed8ee641e42338fddc88cc5d3c6"
+    },
+    {
+      "file": "cancel-warmup-independent-review.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\cancel-warmup-independent-review.json",
+      "bytes": 2476,
+      "sha256": "3e9c89e8eaf1c0aea952dd3b1893c66840cce2681a8a1369e23a79f512ae2747"
+    },
+    {
+      "file": "cold-timing-eos-review.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\cold-timing-eos-review.json",
+      "bytes": 2451,
+      "sha256": "f0d9aa405f2ab8436375d6a2c0eb015d47d8cb0a6efcd40145ea8b262f2434b7"
+    }
+  ],
+  "basis_interpretation": "The three architecture audits describe the pre-fix source. In particular policies.json whole-episode cancellation and missing admission timing statements are historical baseline, superseded by the final source and bounded run3. The two reviews state their own older source hashes and are source reviews, not runtime passes.",
+  "unverified": [
+    "Physically pending GPU member cancellation; the CPU completion may already be ready before publication.",
+    "Stochastic RNG draw advancement, native fault injection, trained-model quality and full-model correctness.",
+    "MTP cancellation semantics are unchanged; no MTP functionality or performance rerun.",
+    "Full CUDA batch_probe build/run: batch_probe.cc was migrated after the final build and is included as source-only change.",
+    "Other migrated EOS probe translation units were not independently rebuilt or run in this bounded batch.",
+    "No prefill/decode/TPS, GPU-memory, overlap benefit or general performance conclusion follows from these CPU fixture runs.",
+    "Retained build closure is incremental; 182/195 selected object dependencies are evidenced, with 13 native/third-party inputs outside full per-object header proof. No SDK/device/Graph/provider rebuild."
+  ],
+  "archive_policy": "Metadata/logs, exact final selected sources (<2MB), source pins, current tracked diff and baseline audit/review JSON only. No executables, libraries, objects, PDBs, maps, SDKs, weights, full traces or superseded source candidates.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-review-fixes-2026-10-26.zip",
+    "bytes": 606270,
+    "sha256": "c4ddc0a76aa8ad1bf2ba2c6f2532b48733e90ecbc9ab73c19f262a45405ddc67",
+    "members": 137
+  }
+}

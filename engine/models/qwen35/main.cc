@@ -52,6 +52,7 @@
 #include "../../inference/execution_observation.h"
 #include "../../reporting/execution_report.h"
 #include "generation_schedule.h"
+#include "generation_tokens.h"
 #include "prepared_roles.h"
 #include "ffn_placement.h"
 #include "projection_binding.h"
@@ -101,9 +102,6 @@ constexpr g::ReplayMode select_replay_mode(ReplayPolicy policy,
   return sampling_enabled || policy == ReplayPolicy::kCommands
       || (policy == ReplayPolicy::kAuto && known_uses <= 1)
       ? g::ReplayMode::kCommands : g::ReplayMode::kPreferCapture;
-}
-constexpr bool is_end_of_generation(std::int32_t token) noexcept {
-  return token == 248044 || token == 248046; // Original endoftext and tokenizer im_end.
 }
 constexpr std::array<const char *, 9> layer0_probe_names{
     "01-gdn-output", "02-out-proj-input", "03-out-proj-output",
@@ -914,6 +912,15 @@ public:
           !record.verification_inputs.try_reserve(maximum_width))
         throw std::bad_alloc{};
   }
+  void discard_uncommitted() {
+    auto &record = next();
+    auto emitted = std::move(record.emitted), accepted = std::move(record.accepted_inputs);
+    auto verified = std::move(record.verification_inputs);
+    record = GenerationCommitRecord{};
+    record.emitted = std::move(emitted); record.accepted_inputs = std::move(accepted);
+    record.verification_inputs = std::move(verified);
+    record.emitted.clear(); record.accepted_inputs.clear(); record.verification_inputs.clear();
+  }
   GenerationCommitRecord &next() {
     if (committed_count >= records.size() || records[committed_count].committed)
       throw std::runtime_error("MTP replay ledger has no uncommitted reserved record");
@@ -1136,10 +1143,11 @@ struct StepState final {
   c::Completion completion;
   hyle::Status terminal;
   Clock::time_point step_start{}, start{};
-  double submit_seconds = 0, cold_batch_seconds = 0;
+  double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
   std::size_t input_tokens = 0, capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
+  bool discard_stopped_members = false;
   // Model admission is serial even when a cancelled native episode has not
   // retired. Return it only after publication and final result reads, or after
   // complete abort cleanup.
@@ -1245,7 +1253,9 @@ public:
   std::weak_ptr<ColdResources> sampling_owner() const noexcept { return resources_; }
   Session(const Session &) = delete;
   Session &operator=(const Session &) = delete;
-  // Stopping any member aborts the whole shared batch. No head is published.
+  // After ordinary multi-request submission, stop withdraws only this member's
+  // publication while a survivor remains. Other roles and pre-submit stop abort
+  // the whole episode. Cancellation never proves native retirement.
   hyle::Status stop() noexcept;
   inference::RetirementObservation try_retire() noexcept;
   inference::RetirementObservation drain() noexcept;
@@ -1257,6 +1267,7 @@ struct EvaluationRequest final {
   const inference::RequestStopPolicy *stop_policy = nullptr;
   LogitsInputs logits;
 };
+enum class EvaluationDisposition : std::uint8_t { kNotPublished, kPublished, kCancelled };
 struct EvaluationOutput final {
   std::shared_ptr<Session> session;
   bool capture_tensors = false, capture_probes = false;
@@ -1266,6 +1277,9 @@ struct EvaluationOutput final {
   inference::PreparationObservation *preparation = nullptr;
   GenerationLedger *generation_ledger = nullptr;
   const GenerationCommitRecord *expected_episode = nullptr;
+  // Optional actual publication fact. A stopped member's raw next_ids element
+  // is not a delivered result; kCancelled has no observer/head/ledger commit.
+  EvaluationDisposition *disposition = nullptr;
 };
 // Borrowed only during the synchronous post-commit observer. Original output
 // leases and the carrier admission guard remain in finish's stack scope.
@@ -2529,6 +2543,7 @@ public:
   void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     if (find_family(requests, tokens, role, false, completion, sampling_index)) return;
+    const auto admission_start = Clock::now();
     if (!state_storage_prepared || active_step || carrier_borrowed || !tokens || tokens > capacity ||
         !requests || requests > cache_plan.active_sequences ||
         cache::multiply(tokens, requests) > cache_plan.max_query_rows || verifies_prefix(role))
@@ -2562,7 +2577,8 @@ public:
       admitted_exact_keys.push_back(key); ++exact_admissions;
       std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
                 << " role=" << static_cast<int>(role) << " retained=" << admitted_exact_keys.size()
-                << " limit=" << limit << '\n';
+                << " limit=" << limit
+                << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
     } catch (...) {
       families.erase(key); history_writers = before_history; recurrent_writers = before_recurrent;
       hidden_writers = before_hidden; generated_state_outputs = before_generated;
@@ -3472,6 +3488,12 @@ public:
     if (carrier_borrowed)
       throw std::runtime_error("cannot cold-prepare carriers during an active execution loan");
     for (const auto tokens : calls) {
+      // Explicit idle warmup can cover a suffix not present in the initial
+      // schedule. Use the same bounded admission and original family owners
+      // as execution, before borrowing a Session or accepting native work.
+      if (state_storage_prepared && (role == GraphRole::kText || is_mtp_prefill(role)) &&
+          !find_family(requests, tokens, role, false, completion, sampling_index))
+        admit_exact_shape(tokens, requests, role, completion, sampling_index);
       if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion, sampling_index);
       auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion, sampling_index);
       initialize_slot(phase, slot_index);
@@ -3666,10 +3688,15 @@ public:
       if (role == GraphRole::kText && completion == TextCompletion::kEmitNext && selected_sampler.enabled)
         (void)session.head->sampling.advanced(1);
     }
-    if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
-        !find_family(requests.size(), tokens, role, false, completion, sampling_index))
-      admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
+    // A suffix first seen at a request boundary may compile a new exact family.
+    // Charge that real synchronous work to this step, before the carrier loan.
     const auto step_start = Clock::now();
+    double shape_admission_seconds = 0;
+    if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
+        !find_family(requests.size(), tokens, role, false, completion, sampling_index)) {
+      admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
+      shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
+    }
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (const auto &request : requests) {
@@ -3683,6 +3710,7 @@ public:
     auto &step = *active_step;
     carrier_borrowed = true; step.candidate_admission = &carrier_borrowed;
     step.step_start = step_start; step.input_tokens = tokens;
+    step.shape_admission_seconds = shape_admission_seconds;
     for (auto &member : step.members) member.session->pending = &step;
     try {
       const auto width = requests.size(), slot = slot_index;
@@ -3914,21 +3942,31 @@ public:
     if (!active_step || outputs.size() != active_step->members.size() || next_ids.size() != outputs.size() ||
         active_step->cancelled || !active_step->submitted || !active_step->completion.valid())
       throw std::runtime_error("finish requires its original complete noncancelled batch");
-    for (std::size_t j = 0; j < outputs.size(); ++j)
-      if (outputs[j].session != active_step->members[j].session || outputs[j].session->stopping || outputs[j].session->failed)
+    for (std::size_t j = 0; j < outputs.size(); ++j) {
+      if (outputs[j].session != active_step->members[j].session || outputs[j].session->failed ||
+          (outputs[j].session->stopping && !active_step->discard_stopped_members))
         throw std::runtime_error("finish participant does not match the original active batch");
+      if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kNotPublished;
+    }
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
+    const auto shape_admission_seconds = step.shape_admission_seconds;
     const auto replay_route = step.replay_route;
     const auto capture_recorded = step.capture_recorded, capture_reused = step.capture_reused;
     std::array<c::ConstTensorView, 9> probe_views;
     std::array<c::ReadLease, 9> probe_owners;
     c::ReadLease generated_logits, generated_hidden;
+    // An empty local mask means all members publish. Allocate only for an
+    // actual withdrawal, before any publication; ordinary R>2 adds no buffer.
+    // It stays owned here through detach and all output observers.
+    hyle::container::SmallVector<std::uint8_t, 2> published_members;
     struct ReturnReadback final { bool *admission = nullptr; ~ReturnReadback() { if (admission) *admission = false; } } return_readback;
     try {
+      if (step.discard_stopped_members &&
+          !published_members.try_resize(outputs.size(), std::uint8_t{1})) throw std::bad_alloc{};
       for (std::size_t j = 0; j < outputs.size(); ++j) {
         if (outputs[j].generation_ledger) {
           if (cache_plan.draft_cache != (phase.family->role != GraphRole::kText) ||
@@ -3947,6 +3985,10 @@ public:
             throw std::runtime_error("generation ledger entry differs from its actual episode");
           if (outputs[j].expected_episode && !outputs[j].expected_episode->committed)
             throw std::runtime_error("expected episode record is not committed");
+          if (step.discard_stopped_members && outputs[j].session->stopping) {
+            step.members[j].commit_ledger = nullptr; step.members[j].commit_record = nullptr;
+            outputs[j].generation_ledger->discard_uncommitted();
+          }
         } else if (outputs[j].expected_episode)
           throw std::runtime_error("expected episode record requires a fresh commit witness");
       }
@@ -3963,14 +4005,21 @@ public:
       }
       if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
         check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
-        const auto bad = std::ranges::find_if(phase.sampling_valid_values, [](auto value) { return value != 1; });
+        auto bad = std::ranges::find_if(phase.sampling_valid_values, [](auto value) { return value != 1; });
+        if (step.discard_stopped_members)
+          while (bad != phase.sampling_valid_values.end() &&
+              step.members[static_cast<std::size_t>(bad - phase.sampling_valid_values.begin())].session->stopping)
+            bad = std::find_if(bad + 1, phase.sampling_valid_values.end(), [](auto value) { return value != 1; });
         if (bad != phase.sampling_valid_values.end()) {
           if (phase.family->role == GraphRole::kText) {
             std::optional<std::size_t> participant;
             // Everything before the first bad value is already proven 1.
             // Only the failure path inspects the remainder for a unique 0.
-            if (*bad == 0 && std::all_of(bad + 1, phase.sampling_valid_values.end(),
-                [](auto value) { return value == 1; }))
+            bool unique = true;
+            for (auto it = bad + 1; it != phase.sampling_valid_values.end(); ++it)
+              if (*it != 1 && !(step.discard_stopped_members &&
+                  step.members[static_cast<std::size_t>(it - phase.sampling_valid_values.begin())].session->stopping)) unique = false;
+            if (*bad == 0 && unique)
               participant = static_cast<std::size_t>(bad - phase.sampling_valid_values.begin());
             throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
                 "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
@@ -3998,7 +4047,8 @@ public:
         auto &member = step.members[j];
         if (!member.accepted_tokens || member.accepted_tokens > tokens ||
             (member.accepted_tokens != tokens && !verifies_prefix(phase.family->role)) ||
-            (!state_only && (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
+            (!state_only && !(step.discard_stopped_members && member.session->stopping) &&
+                (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
           throw std::runtime_error("invalid accepted target boundary");
         member.verified_last_page = member.next->pages.back().page();
         if (member.accepted_tokens != tokens) {
@@ -4157,12 +4207,21 @@ public:
         step.hidden_output = nullptr;
       }
       for (const auto &member : step.members)
-        if (member.session->head != member.base || member.session->pending != &step || member.session->stopping)
+        if (member.session->head != member.base || member.session->pending != &step ||
+            (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
       // All fallible native/export/metadata work is complete. The head swaps
-      // below cannot throw and publish the whole batch in this host transaction.
+      // below cannot throw. Stopped ordinary members discard their unpublished
+      // candidate; every surviving member keeps this original successful work.
       for (std::size_t j = 0; j < step.members.size(); ++j) {
-        auto &member = step.members[j]; member.next->next_id = next_ids[j];
+        auto &member = step.members[j];
+        if (step.discard_stopped_members && member.session->stopping) {
+          published_members[j] = 0;
+          if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kCancelled;
+          continue;
+        }
+        if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kPublished;
+        member.next->next_id = next_ids[j];
         member.session->tails = std::move(member.next_tails);
         member.session->draft_tails = std::move(member.next_draft_tails);
         member.session->head = std::move(member.next);
@@ -4183,12 +4242,14 @@ public:
       throw;
     } catch (...) { (void)abort_episode(); throw; }
     const auto finished = Clock::now();
-    for (const auto &output : outputs) if (output.generation_ledger) {
+    for (std::size_t j = 0; j < outputs.size(); ++j) if ((published_members.empty() || published_members[j]) && outputs[j].generation_ledger) {
+      const auto &output = outputs[j];
       auto &record = output.generation_ledger->records[output.generation_ledger->committed_count - 1];
       record.endpoint = finished;
       record.step_seconds = std::chrono::duration<double>(finished - step_start).count();
     }
     for (std::size_t j = 0; j < outputs.size(); ++j) {
+      if (!published_members.empty() && !published_members[j]) continue;
       const auto &output = outputs[j]; const auto &session = *output.session; const auto next = next_ids[j];
       if (output.complete_seconds) *output.complete_seconds = std::chrono::duration<double>(finished - step_start).count();
       if (output.host_endpoint) *output.host_endpoint = finished;
@@ -4209,6 +4270,7 @@ public:
       observation.seconds = std::chrono::duration<double>(finished - start).count();
       observation.submit_seconds = submit_seconds; observation.step_seconds = std::chrono::duration<double>(finished - step_start).count();
       observation.cold_batch_seconds = cold_batch_seconds; observation.replay_route = replay_route;
+      observation.shape_admission_seconds = shape_admission_seconds;
       observation.capture_recorded = capture_recorded; observation.capture_reused = capture_reused;
       observation.scheduled_progress = static_cast<bool>(scheduler);
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
@@ -4569,6 +4631,15 @@ hyle::Status Session::stop() noexcept {
   if (stopping) return retirement_status;
   stopping = true;
   if (pending) {
+    if (!pending->cancelled && pending->submitted && pending->completion.valid() &&
+        pending->phase && pending->phase->family->role == GraphRole::kText &&
+        model_ && !model_->cache_plan.draft_cache && pending->members.size() > 1 &&
+        std::ranges::any_of(pending->members, [](const auto &member) { return !member.session->stopping; })) {
+      pending->discard_stopped_members = true;
+      // This acknowledges the requested withdrawal, rather than reporting a
+      // device/retirement error. The completed member reports kCancelled.
+      return retirement_status;
+    }
     pending->cancelled = true;
     if (pending->completion.valid()) {
       const auto cancelled = pending->completion.request_cancel();
@@ -4580,6 +4651,10 @@ hyle::Status Session::stop() noexcept {
 }
 inference::RetirementObservation Session::try_retire() noexcept {
   if (!stopping) return {false, hyle::Status::FailedPrecondition("stop the Qwen session before retirement")};
+  // The original caller must finish successful work for surviving members.
+  // Neither a stopped owner nor its drain may turn this into a peer abort.
+  if (pending && pending->discard_stopped_members && !pending->cancelled)
+    return {false, retirement_status};
   inference::RetirementObservation observed{true, {}};
   if (!model_) observed = resources_->retire(false);
   else if (pending) observed = model_->try_retire_episode();
@@ -4590,6 +4665,8 @@ inference::RetirementObservation Session::try_retire() noexcept {
   return {observed.retired, retirement_status};
 }
 inference::RetirementObservation Session::drain() noexcept {
+  if (pending && pending->discard_stopped_members && !pending->cancelled)
+    return {false, retirement_status};
   inference::RetirementObservation observed{true, {}};
   if (!model_) observed = resources_->retire(true);
   else if (pending) observed = model_->abort_episode();
@@ -4871,7 +4948,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
   auto session = model.create_session(calls, {}, first.role, first.before.sampling);
   GenerationLedger actual(ledger.committed_count, model.cache_plan.candidate_boundaries);
   actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
-  const std::array<std::int32_t, 2> eos{248044, 248046};
+  const auto &eos = model_eos_tokens;
   try {
     for (std::size_t index = 0; index < ledger.committed_count; ++index) {
       const auto &expected = ledger.records[index];
@@ -5445,7 +5522,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   }
   if (calls.size() == 1 && calls[0].full_hit) { finish_generation_call(model, calls[0]); return; }
   if (!make_generation_batch_room(model, prefix, calls, requests)) throw std::runtime_error("MTP batch exceeds committed head budget");
-  const std::array<std::int32_t, 2> eos{248044, 248046};
+  const auto &eos = model_eos_tokens;
   if (calls[0].role == GraphRole::kVerify) {
     for (auto &call : calls) {
       if (!call.generation || call.role != GraphRole::kVerify)

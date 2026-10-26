@@ -264,7 +264,7 @@ void advance(q::Model &model, Probe &probe, Run &run, std::size_t which, bool re
   else {
     const q::EvaluationIO output_io{.name = name, .trace_states = false};
     const auto output = q::evaluation_output(model, run.session, output_io, nullptr, nullptr, &observation);
-    round = q::finish_mtp_round(model, *run.session, pending, quota, std::array<std::int32_t, 2>{248044,248046}, &output, output_io);
+    round = q::finish_mtp_round(model, *run.session, pending, quota, q::model_eos_tokens, &output, output_io);
     run.generated.insert(run.generated.end(), round.emitted.begin(), round.emitted.end());
   }
   probe.observe(model);
@@ -492,7 +492,7 @@ void prefix_commit(q::Model &model, PrefixObservation &observation, std::size_t 
   if (natural) {
     const q::EvaluationIO output_io{.name = name, .trace_states = false};
     const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, &step_observation);
-    round = q::finish_mtp_round(model, *session, inputs.front(), 2, std::array<std::int32_t,2>{248044,248046}, &output, output_io); next = round.next_id;
+    round = q::finish_mtp_round(model, *session, inputs.front(), 2, q::model_eos_tokens, &output, output_io); next = round.next_id;
   } else next = q::finish_evaluation(model, *session, name, {}, false, nullptr, nullptr, &step_observation);
   observation.observe(model);
   require(!model.active_step && !model.carrier_borrowed && !session->pending && model.snapshot_versions.live <= 2,
@@ -757,7 +757,7 @@ void resume_commit(q::Model &model, ResumeObservation &observation, const std::s
   hyle::inference::StepObservation step;
   const q::EvaluationIO selected_io{.name = name, .trace = &trace, .trace_states = false};
   const auto selected = q::evaluation_output(model, session, selected_io, nullptr, nullptr, &step, nullptr, &ledger);
-  if (generation) (void)q::finish_mtp_round(model, *session,inputs.front(),quota,std::array<std::int32_t,2>{248044,248046},&selected, selected_io);
+  if (generation) (void)q::finish_mtp_round(model, *session,inputs.front(),quota,q::model_eos_tokens,&selected, selected_io);
   else (void)q::finish_evaluation(model, *session,name,trace,false,nullptr,nullptr,&step,nullptr,{},&ledger);
   observation.observe(model);
   require(!model.active_step && !model.carrier_borrowed && !session->pending && ledger.committed_count &&
@@ -1017,7 +1017,7 @@ void batch_single_commit(q::Model &model, MtpBatchObservation &observation, cons
   model.prepare_evaluation(*session,inputs,nullptr,role); observation.observe(model); model.submit_evaluation(*session); ++observation.graph_calls;
   const q::EvaluationIO output_io{.name = name, .trace_states = false};
   const auto output = q::evaluation_output(model, session, output_io, nullptr, nullptr, nullptr, nullptr, &ledger);
-  if (generation) (void)q::finish_mtp_round(model, *session,expected_pending,quota,std::array<std::int32_t,2>{248044,248046},&output, output_io);
+  if (generation) (void)q::finish_mtp_round(model, *session,expected_pending,quota,q::model_eos_tokens,&output, output_io);
   else (void)q::finish_evaluation(model, *session,name,{},false,nullptr,nullptr,nullptr,nullptr,{},&ledger);
   observation.observe(model); observation.episode(name,ledger.records[ledger.committed_count - 1]);
 }
@@ -1122,7 +1122,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
         q::evaluation_output(model, sessions[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr, &ledgers[1])};
     std::array<q::MtpRoundResult,2> results;
     model.submit_evaluations(); ++observation.graph_calls;
-    model.finish_mtp_rounds(selections,std::array<std::int32_t,2>{248044,248046},outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
+    model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
           q::observe_completed_evaluation(model, outputs[j], outputs_io[j], view);
         }); observation.observe(model);
     for (std::size_t j = 0; j < 2; ++j) {
@@ -1225,7 +1225,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     const q::EvaluationIO policy_output_io{.name = "external_sampled_pending", .trace_states = false};
     const auto policy_output = q::evaluation_output(model, sessions[0], policy_output_io, nullptr, nullptr, nullptr, nullptr, &ledgers[0]);
     model.submit_evaluation(*sessions[0]); ++observation.graph_calls;
-    const auto policy_result = q::finish_mtp_round(model, *sessions[0],observation.external_pending,2,std::array<std::int32_t,2>{248044,248046},&policy_output, policy_output_io);
+    const auto policy_result = q::finish_mtp_round(model, *sessions[0],observation.external_pending,2,q::model_eos_tokens,&policy_output, policy_output_io);
     observation.pending_policy = policy_result.pending == observation.external_pending && ledgers[0].records[3].pending_input == observation.external_pending;
     require(observation.pending_policy,"generation ignored its original explicit external pending token");
     observation.episode("external_sampled_pending",ledgers[0].records[3]);
@@ -1388,7 +1388,7 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
       const std::array outputs{q::evaluation_output(model, twins[0], outputs_io[0], nullptr, nullptr, nullptr, nullptr, &twin_ledgers[0]),
           q::evaluation_output(model, twins[1], outputs_io[1], nullptr, nullptr, nullptr, nullptr, &twin_ledgers[1])};
       std::array<q::MtpRoundResult,2> results; model.submit_evaluations(); ++observation.data.graph_calls;
-      model.finish_mtp_rounds(selections,std::array<std::int32_t,2>{248044,248046},outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
+      model.finish_mtp_rounds(selections,q::model_eos_tokens,outputs,results, [&](std::size_t j, const q::CompletedEvaluationView &view) {
             q::observe_completed_evaluation(model, outputs[j], outputs_io[j], view);
           }); observation.data.observe(model);
       const auto member0 = observation.data.record(label + "_R2_member0",batch_image(model,*twins[0],*phase,0,2),&reference);

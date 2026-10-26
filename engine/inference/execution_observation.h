@@ -15,6 +15,9 @@ struct StepObservation {
   std::size_t input_tokens = 0, visible = 0, capture_recorded = 0, capture_reused = 0;
   std::int32_t next = 0;
   double seconds = 0, submit_seconds = 0, step_seconds = 0, cold_batch_seconds = 0;
+  // Synchronous admission of a previously unseen shape, included in step_seconds.
+  // Zero for an already prepared family; unrelated to CUDA Graph recording.
+  double shape_admission_seconds = 0;
   graph::ReplayRoute replay_route = graph::ReplayRoute::kUnprepared;
   bool scheduled_progress = false;
   bool prefix_hit = false, graph_executed = true;

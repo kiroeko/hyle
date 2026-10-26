@@ -1,0 +1,262 @@
+{
+  "status": "FINITE_SOURCE_CHECK_NO_DENSE_BF16_ACTIVATION_ROUNDTRIP_FOUND",
+  "scope": "Actual frozen CPU constant-View window Hyle7e53/native665 versus peerAVX2 27a/native73a; denseBF16 R1Qwen3.5 decode only. Source/retainedmetadata review; not fresh execution or performance attribution.",
+  "artifacts": {
+    "hyle_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\link-model\\model.exe",
+      "bytes": 141488640,
+      "sha256": "7e53ba106be4728e2a874014eb035211c6379e7cbfa3bcec3167d7f0d61954bc"
+    },
+    "hyle_native": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\link-model\\hyle_ggml_cpu_gdn_scale_v3.dll",
+      "bytes": 1206784,
+      "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+    },
+    "hyle_selected_provider_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\unit.obj",
+      "bytes": 1991131,
+      "sha256": "49befda3e1193e55ceaca2e9babd8392fb0bee693ee6e8afd229314f7051d523"
+    },
+    "peer_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\link\\peer-avx2.exe",
+      "bytes": 35860992,
+      "sha256": "27a49a73fdafccde9528bda413aee69f2e2d755b7705fa60bbd60fc8a8ca5404"
+    },
+    "peer_native_cpu_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\peer-avx2\\archive\\ggml-cpu-avx2.lib",
+      "bytes": 3162550,
+      "sha256": "73a642b2b29427a44ef5cd25e5fdda61a37c4d48a6e6ed02afd87347ab89b226"
+    },
+    "peer_consumer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\source\\peer_multiturn.cc",
+      "bytes": 33761,
+      "sha256": "6ceb596dc51cf003a957ca40177aad1bcb5bf1fbd5394ba6047e849e0ac7a6af"
+    }
+  },
+  "identity_evidence": {
+    "current_CPU_provider_equals_frozen_compiled_source": true,
+    "frozen_provider_actual_dependencies_first_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "bytes": 120159,
+      "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+    },
+    "frozen_provider_object_present_and_rehashed": true,
+    "CPU_native_source_family_pins_rehashed_against_prior_parity": true
+  },
+  "findings": [
+    {
+      "claim": "Current CPU denseBF16 projection widens activation toF32 then nativeMUL_MAT packsBF16 again",
+      "assessment": "NOT_PRESENT_IN_THIS_SELECTED_PATH",
+      "proof": [
+        "engine/models/qwen35/main.cc:490-526 requires source activation type and emits denseBF16 MatMul output for ordinary BF16 stored projections; scores uses separateF32output.",
+        "src/compute_provider_ggml/ggml_cpu_provider.cc:1210-1245 is actualCPU lowering: native_shape preserves BF16left; result=ggml_mul_mat(right,left). There is no as_float/cast of left here.",
+        "Actual665mixed ggml-cpu.c:413-417 BF16 vec_dot_type isBF16; at1341 conversion only executes forsrc1->type !=vec_dot_type. AlreadyBF16src1 passes to original source pointer in one_chunk1214.",
+        "Actualpeer4e1a ggml-cpu.c:395-399 has sameBF16traits;1323-1356 packs onlyF32src1 toBF16 when needed,1196 selects originalBF16pointer.",
+        "src/compute_provider_ggml_cuda/tensor_program.cc:1095-1133 is CUDAcarrier; its separate direct_dense conversions are not evidence of CPUpath work. Its presence in the large linked consumer does not mean this CPUroute calls it."
+      ],
+      "consequence": "No activation roundtrip fix justified for selected ordinarydenseBF16 workload. Quantized/F16/F32weights and customDenseLinearF32 mixed-type branches have different equations and are outside this exact negative finding."
+    },
+    {
+      "claim": "Hyle nativeMatMul materializesF32result thenBF16output",
+      "assessment": "REAL_SOURCE_AND_RETAINED_DESCRIPTOR_EVIDENCE",
+      "proof": [
+        "Mixed ggml.c:3377-3391 ggml_mul_mat always createsGGML_TYPE_F32result.",
+        "Mixed ggml-cpu.c:1255-1266 obtainsfloat*dst_col and writesdot floats fromtmp.",
+        "CPUprovider as_output645-649 casts result to requested output dtype; common return1411 applies this toMatMul.",
+        "Mixed ggml-cpu/ops.cpp:552-555 dispatches F32→BF16CPY/dup conversion to typedcopy kernel.",
+        "Actualcompute mapping CPUprovider1635-1642 binds original inputhostbytes,1678-1688 binds outputhoststorage. This is not an extra stagingcopy of the weight."
+      ],
+      "shape": {
+        "K": 2048,
+        "N": 6144,
+        "M": 1,
+        "weight_BF16_bytes": 25165824,
+        "activation_BF16_bytes": 4096,
+        "native_F32_output_temporary_bytes": 24576,
+        "required_public_BF16_output_bytes": 12288,
+        "old_observed_per_decode_step": 66,
+        "old_observed_nominal_BF16_outputs_per_step_bytes": 811008
+      },
+      "importance_limit": "These are nominal tensor bytes, not measuredDRAM orisolatedCPUtime. Oldcatalog timings useddifferentpoll/executor/instrumentation and cannot assign current4.9%gap. BF16outputrounding is realpublicmath and mustremain. A typednativeepilogue might avoidF32fulltemporary while preserving same dot/reduction/BF16rounding, but existingCPUkernel assumesF32destination and no such candidate is implemented or benchmarked."
+    },
+    {
+      "claim": "Reference avoids allBF16work because it carriesF32betweenops",
+      "assessment": "FALSE_AS_STATED_DIFFERENT_STOREPOINTS",
+      "proof": [
+        "Retainedpeer llama-graph.cpp:1514-1518 returnsnativeggml_mul_matF32result withoutHylepublicBF16outputcast.",
+        "Retainedqwen35.cpp:160/187 norm flows into subsequentprojections;233build_qkvz callsbuild_lora_mm. BF16weight mulmat packs itsF32activation toBF16insideoriginalCPUworkbuffer.",
+        "Thus Hyle directBF16input can skipthispack; referenceF32upstreamdoesnot removeBF16dotinputrounding. But referencedoesnotroundeachpublicprojectionoutput toBF16 at the sameboundaries."
+      ],
+      "numerical_limit": "Sameweights/input/16greedyIDs do not prove equalintermediates. Removing or postponing HyleBF16outputstorepoint to imitatepeerF32flow changesmath and is not proposed."
+    },
+    {
+      "claim": "Hyle repeatedly materializes or repacks wholeBF16weights on hotcall",
+      "assessment": "NO_SUCH_WORK_FOUND_IN_AUDITED_DOMINANT_MATRIX_PATH",
+      "proof": [
+        "CPUprovider1501-1511 maps constants once while creating preparedinvocation. Hotrun1635-1642 maps/binds portdata, withoutwholeweightmemcpy.",
+        "MatMul1238-1241 transposesmetadata and onlycontsifnoncontiguous. ThemodeldeclaredRHSview is thetransposeoforiginal[N,K]; the native transpose returns originalcontiguousrowmajorweight for theseprojections.",
+        "Retainedcatalog dominantweightnb[2,4096,25165824,25165824] alreadycontiguous; itssequenceTRANSPOSE/RESHAPE/MUL_MAT/CPY/RESHAPE containsno25MBweightcopy.",
+        "Head isalsoBF16source0 directread of1,017,118,720B; oldcatalogDUP concerns4,096Bactivation, not wholeweight."
+      ],
+      "limit": "Negative result applies to thesebound denseBF16 matrixgraphs; not a certificate all operators/models/quantizations avoidcopies."
+    }
+  ],
+  "retained_shape_observations": {
+    "catalog": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\native-diagnostic1\\facts.json",
+      "bytes": 32906,
+      "sha256": "dcbf8ccdaa52e71b91d2822c3192d7f826e56e128367294e52514a1a6dba0dc6"
+    },
+    "catalog_episodes": 15,
+    "dominant": {
+      "weight_type": 30,
+      "weight_ne": [
+        2048,
+        6144,
+        1,
+        1
+      ],
+      "weight_nb": [
+        2,
+        4096,
+        25165824,
+        25165824
+      ],
+      "weight_nominal_span_bytes": 25165824,
+      "activation_type": 30,
+      "activation_ne": [
+        2048,
+        1,
+        1,
+        1
+      ],
+      "output_type": 0,
+      "output_ne": [
+        6144,
+        1,
+        1,
+        1
+      ],
+      "calls": 990
+    },
+    "head": {
+      "weight_type": 30,
+      "weight_ne": [
+        2048,
+        248320,
+        1,
+        1
+      ],
+      "weight_nb": [
+        2,
+        4096,
+        1017118720,
+        1017118720
+      ],
+      "weight_nominal_span_bytes": 1017118720,
+      "activation_type": 30,
+      "activation_ne": [
+        2048,
+        1,
+        1,
+        1
+      ],
+      "output_type": 0,
+      "output_ne": [
+        248320,
+        1,
+        1,
+        1
+      ],
+      "calls": 15
+    },
+    "no_current_TPS_or_exclusive_time_claim": true
+  },
+  "source_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "bytes": 120159,
+      "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\source\\src\\compute_provider_ggml\\ggml_cpu_provider.cc",
+      "bytes": 120159,
+      "sha256": "29e0e7c4f0aa9494578af623de61dfeb94ceccbd445276484fef0dad8b259816"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 470192,
+      "sha256": "dfaa530b2148a31d3834f0b62c4f123d5fc6983be9f37652395269db2b69dfc6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+      "bytes": 62683,
+      "sha256": "beaa64011ae8199aecb277aef654b7d439b2f9bcdf74e9c4e6278c67c19ceb4b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src\\ggml-cpu\\ggml-cpu.c",
+      "bytes": 134967,
+      "sha256": "bd5706288ebe9165f097ed1f306964aa15572a09f436de7a591f060ca712bf54"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\legacy-root\\hyle-scratch\\ggml-native-static\\src\\compute_ggml_runtime\\source-4e1a7b2f39afe15d\\src\\ggml-cpu\\ggml-cpu.c",
+      "bytes": 134274,
+      "sha256": "7331342629eb447d08bfc5cb5d2e69cb26086b7a5413a126c76a99b9e66ddf6a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src\\ggml.c",
+      "bytes": 261316,
+      "sha256": "c2165a1fd7984ab00a8d16b5f370631323a658808b5346b0cec202f4b45a9652"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-iq1\\source\\src\\ggml-cpu\\ops.cpp",
+      "bytes": 417812,
+      "sha256": "4a8c21f75d814721b5919dfc03a0d2a0cac8dc8532f64d5d10047d74325ce575"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\llama-graph.cpp",
+      "bytes": 138753,
+      "sha256": "90f5c6f082790599124630680ba1293d702b369e9ce9088680d210b69905c8d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\llama-matched-consumer\\source\\src\\models\\qwen35.cpp",
+      "bytes": 28105,
+      "sha256": "ef973e9c789eb52ef27a77e0b1f36c6f41a378733a994d41b5924e3be012f671"
+    }
+  ],
+  "metadata_pins": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\screen1\\plan.json",
+      "bytes": 7668,
+      "sha256": "1fb04413d7b5e13febc182ae13b0ced5be148feed8c74a660d94758fd8417da0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-region-views-20261026\\validation\\candidate1\\link-model\\link-inputs.json",
+      "bytes": 56955,
+      "sha256": "7416b7bc644ae26c29594d52ea2de69fed337d88b413425c68559e98f6160e63"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\build1\\provider\\actual-dependencies.json",
+      "bytes": 41779,
+      "sha256": "748cafebb21a468c176769f74105c23627ee3e702f289094e524860f4f188402"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-native-source-parity.json",
+      "bytes": 12467,
+      "sha256": "1f00eac3fa682e92efbed7acf22732b7de9998763f1a29b9844fd38f5707e74b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-shared-pool-20261026\\cpu-matrix-source-review.json",
+      "bytes": 6792,
+      "sha256": "8971edf3de820cbc8f162378e1f616707f55f9b34d16887fd2d66b5bc5a2702f"
+    }
+  ],
+  "decision": "No newlargeCPUrootcause proved. Close the denseBF16activationroundtrip hypothesis. Preserve BF16boundary; any outputstorefusion candidate needsexactnumericcheckandcompleteconsumer before adoption. Do not implementthreadcount/Graphloop changesfrom these sourcefacts.",
+  "operations": {
+    "product_edits": 0,
+    "compiles": 0,
+    "profiles": 0,
+    "model_runs": 0,
+    "network": 0
+  }
+}

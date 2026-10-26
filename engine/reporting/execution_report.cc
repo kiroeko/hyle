@@ -32,6 +32,7 @@ void write_step_observation(std::ostream &output, const inference::StepObservati
               << " replay=" << (step.replay_route == graph::ReplayRoute::kCaptured ? "captured"
                   : step.replay_route == graph::ReplayRoute::kHybrid ? "hybrid" : "commands")
               << " cold_batch_seconds=" << step.cold_batch_seconds
+              << " shape_admission_seconds=" << step.shape_admission_seconds
               << " capture_recorded=" << step.capture_recorded
               << " capture_reused=" << step.capture_reused << '\n';
     record << step.name << " tokens=" << step.input_tokens << " visible=" << step.visible

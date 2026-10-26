@@ -1,0 +1,727 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "ONE_PEER_CPU_DIAGNOSTIC_FULL_WORK_AND_INDEPENDENT_COMMON90_RECONSTRUCTION_PASS",
+  "source_git_before_commit": "fefb5bdfa6909c7c6e44bf54b490c0f9386360a4",
+  "activity": {
+    "new_profiles": 1,
+    "new_native_model_processes": 1,
+    "new_peer_consumer_TUs": 1,
+    "SDK_Graph_native_device_builds": 0,
+    "extra_model_runs": 0,
+    "throughput_measurement": false,
+    "sampling": "1000Hz CPU IP/backtrace, process-tree context switches, graph:host-only CUDA/NVTX",
+    "output": "Original native --result file plus independently redirected stdout/stderr; no ProcessStreams extraction"
+  },
+  "peer_identity": {
+    "status": "PEER_CPU_DIAGNOSTIC_BUILT_NOT_PROFILED",
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\link\\consumer.exe",
+      "bytes": 35833856,
+      "sha256": "8cf801db0e583a686f2d14ce78f5b995dd5928ffeefaa049ea1ea56b86e26a09"
+    },
+    "app": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\compile\\unit.obj",
+      "bytes": 14835147,
+      "sha256": "a2d885f4496477efa6b46675dd5266301f16783f9f1f850cd120417357e76648"
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\source\\peer-batch.cc",
+      "bytes": 36639,
+      "sha256": "3e76849d9bc4309ef4fff45d22befaac61279268742d4ff246786187816f448c"
+    },
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\logical_trace.h",
+      "bytes": 2565,
+      "sha256": "85fdaa4efa4f00e49ad193f6a713355007666c101783112a1974840ea6c8521d"
+    },
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\source-pins.json",
+      "bytes": 4655,
+      "sha256": "6d35667ffde2a40417898357c3a786aac8c569efce9703c5c5977347de5eebc2"
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\compile\\actual-dependencies.json",
+      "bytes": 76635,
+      "sha256": "b9d9084ad9ccd60bd4ec53b742b0856bc3b14f4ea7ee980453915bfc0618f4de"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\runtime.json",
+      "bytes": 5854,
+      "sha256": "551e7e5ded6fd51ce9cd8fff452905a70611608c56fb07e138232a8438ec0ec0"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\link-inputs.json",
+      "bytes": 2090,
+      "sha256": "21e034d292c8cf7a4a1135009a92c6dd75ddc7240ec3e9ad20b41f679454dad4"
+    },
+    "pdb": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\link\\consumer.pdb",
+      "bytes": 11890688,
+      "sha256": "f33031c5980c76474154dc16926d2b2a2698a0bb0a366b25ff8705441b2c3cb4"
+    },
+    "map": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\link\\consumer.map",
+      "bytes": 22557401,
+      "sha256": "c8f90f1239dc341e0e12bf3342e858951365a9904ae5c963670861a93999627b"
+    },
+    "symbol_contract": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\symbol-contract.json",
+      "bytes": 914,
+      "sha256": "341ce7b864cb1ec603a0d624a0515a6479794fc43a2adf27ef2f7447747a49f9"
+    },
+    "compile": {
+      "exit": 0,
+      "pid": 39580,
+      "seconds": 3.6052325000055134
+    },
+    "link": {
+      "exit": 0,
+      "pid": 58240,
+      "seconds": 0.602979100018274
+    },
+    "unchanged_native_libraries": 8,
+    "new_host_TUs": 1,
+    "SDK_native_builds": 0,
+    "model_runs": 0,
+    "limits": [
+      "Diagnostic image is not a TPS measurement.",
+      "Only consumerTU privatePDB; retainedcore may lack private/source/inlined symbols.",
+      "ICF/inlining/publicMAP names are limited attribution evidence."
+    ]
+  },
+  "peer_work_quality": {
+    "status": "PASS_COMPLETE_ORIGINAL_REPORT_AND_198_IDS",
+    "native_process": {
+      "exit": 0,
+      "native_pid": 11172,
+      "wrapper_pid": 39104,
+      "timeout": false,
+      "seconds": 4.5708327000029385,
+      "config": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\wrapper-config.json",
+        "bytes": 1081,
+        "sha256": "bc357f12aa8111085b7340cbf9a5b494ecc7d9f7a829845331a48d80a9554227"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-stderr.log",
+        "bytes": 76602,
+        "sha256": "541ed58b8d96a1a4f2e23bad56eca85ef1c59653797416de0ef80020233a34f4"
+      },
+      "authoritative_streams": "Independent binary file handles; Nsight ProcessStreams is not used"
+    },
+    "complete_nontime_report_equal": true,
+    "complete_ids_equal": true,
+    "decisions": 198,
+    "physical_episodes": 99,
+    "prefill": 3,
+    "decode": 96,
+    "rows": 1728,
+    "R": 2,
+    "complete_marker": [
+      "99",
+      "495",
+      "0"
+    ],
+    "reference": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\runs\\timing-02-peer\\peer-result.json",
+      "bytes": 240869,
+      "sha256": "971da9964619fc9ac9fac40e7b9225f223dc72515e98a9129eb7cdce193a84a7"
+    },
+    "authority": "Original native --result file, never Nsight ProcessStreams",
+    "scope": "Original full peer632 B2 work gate and all198IDs; no added normalization exclusions"
+  },
+  "peer_trace_quality": {
+    "status": "PASS_99_CLOSED_ORIGINAL_NATIVE_ROOTS_CPU_QUALITY_PENDING_ANALYSIS",
+    "native_pid": 11172,
+    "wrapper_pid": 39104,
+    "roots": 99,
+    "ranges": 495,
+    "runtime_activity_rows": 21583,
+    "raw_relevant_table_counts": {
+      "CUPTI_ACTIVITY_KIND_GRAPH_TRACE": 93,
+      "DIAGNOSTIC_EVENT": 19,
+      "ENUM_DIAGNOSTIC_SEVERITY_LEVEL": 5,
+      "ENUM_DIAGNOSTIC_SOURCE_TYPE": 4,
+      "ENUM_DIAGNOSTIC_TIMESTAMP_SOURCE": 3,
+      "ENUM_SAMPLING_THREAD_STATE": 11,
+      "ENUM_SCHEDULING_THREAD_BLOCK": 62,
+      "PROCESSES": 485,
+      "ProcessStreams": 3,
+      "SAMPLING_CALLCHAINS": 10681979,
+      "SCHED_EVENTS": 1293035,
+      "TARGET_INFO_CUDA_CONTEXT_INFO": 1,
+      "ThreadNames": 3658
+    },
+    "sampling_and_loss_status": "Not inferred from successful profiler exit; raw sample/backtrace/ctxsw/loss tables require independent offline analysis",
+    "limits": "One instrumented peer632 diagnostic; not a throughput measurement, not a peer comparison. Wrapper samples must be excluded by actual native PID/TID."
+  },
+  "hyle_source_evidence": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-b2-cpu-critical-2026-10-26.json",
+      "bytes": 169543,
+      "sha256": "dffb1d3289badf7cea9597d120ca262065bb75a983e57a2d0bbec5976556e842"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-b2-cpu-critical-2026-10-26.zip",
+      "bytes": 5982095,
+      "sha256": "124099e679bc28874779b2b33f2c9ecc219af828f19ec65834d0967560c62783"
+    },
+    "reuse": "Original Hyle native-scope raw/resolved SQLite remain in this already-published archive and are not duplicated."
+  },
+  "exact_physical_work": {
+    "roots": 99,
+    "prefill": 3,
+    "decode": 96,
+    "requests": 2,
+    "input_rows": 1728,
+    "decisions": 198,
+    "complete_198_ids_equal": true,
+    "peer_phase_labels": 4,
+    "hyle_phase_labels": 17
+  },
+  "common90": {
+    "roots": 90,
+    "hyle_ms": {
+      "wall_ms": 1223.208763,
+      "running_ms": 1218.680163,
+      "off_cpu_ms": 4.5286,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 1069.461576,
+      "cuda_api_union_ms": 1122.461677,
+      "running_inside_cuda_api_ms": 1118.327177,
+      "running_overlapping_gpu_ms": 1065.435776,
+      "running_outside_gpu_and_cuda_api_ms": 99.701301,
+      "observed_graph_envelope_union_ms": 1068.759053,
+      "before_first_graph_envelope_ms": 111.96077,
+      "after_last_graph_envelope_ms": 42.48894
+    },
+    "peer_ms": {
+      "wall_ms": 1085.084314,
+      "running_ms": 1083.024714,
+      "off_cpu_ms": 2.0596,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 1036.831237,
+      "cuda_api_union_ms": 1070.190235,
+      "running_inside_cuda_api_ms": 1068.136635,
+      "running_overlapping_gpu_ms": 1034.79931,
+      "running_outside_gpu_and_cuda_api_ms": 14.364502,
+      "observed_graph_envelope_union_ms": 1028.635732,
+      "before_first_graph_envelope_ms": 40.203128,
+      "after_last_graph_envelope_ms": 16.245454
+    },
+    "Hyle_minus_peer_ms": {
+      "wall_ms": 138.124449,
+      "running_ms": 135.655449,
+      "off_cpu_ms": 2.469,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 32.630339,
+      "cuda_api_union_ms": 52.271442,
+      "running_inside_cuda_api_ms": 50.190542,
+      "running_overlapping_gpu_ms": 30.636466,
+      "running_outside_gpu_and_cuda_api_ms": 85.336799,
+      "observed_graph_envelope_union_ms": 40.123321,
+      "before_first_graph_envelope_ms": 71.757642,
+      "after_last_graph_envelope_ms": 26.243486
+    }
+  },
+  "paired_quality_and_sensitivity": {
+    "hyle_whole_affected_slices_ns": 1614200,
+    "peer_whole_affected_slices_ns": 13645538,
+    "worst_case_absolute_sensitivity_bound_ns": 15259738,
+    "host_outside_GPU_API_delta_minus_entire_suspect_slice_bound_ns": 70077061
+  },
+  "all_decode": {
+    "roots": 96,
+    "hyle_ms": {
+      "wall_ms": 1346.646315,
+      "running_ms": 1340.863315,
+      "off_cpu_ms": 5.783,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 1139.549168,
+      "cuda_api_union_ms": 1223.136507,
+      "running_inside_cuda_api_ms": 1217.965207,
+      "running_overlapping_gpu_ms": 1135.402868,
+      "running_outside_gpu_and_cuda_api_ms": 122.228109,
+      "observed_graph_envelope_union_ms": 1138.765975,
+      "before_first_graph_envelope_ms": 162.395258,
+      "after_last_graph_envelope_ms": 45.485082
+    },
+    "peer_ms": {
+      "wall_ms": 1190.53317,
+      "running_ms": 1188.07207,
+      "off_cpu_ms": 2.4611,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 1107.217629,
+      "cuda_api_union_ms": 1152.059502,
+      "running_inside_cuda_api_ms": 1149.773002,
+      "running_overlapping_gpu_ms": 1104.978454,
+      "running_outside_gpu_and_cuda_api_ms": 33.829135,
+      "observed_graph_envelope_union_ms": 1064.815386,
+      "before_first_graph_envelope_ms": 51.283221,
+      "after_last_graph_envelope_ms": 16.856872
+    },
+    "Hyle_minus_peer_ms": {
+      "wall_ms": 156.113145,
+      "running_ms": 152.791245,
+      "off_cpu_ms": 3.3219,
+      "unknown_ms": 0.0,
+      "observed_gpu_union_ms": 32.331539,
+      "cuda_api_union_ms": 71.077005,
+      "running_inside_cuda_api_ms": 68.192205,
+      "running_overlapping_gpu_ms": 30.424414,
+      "running_outside_gpu_and_cuda_api_ms": 88.398974,
+      "observed_graph_envelope_union_ms": 73.950589,
+      "before_first_graph_envelope_ms": 111.112037,
+      "after_last_graph_envelope_ms": 28.62821
+    }
+  },
+  "phase_boundaries": "No peer phase is treated as identical to a Hyle phase. Common comparison uses original physical roots, native API/GPU intervals and graph envelopes.",
+  "findings": [
+    "Common90: Hyle1223.208763ms/peer1085.084314ms root wall. Before first graph111.960770/40.203128ms, graph-envelope1068.759053/1028.635732ms, after last graph42.488940/16.245454ms. These describe separate instrumented runs, not new TPS or saved time.",
+    "Common90 reconstructed running outside observedGPU and CUDA APIs99.701301/14.364502ms. This overlaps the before/after partition and must not be added to it or called wholly recoverable CPU work.",
+    "Most decode positive-weight leaf samples remain in unresolved NVIDIA driver modules for both engines. Local PDB resolution is partial; symbol names and nearest-public aliases are not exact function extents.",
+    "OS offCPU time is small in these finite reconstructed scopes. Scheduling discrepancies and full affected-slice sensitivity remain explicit; no zero-loss or exact exclusive-userCPU claim.",
+    "Native-only compact raw/resolved peer records exactly reproduce current analysis, with original IDs/timestamps, metadata bytes, predecessor/successor scheduling and all referenced retained StringIds."
+  ],
+  "local_symbol_coverage": {
+    "status": "LOCAL_ONLY_RESOLUTION_COVERAGE_COUNTS",
+    "native_pid": 11172,
+    "root_global_tid": 281662411809024,
+    "raw": {
+      "native_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 17232,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4172,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 469495,
+        "unresolved_frames": 469495,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 21404,
+        "leaf_frames": 21404,
+        "unresolved_leaf_frames": 21404,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "native_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4172,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 88382,
+        "unresolved_frames": 88382,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4172,
+        "leaf_frames": 4172,
+        "unresolved_leaf_frames": 4172,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 15892,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4074,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 444440,
+        "unresolved_frames": 444440,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 19966,
+        "leaf_frames": 19966,
+        "unresolved_leaf_frames": 19966,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4074,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 85849,
+        "unresolved_frames": 85849,
+        "resolved_frames": 0,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4074,
+        "leaf_frames": 4074,
+        "unresolved_leaf_frames": 4074,
+        "resolved_leaf_frames": 0,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "table_counts": {
+        "COMPOSITE_EVENTS": 706809,
+        "SAMPLING_CALLCHAINS": 10681979,
+        "SCHED_EVENTS": 1293035,
+        "NVTX_EVENTS": 496
+      }
+    },
+    "resolved": {
+      "native_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 17232,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4172,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 469495,
+        "unresolved_frames": 395635,
+        "resolved_frames": 73860,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 21404,
+        "leaf_frames": 21404,
+        "unresolved_leaf_frames": 21181,
+        "resolved_leaf_frames": 223,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "native_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4172,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 88382,
+        "unresolved_frames": 61714,
+        "resolved_frames": 26668,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4172,
+        "leaf_frames": 4172,
+        "unresolved_leaf_frames": 3949,
+        "resolved_leaf_frames": 223,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_all_events": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 15892,
+            "cpuCycles": 0,
+            "threadState": 1
+          },
+          {
+            "events": 4074,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 444440,
+        "unresolved_frames": 370580,
+        "resolved_frames": 73860,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 19966,
+        "leaf_frames": 19966,
+        "unresolved_leaf_frames": 19743,
+        "resolved_leaf_frames": 223,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "root_thread_periodic_positive_cpuCycles": {
+        "events_by_raw_state_and_weight": [
+          {
+            "events": 4074,
+            "cpuCycles": 1,
+            "threadState": 1
+          }
+        ],
+        "frames": 85849,
+        "unresolved_frames": 59181,
+        "resolved_frames": 26668,
+        "unknown_resolution_frames": 0,
+        "events_with_frames": 4074,
+        "leaf_frames": 4074,
+        "unresolved_leaf_frames": 3851,
+        "resolved_leaf_frames": 223,
+        "unknown_resolution_leaf_frames": 0
+      },
+      "table_counts": {
+        "COMPOSITE_EVENTS": 706809,
+        "SAMPLING_CALLCHAINS": 10681979,
+        "SCHED_EVENTS": 1293035,
+        "NVTX_EVENTS": 496
+      }
+    },
+    "interpretation": "Frame counts are coverage, not CPU time. cpuCycles=0 state samples kept separate from positive-weight periodic samples. All frames in one sample may contain multiple unresolved entries; frame and leaf fractions must not be substituted for time fractions.",
+    "servers": [],
+    "model_runs": 0,
+    "profile_runs": 0,
+    "preserved_counts": {
+      "COMPOSITE_EVENTS": true,
+      "SAMPLING_CALLCHAINS": true,
+      "SCHED_EVENTS": true,
+      "NVTX_EVENTS": true
+    }
+  },
+  "native_filter_reproduction": {
+    "status": "PEER_NATIVE_FILTERS_EXACTLY_REPRODUCE_ALL_ANALYSIS",
+    "checks": [
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer-raw-cpu-facts.json",
+          "bytes": 3119127,
+          "sha256": "85dd8ea26f6a042ecb57eeb6af3aac31aa0b47feb8568429b449375f46920e6c"
+        },
+        "filtered": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\compact-peer-raw-cpu-facts.json",
+          "bytes": 3119136,
+          "sha256": "98900ee89a2d33996d029c0c441efc4111390fee524b4a91c973bb057bcc58e7"
+        },
+        "all_values_except_source_path_size": "EXACT_EQUAL"
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer-local-resolved-cpu-facts.json",
+          "bytes": 3168417,
+          "sha256": "1b1e69d9f2e3fb64746a31c8a5499ec94673ae074f7cf57835dca2b24d1b7ad2"
+        },
+        "filtered": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\compact-peer-resolved-cpu-facts.json",
+          "bytes": 3168416,
+          "sha256": "6e2cedba23c269626b68f33c3328c497e94eddd3ac1853cf1e4ecfad83ec2e49"
+        },
+        "all_values_except_source_path_size": "EXACT_EQUAL"
+      }
+    ],
+    "analyzer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\analyze.py",
+      "bytes": 20592,
+      "sha256": "e85b58d87eedceb72327d76953788d49a5b2ed576e1ecef3c351a33958d9a99c"
+    },
+    "filter_script": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\filter-native.py",
+      "bytes": 6451,
+      "sha256": "2c69165e8cca139447818c98ba7541313239e15b08b5443f0b22f6ef7b8e689b"
+    },
+    "filtered_datasets": [
+      {
+        "path": ".scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-scope-raw.sqlite",
+        "bytes": 6545408,
+        "sha256": "15a99d36998156deea00f8c8e296f068543fa1b89dff2a97a572727e25e0265d"
+      },
+      {
+        "path": ".scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-scope-resolved.sqlite",
+        "bytes": 6561792,
+        "sha256": "568e40974243dc7a29e0661067247038f1292b8a9937ae6cb4a50cdc18cc7c73"
+      }
+    ],
+    "filter_receipts": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-scope-raw.filter.json",
+        "bytes": 15926,
+        "sha256": "0812766b7c7243098a5fa2d51cbf50dd1da2da7da26115f132b0d624141faecb"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-peer-cpu-critical-20261026\\peer\\trace1\\native-scope-resolved.filter.json",
+        "bytes": 15946,
+        "sha256": "f286ba7f3a489f8f9bad2ec5a2645a6c62b12dcf0baeaedbc4ce0ef1163acb3f"
+      }
+    ],
+    "preserved": "All5588native-process root-window sampleevents/96356linkedframes;946rootTIDschedincludingpredecessor/successorandoriginalrowids; API/graph/eagerGPU records, allnativeNVTX, neededreferencedStringIds. SQLite-to-SQLite copiespreserve originalMETAbytes;bidirectionalEXCEPTandcountsPASS.",
+    "source_untouched": true,
+    "model_runs": 0,
+    "profile_runs": 0,
+    "servers": [],
+    "limits": "Compactroot-windowrecords cannot reproduceunrelatedfullsystem/processstartupinventories. No fulltracearchive prepared; no source deletion performed.",
+    "metadata_refresh": "Generatedqualitypathsnowactualpeerfolder;4offlineanalysesrerun0 after independentfrozenliteral-onlyfix. No new profiles or measurementchanges."
+  },
+  "independent_review": {
+    "status": "ROOT_INDEPENDENT_NATIVE_INTERVAL_RECONSTRUCTION_EXACT",
+    "common_sequences": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "totals_ns": {
+      "hyle": {
+        "wall_ns": 1223208763,
+        "before_ns": 111960770,
+        "graph_ns": 1068759053,
+        "after_ns": 42488940,
+        "outside_ns": 99701301
+      },
+      "peer": {
+        "wall_ns": 1085084314,
+        "before_ns": 40203128,
+        "graph_ns": 1028635732,
+        "after_ns": 16245454,
+        "outside_ns": 14364502
+      }
+    },
+    "method": "Independent direct SQL and interval-edge classification; does not import analyzer or its interval functions.",
+    "checks": [
+      "99roots each; 198IDs equal",
+      "90common nonrecording roots each has one contained graph",
+      "Graph correlation has one native-thread GraphLaunch",
+      "All5 interval claims exactly match paired facts"
+    ],
+    "limits": [
+      "Same single instrumented runs, not independent new measurements or throughput claims.",
+      "Scheduling/graph-envelope/driver/instrumentation and math/state boundary limits still apply."
+    ]
+  },
+  "map_analysis_inputs": {
+    "status": "FROZEN_MAP_ANALYSIS_INPUTS",
+    "files": [
+      {
+        "member": "hyle-map/map-attribution.py",
+        "file": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\map-attribution.py",
+          "bytes": 16538,
+          "sha256": "5aa791b78c08dedad14b8e71c4afea310c5615fd874601b029ed03e8027ee1fe"
+        }
+      },
+      {
+        "member": "hyle-map/map-attribution.json",
+        "file": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-cpu-critical-20261026\\map-attribution.json",
+          "bytes": 815593,
+          "sha256": "5bb2791135a023e63bb61749b0a9ab2261d0a746d5a3cb16b7df4d2605a7951f"
+        }
+      }
+    ],
+    "scope": "Only final static/publicMAP+PE/unwind attribution scriptandderivedfacts. Supersededbefore-unwind files andfullMAP/imageexcluded."
+  },
+  "quality_limits": [
+    "Two separate one-run instrumented diagnoses, not a new paired throughput window or gain certificate.",
+    "Hyle has17 phase labels/12 children; peer has4 siblings. No peerphase is renamed as an equivalent Hylephase; wrapper llama_decode can include multiple host/native stages.",
+    "Profiling options match but NVTX label/range counts differ (Hyle1782 vspeer495). Per-label instrumentation overhead is not independently excluded from hostpath differences.",
+    "Graph envelope contains internal graph scheduling/gaps and is not pure kernel busytime. Before/graph/after partition is compared only where both roots contain exactlyone graph.",
+    "CUDAAPI wall spans can nest/includeGPUwait/driver/profiler interception. Their differences are not recoverableCPUselftime.",
+    "Scheduled-onCPU includes activepolling and interrupts. Read both CPU-ID discrepancy reports before interpreting small differences.",
+    "Sparse public/PDB symbol labels alone are not exactfunction bounds. Refine against actual StaticMAP+PE.pdata without treating nearestpublic names as a hotspot.",
+    "Same physical rows/predictions does not establish bitwise equality of all intermediate math or erase differences in APIs/state/output boundaries.",
+    "Hyle and peer were profiled at different times, each once, with17 versus4 phase labels. Instrumentation, debug/link layout, GPU/CPU clocks and system load can affect differences.",
+    "Graph-level GPU envelope includes internal graph gaps; it is not kernel busytime or a device roofline.",
+    "CUDA API spans include nested driver/profiler work and waiting. Scheduled-onCPU includes polling, kernel and interrupts; all interval categories overlap as specified.",
+    "No loss/overflow diagnostic found is not proof of zero ETW loss. Raw profiler warnings and finite sampling/CPU-ID discrepancy evidence are retained.",
+    "No new prefill/decode TPS, RAM/VRAM benefit, product optimization or MTP performance result is established by this diagnostic.",
+    "The preparation profile-plan copied one Hyle-only wording string; actual peer command, source, output authority and complete work checks define this run."
+  ],
+  "archive": {
+    "path": "inference-b2-peer-cpu-critical-2026-10-26.zip",
+    "bytes": 5041175,
+    "sha256": "5b980f27ef0ef2cfd730b71b51519171f943222a2bdb4e056c58370b6370ba6d",
+    "members": 103,
+    "verification": "ZIP CRC and every member length/SHA256 checked",
+    "scope": "Two peer native-scope SQLite only; no whole-system SQLite/ETL/nsys reports, binaries, PDB/MAP or duplicate old Hyle datasets. Includes bounded current source/commands/logs/analysis and named new Hyle map-analysis summaries."
+  }
+}

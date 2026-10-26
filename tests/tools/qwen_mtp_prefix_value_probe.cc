@@ -148,7 +148,7 @@ int main(int argc,char**argv) {
     auto seed=model.create_session(prompt_shape,{},q::GraphRole::kMtpPrefill);
     model.prepare_evaluation(*seed,prompt,nullptr,q::GraphRole::kMtpPrefill);model.submit_evaluation(*seed);q::finish_evaluation(model, *seed,"seed",{},false);
     auto base=seed->head;const auto before=image(model,*base);
-    const std::array<std::int32_t,2> eos{248044,248046};std::size_t cases=0,perturbed=0,checked=0;
+    const auto &eos = q::model_eos_tokens;std::size_t cases=0,perturbed=0,checked=0;
     q::cache::SnapshotRef lagged;
     for(auto width:wide){
       auto ids=model.propose_recursive(*seed,width-1,eos);require(ids.size()==width,"finite fixture proposal hit EOS early");

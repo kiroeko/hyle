@@ -247,7 +247,8 @@ void cancel_batch(Observation &observation, q::Model &model,
   gate.wait_until_entered(); model.submit_evaluations();
   require(a->head == old_a.head && b->head == old_b.head, "batch submission prematurely changed a head");
   q::check(a->stop());
-  require(a->stopping && !b->stopping && episode->cancelled, "stopping one participant did not cancel its whole episode");
+  require(a->stopping && !b->stopping && !episode->cancelled && episode->discard_stopped_members,
+          "one withdrawn ordinary participant aborted its surviving peer");
   observation.dropped_live_completion = episode->completion.valid();
   require(observation.dropped_live_completion, "batch had no original live public Completion to abandon");
   episode->completion = {}; // Original Graph/native uses still own both candidates.
@@ -268,6 +269,11 @@ void cancel_batch(Observation &observation, q::Model &model,
   const auto native_drained = q::take(model.execution.common_context())->drain();
   if (!native_drained.IsCancelled() || native_drained.has_native_error()) q::check(native_drained);
   const auto drained = run->drain(); if (!drained.IsCancelled() || drained.has_native_error()) q::check(drained);
+  // This case intentionally abandons the public Completion, so its original
+  // owner explicitly aborts the episode. Stopping A alone no longer aborts B.
+  const auto abandoned = model.abort_episode();
+  if (!abandoned.status.IsCancelled() || abandoned.status.has_native_error()) q::check(abandoned.status);
+  require(abandoned.retired, "explicitly abandoned batch did not actually retire");
   const auto cancelled_retirement = a->try_retire();
   if (!cancelled_retirement.status.IsCancelled() || cancelled_retirement.status.has_native_error()) q::check(cancelled_retirement.status);
   require(cancelled_retirement.retired, "released original batch did not pass its actual typed retirement gates");

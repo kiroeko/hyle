@@ -213,7 +213,7 @@ DefaultRuleSelection qualified_default_selection(
         d->type == DataType::kFloat16 && d->rows == 32 && d->width == 2048)
       return {DefaultRuleProvider::kAten, policy(*d)};
   }
-  // Exact physical Qwen projection, including intermediate/output precision.
+  // Exact BF16 projection domain, including intermediate/output precision.
   if (const auto *p = op.get_if<MatMul>();
       p && p->accumulation_type == DataType::kFloat32 && in.size() == 2 && out.size() == 1 &&
       shape(in[0], {32, 2048}, DataType::kBFloat16) &&
