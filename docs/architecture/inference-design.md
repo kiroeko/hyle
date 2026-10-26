@@ -84,13 +84,13 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
 索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
-其它消费者与跨平台接线仍在检查，没有完整提速结论。
+CPU／CUDA的B2独立接受前缀也已检查，完整CUDA普通／MTP窗口另有实测；其它平台尾部及性能仍需核查。
 先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
 旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
 固定槽不自动消除provider复制：CUDA ggml的K1闭合片段已有GDN直接状态输出，不能再把旧的
 packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
-计算需独立承载：私有CUDA GDN／conv及Graph融合已通过下述有限检查，引擎已接原池但尚待完整消费者核查，
+计算需独立承载：私有CUDA GDN／conv及Graph融合已通过下述有限检查，真实Qwen消费者已观察到原生融合，
 不能把K1承载或地址复用记成整段能力已完成。
 
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
@@ -98,7 +98,7 @@ packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1�
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
 槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA／Apple／Vulkan Store已接通，
 CUDA窄链索引GDN／conv另有下述有限集成结果；共同批量控制及引擎接线已实现，
-Vulkan非4字节尾部及完整消费者检查仍待完成。
+Vulkan原码16位Gather／Store及精确短租约同步I/O已接通，仍不放宽权限或读写调用者padding。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
@@ -145,12 +145,15 @@ conv复用相同Artifact、Invocation、StoreBinding与退休回调，不另建�
 不伪造Compute Queue。组内尚有未取回事务时不得重写共享载体，各组不隐式互相重绑。
 取回的SlotBindings可clear旧source／候选后refill，保留原layout、计数、预算与元数据容量，
 仍核完整真实租约及generation，不缓存裸槽号代替权限。引擎现按layer／状态角色保留原事务和元数据容量，
-每步先准备完整新租约，再共同绑定；完整性能对照仍待完成。
+每步先准备完整新租约，再共同绑定；已有完整CUDA普通／MTP四臂窗口，其它工况仍待检查。
 共同机制已有[有限CPU／CUDA检查](../evidence/correctness/inference-batched-slot-controls-2026-10-27.json)，
 覆盖同组全体绑定、固定切片、未全部取回时拒绝重写及晚期权限失败回滚。
 原生copy仍可有每组临时元数据分配，不把事务refill零分配推广为所有后端bind零分配。
 
-本批[引擎接线检查](../evidence/correctness/inference-engine-slot-state-2026-10-27.json)覆盖CPU／CUDA旧快照、状态复用、镜像及真实Qwen前缀；它不代签其它平台、MTP异成员或完整性能。
+[引擎接线检查](../evidence/correctness/inference-engine-slot-state-2026-10-27.json)覆盖CPU／CUDA旧快照、状态复用、镜像及真实Qwen前缀；
+后续[MTP异成员检查](../evidence/correctness/inference-mtp-batch-slots-2026-10-27.json)覆盖B2/K3的不同接受长度与独立目的槽，
+[完整CUDA性能窗口](../evidence/performance/inference-indexed-current-window-2026-10-27.json)另报普通／MTP四项对照。
+各结果只支持其实际制品、工况和镜像，不代签其它平台或自然生成任务质量。
 引擎的history与递归状态分别绑定原池布局，不能复用对方的slot ID。普通K1选最终边界；
 MTP按batch-major `[B,K]`选接受前缀的原writer，未接受候选不公开。成功路径先保留所有普通输出，
 再由原whole-Graph成功见证取回KV append，最后取回状态Store并发布候选；
@@ -176,8 +179,12 @@ Vulkan的整行与pitch均4字节对齐时，原lowering已可按I32字别名选
 非4字节行或pitch现有[原码16位Gather](../evidence/correctness/inference-vulkan-raw16-gather-2026-10-27.json)：
 原checked-index先生成安全ID，实际uint16 shader只读选中行，精确描述符资格来自所选pipeline，不按数学dtype猜。
 BF16／F16部分源租约到Store、越界拒绝及原word路径已有有限检查；SPIR-V不含浮点转换。
-同步短租约D2H仍被原MemoryResource的4字节门拒绝，通用ready租约导入门也未放宽；
-不能把这条Graph索引链的通过推广为任意2字节同步I/O或导入。
+同步I/O现对合法偶数origin／长度剥离至多两个2字节边缘，中段保留原1MiB staging快路。
+边缘复用原16位CopyRecording，独立8B逻辑device scratch先全初始化，不读写调用者的相邻字节。
+两边缘在中段读写前一起预检；所有失败出口撤回两份准备，未知退休继续由原Runtime标错并保活实际Run。
+独立scratch资源不反向retain父MemoryState，避免控制器所有权环；原aligned与whole-owned私有padding路径保留。
+[三组有限检查](../evidence/correctness/inference-vulkan-halfword-io-2026-10-27.json)覆盖2／6字节、跨staging上限和释放wrapper后的短租约，
+没有设备故障注入结论。odd partial仍拒绝，通用ready租约导入门也未放宽，不能推广为任意字节I/O或导入。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，
@@ -241,9 +248,15 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
+`--warmup-shapes planned`只遍历原`planned_slot_uses`中有实际用途的完整形状键，在ready前调用同一准备入口；
+默认lazy保留按需载体准备。它不提交设备工作、不推进状态或RNG，不保证未知尾长已准备，也不代表capture已录制。
+所有调用计划先冻结再创建载体，不复制一份预热注册表。额外载体和输入暂存的真实分配可能增加启动内存，
+执行预算与会话cache预算仍分别生效，不能把`--cache-bytes`宣称为整个Model显存上限。
+[有限CLI检查](../evidence/correctness/inference-warmup-shapes-2026-10-27.json)覆盖普通B2多轮lazy／planned非时间报告一致、MTP K2、fixed及非法policy拒绝；
+不把这些短进程的墙时当作吞吐证据。
 新`shape_admission_seconds`记录该次同步接纳并计入`step_seconds`；后者从成功输入预检后计到主机发布完成，
 不含输入预检、初始加载和失败接纳。原`seconds`仍是提交到完成的区间，不把CUDA Graph重录耗时当新形状编译延迟。
-长度分桶／预热和异长合批仍需分别接入；已有变长页表能力不能自动消除Qwen当前等T密集计算的约束。
+长度分桶、设备执行预热和异长合批仍需分别接入；已有变长页表能力不能自动消除Qwen当前等T密集计算的约束。
 
 会话淘汰后的完整恢复当前仍可重算已消费输入；已有页复制／传输不等于完整会话换出。
 主机状态镜像涵盖KV、递归／卷积状态、pending、RNG和来源配置，分别计量主机／设备预算，

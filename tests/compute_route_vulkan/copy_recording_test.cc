@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <algorithm>
 #include <string>
+#include <vector>
 
 #include "fixture.h"
 #include "vulkan_copy_internal.h"
@@ -197,5 +199,95 @@ TEST(VulkanCopyRecording, BfloatScalarLeaseRequiresItsInitializedFourByteCarrier
   // aligned native descriptor and a logical-only lease grants no tail.
   auto unaligned = owned.subview(2, 4).value();
   EXPECT_FALSE(device.binding(unaligned, description).has_value());
+}
+
+TEST(VulkanMemoryIO, ExactHalfwordEdgesPreserveNeighborsAndReadyLeaseLifetime) {
+  mem::QuotaAllocator quota(mem::system_allocator());
+  {
+    auto context = vulkan_test::context(&quota).value();
+    DrainGuard drain{context};
+    auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    auto pool = c::LeasePool::create(device.ref(), 32, {.max_blocks=1}).value();
+    auto writer = pool.allocate(32, 4).value();
+    std::array<std::byte,32> expected, observed{};
+    for (std::size_t i=0;i<expected.size();++i) expected[i]=std::byte((i*37+19)&255u);
+    ASSERT_TRUE(writer.view()->write(expected).ok());
+    struct Range { std::size_t offset, bytes; };
+    const std::array ranges{Range{0,2},Range{2,2},Range{2,4},Range{0,6},Range{2,6},Range{26,6}};
+    for (std::size_t round=0;round<ranges.size();++round) {
+      const auto [offset,bytes]=ranges[round];
+      auto exact = writer.view()->subview(offset,bytes).value();
+      std::vector<std::byte> payload(bytes), read(bytes);
+      for (std::size_t i=0;i<bytes;++i) payload[i]=std::byte((round*53+i*71+0x81)&255u);
+      auto status=exact.write(payload); ASSERT_TRUE(status.ok()) << status.message();
+      std::copy(payload.begin(),payload.end(),expected.begin()+offset);
+      status=exact.read(read); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(read,payload);
+      status=writer.view()->read(observed); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(observed,expected);
+      const auto fill=std::byte(0xc0u+round);
+      status=exact.fill(fill); ASSERT_TRUE(status.ok()) << status.message();
+      std::fill_n(expected.begin()+offset,bytes,fill);
+      status=writer.view()->read(observed); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(observed,expected);
+    }
+    auto ready=writer.publish().value();
+    auto exact=ready.subview(26,6).value();
+    pool={}; device={}; // The actual ready allocation retains its controller.
+    std::array<std::byte,6> read{};
+    const auto status=exact.view()->read(read); ASSERT_TRUE(status.ok()) << status.message();
+    EXPECT_TRUE(std::equal(read.begin(),read.end(),expected.begin()+26));
+  }
+  // All synchronous work retired. A cached scratch/recording must not leave a
+  // MemoryState -> DeviceIO -> parent Buffer/controller ownership cycle.
+  EXPECT_EQ(quota.used(),0u);
+}
+
+TEST(VulkanMemoryIO, HalfwordRangeAcrossStagingCapacityPreservesBothNeighbors) {
+  auto context=vulkan_test::context().value();
+  DrainGuard drain{context};
+  auto device=v::MemoryResource::create(context,v::MemoryKind::kDevice).value();
+  constexpr std::size_t capacity=1024u*1024u, offset=2, bytes=capacity+8;
+  auto buffer=mem::Buffer::create(device.ref(),capacity+32,4).value();
+  std::vector<std::byte> expected(capacity+32),observed(expected.size()),payload(bytes),read(bytes);
+  for (std::size_t i=0;i<expected.size();++i) expected[i]=std::byte((i*13+47)&255u);
+  for (std::size_t i=0;i<payload.size();++i) payload[i]=std::byte((i*31+0x81)&255u);
+  ASSERT_TRUE(buffer.view().write(expected).ok());
+  auto exact=buffer.view().subview(offset,bytes).value();
+  auto status=exact.write(payload); ASSERT_TRUE(status.ok()) << status.message();
+  std::copy(payload.begin(),payload.end(),expected.begin()+offset);
+  status=exact.read(read); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(read,payload);
+  status=buffer.view().read(observed); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(observed,expected);
+  status=exact.fill(std::byte{0x57}); ASSERT_TRUE(status.ok()) << status.message();
+  std::fill_n(expected.begin()+offset,bytes,std::byte{0x57});
+  status=buffer.view().read(observed); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(observed,expected);
+}
+
+TEST(VulkanMemoryIO, WordAndOwnedOddFastPathsKeepOddPartialRejection) {
+  auto context=vulkan_test::context().value();
+  DrainGuard drain{context};
+  auto device=v::MemoryResource::create(context,v::MemoryKind::kDevice).value();
+  auto words=mem::Buffer::create(device.ref(),16,4).value();
+  ASSERT_TRUE(words.view().fill(std::byte{0x31}).ok());
+  auto aligned=words.view().subview(4,8).value();
+  ASSERT_TRUE(aligned.fill(std::byte{0x72}).ok());
+  std::array<std::byte,16> observed{},expected;
+  expected.fill(std::byte{0x31}); std::fill_n(expected.begin()+4,8,std::byte{0x72});
+  ASSERT_TRUE(words.view().read(observed).ok()); EXPECT_EQ(observed,expected);
+  auto odd=mem::Buffer::create(device.ref(),3,1).value();
+  const std::array payload{std::byte{0x91},std::byte{0xa2},std::byte{0xb3}};
+  std::array<std::byte,3> read{};
+  auto status=odd.view().write(payload); ASSERT_TRUE(status.ok()) << status.message();
+  status=odd.view().read(read); ASSERT_TRUE(status.ok()) << status.message(); EXPECT_EQ(read,payload);
+  status=odd.view().fill(std::byte{0x47}); ASSERT_TRUE(status.ok()) << status.message();
+  auto partial=odd.view().subview(0,1).value();
+  std::array<std::byte,1> one{};
+  EXPECT_TRUE(partial.read(one).IsUnimplemented());
+  EXPECT_TRUE(partial.write(one).IsUnimplemented());
+  EXPECT_TRUE(partial.fill(std::byte{0x99}).IsUnimplemented());
+  auto unaligned=words.view().subview(1,2).value();
+  std::array<std::byte,2> two{};
+  EXPECT_TRUE(unaligned.read(two).IsUnimplemented());
+  EXPECT_TRUE(unaligned.write(two).IsUnimplemented());
+  EXPECT_TRUE(unaligned.fill(std::byte{0x99}).IsUnimplemented());
+  ASSERT_TRUE(odd.view().read(read).ok());
+  EXPECT_EQ(read,(std::array{std::byte{0x47},std::byte{0x47},std::byte{0x47}}));
 }
 } // namespace

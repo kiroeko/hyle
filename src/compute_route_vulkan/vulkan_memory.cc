@@ -141,13 +141,60 @@ struct MemoryState final : mem::MemoryResource {
 // One bounded synchronous controller per device MemoryState. The staging
 // resource outlives its Buffer; recording releases native owners first. No
 // Context/Queue or executable is constructed on a read/write/fill call.
+struct DeviceIOEdges final {
+  // Neither this private resource nor its tokens retain the parent resource.
+  // Native Runs retain the actual Buffer/Device independently after failure.
+  std::unique_ptr<MemoryState> resource;
+  mem::Buffer storage;
+  std::shared_ptr<CopyRecording> recording;
+  bool initialized = false;
+};
 struct DeviceIO final {
   static constexpr std::size_t capacity = 1024u * 1024u;
   std::unique_ptr<MemoryState> staging_resource;
   mem::Buffer staging;
   std::shared_ptr<CopyRecording> recording;
+  std::unique_ptr<DeviceIOEdges> edges;
   Status failure;
 };
+namespace {
+Status clear_io_recording(MemoryState &owner, std::shared_ptr<CopyRecording> &recording) noexcept {
+  if (!recording) return Status::Ok();
+  const auto cleared = clear_copy_recording(*recording);
+  if (!cleared.ok()) {
+    // Raw resource IO has no F1 episode preventing another Graph/resource
+    // admission. Unknown retirement poisons the original Runtime, not just
+    // this cache. The original pending Run owns buffers and pipeline.
+    {
+      std::lock_guard lock(owner.runtime->mutex);
+      owner.runtime->failure.Update(cleared);
+    }
+    owner.io->failure.Update(cleared);
+    // Drop the reusable root, which may retain a parent controller. Never
+    // rebuild a failed cache and erase the actual pending boundary.
+    recording.reset();
+  }
+  return cleared;
+}
+Status finish_io_copy(MemoryState &owner, std::shared_ptr<CopyRecording> &recording,
+                      Status status) noexcept {
+  if (status.ok()) {
+    auto completed = submit_copy_recording(*recording);
+    if (!completed) status = std::move(completed).error();
+    else status = completed->wait();
+  } // Original Completion releases its actual Run before the clear gate.
+  status.Update(clear_io_recording(owner, recording));
+  if (!status.ok()) owner.io->failure.Update(status);
+  return status;
+}
+Status clear_io_preparations(MemoryState &owner, Status status) noexcept {
+  if (!owner.io) return status;
+  status.Update(clear_io_recording(owner, owner.io->recording));
+  if (owner.io->edges)
+    status.Update(clear_io_recording(owner, owner.io->edges->recording));
+  return status;
+}
+} // namespace
 MemoryState::~MemoryState() noexcept = default;
 
 Status MemoryState::read(void *handle, std::size_t offset,
@@ -189,20 +236,24 @@ Status MemoryState::device_io(void *handle, std::size_t offset, std::size_t byte
       bytes > token->buffer->allocation_bytes - token->buffer->offset - offset ||
       !std::in_range<std::int64_t>(token->logical_bytes))
     return Status::OutOfRange("Vulkan synchronous IO exceeds its typed logical/native allocation");
-  if ((static_cast<std::size_t>(token->buffer->offset) + offset) & 3u)
-    return Status::Unimplemented("Vulkan synchronous device IO requires exact four-byte aligned ranges");
+  const auto origin = static_cast<std::size_t>(token->buffer->offset) + offset;
+  bool halfword = (origin & 3u) != 0;
+  if (halfword && ((origin & 1u) || (bytes & 1u)))
+    return Status::Unimplemented("Vulkan synchronous device IO requires word or exact halfword ranges");
   auto transfer_bytes = bytes;
-  if (bytes & 3u) {
+  if ((bytes & 3u) && !halfword) {
     // Only a complete original allocation owns its private transfer padding.
     // Never widen a subrange, alias, or imported owner into adjacent bytes.
     HYLE_ASSIGN_OR_RETURN(auto padded, buffer_capacity(token->logical_bytes));
-    if (offset || bytes != token->logical_bytes || token->buffer->is_view ||
+    const bool whole = !(offset || bytes != token->logical_bytes || token->buffer->is_view ||
         token->buffer->external_owner || token->buffer->offset ||
         token->buffer->memory == VK_NULL_HANDLE ||
         token->buffer->bytes != padded || padded > token->buffer->allocation_bytes ||
-        !std::in_range<std::size_t>(padded))
+        !std::in_range<std::size_t>(padded));
+    if (whole) transfer_bytes = static_cast<std::size_t>(padded);
+    else if (!(bytes & 1u)) halfword = true;
+    else
       return Status::Unimplemented("Vulkan synchronous device IO cannot pad an unaligned partial range");
-    transfer_bytes = static_cast<std::size_t>(padded);
   }
   if (!std::in_range<std::int64_t>(transfer_bytes))
     return Status::OutOfRange("Vulkan synchronous IO transfer extent overflows");
@@ -221,76 +272,131 @@ Status MemoryState::device_io(void *handle, std::size_t offset, std::size_t byte
       io = std::move(candidate);
     }
     HYLE_RETURN_IF_ERROR(io->failure);
-    // Re-export one short-lived control token, not the payload. Exact Mem
-    // subviews then use the same typed range validator as ordinary native
-    // CopyRecording; no new staging/Run is allocated per call or per chunk.
-    // The private whole-allocation proof above may authorize its padding for
-    // this control token only; the caller's original logical extent is intact.
-    const auto exported_bytes = transfer_bytes != bytes ? transfer_bytes : token->logical_bytes;
-    HYLE_ASSIGN_OR_RETURN(auto description, TensorDesc::dense(DataType::kUInt8,
-        std::array<std::int64_t, 1>{static_cast<std::int64_t>(exported_bytes)}));
-    HYLE_ASSIGN_OR_RETURN(auto target, MemoryAccess::export_storage(runtime,
-        mem::MemoryResourceRef(*this), Access::tensor(description, token->buffer), allocator));
-    for (std::size_t done = 0; done < bytes;) {
-      const auto count = (std::min)(DeviceIO::capacity, bytes - done);
-      const auto copied = (std::min)(DeviceIO::capacity, transfer_bytes - done);
-      HYLE_ASSIGN_OR_RETURN(auto stage, io->staging.view().subview(0, copied));
-      HYLE_ASSIGN_OR_RETURN(auto payload, stage.subview(0, count));
-      HYLE_ASSIGN_OR_RETURN(auto device, target.view().subview(offset + done, copied));
-      Status status;
-      if (operation == DeviceIOKind::kWrite)
-        status = payload.write(std::span(source + done, count));
-      else if (operation == DeviceIOKind::kFill)
-        status = payload.fill(value);
-      if (status.ok() && operation != DeviceIOKind::kRead && copied != count) {
-        HYLE_ASSIGN_OR_RETURN(auto padding, stage.subview(count, copied - count));
-        status = padding.fill(std::byte{0});
+    const auto perform = [&]() -> Status {
+      // Re-export one short-lived control token, not the payload. Exact Mem
+      // subviews then use the same typed range validator as ordinary native
+      // CopyRecording; no new staging/Run is allocated per call or per chunk.
+      // The private whole-allocation proof above may authorize its padding for
+      // this control token only; the caller's original logical extent is intact.
+      const auto exported_bytes = transfer_bytes != bytes ? transfer_bytes : token->logical_bytes;
+      HYLE_ASSIGN_OR_RETURN(auto description, TensorDesc::dense(DataType::kUInt8,
+          std::array<std::int64_t, 1>{static_cast<std::int64_t>(exported_bytes)}));
+      HYLE_ASSIGN_OR_RETURN(auto target, MemoryAccess::export_storage(runtime,
+          mem::MemoryResourceRef(*this), Access::tensor(description, token->buffer), allocator));
+      const auto copy = [&](std::shared_ptr<CopyRecording> &recording,
+                            std::span<const compute::detail::CopyBackendRange> ranges) noexcept {
+        return finish_io_copy(*this, recording, bind_copy_recording(*recording, ranges));
+      };
+      const auto mapped_status = [&](Status status) noexcept {
+        if (!status.ok()) io->failure.Update(status);
+        return status;
+      };
+      const auto head = halfword && (origin & 3u) ? (std::min)(bytes, std::size_t{2}) : 0;
+      const auto middle = halfword ? (bytes-head) & ~std::size_t{3} : bytes;
+      const auto tail = halfword ? bytes-head-middle : 0;
+      std::array<compute::detail::CopyBackendRange, 2> edges;
+      std::size_t edge_count = 0;
+      if (halfword) {
+        if (!io->edges) {
+          auto candidate = std::make_unique<DeviceIOEdges>();
+          candidate->resource = std::make_unique<MemoryState>();
+          candidate->resource->runtime = runtime;
+          candidate->resource->kind = MemoryKind::kDevice;
+          candidate->resource->allocator = allocator;
+          // retain_tokens stays false, exactly like the original private
+          // staging resource. This 8B owner must not refer back to this cache.
+          HYLE_ASSIGN_OR_RETURN(candidate->storage, mem::Buffer::create(
+              mem::MemoryResourceRef(*candidate->resource), 8, 4));
+          HYLE_ASSIGN_OR_RETURN(candidate->recording, prepare_copy_recording_runtime(
+              runtime, 2, allocator, 4, CopyRecordingMode::kReplayable, CopyGranularity::kHalfword));
+          io->edges = std::move(candidate);
+        }
+        HYLE_ASSIGN_OR_RETURN(auto stage, io->staging.view().subview(0, 8));
+        if (!io->edges->initialized) {
+          // Initialize every scratch byte through the original word transfer.
+          // Calling storage.write/fill here would recursively create DeviceIO.
+          HYLE_RETURN_IF_ERROR(mapped_status(stage.fill(std::byte{0})));
+          const compute::detail::CopyBackendRange zero{io->edges->storage.view(), stage};
+          HYLE_RETURN_IF_ERROR(copy(io->recording, std::span(&zero, 1)));
+          io->edges->initialized = true;
+        }
+        const auto edge = [&](std::size_t real_offset, std::size_t scratch_offset) noexcept -> Status {
+          HYLE_ASSIGN_OR_RETURN(auto exact, target.view().subview(offset+real_offset, 2));
+          HYLE_ASSIGN_OR_RETURN(auto scratch, io->edges->storage.view().subview(scratch_offset, 2));
+          edges[edge_count++] = operation == DeviceIOKind::kRead
+              ? compute::detail::CopyBackendRange{scratch, exact}
+              : compute::detail::CopyBackendRange{exact, scratch};
+          return Status::Ok();
+        };
+        if (head) HYLE_RETURN_IF_ERROR(edge(0, 0));
+        if (tail) HYLE_RETURN_IF_ERROR(edge(head+middle, 4));
+        // Both real boundaries are qualified together before any caller range
+        // is read/written. Every early exit below clears this prepared owner.
+        const auto bound = bind_copy_recording(*io->edges->recording, std::span(edges).first(edge_count));
+        if (!bound.ok()) return finish_io_copy(*this, io->edges->recording, bound);
       }
-      if (!status.ok()) { io->failure = status; return status; }
-      const compute::detail::CopyBackendRange range = operation == DeviceIOKind::kRead
-          ? compute::detail::CopyBackendRange{stage, mem::ConstBufferView(device)}
-          : compute::detail::CopyBackendRange{device, mem::ConstBufferView(stage)};
-      // Host staging writes have already flushed through the original base
-      // resource path. Keep this synchronous IO on the original compute queue.
-      status = bind_copy_recording(*io->recording, std::span(&range, 1));
-      if (status.ok()) {
-        auto completed = submit_copy_recording(*io->recording);
-        if (!completed) status = std::move(completed).error();
-        else {
-          status = completed->wait();
+      const auto copied_middle = halfword ? middle : transfer_bytes;
+      for (std::size_t done = 0; done < middle;) {
+        const auto count = (std::min)(DeviceIO::capacity, middle-done);
+        const auto copied = (std::min)(DeviceIO::capacity, copied_middle-done);
+        HYLE_ASSIGN_OR_RETURN(auto stage, io->staging.view().subview(0, copied));
+        HYLE_ASSIGN_OR_RETURN(auto payload, stage.subview(0, count));
+        HYLE_ASSIGN_OR_RETURN(auto device, target.view().subview(offset+head+done, copied));
+        Status status;
+        if (operation == DeviceIOKind::kWrite)
+          status = payload.write(std::span(source+head+done, count));
+        else if (operation == DeviceIOKind::kFill)
+          status = payload.fill(value);
+        if (status.ok() && operation != DeviceIOKind::kRead && copied != count) {
+          HYLE_ASSIGN_OR_RETURN(auto padding, stage.subview(count, copied - count));
+          status = padding.fill(std::byte{0});
+        }
+        if (!status.ok()) { io->failure = status; return status; }
+        const compute::detail::CopyBackendRange range = operation == DeviceIOKind::kRead
+            ? compute::detail::CopyBackendRange{stage, mem::ConstBufferView(device)}
+            : compute::detail::CopyBackendRange{device, mem::ConstBufferView(stage)};
+        // Host staging writes have already flushed through the original base
+        // resource path. Keep this synchronous IO on the original compute queue.
+        HYLE_RETURN_IF_ERROR(copy(io->recording, std::span(&range, 1)));
+        if (operation == DeviceIOKind::kRead) {
+          status = payload.read(std::span(destination+head+done, count));
+          if (!status.ok()) { io->failure = status; return status; }
+        }
+        done += count;
+      }
+      if (halfword) {
+        HYLE_ASSIGN_OR_RETURN(auto stage, io->staging.view().subview(0, 8));
+        if (operation == DeviceIOKind::kRead) {
+          HYLE_RETURN_IF_ERROR(finish_io_copy(*this, io->edges->recording, Status::Ok()));
+          const compute::detail::CopyBackendRange read{stage, io->edges->storage.view()};
+          HYLE_RETURN_IF_ERROR(copy(io->recording, std::span(&read, 1)));
+          if (head) {
+            HYLE_ASSIGN_OR_RETURN(auto payload, stage.subview(0, 2));
+            HYLE_RETURN_IF_ERROR(mapped_status(payload.read(std::span(destination, 2))));
+          }
+          if (tail) {
+            HYLE_ASSIGN_OR_RETURN(auto payload, stage.subview(4, 2));
+            HYLE_RETURN_IF_ERROR(mapped_status(payload.read(std::span(destination+head+middle, 2))));
+          }
+        } else {
+          HYLE_RETURN_IF_ERROR(mapped_status(stage.fill(std::byte{0})));
+          const auto put = [&](std::size_t real_offset, std::size_t scratch_offset) noexcept -> Status {
+            HYLE_ASSIGN_OR_RETURN(auto payload, stage.subview(scratch_offset, 2));
+            return mapped_status(operation == DeviceIOKind::kFill ? payload.fill(value)
+                : payload.write(std::span(source+real_offset, 2)));
+          };
+          if (head) HYLE_RETURN_IF_ERROR(put(0, 0));
+          if (tail) HYLE_RETURN_IF_ERROR(put(head+middle, 4));
+          const compute::detail::CopyBackendRange write{io->edges->storage.view(), stage};
+          HYLE_RETURN_IF_ERROR(copy(io->recording, std::span(&write, 1)));
+          HYLE_RETURN_IF_ERROR(finish_io_copy(*this, io->edges->recording, Status::Ok()));
         }
       }
-      // clear has its own actual-retirement gate, including accepted failures.
-      // A failed controller stays retained/failed; it is never silently rebuilt
-      // to erase the original native diagnosis or overwrite pending staging.
-      const auto cleared = clear_copy_recording(*io->recording);
-      if (!cleared.ok()) {
-        // Raw resource IO has no F1 episode preventing another resource/Graph
-        // from reusing a pool page. If retirement is not proved, block every
-        // new native admission on this Runtime; original owners/drain still
-        // retain and retire the accepted work. A local cache flag is not enough.
-        std::lock_guard lock(runtime->mutex);
-        runtime->failure.Update(cleared);
-      }
-      status.Update(cleared);
-      if (!status.ok()) {
-        io->failure = status;
-        // The failed cache will never replay. Relinquish its recording root:
-        // the original pending Run already owns both actual native buffers.
-        // Keeping recording->Buffer->controller here would create a permanent
-        // controller->DeviceIO cycle even after a later real native drain.
-        if (!cleared.ok()) io->recording.reset();
-        return status;
-      }
-      if (operation == DeviceIOKind::kRead) {
-        status = payload.read(std::span(destination + done, count));
-        if (!status.ok()) { io->failure = status; return status; }
-      }
-      done += count;
-    }
-    return Status::Ok();
+      return Status::Ok();
+    }();
+    return perform.ok() ? perform : clear_io_preparations(*this, perform);
   } catch (const std::bad_alloc &) {
-    return Status::ResourceExhausted("Vulkan synchronous IO cold metadata");
+    return clear_io_preparations(*this, Status::ResourceExhausted("Vulkan synchronous IO cold metadata"));
   }
 }
 

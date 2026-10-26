@@ -1,0 +1,406 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "title": "Exact halfword synchronous Vulkan memory I/O",
+  "status": "IMPLEMENTED_FINITE_SCOPE_PASS",
+  "scope": "Synchronous read/write/fill of actual even-origin/even-length native spans, including exact two-byte partial ReadLease spans. The original word-aligned path and whole-owned odd allocation padding path are preserved. No Graph permission or public ABI widening.",
+  "current_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory.cc",
+      "bytes": 56430,
+      "sha256": "2293adf3f6417b30f110b3df35b9b066f43ac88e8228aa7be18f8b72a2be1c01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\copy_recording_test.cc",
+      "bytes": 17796,
+      "sha256": "f441c6b3d8f65ecdd760c7ac472ad31b8748f8a2241088bd7b6d800d4c87f444"
+    }
+  ],
+  "implementation": [
+    "The original 1MiB staging, word CopyRecording, Runtime FIFO and Completion retirement mechanism remain. A lazy independent 8B device scratch joins at most head2 + word-aligned middle + tail2; edge copies use the existing native halfword Recording, not a host payload fallback.",
+    "Both real edge ranges are prebound together before payload writes. Scratch is fully initialized through an original word copy; staging is never treated as STORAGE. Real source/destination logical ranges and neighboring padding are not expanded.",
+    "Scratch MemoryState does not retain the parent resource. Every prepared-word/edge path is cleared after Completion scope, including early errors. Unknown retirement poisons the original runtime/cache and drops reusable recording roots; the original pending Run owns actual buffers/pipeline until retirement. Host map/read/write/fill errors remain recorded in the cache."
+  ],
+  "builds": {
+    "actual_CXX_processes": 2,
+    "distinct_CXX_TUs": 2,
+    "link_processes": 1,
+    "compiled": [
+      {
+        "unit": {
+          "name": "memory",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_memory.cc",
+            "bytes": 56430,
+            "sha256": "2293adf3f6417b30f110b3df35b9b066f43ac88e8228aa7be18f8b72a2be1c01"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\recipes\\memory.json",
+            "bytes": 3110,
+            "sha256": "959b1d90b0c61e82e24d16f07c8d74b1d2cc5df201b301b57eafc775d989db09"
+          }
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\compile\\memory\\unit.obj",
+          "bytes": 893190,
+          "sha256": "e17555c6da380de488e56a635869b8ffd0a61f318c532cf122ee85206ef3e6f4"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 29516,
+          "seconds": 1.9041241999948397
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\compile\\memory\\actual-dependencies.json",
+          "bytes": 49412,
+          "sha256": "60558fcbcecaca48b70b24a2daa03280a00a2571e5e9bb6e2c3662f2d5324900"
+        }
+      },
+      {
+        "unit": {
+          "name": "test",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\copy_recording_test.cc",
+            "bytes": 17796,
+            "sha256": "f441c6b3d8f65ecdd760c7ac472ad31b8748f8a2241088bd7b6d800d4c87f444"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\recipes\\test.json",
+            "bytes": 3978,
+            "sha256": "f35929aed7947955223f84f088c4e57d6aa791be8a5187d62f4dfa98e61b3248"
+          }
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\compile\\test\\unit.obj",
+          "bytes": 940310,
+          "sha256": "22a9772e5d2c91d8569119e0f3901190a0dea8750a1dbdcbbb22c1aa70c6d63b"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 27044,
+          "seconds": 2.479693600034807
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\compile\\test\\actual-dependencies.json",
+          "bytes": 63284,
+          "sha256": "978b43a459b4d7c1dcd166806963c53ddeea3b9cdf1d961c1541e02dd5585eb8"
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 57632,
+      "seconds": 1.4077300000353716
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\bin\\halfword-io-test.exe",
+      "bytes": 67740160,
+      "sha256": "ba60e45f98fde3a942fe1dae6c6dc11607730b252fea45f04a907dfc9de20c3a"
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\ready.json",
+      "bytes": 3600,
+      "sha256": "026d561a365e90f97ee69b9fae3fa7f07cbf66e367a9d7e4314e99ed4f668dec"
+    },
+    "link_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\link-inputs.json",
+      "bytes": 37653,
+      "sha256": "43b7b0f5cb4485683d58a4820050512b2d154d04a5acc2c5331a9dd3f616a528"
+    },
+    "linked_input_count": 146,
+    "reuse": "The exact previous raw16 fixture link closure is reused, replacing only vulkan_memory.cc and this existing test TU. Per-object hashes and actual compiler dependencies are retained. Earlier raw16/halfword CopyRecording/shaders/native frontend remain the same cached objects; no SDK, shader, NVCC, model or download operation in this batch.",
+    "baseline_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-raw16-gather-20261027\\fixture2\\ready.json",
+      "bytes": 1977,
+      "sha256": "55bc6de7467f24a6327abb103e46907cbae17a2c45152c864d56c3659459aa72"
+    },
+    "replaced_inputs": {
+      "memory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stream-padding-20261026\\compile\\vulkan-memory\\unit.obj",
+      "test": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-raw16-gather-20261027\\fixture2\\compile\\unit.obj"
+    },
+    "SDK_builds": 0,
+    "shader_builds": 0,
+    "NVCC_processes": 0,
+    "downloads": 0
+  },
+  "execution": {
+    "test_processes": 1,
+    "actual_cases": 3,
+    "passes": 3,
+    "failures": 0,
+    "process": {
+      "exit": 0,
+      "pid": 50848,
+      "seconds": 0.5614096000208519
+    },
+    "filter": "VulkanMemoryIO.*",
+    "results": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\results.xml",
+      "bytes": 1191,
+      "sha256": "4485b0b675d4c75aa92103ebcc7330e3b3d957a5f054698b714cd20bab8f8d91"
+    },
+    "cases": [
+      {
+        "name": "ExactHalfwordEdgesPreserveNeighborsAndReadyLeaseLifetime",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\copy_recording_test.cc",
+        "line": "204",
+        "status": "run",
+        "result": "completed",
+        "time": "0.195",
+        "timestamp": "2026-10-27T05:44:05.814",
+        "classname": "VulkanMemoryIO"
+      },
+      {
+        "name": "HalfwordRangeAcrossStagingCapacityPreservesBothNeighbors",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\copy_recording_test.cc",
+        "line": "243",
+        "status": "run",
+        "result": "completed",
+        "time": "0.066",
+        "timestamp": "2026-10-27T05:44:06.010",
+        "classname": "VulkanMemoryIO"
+      },
+      {
+        "name": "WordAndOwnedOddFastPathsKeepOddPartialRejection",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_vulkan\\copy_recording_test.cc",
+        "line": "263",
+        "status": "run",
+        "result": "completed",
+        "time": "0.057",
+        "timestamp": "2026-10-27T05:44:06.076",
+        "classname": "VulkanMemoryIO"
+      }
+    ],
+    "attempts": "Each CXX TU, link and actual test process ran once. No failed attempt or retry in this batch; no previously passing Gather/Store suite rerun."
+  },
+  "verified": [
+    "Exact read/write/fill at offsets/lengths (0,2),(2,2),(2,4),(0,6),(2,6),(26,6); every neighboring byte compared after each operation.",
+    "A true six-byte ready ReadLease remains readable after pool/public-resource wrappers are released; all owners released at test end with QuotaAllocator usage zero.",
+    "A range at offset2 of length1MiB+8 covers two edges and a word middle spanning the original staging capacity; write/read/fill preserve both neighbors.",
+    "Original aligned I/O and full owned 3B allocation read/write/fill pass; partial odd bytes/odd native origin remain rejected without changing original bytes."
+  ],
+  "unverified_and_limits": [
+    "No device/runtime fault injection, validation-layer run, full model, throughput comparison or platform/device matrix. Failure/unknown-retirement cleanup is source-reviewed, not runtime fault-injection evidence.",
+    "This adds even native-origin/even-length device I/O. Arbitrary odd-byte partial I/O remains unsupported; the existing complete-owned odd allocation exception is retained.",
+    "Generic ReadLease tensor import still retains its original four-byte carrier gate; this receipt does not claim arbitrary two-byte tensor bindings. The existing exact halfword copy path requires the actually enabled native storage16 feature and real device-backed storage.",
+    "This targeted I/O run closes the short-lease read limitation observed by the previous raw16 Gather receipt; that older experiment and its initial failures remain unchanged. No complete Gather or engine rerun is claimed."
+  ],
+  "cleanup": {
+    "logical_removed_bytes": 279010816.0,
+    "record": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\cleanup-result.json",
+      "bytes": 1278,
+      "sha256": "93e85bb88dfb8bc4baeadefdf0e6f7dd115f502d756f03ceb4318ae33d474ddd"
+    },
+    "explanation": "Parent executed repository test.ps1 after exact path/hash checks, deleting three superseded EXEs only. Their original image identities and run logs remain; the current I/O image, sources, OBJ and recipes are retained. Archive does not require old image files to exist."
+  },
+  "members": [
+    {
+      "name": "build.py",
+      "bytes": 6311,
+      "sha256": "ea30f4281cefb50dea43e54388992a2eaaebe021c3f6658df662606b29664e10"
+    },
+    {
+      "name": "cleanup-executed.ps1",
+      "bytes": 2399,
+      "sha256": "681e9933c0361fe0a24622d7b1ec8f8bc695145272af692f0e7e755a2c8ab6c7"
+    },
+    {
+      "name": "cleanup-result.json",
+      "bytes": 1278,
+      "sha256": "93e85bb88dfb8bc4baeadefdf0e6f7dd115f502d756f03ceb4318ae33d474ddd"
+    },
+    {
+      "name": "compile/memory/actual-dependencies.json",
+      "bytes": 49412,
+      "sha256": "60558fcbcecaca48b70b24a2daa03280a00a2571e5e9bb6e2c3662f2d5324900"
+    },
+    {
+      "name": "compile/memory/command.json",
+      "bytes": 3110,
+      "sha256": "959b1d90b0c61e82e24d16f07c8d74b1d2cc5df201b301b57eafc775d989db09"
+    },
+    {
+      "name": "compile/memory/dependencies.json",
+      "bytes": 24965,
+      "sha256": "1d5498a089a2e75f79f976ad44d6dd4908fbd06939ece62e664cbe9c8ed08d4b"
+    },
+    {
+      "name": "compile/memory/process.json",
+      "bytes": 70,
+      "sha256": "78723a21722e30b999e0c93068795a5413a47e02ee8b28c1f9c2a0be9998e7e3"
+    },
+    {
+      "name": "compile/memory/running.json",
+      "bytes": 22,
+      "sha256": "8ff23043e35bce6157640752c8df1499704b0cacd3fffc950578cf567aa090f5"
+    },
+    {
+      "name": "compile/memory/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/memory/stdout.log",
+      "bytes": 18,
+      "sha256": "f99246f2ca047ddc5ce4c84078d9d30328895231ead6568a7892f31f492f577f"
+    },
+    {
+      "name": "compile/test/actual-dependencies.json",
+      "bytes": 63284,
+      "sha256": "978b43a459b4d7c1dcd166806963c53ddeea3b9cdf1d961c1541e02dd5585eb8"
+    },
+    {
+      "name": "compile/test/command.json",
+      "bytes": 3978,
+      "sha256": "f35929aed7947955223f84f088c4e57d6aa791be8a5187d62f4dfa98e61b3248"
+    },
+    {
+      "name": "compile/test/dependencies.json",
+      "bytes": 32810,
+      "sha256": "2ff1181b04e63cc688710a1a02efba9dc724dad45646defe8d3c46a4a922d7c6"
+    },
+    {
+      "name": "compile/test/process.json",
+      "bytes": 69,
+      "sha256": "f67be458bf1ce0200e23550ffaa4c0857b98e9712a4442d8e1c46d11c7f8264b"
+    },
+    {
+      "name": "compile/test/running.json",
+      "bytes": 22,
+      "sha256": "2532db65a87786bfa1bd597edc6dab0ea0d51d2240b312e43e26c6829f32270c"
+    },
+    {
+      "name": "compile/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/test/stdout.log",
+      "bytes": 24,
+      "sha256": "f927c6e1a1049337ded1bfe02bc4ae608a34db4da72c2695f1ab127ab9befb53"
+    },
+    {
+      "name": "link-inputs.json",
+      "bytes": 37653,
+      "sha256": "43b7b0f5cb4485683d58a4820050512b2d154d04a5acc2c5331a9dd3f616a528"
+    },
+    {
+      "name": "link/command.json",
+      "bytes": 20438,
+      "sha256": "f733fec8b6fc87127b1aebfef3bf4c5b20676c4a60295c530daa5b9212827da8"
+    },
+    {
+      "name": "link/process.json",
+      "bytes": 70,
+      "sha256": "099a7f5caa42dbd7f490db31e4b1e10ce4a6e79610566c273ded27b250071c18"
+    },
+    {
+      "name": "link/running.json",
+      "bytes": 22,
+      "sha256": "85612cce9533c8c7ad3bfa55b7b223846fdcf4f46bac9a4d584f512abdfd17f1"
+    },
+    {
+      "name": "link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "link/stdout.log",
+      "bytes": 221,
+      "sha256": "3ea9bb74ebf49f0d7d9bad11240cc06685b1a3ae9aa4abdd12e631d1540cadcf"
+    },
+    {
+      "name": "partial-build.json",
+      "bytes": 2390,
+      "sha256": "6704f579ceb46d24268974ddd5d79acbb86b20690c59000291b81f91afe0d5d1"
+    },
+    {
+      "name": "plan.json",
+      "bytes": 4735,
+      "sha256": "edaf92bb6bc97a6256cef09be725a3859df80ed36633c04054c709c99b29bc74"
+    },
+    {
+      "name": "publish.py",
+      "bytes": 8758,
+      "sha256": "ef4c2073cefc8be50c249f8c61fa31e54370b73d94be3a9c0363ba7b66275c86"
+    },
+    {
+      "name": "ready.json",
+      "bytes": 3600,
+      "sha256": "026d561a365e90f97ee69b9fae3fa7f07cbf66e367a9d7e4314e99ed4f668dec"
+    },
+    {
+      "name": "recipes/memory.json",
+      "bytes": 3110,
+      "sha256": "959b1d90b0c61e82e24d16f07c8d74b1d2cc5df201b301b57eafc775d989db09"
+    },
+    {
+      "name": "recipes/test.json",
+      "bytes": 3978,
+      "sha256": "f35929aed7947955223f84f088c4e57d6aa791be8a5187d62f4dfa98e61b3248"
+    },
+    {
+      "name": "results.xml",
+      "bytes": 1191,
+      "sha256": "4485b0b675d4c75aa92103ebcc7330e3b3d957a5f054698b714cd20bab8f8d91"
+    },
+    {
+      "name": "run/command.json",
+      "bytes": 396,
+      "sha256": "4bf0c27d5b08284cce289b729d80a863190c5316d173191e5cf0261724faa197"
+    },
+    {
+      "name": "run/process.json",
+      "bytes": 70,
+      "sha256": "0041df7ad2d6a9973188d1b54ce6306b50f648e958cae20e5a01a86085d727b9"
+    },
+    {
+      "name": "run/running.json",
+      "bytes": 22,
+      "sha256": "040c02fca5bf00e75b7042d4144f6119d3d36000987302ea60aa2a6ee6dcffbe"
+    },
+    {
+      "name": "run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run/stdout.log",
+      "bytes": 1039,
+      "sha256": "4faab41580166ad7f3298db68655f2a54d9ea0a2d2212f8ce2e9f5921a6445d1"
+    },
+    {
+      "name": "runtime.json",
+      "bytes": 7453,
+      "sha256": "8bd6bb6ded3e5505f2b82822d34682bd27a96e51fa9108d20dfd0cde5e350d75"
+    },
+    {
+      "name": "source-freeze.json",
+      "bytes": 13971,
+      "sha256": "c1f236d60bb182a682a98427080677c5cfa07f7c205a5d1edd4c2d37e47df4b4"
+    },
+    {
+      "name": "source/src/compute_route_vulkan/vulkan_memory.cc",
+      "bytes": 56430,
+      "sha256": "2293adf3f6417b30f110b3df35b9b066f43ac88e8228aa7be18f8b72a2be1c01"
+    },
+    {
+      "name": "source/tests/compute_route_vulkan/copy_recording_test.cc",
+      "bytes": 17796,
+      "sha256": "f441c6b3d8f65ecdd760c7ac472ad31b8748f8a2241088bd7b6d800d4c87f444"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 2060,
+      "sha256": "d2547fca501b4bc85cc8dd76cfc4d15891d2ab301fe9a3f00cbe62456fee5704"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-vulkan-halfword-io-2026-10-27.zip",
+    "bytes": 89896,
+    "sha256": "720e1c10bfbaea7f7932030cd99f89e64d998d90903d88bd023e9f5c0d291241"
+  },
+  "archive_manifest_sha256": "a175cc847b2d5e200103a03e53a505ccff0c10db716516f9b9e14644e6960e78",
+  "integrity": "Every archive member reopened and checked byte-for-byte and by SHA256; CRC passed. Current sources/snapshots, image, actual compiler records and XML checked before publication."
+}
