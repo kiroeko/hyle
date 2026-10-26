@@ -584,6 +584,37 @@ PagedArenaRead&PagedArenaRead::operator=(PagedArenaRead&&p)noexcept{if(this!=&p)
 PagedArenaRead::~PagedArenaRead(){if(data_)data_->decref();}
 BatchLayoutVersion PagedArenaRead::layout()const noexcept{return data_?data_->layout:BatchLayoutVersion{};}
 std::size_t PagedArenaRead::page_count()const noexcept{return data_?data_->pages.size():0;}
+Result<ReadLease> PagedArenaRead::page_prefix(std::uint32_t physical_page)const noexcept{
+  if(!data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));
+  const auto&arena=*data_->arena;
+  if(!arena.schema.owns(data_->layout))
+    return std::unexpected(Status::InvalidArgument("paged arena read layout is foreign"));
+  if(physical_page>=arena.slots.size())
+    return std::unexpected(Status::OutOfRange("paged arena read physical page is out of range"));
+  const auto page_rows=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
+  if(!page_rows || !arena.page_bytes || arena.page_bytes%page_rows)
+    return std::unexpected(Status::FailedPrecondition("paged arena read row geometry is invalid"));
+  // The immutable layout, not the slot's possibly advanced initialized_rows,
+  // limits this export even when its original guard covers the whole page.
+  const auto host=data_->layout.host();std::uint32_t rows=0;
+  for(std::size_t request=0;request<data_->layout.facts().requests;++request){
+    const auto end=std::size_t(host.kv_indptr[request+1]);
+    for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index)
+      if(std::uint32_t(host.page_indices[index])==physical_page)
+        rows=std::max(rows,index+1==end?std::uint32_t(host.last_page_lengths[request]):page_rows);
+  }
+  if(!rows || rows>page_rows)
+    return std::unexpected(Status::FailedPrecondition("paged arena read physical page is absent from its footprint"));
+  const ReadLease*selected=nullptr;
+  for(const auto&guard:data_->pages){
+    HYLE_ASSIGN_OR_RETURN(auto page,page_id(arena,guard));
+    if(page==physical_page)selected=&guard;
+  }
+  const auto bytes=std::size_t(rows)*(arena.page_bytes/page_rows);
+  if(!selected || selected->size()<bytes)
+    return std::unexpected(Status::FailedPrecondition("paged arena read page permission does not cover its logical prefix"));
+  return selected->subview(0,bytes);
+}
 Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaRead&read)noexcept{if(!read.data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);}
 Status detail::PagedArenaAccess::validate_storage(const PagedArenaRead&read,const CacheStorage&expected)noexcept{
   if(!read.data_)return Status::InvalidArgument("paged arena read is empty");
@@ -601,6 +632,7 @@ Status detail::PagedArenaAccess::validate_storage(const PagedArenaPendingRead&re
 }
 std::span<const ReadLease> detail::PagedArenaAccess::pages(const PagedArenaRead&read)noexcept{return read.data_?std::span<const ReadLease>(read.data_->pages):std::span<const ReadLease>{};}
 RowCacheLayoutVersion PagedRowCacheRead::layout()const noexcept{return detail::BatchLayoutAccess::row_layout(owner_.layout());}
+Result<ReadLease> PagedRowCacheRead::page_prefix(std::uint32_t physical_page)const noexcept{return owner_.page_prefix(physical_page);}
 RowCacheLayoutVersion PagedRowCachePendingRead::layout()const noexcept{return detail::BatchLayoutAccess::row_layout(owner_.layout());}
 Status detail::PagedArenaAccess::validate_storage(const PagedRowCachePendingRead&read,RowCacheEncoding expected)noexcept{
   if(!read.owner_.data_ || read.owner_.data_->arena->role!=BatchCacheRole::kRow)return Status::InvalidArgument("pending row cache frame is empty/foreign");

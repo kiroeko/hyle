@@ -5248,6 +5248,7 @@ struct PreparedGenerationCall final {
   std::vector<std::int32_t> verification_ids;
   std::vector<c::ReadLease> draft_log_probabilities;
   bool generation = false, full_hit = false, initial_prefix = false, prefill_complete = true;
+  EvaluationDisposition disposition = EvaluationDisposition::kNotPublished;
   LogitsInputs logits; // Snapshot the caller's input leases for this prepared episode.
   TextCompletion completion = TextCompletion::kEmitNext;
   std::size_t input_begin = 0;
@@ -5456,6 +5457,7 @@ bool make_generation_batch_room(Model &model, cache::PrefixCache *prefix,
 }
 
 void finish_generation_call(Model &model, PreparedGenerationCall &call) {
+  if (call.disposition == EvaluationDisposition::kCancelled) return;
   auto &request = *call.request;
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   if (call.full_hit && request.progress.prefilled) return; // A committed cache hit is observed once.
@@ -5505,8 +5507,14 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call) {
   (void)model;
 }
 
+// The serialized owner may process controls after the original native submit
+// and before completion. Static optional dispatch adds no callback table, native
+// executor or cost for the ordinary synchronous caller. A throwing control
+// observer aborts through the original episode owner, retaining unretired work.
+template<class AfterSubmit = std::nullptr_t>
 void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> calls, bool trace_states,
-    cache::PrefixCache *prefix = nullptr, std::span<const GenerationRequest> requests = {}) {
+    cache::PrefixCache *prefix = nullptr, std::span<const GenerationRequest> requests = {},
+    AfterSubmit &&after_submit = nullptr) {
   if (calls.empty()) return;
   // Validate every request's cold metadata before prefix eviction, proposal
   // work or preparing even the first uncommitted ledger slot.
@@ -5543,7 +5551,9 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       if (!call.generation) (void)request.warm_inputs.at(request.progress.turn_index);
     }
   }
-  if (calls.size() == 1 && calls[0].full_hit) { finish_generation_call(model, calls[0]); return; }
+  if (calls.size() == 1 && calls[0].full_hit) {
+    finish_generation_call(model, calls[0]); calls[0].disposition = EvaluationDisposition::kPublished; return;
+  }
   if (!make_generation_batch_room(model, prefix, calls, requests)) throw std::runtime_error("MTP batch exceeds committed head budget");
   const auto &eos = model_eos_tokens;
   if (calls[0].role == GraphRole::kVerify) {
@@ -5565,7 +5575,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         (void)rows;
         std::vector<PreparedGenerationCall> selected;
         for (const auto index : members) selected.push_back(std::move(calls[index]));
-        execute_generation_calls(model, selected, trace_states, prefix, requests);
+        execute_generation_calls(model, selected, trace_states, prefix, requests, after_submit);
         for (std::size_t j = 0; j < members.size(); ++j) calls[members[j]] = std::move(selected[j]);
       }
       return;
@@ -5592,6 +5602,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     outputs.push_back(evaluation_output(model, request.session, {call.name, &request.trace, trace_states},
         &call.step_seconds, generation ? &request.endpoint : &request.prefill_endpoint,
         nullptr, nullptr, request.ledger.get()));
+    outputs.back().disposition = &call.disposition;
     if (generation && role != GraphRole::kText) selections.push_back({request.session, call.pending, call.quota, call.draft_log_probabilities, call.maximum});
   }
   const auto observe = [&](std::size_t j, const CompletedEvaluationView &view) {
@@ -5600,6 +5611,10 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   };
   model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion); model.submit_evaluations();
   try {
+    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) {
+      try { after_submit(); }
+      catch (...) { (void)model.abort_episode(); throw; }
+    }
     if (generation && role == GraphRole::kVerify) model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
     else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
@@ -5620,7 +5635,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
 }
 
 void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache::PrefixCache *prefix) {
-  if (!call.initial_prefix || call.full_hit || !call.prefill_complete) return;
+  if (!call.initial_prefix || call.full_hit || !call.prefill_complete ||
+      call.disposition == EvaluationDisposition::kCancelled) return;
   auto &request = *call.request;
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   for (const auto &record : std::span(request.ledger->records).first(request.ledger->committed_count)) {
@@ -5703,6 +5719,10 @@ struct GenerationRequestAdapter final {
     }
   }
   void execute_wave(std::span<const inference::RequestKey> active) const { execute(active); }
+  hyle::Status stop(inference::RequestKey key) const noexcept {
+    const auto &request = requests[key.slot];
+    return request.session ? request.session->stop() : hyle::Status::Ok();
+  }
   void publish_turn(inference::RequestKey key) const {
     publish_generation_completed(model, requests[key.slot], prefix);
   }

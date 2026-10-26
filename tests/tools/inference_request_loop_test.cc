@@ -40,13 +40,18 @@ static_assert(!std::is_copy_constructible_v<i::RequestLoop> && !std::is_move_con
 struct Adapter final {
   std::array<std::optional<i::RequestProgress>, 4> progress_values;
   std::array<bool, 4> residents{};
+  std::array<bool, 4> stopped{};
   std::array<std::array<std::int32_t, 4>, 4> inputs{};
   std::array<std::size_t, 4> executions{}, publications{}, retirement_polls{}, eviction_polls{};
+  std::array<std::size_t, 4> stops{};
   std::array<i::RequestKey, 32> admission_order{};
   std::array<std::size_t, 32> active_at_admission{};
   std::size_t admissions = 0, waves = 0, resident_queries = 0;
   std::size_t deferred_terminal = 0, deferred_eviction = 0, physical_bytes = 4096;
   std::optional<std::size_t> reject_preflight, throw_after_commit, retirement_error;
+  std::optional<std::size_t> cancel_during_wave;
+  i::RequestLoop *cancel_owner = nullptr;
+  hyle::Status stop_result{};
   bool error_is_retired = false;
   hyle::Status error = hyle::Status::FromNative(hyle::StatusCode::Internal,
       {hyle::NativeErrorDomain::CudaDriver, 999}, "test native retirement failure");
@@ -78,25 +83,37 @@ struct Adapter final {
   }
   void execute_wave(std::span<const i::RequestKey> active) {
     ++waves;
+    if (cancel_during_wave) {
+      const auto found = std::find_if(active.begin(), active.end(), [&](auto key) { return key.slot == *cancel_during_wave; });
+      require(found != active.end() && cancel_owner, "missing original active cancellation target");
+      const auto width = active.size();
+      require(cancel_owner->cancel(*found, *this).ok() && cancel_owner->active().size() == width,
+          "active cancellation invalidated its borrowed original wave");
+      cancel_during_wave.reset();
+    }
     for (auto key : active) {
+      if (stopped[key.slot]) continue; // Explicit original model cancelled-member outcome.
       auto &p = progress(key); residents[key.slot] = true; ++executions[key.slot];
       const std::array output{static_cast<std::int32_t>(key.slot * 10 + p.generated.size() + 1)};
       require(p.observe_commit(p.observed_commits(), output, true, true, false), "host output was replayed");
       if (throw_after_commit == key.slot) throw std::runtime_error("test observer failed after commit");
     }
   }
+  hyle::Status stop(i::RequestKey key) {
+    ++stops[key.slot]; stopped[key.slot] = true; return stop_result;
+  }
   void publish_turn(i::RequestKey key) {
     require(progress(key).turn_done, "owner published an unfinished turn");
     ++publications[key.slot];
   }
   i::RetirementObservation retire(i::RequestKey key, i::RequestRetirement reason) {
-    auto &polls = reason == i::RequestRetirement::kCompleted ? retirement_polls[key.slot] : eviction_polls[key.slot];
+    auto &polls = reason == i::RequestRetirement::kEvicted ? eviction_polls[key.slot] : retirement_polls[key.slot];
     ++polls;
     if (retirement_error == key.slot) {
       if (error_is_retired) residents[key.slot] = false;
       return {error_is_retired, error};
     }
-    auto &remaining = reason == i::RequestRetirement::kCompleted ? deferred_terminal : deferred_eviction;
+    auto &remaining = reason == i::RequestRetirement::kEvicted ? deferred_eviction : deferred_terminal;
     if (remaining) { --remaining; return {false, {}}; }
     residents[key.slot] = false;
     return {true, {}}; // Pool backing/externally retained versions remain owned elsewhere.
@@ -148,6 +165,17 @@ void preflight_and_actual_eviction_facts() {
   require(done.completed == 1 && done.admitted == 1 && adapter.eviction_polls[0] == 2 &&
       owner.matches(a) && !adapter.residents[0] && adapter.physical_bytes == 4096,
       "eviction inferred physical release or destroyed the paused logical request");
+
+  i::RequestLoop transfer; transfer.prepare(2, 1); Adapter cancelled{1, 1};
+  cancelled.progress_values[0]->bind_open_turns(first, 1, 1);
+  const auto victim = transfer.enqueue(0); (void)transfer.pump_once(cancelled);
+  (void)transfer.enqueue(1); cancelled.deferred_eviction = 1;
+  require(transfer.pump_once(cancelled).waiting_retirement, "fixture did not retain the original eviction");
+  require(transfer.cancel(victim, cancelled).ok(), "pending eviction cancellation was not acknowledged");
+  const auto transferred = transfer.pump_once(cancelled);
+  require(transferred.completed == 2 && transferred.cancelled == 1 && cancelled.eviction_polls[0] == 1 &&
+      cancelled.retirement_polls[0] == 1 && !transfer.matches(victim),
+      "pending eviction was polled/reset twice or its cancelled terminal was lost");
 }
 
 void deferred_terminal_keeps_original_identity_without_execution() {
@@ -169,7 +197,9 @@ void deferred_terminal_keeps_original_identity_without_execution() {
   require(replacement.generation > old.generation && !owner.matches(old), "slot reuse revived an old key");
   rejects<std::out_of_range>([&] { owner.wake(old); });
   i::RequestLoop foreign; foreign.prepare(1, 1); const auto other = foreign.enqueue(0);
-  require(!owner.matches(other), "foreign window identity matched by slot and generation");
+  require(!owner.matches(other) && !owner.acknowledge(other, 0, adapter) &&
+      owner.cancel(other, adapter).IsNotFound() && !adapter.stops[0],
+      "foreign ACK/cancel reached an owner with the same slot and generation");
 }
 
 void errors_preserve_proof_and_committed_boundaries() {
@@ -201,31 +231,139 @@ void errors_preserve_proof_and_committed_boundaries() {
   require(resumed.completed == 2 && observed.executions[0] == 1 && observed.executions[1] == 1 &&
       observed.publications[0] == 1 && !partial.matches(a) && !partial.matches(b),
       "post-commit error replayed the completed turn or rolled back its survivor");
+
+  i::RequestLoop queued; queued.prepare(2, 1); Adapter withdrawn{1, 1};
+  const auto withdrawn_key = queued.enqueue(0); (void)queued.enqueue(1);
+  require(queued.cancel(withdrawn_key, withdrawn).ok() && queued.cancelled(withdrawn_key),
+      "queued cancellation did not retain its typed request intent");
+  require(queued.cancel(withdrawn_key, withdrawn).ok(), "duplicate cancel was not idempotent");
+  const auto withdrawn_result = queued.pump_once(withdrawn);
+  const auto stop_count = withdrawn.stops[0];
+  require(withdrawn_result.completed == 2 && withdrawn_result.cancelled == 1 &&
+      !withdrawn.progress_values[0]->turn_started() && !withdrawn.executions[0] && !withdrawn.publications[0] &&
+      queued.cancel(withdrawn_key, withdrawn).IsNotFound() && withdrawn.stops[0] == stop_count,
+      "queued/stale cancellation executed work, published a turn or reached a replacement owner");
+
+  i::RequestLoop shared; shared.prepare(2, 2); Adapter survivor{1, 1};
+  const auto cancelled_key = shared.enqueue(0), survivor_key = shared.enqueue(1);
+  survivor.cancel_owner = &shared; survivor.cancel_during_wave = 0;
+  const auto shared_result = shared.pump_once(survivor);
+  require(shared_result.completed == 2 && shared_result.cancelled == 1 && !survivor.executions[0] &&
+      !survivor.publications[0] && survivor.executions[1] == 1 && survivor.publications[1] == 1 &&
+      !shared.matches(cancelled_key) && !shared.matches(survivor_key),
+      "active cancellation changed its surviving peer or published a cancelled turn");
+
+  i::RequestLoop outside; outside.prepare(1, 1); Adapter idle_active{3};
+  const auto idle_key = outside.enqueue(0); (void)outside.pump_once(idle_active);
+  require(outside.cancel(idle_key, idle_active).ok(), "between-wave active cancellation failed");
+  const auto idle_stopped = outside.pump_once(idle_active);
+  require(idle_stopped.completed == 1 && idle_stopped.cancelled == 1 && !idle_stopped.executed &&
+      idle_active.executions[0] == 1 && idle_active.progress_values[0]->generated.size() == 1 &&
+      !idle_active.publications[0], "stopping idle-active request was prepared/executed again");
+
+  i::RequestLoop expected; expected.prepare(1, 1); Adapter cancelled_status{1};
+  const auto expected_key = expected.enqueue(0);
+  cancelled_status.stop_result = hyle::Status(hyle::StatusCode::Cancelled);
+  require(expected.cancel(expected_key, cancelled_status).IsCancelled(), "cancel did not return the original stop status");
+  cancelled_status.retirement_error = 0; cancelled_status.error_is_retired = true;
+  cancelled_status.error = hyle::Status(hyle::StatusCode::Cancelled);
+  require(expected.pump_once(cancelled_status).cancelled == 1, "expected retired cancellation became a native failure");
+
+  i::RequestLoop native; native.prepare(1, 1); Adapter native_status{1};
+  const auto native_key = native.enqueue(0); require(native.cancel(native_key, native_status).ok(), "native case cancel failed");
+  native_status.retirement_error = 0; native_status.error_is_retired = true;
+  native_status.error = hyle::Status::FromNative(hyle::StatusCode::Cancelled,
+      {hyle::NativeErrorDomain::CudaDriver, 999}, "test native cancelled error");
+  try { (void)native.pump_once(native_status); throw std::logic_error("native cancellation error was hidden"); }
+  catch (const i::RequestLoopFailure &failure) {
+    require(failure.key() == native_key && failure.status() == native_status.error &&
+        failure.retirement().retired && !native.matches(native_key), "native cancelled error lost its proof or identity");
+  }
 }
 
 void open_input_and_midturn_pause_keep_progress() {
   i::RequestLoop owner; owner.prepare(1, 1); Adapter adapter{3};
   const std::array turns{i::GenerationTurn{{1}, 2}, i::GenerationTurn{{}, 1}};
   adapter.progress_values[0]->bind_open_turns(std::span(turns).first(1), 2, 1);
-  const auto key = owner.enqueue(0); (void)owner.pump_once(adapter);
+  i::OutputDelivery open_delivery(3);
+  const auto key = owner.enqueue(0, &open_delivery); (void)owner.pump_once(adapter);
   const auto generated = adapter.progress(key).generated;
   const auto commits = adapter.progress(key).observed_commits();
   (void)owner.pause(key);
+  require(owner.acknowledge(key, 1, adapter), "actual manual-pause output was not acknowledged");
   require(owner.pump_once(adapter).executed == false && adapter.progress(key).generated == generated &&
       adapter.progress(key).observed_commits() == commits && adapter.progress(key).turn_index == 0,
       "midturn pause changed observed outputs or turn position");
   owner.wake(key); (void)owner.pump_once(adapter);
   require(adapter.progress(key).waiting_for_input() && owner.matches(key) && owner.active().empty() &&
       adapter.publications[0] == 1, "open input was completed or its boundary was not paused");
+  require(owner.acknowledge(key, 2, adapter) && !owner.waiting_front(), "ACK woke an input waiter without new input");
   adapter.progress(key).extend_turns(turns); owner.wake(key);
   require(adapter.progress(key).turn_index == 0, "wake advanced model-facing progress before admission");
   (void)owner.pump_once(adapter);
   require(adapter.progress(key).turn_index == 1 && adapter.progress(key).generated.size() == 3 &&
       adapter.publications[0] == 2 && owner.matches(key), "actual later input did not resume the same request");
+  require(owner.acknowledge(key, 3, adapter), "actual final open output was not acknowledged");
   adapter.progress(key).close_input(); owner.wake(key);
   const auto closed = owner.pump_once(adapter);
   require(closed.completed == 1 && !closed.executed && !owner.matches(key) && adapter.executions[0] == 3 &&
       adapter.publications[0] == 2, "closing paused input restored/reexecuted or republished an old turn");
+
+  i::RequestLoop credit; credit.prepare(1, 1); Adapter blocked{3}; i::OutputDelivery delivery(1);
+  const auto blocked_key = credit.enqueue(0, &delivery);
+  const auto blocked_first = credit.pump_once(blocked);
+  require(blocked_first.waiting_output && !blocked_first.waiting_retirement && credit.active().empty() &&
+      !blocked.progress(blocked_key).turn_done && credit.credit(blocked_key, 1) == 0,
+      "zero credit completed a turn or was labelled native retirement");
+  require(credit.acknowledge(blocked_key, 0, blocked) && !credit.waiting_front(), "zero ACK granted output credit");
+  rejects<std::out_of_range>([&] { (void)credit.acknowledge(blocked_key, 2, blocked); });
+  require(delivery.acknowledged() == 0 && credit.acknowledge(blocked_key, 1, blocked) &&
+      credit.acknowledge(blocked_key, 1, blocked) && credit.waiting_front() == blocked_key,
+      "invalid/duplicate ACK changed credit or same-key FIFO wake");
+  (void)credit.pump_once(blocked);
+  require(blocked.progress(blocked_key).generated.size() == 2 && !blocked.progress(blocked_key).turn_done,
+      "credit wake consumed a pending input twice or completed the wrong quota");
+  require(credit.cancel(blocked_key, blocked).ok(), "credit-paused cancellation failed");
+  const auto cancelled_pending = credit.pump_once(blocked);
+  require(cancelled_pending.waiting_output && !cancelled_pending.waiting_retirement && !cancelled_pending.completed &&
+      credit.matches(blocked_key) && !blocked.residents[0] && blocked.retirement_polls[0] == 1,
+      "native retirement discarded undelivered cancelled output");
+  (void)credit.pump_once(blocked);
+  require(blocked.retirement_polls[0] == 1 && blocked.executions[0] == 2 && !blocked.publications[0],
+      "delivery wait repolled native retirement, replayed input or published a cancelled turn");
+  require(credit.acknowledge(blocked_key, 2, blocked), "cancelled output could not drain through its original key");
+  const auto drained_cancel = credit.pump_once(blocked);
+  require(drained_cancel.completed == 1 && drained_cancel.cancelled == 1 && !credit.matches(blocked_key) &&
+      blocked.progress_values[0]->generated.size() == 2, "final cancel ACK cleared output payload or failed logical release");
+
+  i::RequestLoop final; final.prepare(2, 1); Adapter retained{1, 1}; i::OutputDelivery last_delivery(1);
+  const auto final_key = final.enqueue(0, &last_delivery); (void)final.enqueue(1);
+  const auto last_output = final.pump_once(retained);
+  require(last_output.waiting_output && !last_output.waiting_retirement && !last_output.completed && final.matches(final_key),
+      "unacknowledged final output lost its terminal key");
+  const auto peer_done = final.pump_once(retained);
+  require(peer_done.completed == 1 && peer_done.executed && peer_done.waiting_output && retained.retirement_polls[0] == 1,
+      "native-retired output waiter blocked a ready peer or repolled native work");
+  require(final.acknowledge(final_key, 1, retained), "final output ACK was rejected");
+  const auto last_release = final.pump_once(retained);
+  require(last_release.completed == 1 && !last_release.executed && !last_release.waiting_output &&
+      retained.executions[0] == 1 && retained.publications[0] == 1 && retained.progress_values[0]->generated.size() == 1,
+      "final ACK replayed/published old work or destroyed authoritative output");
+  retained.progress_values[0].emplace(1); i::OutputDelivery replacement_delivery(1);
+  const auto replacement = final.enqueue(0, &replacement_delivery);
+  require(!final.acknowledge(final_key, 1, retained) && replacement_delivery.acknowledged() == 0 &&
+      final.matches(replacement), "delayed ACK advanced a replacement request's cursor");
+  rejects<std::out_of_range>([&] { (void)final.credit(final_key, 0); });
+
+  i::RequestLoop malformed; malformed.prepare(1, 1); Adapter oversized{2}; i::OutputDelivery bounded(1);
+  const auto bad_key = malformed.enqueue(0, &bounded); (void)malformed.pump_once(oversized);
+  // Deliberate owner misuse: commit another user output without delivery credit.
+  const std::array illegal_output{std::int32_t{99}};
+  require(oversized.progress(bad_key).observe_commit(1, illegal_output, true, true, false), "invalid-credit fixture failed");
+  require(malformed.cancel(bad_key, oversized).ok(), "invalid-credit fixture could not request stop");
+  rejects<std::out_of_range>([&] { (void)malformed.pump_once(oversized); });
+  require(!oversized.retirement_polls[0] && malformed.matches(bad_key) && !bounded.acknowledged(),
+      "invalid terminal delivery mutated native retirement or acknowledged fabricated credit");
 }
 
 void prepared_hot_owner_allocates_nothing() {
@@ -236,6 +374,18 @@ void prepared_hot_owner_allocates_nothing() {
   track_allocations = false;
   require(!allocation_count && adapter.executions[0] == 3 && adapter.executions[1] == 3 &&
       owner.active().empty() && !owner.waiting_front(), "valid prepared owner loop allocated host storage");
+
+  i::RequestLoop controls; controls.prepare(2, 1); Adapter controlled{2, 1}; i::OutputDelivery delivery(1);
+  const auto key = controls.enqueue(0, &delivery);
+  allocation_count = 0; track_allocations = true;
+  (void)controls.pump_once(controlled);
+  const bool acknowledged = controls.acknowledge(key, 1, controlled);
+  const auto cancelled = controls.cancel(key, controlled);
+  (void)controls.pump_once(controlled);
+  (void)controls.enqueue(1); (void)controls.pump_once(controlled);
+  track_allocations = false;
+  require(acknowledged && cancelled.ok() && !allocation_count && controlled.executions[0] == 1 &&
+      controlled.executions[1] == 1, "prepared delivery/cancel control allocated or replayed host work");
 }
 }
 

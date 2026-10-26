@@ -203,6 +203,13 @@ public:
   bool valid()const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API BatchLayoutVersion layout()const noexcept;
   HYLE_COMPUTE_BATCH_API std::size_t page_count()const noexcept;
+  // This frame's initialized whole-row prefix of one selected physical page.
+  // Repeated references use their largest logical prefix. The returned lease
+  // retains the original backing and only this page's permission. Its view
+  // never grows with later append/publication and exposes no capacity tails
+  // or other pages.
+  // Empty/foreign frames and IDs absent from this footprint are rejected.
+  HYLE_COMPUTE_BATCH_API Result<ReadLease> page_prefix(std::uint32_t physical_page)const noexcept;
 private:
   friend class PagedArena;
   friend struct detail::PagedArenaAccess;
@@ -217,6 +224,8 @@ public:
   bool valid()const noexcept{return owner_.valid();}
   HYLE_COMPUTE_BATCH_API RowCacheLayoutVersion layout()const noexcept;
   std::size_t page_count()const noexcept{return owner_.page_count();}
+  // The same exact initialized-prefix export, preserving encoded row bytes.
+  HYLE_COMPUTE_BATCH_API Result<ReadLease> page_prefix(std::uint32_t physical_page)const noexcept;
 private:
   friend class PagedArena;
   friend struct detail::PagedArenaAccess;

@@ -59,7 +59,19 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 中途pause／wake不重置已消费输入、已观察输出或额度。适配器必须在返回前观察真实提交；晚观察抛错
 不能撤回已提交结果。固定输入teacher的cohort与phase规则不同，继续只复用共同批次遍历，不冒充自然FIFO消费者。
 [有限主机、真实CPU续接及CUDA普通／MTP对照](../evidence/correctness/inference-request-loop-2026-10-26.json)
-支持这次迁移；新循环的统一取消和输出credit／ACK接线仍待补齐，不以有限CLI日程代签完整请求控制。
+支持这次迁移，不以有限CLI日程代签完整请求控制。
+
+请求可在enqueue时借用自己唯一的`OutputDelivery`；省略表示同步消费。`credit`只查询原游标，
+`acknowledge`先核对完整key再确认实际已交付前缀，不修改模型提交或RNG。信用不足时暂停调度，
+有效ACK仅自动唤醒因信用暂停的请求。最终输出尚未ACK时，原Session可以在真实退休后释放，
+请求key与已提交输出仍保留在单独等待表；它不会成为虚假的设备等待或阻止其它请求执行。
+最终ACK在下一次pump归还身份，旧generation的控制不能影响复用后的slot。
+
+`cancel`沿原模型`stop`返回真实Status：排队／暂停请求撤回，活动请求先记意图，原波结束后才移除，
+不破坏借用的active span。普通R2以上已提交batch沿原成员撤回合同完成幸存者；其它角色仍遵守原
+整体取消范围，不把MTP假装成普通单成员取消。可选的静态提交后观察点让同一owner在原submit之后处理控制，
+同步调用省略时不引入回调表。高层生成读取真实`EvaluationDisposition`，取消成员不发布token、ledger或prompt history。
+原生退休与输出排空分别判断；只有无native错误的预期取消可作为正常取消结果，真实设备错误继续保留。
 
 当前控制由单owner串行驱动；这与设备执行并发是两个维度。未来应用可向owner投递请求、取消和输出额度，
 观察有序事件，不能直接并发改Session。已有错误事实包括底层`Status`和带成员／退休信息的`EvaluationFailure`，
@@ -99,6 +111,11 @@ canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fo
 换入在原池中重建真实PageRef及完整State，全部成功后安装新head，不重放输入或重新采样。
 当前状态bank是固定backing；释放一个会话只归还槽，不保证显存占用下降。仍被旧快照保留的页和版本
 继续计费；真正缩减设备backing需要单独的池容量机制，不能由逻辑换出推导。
+
+`PagedArenaRead`与`PagedRowCacheRead`现提供`page_prefix(physical_page)`，供原CopyBatch读取不可变frame
+实际覆盖的整行前缀。返回原ReadLease的裁剪子权限，保活原backing，不暴露容量尾部，也不会随后续append扩大。
+它是搬运源，不自动成为可重新交给arena.read的整页guard；换入仍经原writer与publish路径取得新权限。
+此查询是冷路径线性扫描，不在每token路径增加页表；完整长上下文镜像接线仍需避免逐页重复扫描形成平方主机开销。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，

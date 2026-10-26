@@ -76,12 +76,32 @@ TEST(RowCachePaged, EmptyHistoryPreservesRowGroupsAndHasNoPagePermission){
   EXPECT_EQ(version.facts().query_rows,3u);EXPECT_EQ(version.facts().kv_rows,0u);EXPECT_EQ(version.facts().page_refs,0u);
   auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
   auto empty=arena.read(version,{}).value();EXPECT_TRUE(empty.valid());EXPECT_EQ(empty.page_count(),0u);EXPECT_TRUE(c::detail::PagedArenaAccess::pages(empty).empty());
+  EXPECT_TRUE(empty.page_prefix(0).error().IsFailedPrecondition());
   auto metadata=version.metadata().value();EXPECT_EQ(metadata.size(),schema.metadata_offsets().bytes);
   auto next=schema.version({q,kv,{},tails}).value();EXPECT_NE(version,next);EXPECT_GT(next.generation(),version.generation());
   auto page=fill(arena,0,std::byte{43});EXPECT_TRUE(arena.read(version,std::array{page}).error().IsInvalidArgument());
   EXPECT_TRUE(arena.acquire(page));
   // Escaped metadata remains its original independent readonly F1 owner.
   empty={};version={};next={};schema={};arena={};auto uses=c::LeaseUsePool::create().value();auto use=uses.begin().value();EXPECT_TRUE(use.read(metadata).ok());
+}
+TEST(RowCachePaged, PagePrefixPreservesEncodedRowsAndRejectsUnselectedPages){
+  for(auto encoding:{c::RowCacheEncoding::float8_block64_tail64(),c::RowCacheEncoding::float4_block32()}){
+    auto schema=c::RowCacheBatchSchema::create(capacity(encoding)).value();
+    auto arena=c::PagedArena::create(schema,m::system_resource(),{.max_backing_bytes=4096}).value();
+    auto zero=fill(arena,0,std::byte{13}),one=fill(arena,1,std::byte{19}),two=fill(arena,2,std::byte{29});
+    auto frame=arena.read(layout(schema,std::array<std::int32_t,2>{0,2},1),std::array{two,zero}).value();
+    auto full=frame.page_prefix(0),tail=frame.page_prefix(2);ASSERT_TRUE(full);ASSERT_TRUE(tail);
+    EXPECT_EQ(full->size(),2*encoding.row_bytes());EXPECT_EQ(tail->size(),encoding.row_bytes());
+    EXPECT_EQ(tail->generation(),two.generation());EXPECT_EQ(tail->view()->offset(),two.view()->offset());
+    EXPECT_FALSE(tail->subview(encoding.row_bytes(),1));EXPECT_FALSE(frame.page_prefix(1));
+    EXPECT_FALSE(frame.page_prefix(UINT32_MAX));EXPECT_FALSE(c::PagedRowCacheRead{}.page_prefix(0));
+    std::array<std::byte,1> byte{};ASSERT_TRUE(tail->view()->subview(0,1)->read(byte).ok());
+    EXPECT_EQ(byte[0],std::byte{29});
+    auto repeated=arena.read(layout(schema,std::array<std::int32_t,2>{0,0},1),std::array{zero}).value();
+    EXPECT_EQ(repeated.page_prefix(0)->size(),2*encoding.row_bytes());
+    ASSERT_TRUE(arena.close().ok());
+    EXPECT_EQ(frame.page_prefix(2)->size(),encoding.row_bytes());
+  }
 }
 TEST(RowCachePaged, OriginalF2WholePageWriterAndOldBranchRemainIndependent){
   auto schema=c::RowCacheBatchSchema::create(capacity(c::RowCacheEncoding::float4_block32())).value();

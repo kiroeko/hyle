@@ -27,6 +27,7 @@ TEST(PagedArena, EncodedKeyAndValuePagesKeepSeparateBytePrefixesAndPermissions){
   auto k=kw.publish(1).value(),v=vw.publish(1).value();
   auto one=layout(schema,std::array<std::int32_t,1>{0},1);
   auto kr=keys.read(one,std::span(&k,1));auto vr=values.read(one,std::span(&v,1));ASSERT_TRUE(kr);ASSERT_TRUE(vr);
+  EXPECT_EQ(kr->page_prefix(0)->size(),136u);EXPECT_EQ(vr->page_prefix(0)->size(),272u);
   EXPECT_EQ(c::detail::PagedArenaAccess::tensor(*kr)->description(),c::batch_cache_description(cap,c::BatchCacheRole::kKey).value());
   EXPECT_EQ(c::detail::PagedArenaAccess::tensor(*vr)->description(),c::batch_cache_description(cap,c::BatchCacheRole::kValue).value());
   auto two=layout(schema,std::array<std::int32_t,1>{0},2);
@@ -61,6 +62,51 @@ TEST(PagedArena, ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject){
 TEST(PagedArena, RepeatedPhysicalReferencesKeepOneActualGuard){
   auto schema=c::BatchSchema::create(capacity()).value();auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();auto zero=fill(arena,0,std::byte{7});auto frame=arena.read(layout(schema,std::array<std::int32_t,2>{0,0}),std::array{zero,zero}).value();EXPECT_EQ(frame.page_count(),1u);EXPECT_EQ(c::detail::PagedArenaAccess::pages(frame).size(),1u);
 }
+TEST(PagedArena, PagePrefixExportsOnlyTheImmutableFootprintOfOriginalWholePages){
+  auto schema=c::BatchSchema::create(capacity()).value();m::QuotaAllocator quota(m::system_allocator());
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=quota.get()}).value();
+  auto zero=fill(arena,0,std::byte{7}),one=fill(arena,1,std::byte{11}),unused=fill(arena,2,std::byte{17});
+  auto frame=arena.read(layout(schema,std::array<std::int32_t,2>{0,1},1),std::array{one,zero}).value();
+  // No metadata allocation or slot frontier inference is needed. The old
+  // whole-page guard does not grant its unselected second row for export.
+  auto reserved=quota.try_reserve_bytes(quota.remaining()).value();
+  auto full=frame.page_prefix(0),tail=frame.page_prefix(1);ASSERT_TRUE(full);ASSERT_TRUE(tail);
+  EXPECT_EQ(full->size(),arena.page_bytes());EXPECT_EQ(tail->size(),arena.page_bytes()/2);
+  EXPECT_EQ(tail->generation(),one.generation());EXPECT_EQ(tail->view()->native_handle(),one.view()->native_handle());
+  EXPECT_EQ(tail->view()->offset(),one.view()->offset());EXPECT_EQ(first(*tail),std::byte{11});
+  EXPECT_FALSE(tail->subview(tail->size(),1));
+  auto absent=frame.page_prefix(2);ASSERT_FALSE(absent);EXPECT_TRUE(absent.error().IsFailedPrecondition());
+  auto outside=frame.page_prefix(UINT32_MAX);ASSERT_FALSE(outside);EXPECT_TRUE(outside.error().IsOutOfRange());
+  EXPECT_FALSE(c::PagedArenaRead{}.page_prefix(0));
+  EXPECT_EQ(frame.page_count(),2u);EXPECT_EQ(first(unused),std::byte{17});
+}
+TEST(PagedArena, ExportedPagePrefixRemainsAnOriginalCopySourceAfterFramesAndArenaDrop){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto page=fill(arena,0,std::byte{23});
+  auto frame=arena.read(layout(schema,std::array<std::int32_t,1>{0},1),std::array{page}).value();
+  auto prefix=frame.page_prefix(0).value();const auto bytes=prefix.size();
+  auto context=c::Context::create(c::cpu::device()).value();auto queue=context.create_queue().value();
+  auto pool=c::LeasePool::create(m::system_resource(),1024,{.max_blocks=2}).value();
+  auto program=c::CopyBatchProgram::prepare(context,std::array{
+      c::CopyResourceSpec{m::system_resource(),bytes},c::CopyResourceSpec{m::system_resource(),bytes}}).value();
+  auto copy=c::CopyBatchInvocation::create(program,queue).value();
+  ASSERT_TRUE(copy.bind_source({0},prefix).ok());
+  ASSERT_TRUE(copy.bind_mutable({1},pool.allocate(bytes).value()).ok());
+  const std::array<c::CopyPhase,1> phases{{{}}};
+  const std::array<c::CopyRange,1> ranges{{{{0},{1},{0},0,0,bytes}}};
+  ASSERT_TRUE(copy.prepare_replay(phases,ranges).ok());
+  frame={};page.reset();prefix.reset();
+  EXPECT_TRUE(arena.acquire(0).error().IsUnavailable());
+  arena={};schema={}; // The original bound lease retains its actual backing.
+  auto submitted=copy.submit().value();ASSERT_TRUE(submitted.wait().ok());
+  auto output=submitted.output({0},{1},0,bytes).value();
+  std::array<std::byte,256> actual{};ASSERT_EQ(bytes,actual.size());
+  ASSERT_TRUE(output.view()->read(actual).ok());
+  for(const auto value:actual)EXPECT_EQ(value,std::byte{23});
+  EXPECT_EQ(submitted.report().logical_bytes,bytes);
+}
 TEST(PagedArena, TrueEmptyAttentionFrameRetainsCapacityWithoutPagePermissions){
   auto schema=c::BatchSchema::create(capacity()).value();
   auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
@@ -70,6 +116,7 @@ TEST(PagedArena, TrueEmptyAttentionFrameRetainsCapacityWithoutPagePermissions){
   auto empty=schema.version({zero,zero,{},tail}).value();
   auto frame=arena.read(empty,{});ASSERT_TRUE(frame)<<frame.error().message();
   EXPECT_TRUE(frame->valid());EXPECT_EQ(frame->page_count(),0U);
+  EXPECT_TRUE(frame->page_prefix(0).error().IsFailedPrecondition());
   EXPECT_TRUE(c::detail::PagedArenaAccess::pages(*frame).empty());
   auto physical=c::detail::PagedArenaAccess::tensor(*frame);ASSERT_TRUE(physical);
   EXPECT_EQ(physical->description(),c::batch_cache_description(capacity(),c::BatchCacheRole::kKey).value());
@@ -374,6 +421,7 @@ TEST(PagedArena, ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances)
   const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
   const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
   auto old=arena.read(one,std::array{published.prefix}).value();
+  auto exported=old.page_prefix(0).value();EXPECT_EQ(exported.size(),row_bytes);
   ASSERT_TRUE(published.appender.reserve_rows(1).ok());
   ASSERT_TRUE(published.appender.view()->fill(std::byte{47}).ok());
   auto current=published.appender.publish().value();
@@ -382,9 +430,12 @@ TEST(PagedArena, ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances)
   auto expanded=arena.reframe(two,std::array{old});
   ASSERT_FALSE(expanded);EXPECT_TRUE(expanded.error().IsFailedPrecondition());
   EXPECT_EQ(old.layout(),one);EXPECT_EQ(c::detail::PagedArenaAccess::pages(old)[0].size(),row_bytes);
+  EXPECT_EQ(exported.size(),row_bytes);EXPECT_EQ(old.page_prefix(0)->size(),row_bytes);
+  EXPECT_FALSE(exported.subview(row_bytes,1));EXPECT_EQ(first(exported),std::byte{31});
   EXPECT_EQ(first(published.prefix),std::byte{31});
   EXPECT_TRUE(arena.reframe(one,std::array{old}));
   auto longer=arena.read(two,std::array{current}).value();
+  EXPECT_EQ(longer.page_prefix(0)->size(),2*row_bytes);
   auto combined=arena.reframe(two,std::array{longer,old});ASSERT_TRUE(combined);
   EXPECT_EQ(combined->page_count(),1u);EXPECT_EQ(first(current),std::byte{31});
   std::array<std::byte,1> appended{};
