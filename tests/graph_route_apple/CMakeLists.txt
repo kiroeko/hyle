@@ -1,6 +1,8 @@
 hyle_add_header_self_contained_test(graph_route_apple
   HEADER_DIR graph HEADERS apple.h)
 if(_HYLE_COMPUTE_HAVE_APPLE)
+  hyle_add_test(graph_route_apple NAME slot_store SOURCES slot_store_test.cc)
+  hyle_stage_runtime(hyle_graph_route_apple_slot_store_test)
   hyle_add_test(graph_route_apple NAME float8_quantize_output
     SOURCES ../compute_models/float8_quantize_output_test.cc
     DEFINES HYLE_TEST_FP8_QUANT_APPLE=1)

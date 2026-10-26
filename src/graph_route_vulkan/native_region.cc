@@ -1,6 +1,7 @@
 #include "native_region.h"
 #include "native_paged_region.h"
 #include "native_paged_append.h"
+#include "native_slot_store.h"
 #include "native_ragged_region.h"
 #include "native_paged_pending.h"
 #include "vulkan_source.h"
@@ -101,12 +102,16 @@ struct RowLayout final {
   bool empty = false;
   std::uint32_t requests = 0, page_refs = 0;
 };
+struct GatherAccess final {
+  std::uint32_t node = 0, input_port = 0;
+};
 struct Artifact final {
   explicit Artifact(mem::AllocatorRef allocator)
       : input_ports(mem::StdAllocator<std::size_t>(allocator)),
         output_resources(mem::StdAllocator<mem::MemoryResourceRef>(allocator)),
         output_contracts(mem::StdAllocator<RegionOutputContract>(allocator)),
         row_accesses(mem::StdAllocator<RowAccess>(allocator)),
+        gather_accesses(mem::StdAllocator<GatherAccess>(allocator)),
         pending_inputs(mem::StdAllocator<ValueId>(allocator)),
         pending_ports(mem::StdAllocator<std::uint32_t>(allocator)),
         pending_accesses(mem::StdAllocator<std::size_t>(allocator)) {}
@@ -116,6 +121,7 @@ struct Artifact final {
   Vector<mem::MemoryResourceRef> output_resources;
   Vector<RegionOutputContract> output_contracts;
   Vector<RowAccess> row_accesses;
+  Vector<GatherAccess> gather_accesses;
   Vector<ValueId> pending_inputs;
   Vector<std::uint32_t> pending_ports;
   Vector<std::size_t> pending_accesses;
@@ -173,6 +179,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
       graph::detail::analyze_native_reachability(graph, allocator));
   HYLE_RETURN_IF_ERROR(propose_native_paged(context, request, analysis.needed, writer));
   HYLE_RETURN_IF_ERROR(propose_native_append(request, writer));
+  HYLE_RETURN_IF_ERROR(propose_native_slot_store(request, writer));
   HYLE_RETURN_IF_ERROR(propose_native_ragged(request, analysis.needed, writer));
   const auto ordinary_begin = writer.size();
   HYLE_RETURN_IF_ERROR(graph::detail::discover_regions(graph, allocator,
@@ -182,7 +189,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
           return false;
         HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
         if (native_paged_operation(operation) || native_ragged_operation(operation) ||
-            native_append_operation(operation)) return false;
+            native_append_operation(operation) || native_slot_store_operation(operation)) return false;
         // Discovery is structural, without per-node prepare/JIT. Actual typed
         // mathematics and device limits remain the final lowerer's admission.
         return graph::detail::validate_native_node(operation).ok();
@@ -268,6 +275,8 @@ Status resources(void *context, const RegionCompileRequest &request,
     RegionResourceProposal *proposal) noexcept {
   if (request.route == kNativeAppendRoute)
     return native_append_resources(context, request, inputs, outputs, proposal);
+  if (request.route == kNativeSlotStoreRoute)
+    return native_slot_store_resources(context, request, inputs, outputs, proposal);
   if (request.route == 2)
     return native_paged_resources(context, request, inputs, outputs, proposal);
   if (request.route == kNativeRaggedRoute)
@@ -557,6 +566,11 @@ Status inspect_row_port(const ProviderRegionPrepared &prepared, void *invocation
   if (prepared.vtable != &prepared_table || !prepared.state || !output)
     return Status::InvalidArgument("Vulkan projected row artifact differs");
   const auto &artifact = *static_cast<const Artifact *>(prepared.state);
+  for (const auto &access : artifact.gather_accesses)
+    if (access.input_port == port) {
+      *output = {.projected_input = port};
+      return Status::Ok();
+    }
   for (std::size_t i = 0; i < artifact.row_accesses.size(); ++i) {
     const auto &access = artifact.row_accesses[i];
     if (access.input_port == cd::OperationPreparedAccess::kNoInput ||
@@ -574,9 +588,17 @@ Status inspect_row_node(const ProviderRegionPrepared &prepared, void *invocation
     graph::detail::RegionNodeAccess *output) noexcept {
   if (prepared.vtable != &prepared_table || !prepared.state || !output)
     return Status::InvalidArgument("Vulkan projected row artifact differs");
+  const auto &artifact = *static_cast<const Artifact *>(prepared.state);
+  if (capability == cd::kProjectedInputReadExtensionId) {
+    for (const auto &access : artifact.gather_accesses)
+      if (access.node == node) {
+        *output = {.access = {.projected_input = access.input_port}};
+        return Status::Ok();
+      }
+    return Status::Unimplemented("Vulkan node has no selected direct row Gather");
+  }
   if (capability != cd::kRowCacheColdPlanningId)
     return Status::Unimplemented("Vulkan logical access capability differs");
-  const auto &artifact = *static_cast<const Artifact *>(prepared.state);
   for (std::size_t i = 0; i < artifact.row_accesses.size(); ++i) {
     const auto &access = artifact.row_accesses[i];
     if (access.node != node) continue;
@@ -791,6 +813,8 @@ compute::ProviderPrepareOutcome compile(void *context,
   *result = {};
   if (request.route == kNativeAppendRoute)
     return compile_native_append(context, request, allocator, result);
+  if (request.route == kNativeSlotStoreRoute)
+    return compile_native_slot_store(context, request, allocator, result);
   if (request.route == 2)
     return compile_native_paged(context, request, allocator, result);
   if (request.route == kNativeRaggedRoute)
@@ -909,6 +933,27 @@ compute::ProviderPrepareOutcome compile(void *context,
           custom_resolver(static_cast<const SourceContext *>(context)->custom)));
       artifact->output_resources.assign(request.output_resources.begin(), request.output_resources.end());
       const auto &native = *vn::Access::program(artifact->program);
+      // A selected direct checked Gather never packs the bank: lower_gather
+      // uses its real word-row pitch. Reject any other original use, alias,
+      // publication or materialization of that same boundary before granting
+      // a partial ready footprint to the compiled native program.
+      for (const auto port : artifact->input_ports) {
+        const auto value = ids[request.inputs[port].ordinal()];
+        if (std::ranges::find(plan.outputs, value) != plan.outputs.end()) continue;
+        bool eligible = true, used = false;
+        for (const auto &step : plan.steps)
+          for (std::size_t p = 0; p < step.inputs.size(); ++p) {
+            if (step.inputs[p] != value) continue;
+            used = true;
+            if (p != 0 || step.inputs.size() != 2 || step.outputs.size() != 1 ||
+                !vn::direct_gather_rows(step.operation, plan.values[value].description,
+                    plan.values[step.inputs[1]].description)) eligible = false;
+          }
+        if (!eligible || !used) continue;
+        for (std::size_t i = 0; i < plan.steps.size(); ++i)
+          if (plan.steps[i].inputs.size() == 2 && plan.steps[i].inputs[0] == value)
+            artifact->gather_accesses.push_back({step_nodes[i], static_cast<std::uint32_t>(port)});
+      }
       for (const auto &fact : facts.row_cache_accesses) {
         if (fact.step >= step_nodes.size())
           return Status::Internal("Vulkan row lowering step exceeds selected region");

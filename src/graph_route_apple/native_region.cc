@@ -2,6 +2,7 @@
 #include "native_output.h"
 #include "native_paged_region.h"
 #include "native_paged_append_region.h"
+#include "native_slot_store_region.h"
 #include "native_ragged_region.h"
 #include "native_paged_pending.h"
 #include "apple_lowering_internal.h"
@@ -123,6 +124,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
   HYLE_ASSIGN_OR_RETURN(auto analysis,
       graph::detail::analyze_native_reachability(graph, allocator));
   HYLE_RETURN_IF_ERROR(propose_native_paged_append(context, request, analysis.needed, writer));
+  HYLE_RETURN_IF_ERROR(propose_native_slot_store(context, request, analysis.needed, writer));
   HYLE_RETURN_IF_ERROR(propose_native_paged(context, request, analysis.needed, writer));
   HYLE_RETURN_IF_ERROR(propose_native_ragged(context, request, analysis.needed, writer));
   using Packed = graph::detail::ArtifactPackedPattern;
@@ -141,6 +143,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
           return false;
         HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
         if (native_paged_operation(operation) || native_paged_append_operation(operation) ||
+            native_slot_store_operation(operation) ||
             native_ragged_operation(context, operation)) return false;
         // Discovery is structural, without per-node prepare/JIT. Actual typed
         // mathematics and device limits remain the final lowerer's admission.
@@ -211,6 +214,8 @@ Status resources(void *context, const RegionCompileRequest &request, mem::Alloca
     return native_paged_resources(context, request, inputs, outputs, proposal);
   if (request.route == kNativePagedAppendRoute)
     return native_paged_append_resources(context, request, inputs, outputs, proposal);
+  if (request.route == kNativeSlotStoreRoute)
+    return native_slot_store_resources(context, request, inputs, outputs, proposal);
   if (request.route == kNativeRaggedRoute)
     return native_ragged_resources(context, request, inputs, outputs, proposal);
   HYLE_RETURN_IF_ERROR(qualify(request));
@@ -539,15 +544,17 @@ Status inspect_row_node(const ProviderRegionPrepared &prepared, void *invocation
     graph::detail::RegionNodeAccess *output) noexcept {
   if (prepared.vtable != &prepared_table || !prepared.state || !output)
     return Status::InvalidArgument("Apple projected row artifact differs");
-  if (capability != cd::kRowCacheColdPlanningId)
-    return Status::Unimplemented("Apple logical access capability differs");
   const auto &artifact = *static_cast<const Artifact *>(prepared.state);
   for (std::size_t i = 0; i < artifact.row_accesses.size(); ++i) {
     const auto &access = artifact.row_accesses[i];
     if (access.node != node) continue;
+    const bool gather = access.native.kind == an::RowCacheAccessKind::kCheckedGather;
+    if (capability != cd::kRowCacheColdPlanningId &&
+        !(gather && capability == cd::kProjectedInputReadExtensionId))
+      return Status::Unimplemented("Apple logical access capability differs");
     *output = {.access = {.projected_input = access.input_port,
         .allows_empty_footprint = empty_row_layout(artifact, static_cast<const Slot *>(invocation), i),
-        .requires_configuration = true},
+        .requires_configuration = !gather},
         .allows_pending = access.input_port != cd::OperationPreparedAccess::kNoInput &&
             std::ranges::find(artifact.pending_ports, access.input_port) != artifact.pending_ports.end()};
     return Status::Ok();
@@ -567,6 +574,8 @@ Result<bool> configure_row_node(const ProviderRegionPrepared &prepared, void *in
   const auto position = std::ranges::find(artifact.row_accesses, node, &PreparedRowAccess::node);
   if (position == artifact.row_accesses.end())
     return std::unexpected(Status::Unimplemented("Apple node has no selected row configuration"));
+  if (position->native.kind == an::RowCacheAccessKind::kCheckedGather)
+    return std::unexpected(Status::Unimplemented("ordinary Apple Gather has no paged cold layout"));
   if (std::ranges::any_of(slot.pending_frames, [](const auto &frame) { return frame.valid(); }))
     return std::unexpected(Status::FailedPrecondition("reset Apple pending row frames before changing their layout"));
   slot.result.reset();
@@ -742,6 +751,8 @@ compute::ProviderPrepareOutcome compile(void *context, const RegionCompileReques
     return compile_native_paged(context, request, allocator, result);
   if (request.route == kNativePagedAppendRoute)
     return compile_native_paged_append(context, request, allocator, result);
+  if (request.route == kNativeSlotStoreRoute)
+    return compile_native_slot_store(context, request, allocator, result);
   if (request.route == kNativeRaggedRoute)
     return compile_native_ragged(context, request, allocator, result);
   auto status = qualify(request);
@@ -800,6 +811,9 @@ compute::ProviderPrepareOutcome compile(void *context, const RegionCompileReques
         static_cast<const SourceContext *>(context)->custom, &custom_failed, &artifact->row_accesses,
         &prepared_constants));
     for (std::size_t access = 0; access < artifact->row_accesses.size(); ++access) {
+      // Ordinary Gather proves ready selected rows only. It neither accepts a
+      // pending paged producer nor inherits a RowCache layout/ordering proof.
+      if (artifact->row_accesses[access].native.kind == an::RowCacheAccessKind::kCheckedGather) continue;
       const auto port = artifact->row_accesses[access].input_port;
       if (port == cd::OperationPreparedAccess::kNoInput) continue;
       if (port >= request.inputs.size()) return Status::Internal("Apple row bank boundary port differs");

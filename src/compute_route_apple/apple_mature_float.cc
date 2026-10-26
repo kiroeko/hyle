@@ -17,6 +17,7 @@
 #include "apple_blockwise_w4a8.h"
 #include "apple_static_fp8.h"
 #include "apple_internal.h"
+#include "apple_mature_indexing.h"
 #include "apple_nvfp4.h"
 #include "apple_row_cache.h"
 #include "apple_row_cache_indexer.h"
@@ -468,12 +469,35 @@ mx::array packed_fp8_dot(const Quantized &a, const Quantized &b, mx::Stream s,
 
 } // namespace
 
+namespace {
+bool checked_plain_gather(const Operation &operation,
+    std::span<const TensorDesc> inputs) noexcept {
+  const auto *gather = operation.get_if<Gather>();
+  if (!gather || gather->bounds != IndexBoundsPolicy::kChecked ||
+      (gather->axis != 0 && gather->axis != -2) || inputs.size() != 2)
+    return false;
+  const auto &table = inputs[0], &ids = inputs[1];
+  const auto type = table.data_type();
+  if (!table.valid() || !table.is_plain() || table.rank() != 2 ||
+      table.dimensions()[0] <= 0 || table.dimensions()[1] <= 0 ||
+      (type != DataType::kFloat32 && type != DataType::kFloat16 && type != DataType::kBFloat16) ||
+      !ids.is_dense() || ids.rank() != 1 || ids.data_type() != DataType::kInt32 ||
+      ids.dimensions()[0] <= 0 || ids.dimensions()[0] > UINT32_MAX)
+    return false;
+  const auto unit = static_cast<std::int64_t>(data_type_size(type));
+  return table.dimensions()[1] <= INT64_MAX / unit &&
+      table.byte_strides()[1] == unit && table.byte_strides()[0] % unit == 0 &&
+      table.byte_strides()[0] >= table.dimensions()[1] * unit;
+}
+} // namespace
+
 bool is_mlx_float_operation(const Operation &operation,
                             std::span<const TensorDesc> inputs) noexcept {
   if (const auto packed = operation.custom_as<packed::internal::ArtifactPackedLinear>();
       packed && packed->format == model_ops::WeightArtifactFormat::kNf4DoubleQuant)
     return false;
-  return operation.custom_as<model_ops::CacheEncode>() ||
+  return checked_plain_gather(operation, inputs) ||
+         operation.custom_as<model_ops::CacheEncode>() ||
          is_mlx_float8_cast(operation, inputs) ||
          is_mlx_exact_binary(operation, inputs) ||
          operation.custom_as<packed::internal::StaticFloat8Linear>() ||
@@ -551,6 +575,9 @@ std::optional<std::size_t> mlx_row_bank_input(const Operation &operation) noexce
 
 Result<std::optional<RowCacheAccessFacts>> analyze_mlx_row_access(
     const Operation &operation, std::span<const TensorDesc> inputs) noexcept {
+  if (checked_plain_gather(operation, inputs))
+    return RowCacheAccessFacts{.kind = RowCacheAccessKind::kCheckedGather,
+        .projected_input = 0, .query_rows = static_cast<std::uint32_t>(inputs[1].dimensions()[0])};
   const auto map = operation.custom_as<compute::detail::RowCacheMap>();
   const auto padded_map = operation.custom_as<compute::detail::RowCachePaddedMap>();
   const auto decoder = operation.custom_as<model_ops::RowCacheGatherDecode>();
@@ -598,6 +625,25 @@ Result<std::vector<mx::array>> lower_mlx_float(
   try {
     if (s.device.type != mx::Device::gpu || inputs.size() != descriptions.size())
       return std::unexpected(Status::InvalidArgument("Apple FP8 lowering requires GPU and matching ports"));
+    if (checked_plain_gather(operation, descriptions)) {
+      for (std::size_t i = 0; i < inputs.size(); ++i) {
+        HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(descriptions[i]));
+        if (inputs[i].dtype() != spec.dtype || inputs[i].shape() != spec.shape)
+          return std::unexpected(Status::InvalidArgument("Apple Gather carrier differs from its logical input"));
+      }
+      HYLE_ASSIGN_OR_RETURN(auto output, infer_single_output(operation, descriptions));
+      HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(output));
+      // Preserve the original typed checked take, including its table strides.
+      // Ordinary floating banks are not encoded U8 descriptor-warmup ports and
+      // do not inherit the unrelated FP8 flat-carrier byte limit below.
+      HYLE_ASSIGN_OR_RETURN(auto result,
+          lower_mature_indexing(operation, inputs, spec.shape, s));
+      if (access) {
+        HYLE_ASSIGN_OR_RETURN(auto fact, analyze_mlx_row_access(operation, descriptions));
+        if (fact) *access = *fact;
+      }
+      return result;
+    }
     if (is_mlx_float8_cast(operation, descriptions))
       return lower_float8_cast(operation, descriptions, inputs, s);
     if (is_mlx_exact_binary(operation, descriptions))

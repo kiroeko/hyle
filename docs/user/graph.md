@@ -1161,10 +1161,11 @@ CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed�
 创建图时提供同类型 rows 和 I32 `[M]` 索引输入，不把池或写权限放进数学描述符。
 索引输入必须只被这一个 Store 使用，也不能发布为图输出。
 
-普通 CPU／CUDA 编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
+普通 CPU／CUDA 和 Apple／Vulkan 原生编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
 
 1. `slots::prepare(run, queues, options)` 准备固定的小索引载体；CUDA 的
    `options.host_workspace` 使用同一 Context 的 pinned／managed host resource。
+   纯 Apple／Vulkan 原生路线的 `queues` 传空，复用原 ExecutionSource；混合计划只为共享 Compute lane 提供真实 Queue。
 2. `SlotBindings::create(layout, sources, destinations)` 完整检查实际租约，成功才移走
    destination writers；然后 `slots::bind(run, graph, store_node, std::move(bindings))`。
    bind 根据真实槽号设置私有索引，失败不消费事务；普通 rows 输入仍由调用者绑定。
@@ -1185,14 +1186,17 @@ auto status = graph::slots::prepare(run, logical_graph, queues, sources, options
 源Gather须是checked axis0读取完整同类型槽，池和两组ID输入保持私有。共同绑定按真实source leases
 生成源ID，并核实际选中reader的读取资格；调用者不再自行绑定池或ID。准备／seal会重新核实际输入，
 替换池或ID不能沿用原权限执行。这个关联只描述逻辑资源，不选择Provider；尚无资格的实现会明确拒绝，
-不能以整池ReadLease代替。当前Apple／Vulkan的原生Store及部分普通Gather资格仍待接通。
+不能以整池ReadLease代替。Apple／Vulkan已接普通原类型选行与原生Store，当前Store要求item字节数及偏移为4字节对齐；
+不符合时明确拒绝，不扩写padding。CPU默认ggml带padding的读取及原生字节尾部承载仍待补齐。
 CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合：若实际选中该region，
 同一`slots::bind`从事务的B个source readers和B×K个writers生成一块私有索引载体，
 同时绑定原池的准确读写权限；普通GDN的K1与最后K个候选状态遵守同一接口。
 这不授予整池读取权限；拒绝融合时用上述SourceBinding接普通Gather和Store。融合当前只支持无逃逸稠密状态的
 F32数学链；Y可正常发布，也可只有状态写入。完整引擎和conv尚未接此路径，未证明速度收益。
-实际使用见[CPU](../../tests/graph/slots_execution_test.cc)和
-[CUDA](../../tests/graph/slots_cuda_execution_test.cc)Store消费者及
+实际使用见[CPU](../../tests/graph/slots_execution_test.cc)、
+[CUDA](../../tests/graph/slots_cuda_execution_test.cc)、
+[Apple](../../tests/graph_route_apple/slot_store_test.cc)、
+[Vulkan](../../tests/graph_route_vulkan/slot_store_test.cc)Store消费者及
 [索引GDN融合](../../tests/graph_provider_ggml_cuda/indexed_state_test.cc)消费者。
 
 ### 原生后端的租约绑定

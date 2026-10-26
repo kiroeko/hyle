@@ -1,4 +1,5 @@
 #include "slots_region.h"
+#include "execution_source_internal.h"
 #include "plan_state.h"
 
 #include <algorithm>
@@ -34,17 +35,20 @@ bool same_configuration(const detail::StoreConfiguration &a,
 }
 
 // Only private I32 control bytes, never inference payload or slot ownership.
-// Uploads use original leases/QueueSequence/Completion, including failures.
+// Uploads use the original shared Queue or native cold source, including its
+// actual completion/retirement and accepted-prefix failure ownership.
 struct Indices final {
   c::LeasePool device_pool, host_pool;
   c::WriteLease writer, staging;
   c::ReadLease ready, source;
   c::LeaseUsePool uses;
   c::Completion pending;
+  c::ResourceBudget::Reservation native_scratch;
   bool direct = false, failed = false;
 
   static Result<Indices> create(mem::MemoryResourceRef resource,
-      mem::MemoryResourceRef host, std::size_t count, ResourceOptions options) noexcept {
+      mem::MemoryResourceRef host, std::size_t count, ResourceOptions options,
+      bool shared_queue) noexcept {
     if (!resource.valid() || !host.valid() || !count ||
         count > SIZE_MAX / sizeof(std::int32_t) ||
         !host.properties().has(mem::MemoryProperty::kHostAccessible))
@@ -59,13 +63,27 @@ struct Indices final {
     if (!result.direct) {
       HYLE_ASSIGN_OR_RETURN(result.host_pool, c::LeasePool::create(host, bytes, pool_options));
       HYLE_ASSIGN_OR_RETURN(result.staging, result.host_pool.allocate(bytes, 4));
-      HYLE_ASSIGN_OR_RETURN(result.uses, c::LeaseUsePool::create({.max_batches = 1,
-          .max_resources_per_batch = 2, .allocator = options.allocator,
-          .resource_budget = options.resource_budget}));
+      if (shared_queue) {
+        HYLE_ASSIGN_OR_RETURN(result.uses, c::LeaseUsePool::create({.max_batches = 1,
+            .max_resources_per_batch = 2, .allocator = options.allocator,
+            .resource_budget = options.resource_budget}));
+      }
     }
     return result;
   }
-  Status upload(const cd::QueueRef &queue,
+  static Result<gd::ConstantCopy> native_copy(mem::BufferView output,
+      mem::ConstBufferView input) noexcept {
+    if (!output.size() || output.size() != input.size() || output.size() % sizeof(std::int32_t) ||
+        output.size() / sizeof(std::int32_t) > static_cast<std::uint64_t>(INT64_MAX))
+      return std::unexpected(Status::InvalidArgument("slot metadata native copy size differs"));
+    HYLE_ASSIGN_OR_RETURN(auto description, c::TensorDesc::dense(c::DataType::kInt32,
+        std::array<std::int64_t, 1>{static_cast<std::int64_t>(output.size() / sizeof(std::int32_t))}));
+    HYLE_ASSIGN_OR_RETURN(auto destination, c::TensorView::create(description, output));
+    HYLE_ASSIGN_OR_RETURN(auto source, c::ConstTensorView::create(description, input));
+    return gd::ConstantCopy{destination, source};
+  }
+  Status upload(const ExecutionSource &execution, const cd::QueueRef &queue,
+      ResourceOptions options,
       std::span<const c::LeaseSlotAddress> sources,
       std::span<const c::LeaseSlotAddress> destinations) noexcept {
     if (failed || pending.valid() || (!direct && uses.active_batches()))
@@ -93,6 +111,29 @@ struct Indices final {
     HYLE_ASSIGN_OR_RETURN(source, staging.publish());
     HYLE_ASSIGN_OR_RETURN(auto input, source.view());
     HYLE_ASSIGN_OR_RETURN(auto output, writer.view());
+    if (!queue.valid()) {
+      // Original native cold transfer, not a second Queue or runtime. The
+      // source prevalidates all ranges and succeeds only after actual native
+      // retirement. Its native owners protect an accepted failing prefix.
+      HYLE_ASSIGN_OR_RETURN(auto copy, native_copy(output, input));
+      HYLE_ASSIGN_OR_RETURN(auto supported, gd::ExecutionSourceAccess::can_copy_constant(execution, copy));
+      if (!supported) return Status::Unimplemented("original native source cannot upload slot metadata");
+      const std::array copies{copy};
+      if (options.resource_budget.valid()) {
+        HYLE_ASSIGN_OR_RETURN(auto scratch_bytes, gd::ExecutionSourceAccess::constant_copy_scratch_bytes(execution, copies));
+        HYLE_ASSIGN_OR_RETURN(native_scratch, options.resource_budget.reserve_unattributed(scratch_bytes));
+      }
+      const auto copied = gd::ExecutionSourceAccess::copy_constants(execution, copies, options.allocator);
+      if (!copied.ok()) {
+        // No retry/fallback/publication after possibly accepted native work.
+        // Keep our original endpoints, private backing and scratch charge.
+        failed = true;
+        return copied;
+      }
+      native_scratch = {};
+      HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
+      return Status::Ok();
+    }
     HYLE_ASSIGN_OR_RETURN(auto use, uses.begin());
     HYLE_RETURN_IF_ERROR(use.read(source));
     HYLE_RETURN_IF_ERROR(use.write(writer));
@@ -119,6 +160,7 @@ struct StoreBindingData final {
         writer_pointers(mem::StdAllocator<const c::WriteLease *>{selected}) {}
   void destroy() noexcept { const auto selected = allocator; selected.destroy(this); }
   mem::AllocatorRef allocator;
+  ExecutionSource execution;
   SlotBindings bindings;
   Indices indices;
   cd::QueueRef queue;
@@ -438,14 +480,14 @@ c::ProviderPrepareOutcome compile(void *opaque, const RegionCompileRequest &requ
 }
 const RegionProviderVTable provider_table{&propose, &resources, &compile};
 struct Find final {
-  NodeId node;
+  NodeId node{};
   detail::StoreBinding *binding = nullptr;
   const detail::StoreRegionVTable *interface = nullptr;
   ProviderRegionPrepared prepared{};
   void *invocation = nullptr;
-  detail::StoreRegionFacts facts;
+  detail::StoreRegionFacts facts{};
   gd::ProjectedWriter proof{};
-  ExecutionLaneId lane;
+  ExecutionLaneId lane{};
 };
 struct LogicalSource final {
   NodeId store;
@@ -633,12 +675,23 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     auto *binding = interface->binding(view.invocation);
     if (!binding) return Status::InvalidArgument("slot store has no original binding owner");
     if (binding->valid()) return Status::FailedPrecondition("take original slot bindings before preparation");
+    HYLE_ASSIGN_OR_RETURN(auto execution,
+        gd::RegionAccess::execution_source(call.invocation->executable(), view.lane));
+    HYLE_RETURN_IF_ERROR(execution.validate_resource(facts.resource));
+    const auto context = gd::ExecutionSourceAccess::compute(execution);
+    if (!context && !context.error().IsUnimplemented()) return context.error();
+    const bool shared_queue = context.has_value();
     const auto first = std::ranges::find_if(call.queues, [&](const auto &binding) { return binding.lane == view.lane; });
-    if (first == call.queues.end() || !first->queue ||
-        std::count_if(call.queues.begin(), call.queues.end(), [&](const auto &binding) { return binding.lane == view.lane; }) != 1)
-      return Status::InvalidArgument("slot preparation needs one original Queue per selected lane");
-    HYLE_RETURN_IF_ERROR(gd::RegionAccess::validate_queue(call.invocation->executable(), view.lane, *first->queue));
-    HYLE_ASSIGN_OR_RETURN(auto queue, cd::QueueRef::acquire(*first->queue));
+    cd::QueueRef queue;
+    if (shared_queue) {
+      if (first == call.queues.end() || !first->queue ||
+          std::count_if(call.queues.begin(), call.queues.end(), [&](const auto &binding) { return binding.lane == view.lane; }) != 1)
+        return Status::InvalidArgument("slot preparation needs one original Queue per shared lane");
+      HYLE_RETURN_IF_ERROR(gd::RegionAccess::validate_queue(call.invocation->executable(), view.lane, *first->queue));
+      HYLE_ASSIGN_OR_RETURN(queue, cd::QueueRef::acquire(*first->queue));
+    } else if (first != call.queues.end()) {
+      return Status::InvalidArgument("native slot source must not use a Compute Queue binding");
+    }
     const ResourceOptions resources{call.options.allocator, call.options.resource_budget};
     auto allocator = resources.allocator;
     if (resources.resource_budget.valid()) {
@@ -651,17 +704,25 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     try { data->writer_pointers.resize(facts.destination_count); }
     catch (...) { return Status::ResourceExhausted("slot store selected writer pointers"); }
     HYLE_ASSIGN_OR_RETURN(auto indices, Indices::create(facts.resource, call.options.host_workspace,
-        facts.source.count + facts.destination_count, resources));
+        facts.source.count + facts.destination_count, resources, shared_queue));
     if (!indices.direct) {
       HYLE_ASSIGN_OR_RETURN(auto destination, indices.writer.view());
       HYLE_ASSIGN_OR_RETURN(auto source, indices.staging.view());
-      const auto transfer = c::transfer_properties(*first->queue, destination, source);
-      if (!transfer)
-        return transfer.error().WithContext(
-            "slot host_workspace must support metadata transfer on the original Queue");
+      if (shared_queue) {
+        const auto transfer = c::transfer_properties(*first->queue, destination, source);
+        if (!transfer)
+          return transfer.error().WithContext(
+              "slot host_workspace must support metadata transfer on the original Queue");
+      } else {
+        HYLE_ASSIGN_OR_RETURN(auto copy, Indices::native_copy(destination, source));
+        HYLE_ASSIGN_OR_RETURN(auto supported, gd::ExecutionSourceAccess::can_copy_constant(execution, copy));
+        if (!supported)
+          return Status::Unimplemented("slot host_workspace has no original native metadata transfer");
+      }
     }
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(*call.invocation, view.step));
     interface->clear_configuration({.vtable = view.prepared_vtable, .state = view.prepared}, view.invocation);
+    data->execution = std::move(execution);
     data->indices = std::move(indices); data->queue = std::move(queue);
     data->options = resources; data->facts = facts;
     data->artifact_source = artifact_source; data->logical_source = logical_source;
@@ -686,8 +747,9 @@ Status bind(Invocation &invocation, const Graph &graph, NodeId node,
   Find found{node}; HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, node, &find, &found));
   if (!found.binding) return Status::Unimplemented("Store has no selected original slot implementation");
   auto *data = detail::StoreBindingAccess::get(*found.binding);
-  if (!data || !data->queue.is_open() || data->bindings.valid() || !bindings.valid())
-    return Status::FailedPrecondition("slot bind needs its prepared open Queue and untaken original transaction");
+  if (!data || !data->execution.is_open() || (data->queue.valid() && !data->queue.is_open()) ||
+      data->bindings.valid() || !bindings.valid())
+    return Status::FailedPrecondition("slot bind needs its prepared open execution source and untaken original transaction");
   auto &s = *data; const auto &p = s.facts;
   if (found.facts.store != p.store || found.facts.schema != p.schema ||
       found.facts.destination_indices != p.destination_indices ||
@@ -745,7 +807,8 @@ Status bind(Invocation &invocation, const Graph &graph, NodeId node,
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, found.proof.step));
   else HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
   found.interface->clear_configuration(found.prepared, found.invocation);
-  HYLE_RETURN_IF_ERROR(s.indices.upload(s.queue, source_addresses, bindings.destination_addresses()));
+  HYLE_RETURN_IF_ERROR(s.indices.upload(s.execution, s.queue, s.options,
+      source_addresses, bindings.destination_addresses()));
   HYLE_ASSIGN_OR_RETURN(auto carrier_view, s.indices.ready.view());
   HYLE_ASSIGN_OR_RETURN(auto destination_view, carrier_view.subview(
       p.source.count * sizeof(std::int32_t), p.destination_count * sizeof(std::int32_t)));

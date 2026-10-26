@@ -95,8 +95,8 @@ packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1�
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
-槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA Store已接通，
-CUDA窄链索引GDN另有下述有限集成结果，conv、跨后端源绑定及引擎接线仍待完成。
+槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA／Apple／Vulkan Store已接通，
+CUDA窄链索引GDN另有下述有限集成结果，conv、部分读取／尾部承载及引擎接线仍待完成。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
@@ -129,14 +129,17 @@ Y发布与仅写状态、reset撤权回收及原13项Store／投影合同；实�
 候选状态与原稠密GDN逐位一致，源槽、未选槽及padding不变。普通与MTP共享同一K参数，
 但这不代表MTP接受／回滚或完整引擎已经接通。带逃逸状态／别名、其它图形及跨后端读绑定另计。
 当前一次上传针对一个region，尚须消除引擎逐层metadata等待并接conv；
-CPU／Vulkan／Apple及CUDA拒绝融合时的合法投影绑定也须在统一引擎接线前补齐，
-不能让模型按Provider分叉构图或伪造整池ReadLease。
+拒绝融合时仍须由实际reader证明合法投影，不能让模型按Provider分叉构图或伪造整池ReadLease。
 可移植接线由冷准备关联原Graph的Store与源Gather，不包含Provider身份；
 共同层核checked axis0读取、池几何和私有ID，再由实际选中实现证明只读选中行。
 跨region时还须在准备／seal核原父Invocation实际绑定的池与源ID载体，
 不能只保留合法guards、却允许调用方替换索引读取未授权槽。融合与fallback复用同一事务和退休回收。
-CPU ggml的padding读取、Vulkan可能的整池物化及Apple导入必须分别核实际lowering，不能只放宽资格；
-Apple／Vulkan还缺原生Source上的Store装配，应走各自原Completion和传输路径，不伪造Compute Queue。
+Apple／Vulkan现已沿原ExecutionSource装配Store：共同事务持有实际source，只有共享Compute路线才需要Queue，
+私有索引由该source原冷传输能力准备，Store沿原FIFO／Completion和真实退休回收，不新增执行器。
+Apple原类型选行与Vulkan合格原码选行保留实际stride，不复制整池；资格仍以实际lowering及全部读者核验为准。
+[有限检查](../evidence/correctness/inference-native-slot-store-2026-10-27.json)覆盖两原生路线各3项及共同层11项回归，
+不代表完整引擎提速。当前原生Store仅承载4字节对齐item与offset；此为实现限制，精确字节尾部仍待补。
+CPU默认ggml的padding读取仍可能整池物化，尚不能用native-only组件检查代签默认路线；这些缺项须在引擎接线前补齐。
 history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 GDN各用自己的池和槽号。
 私有CUDA索引GDN沿原内核的F32运算体寻址：pool保留真实`[S,S,H,P]`及槽stride，
 源为I32`[B]`，目的为batch-major I32`[B,K]`，K>1写最后K个边界的时间升序状态。

@@ -42,6 +42,8 @@ public:
   HYLE_GRAPH_API ~StoreBinding();
   HYLE_GRAPH_API bool prepared() const noexcept;
   HYLE_GRAPH_API bool valid() const noexcept;
+  // Shared-Queue submission only; native artifacts use their original source
+  // endpoint and the same cold authority/configuration validation below.
   HYLE_GRAPH_API bool same_queue(const compute::detail::QueueSequence &) const noexcept;
   // Borrowed only in cold preparation/sealing, never permission to read the
   // capacity. Both IDs slices belong to the single private initialized carrier.

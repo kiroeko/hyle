@@ -80,7 +80,8 @@ mlx_row_bank_input(const Operation &) noexcept;
 // inputs are not read permissions. Actual lowering must return these same
 // facts before a selected Graph artifact may authorize a projected bank.
 enum class RowCacheAccessKind : std::uint8_t {
-  kNone, kMap, kPaddedMap, kCheckedDecode, kPaddedCheckedDecode, kPagedIndexer
+  kNone, kMap, kPaddedMap, kCheckedDecode, kPaddedCheckedDecode, kPagedIndexer,
+  kCheckedGather
 };
 struct RowCacheAccessFacts final {
   RowCacheAccessKind kind = RowCacheAccessKind::kNone;

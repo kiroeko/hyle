@@ -171,6 +171,10 @@ bool single_topk_operation(const ProgramState &, const PlanStep &) noexcept;
 Status lower_sampling(ProgramState &, const PlanStep &) noexcept;
 Status lower_topk(ProgramState &, const PlanStep &) noexcept;
 Status lower_gather(ProgramState &, const PlanStep &) noexcept;
+// Exact row adapter: no whole-input pack, cast or padding materialization.
+// Runtime device/buffer qualification remains part of lowering/binding.
+HYLE_COMPUTE_ROUTE_VULKAN_API bool
+direct_gather_rows(Operation, const TensorDesc &, const TensorDesc &) noexcept;
 Status lower_gather_elements(ProgramState &, const PlanStep &) noexcept;
 Status lower_scan(ProgramState &, const PlanStep &) noexcept;
 bool mature_scatter_add_operation(const ProgramState &,

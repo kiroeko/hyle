@@ -317,6 +317,15 @@ bool grouped_activation_domain(const TensorDesc &description) noexcept {
           (strides[0] > 0 && strides[0] % scalar_bytes == 0 &&
            strides[0] / scalar_bytes >= shape[2]));
 }
+bool word_rows_domain(const TensorDesc &description) noexcept {
+  if (!description.valid() || !description.is_plain() ||
+      description.data_type() != DataType::kInt32 || description.rank() != 2 ||
+      description.dimensions()[0] <= 0 || description.dimensions()[1] <= 0)
+    return false;
+  const auto strides = description.byte_strides();
+  return strides[1] == 4 && strides[0] > 0 && strides[0] % 4 == 0 &&
+      strides[0] / 4 >= description.dimensions()[1];
+}
 bool tensor_domain(const TensorDesc &description) noexcept {
   const bool cache = description.rank() >= 3 && description.rank() <= 4 &&
       description.block_axis() == description.rank()-1 &&
@@ -327,7 +336,7 @@ bool tensor_domain(const TensorDesc &description) noexcept {
           quantized_weight_domain(description) ||
           quantized_grouped_weight_domain(description) ||
           (description.is_plain() &&
-           (description.is_dense() || resident_attention_view(description) ||
+           (description.is_dense() || word_rows_domain(description) || resident_attention_view(description) ||
             packed_matrix_rhs(description)) &&
            (floating(description.data_type()) ||
             description.data_type() == DataType::kInt32))) &&
@@ -629,11 +638,18 @@ bool region_supports(const Operation &operation,
           e4_cache_domain(inputs[port],paged_read->compact_mla)) &&
         !(grouped && port == 1 && grouped_activation_domain(inputs[port])))
       return false;
+  const auto *row_gather = operation.get_if<Gather>();
+  const bool word_rows = row_gather && inputs.size() == 2 && outputs.size() == 1 &&
+      row_gather->bounds == IndexBoundsPolicy::kUnchecked &&
+      (row_gather->axis == 0 || row_gather->axis == -2) &&
+      word_rows_domain(inputs[0]) && inputs[1].is_dense() && outputs[0].is_dense();
+  // Original GET_ROWS reads i01*nb01 in get_rows.comp. Admit that one real
+  // I32 word-row reader without packing a padded bank or widening other ops.
   // Padded resident ports belong to SDPA; MatMul separately checks its exact
   // packed RHS layout. Other operations retain their dense/encoded domain.
   if (!operation.get_if<ScaledDotProductAttention>() &&
       !operation.custom_as<PagedAttentionRead>() && !operation.get_if<MatMul>() &&
-      !grouped &&
+      !grouped && !word_rows &&
       (!std::ranges::all_of(inputs, [](const auto &input) {
         return !input.is_plain() || input.is_dense();
       }) || !std::ranges::all_of(outputs, [](const auto &output) {

@@ -106,7 +106,8 @@ private:
 
 struct PrepareOptions final {
   // CUDA device storage needs a same-Context pinned/managed host resource for
-  // its queued metadata upload. Preparation checks that actual transfer route.
+  // its queued metadata upload. Native sources qualify their own cold copy
+  // route; host-accessible destination controls use direct flush/close.
   mem::MemoryResourceRef host_workspace = mem::system_resource();
   mem::AllocatorRef allocator = mem::system_allocator();
   compute::ResourceBudget resource_budget{};
@@ -114,6 +115,8 @@ struct PrepareOptions final {
 // Prepare the original selected Store slots and their small, fixed I32
 // controls. Ordinary CPU/CUDA route compilation supplies the fallback Store
 // automatically. No tensor payload is copied and no second executor is made.
+// Shared-Context lanes require their original QueueBinding. Native execution
+// lanes have no Compute Queue and use an empty span (or only shared siblings).
 HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
     PrepareOptions = {}) noexcept;
 // Logical resource association, independent of the selected providers. The
@@ -134,7 +137,7 @@ HYLE_GRAPH_API Status prepare(Invocation &, const Graph &,
 // independent fallback Store uses a prepared SourceBinding for its reader;
 // without that association ordinary source bindings remain caller-owned.
 // Preparation/binding may wait for a metadata-only upload on the original
-// Queue. Failure never consumes the caller's transaction. No executor or
+// execution source. Failure never consumes the caller's transaction. No executor or
 // provider selection is created here.
 HYLE_GRAPH_API Status bind(Invocation &, const Graph &, NodeId store,
     SlotBindings &&) noexcept;

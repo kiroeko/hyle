@@ -714,6 +714,8 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
       bool other_reader = false;
       bool grouped_activation = false;
       bool other_grouped_reader = false;
+      bool selected_rows = false;
+      bool other_selected_reader = false;
     };
     std::vector<ValueUses> uses(ids.size());
     for (auto i = first; i < end; ++i) {
@@ -744,6 +746,15 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         const bool activation = grouped && port == 1;
         uses[node.inputs[port]].grouped_activation |= activation;
         uses[node.inputs[port]].other_grouped_reader |= !activation;
+        const auto *gather = step.operation.get_if<Gather>();
+        const bool selected_rows = port == 0 && gather &&
+            gather->bounds == IndexBoundsPolicy::kUnchecked &&
+            node.inputs.size() == 2 &&
+            recipe->values[node.inputs[0]].data_type() == DataType::kInt32 &&
+            direct_gather_rows(Operation(Gather{gather->axis, IndexBoundsPolicy::kChecked}),
+                recipe->values[node.inputs[0]], recipe->values[node.inputs[1]]);
+        uses[node.inputs[port]].selected_rows |= selected_rows;
+        uses[node.inputs[port]].other_selected_reader |= !selected_rows;
       }
       // Argsort, indexed rows, GroupNorm, Softmax and multi-pass Scan need
       // aligned descriptors. Other admitted operations retain their
@@ -797,6 +808,14 @@ Status lower_region(ProgramState &program, const Plan &plan, std::size_t first,
         continue;
       }
       const auto &description = program.values[value].description;
+      if (uses[input].selected_rows && !uses[input].other_selected_reader) {
+        // GET_ROWS addresses only checked selected rows using the real nb01.
+        // Preserve both dense and padded bank storage instead of copying the
+        // whole external bank through the generic alignment/layout adapter.
+        // The Provider still checks the actual native origin is word-aligned.
+        dispatch.values.push_back(value);
+        continue;
+      }
       if (uses[input].grouped_activation && !uses[input].other_grouped_reader &&
           !description.is_dense()) {
         // The qualified Grouped port retains its real token pitch and slot0
@@ -945,6 +964,23 @@ Status lower_gather_elements(ProgramState &program, const PlanStep &step) noexce
   }
 }
 
+bool direct_gather_rows(Operation operation, const TensorDesc &input,
+                        const TensorDesc &indices) noexcept {
+  const auto *gather = operation.get_if<Gather>();
+  if (!gather || gather->bounds != IndexBoundsPolicy::kChecked ||
+      (gather->axis != 0 && gather->axis != -2) ||
+      !input.is_plain() || input.rank() != 2 ||
+      !indices.is_plain() || !indices.is_dense() || indices.rank() != 1 ||
+      indices.data_type() != DataType::kInt32 || input.dimensions()[0] <= 0 ||
+      input.dimensions()[1] <= 0 || indices.dimensions()[0] <= 0)
+    return false;
+  const auto size = data_type_size(input.data_type());
+  if (!size || input.byte_strides()[1] != static_cast<std::int64_t>(size) ||
+      input.dimensions()[1] > INT64_MAX / static_cast<std::int64_t>(size)) return false;
+  const auto row = input.dimensions()[1] * static_cast<std::int64_t>(size);
+  return row % 4 == 0 && input.byte_strides()[0] >= row &&
+      input.byte_strides()[0] % 4 == 0;
+}
 Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
   try {
     const auto input = program.values[step.inputs[0]].description;
@@ -962,6 +998,7 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
                         : gather.axis);
     const auto extent = static_cast<std::uint64_t>(input.dimensions()[axis]);
     const bool checked = gather.bounds == IndexBoundsPolicy::kChecked;
+    const bool direct_rows = direct_gather_rows(step.operation, input, indices);
     while (program.aliases.size() < program.values.size()) {
       const auto id = static_cast<std::uint32_t>(program.aliases.size());
       program.aliases.push_back({id, 0});
@@ -1035,7 +1072,7 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
     HYLE_ASSIGN_OR_RETURN(auto rows, infer_single_output(Operation(permute),
                                                          std::span(&input, 1)));
     auto source = alias(rows, step.inputs[0]);
-    if (!rows.is_dense()) {
+    if (!rows.is_dense() && !direct_rows) {
       HYLE_ASSIGN_OR_RETURN(
           auto dense, TensorDesc::dense(input.data_type(), rows.dimensions()));
       const auto packed = append(dense);
@@ -1049,7 +1086,7 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
                           std::array<std::int64_t, 2>{
                               static_cast<std::int64_t>(extent),
                               static_cast<std::int64_t>(row_elements)}));
-    source = alias(matrix, source);
+    if (!direct_rows) source = alias(matrix, source);
     const auto padding = (padded_bytes - row_bytes) / size;
     if (padding != 0) {
       HYLE_ASSIGN_OR_RETURN(
@@ -1087,12 +1124,14 @@ Status lower_gather(ProgramState &program, const PlanStep &step) noexcept {
                                                   {}}));
       source = padded;
     }
-    HYLE_ASSIGN_OR_RETURN(
-        auto raw_desc,
-        TensorDesc::dense(DataType::kInt32,
-                          std::array<std::int64_t, 2>{
-                              static_cast<std::int64_t>(extent),
-                              static_cast<std::int64_t>(padded_bytes / 4)}));
+    const std::array<std::int64_t, 2> raw_shape{
+        static_cast<std::int64_t>(extent), static_cast<std::int64_t>(padded_bytes / 4)};
+    HYLE_ASSIGN_OR_RETURN(auto raw_desc, direct_rows
+        ? TensorDesc::strided_bytes(DataType::kInt32, raw_shape,
+            std::array<std::int64_t, 2>{input.byte_strides()[0], 4})
+        : TensorDesc::dense(DataType::kInt32, raw_shape));
+    if (*raw_desc.required_bytes() > limits.maxStorageBufferRange)
+      return Status::Unimplemented("Vulkan Gather physical row span exceeds native range");
     const auto raw = alias(raw_desc, source);
     HYLE_ASSIGN_OR_RETURN(
         auto flat_indices,
