@@ -1,0 +1,372 @@
+{
+  "schema": 1,
+  "batch": "inference-slot-bindings-20261027",
+  "status": "SIX_GRAPH_SLOT_BINDING_CASES_PASS",
+  "published_at": "2026-10-27T00:11:17.922697+08:00",
+  "test_started_at": "2026-10-27T00:10:27.473",
+  "test_timestamp_timezone": "Asia/Shanghai, UTC+08:00",
+  "scope": "Finite Windows CPU resource transaction/schema contract tests for graph::slots::SlotBindings. Complete slot_bindings_test.cc TU; no model or native execution pipeline.",
+  "source_identity": [
+    {
+      "path": "include/hyle/graph/slots.h",
+      "bytes": 4932,
+      "sha256": "218b43a9d792c18e7b4c51e1edf46c1bb5bd928130de0d5392af0b21e0db2e9f"
+    },
+    {
+      "path": "src/graph/slots.cc",
+      "bytes": 7768,
+      "sha256": "96761f58fefb7dad3cfc9f703b53a333524e2cbc0225bc3b223f8a93b05af2c8"
+    },
+    {
+      "path": "tests/graph/slot_bindings_test.cc",
+      "bytes": 12361,
+      "sha256": "281f4190d03ba5a9b09d79aed3dd0a87853952636c061c22b5cfa4bb66094b94"
+    }
+  ],
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-slot-bindings-20261027\\link\\slot-bindings-test.exe",
+    "bytes": 67649024,
+    "sha256": "4112b478b0611a31b0962bc0324b083878d2259ae8b7ec8dc0eb6ef4491b8236"
+  },
+  "processes": [
+    {
+      "stage": "compile/slots",
+      "exit": 0,
+      "pid": 36396,
+      "seconds": 1.0474619999877177
+    },
+    {
+      "stage": "compile/test",
+      "exit": 0,
+      "pid": 47712,
+      "seconds": 1.9897304000332952
+    },
+    {
+      "stage": "link",
+      "exit": 0,
+      "pid": 49916,
+      "seconds": 1.3769046000088565
+    },
+    {
+      "stage": "run1",
+      "exit": 0,
+      "pid": 39832,
+      "seconds": 0.23827240004902706
+    }
+  ],
+  "tests": 6,
+  "failures": 0,
+  "skipped": 0,
+  "test_cases": [
+    {
+      "name": "SchemaPreservesPaddingAndRejectsInvalidGeometry",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "30",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    },
+    {
+      "name": "StoreInfersExactDenseWholeItemsAndIsAnExternalEffect",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "61",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    },
+    {
+      "name": "LateForeignSourceAndWriterNeverConsumeCallerDestinations",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "109",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    },
+    {
+      "name": "FailedLateWriterIsNotTurnedIntoAnOwnedReadyResult",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "139",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    },
+    {
+      "name": "MetadataFailureDoesNotConsumeAndBudgetTracksOnlySelectedOwners",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "164",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    },
+    {
+      "name": "OwnsExactAddressesAcrossPoolMoveDropAndTransactionMove",
+      "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+      "line": "203",
+      "status": "run",
+      "result": "completed",
+      "time": "0.",
+      "timestamp": "2026-10-27T00:10:27.473",
+      "classname": "GraphSlots"
+    }
+  ],
+  "successful_TUs": 2,
+  "compile_processes": 2,
+  "link_processes": 1,
+  "test_processes": 1,
+  "compile_contract": "Original CPU /O2 /W4 /WX CXX flags with canonical Hyle include roots; all actual own-source dependencies checked against the 32-file frozen closure.",
+  "reuse": {
+    "baseline": {
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\empty-rejection-final\\link\\command.json",
+        "bytes": 19446,
+        "sha256": "6e0a04363ed65d00224d63be318db2229ff5e2d1cd4eba8ba086ec5870b71f13"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\empty-rejection-final\\link-inputs.json",
+        "bytes": 35536,
+        "sha256": "17d5ea889e359cf25af46383d088f01d48756505925e1676b60e2ccd2f6f543f"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\empty-rejection-final\\runtime.json",
+        "bytes": 6917,
+        "sha256": "4a7743ae6c4073604ade34afb9fcc908340ec0417dd153709adc2da24e0aafcf"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\empty-rejection-final\\ready.json",
+        "bytes": 2286,
+        "sha256": "a5c8c66f5a194100299337fcb346ad3540ed4e120b2f214e6e545c68b2c9c353"
+      }
+    },
+    "reused_Graph_resources": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 111892,
+        "sha256": "60df445357d9b7f146dd880721da469043e259f193d355cf80112310b239ef6a"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-fused-writer-20261026\\compile\\resources\\unit.obj",
+        "bytes": 1224925,
+        "sha256": "f0e7e0c6ad221cbadab7651bbf19bb48d7cc42e37b1e1007e764b778bb3d5923"
+      }
+    },
+    "reused_LeaseSlots_core": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-lease-slots-20261026\\compile\\core\\unit.obj",
+      "bytes": 509574,
+      "sha256": "0b948494bdf254b09cb7c4d5945897ea10ddadcb8573d8724462584c92fb51ab"
+    },
+    "original_inputs": 137,
+    "result_inputs": 138,
+    "replaced": "One original Graph GTest TU object",
+    "added": "One current graph/slots.cc object",
+    "retained": "All other Compute/Graph/provider/native dependencies and GoogleTest from the passed fused-writer closure remain unchanged; no archive rewrite.",
+    "note": "The Graph resources object is the passed 60df445... implementation, not the later in-progress release work."
+  },
+  "limits": [
+    "This does not claim engine wiring, native Gather/scatter execution, complete projected-read permission, or a throughput gain.",
+    "No reconfigure, SDK rebuild, CUDA build/run, Apple/Linux run, or full-engine test was performed in this batch."
+  ],
+  "quality_claim": false,
+  "performance_claim": false,
+  "model_runs": 0,
+  "SDK_builds": 0,
+  "reconfigure_runs": 0,
+  "HTTP": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-slot-bindings-2026-10-27.zip",
+    "bytes": 60289,
+    "sha256": "8922779a5e61c0e716f55fa490a7fc697004b72d1e33ddee643b0af2e0704468",
+    "file_count": 36,
+    "files": [
+      {
+        "path": "records/build.py",
+        "bytes": 6435,
+        "sha256": "502810bf4cb86eb9d2228093bee6359bbfca3ac4efa6cb0a1fa7476728b1287e"
+      },
+      {
+        "path": "records/compile/slots/actual-dependencies.json",
+        "bytes": 32513,
+        "sha256": "9155deefd2ad74e41325e3e516e307c0730856bdf1a30fb5cc63f97aedce13a7"
+      },
+      {
+        "path": "records/compile/slots/command.json",
+        "bytes": 1520,
+        "sha256": "5db882fae7ee911f6ce5aba2f88cd8f9c872d8d3b51504eb19237c79c5907d9b"
+      },
+      {
+        "path": "records/compile/slots/dependencies.json",
+        "bytes": 16361,
+        "sha256": "ac2966fca75655337a13bf20f302f4c034180b3b3ded22204bdbc23103542694"
+      },
+      {
+        "path": "records/compile/slots/process.json",
+        "bytes": 70,
+        "sha256": "594005b383fe1e202111e7f75085b4603bfac89dad439ec31c53722efddcc4b7"
+      },
+      {
+        "path": "records/compile/slots/running.json",
+        "bytes": 22,
+        "sha256": "19d9a2426785afa7e60cd70dc7a0b26522b5f5a31dc3614f191e961352ea49c2"
+      },
+      {
+        "path": "records/compile/slots/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/slots/stdout.log",
+        "bytes": 10,
+        "sha256": "abb260cbc8533f400e7b37d2097a12274964e0aaca89e966c697dcb396254d4b"
+      },
+      {
+        "path": "records/compile/test/actual-dependencies.json",
+        "bytes": 52761,
+        "sha256": "9d0b3e0d0044506240dcfd286e630c48af7715be9dca4d88f1ab52f1a28c0dc0"
+      },
+      {
+        "path": "records/compile/test/command.json",
+        "bytes": 1532,
+        "sha256": "b5c87bbd213ea14c87f1d8c87f7341adb6253f2dd8fc4b6f14c083470f948c65"
+      },
+      {
+        "path": "records/compile/test/dependencies.json",
+        "bytes": 27501,
+        "sha256": "b860fccf4adb4be32501eb0057046f467d8c56a074b458204f232e9d96f9c68b"
+      },
+      {
+        "path": "records/compile/test/process.json",
+        "bytes": 70,
+        "sha256": "355858356c7d5036344dd5ec98c74737483475b50d093d3865e089a3d38268da"
+      },
+      {
+        "path": "records/compile/test/running.json",
+        "bytes": 22,
+        "sha256": "f7142eb264ac48aadb736fe21ea89d35f76b0ebb49b46c9101972fa3a8babfa3"
+      },
+      {
+        "path": "records/compile/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/test/stdout.log",
+        "bytes": 23,
+        "sha256": "ab31b10315942461176b2952553c5fa3f984417fc0df0794a5ddc81b364e4a39"
+      },
+      {
+        "path": "records/link-inputs.json",
+        "bytes": 35745,
+        "sha256": "6d89b9bd1e9d8863e6ca797c830ab2dd99e004ced0e58d485384566303610d9e"
+      },
+      {
+        "path": "records/link/command.json",
+        "bytes": 19511,
+        "sha256": "6e952f37923fa5af479a6410b39fd882386e89e22f7cb797970ea6d9e7e46288"
+      },
+      {
+        "path": "records/link/process.json",
+        "bytes": 70,
+        "sha256": "24b8a458f298edff8f0b6c353cf5dbf64f236b2ab650458054306291bf34c1aa"
+      },
+      {
+        "path": "records/link/running.json",
+        "bytes": 22,
+        "sha256": "71f693f2bbbf9def980efc816ec4d917b09ca0ae0fd94961b9320eeec3b434da"
+      },
+      {
+        "path": "records/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link/stdout.log",
+        "bytes": 217,
+        "sha256": "97b711b9e446d81bd9a7afe2837f7460d1598196bd27a4168475db045246c896"
+      },
+      {
+        "path": "records/plan.json",
+        "bytes": 7293,
+        "sha256": "df2da9215109188b00b38f9982ffa5185333cce977e0eb077246e5442254acf7"
+      },
+      {
+        "path": "records/publish.py",
+        "bytes": 4898,
+        "sha256": "4349ad673327fc86b39b2aba501f5ccabc196c1c004872bc18b4f5308aa50afb"
+      },
+      {
+        "path": "records/ready.json",
+        "bytes": 2964,
+        "sha256": "25b487affc734dd1cf0358a5a2b0c82bfd7bd30265c1377764d8b43090d0fdb4"
+      },
+      {
+        "path": "records/results.xml",
+        "bytes": 1892,
+        "sha256": "8549455a6a3e550cdbca579423b14e5b1e1bf7f9be0ba95ffa370aa3ebf99198"
+      },
+      {
+        "path": "records/run1/command.json",
+        "bytes": 385,
+        "sha256": "a2d129b9e26b9bca65b017b689a8e9637f13e2804d6b20e6a850fb92d5c4113b"
+      },
+      {
+        "path": "records/run1/process.json",
+        "bytes": 71,
+        "sha256": "8f07628112572196b7dc9abfb1e41eb14a9ba2bbc724e45ad7ba48a02857bc1b"
+      },
+      {
+        "path": "records/run1/running.json",
+        "bytes": 22,
+        "sha256": "f9ca4621bdec7ff4f26ffb25b95fc855a914c63e3a50e5397b00d62eb348f753"
+      },
+      {
+        "path": "records/run1/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/run1/stdout.log",
+        "bytes": 1494,
+        "sha256": "684336bf07793a33391d7316f024f488c46be6bb0205d6f781e0cdc043ab36e0"
+      },
+      {
+        "path": "records/runtime.json",
+        "bytes": 6917,
+        "sha256": "4a7743ae6c4073604ade34afb9fcc908340ec0417dd153709adc2da24e0aafcf"
+      },
+      {
+        "path": "records/source-freeze.json",
+        "bytes": 6279,
+        "sha256": "0afea72cc7b8f334729f446ae4853a2c3c1ccfa30a6181857df13348f4307597"
+      },
+      {
+        "path": "records/summary.json",
+        "bytes": 890,
+        "sha256": "dd1d2fac7f64548a070c3da6b9cbdbf5736f3f3523b3462f34f1105f79ae605a"
+      },
+      {
+        "path": "source/include/hyle/graph/slots.h",
+        "bytes": 4932,
+        "sha256": "218b43a9d792c18e7b4c51e1edf46c1bb5bd928130de0d5392af0b21e0db2e9f"
+      },
+      {
+        "path": "source/src/graph/slots.cc",
+        "bytes": 7768,
+        "sha256": "96761f58fefb7dad3cfc9f703b53a333524e2cbc0225bc3b223f8a93b05af2c8"
+      },
+      {
+        "path": "source/tests/graph/slot_bindings_test.cc",
+        "bytes": 12361,
+        "sha256": "281f4190d03ba5a9b09d79aed3dd0a87853952636c061c22b5cfa4bb66094b94"
+      }
+    ]
+  }
+}
