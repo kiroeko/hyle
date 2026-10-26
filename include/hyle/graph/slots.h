@@ -116,11 +116,13 @@ struct PrepareOptions final {
 // automatically. No tensor payload is copied and no second executor is made.
 HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
     PrepareOptions = {}) noexcept;
-// Writer-only Store binding. Its destination-ID input is private to this
-// Store and is configured from the actual writer coordinates. Preparation and
-// this cold binding may wait for a metadata-only upload on the original Queue.
-// Failure never consumes the caller's transaction. Ordinary row inputs remain
-// caller-bound; this does not bind a projected Gather/source-capacity chain.
+// Cold binding for the selected Store. Its private destination-ID input comes
+// from actual writer coordinates. A qualified fused source reader also gets
+// private source IDs and the capacity's exact original ready guards; an
+// independent fallback Store leaves ordinary rows/source bindings to callers.
+// Preparation/binding may wait for a metadata-only upload on the original
+// Queue. Failure never consumes the caller's transaction. No executor or
+// provider selection is created here.
 HYLE_GRAPH_API Status bind(Invocation &, const Graph &, NodeId store,
     SlotBindings &&) noexcept;
 // No implicit wait or publication: returns the original transaction only
