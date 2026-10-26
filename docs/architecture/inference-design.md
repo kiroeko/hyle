@@ -10,7 +10,7 @@
 `RequestProgress` 已共用主机进度、turn 输入、额度／停止和提交观察；版本接纳查询和执行观察事实已共用，
 CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共同的请求窗口、目录和进度规则。
 `RequestLoop`现承载自然请求的FIFO、驻留腾位、turn切换和待退休身份；Qwen的静态适配器提供实际状态与执行。
-兼容合批政策、模型恢复算法和数学阶段仍在Qwen实现中；GLM／DeepSeek／Kimi仍为组件消费者，
+兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
@@ -32,7 +32,7 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 
 ## 当前调整的边界
 
-共同调度接下来按真实调用提取：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
+共同调度按真实调用分工：请求窗口、兼容分组、接纳／淘汰、输出额度和停止属于
 `engine/inference`；模型适配负责容量事实、实际工作形状、准备／提交／完成事实、完整检查点与恢复。
 优先静态分派和已有类型，不为搬出Qwen循环先造大`ModelOps`接口。组件复用与第二个完整模型接入
 分别记录，不能用前者代签后者。CLI的`run(argc, argv)`也不冒充可安装的引擎服务API。
@@ -95,9 +95,45 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 CPU提前准备下一步仍值得独立设计：元数据准备与设备提交分别推进；设备token接力需要真实生产者、
 依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
-索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
+
+提前准备不得改已提交head、ledger、RNG或交付游标；它失败时只撤回自己的预留。
+后继设备提交另须取得前驱候选的真实读取权限、原生顺序及完整终结事实。
+模型层给出实际依赖、工作形状与资源需求，共同层管理有界推进，不把Qwen阶段表搬入Graph。
+
+已有机制和剩余缺口如下：
+
+- Graph的`InputSource`可保留尚未完成的不可变生产者，按原Queue选择device／host wait，
+  在消费者真实退休后补核生产者完整Status。`OrderedGraphSubmission`及typed pending frame
+  已用于原批次搬运组合，Compute已有有序读取writer的内部权限原语。
+- `Invocation::result/output`只导出成功终结的输出，尚无可交给引擎的在途token出口。
+  不把裸device地址或pending writer包装成ready `ReadLease`。最小纵切片先限定原两个Invocation、
+  一个真实共享Queue与固定caller-owned I32输出，保留原生产者、存储、提交代际和终结观察；
+  自身依赖、未提交生产者及未经证明的拓扑拒绝接纳，不增加执行器。
+- 一次A→B依赖链与持续有限槽轮换分别实现。`GraphOutput`保留原Invocation并阻止重绑；
+  B仍借读A时，即使A已完成，也不能重用A的槽。持续轮换还需分清输出存储／本次终结owner
+  与可重用载体的寿命，按真实读者退休归还权限；一次链通过不表示双槽重叠已完成。
+- CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
+  layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
+
+后继以原前驱候选及其代际为base，按原依赖执行。只有前驱成功、expected-base仍一致且本成员
+仍有额度时才顺序发布；前驱失败／取消使其未发布后继失效，已接受原生工作继续保活至真实退休。
+EOS、停止或背压使无效后继只退休、不发布token或推进RNG，提前预留的输出信用计入上限。
+后继事件成功不能替代前驱的采样有效性、原生错误或完整状态事实。
+
+容量按实际未发布候选计量。R1／K1若在前驱发布前提交后继，必须同时保留旧head、前驱目的及后继目的；
+仅两块状态会使后继覆盖失败回退需要的旧状态。当前`N+K×R`是单episode容量，
+不是深度二承诺；提前提交需显式增加候选预算或缩小提前深度。KV保留原追加／COW权限与各候选
+真实长度，不提前扩大已发布帧的可读范围；MTP接受未知时等待真实接受事实，或由实际实现修正
+候选长度，不能按全接受页界执行。`slots::SlotBindings`及Graph append目前仍从成功退休的输出
+取得ready状态，其pending适配要另行实现。
+
+实施先证明一次设备token依赖链及前驱失败传播，再证明有界槽连续轮换，最后接普通请求的
+有序发布、额度和停止，MTP另核接受／修复。以上是待实现设计，尚无重叠执行或提速结论。
+
+索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
-CPU／CUDA的B2独立接受前缀也已检查，完整CUDA普通／MTP窗口另有实测；其它平台尾部及性能仍需核查。
+CPU／CUDA的B2独立接受前缀也已检查，Apple／Vulkan普通与MTP K3完整tiny入口另已通过有限检查；
+两个tiny制品接受草稿数为零，不代表正向多token接受。完整CUDA普通／MTP窗口另有实测，跨平台性能仍需核查。
 先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
 旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
@@ -256,7 +292,7 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 
 自然生成入口现将 `--prefill-chunk-tokens` 接到已有真实分块原语：冷形状、ledger及dispatch元数据、
 最大query行数和实际 `prepare_generation_call` 使用同一量子。冷键区分中间StateOnly与末块EmitNext；
-每块返回原RequestLoop，不在模型内部循环独占完整prompt。未知prefix尾长仍走原有界exact接纳，
+每块返回原RequestLoop，不在模型内部循环独占完整prompt。无界或未计划prefix尾长仍走原有界exact接纳，
 后续turn的pending只进入首块一次，取消／重建保留真实分块和采样边界。
 [有限CLI检查](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)覆盖三条CUDA旅程及参数拒绝；
 当前仅普通自然生成，不是MTP分块、全模型varlen或设备执行预热。
@@ -266,13 +302,22 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 冷形状、ledger容量、query上界、modifier输出预检、prefix后缀及实际切片共用它。
 模型适配仍负责pending入turn、prefix查找、阶段／completion映射和成功后推进原游标；共同策略只保存量子，
 不拥有会话或第二份进度。普通和MTP保留各自实际可支持的分块边界。
+有限量子的尾块按不超过真实剩余行数的二次幂分解；默认无界行为不变，MTP继续拒绝有限量子。
+`parts`是精确片数但不单调（量子8的8行一片、7行三片），未知prefix的容量使用`parts_bound`。
+前缀启用时，`for_each_shape`将已知输入范围内可能的真实尾块行数／completion与成员支持并入原Family计划，
+仍按批宽与采样配置生成exact child，不扩展递归算子的padding语义，也不另建形状或预热注册表。
+额外小块可能增加episode和提交次数，合法数学形状的舍入仍可不同；这一政策本身不构成吞吐或质量结论。
+[有限尾块检查](../evidence/correctness/inference-bounded-prefill-2026-10-27.json)覆盖六组主机合同和一次真实生成后前缀命中，
+剩余T2以B2执行、ready后新增exact family为零；首次N4旅程未命中目标覆盖，保留记录后仅将驻留数改为N2。
 [有限检查](../evidence/correctness/inference-prefill-facts-2026-10-27.json)覆盖四组纯主机边界与原Q2／B2多轮CUDA非时间报告一致，
 不把这一算法抽离记作吞吐提升或其它平台运行结果。
 
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
-不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。
+不会预先接纳Session或另造编译缓存。额外exact容量在初始冷计划结束时按完整键数冻结（至少1），
+与会话数量N解耦；仍用原FIFO、真实drain和资源预算，动态未见形状可能在请求边界准备并淘汰旧额外family。
 `--warmup-shapes planned`只遍历原`planned_slot_uses`中有实际用途的完整形状键，在ready前调用同一准备入口；
-默认lazy保留按需载体准备。它不提交设备工作、不推进状态或RNG，不保证未知尾长已准备，也不代表capture已录制。
+默认lazy保留按需载体准备。它不提交设备工作、不推进状态或RNG；有限量子与前缀启用时覆盖已知范围内的可能尾块，
+但不保证所有未来输入形状已准备，也不代表capture已录制。
 所有调用计划先冻结再创建载体，不复制一份预热注册表。额外载体和输入暂存的真实分配可能增加启动内存，
 执行预算与会话cache预算仍分别生效，不能把`--cache-bytes`宣称为整个Model显存上限。
 [有限CLI检查](../evidence/correctness/inference-warmup-shapes-2026-10-27.json)覆盖普通B2多轮lazy／planned非时间报告一致、MTP K2、fixed及非法policy拒绝；
