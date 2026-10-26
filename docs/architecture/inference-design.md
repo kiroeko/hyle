@@ -118,13 +118,19 @@ reset后保留事务不代表可继续执行；真实退休后可以take回收ow
 [13项有限检查](../evidence/correctness/inference-slot-store-2026-10-27.json)包括5个实际Store检查与8个相邻合同。
 这条fallback未接引擎、不支持capture，索引上传可能等待；原生融合仍须消除状态物化和逐层metadata等待，
 不能拿这个正确性入口代替性能实现。共同绑定与退休应继续复用，不能在每个Provider再复制一套事务。
-下一段迁移保持`slots::prepare/bind/take`入口，提取唯一的内部槽绑定owner，
+融合沿用`slots::prepare/bind/take`入口和唯一的内部槽绑定owner，
 fallback与融合region只各持一个实例；selected-artifact冷扩展交回该实例，不新增热分派表。
-融合从原Store回溯到同item的GDN和Gather，只消解无逃逸读者的稠密状态，Y可有外部读者。
-源码侧的原生Recipe需要显式effect roots：即使Y不逃出，也必须在原ggml graph中执行状态写入，
+当前CUDA冷匹配从原Store回溯同item的GDN和Gather，只消解无逃逸读者的稠密状态，Y可有外部读者。
+原生Recipe以显式effect roots保留副作用：即使Y不逃出，也在原ggml graph中执行状态写入，
 不能用伪公开输出维持活性。源ID与目的ID共用一次小metadata上传，保持各自原真实权限；
 绑定失败回滚本次权限后保留调用方事务，换载体前销毁原录制。
-这些融合与共用owner仍是待实现项，当前Store检查不替代它们。
+[有限集成检查](../evidence/correctness/inference-indexed-gdn-graph-2026-10-27.json)已覆盖精确五节点链、
+Y发布与仅写状态、reset撤权回收及原13项Store／投影合同；实际选择一个融合region，
+候选状态与原稠密GDN逐位一致，源槽、未选槽及padding不变。普通与MTP共享同一K参数，
+但这不代表MTP接受／回滚或完整引擎已经接通。带逃逸状态／别名、其它图形及跨后端读绑定另计。
+当前一次上传针对一个region，尚须消除引擎逐层metadata等待并接conv；
+CPU／Vulkan／Apple及CUDA拒绝融合时的合法投影绑定也须在统一引擎接线前补齐，
+不能让模型按Provider分叉构图或伪造整池ReadLease。
 私有CUDA索引GDN沿原内核的F32运算体寻址：pool保留真实`[S,S,H,P]`及槽stride，
 源为I32`[B]`，目的为batch-major I32`[B,K]`，K>1写最后K个边界的时间升序状态。
 它保留原op／tensor／backend及旧fused-cache布局，冷接线须核真实native契约符号；

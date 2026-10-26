@@ -32,6 +32,7 @@
 #include "native_bridge.h"
 #include "native_context.h"
 #include "tensor_program.h"
+#include "indexed_state.h"
 #include "sink_mask.h"
 
 namespace hyle::compute::ggml_cuda {
@@ -769,6 +770,8 @@ struct Invocation final {
       ggml_set_output(roots[id]);
       ggml_build_forward_expand(graph, tensors[id]);
     }
+    for (const auto id : recipe.effect_roots)
+      ggml_build_forward_expand(graph, tensors[id]);
     for (std::size_t id = 0; id < count; ++id) {
       if (!tensors[id])
         return Status::InvalidArgument("ggml CUDA recipe has an unused value");
@@ -1476,6 +1479,7 @@ Status evaluate_constant_recipe(void *context, Recipe recipe,
   if (!sequence.terminal().ok())
     return sequence.terminal();
   if (!context || !allocator.valid() || !recipe.inputs.empty() ||
+      !recipe.effect_roots.empty() ||
       destinations.empty() || destinations.size() != recipe.outputs.size())
     return Status::InvalidArgument("ggml CUDA constant recipe bindings differ");
   // Ready-only regions are represented by their prepared output bindings,
@@ -1628,6 +1632,64 @@ bool supports(void *value, Operation operation,
       static_cast<Context *>(value)->device);
 }
 
+bool supports_indexed_state(void *value, const Node &node,
+                             std::span<const TensorDesc> values) noexcept {
+  const auto *gdn = node.operation.get_if<GatedDeltaNet>();
+  const auto recurrent = node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
+  if (!value || !node.indexed_state || (!gdn && !recurrent) ||
+      node.inputs.size() != (gdn ? 8U : 10U) || node.outputs.size() != 1 ||
+      std::ranges::any_of(node.inputs, [&](auto id) { return id >= values.size(); }) ||
+      node.outputs[0] >= values.size() ||
+      ggml_hyle_cuda_gdn_indexed_state_contract() != kIndexedStateContract)
+    return false;
+  const auto state_port = gdn ? 5U : 7U;
+  const auto &q = values[node.inputs[0]], &v = values[node.inputs[2]];
+  const auto &pool = values[node.inputs[state_port]];
+  const auto &sources = values[node.inputs[state_port + 1]];
+  const auto &destinations = values[node.inputs[state_port + 2]];
+  constexpr auto element_bytes = static_cast<std::int64_t>(sizeof(float));
+  if (!q.valid() || !v.valid() || q.rank() != 4 || v.rank() != 4 || q.dimensions()[0] <= 0 ||
+      q.dimensions()[0] != v.dimensions()[0] || q.dimensions()[3] <= 0 ||
+      q.dimensions()[3] != v.dimensions()[3] || v.dimensions()[2] <= 0 ||
+      !pool.valid() || !pool.is_plain() || pool.rank() != 2 ||
+      pool.data_type() != DataType::kFloat32 || pool.dimensions()[0] <= 0 ||
+      pool.dimensions()[0] > INT32_MAX || pool.dimensions()[1] <= 0 ||
+      pool.byte_strides()[1] != element_bytes ||
+      !sources.valid() || !sources.is_dense() || sources.rank() != 1 ||
+      sources.data_type() != DataType::kInt32 ||
+      sources.dimensions()[0] != q.dimensions()[0] ||
+      !destinations.valid() || !destinations.is_dense() || destinations.rank() != 1 ||
+      destinations.data_type() != DataType::kInt32)
+    return false;
+  const auto width = q.dimensions()[3], heads = v.dimensions()[2];
+  const auto snapshots = gdn ? gdn->snapshot_count : recurrent->snapshot_count;
+  if (!snapshots || snapshots > static_cast<std::uint64_t>(q.dimensions()[1]) ||
+      width > INT64_MAX / width || width * width > INT64_MAX / heads ||
+      pool.dimensions()[1] != width * width * heads ||
+      pool.dimensions()[1] > INT64_MAX / element_bytes ||
+      pool.byte_strides()[0] < pool.dimensions()[1] * element_bytes ||
+      pool.byte_strides()[0] % element_bytes != 0 ||
+      q.dimensions()[0] > INT64_MAX / snapshots ||
+      destinations.dimensions()[0] != q.dimensions()[0] * snapshots)
+    return false;
+  const auto pool_bytes = pool.required_bytes();
+  if (!pool_bytes || *pool_bytes > static_cast<std::uint64_t>(INT64_MAX)) return false;
+  // Validate against the original public dense mathematics, without allocating
+  // its state or changing any type, gate, head grouping or rounding boundary.
+  std::array<TensorDesc, 8> original;
+  for (std::size_t i = 0; i < state_port; ++i)
+    original[i] = values[node.inputs[i]];
+  auto initial = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 4>{q.dimensions()[0], heads, width, width});
+  if (!initial) return false;
+  original[state_port] = *initial;
+  std::array<TensorDesc, 2> outputs;
+  const auto inputs = std::span(original).first(state_port + 1);
+  return infer_output_descriptions(node.operation, inputs, outputs).ok() &&
+      outputs[0] == values[node.outputs[0]] &&
+      supports(value, node.operation, inputs, outputs);
+}
+
 ProviderPrepareOutcome compile(void *value, Recipe recipe,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
@@ -1638,15 +1700,25 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
   std::vector<std::vector<std::int32_t>> snapshot_indices;
   std::vector<Program::IndexCheck> index_checks;
   try {
+    for (const auto id : recipe.effect_roots)
+      if (id >= recipe.values.size())
+        return ProviderPrepareOutcome::error(Status::InvalidArgument(
+            "ggml CUDA effect root is not a recipe value"));
     alignments.resize(recipe.values.size(), 1);
     hadamards.resize(recipe.nodes.size());
     for (std::size_t node_index = 0; node_index < recipe.nodes.size();
          ++node_index) {
       const auto &node = recipe.nodes[node_index];
+      if (node.indexed_state &&
+          (!supports_indexed_state(value, node, recipe.values) ||
+           std::ranges::find(recipe.effect_roots, node.outputs[0]) == recipe.effect_roots.end()))
+        return ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+            "ggml CUDA indexed state needs exact geometry and its original effect root"));
       const auto require = [&](std::uint32_t id) {
         alignments[id] = std::max(
             alignments[id],
-            boundary_alignment(node.operation, recipe.values[id].data_type()));
+            node.indexed_state ? data_type_size(recipe.values[id].data_type())
+                : boundary_alignment(node.operation, recipe.values[id].data_type()));
       };
       for (const auto id : node.inputs)
         require(id);
@@ -1657,7 +1729,7 @@ ProviderPrepareOutcome compile(void *value, Recipe recipe,
           node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>();
       const auto snapshots = gdn ? gdn->snapshot_count
                                  : recurrent ? recurrent->snapshot_count : 1;
-      if (snapshots > 1) {
+      if (snapshots > 1 && !node.indexed_state) {
         if (snapshot_indices.empty())
           snapshot_indices.resize(recipe.nodes.size());
         const auto batches = recipe.values[node.inputs[0]].dimensions()[0];

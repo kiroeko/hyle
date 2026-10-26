@@ -46,6 +46,11 @@ struct Node final {
   Operation operation;
   std::vector<std::uint32_t> inputs;
   std::vector<std::uint32_t> outputs;
+  // Trusted cold Graph lowering only. The original GDN math is unchanged;
+  // its final dense state input is replaced by the real [P,E] pool followed
+  // by private source I32[B] and destination I32[B*K] controls. Only Y is a
+  // tensor output. Actual pool permissions belong to the outer Graph effect.
+  bool indexed_state = false;
 };
 struct Recipe final {
   struct Constant final {
@@ -59,6 +64,9 @@ struct Recipe final {
   // Graph's immutable artifact owns these bindings through region teardown.
   // Ordinary Compute inputs remain rebindable and never enter this list.
   std::vector<Constant> constants;
+  // Native values whose original external effects must execute even when no
+  // tensor escapes. These are not published outputs or extra execution work.
+  std::vector<std::uint32_t> effect_roots;
 };
 
 // Cold constant preparation records into the caller's original sequence. The
@@ -88,6 +96,9 @@ supports_bfloat_paired_projection(void *context, std::uint64_t inner,
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
 supports(void *context, Operation, std::span<const TensorDesc>,
          std::span<const TensorDesc>) noexcept;
+HYLE_COMPUTE_PROVIDER_GGML_CUDA_API bool
+supports_indexed_state(void *context, const Node &,
+                       std::span<const TensorDesc> values) noexcept;
 HYLE_COMPUTE_PROVIDER_GGML_CUDA_API ProviderPrepareOutcome
 compile(void *context, Recipe recipe, mem::AllocatorRef,
         detail::ProviderPrepared *) noexcept;

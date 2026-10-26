@@ -234,7 +234,9 @@ struct RegionAccess final {
   // Takes payload ownership only after successful cold admission.
   HYLE_GRAPH_API static Status attach_resource_payload(
       Invocation &, const ResourcePayloadVTable *, void *) noexcept;
-  // Cold opt-in capacity; ordinary borrowed invocations need no lease table.
+  // Cold opt-in capacity for extra records beyond the current binding count;
+  // ordinary borrowed invocations need no lease table. Repeated reservations
+  // still account for guards installed since the earlier reservation.
   HYLE_GRAPH_API static Status reserve_reads(Invocation&,std::uint32_t,
       ResourceOptions) noexcept;
   // Owns immutable input metadata of the selected cold configuration. Only
@@ -256,6 +258,12 @@ struct RegionAccess final {
   // pending/source controls and all other caller/configuration bindings stay.
   // Native input owners use the same qualified reverse release as unbind.
   HYLE_GRAPH_API static Status release_read_projection(Invocation&,ValueId) noexcept;
+  // Cold fact query, separate from admission/retirement. False after the
+  // original projection was reset/released; a different live scope or ready
+  // footprint is an error. Rechecks the exact original guards, including
+  // subview bounds. The stable state survives public Invocation moves.
+  HYLE_GRAPH_API static Result<bool> has_read_projection(const InvocationState*,
+      ValueId,std::span<const compute::ReadLease>) noexcept;
   // Same-Graph write then read. Checks the original Graph control edges and
   // exact selected artifacts; only the supplied independent page writers are
   // admitted to the original resource episode. No whole-bank write is granted.

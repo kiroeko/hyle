@@ -23,6 +23,15 @@ bool same_storage(mem::ConstBufferView a, mem::ConstBufferView b) noexcept {
   return a.resource() == b.resource() && a.native_handle() == b.native_handle() &&
       a.offset() == b.offset() && a.size() == b.size();
 }
+bool same_configuration(const detail::StoreConfiguration &a,
+    const detail::StoreConfiguration &b) noexcept {
+  const auto same = [](c::ConstTensorView x, c::ConstTensorView y) noexcept {
+    return x.valid() == y.valid() && (!x.valid() ||
+        (x.description() == y.description() && same_storage(x.storage(), y.storage())));
+  };
+  return same(a.capacity, b.capacity) && same(a.source_indices, b.source_indices) &&
+      same(a.destination_indices, b.destination_indices);
+}
 
 // Only private I32 control bytes, never inference payload or slot ownership.
 // Uploads use original leases/QueueSequence/Completion, including failures.
@@ -57,19 +66,22 @@ struct Indices final {
     return result;
   }
   Status upload(const cd::QueueRef &queue,
-      std::span<const c::LeaseSlotAddress> addresses) noexcept {
+      std::span<const c::LeaseSlotAddress> sources,
+      std::span<const c::LeaseSlotAddress> destinations) noexcept {
     if (failed || pending.valid() || (!direct && uses.active_batches()))
       return Status::FailedPrecondition("slot index upload is failed or not actually retired");
     if (ready.valid()) { HYLE_ASSIGN_OR_RETURN(writer, ready.try_write()); }
     if (source.valid()) { HYLE_ASSIGN_OR_RETURN(staging, source.try_write()); }
     auto &host_writer = direct ? writer : staging;
     HYLE_ASSIGN_OR_RETURN(auto host, host_writer.view());
-    if (addresses.size() != host.size() / sizeof(std::int32_t))
+    if (sources.size() > SIZE_MAX - destinations.size() ||
+        sources.size() + destinations.size() != host.size() / sizeof(std::int32_t))
       return Status::InvalidArgument("slot index count differs from its fixed carrier");
     HYLE_ASSIGN_OR_RETURN(auto mapping, host.map_host());
     HYLE_ASSIGN_OR_RETURN(auto bytes, mapping.writable_bytes());
-    for (std::size_t i = 0; i < addresses.size(); ++i) {
-      const auto id = static_cast<std::int32_t>(addresses[i].index);
+    for (std::size_t i = 0; i < sources.size() + destinations.size(); ++i) {
+      const auto &address = i < sources.size() ? sources[i] : destinations[i - sources.size()];
+      const auto id = static_cast<std::int32_t>(address.index);
       std::memcpy(bytes.data() + i * sizeof(id), &id, sizeof(id));
     }
     HYLE_RETURN_IF_ERROR(mapping.flush());
@@ -98,6 +110,78 @@ struct Indices final {
     return Status::Ok();
   }
 };
+} // namespace
+
+namespace detail {
+struct StoreBindingData final {
+  explicit StoreBindingData(mem::AllocatorRef selected) noexcept
+      : allocator(selected),
+        writer_pointers(mem::StdAllocator<const c::WriteLease *>{selected}) {}
+  void destroy() noexcept { const auto selected = allocator; selected.destroy(this); }
+  mem::AllocatorRef allocator;
+  SlotBindings bindings;
+  Indices indices;
+  cd::QueueRef queue;
+  ResourceOptions options;
+  std::vector<const c::WriteLease *, mem::StdAllocator<const c::WriteLease *>> writer_pointers;
+  StoreRegionFacts facts;
+  StoreConfiguration configuration;
+  StoreConfiguration last_configuration;
+  // Stable original state, not the movable public Invocation wrapper.
+  const gd::InvocationState *owner = nullptr;
+  gd::ProjectedWriter writer{};
+};
+struct StoreBindingAccess final {
+  static StoreBindingData *get(StoreBinding &binding) noexcept { return binding.data_; }
+  static void replace(StoreBinding &binding, StoreBindingData *data) noexcept {
+    if (binding.data_) binding.data_->destroy();
+    binding.data_ = data;
+  }
+};
+StoreBinding::StoreBinding(StoreBinding &&other) noexcept
+    : data_(std::exchange(other.data_, nullptr)) {}
+StoreBinding &StoreBinding::operator=(StoreBinding &&other) noexcept {
+  if (this != &other) {
+    StoreBinding next(std::move(other)); std::swap(data_, next.data_);
+  }
+  return *this;
+}
+StoreBinding::~StoreBinding() { if (data_) data_->destroy(); }
+bool StoreBinding::prepared() const noexcept { return data_ != nullptr; }
+bool StoreBinding::valid() const noexcept { return data_ && data_->bindings.valid(); }
+bool StoreBinding::same_queue(const cd::QueueSequence &sequence) const noexcept {
+  return data_ && data_->queue.same_owner(sequence);
+}
+StoreConfiguration StoreBinding::configuration() const noexcept {
+  return data_ ? data_->configuration : StoreConfiguration{};
+}
+const SlotBindings *StoreBinding::transaction() const noexcept {
+  return valid() ? &data_->bindings : nullptr;
+}
+Status StoreBinding::validate_authority() const noexcept {
+  if (!valid() || !data_->indices.ready.valid())
+    return Status::FailedPrecondition("slot store has no current original transaction and controls");
+  HYLE_ASSIGN_OR_RETURN(auto bound,
+      gd::RegionAccess::has_write_effect(data_->owner, data_->writer, data_->writer_pointers));
+  if (!bound)
+    return Status::FailedPrecondition("slot store original write permissions were reset or withdrawn");
+  if (data_->facts.source.count) {
+    HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::has_read_projection(
+        data_->owner, data_->facts.source.capacity, data_->bindings.sources()));
+    if (!source)
+      return Status::FailedPrecondition("slot store original source permissions were reset or withdrawn");
+  }
+  return Status::Ok();
+}
+Status StoreBinding::validate_configuration(const StoreConfiguration &actual) const noexcept {
+  HYLE_RETURN_IF_ERROR(validate_authority());
+  if (!same_configuration(actual, data_->configuration))
+    return Status::InvalidArgument("slot store differs from its private validated capacity/IDs");
+  return Status::Ok();
+}
+} // namespace detail
+
+namespace {
 
 struct Prepared final {
   Store store;
@@ -110,39 +194,26 @@ struct Prepared final {
 };
 struct Slot final {
   explicit Slot(mem::AllocatorRef allocator) noexcept
-      : writer_pointers(mem::StdAllocator<const c::WriteLease *>{allocator}),
-        destinations(mem::StdAllocator<mem::BufferView>{allocator}) {}
-  SlotBindings bindings;
-  Indices indices;
-  cd::QueueRef queue;
-  ResourceOptions options;
-  std::vector<const c::WriteLease *, mem::StdAllocator<const c::WriteLease *>> writer_pointers;
+      : destinations(mem::StdAllocator<mem::BufferView>{allocator}) {}
+  detail::StoreBinding binding;
   std::vector<mem::BufferView, mem::StdAllocator<mem::BufferView>> destinations;
-  // The original state owns this slot. This non-owning back-reference is
-  // stable across public Invocation moves and is queried only while it lives.
-  const gd::InvocationState *owner = nullptr;
-  gd::ProjectedWriter writer{};
   c::ConstTensorView rows, ids;
-  bool prepared = false, sealed = false;
+  bool sealed = false;
 };
 
 Status validate_rows(const Prepared &p, Slot &s,
     c::ConstTensorView rows, c::ConstTensorView ids) noexcept {
-  if (!s.prepared || !s.bindings.valid() || !s.indices.ready.valid() ||
-      rows.description() != p.rows || ids.description() != p.ids)
+  if (rows.description() != p.rows || ids.description() != p.ids)
     return Status::FailedPrecondition("slot store has no current exact transaction and controls");
-  HYLE_ASSIGN_OR_RETURN(auto bound,
-      gd::RegionAccess::has_write_effect(s.owner, s.writer, s.writer_pointers));
-  if (!bound)
-    return Status::FailedPrecondition("slot store original write permissions were reset or withdrawn");
-  HYLE_ASSIGN_OR_RETURN(auto expected_ids, s.indices.ready.view());
-  if (!same_storage(ids.storage(), expected_ids))
-    return Status::InvalidArgument("slot store IDs differ from its private validated carrier");
+  auto configuration = s.binding.configuration();
+  configuration.destination_indices = ids;
+  HYLE_RETURN_IF_ERROR(s.binding.validate_configuration(configuration));
+  const auto &bindings = *s.binding.transaction();
   const auto input = rows.storage();
   if (input.resource() != p.resource || input.offset() > SIZE_MAX - input.size())
     return Status::InvalidArgument("slot store rows differ from its original Queue storage");
-  for (std::size_t i = 0; i < s.bindings.destination_count(); ++i) {
-    HYLE_ASSIGN_OR_RETURN(auto target, s.bindings.destinations()[i].view());
+  for (std::size_t i = 0; i < bindings.destination_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto target, bindings.destinations()[i].view());
     if (target.resource() != p.resource || target.offset() > SIZE_MAX - target.size())
       return Status::InvalidArgument("slot store destination range changed");
     if (input.native_handle() == target.native_handle() &&
@@ -160,6 +231,34 @@ const gd::RegionBindingReleaseVTable binding_release{
       auto &slot = *static_cast<Slot *>(opaque);
       slot.rows = {}; slot.ids = {}; slot.sealed = false;
     }, true};
+const detail::StoreRegionVTable store_binding{
+    .inspect = [](const ProviderRegionPrepared &prepared, void *invocation) noexcept
+        -> Result<detail::StoreRegionFacts> {
+      if (!prepared.state || !invocation)
+        return std::unexpected(Status::InvalidArgument("slot store needs its original artifact/slot"));
+      const auto &p = *static_cast<Prepared *>(prepared.state);
+      return detail::StoreRegionFacts{.store = p.node, .schema = p.store.schema,
+          .destination_indices = p.ids_value, .destination_input_port = p.ids_port,
+          .destination_count = static_cast<std::size_t>(p.rows.dimensions()[0]),
+          .resource = p.resource};
+    },
+    .binding = [](void *invocation) noexcept {
+      return &static_cast<Slot *>(invocation)->binding;
+    },
+    .configure = [](const ProviderRegionPrepared &prepared, void *invocation,
+        const detail::StoreConfiguration &configuration) noexcept -> Status {
+      const auto &p = *static_cast<Prepared *>(prepared.state);
+      if (!configuration.capacity.valid() || configuration.source_indices.valid() ||
+          configuration.destination_indices.description() != p.ids)
+        return Status::InvalidArgument("slot store private configuration differs");
+      auto &s = *static_cast<Slot *>(invocation);
+      s.rows = {}; s.ids = {}; s.sealed = false;
+      return Status::Ok();
+    },
+    .clear_configuration = [](const ProviderRegionPrepared &, void *invocation) noexcept {
+      auto &s = *static_cast<Slot *>(invocation);
+      s.rows = {}; s.ids = {}; s.sealed = false;
+    }};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Prepared *>(p)); },
     .alias_support = [](void *, std::size_t, std::size_t) noexcept { return c::AliasSupport{}; },
@@ -169,7 +268,6 @@ const ProviderRegionPreparedVTable prepared_table{
       if (!slot) return Status::ResourceExhausted("slot store invocation metadata");
       try {
         const auto count = static_cast<std::size_t>(static_cast<Prepared *>(opaque)->rows.dimensions()[0]);
-        slot->writer_pointers.resize(count);
         slot->destinations.resize(count);
       }
       catch (...) { a.destroy(slot); return Status::ResourceExhausted("slot store selected writer pointers"); }
@@ -181,7 +279,7 @@ const ProviderRegionPreparedVTable prepared_table{
         std::span<const c::ConstTensorView> inputs, std::span<const c::TensorView> outputs) noexcept -> cd::EnqueueResult {
       const auto &p = *static_cast<Prepared *>(opaque);
       auto &s = *static_cast<Slot *>(invocation);
-      if (inputs.size() != 2 || !outputs.empty() || !s.sealed || !s.queue.same_owner(sequence))
+      if (inputs.size() != 2 || !outputs.empty() || !s.sealed || !s.binding.same_queue(sequence))
         return cd::EnqueueResult::rejected(Status::FailedPrecondition("slot store needs its original sealed Queue episode"));
       if (inputs[p.rows_port].description() != p.rows || inputs[p.ids_port].description() != p.ids ||
           !same_storage(inputs[p.rows_port].storage(), s.rows.storage()) ||
@@ -214,7 +312,9 @@ const ProviderRegionPreparedVTable prepared_table{
       s.sealed = true; return Status::Ok();
     },
     .query_extension = [](void *, c::ProviderExtensionId id) noexcept -> const void * {
-      return id == gd::kRegionBindingReleaseExtensionId ? &binding_release : nullptr;
+      if (id == gd::kRegionBindingReleaseExtensionId) return &binding_release;
+      if (id == detail::kStoreBindingExtensionId) return &store_binding;
+      return nullptr;
     }};
 
 struct Description final {
@@ -330,21 +430,59 @@ c::ProviderPrepareOutcome compile(void *opaque, const RegionCompileRequest &requ
 const RegionProviderVTable provider_table{&propose, &resources, &compile};
 struct Find final {
   NodeId node;
-  Slot *slot = nullptr;
-  Prepared *prepared = nullptr;
+  detail::StoreBinding *binding = nullptr;
+  const detail::StoreRegionVTable *interface = nullptr;
+  ProviderRegionPrepared prepared{};
+  void *invocation = nullptr;
+  detail::StoreRegionFacts facts;
   gd::ProjectedWriter proof{};
   ExecutionLaneId lane;
 };
+const detail::StoreRegionVTable *store_interface(const gd::RegionAccessView &view) noexcept {
+  return view.prepared_vtable && view.prepared_vtable->query_extension
+      ? static_cast<const detail::StoreRegionVTable *>(view.prepared_vtable->query_extension(
+          view.prepared, detail::kStoreBindingExtensionId)) : nullptr;
+}
+Result<detail::StoreRegionFacts> inspect(const gd::RegionAccessView &view,
+    const detail::StoreRegionVTable &interface) noexcept {
+  if (!view.prepared || !view.invocation || !interface.inspect || !interface.binding ||
+      !interface.configure || !interface.clear_configuration)
+    return std::unexpected(Status::InvalidArgument("slot store cold extension is incomplete"));
+  const ProviderRegionPrepared prepared{.vtable = view.prepared_vtable, .state = view.prepared};
+  HYLE_ASSIGN_OR_RETURN(auto facts, interface.inspect(prepared, view.invocation));
+  if (!facts.store.valid() || !facts.schema.valid() || !facts.resource.valid() ||
+      !facts.destination_indices.valid() || facts.destination_indices.kind() != ValueKind::kInput ||
+      facts.destination_input_port == UINT32_MAX || !facts.destination_count ||
+      facts.destination_count > facts.schema.slot_count() ||
+      facts.source.count > static_cast<std::size_t>(INT32_MAX) ||
+      facts.source.count > SIZE_MAX - facts.destination_count ||
+      std::ranges::find(view.node_ordinals, facts.store.ordinal()) == view.node_ordinals.end())
+    return std::unexpected(Status::InvalidArgument("slot store cold geometry/artifact facts differ"));
+  if (facts.source.count && (!facts.source.gather.valid() ||
+      !facts.source.capacity.valid() || !facts.source.indices.valid() ||
+      facts.source.capacity.kind() != ValueKind::kInput ||
+      facts.source.indices.kind() != ValueKind::kInput ||
+      facts.source.capacity == facts.source.indices ||
+      facts.source.capacity == facts.destination_indices ||
+      facts.source.indices == facts.destination_indices ||
+      facts.source.capacity_input_port == UINT32_MAX ||
+      std::ranges::find(view.node_ordinals, facts.source.gather.ordinal()) == view.node_ordinals.end()))
+    return std::unexpected(Status::InvalidArgument("slot source cold reader/artifact facts differ"));
+  return facts;
+}
 Status find(void *opaque, const gd::RegionAccessView &view) noexcept {
   auto &found = *static_cast<Find *>(opaque);
-  if (view.prepared_vtable != &prepared_table) return Status::Ok();
-  auto *prepared = static_cast<Prepared *>(view.prepared);
-  if (!prepared || prepared->node != found.node) return Status::Ok();
-  if (found.slot || view.node_ordinals.size() != 1 ||
-      view.node_ordinals[0] != found.node.ordinal() || !view.invocation)
+  const auto *interface = store_interface(view);
+  if (!interface) return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto facts, inspect(view, *interface));
+  if (facts.store != found.node) return Status::Ok();
+  if (found.binding)
     return Status::InvalidArgument("slot store selected artifact/slot identity differs");
-  found.slot = static_cast<Slot *>(view.invocation); found.prepared = prepared;
-  found.proof = {found.node, view.step, &prepared_table, prepared}; found.lane = view.lane;
+  found.binding = interface->binding(view.invocation);
+  if (!found.binding) return Status::InvalidArgument("slot store has no original binding owner");
+  found.interface = interface; found.prepared = {.vtable = view.prepared_vtable, .state = view.prepared};
+  found.invocation = view.invocation; found.facts = facts;
+  found.proof = {found.node, view.step, view.prepared_vtable, view.prepared}; found.lane = view.lane;
   return Status::Ok();
 }
 } // namespace
@@ -361,11 +499,13 @@ Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
   HYLE_RETURN_IF_ERROR(invocation.prepare_resources(resources));
   struct Call final { Invocation *invocation; std::span<const QueueBinding> queues; PrepareOptions options; } call{&invocation, queues, options};
   return gd::RegionAccess::visit(invocation, [](void *opaque, const gd::RegionAccessView &view) noexcept -> Status {
-    if (view.prepared_vtable != &prepared_table) return Status::Ok();
+    const auto *interface = store_interface(view);
+    if (!interface) return Status::Ok();
     const auto &call = *static_cast<Call *>(opaque);
-    const auto &p = *static_cast<Prepared *>(view.prepared);
-    auto &s = *static_cast<Slot *>(view.invocation);
-    if (s.bindings.valid()) return Status::FailedPrecondition("take original slot bindings before preparation");
+    HYLE_ASSIGN_OR_RETURN(auto facts, inspect(view, *interface));
+    auto *binding = interface->binding(view.invocation);
+    if (!binding) return Status::InvalidArgument("slot store has no original binding owner");
+    if (binding->valid()) return Status::FailedPrecondition("take original slot bindings before preparation");
     const auto first = std::ranges::find_if(call.queues, [&](const auto &binding) { return binding.lane == view.lane; });
     if (first == call.queues.end() || !first->queue ||
         std::count_if(call.queues.begin(), call.queues.end(), [&](const auto &binding) { return binding.lane == view.lane; }) != 1)
@@ -373,8 +513,18 @@ Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::validate_queue(call.invocation->executable(), view.lane, *first->queue));
     HYLE_ASSIGN_OR_RETURN(auto queue, cd::QueueRef::acquire(*first->queue));
     const ResourceOptions resources{call.options.allocator, call.options.resource_budget};
-    HYLE_ASSIGN_OR_RETURN(auto indices, Indices::create(p.resource, call.options.host_workspace,
-        static_cast<std::size_t>(p.rows.dimensions()[0]), resources));
+    auto allocator = resources.allocator;
+    if (resources.resource_budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(allocator, resources.resource_budget.metadata_allocator());
+    }
+    auto *data = allocator.construct<detail::StoreBindingData>(allocator);
+    if (!data) return Status::ResourceExhausted("slot store original binding metadata");
+    detail::StoreBinding next;
+    detail::StoreBindingAccess::replace(next, data);
+    try { data->writer_pointers.resize(facts.destination_count); }
+    catch (...) { return Status::ResourceExhausted("slot store selected writer pointers"); }
+    HYLE_ASSIGN_OR_RETURN(auto indices, Indices::create(facts.resource, call.options.host_workspace,
+        facts.source.count + facts.destination_count, resources));
     if (!indices.direct) {
       HYLE_ASSIGN_OR_RETURN(auto destination, indices.writer.view());
       HYLE_ASSIGN_OR_RETURN(auto source, indices.staging.view());
@@ -384,8 +534,10 @@ Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
             "slot host_workspace must support metadata transfer on the original Queue");
     }
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(*call.invocation, view.step));
-    s.indices = std::move(indices); s.queue = std::move(queue); s.options = resources;
-    s.prepared = true; s.sealed = false; s.rows = {}; s.ids = {};
+    interface->clear_configuration({.vtable = view.prepared_vtable, .state = view.prepared}, view.invocation);
+    data->indices = std::move(indices); data->queue = std::move(queue);
+    data->options = resources; data->facts = facts;
+    *binding = std::move(next);
     return Status::Ok();
   }, &call);
 }
@@ -393,13 +545,17 @@ Status prepare(Invocation &invocation, std::span<const QueueBinding> queues,
 Status bind(Invocation &invocation, const Graph &graph, NodeId node,
     SlotBindings &&bindings) noexcept {
   Find found{node}; HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, node, &find, &found));
-  if (!found.slot) return Status::Unimplemented("Store has no selected original slot implementation");
-  auto &s = *found.slot; const auto &p = *found.prepared;
-  if (!s.prepared || !s.queue.is_open() || s.bindings.valid() || !bindings.valid())
+  if (!found.binding) return Status::Unimplemented("Store has no selected original slot implementation");
+  auto *data = detail::StoreBindingAccess::get(*found.binding);
+  if (!data || !data->queue.is_open() || data->bindings.valid() || !bindings.valid())
     return Status::FailedPrecondition("slot bind needs its prepared open Queue and untaken original transaction");
+  auto &s = *data; const auto &p = found.facts;
   const auto layout = bindings.layout();
   HYLE_ASSIGN_OR_RETURN(auto schema, Schema::create(layout.description(), layout.slot_count(), layout.stride_bytes()));
-  if (schema != p.store.schema || bindings.destination_count() != static_cast<std::size_t>(p.rows.dimensions()[0]) ||
+  if (schema != p.schema || bindings.destination_count() != p.destination_count ||
+      (p.source.count && bindings.source_count() != p.source.count) ||
+      s.facts.store != p.store || s.facts.schema != p.schema ||
+      s.facts.source.count != p.source.count || s.writer_pointers.size() != p.destination_count ||
       bindings.source_addresses().size() != bindings.source_count() ||
       bindings.destination_addresses().size() != bindings.destination_count())
     return Status::InvalidArgument("slot transaction differs from its selected Store geometry");
@@ -416,33 +572,106 @@ Status bind(Invocation &invocation, const Graph &graph, NodeId node,
   if (carrier.resource() != p.resource) return Status::InvalidArgument("slot pool differs from its selected Queue resource");
   HYLE_ASSIGN_OR_RETURN(auto description, schema.capacity_description());
   HYLE_ASSIGN_OR_RETURN(auto capacity, c::ConstTensorView::create(description, carrier));
-  s.sealed = false;
-  HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, found.proof.step));
-  HYLE_RETURN_IF_ERROR(s.indices.upload(s.queue, bindings.destination_addresses()));
-  HYLE_ASSIGN_OR_RETURN(auto ids, s.indices.ready.tensor(p.ids));
-  HYLE_RETURN_IF_ERROR(invocation.bind(p.ids_value, ids));
-  const std::array controls{s.indices.ready};
-  HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation, graph, capacity,
-      bindings.sources(), s.writer_pointers, {}, found.proof, controls, s.options));
+  if (p.source.count) {
+    // The projected input adds its guards before bind_write_effect performs
+    // its own reservation. Reserve the actual combined footprint first.
+    if (p.source.count > (UINT32_MAX - 1u) - p.destination_count - 1u)
+      return Status::ResourceExhausted("slot projected permission count overflows");
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::reserve_reads(invocation,
+        static_cast<std::uint32_t>(p.source.count + p.destination_count + 1), s.options));
+  }
+  // Changing only validated indices in a fixed private carrier does not change
+  // native arguments. The selected artifact and real backend independently
+  // qualify preservation; writer-only fallback retains its original policy.
+  detail::StoreConfiguration configuration{.capacity = capacity};
+  HYLE_ASSIGN_OR_RETURN(auto destination_description, c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(p.destination_count)}));
+  const auto source_addresses = p.source.count ? bindings.source_addresses()
+      : std::span<const c::LeaseSlotAddress>{};
+  // Withdraw stale borrowed configuration before recycling the metadata
+  // lease; no Graph permission or caller transaction is moved by this hook.
+  const bool may_preserve = p.source.count && p.source.permission_changes_preserve_commands;
+  if (!may_preserve)
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, found.proof.step));
+  else HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
+  found.interface->clear_configuration(found.prepared, found.invocation);
+  HYLE_RETURN_IF_ERROR(s.indices.upload(s.queue, source_addresses, bindings.destination_addresses()));
+  HYLE_ASSIGN_OR_RETURN(auto carrier_view, s.indices.ready.view());
+  HYLE_ASSIGN_OR_RETURN(auto destination_view, carrier_view.subview(
+      p.source.count * sizeof(std::int32_t), p.destination_count * sizeof(std::int32_t)));
+  HYLE_ASSIGN_OR_RETURN(configuration.destination_indices,
+      c::ConstTensorView::create(destination_description, destination_view));
+  if (p.source.count) {
+    HYLE_ASSIGN_OR_RETURN(auto source_description, c::TensorDesc::dense(c::DataType::kInt32,
+        std::array<std::int64_t, 1>{static_cast<std::int64_t>(p.source.count)}));
+    HYLE_ASSIGN_OR_RETURN(auto source_view, carrier_view.subview(0, p.source.count * sizeof(std::int32_t)));
+    HYLE_ASSIGN_OR_RETURN(configuration.source_indices,
+        c::ConstTensorView::create(source_description, source_view));
+  }
+  if (may_preserve && !same_configuration(configuration, s.last_configuration))
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, found.proof.step));
+  auto configured = found.interface->configure(found.prepared, found.invocation, configuration);
+  if (!configured.ok()) {
+    found.interface->clear_configuration(found.prepared, found.invocation);
+    return configured;
+  }
+  bool source_bound = false;
+  const auto install = [&]() noexcept -> Status {
+    HYLE_RETURN_IF_ERROR(invocation.bind(p.destination_indices, configuration.destination_indices));
+    if (p.source.count) {
+      HYLE_RETURN_IF_ERROR(invocation.bind(p.source.indices, configuration.source_indices));
+      const std::array readers{gd::ProjectedReader{found.proof.step, found.proof.implementation,
+          found.proof.prepared, p.source.capacity_input_port,
+          p.source.permission_changes_preserve_commands}};
+      HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_projected(invocation, p.source.capacity,
+          capacity, bindings.sources(), readers));
+      source_bound = true;
+    }
+    // Indexed sources already belong to the original projected input. The
+    // writer-only fallback keeps its existing anonymous source controls.
+    const auto anonymous_sources = p.source.count ? std::span<const c::ReadLease>{} : bindings.sources();
+    const std::array controls{s.indices.ready};
+    return gd::RegionAccess::bind_write_effect(invocation, graph, capacity,
+        anonymous_sources, s.writer_pointers, {}, found.proof, controls, s.options);
+  };
+  auto status = install();
+  if (!status.ok()) {
+    // No writer effect was accepted on a rejecting bind. Undo the only
+    // installed permission before returning the untouched caller owner.
+    const auto rollback = source_bound
+        ? gd::RegionAccess::release_read_projection(invocation, p.source.capacity) : Status::Ok();
+    found.interface->clear_configuration(found.prepared, found.invocation);
+    if (!rollback.ok()) return rollback.WithContext("slot source rollback after rejected binding");
+    return status;
+  }
   s.owner = gd::InvocationAccess::state(invocation); s.writer = found.proof;
+  s.configuration = configuration; s.last_configuration = configuration;
   s.bindings = std::move(bindings);
   return Status::Ok();
 }
 
 Result<SlotBindings> take(Invocation &invocation, NodeId node) noexcept {
   Find found{node}; HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit_retired(invocation, node, &find, &found));
-  if (!found.slot || !found.slot->bindings.valid())
+  if (!found.binding || !found.binding->valid())
     return std::unexpected(Status::InvalidArgument("Store has no retained original slot transaction"));
+  auto &s = *detail::StoreBindingAccess::get(*found.binding);
   HYLE_ASSIGN_OR_RETURN(auto bound, gd::RegionAccess::has_write_effect(
-      found.slot->owner, found.slot->writer, found.slot->writer_pointers));
+      s.owner, s.writer, s.writer_pointers));
+  bool source_bound = false;
+  if (s.facts.source.count) {
+    HYLE_ASSIGN_OR_RETURN(source_bound, gd::RegionAccess::has_read_projection(
+        s.owner, s.facts.source.capacity, s.bindings.sources()));
+  }
+  if (source_bound)
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_read_projection(invocation, s.facts.source.capacity));
   if (bound)
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_write_effect(invocation, node));
   // A reset/release may already have withdrawn this exact old effect. The
   // retired visitor above still excludes native work/results/observations;
   // returning the original owner neither reopens execution nor publishes it.
-  found.slot->sealed = false; found.slot->rows = {}; found.slot->ids = {};
-  found.slot->owner = nullptr; found.slot->writer = {};
-  return std::move(found.slot->bindings);
+  found.interface->clear_configuration(found.prepared, found.invocation);
+  s.configuration = {}; s.owner = nullptr; s.writer = {};
+  return std::move(s.bindings);
 }
 
 } // namespace hyle::graph::slots

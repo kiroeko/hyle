@@ -5,6 +5,7 @@
 #include <exception>
 #include <limits>
 #include <new>
+#include <optional>
 #include <vector>
 
 #include "hyle/graph/region_provider.h"
@@ -12,6 +13,8 @@
 #include "hyle/compute/model_ops.h"
 #include "../graph_ggml_shared/constant_packing.h"
 #include "../graph/region_discovery.h"
+#include "../graph/slots_region.h"
+#include "hyle/graph/slots.h"
 #include "program.h"
 #include "constant_expressions.h"
 
@@ -33,6 +36,8 @@ inline constexpr std::uint32_t kGgmlCudaCastStableSiluPreference = 200;
 inline constexpr compute::RoutePolicyId kGgmlCudaPairedProjectionPolicy{
     0x48594c4547474355ULL, 5, 1};
 inline constexpr std::uint32_t kGgmlCudaPairedProjectionPreference = 201;
+inline constexpr compute::RoutePolicyId kGgmlCudaIndexedStatePolicy{
+    0x48594c4547474355ULL, 6, 1};
 
 Result<bool> supported_node(void *context, const Graph &graph,
                             NodeId node) noexcept {
@@ -156,6 +161,115 @@ struct FusionUses final {
     return Status::Ok();
   }
 };
+
+// One original state transaction: checked Gather -> whole-state reshape ->
+// GDN -> chronological whole-state reshape -> the original external Store.
+// The immutable native recipe below contains only its indexed GDN; original
+// Graph identities/effect ownership remain in this artifact's cold binding.
+struct IndexedStatePattern final {
+  std::array<NodeId, 5> nodes{};
+  NodeId gather, gdn, store;
+  ValueId pool, source_ids, destination_ids, scores;
+  slots::Schema schema;
+  std::uint32_t source_count = 0, destination_count = 0;
+};
+template<class Private>
+Result<bool> match_indexed_state(const Graph &graph, NodeId store_node,
+    IndexedStatePattern &out, Private private_value) noexcept {
+  const auto store_operation = graph.operation(store_node);
+  const auto store = store_operation ? store_operation->custom_as<slots::Store>() : std::nullopt;
+  if (!store) return false;
+  HYLE_ASSIGN_OR_RETURN(auto store_inputs, graph.node_input_count(store_node));
+  HYLE_ASSIGN_OR_RETURN(auto store_outputs, graph.node_output_count(store_node));
+  if (store_inputs != 2 || store_outputs != 0) return false;
+  HYLE_ASSIGN_OR_RETURN(auto rows, graph.node_input(store_node, 0));
+  HYLE_ASSIGN_OR_RETURN(auto destination_ids, graph.node_input(store_node, 1));
+  if (rows.kind() != ValueKind::kNodeOutput || destination_ids.kind() != ValueKind::kInput) return false;
+  HYLE_ASSIGN_OR_RETURN(auto state_view, graph.producer(rows));
+  const auto state_operation = graph.operation(state_view);
+  const auto *state_reshape = state_operation ? state_operation->get_if<compute::View>() : nullptr;
+  if (!state_reshape || state_reshape->kind() != compute::ViewKind::kReshape) return false;
+  HYLE_ASSIGN_OR_RETURN(auto state, graph.node_input(state_view, 0));
+  if (state.kind() != ValueKind::kNodeOutput) return false;
+  HYLE_ASSIGN_OR_RETURN(auto gdn_node, graph.producer(state));
+  const auto operation = graph.operation(gdn_node);
+  const auto *gdn = operation ? operation->get_if<compute::GatedDeltaNet>() : nullptr;
+  const auto recurrent = operation ? operation->custom_as<compute::model_ops::RecurrentGatedDeltaNet>() : std::nullopt;
+  if (!gdn && !recurrent) return false;
+  HYLE_ASSIGN_OR_RETURN(auto actual_state, graph.result(gdn_node, 1));
+  if (state != actual_state) return false;
+  HYLE_ASSIGN_OR_RETURN(auto initial, graph.node_input(gdn_node, recurrent ? 7 : 5));
+  if (initial.kind() != ValueKind::kNodeOutput) return false;
+  HYLE_ASSIGN_OR_RETURN(auto initial_view, graph.producer(initial));
+  const auto initial_operation = graph.operation(initial_view);
+  const auto *initial_reshape = initial_operation ? initial_operation->get_if<compute::View>() : nullptr;
+  if (!initial_reshape || initial_reshape->kind() != compute::ViewKind::kReshape) return false;
+  HYLE_ASSIGN_OR_RETURN(auto gathered, graph.node_input(initial_view, 0));
+  if (gathered.kind() != ValueKind::kNodeOutput) return false;
+  HYLE_ASSIGN_OR_RETURN(auto gather_node, graph.producer(gathered));
+  const auto gather_operation = graph.operation(gather_node);
+  const auto *gather = gather_operation ? gather_operation->get_if<compute::Gather>() : nullptr;
+  if (!gather || (gather->axis != 0 && gather->axis != -2) ||
+      gather->bounds != compute::IndexBoundsPolicy::kChecked) return false;
+  HYLE_ASSIGN_OR_RETURN(auto pool, graph.node_input(gather_node, 0));
+  HYLE_ASSIGN_OR_RETURN(auto source_ids, graph.node_input(gather_node, 1));
+  if (pool.kind() != ValueKind::kInput || source_ids.kind() != ValueKind::kInput ||
+      source_ids == destination_ids || pool == source_ids || pool == destination_ids) return false;
+  std::array nodes{gather_node, initial_view, gdn_node, state_view, store_node};
+  std::ranges::sort(nodes, {}, &NodeId::ordinal);
+  if (std::adjacent_find(nodes.begin(), nodes.end()) != nodes.end()) return false;
+  for (const auto node : nodes) {
+    HYLE_ASSIGN_OR_RETURN(auto effects, graph.node_resource_count(node));
+    if (effects != 0) return false;
+    if (node == store_node) continue;
+    const auto op = graph.operation(node);
+    if (!op || compute::operation_traits(*op).effect != compute::EffectKind::kPure) return false;
+  }
+  for (const auto pair : {std::pair{gather_node, gathered}, std::pair{initial_view, initial},
+                         std::pair{gdn_node, state}, std::pair{state_view, rows}})
+    if (!private_value(pair.first, pair.second, nodes)) return false;
+  // These exact private controls are later supplied by the shared slot owner,
+  // never arbitrary user-generated IDs or a relabelled whole-pool read lease.
+  for (const auto value : {pool, source_ids, destination_ids})
+    if (!private_value(NodeId{}, value, nodes)) return false;
+  HYLE_ASSIGN_OR_RETURN(auto pool_description, graph.value_description(pool));
+  HYLE_ASSIGN_OR_RETURN(auto expected_pool, store->schema.capacity_description());
+  if (pool_description != expected_pool || pool_description.data_type() != compute::DataType::kFloat32) return false;
+  HYLE_ASSIGN_OR_RETURN(auto initial_description, graph.value_description(initial));
+  HYLE_ASSIGN_OR_RETURN(auto gathered_description, graph.value_description(gathered));
+  HYLE_ASSIGN_OR_RETURN(auto state_description, graph.value_description(state));
+  HYLE_ASSIGN_OR_RETURN(auto rows_description, graph.value_description(rows));
+  HYLE_ASSIGN_OR_RETURN(auto source_description, graph.value_description(source_ids));
+  HYLE_ASSIGN_OR_RETURN(auto destination_description, graph.value_description(destination_ids));
+  if (!initial_description.is_dense() || !state_description.is_dense() ||
+      !gathered_description.is_dense() || !rows_description.is_dense() ||
+      initial_description.rank() != 4 || rows_description.rank() != 2 ||
+      source_description.rank() != 1 || destination_description.rank() != 1 ||
+      !source_description.is_dense() || !destination_description.is_dense() ||
+      source_description.data_type() != compute::DataType::kInt32 ||
+      destination_description.data_type() != compute::DataType::kInt32) return false;
+  const auto batches = initial_description.dimensions()[0];
+  const auto snapshots = gdn ? gdn->snapshot_count : recurrent->snapshot_count;
+  if (batches <= 0 || batches > UINT32_MAX || snapshots == 0 ||
+      static_cast<std::uint64_t>(batches) > UINT32_MAX / snapshots ||
+      source_description.dimensions()[0] != batches ||
+      destination_description.dimensions()[0] != batches * snapshots ||
+      rows_description.dimensions()[0] != batches * snapshots ||
+      rows_description.dimensions()[1] != store->schema.item_elements()) return false;
+  HYLE_ASSIGN_OR_RETURN(auto initial_bytes, initial_description.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto gathered_bytes, gathered_description.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto state_bytes, state_description.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto rows_bytes, rows_description.required_bytes());
+  if (initial_bytes != gathered_bytes || state_bytes != rows_bytes ||
+      initial_bytes % static_cast<std::uint64_t>(batches) != 0 ||
+      initial_bytes / static_cast<std::uint64_t>(batches) / sizeof(float) !=
+          static_cast<std::uint64_t>(store->schema.item_elements())) return false;
+  HYLE_ASSIGN_OR_RETURN(auto scores, graph.result(gdn_node, 0));
+  out = {nodes, gather_node, gdn_node, store_node, pool, source_ids, destination_ids,
+         scores, store->schema, static_cast<std::uint32_t>(batches),
+         static_cast<std::uint32_t>(batches * snapshots)};
+  return true;
+}
 
 // This private implementation preserves the public BF16 Cast boundary in
 // registers. Its F32 source and terminal SiLU may escape; only the Cast
@@ -546,6 +660,35 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
   }
   FusionUses uses(allocator);
   HYLE_RETURN_IF_ERROR(uses.initialize(graph));
+
+  for (std::size_t i = 0; i < graph.node_count(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto terminal, graph.node_id(i));
+    IndexedStatePattern pattern;
+    HYLE_ASSIGN_OR_RETURN(auto matches, match_indexed_state(graph, terminal, pattern,
+        [&](NodeId producer, ValueId value, std::span<const NodeId> nodes) noexcept {
+          if (uses.uses[value.ordinal()] != 1) return false;
+          if (!producer.valid()) return true;
+          const auto control = uses.control_readers[producer.ordinal()];
+          return control == FusionUses::kNone || std::ranges::any_of(nodes,
+              [&](NodeId node) noexcept { return node.ordinal() == control; });
+        }));
+    if (!matches || (!request.allowed_nodes.empty() &&
+        std::ranges::any_of(pattern.nodes, [&](NodeId node) noexcept {
+          return !request.allowed_nodes[node.ordinal()];
+        }))) continue;
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, graph, pattern.gdn));
+    if (!supported) continue;
+    HYLE_ASSIGN_OR_RETURN(auto contractible, is_region_contractible(graph, pattern.nodes, allocator));
+    if (!contractible) continue;
+    HYLE_ASSIGN_OR_RETURN(auto more, writer.try_add({.nodes = pattern.nodes,
+        .cost = {.workspace = std::nullopt, .persistent_bytes = std::nullopt,
+                 .copy_bytes = 0, .repack_bytes = 0,
+                 .synchronization_count = 2, .dispatch_count = 1},
+        .route = 6, .replay_class = compute::ProviderReplayClass::kManaged,
+        .implementation = compute::ProviderImplementationId{7},
+        .policy = kGgmlCudaIndexedStatePolicy, .preference = 200}));
+    if (!more) return Status::Ok();
+  }
 
   // A distinct no-copy implementation may cover two otherwise preferred BLAS
   // leaves. Their ordinary ranks and all nonmatching regions are unchanged.
@@ -961,7 +1104,31 @@ Status propose(void *context, const RegionDiscoveryRequest &request, mem::Alloca
   return Status::Ok();
 }
 
-Status qualify(void *context, const RegionCompileRequest &request) noexcept {
+Status qualify(void *context, const RegionCompileRequest &request,
+               mem::AllocatorRef allocator) noexcept {
+  if (request.graph && request.route == 6) {
+    if (request.nodes.size() != 5 || !request.has_unknown_effects ||
+        !request.effect_accesses.empty() || !request.effect_bindings.empty())
+      return Status::Unimplemented("indexed GDN requires one original unknown Store effect");
+    FusionUses uses(allocator);
+    HYLE_RETURN_IF_ERROR(uses.initialize(*request.graph));
+    IndexedStatePattern pattern;
+    HYLE_ASSIGN_OR_RETURN(auto matches, match_indexed_state(*request.graph,
+        request.nodes.back(), pattern,
+        [&](NodeId producer, ValueId value, std::span<const NodeId> nodes) noexcept {
+          if (uses.uses[value.ordinal()] != 1) return false;
+          if (!producer.valid()) return true;
+          const auto control = uses.control_readers[producer.ordinal()];
+          return control == FusionUses::kNone || std::ranges::any_of(nodes,
+              [&](NodeId node) noexcept { return node.ordinal() == control; });
+        }));
+    if (!matches || !std::ranges::equal(request.nodes, pattern.nodes) ||
+        request.outputs.size() > 1 ||
+        (!request.outputs.empty() && request.outputs.front() != pattern.scores))
+      return Status::Unimplemented("indexed GDN private state or Store boundary escapes");
+    HYLE_ASSIGN_OR_RETURN(auto supported, supported_node(context, *request.graph, pattern.gdn));
+    return supported ? Status::Ok() : Status::Unimplemented("indexed GDN original math is unsupported");
+  }
   if (!request.graph || (request.route != 1 && request.route != 2 && request.route != 3 && request.route != 4 && request.route != 5) || request.nodes.empty() ||
       request.outputs.empty() || request.has_unknown_effects ||
       !request.effect_accesses.empty())
@@ -1071,18 +1238,33 @@ Status qualify(void *context, const RegionCompileRequest &request) noexcept {
   return Status::Ok();
 }
 Status resources(void *context, const RegionCompileRequest &request,
-                 mem::AllocatorRef,
+                 mem::AllocatorRef allocator,
                  std::span<RegionInputRequirement> inputs,
                  std::span<RegionOutputRequirement> outputs,
                  RegionResourceProposal *proposal) noexcept {
   *proposal = {};
-  HYLE_RETURN_IF_ERROR(qualify(context, request));
+  HYLE_RETURN_IF_ERROR(qualify(context, request, allocator));
   std::ranges::fill(inputs, RegionInputRequirement{.resource = native::kBinding});
   std::ranges::fill(outputs, RegionOutputRequirement{.resource = native::kBinding});
   for (auto &binding : inputs)
     binding.resource.minimum_alignment = 1;
   for (auto &binding : outputs)
     binding.resource.minimum_alignment = 1;
+  if (request.route == 6) {
+    // The indexed kernel uses the original scalar state/ID addressing; a
+    // Store descriptor is not a vectorized reader of its private I32 slice.
+    for (std::size_t port = 0; port < request.inputs.size(); ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto description, request.graph->value_description(request.inputs[port]));
+      inputs[port].resource.minimum_alignment = compute::data_type_size(description.data_type());
+    }
+    for (std::size_t port = 0; port < request.outputs.size(); ++port) {
+      HYLE_ASSIGN_OR_RETURN(auto description, request.graph->value_description(request.outputs[port]));
+      outputs[port].resource.minimum_alignment = compute::data_type_size(description.data_type());
+    }
+    *proposal = {.runtime = native::kRuntime, .workspace_resource = native::kBinding,
+                .preserves_effects = true};
+    return Status::Ok();
+  }
   for (const auto node : request.nodes) {
     const auto operation = request.graph->operation(node).value();
     const auto require = [&](ValueId id) {
@@ -1107,12 +1289,21 @@ Status resources(void *context, const RegionCompileRequest &request,
       require(request.graph->result(node, i).value());
   }
   *proposal = {.runtime = native::kRuntime,
-               .workspace_resource = native::kBinding};
+               .workspace_resource = native::kBinding,
+               .preserves_effects = request.route == 6};
   return Status::Ok();
 }
 
 struct Artifact final {
   compute::detail::ProviderPrepared native;
+  std::optional<IndexedStatePattern> indexed;
+  slots::detail::StoreRegionFacts store_facts;
+  // Exact original Graph boundary ports, never a second native input map.
+  std::array<std::uint32_t, 3> indexed_ports{};
+  std::array<compute::TensorDesc, 3> indexed_descriptions{};
+  // The special route does no constant folding/packing. Retain the real
+  // physical constant owners/leases, without copying their tensor payload.
+  std::vector<ConstantBinding> constants;
 };
 void destroy(void *value, mem::AllocatorRef allocator) noexcept {
   auto *artifact = static_cast<Artifact *>(value);
@@ -1136,6 +1327,10 @@ Status create_invocation(void *value, mem::AllocatorRef allocator,
 // Both Direct and Graph use the same invocation callbacks; this table keeps
 // only an immutable pointer to that table, never a second execution program.
 struct Invocation final {
+  // Native arguments/imports are destroyed before this sole transaction owner.
+  slots::detail::StoreBinding store_binding;
+  slots::detail::StoreConfiguration configuration;
+  bool sealed = false;
   const compute::detail::ProviderPreparedVTable *vtable = nullptr;
   void *state = nullptr;
   std::vector<compute::ConstTensorView> input_bindings;
@@ -1150,7 +1345,8 @@ Status create_region_invocation(void *value, mem::AllocatorRef allocator,
   if (!storage)
     return Status::ResourceExhausted(
         "ggml CUDA region invocation allocation failed");
-  auto *invocation = ::new (storage) Invocation{artifact.vtable, nullptr, {}};
+  auto *invocation = ::new (storage) Invocation;
+  invocation->vtable = artifact.vtable;
   *output = invocation;
   return create_invocation(value, allocator, workspace, &invocation->state);
 }
@@ -1168,8 +1364,24 @@ compute::detail::EnqueueResult
 submit(void *value, void *lane, compute::detail::QueueSequence &sequence,
        std::span<const compute::ConstTensorView> inputs,
        std::span<const compute::TensorView> outputs) noexcept {
-  const auto &artifact = static_cast<Artifact *>(value)->native;
+  const auto &region = *static_cast<Artifact *>(value);
+  const auto &artifact = region.native;
   if (!artifact.vtable) return compute::detail::EnqueueResult::no_op();
+  const auto &invocation = *static_cast<Invocation *>(lane);
+  if (region.indexed) {
+    if (!invocation.sealed || !invocation.store_binding.same_queue(sequence) ||
+        inputs.size() != invocation.input_bindings.size())
+      return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
+          "indexed GDN needs its original sealed slot transaction and Queue"));
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
+      const auto a = inputs[i].storage(), b = invocation.input_bindings[i].storage();
+      if (inputs[i].description() != invocation.input_bindings[i].description() ||
+          a.resource() != b.resource() || a.native_handle() != b.native_handle() ||
+          a.offset() != b.offset() || a.size() != b.size())
+        return compute::detail::EnqueueResult::rejected(Status::FailedPrecondition(
+            "indexed GDN inputs differ from their admitted original spans"));
+    }
+  }
   return artifact.vtable->shared_submit(artifact.state,
                                         static_cast<Invocation *>(lane)->state,
                                         sequence, inputs, outputs);
@@ -1177,9 +1389,22 @@ submit(void *value, void *lane, compute::detail::QueueSequence &sequence,
 Status prepare_bindings(void *value, void *lane,
                         std::span<const RegionValue> inputs,
                         std::span<const compute::TensorView> outputs) noexcept {
-  const auto &artifact = static_cast<Artifact *>(value)->native;
+  const auto &region = *static_cast<Artifact *>(value);
+  const auto &artifact = region.native;
   if (!artifact.vtable) return Status::Ok();
   auto &invocation = *static_cast<Invocation *>(lane);
+  invocation.sealed = false;
+  if (region.indexed) {
+    for (const auto port : region.indexed_ports)
+      if (port >= inputs.size())
+        return Status::InvalidArgument("indexed GDN original boundary changed");
+    const slots::detail::StoreConfiguration actual{
+        inputs[region.indexed_ports[0]].tensor,
+        inputs[region.indexed_ports[1]].tensor,
+        inputs[region.indexed_ports[2]].tensor};
+    HYLE_RETURN_IF_ERROR(invocation.store_binding.validate_configuration(actual));
+    invocation.configuration = actual;
+  }
   try {
     invocation.input_bindings.resize(inputs.size());
     for (std::size_t i = 0; i < inputs.size(); ++i)
@@ -1190,21 +1415,121 @@ Status prepare_bindings(void *value, void *lane,
   return artifact.vtable->prepare_bindings(
       artifact.state, invocation.state, invocation.input_bindings, outputs);
 }
+Status seal_bindings(void *value, void *lane) noexcept {
+  const auto &region = *static_cast<Artifact *>(value);
+  if (!region.indexed) return Status::Ok();
+  auto &invocation = *static_cast<Invocation *>(lane);
+  invocation.sealed = false;
+  HYLE_RETURN_IF_ERROR(invocation.store_binding.validate_configuration(
+      invocation.configuration));
+  invocation.sealed = true;
+  return Status::Ok();
+}
+bool native_capture_bindings(const Artifact &region,
+                             const Invocation &invocation) noexcept {
+  const auto &artifact = region.native;
+  return artifact.vtable && artifact.state &&
+      artifact.runtime.capture_compatible &&
+      artifact.runtime.mode == compute::ProviderRuntimeMode::kSharedQueue &&
+      invocation.vtable == artifact.vtable && invocation.state;
+}
+const slots::detail::StoreRegionVTable store_binding{
+    .inspect = [](const ProviderRegionPrepared &prepared, void *lane) noexcept
+        -> Result<slots::detail::StoreRegionFacts> {
+      if (!prepared.state || !lane)
+        return std::unexpected(Status::InvalidArgument("indexed GDN needs its original artifact/slot"));
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      if (!region.indexed)
+        return std::unexpected(Status::Unimplemented("not an indexed GDN Store region"));
+      return region.store_facts;
+    },
+    .binding = [](void *lane) noexcept -> slots::detail::StoreBinding * {
+      return lane ? &static_cast<Invocation *>(lane)->store_binding : nullptr;
+    },
+    .configure = [](const ProviderRegionPrepared &prepared, void *lane,
+        const slots::detail::StoreConfiguration &configuration) noexcept -> Status {
+      if (!prepared.state || !lane)
+        return Status::InvalidArgument("indexed GDN needs its original artifact/slot");
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      if (!region.indexed)
+        return Status::Unimplemented("not an indexed GDN Store region");
+      const std::array views{configuration.capacity, configuration.source_indices,
+                             configuration.destination_indices};
+      for (std::size_t i = 0; i < views.size(); ++i)
+        if (!views[i].valid() || views[i].description() != region.indexed_descriptions[i] ||
+            views[i].storage().resource() != region.store_facts.resource)
+          return Status::InvalidArgument("indexed GDN private capacity/ID configuration differs");
+      auto &invocation = *static_cast<Invocation *>(lane);
+      invocation.configuration = configuration;
+      invocation.sealed = false;
+      return Status::Ok();
+    },
+    .clear_configuration = [](const ProviderRegionPrepared &, void *lane) noexcept {
+      auto &invocation = *static_cast<Invocation *>(lane);
+      invocation.configuration = {};
+      invocation.sealed = false;
+    }};
+const detail::RegionProjectedReadVTable projected_read{
+    .inspect = [](const ProviderRegionPrepared &prepared, void *lane,
+        std::uint32_t port, compute::detail::OperationPreparedAccess *out) noexcept -> Status {
+      *out = {};
+      if (!prepared.state || !lane)
+        return Status::InvalidArgument("indexed GDN projection needs its original artifact/slot");
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      if (!region.indexed || port != region.indexed_ports[0])
+        return Status::Unimplemented("indexed GDN does not project this boundary port");
+      // The native program reads this capacity only through private source IDs.
+      // Real ready slot guards and exclusive destinations remain Graph's duty.
+      *out = {.projected_input = port};
+      return Status::Ok();
+    },
+    .inspect_node = [](const ProviderRegionPrepared &prepared, void *,
+        std::uint32_t ordinal, compute::ProviderExtensionId capability,
+        detail::RegionNodeAccess *out) noexcept -> Status {
+      *out = {};
+      if (!prepared.state || capability != slots::detail::kStoreBindingExtensionId)
+        return Status::Unimplemented("indexed GDN source capability differs");
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      if (!region.indexed || !std::ranges::any_of(region.indexed->nodes,
+          [&](NodeId node) noexcept { return node.ordinal() == ordinal; }))
+        return Status::Unimplemented("node is not in this exact indexed GDN state chain");
+      if (region.indexed->gather.ordinal() == ordinal)
+        out->access.projected_input = region.indexed_ports[0];
+      return Status::Ok();
+    }};
+const detail::RegionProjectedWriteVTable projected_write{
+    [](const ProviderRegionPrepared &prepared, void *lane) noexcept -> bool {
+      if (!prepared.state || !lane) return false;
+      const auto &region = *static_cast<const Artifact *>(prepared.state);
+      const auto &invocation = *static_cast<const Invocation *>(lane);
+      return region.indexed && native_capture_bindings(region, invocation) &&
+          invocation.store_binding.prepared() &&
+          invocation.configuration.capacity.valid() &&
+          invocation.configuration.source_indices.valid() &&
+          invocation.configuration.destination_indices.valid();
+    }};
 const detail::RegionCaptureBindingsVTable capture_bindings{
     [](void *prepared, void *lane) noexcept -> bool {
       if (!prepared || !lane) return false;
-      const auto &artifact = static_cast<const Artifact *>(prepared)->native;
+      const auto &region = *static_cast<const Artifact *>(prepared);
       const auto &invocation = *static_cast<const Invocation *>(lane);
       // This exact native program rebinds only external roots/views. Its
       // graph/workspace and patched outer-recording pools retain private
       // addresses until teardown. Commands or private configuration changes
       // must discard all recordings before entering the ordinary encoder.
-      return artifact.vtable && artifact.state &&
-          artifact.runtime.capture_compatible &&
-          artifact.runtime.mode == compute::ProviderRuntimeMode::kSharedQueue &&
-          invocation.vtable == artifact.vtable && invocation.state;
+      return native_capture_bindings(region, invocation) &&
+          (!region.indexed || (invocation.store_binding.prepared() &&
+              invocation.configuration.capacity.valid() &&
+              invocation.configuration.source_indices.valid() &&
+              invocation.configuration.destination_indices.valid()));
     }};
-const void *binding_release_extension(void *, compute::ProviderExtensionId id) noexcept {
+const void *binding_release_extension(void *prepared, compute::ProviderExtensionId id) noexcept {
+  const auto &region = *static_cast<const Artifact *>(prepared);
+  if (region.indexed) {
+    if (id == slots::detail::kStoreBindingExtensionId) return &store_binding;
+    if (id == detail::kRegionProjectedReadExtensionId) return &projected_read;
+    if (id == detail::kRegionProjectedWriteExtensionId) return &projected_write;
+  }
   if (id == detail::kRegionCaptureBindingsExtensionId)
     return &capture_bindings;
   // This shared carrier passes only borrowed TensorViews to the original
@@ -1215,7 +1540,9 @@ const void *binding_release_extension(void *, compute::ProviderExtensionId id) n
       .validate = [](void *, void *) noexcept { return Status::Ok(); },
       // TensorView metadata owns no leases or native imports. Keep its exact
       // arguments dormant so proven stable recordings can survive withdrawal.
-      .release = [](void *, void *) noexcept {},
+      .release = [](void *, void *lane) noexcept {
+        static_cast<Invocation *>(lane)->sealed = false;
+      },
       .borrows_tensor_views_only = true};
   return id == detail::kRegionBindingReleaseExtensionId ? &release : nullptr;
 }
@@ -1226,18 +1553,105 @@ const ProviderRegionPreparedVTable kPrepared{
     .destroy_invocation = &destroy_region_invocation,
     .shared_submit = &submit,
     .prepare_bindings = &prepare_bindings,
+    .seal_bindings = &seal_bindings,
     .query_extension = &binding_release_extension};
 
 compute::ProviderPrepareOutcome
 compile(void *context, const RegionCompileRequest &request,
         mem::AllocatorRef allocator, ProviderRegionPrepared *output) noexcept {
   *output = {};
-  auto status = qualify(context, request);
+  auto status = qualify(context, request, allocator);
   if (!status.ok())
     return status.IsUnimplemented()
         ? compute::ProviderPrepareOutcome::unsupported(std::move(status))
         : compute::ProviderPrepareOutcome::error(std::move(status));
   try {
+    if (request.route == 6) {
+      FusionUses uses(allocator);
+      const auto initialized = uses.initialize(*request.graph);
+      if (!initialized.ok()) return compute::ProviderPrepareOutcome::error(initialized);
+      IndexedStatePattern pattern;
+      const auto matched = match_indexed_state(*request.graph,
+          request.nodes.back(), pattern,
+          [&](NodeId producer, ValueId value, std::span<const NodeId> nodes) noexcept {
+            if (uses.uses[value.ordinal()] != 1) return false;
+            if (!producer.valid()) return true;
+            const auto control = uses.control_readers[producer.ordinal()];
+            return control == FusionUses::kNone || std::ranges::any_of(nodes,
+                [&](NodeId node) noexcept { return node.ordinal() == control; });
+          });
+      if (!matched) return compute::ProviderPrepareOutcome::error(matched.error());
+      if (!*matched) return compute::ProviderPrepareOutcome::unsupported(
+          Status::Unimplemented("indexed GDN exact state chain changed"));
+      native::Recipe recipe;
+      std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
+      for (std::uint32_t i = 0; i < values.size(); ++i) {
+        recipe.inputs.push_back(i);
+        recipe.values.push_back(request.graph->value_description(values[i]).value());
+      }
+      const auto local = [&](ValueId value) -> std::uint32_t {
+        return static_cast<std::uint32_t>(std::ranges::find(values, value) - values.begin());
+      };
+      const auto math = request.graph->operation(pattern.gdn).value();
+      const bool recurrent = math.custom_as<compute::model_ops::RecurrentGatedDeltaNet>().has_value();
+      native::Node node{math, {}, {}, true};
+      for (std::size_t port = 0; port < (recurrent ? 7U : 5U); ++port)
+        node.inputs.push_back(local(request.graph->node_input(pattern.gdn, port).value()));
+      for (const auto value : {pattern.pool, pattern.source_ids, pattern.destination_ids})
+        node.inputs.push_back(local(value));
+      if (std::ranges::any_of(node.inputs, [&](std::uint32_t id) { return id >= values.size(); }))
+        return compute::ProviderPrepareOutcome::unsupported(
+            Status::Unimplemented("indexed GDN math needs an original external boundary"));
+      const auto score = static_cast<std::uint32_t>(recipe.values.size());
+      recipe.values.push_back(request.graph->value_description(pattern.scores).value());
+      node.outputs.push_back(score);
+      if (!native::supports_indexed_state(context, node, recipe.values))
+        return compute::ProviderPrepareOutcome::unsupported(
+            Status::Unimplemented("linked native indexed GDN does not support this exact state geometry"));
+      recipe.nodes.push_back(std::move(node));
+      recipe.effect_roots.push_back(score);
+      if (!request.outputs.empty()) recipe.outputs.push_back(score);
+      std::vector<ConstantBinding> constants(request.constants.begin(), request.constants.end());
+      const std::array indexed_ports{local(pattern.pool), local(pattern.source_ids),
+                                     local(pattern.destination_ids)};
+      if (request.input_resources.size() != request.inputs.size() ||
+          !request.input_resources[indexed_ports[0]].valid())
+        return compute::ProviderPrepareOutcome::error(Status::InvalidArgument(
+            "indexed GDN needs its exact original input resource assignments"));
+      const auto resource = request.input_resources[indexed_ports[0]];
+      for (const auto port : indexed_ports)
+        if (request.input_resources[port] != resource)
+          return compute::ProviderPrepareOutcome::unsupported(Status::Unimplemented(
+              "indexed GDN capacity/IDs need the same original native resource"));
+      void *storage = allocator.allocate(sizeof(Artifact), alignof(Artifact));
+      if (!storage) return compute::ProviderPrepareOutcome::error(
+          Status::ResourceExhausted("indexed GDN artifact metadata"));
+      auto *artifact = ::new (storage) Artifact;
+      artifact->indexed = pattern; artifact->constants = std::move(constants);
+      artifact->indexed_ports = indexed_ports;
+      for (std::size_t i = 0; i < indexed_ports.size(); ++i)
+        artifact->indexed_descriptions[i] = recipe.values[indexed_ports[i]];
+      artifact->store_facts = {.store = pattern.store, .schema = pattern.schema,
+          .destination_indices = pattern.destination_ids,
+          .destination_input_port = indexed_ports[2],
+          .destination_count = pattern.destination_count, .resource = resource,
+          .source = {.gather = pattern.gather, .capacity = pattern.pool,
+              .indices = pattern.source_ids, .capacity_input_port = indexed_ports[0],
+              .count = pattern.source_count,
+              .permission_changes_preserve_commands = true}};
+      const auto outcome = native::compile(context, std::move(recipe), allocator, &artifact->native);
+      if (!artifact->native.state) {
+        artifact->~Artifact(); allocator.deallocate(artifact, sizeof(Artifact), alignof(Artifact));
+        return outcome;
+      }
+      *output = {.vtable = &kPrepared, .state = artifact,
+          .properties = {.workspace = artifact->native.workspace,
+              .persistent_bytes = std::nullopt, .copy_bytes = 0,
+              .synchronization_count = 2, .dispatch_count = 1,
+              .runtime = artifact->native.runtime, .preserves_effects = true,
+              .invocation_private_bytes = std::nullopt}};
+      return outcome;
+    }
     native::Recipe recipe;
     std::vector<ValueId> values(request.inputs.begin(), request.inputs.end());
     for (std::uint32_t i = 0; i < values.size(); ++i)

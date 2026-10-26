@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 01:10（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **61%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 01:33（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **63%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -15,10 +15,10 @@
   - 请求／兼容合批／接纳与缓存编排：约80%（共同循环与取消／交付已实现，有限检查通过）
   - 模型适配、错误类别与输出合同：约60%（取消／交付已接线，有限检查通过）
   - SDK／Provider／依赖与诊断组织：约65%（已补公开页导出、冻结、Completion／CopyBatch保活及Context身份，有限检查通过）
-- 稳态状态协议：约60%（实现中）
+- 稳态状态协议：约64%（实现中）
   - 持续工作态与按需导出不可变快照：约90%（KV已接持续工作帧与按需封存，有限检查通过）
   - KV持续工作帧及无失败事务发布：100%（本批实现完成，Windows／Apple有限功能检查及B2对照完成）
-  - 原生 GDN／conv 的版本化双缓冲与索引状态：约55%（Store和私有索引GDN已有限检查，正在接共用绑定及Graph融合；conv／引擎待完成）
+  - 原生 GDN／conv 的版本化双缓冲与索引状态：约65%（CUDA GDN窄链融合与共用绑定已有限检查，conv、可移植源绑定及引擎待完成）
   - MTP 稳定状态槽及接受／回滚接线：0%（待实现）
 - 其它底层功能补齐：约50%（实现中）
   - 长度分桶、启动预热政策与异长批次：约10%（设计中，已确认真实分块与活跃长度边界）
@@ -35,19 +35,21 @@
 
 ## 正在做
 
-- GDN的Graph索引融合：约50%（所属：稳态状态协议／索引状态；原生三组逐位检查通过，正在共用槽事务并接冷匹配、真实读写权限和无Y输出的状态写入；Graph及引擎未完成）。
+- 稳定状态的可移植引擎接线：约10%（所属：稳态状态协议／索引状态；CUDA GDN五节点融合已通过15项有限检查，正在核对其它Provider及拒绝融合时的合法源绑定，随后接引擎与conv；尚无完整消费者性能结果）。
 
 剩余大项仍包括原生GDN／conv稳定状态、MTP稳定状态槽、形状政策及重叠执行，不能以KV完成代签这些工作。
 
 ## 本批结果与下一步
 
-索引状态的三个前提已落地：[原池槽资源](../evidence/correctness/inference-lease-slots-2026-10-26.json)25项、[融合写资格](../evidence/correctness/inference-fused-writer-2026-10-26.json)4项、[CUDA浮点Gather](../evidence/correctness/inference-cuda-slot-gather-2026-10-26.json)3组有限检查通过。后者保持F32／F16／BF16原码并支持行padding；未完成GDN／conv整段融合，也未重测完整模型性能。
+索引状态的三个前提已落地：[原池槽资源](../evidence/correctness/inference-lease-slots-2026-10-26.json)25项、[融合写资格](../evidence/correctness/inference-fused-writer-2026-10-26.json)4项、[CUDA浮点Gather](../evidence/correctness/inference-cuda-slot-gather-2026-10-26.json)3组有限检查通过。后者保持F32／F16／BF16原码并支持行padding；当次尚未包含下述GDN融合，conv及完整模型性能仍未完成。
 模型无关的Store描述及[槽绑定事务](../evidence/correctness/inference-slot-bindings-2026-10-27.json)另有6组检查通过，覆盖元数据失败不消费writer、寿命、真实地址与预算；这些资源类型不代表实际Store执行已接通。
 [读权限撤回](../evidence/correctness/inference-projected-read-release-2026-10-27.json)11项检查通过：真实退休后只撤回指定源及其alias与guard，旧源可重获写权，其它绑定仍保留；包含三项原unbind回归。该次检查尚未包含下述实际Store执行，原生索引GDN／conv仍是剩余实现的大头。
 
 [Store实际执行](../evidence/correctness/inference-slot-store-2026-10-27.json)已接默认CPU／CUDA装配：5个新实际写入检查及8个相邻权限合同通过，覆盖固定索引载体复用、非连续目标槽、未选择槽、原结果寿命、非法重绑和reset后失权拒绝。本批只成功编译6个不同单元、链接1个镜像，保留首次测试命令缺Toolkit头路径的失败；未重建SDK、未接引擎或测性能。该fallback不支持capture、冷索引上传可能等待，下一步仍是原生索引融合。
 
 [私有索引GDN](../evidence/correctness/inference-indexed-gdn-native-2026-10-27.json)三组原生检查通过：K1、T4>K2最后K个状态及BF16 V／beta，与原稠密F32路径逐位一致，另核源槽、未选槽及padding不变。首次BF16失败来自旧融合预检漏排除新模式，已窄修并复用成功内核／测试对象；实际只编两个不同NVCC单元和一个测试单元，dispatcher因该修正补编一次。保持原F32运算体及旧fused-cache布局；未证明公开Provider／Graph／引擎接通或完整提速。
+
+[CUDA GDN的Graph融合](../evidence/correctness/inference-indexed-gdn-graph-2026-10-27.json)15项有限检查通过：原13项Store／权限合同，加上Y发布、仅写状态两种实际融合；后者覆盖reset后拒绝旧权限及取回原事务。共用唯一StoreBinding及一次小索引上传，原Recipe的effect roots保留无Y输出的状态写入；不复制状态载荷。另修权限预留误用旧extra计数的问题，扩容失败仍保留原投影。7个不同C++单元增量编译，5个产品对象全程复用，追加编译只修测试；各通过结果的实际镜像、DLL装配及测试预算／alignment失败均在记录中。尚未接引擎或conv，未测完整性能，也未验证全部平台与图形。
 
 KV工作帧已接通Compute、Graph及引擎：41项页存储检查、23组前缀／工作态检查、7个CPU／Vulkan／CUDA功能进程和4个递归MTP对照进程通过。Apple复用缓存增量编译11个单元，tiny普通／MTP及lag1两次运行通过，状态字节、续算、旧快照及最终资源归零一致。旧快照、失败边界、封存失败与较短接受前缀均有有限覆盖；[Windows功能记录](../evidence/correctness/inference-paged-frame-2026-10-26.json)和[Apple功能记录](../evidence/correctness/inference-paged-frame-macos-2026-10-26.json)保留原失败和未验证项。本批没有新Linux运行，4个诊断probe虽已适配但未单独编译；有限检查不代表全平台与模型质量穷尽。
 

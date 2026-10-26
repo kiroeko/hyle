@@ -1174,10 +1174,15 @@ CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed�
 
 Store 不授予整池读写权限。普通 rows 不得与任意目标重叠；源槽、未选择槽和 padding
 保持原权限。reset 撤回权限后不能继续执行旧事务，但实际退休后仍可 take 回收 owner。
-本入口只处理写回，不自动绑定投影 Gather。当前 CPU／CUDA fallback 不支持 capture，
-冷绑定的索引上传可能等待；不能把它当作已融合的 GDN／conv 热路径。
+独立Store的fallback只处理写回，不自动绑定投影Gather，也不支持capture；冷索引上传可能等待。
+CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合：若实际选中该region，
+同一`slots::bind`从事务的B个source readers和B×K个writers生成一块私有索引载体，
+同时绑定原池的准确读写权限；普通GDN的K1与最后K个候选状态遵守同一接口。
+这不授予整池读取权限，也不替代其它后端或拒绝融合时的源绑定。当前只支持无逃逸稠密状态的
+F32数学链；Y可正常发布，也可只有状态写入。完整引擎和conv尚未接此路径，未证明速度收益。
 实际使用见[CPU](../../tests/graph/slots_execution_test.cc)和
-[CUDA](../../tests/graph/slots_cuda_execution_test.cc)组件消费者。
+[CUDA](../../tests/graph/slots_cuda_execution_test.cc)Store消费者及
+[索引GDN融合](../../tests/graph_provider_ggml_cuda/indexed_state_test.cc)消费者。
 
 ### 原生后端的租约绑定
 

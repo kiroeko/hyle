@@ -80,7 +80,9 @@ struct ResourceEpisode final {
   LeasePermissionSet permissions;
   compute::LeaseUsePool uses;
   compute::LeaseUseBatch batch;
-  std::uint32_t reserved_reads = 0;
+  // Actual shared capacity of bindings, permissions and LeaseUsePool, rather
+  // than the last caller's extra count or vector's geometric over-allocation.
+  std::uint32_t permission_capacity = 0;
   bool configuration_spans = false;
   const ResourcePayloadVTable *payload_table = nullptr;
   void *payload = nullptr;
@@ -588,24 +590,25 @@ Status RegionAccess::reserve_reads(Invocation &invocation, std::uint32_t extra,
   // Repeated layout preparation reuses the same fixed permission/use storage.
   // Growth is cold and idle-gated; existing leases do not refer to this pool.
   // Keep the old pool until every replacement allocation has succeeded.
-  if (extra <= episode->reserved_reads) {
+  if (extra > UINT32_MAX - 1 || episode->bindings.size() > UINT32_MAX - 1 - extra)
+    return Status::ResourceExhausted("graph permission capacity overflow");
+  const auto required = static_cast<std::uint32_t>(episode->bindings.size() + extra);
+  if (required <= episode->permission_capacity) {
     try { episode->input_lease_candidates.reserve(episode->bindings.capacity()); }
     catch (...) { return Status::ResourceExhausted("graph fixed read lookup metadata"); }
     return Status::Ok();
   }
-  if (extra > UINT32_MAX - 1 || episode->bindings.size() > UINT32_MAX - 1 - extra)
-    return Status::ResourceExhausted("graph permission capacity overflow");
   HYLE_ASSIGN_OR_RETURN(auto uses, compute::LeaseUsePool::create({.max_batches = 1,
-      .max_resources_per_batch = std::uint32_t(episode->bindings.size() + extra + 1),
+      .max_resources_per_batch = required + 1,
       .allocator = options.allocator, .resource_budget = options.resource_budget}));
   try {
-    episode->bindings.reserve(episode->bindings.size() + extra);
+    episode->bindings.reserve(required);
     episode->input_lease_candidates.reserve(episode->bindings.capacity());
   }
   catch (...) { return Status::ResourceExhausted("graph fixed permission metadata"); }
-  if (extra) HYLE_RETURN_IF_ERROR(episode->permissions.reserve(episode->bindings.size() + extra));
+  HYLE_RETURN_IF_ERROR(episode->permissions.reserve(required));
   episode->uses = std::move(uses);
-  episode->reserved_reads = extra;
+  episode->permission_capacity = required;
   return Status::Ok();
 }
 Status RegionAccess::bind_projected_impl(Invocation&invocation,ValueId value,
@@ -697,6 +700,54 @@ Status RegionAccess::bind_projected(Invocation&invocation,ValueId value,
 Status RegionAccess::bind_pending_projected(Invocation&invocation,ValueId value,
     compute::ConstTensorView tensor,std::span<const ProjectedReader> readers)noexcept{
   return bind_projected_impl(invocation,value,tensor,{},readers,true);
+}
+Result<bool> RegionAccess::has_read_projection(const InvocationState*state,
+    ValueId value,std::span<const compute::ReadLease>pages)noexcept{
+  if(!state || !state->plan)
+    return std::unexpected(Status::FailedPrecondition("read-projection parent invocation is empty"));
+  const auto&plan=*state->plan;
+  if(GraphIdentity::generation(value)!=plan.generation || value.kind()!=ValueKind::kInput ||
+      value.ordinal()>=plan.binding_roles.size() || !(plan.binding_roles[value.ordinal()]&kExternalInput) || pages.empty())
+    return std::unexpected(Status::InvalidArgument("read-projection query needs its original input and ready footprint"));
+  if(!state->resources)return false;
+  const auto*binding=find_binding(state,value);
+  if(!binding || !binding->input)
+    return std::unexpected(Status::InvalidArgument("read projection is not an original resource input"));
+  if(binding->scope!=BindingScope::kProjected){
+    if(binding->scope==BindingScope::kCaller && binding->borrowed &&
+        !binding->read.valid() && !binding->write.valid() && !binding->permissionless)return false;
+    return std::unexpected(Status::InvalidArgument("read-projection query differs from its current binding scope"));
+  }
+  // The general ReadProjection entry keeps its root by value, while the
+  // direct ready entry also tags projection=value. Both retain real guards;
+  // a pending/empty footprint has no ready root and cannot qualify here.
+  if((binding->projection.valid() && binding->projection!=value) ||
+      !binding->read.valid() || binding->exclusive || binding->permissionless)
+    return std::unexpected(Status::InvalidArgument("read-projection query differs from its current ready footprint"));
+  const auto match=[](const compute::ReadLease&bound,const compute::ReadLease&expected)noexcept->Status{
+    if(!bound.valid() || !expected.valid() ||
+        compute::detail::LeaseAccess::identity(bound)!=compute::detail::LeaseAccess::identity(expected) ||
+        bound.generation()!=expected.generation())
+      return Status::InvalidArgument("read-projection guard differs from its original owner");
+    HYLE_ASSIGN_OR_RETURN(auto left,bound.view());
+    HYLE_ASSIGN_OR_RETURN(auto right,expected.view());
+    if(left.resource()!=right.resource() || left.native_handle()!=right.native_handle() ||
+        left.offset()!=right.offset() || left.size()!=right.size())
+      return Status::InvalidArgument("read-projection guard differs from its original bounds");
+    return Status::Ok();
+  };
+  HYLE_RETURN_IF_ERROR(match(binding->read,pages.front()));
+  std::size_t matched=1;
+  for(const auto&extra:state->resources.get()->bindings){
+    if(extra.value.valid() || extra.projection!=value)continue;
+    if(extra.scope!=BindingScope::kProjected || matched>=pages.size())
+      return std::unexpected(Status::InvalidArgument("read-projection guard count or scope differs from its original owner"));
+    HYLE_RETURN_IF_ERROR(match(extra.read,pages[matched]));
+    ++matched;
+  }
+  if(matched!=pages.size())
+    return std::unexpected(Status::InvalidArgument("read-projection guard count differs from its original owner"));
+  return true;
 }
 namespace {
 Status validate_write_ranges(compute::ConstTensorView tensor,

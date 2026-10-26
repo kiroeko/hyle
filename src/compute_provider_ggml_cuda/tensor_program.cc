@@ -1,5 +1,6 @@
 #include "tensor_program.h"
 #include "gated_delta_scale.h"
+#include "indexed_state.h"
 
 #include <algorithm>
 #include <array>
@@ -1274,9 +1275,33 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         gdn ? gdn->snapshot_count
             : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()
                   ->snapshot_count;
-    auto *packed = ggml_gated_delta_net(
-        context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
-        decay, beta, initial, snapshots);
+    ggml_tensor *packed;
+    if (node.indexed_state) {
+      // This real capacity keeps its original padding/slot stride. Neither a
+      // dense B-state input nor a packed state tail is allocated or copied.
+      const auto state_port = gdn ? 5U : 7U;
+      auto *pool = recurrent_input(state_port);
+      const auto *v = recurrent_input(2);
+      const auto width = v->ne[0], heads = v->ne[1];
+      auto *slots = ggml_view_4d(context, pool, width, width, heads,
+          pool->ne[1], static_cast<std::size_t>(width) * sizeof(float),
+          static_cast<std::size_t>(width * width) * sizeof(float), pool->nb[1], 0);
+      packed = ggml_new_tensor_4d(context, GGML_TYPE_F32,
+          v->ne[0], v->ne[1], v->ne[2], v->ne[3]);
+      packed->op = GGML_OP_GATED_DELTA_NET;
+      packed->src[0] = recurrent_input(0); packed->src[1] = recurrent_input(1);
+      packed->src[2] = recurrent_input(2); packed->src[3] = decay;
+      packed->src[4] = beta; packed->src[5] = slots;
+      packed->src[6] = recurrent_input(state_port + 1);
+      packed->src[7] = ggml_reshape_2d(context,
+          recurrent_input(state_port + 2), snapshots, v->ne[3]);
+      packed->op_params[0] = static_cast<std::int32_t>(snapshots);
+      packed->op_params[kIndexedStateParameter] = kIndexedStateContract;
+    } else {
+      packed = ggml_gated_delta_net(
+          context, recurrent_input(0), recurrent_input(1), recurrent_input(2),
+          decay, beta, initial, snapshots);
+    }
     ggml_runtime::set_gdn_output_scale(
         packed, gdn ? gdn->output_scale
                     : node.operation.custom_as<model_ops::RecurrentGatedDeltaNet>()->output_scale);
@@ -1298,6 +1323,8 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     // that operation would change its public math and BF16 rounding boundary.
     if (gdn)
       if (auto *source = typed_source(4, false)) packed->src[4] = source;
+    if (node.indexed_state)
+      return {as_output(context, packed, recipe.values[node.outputs[0]])};
     const auto score_count = static_cast<std::int64_t>(
         *recipe.values[node.outputs[0]].element_count());
     const auto state_count = static_cast<std::int64_t>(

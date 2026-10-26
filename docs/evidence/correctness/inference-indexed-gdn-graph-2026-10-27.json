@@ -1,0 +1,1040 @@
+{
+  "status": "FIFTEEN_BOUNDED_GRAPH_TESTS_PASS",
+  "date": "2026-10-27",
+  "scope": "Actual default CUDA Graph indexed GDN state consumer and adjacent Store/projected-read contracts; no engine or performance claim.",
+  "passed_tests": 15,
+  "groups": [
+    {
+      "name": "CPU Store",
+      "tests": 4,
+      "process": {
+        "exit": 0,
+        "pid": 3060,
+        "seconds": 0.5135564000229351
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\ready.json",
+        "bytes": 9232,
+        "sha256": "a4226ff6bd15682eb11aaaa775db0820698631b7bbe2beaa47f1435da102ca40"
+      }
+    },
+    {
+      "name": "CUDA Store",
+      "tests": 1,
+      "process": {
+        "exit": 0,
+        "pid": 59772,
+        "seconds": 0.5003674000035971
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\ready.json",
+        "bytes": 9232,
+        "sha256": "a4226ff6bd15682eb11aaaa775db0820698631b7bbe2beaa47f1435da102ca40"
+      }
+    },
+    {
+      "name": "Projected region",
+      "tests": 8,
+      "process": {
+        "exit": 0,
+        "pid": 50276,
+        "seconds": 0.441919400007464
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\ready3.json",
+        "bytes": 10022,
+        "sha256": "436f00ffd360eebb6144547f15167ee6559771edf2f952ffd96b5ff9d43def2e"
+      }
+    },
+    {
+      "name": "Indexed state Graph",
+      "tests": 2,
+      "process": {
+        "exit": 0,
+        "pid": 45768,
+        "seconds": 0.559034000034444
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\ready5.json",
+        "bytes": 10017,
+        "sha256": "7a065b8fba1f823d9439ed18af398550b2497017b92bfc53a222b7f166375ee2"
+      }
+    }
+  ],
+  "observation_rule": "15 is the union of four passing group observations on three images; not all 15 rerun on the final image. All use the identical five product objects below.",
+  "unchanged_product_objects": [
+    {
+      "name": "resources",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 121226,
+        "sha256": "7e969f990c33ca8d7900077591008612ad5fab7532ea3b5161730114d2cd755f"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\compile\\resources\\unit.obj",
+        "bytes": 1254116,
+        "sha256": "5ab21c6abba33d918b7dcc2dbe4a6889b07a8f8ab8857637493f3148563815ea"
+      }
+    },
+    {
+      "name": "store",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+        "bytes": 38042,
+        "sha256": "c807c869c52a87c5aa1e7efb9044b5eeb5d746b5c748619d489d9c7f4ac49645"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\compile\\store\\unit.obj",
+        "bytes": 984982,
+        "sha256": "e20e9c24fc08a44d2b8d2418387dbe30fac8c9c301eee95f7d9109ec8e95c5d0"
+      }
+    },
+    {
+      "name": "provider",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\ggml_cuda_provider.cc",
+        "bytes": 86748,
+        "sha256": "1652a42c19260422b9b7972ab181b7079ebc7c2211d8758704d18073211f4061"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\compile\\provider\\unit.obj",
+        "bytes": 2431741,
+        "sha256": "de3e9dfc81d8d3ad00f8dddf6e9231c1dac94cf15e484cb79ef9d49a13bb032e"
+      }
+    },
+    {
+      "name": "tensor",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_ggml_cuda\\tensor_program.cc",
+        "bytes": 65489,
+        "sha256": "09581a56a4db1f762c2c1a43c5aa9a71b8653dda192d3c74e3fb38578af660c1"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\compile\\tensor\\unit.obj",
+        "bytes": 817254,
+        "sha256": "d15de28e66da8a37b9083669149f0447865fe327c9aa5b961694783741977b84"
+      }
+    },
+    {
+      "name": "graph-provider",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+        "bytes": 96164,
+        "sha256": "8f28b98136e4853d0558a6c49377d1fdea8a639eee5800e792cf275dbcf9bac6"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\compile\\graph-provider\\unit.obj",
+        "bytes": 2595724,
+        "sha256": "1089ff8bcf8885e516272546dadba39303c4cbac3794ad127a9f646d99ec4898"
+      }
+    }
+  ],
+  "distinct_CXX_TUs": 7,
+  "CXX_compile_attempts": 10,
+  "link_attempts": 4,
+  "linked_images": 4,
+  "native_test_processes": 8,
+  "native_objects_reused": [
+    {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\glm-mlx-flash-original-20261024\\gdn-output-scale-validation\\native1\\cuda-gated-delta.obj",
+        "bytes": 842417,
+        "sha256": "1bfc8bbaf9dd2322d0659e71c89c85963e8fd5d4cb45c571ed45794617e1fd0b"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile\\gdn\\unit.obj",
+        "bytes": 1518528,
+        "sha256": "814c6e2e34a5b7ebdde14aa712ed3c26cb8bb70e799335cdb4b77b4d2a0b72bf"
+      }
+    },
+    {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\architecture-refactor-2026-10-18\\gdn-direct-state-output\\checks\\native1\\native-main.obj",
+        "bytes": 1646064,
+        "sha256": "827e2876cc20224c0fa6a5dc1fc6340d1a4ff5541173dd22b6b8cd7d0e98758b"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile2\\dispatcher\\unit.obj",
+        "bytes": 1651315,
+        "sha256": "5dda051084f30ea6ee8337ad50009a0a5ed54ac8c644e528dfc97082b3703092"
+      }
+    }
+  ],
+  "native_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-indexed-gdn-native-2026-10-27.json",
+    "bytes": 22346,
+    "sha256": "0bc006526751799069440299764a97d4821dc0308724dd1e7474cd3b57804ea7"
+  },
+  "indexed_coverage": {
+    "batches": 2,
+    "tokens": 4,
+    "snapshots": 2,
+    "heads": 2,
+    "depth": 16,
+    "pool_slots": 17,
+    "slot_stride_bytes": 4096,
+    "allocation_alignment_bytes": 256,
+    "source_slots": [
+      13,
+      2
+    ],
+    "destination_slots": [
+      7,
+      16,
+      4,
+      11
+    ],
+    "route_policy": [
+      5213281904090366805,
+      6,
+      1
+    ],
+    "implementation": 7,
+    "logical_nodes": 5,
+    "dispatch_count": 1,
+    "cases": [
+      "Published Y plus batch-major chronological last-K candidate slots",
+      "No public Y: original external effect still executes; second real transaction reset, stale prepare/submit rejected, take returns original owner"
+    ],
+    "reference": "Original public dense GDN in the same Context; no Gather/Store pattern.",
+    "checks": [
+      "Activation/state F32 bits",
+      "Original sources and unused slots unchanged",
+      "All slot gaps and trailing padding unchanged",
+      "Mathematical input buffers unchanged",
+      "Real exact source/destination leases and common owner-generated private controls"
+    ],
+    "padding_authority": "Separate ordinary initialized gap blocks; no Graph writer includes padding. Whole backing alias is diagnostic read only after retirement, never a pool ReadLease or Graph input."
+  },
+  "failed_attempts": [
+    {
+      "process": {
+        "exit": 1,
+        "pid": 29096,
+        "seconds": 0.3930011999909766
+      },
+      "kind": "Runtime staging",
+      "reason": "CPU DLL absent from image directory; DEFAULT_DIRS loader does not search PATH. Reused same-SHA existing DLL hardlink, no product/image change."
+    },
+    {
+      "process": {
+        "exit": 1,
+        "pid": 40584,
+        "seconds": 0.39359009999316186
+      },
+      "kind": "Root test budget setup",
+      "reason": "Zero-byte system budget cannot create its own control state. Corrected to create 64KiB scope and reserve its remaining metadata allowance before testing denied growth."
+    },
+    {
+      "process": {
+        "exit": 1,
+        "pid": 22112,
+        "seconds": 0.5090693999663927
+      },
+      "kind": "Own test diagnostic deficiency",
+      "reason": "Bad expected access hid the Buffer allocation error; subsequent test made fallible fixture calls explicit."
+    },
+    {
+      "process": {
+        "exit": 1,
+        "pid": 52652,
+        "seconds": 0.5368508999818005
+      },
+      "kind": "Own test resource setup",
+      "reason": "4096-byte requested allocation alignment exceeded original CUDA resource limit256. Kept actual logical/math/IDs/stride; used legal256 alignment and retained separate2048-byte gaps."
+    }
+  ],
+  "historical_source_limit": "Earlier failed test source byte snapshots are incomplete. Their source hashes, freezes, exact commands, logs and error descriptions are retained; final canonical source is not presented as their old bytes. Final replay script contains retry support added after initial attempts.",
+  "exclusions": [
+    "No engine integration",
+    "No indexed convolution integration",
+    "No model-quality or model inference run",
+    "No performance/speedup measurement",
+    "No full-platform or arbitrary-shape claim",
+    "No SDK/weights downloads, SDK rebuild or new NVCC build",
+    "No arbitrary user device-ID validation guarantee; actual lease-derived private controls only"
+  ],
+  "SDK_builds": 0,
+  "NVCC_builds": 0,
+  "model_runs": 0,
+  "downloads": 0,
+  "performance_claim": false,
+  "final_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\ready5.json",
+    "bytes": 10017,
+    "sha256": "7a065b8fba1f823d9439ed18af398550b2497017b92bfc53a222b7f166375ee2"
+  },
+  "raw_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\graph-integration\\summary.json",
+    "bytes": 8405,
+    "sha256": "d35b122a4e11eb328466b5dd7a3b6ec1bfc6d04791897b88dc826a1505715bdf"
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-indexed-gdn-graph-2026-10-27.zip",
+    "bytes": 516012,
+    "sha256": "1bb720941715429d201b6f933e88fc56a95f829bc6a985c6548b3cc4e41920b9",
+    "members": 152
+  },
+  "members": [
+    {
+      "path": "native/native-final.json",
+      "bytes": 6421,
+      "sha256": "728ca404df723ce827dd736a58c48b3f9067d0e8b72f2a291449b0e575f591b3"
+    },
+    {
+      "path": "native/published-native-receipt.json",
+      "bytes": 22346,
+      "sha256": "0bc006526751799069440299764a97d4821dc0308724dd1e7474cd3b57804ea7"
+    },
+    {
+      "path": "records/canonical-recipes.json",
+      "bytes": 15550,
+      "sha256": "d518abce3ef5f1e5b3af371cc6138833a99df69ccc53df652272d59af2d2c790"
+    },
+    {
+      "path": "records/compile/graph-provider/actual-dependencies.json",
+      "bytes": 41032,
+      "sha256": "cc220ddbfa7e3f71875ee22e3ad7810a9efcb84d6aa140cde1b2a6e849077b9f"
+    },
+    {
+      "path": "records/compile/graph-provider/command.json",
+      "bytes": 2869,
+      "sha256": "1118b2a0aca3908307303a8baf253dbef4b203a5435fd598870e6fbb639eb1f5"
+    },
+    {
+      "path": "records/compile/graph-provider/process.json",
+      "bytes": 68,
+      "sha256": "bf978c93cd6de07143ee5fa773d3e18abf80e6b5393e7925e554adb458c5957b"
+    },
+    {
+      "path": "records/compile/graph-provider/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/graph-provider/stdout.log",
+      "bytes": 21,
+      "sha256": "15e15e3c0800a97a15c4157632f2e96d65c2cae32a9a8fa9adda2ef27d6bef6f"
+    },
+    {
+      "path": "records/compile/provider/actual-dependencies.json",
+      "bytes": 47075,
+      "sha256": "333fbe98bd27cc9c9c431f2bfed9696a51455dc891d6e46ab9067b7a556f80cc"
+    },
+    {
+      "path": "records/compile/provider/command.json",
+      "bytes": 3241,
+      "sha256": "3f3ff22afe1bb697690540f2716a6d86091015ff5bad9f110d62cf91f1232251"
+    },
+    {
+      "path": "records/compile/provider/process.json",
+      "bytes": 70,
+      "sha256": "fc836303f904dc27f432c260c7def82ca58395c38def2fc16976e75fc06fe6bb"
+    },
+    {
+      "path": "records/compile/provider/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/provider/stdout.log",
+      "bytes": 23,
+      "sha256": "c5c3c8aa094b49a053c42b65acff15c18229cc1b2ba492ba6b6fd563e05e40c4"
+    },
+    {
+      "path": "records/compile/region-test/actual-dependencies.json",
+      "bytes": 66543,
+      "sha256": "7707b77bb5a2b04de5bff73e3f15eff03127dd763f66a260407d4c952917d109"
+    },
+    {
+      "path": "records/compile/region-test/command.json",
+      "bytes": 1686,
+      "sha256": "8e045c124d52461c48ca1e8942eebf92287c8880122a8bfff1eb58cd3acc3b7a"
+    },
+    {
+      "path": "records/compile/region-test/process.json",
+      "bytes": 70,
+      "sha256": "1fbb9f546b7f3f4b932882af9a7ddc8800b1265d9ebc9444af8dd4a27507ceed"
+    },
+    {
+      "path": "records/compile/region-test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/region-test/stdout.log",
+      "bytes": 25,
+      "sha256": "d9c2de6704012da4ff0e7bc64b2d398fe2980e12672b04d8f83f50f7b788a5f7"
+    },
+    {
+      "path": "records/compile/resources/actual-dependencies.json",
+      "bytes": 47806,
+      "sha256": "fd92563c50b533f7206b029de66e66f2feaebde878f90169d5ef3af782ba1b1b"
+    },
+    {
+      "path": "records/compile/resources/command.json",
+      "bytes": 1667,
+      "sha256": "aa2642a899c8d7e8df76000b3348245adfd3bb1f176301249be69874a645d739"
+    },
+    {
+      "path": "records/compile/resources/process.json",
+      "bytes": 69,
+      "sha256": "f08a5540f2b08613fbb64bf5d9134f85f106165e31552f6f535cb8d948c241a4"
+    },
+    {
+      "path": "records/compile/resources/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/resources/stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "path": "records/compile/store/actual-dependencies.json",
+      "bytes": 46105,
+      "sha256": "adf3c505157ca9b816e349fe9ca702d10b1bbc246e4a26af07c4a363411e692e"
+    },
+    {
+      "path": "records/compile/store/command.json",
+      "bytes": 1658,
+      "sha256": "5bcc1e311cacdc8d932ef2ff64a90451affe6027f7dff35dd02afa988efb884c"
+    },
+    {
+      "path": "records/compile/store/process.json",
+      "bytes": 70,
+      "sha256": "e48d1e3ae65e109f008d9d38a93e12df655ac4cde4f191df970965da7dca69d8"
+    },
+    {
+      "path": "records/compile/store/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/store/stdout.log",
+      "bytes": 17,
+      "sha256": "1836ada6ce79313c8f22f93145e6c21aaf7333fc7a41a7762e7d4b951e2bb43f"
+    },
+    {
+      "path": "records/compile/tensor/actual-dependencies.json",
+      "bytes": 37749,
+      "sha256": "7e450a1c831d3d26d4bf368a0f8078f406707547ec796d7eb5ce840695cfd74e"
+    },
+    {
+      "path": "records/compile/tensor/command.json",
+      "bytes": 2879,
+      "sha256": "36b6773ddf84dd370930ae4983eb9ff53f29a517d5fb1600bb2beb31285e827a"
+    },
+    {
+      "path": "records/compile/tensor/process.json",
+      "bytes": 69,
+      "sha256": "88c7a436e4332d7225e587107aff394c1bd5f8d6a2144ae2de8c3942303c406d"
+    },
+    {
+      "path": "records/compile/tensor/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/tensor/stdout.log",
+      "bytes": 19,
+      "sha256": "af0441dbee37064a856a700771d091789232bba62895a6d69a27732cb5b7db99"
+    },
+    {
+      "path": "records/compile/test/actual-dependencies.json",
+      "bytes": 60932,
+      "sha256": "04147c3ca199550ff64d77e6fb7f48460d81dcf8139b2360b08736df4a5f7183"
+    },
+    {
+      "path": "records/compile/test/command.json",
+      "bytes": 2203,
+      "sha256": "66e18f2f45b3e43073c4b367a4ccde5efac361502ada36e821ecdc73dca83d31"
+    },
+    {
+      "path": "records/compile/test/process.json",
+      "bytes": 69,
+      "sha256": "107bb3227dd05a26000932c2f1a331fe6bdcc7d664770eeaf2606daeca267e47"
+    },
+    {
+      "path": "records/compile/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/test/stdout.log",
+      "bytes": 23,
+      "sha256": "411dc94bc0267fddba4f6dd2720b69eb020555fb1c62da016811171be32e1a09"
+    },
+    {
+      "path": "records/compile2/region-test/actual-dependencies.json",
+      "bytes": 66543,
+      "sha256": "47d76ec5a02fa9f760c4caef96dfcda53cb0259675d9dad8bf53887063cb2a6c"
+    },
+    {
+      "path": "records/compile2/region-test/command.json",
+      "bytes": 1689,
+      "sha256": "0d60f4aeaabcd5468cf2a4ea875d8dd236f2f2c28822a53326bae29dc15c1790"
+    },
+    {
+      "path": "records/compile2/region-test/process.json",
+      "bytes": 70,
+      "sha256": "1cd92b723bdb54de1a4996777210373a5989049aa5175df4a2b905c9700fd151"
+    },
+    {
+      "path": "records/compile2/region-test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile2/region-test/stdout.log",
+      "bytes": 25,
+      "sha256": "d9c2de6704012da4ff0e7bc64b2d398fe2980e12672b04d8f83f50f7b788a5f7"
+    },
+    {
+      "path": "records/compile3/test/actual-dependencies.json",
+      "bytes": 60932,
+      "sha256": "3c98251a2db0a05e2d39fbf5d9539b8da40db7a50c21015d407added6993d75a"
+    },
+    {
+      "path": "records/compile3/test/command.json",
+      "bytes": 2206,
+      "sha256": "21b5de6c93f759469af7a2dab36a4954097c7ffc4d6c47ecd0fba5cfd59ae18d"
+    },
+    {
+      "path": "records/compile3/test/process.json",
+      "bytes": 69,
+      "sha256": "4857c810799e70401bac11b0e8f2eb797a1870c941c914a4c1a1cf3a933a4831"
+    },
+    {
+      "path": "records/compile3/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile3/test/stdout.log",
+      "bytes": 23,
+      "sha256": "411dc94bc0267fddba4f6dd2720b69eb020555fb1c62da016811171be32e1a09"
+    },
+    {
+      "path": "records/compile4/test/actual-dependencies.json",
+      "bytes": 60932,
+      "sha256": "16713b34011ea268d5431e5b1d90939b512b2abab1793f570d59f19ffd992185"
+    },
+    {
+      "path": "records/compile4/test/command.json",
+      "bytes": 2206,
+      "sha256": "c8c118cdb110b4f4b970b507479345a0c3f21611db271791fdd69b3ccbb8ffc9"
+    },
+    {
+      "path": "records/compile4/test/process.json",
+      "bytes": 69,
+      "sha256": "233eab3e8a45a38ddde2c1a07ed2bcdf9982e511a4d7d1d079a0955c9c49d612"
+    },
+    {
+      "path": "records/compile4/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile4/test/stdout.log",
+      "bytes": 23,
+      "sha256": "411dc94bc0267fddba4f6dd2720b69eb020555fb1c62da016811171be32e1a09"
+    },
+    {
+      "path": "records/link-inputs.json",
+      "bytes": 58724,
+      "sha256": "4d89bbd6ccfa975784648aa2f96ea28c43dbda9aa3d5b1f99a791cc22ea4cc73"
+    },
+    {
+      "path": "records/link/command.json",
+      "bytes": 31983,
+      "sha256": "4c03faf0747f32b46ab1db30dc9d7fed1c2205ed5545f42443fa50a7f10967be"
+    },
+    {
+      "path": "records/link/process.json",
+      "bytes": 70,
+      "sha256": "37fc21bc39b5f60840219d1669f93824a67d089065f16370917f8af3d6184cee"
+    },
+    {
+      "path": "records/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link/stdout.log",
+      "bytes": 263,
+      "sha256": "80fe0de72992ad4a18e5de4a27b723536c98d58b90bf6655efad4ceea4bd8dab"
+    },
+    {
+      "path": "records/link2-inputs.json",
+      "bytes": 58725,
+      "sha256": "2feb7debc732bc53873e027d292a8d727eea5309a9783b1bc91f8a06db4877b1"
+    },
+    {
+      "path": "records/link2/command.json",
+      "bytes": 31987,
+      "sha256": "85d7c92a9e732e3a42dda2b43ce00707bb5f5927e0c74d0258aae1c90e09cec3"
+    },
+    {
+      "path": "records/link2/process.json",
+      "bytes": 70,
+      "sha256": "5f5642cc7543c40b811e66c6c8748d746c295dbde2c0d8ad8d81c821e0527b73"
+    },
+    {
+      "path": "records/link2/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link2/stdout.log",
+      "bytes": 265,
+      "sha256": "ad52e53ad8638f6595d68b7452aadb39fd32cf74db5a25e156ae50d30cd40644"
+    },
+    {
+      "path": "records/link3-inputs.json",
+      "bytes": 58726,
+      "sha256": "78f3f12f35840c8a4a079f11046ac1bf30283eca3e253c81a5a11e535500dd5f"
+    },
+    {
+      "path": "records/link3/command.json",
+      "bytes": 31988,
+      "sha256": "6cd7e67009fb98a2f6c3e6ba09cd154a89569e2213c354dafe23cfb18f36428d"
+    },
+    {
+      "path": "records/link3/process.json",
+      "bytes": 70,
+      "sha256": "c6e46465b3eec3e05b3a95e7564c19d75403614f8de933f665cbe1663c4b2ff5"
+    },
+    {
+      "path": "records/link3/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link3/stdout.log",
+      "bytes": 265,
+      "sha256": "473432affa846860fa6af85fb1ee409c829879f72491e2a2486d1d2062eaca9b"
+    },
+    {
+      "path": "records/link4-inputs.json",
+      "bytes": 58726,
+      "sha256": "bd08299ce431b1574d1c560d15324612f80578be692eb9039e567fa3ac2154ea"
+    },
+    {
+      "path": "records/link4/command.json",
+      "bytes": 31988,
+      "sha256": "74f0bd58f67e031f87d775d5e3c81aad7c505044bb8d4ba08cbb58c66729186e"
+    },
+    {
+      "path": "records/link4/process.json",
+      "bytes": 69,
+      "sha256": "aa9fa8d257943c6f7edd562cc6f5a0a122093c77dab5b0626197a7193da506e7"
+    },
+    {
+      "path": "records/link4/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link4/stdout.log",
+      "bytes": 265,
+      "sha256": "2451c8498ed099a54a4521e8506d5280574c2dfbfa0b7a5b63f70aa530b3a8ff"
+    },
+    {
+      "path": "records/partial-results.json",
+      "bytes": 2748,
+      "sha256": "632ecf21b48755da0f65123e99f6f603ed4b3f5d4a6d2cfecb68fe7955cb22f2"
+    },
+    {
+      "path": "records/partial-results3.json",
+      "bytes": 6234,
+      "sha256": "01552a06aed660381878a19b86481dd556e32a6f30f0a836ef9ba0b3c16525eb"
+    },
+    {
+      "path": "records/partial-results5.json",
+      "bytes": 7466,
+      "sha256": "66a87d0a110450173bf979e37d0790689dfc7466179b91c2e3263b61d6275883"
+    },
+    {
+      "path": "records/plan.json",
+      "bytes": 26080,
+      "sha256": "8a2359285571645713e84ac19d8b5db9d63e78916c0ca3dfbd614c1070ca3d70"
+    },
+    {
+      "path": "records/ready.json",
+      "bytes": 9232,
+      "sha256": "a4226ff6bd15682eb11aaaa775db0820698631b7bbe2beaa47f1435da102ca40"
+    },
+    {
+      "path": "records/ready2.json",
+      "bytes": 9756,
+      "sha256": "bf3f6735a60a29b5f261627212fd05139961f5a27f23fcd409d62c1b2e099133"
+    },
+    {
+      "path": "records/ready3.json",
+      "bytes": 10022,
+      "sha256": "436f00ffd360eebb6144547f15167ee6559771edf2f952ffd96b5ff9d43def2e"
+    },
+    {
+      "path": "records/ready4.json",
+      "bytes": 10018,
+      "sha256": "3310d3b725b84cc8fe2b46e55798a2b0cf72118a11ba425c2693e12a76a573c1"
+    },
+    {
+      "path": "records/ready5.json",
+      "bytes": 10017,
+      "sha256": "7a065b8fba1f823d9439ed18af398550b2497017b92bfc53a222b7f166375ee2"
+    },
+    {
+      "path": "records/region-test2-freeze.json",
+      "bytes": 18362,
+      "sha256": "5b3200eb06752c3f9c8b1f764349011afd504a85a2e244342be745e7d590cb59"
+    },
+    {
+      "path": "records/region-test2-plan.json",
+      "bytes": 2583,
+      "sha256": "23c3d590b24625de406b1c898a81a877ffd0be532f91fad411066c58115cb1d1"
+    },
+    {
+      "path": "records/results-cpu.xml",
+      "bytes": 1429,
+      "sha256": "b7bd7d8a30b0e075e672716d1da097e7ff004ce6a5302ff602db4798b77391fa"
+    },
+    {
+      "path": "records/results-cuda.xml",
+      "bytes": 630,
+      "sha256": "66827c11a7f3a5b5f2cad7e923824de1a3fbce74503d961161f7d9d9633a3dfd"
+    },
+    {
+      "path": "records/results-region.xml",
+      "bytes": 2977,
+      "sha256": "ca06ddcc36160378fd68ee3686f90e3186b92b8a80a96d806b64c463bb31871d"
+    },
+    {
+      "path": "records/results2-region.xml",
+      "bytes": 2807,
+      "sha256": "e94371a287b1746ca69aaa60f6dd9c142336392f0d918f0af0db99a5a7afa70b"
+    },
+    {
+      "path": "records/results3-indexed.xml",
+      "bytes": 1496,
+      "sha256": "53724feeff45230640e34e62f3171a344bb93e165e4e760e8cbe07e600312ff9"
+    },
+    {
+      "path": "records/results3-region.xml",
+      "bytes": 2530,
+      "sha256": "96ff1bf399d28c9ef2f7aea17091dd08c8540b6942bafde389c7e3ecfa113ff5"
+    },
+    {
+      "path": "records/results4-indexed.xml",
+      "bytes": 1987,
+      "sha256": "e14ed121ca1b2585bafd8b32469da08a22fc017429d8a248e33d373fbf03ded7"
+    },
+    {
+      "path": "records/results5-indexed.xml",
+      "bytes": 942,
+      "sha256": "a6a6d8004e49b5d0d689d15080394092ff429a1da756e0a094c182a35ff6ac70"
+    },
+    {
+      "path": "records/run-cpu/command.json",
+      "bytes": 441,
+      "sha256": "d7930493a351e4c1c816e6d26bde4f102e7a3ad8ae892c1492f17a7ceeb41625"
+    },
+    {
+      "path": "records/run-cpu/process.json",
+      "bytes": 69,
+      "sha256": "21733ab9e2e31f11efd9b91591fe7b6d3c6a591b5b663eb6c8f4cf30e22d12ea"
+    },
+    {
+      "path": "records/run-cpu/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/run-cpu/stdout.log",
+      "bytes": 1257,
+      "sha256": "64fd786ffa343b9feca83cf2aad7b365d38f47e3bdab3853fee7d0c0c4277529"
+    },
+    {
+      "path": "records/run-cuda/command.json",
+      "bytes": 446,
+      "sha256": "e304f50f7cdbc53c106a178243cf84e3d4f9a749b3655e259edf0daa108d29c1"
+    },
+    {
+      "path": "records/run-cuda/process.json",
+      "bytes": 70,
+      "sha256": "8db79bf260b25bc378ac9923cf33fed1ceb9550882268d681c971f55c899690a"
+    },
+    {
+      "path": "records/run-cuda/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/run-cuda/stdout.log",
+      "bytes": 722,
+      "sha256": "d2229b03b82501ac60e837a41964c883f5805dd97c5d1c3694bfa9f44e921fa4"
+    },
+    {
+      "path": "records/run-region/command.json",
+      "bytes": 569,
+      "sha256": "4b925c236c694fc84085a831c14c6b25d304367facf0d8ff400878754b16d182"
+    },
+    {
+      "path": "records/run-region/process.json",
+      "bytes": 70,
+      "sha256": "ff99783c288556a1c43acd13aac24c4291c62d8c93aff286afe10727f89ada95"
+    },
+    {
+      "path": "records/run-region/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/run-region/stdout.log",
+      "bytes": 2447,
+      "sha256": "b4a49853eed7640bc06f8ee8e2bbba1431bd7257d7f10357fe1ab261e960c389"
+    },
+    {
+      "path": "records/run2-region/command.json",
+      "bytes": 570,
+      "sha256": "2fe8993a957415b08f08aaec03f522a7e39d3da8448a21339ed5b3adaac2e522"
+    },
+    {
+      "path": "records/run2-region/process.json",
+      "bytes": 71,
+      "sha256": "1936d42a5c6a00a9958f1a11560f76f064694fd83ab39d534905199f1745f4ef"
+    },
+    {
+      "path": "records/run2-region/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/run2-region/stdout.log",
+      "bytes": 2362,
+      "sha256": "7cccfa8da5489be3d8b82254e740f8258e9ec9d363a80ca67d3323b61ba3d3ac"
+    },
+    {
+      "path": "records/run3-indexed/command.json",
+      "bytes": 453,
+      "sha256": "ebcd2b2d2ddbf9044b82975295a62f92d7dc8953fff1e34fb4559426f130c8b1"
+    },
+    {
+      "path": "records/run3-indexed/process.json",
+      "bytes": 70,
+      "sha256": "19c979e65ae02c642a81203e1740a55be33e81c86c65fc3be0ca20c08edb446d"
+    },
+    {
+      "path": "records/run3-indexed/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "records/run3-indexed/stdout.log",
+      "bytes": 1371,
+      "sha256": "1059295b6437e2e73cbebef941928cc716860c8d5b47bc7a18f0f4e7e3cd9737"
+    },
+    {
+      "path": "records/run3-region/command.json",
+      "bytes": 571,
+      "sha256": "6b09b5cf55a7e5a63e417679284d583e40097ce842b994122c7ab0b4ecaa4748"
+    },
+    {
+      "path": "records/run3-region/process.json",
+      "bytes": 69,
+      "sha256": "0933d9dbef4be106044f5db12ec147cc4f31f4183379eba71237ada6c7a55f71"
+    },
+    {
+      "path": "records/run3-region/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/run3-region/stdout.log",
+      "bytes": 2124,
+      "sha256": "fc590b7cd6d9fece00c6f795fb0771980f1e429763e54c361975163fcac5d7f4"
+    },
+    {
+      "path": "records/run4-indexed/command.json",
+      "bytes": 453,
+      "sha256": "cd581fe2eacef376c23f99ed489361d1cb9ab47e0b6266573ffeb748299b04d3"
+    },
+    {
+      "path": "records/run4-indexed/process.json",
+      "bytes": 70,
+      "sha256": "09324747948f47de5cdc424734f437f44e47b43fa3525138491d24014b2b7971"
+    },
+    {
+      "path": "records/run4-indexed/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "records/run4-indexed/stdout.log",
+      "bytes": 1617,
+      "sha256": "e3075828f05b46c4bfc31ae1b977f74edeb6e57ea3bb088aafeddd1eb430f6f0"
+    },
+    {
+      "path": "records/run5-indexed/command.json",
+      "bytes": 453,
+      "sha256": "141b5c7dcc61ecdbd992923febaaedafd51750cfc59c26b245d99533c0ae1223"
+    },
+    {
+      "path": "records/run5-indexed/process.json",
+      "bytes": 69,
+      "sha256": "780f6704466239b5afdb7a4c9fe712411b88d9f698ef51ee645b62cbd71e3d81"
+    },
+    {
+      "path": "records/run5-indexed/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "records/run5-indexed/stdout.log",
+      "bytes": 931,
+      "sha256": "47c53b3c5271e30eca9e97f8d4f14551669a92cd715d5046bfc60c1f8365b215"
+    },
+    {
+      "path": "records/runtime-correction.json",
+      "bytes": 1486,
+      "sha256": "0c01b4381715d88d1c5604a5279b6fc4877549f8eab4247c481a82fbf193d3c4"
+    },
+    {
+      "path": "records/runtime.json",
+      "bytes": 20573,
+      "sha256": "b6de874713df3c31eef3c56cc928485a5cd8c66bdddb06ca5d4808457ba6c63b"
+    },
+    {
+      "path": "records/runtime2.json",
+      "bytes": 20585,
+      "sha256": "4a482e87d4508c9e5f4fd8a5e8185641a2bd0d6fd9947f96a32952ce97bea8aa"
+    },
+    {
+      "path": "records/runtime3.json",
+      "bytes": 20586,
+      "sha256": "8f166ddf0ecfe7efc7706a9a9e88be069882d95934172718c1bffd3900b3a5b8"
+    },
+    {
+      "path": "records/runtime4.json",
+      "bytes": 20586,
+      "sha256": "699acd17e3ae2224ceed1a75536499eeaab4b0a05d8b6256ea14cf5778402332"
+    },
+    {
+      "path": "records/runtime5.json",
+      "bytes": 20586,
+      "sha256": "640593b0b468b37aabbea780ea89ac78d3f7eb3a727aa95f2f5767eb6f89f68c"
+    },
+    {
+      "path": "records/source-freeze.json",
+      "bytes": 26749,
+      "sha256": "8333019a7f20b0eb9804ea6f5b0c28138a5f8fa823668df23aa59138d22eea08"
+    },
+    {
+      "path": "records/summary.json",
+      "bytes": 8405,
+      "sha256": "d35b122a4e11eb328466b5dd7a3b6ec1bfc6d04791897b88dc826a1505715bdf"
+    },
+    {
+      "path": "records/test3-freeze.json",
+      "bytes": 10784,
+      "sha256": "b70fb364315fb33a1a9279c2f2a4ecec96b2ad5e57bd47c542d6f72cc0c10ca0"
+    },
+    {
+      "path": "records/test3-plan.json",
+      "bytes": 3008,
+      "sha256": "7eab58485af36243eac935b8796586820953a1a0e5edc73309b27e870415e69c"
+    },
+    {
+      "path": "records/test4-freeze.json",
+      "bytes": 10784,
+      "sha256": "d36fdeec2b7f55567e0c9162bb7855fa254b83c2f461d33d763dd31f18a8b734"
+    },
+    {
+      "path": "records/test4-plan.json",
+      "bytes": 3031,
+      "sha256": "372bb3951ba52d79b39602b8a68edc7025711ea26c8c36a3aea9c81731b5d59d"
+    },
+    {
+      "path": "scripts/graph-build.py",
+      "bytes": 17206,
+      "sha256": "59688749b24c9f3618556ddd6f2aabb33461ab900be014c0118abf9c50f48c1c"
+    },
+    {
+      "path": "scripts/publish-graph.py",
+      "bytes": 10142,
+      "sha256": "21c288fce2def7b0eec714d8fe01fb1f59d9ab33fb735fbed510c5903695c0cd"
+    },
+    {
+      "path": "source/include/hyle/graph/detail/region_access.h",
+      "bytes": 21328,
+      "sha256": "7c49d0b7a39a1694e5794e0f98b2f1e295b699f45c17b2b08cde4e6590169149"
+    },
+    {
+      "path": "source/src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "bytes": 86748,
+      "sha256": "1652a42c19260422b9b7972ab181b7079ebc7c2211d8758704d18073211f4061"
+    },
+    {
+      "path": "source/src/compute_provider_ggml_cuda/indexed_state.h",
+      "bytes": 471,
+      "sha256": "57ca7b4485d2a171c26d26ba6bad6592cf13056ad44cfed114523310d3f0666a"
+    },
+    {
+      "path": "source/src/compute_provider_ggml_cuda/program.h",
+      "bytes": 5423,
+      "sha256": "e7bfa656ff8005d0b18ddb3136fd921833dabd1d190616ce6ac099192874997c"
+    },
+    {
+      "path": "source/src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 65489,
+      "sha256": "09581a56a4db1f762c2c1a43c5aa9a71b8653dda192d3c74e3fb38578af660c1"
+    },
+    {
+      "path": "source/src/graph/resources.cc",
+      "bytes": 121226,
+      "sha256": "7e969f990c33ca8d7900077591008612ad5fab7532ea3b5161730114d2cd755f"
+    },
+    {
+      "path": "source/src/graph/slots_region.cc",
+      "bytes": 38042,
+      "sha256": "c807c869c52a87c5aa1e7efb9044b5eeb5d746b5c748619d489d9c7f4ac49645"
+    },
+    {
+      "path": "source/src/graph/slots_region.h",
+      "bytes": 3612,
+      "sha256": "0f2d8ec80dab3487a29b26b67c87fcb8445bc12b7c7e3bf97baf26038316fe0e"
+    },
+    {
+      "path": "source/src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "bytes": 96164,
+      "sha256": "8f28b98136e4853d0558a6c49377d1fdea8a639eee5800e792cf275dbcf9bac6"
+    },
+    {
+      "path": "source/tests/graph/region_provider_test.cc",
+      "bytes": 650127,
+      "sha256": "c4bb40dffbc2795c1996d1a8dace717c9d06551f6a07cb1d79c6462fcb90a265"
+    },
+    {
+      "path": "source/tests/graph/slots_cuda_execution_test.cc",
+      "bytes": 5929,
+      "sha256": "7b0615abd2acaa22c6c4b2bcec9ad59291df14ecf0176c42157d71e1ae1fab14"
+    },
+    {
+      "path": "source/tests/graph/slots_execution_test.cc",
+      "bytes": 13654,
+      "sha256": "6a56765509c11686c19d651fa9bcf589b6f64bc5479771527f29e6d61eaffa9c"
+    },
+    {
+      "path": "source/tests/graph_provider_ggml_cuda/CMakeLists.txt",
+      "bytes": 771,
+      "sha256": "7afb0e7bbcdfa0f81d6a4c454768c6579c874159c93db1cb1fe865eaabc21409"
+    },
+    {
+      "path": "source/tests/graph_provider_ggml_cuda/indexed_state_test.cc",
+      "bytes": 17900,
+      "sha256": "363306d97490ed5af3b0924cf49199441db16b0b8ffcabaa93a3c687a3e90a52"
+    }
+  ]
+}

@@ -3421,6 +3421,30 @@ TEST(GraphRouteBoundary, ProjectedInputRetainsAllReadersAndLivePageGuards) {
   EXPECT_EQ(wrong_page.message(), "projected page permission is outside its native capacity");
   ASSERT_TRUE(hyle::graph::detail::RegionAccess::bind_projected(
       run, bank, tensor, pages, readers.values).ok());
+  const auto *parent = hyle::graph::detail::InvocationAccess::state(run);
+  auto current_projection = hyle::graph::detail::RegionAccess::has_read_projection(parent, bank, pages);
+  ASSERT_TRUE(current_projection); EXPECT_TRUE(*current_projection);
+  const std::array swapped_pages{pages[1], pages[0]};
+  auto changed_bounds = hyle::graph::detail::RegionAccess::has_read_projection(parent, bank, swapped_pages);
+  ASSERT_FALSE(changed_bounds); EXPECT_TRUE(changed_bounds.error().IsInvalidArgument());
+  // Installing these guards consumed spare records. Repeating an additional
+  // reservation must grow all original permission/use storage, rather than
+  // reuse a stale extra-count high-water mark. Failed growth keeps the live
+  // projection usable by the original submission below.
+  constexpr std::size_t scope_bytes = 64 * 1024;
+  const std::array limits{hyle::compute::ResourceBudgetLimit{hyle::mem::system_resource(), scope_bytes}};
+  auto budget_result = hyle::compute::ResourceBudget::create({.limits = limits});
+  ASSERT_TRUE(budget_result) << budget_result.error().message();
+  auto denied_budget = std::move(*budget_result);
+  const auto scope_usage = denied_budget.usage(hyle::mem::system_resource());
+  ASSERT_TRUE(scope_usage) << scope_usage.error().message();
+  auto held_credit = denied_budget.reserve(hyle::mem::system_resource(),
+      scope_bytes - scope_usage->live_bytes, hyle::compute::ResourceBudgetCategory::kMetadata);
+  ASSERT_TRUE(held_credit) << held_credit.error().message();
+  EXPECT_TRUE(hyle::graph::detail::RegionAccess::reserve_reads(run, 2,
+      {.resource_budget = denied_budget}).IsResourceExhausted());
+  current_projection = hyle::graph::detail::RegionAccess::has_read_projection(parent, bank, pages);
+  ASSERT_TRUE(current_projection); EXPECT_TRUE(*current_projection);
   auto side_tensor = make_tensor(row(8));
   write(side_tensor, values);
   std::array outputs{make_tensor(row(8)), make_tensor(row(8)), make_tensor(row(8))};
