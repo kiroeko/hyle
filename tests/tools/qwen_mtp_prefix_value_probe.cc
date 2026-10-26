@@ -4,6 +4,9 @@
 #include "../../engine/models/qwen35/mtp_session_probe.cc"
 #undef main
 
+#include "../../src/graph/slots_region.h"
+#include "hyle/graph/detail/region_access.h"
+
 namespace {
 struct PrefixValueCase final {
   HeadImage selected, continued;
@@ -16,6 +19,78 @@ Bytes original_result(q::Model &model, q::StepState &step, q::V port) {
     q::check(model.execution.read(tensor->storage(), value)); return value;
   }
   return read(q::take(result.storage_lease()));
+}
+Bytes original_slot_result(q::Model &model, q::StepState &step,
+    const q::StatePorts &ports, const c::TensorDesc &item, std::size_t prefix) {
+  namespace gd = hyle::graph::detail;
+  namespace sd = hyle::graph::slots::detail;
+  require(step.run && step.phase && step.states_bound && step.members.size() == 1 &&
+      prefix < step.phase->prefix_rows, "prefix state needs its original bound single-request episode");
+  // finish_selected_evaluations observes successful completion before select.
+  // The independent retired visitor also rejects native work/results/observers;
+  // an invalid public Completion alone would not prove actual retirement.
+  require(gd::RegionAccess::successful_outcome(*step.run),
+      "prefix state inspection requires the original successful Graph outcome");
+  Bytes bytes(q::take(item.required_bytes()));
+  struct Read final {
+    q::Model *model;
+    const q::StatePorts *ports;
+    c::TensorDesc item;
+    std::size_t prefix, destinations;
+    std::span<std::byte> bytes;
+    bool found = false;
+  } observation{&model, &ports, item, prefix,
+      q::cache::multiply(step.members.size(), step.phase->prefix_rows), bytes};
+  q::check(gd::RegionAccess::visit_retired(*step.run, ports.store,
+      +[](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
+        auto &request = *static_cast<Read *>(opaque);
+        if (request.found || std::ranges::find(view.node_ordinals, request.ports->store.ordinal()) ==
+            view.node_ordinals.end() || !view.prepared_vtable || !view.prepared_vtable->query_extension)
+          return hyle::Status::InvalidArgument("prefix state has no unique original selected Store");
+        const auto *extension = static_cast<const sd::StoreRegionVTable *>(
+            view.prepared_vtable->query_extension(view.prepared, sd::kStoreBindingExtensionId));
+        if (!extension || !extension->inspect || !extension->binding)
+          return hyle::Status::Unimplemented("selected prefix Store lacks its original transaction extension");
+        const hyle::graph::ProviderRegionPrepared prepared{
+            .vtable = view.prepared_vtable, .state = view.prepared};
+        HYLE_ASSIGN_OR_RETURN(auto facts, extension->inspect(prepared, view.invocation));
+        if (facts.store != request.ports->store || facts.destination_indices != request.ports->destination_ids ||
+            facts.destination_count != request.destinations ||
+            (facts.source.count && (facts.source.gather != request.ports->gather ||
+                facts.source.capacity != request.ports->pool || facts.source.indices != request.ports->source_ids)))
+          return hyle::Status::InvalidArgument("prefix Store facts differ from the original Graph node and ports");
+        auto *binding = extension->binding(view.invocation);
+        if (!binding) return hyle::Status::FailedPrecondition("prefix Store has no original binding owner");
+        HYLE_RETURN_IF_ERROR(binding->validate_authority());
+        const auto *transaction = binding->transaction();
+        if (!transaction || transaction->source_count() != 1 ||
+            transaction->destination_count() != request.destinations ||
+            transaction->destinations().size() != request.destinations ||
+            transaction->destination_addresses().size() != request.destinations)
+          return hyle::Status::FailedPrecondition("prefix Store no longer holds the actual full candidate transaction");
+        const auto layout = transaction->layout();
+        if (layout.description() != request.item)
+          return hyle::Status::InvalidArgument("prefix candidate item differs from its original state description");
+        HYLE_ASSIGN_OR_RETURN(auto schema, hyle::graph::slots::Schema::create(
+            request.item, layout.slot_count(), layout.stride_bytes()));
+        if (facts.schema != schema)
+          return hyle::Status::InvalidArgument("prefix Store schema differs from its original pool layout");
+        const auto &writer = transaction->destinations()[request.prefix];
+        HYLE_ASSIGN_OR_RETURN(auto address, layout.locate(writer));
+        if (address != transaction->destination_addresses()[request.prefix])
+          return hyle::Status::InvalidArgument("prefix candidate writer changed its original slot or generation");
+        HYLE_ASSIGN_OR_RETURN(auto storage, writer.view());
+        if (storage.resource() != facts.resource || storage.size() != request.bytes.size())
+          return hyle::Status::InvalidArgument("prefix candidate writer has a different resource or byte extent");
+        // The original Graph still owns this writer. Copy its exact raw bytes
+        // synchronously inside the retired visit; do not publish/take/reset or
+        // retain a borrowed view beyond this original owner observation.
+        HYLE_RETURN_IF_ERROR(request.model->execution.read(hyle::mem::ConstBufferView{storage}, request.bytes));
+        request.found = true;
+        return hyle::Status::Ok();
+      }, &observation));
+  require(observation.found, "original completed Store candidate was not observed");
+  return bytes;
 }
 const Blob &named(const HeadImage &captured, std::string_view name) {
   const auto found = std::ranges::find(captured.blobs, name, &Blob::name);
@@ -45,16 +120,16 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
   std::array<std::int32_t, 1> pending{16};
   model.finish_selected_evaluations(outputs, pending,
       [&](auto, q::StepState &step, auto selected) {
-        // Observe only ports that the unmodified verifier already publishes.
-        // These values belong to this exact completed graph, not T1 or another
-        // row width whose reduction arithmetic is allowed to differ.
+        // Observe actual candidate writers still held by this same completed
+        // verifier. No final-head self comparison, T1/cross-width arithmetic or
+        // early take that could revoke the still-needed carry outputs.
         for (std::size_t layer = 0; layer < model.geometry.layers.size(); ++layer)
           if (model.geometry.is_gdn(layer)) {
-            const auto &ports = step.phase->layers[layer].sequences[0];
+            const auto &ports = step.phase->layers[layer];
             expected.push_back({"layer"+std::to_string(layer)+".conv.bf16",true,
-                original_result(model,step,ports.history_prefix.at(consumed-1))});
+                original_slot_result(model,step,ports.history,model.state_schema[layer].history,consumed-1)});
             expected.push_back({"layer"+std::to_string(layer)+".gdn.f32",false,
-                original_result(model,step,ports.recurrent_prefix.at(consumed-1))});
+                original_slot_result(model,step,ports.recurrent,model.state_schema[layer].recurrent,consumed-1)});
           }
         for (std::size_t row = 0; row < consumed; ++row)
           carry.push_back(original_result(model,step,step.phase->carry_ports[0].at(row)));
@@ -84,7 +159,7 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
   // committed target h[p-1], never recursive approximate draft hidden. Its
   // actual row width matches repair, so this introduces no cross-width oracle.
   {
-    q::DraftWork reference; reference.state = *base->draft;
+    q::DraftWork reference; reference.state = q::Model::fork_draft(*base->draft);
     std::vector<std::int32_t> tokens; std::vector<c::ReadLease> shifted;
     std::vector<q::Tensor> retained; retained.reserve(consumed);
     if (base->draft->lag) {tokens.push_back(base->draft->catchup_token);shifted.push_back(base->prior_hidden);}
@@ -144,6 +219,24 @@ int main(int argc,char**argv) {
     for(std::size_t width=1;width<=5;++width){model.prepare_draft_program(width,false);if(width<=2)model.prepare_draft_program(width,true);}
     for(auto role:{q::GraphRole::kMtpSingle,q::GraphRole::kMtpCatchupSingle}){
       model.prepare_family(single,false,1,role);model.plan_replay_uses(1,1,24,role);
+    }
+    // Observe the actual selected exact child, not an assumed provider route
+    // based on tensor geometry or on the later successful Session result.
+    for (const auto &[key, family] : model.families) {
+      (void)key;
+      for (std::size_t variant = 0; variant < family->children.size(); ++variant) {
+        const auto &report = family->children[variant]->compiled.report;
+        std::size_t indexed_gdn = 0, indexed_conv = 0;
+        for (std::size_t step = 0; step < report.step_count(); ++step) {
+          const auto policy = q::take(report.step(step)).policy;
+          indexed_gdn += policy == c::RoutePolicyId{0x48594c4547474355ULL, 6, 1};
+          indexed_conv += policy == c::RoutePolicyId{0x48594c4547474355ULL, 7, 1};
+        }
+        std::cout << "COLD role=" << static_cast<int>(family->role)
+            << " requests=" << family->requests << " tokens=" << family->chunks[variant]
+            << " indexed_gdn_regions=" << indexed_gdn
+            << " indexed_conv_regions=" << indexed_conv << '\n';
+      }
     }
     auto seed=model.create_session(prompt_shape,{},q::GraphRole::kMtpPrefill);
     model.prepare_evaluation(*seed,prompt,nullptr,q::GraphRole::kMtpPrefill);model.submit_evaluation(*seed);q::finish_evaluation(model, *seed,"seed",{},false);

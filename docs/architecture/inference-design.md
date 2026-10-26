@@ -83,20 +83,22 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
 索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
-它与已撤回的固定IO复制方案不同，完整原生与引擎路径尚未接通，也没有完整提速结论。
+它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
+其它消费者与跨平台接线仍在检查，没有完整提速结论。
 先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
 旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
 固定槽不自动消除provider复制：CUDA ggml的K1闭合片段已有GDN直接状态输出，不能再把旧的
 packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
-计算需独立承载：私有CUDA GDN／conv及Graph融合已通过下述有限检查，引擎仍未接完，
+计算需独立承载：私有CUDA GDN／conv及Graph融合已通过下述有限检查，引擎已接原池但尚待完整消费者核查，
 不能把K1承载或地址复用记成整段能力已完成。
 
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
 槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA／Apple／Vulkan Store已接通，
-CUDA窄链索引GDN／conv另有下述有限集成结果，部分尾部承载、批量控制及引擎接线仍待完成。
+CUDA窄链索引GDN／conv另有下述有限集成结果；共同批量控制及引擎接线已实现，
+Vulkan非4字节尾部及完整消费者检查仍待完成。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
@@ -121,7 +123,8 @@ CUDA普通浮点选行也已接通；这两项是前提，尚不等于整个索�
 借用输入载体与其真实只读控制权限分开登记。准备和seal核对原父Invocation的写权限，
 reset后保留事务不代表可继续执行；真实退休后可以take回收owner，不将回收当作计算成功。
 [13项有限检查](../evidence/correctness/inference-slot-store-2026-10-27.json)包括5个实际Store检查与8个相邻合同。
-这条fallback未接引擎、不支持capture，索引上传可能等待；原生融合仍须消除状态物化和逐层metadata等待，
+这条fallback不支持capture，索引上传可能等待；引擎按同一普通图与事务接线，是否融合由冷规划决定。
+原生融合用于消除状态物化和逐层metadata等待，
 不能拿这个正确性入口代替性能实现。共同绑定与退休应继续复用，不能在每个Provider再复制一套事务。
 融合沿用`slots::prepare/bind/take`入口和唯一的内部槽绑定owner，
 fallback与融合region只各持一个实例；selected-artifact冷扩展交回该实例，不新增热分派表。
@@ -141,10 +144,19 @@ conv复用相同Artifact、Invocation、StoreBinding与退休回调，不另建�
 拒绝时撤回本次已安装的写效果和源投影，不消费调用方事务。原生路线仍用真实ExecutionSource，
 不伪造Compute Queue。组内尚有未取回事务时不得重写共享载体，各组不隐式互相重绑。
 取回的SlotBindings可clear旧source／候选后refill，保留原layout、计数、预算与元数据容量，
-仍核完整真实租约及generation，不缓存裸槽号代替权限。引擎迁移与完整性能对照仍待完成；
+仍核完整真实租约及generation，不缓存裸槽号代替权限。引擎现按layer／状态角色保留原事务和元数据容量，
+每步先准备完整新租约，再共同绑定；完整性能对照仍待完成。
 共同机制已有[有限CPU／CUDA检查](../evidence/correctness/inference-batched-slot-controls-2026-10-27.json)，
 覆盖同组全体绑定、固定切片、未全部取回时拒绝重写及晚期权限失败回滚。
 原生copy仍可有每组临时元数据分配，不把事务refill零分配推广为所有后端bind零分配。
+
+本批[引擎接线检查](../evidence/correctness/inference-engine-slot-state-2026-10-27.json)覆盖CPU／CUDA旧快照、状态复用、镜像及真实Qwen前缀；它不代签其它平台、MTP异成员或完整性能。
+引擎的history与递归状态分别绑定原池布局，不能复用对方的slot ID。普通K1选最终边界；
+MTP按batch-major `[B,K]`选接受前缀的原writer，未接受候选不公开。成功路径先保留所有普通输出，
+再由原whole-Graph成功见证取回KV append，最后取回状态Store并发布候选；
+`slots::take`只证明真实退休，不替代计算成功。清空取回事务中的旧source后才进入原联合head发布，
+失败仍沿原退休、回收和旧head保留合同。控制载体归执行预算，状态载荷仍归原缓存预算。
+
 拒绝融合时仍须由实际reader证明合法投影，不能让模型按Provider分叉构图或伪造整池ReadLease。
 可移植接线由冷准备关联原Graph的Store与源Gather，不包含Provider身份；
 共同层核checked axis0读取、池几何和私有ID，再由实际选中实现证明只读选中行。
@@ -157,7 +169,8 @@ Apple原类型选行与Vulkan合格原码选行保留实际stride，不复制整
 不代表完整引擎提速。Apple现复用原CopyRecording按全部实际范围冷准备、FIFO解析成功producer后先验：
 对齐范围仍走原blit，合法的非对齐范围精确host copy；不重算、不扩写padding，原Shared门及退休机制保持。
 [5项有限检查](../evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.json)覆盖2／6字节生成状态及原回归。
-Vulkan目前仍要求4字节对齐item和offset；原码16位选行与精确copy须另补真实原生能力，不能只放宽transfer门。
+Vulkan的整行与pitch均4字节对齐时，原lowering已可按I32字别名选行并保持F16／BF16原码，
+不会经浮点数值转换。非4字节尾部或pitch仍需原码16位选行与精确copy能力，不能只放宽transfer门。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，
@@ -181,15 +194,15 @@ Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前�
 
 expected-base及可追加尾权同时核对epoch，避免元数据地址轮换造成身份复用。采样恢复仍从冻结的
 canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fork、旧读者和未知退休继续持有真实
-权限与预算。KV帧reframe现由下文工作帧及变化页事务替代；逐层递归状态导出及部分provider状态复制仍存在，原生索引状态槽和MTP有界捕获
-复用仍待实现，不能从主机元数据复用推导吞吐收益。[有限主机、CPU 与 CUDA 普通／MTP 对照](../evidence/correctness/inference-working-state-2026-10-26.json)
+权限与预算。KV帧reframe现由下文工作帧及变化页事务替代；GDN／conv现通过原池Store选槽发布，
+不再逐层导出普通Graph状态输出。实际融合与捕获复用仍须检查所选artifact，不能从主机元数据复用推导吞吐收益。[有限主机、CPU 与 CUDA 普通／MTP 对照](../evidence/correctness/inference-working-state-2026-10-26.json)
 记录了这次迁移的实际检查范围和保留边界。
 
-caller-owned的GDN／conv状态现另用共享R容量的FIFO保留原`WriteLease`：只在完整成功、原生
+GDN／conv原池状态用共享R容量的FIFO保留原`WriteLease`：只在完整成功、原生
 读者撤回后，从独占的旧工作态调用`try_write`回收，保留原generation和地址。未冻结的普通K1
 可轮换两块原状态；共享旧Snapshot、失败候选及未知退休均不回收。decode、冷创建和镜像恢复
 消费同一缓存，不增加原N+K×R载荷容量；缓存不是额外不可用的占位。此项不改变KV帧发布、
-原生索引计算或MTP接受前缀合同，有限结果见[回收与定位](../evidence/correctness/inference-reusable-state-2026-10-26.json)。
+原生索引计算或MTP接受前缀合同；最初的caller-owned输出检查见[回收与定位](../evidence/correctness/inference-reusable-state-2026-10-26.json)。
 
 同一Graph的多个append可用`batch::take_appends`一次取回：先检查全部原节点、目的及真实退休，
 再按原writer／reader资格撤回权限、压缩一次匿名绑定表，最后移出原事务。完整成功事实仍只

@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/compute/lease_slots.h"
 #include "hyle/compute/paged_frame.h"
 #include "hyle/core/assert.h"
 #include "hyle/container/small_vector.h"
@@ -224,6 +225,9 @@ inline PageRef::~PageRef() { if (owner_) owner_->release(page_); }
 struct Recurrent final { c::ReadLease history, recurrent; };
 struct StatePools final {
   c::LeasePool history, recurrent;
+  // Coordinate layouts retain their exact original pool domains. Model setup
+  // assigns them only after both pools exist; default layouts are invalid.
+  c::LeaseSlotLayout history_layout, recurrent_layout;
   // Shared by the Model's R active members, never a second state per each of
   // N resident sessions. Destroy cached writers before their original pools.
   hyle::inference::ReusableOutputStorage history_reuse, recurrent_reuse;

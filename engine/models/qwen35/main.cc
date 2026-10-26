@@ -74,6 +74,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/resource_budget.h"
 #include "hyle/graph/batch.h"
+#include "hyle/graph/slots.h"
 #include "hyle/graph/progress.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/io/file.h"
@@ -952,14 +953,12 @@ struct ExecutionShape final {
   auto operator<=>(const ExecutionShape &) const = default;
 };
 struct StatePorts final {
-  V history, recurrent;
-  // Cold, chronological material outputs. Ordinary execution has one final
-  // boundary; verification has one independent output for every input prefix.
-  std::vector<V> history_prefix, recurrent_prefix;
+  V pool, source_ids, destination_ids;
+  g::NodeId gather, store;
 };
 struct Ports final {
   V key, value;
-  std::vector<StatePorts> sequences;
+  StatePorts history, recurrent;
 };
 struct FamilyPorts {
   std::size_t prefix_rows = 1;
@@ -968,6 +967,7 @@ struct FamilyPorts {
   bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
   std::vector<V> logits_bias_ports, logits_allowed_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
+  std::vector<g::slots::SourceBinding> state_sources;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
   std::vector<std::array<V, 2>> draft_hidden_inputs;
@@ -979,6 +979,9 @@ struct FamilyPorts {
 };
 struct FamilyChild final {
   g::CompiledGraph compiled; // One immutable selected child shared by every session.
+  // Only needed when the original symbolic graph cannot describe a state row.
+  // This is cold metadata with the same IDs, never another executable.
+  g::Graph state_graph;
   std::vector<PreparedOutputFacts> outputs;
   std::vector<std::uint32_t> output_indices;
   const PreparedOutputFacts &output(V value) const {
@@ -1053,6 +1056,13 @@ struct HiddenOutputCopy final {
     return hyle::Status::Ok();
   }
 };
+struct StateBinding final {
+  std::size_t layer = 0;
+  bool recurrent = false;
+  g::slots::SlotBindings transaction;
+  std::vector<c::ReadLease> sources;
+  std::vector<c::WriteLease> destinations;
+};
 struct Phase final : FamilyPorts {
   inference::QueueBindings queues;
   std::size_t query_rows = 0;
@@ -1063,6 +1073,11 @@ struct Phase final : FamilyPorts {
   const Family *family = nullptr;
   std::size_t variant_index = 0;
   std::array<g::Invocation, execution_slot_count> slots;
+  std::array<std::vector<StateBinding>, execution_slot_count> state_bindings;
+  std::array<std::vector<g::slots::BindRequest>, execution_slot_count> state_requests;
+  const g::Graph &state_graph() const noexcept {
+    return child->state_graph.valid() ? child->state_graph : family->graph;
+  }
   std::array<ResourceRetention, execution_slot_count> retirement;
   std::array<HiddenOutputCopy, execution_slot_count> hidden_output;
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
@@ -1205,6 +1220,8 @@ struct StepState final {
   std::size_t input_tokens = 0, capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
+  std::size_t state_slot = 0;
+  bool states_bound = false;
   bool discard_stopped_members = false;
   // Model admission is serial even when a cancelled native episode has not
   // retired. Return it only after publication and final result reads, or after
@@ -1236,7 +1253,24 @@ struct StepState final {
         }
         appends[i] = std::move(*recovered); bound[i] = false;
       }
-      *run = {}; // Release failed state-output writers and old input bindings.
+      // One batch bind transfers every state transaction together. A partial
+      // take on recovery is remembered by the valid caller-owned metadata.
+      if (phase) for (std::size_t i = 0; i < phase->state_bindings[state_slot].size(); ++i) {
+        auto &bank = phase->state_bindings[state_slot][i];
+        if (states_bound && !bank.transaction.valid()) {
+          auto recovered = g::slots::take(*run, phase->state_sources[i].store);
+          if (!recovered) {
+            if (recovered.error().IsUnavailable()) return false;
+            return std::unexpected(recovered.error());
+          }
+          bank.transaction = std::move(*recovered);
+        }
+        bank.transaction.clear();
+        for (auto &source : bank.sources) source = {};
+        for (auto &writer : bank.destinations) writer = {};
+      }
+      states_bound = false;
+      *run = {}; // Release failed ordinary outputs and their original bindings.
     }
     if (hidden_output) {
       const auto restored = hidden_output->restore_writers();
@@ -1599,7 +1633,6 @@ public:
   c::ResourceBudget &cache_budget, &execution_budget, &allocation_budget;
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
-  std::vector<bool> history_writers, recurrent_writers;
   bool hidden_writers = false;
   bool generated_state_outputs = false;
   const cache::Plan cache_plan;
@@ -1695,7 +1728,6 @@ public:
          weight_meanings(resources_->weight_meanings), source_identity(resources_->source_identity),
          state_schema(resources_->state_schema), cache_budget(resources_->cache_budget), execution_budget(resources_->execution_budget),
          allocation_budget(resources_->allocation_budget),
-         history_writers(geometry.layers.size(), false), recurrent_writers(geometry.layers.size(), false),
          cache_plan(selected_cache), snapshot_versions(resources_->snapshot_versions), carrier_borrowed(resources_->carrier_borrowed),
          page_inventory(resources_->page_inventory), draft_inventory(resources_->draft_inventory),
          state_pools(resources_->state_pools), hidden_pool(resources_->hidden_pool),
@@ -1748,24 +1780,23 @@ public:
     cache_budget = take(c::ResourceBudget::create({.limits = std::span(limits).first(limit_count),
         .allocator = cache_allocator}));
     if (allocation_budget) execution_budget = allocation_budget;
-    else if (execution.native_generated_storage() || execution.host_only() || ffn_placement.cpu_layers()) {
-      // Native checked operations can own staging status/metadata buffers.
-      // Register actual resource identities once, including CPU's shared
-      // payload/metadata resource. Execution workspace has its own scope,
-      // separate from retained session-cache storage.
-      std::vector<c::ResourceBudgetLimit> native_limits;
-      native_limits.reserve(3);
+    else {
+      // Execution controls and native outputs have their own actual resource
+      // scope on every backend. State/KV/hidden pools remain cache storage;
+      // private slot indices and their pinned staging do not consume its plan.
+      std::vector<c::ResourceBudgetLimit> execution_limits;
+      execution_limits.reserve(4);
       for (const auto resource : {execution.device(), execution.staging(), mem::system_resource()})
-        if (std::ranges::none_of(native_limits, [resource](const auto &limit) {
+        if (std::ranges::none_of(execution_limits, [resource](const auto &limit) {
               return limit.resource == resource;
             }))
-          native_limits.push_back({resource});
+          execution_limits.push_back({resource});
       if (ffn_placement.cpu_layers()) {
         const auto host = weight_resource(execution, true);
-        if (std::ranges::none_of(native_limits, [host](const auto &limit) { return limit.resource == host; }))
-          native_limits.push_back({host});
+        if (std::ranges::none_of(execution_limits, [host](const auto &limit) { return limit.resource == host; }))
+          execution_limits.push_back({host});
       }
-      execution_budget = take(c::ResourceBudget::create({.limits = native_limits, .allow_unattributed = true}));
+      execution_budget = take(c::ResourceBudget::create({.limits = execution_limits, .allow_unattributed = true}));
     }
     if (progress) {
       auto status = hyle::Status::Ok();
@@ -2063,8 +2094,8 @@ public:
     preparation_started_ = true;
     if (state_storage_prepared) return;
     prepare_sampling_frontier();
-    // Generated results keep their original native owners. These pools cover
-    // actual initial zero inputs, and only selected caller-written outputs.
+    // History and recurrence always use the original versioned state pools.
+    // Hidden results keep their actual caller/generated output contract.
     // Publish together so a failed allocation releases its temporary backing
     // and leaves this Model ready for a later admission attempt.
     std::vector<cache::StatePools> prepared_pools(geometry.layers.size());
@@ -2073,8 +2104,8 @@ public:
     const auto initial_slots = static_cast<std::uint32_t>(cache_plan.resident_sessions);
     for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i)) {
       const auto &description = state_schema[i]; auto &pools = prepared_pools[i];
-      const auto history_slots = history_writers[i] ? cache_plan.state_slots : initial_slots;
-      const auto recurrent_slots = recurrent_writers[i] ? cache_plan.state_slots : initial_slots;
+      const auto history_slots = cache_plan.state_slots;
+      const auto recurrent_slots = cache_plan.state_slots;
       const auto history_bytes = cache::state_pool_backing_bytes(take(description.history.required_bytes()), history_slots);
       const auto recurrent_bytes = cache::state_pool_backing_bytes(take(description.recurrent.required_bytes()), recurrent_slots);
       pools.history = take(c::LeasePool::create(execution.device(), history_bytes,
@@ -2083,10 +2114,14 @@ public:
       pools.recurrent = take(c::LeasePool::create(execution.device(), recurrent_bytes,
           {.max_blocks = recurrent_slots, .backing_alignment = cache::state_pool_alignment,
            .resource_budget = cache_budget}, allocation_budget));
-      check(pools.history_reuse.prepare(history_writers[i] ? cache_plan.active_sequences : 0,
-          take(description.history.required_bytes())));
-      check(pools.recurrent_reuse.prepare(recurrent_writers[i] ? cache_plan.active_sequences : 0,
-          take(description.recurrent.required_bytes())));
+      const auto history_payload = take(description.history.required_bytes());
+      const auto recurrent_payload = take(description.recurrent.required_bytes());
+      pools.history_layout = take(c::LeaseSlotLayout::create(pools.history, description.history,
+          history_slots, cache::add(history_payload, cache::state_pool_padding(history_payload))));
+      pools.recurrent_layout = take(c::LeaseSlotLayout::create(pools.recurrent, description.recurrent,
+          recurrent_slots, cache::add(recurrent_payload, cache::state_pool_padding(recurrent_payload))));
+      check(pools.history_reuse.prepare(cache_plan.active_sequences, history_payload));
+      check(pools.recurrent_reuse.prepare(cache_plan.active_sequences, recurrent_payload));
       prepared_bytes = cache::add(prepared_bytes, cache::add(history_bytes, recurrent_bytes));
     }
     if (cache_plan.hidden_bytes) {
@@ -2297,37 +2332,54 @@ public:
       auto &ports = definition.layers[i];
       V mixed;
       if (geometry.is_gdn(i)) {
-        ports.sequences.resize(requests);
-        std::vector<V> history_inputs, recurrent_inputs;
-        history_inputs.reserve(requests); recurrent_inputs.reserve(requests);
-        for (auto &sequence : ports.sequences) {
-          sequence.history = r.input(state_schema[i].history);
-          sequence.recurrent = r.input(state_schema[i].recurrent);
-          history_inputs.push_back(sequence.history);
-          recurrent_inputs.push_back(sequence.recurrent);
-        }
-        const auto history = r.concat(history_inputs, 0,
-            r.dense_spec(precision.activation_type(), {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
-        const auto state = r.concat(recurrent_inputs, 0,
-            r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)}));
+        const auto state_port = [&](StatePorts &port, const c::TensorDesc &item) {
+          const auto bytes = take(item.required_bytes());
+          const auto schema = take(g::slots::Schema::create(item, cache_plan.state_slots,
+              cache::add(bytes, cache::state_pool_padding(bytes))));
+          port.pool = r.input(take(schema.capacity_description()));
+          port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+          port.destination_ids = r.input(dense(Type::kInt32,
+              {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
+          auto rows = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+              {port.pool, port.source_ids}, r.dense_spec(item.data_type(),
+                  {batch, f(schema.item_elements())}), &port.gather);
+          return std::pair{schema, rows};
+        };
+        const auto [history_schema, history_rows] = state_port(ports.history, state_schema[i].history);
+        const auto [recurrent_schema, recurrent_rows] = state_port(ports.recurrent, state_schema[i].recurrent);
+        const auto history = r.reshape(history_rows,
+            {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())});
+        const auto state = r.reshape(recurrent_rows,
+            {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)});
+        const auto store_state = [&](StatePorts &port, const g::slots::Schema &schema, V rows) {
+          r.op(c::Operation::custom(g::slots::Store{schema}), {rows, port.destination_ids}, {}, &port.store);
+          if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
+          prior_append = port.store; has_prior_append = true;
+          definition.state_sources.push_back({port.store, port.gather});
+        };
         auto qkv = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight"), {batch, t, f(geometry.gdn_qkv_width())});
         auto samples = r.one(c::Concat{.axis = 1}, {history, qkv},
             r.dense_spec(precision.activation_type(), {batch, r.sample_rows, f(geometry.gdn_qkv_width())}));
-        // Every published state has independent per-session material storage.
-        // R1 preserves its original Copy and direct GDN state result.
-        const auto next_history = r.slice(samples, 1, t, f(geometry.conv_kernel - 1));
-        for (std::size_t request = 0; request < requests; ++request) {
-          auto &sequence = ports.sequences[request];
-          sequence.history_prefix.resize(prefix_rows);
-          sequence.recurrent_prefix.resize(prefix_rows);
-          sequence.history_prefix.back() = r.copy(requests == 1 ? next_history :
-              r.slice(next_history, 0, f(static_cast<std::int64_t>(request)), f(1)));
-          for (std::size_t row = 0; row + 1 < prefix_rows; ++row) {
-            auto selected_history = r.slice(samples, 1, f(static_cast<std::int64_t>(row + 1)), f(geometry.conv_kernel - 1));
-            if (requests != 1) selected_history = r.slice(selected_history, 0, f(static_cast<std::int64_t>(request)), f(1));
-            sequence.history_prefix[row] = r.copy(selected_history);
-          }
+        // K1 records the final boundary; current K>1 families have T==K.
+        // The ordinary graph stores raw history before Cast F32. A single
+        // window may have a batch gap and therefore needs real materialization.
+        std::vector<V> windows;
+        windows.reserve(prefix_rows);
+        for (std::size_t row = 0; row < prefix_rows; ++row) {
+          const auto boundary = prefix_rows == 1 ? t : f(static_cast<std::int64_t>(row + 1));
+          auto window = r.slice(samples, 1, boundary, f(geometry.conv_kernel - 1));
+          if (prefix_rows == 1) window = r.one(c::Copy{}, {window},
+              r.dense_spec(precision.activation_type(),
+                  {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
+          else window = r.reshape(window,
+              {batch, f(1), f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())});
+          windows.push_back(window);
         }
+        const auto histories = prefix_rows == 1 ? windows[0] : r.concat(windows, 1,
+            r.dense_spec(precision.activation_type(), {batch, f(static_cast<std::int64_t>(prefix_rows)),
+                f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
+        store_state(ports.history, history_schema, r.reshape(histories,
+            {f(static_cast<std::int64_t>(requests * prefix_rows)), f(history_schema.item_elements())}));
         auto convolution = r.one(c::model_ops::causal_conv1d(), {r.cast(samples, Type::kFloat32),
             r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"), {f(geometry.gdn_qkv_width()), f(geometry.conv_kernel)}), Type::kFloat32)},
             r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_qkv_width())}));
@@ -2348,16 +2400,10 @@ public:
              r.cast(v, Type::kFloat32), g, beta, state},
             {r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
              prefix_rows > 1
-                 ? r.dense_spec(Type::kFloat32, {batch, f(static_cast<std::int64_t>(prefix_rows)), f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)}) : r.spec(state)});
-        for (std::size_t request = 0; request < requests; ++request) {
-          if (prefix_rows > 1) {
-            auto per_request = r.slice(recurrent[1], 0, f(static_cast<std::int64_t>(request)), f(1));
-            for (std::size_t row = 0; row < prefix_rows; ++row)
-              ports.sequences[request].recurrent_prefix[row] = r.copy(r.reshape(
-                  r.slice(per_request, 1, f(static_cast<std::int64_t>(row)), f(1)), {f(1), f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)}));
-          } else ports.sequences[request].recurrent_prefix[0] = requests == 1 ? recurrent[1] :
-              r.copy(r.slice(recurrent[1], 0, f(static_cast<std::int64_t>(request)), f(1)));
-        }
+                 ? r.dense_spec(Type::kFloat32, {batch, f(static_cast<std::int64_t>(prefix_rows)), f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)})
+                 : r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)})});
+        store_state(ports.recurrent, recurrent_schema, r.reshape(recurrent[1],
+            {f(static_cast<std::int64_t>(requests * prefix_rows)), f(recurrent_schema.item_elements())}));
         auto y = r.cast(recurrent[0], precision.activation_type());
         if (i == 0) definition.probe_ports[0] = y;
         const auto y_f32 = r.cast(y, Type::kFloat32);
@@ -2373,19 +2419,6 @@ public:
         if (i == 0) definition.probe_ports[1] = y; // Same BF16 payload before its metadata-only out_proj reshape.
         mixed = r.linear(projection_input, prefix + "linear_attn.out_proj.weight");
         if (i == 0) definition.probe_ports[2] = mixed;
-        for (const auto &sequence : ports.sequences) {
-          // Preserve the default T2 publication order (final, then earlier),
-          // with independently releasable storage for every possible prefix.
-          for (auto row = prefix_rows; row != 0; --row) {
-            r.publish(sequence.history_prefix[row - 1]); r.publish(sequence.recurrent_prefix[row - 1]);
-            if (row != prefix_rows) {
-              definition.state_resource_ports.push_back(sequence.history_prefix[row - 1]);
-              definition.state_resource_ports.push_back(sequence.recurrent_prefix[row - 1]);
-            }
-          }
-          for (const auto port : {sequence.history, sequence.recurrent, sequence.history_prefix.back(), sequence.recurrent_prefix.back()})
-            definition.state_resource_ports.push_back(port);
-        }
       } else {
         const auto layer = geometry.attention_slot(i);
         const auto &schema = target_attention_schema(layer);
@@ -2569,18 +2602,25 @@ public:
       child->outputs.resize(child->compiled.executable.output_count());
       child->output_indices.resize(definition.specs.size());
       check(inference::prepare_outputs(child->compiled, child->outputs, child->output_indices));
-      for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
-        for (const auto &ports : definition.layers[layer].sequences) {
-          for (std::size_t row = 0; row < prefix_rows; ++row) {
-            const auto &history = child->output(ports.history_prefix[row]);
-            const auto &recurrent = child->output(ports.recurrent_prefix[row]);
-            validate_state_output(history, state_schema[layer].history);
-            validate_state_output(recurrent, state_schema[layer].recurrent);
-            generated_state_outputs = generated_state_outputs || !history.caller_owned() || !recurrent.caller_owned();
-            history_writers[layer] = history_writers[layer] || history.caller_owned();
-            recurrent_writers[layer] = recurrent_writers[layer] || recurrent.caller_owned();
+      bool concrete_states = true;
+      for (const auto &association : definition.state_sources) {
+        for (const auto value : {take(definition.graph.node_input(association.gather, 0)),
+                 take(definition.graph.node_input(association.gather, 1)),
+                 take(definition.graph.result(association.gather, 0)),
+                 take(definition.graph.node_input(association.store, 0)),
+                 take(definition.graph.node_input(association.store, 1))})
+          if (auto description = definition.graph.value_description(value); !description) {
+            if (!description.error().IsFailedPrecondition()) check(description.error());
+            concrete_states = false;
           }
-        }
+      }
+      if (!concrete_states) {
+        auto specialized = take(g::specialize_exact(definition.graph, bindings[index],
+            take(execution_budget.metadata_allocator())));
+        if (specialized.signature != child->compiled.executable.specialization())
+          throw std::runtime_error("state graph specialization differs from its selected child");
+        child->state_graph = std::move(specialized.graph);
+      }
       for (const auto &ports : definition.carry_ports) for (const auto value : ports) {
         if (!value.valid()) continue;
         const auto &output = child->output(value);
@@ -2630,14 +2670,10 @@ public:
       planned_slot_uses.erase(shape); families.erase(old);
       admitted_exact_keys.erase(admitted_exact_keys.begin()); ++exact_evictions;
     }
-    const auto before_history = history_writers, before_recurrent = recurrent_writers;
     const auto before_hidden = hidden_writers, before_generated = generated_state_outputs;
     const auto key = FamilyKey::exact(requests, role, tokens, completion, sampling_index);
     try {
       const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion, sampling_index);
-      for (std::size_t i = 0; i < state_schema.size(); ++i)
-        if ((!before_history[i] && history_writers[i]) || (!before_recurrent[i] && recurrent_writers[i]))
-          throw std::runtime_error("new suffix requires caller-written state storage absent from the original cache plan; reconfigure the idle model");
       if (!before_hidden && hidden_writers)
         throw std::runtime_error("new suffix requires caller-written hidden storage absent from the original cache plan; reconfigure the idle model");
       planned_slot_uses[{requests, tokens, role, completion, sampling_index}].fill(1);
@@ -2647,7 +2683,7 @@ public:
                 << " limit=" << limit
                 << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
     } catch (...) {
-      families.erase(key); history_writers = before_history; recurrent_writers = before_recurrent;
+      families.erase(key);
       hidden_writers = before_hidden; generated_state_outputs = before_generated;
       throw;
     }
@@ -3453,6 +3489,9 @@ public:
     if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
         check(run.bind(output->value, phase.probe_outputs[i].view()));
+    if (!phase.state_sources.empty())
+      check(g::slots::prepare(run, phase.state_graph(), inference::queue_span(phase.queues), phase.state_sources,
+          {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
     // Cold preparation can also run without a pending StepState. Publish only
     // the fully bound slot, so an allocation/binding failure cannot leave an
     // apparently valid half-prepared Invocation in the reusable Model pool.
@@ -3486,6 +3525,20 @@ public:
     phase.child = definition.children.at(index).get();
     phase.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), phase.child->compiled.report));
     phase.family = &definition; phase.variant_index = index;
+    for (std::size_t slot = 0; slot < execution_slot_count; ++slot) {
+      auto &banks = phase.state_bindings[slot];
+      banks.reserve(phase.state_sources.size());
+      for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
+        for (const bool recurrent : {false, true}) {
+          StateBinding bank{.layer = layer, .recurrent = recurrent};
+          bank.sources.resize(requests);
+          bank.destinations.resize(cache::multiply(requests, phase.prefix_rows));
+          banks.push_back(std::move(bank));
+        }
+      phase.state_requests[slot].resize(banks.size());
+      for (std::size_t bank = 0; bank < banks.size(); ++bank)
+        phase.state_requests[slot][bank] = {phase.state_sources[bank].store, &banks[bank].transaction};
+    }
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
@@ -3838,7 +3891,7 @@ public:
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion, sampling_index);
       auto &run = phase.slots[slot];
-      step.phase = &phase; step.run = &run; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
+      step.phase = &phase; step.run = &run; step.state_slot = slot; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
       auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;
       packed_ids.clear(); positions.clear();
@@ -3961,25 +4014,24 @@ public:
             compose(false), sources, step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
-      for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i))
+      for (auto &bank : phase.state_bindings[slot]) {
+        auto &pools = state_pools[bank.layer];
+        const auto &description = bank.recurrent ? state_schema[bank.layer].recurrent : state_schema[bank.layer].history;
+        const auto bytes = take(description.required_bytes());
         for (std::size_t j = 0; j < width; ++j) {
-          const auto &ports = phase.layers[i].sequences[j]; const auto &descriptions = state_schema[i];
-          check(run.bind(ports.history, descriptions.history, step.members[j].base->state[i].history));
-          check(run.bind(ports.recurrent, descriptions.recurrent, step.members[j].base->state[i].recurrent));
-          const auto bind_state = [&](V port, bool recurrent) {
-            const auto &output = phase.child->output(port);
-            if (output.caller_owned()) {
-              const auto bytes = take(output.description.required_bytes());
-              auto &pools = state_pools[i];
-              check(run.bind(output.value, output.description, take(recurrent
-                  ? pools.acquire_recurrent(bytes) : pools.acquire_history(bytes))));
-            }
-          };
-          for (auto row = phase.prefix_rows; row != 0; --row) {
-            bind_state(ports.history_prefix[row - 1], false);
-            bind_state(ports.recurrent_prefix[row - 1], true);
-          }
+          const auto &state = step.members[j].base->state[bank.layer];
+          bank.sources[j] = bank.recurrent ? state.recurrent : state.history;
         }
+        for (auto &writer : bank.destinations)
+          writer = take(bank.recurrent ? pools.acquire_recurrent(bytes) : pools.acquire_history(bytes));
+        if (bank.transaction.valid()) check(bank.transaction.refill(bank.sources, bank.destinations));
+        else bank.transaction = take(g::slots::SlotBindings::create(
+            bank.recurrent ? pools.recurrent_layout : pools.history_layout,
+            bank.sources, bank.destinations, {.resource_budget = cache_budget}));
+        // The transaction now owns these source guards. Do not keep a second
+        // Phase reader that would block old-head recovery after take/clear.
+        for (auto &source : bank.sources) source = {};
+      }
       auto &fixed_output = phase.hidden_output[slot];
       if (fixed_output.program.valid()) step.hidden_output = &fixed_output;
       std::size_t carry_index = 0;
@@ -4013,6 +4065,8 @@ public:
         else check(g::batch::bind_append(run, phase.family->graph, phase.append_nodes[bank], std::move(step.appends[bank])));
         step.bound[bank] = true;
       }
+      check(g::slots::bind(run, phase.state_graph(), phase.state_requests[slot]));
+      step.states_bound = !phase.state_sources.empty();
       const auto batch_end = Clock::now();
       check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
@@ -4190,13 +4244,6 @@ public:
       }
       // Export every participant's ordinary outputs before taking ANY append:
       // the first take_append revokes Graph output-ready for the entire batch.
-      for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i))
-        for (std::size_t j = 0; j < outputs.size(); ++j) {
-          const auto &ports = phase.layers[i].sequences[j];
-          const auto row = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
-          step.members[j].next->state[i].history = retain_state_storage(run, phase.child->output(ports.history_prefix.at(row)));
-          step.members[j].next->state[i].recurrent = retain_state_storage(run, phase.child->output(ports.recurrent_prefix.at(row)));
-        }
       copy_selected_hidden_outputs(step);
       if (!step.hidden_output && (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || retains_sampling_frontier()))
         for (std::size_t j = 0; j < outputs.size(); ++j) {
@@ -4227,10 +4274,29 @@ public:
             probe_views[i] = take(probe_owners[i].tensor(output.description));
           }
         }
+      // Attest the original append success before any slot withdrawal revokes
+      // Graph output-ready. Every ordinary output has already been retained.
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
       check(g::batch::take_appends(run, std::span(step.nodes.data(), append_banks),
           std::span(step.appends.data(), append_banks)));
       std::fill_n(step.bound.begin(), append_banks, std::uint8_t{});
+      // Slot take proves actual retirement, not success; the original whole
+      // Graph completion above remains the success witness for every bank.
+      for (std::size_t bank_index = 0; bank_index < phase.state_bindings[step.state_slot].size(); ++bank_index) {
+        auto &bank = phase.state_bindings[step.state_slot][bank_index];
+        bank.transaction = take(g::slots::take(run, phase.state_sources[bank_index].store));
+        for (std::size_t j = 0; j < outputs.size(); ++j) {
+          const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
+          const auto selected = j * phase.prefix_rows + prefix;
+          auto ready = take(bank.transaction.destinations()[selected].publish());
+          auto &state = step.members[j].next->state[bank.layer];
+          (bank.recurrent ? state.recurrent : state.history) = std::move(ready);
+        }
+        // Release old source guards before the joint head-commit recycle hook.
+        // Unaccepted MTP candidates are discarded, never made visible.
+        bank.transaction.clear();
+      }
+      step.states_bound = false;
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];

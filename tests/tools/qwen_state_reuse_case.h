@@ -22,7 +22,7 @@ inline BlockIdentity identity(const hyle::compute::ReadLease &lease) {
 }
 struct OutputTrace final {
   std::size_t layer = 0;
-  bool recurrent = false, caller_owned = false;
+  bool recurrent = false, external_store = false;
   std::size_t pool_blocks = 0, cache_peak = 0;
   std::array<BlockIdentity, 6> blocks{};
 };
@@ -56,16 +56,20 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   auto &decode = model.prepare_child(1, false);
   std::vector<OutputTrace> traces;
   for (std::size_t layer = 0; layer < model.state_schema.size(); ++layer) if (geometry.is_gdn(layer)) {
-    const auto &ports = decode.layers[layer].sequences.at(0);
+    const auto &ports = decode.layers[layer];
     for (const bool recurrent : {false, true}) {
-      const auto port = recurrent ? ports.recurrent_prefix.at(0) : ports.history_prefix.at(0);
-      const auto owned = decode.child->output(port).caller_owned();
-      const auto &pool = recurrent ? model.state_pools[layer].recurrent : model.state_pools[layer].history;
-      if (owned) require(pool.stats().max_blocks == plan.state_slots,
-          "caller-written state pool grew beyond its original N+R capacity");
-      traces.push_back({layer, recurrent, owned, pool.stats().max_blocks});
+      const auto &port = recurrent ? ports.recurrent : ports.history;
+      const auto &pools = model.state_pools[layer];
+      const auto &pool = recurrent ? pools.recurrent : pools.history;
+      const auto &layout = recurrent ? pools.recurrent_layout : pools.history_layout;
+      require(port.store.valid() && port.gather.valid() && layout.valid(),
+          "state reuse case requires the original external Store and slot layout for every state role");
+      require(pool.stats().max_blocks == plan.state_slots && layout.slot_count() == plan.state_slots,
+          "external state Store pool grew beyond its original N+R capacity");
+      traces.push_back({layer, recurrent, true, pool.stats().max_blocks});
     }
   }
+  require(!traces.empty(), "state reuse case requires at least one recurrent layer and its two external Stores");
   const auto inspect_caches = [&] {
     for (auto &trace : traces) {
       const auto &cache = trace.recurrent ? model.state_pools[trace.layer].recurrent_reuse
@@ -131,13 +135,13 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     (void)q::evaluate(model, *session, std::span(&pending, 1), "state-reuse-decode", {}, false);
     require(session->length() == 4 + step && session->head->sampling == sampling.advanced(1) &&
         session->head.epoch() == epoch + 1, "ordinary decode lost its committed length/cursor/epoch");
-    for (auto &trace : traces) if (trace.caller_owned) {
+    for (auto &trace : traces) {
       const auto &state = session->head->state[trace.layer];
       trace.blocks[step] = identity(trace.recurrent ? state.recurrent : state.history);
       if (step >= 2) require(trace.blocks[step] == trace.blocks[step - 2] &&
           (trace.blocks[step].handle != trace.blocks[step - 1].handle ||
            trace.blocks[step].offset != trace.blocks[step - 1].offset),
-          "ordinary caller-written state did not alternate its same two retired original blocks");
+          "ordinary external state Store did not alternate its same two retired original blocks");
     }
     inspect_caches();
   }
@@ -184,10 +188,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   checkpoint.reset();
   require(!model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
       "state reuse case retained a version or original native episode");
-  const auto applicable = std::ranges::any_of(traces, [](const auto &trace) { return trace.caller_owned; });
   std::cout << "{\"status\":\"PASS\",\"backend\":\"" << qwen_host_image_case::backend_name(kind)
       << "\",\"mode\":\"state_reuse\",\"hidden\":" << geometry.hidden
-      << ",\"layers\":" << geometry.layers.size() << ",\"applicable\":" << (applicable ? "true" : "false")
+      << ",\"layers\":" << geometry.layers.size() << ",\"applicable\":true"
       << ",\"resident_sessions\":2,\"active_sequences\":1,\"state_slots\":" << plan.state_slots
       << ",\"prefill_tokens\":3,\"decode_steps\":8,\"final_length\":11,\"unfrozen_decode_steps\":6"
       << ",\"cold_acquire_pressure_roles\":" << cold_pressure_roles
@@ -197,9 +200,9 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     const auto &trace = traces[at];
     std::cout << (at ? "," : "") << "{\"layer\":" << trace.layer
         << ",\"role\":\"" << (trace.recurrent ? "gdn" : "conv")
-        << "\",\"caller_owned\":" << (trace.caller_owned ? "true" : "false")
+        << "\",\"external_store\":" << (trace.external_store ? "true" : "false")
         << ",\"pool_max_blocks\":" << trace.pool_blocks << ",\"cache_peak\":" << trace.cache_peak << ",\"blocks\":[";
-    if (trace.caller_owned) for (std::size_t step = 0; step < trace.blocks.size(); ++step) {
+    for (std::size_t step = 0; step < trace.blocks.size(); ++step) {
       const auto &block = trace.blocks[step];
       std::cout << (step ? "," : "") << "{\"generation\":" << block.generation
           << ",\"native_handle\":" << block.handle << ",\"offset\":" << block.offset << '}';
