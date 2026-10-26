@@ -11,7 +11,7 @@ inline void require(bool value, const char *message) {
   if (!value) throw std::runtime_error(message);
 }
 using BankBytes = std::vector<std::vector<std::byte>>;
-inline BankBytes read_pages(q::Model &model, const q::cache::Snapshot &head) {
+inline BankBytes read_pages(q::Model &model, const q::cache::State &head) {
   BankBytes result;
   for (const auto *banks : {&head.keys, &head.values})
     for (const auto &bank : *banks) {
@@ -39,6 +39,7 @@ inline void partial_cancel(q::Model &model) {
   {
     auto a = model.create_session(chunks), b = model.create_session(chunks);
     const auto *old_a = a->head.get(), *old_b = b->head.get();
+    const auto epoch_a = a->head.epoch(), epoch_b = b->head.epoch();
     const auto boundary_a = q::generation_boundary(*a->head);
     q::GenerationLedger ledger_a(2, 1), ledger_b(2, 1);
     q::prepare_generation_record(ledger_a, *a, q::GraphRole::kText, prompt, false, 0, 0);
@@ -50,7 +51,8 @@ inline void partial_cancel(q::Model &model) {
     require(model.active_step->discard_stopped_members &&
         !model.active_step->cancelled, "one submitted ordinary stop cancelled its survivor");
     require(!a->try_retire().retired && !a->drain().retired && !b->drain().retired &&
-        model.active_step && !model.active_step->cancelled && a->head.get() == old_a && b->head.get() == old_b,
+        model.active_step && !model.active_step->cancelled && a->head.get() == old_a && b->head.get() == old_b &&
+        a->head.epoch() == epoch_a && b->head.epoch() == epoch_b,
         "member retirement aborted or published its still-shared original episode");
     std::array disposition{q::EvaluationDisposition::kNotPublished, q::EvaluationDisposition::kNotPublished};
     const std::array outputs{
@@ -66,10 +68,10 @@ inline void partial_cancel(q::Model &model) {
     require(disposition[0] == q::EvaluationDisposition::kCancelled &&
         disposition[1] == q::EvaluationDisposition::kPublished && observers == 1,
         "member result disposition did not distinguish cancelled and published output");
-    require(a->head.get() == old_a && q::generation_boundary(*a->head) == boundary_a &&
+    require(a->head.get() == old_a && a->head.epoch() == epoch_a && q::generation_boundary(*a->head) == boundary_a &&
         !ledger_a.committed_count && !ledger_a.records[0].committed && ledger_a.records[0].ids().empty(),
         "cancelled first output changed its complete head/RNG or empty ledger");
-    require(b->head.get() == candidate_b && b->head.get() != old_b && b->length() == 2 &&
+    require(b->head.get() == candidate_b && b->head.get() != old_b && b->head.epoch() == epoch_b + 1 && b->length() == 2 &&
         b->head->next_id == next[1] && ledger_b.committed_count == 1 && ledger_b.records[0].committed &&
         !b->stopping && b->retirement_status.ok() && !model.active_step && !a->pending && !b->pending,
         "survivor recomputed or lost its original ready candidate/ledger");
@@ -85,6 +87,7 @@ inline void partial_cancel(q::Model &model) {
   {
     auto a = model.create_session(chunks), b = model.create_session(chunks);
     const auto *old_a = a->head.get(), *old_b = b->head.get();
+    const auto epoch_a = a->head.epoch(), epoch_b = b->head.epoch();
     const std::array inputs{q::EvaluationRequest{a, prompt}, q::EvaluationRequest{b, prompt}};
     model.prepare_evaluations(inputs); model.submit_evaluations();
     (void)a->stop(); (void)b->stop();
@@ -93,6 +96,7 @@ inline void partial_cancel(q::Model &model) {
     const auto retired = model.abort_episode();
     if (!retired.status.IsCancelled()) q::check(retired.status);
     require(retired.retired && a->head.get() == old_a && b->head.get() == old_b &&
+        a->head.epoch() == epoch_a && b->head.epoch() == epoch_b &&
         !model.active_step && !a->pending && !b->pending,
         "whole cancelled episode published or failed actual retirement");
     for (auto *session : {&a, &b}) {
@@ -166,7 +170,7 @@ inline int run(const std::filesystem::path &input,
   const auto pending = q::evaluate(model, *first, prompt, "e4-prefill", {}, false);
   require(first->length() == 2 && pending >= 0 && pending < geometry.vocabulary,
       "E4 prefill did not publish a complete ordinary boundary");
-  auto old = first->head;
+  auto old = first->checkpoint();
   for (std::size_t layer = 0; layer < 2; ++layer)
     require(model.target_attention_schema(layer).owns(old->keys[layer].layout()) &&
         model.attention_schema.owns(old->values[layer].layout()) &&

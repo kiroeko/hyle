@@ -1,4 +1,4 @@
-// Process-local consumer policy. Snapshot owns the original state permissions;
+// Process-local consumer policy. State owns the original state permissions;
 // the typed shared directory never manufactures a state or starts native work.
 #pragma once
 
@@ -65,7 +65,7 @@ struct Checkpoint final {
   ReplayPrefix replay;
 };
 inline Checkpoint consumed_checkpoint(std::span<const ConsumedChunk> chunks,
-    const Snapshot &head, std::size_t capacity) {
+    const State &head, std::size_t capacity) {
   if (chunks.empty() || !head.length || head.length > capacity || head.next_id < 0)
     throw std::runtime_error("checkpoint requires a complete nonempty consumed boundary within context");
   std::size_t total = 0;
@@ -84,7 +84,7 @@ inline Checkpoint consumed_checkpoint(std::span<const ConsumedChunk> chunks,
     input->ids.push_back(id);
     input->hashes.push_back((input->hashes.back() ^ static_cast<std::uint32_t>(id)) * 1099511628211ULL);
   }
-  // Only this final Snapshot is available. Historical chunk ends are rebuild
+  // Only this final State is available. Historical chunk ends are rebuild
   // boundaries, not extra cached states manufactured by a radix split.
   input->checkpoints.push_back(total);
   auto history = std::make_shared<ReplayHistory>(capacity);
@@ -97,7 +97,7 @@ inline Checkpoint consumed_checkpoint(std::span<const ConsumedChunk> chunks,
 }
 
 // Model completeness/identity and rebuild policy stay here; radix/LRU/pins
-// belong to the one shared typed directory. It never manufactures a Snapshot.
+// belong to the one shared typed directory. It never manufactures a State.
 struct PrefixPayload final {
   SnapshotRef snapshot;
   ReplayPrefix replay;
@@ -112,7 +112,7 @@ public:
   PrefixCache &operator=(const PrefixCache &) = delete;
   PrefixCache(PrefixCache &&) = delete;
   PrefixCache &operator=(PrefixCache &&) = delete;
-  bool retains(const Snapshot *snapshot) const noexcept {
+  bool retains(const State *snapshot) const noexcept {
     if (!snapshot) return false;
     return directory_.retains([snapshot](const PrefixPayload &payload) {
       return payload.snapshot && payload.snapshot->state_identity() == snapshot->state_identity();

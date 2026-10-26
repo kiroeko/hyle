@@ -119,7 +119,7 @@ inline int run(const std::filesystem::path &input) {
   const auto first_boundary = q::generation_boundary(*a.session->head);
   // The same consumed key can be published by another request's RNG wrapper.
   // Direct recovery must retain this request's historical cursor, without a draw.
-  auto peer = model.sampling_fork(a.session->head, {123, 99, 7}, first_boundary.next_id);
+  auto peer = model.sampling_fork(a.session->checkpoint(), {123, 99, 7}, first_boundary.next_id);
   prefix.publish(a.completed_checkpoint.input, peer, a.completed_checkpoint.replay);
   peer.reset();
   window.release_turn(key_a, true); retire(a);

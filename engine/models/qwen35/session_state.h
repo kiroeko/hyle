@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -82,7 +83,7 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
   const auto pages = add(multiply(refs, residents), active_sequences);
   const auto snapshots = add(residents, active_sequences);
   // Each verifier prefix has independent material state, while the episode
-  // still creates one unpublished Snapshot. Committed heads may retain carry
+  // still creates one unpublished candidate. Committed heads may retain carry
   // and prior together; a candidate retains one actual target row per prefix.
   const auto states = add(residents, multiply(candidate_boundaries, active_sequences));
   const auto hidden_slots = draft_cache || candidate_boundaries > 1
@@ -247,15 +248,17 @@ struct DraftState final {
   c::PagedArenaRead key, value;
   std::size_t frontier = 0;
   // Committed MTP heads have frontier == target length - lag. Lag1 also
-  // requires a valid catchup_token and Snapshot.prior_hidden; lag0 has no token.
+  // requires a valid catchup_token and State.prior_hidden; lag0 has no token.
   std::uint32_t lag = 0;
   std::int32_t catchup_token = -1;
 };
 using hyle::inference::SamplingCursor;
-// Snapshot is immutable once published. Tokens/positions and every layer's
-// state advance by replacing one shared pointer. The actual cold inventory
-// owner outlives every snapshot, independently of the host application Model.
-struct Snapshot final {
+struct State;
+using SnapshotRef = std::shared_ptr<const State>;
+// Complete model boundary. A WorkingState owns mutable metadata exclusively;
+// an explicit checkpoint transfers that object to an immutable SnapshotRef.
+// Native payloads keep their original ready leases and retirement authority.
+struct State final {
   // The complete cold inventory/control addresses outlive escaped prefixes
   // and every VersionRef/PageRef below. Never retain the application Model.
   std::shared_ptr<const void> resource_owner;
@@ -263,7 +266,7 @@ struct Snapshot final {
   VersionRef version;
   // Sampling-only wrappers share one evaluated model-state version. The
   // origin is always canonical (its own state_origin is empty), never a chain.
-  std::shared_ptr<const Snapshot> state_origin;
+  SnapshotRef state_origin;
   std::vector<PageRef> pages;
   // Inline capacities avoid new hot allocations for current geometries; they
   // are storage optimizations, not supported-model or layer-count limits.
@@ -276,7 +279,73 @@ struct Snapshot final {
   std::size_t length = 0;
   std::int32_t next_id = -1; // Valid only at a complete nonempty evaluated boundary.
   SamplingCursor sampling;
-  const Snapshot *state_identity() const noexcept { return state_origin ? state_origin.get() : this; }
+  const State *state_identity() const noexcept { return state_origin ? state_origin.get() : this; }
+
+  // Called only after the original Graph/native readers have withdrawn. Empty
+  // metadata may be reused; no old payload, page policy or version stays pinned.
+  // Release the resource owner last, just as in normal reverse destruction.
+  void clear() noexcept {
+    keys.clear(); values.clear(); state.clear();
+    carry_hidden = {}; prior_hidden = {}; draft.reset(); pages.clear();
+    state_origin.reset(); version = {}; resource_owner.reset();
+    model = nullptr; math = nullptr; length = 0; next_id = -1; sampling = {};
+  }
 };
-using SnapshotRef = std::shared_ptr<const Snapshot>;
+
+// Serialized model-state owner, not another executor or native state pool.
+// Borrowed views last only until commit/adopt/reset. Only checkpoint() can
+// escape a retained state; a frozen object is never mutated or recycled.
+class WorkingState final {
+public:
+  WorkingState() = default;
+  WorkingState(const WorkingState &) = delete;
+  WorkingState &operator=(const WorkingState &) = delete;
+  const State *get() const noexcept { return current_ ? current_.get() : frozen_.get(); }
+  const State *operator->() const noexcept { return get(); }
+  const State &operator*() const noexcept { return *get(); }
+  explicit operator bool() const noexcept { return get() != nullptr; }
+  std::uint64_t epoch() const noexcept { return epoch_; }
+
+  void preflight_commit() const {
+    if (epoch_ == (std::numeric_limits<std::uint64_t>::max)())
+      throw std::overflow_error("committed model-state epoch exhausted");
+  }
+  std::unique_ptr<State> acquire_candidate() {
+    preflight_commit();
+    return spare_ ? std::exchange(spare_, {}) : std::make_unique<State>();
+  }
+  void recycle_candidate(std::unique_ptr<State> candidate) noexcept {
+    if (!candidate) return;
+    candidate->clear(); spare_ = std::move(candidate);
+  }
+  // All fallible metadata/permission work and epoch preflight precede commit.
+  // The old committed boundary survives until this whole-success point.
+  void commit(std::unique_ptr<State> candidate) noexcept {
+    assert(candidate && epoch_ != (std::numeric_limits<std::uint64_t>::max)());
+    auto previous = std::move(current_);
+    current_ = std::move(candidate); frozen_.reset(); ++epoch_;
+    recycle_candidate(std::move(previous));
+  }
+  void adopt(SnapshotRef checkpoint) {
+    if (!checkpoint) throw std::invalid_argument("cannot adopt an empty model-state checkpoint");
+    preflight_commit();
+    auto previous = std::move(current_);
+    frozen_ = std::move(checkpoint); ++epoch_;
+    recycle_candidate(std::move(previous));
+  }
+  SnapshotRef checkpoint() {
+    if (current_) {
+      // unique_ptr -> shared_ptr has no effect on allocation failure. The same
+      // State and VersionRef survive; no tensor/frame payload is copied.
+      SnapshotRef frozen(std::move(current_));
+      frozen_.swap(frozen);
+    }
+    return frozen_;
+  }
+  void reset() noexcept { current_.reset(); frozen_.reset(); spare_.reset(); }
+private:
+  std::unique_ptr<State> current_, spare_;
+  SnapshotRef frozen_;
+  std::uint64_t epoch_ = 0;
+};
 } // namespace qwen35::cache

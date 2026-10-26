@@ -27,7 +27,7 @@ inline void duplicate_session_before_admission(q::Model &model) {
   require(model.cache_plan.resident_sessions == 2 && !model.snapshot_versions.live,
       "duplicate admission case needs an empty N2 version inventory");
   q::cache::PrefixCache prefix(1);
-  std::weak_ptr<const q::cache::Snapshot> b_boundary;
+  std::weak_ptr<const q::cache::State> b_boundary;
   const std::array<std::int32_t, 2> b_prompt{3, 4};
   {
     const std::array seed_rows{std::size_t{2}};
@@ -36,9 +36,9 @@ inline void duplicate_session_before_admission(q::Model &model) {
     const auto next = q::evaluate(model, *seed, b_prompt, "duplicate-prefix-B", {}, false);
     const std::array chunks{q::cache::ConsumedChunk{b_prompt, next, false}};
     const auto checkpoint = q::cache::consumed_checkpoint(chunks, *seed->head, model.capacity);
-    require(prefix.publish(checkpoint.input, seed->head, checkpoint.replay),
+    require(prefix.publish(checkpoint.input, seed->checkpoint(), checkpoint.replay),
         "duplicate admission case did not publish the real B boundary");
-    b_boundary = seed->head;
+    b_boundary = seed->checkpoint();
     q::check(seed->stop());
     const auto retired = seed->try_retire(); q::check(retired.status);
     require(retired.retired, "duplicate admission B seed did not retire");

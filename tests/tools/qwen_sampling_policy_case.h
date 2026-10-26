@@ -33,7 +33,7 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
   q::execute_generation_calls(model, calls, false);
   require(request.progress.generated.size() == 1 && request.ledger->committed_count == 1 && request.session->head->sampling.draw == 1,
       "random producer did not publish its one actual sample");
-  auto original = request.session->head; const auto *canonical = original->state_identity();
+  auto original = request.session->checkpoint(); const auto *canonical = original->state_identity();
   const auto producer_id = original->next_id; const auto producer_cursor = original->sampling;
   const auto empty = std::span<const std::size_t>{}; const std::array one{std::size_t{1}};
   std::int32_t greedy = -1;
@@ -61,7 +61,7 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
   const auto historical = static_cast<std::int32_t>((static_cast<std::int64_t>(producer_id) + 1) % model.vocabulary);
   model.restore_pending_boundary(*request.session, producer_cursor, historical);
   {
-    auto same = model.create_session(empty, request.session->head, q::GraphRole::kText, {}, false, q::TextCompletion::kEmitNext, 2);
+    auto same = model.create_session(empty, request.session->checkpoint(), q::GraphRole::kText, {}, false, q::TextCompletion::kEmitNext, 2);
     require(same->head->next_id == historical && same->head->sampling == producer_cursor && same->head->state_identity() == canonical,
         "same-request restore discarded historical pending or cursor");
   }

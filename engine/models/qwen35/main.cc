@@ -831,7 +831,7 @@ struct GenerationBoundary final {
   cache::SamplingCursor sampling{};
   friend bool operator==(const GenerationBoundary &, const GenerationBoundary &) = default;
 };
-GenerationBoundary generation_boundary(const cache::Snapshot &head) noexcept {
+GenerationBoundary generation_boundary(const cache::State &head) noexcept {
   return {head.length, head.draft ? head.draft->frontier : 0,
       head.draft ? head.draft->lag : 0, head.next_id,
       head.draft ? head.draft->catchup_token : -1, head.sampling};
@@ -1104,11 +1104,13 @@ struct InputPreparationScratch final {
 class Session;
 struct StepMember final {
   std::shared_ptr<Session> session;
-  cache::SnapshotRef base;
+  cache::WorkingState *owner_state = nullptr;
+  const cache::State *base = nullptr;
+  std::uint64_t base_epoch = 0;
   // Synchronous episode borrow, like its original request input. No native
   // callback reads this policy; the original owner keeps it through finish.
   const inference::RequestStopPolicy *stop_policy = nullptr;
-  std::shared_ptr<cache::Snapshot> next{};
+  std::unique_ptr<cache::State> next{};
   hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
   c::BatchLayoutVersion layout{};
@@ -1222,7 +1224,9 @@ struct StepState final {
     appends = {};
     for (auto &bank : dirty) bank.clear();
     tails = {};
-    for (auto &member : members) { member.next.reset(); member.base.reset(); }
+    for (auto &member : members) {
+      member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
+    }
     run = nullptr; phase = nullptr;
     release_admission();
     return true;
@@ -1240,15 +1244,18 @@ class Session final : public std::enable_shared_from_this<Session> {
       : model_(&model), resources_(std::move(resources)), sampling_(sampling) {}
   const PreparedSampling &sampling_;
 public:
-  cache::SnapshotRef head;
+  cache::WorkingState head;
   hyle::container::SmallVector<c::PagedPageAppender, 32> tails;
   std::array<c::PagedPageAppender, 2> draft_tails;
-  const cache::Snapshot *tail_head = nullptr;
-  const cache::Snapshot *draft_tail_head = nullptr;
+  std::uint64_t tail_epoch = 0, draft_tail_epoch = 0;
   StepState *pending = nullptr; // Borrowed from Model; episode pins this Session.
   bool failed = false, stopping = false;
   hyle::Status retirement_status;
   std::size_t length() const noexcept { return head ? head->length : 0; }
+  cache::SnapshotRef checkpoint() {
+    if (pending) throw std::runtime_error("checkpoint requires an idle committed model boundary");
+    return head.checkpoint();
+  }
   const PreparedSampling &sampling_configuration() const noexcept { return sampling_; }
   std::weak_ptr<ColdResources> sampling_owner() const noexcept { return resources_; }
   Session(const Session &) = delete;
@@ -1285,7 +1292,7 @@ struct EvaluationOutput final {
 // leases and the carrier admission guard remain in finish's stack scope.
 struct CompletedEvaluationView final {
   inference::StepObservation &observation;
-  const cache::Snapshot &head;
+  const cache::State &head;
   std::size_t member_index = 0, requests = 1;
   c::ConstTensorView logits{}, hidden{};
   std::span<const c::ConstTensorView> probes{};
@@ -2946,9 +2953,9 @@ public:
     }
   }
 
-  std::shared_ptr<cache::Snapshot> reserve_snapshot() {
+  std::unique_ptr<cache::State> reserve_state(cache::WorkingState &owner) {
     auto version = take(cache::VersionRef::acquire(snapshot_versions));
-    auto result = std::make_shared<cache::Snapshot>();
+    auto result = owner.acquire_candidate();
     result->resource_owner = resources_;
     if (!result->keys.try_resize(target_kv_layers) || !result->values.try_resize(target_kv_layers) ||
         !result->state.try_resize(geometry.layers.size())) throw std::bad_alloc{};
@@ -2959,11 +2966,11 @@ public:
   // A request's pending token/cursor is not part of the reusable model state.
   // Wrapper origins are canonical so aliases share exactly one finite version;
   // mutable page-tail capabilities stay with the original Session only.
-  std::shared_ptr<cache::Snapshot> sampling_fork(cache::SnapshotRef base,
+  std::shared_ptr<cache::State> sampling_fork(cache::SnapshotRef base,
       cache::SamplingCursor cursor, std::int32_t pending) const {
     if (!base || base->model != this || base->math != math_identity())
       throw std::runtime_error("sampling fork belongs to another model or compiled policy");
-    auto next = std::make_shared<cache::Snapshot>();
+    auto next = std::make_shared<cache::State>();
     next->state_origin = base->state_origin ? base->state_origin : base;
     next->pages = base->pages; next->keys = base->keys; next->values = base->values;
     next->state = base->state; next->carry_hidden = base->carry_hidden;
@@ -3143,10 +3150,10 @@ public:
         // The old sampled pending/cursor is not this request's boundary.
         prefix = sampling_fork(std::move(prefix), {}, -1);
       }
-      session->head = std::move(prefix); // Exact evaluated-state fork; no KV/state payload copy.
+      session->head.adopt(std::move(prefix)); // Exact evaluated-state fork; no KV/state payload copy.
     }
     else {
-      auto initial = reserve_snapshot();
+      auto initial = reserve_state(session->head);
       initial->sampling = selected_sampler.enabled ? cursor.value_or(cache::SamplingCursor{sampling_seed, 0, 0})
           : cache::SamplingCursor{};
       const std::array<std::int32_t, 2> empty{0, 0};
@@ -3170,7 +3177,7 @@ public:
         initial->state[i].history = take(history.publish());
         initial->state[i].recurrent = take(recurrent.publish());
       }
-      session->head = std::move(initial);
+      session->head.commit(std::move(initial));
     }
     // State admission does not allocate execution carriers. The first actual
     // explicit prepare creates its needed Phase and slot; idle/full-hit cached
@@ -3181,11 +3188,12 @@ public:
   void restore_pending_boundary(Session &session, cache::SamplingCursor cursor, std::int32_t pending) const {
     if (session.pending || active_step || carrier_borrowed || pending < -1 || pending >= vocabulary)
       throw std::runtime_error("sampling recovery requires an idle committed boundary and historical pending token");
-    auto replacement = sampling_fork(session.head, cursor, pending);
+    session.head.preflight_commit();
+    auto replacement = sampling_fork(session.checkpoint(), cursor, pending);
     for (auto &tail : session.tails) tail = {};
     session.draft_tails = {};
-    session.tail_head = nullptr; session.draft_tail_head = nullptr;
-    session.head = std::move(replacement);
+    session.tail_epoch = 0; session.draft_tail_epoch = 0;
+    session.head.adopt(std::move(replacement));
   }
 
   void copy_selected_hidden_outputs(StepState &step) {
@@ -3246,7 +3254,7 @@ public:
     // copy completion alone does not permit their promotion/reuse.
   }
 
-  void validate_mtp_snapshot(const cache::Snapshot &head) const {
+  void validate_mtp_snapshot(const cache::State &head) const {
     if (cache_plan.draft_cache != head.draft.has_value())
       throw std::runtime_error("snapshot does not contain the configured complete MTP state");
     if (!head.draft) return;
@@ -3573,7 +3581,7 @@ public:
       const auto prefix_pages = old.frontier / cache::Plan::page_rows;
       const auto count = (next.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
       const auto dirty_count = count - prefix_pages, old_tail = old.frontier % cache::Plan::page_rows;
-      bool reuse = old_tail && session.draft_tail_head == member.base.get() && !old.pages.empty();
+      bool reuse = old_tail && session.draft_tail_epoch == member.base_epoch && !old.pages.empty();
       if (reuse) for (const auto &tail : session.draft_tails)
         reuse = reuse && tail.valid() && !tail.reserved_rows() &&
             tail.page() == old.pages.back().page() && tail.initialized_rows() == old_tail;
@@ -3596,7 +3604,7 @@ public:
         next.pages.push_back(old.pages.back());
         for (std::size_t bank = 0; bank < 2; ++bank) step.tails[draft_bank + bank].push_back(std::move(session.draft_tails[bank]));
       } else session.draft_tails = {};
-      session.draft_tail_head = nullptr;
+      session.draft_tail_epoch = 0;
       for (std::size_t page = reuse ? 1 : 0; page < dirty_count; ++page) {
         auto reservation = take(draft_inventory.acquire()); next.pages.push_back(std::move(reservation.reference));
         step.dirty[draft_bank].push_back(std::move(reservation.keys[0])); step.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
@@ -3670,6 +3678,7 @@ public:
       if (completion == TextCompletion::kEmitNext) validate_logits_inputs(selected_sampler, request.logits, vocabulary);
       if (session.stopping || session.failed || session.pending)
         throw std::runtime_error("batch session is stopped, failed or already pending");
+      session.head.preflight_commit();
       if (!supplied_tokens || request.ids.size() != supplied_tokens || tokens > capacity - session.length())
         throw std::runtime_error("batch requires equal nonempty chunks within each remaining context");
       validate_mtp_snapshot(*session.head);
@@ -3700,7 +3709,8 @@ public:
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (const auto &request : requests) {
-      candidate->members.push_back({.session = request.session, .base = request.session->head,
+      candidate->members.push_back({.session = request.session, .owner_state = &request.session->head,
+          .base = request.session->head.get(), .base_epoch = request.session->head.epoch(),
           .stop_policy = request.stop_policy});
       candidate->members.back().first_input = request.ids.front();
       if (role == GraphRole::kVerify)
@@ -3765,7 +3775,7 @@ public:
       for (std::size_t j = 0; j < width; ++j) {
         auto &member = step.members[j]; auto &session = *member.session;
         const auto length = session.length();
-        member.next = reserve_snapshot();
+        member.next = reserve_state(session.head);
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
         member.next->length = length + tokens;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
@@ -3774,7 +3784,7 @@ public:
         const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
         const auto dirty_count = page_count - full_prefix_pages;
         const auto tail_rows = length % cache::Plan::page_rows;
-        bool reuse_tail = tail_rows && session.tail_head == member.base.get() && !member.base->pages.empty();
+        bool reuse_tail = tail_rows && session.tail_epoch == member.base_epoch && !member.base->pages.empty();
         if (reuse_tail) for (const auto &tail : session.tails)
           reuse_tail = reuse_tail && tail.valid() && !tail.reserved_rows() &&
               tail.page() == member.base->pages.back().page() && tail.initialized_rows() == tail_rows;
@@ -3799,7 +3809,7 @@ public:
           for (std::size_t bank = 0; bank < session.tails.size(); ++bank)
             step.tails[bank].push_back(std::move(session.tails[bank]));
         } else for (auto &tail : session.tails) tail = {};
-        session.tail_head = nullptr;
+        session.tail_epoch = 0;
         for (std::size_t page = reuse_tail ? 1 : 0; page < dirty_count; ++page) {
           auto reservation = take(page_inventory.acquire());
           member.next->pages.push_back(std::move(reservation.reference));
@@ -4207,7 +4217,8 @@ public:
         step.hidden_output = nullptr;
       }
       for (const auto &member : step.members)
-        if (member.session->head != member.base || member.session->pending != &step ||
+        if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
+            member.session->pending != &step ||
             (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
       // All fallible native/export/metadata work is complete. The head swaps
@@ -4224,9 +4235,9 @@ public:
         member.next->next_id = next_ids[j];
         member.session->tails = std::move(member.next_tails);
         member.session->draft_tails = std::move(member.next_draft_tails);
-        member.session->head = std::move(member.next);
-        member.session->tail_head = member.session->head.get();
-        member.session->draft_tail_head = member.session->head.get();
+        member.session->head.commit(std::move(member.next));
+        member.session->tail_epoch = member.session->head.epoch();
+        member.session->draft_tail_epoch = member.session->head.epoch();
       }
       // Every bound and expected decision was checked before publication.
       // The reserved host slot is now authoritative even if trace/report IO
@@ -4660,7 +4671,7 @@ inference::RetirementObservation Session::try_retire() noexcept {
   else if (pending) observed = model_->try_retire_episode();
   inference::record_retirement_status(retirement_status, observed.status);
   if (observed.retired) {
-    tails = {}; draft_tails = {}; tail_head = nullptr; draft_tail_head = nullptr; head.reset();
+    tails = {}; draft_tails = {}; tail_epoch = 0; draft_tail_epoch = 0; head.reset();
   }
   return {observed.retired, retirement_status};
 }
@@ -4905,7 +4916,7 @@ void observe_generation_commits(GenerationRequest &request) {
 
 // Only the serialized request owners and this directory retain committed
 // Snapshots here. Hit/local Snapshot references are dropped before this gate.
-inference::VersionHolder<Session, cache::Snapshot> version_holder(const Session *session) noexcept {
+inference::VersionHolder<Session, cache::State> version_holder(const Session *session) noexcept {
   return {session, session && session->head ? session->head->state_identity() : nullptr};
 }
 
@@ -4916,13 +4927,15 @@ void make_generation_room(Model &model, cache::PrefixCache *prefix, Session *own
   const auto residents = requests | std::views::transform([](const auto &request) {
     return version_holder(request.session.get());
   });
-  const auto fits = [&] {
+  const auto observe = [&] {
     const auto live = std::size_t(model.snapshot_versions.live);
     if (live > limit || model.active_step) throw std::runtime_error("generation admission requires retired committed heads within N");
-    return inference::version_admission({live, limit}, selected, residents,
-        [&](const auto *head) { return prefix && prefix->retains(head); }).fits;
+    return inference::VersionRoomObservation{{live, limit}, prefix ? prefix->size() : 0,
+        inference::version_admission({live, limit}, selected, residents,
+            [&](const auto *head) { return prefix && prefix->retains(head); }).fits};
   };
-  while (!fits()) if (!prefix || !prefix->evict_one())
+  if (inference::make_version_room(observe, [&] { return prefix && prefix->evict_one(); }) !=
+      inference::VersionRoomResult::kReady)
     throw std::runtime_error("generation checkpoints retain all committed versions; no unfinished session may be evicted");
 }
 
@@ -5422,14 +5435,15 @@ bool make_generation_batch_room(Model &model, cache::PrefixCache *prefix,
   const auto residents = requests | std::views::transform([](const auto &request) {
     return version_holder(request.session.get());
   });
-  const auto fits = [&] {
+  const auto observe = [&] {
     const auto live = std::size_t(model.snapshot_versions.live);
     if (live > limit || model.active_step) throw std::runtime_error("generation batch admission requires retired heads within N");
-    return inference::version_admission({live, limit}, selected, residents,
-        [&](const auto *head) { return prefix && prefix->retains(head); }).fits;
+    return inference::VersionRoomObservation{{live, limit}, prefix ? prefix->size() : 0,
+        inference::version_admission({live, limit}, selected, residents,
+            [&](const auto *head) { return prefix && prefix->retains(head); }).fits};
   };
-  while (!fits()) if (!prefix || !prefix->evict_one()) return false;
-  return true;
+  return inference::make_version_room(observe, [&] { return prefix && prefix->evict_one(); }) ==
+      inference::VersionRoomResult::kReady;
 }
 
 void finish_generation_call(Model &model, PreparedGenerationCall &call) {
@@ -5611,7 +5625,7 @@ void publish_generation_prompt(Model &model, PreparedGenerationCall &call, cache
     throw std::runtime_error("committed prefill chunks do not cover the complete prompt");
   if (request.session->head->draft && request.session->head->draft->lag)
     throw std::runtime_error("only a complete lag0 MTP prompt may enter the directory");
-  prefix->publish(request.input, request.session->head, {request.history, request.history->chunks.size(), request.prompt.size()});
+  prefix->publish(request.input, request.session->checkpoint(), {request.history, request.history->chunks.size(), request.prompt.size()});
   (void)model;
 }
 
@@ -5627,7 +5641,7 @@ void publish_generation_completed(Model &model, GenerationRequest &request, cach
     chunks.push_back({record.committed_ids(), record.after.next_id, record.completion == TextCompletion::kStateOnly});
   }
   request.completed_checkpoint = cache::consumed_checkpoint(chunks, *request.session->head, model.capacity);
-  prefix->publish(request.completed_checkpoint.input, request.session->head, request.completed_checkpoint.replay);
+  prefix->publish(request.completed_checkpoint.input, request.session->checkpoint(), request.completed_checkpoint.replay);
 }
 
 void advance_generation_request(Model &model, GenerationRequest &request,
@@ -6649,14 +6663,15 @@ int qwen35::run(int argc, char **argv) {
       const auto residents = runs | std::views::transform([](const auto &run) {
         return qwen35::version_holder(run.session.get());
       });
-      const auto fits = [&] {
-        return hyle::inference::version_admission({std::size_t(model.snapshot_versions.live), cache_slots},
-            selected, residents, [&](const auto *head) { return prefix_cache && prefix_cache->retains(head); }).fits;
+      const auto observe = [&] {
+        const auto live = std::size_t(model.snapshot_versions.live);
+        return hyle::inference::VersionRoomObservation{{live, cache_slots}, prefix_cache ? prefix_cache->size() : 0,
+            hyle::inference::version_admission({live, cache_slots}, selected, residents,
+                [&](const auto *head) { return prefix_cache && prefix_cache->retains(head); }).fits};
       };
-      while (!fits()) {
-        if (!prefix_cache || !prefix_cache->evict_one())
-          throw std::runtime_error("prefix/session heads retain the committed version budget before initial admission");
-      }
+      if (hyle::inference::make_version_room(observe, [&] { return prefix_cache && prefix_cache->evict_one(); }) !=
+          hyle::inference::VersionRoomResult::kReady)
+        throw std::runtime_error("prefix/session heads retain the committed version budget before initial admission");
     };
     const auto make_batch_room = [&](std::span<qwen35::Session *const> owners) {
       if (owners.empty() || model.active_step || model.snapshot_versions.live > cache_slots)
@@ -6672,14 +6687,16 @@ int qwen35::run(int argc, char **argv) {
       const auto residents = runs | std::views::transform([](const auto &run) {
         return qwen35::version_holder(run.session.get());
       });
-      const auto fits = [&] {
+      const auto observe = [&] {
         const auto live = std::size_t(model.snapshot_versions.live);
-        return hyle::inference::version_admission({live, cache_slots}, selected, residents,
-            [&](const auto *head) { return prefix_cache->retains(head); }).fits;
+        return hyle::inference::VersionRoomObservation{{live, cache_slots}, prefix_cache->size(),
+            hyle::inference::version_admission({live, cache_slots}, selected, residents,
+                [&](const auto *head) { return prefix_cache->retains(head); }).fits};
       };
       // Dropping a directory alias need not free a version. Re-read both live
       // inventory and external retainers after EVERY eviction, including full hits.
-      while (!fits()) if (!prefix_cache->evict_one())
+      if (hyle::inference::make_version_room(observe, [&] { return prefix_cache->evict_one(); }) !=
+          hyle::inference::VersionRoomResult::kReady)
         throw std::runtime_error("batch commit exceeds N retained snapshots; release a checkpoint/session or increase the cache");
     };
     const auto make_advance_room = [&](qwen35::Session &owner) {
@@ -7049,7 +7066,7 @@ int qwen35::run(int argc, char **argv) {
           if (call.local + 1 != count) continue;
           auto &run = runs[call.session];
           const qwen35::cache::ReplayPrefix history{run.history, run.history->chunks.size(), run.history->length};
-          (void)prefix_cache->publish(token_plans[call.session], run.session->head, history);
+          (void)prefix_cache->publish(token_plans[call.session], run.session->checkpoint(), history);
         }
         wave_observation.outputs = wave.calls.size();
         wave_observation.actual_tokens = executed_graph_tokens - tokens_before;

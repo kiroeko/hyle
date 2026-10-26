@@ -68,4 +68,39 @@ VersionAdmission version_admission(VersionCapacity capacity, Selected &&selected
   return {retiring, requested <= capacity.limit - (capacity.live - retiring)};
 }
 
+struct VersionRoomObservation final {
+  VersionCapacity capacity;
+  std::size_t evictable = 0;
+  bool fits = false;
+};
+enum class VersionRoomResult { kReady, kRetained };
+
+// Serialized directory eviction only: observe rereads actual live versions,
+// candidate entries and the complete admission query. Removing an alias is not
+// proof that a version or any physical bytes were freed. Native retirement and
+// its errors remain with the resource owner, outside this loop.
+//
+// Each successful evict must consume candidate inventory. The fixed initial
+// bound therefore limits attempts, even when aliases keep every version live.
+// The callbacks borrow all ownership; valid traversal allocates nothing. False
+// eviction stops admission, and exceptions propagate without retry or rollback.
+template<class Observe, class Evict>
+VersionRoomResult make_version_room(Observe &&observe, Evict &&evict) {
+  VersionRoomObservation current = observe();
+  if (!current.capacity.limit || current.capacity.live > current.capacity.limit)
+    throw std::logic_error("version room requires valid current capacity");
+  if (current.fits) return VersionRoomResult::kReady;
+  const auto attempts = current.evictable;
+  for (std::size_t attempt = 0; attempt < attempts; ++attempt) {
+    if (!current.evictable || !evict()) return VersionRoomResult::kRetained;
+    const VersionRoomObservation next = observe();
+    if (next.capacity.limit != current.capacity.limit ||
+        next.capacity.live > current.capacity.live || next.evictable >= current.evictable)
+      throw std::logic_error("version room eviction changed capacity or failed to reduce its inventory");
+    current = next;
+    if (current.fits) return VersionRoomResult::kReady;
+  }
+  return VersionRoomResult::kRetained;
+}
+
 } // namespace hyle::inference

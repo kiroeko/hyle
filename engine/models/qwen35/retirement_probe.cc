@@ -56,7 +56,7 @@ std::vector<std::byte> sample(const c::ReadLease &lease) {
 
 // Actual immutable guards, including their bounded views. This probe inspects
 // internal permissions to verify retirement; ordinary consumers use the frame.
-std::vector<std::vector<std::byte>> committed_pages(const q::cache::Snapshot &head) {
+std::vector<std::vector<std::byte>> committed_pages(const q::cache::State &head) {
   std::vector<std::vector<std::byte>> result;
   const auto append = [&](const c::PagedArenaRead &frame) {
     for (const auto &lease : c::detail::PagedArenaAccess::pages(frame)) {
@@ -69,7 +69,7 @@ std::vector<std::vector<std::byte>> committed_pages(const q::cache::Snapshot &he
   return result;
 }
 
-std::vector<std::vector<std::byte>> committed_recurrent(const q::cache::Snapshot &head) {
+std::vector<std::vector<std::byte>> committed_recurrent(const q::cache::State &head) {
   std::vector<std::vector<std::byte>> result;
   for (const auto &state : head.state)
     for (const auto *lease : {&state.history, &state.recurrent}) if (lease->valid()) {
@@ -79,7 +79,7 @@ std::vector<std::vector<std::byte>> committed_recurrent(const q::cache::Snapshot
   return result;
 }
 
-std::size_t head_lease_bytes(const q::cache::Snapshot &head, const q::Model &model) {
+std::size_t head_lease_bytes(const q::cache::State &head, const q::Model &model) {
   std::size_t bytes = 0;
   for (const auto &state : head.state) {
     bytes = q::cache::add(bytes, state.history.size());
@@ -108,7 +108,7 @@ struct MtpSaved final {
   std::int32_t next = -1, catchup = -1;
 };
 
-MtpSaved save_mtp(const q::cache::Snapshot &head) {
+MtpSaved save_mtp(const q::cache::State &head) {
   require(head.draft && head.carry_hidden.valid(), "MTP probe needs a complete target/draft head");
   MtpSaved saved;
   saved.pages = committed_pages(head); saved.recurrent = committed_recurrent(head);
@@ -126,7 +126,7 @@ MtpSaved save_mtp(const q::cache::Snapshot &head) {
   return saved;
 }
 
-void unchanged_mtp(const q::cache::Snapshot &head, const MtpSaved &saved) {
+void unchanged_mtp(const q::cache::State &head, const MtpSaved &saved) {
   const auto now = save_mtp(head);
   require(now.pages == saved.pages && now.recurrent == saved.recurrent && now.hidden == saved.hidden && now.layouts == saved.layouts &&
           now.length == saved.length && now.next == saved.next && now.frontier == saved.frontier &&
@@ -187,7 +187,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   require(static_cast<bool>(pin), "initial owner could not pin");
   (void)q::evaluate(model, *session, prompt, "retirement_prefill");
   (void)q::evaluate(model, *session, std::span(&tape[0], 1), "retirement_decode1");
-  auto old_prefix = session->head;
+  auto old_prefix = session->checkpoint();
   require(old_prefix && old_prefix->length == 129, "committed prefix is not P128+D1");
   const auto old_conv = sample(old_prefix->state[0].history);
   const auto old_gdn = sample(old_prefix->state[0].recurrent);
@@ -208,7 +208,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   model.prepare_evaluation(*session, std::span(&tape[1], 1));
   require(session->pending && session->pending == model.active_step.get() &&
           session->pending->members.size() == 1 && session->pending->members[0].session == session &&
-          session->pending->members[0].next && session->pending->members[0].base == old_prefix,
+          session->pending->members[0].next && session->pending->members[0].base == old_prefix.get(),
           "prepared candidate lost its original Model episode/base");
   auto *const shared_phase = session->pending->phase;
   auto *const shared_run = session->pending->run;
@@ -223,8 +223,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   require(session->pending->phase == shared_phase && session->pending->run == shared_run &&
           shared_run->valid() && model.carrier_borrowed,
           "stopping an idle Session disturbed another Session's shared execution loan");
-  std::weak_ptr<const q::cache::Snapshot> candidate = session->pending->members[0].next;
   const auto *candidate_identity = session->pending->members[0].next.get();
+  require(candidate_identity, "prepared episode has no unique unpublished candidate");
   const auto dirty_page = session->pending->members[0].next->pages.back().page();
   require(dirty_page == old_prefix->pages.back().page(),
           "probe did not enter actual same-page exclusive suffix continuation");
@@ -237,7 +237,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   q::check(gate.arm()); q::check(gate.wait_until_entered());
   model.submit_evaluation(*session);
   q::check(gate.wait_for_model_submission());
-  require(session->head == old_prefix && session->length() == 129,
+  require(session->head.get() == old_prefix.get() && session->length() == 129,
           "submission prematurely published candidate state");
   std::size_t rejected_prepares = 0;
   const auto expect_borrow_busy = [&](const char *stage) {
@@ -249,7 +249,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
                 << " reason=" << error.what() << '\n';
     }
     require(rejected && !waiting->pending && !waiting->failed && !waiting->stopping &&
-            waiting->head == old_prefix &&
+            waiting->head.get() == old_prefix.get() &&
             session->pending && session->pending == model.active_step.get() &&
             session->pending->phase == shared_phase && session->pending->run == shared_run &&
             model.carrier_borrowed,
@@ -285,9 +285,9 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   session->pending->completion = {};
   expect_borrow_busy("dropped_completion_native_pending");
   require(!collect().retired, "dropping public Completion reclaimed native-blocked work");
-  require(directory.retained_sessions() == 1 && !candidate.expired() &&
+  require(directory.retained_sessions() == 1 &&
           session->pending && session->pending->members[0].next.get() == candidate_identity &&
-          session->head == old_prefix && model.snapshot_versions.live == 2 &&
+          session->head.get() == old_prefix.get() && model.snapshot_versions.live == 2 &&
           model.carrier_borrowed,
           "pending retirement released candidate, visible head or finite version charge");
   require(q::take(model.cache_budget.usage(model.execution.device())).live_bytes == pending_bytes,
@@ -310,7 +310,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
     std::this_thread::yield();
   }
   require(!session && !directory.retiring(0) && directory.retained_sessions() == 0 &&
-          directory.retained_bytes() == 0 && candidate.expired() &&
+          directory.retained_bytes() == 0 &&
           model.snapshot_versions.live == 1 && !model.carrier_borrowed && !model.active_step &&
           !shared_run->valid(),
           "actual retirement did not release the candidate/owner");
@@ -331,7 +331,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   auto next_pin = directory.pin(1);
   require(static_cast<bool>(next_pin), "replacement owner could not pin");
   auto recovered = std::move(waiting);
-  std::weak_ptr<const q::cache::Snapshot> retired_prefix = old_prefix;
+  std::weak_ptr<const q::cache::State> retired_prefix = old_prefix;
   old_prefix.reset(); // N1 keeps only the new Session's original committed head.
   model.prepare_evaluation(*recovered, std::span(&tape[1], 1));
   require(recovered->pending && recovered->pending->phase == shared_phase &&
@@ -353,8 +353,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
 
   // The reported IO failure follows the real head commit. Another logical owner
   // must be able to borrow the same Model carrier without resetting that head.
-  auto after_report = model.create_session(resume, recovered->head);
-  std::weak_ptr<const q::cache::Snapshot> report_head = recovered->head;
+  auto after_report = model.create_session(resume, recovered->checkpoint());
+  std::weak_ptr<const q::cache::State> report_head = recovered->checkpoint();
   q::check(recovered->stop());
   const auto report_retirement = recovered->try_retire(); q::check(report_retirement.status);
   require(report_retirement.retired, "reported-error Session did not retire its committed head alias");
@@ -447,7 +447,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
           session->head->draft->frontier == 16 && session->head->draft->lag == 1 &&
           session->head->draft->catchup_token == seed.draft,
           "real first MTP round did not naturally create the fixed lag1 boundary");
-  auto old_prefix = session->head;
+  auto old_prefix = session->checkpoint();
   const auto saved = save_mtp(*old_prefix);
   require(saved.recurrent.size() == 36 && saved.hidden.size() == 2 &&
           old_prefix->carry_hidden.size() == 4096 && old_prefix->prior_hidden.size() == 4096,
@@ -466,7 +466,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   auto *const run = session->pending->run;
   require(phase && phase->slots.size() == 1 && slot == 0 && run == &phase->slots[slot] && run->valid() &&
           session->pending == model.active_step.get() && session->pending->members.size() == 1 &&
-          session->pending->members[0].base == old_prefix,
+          session->pending->members[0].base == old_prefix.get(),
           "MTP catchup did not borrow its original Model carrier and complete base");
   const auto all_bound = [&] {
     return session && session->pending &&
@@ -478,8 +478,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   q::check(idle->stop()); const auto idle_retirement = idle->try_retire(); q::check(idle_retirement.status);
   require(idle_retirement.retired, "idle MTP alias could not retire"); idle.reset();
   require(run->valid() && model.carrier_borrowed && all_bound(), "idle stop closed another MTP carrier");
-  std::weak_ptr<const q::cache::Snapshot> candidate = session->pending->members[0].next;
   const auto *candidate_identity = session->pending->members[0].next.get();
+  require(candidate_identity, "prepared MTP episode has no unique unpublished candidate");
   const auto target_page = session->pending->members[0].next->pages.back().page();
   const auto draft_page = session->pending->members[0].next->draft->pages.back().page();
   const auto native_pending_bytes = q::take(model.cache_budget.usage(model.execution.device())).live_bytes;
@@ -497,7 +497,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
     try { model.prepare_evaluation(*waiting, std::span(&pending, 1), nullptr, catchup_role); }
     catch (const std::exception &) { rejected = true; }
     require(rejected && !waiting->pending && !waiting->failed && !waiting->stopping &&
-            waiting->head == old_prefix && model.carrier_borrowed && all_bound() &&
+            waiting->head.get() == old_prefix.get() && model.carrier_borrowed && all_bound() &&
             session->pending->run == run,
             "another MTP Session disturbed a native-pending shared loan");
     ++busy_rejections;
@@ -527,7 +527,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   const bool dropped = session->pending->completion.valid();
   session->pending->completion = {};
   busy();
-  require(!collect().retired && session->head == old_prefix && all_bound() && !candidate.expired() &&
+  require(!collect().retired && session->head.get() == old_prefix.get() && all_bound() &&
           session->pending->members[0].next.get() == candidate_identity &&
           model.snapshot_versions.live == 2 && model.carrier_borrowed && directory.retained_sessions() == 1 &&
           q::take(model.cache_budget.usage(model.execution.device())).live_bytes == native_pending_bytes,
@@ -548,7 +548,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   gate.release(); q::check(gate.wait()); require(!gate.timed_out(), "native gate watchdog opened during MTP assertions");
   const auto deadline = q::Clock::now() + std::chrono::seconds(30);
   while (!collect().retired) { require(q::Clock::now() < deadline, "MTP native retirement timed out"); std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
-  require(!session && candidate.expired() && !model.active_step && !model.carrier_borrowed &&
+  require(!session && !model.active_step && !model.carrier_borrowed &&
           model.snapshot_versions.live == 1 && !run->valid() &&
           directory.retained_sessions() == 0 && directory.retained_bytes() == 0,
           "MTP retirement did not reclaim all14 candidates/loan/finite owner charges");
@@ -578,7 +578,10 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   require(policy_target_page != old_prefix->pages.back().page() &&
           policy_draft_page != old_prefix->draft->pages.back().page(),
           "policy rejection probe did not reserve fresh target and draft dirty pages");
-  std::weak_ptr<const q::cache::Snapshot> policy_candidate = policy_session->pending->members[0].next;
+  const auto *const policy_candidate = policy_session->pending->members[0].next.get();
+  const auto policy_epoch = policy_session->head.epoch();
+  require(policy_candidate && model.snapshot_versions.live == 2,
+          "host policy episode did not retain its unique candidate version");
   model.submit_evaluation(*policy_session);
   bool selector_called = false, selector_rejected = false;
   {
@@ -588,7 +591,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
     try {
       model.finish_selected_evaluations(outputs, std::span(&ignored, 1),
           [&](std::span<const std::int32_t> ids, q::StepState &step, std::span<std::int32_t>) {
-            require(ids.size() == verify_rows && (verify_rows == 1 ? step.members[0].draft_token == -1 : step.members[0].draft_token >= 0) && step.members[0].base == old_prefix &&
+            require(ids.size() == verify_rows && (verify_rows == 1 ? step.members[0].draft_token == -1 : step.members[0].draft_token >= 0) && step.members[0].base == old_prefix.get() &&
                     std::count_if(step.bound.begin(), step.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
                     "host policy was not called after the actual complete MTP terminal");
             selector_called = true;
@@ -600,8 +603,9 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
       selector_rejected = true; std::cerr << "mtp_selector_rejected reason=" << error.what() << '\n';
     }
   }
-  require(selector_called && selector_rejected && policy_session->head == old_prefix &&
-          !policy_session->pending && !model.active_step && !model.carrier_borrowed && policy_candidate.expired() &&
+  require(selector_called && selector_rejected && policy_session->head.get() == old_prefix.get() &&
+          policy_session->head.epoch() == policy_epoch &&
+          !policy_session->pending && !model.active_step && !model.carrier_borrowed &&
           model.snapshot_versions.live == 1 && !policy_run->valid(),
           "host selector failure published a head or retained an MTP candidate/carrier");
   unchanged_mtp(*old_prefix, saved);
@@ -624,7 +628,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
           final.next_id == retried.next_id && final.processed_target == retried.processed_target,
           "old lag1 head could not continue after host policy abort");
   const auto final_length = policy_session->length(), final_frontier = policy_session->head->draft->frontier;
-  std::weak_ptr<const q::cache::Snapshot> prefix_weak = old_prefix;
+  std::weak_ptr<const q::cache::State> prefix_weak = old_prefix;
   old_prefix.reset();
   require(prefix_weak.expired() && model.snapshot_versions.live == 1, "MTP probe leaked an extra committed prefix owner");
   q::check(policy_session->stop()); const auto final_retirement = policy_session->try_retire(); q::check(final_retirement.status);

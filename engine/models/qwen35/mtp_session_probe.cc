@@ -81,7 +81,7 @@ struct HeadImage final {
   std::vector<std::uint32_t> target_pages, draft_pages;
   std::vector<Blob> blobs;
 };
-HeadImage image(q::Model &model, const q::cache::Snapshot &head) {
+HeadImage image(q::Model &model, const q::cache::State &head) {
   model.validate_mtp_snapshot(head);
   require(head.draft && head.carry_hidden.valid(), "incomplete MTP head");
   HeadImage result;
@@ -546,7 +546,7 @@ void run_prefix(const std::filesystem::path &inputs, const std::filesystem::path
     const auto checkpoint = image(model,*producer->head); // CPU only, never an extra SnapshotRef.
     const auto token_plan = q::cache::token_plan(prompt,64);
     auto history = std::make_shared<q::cache::ReplayHistory>(64); history->append(token_plan,0,15,cached_next);
-    require(directory.publish(token_plan,producer->head,{history,1,15}), "real P15 checkpoint publish failed");
+    require(directory.publish(token_plan,producer->checkpoint(),{history,1,15}), "real P15 checkpoint publish failed");
     retire_prefix_session(producer); require(model.snapshot_versions.live == 1, "source Session did not leave exactly one directory version");
     const auto check_old = [&]() {
       auto hit = directory.lookup(*token_plan,15,15,&model,model.math_identity());
@@ -1062,7 +1062,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       sessions[j] = model.create_session(calls,{},q::GraphRole::kMtpPrefill);
       batch_single_commit(model,observation,sessions[j],ledgers[j],std::span(source).first(count),q::GraphRole::kMtpPrefill,false,2,"batch_prefill" + std::to_string(j));
     }
-    std::array old_heads{sessions[0]->head,sessions[1]->head};
+    std::array old_heads{sessions[0]->checkpoint(),sessions[1]->checkpoint()};
     const std::array old_images{image(model,*old_heads[0]),image(model,*old_heads[1])};
     std::array pending{sessions[0]->head->next_id,sessions[1]->head->next_id};
     std::array requests{q::EvaluationRequest{sessions[0],std::span(&pending[0],1)},q::EvaluationRequest{sessions[1],std::span(&pending[1],1)}};
@@ -1076,7 +1076,8 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
             episode->members.size() == 2 && phase->family->requests == 2 && phase->attention_layout.facts().requests == 2 &&
             phase->attention_layout.facts().query_rows == 4 && std::count_if(episode->bound.begin(),episode->bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
             "MTP batch did not prepare one real R2/T2 fourteen-bank Graph");
-    std::array<std::weak_ptr<const q::cache::Snapshot>,2> weak{episode->members[0].next,episode->members[1].next};
+    const std::array candidate_ids{episode->members[0].next.get(),episode->members[1].next.get()};
+    require(candidate_ids[0] && candidate_ids[1],"MTP batch did not retain both unique unpublished candidates");
     observation.versions_blocked = model.snapshot_versions.live;
     require(observation.versions_blocked == observation.versions_before_cancel + 2,"MTP batch did not charge both candidates");
     {
@@ -1089,8 +1090,9 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
       require(!blocked_retirement.retired,"MTP batch retired while its native queue was blocked");
       observation.blocked_retained = model.active_step.get() == episode && model.carrier_borrowed &&
-          sessions[0]->pending == episode && sessions[1]->pending == episode && !weak[0].expired() && !weak[1].expired() &&
-          sessions[0]->head == old_heads[0] && sessions[1]->head == old_heads[1] && episode->cancelled &&
+          sessions[0]->pending == episode && sessions[1]->pending == episode &&
+          episode->members[0].next.get() == candidate_ids[0] && episode->members[1].next.get() == candidate_ids[1] &&
+          sessions[0]->head.get() == old_heads[0].get() && sessions[1]->head.get() == old_heads[1].get() && episode->cancelled &&
           model.snapshot_versions.live == observation.versions_blocked &&
           ledgers[0].committed_count == 1 && ledgers[1].committed_count == 1 &&
           q::take(model.cache_budget.usage(model.execution.device())).live_bytes == observation.backing;
@@ -1105,7 +1107,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     }
     observation.versions_after_cancel = model.snapshot_versions.live;
     observation.cancelled = !model.active_step && !model.carrier_borrowed && !sessions[0]->head && !sessions[0]->pending &&
-        !sessions[1]->pending && sessions[1]->head == old_heads[1] && weak[0].expired() && weak[1].expired() &&
+        !sessions[1]->pending && sessions[1]->head.get() == old_heads[1].get() &&
         observation.versions_after_cancel == observation.versions_before_cancel && !run->valid();
     require(observation.cancelled,"retired batch partially published a head or retained a candidate");
     for (std::size_t j = 0; j < 2; ++j) { require(same(old_images[j],image(model,*old_heads[j])),"cancel changed an old complete MTP head"); ++observation.old_checks; }
@@ -1310,7 +1312,7 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
     batch_single_commit(model,observation.data,seed,seed_record,prompt,q::GraphRole::kMtpPrefill,false,0,"seed_R1");
     auto &prefill1 = *model.phases.at(q::ExecutionShape{1,15,q::GraphRole::kMtpPrefill});
     const auto seed_r1 = observation.data.record("seed_R1",batch_image(model,*seed,prefill1,0,1));
-    seed_heads[0] = seed->head; retire_prefix_session(seed);
+    seed_heads[0] = seed->checkpoint(); retire_prefix_session(seed);
 
     std::array seed_sessions{model.create_session(prefills,{},q::GraphRole::kMtpPrefill),model.create_session(prefills,{},q::GraphRole::kMtpPrefill)};
     std::array<q::GenerationLedger,2> seed_ledgers{q::GenerationLedger(1),q::GenerationLedger(1)};
@@ -1330,7 +1332,7 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
     const auto seed_r2 = observation.data.record("seed_R2_0",batch_image(model,*seed_sessions[0],*prefill2,0,2),&seed_r1);
     (void)observation.data.record("seed_R2_1",batch_image(model,*seed_sessions[1],*prefill2,1,2),&seed_r2);
     for (std::size_t j = 0; j < 2; ++j) observation.data.episode("seed_R2_" + std::to_string(j),seed_ledgers[j].records[0]);
-    seed_heads[1] = seed_sessions[0]->head;
+    seed_heads[1] = seed_sessions[0]->checkpoint();
     for (auto &session : seed_sessions) retire_prefix_session(session);
 
     std::array<std::array<SavedStep,2>,2> source_steps;
@@ -1349,7 +1351,7 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
         source_steps[source][step] = observation.data.record(name,batch_image(model,*session,phase,0,1),source ? &source_steps[0][step] : nullptr);
       }
       require(same(original_seed,image(model,*seed_heads[source])),"natural R1 derivation changed its old seed state"); ++observation.seed_unchanged_checks;
-      old_heads[source] = session->head; retire_prefix_session(session);
+      old_heads[source] = session->checkpoint(); retire_prefix_session(session);
     }
     seed_heads = {}; // Only the two real old L18 sources remain on the device.
     for (std::size_t source = 0; source < 2; ++source) {
@@ -1380,7 +1382,7 @@ void run_numerics(const std::filesystem::path &inputs, const std::filesystem::pa
         q::prepare_generation_record(twin_ledgers[j],*twins[j],q::GraphRole::kMtpRound,twin_requests[j].ids,true,2,0);
       model.prepare_evaluations(twin_requests,nullptr,q::GraphRole::kMtpRound); observation.data.observe(model);
       auto *const phase = model.active_step->phase;
-      require(phase->family->requests == 2 && model.active_step->members[0].base.get() == old.get() && model.active_step->members[1].base.get() == old.get(),
+      require(phase->family->requests == 2 && model.active_step->members[0].base == old.get() && model.active_step->members[1].base == old.get(),
               "R2 numerical control is not one true Graph with the exact retained old state");
       const std::array selections{q::MtpGenerationSelection{twins[0],pending,2},q::MtpGenerationSelection{twins[1],pending,2}};
       const std::array outputs_io{q::EvaluationIO{.name = label, .trace_states = false},

@@ -185,7 +185,7 @@ bool disjoint(const c::ReadLease &a, const c::ReadLease &b) {
       q::cache::add(x.offset(), x.size()) <= y.offset() || q::cache::add(y.offset(), y.size()) <= x.offset();
 }
 
-void check_frames(const q::cache::Snapshot &a, const q::cache::Snapshot &b) {
+void check_frames(const q::cache::State &a, const q::cache::State &b) {
   require(a.length == 131 && b.length == 132, "B2 publication used a common position instead of individual histories");
   require(a.pages.back().page() != b.pages.back().page(), "batch requests share a dirty physical tail");
   for (const auto *head : {&a, &b}) {
@@ -221,7 +221,7 @@ void compare_case(Observation &observation, q::Model &model, std::string_view ba
 void cancel_batch(Observation &observation, q::Model &model,
                   std::shared_ptr<q::Session> &a, const std::shared_ptr<q::Session> &b,
                   std::int32_t id_a, std::int32_t id_b) {
-  const auto old_a = save(a->head), old_b = save(b->head); // Read only before inserting the gate.
+  const auto old_a = save(a->checkpoint()), old_b = save(b->checkpoint()); // Read only before inserting the gate.
   observation.cancel_versions_before = model.snapshot_versions.live;
   const auto slot = model.slot_index;
   std::array requests{q::EvaluationRequest{a, std::span(&id_a, 1)}, q::EvaluationRequest{b, std::span(&id_b, 1)}};
@@ -232,8 +232,8 @@ void cancel_batch(Observation &observation, q::Model &model,
   auto *const phase = episode->phase; auto *const run = episode->run;
   require(phase && phase->slots.size() == 1 && slot == 0 && run &&
           run == &phase->slots[slot] && run->valid(), "cancel case lost its original serial R2 carrier slot");
-  std::array<std::weak_ptr<const q::cache::Snapshot>, 2> candidates{episode->members[0].next, episode->members[1].next};
   const std::array candidate_ids{episode->members[0].next.get(), episode->members[1].next.get()};
+  require(candidate_ids[0] && candidate_ids[1], "batch did not retain both unique unpublished candidates");
   observation.cancel_versions_blocked = model.snapshot_versions.live;
   require(observation.cancel_versions_blocked == observation.cancel_versions_before + 2,
           "two admitted candidates are not both charged");
@@ -245,7 +245,7 @@ void cancel_batch(Observation &observation, q::Model &model,
     return cudaLaunchHostFunc(stream, &NativeGate::wait, &gate);
   }));
   gate.wait_until_entered(); model.submit_evaluations();
-  require(a->head == old_a.head && b->head == old_b.head, "batch submission prematurely changed a head");
+  require(a->head.get() == old_a.head.get() && b->head.get() == old_b.head.get(), "batch submission prematurely changed a head");
   q::check(a->stop());
   require(a->stopping && !b->stopping && !episode->cancelled && episode->discard_stopped_members,
           "one withdrawn ordinary participant aborted its surviving peer");
@@ -256,9 +256,9 @@ void cancel_batch(Observation &observation, q::Model &model,
   if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
   require(!blocked_retirement.retired, "native-blocked batch retired after public Completion was dropped"); // Exactly one blocked check.
   require(model.active_step.get() == episode && a->pending == episode && b->pending == episode &&
-          !candidates[0].expired() && !candidates[1].expired() &&
+          episode->members[0].next && episode->members[1].next &&
           episode->members[0].next.get() == candidate_ids[0] && episode->members[1].next.get() == candidate_ids[1] &&
-          a->head == old_a.head && b->head == old_b.head && model.carrier_borrowed &&
+          a->head.get() == old_a.head.get() && b->head.get() == old_b.head.get() && model.carrier_borrowed &&
           model.snapshot_versions.live == observation.cancel_versions_blocked &&
           q::take(model.cache_budget.usage(model.execution.device())).live_bytes == observation.cancel_backing_bytes,
           "blocked batch returned a candidate, head, version charge, backing or carrier early");
@@ -278,7 +278,8 @@ void cancel_batch(Observation &observation, q::Model &model,
   if (!cancelled_retirement.status.IsCancelled() || cancelled_retirement.status.has_native_error()) q::check(cancelled_retirement.status);
   require(cancelled_retirement.retired, "released original batch did not pass its actual typed retirement gates");
   require(!a->pending && !b->pending && !model.active_step && !model.carrier_borrowed && !a->head &&
-          b->head == old_b.head && candidates[0].expired() && candidates[1].expired() && !run->valid(),
+          b->head.get() == old_b.head.get() &&
+          model.snapshot_versions.live == observation.cancel_versions_before && !run->valid(),
           "whole-batch abort retained candidates, published B or kept stopped A's head");
   observation.cancel_versions_retired = model.snapshot_versions.live;
   require(observation.cancel_versions_retired == observation.cancel_versions_before,
@@ -337,14 +338,14 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
     (void)q::evaluate(model, *seed, prompt, "seed_prefill");
     (void)q::evaluate(model, *seed, std::span(&ids[0], 1), "seed129");
     require(seed->length() == 129, "shared seed is not P128 plus one T1");
-    auto origin_a = model.create_session(singleton, seed->head);
-    const std::array<std::size_t, 2> twice{1,1}; auto origin_b = model.create_session(twice, seed->head);
+    auto origin_a = model.create_session(singleton, seed->checkpoint());
+    const std::array<std::size_t, 2> twice{1,1}; auto origin_b = model.create_session(twice, seed->checkpoint());
     (void)q::evaluate(model, *origin_a, std::span(&ids[1], 1), "origin_a130");
     (void)q::evaluate(model, *origin_b, std::span(&ids[2], 1), "origin_b130");
     (void)q::evaluate(model, *origin_b, std::span(&ids[3], 1), "origin_b131");
-    std::array old{save(seed->head), save(origin_a->head), save(origin_b->head)};
-    auto baseline_a = model.create_session(twice, origin_a->head), baseline_b = model.create_session(twice, origin_b->head);
-    auto batch_a = model.create_session(twice, origin_a->head), batch_b = model.create_session(twice, origin_b->head);
+    std::array old{save(seed->checkpoint()), save(origin_a->checkpoint()), save(origin_b->checkpoint())};
+    auto baseline_a = model.create_session(twice, origin_a->checkpoint()), baseline_b = model.create_session(twice, origin_b->checkpoint());
+    auto batch_a = model.create_session(twice, origin_a->checkpoint()), batch_b = model.create_session(twice, origin_b->checkpoint());
     observation.baseline_ids[0] = q::evaluate(model, *baseline_a, std::span(&ids[4], 1), "b1_a", trace);
     observation.baseline_ids[1] = q::evaluate(model, *baseline_b, std::span(&ids[5], 1), "b1_b", trace);
     std::array evaluations{q::EvaluationRequest{batch_a, std::span(&ids[4], 1)}, q::EvaluationRequest{batch_b, std::span(&ids[5], 1)}};
@@ -354,7 +355,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
     require(model.active_step->phase && model.active_step->phase->family->requests == requests &&
         model.active_step->phase->attention_layout.facts().requests == requests && model.active_step->phase->attention_layout.facts().query_rows == requests,
         "prepared native Graph is not actual B2/T1");
-    require(batch_a->head == origin_a->head && batch_b->head == origin_b->head, "prepare prematurely published a candidate head");
+    require(batch_a->head.get() == origin_a->head.get() && batch_b->head.get() == origin_b->head.get(), "prepare prematurely published a candidate head");
     observation.one_batch_episode = true;
     model.submit_evaluations();
     const std::array outputs_io{q::EvaluationIO{.name = "b2_a", .trace = &trace},

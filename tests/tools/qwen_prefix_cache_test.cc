@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <limits>
 #include <new>
+#include <type_traits>
 
 #if !defined(HYLE_PREFIX_CACHE_STANDALONE)
 #include <gtest/gtest.h>
@@ -215,7 +216,7 @@ p::TokenPlanRef tokens(std::initializer_list<std::int32_t> ids) {
   return p::token_plan(std::span(ids.begin(), ids.size()), ids.size());
 }
 p::SnapshotRef snapshot(std::size_t length, const void *model, const void *math, std::int32_t next = 71) {
-  auto value = std::make_shared<p::Snapshot>();
+  auto value = std::make_shared<p::State>();
   value->length = length; value->model = model; value->math = math; value->next_id = next; return value;
 }
 p::ReplayPrefix history(const p::TokenPlanRef &input, const p::SnapshotRef &head) {
@@ -252,16 +253,16 @@ void sampling_cursor_addresses_are_transactional() {
 void sampling_wrappers_share_one_state_version() {
   int model = 0, math = 0, other_model = 0, other_math = 0;
   p::VersionCount versions{0,1};
-  auto canonical = std::make_shared<p::Snapshot>();
+  auto canonical = std::make_shared<p::State>();
   canonical->version = p::VersionRef::acquire(versions).value();
   canonical->model = &model; canonical->math = &math; canonical->length = 3;
   canonical->next_id = 71; canonical->sampling = {1,2,3};
-  std::weak_ptr<const p::Snapshot> lifetime = canonical;
-  auto first = std::make_shared<p::Snapshot>();
+  std::weak_ptr<const p::State> lifetime = canonical;
+  auto first = std::make_shared<p::State>();
   first->state_origin = canonical;
   first->model = &model; first->math = &math; first->length = 3;
   first->next_id = 81; first->sampling = {11,12,1};
-  auto second = std::make_shared<p::Snapshot>();
+  auto second = std::make_shared<p::State>();
   second->state_origin = first->state_origin;
   second->model = &model; second->math = &math; second->length = 3;
   second->next_id = 91; second->sampling = {21,22,1};
@@ -290,10 +291,109 @@ void sampling_wrappers_share_one_state_version() {
       "the canonical finite version must retire exactly once after its last fork");
 }
 
+void working_state_reuses_metadata_and_freezes_explicitly() {
+  static_assert(!std::is_copy_constructible_v<p::WorkingState>);
+  p::VersionCount versions{0,2}; p::WorkingState working;
+  const auto next = [&](std::size_t length) {
+    auto candidate = working.acquire_candidate();
+    candidate->version = p::VersionRef::acquire(versions).value();
+    candidate->pages.reserve(8);
+    if (!candidate->keys.try_resize(3) || !candidate->values.try_resize(3) ||
+        !candidate->state.try_resize(2)) throw std::bad_alloc();
+    candidate->length = length; candidate->next_id = 17; candidate->sampling = {1,2,length};
+    working.commit(std::move(candidate));
+  };
+  next(1); const auto *first = working.get();
+  next(2); const auto *second = working.get();
+  bool stable = first != second;
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+  reject_allocations = true;
+#endif
+  try {
+    for (std::size_t i = 0; i < 128; ++i) {
+      next(i + 3);
+      stable = stable && working.get() == (i % 2 ? second : first) && versions.live == 1;
+    }
+  } catch (...) {
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+    reject_allocations = false;
+#endif
+    throw;
+  }
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+  reject_allocations = false;
+#endif
+  require(stable, "ordinary commits allocated/replaced warm metadata or kept an old version");
+  const auto *identity = working.get(); const auto epoch = working.epoch();
+#if defined(HYLE_PREFIX_CACHE_STANDALONE)
+  bool rejected = false; reject_allocations = true;
+  try { (void)working.checkpoint(); }
+  catch (const std::bad_alloc &) { rejected = true; }
+  catch (...) { reject_allocations = false; throw; }
+  reject_allocations = false;
+  require(rejected && working.get() == identity && working.epoch() == epoch && versions.live == 1 &&
+      working->length == 130 && working->next_id == 17 && working->sampling == p::SamplingCursor{1,2,130},
+      "checkpoint allocation failure changed the unique committed boundary or version");
+#endif
+  auto frozen = working.checkpoint();
+  require(frozen.get() == identity && working.get() == identity && working.epoch() == epoch && versions.live == 1,
+      "checkpoint copied State, changed epoch or counted a second version");
+  require(working.checkpoint() == frozen, "repeated checkpoint replaced an immutable committed identity");
+  working.reset(); require(versions.live == 1 && frozen->length == 130, "reset revoked an escaped checkpoint");
+  frozen.reset(); require(!versions.live, "final checkpoint retained a model-state version");
+}
+
+void working_state_adopts_sampling_origin_without_another_version() {
+  p::VersionCount versions{0,2}; p::WorkingState source, fork;
+  auto initial = source.acquire_candidate(); initial->version = p::VersionRef::acquire(versions).value();
+  initial->length = 3; initial->next_id = 71; initial->sampling = {1,2,3};
+  initial->draft.emplace(); initial->draft->frontier = 2; initial->draft->lag = 1; initial->draft->catchup_token = 5;
+  source.commit(std::move(initial)); auto canonical = source.checkpoint();
+  fork.adopt(canonical); source.reset();
+  require(fork.get() == canonical.get() && versions.live == 1, "checkpoint adoption copied its version");
+  auto wrapper = fork.acquire_candidate();
+  wrapper->state_origin = canonical; wrapper->length = canonical->length; wrapper->draft = canonical->draft;
+  wrapper->next_id = 81; wrapper->sampling = {11,12,13};
+  fork.commit(std::move(wrapper)); auto sampled = fork.checkpoint(); canonical.reset();
+  require(versions.live == 1 && sampled->state_identity() == sampled->state_origin.get() &&
+      !sampled->state_origin->state_origin && sampled->state_identity()->next_id == 71 && sampled->next_id == 81 &&
+      sampled->draft->frontier == 2 && sampled->draft->lag == 1 && sampled->draft->catchup_token == 5,
+      "sampling wrapper changed canonical pending, complete draft metadata or version count");
+  auto evaluated = fork.acquire_candidate(); evaluated->version = p::VersionRef::acquire(versions).value();
+  evaluated->length = 4; evaluated->next_id = 91; fork.commit(std::move(evaluated));
+  require(versions.live == 2 && sampled->next_id == 81 && fork->next_id == 91,
+      "new unique state overwrote its frozen sampling boundary or lost a version");
+  fork.reset(); require(versions.live == 1, "working owner retained a retired evaluated version");
+  sampled.reset(); require(!versions.live, "sampling origin retained a canonical version after final release");
+}
+
+void recycled_candidate_releases_permissions_and_owners() {
+  namespace c = hyle::compute;
+  auto pool = c::LeasePool::create(hyle::mem::system_resource(), 257, {.max_blocks = 1}).value();
+  p::VersionCount versions{0,1}, origins{0,1}; p::WorkingState working;
+  auto owner = std::make_shared<int>(7); std::weak_ptr<const void> lifetime = owner;
+  auto canonical = std::make_shared<p::State>(); canonical->version = p::VersionRef::acquire(origins).value();
+  auto candidate = working.acquire_candidate(); const auto *metadata = candidate.get();
+  candidate->version = p::VersionRef::acquire(versions).value(); candidate->resource_owner = owner;
+  candidate->state_origin = canonical; candidate->pages.reserve(8);
+  require(candidate->state.try_resize(1), "candidate state metadata could not be prepared");
+  auto writer = pool.allocate(128).value();
+  candidate->state[0].history = writer.publish().value(); owner.reset(); canonical.reset();
+  require(pool.stats().live_blocks == 1 && versions.live == 1 && origins.live == 1 && !lifetime.expired(),
+      "candidate did not own its actual lease, resource owner and canonical versions");
+  working.recycle_candidate(std::move(candidate));
+  require(!versions.live && !origins.live && lifetime.expired() && !pool.stats().live_blocks && !working,
+      "empty candidate metadata retained an old lease, owner, origin or version");
+  auto reused = working.acquire_candidate();
+  require(reused.get() == metadata && reused->pages.capacity() >= 8 && reused->pages.empty() && reused->state.empty() &&
+      !reused->state_origin && !reused->resource_owner && !reused->carry_hidden && !reused->prior_hidden && !reused->draft,
+      "candidate reuse lost metadata capacity or revived old permissions");
+}
+
 void completed_consumed_checkpoints() {
   int model=0,math=0;
   p::VersionCount versions{0,2};
-  auto head=std::make_shared<p::Snapshot>();
+  auto head=std::make_shared<p::State>();
   head->version=p::VersionRef::acquire(versions).value();
   head->model=&model;head->math=&math;head->length=8;head->next_id=248044;
   head->sampling={17,29,13};
@@ -694,6 +794,9 @@ int main() {
     shared_pins_and_lru(); std::puts("PASS shared read-only pins, bounded admission and LRU");
     sampling_cursor_addresses_are_transactional(); std::puts("PASS transactional sampling addresses and overflow");
     sampling_wrappers_share_one_state_version(); std::puts("PASS independent sampler metadata and canonical state-version retirement");
+    working_state_reuses_metadata_and_freezes_explicitly(); std::puts("PASS working-state metadata reuse and explicit checkpoint allocation failure");
+    working_state_adopts_sampling_origin_without_another_version(); std::puts("PASS working-state adoption, canonical sampling origin and shared version accounting");
+    recycled_candidate_releases_permissions_and_owners(); std::puts("PASS recycled candidate releases actual lease, owner and versions");
     completed_consumed_checkpoints(); std::puts("PASS complete generated/multiturn consumed keys, lag/RNG retention, pins and retirement");
     completed_checkpoint_validation(); std::puts("PASS rejected unconsumed pending, missing inputs and invalid completed checkpoints");
     bounded_tree_reuse(); std::puts("PASS split/prune/internal-boundary churn against linear oracle");
@@ -715,6 +818,9 @@ TEST(QwenPrefixCache, ExactSnapshotBoundariesAndDomains) { exact_boundaries_and_
 TEST(QwenPrefixCache, SharedPinsAndLru) { shared_pins_and_lru(); }
 TEST(QwenSessionState, SamplingCursorAddressesAreTransactional) { sampling_cursor_addresses_are_transactional(); }
 TEST(QwenPrefixCache, SamplingWrappersShareOneStateVersion) { sampling_wrappers_share_one_state_version(); }
+TEST(QwenSessionState, WorkingMetadataReuseAndExplicitCheckpoint) { working_state_reuses_metadata_and_freezes_explicitly(); }
+TEST(QwenSessionState, WorkingStateSharesCanonicalSamplingVersion) { working_state_adopts_sampling_origin_without_another_version(); }
+TEST(QwenSessionState, RecycledCandidateReleasesPermissionsAndOwners) { recycled_candidate_releases_permissions_and_owners(); }
 TEST(QwenPrefixCache, CompletedConsumedCheckpoints) { completed_consumed_checkpoints(); }
 TEST(QwenPrefixCache, CompletedCheckpointValidation) { completed_checkpoint_validation(); }
 TEST(QwenPrefixCache, BoundedTreeReuse) { bounded_tree_reuse(); }

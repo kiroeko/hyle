@@ -61,7 +61,7 @@ void run(const std::filesystem::path &input) {
   q::prepare_generation_record(ledger, *session, q::GraphRole::kMtpPrefill, prompt, false, 0, 0);
   model.prepare_evaluation(*session, prompt, nullptr, q::GraphRole::kMtpPrefill); model.submit_evaluation(*session);
   (void)q::finish_evaluation(model, *session, "prefill", {}, false, nullptr, nullptr, nullptr, nullptr, {}, &ledger);
-  auto base = session->head;
+  auto base = session->checkpoint();
   require(base->sampling == q::cache::SamplingCursor{123, 0, 1}, "prefill did not publish exactly one draw");
   const auto result = round(model, session, ledger);
   const auto final = q::generation_boundary(*session->head);
@@ -83,7 +83,7 @@ void run(const std::filesystem::path &input) {
   bool failed = false;
   try { (void)round(model, session, rejected, &damaged); }
   catch (const std::runtime_error &error) { failed = true; std::cerr << "random_probe_expected_failure=" << error.what() << '\n'; }
-  require(failed && session->head == base && session->head->sampling.draw == 1 &&
+  require(failed && session->head.get() == base.get() && session->head->sampling.draw == 1 &&
       !rejected.committed_count && !model.active_step && !model.carrier_borrowed,
       "failed sampled episode published a partial head, cursor or ledger");
   std::cerr << "random_probe_stage=retry\n";
@@ -103,10 +103,10 @@ void run(const std::filesystem::path &input) {
     std::cerr << "random_probe_stage=cancel_submit\n";
     q::check(gate.arm()); q::check(gate.wait_until_entered()); model.submit_evaluation(*session);
     q::check(gate.wait_for_model_submission()); q::check(session->stop());
-    const auto pending = session->try_retire();
-    if (!pending.status.IsCancelled() || pending.status.has_native_error()) q::check(pending.status);
-    require(!pending.retired && model.active_step.get() == episode &&
-        session->head == base && session->head->sampling.draw == 1 &&
+    const auto waiting_retirement = session->try_retire();
+    if (!waiting_retirement.status.IsCancelled() || waiting_retirement.status.has_native_error()) q::check(waiting_retirement.status);
+    require(!waiting_retirement.retired && model.active_step.get() == episode &&
+        session->head.get() == base.get() && session->head->sampling.draw == 1 &&
         model.snapshot_versions.live == candidates, "blocked cancellation published or released an accepted native owner");
     gate.release(); q::check(gate.wait());
     require(!gate.timed_out(), "native gate watchdog released the queue");

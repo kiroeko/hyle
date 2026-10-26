@@ -109,7 +109,7 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
     result.draft_reference_bytes=key.size()+value.size();
   }
   require(same(old,image(model,*base)),"verification or draft repair mutated the immutable complete source");
-  if (saved) *saved=session->head;
+  if (saved) *saved=session->checkpoint();
   if (continue_one) {
     const auto role=session->head->draft->lag?q::GraphRole::kMtpCatchupSingle:q::GraphRole::kMtpSingle;
     const std::array<std::int32_t,1> one{16};
@@ -147,7 +147,7 @@ int main(int argc,char**argv) {
     }
     auto seed=model.create_session(prompt_shape,{},q::GraphRole::kMtpPrefill);
     model.prepare_evaluation(*seed,prompt,nullptr,q::GraphRole::kMtpPrefill);model.submit_evaluation(*seed);q::finish_evaluation(model, *seed,"seed",{},false);
-    auto base=seed->head;const auto before=image(model,*base);
+    auto base=seed->checkpoint();const auto before=image(model,*base);
     const auto &eos = q::model_eos_tokens;std::size_t cases=0,perturbed=0,checked=0;
     q::cache::SnapshotRef lagged;
     for(auto width:wide){

@@ -93,7 +93,8 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 // retaining the operation's group32 scale order and final BF16 store.
 // Two launches, caller-owned FP8 codes/F32 scales workspace, no host ID
 // transfer or whole-weight expansion.
-// Four DeepSeek N/K pairs only, BF16 activations/output aligned16, I32 IDs
+// Native admission follows signed-I32 activation and CUDA grid/address bounds,
+// with no model-specific N/K list. BF16 activations/output aligned16, I32 IDs
 // aligned4; invalid IDs fail Completion. Workspace lasts until completion.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;
 

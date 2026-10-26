@@ -11,7 +11,7 @@ void retire(q::GenerationRequest &request){
   const auto retired=request.session->try_retire();if(retired.retired)request.session.reset();
   q::check(drained.status);q::check(retired.status);require(retired.retired,"payload did not retire");
 }
-std::uint64_t gdn_digest(q::Model &model,const q::cache::Snapshot &head){
+std::uint64_t gdn_digest(q::Model &model,const q::cache::State &head){
   std::uint64_t hash=1469598103934665603ULL;
   const auto add=[&](const q::c::ReadLease &lease){
     const auto view=q::take(lease.view());std::vector<std::byte> bytes(view.size());q::check(model.execution.read(view,bytes));

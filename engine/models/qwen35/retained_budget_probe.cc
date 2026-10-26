@@ -77,7 +77,7 @@ struct HeadImage final {
   std::vector<std::uint32_t> target_pages, draft_pages;
   std::vector<Blob> blobs;
 };
-HeadImage image(q::Model &model, const q::cache::Snapshot &head) {
+HeadImage image(q::Model &model, const q::cache::State &head) {
   model.validate_mtp_snapshot(head);
   require(head.draft && head.carry_hidden.valid(), "native MTP Snapshot is incomplete");
   HeadImage result;
@@ -187,7 +187,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   }
   require(session->head->draft->lag == 1 && session->head->prior_hidden.valid(),
           "finite native seed did not produce lag1 with both carry and prior");
-  auto old = session->head;
+  auto old = session->checkpoint();
   const auto saved = image(model, *old);
   const auto pending = old->next_id;
   require(!q::is_end_of_generation(pending), "lag1 seed pending token is EOS");
@@ -216,14 +216,18 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
           "pressure episode did not borrow the original Model carrier");
   auto *const phase = session->pending->phase;
   auto *const invocation = session->pending->run;
-  std::weak_ptr<const q::cache::Snapshot> candidate = session->pending->members[0].next;
-  require(phase->slots.size() == 1 && slot == 0 && invocation == &phase->slots[slot] && model.snapshot_versions.live == 2 &&
+  const auto *const candidate = session->pending->members[0].next.get();
+  const auto *const episode = session->pending;
+  require(candidate && model.active_step.get() == episode && phase->slots.size() == 1 && slot == 0 && invocation == &phase->slots[slot] && model.snapshot_versions.live == 2 &&
           std::count_if(session->pending->bound.begin(), session->pending->bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
           "pressure episode did not retain its original slot/candidate/all14 append permissions");
   model.submit_evaluation(*session);
   // Prove native completion separately. The original finish still owns and
   // waits its same Completion, and performs all export/selection/publication.
   q::check(session->pending->completion.wait());
+  require(model.active_step.get() == episode && session->pending == episode &&
+          episode->members[0].next.get() == candidate && model.snapshot_versions.live == 2,
+          "native completion discarded the original unpublished candidate before retention admission");
   const auto before_pressure = model.cache_usage();
   require(before_pressure.limit_bytes == limit && before_pressure.live_bytes < limit,
           "finite retained budget is unexpectedly full before synthetic quota pressure");
@@ -235,8 +239,8 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   catch (const std::exception &error) { rejection = error.what(); }
   require(rejection.find("cache retained-state admission failed before snapshot publication:") != std::string::npos,
           "completed native episode did not reject specifically at retained-state export admission");
-  require(session->head == old && !session->pending && !session->failed && !session->stopping &&
-          !model.active_step && !model.carrier_borrowed && candidate.expired() &&
+  require(session->head.get() == old.get() && !session->pending && !session->failed && !session->stopping &&
+          !model.active_step && !model.carrier_borrowed &&
           model.snapshot_versions.live == 1 &&
           !invocation->valid() && !invocation->in_flight(),
           "retention rejection published a head or retained the candidate/slot/admission");
@@ -257,7 +261,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   q::prepare_generation_record(ledger, *session, role, std::span(&pending, 1), true, 2, 0);
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role);
   require(session->pending->phase == phase && session->pending->run == invocation && invocation->valid() &&
-          session->pending->members[0].base == old,
+          session->pending->members[0].base == old.get(),
           "unpressured retry did not rebuild the same slot against the original complete Snapshot");
   model.submit_evaluation(*session);
   const auto retried_round = finish(model, session, pending, ledger, "retained_budget_retry", &reference_ledger.records[0]);
@@ -266,7 +270,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
           ledger.records[committed_before].same_result(reference_ledger.records[0]) &&
           same_payload(expected, image(model, *session->head)),
           "unpressured retry differs from the original-path same-Snapshot reference");
-  require(unchanged(saved, image(model, *old)) && session->head != old &&
+  require(unchanged(saved, image(model, *old)) && session->head.get() != old.get() &&
           !session->pending && !model.active_step && !model.carrier_borrowed,
           "successful retry changed old Snapshot or retained a Model execution loan");
   const auto successful_usage = model.cache_usage();
