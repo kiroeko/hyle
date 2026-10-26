@@ -2,6 +2,7 @@
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/detail/input_source.h"
 #include "hyle/graph/detail/region_adapter.h"
 
@@ -9524,8 +9525,86 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
   return Status::Ok();
 }
 
-Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
-                                  ReplayOptions options) noexcept {
+namespace {
+Result<bool> reusable_capture_tuple(const detail::InvocationState &state,
+    std::optional<std::uint32_t> replacement_instance,
+    compute::ConstTensorView replacement) noexcept {
+  const auto &plan = *state.plan;
+  if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+      plan.capture_command_count != plan.command_count || !plan.command_count)
+    return false;
+  const auto lane = plan.segments.front().lane;
+  if (!shared_lane(plan, lane) || lane.ordinal() >= state.queues.size() ||
+      !state.queues[lane.ordinal()].valid() || !state.queues[lane.ordinal()].is_open())
+    return false;
+  for (std::size_t i = 0; i < plan.steps.size(); ++i) {
+    const auto &step = plan.steps[i];
+    if (!step.emits_command()) continue;
+    if (step.runtime_properties().mode != compute::ProviderRuntimeMode::kSharedQueue ||
+        !state.step_bindings[i].stable_binding_identity || state.step_bindings[i].native_inputs)
+      return false;
+    if (step.region.valid()) {
+      if (!detail::RegionAccess::borrows_tensor_views_only(step.region) ||
+          !detail::RegionAccess::preserves_capture_bindings(state.invocations[i].region))
+        return false;
+    } else if (step.kind == detail::PlanStepKind::kOperation) {
+      HYLE_ASSIGN_OR_RETURN(const auto preserves,
+          compute::detail::OperationPreparationAccess::preserves_capture_bindings(
+              state.invocations[i].operation));
+      if (!preserves) return false;
+    } else {
+      return false;
+    }
+  }
+  for (const auto &candidate : plan.capture_ranges) {
+    const auto saved = std::ranges::find_if(state.capture_rebuilds, [&](const auto &range) {
+      return range.step_begin == candidate.step_begin && range.step_count == candidate.step_count;
+    });
+    if (saved == state.capture_rebuilds.end() || !saved->qualification_valid ||
+        !saved->preserves_private_arguments)
+      return false;
+    const auto matches = [&](const detail::CaptureBindingVariant &variant) noexcept {
+      if (!variant.key_valid) return false;
+      std::size_t port = 0;
+      for (std::size_t index = saved->step_begin;
+           index < std::size_t{saved->step_begin} + saved->step_count; ++index) {
+        const auto &step = plan.steps[index];
+        if (!step.emits_command()) continue;
+        for (std::size_t input = 0; input < step.input_count; ++input) {
+          const auto instance = plan.node_inputs[step.input_begin + input];
+          const auto &tensor = replacement_instance && instance == *replacement_instance
+              ? replacement : state.readable[instance];
+          if (port == variant.bindings.size() || !tensor.valid() ||
+              !same_physical_tensor(variant.bindings[port++], tensor))
+            return false;
+        }
+        for (std::size_t output = 0; output < step.output_count; ++output) {
+          const auto &tensor = state.writable[plan.node_outputs[step.output_begin + output]];
+          if (port == variant.bindings.size() || !tensor.valid() ||
+              !same_physical_tensor(variant.bindings[port++], tensor.as_const()))
+            return false;
+        }
+      }
+      return port == variant.bindings.size();
+    };
+    bool found = false;
+    for (const auto &range : state.captured_ranges)
+      if (range.step_begin == candidate.step_begin && range.step_count == candidate.step_count &&
+          range.commands.valid() && range.commands.tensor_bindings_have_stable_identity() &&
+          saved->active_variant < 2 && matches(saved->variants[saved->active_variant]))
+        found = true;
+    if (!found)
+      for (const auto &variant : saved->variants)
+        if (variant.commands.valid() && variant.commands.tensor_bindings_have_stable_identity() &&
+            matches(variant)) found = true;
+    if (!found) return false;
+  }
+  return !plan.capture_ranges.empty();
+}
+
+Status prepare_replay_impl(detail::InvocationState *state_,
+    std::span<const QueueBinding> queues, ReplayOptions options,
+    bool reuse_only) noexcept {
   if (!state_)
     return Status::FailedPrecondition("graph invocation is empty");
   HYLE_RETURN_IF_ERROR(detail::begin_preparation(*state_));
@@ -9660,6 +9739,9 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       prepare_dependency_routes(*state_, options.host_wait);
   if (!dependency_report)
     return std::move(dependency_report).error();
+  if (reuse_only && (transfer_report.immediate_transfer_count ||
+      dependency_report->host_wait_dependency_count))
+    return Status::Unimplemented("capture reuse requires device-ordered transfers and dependencies");
   HYLE_RETURN_IF_ERROR(detail::prepare_input_sources(*state_, queues, options.host_wait));
   dependency_report->immediate_transfer_count =
       transfer_report.immediate_transfer_count;
@@ -9717,6 +9799,13 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
     }
     for (auto &saved : state_->capture_rebuilds)
       HYLE_RETURN_IF_ERROR(qualify_capture_variants(*state_, saved));
+  }
+
+  if (reuse_only) {
+    HYLE_ASSIGN_OR_RETURN(const auto reusable,
+        reusable_capture_tuple(*state_, std::nullopt, {}));
+    if (!reusable)
+      return Status::Unavailable("existing captures do not cover the complete prepared tuple");
   }
 
   // Publish the replacement Queue/route only after validation. Any selected
@@ -9829,6 +9918,8 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
         captured_command_count += candidate.command_count;
         continue;
       }
+      if (reuse_only)
+        return Status::Unavailable("an existing prepared capture key is missing");
       selected_variant = saved->variants[0].key_valid
           ? saved->variants[1].key_valid ? static_cast<std::uint8_t>(1 - saved->last_used) : std::uint8_t{1}
           : std::uint8_t{0};
@@ -9839,6 +9930,8 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
       evicted.key_valid = false;
       evicted.bindings.clear();
     }
+    if (reuse_only)
+      return Status::Unavailable("an existing prepared capture range is missing");
     compute::Queue *queue = candidate_queue(queues, segment.lane);
     if (queue == nullptr) {
       unprepare_captures();
@@ -9933,6 +10026,49 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   rebuild_capture_spans(*state_);
   commit_producer_groups();
   state_->replay_prepared = true;
+  return Status::Ok();
+}
+} // namespace
+
+Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
+                                  ReplayOptions options) noexcept {
+  return prepare_replay_impl(state_, queues, options, false);
+}
+
+Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocation,
+    ValueId input, compute::ConstTensorView replacement) noexcept {
+  const auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  const auto &plan = *state->plan;
+  if (!::hyle::graph::owns(plan, input) || input.kind() != ValueKind::kInput ||
+      !replacement.valid() || replacement.description() != logical_description(*state, input.ordinal()))
+    return std::unexpected(Status::InvalidArgument("capture replacement needs its original input description"));
+  // A changed alias needs actual View preparation. This pure query deliberately
+  // does not infer a replacement pointer for an alias or an opaque native port.
+  if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal()))
+    return false;
+  return reusable_capture_tuple(*state, plan.external_instances[input.ordinal()], replacement);
+}
+
+Status detail::ReplayAccess::prepare_reuse(Invocation &invocation,
+    std::span<const QueueBinding> queues) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  HYLE_ASSIGN_OR_RETURN(const auto reusable,
+      reusable_capture_tuple(*state, std::nullopt, {}));
+  if (!reusable)
+    return Status::Unavailable("no existing capture covers the current physical tuple");
+  const auto lane = state->plan->segments.front().lane;
+  if (queues.size() != 1 || queues.front().lane != lane || !queues.front().queue ||
+      !state->queues[lane.ordinal()].same_owner(*queues.front().queue))
+    return Status::InvalidArgument("capture reuse requires its original actual Queue");
+  HYLE_RETURN_IF_ERROR(prepare_replay_impl(state, queues,
+      {.mode = ReplayMode::kRequireCapture, .host_wait = HostWaitPolicy::kReject}, true));
+  if (state->replay_route != ReplayRoute::kCaptured ||
+      state->replay_report.recorded_capture_range_count ||
+      state->replay_report.immediate_transfer_count ||
+      state->replay_report.host_wait_dependency_count)
+    return Status::Internal("capture reuse did not preserve complete device-ordered existing coverage");
   return Status::Ok();
 }
 

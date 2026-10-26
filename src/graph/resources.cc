@@ -1,5 +1,6 @@
 #include "hyle/graph/executable.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/result.h"
 #include "hyle/graph/detail/output_source.h"
 #include "hyle/graph/detail/input_source.h"
@@ -1825,7 +1826,7 @@ struct OutputSourceState final : util::RefCounted<OutputSourceState> {
   // One-shot borrowed identity only; never a back-reference owning consumer.
   InvocationState *consumer = nullptr;
   ValueId input{};
-  bool preparing = false, submitted = false;
+  bool preparing = false, submitted = false, capture_consumer = false;
 };
 namespace {
 Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
@@ -1859,7 +1860,7 @@ const InputSourceVTable output_source_table{
         -> Result<InputDependencyRoute> {
       const auto &source = *static_cast<OutputSourceState *>(opaque);
       if (!source.preparing)
-        return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only Commands preparation"));
+        return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only source preparation"));
       if (!queue || !source.queue.same_owner(*queue))
         return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
       return InputDependencyRoute::kDeviceWait;
@@ -1889,20 +1890,33 @@ Result<InputSource> output_input_source(OutputSourceState *state) noexcept {
 }
 Status check_output_consumer(Invocation &invocation, ValueId input,
     OutputSourceState *source, std::span<const QueueBinding> queues,
-    bool require_binding) noexcept {
+    bool require_binding, bool *capture_consumer = nullptr) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (!source || state == source->producer)
     return Status::InvalidArgument("output relay source is empty or refers to its own consumer");
   const auto &plan = *state->plan;
   if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
-      !shared_lane(plan, plan.segments.front().lane) || plan.segments.front().blocks_host)
-    return Status::Unimplemented("output relay consumer requires one nonblocking shared segment");
+      !shared_lane(plan, plan.segments.front().lane))
+    return Status::Unimplemented("output relay consumer requires one original shared segment");
+  bool commands = !plan.segments.front().blocks_host;
   for (const auto &step : plan.steps) {
     const auto runtime = step.runtime_properties();
     if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
         runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
-      return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
+      commands = false;
+  }
+  const bool captured = source->consumer ? source->capture_consumer : !commands;
+  if (captured) {
+    HYLE_ASSIGN_OR_RETURN(const auto reusable,
+        ReplayAccess::can_reuse_capture(invocation, input, source->tensor));
+    if (!reusable)
+      return Status::Unavailable("pending output has no complete existing capture for its physical tuple");
+    const auto lane = plan.segments.front().lane;
+    if (!source->queue.same_owner(state->queues[lane.ordinal()]))
+      return Status::InvalidArgument("pending captured output requires the producer's actual Queue");
+  } else if (!commands) {
+    return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
   }
   if (!queues.empty() && (queues.size() != 1 || !queues.front().queue ||
       queues.front().lane != plan.segments.front().lane ||
@@ -1921,6 +1935,7 @@ Status check_output_consumer(Invocation &invocation, ValueId input,
         binding->permissionless || binding->description != source->tensor.description())
       return Status::FailedPrecondition("output relay lost its original pending read requirement");
   }
+  if (capture_consumer) *capture_consumer = captured;
   return Status::Ok();
 }
 } // namespace
@@ -2045,7 +2060,8 @@ Status OutputSource::detach() noexcept {
   return Status::Ok();
 }
 Status bind_output(Invocation &invocation, ValueId input, const OutputSource &source) noexcept {
-  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, {}, false));
+  bool captured = false;
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, {}, false, &captured));
   if (source.state_->consumer)
     return Status::FailedPrecondition("output source has already bound its one original consumer");
   auto *state = InvocationAccess::state(invocation);
@@ -2064,6 +2080,7 @@ Status bind_output(Invocation &invocation, ValueId input, const OutputSource &so
   binding->exclusive = false; binding->description = source.state_->tensor.description();
   source.state_->consumer = state;
   source.state_->input = input;
+  source.state_->capture_consumer = captured;
   return Status::Ok();
 }
 Status prepare_output(Invocation &invocation, ValueId input, const OutputSource &source,
@@ -2076,14 +2093,17 @@ Status prepare_output(Invocation &invocation, ValueId input, const OutputSource 
     OutputSourceState *source;
     ~EndPreparation() { source->preparing = false; }
   } end{source.state_};
+  if (source.state_->capture_consumer)
+    return ReplayAccess::prepare_reuse(invocation, queues);
   return invocation.prepare_replay(queues,
       {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
 }
 Result<compute::Completion> submit_output(Invocation &invocation, ValueId input,
     const OutputSource &source, std::span<const QueueBinding> queues) noexcept {
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, queues, true));
-  if (queues.size() != 1 || invocation.replay_route() != ReplayRoute::kCommands)
-    return std::unexpected(Status::FailedPrecondition("output relay needs its prepared Commands route"));
+  const auto expected = source.state_->capture_consumer ? ReplayRoute::kCaptured : ReplayRoute::kCommands;
+  if (queues.size() != 1 || invocation.replay_route() != expected)
+    return std::unexpected(Status::FailedPrecondition("output relay lost its selected prepared replay route"));
   if (source.state_->submitted)
     return std::unexpected(Status::FailedPrecondition("output source consumer was already submitted"));
   const OrderedGraphSubmission ordered{

@@ -161,9 +161,14 @@ Region的prepare／seal已统一为metadata、资源、owner及未提交recordin
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。
 ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同步路径，保留managed／host-blocking事实；
 `record_compatible`只表示原encoder可录制，不是普通执行无阻塞的证明。
-下一步应复用Graph原已完成的捕获：核同一实际Queue、物理key及完整覆盖，pending输入只允许复用，
-miss须在begin capture之前拒绝，不新录制、不降回managed Commands。当前`prepare_output`强制Commands，
-尚未实现该reuse-only路径，也不能将外层capture的实际重放资格改写成整个Provider的静态能力。
+Graph已增加窄`detail::ReplayAccess`沿原准备实现复用已完成的捕获：核同一实际Queue、物理key、
+稳定地址／私有参数及完整覆盖，pending输入只允许复用，所有range预检命中后才选择原记录。
+miss在begin capture及variant eviction之前拒绝，不新录制、不降回managed Commands，普通`ReplayOptions`不扩维。
+`prepare_output`固定本consumer选择的Commands或既有capture模式，submit仍核实际完整路由与原有序读权限。
+[有限CUDA检查](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)证明原ggml Gather→Add区域
+在生产者pending时取得0次新录制／1次复用，物理tuple不匹配时拒绝，原块读写权限交接及结果正确。
+仍执行原metadata hook／预算及权限准备，不表示零分配；静态host-blocking生产者及多segment未准入，
+不能将外层capture的实际重放资格改写成整个Provider的静态能力或完整引擎流水结论。
 
 普通多成员请求已先接[CPU整数准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)：
 冷阶段按执行元数据预算预留scratch，GPU执行期间仅填下一步位置与旧页拓扑，不提前取得状态／tail或布局版本。
