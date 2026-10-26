@@ -81,6 +81,33 @@ TEST(PagedArena, PagePrefixExportsOnlyTheImmutableFootprintOfOriginalWholePages)
   EXPECT_FALSE(c::PagedArenaRead{}.page_prefix(0));
   EXPECT_EQ(frame.page_count(),2u);EXPECT_EQ(first(unused),std::byte{17});
 }
+TEST(PagedArena, BulkPagePrefixesKeepEachLogicalRequestTailAndRejectWrongOutputWithoutMutation){
+  auto cap=capacity();cap.max_requests=2;cap.max_query_rows=2;
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto schema=c::BatchSchema::create(cap).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=metadata.ref()}).value();
+  auto other=fill(arena,0,std::byte{7}),shared=fill(arena,1,std::byte{19});
+  const std::array<std::int32_t,3> q{0,1,2},kv{0,1,2};
+  const std::array<std::int32_t,2> ids{1,1},tails{1,2};
+  auto version=schema.version({q,kv,ids,tails}).value();
+  auto frame=arena.read(version,std::array{shared}).value();
+  ASSERT_EQ(frame.page_count(),1u);
+  std::array<c::ReadLease,1> wrong{other};
+  const auto original_generation=wrong[0].generation();const auto original_offset=wrong[0].view()->offset();
+  EXPECT_TRUE(frame.page_prefixes(wrong).IsInvalidArgument());
+  EXPECT_EQ(wrong[0].generation(),original_generation);EXPECT_EQ(wrong[0].view()->offset(),original_offset);
+  EXPECT_EQ(wrong[0].size(),other.size());EXPECT_EQ(first(wrong[0]),std::byte{7});
+  std::array<c::ReadLease,2> output;
+  const auto attempts=metadata.attempts;metadata.fail=attempts;
+  ASSERT_TRUE(frame.page_prefixes(output).ok());
+  EXPECT_EQ(metadata.attempts,attempts); // No new original arena/pool metadata.
+  EXPECT_EQ(output[0].size(),arena.page_bytes()/2);EXPECT_EQ(output[1].size(),arena.page_bytes());
+  EXPECT_EQ(output[0].generation(),shared.generation());EXPECT_EQ(output[1].generation(),shared.generation());
+  EXPECT_EQ(output[0].view()->offset(),output[1].view()->offset());
+  EXPECT_EQ(first(output[0]),std::byte{19});EXPECT_EQ(first(output[1]),std::byte{19});
+  EXPECT_FALSE(output[0].subview(output[0].size(),1));
+}
 TEST(PagedArena, ExportedPagePrefixRemainsAnOriginalCopySourceAfterFramesAndArenaDrop){
   auto schema=c::BatchSchema::create(capacity()).value();
   auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
@@ -422,6 +449,8 @@ TEST(PagedArena, ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances)
   const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
   auto old=arena.read(one,std::array{published.prefix}).value();
   auto exported=old.page_prefix(0).value();EXPECT_EQ(exported.size(),row_bytes);
+  std::array<c::ReadLease,1> original_bulk;
+  ASSERT_TRUE(old.page_prefixes(original_bulk).ok());EXPECT_EQ(original_bulk[0].size(),row_bytes);
   ASSERT_TRUE(published.appender.reserve_rows(1).ok());
   ASSERT_TRUE(published.appender.view()->fill(std::byte{47}).ok());
   auto current=published.appender.publish().value();
@@ -432,10 +461,17 @@ TEST(PagedArena, ReframeKeepsOldAppendablePrefixBoundedAfterTheFrontierAdvances)
   EXPECT_EQ(old.layout(),one);EXPECT_EQ(c::detail::PagedArenaAccess::pages(old)[0].size(),row_bytes);
   EXPECT_EQ(exported.size(),row_bytes);EXPECT_EQ(old.page_prefix(0)->size(),row_bytes);
   EXPECT_FALSE(exported.subview(row_bytes,1));EXPECT_EQ(first(exported),std::byte{31});
+  std::array<c::ReadLease,1> old_bulk_after_append;
+  ASSERT_TRUE(old.page_prefixes(old_bulk_after_append).ok());
+  EXPECT_EQ(old_bulk_after_append[0].size(),row_bytes);EXPECT_EQ(original_bulk[0].size(),row_bytes);
+  EXPECT_EQ(old_bulk_after_append[0].generation(),generation);
+  EXPECT_FALSE(old_bulk_after_append[0].subview(row_bytes,1));
   EXPECT_EQ(first(published.prefix),std::byte{31});
   EXPECT_TRUE(arena.reframe(one,std::array{old}));
   auto longer=arena.read(two,std::array{current}).value();
   EXPECT_EQ(longer.page_prefix(0)->size(),2*row_bytes);
+  std::array<c::ReadLease,1> current_bulk;
+  ASSERT_TRUE(longer.page_prefixes(current_bulk).ok());EXPECT_EQ(current_bulk[0].size(),2*row_bytes);
   auto combined=arena.reframe(two,std::array{longer,old});ASSERT_TRUE(combined);
   EXPECT_EQ(combined->page_count(),1u);EXPECT_EQ(first(current),std::byte{31});
   std::array<std::byte,1> appended{};

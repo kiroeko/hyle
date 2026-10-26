@@ -104,7 +104,7 @@ canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fo
 长度分桶／预热和异长合批仍需分别接入；已有变长页表能力不能自动消除Qwen当前等T密集计算的约束。
 
 会话淘汰后的完整恢复当前仍可重算已消费输入；已有页复制／传输不等于完整会话换出。
-待补的主机状态镜像须涵盖KV、递归／卷积状态、pending、RNG和来源配置，分别计量主机／设备预算，
+主机状态镜像涵盖KV、递归／卷积状态、pending、RNG和来源配置，分别计量主机／设备预算，
 保留共享页、旧版本及真实退休，恢复时不复用失效设备指针。此项属于底层状态能力，HTTP不是前置条件。
 镜像还须分别保存canonical已计算预测与请求自己的历史pending／RNG，保留采样wrapper的语义。
 换出使用原CopyBatch、租约及Completion；完整复制成功并真实退休后才发布镜像、退役原Session。
@@ -115,7 +115,20 @@ canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fo
 `PagedArenaRead`与`PagedRowCacheRead`现提供`page_prefix(physical_page)`，供原CopyBatch读取不可变frame
 实际覆盖的整行前缀。返回原ReadLease的裁剪子权限，保活原backing，不暴露容量尾部，也不会随后续append扩大。
 它是搬运源，不自动成为可重新交给arena.read的整页guard；换入仍经原writer与publish路径取得新权限。
-此查询是冷路径线性扫描，不在每token路径增加页表；完整长上下文镜像接线仍需避免逐页重复扫描形成平方主机开销。
+单页查询是冷路径线性扫描，不在每token路径增加页表。完整镜像用新增`page_prefixes(output)`，
+按不可变layout的逻辑引用顺序导出每个前缀，重复物理页分别受各请求自己的末页长度限制。
+它先检查全部输出再替换句柄，无分配，按原已排序guard二分查找，复杂度O(P log U)，避免逐页扫描的平方成本。
+
+`HostStateStorage`只保原同Context的独立主机资源，CUDA使用pinned host；复用`ResourceBudget`限制
+实际托管backing及原池／搬运已纳入预算的元数据字节，并独立限制镜像数量。逻辑描述等标准容器元数据
+仍由模型上下文和镜像数约束，不冒充完整进程内存上限。镜像只保存逻辑层／页、完整有效字节和弱模型身份，
+不保权重、物理页权限、原VersionRef或执行器。借用payload的搬运必须同时保活完整镜像。
+CUDA pinned host不承诺CPU／GPU并发coherence；原复制成功并退休之后才发布ready，通过资源自己的
+read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当成完成后可读的必要条件。
+`StateTransfer`使用原CopyBatch及Completion接管临时源／目的资源，成功wait后才能取回完整原writer；
+未知退休时不归还容量，不把错误当作退休。模型adapter负责完整清单、新页布局和wrapper恢复。
+共同请求adapter可显式选择主机镜像恢复；未选时仍按原已消费token重建。CPU／CUDA接线的消费者检查
+正在进行；Apple／Vulkan的这一搬运入口明确未实现，不以CPU路径冒充原生支持。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，

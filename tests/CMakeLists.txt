@@ -329,6 +329,26 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
 endif()
 
+if(TARGET hyle_engine AND (TARGET hyle_graph_route_cpu OR TARGET hyle_graph_route_cuda))
+  # The complete-state consumer is available on CPU-only builds as well.
+  add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
+    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+  hyle_configure_engine_target(hyle_qwen_host_image_test)
+  set_target_properties(hyle_qwen_host_image_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_host_image_test)
+  foreach(_host_image_backend IN ITEMS cpu cuda)
+    if(TARGET hyle_graph_route_${_host_image_backend})
+      add_test(NAME hyle_qwen_host_image_${_host_image_backend}_test
+        COMMAND hyle_qwen_host_image_test --${_host_image_backend})
+      set_tests_properties(hyle_qwen_host_image_${_host_image_backend}_test PROPERTIES
+        LABELS "tooling;generation;cache;transfer;${_host_image_backend};local-model"
+        TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+    endif()
+  endforeach()
+  unset(_host_image_backend)
+endif()
+
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   # Actual Model/Session regression, reusing the application's SDK contract.
   # Missing local model input is a skip; an explicitly invalid input is an error.

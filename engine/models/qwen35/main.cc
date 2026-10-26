@@ -34,6 +34,9 @@
 #include "session_schedule.h"
 #include "../../inference/session_cache.h"
 #include "session_state.h"
+#include "host_image.h"
+#include "../../inference/host_state_storage.h"
+#include "../../inference/state_transfer.h"
 #include "prefix_cache.h"
 #include "batch_schedule.h"
 #include "mtp_graph.h"
@@ -3197,6 +3200,14 @@ public:
     session.head.adopt(std::move(replacement));
   }
 
+  // Complete same-model cold parking. No token replay, sampling or native
+  // state publication occurs until the original byte transfer succeeds.
+  cache::HostImageSchema host_image_schema() const;
+  cache::HostImageIdentity host_image_identity(std::size_t sampling_index) const;
+  std::shared_ptr<const cache::HostImage> export_session(Session &session,
+      const std::shared_ptr<inference::HostStateStorage> &storage);
+  std::shared_ptr<Session> restore_session(std::shared_ptr<const cache::HostImage> image);
+
   void copy_selected_hidden_outputs(StepState &step) {
     if (!step.hidden_output) return;
     auto &copy = *step.hidden_output; auto &phase = *step.phase; auto &run = *step.run;
@@ -4540,6 +4551,10 @@ public:
 
 };
 
+} // namespace qwen35
+#include "session_transfer.h"
+namespace qwen35 {
+
 // Entry IO runs synchronously inside Model's original completed-output scope.
 // Neither this view nor its borrowed storage may escape or reenter preparation.
 void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
@@ -4713,6 +4728,7 @@ struct GenerationRequest {
   inference::RequestKey request_key{};
   std::shared_ptr<Session> session;
   cache::TokenPlanRef input;
+  std::shared_ptr<const cache::HostImage> host_image;
   cache::Checkpoint completed_checkpoint;
   std::shared_ptr<cache::ReplayHistory> history;
   std::vector<MtpRoundResult> rounds;
@@ -5694,6 +5710,9 @@ struct GenerationRequestAdapter final {
   bool trace_states;
   std::vector<std::size_t> *evictions;
   ExecuteWave &execute;
+  // Optional explicit policy; the default remains committed-token recovery.
+  // Host storage has independent finite image-count and actual-byte limits.
+  std::shared_ptr<inference::HostStateStorage> host_storage{};
 
   inference::RequestProgress &progress(inference::RequestKey key) const noexcept {
     return requests[key.slot].progress;
@@ -5708,6 +5727,13 @@ struct GenerationRequestAdapter final {
   }
   void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
     auto &request = requests[key.slot];
+    if (!request.session && request.host_image) {
+      if (request.host_image->identity.sampling_index != request.sampling_index)
+        throw std::runtime_error("parked request sampling configuration changed");
+      make_generation_room(model, prefix, nullptr, requests);
+      request.session = model.restore_session(request.host_image);
+      request.host_image.reset(); // Only successful complete import releases it.
+    }
     if (!request.session)
       restore_generation_session(model, request, prefix, trace_states, requests);
     if (request.progress.turn_index && !request.session)
@@ -5728,7 +5754,12 @@ struct GenerationRequestAdapter final {
   }
   inference::RetirementObservation retire(inference::RequestKey key, inference::RequestRetirement reason) const {
     auto &request = requests[key.slot];
-    if (!request.session) return {true, {}};
+    if (!request.session) {
+      if (reason != inference::RequestRetirement::kEvicted) request.host_image.reset();
+      return {true, {}};
+    }
+    if (reason == inference::RequestRetirement::kEvicted && host_storage && !request.host_image)
+      request.host_image = model.export_session(*request.session, host_storage);
     const auto retired = retire_generation_request(request);
     if (retired.retired) {
       request.session.reset();

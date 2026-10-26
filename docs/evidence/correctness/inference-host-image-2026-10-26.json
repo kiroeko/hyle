@@ -1,0 +1,2098 @@
+{
+  "status": "PASS_WITH_DOCUMENTED_PROVIDER_LIMIT_AND_FIXED_FAILURES",
+  "required_CPU_tiny_and_CUDA_original_cases_pass": true,
+  "baseline_commit": "9682a3961",
+  "publication_head": "9682a396133b4aeabd227ef38b9c8fd24022ebb4",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\backend.h",
+      "bytes": 26098,
+      "sha256": "8f4ade971c08a2fc842c13ee12a09b71e72f25be75a9acea131cfadfbec7cf5f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\host_state_storage.h",
+      "bytes": 5577,
+      "sha256": "a7efd1f1e1f1b98b7a5e50b1363602f6984625f4680caf8bd426203e84249a1d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\state_transfer.h",
+      "bytes": 9729,
+      "sha256": "73763a60aeba3f6ace201b6cf194fcad8dd75d4cb0267e2639902d52d73d341f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_image.h",
+      "bytes": 22338,
+      "sha256": "e3e5b986121d1bf2a17f31adc9e61218016d5f6d09c397cf37fd2ae707b1a839"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_transfer.h",
+      "bytes": 15325,
+      "sha256": "43eafe282293f315c6cac1f7196ea4b0d8c74324c8bc17f27cb26dbcc58e87b7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 480099,
+      "sha256": "d7c0d7fa78035bde2ee75180d82a3b5d7392c9fa67e50cd15ccb34d1ed750312"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\paged_arena.h",
+      "bytes": 15882,
+      "sha256": "7bb855e5d19f21444f9e5550cafb854ee0c2e3b836c5930fa8569bf2a1c2cca2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_arena.cc",
+      "bytes": 55319,
+      "sha256": "79b05ed31b19dfad3e71a0e24211e55ccc7d32e294d708d6d124c2c48b45b0d3"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda\\cuda_memory.cc",
+      "bytes": 25947,
+      "sha256": "555f86658d23b10a12f1c2c7ac3bb0a8978e8c0361e5c292904e9101b1bc3712"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+      "bytes": 54689,
+      "sha256": "428be3a5131e258d6e96e78f2bd0fa36dc1bfd7fc65a2b09dee66fdc80db260e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\row_cache_paged_test.cc",
+      "bytes": 19288,
+      "sha256": "259e1463c9481735c3527e60f2f873b2abe90a9ae5667752e2f3aec80b745e79"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_case.h",
+      "bytes": 19439,
+      "sha256": "01c9cbd0a84af9a857fcc2fdca6bc5d0c0d91e7d51c3348a4f151e9b6da2439f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+      "bytes": 21983,
+      "sha256": "8439c7606502da39d6729aff673985cbb420ab45f25a2896596d84455cfe8226"
+    }
+  ],
+  "source_diff": {
+    "bytes": 90116,
+    "sha256": "9f7e0340bcfffe308b98b4f82acd95ea63adda4d0e838805debc2f040d01bb51",
+    "archive_entry": "publication/source.diff",
+    "untracked_source_files_archived": []
+  },
+  "builds": {
+    "compile_attempts": 11,
+    "attempts_by_exit": {
+      "0": 9,
+      "2": 2
+    },
+    "attempts": [
+      {
+        "stage": "arena/implementation",
+        "process": {
+          "exit": 0,
+          "pid": 42160,
+          "seconds": 1.7193107000202872
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\implementation\\command.json",
+          "bytes": 1756,
+          "sha256": "5cdaf4ae9d9162a91cf5fc760a9541d632fa5222541a231789a202a1c0931b87"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\implementation\\stdout.log",
+          "bytes": 16,
+          "sha256": "8ef4c8706ea4d3b7d09904480457bbb8a32b467d50a870b3e12e6dae0f6d98a7"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\implementation\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "arena/paged-test",
+        "process": {
+          "exit": 0,
+          "pid": 19208,
+          "seconds": 2.6705679000006057
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\paged-test\\command.json",
+          "bytes": 1751,
+          "sha256": "dc71da4837fa0263e87aad51ada73efb4781d17d5f33a6d06f8211cd230f51ae"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\paged-test\\stdout.log",
+          "bytes": 21,
+          "sha256": "5be2f9b5fc8fdd68cd08c89de3c1f28e06a99e28b365059f1c4483b0558cad17"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\paged-test\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "arena/row-test",
+        "process": {
+          "exit": 0,
+          "pid": 47308,
+          "seconds": 2.3369936000090092
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\row-test\\command.json",
+          "bytes": 1749,
+          "sha256": "34c15c36259bc0e6b0e4e80dab90a6a535cf5a7eb6a529c0cb3eb39a324df9a1"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\row-test\\stdout.log",
+          "bytes": 25,
+          "sha256": "e516991fc31b8c7be992e644c7e5d537ae8a89029c8e190bbd6f4e0fc3de9694"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\row-test\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "compile",
+        "process": {
+          "exit": 0,
+          "pid": 57196,
+          "seconds": 19.796775900002103
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\compile\\command.json",
+          "bytes": 2682,
+          "sha256": "31f90ef138539aed5859d055075a184c4e86420f0b0eadee207bef1b1d7d87d7"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\compile\\stdout.log",
+          "bytes": 9,
+          "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cpu/compile",
+        "process": {
+          "exit": 2,
+          "pid": 23036,
+          "seconds": 5.171384500048589
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu\\compile\\command.json",
+          "bytes": 2977,
+          "sha256": "fb99b6c864ac534cd562bc7dda80c12fed23dc6a1e4ec3a379a5f33a1e54fa9c"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu\\compile\\stdout.log",
+          "bytes": 381,
+          "sha256": "56c033cef942d846cfe128fcea8a035e818a902136482556d3ad07a44bff0ed7"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cuda/compile",
+        "process": {
+          "exit": 2,
+          "pid": 57720,
+          "seconds": 5.130014199996367
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda\\compile\\command.json",
+          "bytes": 2726,
+          "sha256": "571d1e809f76a297f15bbe59f1af3cc79258d803a79ae6ece5e17234f8d681c3"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda\\compile\\stdout.log",
+          "bytes": 382,
+          "sha256": "126fa0f43f028d45f9b7db0e457cd4eed2668c94252d9ec248d181f1d4dad9bd"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cpu2/compile",
+        "process": {
+          "exit": 0,
+          "pid": 60384,
+          "seconds": 19.580146199965384
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\compile\\command.json",
+          "bytes": 2980,
+          "sha256": "ae571a5ec59a066b5ca719a53643cd9bb734e014ab4d769630c53badfefa5cc2"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\compile\\stdout.log",
+          "bytes": 17,
+          "sha256": "adfc7ae813d1612f7a0fd27d0a080789a7b578521b74079595cfc571fc8bff96"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cuda2/compile",
+        "process": {
+          "exit": 0,
+          "pid": 3504,
+          "seconds": 19.590077799977735
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\compile\\command.json",
+          "bytes": 2729,
+          "sha256": "9bd26ddb25321eda0d360939aa6373cb7c55879038c452428b0e968503c2327a"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\compile\\stdout.log",
+          "bytes": 18,
+          "sha256": "d674d2a3b981ba557e751e18d7e9157e48a8f54fd40fd5e7fc66ed8ddf0e3e57"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "product2/compile",
+        "process": {
+          "exit": 0,
+          "pid": 44532,
+          "seconds": 22.277264099975582
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\compile\\command.json",
+          "bytes": 2712,
+          "sha256": "74ca0ca69540f92b10bd57d554d50e10e786c244cddb444ea7405d6e0c942915"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\compile\\stdout.log",
+          "bytes": 9,
+          "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cpu3/compile",
+        "process": {
+          "exit": 0,
+          "pid": 43868,
+          "seconds": 22.416659599984996
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\compile\\command.json",
+          "bytes": 2980,
+          "sha256": "c424862a5c6382cd9d60d248775ede4a6a7b1d9cf7c36cb4405e1e0dba5997f2"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\compile\\stdout.log",
+          "bytes": 17,
+          "sha256": "adfc7ae813d1612f7a0fd27d0a080789a7b578521b74079595cfc571fc8bff96"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "stage": "cuda4/compile",
+        "process": {
+          "exit": 0,
+          "pid": 56444,
+          "seconds": 22.471101099974476
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\compile\\command.json",
+          "bytes": 2729,
+          "sha256": "5acbf9cd440216785c186f43913afb858c308c159556c4ef2db7052d44804b5c"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\compile\\stdout.log",
+          "bytes": 18,
+          "sha256": "d674d2a3b981ba557e751e18d7e9157e48a8f54fd40fd5e7fc66ed8ddf0e3e57"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\compile\\stderr.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "link_attempts": [
+      {
+        "stage": "link",
+        "process": {
+          "exit": 0,
+          "pid": 13256,
+          "seconds": 1.739056000020355
+        }
+      },
+      {
+        "stage": "arena/link",
+        "process": {
+          "exit": 0,
+          "pid": 61704,
+          "seconds": 1.719764599984046
+        }
+      },
+      {
+        "stage": "cpu2/link",
+        "process": {
+          "exit": 0,
+          "pid": 20452,
+          "seconds": 1.719975300016813
+        }
+      },
+      {
+        "stage": "cuda2/link",
+        "process": {
+          "exit": 0,
+          "pid": 11936,
+          "seconds": 1.739240599970799
+        }
+      },
+      {
+        "stage": "cuda3/link",
+        "process": {
+          "exit": 0,
+          "pid": 19884,
+          "seconds": 1.725450300029479
+        }
+      },
+      {
+        "stage": "product2/link",
+        "process": {
+          "exit": 0,
+          "pid": 60728,
+          "seconds": 1.7527408999740146
+        }
+      },
+      {
+        "stage": "cpu3/link",
+        "process": {
+          "exit": 0,
+          "pid": 62312,
+          "seconds": 1.7691525999689475
+        }
+      },
+      {
+        "stage": "cuda4/link",
+        "process": {
+          "exit": 0,
+          "pid": 11692,
+          "seconds": 1.795298199984245
+        }
+      }
+    ],
+    "scope": "Actual compiler process receipts: arena implementation + two existing page tests + original CLI Model + initial CPU/CUDA case failures + CTAD-corrected CPU2/CUDA2 case TUs (eight attempts), then coherence-corrected product2 CLI, CPU3 case and CUDA4 case (three more attempts). CUDA3 was link-only. No SDK/provider/native/report/weight rebuild.",
+    "correction": {
+      "status": "TEST_CTAD_DECLARATION_ONLY_FIX",
+      "first_attempts": [
+        "cpu",
+        "cuda"
+      ],
+      "new_attempts": [
+        "cpu2",
+        "cuda2"
+      ],
+      "reason": "Split one const std::array declaration into three declarations because CTAD gives array<size_t,1> versus array<size_t,2>.",
+      "changed_recorded_project_dependencies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_case.h",
+          "before": "96faed845cf1f2b1ba6abc46b087760a199710e1b387ab66a7d7fb36a37a4e83",
+          "after": "01c9cbd0a84af9a857fcc2fdca6bc5d0c0d91e7d51c3348a4f151e9b6da2439f"
+        }
+      ],
+      "unchanged": "Model/common/SDK/report/native and wrappers; no warnings changed",
+      "retry_order": "CPU2 compile/link then GA run; only after PASS build/run CUDA2 GA; only after both PASS run same CUDA2 executable once with original335 V2"
+    },
+    "preserved_private_link_failure": {
+      "process": {
+        "pid": 38528,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 0.9436182000208646,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\link\\host-image-consumer.exe",
+          "bytes": 141169664,
+          "sha256": "0a704bf1597d29e0d055f6468d375b0fc56e8cabda34fa8afe983f663d23faf6"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\runtime.json",
+          "bytes": 8222,
+          "sha256": "73ee5500cbc6f6dc554a2c977dd4da940d1f266035966563a3137581f91b49a5"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\ready.json",
+          "bytes": 3432,
+          "sha256": "27d7c0f36c9729d67bcae183475c8d7707c56a3ba5e62e6f8459dd18810ae84b"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+          "bytes": 7861,
+          "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda-consumer.cc",
+          "bytes": 372,
+          "sha256": "25a97c5c19bddf77be5ed5b12eab3eb3fc35301ec552711e211bb78645cd2ef4"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "dd2fdc7f004d3af20d7d16f4da0d23e3c95f0f3c93a3b264e83c7fb3733c8dad"
+        }
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\run1\\stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\run1\\stderr.log",
+        "bytes": 219,
+        "sha256": "de281e219d68c30a42888b2db19e9a763c74d1a1450674a138a379786f68ea59"
+      },
+      "classification": "PRIVATE_CONSUMER_CROSS_FEATURE_ODR_LINK_CLOSURE_MISMATCH",
+      "diagnosis": "CUDA consumer TU used a CPU-representative engine link closure with additional HYLE_CPU/GGML_CPU/ONEDNN/GRAPH_ONEDNN feature macros. Both representative weights recipes included CUDA and used the same old backend.h SHA7fa40bcd91706096187d7c52387d29c97a79434a31083642cb58ff6374b9e8e2. The mismatch is across feature-dependent Backend inline/variant ODR closure; the earlier claim that the weights object lacked the CUDA branch is not supported.",
+      "correction": "CUDA3 only relinks the identical CUDA2 Model object against the retained passing CUDA CLI closure, removing its original entry and Model object. No product/wrapper source or CUDA2 compile object changed for that correction; its compile-attempt subtotal remained eight. The recorded same-TU relink/run outcome is the bounded correction check, without an additional causal experiment. The later separate product coherence fix adds three Model TUs.",
+      "link_facts": {
+        "status": "VALIDATION_SCRIPT_CUDA_CLOSURE_CORRECTION_NOT_PRODUCT_FIX",
+        "previous_failure": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\run1\\process.json",
+          "bytes": 1787,
+          "sha256": "14f5b7b43dd9e3aca547dfdda32fdfa2333e87c19b8a15306a1813b8c45a0524"
+        },
+        "previous_stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\run1\\stderr.log",
+          "bytes": 219,
+          "sha256": "de281e219d68c30a42888b2db19e9a763c74d1a1450674a138a379786f68ea59"
+        },
+        "reason": "consumer.py incorrectly selected the CPU-representative link closure for a CUDA-only-feature case TU. Backend inline/type definitions have different feature sets; use the exact successful CUDA CLI closure.",
+        "evidence": {
+          "mixed_CPU_feature_weights": {
+            "recipe": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\weights\\command.json",
+              "bytes": 2983,
+              "sha256": "e4381eb3cfa75b0ea702d1d5d627e3b323fb9916edba321c5ee46a1c020e8ec5"
+            },
+            "definitions": [
+              "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+              "/DNDEBUG",
+              "/DHYLE_STATIC",
+              "/DNOMINMAX",
+              "/DGGML_USE_CUDA",
+              "/DHYLE_COMPUTE_CUDA=1",
+              "/DHYLE_COMPUTE_GGML_CUDA=1",
+              "/DHYLE_COMPUTE_CPU=1",
+              "/DHYLE_COMPUTE_GGML_CPU=1",
+              "/DHYLE_COMPUTE_ONEDNN=1",
+              "/DHYLE_GRAPH_ONEDNN=1"
+            ]
+          },
+          "CUDA_CLI_weights": {
+            "recipe": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\command.json",
+              "bytes": 2724,
+              "sha256": "11a555d4e40a8a94f547d093eb7831451c028b894e8ae22037b11398a550c082"
+            },
+            "definitions": [
+              "/DHYLE_IO_HAS_COROUTINE_TRANSPORT=1",
+              "/DNDEBUG",
+              "/DHYLE_STATIC",
+              "/DNOMINMAX",
+              "/DGGML_USE_CUDA",
+              "/DHYLE_COMPUTE_CUDA=1",
+              "/DHYLE_COMPUTE_GGML_CUDA=1"
+            ]
+          }
+        },
+        "wrong_weights": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-representative-20261026\\compile\\weights\\unit.obj",
+          "bytes": 3499284,
+          "sha256": "4d8c85d7c12db20d8d0c3a612a86ba36e80df71d9a82eda5666970f50e018d3c"
+        },
+        "retained_CUDA_weights": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\weights\\unit.obj",
+          "bytes": 3493919,
+          "sha256": "edff2e8c11cc895473f6f52aabb1fa9f450f0608617f7bce098a3adad98a4e12"
+        },
+        "removed_CLI_entry": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\engine\\entry\\unit.obj",
+          "bytes": 777,
+          "sha256": "c44d44f90c729b329aeac89e3384e4ce6b1bde5bd4f6c2acb7e59f0c17cc052f"
+        },
+        "removed_CLI_Model": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\compile\\unit.obj",
+          "bytes": 14650621,
+          "sha256": "630d0f91beaa8c3be7616e6341d5e590c5a2cba0624db5d612b8838c1199cc49"
+        },
+        "reused_case_object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\compile\\unit.obj",
+          "bytes": 15007156,
+          "sha256": "4d2b182cd014c234d4050e8e534e9b5e18cd099b2b0317cac429805d75f22346"
+        },
+        "before_inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\link-inputs-before.json",
+          "bytes": 58077,
+          "sha256": "ab7e0271e4217d0ed5ed1c321ab771ad05c1c6d3cbf299f32a95a2893095a4bc"
+        },
+        "unchanged_inputs": 220,
+        "notes": [
+          "Both weights recipes list CUDA definitions. The CPU-representative recipe additionally defines CPU/GGML_CPU/ONEDNN/GRAPH_ONEDNN, so this is a cross-feature inline/ODR mismatch, not an absence of every CUDA macro.",
+          "This relink does not change product source, case input, seed, existing case object, native/provider/report or new arena object. No TU or archive rebuild."
+        ]
+      }
+    }
+  },
+  "page_exports": {
+    "reused_37_test_result": {
+      "process": {
+        "pid": 25184,
+        "exit": 0,
+        "timeout": false,
+        "seconds": 0.4308403000468388,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\arena\\link\\page-export-test.exe",
+          "--gtest_filter=PagedArena.*:RowCachePaged.*"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\arena\\link\\page-export-test.exe",
+          "bytes": 139852800,
+          "sha256": "2478983e6263511ffd3c7db593cf3b79aa8ccd568e372cdc0aec1276590b72b2"
+        }
+      },
+      "passed_tests": 37,
+      "scope": "Existing PagedArena and RowCachePaged GTests; cold linear export of selected initialized page prefixes. A cropped original sublease is a copy source, not automatic compatibility with arena.read.",
+      "limits": "Host tests establish typed page/lease contracts; no GPU physical pending-copy execution or complete host-image swap is established."
+    },
+    "reused_publication": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-controls-2026-10-26.json",
+      "bytes": 50755,
+      "sha256": "6c65c21deb7eaaf8796bbbedc07fb626b221875aae1d67980ea1049f185b4fb3"
+    },
+    "new_bulk_suite": {
+      "status": "PASS",
+      "process": {
+        "exit": 0,
+        "pid": 47688,
+        "seconds": 0.4415246000280604
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\link\\page-export-test.exe",
+        "bytes": 139869184,
+        "sha256": "4f5c409b9c028a1f1443f53ff9d563cdefc02a70369eb922ae1b8d5ec6e69610"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\ready.json",
+        "bytes": 5156,
+        "sha256": "89632c5f873eb08771eea9569a2b84202142962231e45d1c1e538c88b466ee2b"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\runtime.json",
+        "bytes": 8222,
+        "sha256": "76a20fe2d43d7ed99334c5a3d5ecf7fe9645fcb8896815c280812d130ed59cf1"
+      },
+      "result_xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\test-result.xml",
+        "bytes": 10935,
+        "sha256": "6a6f5e30dab9d752cd8c8d3a1e4ec541891035475781f61a75c5e8f680353b0b"
+      },
+      "observed_counts": {
+        "tests": 38,
+        "failures": 0,
+        "disabled": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\arena\\source-freeze.json",
+        "bytes": 11265,
+        "sha256": "caed671ae67bca115885a2df2ed7c80dbeeec5e22382c285686393118c84c22e"
+      },
+      "process_count": 1,
+      "model_runs": 0,
+      "scope": "Existing PagedArena and RowCachePaged suites plus frozen bulk-export coverage; no Model/HostImage quality or GPU physical-pending claim."
+    },
+    "scope": "Original37 PagedArena/RowCache tests were already observed PASS; the new38-test suite adds bounded bulk initialized-prefix export. Host tests are not GPU pending-copy proof."
+  },
+  "ordinary_K1_CLI": {
+    "comparisons": {
+      "status": "PASS",
+      "method": "Exact complete recursive JSON type/value/presence excluding only enumerated clocks/rates; no resource/path exclusions. Independently hash every trace file in both arms.",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\manifest.json",
+        "bytes": 35638,
+        "sha256": "26036fadc6f794327d8774f54a54f398770ea61c39c3d5d258f092610b89c307"
+      },
+      "analyzer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\compare.py",
+        "bytes": 11197,
+        "sha256": "99edcfe53406984bd2baf65e08a3095d84b32361cceb717da66de900976416bd"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\ready.json",
+        "bytes": 3673,
+        "sha256": "74540e2d0a780a84276998d0def14e2ea1a2373ebfd40436049e9c39fa5644cd"
+      },
+      "pairs": [
+        {
+          "mode": "ordinary",
+          "status": "PASS",
+          "all_non_time_JSON_equal": true,
+          "normalized_baseline_report_sha256": "1bc6638e1366789bf823330f343efcc05f549f520304f05d6b9906194892e7d8",
+          "ignored_time_rate_paths": [
+            "$.restore_step_seconds",
+            "$.restore_seconds",
+            "$.prefill_seconds",
+            "$.decode_seconds",
+            "$.session_seconds",
+            "$.step_sum_seconds",
+            "$.participation_step_sum_seconds",
+            "$.post_endpoint_seconds",
+            "$.startup_total_seconds",
+            "$.startup_to_endpoint_seconds",
+            "$.startup_to_ready_seconds",
+            "$.first_token_elapsed_seconds",
+            "$.prefill_tokens_per_second",
+            "$.decode_output_tokens_per_second",
+            "$.output_tokens_per_second",
+            "$.sessions[0].result.prefill_seconds",
+            "$.sessions[0].result.decode_seconds",
+            "$.sessions[0].result.session_seconds",
+            "$.sessions[0].result.startup_total_seconds",
+            "$.sessions[0].result.startup_to_endpoint_seconds",
+            "$.sessions[0].result.startup_to_ready_seconds",
+            "$.sessions[0].result.first_token_elapsed_seconds",
+            "$.sessions[0].result.prefill_step_seconds",
+            "$.sessions[0].result.decode_step_sum_seconds",
+            "$.sessions[0].result.step_sum_seconds",
+            "$.sessions[0].result.prefill_tokens_per_second",
+            "$.sessions[0].result.decode_output_tokens_per_second",
+            "$.sessions[0].result.output_tokens_per_second",
+            "$.sessions[0].result.between_turn_seconds",
+            "$.sessions[0].result.turns[0].prefill_seconds",
+            "$.sessions[0].result.turns[0].decode_seconds",
+            "$.sessions[0].result.turns[1].prefill_seconds",
+            "$.sessions[0].result.turns[1].decode_seconds",
+            "$.sessions[0].result.turns[2].prefill_seconds",
+            "$.sessions[0].result.turns[2].decode_seconds",
+            "$.sessions[1].result.prefill_seconds",
+            "$.sessions[1].result.decode_seconds",
+            "$.sessions[1].result.session_seconds",
+            "$.sessions[1].result.startup_total_seconds",
+            "$.sessions[1].result.startup_to_endpoint_seconds",
+            "$.sessions[1].result.startup_to_ready_seconds",
+            "$.sessions[1].result.first_token_elapsed_seconds",
+            "$.sessions[1].result.prefill_step_seconds",
+            "$.sessions[1].result.decode_step_sum_seconds",
+            "$.sessions[1].result.step_sum_seconds",
+            "$.sessions[1].result.prefill_tokens_per_second",
+            "$.sessions[1].result.decode_output_tokens_per_second",
+            "$.sessions[1].result.output_tokens_per_second",
+            "$.sessions[1].result.between_turn_seconds",
+            "$.sessions[1].result.turns[0].prefill_seconds",
+            "$.sessions[1].result.turns[0].decode_seconds",
+            "$.sessions[1].result.turns[1].prefill_seconds",
+            "$.sessions[1].result.turns[1].decode_seconds",
+            "$.sessions[1].result.turns[2].prefill_seconds",
+            "$.sessions[1].result.turns[2].decode_seconds"
+          ],
+          "ignored_resource_or_path_fields": [],
+          "non_time_differences": [],
+          "trace_file_count": 78,
+          "trace_bytes_per_arm": 36019875,
+          "trace_differences": [],
+          "coverage_equal": true,
+          "baseline_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  2997,
+                  5675,
+                  11,
+                  9637,
+                  5433,
+                  14733,
+                  3497,
+                  11
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  37435,
+                  198,
+                  50346
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 12,
+            "double_token_verifications": 0,
+            "selected_prefix_rows": {},
+            "accepted_proposal_rounds": 0,
+            "rejected_proposal_rounds": 0,
+            "draft_rounds": 0,
+            "consumed_drafts": 0,
+            "normalized_lag_rows": 0,
+            "recomputed_decision_changes": 0
+          },
+          "candidate_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  2997,
+                  5675,
+                  11,
+                  9637,
+                  5433,
+                  14733,
+                  3497,
+                  11
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  37435,
+                  198,
+                  50346
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 12,
+            "double_token_verifications": 0,
+            "selected_prefix_rows": {},
+            "accepted_proposal_rounds": 0,
+            "rejected_proposal_rounds": 0,
+            "draft_rounds": 0,
+            "consumed_drafts": 0,
+            "normalized_lag_rows": 0,
+            "recomputed_decision_changes": 0
+          }
+        },
+        {
+          "mode": "mtp-k1",
+          "status": "PASS",
+          "all_non_time_JSON_equal": true,
+          "normalized_baseline_report_sha256": "b73b5c99463a690ecd54d161faea2e6816ca31240b1147aeefda39cead46b158",
+          "ignored_time_rate_paths": [
+            "$.restore_step_seconds",
+            "$.restore_seconds",
+            "$.prefill_seconds",
+            "$.decode_seconds",
+            "$.session_seconds",
+            "$.step_sum_seconds",
+            "$.participation_step_sum_seconds",
+            "$.post_endpoint_seconds",
+            "$.startup_total_seconds",
+            "$.startup_to_endpoint_seconds",
+            "$.startup_to_ready_seconds",
+            "$.first_token_elapsed_seconds",
+            "$.prefill_tokens_per_second",
+            "$.decode_output_tokens_per_second",
+            "$.output_tokens_per_second",
+            "$.sessions[0].result.prefill_seconds",
+            "$.sessions[0].result.decode_seconds",
+            "$.sessions[0].result.session_seconds",
+            "$.sessions[0].result.startup_total_seconds",
+            "$.sessions[0].result.startup_to_endpoint_seconds",
+            "$.sessions[0].result.startup_to_ready_seconds",
+            "$.sessions[0].result.first_token_elapsed_seconds",
+            "$.sessions[0].result.prefill_step_seconds",
+            "$.sessions[0].result.decode_step_sum_seconds",
+            "$.sessions[0].result.step_sum_seconds",
+            "$.sessions[0].result.prefill_tokens_per_second",
+            "$.sessions[0].result.decode_output_tokens_per_second",
+            "$.sessions[0].result.output_tokens_per_second",
+            "$.sessions[0].result.between_turn_seconds",
+            "$.sessions[0].result.turns[0].prefill_seconds",
+            "$.sessions[0].result.turns[0].decode_seconds",
+            "$.sessions[0].result.turns[1].prefill_seconds",
+            "$.sessions[0].result.turns[1].decode_seconds",
+            "$.sessions[0].result.turns[2].prefill_seconds",
+            "$.sessions[0].result.turns[2].decode_seconds",
+            "$.sessions[1].result.prefill_seconds",
+            "$.sessions[1].result.decode_seconds",
+            "$.sessions[1].result.session_seconds",
+            "$.sessions[1].result.startup_total_seconds",
+            "$.sessions[1].result.startup_to_endpoint_seconds",
+            "$.sessions[1].result.startup_to_ready_seconds",
+            "$.sessions[1].result.first_token_elapsed_seconds",
+            "$.sessions[1].result.prefill_step_seconds",
+            "$.sessions[1].result.decode_step_sum_seconds",
+            "$.sessions[1].result.step_sum_seconds",
+            "$.sessions[1].result.prefill_tokens_per_second",
+            "$.sessions[1].result.decode_output_tokens_per_second",
+            "$.sessions[1].result.output_tokens_per_second",
+            "$.sessions[1].result.between_turn_seconds",
+            "$.sessions[1].result.turns[0].prefill_seconds",
+            "$.sessions[1].result.turns[0].decode_seconds",
+            "$.sessions[1].result.turns[1].prefill_seconds",
+            "$.sessions[1].result.turns[1].decode_seconds",
+            "$.sessions[1].result.turns[2].prefill_seconds",
+            "$.sessions[1].result.turns[2].decode_seconds"
+          ],
+          "ignored_resource_or_path_fields": [],
+          "non_time_differences": [],
+          "trace_file_count": 68,
+          "trace_bytes_per_arm": 34167094,
+          "trace_differences": [],
+          "coverage_equal": true,
+          "baseline_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  3584,
+                  28,
+                  15,
+                  11,
+                  3269,
+                  539,
+                  28,
+                  15
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 24,
+                "draft_lag": 1,
+                "ledger_records": 7,
+                "decision_changes": [
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 4,
+                    "historical_next": 3269,
+                    "fresh_next": 9637
+                  }
+                ]
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  1879,
+                  10206,
+                  248046
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 25,
+                "draft_lag": 0,
+                "ledger_records": 7,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 8,
+            "double_token_verifications": 6,
+            "selected_prefix_rows": {
+              "1": 2,
+              "2": 4
+            },
+            "accepted_proposal_rounds": 4,
+            "rejected_proposal_rounds": 2,
+            "draft_rounds": 6,
+            "consumed_drafts": 4,
+            "normalized_lag_rows": 3,
+            "recomputed_decision_changes": 3
+          },
+          "candidate_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  3584,
+                  28,
+                  15,
+                  11,
+                  3269,
+                  539,
+                  28,
+                  15
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 24,
+                "draft_lag": 1,
+                "ledger_records": 7,
+                "decision_changes": [
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 4,
+                    "historical_next": 3269,
+                    "fresh_next": 9637
+                  }
+                ]
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  1879,
+                  10206,
+                  248046
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 25,
+                "draft_lag": 0,
+                "ledger_records": 7,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 8,
+            "double_token_verifications": 6,
+            "selected_prefix_rows": {
+              "1": 2,
+              "2": 4
+            },
+            "accepted_proposal_rounds": 4,
+            "rejected_proposal_rounds": 2,
+            "draft_rounds": 6,
+            "consumed_drafts": 4,
+            "normalized_lag_rows": 3,
+            "recomputed_decision_changes": 3
+          }
+        }
+      ],
+      "important_existing_fact": "Retain the three alice replay historical-vs-fresh changes exactly: episode1 3584->2997 twice; episode4 3269->9637 once. They are not hidden/excluded or required to become zero.",
+      "limits": [
+        "No performance ranking or ordinary-to-MTP equality.",
+        "Decision-level traces do not prove complete target/draft KV, GDN/conv, carry/prior bytes or old-checkpoint alias immutability.",
+        "Same 2 sessions x3 turns,4 restores/evictions/pending flushes,18 outputs. K1 control covers6 double verifications with4 accepted drafts and2 rejected proposals; report any candidate mismatch without adding runs."
+      ]
+    },
+    "processes": {
+      "status": "TWO_REUSED_CONTROLS_PLUS_TWO_CANDIDATES_OBSERVED_EXIT0",
+      "processes": [
+        {
+          "id": "ordinary-baseline",
+          "reused_observed_control": true,
+          "pid": 62132,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 2.7076044999994338,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\ordinary-candidate\\process.json",
+            "bytes": 1917,
+            "sha256": "3fddc9ffdfb7174355f50aebbec8fbb905ce1fc6df45e61006b54ddd3e6ee2d6"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\ordinary-candidate\\stdout.json",
+            "bytes": 24682,
+            "sha256": "acc20353b32f61a36fd4cd14f046839e2d806a44fa66e3cb500c55cd0740feca"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\ordinary-candidate\\stderr.log",
+            "bytes": 103113,
+            "sha256": "ef30cc777db345aa85043c3ab8cb36c89174cee2bcd90820af200de95c831add"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\link\\hyle.exe",
+            "bytes": 141489152,
+            "sha256": "c31a44697ecd106b3dbd77db006e9cc3ad3e01a50c61c7104c536567f7e62401"
+          }
+        },
+        {
+          "id": "ordinary-candidate",
+          "reused_observed_control": false,
+          "pid": 62196,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 3.468956899945624,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\ordinary-candidate\\process.json",
+            "bytes": 2340,
+            "sha256": "09d635e0cbdfc3ebedc6270a972b468aadced473796e3e47a5eae17ef38a59cb"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\ordinary-candidate\\stdout.json",
+            "bytes": 24655,
+            "sha256": "f3f1c50211a80193d9d901cd587ba924418f133375c7c38f4a7a3ef259083c69"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\ordinary-candidate\\stderr.log",
+            "bytes": 103110,
+            "sha256": "f8cf675d8a328a3c3a752d51f6d4c1053a00bc2a961ccc1b4c6ce4ef2bdc8bdd"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\link\\hyle.exe",
+            "bytes": 141548544,
+            "sha256": "10cdd7773aa8deeb5fd4cd5b5ce4e4ce2e82653086792f6a9b8a9be7eecf83b1"
+          }
+        },
+        {
+          "id": "mtp-k1-baseline",
+          "reused_observed_control": true,
+          "pid": 28616,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 3.1039756999816746,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\process.json",
+            "bytes": 1985,
+            "sha256": "248f62b4f11b184bafadf54d055bf08972b613aefc3baf4ef4201e141b1fbc54"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stdout.json",
+            "bytes": 23221,
+            "sha256": "c230fe34a5ac514b91d69ec5caa621849d2bf4e5ec07a30bb080ef280ad07ece"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stderr.log",
+            "bytes": 134462,
+            "sha256": "5cf871be98ca2e0d09c98bd10f83f01149b63378b60a141c54713a7a9d9b6f53"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-control-20261026\\link\\hyle.exe",
+            "bytes": 141489152,
+            "sha256": "c31a44697ecd106b3dbd77db006e9cc3ad3e01a50c61c7104c536567f7e62401"
+          }
+        },
+        {
+          "id": "mtp-k1-candidate",
+          "reused_observed_control": false,
+          "pid": 45464,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 3.0973662000033073,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\process.json",
+            "bytes": 2409,
+            "sha256": "b119009c6bda457f0a163fd3e44146110d8cf8efffd05b22d2bf5e7b2ce689ce"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stdout.json",
+            "bytes": 23266,
+            "sha256": "482f286260ef3e73e3120aaa4723471e89711b51424e985edb063aaaf7d26abf"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stderr.log",
+            "bytes": 134459,
+            "sha256": "ef1837936680aa3f18b33d87c389997838b6904de477e091a266f423a92ecdb8"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\link\\hyle.exe",
+            "bytes": 141548544,
+            "sha256": "10cdd7773aa8deeb5fd4cd5b5ce4e4ce2e82653086792f6a9b8a9be7eecf83b1"
+          }
+        }
+      ],
+      "new_model_processes": 2,
+      "reused_observed_model_processes": 2,
+      "additional_analyzer_model_runs": 0,
+      "original_V1_rejection": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\input-v2-correction.json",
+        "bytes": 1533,
+        "sha256": "35f75c61a4a973e99784c0c055a7853b0a0b2251f37cc2c75c9f6fc7dead5fcc"
+      }
+    },
+    "trace_inventory": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\consumer-cases\\tracehashes.json",
+      "bytes": 18817,
+      "sha256": "c93c50647f85f43ea89c01b19488d280a899ec577cc2d7229737902353c181a8"
+    },
+    "scope": "Two observed cached335-role BF16 CUDA CLI candidates from the original W/link/hyle.exe versus reused controls. Per-mode exactly55 clock/rate exclusions; every other JSON field is exact, including resources/paths/ledgers. 78+68 trace files independently hashed; no raw trace packaged. These runs precede the two-header coherence correction. The later product2 CLI is build-only; this comparison is not attributed to its new image.",
+    "existing_MTP_recompute_fact": "Retain the three alice replay historical-vs-fresh changes exactly: episode1 3584->2997 twice; episode4 3269->9637 once. They are not hidden/excluded or required to become zero."
+  },
+  "complete_host_image_cases": [
+    {
+      "id": "cpu-tiny",
+      "final": true,
+      "passed": true,
+      "outcome": "PASS",
+      "process": {
+        "pid": 45920,
+        "exit": 0,
+        "timeout": false,
+        "seconds": 0.8599757000338286,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\link\\host-image-consumer.exe",
+          "bytes": 141188608,
+          "sha256": "c6f67692e4c4ade0c91bc68b51a937afcb6106552a0ab7dce199810300986617"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\runtime.json",
+          "bytes": 8221,
+          "sha256": "18132ba7e6fcd975a4b44595bc6e14fa6dcc1c23b3c98506df8901aeb95bf725"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\ready.json",
+          "bytes": 3544,
+          "sha256": "5926c1e90bed1878eb4185542bb0a4f31662ffbb4a451b21836acc5b92e2280a"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+          "bytes": 7861,
+          "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu-consumer.cc",
+          "bytes": 371,
+          "sha256": "140ee3ff5c7e5c4dc6285e41f673d604589ab6cc0593c6ec282cab54abc46265"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "f7c13d4d42818867471bc24bbcf160e84cbe2408e8311816f05aec2360889a8d"
+        }
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 5,
+          "bytes": 18432,
+          "byte_limit_at_factory": true,
+          "adapter_parking": true,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_value": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            }
+          }
+        },
+        "mtp": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 7,
+          "bytes": 19200,
+          "byte_limit_at_factory": true,
+          "adapter_parking": false,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "draft_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            }
+          }
+        },
+        "all_initialized_bytes_equal": true,
+        "historical_wrapper_preserved": true,
+        "same_shape_continuation_equal": true,
+        "old_alias_unchanged": true,
+        "cold_resources_expired": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\run1\\process.json",
+        "bytes": 1781,
+        "sha256": "8c34deb1a11b411475d9451397ba75cdb5a90230c53045efa001cc6039a85814"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\run1\\stdout.log",
+        "bytes": 1646,
+        "sha256": "ebe5754ee8819ba36787608da5532b9e54cfad117f769c21f596e144d0b06788"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu3\\run1\\stderr.log",
+        "bytes": 5827,
+        "sha256": "7b4e1e36542bd948fd0e2ca92d48e94330ef0256641de4ed1e8985fa15007728"
+      }
+    },
+    {
+      "id": "cuda-original-335",
+      "final": true,
+      "passed": true,
+      "outcome": "PASS",
+      "process": {
+        "pid": 41720,
+        "exit": 0,
+        "timeout": false,
+        "seconds": 3.7433257999946363,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\link\\host-image-consumer.exe",
+          "bytes": 141160448,
+          "sha256": "97ff77aae6eb04f31ffee148f3a2b0843ec62c3a52bc36f23037d3d47b941451"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\runtime.json",
+          "bytes": 8222,
+          "sha256": "67df9954696cccf50049d4f1b0d6ff2b44e44de4b9cff639ed75f86530a412d5"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\ready.json",
+          "bytes": 3549,
+          "sha256": "175017e5e74ccf04002f93c3abf063865520168f9e73b2881f321c90a0ac6e9e"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+          "bytes": 56735,
+          "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda-consumer.cc",
+          "bytes": 372,
+          "sha256": "25a97c5c19bddf77be5ed5b12eab3eb3fc35301ec552711e211bb78645cd2ef4"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "f7c13d4d42818867471bc24bbcf160e84cbe2408e8311816f05aec2360889a8d"
+        }
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cuda",
+        "ordinary": {
+          "hidden": 2048,
+          "target_layers": 24,
+          "payloads": 49,
+          "bytes": 19578880,
+          "byte_limit_at_factory": true,
+          "adapter_parking": true,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18383
+            },
+            "target_value": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18394
+            },
+            "conv": {
+              "payloads": 18,
+              "bytes": 663552,
+              "nonzero_bytes": 662092
+            },
+            "gdn": {
+              "payloads": 18,
+              "bytes": 18874368,
+              "nonzero_bytes": 18807043
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 4096,
+              "nonzero_bytes": 4090
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_value": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            }
+          }
+        },
+        "mtp": {
+          "hidden": 2048,
+          "target_layers": 24,
+          "payloads": 51,
+          "bytes": 19585024,
+          "byte_limit_at_factory": true,
+          "adapter_parking": false,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18383
+            },
+            "target_value": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18394
+            },
+            "conv": {
+              "payloads": 18,
+              "bytes": 663552,
+              "nonzero_bytes": 662092
+            },
+            "gdn": {
+              "payloads": 18,
+              "bytes": 18874368,
+              "nonzero_bytes": 18807043
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 4096,
+              "nonzero_bytes": 4090
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 1,
+              "bytes": 3072,
+              "nonzero_bytes": 3067
+            },
+            "draft_value": {
+              "payloads": 1,
+              "bytes": 3072,
+              "nonzero_bytes": 3067
+            }
+          }
+        },
+        "all_initialized_bytes_equal": true,
+        "historical_wrapper_preserved": true,
+        "same_shape_continuation_equal": true,
+        "old_alias_unchanged": true,
+        "cold_resources_expired": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\run1\\process.json",
+        "bytes": 1788,
+        "sha256": "dc229bce075ae66531eadefa8557675743587a0e8b1e1ceca647f266d7ff6004"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\run1\\stdout.log",
+        "bytes": 1709,
+        "sha256": "27d4680d2309230b1c6e4b98cd06ede7ccd8e0853099f585b5eac66b83813f65"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda4\\run1\\stderr.log",
+        "bytes": 46793,
+        "sha256": "003496d98a316a4440b630ed5dbfdf3549c230fed92b7324d043714c912fb932"
+      }
+    }
+  ],
+  "preserved_host_image_attempts": [
+    {
+      "id": "cpu-tiny-before-coherence-fix",
+      "final": false,
+      "passed": true,
+      "outcome": "PASS",
+      "process": {
+        "pid": 58800,
+        "exit": 0,
+        "timeout": false,
+        "seconds": 0.8265276000020094,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\link\\host-image-consumer.exe",
+          "bytes": 141188096,
+          "sha256": "d92f06d9780852f4ff42715ba8e97660fa7d199ac6af89f32b2714d55607a13e"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\runtime.json",
+          "bytes": 8221,
+          "sha256": "5f080afc876ae28459213264a72f490e76eac514d111993afad090b11fabda47"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\ready.json",
+          "bytes": 3424,
+          "sha256": "9a1e63b4e60708eaf98e13847d23e5310d206c7bb1a769507d9d66c9fbc0ec68"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+          "bytes": 7861,
+          "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu-consumer.cc",
+          "bytes": 371,
+          "sha256": "140ee3ff5c7e5c4dc6285e41f673d604589ab6cc0593c6ec282cab54abc46265"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "dd2fdc7f004d3af20d7d16f4da0d23e3c95f0f3c93a3b264e83c7fb3733c8dad"
+        }
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cpu",
+        "ordinary": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 5,
+          "bytes": 18432,
+          "byte_limit_at_factory": true,
+          "adapter_parking": true,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_value": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            }
+          }
+        },
+        "mtp": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 7,
+          "bytes": 19200,
+          "byte_limit_at_factory": true,
+          "adapter_parking": false,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "draft_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            }
+          }
+        },
+        "all_initialized_bytes_equal": true,
+        "historical_wrapper_preserved": true,
+        "same_shape_continuation_equal": true,
+        "old_alias_unchanged": true,
+        "cold_resources_expired": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\run1\\process.json",
+        "bytes": 1781,
+        "sha256": "572e2ce1960546255ddb11a0ca65a04c07e5b276fed12637217a655075b6c9a7"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\run1\\stdout.log",
+        "bytes": 1646,
+        "sha256": "ebe5754ee8819ba36787608da5532b9e54cfad117f769c21f596e144d0b06788"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cpu2\\run1\\stderr.log",
+        "bytes": 5826,
+        "sha256": "ac6f5e773ac6860339f6572062a3a5fa43097adf8e951c8c9c184a8579cfabc9"
+      }
+    },
+    {
+      "id": "cuda-tiny",
+      "final": false,
+      "passed": false,
+      "outcome": "FAILED_BEFORE_EVALUATION_UNSUPPORTED_PROVIDER_SHAPE",
+      "process": {
+        "pid": 42052,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 1.0367287999833934,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\link\\host-image-consumer.exe",
+          "bytes": 141160448,
+          "sha256": "9989d6a832843d986542dd513a7bb77eef95aed85c1ab5c302071f52716d6ad0"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\runtime.json",
+          "bytes": 8222,
+          "sha256": "6aa5f9f394aade6f0f7a74d8c411a2752a8d34479af20c5fd09ca19d3c751871"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\ready.json",
+          "bytes": 2561,
+          "sha256": "6a4e445ed2d018157c4ef2e25a4dc8f5372a94d8e4547b7e05b25c9aeb215205"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+          "bytes": 7861,
+          "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda-consumer.cc",
+          "bytes": 372,
+          "sha256": "25a97c5c19bddf77be5ed5b12eab3eb3fc35301ec552711e211bb78645cd2ef4"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "dd2fdc7f004d3af20d7d16f4da0d23e3c95f0f3c93a3b264e83c7fb3733c8dad"
+        }
+      },
+      "result": {
+        "status": "NO_COMPLETE_JSON_REPORT"
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run1\\process.json",
+        "bytes": 1787,
+        "sha256": "53a3b5f0c374ded9e05f6f5cee64871681b62d58616e8828b5cfe86c7512ab0c"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run1\\stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run1\\stderr.log",
+        "bytes": 678,
+        "sha256": "5261b8ce80fb62db140cefee735b7a73b420b567910c26eacc62cbdb8b352156"
+      }
+    },
+    {
+      "id": "cuda-original-before-coherence-fix",
+      "final": false,
+      "passed": false,
+      "outcome": "PRODUCT_BUG_OVERSTRONG_HOST_COHERENCE_REQUIREMENT_AFTER_PREFILL",
+      "process": {
+        "pid": 60720,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 1.7258359999977984,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\link\\host-image-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\link\\host-image-consumer.exe",
+          "bytes": 141160448,
+          "sha256": "9989d6a832843d986542dd513a7bb77eef95aed85c1ab5c302071f52716d6ad0"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\runtime.json",
+          "bytes": 8222,
+          "sha256": "6aa5f9f394aade6f0f7a74d8c411a2752a8d34479af20c5fd09ca19d3c751871"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\ready.json",
+          "bytes": 2561,
+          "sha256": "6a4e445ed2d018157c4ef2e25a4dc8f5372a94d8e4547b7e05b25c9aeb215205"
+        },
+        "fixture_manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+          "bytes": 56735,
+          "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda-consumer.cc",
+          "bytes": 372,
+          "sha256": "25a97c5c19bddf77be5ed5b12eab3eb3fc35301ec552711e211bb78645cd2ef4"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda2\\source-freeze.json",
+          "bytes": 34732,
+          "sha256": "dd2fdc7f004d3af20d7d16f4da0d23e3c95f0f3c93a3b264e83c7fb3733c8dad"
+        }
+      },
+      "result": {
+        "status": "NO_COMPLETE_JSON_REPORT"
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\process.json",
+        "bytes": 1788,
+        "sha256": "1ded4551761a2b074d33437e329fcc9ffaa2f61aeae889fa433db5a46694ef32"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\stderr.log",
+        "bytes": 1546,
+        "sha256": "286faa1b50bf102aec8ff8eb5879f05268667520cf6e02973304f0283a984719"
+      }
+    }
+  ],
+  "product_coherence_fix": {
+    "classification": "PRODUCT_SOURCE_CORRECTION_APPLIED",
+    "verified_by_final_host_image_cases": true,
+    "correction_receipt": {
+      "status": "PRODUCT_PINNED_HOST_ACCESSIBILITY_FIX",
+      "changed_dependencies": [
+        {
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\host_state_storage.h",
+            "bytes": 5432,
+            "sha256": "6d1d30b8287e62a09bf10beefcf5c415144bb09e68a4755555be5db161a46437"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\host_state_storage.h",
+            "bytes": 5577,
+            "sha256": "a7efd1f1e1f1b98b7a5e50b1363602f6984625f4680caf8bd426203e84249a1d"
+          }
+        },
+        {
+          "before": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_image.h",
+            "bytes": 22197,
+            "sha256": "3c1c88ac73001c2b76ffa83ecab131e72f5fbc4ff5ea6463d5233a2c374be385"
+          },
+          "after": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\host_image.h",
+            "bytes": 22338,
+            "sha256": "e3e5b986121d1bf2a17f31adc9e61218016d5f6d09c397cf37fd2ae707b1a839"
+          }
+        }
+      ],
+      "reason": "CUDA pinned-host buffers expose HostAccessible|HostPinned|HostAddressIdentity but do not promise HostDeviceCoherent. Original CopyBatch retirement/wait defines visibility; preserve it and require host accessibility rather than extra coherence capability.",
+      "source_evidence": {
+        "file": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda\\cuda_memory.cc",
+          "bytes": 25947,
+          "sha256": "555f86658d23b10a12f1c2c7ac3bb0a8978e8c0361e5c292904e9101b1bc3712"
+        },
+        "properties_lines": "31-34",
+        "flush_invalidate_lines": "74-84",
+        "pinned_read_memmove_line": 114
+      },
+      "previous_real_failure": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\process.json",
+        "bytes": 1788,
+        "sha256": "1ded4551761a2b074d33437e329fcc9ffaa2f61aeae889fa433db5a46694ef32"
+      },
+      "previous_stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\stderr.log",
+        "bytes": 1546,
+        "sha256": "286faa1b50bf102aec8ff8eb5879f05268667520cf6e02973304f0283a984719"
+      },
+      "unchanged": "Original source read permissions, wait/publish boundary, case/Model CPP, CUDA macros/weights/report/SDK/arena and seed/input.",
+      "new_attempts": [
+        "cpu3",
+        "cuda4",
+        "product2"
+      ],
+      "prior_default_CLI_regressions": "Retained results refer to earlier10cdd777 binary and never invoked these new HostImage APIs; no automatic rerun."
+    },
+    "failed_process": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\process.json",
+      "bytes": 1788,
+      "sha256": "1ded4551761a2b074d33437e329fcc9ffaa2f61aeae889fa433db5a46694ef32"
+    },
+    "failed_stderr": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\cuda3\\run2\\stderr.log",
+      "bytes": 1546,
+      "sha256": "286faa1b50bf102aec8ff8eb5879f05268667520cf6e02973304f0283a984719"
+    },
+    "reason": "CUDA pinnedHost intentionally declares HostAccessible/HostPinned/HostAddressIdentity without HostDeviceCoherent. Requiring the latter rejected valid same-context host storage after real prefill.",
+    "correction": "Remove only the extra coherence-property conditions in HostStateStorage::create and HostImage payload validation. Preserve HostAccessible, exact bytes/ready leases, resource API host reads, and successful original CopyBatch wait before writer/payload publication.",
+    "source_basis": {
+      "cuda_memory": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_backend_cuda\\cuda_memory.cc",
+        "bytes": 25947,
+        "sha256": "555f86658d23b10a12f1c2c7ac3bb0a8978e8c0361e5c292904e9101b1bc3712"
+      },
+      "locations": [
+        "src/compute_backend_cuda/cuda_memory.cc:32 pinnedHost flags",
+        "src/compute_backend_cuda/cuda_memory.cc:59 map_host",
+        "src/compute_backend_cuda/cuda_memory.cc:92 invalidate",
+        "src/compute_backend_cuda/cuda_memory.cc:127 read",
+        "engine/models/qwen35/session_transfer.h:155 export wait before publish",
+        "engine/models/qwen35/session_transfer.h:225 import wait before publish"
+      ]
+    },
+    "final_product_CLI": {
+      "status": "BUILT_ONLY_NOT_RUN",
+      "ready": {
+        "status": "HOST_IMAGE_PRODUCT2_CUDA_BUILT_NOT_RUN",
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\link\\hyle.exe",
+          "bytes": 141548544,
+          "sha256": "8d9107d51ce34b988249d5f45b37fa08d586ee6beb8e17a38480815d1e19fae4"
+        },
+        "runtime": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\runtime.json",
+          "bytes": 8225,
+          "sha256": "2e4024453392dee0a1d0de8a265fb918b910f0b54844c760b712da2addfa894c"
+        },
+        "link_inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\link-inputs.json",
+          "bytes": 58087,
+          "sha256": "07f5566cf5c98c29f0d6c081551d0ce9451f6601c4997e3dfe12b6a6f300fa9a"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 480099,
+          "sha256": "d7c0d7fa78035bde2ee75180d82a3b5d7392c9fa67e50cd15ccb34d1ed750312"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\source-freeze.json",
+          "bytes": 34533,
+          "sha256": "034e8fb939078c809a63b8bc2ccf47b3c681ddbc9da10398ff84ee882e89c0dd"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\actual-dependencies.json",
+          "bytes": 75785,
+          "sha256": "c6b19e04282604d719beafc4788aef70dc48b5fc2cec9e28116b10be7bac78cd"
+        },
+        "plan": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\plan.json",
+          "bytes": 5879,
+          "sha256": "527b8bce5429b9c3da47633489f3b443c508d07126d0174955907c31e896fe03"
+        },
+        "baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\link\\hyle.exe",
+          "bytes": 141548544,
+          "sha256": "10cdd7773aa8deeb5fd4cd5b5ce4e4ce2e82653086792f6a9b8a9be7eecf83b1"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-20261026\\product2\\compile\\unit.obj",
+          "bytes": 14650631,
+          "sha256": "01329d4c1c2cd2e5a607342a2b5711bd28cdc2c9185f999f044c8aadaf0526f8"
+        },
+        "compile": {
+          "exit": 0,
+          "pid": 44532,
+          "seconds": 22.277264099975582
+        },
+        "link": {
+          "exit": 0,
+          "pid": 60728,
+          "seconds": 1.7527408999740146
+        },
+        "compiled_TUs": 1,
+        "unchanged_inputs": 221,
+        "SDK_native_provider_report_builds": 0,
+        "model_runs": 0,
+        "consumer_runs": 0,
+        "limits": [
+          "One canonical CUDA Model TU against the current HostImage CUDA CLI closure; no SDK/native/Graph/provider/report rebuild.",
+          "Replaced prior CLI Model object is used only to replace its link argument; it is not a dependency to restore.",
+          "Build/link does not execute a host, Model or inference consumer; no numerical or performance claim."
+        ]
+      }
+    }
+  },
+  "provider_shape_boundary": {
+    "classification": "CUDA_TINY_UNSUPPORTED_SHAPE_BEFORE_EVALUATION",
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\third_party\\ggml_cuda_runtime\\patches.json",
+      "bytes": 569538,
+      "sha256": "fb875c9d31db5ea3bfbe082ee00a9cbff673cd3bfade9f6e5010bd9047f3f3be"
+    },
+    "upstream_revision": "456172ec733a135778adcd32d00e576a58232e45",
+    "patch_target": "src/ggml-cuda/ssm-conv.cu",
+    "predicate_excerpt": "bool ggml_cuda_supports_ssm_conv(const ggml_tensor * dst) {\n    if (!dst || dst->op != GGML_OP_SSM_CONV || dst->type != GGML_TYPE_F32) return false;\n    const ggml_tensor * const x = dst->src[0], * const w = dst->src[1];\n    if (!x || !w || (x->type != GGML_TYPE_BF16 && x->type != GGML_TYPE_F32) || w->type != GGML_TYPE_F32) return false;\n    const int64_t W = x->ne[0], C = x->ne[1], B = x->ne[2], K = w->ne[0];\n    if (W <= 0 || C <= 0 || C % 128 || B <= 0 || x->ne[3] != 1 ||\n        (K != 3 && K != 4 && K != 5 && K != 9 && K != 15) || W < K ||\n        w->ne[1] != C || w->ne[2] != 1 || w->ne[3] != 1 ||\n        dst->ne[0] != C || dst->ne[1] != W - K + 1 || dst->ne[2] != B || dst->ne[3] != 1) return false;\n",
+    "tiny_QKV_channels": 192,
+    "original335_QKV_channels": 6144,
+    "condition": "SSM_CONV CUDA support requires C % 128 == 0. Tiny C192 violates it; original335 C6144 satisfies this condition only, not proof of all other support or runtime success.",
+    "limit": "The tiny CUDA process loaded 27 roles, then cold exact-variant compilation declined SSM_CONV F32 value2 before evaluation. It is neither a completed HostImage case nor evidence of a HostImage numerical failure."
+  },
+  "case_scope": "Final corrected HostImage cases are CPU3 tiny GA and CUDA4 original335 roles, each exercising ordinary and K1 modes only when its result is PASS. Preserve CPU2 earlier PASS, CUDA3 tiny unsupported-shape rejection, and CUDA3 original335 actual product coherence rejection; no CUDA tiny rerun. CUDA2 link-closure failure is preserved separately. Read actual per-role payload/byte/nonzero counts, boundary/old-alias/continuation/Model-expiry and budget-failure facts; do not infer nonzero from role presence or treat unsupported tiny shape as a HostImage numerical failure.",
+  "limits": [
+    "Finite correctness and ownership evidence, no quality, latency, throughput or speedup claim.",
+    "Final MTP cases exercised lag0 with no prior-hidden payload. Lag1/prior-hidden transfer was not exercised in these cases.",
+    "Tiny GA is untrained. Raw HF RMS zero has effective gamma one; direct GDN norm zero can mask its mixed contribution. Actual full-byte and zero/nonzero facts are recorded, not assumed.",
+    "No physical-GPU pending gate/fault injection is introduced in these HostImage cases. Native failure/unknown-retirement safety is preserved by original ownership contracts; successful synchronous cases do not alone verify every fault path.",
+    "Host parking returns reusable device slots, not an automatic reduction in fixed-bank allocated VRAM. Old checkpoint aliases remain valid retainers.",
+    "Managed ResourceBudget rows/shared cap and image count are bounded; opaque driver/private native memory is explicitly outside the managed byte cap.",
+    "Apple/Vulkan complete-state transfer remains unimplemented in this common CPU/CUDA adapter; no cross-platform claim.",
+    "Archive contains only explicit small source/recipe/process/output/fixture-identity/comparison/hash metadata. No binary, SDK, model weights, full raw traces or copied prepared input library."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-host-image-2026-10-26.zip",
+    "bytes": 910283,
+    "sha256": "68033920978ea35be9bb12bb54fafc207b9e458492159fab27a8e3862308264f"
+  },
+  "archive_members": 256
+}

@@ -333,6 +333,33 @@ public:
   mem::MemoryResourceRef host_device() const noexcept { return state_ ? state_->host : mem::MemoryResourceRef{}; }
   mem::MemoryResourceRef staging() const noexcept { return state_ ? state_->staging : mem::MemoryResourceRef{}; }
 
+  // Independent cold host-storage scope for complete parked state. CUDA uses
+  // its original Context's pinned resource, never the CPU-assist allocator or
+  // the Backend's borrowed staging object. This retains no model/device bank.
+  Result<compute::StorageOwner> create_host_storage() const noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_CPU)
+    if (const auto *endpoint = std::get_if<CpuEndpoint>(&state_->primary)) {
+      // cpu::memory_resource is the process-lifetime host resource. The
+      // original Context/metadata allocator contract stays with StorageOwner.
+      struct HostResource final {
+        mem::MemoryResourceRef resource;
+        mem::MemoryResourceRef ref() const noexcept { return resource; }
+      };
+      return compute::StorageOwner::adopt(endpoint->context, HostResource{endpoint->memory});
+    }
+#endif
+#if defined(HYLE_COMPUTE_CUDA)
+    if (const auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary)) {
+      HYLE_ASSIGN_OR_RETURN(auto memory, compute::cuda::MemoryResource::create(
+          endpoint->context, compute::cuda::MemoryKind::kPinnedHost));
+      return compute::StorageOwner::adopt(endpoint->context, std::move(memory));
+    }
+#endif
+    return std::unexpected(Status::Unimplemented(
+        "selected native backend requires its typed host-state transfer adapter"));
+  }
+
   Result<mem::MemoryResourceRef> resource_for(graph::StorageDomainId domain) const noexcept {
     if (!domain.valid()) return std::unexpected(Status::InvalidArgument("Backend storage domain is invalid"));
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
@@ -442,7 +469,7 @@ public:
 #endif
   }
 
-  // Cold diagnostics borrow only original selected endpoints. No getter
+  // Cold composition/diagnostics borrow only original selected endpoints. No getter
   // constructs an otherwise unselected Context or substitutes a native queue.
   Result<compute::Context *> common_context() noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));

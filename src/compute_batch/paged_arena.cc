@@ -615,6 +615,42 @@ Result<ReadLease> PagedArenaRead::page_prefix(std::uint32_t physical_page)const 
     return std::unexpected(Status::FailedPrecondition("paged arena read page permission does not cover its logical prefix"));
   return selected->subview(0,bytes);
 }
+Status PagedArenaRead::page_prefixes(std::span<ReadLease> output)const noexcept{
+  if(!data_)return Status::FailedPrecondition("paged arena read is empty");
+  const auto&arena=*data_->arena;
+  if(!arena.schema.owns(data_->layout))return Status::InvalidArgument("paged arena read layout is foreign");
+  if(output.size()!=data_->layout.facts().page_refs)return Status::InvalidArgument("page prefix output count differs from the logical layout");
+  const auto rows_per_page=detail::BatchLayoutAccess::geometry(arena.schema).page_size;
+  if(!rows_per_page || !arena.page_bytes || arena.page_bytes%rows_per_page)
+    return Status::FailedPrecondition("paged arena read row geometry is invalid");
+  const auto find=[&](std::uint32_t wanted)->Result<const ReadLease*>{
+    // read_impl keeps these unique guards sorted by physical page ID.
+    std::size_t begin=0,end=data_->pages.size();
+    while(begin<end){const auto middle=begin+(end-begin)/2;
+      HYLE_ASSIGN_OR_RETURN(auto id,page_id(arena,data_->pages[middle]));
+      if(id<wanted)begin=middle+1;else end=middle;
+    }
+    if(begin==data_->pages.size())return std::unexpected(Status::FailedPrecondition("page prefix permission is absent"));
+    HYLE_ASSIGN_OR_RETURN(auto id,page_id(arena,data_->pages[begin]));
+    if(id!=wanted)return std::unexpected(Status::FailedPrecondition("page prefix permission is absent"));
+    return &data_->pages[begin];
+  };
+  const auto host=data_->layout.host();
+  // Preflight the whole export before replacing any caller-owned handle.
+  for(unsigned pass=0;pass<2;++pass)
+    for(std::size_t request=0;request<data_->layout.facts().requests;++request){
+      const auto end=std::size_t(host.kv_indptr[request+1]);
+      for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index){
+        const auto rows=index+1==end?std::uint32_t(host.last_page_lengths[request]):rows_per_page;
+        const auto bytes=std::size_t(rows)*(arena.page_bytes/rows_per_page);
+        HYLE_ASSIGN_OR_RETURN(auto guard,find(std::uint32_t(host.page_indices[index])));
+        if(!rows || rows>rows_per_page || guard->size()<bytes)
+          return Status::FailedPrecondition("page prefix permission does not cover its logical rows");
+        if(pass){HYLE_ASSIGN_OR_RETURN(auto lease,guard->subview(0,bytes));output[index]=std::move(lease);}
+      }
+    }
+  return Status::Ok();
+}
 Result<ConstTensorView> detail::PagedArenaAccess::tensor(const PagedArenaRead&read)noexcept{if(!read.data_)return std::unexpected(Status::FailedPrecondition("paged arena read is empty"));return ConstTensorView::create(read.data_->arena->description,read.data_->arena->span);}
 Status detail::PagedArenaAccess::validate_storage(const PagedArenaRead&read,const CacheStorage&expected)noexcept{
   if(!read.data_)return Status::InvalidArgument("paged arena read is empty");

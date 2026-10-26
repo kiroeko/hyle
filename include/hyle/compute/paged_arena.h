@@ -210,6 +210,11 @@ public:
   // or other pages.
   // Empty/foreign frames and IDs absent from this footprint are rejected.
   HYLE_COMPUTE_BATCH_API Result<ReadLease> page_prefix(std::uint32_t physical_page)const noexcept;
+  // One exact prefix per logical page reference, in layout.host().page_indices
+  // order (including repeated physical IDs). Output size must equal page_refs.
+  // No allocation or capacity export; O(page_refs * log(unique pages)).
+  // Each request's last page is bounded by its own immutable initialized rows.
+  HYLE_COMPUTE_BATCH_API Status page_prefixes(std::span<ReadLease> output)const noexcept;
 private:
   friend class PagedArena;
   friend struct detail::PagedArenaAccess;
