@@ -3199,6 +3199,8 @@ TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
   auto writer = pool.allocate(32).value();
   const auto capacity = writer.tensor(row(8))->as_const();
   const std::array<const hyle::compute::WriteLease *, 1> writers{&writer};
+  const auto *parent = hyle::graph::detail::InvocationAccess::state(run);
+  EXPECT_FALSE(Access::has_write_effect(parent, selected, writers).value());
   // Rejected empty effects install no authority and cannot block a later valid bind.
   EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, {}, {}, selected, {}, {}).IsInvalidArgument());
   EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, {}, {}, selected, {}, {}).IsInvalidArgument());
@@ -3214,6 +3216,13 @@ TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
     EXPECT_TRUE(writer.view());
   }
   ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
+  ASSERT_TRUE(Access::has_write_effect(parent, selected, writers).value());
+  EXPECT_TRUE(Access::has_write_effect(parent, selected, {}).error().IsInvalidArgument());
+  const std::array<const hyle::compute::WriteLease *, 1> wrong_writers{nullptr};
+  EXPECT_TRUE(Access::has_write_effect(parent, selected, wrong_writers).error().IsInvalidArgument());
+  auto wrong_owner = selected;
+  wrong_owner.prepared = &probe;
+  EXPECT_TRUE(Access::has_write_effect(parent, wrong_owner, writers).error().IsInvalidArgument());
   EXPECT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).IsFailedPrecondition());
   auto input = make_tensor(row(8)); auto output = make_tensor(row(8));
   const std::array<float, 8> values{1, 2, 3, 4, 5, 6, 7, 8}; write(input, values);
@@ -3229,6 +3238,7 @@ TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
   const std::array mixed{logical.writer, logical.pure};
   EXPECT_TRUE(Access::release_projected_writes(run, mixed).IsInvalidArgument());
   ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
+  EXPECT_FALSE(Access::has_write_effect(parent, selected, writers).value());
   EXPECT_TRUE(Access::release_write_effect(run, logical.writer).IsInvalidArgument());
   ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
   const std::array duplicate{logical.writer, logical.writer};
@@ -3238,6 +3248,7 @@ TEST(GraphRouteBoundary, ProjectedWriteRegionKeepsOneOriginalNominatedEffect) {
   EXPECT_TRUE(Access::release_projected_writes(run, single).IsInvalidArgument());
   ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
   ASSERT_TRUE(run.reset().ok());
+  EXPECT_FALSE(Access::has_write_effect(parent, selected, writers).value());
   ASSERT_TRUE(Access::bind_write_effect(run, logical.graph, capacity, {}, writers, {}, selected, {}, {}).ok());
   ASSERT_TRUE(Access::release_write_effect(run, logical.writer).ok());
 }

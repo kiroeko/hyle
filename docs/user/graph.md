@@ -1153,6 +1153,34 @@ drain 能主动观察原 Completion，并等待真正的 accepted prefix 退休�
 
 CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed绑定见
 [CPU与GPU组合](#cpu-与-gpu-组合)。
+
+### 外部固定槽写入
+
+`<hyle/graph/slots.h>` 的 `slots::Store` 将稠密 `rows[M,E]` 原码写入同一
+`LeaseSlotLayout` 中的 M 个独占槽。描述符只含 dtype、item 元素数、槽数和 stride；
+创建图时提供同类型 rows 和 I32 `[M]` 索引输入，不把池或写权限放进数学描述符。
+索引输入必须只被这一个 Store 使用，也不能发布为图输出。
+
+普通 CPU／CUDA 编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
+
+1. `slots::prepare(run, queues, options)` 准备固定的小索引载体；CUDA 的
+   `options.host_workspace` 使用同一 Context 的 pinned／managed host resource。
+2. `SlotBindings::create(layout, sources, destinations)` 完整检查实际租约，成功才移走
+   destination writers；然后 `slots::bind(run, graph, store_node, std::move(bindings))`。
+   bind 根据真实槽号设置私有索引，失败不消费事务；普通 rows 输入仍由调用者绑定。
+3. 沿原 `prepare_replay`、`submit` 和 Completion 观察执行。原生工作、完成观察和旧
+   GraphOutput 均退休后，`slots::take(run, store_node)` 取回原事务；仅在 whole Graph
+   成功时发布 writers，失败时按原租约规则释放或重建。take 成功本身不表示计算成功。
+
+Store 不授予整池读写权限。普通 rows 不得与任意目标重叠；源槽、未选择槽和 padding
+保持原权限。reset 撤回权限后不能继续执行旧事务，但实际退休后仍可 take 回收 owner。
+本入口只处理写回，不自动绑定投影 Gather。当前 CPU／CUDA fallback 不支持 capture，
+冷绑定的索引上传可能等待；不能把它当作已融合的 GDN／conv 热路径。
+实际使用见[CPU](../../tests/graph/slots_execution_test.cc)和
+[CUDA](../../tests/graph/slots_cuda_execution_test.cc)组件消费者。
+
+### 原生后端的租约绑定
+
 Vulkan 的固定纯图可先把实际端点装入普通编译环境，后续仍使用上述绑定、准备、提交和 GraphOutput：
 
 ```cpp

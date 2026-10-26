@@ -276,6 +276,12 @@ struct RegionAccess final {
       std::span<const compute::WriteLease*const>,
       std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
       std::span<const compute::ReadLease> controls,ResourceOptions) noexcept;
+  // Cold synchronized query of the original resource episode, never admission
+  // or retirement proof. The stable parent state survives moving Invocation.
+  // False after reset/release; a foreign artifact or mismatched live authority
+  // is an error. Only exact ordinary writer pointers qualify this narrow path.
+  HYLE_GRAPH_API static Result<bool> has_write_effect(const InvocationState*,
+      ProjectedWriter,std::span<const compute::WriteLease*const>) noexcept;
   // Actual retirement, including failed/closed recovery. Withdraws only this
   // original node's anonymous uses, after revoking its current preparation.
   HYLE_GRAPH_API static Status release_write_effect(Invocation&,NodeId) noexcept;

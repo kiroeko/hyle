@@ -14,12 +14,15 @@
 #include "native_batch_regions.h"
 #include "row_cache_node.h"
 #include "paged_append.h"
+#include "../graph/slots_region.h"
+#include "hyle/graph/slots.h"
 #include <algorithm>
 #include <array>
 #include <vector>
 
 namespace hyle::graph::batch {
 namespace c=compute;namespace cd=c::detail;namespace gd=graph::detail;
+namespace gs=::hyle::graph::slots;
 namespace {
 struct Region final {
   NodeId node;ValueId metadata;
@@ -293,15 +296,17 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
   if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
   if(!allocator.valid())return std::unexpected(Status::InvalidArgument("native capability assembly allocator is invalid"));
   if(environment.targets.size()>UINT32_MAX)return std::unexpected(Status::OutOfRange("native target identity count overflows"));
-  bool has_append=false;
+  bool has_append=false,has_store=false;
   for(std::size_t i=0;i<graph.node_count();++i){HYLE_ASSIGN_OR_RETURN(auto node,graph.node_id(i));
     // Logical views have no concrete Operation until specialization. Batch
     // discovery only inspects its typed custom nodes in this mixed graph.
     HYLE_ASSIGN_OR_RETURN(auto kind,graph.operation_kind(node));
     if(kind!=c::OperationKind::kCustom)continue;
-    HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));has_append|=operation.custom_as<PagedAppend>().has_value();}
+    HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));has_append|=operation.custom_as<PagedAppend>().has_value();
+    has_store|=operation.custom_as<gs::Store>().has_value();}
   try{
     std::size_t maximum=has_append?environment.targets.size():0;
+    if(has_store){if(maximum>SIZE_MAX-environment.targets.size())return std::unexpected(Status::OutOfRange("slot capability count overflows"));maximum+=environment.targets.size();}
     for(const auto&target:environment.targets){
       if(!target.source)return std::unexpected(Status::InvalidArgument("native capability target has no execution source"));
       auto context=gd::ExecutionSourceAccess::compute(target.source);
@@ -313,8 +318,10 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
     std::vector<AdapterContext,mem::StdAllocator<AdapterContext>>contexts{mem::StdAllocator<AdapterContext>(allocator)};
     std::vector<gd::RegionAdapter,mem::StdAllocator<gd::RegionAdapter>>adapters{mem::StdAllocator<gd::RegionAdapter>(allocator)};
     std::vector<detail::AppendAdapter,mem::StdAllocator<detail::AppendAdapter>>append_contexts{mem::StdAllocator<detail::AppendAdapter>(allocator)};
+    std::vector<gs::detail::StoreAdapter,mem::StdAllocator<gs::detail::StoreAdapter>>store_contexts{mem::StdAllocator<gs::detail::StoreAdapter>(allocator)};
     contexts.reserve(maximum);adapters.reserve(maximum);
     append_contexts.reserve(environment.targets.size());
+    if(has_store)store_contexts.reserve(environment.targets.size());
     for(std::size_t target=0;target<environment.targets.size();++target){
       const auto&endpoint=environment.targets[target].source;
       auto retained=gd::ExecutionSourceAccess::compute(endpoint);
@@ -322,6 +329,12 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
       const auto&context=**retained;
       const auto storage=environment.targets[target].default_storage;
       if(!storage.valid() || storage.ordinal()>=environment.storage_domains.size())return std::unexpected(Status::InvalidArgument("native capability target storage is invalid"));
+      if(has_store){
+        const auto*provider=gs::detail::store_provider();
+        HYLE_ASSIGN_OR_RETURN(auto source,gd::GraphRegionSource::shared_queue(endpoint,provider));
+        store_contexts.push_back({environment.storage_domains[storage.ordinal()].resource,context.device().device_class()});
+        adapters.push_back({std::move(source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},provider,&store_contexts.back()});
+      }
       if(has_append){
         HYLE_ASSIGN_OR_RETURN(auto append_source,gd::GraphRegionSource::shared_queue(endpoint,detail::PagedAppendAccess::provider()));
         detail::AppendAdapter append_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class(),{}};

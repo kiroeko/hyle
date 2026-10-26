@@ -83,7 +83,7 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
 索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
-它与已撤回的固定IO复制方案不同，尚未实现，也没有完整提速结论。
+它与已撤回的固定IO复制方案不同，完整原生与引擎路径尚未接通，也没有完整提速结论。
 先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
 旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
@@ -94,7 +94,8 @@ packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1�
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
 源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
-槽资源接口的25项Windows组件检查已通过，Graph绑定、原生索引计算及引擎接线尚未完成。
+槽资源接口的25项Windows组件检查已通过；Graph写事务与CPU／CUDA Store已接通，
+原生索引计算、整段融合及引擎接线仍待完成。
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
@@ -109,7 +110,13 @@ CUDA普通浮点选行也已接通；这两项是前提，尚不等于整个索�
 `graph::slots::Schema`只保几何，`Store`描述原码写效果；`SlotBindings`按实际源／目标数量
 预分配元数据、整批检查后才移交原writer，并保存generation。它不执行或发布状态，
 已通过[6组资源事务检查](../evidence/correctness/inference-slot-bindings-2026-10-27.json)。
-实际Store region将持有该事务，避免另占KV已使用的Invocation资源payload。
+实际Store region持有该事务，避免另占KV已使用的Invocation资源payload。
+普通CPU／CUDA路线冷装配fallback，按原Queue逐真实writer复制原码；小I32索引由实际租约地址生成，
+借用输入载体与其真实只读控制权限分开登记。准备和seal核对原父Invocation的写权限，
+reset后保留事务不代表可继续执行；真实退休后可以take回收owner，不将回收当作计算成功。
+[13项有限检查](../evidence/correctness/inference-slot-store-2026-10-27.json)包括5个实际Store检查与8个相邻合同。
+这条fallback未接引擎、不支持capture，索引上传可能等待；原生融合仍须消除状态物化和逐层metadata等待，
+不能拿这个正确性入口代替性能实现。共同绑定与退休应继续复用，不能在每个Provider再复制一套事务。
 原生工作真实退休后，集成层可用`release_read_projection`只撤回指定ready容量及其guard和透明alias，
 使旧源槽有机会重新取得写权；其它绑定、payload与pending来源不被重置。
 原生导入沿原反向释放链清理，只有精确reader和实际backend同时证明时才保留录制。

@@ -935,6 +935,43 @@ bool RegionAccess::successful_outcome(const Invocation&invocation)noexcept{
   return outcome_available(invocation) && state->phase.load(std::memory_order_acquire)==InvocationPhase::kIdle &&
       state->outputs_ready.load(std::memory_order_acquire);
 }
+Result<bool> RegionAccess::has_write_effect(const InvocationState*state,
+    ProjectedWriter writer,std::span<const compute::WriteLease*const>writers)noexcept{
+  if(!state || !state->plan)
+    return std::unexpected(Status::FailedPrecondition("write-effect parent invocation is empty"));
+  const auto&plan=*state->plan;
+  if(GraphIdentity::generation(writer.node)!=plan.generation ||
+      writer.node.ordinal()>=plan.node_steps.size() ||
+      plan.node_steps[writer.node.ordinal()]!=writer.step ||
+      writer.step>=plan.steps.size() || writer.step>=state->invocations.size())
+    return std::unexpected(Status::InvalidArgument("write-effect proof belongs to another original plan"));
+  const auto&selected=plan.steps[writer.step];
+  if(selected.kind!=PlanStepKind::kRegion || !state->invocations[writer.step].region.valid() ||
+      !selected.region.matches_artifact(writer.implementation,writer.prepared))
+    return std::unexpected(Status::InvalidArgument("write-effect proof differs from its selected artifact"));
+  if(!state->resources)return false;
+  const auto&episode=*state->resources.get();
+  if(writer.step>=episode.nominated_writers.size())
+    return std::unexpected(Status::Internal("write-effect identity table does not cover its original plan"));
+  const auto nominated=episode.nominated_writers[writer.step];
+  if(nominated==UINT32_MAX)return false;
+  if(nominated!=writer.node.ordinal() || writers.empty())
+    return std::unexpected(Status::InvalidArgument("write-effect proof is not the original nominated writer"));
+  std::size_t matched=0;
+  for(const auto&binding:episode.bindings){
+    if(binding.scope!=BindingScope::kWriteEffect || binding.writer_step!=writer.step)continue;
+    if(binding.projected_appender)
+      return std::unexpected(Status::InvalidArgument("ordinary writer proof cannot substitute an append authority"));
+    if(!binding.projected_writer)continue;
+    if(matched>=writers.size() || binding.projected_writer!=writers[matched] ||
+        !writers[matched] || !writers[matched]->valid())
+      return std::unexpected(Status::InvalidArgument("write-effect authority differs from its original owner"));
+    ++matched;
+  }
+  if(matched!=writers.size())
+    return std::unexpected(Status::InvalidArgument("write-effect authority count differs from its original owner"));
+  return true;
+}
 Status RegionAccess::visit_retired(Invocation&invocation,RegionAccessFn callback,void*user)noexcept{
   auto*state=InvocationAccess::state(invocation);
   if(!callback)return Status::InvalidArgument("retired region visitor is empty");

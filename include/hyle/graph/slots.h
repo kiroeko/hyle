@@ -7,6 +7,7 @@
 
 #include "hyle/compute/lease_slots.h"
 #include "hyle/compute/operation.h"
+#include "hyle/graph/executable.h"
 #include "hyle/graph/visibility.h"
 
 namespace hyle::graph::slots {
@@ -102,5 +103,30 @@ private:
   explicit SlotBindings(detail::SlotBindingsData *data) noexcept : data_(data) {}
   detail::SlotBindingsData *data_ = nullptr;
 };
+
+struct PrepareOptions final {
+  // CUDA device storage needs a same-Context pinned/managed host resource for
+  // its queued metadata upload. Preparation checks that actual transfer route.
+  mem::MemoryResourceRef host_workspace = mem::system_resource();
+  mem::AllocatorRef allocator = mem::system_allocator();
+  compute::ResourceBudget resource_budget{};
+};
+// Prepare the original selected Store slots and their small, fixed I32
+// controls. Ordinary CPU/CUDA route compilation supplies the fallback Store
+// automatically. No tensor payload is copied and no second executor is made.
+HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
+    PrepareOptions = {}) noexcept;
+// Writer-only Store binding. Its destination-ID input is private to this
+// Store and is configured from the actual writer coordinates. Preparation and
+// this cold binding may wait for a metadata-only upload on the original Queue.
+// Failure never consumes the caller's transaction. Ordinary row inputs remain
+// caller-bound; this does not bind a projected Gather/source-capacity chain.
+HYLE_GRAPH_API Status bind(Invocation &, const Graph &, NodeId store,
+    SlotBindings &&) noexcept;
+// No implicit wait or publication: returns the original transaction only
+// after the whole Graph's work/results/observations have actually retired,
+// including failed or closed recovery. The caller observes execution success
+// before publishing writers; successful take alone is not a native outcome.
+HYLE_GRAPH_API Result<SlotBindings> take(Invocation &, NodeId store) noexcept;
 
 } // namespace hyle::graph::slots
