@@ -224,7 +224,21 @@ submit_gather(const NativePlan &plan,
   }
 
   const std::size_t element_size = data_type_size(source_desc.data_type());
-  if (source_desc.is_dense()) {
+  if (source_desc.rank() == 2 && plan.axis == 0 &&
+      source_desc.byte_strides()[1] == static_cast<std::int64_t>(element_size)) {
+    // A padded row bank still has one contiguous selected payload. Keep its
+    // real row pitch and copy no gaps or unselected rows. All current IDs
+    // were checked before mapping the output for writing above.
+    const auto row_bytes =
+        static_cast<std::size_t>(source_desc.dimensions()[1]) * element_size;
+    const auto pitch = static_cast<std::size_t>(source_desc.byte_strides()[0]);
+    const auto index_count = indices_desc.element_count().value();
+    for (std::size_t item = 0; item < index_count; ++item) {
+      const auto selected =
+          static_cast<std::size_t>(read_index(indices, indices_desc, item));
+      std::memcpy(output + item * row_bytes, source + selected * pitch, row_bytes);
+    }
+  } else if (source_desc.is_dense()) {
     const auto source_dimensions = source_desc.dimensions();
     const std::size_t prefix = product(source_dimensions, 0, plan.axis);
     const std::size_t suffix =

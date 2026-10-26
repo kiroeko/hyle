@@ -3,10 +3,14 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <span>
 #include <utility>
+#include <vector>
 
 #include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/cpu.h"
+#include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/detail/region_access.h"
@@ -297,8 +301,8 @@ TEST(GraphSlotsExecution, ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner) {
 // Store. Only the real initialized source items are readable; the [P,E] pool
 // description does not manufacture initialized storage for the other slots.
 struct SourceProgram final {
-  c::Context context = c::Context::create(c::cpu::device(), c::native::provider()).value();
-  c::Queue queue = context.create_queue().value();
+  c::Context context;
+  c::Queue queue;
   s::Schema schema;
   c::TensorDesc ids_description;
   g::ValueId pool, source_ids, destination_ids, gathered;
@@ -309,7 +313,10 @@ struct SourceProgram final {
   g::Invocation invocation;
   const std::array<g::QueueBinding, 1> queues{{{g::ExecutionLaneId{0}, &queue}}};
 
-  explicit SourceProgram(std::size_t stride) {
+  explicit SourceProgram(std::size_t stride, bool defaults = false)
+      : context(defaults ? g::cpu::create_context({.native_threads = 2}).value()
+                         : c::Context::create(c::cpu::device(), c::native::provider()).value()),
+        queue(context.create_queue().value()) {
     schema = s::Schema::create(item_description(), 5, stride).value();
     ids_description = c::TensorDesc::dense(c::DataType::kInt32,
         std::array<std::int64_t, 1>{2}).value();
@@ -360,8 +367,18 @@ struct SourceStorage final {
   }
 };
 
-void exercise_source_gather(std::size_t stride) {
-  SourceProgram program(stride);
+void exercise_source_gather(std::size_t stride, bool defaults = false) {
+  SourceProgram program(stride, defaults);
+  if (defaults) {
+    bool selected = false;
+    for (std::size_t step = 0; step < program.compiled.report.step_count(); ++step)
+      for (std::size_t node = 0; node < program.compiled.report.step(step)->node_count; ++node)
+        if (program.compiled.report.step_node(step, node).value() == program.gather) {
+          EXPECT_EQ(program.compiled.report.step(step)->provider.id, c::native::kProviderId);
+          selected = true;
+        }
+    ASSERT_TRUE(selected);
+  }
   SourceStorage storage(stride);
   const std::array associations{s::SourceBinding{program.store, program.gather}};
   ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
@@ -425,6 +442,9 @@ TEST(GraphSlotsExecution, SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSl
 TEST(GraphSlotsExecution, SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices) {
   exercise_source_gather(kStride);
 }
+TEST(GraphSlotsExecution, DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider) {
+  exercise_source_gather(kStride, true);
+}
 
 TEST(GraphSlotsExecution, InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners) {
   SourceProgram program(kStride);
@@ -468,6 +488,121 @@ TEST(GraphSlotsExecution, InvalidAssociationCountAndReplacedSourceIdsPreserveOri
   EXPECT_EQ(read_item(storage.sources[0]), (std::array<float, 4>{1, 2, 3, 4}));
   EXPECT_EQ(read_item(storage.sources[1]), (std::array<float, 4>{11, 12, 13, 14}));
   EXPECT_EQ(read_item(storage.sentinel), kSentinel);
+}
+
+void exercise_default_gather(c::DataType type, bool padded, bool graph) {
+  constexpr std::int64_t rows = 5, width = 5;
+  const auto scalar = c::data_type_size(type);
+  const auto row_bytes = static_cast<std::size_t>(width) * scalar;
+  const auto pitch = row_bytes + (padded ? 16 : 0);
+  const auto source_desc = c::TensorDesc::strided_bytes(type,
+      std::array{rows, width},
+      std::array<std::int64_t, 2>{static_cast<std::int64_t>(pitch),
+          static_cast<std::int64_t>(scalar)}).value();
+  const auto ids_desc = c::TensorDesc::strided_bytes(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{3}, std::array<std::int64_t, 1>{8}).value();
+  const c::Gather operation{.axis = -2, .bounds = c::IndexBoundsPolicy::kChecked};
+  const std::array descriptions{source_desc, ids_desc};
+  const auto output_desc = c::infer_single_output(c::Operation(operation), descriptions).value();
+  std::vector<std::byte> original(source_desc.required_bytes().value(), std::byte{0xa5});
+  const std::array<std::uint32_t, 5> single{0x80000000u, 0x7f812345u,
+      0x7fc54321u, 0u, 0x3f800000u};
+  const std::array<std::uint16_t, 5> half{0x8000u, 0x7c01u, 0x7e55u, 0u, 0x3c00u};
+  const std::array<std::uint16_t, 5> brain{0x8000u, 0x7f81u, 0x7fc5u, 0u, 0x3f80u};
+  for (std::size_t row = 0; row < static_cast<std::size_t>(rows); ++row)
+    for (std::size_t column = 0; column < static_cast<std::size_t>(width); ++column) {
+      const auto i = (row + column) % single.size();
+      const void *bits = type == c::DataType::kFloat32
+          ? static_cast<const void *>(&single[i])
+          : type == c::DataType::kFloat16 ? static_cast<const void *>(&half[i])
+                                        : static_cast<const void *>(&brain[i]);
+      std::memcpy(original.data() + row * pitch + column * scalar, bits, scalar);
+    }
+  auto source = m::Buffer::create(m::system_resource(), original.size(), 64).value();
+  auto ids = m::Buffer::create(m::system_resource(), ids_desc.required_bytes().value(), 64).value();
+  auto destination = m::Buffer::create(m::system_resource(), output_desc.required_bytes().value(), 64).value();
+  ASSERT_TRUE(source.view().write(original).ok());
+  const std::array inputs{c::ConstTensorView::create(source_desc, source.view()).value(),
+      c::ConstTensorView::create(ids_desc, ids.view()).value()};
+  auto output = c::TensorView::create(output_desc, destination.view()).value();
+  // Two native threads deliberately miss the sampled one-thread kWins. These
+  // ordinary factories choose from formats/algorithms, without an explicit
+  // provider or a Store annotation.
+  auto context = graph ? g::cpu::create_context({.native_threads = 2}).value()
+                       : c::cpu::create_context({.native_threads = 2}).value();
+  auto queue = context.create_queue().value();
+  const bool native = padded || type != c::DataType::kFloat32;
+  c::PreparedOperation direct;
+  c::OperationInvocation direct_invocation;
+  g::CompiledGraph compiled;
+  g::ValueId table_node, ids_node, output_node;
+  if (graph) {
+    auto builder = g::GraphBuilder::create().value();
+    table_node = builder.input(source_desc).value(); ids_node = builder.input(ids_desc).value();
+    const auto node = builder.add_node(c::Operation(operation), std::array{table_node, ids_node}).value();
+    output_node = builder.result(node).value(); ASSERT_TRUE(builder.publish(output_node).ok());
+    auto description = std::move(builder).finish().value();
+    auto result = g::cpu::compile(description, context);
+    ASSERT_TRUE(result) << result.error().message(); compiled = std::move(*result);
+    ASSERT_EQ(compiled.report.step_count(), 1u);
+    EXPECT_EQ(compiled.report.step(0)->provider.id == c::native::kProviderId, native);
+  } else {
+    auto result = c::prepare(context, c::Operation(operation), inputs, std::span(&output, 1));
+    ASSERT_TRUE(result) << result.error().message(); direct = std::move(*result);
+    EXPECT_EQ(direct.provider().id == c::native::kProviderId, native);
+    auto invocation = direct.create_invocation(); ASSERT_TRUE(invocation) << invocation.error().message();
+    direct_invocation = std::move(*invocation);
+  }
+  std::array<std::int32_t, 5> index_bytes{4, -99, 0, -99, 4};
+  const auto submit = [&]() -> hyle::Status {
+    if (!graph) {
+      auto done = direct_invocation.submit(queue, inputs, std::span(&output, 1));
+      if (!done) return done.error();
+      return done->wait();
+    }
+    auto invocation = compiled.executable.create_invocation();
+    if (!invocation) return invocation.error();
+    HYLE_RETURN_IF_ERROR(invocation->bind(table_node, inputs[0]));
+    HYLE_RETURN_IF_ERROR(invocation->bind(ids_node, inputs[1]));
+    HYLE_RETURN_IF_ERROR(invocation->bind(output_node, output));
+    const std::array<g::QueueBinding, 1> queues{{{g::ExecutionLaneId{0}, &queue}}};
+    HYLE_RETURN_IF_ERROR(invocation->prepare_replay(queues));
+    auto done = invocation->submit(queues);
+    if (!done) return done.error();
+    return done->wait();
+  };
+  std::vector<std::byte> expected(destination.size()), actual(destination.size());
+  for (int run = 0; run < 2; ++run) {
+    if (run) index_bytes = {1, -99, 3, -99, 1};
+    ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(index_bytes))).ok());
+    const auto status = submit(); ASSERT_TRUE(status.ok()) << status.message();
+    for (std::size_t i = 0; i < 3; ++i)
+      std::memcpy(expected.data() + i * row_bytes,
+          original.data() + static_cast<std::size_t>(index_bytes[2 * i]) * pitch, row_bytes);
+    ASSERT_TRUE(destination.view().read(actual).ok()); EXPECT_EQ(actual, expected);
+  }
+  // The last ID is invalid: checking a prefix and partially publishing rows
+  // would corrupt this exact previous output and fail the byte comparison.
+  index_bytes[4] = static_cast<std::int32_t>(rows);
+  ASSERT_TRUE(ids.view().write(std::as_bytes(std::span(index_bytes))).ok());
+  EXPECT_TRUE(submit().IsOutOfRange());
+  ASSERT_TRUE(destination.view().read(actual).ok()); EXPECT_EQ(actual, expected);
+  std::vector<std::byte> unchanged(original.size());
+  ASSERT_TRUE(source.view().read(unchanged).ok()); EXPECT_EQ(unchanged, original);
+}
+TEST(CpuStorageGather, OrdinaryDefaultComputePreservesRawRowsAndChecksAllIdsBeforeWriting) {
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16})
+    for (const auto padded : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << "type=" << static_cast<int>(type) << " padded=" << padded);
+      exercise_default_gather(type, padded, false);
+    }
+}
+TEST(CpuStorageGather, OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotations) {
+  for (const auto type : {c::DataType::kFloat32, c::DataType::kFloat16, c::DataType::kBFloat16})
+    for (const auto padded : {false, true}) {
+      SCOPED_TRACE(::testing::Message() << "type=" << static_cast<int>(type) << " padded=" << padded);
+      exercise_default_gather(type, padded, true);
+    }
 }
 
 } // namespace

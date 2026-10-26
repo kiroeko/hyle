@@ -172,6 +172,20 @@ RoutePolicyId policy(const Domain &d) noexcept {
 }
 } // namespace
 
+RoutePolicyId storage_gather_policy(Operation op,
+    std::span<const TensorDesc> in, std::span<const TensorDesc> out) noexcept {
+  if (!op.get_if<Gather>() || in.size() != 2 || out.size() != 1 ||
+      !in[0].valid() || !in[0].is_plain() || !out[0].is_plain() ||
+      !out[0].is_dense() || in[0].data_type() != out[0].data_type() ||
+      data_type_size(in[0].data_type()) == 0)
+    return {};
+  const auto type = in[0].data_type();
+  if (in[0].is_dense() && type != DataType::kFloat16 &&
+      type != DataType::kBFloat16)
+    return {};
+  return {0x48594c4553544f52ULL, 1, 1};
+}
+
 bool qualified_default_environment() noexcept {
   // Explicit new shared-runtime settings do not inherit the old one-thread
   // recipe. Unconfigured legacy callers keep their original admission rules.

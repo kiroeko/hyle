@@ -12,6 +12,11 @@ default_provider(Options options, DefaultRuleScope scope,
                  bool single_native_thread) noexcept;
 
 HYLE_COMPUTE_PROVIDER_NATIVE_API bool qualified_default_environment() noexcept;
+// Storage Gather must not pack an entire strided bank or round plain half
+// payloads through F32. This is an algorithm/format rule, independent of the
+// sampled hardware rules and of any Graph Store association.
+RoutePolicyId storage_gather_policy(Operation, std::span<const TensorDesc>,
+                                  std::span<const TensorDesc>) noexcept;
 enum class DefaultRuleProvider : std::uint8_t { kNone, kNative, kGgml, kAten };
 struct DefaultRuleSelection final {
   DefaultRuleProvider provider = DefaultRuleProvider::kNone;

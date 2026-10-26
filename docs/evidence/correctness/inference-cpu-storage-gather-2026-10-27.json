@@ -1,0 +1,776 @@
+{
+  "schema": 1,
+  "batch": "inference-cpu-storage-gather-2026-10-27",
+  "status": "ELEVEN_CPU_STORAGE_TESTS_PASS",
+  "changes": [
+    "Ordinary CPU defaults prefer the existing Native selected-byte Gather for plain non-dense storage or F16/BF16 storage. No model, Store association, hardware identity or thread-count qualification is used by this natural rule.",
+    "Rank-two axis-zero Gather with contiguous inner payload now copies exact selected rows using their original leading byte pitch. The original full current-ID validation still precedes output write mapping; padding and unselected rows are untouched.",
+    "Dense F32/I32 and encoded default routes remain unchanged. Expert Native behavior and existing hardware-qualified kWins remain available.",
+    "Default Compute and Graph tests check raw F32/F16/BF16 payloads, odd-width dense/padded rows, current strided IDs, changed selection, NaN/signed-zero bit preservation and invalid-last-ID zero writes. A default-factory padded Gather/Store case checks original lease guards and retirement. The legacy rules assertion is updated for the natural narrow-storage choice."
+  ],
+  "actual": {
+    "distinct_CXX_TUs": 5,
+    "CXX_compile_attempts": 6,
+    "successful_CXX_TUs": 5,
+    "link_attempts": 1,
+    "images": 1,
+    "native_test_processes": 2,
+    "tests": 11,
+    "failures": 0,
+    "skipped": 0,
+    "groups": [
+      {
+        "name": "storage",
+        "process": {
+          "exit": 0,
+          "pid": 55072,
+          "seconds": 0.4293481999775395
+        },
+        "tests": [
+          {
+            "name": "RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "104",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.469",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "190",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.470",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "SourceDestinationOverlapIsRejectedBeforeAnyStore",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "226",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.470",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "252",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.470",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "439",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.470",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "442",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.470",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "445",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.471",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "449",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.471",
+            "classname": "GraphSlotsExecution",
+            "properties": {}
+          },
+          {
+            "name": "OrdinaryDefaultComputePreservesRawRowsAndChecksAllIdsBeforeWriting",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "593",
+            "status": "run",
+            "result": "completed",
+            "time": "0.003",
+            "timestamp": "2026-10-27T02:54:53.471",
+            "classname": "CpuStorageGather",
+            "properties": {}
+          },
+          {
+            "name": "OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotations",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "600",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.474",
+            "classname": "CpuStorageGather",
+            "properties": {}
+          }
+        ],
+        "results": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\results-storage.xml",
+          "bytes": 3264,
+          "sha256": "d08b852d7a8078686dec3cfdf8041ff53ba59c504e2d9e75becbde0de2eca09b"
+        }
+      },
+      {
+        "name": "legacy",
+        "process": {
+          "exit": 0,
+          "pid": 42736,
+          "seconds": 0.4094953999738209
+        },
+        "tests": [
+          {
+            "name": "ExactQualifiedRequestsAndNearbyMissesUseOrdinaryFactories",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\current_rules_test.cc",
+            "line": "30",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T02:54:53.883",
+            "classname": "CpuCurrentRules",
+            "properties": {
+              "qualified_default_environment": "0"
+            }
+          }
+        ],
+        "results": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\results-legacy.xml",
+          "bytes": 744,
+          "sha256": "90c4cefc2a27493ad5fbe2229224a04187bd8a76ac1dacebf7dc5688875cdd0d"
+        }
+      }
+    ],
+    "compiled": [
+      {
+        "name": "default_rules",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\default_rules.cc",
+          "bytes": 12236,
+          "sha256": "83ec2aeaf97a762b7401fc420149c65b0f384ad004a56ec6f562471ccf82c001"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\default_rules\\unit.obj",
+          "bytes": 557163,
+          "sha256": "864ca973c762c88983338bf4c5c2c8f4ab05315657282b8ee8fc7c72647c2efe"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 17616,
+          "seconds": 1.1938678000005893
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\default_rules\\actual-canonical-dependencies.json",
+          "bytes": 7810,
+          "sha256": "3b84eb423f4ca72ac0d65202b6065feb8271337cd7ef19ea34e4dcb34a43c6af"
+        }
+      },
+      {
+        "name": "indexing",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\indexing.cc",
+          "bytes": 12966,
+          "sha256": "e725a5415319856917b9bb1fa3441c9267c6dcddbc0b10cb252d88ab9742aa3c"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\indexing\\unit.obj",
+          "bytes": 211780,
+          "sha256": "9b0d32c94b5f65218bf92d2cbbf1840958c4962aa8a2e6a980ec575a81d4cde6"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 61976,
+          "seconds": 1.064154400024563
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\indexing\\actual-canonical-dependencies.json",
+          "bytes": 6925,
+          "sha256": "7fc854ff5bcc4eb61c1ed38f6fb2d837ec20dd8a0c2dfd2fa55677d7142bc835"
+        }
+      },
+      {
+        "name": "native_provider",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+          "bytes": 41433,
+          "sha256": "a464589ef1dd4c1a31926bc899f12ba7373e512946492ce10ca410dc63316749"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\native_provider\\unit.obj",
+          "bytes": 748580,
+          "sha256": "6ab390f535b08b5b536f2a1340e5435aa42d5ce5bc3d21749397bac3e2e59a11"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 59468,
+          "seconds": 1.4886307999840938
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\native_provider\\actual-canonical-dependencies.json",
+          "bytes": 10573,
+          "sha256": "5ae8a7a8cb427a71f43c1a967b040fae1b0fe323c1cd971b004f8fb292905987"
+        }
+      },
+      {
+        "name": "slots-test",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "bytes": 31525,
+          "sha256": "18b55e15e2226217fd2286ce82bbf1cd28898f7048220db6705de5246de43814"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile2\\slots-test\\unit.obj",
+          "bytes": 1255572,
+          "sha256": "595990afeb616baf940a9a01a6fe7a371f6b801acab71d015b74e1ced60a5486"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 21748,
+          "seconds": 2.6763725000200793
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile2\\slots-test\\actual-canonical-dependencies.json",
+          "bytes": 10194,
+          "sha256": "4bc2fbcc4ed8c5e6a2a66d5b9e47aa69d905f957d6d32f1118c3ea899b2b82b3"
+        }
+      },
+      {
+        "name": "rules-test",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\current_rules_test.cc",
+          "bytes": 13023,
+          "sha256": "dd23e899476ddb4872a7846a9e81edb8e1f0da80a676510326b3693be59e51e7"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile2\\rules-test\\unit.obj",
+          "bytes": 1597184,
+          "sha256": "12b71e67b7430a42e9796447305ae45f25bd66929d76c83d64a87fe9ab9e426a"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 32292,
+          "seconds": 2.234330500010401
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile2\\rules-test\\actual-canonical-dependencies.json",
+          "bytes": 6600,
+          "sha256": "c2c5cc04f939b1f64a1a01bd3c00b4614eafe6ca19e038b229ef0f8e7cf322fe"
+        }
+      }
+    ],
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\bin\\cpu-storage-gather-test.exe",
+      "bytes": 143324672,
+      "sha256": "b0366400de23a1a275f1c0761119dd6ca75f9cc0e6dd1adf223a74ae742e6f52"
+    },
+    "link": {
+      "exit": 0,
+      "pid": 61276,
+      "seconds": 1.7906044000410475
+    }
+  },
+  "failures_and_corrections": [
+    "Initial slots test had an ambiguous conditional expression between Status and ResultError; fixed only two test return expressions. Three successful product objects reused.",
+    "Both native GTest processes passed. The first Python summary assertion incorrectly rejected the legacy test RecordProperty XML child. Corrected offline without rerunning any process."
+  ],
+  "sources": [
+    {
+      "path": "src/compute_provider_native/default_rules.h",
+      "bytes": 1483,
+      "sha256": "d5c49742bbf49377917f77aa6226a09b89eac13cff015ed5bf0052f2a160d114"
+    },
+    {
+      "path": "src/compute_provider_native/default_rules.cc",
+      "bytes": 12236,
+      "sha256": "83ec2aeaf97a762b7401fc420149c65b0f384ad004a56ec6f562471ccf82c001"
+    },
+    {
+      "path": "src/compute_provider_native/native_provider.cc",
+      "bytes": 41433,
+      "sha256": "a464589ef1dd4c1a31926bc899f12ba7373e512946492ce10ca410dc63316749"
+    },
+    {
+      "path": "src/compute_provider_native/indexing.cc",
+      "bytes": 12966,
+      "sha256": "e725a5415319856917b9bb1fa3441c9267c6dcddbc0b10cb252d88ab9742aa3c"
+    },
+    {
+      "path": "tests/graph/slots_execution_test.cc",
+      "bytes": 31525,
+      "sha256": "18b55e15e2226217fd2286ce82bbf1cd28898f7048220db6705de5246de43814"
+    },
+    {
+      "path": "tests/compute_route_cpu/current_rules_test.cc",
+      "bytes": 13023,
+      "sha256": "dd23e899476ddb4872a7846a9e81edb8e1f0da80a676510326b3693be59e51e7"
+    }
+  ],
+  "source_boundaries": {
+    "changed_header": "default_rules.h adds a private function declaration only. NativePlan/provider/Graph/public layouts are unchanged; no SDK/native/third-party rebuild was performed.",
+    "assembly_reference": "docs/evidence/correctness/inference-native-slot-store-2026-10-27.json",
+    "assembly_archive": "docs/evidence/correctness/inference-native-slot-store-2026-10-27.zip",
+    "original_shared_summary": ".scratch/inference-native-slot-store-20261027/windows-shared/attempt2/summary.json",
+    "original_shared_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-shared\\attempt2\\ready.json",
+      "bytes": 3530,
+      "sha256": "ae7191ce5a448e9e3742a9d133f5a8e185f228b806c04a4fbd23def7a99cebc1"
+    },
+    "common_reuse": {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-shared\\attempt2\\compile\\store\\unit.obj",
+        "bytes": 1061838,
+        "sha256": "ff8817d6eb4ca6a655b9cefd592d93dbbe2bb476c095d750f8ea848d5708a3d6"
+      },
+      "current": {
+        "name": "common",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+          "bytes": 51377,
+          "sha256": "40d4ffad41303f89693b01a58c493f158e7b93e10658d9b7e34b4e946a054351"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-vulkan\\compile\\common\\unit.obj",
+          "bytes": 1061830,
+          "sha256": "01eee01961615cbde056f5821291d15cabf96146446c0e9cb514a4f5ece7fc33"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 14000,
+          "seconds": 2.4418766999733634
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-vulkan\\compile\\common\\actual-dependencies.json",
+          "bytes": 46105,
+          "sha256": "f76cc3bea6264dc1d7e39372cfa09407568b3edb1422ff82ac9fda916bb06a70"
+        }
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-vulkan\\ready.json",
+        "bytes": 8004,
+        "sha256": "fdcb4cf8a2533e28b8b6b620e3d0788a997f7c60225270708e517945cfffb16a"
+      }
+    },
+    "note": "The shared baseline common object used source154b6d92. This image reuses the already built current native-slot-store common object matching source40d4ffad; it does not rebuild common. Other cached objects retain their original recorded source snapshots, not an assertion of a current-source full rebuild."
+  },
+  "limitations": [
+    "Existing hardware-qualified kWins remain; this run reports qualified_default_environment=0 and does not requalify them.",
+    "Tests request native_threads=2 to exercise the natural rule outside the old one-thread gate; this is not a multithread performance claim.",
+    "No other CpuCurrentRules groups, model, CUDA/Vulkan execution, performance, SDK build or download."
+  ],
+  "no_new_model_speed_or_platform_claim": true,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cpu-storage-gather-2026-10-27.zip",
+    "bytes": 116013,
+    "sha256": "05be137f3faaa8b0c77236ca564b31c3908ead19b16c0bc0de9d8cf1e6744936",
+    "members": [
+      {
+        "path": "build.py",
+        "bytes": 8789,
+        "sha256": "a46dbf3c86bae8ab5d214efdc3cc774c3b425424fc3940b516bf34e4fee2bc9d"
+      },
+      {
+        "path": "build-attempt1.py",
+        "bytes": 8705,
+        "sha256": "cbd77cdb43887fe88572cc533bda46f4a0aebb85237527825f72325b4f0d9e91"
+      },
+      {
+        "path": "resume.py",
+        "bytes": 3783,
+        "sha256": "0d9039d29784067e00a3984fc9b0e865520477e5ebaea1412992fad1e06cee6e"
+      },
+      {
+        "path": "finalize.py",
+        "bytes": 4479,
+        "sha256": "7a3ff295114bea353739bbe6455ec05f63e20294620e85f39e3dee0effcc5655"
+      },
+      {
+        "path": "plan.json",
+        "bytes": 21023,
+        "sha256": "6234493a13302dadf41d59b1ce26ccc1290b03c909b86ea882830cb6f93434cc"
+      },
+      {
+        "path": "plan2.json",
+        "bytes": 8877,
+        "sha256": "d504ba39382ff1c5ee12598f6766ee3a9af3eeacc274a75e0f8602facc29e284"
+      },
+      {
+        "path": "source-freeze.json",
+        "bytes": 1246,
+        "sha256": "97f4586c2986e77ff21811d6fc1fea1fc161134a0676dba1ce036f9cf9ff2611"
+      },
+      {
+        "path": "source2-freeze.json",
+        "bytes": 1246,
+        "sha256": "bc99ac208ea3e2f8917e492670508875b7efead1dfdfa205bf165a50f2466b92"
+      },
+      {
+        "path": "recipe-default_rules.json",
+        "bytes": 3215,
+        "sha256": "ad990be78c9f4837c277700386ed1df3a9a2ed4c3c80ee6886c4f2648111bf4e"
+      },
+      {
+        "path": "recipe-indexing.json",
+        "bytes": 3195,
+        "sha256": "901f217561b92066eea82ecde0a5c0428f24823616eb1cc35e59d11631597adf"
+      },
+      {
+        "path": "partial-compile.json",
+        "bytes": 2807,
+        "sha256": "0c41d531729c19e8c99227324dd36b4742e8f655fc516440487f7d7ebf4a80a3"
+      },
+      {
+        "path": "partial-compile2.json",
+        "bytes": 4663,
+        "sha256": "7334a6436ec2c7cab01e6dca6b5fa9e12d257fcb93301c9e9cb636cadb806294"
+      },
+      {
+        "path": "ready.json",
+        "bytes": 6286,
+        "sha256": "bfecf1958eaab758c6250aa779d628b634af6e0c5ce73413183992bc5d8cc115"
+      },
+      {
+        "path": "link-inputs.json",
+        "bytes": 58782,
+        "sha256": "945130d667155fd391d8406eefef99e4f59104fdf7d97dbe072184db31e49533"
+      },
+      {
+        "path": "runtime.json",
+        "bytes": 20766,
+        "sha256": "b831e3f6dd442243e66f27326c8e9bc6c0e015855dfaaae6f33368644f950cc1"
+      },
+      {
+        "path": "partial-results.json",
+        "bytes": 4268,
+        "sha256": "fc628423b6f7eb0f81c9c08b297589373ff9ef0cfbaed9c4bc005fd7ae1665ca"
+      },
+      {
+        "path": "summary.json",
+        "bytes": 6687,
+        "sha256": "d1b76ec5b94cb3c3ee353573550ec31b1cdd164e8ef331982d2fd46538d43445"
+      },
+      {
+        "path": "results-storage.xml",
+        "bytes": 3264,
+        "sha256": "d08b852d7a8078686dec3cfdf8041ff53ba59c504e2d9e75becbde0de2eca09b"
+      },
+      {
+        "path": "results-legacy.xml",
+        "bytes": 744,
+        "sha256": "90c4cefc2a27493ad5fbe2229224a04187bd8a76ac1dacebf7dc5688875cdd0d"
+      },
+      {
+        "path": "source/src/compute_provider_native/default_rules.h",
+        "bytes": 1483,
+        "sha256": "d5c49742bbf49377917f77aa6226a09b89eac13cff015ed5bf0052f2a160d114"
+      },
+      {
+        "path": "source/src/compute_provider_native/default_rules.cc",
+        "bytes": 12236,
+        "sha256": "83ec2aeaf97a762b7401fc420149c65b0f384ad004a56ec6f562471ccf82c001"
+      },
+      {
+        "path": "source/src/compute_provider_native/native_provider.cc",
+        "bytes": 41433,
+        "sha256": "a464589ef1dd4c1a31926bc899f12ba7373e512946492ce10ca410dc63316749"
+      },
+      {
+        "path": "source/src/compute_provider_native/indexing.cc",
+        "bytes": 12966,
+        "sha256": "e725a5415319856917b9bb1fa3441c9267c6dcddbc0b10cb252d88ab9742aa3c"
+      },
+      {
+        "path": "source/tests/graph/slots_execution_test.cc",
+        "bytes": 31495,
+        "sha256": "0ca199b4b47bb04e36499bd346a7b51b4434ff89643100ca27fb445667377b2e"
+      },
+      {
+        "path": "source/tests/compute_route_cpu/current_rules_test.cc",
+        "bytes": 13023,
+        "sha256": "dd23e899476ddb4872a7846a9e81edb8e1f0da80a676510326b3693be59e51e7"
+      },
+      {
+        "path": "source2/tests/graph/slots_execution_test.cc",
+        "bytes": 31525,
+        "sha256": "18b55e15e2226217fd2286ce82bbf1cd28898f7048220db6705de5246de43814"
+      },
+      {
+        "path": "compile/default_rules/command.json",
+        "bytes": 3053,
+        "sha256": "222c36282f9ceab5b60814b5e17c387486cbf89caf3a4b60b58a4b943307425e"
+      },
+      {
+        "path": "compile/default_rules/process.json",
+        "bytes": 70,
+        "sha256": "4e4e3a571e73a5cab37ad2e63ab4faa136eedff4bcf47692d271a633450071d9"
+      },
+      {
+        "path": "compile/default_rules/stdout.log",
+        "bytes": 18,
+        "sha256": "44e8819f1dc51d9c05b86a8bece817f83e4ae47294e7d20a74d24d5b3b261746"
+      },
+      {
+        "path": "compile/default_rules/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile/default_rules/dependencies.json",
+        "bytes": 17762,
+        "sha256": "4e6d001fa4cc2e80a6d1e36766cdbb34597524a034195e90cb896a1aab5abfee"
+      },
+      {
+        "path": "compile/default_rules/actual-canonical-dependencies.json",
+        "bytes": 7810,
+        "sha256": "3b84eb423f4ca72ac0d65202b6065feb8271337cd7ef19ea34e4dcb34a43c6af"
+      },
+      {
+        "path": "compile/indexing/command.json",
+        "bytes": 3033,
+        "sha256": "a9c860b4e69ae6a723279b60bf0b22d18c3ad39492d4807f190d91f6f821f9a9"
+      },
+      {
+        "path": "compile/indexing/process.json",
+        "bytes": 69,
+        "sha256": "8cd8f0dd3ff1087b7a5762cf407866984a931c319b459b53ee4d873c5c86d5f9"
+      },
+      {
+        "path": "compile/indexing/stdout.log",
+        "bytes": 13,
+        "sha256": "0cae461ccae969cc82f22bcc6e90154615523f9f8849bfb2d76f172dbe1a33f4"
+      },
+      {
+        "path": "compile/indexing/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile/indexing/dependencies.json",
+        "bytes": 17448,
+        "sha256": "e31f5f1b30a9a469f829035495ec56ac422bd2a3cf968ad1d7b2ce1dba151c4e"
+      },
+      {
+        "path": "compile/indexing/actual-canonical-dependencies.json",
+        "bytes": 6925,
+        "sha256": "7fc854ff5bcc4eb61c1ed38f6fb2d837ec20dd8a0c2dfd2fa55677d7142bc835"
+      },
+      {
+        "path": "compile/native_provider/command.json",
+        "bytes": 3037,
+        "sha256": "9473efa982607737da33d20e56877f6e0e12239eacbebd2cb9f94abb3634eae2"
+      },
+      {
+        "path": "compile/native_provider/process.json",
+        "bytes": 70,
+        "sha256": "be41a60282b1c9b846357a971658867dee5b0dae78205dda79a062621e733512"
+      },
+      {
+        "path": "compile/native_provider/stdout.log",
+        "bytes": 20,
+        "sha256": "7b6d1674bdf9f120075bc110f707c21e4ef5a8954718aa6a8d393b3ada2be4f6"
+      },
+      {
+        "path": "compile/native_provider/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile/native_provider/dependencies.json",
+        "bytes": 19064,
+        "sha256": "6dfb2bfcfd7699ed5e7d1646005f5faf852f1a52b8882f5ea357ec209f2aa41d"
+      },
+      {
+        "path": "compile/native_provider/actual-canonical-dependencies.json",
+        "bytes": 10573,
+        "sha256": "5ae8a7a8cb427a71f43c1a967b040fae1b0fe323c1cd971b004f8fb292905987"
+      },
+      {
+        "path": "compile/slots-test/command.json",
+        "bytes": 1803,
+        "sha256": "2f66d318903dc22497f4714541384ed0f6ac9a5b0713126fb02a41c321978e83"
+      },
+      {
+        "path": "compile/slots-test/process.json",
+        "bytes": 70,
+        "sha256": "90f5a081b217c405a05d3b7941896f8609888a3a6f656ed1056d5c51010ad6ea"
+      },
+      {
+        "path": "compile/slots-test/stdout.log",
+        "bytes": 1063,
+        "sha256": "8a507756a2a0ccaed7937f9451526e56c9f9aa0ae59fb677bbf5d268dfd14397"
+      },
+      {
+        "path": "compile/slots-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile/slots-test/dependencies.json",
+        "bytes": 29663,
+        "sha256": "47184f3ce42eece58b8251652fcc1e01a8f350a0cd4000fe6c408a9678857d95"
+      },
+      {
+        "path": "compile2/slots-test/command.json",
+        "bytes": 1806,
+        "sha256": "b9201afc07286640eae4f7d5051c183096eb97a39908041e51de2855843a7328"
+      },
+      {
+        "path": "compile2/slots-test/process.json",
+        "bytes": 70,
+        "sha256": "4b035f8203a8531e6927e6f2850539f11dd1324526945a9d52d143f08ef05a87"
+      },
+      {
+        "path": "compile2/slots-test/stdout.log",
+        "bytes": 25,
+        "sha256": "32ac94e534a5a91a06834043d39a59d1c0f6eff0dd0e895f63eea78b686cf0a0"
+      },
+      {
+        "path": "compile2/slots-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile2/slots-test/dependencies.json",
+        "bytes": 29663,
+        "sha256": "47184f3ce42eece58b8251652fcc1e01a8f350a0cd4000fe6c408a9678857d95"
+      },
+      {
+        "path": "compile2/slots-test/actual-canonical-dependencies.json",
+        "bytes": 10194,
+        "sha256": "4bc2fbcc4ed8c5e6a2a66d5b9e47aa69d905f957d6d32f1118c3ea899b2b82b3"
+      },
+      {
+        "path": "compile2/rules-test/command.json",
+        "bytes": 1816,
+        "sha256": "b8bad4472f83278bb0e0ff36a642d375337d9ccf63adc147d0b22980896660bb"
+      },
+      {
+        "path": "compile2/rules-test/process.json",
+        "bytes": 69,
+        "sha256": "a5844aeb8959da3bd03f9266215ba4e2cf3d0d3e8cbfd25a5a752e73a1e41af4"
+      },
+      {
+        "path": "compile2/rules-test/stdout.log",
+        "bytes": 23,
+        "sha256": "892bc2a02704bc7720e809fa1de10bef5cdcd88d0a6132f11831e24143805369"
+      },
+      {
+        "path": "compile2/rules-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "compile2/rules-test/dependencies.json",
+        "bytes": 28502,
+        "sha256": "965eb98a0b8df1885b480032470d583b746611a8782f3e2849169827175fbde0"
+      },
+      {
+        "path": "compile2/rules-test/actual-canonical-dependencies.json",
+        "bytes": 6600,
+        "sha256": "c2c5cc04f939b1f64a1a01bd3c00b4614eafe6ca19e038b229ef0f8e7cf322fe"
+      },
+      {
+        "path": "link/command.json",
+        "bytes": 31870,
+        "sha256": "139a3d14a121f41e7f868a2b5c2a2ce1a951b78be136886e3919cf3c12386eb5"
+      },
+      {
+        "path": "link/process.json",
+        "bytes": 70,
+        "sha256": "5ee6243fd639601961b6d79b98dd0742b37e9b29b2b899ea7dcef67e02030db1"
+      },
+      {
+        "path": "link/stdout.log",
+        "bytes": 235,
+        "sha256": "5afe00be41dc57751f497a816fb0e8d383d4daee3830a2e9975b05002f5d2de2"
+      },
+      {
+        "path": "link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "run-storage/command.json",
+        "bytes": 435,
+        "sha256": "18398ef973336a0f8c1d82d2b6df8e0637c4672b1489b9a88d171f64905a3942"
+      },
+      {
+        "path": "run-storage/process.json",
+        "bytes": 70,
+        "sha256": "4b6c3bc072a7f14ad03e13f66adf24b3d95269a6aed05cff8da7f0e4c6d074be"
+      },
+      {
+        "path": "run-storage/stdout.log",
+        "bytes": 2564,
+        "sha256": "934ac763e60919e2cae2ff08b896fa52f5d3e266173d51c288e59ce564f3eec2"
+      },
+      {
+        "path": "run-storage/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "run-legacy/command.json",
+        "bytes": 467,
+        "sha256": "27e47f8999265c1bc23e54aa0c35c73efabd406f1342fde32bd9e9abcf599e23"
+      },
+      {
+        "path": "run-legacy/process.json",
+        "bytes": 70,
+        "sha256": "9aae6cab8e839c0c758cea1a8690d41d1670676ab966d6bd4802b728b386a551"
+      },
+      {
+        "path": "run-legacy/stdout.log",
+        "bytes": 749,
+        "sha256": "8683490d871f591a1bbe9987753ee86312c59a8086b5278a0f5de695a9fb78fd"
+      },
+      {
+        "path": "run-legacy/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "excluded": "No EXE/OBJ/PDB/vendor source/SDK/header tree/models/full old closure copied into this archive."
+  },
+  "local_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\summary.json",
+    "bytes": 6687,
+    "sha256": "d1b76ec5b94cb3c3ee353573550ec31b1cdd164e8ef331982d2fd46538d43445"
+  },
+  "local_receipt": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\receipt.json",
+    "bytes": 17758,
+    "sha256": "d56d1428eac84700c823a9a36677c5f5afd2312460c844850259fe444842dc48"
+  }
+}

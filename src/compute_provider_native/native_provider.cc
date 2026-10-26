@@ -826,6 +826,17 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               static_cast<std::uint64_t>(operation.kind()) + 1 +
               (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };
+  if (request.shape.exact() &&
+      context->scope != internal::DefaultRuleScope::kExpert) {
+    const auto policy = internal::storage_gather_policy(operation, inputs, outputs);
+    if (policy.valid()) {
+      proposal->policy = policy;
+      // Prefer the existing selected-byte algorithm to whole-bank CONT or a
+      // half -> F32 -> half conversion. No model, CPU or thread-count gate.
+      proposal->preference =
+          context->scope == internal::DefaultRuleScope::kDirect ? 75 : 275;
+    }
+  }
   if (request.shape.exact() && context->qualified_environment &&
       internal::thread_runtime_allows_qualified_default() &&
       context->scope != internal::DefaultRuleScope::kExpert) {

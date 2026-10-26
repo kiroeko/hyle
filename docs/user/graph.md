@@ -1187,7 +1187,8 @@ auto status = graph::slots::prepare(run, logical_graph, queues, sources, options
 生成源ID，并核实际选中reader的读取资格；调用者不再自行绑定池或ID。准备／seal会重新核实际输入，
 替换池或ID不能沿用原权限执行。这个关联只描述逻辑资源，不选择Provider；尚无资格的实现会明确拒绝，
 不能以整池ReadLease代替。Apple／Vulkan已接普通原类型选行与原生Store，当前Store要求item字节数及偏移为4字节对齐；
-不符合时明确拒绝，不扩写padding。CPU默认ggml带padding的读取及原生字节尾部承载仍待补齐。
+不符合时明确拒绝，不扩写padding。原生字节尾部承载仍待补齐。CPU默认路线自动为plain非稠密或F16／BF16
+Gather选择现有原码选行，保留stride及原始位，不要求调用者指定Provider；encoded及稠密F32／I32沿原选择。
 CUDA已接精确的`Gather → reshape → GDN → reshape → Store`冷融合：若实际选中该region，
 同一`slots::bind`从事务的B个source readers和B×K个writers生成一块私有索引载体，
 同时绑定原池的准确读写权限；普通GDN的K1与最后K个候选状态遵守同一接口。

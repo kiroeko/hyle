@@ -125,7 +125,14 @@ TEST(CpuCurrentRules, ExactQualifiedRequestsAndNearbyMissesUseOrdinaryFactories)
     // This is a real public thread-policy miss; math stays available.
     auto fallback = prepare(multiple, op, inputs, outputs, hyle::mem::system_resource());
     ASSERT_TRUE(fallback) << fallback.error().message();
-    EXPECT_NE(fallback->provider().id, native::kProviderId);
+    // Narrow Gather is now an ordinary byte-preserving storage choice, even
+    // outside the sampled one-thread environment; it is not a sampled WIN.
+    const bool storage_gather = item.family == "gather" &&
+        (t == DataType::kFloat16 || t == DataType::kBFloat16);
+    if (storage_gather)
+      EXPECT_EQ(fallback->provider().id, native::kProviderId);
+    else
+      EXPECT_NE(fallback->provider().id, native::kProviderId);
     EXPECT_NE(fallback->route_policy().namespace_id, 0x48594c4543505552ULL);
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
     // Exercise actual Graph lowering of the same leaf with regions explicitly

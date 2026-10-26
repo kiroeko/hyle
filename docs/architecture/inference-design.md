@@ -139,7 +139,10 @@ Apple／Vulkan现已沿原ExecutionSource装配Store：共同事务持有实际s
 Apple原类型选行与Vulkan合格原码选行保留实际stride，不复制整池；资格仍以实际lowering及全部读者核验为准。
 [有限检查](../evidence/correctness/inference-native-slot-store-2026-10-27.json)覆盖两原生路线各3项及共同层11项回归，
 不代表完整引擎提速。当前原生Store仅承载4字节对齐item与offset；此为实现限制，精确字节尾部仍待补。
-CPU默认ggml的padding读取仍可能整池物化，尚不能用native-only组件检查代签默认路线；这些缺项须在引擎接线前补齐。
+CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
+不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
+[11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，
+不是单独强选Native；显式ggml的带padding读取未因此取得投影资格。
 history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 GDN各用自己的池和槽号。
 私有CUDA索引GDN沿原内核的F32运算体寻址：pool保留真实`[S,S,H,P]`及槽stride，
 源为I32`[B]`，目的为batch-major I32`[B,K]`，K>1写最后K个边界的时间升序状态。
