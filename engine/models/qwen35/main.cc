@@ -1366,6 +1366,30 @@ struct EvaluationRequest final {
   const inference::RequestStopPolicy *stop_policy = nullptr;
   LogitsInputs logits;
 };
+
+// CPU topology only, never a candidate/head or permission. A weak identity and
+// the next committed epoch qualify consumption after the original predecessor.
+struct DecodeAheadMetadata final {
+  template<class T, std::size_t N>
+  using Values = hyle::container::SmallVector<T, N, mem::AllocatorRef>;
+  struct Member final {
+    std::weak_ptr<Session> session;
+    std::uint64_t epoch = 0;
+    std::size_t length = 0;
+  };
+  c::ResourceBudget budget; // Outlives its borrowed metadata allocators.
+  Values<Member, 2> members;
+  Values<std::int32_t, 2> positions, old_ids, old_indptr, old_last, old_query;
+  std::size_t sampling_index = 0;
+  bool ready = false;
+  DecodeAheadMetadata(c::ResourceBudget owner, mem::AllocatorRef allocator)
+      : budget(std::move(owner)), members(allocator), positions(allocator), old_ids(allocator),
+        old_indptr(allocator), old_last(allocator), old_query(allocator) {}
+  void clear() noexcept {
+    ready = false;
+    members.clear(); positions.clear(); old_ids.clear(); old_indptr.clear(); old_last.clear(); old_query.clear();
+  }
+};
 enum class EvaluationDisposition : std::uint8_t { kNotPublished, kPublished, kCancelled };
 struct EvaluationOutput final {
   std::shared_ptr<Session> session;
@@ -1680,6 +1704,9 @@ public:
   // owners referenced by Snapshot/PageRef, including exceptional shutdown.
   InputPreparationScratch input_scratch;
   std::unique_ptr<StepState> active_step;
+  std::optional<DecodeAheadMetadata> decode_ahead;
+  std::size_t cpu_ahead_prepared = 0, cpu_ahead_hits = 0, cpu_ahead_discarded = 0;
+  double cpu_ahead_prepare_seconds = 0;
   const std::size_t capacity;
   const ReplayPolicy replay_policy;
   const std::filesystem::path layer0_probe;
@@ -1948,6 +1975,10 @@ public:
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
         << ",\"cold_exact_admissions\":" << exact_admissions
         << ",\"cold_exact_evictions\":" << exact_evictions
+        << ",\"cpu_ahead_prepared\":" << cpu_ahead_prepared
+        << ",\"cpu_ahead_hits\":" << cpu_ahead_hits
+        << ",\"cpu_ahead_discarded\":" << cpu_ahead_discarded
+        << ",\"cpu_ahead_prepare_seconds\":" << cpu_ahead_prepare_seconds
         << ",\"backend\":\"" << execution.name()
         << "\",\"cache_budget_scope\":\"shared_pools_retained_outputs_and_resource_metadata\""
         << ",\"cpu_ffn_layers\":" << ffn_placement.cpu_layers()
@@ -2091,6 +2122,7 @@ public:
     snapshot_versions.capacity = cache_plan.snapshot_slots;
     attention_schemas = std::move(prepared_schemas);
     attention_schema = std::move(prepared_schema);
+    prepare_decode_ahead_storage();
   }
 
   void prepare_state_storage() {
@@ -3735,6 +3767,7 @@ public:
   }
 
   inference::RetirementObservation abort_episode() noexcept {
+    discard_decode_ahead();
     if (!active_step) return {true, {}};
     // Nonblocking collection cannot drain a partially accepted Vulkan prefix.
     // Hand off once to the original blocking owner, then check the unchanged
@@ -3836,6 +3869,98 @@ public:
     if (draft_lag(role)) phase.catchup_token.write<std::int32_t>(catchups);
   }
 
+  void discard_decode_ahead() noexcept {
+    if (!decode_ahead) return;
+    if (decode_ahead->ready) ++cpu_ahead_discarded;
+    decode_ahead->clear();
+  }
+
+  // Admit the complete optional host workspace while cold. In-flight work
+  // must not acquire budget that the original episode still needs to finish.
+  void prepare_decode_ahead_storage() noexcept {
+    if (cache_plan.active_sequences < 2 || cache_plan.draft_cache || decode_ahead) return;
+    try {
+      decode_ahead.emplace(execution_budget, take(execution_budget.metadata_allocator()));
+      auto &prepared = *decode_ahead;
+      const auto width = cache_plan.active_sequences;
+      if (!prepared.members.try_reserve(width) || !prepared.positions.try_reserve(width) ||
+          !prepared.old_ids.try_reserve(attention_schema.capacity().max_page_refs) ||
+          !prepared.old_indptr.try_reserve(width + 1) || !prepared.old_last.try_reserve(width) ||
+          !prepared.old_query.try_reserve(width + 1)) decode_ahead.reset();
+    } catch (...) { decode_ahead.reset(); } // Optional, before any accepted work.
+  }
+
+  // Only the complete submitted batch is eligible, never a guessed future wave.
+  // Failure is optional preparation failure only: never abort the predecessor.
+  hyle::Status prepare_decode_ahead() noexcept {
+    if (!decode_ahead) return hyle::Status::Ok();
+    if (!active_step || !active_step->submitted || active_step->cancelled || !active_step->phase ||
+        active_step->phase->family->role != GraphRole::kText ||
+        active_step->phase->family->completion != TextCompletion::kEmitNext || active_step->members.size() < 2)
+      return hyle::Status::FailedPrecondition("decode metadata requires an original ordinary submitted episode");
+    const auto begin = Clock::now();
+    const auto fail = [&](hyle::Status status) noexcept {
+      discard_decode_ahead();
+      cpu_ahead_prepare_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
+      return status;
+    };
+    try {
+      discard_decode_ahead();
+      auto &prepared = *decode_ahead;
+      std::size_t refs = 0;
+      for (const auto &member : active_step->members) {
+        if (!member.next || member.session->failed || member.session->stopping ||
+            member.next->length >= capacity || member.base_epoch == UINT64_MAX)
+          return fail(hyle::Status::Unavailable("decode metadata member cannot continue"));
+        refs = cache::add(refs, member.next->pages.size());
+      }
+      const auto width = active_step->members.size();
+      if (width > prepared.members.capacity() || width > prepared.positions.capacity() ||
+          refs > prepared.old_ids.capacity() || width + 1 > prepared.old_indptr.capacity() ||
+          width > prepared.old_last.capacity() || width + 1 > prepared.old_query.capacity())
+        return fail(hyle::Status::Unavailable("decode topology exceeds its cold workspace"));
+      prepared.old_query.resize(width + 1, 0);
+      prepared.old_indptr.push_back(0);
+      for (const auto &member : active_step->members) {
+        const auto length = member.next->length;
+        prepared.members.push_back({member.session, member.base_epoch + 1, length});
+        prepared.positions.push_back(static_cast<std::int32_t>(length));
+        for (const auto &page : member.next->pages) prepared.old_ids.push_back(static_cast<std::int32_t>(page.page()));
+        prepared.old_indptr.push_back(static_cast<std::int32_t>(prepared.old_ids.size()));
+        prepared.old_last.push_back(static_cast<std::int32_t>((length - 1) % cache::Plan::page_rows + 1));
+      }
+      prepared.sampling_index = active_step->phase->family->sampling->index;
+      prepared.ready = true; ++cpu_ahead_prepared;
+      cpu_ahead_prepare_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
+      return hyle::Status::Ok();
+    } catch (const std::bad_alloc &) {
+      return fail(hyle::Status::ResourceExhausted("optional decode metadata allocation"));
+    } catch (...) {
+      return fail(hyle::Status::Unavailable("optional decode metadata preparation"));
+    }
+  }
+
+  bool take_decode_ahead(std::span<const EvaluationRequest> requests, GraphRole role,
+      TextCompletion completion, std::size_t sampling_index) noexcept {
+    if (!decode_ahead || !decode_ahead->ready) return false;
+    auto &prepared = *decode_ahead;
+    bool matches = requests.size() > 1 && requests.size() == prepared.members.size() &&
+        role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
+        sampling_index == prepared.sampling_index;
+    for (std::size_t i = 0; matches && i < requests.size(); ++i) {
+      const auto &request = requests[i];
+      auto owner = prepared.members[i].session.lock();
+      matches = request.ids.size() == 1 && owner && owner.get() == request.session.get() &&
+          !owner.owner_before(request.session) && !request.session.owner_before(owner) &&
+          !owner->failed && !owner->stopping && owner->head.epoch() == prepared.members[i].epoch &&
+          owner->length() == prepared.members[i].length;
+    }
+    if (!matches) { discard_decode_ahead(); return false; }
+    prepared.ready = false;
+    prepared.members.clear(); ++cpu_ahead_hits;
+    return true;
+  }
+
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
                            inference::PreparationObservation *preparation = nullptr,
                            GraphRole role = GraphRole::kText,
@@ -3900,6 +4025,7 @@ public:
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
+    const bool ahead = take_decode_ahead(requests, role, completion, sampling_index);
     auto candidate = std::make_unique<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (const auto &request : requests) {
@@ -3927,7 +4053,7 @@ public:
       packed_ids.clear(); positions.clear();
       for (const auto &request : requests) {
         if (width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
-        for (std::size_t row = 0; row < tokens; ++row)
+        if (!ahead) for (std::size_t row = 0; row < tokens; ++row)
           positions.push_back(static_cast<std::int32_t>(request.session->length() + row));
       }
       for (std::size_t j = 0; j < width; ++j) {
@@ -3935,7 +4061,10 @@ public:
         if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
       }
       phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
-      phase.positions.write<std::int32_t>(positions);
+      if (ahead) {
+        phase.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
+        decode_ahead->positions.clear();
+      } else phase.positions.write<std::int32_t>(positions);
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
@@ -3962,7 +4091,7 @@ public:
         old_refs = cache::add(old_refs, member.base->pages.size());
         new_refs = cache::add(new_refs, (member.base->length + tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
       }
-      if (width != 1) old_ids.reserve(old_refs);
+      if (width != 1 && !ahead) old_ids.reserve(old_refs);
       if (new_refs > new_ids.capacity())
         throw std::runtime_error("target page-index scratch exceeds prepared schema capacity");
       for (auto &bank : step.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
@@ -4012,7 +4141,7 @@ public:
             step.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
           }
         }
-        if (width != 1) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
+        if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
         const auto begin = new_ids.size();
         for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
         query_indptr.push_back(static_cast<std::int32_t>((j + 1) * tokens));
@@ -4027,9 +4156,15 @@ public:
       phase.attention_layout = width == 1 ? step.members[0].layout
           : take(attention_schema.version({query_indptr, new_indptr, new_ids, new_last}));
       // Old layouts describe no new queries, but retain each independent history.
-      const std::vector<std::int32_t> old_query(width == 1 ? 0 : width + 1, 0);
+      const std::vector<std::int32_t> old_query(width == 1 || ahead ? 0 : width + 1, 0);
       const auto old_layout = width == 1 ? c::BatchLayoutVersion{}
+          : ahead ? take(attention_schema.version({
+              {decode_ahead->old_query.data(), decode_ahead->old_query.size()},
+              {decode_ahead->old_indptr.data(), decode_ahead->old_indptr.size()},
+              {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
+              {decode_ahead->old_last.data(), decode_ahead->old_last.size()}}))
           : take(attention_schema.version({old_query, old_indptr, old_ids, old_last}));
+      if (ahead) decode_ahead->clear(); // version() copied the borrowed integers.
       std::vector<c::PagedArenaFootprint> sources(width);
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
         const auto compose = [&](bool key) {
@@ -5837,10 +5972,26 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
   };
   model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion); model.submit_evaluations();
+  bool prepared_ahead = false;
   try {
     if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<AfterSubmit>>) {
       try { after_submit(); }
       catch (...) { (void)model.abort_episode(); throw; }
+    }
+    // Controls retain their original post-submit ordering. Optional CPU-only
+    // work follows them, and never turns its own allocation failure into a
+    // failure or publication of this already submitted episode.
+    if (calls.size() > 1 && generation && role == GraphRole::kText &&
+        calls[0].completion == TextCompletion::kEmitNext) {
+      const bool continues = std::ranges::all_of(calls, [](const auto &call) {
+        const auto &request = *call.request;
+        return call.quota > 1 && request.progress.remaining_outputs() > 1 && request.session &&
+            !request.session->stopping && !request.session->failed;
+      });
+      if (continues) {
+        (void)model.prepare_decode_ahead();
+        prepared_ahead = model.decode_ahead && model.decode_ahead->ready;
+      }
     }
     if (generation && role == GraphRole::kVerify) model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
@@ -5855,6 +6006,12 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       }
       finish_generation_call(model, calls[j]);
     }
+    if (prepared_ahead)
+      for (const auto &call : calls)
+        if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
+            !call.request->session || call.request->session->stopping) {
+          model.discard_decode_ahead(); break;
+        }
   } catch (...) {
     for (auto &call : calls) observe_generation_commits(*call.request);
     throw;

@@ -1,0 +1,406 @@
+{
+  "schema": 1,
+  "status": "BOUNDED_FUNCTIONAL_PASS",
+  "created_utc": "2026-10-26T23:24:21.430896+00:00",
+  "changes": [
+    "Cold-budgeted per-Model weak identities and integer positions/page topology for complete ordinary B>1 decode batches.",
+    "Original AfterSubmit control hook runs first. Next real prepare consumes only after owner/control-block/epoch/length/order/role/completion/sampler/T1 match.",
+    "Layout version creation, budget checks, candidate/state/tail/native binding and publication remain in the next normal prepare. Singleton/MTP/ineligible batches skip ahead.",
+    "Reordering, cancelled members, changed batch and predecessor failure discard optional metadata without retaining Session heads."
+  ],
+  "sources": {
+    "engine/models/qwen35/main.cc": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 504270,
+      "sha256": "fdcbc7a662bcb87b545dc6d0f13c39daf01d67e88fdedb80c630eb31b6d158ff"
+    },
+    "tests/tools/qwen_cpu_ahead_test.cc": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_cpu_ahead_test.cc",
+      "bytes": 7181,
+      "sha256": "46a3d31df1fba71317e1e4ce8b74dc060d4eb0b4d8395223df061dd5f81c105b"
+    },
+    "tests/CMakeLists.txt": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 28115,
+      "sha256": "fc385ccca5a0c4df499c246bc06e381cd40092b8f798ea008511bb8b6a46e135"
+    }
+  },
+  "final_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-ahead-20261027\\attempt2\\ready.json",
+    "bytes": 2094,
+    "sha256": "3005d4e7d119d89022a0065e33a7191477ef284e7fd4b75ea3084d6f2ccd1e6d"
+  },
+  "final_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-ahead-20261027\\attempt2\\image\\cpu-ahead-test.exe",
+    "bytes": 141667328,
+    "sha256": "50d99d5160f3b564e10fbbaf3e813dbb64ed205581ac7e893ecf8f3d00a210bb"
+  },
+  "result": {
+    "status": "PASS",
+    "backend": "cuda",
+    "physical_calls": 10,
+    "outputs": 18,
+    "records_compared": 9,
+    "candidate_prepared": 3,
+    "candidate_hits": 1,
+    "candidate_discarded": 2,
+    "control_hits": 0,
+    "owner_epoch_length_order_checked": true,
+    "reorder_discard": true,
+    "paused_cancel_subset_discard": true,
+    "final_versions": 0,
+    "cpu_prepare_seconds": 2e-06,
+    "ids": [
+      [
+        8,
+        11,
+        48,
+        11
+      ],
+      [
+        33,
+        2,
+        5,
+        45,
+        5
+      ]
+    ]
+  },
+  "counts": {
+    "distinct_CXX_TUs": 1,
+    "compile_attempts": 2,
+    "successful_compiles": 2,
+    "links": 2,
+    "native_processes": 2,
+    "failed_fixture_processes": 1,
+    "successful_consumer_processes": 1,
+    "successful_graph_calls": 10,
+    "successful_outputs": 18,
+    "compared_nonclock_records": 9,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "weights_builds": 0,
+    "report_builds": 0,
+    "downloads": 0
+  },
+  "failures": [
+    {
+      "kind": "script_setup",
+      "description": "One unmatched Python closing parenthesis; parse failed before any native process. Original script retained."
+    },
+    {
+      "kind": "test_fixture",
+      "process": {
+        "exit": 1,
+        "pid": 47356,
+        "seconds": 1.0318741999799386
+      },
+      "description": "New consumer omitted progress.begin_turn. Actual input validation rejected before any Graph execution. Only fixture initialization changed for attempt2; product source and all 222 retained inputs unchanged."
+    }
+  ],
+  "reused": {
+    "reference": "docs/evidence/correctness/inference-bounded-prefill-2026-10-27.json",
+    "baseline_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\ready.json",
+      "bytes": 3143,
+      "sha256": "bfc35b6220ec603a3f394e33d8055dd1f0b029e0dc17503b351e389d10b4d9e8"
+    },
+    "retained_inputs": 222,
+    "removed": "Previous formal Model object and engine entry object; one combined test+Model object supplies both.",
+    "ABI": "Exact prior CUDA-only macro closure, including retained CUDA weights/report/SDK/native. No changed SDK or native math compiled in this batch."
+  },
+  "boundaries": [
+    "One cached untrained tiny GA fixture on RTX4070 CUDA; valid for resource/behavior regression, not task quality.",
+    "A control clears the optional cache after each call; candidate exercises an actual next-prepare hit, member-order rejection and paused cancellation/subset rejection.",
+    "Only integer topology CPU loops are moved. The 2us accumulated fixture preparation clock is not an end-to-end speedup or a claim that layout creation/whole cold_batch was hidden.",
+    "No successor GPU submit, device overlap benchmark, full model performance, MTP, non-CUDA backend or concurrent service claim.",
+    "No CMake reconfiguration/CTest run: direct cached strict /O2 /W4 /WX compile/link and one corrected native consumer."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-cpu-ahead-2026-10-27.zip",
+    "bytes": 267866,
+    "sha256": "20580a706aa4f12da8f6949e086ac197a3acb7f2b52f99894921a3ee44e8194c"
+  },
+  "members": [
+    {
+      "name": "build.py",
+      "bytes": 4382,
+      "sha256": "6b3b4b3558f1938e60c5306dee946085826ea86fc0842e3dae6cf0673d63732e"
+    },
+    {
+      "name": "run.py",
+      "bytes": 2733,
+      "sha256": "54aed5dfe42a06f7c16835d9b0da36907f643cbc4a9b6e4ca1616c1df91291bc"
+    },
+    {
+      "name": "publish.py",
+      "bytes": 5466,
+      "sha256": "8d7ae30dceaa4f12dcc947fed1f4ca4404a04e61ded54ec9f4b080dd598f7fd8"
+    },
+    {
+      "name": "run-script-attempt1.py",
+      "bytes": 2657,
+      "sha256": "35d5667acac50d887397068ceba589ca9b90401da1f12ddf9701655dc15ed982"
+    },
+    {
+      "name": "script-setup-failure.json",
+      "bytes": 218,
+      "sha256": "22a3da2374391bea4559c05a6321628f26137b8bf7b4ad40deabc64e16764422"
+    },
+    {
+      "name": "plan.json",
+      "bytes": 1941,
+      "sha256": "fca577a2efb77dfcda7e48feb95c59f942ed064d76128110bf3899b6cf94e906"
+    },
+    {
+      "name": "source-freeze.json",
+      "bytes": 35914,
+      "sha256": "461685bcea0fcb0cd87b4a326c61b13cfe1a1da3d7acc261a9e50f2a085021bf"
+    },
+    {
+      "name": "retained-inputs.json",
+      "bytes": 57514,
+      "sha256": "382dc30534934dec069b7f6eb59ad157198bb934d74fffc4d5b53b0e82e843d1"
+    },
+    {
+      "name": "link-inputs.json",
+      "bytes": 57737,
+      "sha256": "2744a918f6a8d8d374aa2ab3707f943622b66a55f94f36f89655e427c01107d7"
+    },
+    {
+      "name": "runtime.json",
+      "bytes": 21699,
+      "sha256": "4d7e1bba8779fb7da9258be4054fe87792ec31bc551fe269cacec630fe82bfdc"
+    },
+    {
+      "name": "ready.json",
+      "bytes": 2034,
+      "sha256": "498984f40d0dcf2d0f19b121ffb84fcd26acb992fdadb2e279510ed065bb2dce"
+    },
+    {
+      "name": "compile-plan.json",
+      "bytes": 2883,
+      "sha256": "a3e6c5b247055512a4d031d8cbe395293ac720217e28f5824ac5442b45994b42"
+    },
+    {
+      "name": "link-plan.json",
+      "bytes": 31270,
+      "sha256": "dc75ae4848c17e74aceb5208fa3d23e3c7dd7f0c27d352aef9d945e99b3442fb"
+    },
+    {
+      "name": "run-plan.json",
+      "bytes": 1622,
+      "sha256": "360bac3aeb79622525e36a26a65524cea8ddf62320953c23ebd8598d9a7e8c5c"
+    },
+    {
+      "name": "run-failure.json",
+      "bytes": 740,
+      "sha256": "0fd6fd769d88f64112baeebf12c2afc0e6af4631f89742cff0cae8280f7e7a48"
+    },
+    {
+      "name": "source/engine/models/qwen35/main.cc",
+      "bytes": 504270,
+      "sha256": "fdcbc7a662bcb87b545dc6d0f13c39daf01d67e88fdedb80c630eb31b6d158ff"
+    },
+    {
+      "name": "source/tests/tools/qwen_cpu_ahead_test.cc",
+      "bytes": 7106,
+      "sha256": "0950ca8cecb19de6520750a8ff3f5382d0302364c06c6be23ffdec7bca8004e9"
+    },
+    {
+      "name": "source/tests/CMakeLists.txt",
+      "bytes": 28115,
+      "sha256": "fc385ccca5a0c4df499c246bc06e381cd40092b8f798ea008511bb8b6a46e135"
+    },
+    {
+      "name": "attempt2/source/tests/tools/qwen_cpu_ahead_test.cc",
+      "bytes": 7181,
+      "sha256": "46a3d31df1fba71317e1e4ce8b74dc060d4eb0b4d8395223df061dd5f81c105b"
+    },
+    {
+      "name": "attempt2/plan.json",
+      "bytes": 1961,
+      "sha256": "9213d903c9578ea7a9f7b89078b484c3c6c9866087106ac35cad02c2693f27c0"
+    },
+    {
+      "name": "attempt2/source-freeze.json",
+      "bytes": 35914,
+      "sha256": "910786823399354bb66e91c0d977485c5e96970783d533f4d77c35ce23db1d25"
+    },
+    {
+      "name": "attempt2/link-inputs.json",
+      "bytes": 57747,
+      "sha256": "c355a44671cf30ff3e7aa22190cd86d0c976ecd0058ad43de2e58559757507ec"
+    },
+    {
+      "name": "attempt2/runtime.json",
+      "bytes": 21719,
+      "sha256": "36d949a71db3d3cedd1ff8ee8d7993a12a782072f215fb0c168d39b9442d8fdb"
+    },
+    {
+      "name": "attempt2/ready.json",
+      "bytes": 2094,
+      "sha256": "3005d4e7d119d89022a0065e33a7191477ef284e7fd4b75ea3084d6f2ccd1e6d"
+    },
+    {
+      "name": "attempt2/summary.json",
+      "bytes": 1419,
+      "sha256": "20590a6e49e1a0e32bdc64092f19a2406dc7629a9fbe6b8c1093dc4931bc69e0"
+    },
+    {
+      "name": "attempt2/compile-plan.json",
+      "bytes": 2913,
+      "sha256": "425b1d9656b760aeb728e8f03954d7eb8d8e114f9024cd04548856c46a9c0333"
+    },
+    {
+      "name": "attempt2/link-plan.json",
+      "bytes": 31310,
+      "sha256": "cd17e94501b9de6f476fe8b3e84ccca7e5ce7287e6d710e8bc3446fe162f2454"
+    },
+    {
+      "name": "attempt2/run-plan.json",
+      "bytes": 1642,
+      "sha256": "f7e4674cea7dcf20d0b1b4813f3bf56347e309d1a26a6e92339cd611b8baed3b"
+    },
+    {
+      "name": "compile/command.json",
+      "bytes": 2883,
+      "sha256": "a3e6c5b247055512a4d031d8cbe395293ac720217e28f5824ac5442b45994b42"
+    },
+    {
+      "name": "compile/process.json",
+      "bytes": 70,
+      "sha256": "9fc9a7213c4bc78d14a863a09de5dd6d2b2c1bceac187dddcaebd5ce86b767da"
+    },
+    {
+      "name": "compile/stdout.log",
+      "bytes": 24,
+      "sha256": "279201aebcdf7a827ccaf4495bd1fe750ac7ac747e5abe0b036e0dadf5b2f16b"
+    },
+    {
+      "name": "compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "link/command.json",
+      "bytes": 31270,
+      "sha256": "dc75ae4848c17e74aceb5208fa3d23e3c7dd7f0c27d352aef9d945e99b3442fb"
+    },
+    {
+      "name": "link/process.json",
+      "bytes": 70,
+      "sha256": "9843b7d52658201b5457b3f5c9fe3809fffb0cabdf52b1ed120fd2375bee7393"
+    },
+    {
+      "name": "link/stdout.log",
+      "bytes": 203,
+      "sha256": "517a6f8b2d70006f2c2d040316a2bde24ef4851ee6357f8ec4802b6277145ae8"
+    },
+    {
+      "name": "link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run1/command.json",
+      "bytes": 310,
+      "sha256": "3c8094d57526202168a37a28c48d1b1462f4b75ab3f879fcda65d81672e79e30"
+    },
+    {
+      "name": "run1/process.json",
+      "bytes": 70,
+      "sha256": "9bb40b4fe641856ec56ae9d0b4aab31146c95850c3b62e5029a78b3f980a919a"
+    },
+    {
+      "name": "run1/stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run1/stderr.log",
+      "bytes": 2052,
+      "sha256": "53d8b9caf1449dbc44d25ad76290edfc7dbfe547ca843c040b971478e09a92b7"
+    },
+    {
+      "name": "compile/dependencies.json",
+      "bytes": 38134,
+      "sha256": "67ecd0fee5bcb3e63edff0dfced76e9c906e377f13c7e541a285b7fad23edb0b"
+    },
+    {
+      "name": "compile/actual-dependencies.json",
+      "bytes": 77166,
+      "sha256": "614b76191e80793dbffe62466a94c9b0c73650e194765e560acdeafd94d6e57e"
+    },
+    {
+      "name": "attempt2/compile/command.json",
+      "bytes": 2913,
+      "sha256": "425b1d9656b760aeb728e8f03954d7eb8d8e114f9024cd04548856c46a9c0333"
+    },
+    {
+      "name": "attempt2/compile/process.json",
+      "bytes": 70,
+      "sha256": "114e38745144b0a88939ae6ffab6f948952d7b9eacac4c2007c50d1c843fd8c7"
+    },
+    {
+      "name": "attempt2/compile/stdout.log",
+      "bytes": 24,
+      "sha256": "279201aebcdf7a827ccaf4495bd1fe750ac7ac747e5abe0b036e0dadf5b2f16b"
+    },
+    {
+      "name": "attempt2/compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "attempt2/link/command.json",
+      "bytes": 31310,
+      "sha256": "cd17e94501b9de6f476fe8b3e84ccca7e5ce7287e6d710e8bc3446fe162f2454"
+    },
+    {
+      "name": "attempt2/link/process.json",
+      "bytes": 70,
+      "sha256": "e228a39cb1f97f75c7da54a924f974cebd41033d31e8a4d8a30eeaee4a07f5b1"
+    },
+    {
+      "name": "attempt2/link/stdout.log",
+      "bytes": 221,
+      "sha256": "f4f3d08fb6d1749b752126e4ee47508659d7ef76efb934b04be08fa2b787c910"
+    },
+    {
+      "name": "attempt2/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "attempt2/run1/command.json",
+      "bytes": 320,
+      "sha256": "70818792f65ebf8e5152b50537854afe5dc38bb3ca31e571594f1ef21b6ac691"
+    },
+    {
+      "name": "attempt2/run1/process.json",
+      "bytes": 70,
+      "sha256": "bc5144ee63cbf05ce3f5d3b753a203d76a77f90d6601a912ceedd15aa08137f0"
+    },
+    {
+      "name": "attempt2/run1/stdout.log",
+      "bytes": 354,
+      "sha256": "cb74011c2ce2d1b571aed498630b8a44b8acf8fe3df4fc9929f24766a516b69b"
+    },
+    {
+      "name": "attempt2/run1/stderr.log",
+      "bytes": 16138,
+      "sha256": "3b741ed057917fec0b58c0a12867640609be12b293b9ef0ca42887a87ebce511"
+    },
+    {
+      "name": "attempt2/compile/dependencies.json",
+      "bytes": 38134,
+      "sha256": "67ecd0fee5bcb3e63edff0dfced76e9c906e377f13c7e541a285b7fad23edb0b"
+    },
+    {
+      "name": "attempt2/compile/actual-dependencies.json",
+      "bytes": 77166,
+      "sha256": "f4361016b7007ff9608256b1456d031c4976bd1ad8893385e2f2bf11e297107d"
+    }
+  ]
+}

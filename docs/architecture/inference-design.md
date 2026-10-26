@@ -142,6 +142,35 @@ A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一�
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
+剩余接线按以下共同职责收敛，尚未实现的部分不能由现有token检查代签：
+
+- 一次原Graph提交只持一份proxy、观察锁、实际依赖及完整终结事实。token、Store和KV视图共用此提交身份，
+  沿原`InputSource`按owner及实际Queue去重等待／终结核对；每个值的实际读权限仍单独接纳。
+  不用Plan代际表示提交代，不为每层状态搬动Completion或增设观察者／执行器。
+- typed pending读凭据须独立保活原block、generation及精确范围；append还核原epoch与已写前缀。
+  它不是ready租约，不公开pending字节；仅原typed owner可导出，不能借任意TensorView取得权限。
+  前驱成功实际退休、所有借用指针已分离后，才解除原结果保留并沿原take／publication发布。
+- Store发布须证明原writer已退休，允许已接纳的只读者存续；KV另须支持受检的pending前缀读取及原epoch发布。
+  新append仍须等旧读者，或使用真实独立／COW页，不能把原保护门整体移除。
+  `WorkingFrame`继续只表示已提交ready范围，不承载未发布候选权限。
+- 深度二按实际候选增加状态／页／载体预算，先支持已证明的单shared Queue。
+  真实多segment／managed路径还须由原提交游标给出可等待frontier并保留完整聚合Status，
+  不把最后一个event当成整图成功，也不以单Queue组件通过代签完整模型。
+
+Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
+[真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。
+ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同步路径，保留managed／host-blocking事实；
+`record_compatible`只表示原encoder可录制，不是普通执行无阻塞的证明。
+下一步应复用Graph原已完成的捕获：核同一实际Queue、物理key及完整覆盖，pending输入只允许复用，
+miss须在begin capture之前拒绝，不新录制、不降回managed Commands。当前`prepare_output`强制Commands，
+尚未实现该reuse-only路径，也不能将外层capture的实际重放资格改写成整个Provider的静态能力。
+
+普通多成员请求已先接[CPU整数准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)：
+冷阶段按执行元数据预算预留scratch，GPU执行期间仅填下一步位置与旧页拓扑，不提前取得状态／tail或布局版本。
+下一次真实prepare完整匹配Session控制块、epoch、长度、成员顺序及采样形状后才使用；
+停止、换序、取消、失败或不匹配均丢弃。R1及MTP跳过，布局创建和所有原权限检查仍在正常prepare。
+这只是CPU工作提前，不是后继GPU提交、有序候选发布或完整重叠的完成证明。
+
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
 CPU／CUDA的B2独立接受前缀也已检查，Apple／Vulkan普通与MTP K3完整tiny入口另已通过有限检查；
