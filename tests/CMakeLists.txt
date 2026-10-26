@@ -254,6 +254,18 @@ set_tests_properties(hyle_inference_output_delivery_test PROPERTIES
 # Retirement observations use the existing Status implementation; do not pull
 # an unselected product into a standalone header-only/util test configuration.
 if(TARGET hyle_error)
+  add_executable(hyle_inference_request_execution_failure_test tools/inference_request_execution_failure_test.cc)
+  target_link_libraries(hyle_inference_request_execution_failure_test PRIVATE hyle_build_contract hyle_error)
+  target_compile_features(hyle_inference_request_execution_failure_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_request_execution_failure_test)
+  hyle_apply_sanitizer(hyle_inference_request_execution_failure_test)
+  set_target_properties(hyle_inference_request_execution_failure_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_request_execution_failure_test)
+  add_test(NAME hyle_inference_request_execution_failure_test COMMAND hyle_inference_request_execution_failure_test)
+  set_tests_properties(hyle_inference_request_execution_failure_test PROPERTIES
+    LABELS "tooling;generation;failure;identity" TIMEOUT 30)
+
   add_executable(hyle_inference_request_loop_test tools/inference_request_loop_test.cc)
   target_link_libraries(hyle_inference_request_loop_test PRIVATE hyle_build_contract hyle_error)
   target_compile_features(hyle_inference_request_loop_test PRIVATE cxx_std_23)

@@ -1,0 +1,181 @@
+{
+  "status": "PASS_FINITE_REQUEST_ERROR_IDENTITY",
+  "date": "2026-10-27",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 494261,
+    "sha256": "14323839a114921a6aff72ccccd25a3b3b5ef355bdcbdc7c3caebd85a33564b4"
+  },
+  "header": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_execution_failure.h",
+    "bytes": 1979,
+    "sha256": "8c67c280a6e37da91aa365de8eb8794a1748ef00816535162f0ca8a10d0a1c96"
+  },
+  "test": {
+    "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_execution_failure_test.cc",
+    "bytes": 6606,
+    "sha256": "93b94bc87b9dbdf3861099d8316f53d15d4261c9fad37b8806a46ce4c830f7ff"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\image\\hyle.exe",
+    "bytes": 142052864,
+    "sha256": "d78a4706ef05144dca977af5f778ad222f70b9c54849d917857e54ef5e8b575e"
+  },
+  "standalone": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\host\\image\\request-error-identity-test.exe",
+    "bytes": 35840,
+    "sha256": "ea159ef8f2770f535288584ee303b51c38ee2e7c926b1829d2b52cfc65859a54"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\ready.json",
+    "bytes": 3132,
+    "sha256": "a82d8a6ed4de62bfdd431f9ab4b91d8d7a6bcf97bfb72189367b4fc8bb2792ab"
+  },
+  "counts": {
+    "CXX_TUs": 2,
+    "links": 2,
+    "host_processes": 1,
+    "host_groups": 4,
+    "CUDA_model_processes": 1,
+    "baseline_reruns": 0,
+    "MTP_reruns": 0,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "changes": [
+    "RequestExecutionFailure retains the original EvaluationFailure and separate retirement observation.",
+    "Only the actual failed submitted bucket maps a qualified participant to its complete RequestKey. Unknown/out-of-range/native error facts remain batch-wide; normal success builds no identity table."
+  ],
+  "results": {
+    "host": {
+      "process": {
+        "exit": 0,
+        "pid": 17500,
+        "seconds": 0.04151619999902323
+      },
+      "groups": 4,
+      "scope": "Actual/reordered bucket complete identity including owner/generation, unknown/out-of-range, synthetic native Status facts, independent retirement observations."
+    },
+    "ordinary_planned_Q2_B2": {
+      "process": {
+        "exit": 0,
+        "pid": 14088,
+        "seconds": 1.1843408000422642
+      },
+      "ledger": {
+        "A": {
+          "state_only_records": 3,
+          "rows": 11,
+          "ledger_records": 7,
+          "visible": 11,
+          "draws": 4,
+          "generated": [
+            8,
+            8,
+            3,
+            40
+          ]
+        },
+        "B": {
+          "state_only_records": 1,
+          "rows": 7,
+          "ledger_records": 5,
+          "visible": 7,
+          "draws": 4,
+          "generated": [
+            0,
+            34,
+            10,
+            10
+          ]
+        }
+      },
+      "eligible_planned_shapes": 6,
+      "complete_nontime_report_differences": 0,
+      "control": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\cli\\run1\\report.json",
+        "bytes": 29184,
+        "sha256": "51ec1e6929bf7d37f862613eeff96dcbc299cfba8da37f260f50d21dbc90918a"
+      },
+      "differences": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\nontime-differences.json",
+        "bytes": 4,
+        "sha256": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f"
+      }
+    }
+  },
+  "build": {
+    "model": {
+      "exit": 0,
+      "pid": 56968,
+      "seconds": 20.664194500015583
+    },
+    "CLI_link": {
+      "exit": 0,
+      "pid": 11420,
+      "seconds": 1.774829400004819
+    },
+    "standalone_compile": {
+      "exit": 0,
+      "pid": 59688,
+      "seconds": 0.513206799980253
+    },
+    "standalone_link": {
+      "exit": 0,
+      "pid": 4936,
+      "seconds": 0.046145099971909076
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\compile\\actual-dependencies.json",
+      "bytes": 76968,
+      "sha256": "7da1634ef9c5779d4435f291fb97463f23093afb4c65e2f049cd57267b38a41a"
+    },
+    "standalone_actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\host\\compile\\actual-dependencies.json",
+      "bytes": 27049,
+      "sha256": "a198b1b48dc33a6255c8a88d27e556ed5e26791946a91ffa43d8940338112903"
+    },
+    "retained_CLI_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\retained-inputs.json",
+      "bytes": 57744,
+      "sha256": "eb2b80f958228e46b01379ee9232769310b3a95a782f72fc76f896f5187877cd"
+    },
+    "failed_compile_link_or_native_processes": 0
+  },
+  "reuse": {
+    "previous_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-prefill-facts-2026-10-27.json",
+      "bytes": 6317,
+      "sha256": "2474e85b1290c25d53409e4ca3ae2acebe73505dfebe9385eab3f878e659a1b3"
+    },
+    "standalone_reused_libraries": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib",
+        "bytes": 136936,
+        "sha256": "1da55ee1495b45e4b32f14cdf6b374487e538f01899e0902446742ef24c25326"
+      }
+    ],
+    "standalone_system_libraries": [
+      "kernel32.lib"
+    ],
+    "baseline_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-prefill-facts-20261027\\image\\hyle.exe",
+      "bytes": 142050816,
+      "sha256": "125271caa8f4ecd141126d1d5cd1971ad2979e2d4770f8f3d6037dc03fe10b98"
+    },
+    "scope": "223 prior CLI inputs and exact runtime reused. Standalone adds the existing hyle_error plus Kernel32. No SDK/native/NVCC/weights/report rebuild; no baseline or MTP re-execution."
+  },
+  "limits": [
+    "Four standalone error-fact groups and one normal cached untrained tiny CUDA ordinary Q2/B2 journey. Native faults in host checks are synthetic Status values, not device fault injection; no engine failure-path run was added.",
+    "All prior nonclock JSON fields, ledger/RNG/IDs/cache/resource/work facts compared without new exclusions. Clock/rate normalization uses the recorded existing pure functions.",
+    "No device-capture warmup, varlen/padding, cross-chunk bitwise quality, performance gain, full-model or all-platform claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-error-identity-2026-10-27.zip",
+    "bytes": 232804,
+    "sha256": "07bf574226cd4c95c64c33ea9e613c25adaad79f0162b10a5c14a2d57d35a3a6",
+    "members": 71,
+    "CRC_and_member_SHA256_verified": true
+  }
+}

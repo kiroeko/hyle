@@ -78,6 +78,19 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 尚未统一全部引擎异常。后续API需同时保留错误类别、影响范围（成员／批次／模型）和真实原生退休事实；
 不靠异常字符串区分容量可重试、输入无效、取消与设备故障。
 
+自然消费者的执行错误在最终缩批后的bucket仍有效时桥接到`RequestExecutionFailure`。
+仅原`EvaluationFailure`已确认的成员索引映射到完整`RequestKey`，不使用active或slot索引替代；
+未知成员、越界成员及计算／退休中的native故障保持批次级。桥接保留原计算Status、成员索引及独立退休观察，
+请求身份本身不授予回收、重试或取消权限，正常路径不创建额外成员表。
+[有限检查](../evidence/correctness/inference-request-error-identity-2026-10-27.json)覆盖四组主机身份／错误事实及正常B2多轮CUDA报告一致；
+未注入真实模型或设备故障，不把正常生成通过当作失败隔离证明。
+
+Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../../include/hyle/compute/providers/cuda.h)按数学、类型、形状及设备接纳，
+不读取模型身份。CPU的`kWins`只在锁定的已测构建／硬件条件下调整合法候选的[冷偏好](../../src/compute_route_cpu/default_policy.cc)，
+未命中仍保留正常候选。完整CUDA组合仍自动携带ATen模块，覆盖稳定Softplus、BF16融合SDPA及部分制品解码；
+同一模块也承载原生packed路径，不能把移除模块等同于只去掉ATen调用。
+显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
+
 当前Model仍每Phase单Invocation、同时一个episode。普通B2参考也逐episode同步，单槽不是已证实的差距原因。
 CPU提前准备下一步仍值得独立设计：元数据准备与设备提交分别推进；设备token接力需要真实生产者、
 依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
@@ -185,6 +198,8 @@ BF16／F16部分源租约到Store、越界拒绝及原word路径已有有限检�
 独立scratch资源不反向retain父MemoryState，避免控制器所有权环；原aligned与whole-owned私有padding路径保留。
 [三组有限检查](../evidence/correctness/inference-vulkan-halfword-io-2026-10-27.json)覆盖2／6字节、跨staging上限和释放wrapper后的短租约，
 没有设备故障注入结论。odd partial仍拒绝，通用ready租约导入门也未放宽，不能推广为任意字节I/O或导入。
+[完整tiny消费者](../evidence/correctness/inference-vulkan-engine-slots-2026-10-27.json)另通过普通与MTP K3入口，
+实际验证候选／拒绝修复与资源收尾；该制品接受草稿数为零，未覆盖正向多token接受。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，

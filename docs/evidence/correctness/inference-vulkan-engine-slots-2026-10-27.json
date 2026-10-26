@@ -1,0 +1,570 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "title": "Provider-independent indexed state Vulkan tiny CLI",
+  "status": "FINITE_ORDINARY_AND_MTP_K3_CLI_PASS",
+  "source_head_context": "97cab7aac552ee9e0adfa158467f42524f135988",
+  "source_scope": "No product modification in this validation batch. The current engine uses one provider-independent slot-state Graph; Vulkan executes ordinary selected-row Gather/math/external Store through its original native source and real retirement path. No engine backend-specific graph or duplicated executor was introduced.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 493765,
+      "sha256": "3d85397362f767f7c9516faf1927086d1bf087afeb0ff856783dc8cab048a67d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\prefill_plan.h",
+      "bytes": 1449,
+      "sha256": "fb5f0afd618ed4af6dae02ae48d11b0de2fe9dcebb68392e9286823892e2f707"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+      "bytes": 48142,
+      "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+    }
+  ],
+  "cold_build": {
+    "CXX_processes": 2,
+    "distinct_CXX_TUs": 2,
+    "links": 1,
+    "compiled": [
+      {
+        "unit": {
+          "name": "model",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+            "bytes": 493765,
+            "sha256": "3d85397362f767f7c9516faf1927086d1bf087afeb0ff856783dc8cab048a67d"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\recipes\\model.json",
+            "bytes": 1634,
+            "sha256": "616ceea133cc9df7d45c8a4313348bc6e3c5af950befd64e2ad7e5d60ccf0ea3"
+          }
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\compile\\model\\unit.obj",
+          "bytes": 15445229,
+          "sha256": "60325313100d02374831b8f220d31df111bc241073517e7e4b9efce2eb63ef5a"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 37180,
+          "seconds": 20.762792199966498
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\compile\\model\\actual-dependencies.json",
+          "bytes": 80191,
+          "sha256": "1064be55e388a1eb65338468c29eb6c82656b9b1fc34db52e50c1a564b2ba280"
+        }
+      },
+      {
+        "unit": {
+          "name": "weights",
+          "source": {
+            "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+            "bytes": 48142,
+            "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+          },
+          "recipe": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\recipes\\weights.json",
+            "bytes": 1444,
+            "sha256": "25f0255e00fcf7775aee3d135490081bf4037b9f2d657c4a4bd27127839dc8ad"
+          }
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\compile\\weights\\unit.obj",
+          "bytes": 3468798,
+          "sha256": "0e411d50a0b64da5d4ddd858c7c8097d838bf81b7e11cfdd5d74d2a3d67ad96d"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 33832,
+          "seconds": 5.665820399997756
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\compile\\weights\\actual-dependencies.json",
+          "bytes": 73675,
+          "sha256": "800ff3b1db51450d6c3cc9db77050e5eaa0f3ae831e8d05fc9132563edbed401"
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 36424,
+      "seconds": 1.384087799990084
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\bin\\hyle.exe",
+      "bytes": 70067200,
+      "sha256": "219a5b057d3347538e545d1c093d5fba5be9eb72aed42e0471bb0871a8ccbd8f"
+    },
+    "linked_input_count": 145,
+    "linked_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\link-inputs.json",
+      "bytes": 37339,
+      "sha256": "2a50b14e9df921c7c08603a85e81e299a92bba96a6179b4421ecd088f43a7c92"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-io-20261027\\ready.json",
+      "bytes": 3600,
+      "sha256": "026d561a365e90f97ee69b9fae3fa7f07cbf66e367a9d7e4314e99ed4f668dec"
+    },
+    "replaced_CPU_objects": [
+      {
+        "name": "default_rules",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\default_rules.cc",
+          "bytes": 12236,
+          "sha256": "83ec2aeaf97a762b7401fc420149c65b0f384ad004a56ec6f562471ccf82c001"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\default_rules\\unit.obj",
+          "bytes": 557163,
+          "sha256": "864ca973c762c88983338bf4c5c2c8f4ab05315657282b8ee8fc7c72647c2efe"
+        },
+        "actual_project_dependencies_identical_to_current": 39,
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\default_rules\\actual-canonical-dependencies.json",
+          "bytes": 7810,
+          "sha256": "3b84eb423f4ca72ac0d65202b6065feb8271337cd7ef19ea34e4dcb34a43c6af"
+        }
+      },
+      {
+        "name": "indexing",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\indexing.cc",
+          "bytes": 12966,
+          "sha256": "e725a5415319856917b9bb1fa3441c9267c6dcddbc0b10cb252d88ab9742aa3c"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\indexing\\unit.obj",
+          "bytes": 211780,
+          "sha256": "9b0d32c94b5f65218bf92d2cbbf1840958c4962aa8a2e6a980ec575a81d4cde6"
+        },
+        "actual_project_dependencies_identical_to_current": 35,
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\indexing\\actual-canonical-dependencies.json",
+          "bytes": 6925,
+          "sha256": "7fc854ff5bcc4eb61c1ed38f6fb2d837ec20dd8a0c2dfd2fa55677d7142bc835"
+        }
+      },
+      {
+        "name": "native_provider",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+          "bytes": 41433,
+          "sha256": "a464589ef1dd4c1a31926bc899f12ba7373e512946492ce10ca410dc63316749"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\native_provider\\unit.obj",
+          "bytes": 748580,
+          "sha256": "6ab390f535b08b5b536f2a1340e5435aa42d5ce5bc3d21749397bac3e2e59a11"
+        },
+        "actual_project_dependencies_identical_to_current": 53,
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\compile\\native_provider\\actual-canonical-dependencies.json",
+          "bytes": 10573,
+          "sha256": "5ae8a7a8cb427a71f43c1a967b040fae1b0fe323c1cd971b004f8fb292905987"
+        }
+      }
+    ],
+    "reuse": "Original latest Vulkan halfword-I/O closure of 146 inputs, removing its one test TU and two GTest libraries. Replace three stale native CPU objects with the actual tested storage-Gather objects, replace old matching weights with a fresh CPU+Vulkan weights TU, then add current standalone Model and original unchanged entry TU: 145 inputs. No SDK/native frontend/shader/NVCC operation. Original cached reporting object remains; this batch does not change reporting observation layout.",
+    "private_ABI": "CPU native 3 objects actual canonical project source/header hashes match current. Recompile matching CPU+Vulkan weights because Backend conditional variant and session_state changed. Reuse entry only after all actual two project dependencies match. Vulkan private Pipeline/DescriptorBinding and original Run ABI/constructors retain the already-verified raw16+halfword-IO closure; no new private struct edit in this batch. Model and weights both see current prefill_plan/session_state/backend/public headers; do not reuse CUDA Model/weights.",
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\source-freeze.json",
+      "bytes": 36514,
+      "sha256": "e9e0abe12ae88ace5ab14011069c15991adf60d18c70c57d32422de250d4b7c0"
+    },
+    "shader_builds": 0,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "fixture": {
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+      "bytes": 7861,
+      "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+    },
+    "prompt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\prompt.ids",
+      "bytes": 7,
+      "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+    },
+    "payload": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+      "bytes": 298628,
+      "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+    },
+    "geometry": "geometry 64 128 64 1 1 64 64 64 1 1 64 64 4 16 10000 1e-6 1 1 grouped \"GA\"",
+    "roles": 42,
+    "bounds": "All 42 role offset/byte ranges checked against the existing single 298628-byte BF16 file. Two target layers GA include GDN/causal-conv and dense attention, with MTP role weights. Only 3 prompt IDs; C16/N4/R1, greedy, Commands, prefix-cache off, steps8. Payload is not archived or downloaded."
+  },
+  "execution": {
+    "actual_processes": 2,
+    "observations": [
+      {
+        "name": "ordinary",
+        "process": {
+          "exit": 0,
+          "pid": 50416,
+          "seconds": 2.791851299989503
+        },
+        "generated_ids": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "mtp": false,
+        "actual_graph_calls": 8,
+        "draft_program_graph_calls": 0,
+        "verified_target_rows": 7,
+        "mtp_max_drafts": 0,
+        "retired_requests": 1,
+        "live_committed_versions": 0,
+        "draft_rounds": null,
+        "consumed_drafts": null,
+        "original_host_weight_bytes": 0
+      },
+      {
+        "name": "mtp-k3",
+        "process": {
+          "exit": 0,
+          "pid": 43564,
+          "seconds": 3.219205899978988
+        },
+        "generated_ids": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "mtp": true,
+        "actual_graph_calls": 29,
+        "draft_program_graph_calls": 21,
+        "verified_target_rows": 22,
+        "mtp_max_drafts": 3,
+        "retired_requests": 1,
+        "live_committed_versions": 0,
+        "draft_rounds": 6,
+        "consumed_drafts": 0,
+        "original_host_weight_bytes": 0
+      }
+    ],
+    "results": "Both exited zero once, each generated 8 legal vocabulary IDs; IDs equal for this synthetic fixture. Actual backend Vulkan, no CPU FFN or host weight placement, one retired request and zero live committed versions at exit.",
+    "acceptance_boundary": "MTP K3 made 6 draft rounds, 21 draft graph calls and verified 22 target rows, but consumed_drafts is zero for these untrained weights. This exercises candidate generation/verification/rejection/repair and final resource cleanup; it does not prove positive accepted prefixes longer than one on Vulkan.",
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "failures_preserved": {
+    "preparation": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-engine-slots-20261027\\preparation-failures.json",
+      "bytes": 825,
+      "sha256": "560cd266e13905d2e6561b004cfbdbf3e67caea5308e28c67d6c794968d1f679"
+    },
+    "explanation": "Two pre-compilation recipe errors: old cached receipt filename ready2.json instead of ready.json, then tensor parser failed to skip the real three-line manifest header. Both corrected without CXX/product/GPU execution. First original plan-failure.json was overwritten by the second; exact causes and that limitation are recorded. The second traceback remains. Actual 2 CXX, link and 2 native CLI processes have no failures or retries."
+  },
+  "verified": [
+    "Current main/prefill-plan and matching CPU+Vulkan Backend/session-state code compile together, link against the exact native Vulkan raw16 Gather, Store and halfword-I/O objects, then execute complete ordinary/MTP tiny request loops.",
+    "The same provider-independent history/recurrent state Graph executes on Vulkan; no CUDA-only kernel or special engine model branch is needed.",
+    "K3 candidates and rejection/repair continuation finish with zero live committed versions. Actual generated IDs are retained in raw report and receipt."
+  ],
+  "limits": [
+    "Synthetic untrained hidden64 two-layer fixture, not complete Qwen3.5-2B weights, task quality or performance. CLI-reported wall/throughput fields are diagnostic only; this is not a benchmark.",
+    "No positive multi-token draft acceptance in these weights; no randomized sampling, B2 multi-request, capture, failure injection, new host-image/lag1 suite or exhaustive shape/device matrix in this batch.",
+    "Earlier raw16 Gather/Store/I/O tests remain their original independent evidence and were not rerun. The fixture rows are word-sized overall; exact two-byte partial I/O is proven separately by the halfword-I/O receipt, not newly by this CLI."
+  ],
+  "members": [
+    {
+      "name": "build.py",
+      "bytes": 13210,
+      "sha256": "f5737d075cad7400846cad0fc4295ca44ff5b64dfbd6997ea6f4f787be904d6b"
+    },
+    {
+      "name": "compile/model/actual-dependencies.json",
+      "bytes": 80191,
+      "sha256": "1064be55e388a1eb65338468c29eb6c82656b9b1fc34db52e50c1a564b2ba280"
+    },
+    {
+      "name": "compile/model/command.json",
+      "bytes": 1634,
+      "sha256": "616ceea133cc9df7d45c8a4313348bc6e3c5af950befd64e2ad7e5d60ccf0ea3"
+    },
+    {
+      "name": "compile/model/dependencies.json",
+      "bytes": 39295,
+      "sha256": "50dcc71a21a1bc9ee64de8a34d9874b85d38c906fe29a39a4e198c8ceb69761d"
+    },
+    {
+      "name": "compile/model/process.json",
+      "bytes": 70,
+      "sha256": "44f630e10e18b4cece859cbdd4574b3058f7cdc6407c2b1bfd02e81a7b6ca01e"
+    },
+    {
+      "name": "compile/model/running.json",
+      "bytes": 22,
+      "sha256": "58d7e69181a4004ee47ac058d3bcaa1dc328f6ee244ede340da33dec803aff30"
+    },
+    {
+      "name": "compile/model/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/model/stdout.log",
+      "bytes": 9,
+      "sha256": "f197b2519eedf02e571357ddc67cf5ca097ec055c64ddd28a980d92394b07b5d"
+    },
+    {
+      "name": "compile/weights/actual-dependencies.json",
+      "bytes": 73675,
+      "sha256": "800ff3b1db51450d6c3cc9db77050e5eaa0f3ae831e8d05fc9132563edbed401"
+    },
+    {
+      "name": "compile/weights/command.json",
+      "bytes": 1444,
+      "sha256": "25f0255e00fcf7775aee3d135490081bf4037b9f2d657c4a4bd27127839dc8ad"
+    },
+    {
+      "name": "compile/weights/dependencies.json",
+      "bytes": 36295,
+      "sha256": "8eba745023f33a35e3674f7e1a79023fd50374ad0f15ef35a11a7b26d9871beb"
+    },
+    {
+      "name": "compile/weights/process.json",
+      "bytes": 69,
+      "sha256": "70becc7d8fac088db408311ac8938a108caf9235a7e4913f257abed4aa9fdf8a"
+    },
+    {
+      "name": "compile/weights/running.json",
+      "bytes": 22,
+      "sha256": "2db09fbe4235a256700a80918ceaf0a87a2061830f69f87cdf2556002677261f"
+    },
+    {
+      "name": "compile/weights/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/weights/stdout.log",
+      "bytes": 12,
+      "sha256": "8449a15f1b4fc95b33dd2c76dcf6c64238ed3ca5deaecde19b79a34770696bf0"
+    },
+    {
+      "name": "cpu-object-proof/default_rules-actual-dependencies.json",
+      "bytes": 7810,
+      "sha256": "3b84eb423f4ca72ac0d65202b6065feb8271337cd7ef19ea34e4dcb34a43c6af"
+    },
+    {
+      "name": "cpu-object-proof/indexing-actual-dependencies.json",
+      "bytes": 6925,
+      "sha256": "7fc854ff5bcc4eb61c1ed38f6fb2d837ec20dd8a0c2dfd2fa55677d7142bc835"
+    },
+    {
+      "name": "cpu-object-proof/native_provider-actual-dependencies.json",
+      "bytes": 10573,
+      "sha256": "5ae8a7a8cb427a71f43c1a967b040fae1b0fe323c1cd971b004f8fb292905987"
+    },
+    {
+      "name": "fixture.json",
+      "bytes": 14936,
+      "sha256": "52886268fdcff69bb2487b37dc89062865d6e23cea14b11d52adfc9046a7a6ea"
+    },
+    {
+      "name": "fixture/prompt.ids",
+      "bytes": 7,
+      "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+    },
+    {
+      "name": "fixture/weights.tsv",
+      "bytes": 7861,
+      "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+    },
+    {
+      "name": "link-inputs.json",
+      "bytes": 37339,
+      "sha256": "2a50b14e9df921c7c08603a85e81e299a92bba96a6179b4421ecd088f43a7c92"
+    },
+    {
+      "name": "link/command.json",
+      "bytes": 20236,
+      "sha256": "b1f84d84a40f5674bdd2cbd446a460b8433e9739ca2817ee0d5a61dbae81db8b"
+    },
+    {
+      "name": "link/process.json",
+      "bytes": 69,
+      "sha256": "6160403ddfe0c94e20634fad7a8dc633c0b7958b10b393b172664a09f7b2f8e6"
+    },
+    {
+      "name": "link/running.json",
+      "bytes": 22,
+      "sha256": "a4395d6fdf22857d4c68e6e2dc53667d73fa9e250c53fc5cf794cdc0edc9cebb"
+    },
+    {
+      "name": "link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "link/stdout.log",
+      "bytes": 199,
+      "sha256": "f3e847bc25498caed7c60fc4eb5057b87897d7c73cadbb61f1515f4bb0286433"
+    },
+    {
+      "name": "partial-build.json",
+      "bytes": 2379,
+      "sha256": "5fe8f8721aaba59a5301e9b0e6cda8e3c7d5f260af1331686d0adc7310121fb8"
+    },
+    {
+      "name": "partial-run.json",
+      "bytes": 48094,
+      "sha256": "87664dd79aa68a88a0305b0d188a6767916acf67ebabb204ad2e6e519d419595"
+    },
+    {
+      "name": "plan-failure.json",
+      "bytes": 513,
+      "sha256": "840305dd5ecaa81dbec835de4c460b0a10dc649e8f2a8c7f4811e24bfc60fe50"
+    },
+    {
+      "name": "plan.json",
+      "bytes": 7372,
+      "sha256": "2c433ca5b7900dc7b234a882d665df36869715636ae28b9d423360fb528fcc15"
+    },
+    {
+      "name": "preparation-failures.json",
+      "bytes": 825,
+      "sha256": "560cd266e13905d2e6561b004cfbdbf3e67caea5308e28c67d6c794968d1f679"
+    },
+    {
+      "name": "publish.py",
+      "bytes": 10045,
+      "sha256": "34414a5f3bbec5a73ed3f351d0e44d605736c3c976e631a62b4aa519559bae81"
+    },
+    {
+      "name": "ready.json",
+      "bytes": 3580,
+      "sha256": "3a5a108374c74028e03cf547302958248b8b0b7919e49bfa2a813daa3e03d38c"
+    },
+    {
+      "name": "recipes/model.json",
+      "bytes": 1634,
+      "sha256": "616ceea133cc9df7d45c8a4313348bc6e3c5af950befd64e2ad7e5d60ccf0ea3"
+    },
+    {
+      "name": "recipes/weights.json",
+      "bytes": 1444,
+      "sha256": "25f0255e00fcf7775aee3d135490081bf4037b9f2d657c4a4bd27127839dc8ad"
+    },
+    {
+      "name": "retained-inputs.json",
+      "bytes": 36864,
+      "sha256": "9fa8e8babea32321576037ed049b21effd786f0a285ad22463f31a3dcbf60dce"
+    },
+    {
+      "name": "runs/mtp-k3/command.json",
+      "bytes": 676,
+      "sha256": "fbf26497acd38cb2280aeef63aa339a91c5a9a06426662cb85a6baa9ec9a5668"
+    },
+    {
+      "name": "runs/mtp-k3/process.json",
+      "bytes": 69,
+      "sha256": "55454eb36b8466d308c80c2ede9ec993d0abe13fb4182d0e2cd2d6c822444ae3"
+    },
+    {
+      "name": "runs/mtp-k3/running.json",
+      "bytes": 22,
+      "sha256": "08c912e417958a82679042027ecfca69331cd41388638518a961b7a5bd52cf35"
+    },
+    {
+      "name": "runs/mtp-k3/stderr.log",
+      "bytes": 6772,
+      "sha256": "154f99d22cbdf0c1341e4fb1f0c79d3993664c25a52a0d19ecbaaa6708322cc2"
+    },
+    {
+      "name": "runs/mtp-k3/stdout.log",
+      "bytes": 13643,
+      "sha256": "1e440b9bf342263f17d16eae3a326459f4ee6c3267ffa043fcdd5f630ef0c5ca"
+    },
+    {
+      "name": "runs/ordinary/command.json",
+      "bytes": 642,
+      "sha256": "effc084123936bba50297b9737852e71cd4609651725d717bb24b837829d4a17"
+    },
+    {
+      "name": "runs/ordinary/process.json",
+      "bytes": 69,
+      "sha256": "7c707ea977f7a921e0b47b957cc4df0572aefb2f47a1ebb0d8137a378e4d22d4"
+    },
+    {
+      "name": "runs/ordinary/running.json",
+      "bytes": 22,
+      "sha256": "845503c2bb56a59c11989b6b2f5f2acf54c26f6c262deef2bde9a20bb48e883e"
+    },
+    {
+      "name": "runs/ordinary/stderr.log",
+      "bytes": 4075,
+      "sha256": "98119a4799b0e430fb0fda035c469d6c119f83e84f7afc888498566054853752"
+    },
+    {
+      "name": "runs/ordinary/stdout.log",
+      "bytes": 12172,
+      "sha256": "5e0f1256924744f2d6564dc98f3a55d6e958cccfbae81fda937f5afd7b975ffa"
+    },
+    {
+      "name": "runtime.json",
+      "bytes": 7540,
+      "sha256": "55b8e6a9ccfc8bf84640c531d1004b3c6ec4c2b43ef7f56db6b055c0eeb0d901"
+    },
+    {
+      "name": "source-freeze.json",
+      "bytes": 36514,
+      "sha256": "e9e0abe12ae88ace5ab14011069c15991adf60d18c70c57d32422de250d4b7c0"
+    },
+    {
+      "name": "source/engine/inference/backend.h",
+      "bytes": 28732,
+      "sha256": "4dc28db4386510de821da68e24afd889b9ded3a10821e10ece61e85456d1fd74"
+    },
+    {
+      "name": "source/engine/inference/prefill_plan.h",
+      "bytes": 1449,
+      "sha256": "fb5f0afd618ed4af6dae02ae48d11b0de2fe9dcebb68392e9286823892e2f707"
+    },
+    {
+      "name": "source/engine/models/qwen35/main.cc",
+      "bytes": 493765,
+      "sha256": "3d85397362f767f7c9516faf1927086d1bf087afeb0ff856783dc8cab048a67d"
+    },
+    {
+      "name": "source/engine/models/qwen35/session_state.h",
+      "bytes": 21165,
+      "sha256": "e393af9522901f73bab16801054e7c4761ca836f87b15003902f6b7c279ce2bd"
+    },
+    {
+      "name": "source/engine/models/qwen35/weights.cc",
+      "bytes": 48142,
+      "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 51726,
+      "sha256": "fcdd999e0de05845372ce218ad69bb033aa4d37f9e66ec928fb070d4737bb204"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-vulkan-engine-slots-2026-10-27.zip",
+    "bytes": 256908,
+    "sha256": "f990b590d0a13de0a558aefe3faff08ca0b232c30d1e508d439ef3fad18a78e1"
+  },
+  "archive_manifest_sha256": "6fbb10565e0d3bbcd330593a49aa78fe7b37fdf610e6dd1dcde7f21c7e5c8e8d",
+  "integrity": "All ZIP members reopened and compared byte-for-byte and SHA256; CRC passed. Current source snapshots, native image, actual objects, dependency proofs and complete stdout reports checked before publication. No OBJ/EXE/DLL/SDK/model payload included."
+}

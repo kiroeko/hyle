@@ -46,6 +46,7 @@
 #include "../../inference/execution_resources.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
+#include "../../inference/request_execution_failure.h"
 #include "../../inference/prepared_output.h"
 #include "../../inference/request_progress.h"
 #include "../../inference/request_stop_policy.h"
@@ -6329,7 +6330,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           }
           std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
                     << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
-          execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests);
+          try {
+            execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests);
+          } catch (const inference::EvaluationFailure &failure) {
+            // The final submitted bucket may be smaller or differently ordered
+            // than the active request wave. Attribute only its original member.
+            throw inference::RequestExecutionFailure::from_evaluation(failure, bucket.size(),
+                [&](std::size_t member) { return bucket[member].request->request_key; });
+          }
           auto finished = endpoint;
           hyle::container::SmallVector<std::size_t, 2> members;
           if (!members.try_reserve(bucket.size())) throw std::bad_alloc{};

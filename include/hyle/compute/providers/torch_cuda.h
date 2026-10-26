@@ -15,9 +15,9 @@ inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
 // Ordinary NF4/AutoAWQ/CT decode and attention use managed private ATen
 // allocations; strict caller budgets and external capture are unsupported
 // for those allocation routes. Softplus writes the caller's destination and
-// advertises capture compatibility. MLX retains F32 accumulation, original
-// group-scale order and device-checked IDs; it reads current packed weights
-// without an unpacked bank or host IDs check, but does not advertise capture.
+// advertises capture compatibility. MLX uses capture-compatible native packed
+// routes with F32 accumulation, original group-scale order and device-checked
+// IDs; it reads current packed weights without an unpacked bank or host IDs check.
 //
 // Checked native GPTQ-v1 decode and closed ordinary CT/GPTQ linear recipes
 // support capture. Closed stored-scale FP8 recipes also use native capture
