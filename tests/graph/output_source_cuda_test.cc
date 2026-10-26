@@ -12,6 +12,9 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/region_provider.h"
+#include "hyle/graph/slots.h"
 #include "hyle/graph/graph.h"
 
 namespace {
@@ -53,7 +56,7 @@ struct Gate final {
   }
 };
 
-void relay(bool bad_producer_index, bool reuse_producer = false) {
+void relay(bool bad_producer_index, bool reuse_producer = false, bool region_consumer = false) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -74,6 +77,9 @@ void relay(bool bad_producer_index, bool reuse_producer = false) {
   auto source_pool = c::LeasePool::create(storage.ref(), source_blocks * 256,
       {.max_blocks = source_blocks}).value();
   auto output_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  c::cuda::MemoryResource staging;
+  if (region_consumer) staging = c::cuda::MemoryResource::create(
+      context, c::cuda::MemoryKind::kPinnedHost).value();
   auto table = inputs.allocate(4 * sizeof(std::int32_t), 256).value();
   auto index = inputs.allocate(sizeof(std::int32_t), 256).value();
   auto embedding = inputs.allocate(8 * sizeof(float), 256).value();
@@ -124,16 +130,57 @@ void relay(bool bad_producer_index, bool reuse_producer = false) {
   const auto second_table = second.input(table_f32).value();
   const auto second_index = second.input(i32).value();
   const auto selected = second.add(c::Gather{.axis = 0}, second_table, second_index).value();
-  ASSERT_TRUE(second.publish(selected).ok());
+  const auto item = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  g::NodeId store;
+  if (region_consumer) {
+    const auto ids = second.input(i32).value();
+    store = second.add_node(c::Operation::custom(g::slots::Store{
+        g::slots::Schema::create(item, 1, 256).value()}), std::array{selected, ids}).value();
+  } else {
+    ASSERT_TRUE(second.publish(selected).ok());
+  }
   auto second_graph = std::move(second).finish().value();
   auto consumer_plan = g::cuda::compile(second_graph, context, storage);
   ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
   auto consumer = consumer_plan->executable.create_invocation().value();
   ASSERT_TRUE(consumer.prepare_resources().ok());
+  if (region_consumer) {
+    ASSERT_EQ(consumer_plan->report.region_count(), 1u);
+    ASSERT_EQ(consumer_plan->report.step_count(), 2u);
+    bool store_region = false;
+    for (std::size_t i = 0; i < consumer_plan->report.step_count(); ++i) {
+      const auto step = consumer_plan->report.step(i).value();
+      EXPECT_EQ(step.runtime.mode, c::ProviderRuntimeMode::kSharedQueue);
+      EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
+      EXPECT_FALSE(step.runtime.blocks_host);
+      if (step.kind == g::CompileStepKind::kProviderRegion) {
+        EXPECT_EQ(step.node_count, 1u); store_region = true;
+      }
+    }
+    ASSERT_TRUE(store_region);
+    bool hooks = false;
+    const auto inspected = gd::RegionAccess::visit(consumer,
+        [](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
+          *static_cast<bool *>(opaque) = view.prepared_vtable &&
+              view.prepared_vtable->prepare_bindings && view.prepared_vtable->seal_bindings;
+          return hyle::Status::Ok();
+        }, &hooks);
+    ASSERT_TRUE(inspected.ok()) << inspected.message();
+    ASSERT_TRUE(hooks); // A genuine selected region, never a leaf/proxy fallback.
+  }
   ASSERT_TRUE(consumer.bind(second_table, table_f32, embedding_ready).ok());
   auto row_writer = output_pool.allocate(2 * sizeof(float), 256).value();
-  ASSERT_TRUE(consumer.bind(selected, row_f32, std::move(row_writer)).ok());
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  if (region_consumer) {
+    const auto layout = c::LeaseSlotLayout::create(output_pool, item, 1, 256).value();
+    std::array<c::WriteLease, 1> destination{std::move(row_writer)};
+    auto transaction = g::slots::SlotBindings::create(layout, {}, destination).value();
+    ASSERT_TRUE(g::slots::prepare(consumer, queues, {.host_workspace = staging.ref()}).ok());
+    ASSERT_TRUE(g::slots::bind(consumer, second_graph, store, std::move(transaction)).ok());
+  } else {
+    ASSERT_TRUE(consumer.bind(selected, row_f32, std::move(row_writer)).ok());
+  }
   ASSERT_TRUE(producer.prepare_replay(queues,
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
 
@@ -165,6 +212,11 @@ void relay(bool bad_producer_index, bool reuse_producer = false) {
   const auto prepared = gd::prepare_output(consumer, second_index, source, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
+  if (region_consumer) {
+    EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+    ASSERT_TRUE(source.poll());
+    EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
+  }
   const auto source_report = consumer.input_source_report().value();
   EXPECT_EQ(source_report.source_count, 1u);
   EXPECT_EQ(source_report.device_wait_count, 1u);
@@ -240,8 +292,17 @@ void relay(bool bad_producer_index, bool reuse_producer = false) {
     ASSERT_TRUE(producer_status.ok()) << producer_status.message();
     ASSERT_TRUE(consumer_status.ok()) << consumer_status.message();
     std::array<float, 2> actual{};
-    ASSERT_TRUE(consumer.output(selected)->storage().read(
-        std::as_writable_bytes(std::span(actual))).ok());
+    if (region_consumer) {
+      auto returned = g::slots::take(consumer, store);
+      ASSERT_TRUE(returned) << returned.error().message();
+      ASSERT_EQ(returned->destination_count(), 1u);
+      auto ready = returned->destinations()[0].publish();
+      ASSERT_TRUE(ready) << ready.error().message();
+      ASSERT_TRUE(ready->view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    } else {
+      ASSERT_TRUE(consumer.output(selected)->storage().read(
+          std::as_writable_bytes(std::span(actual))).ok());
+    }
     EXPECT_EQ(actual, (std::array<float, 2>{30, 31}));
     // Successful observation does not drop the immutable producer pin.
     if (!reuse_producer) EXPECT_FALSE(producer.reset().ok());
@@ -254,6 +315,7 @@ void relay(bool bad_producer_index, bool reuse_producer = false) {
 }
 
 TEST(GraphOutputSourceCuda, PendingI32UsesOriginalQueueAndLeasesForCheckedGather) { relay(false); }
+TEST(GraphOutputSourceCuda, PendingI32PreparesRealStoreRegionBindingHooks) { relay(false, false, true); }
 TEST(GraphOutputSourceCuda, ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement) { relay(true); }
 TEST(GraphOutputSourceCuda, RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter) { relay(false, true); }
 } // namespace

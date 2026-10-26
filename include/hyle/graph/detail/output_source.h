@@ -58,9 +58,9 @@ private:
 // ordinary bindings. Pending bytes are never exposed to the caller.
 HYLE_GRAPH_API Status bind_output(Invocation &, ValueId,
     const OutputSource &) noexcept;
-// Commands only: capture could execute user math on a pending input. Leaf
-// preparation has its existing metadata-only contract. This first adapter
-// rejects regions with binding callbacks rather than guessing their behavior.
+// Commands only: capture could execute user math on a pending input. Leaf and
+// region binding hooks keep their metadata/resource-only preparation contract;
+// they must not observe pending tensor contents or accept device work.
 HYLE_GRAPH_API Status prepare_output(Invocation &, ValueId,
     const OutputSource &, std::span<const QueueBinding>) noexcept;
 HYLE_GRAPH_API Result<compute::Completion> submit_output(Invocation &, ValueId,

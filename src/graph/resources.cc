@@ -1899,9 +1899,6 @@ Status check_output_consumer(Invocation &invocation, ValueId input,
       !shared_lane(plan, plan.segments.front().lane) || plan.segments.front().blocks_host)
     return Status::Unimplemented("output relay consumer requires one nonblocking shared segment");
   for (const auto &step : plan.steps) {
-    if (step.region.valid() && (step.region.prepares_bindings() || step.region.seals_bindings() ||
-        !RegionAccess::borrows_tensor_views_only(step.region)))
-      return Status::Unimplemented("pending output relay does not qualify native binding callbacks");
     const auto runtime = step.runtime_properties();
     if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
         runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))

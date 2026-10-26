@@ -437,6 +437,13 @@ struct ProviderRegionPreparedVTable final {
   RegionOutputContract (*output_contract)(void *prepared, std::size_t port) noexcept = nullptr;
   Result<RegionValue> (*output_value)(void *prepared, void *invocation,
                                     std::size_t port) noexcept = nullptr;
+  // Cold binding/resource/owner preparation. Both prepare_bindings and
+  // seal_bindings may allocate owned resources, retain exact owners/imports
+  // and record unsubmitted native commands. Neither hook may read or write
+  // tensor payloads, accept device work, or create a Completion. Inputs may
+  // still be pending; a valid descriptor does not prove readable contents.
+  // Recording grants no resource permission. These restrictions cover these
+  // hooks, not provider compilation, batch preparation or capture execution.
   Status (*prepare_bindings)(void *prepared, void *invocation,
       std::span<const RegionValue> inputs,
       // One entry per logical output; generated entries are empty.
