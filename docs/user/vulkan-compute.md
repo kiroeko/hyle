@@ -462,7 +462,7 @@ fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`�
 
 CPU＋Vulkan使用普通`graph::compile`：冷装配实际CPU/Vulkan ExecutionSource与host/device/staging域，
 随后沿同一Executable、Invocation、prepare_replay、submit和GraphOutput消费。完整调用见
-[组合样例](../../samples/package/graph/cpu_vulkan/README.md)；ready原生分页见[批次说明](batch-attention.md#cpu-与原生分页组合)。
+[组合样例](../../samples/package/graph/cpu_vulkan/README.md)；ready原生分页见[批次说明](batch-attention.md#同一分页图用于-cpu-与-gpu)。
 模型层/offload比例、KV和专家策略由引擎决定，具体Provider在冷编译选择。
 跨域 Graph replay copy 使用原生 DMA，要求复制字节数满足四字节粒度；例如 BF16[17] 的34字节会在准备期拒绝，不能通过扩大借用范围来补齐。该限制与设备内 typed Copy 算子的元素支持分别计算。已完成工作的复制绑定可在 Completion 退休后 `unbind`，释放实际 native backing 后换存储重绑。
 需要异步推进时，为原Invocation调用`prepare_progress(invocation, scheduler, completion_waiters)`。

@@ -12,7 +12,7 @@ Executable／Invocation，内部继续使用原生 Program、结果与完成机�
 
 - 单 CPU 或单 CUDA：对应普通入口；最简单的固定设备图无需手写 target/storage/lane 表。
 - CPU 与一个 GPU：[显式片段组合](#cpu-与-gpu-组合)。
-- 可变 batch/token：[独立与派生维度](#独立与派生维度)与[精确变体](#有限精确变体与通用回退)。
+- 可变 batch/token：[独立与派生维度](#独立与派生维度)与[精确变体](#有限精确变体)。
 - 内存上限、低热开销、capture：按后文编译与 replay 选项检查实际计划，不从逻辑图推断零分配。
 - KV/conv/recurrent 快照：[状态版本](state-versions.md)；Graph 不隐式决定何时发布模型状态。
 

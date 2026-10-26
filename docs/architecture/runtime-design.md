@@ -2,6 +2,7 @@
 
 Sched、IO和Process组合任务与外部操作的生命周期，而非三个互不相干的runtime。
 共同所有权和错误原则见[基础机制](foundation-design.md)；API使用见[用户文档](../user/README.md)。
+三个模块各自的设计细节见 [sched](sched-design.md)、[io](io-design.md)、[process](process-design.md)。
 
 ## 调度与进展只有一个明确owner
 
@@ -54,7 +55,10 @@ IOCP/io_uring直接返回completion，epoll/kqueue先表示readiness；不能为
 也不能把后者的一次ready当完成。
 
 kernel可能在提交后继续读取参数结构、iovec和payload。取消后返回用户层前必须遵守该操作的实际退休合同。
-普通文件的blocking fallback无法逐操作抢占时，deadline仅停止后继并等待已开始读写结束，不能承诺中断syscall。
+普通文件 data I/O 的 blocking fallback 不接受逐操作 deadline／cancel；需要这些边界而后端没有
+原生可取消能力时，明确返回 `Unimplemented`。不带这些选项的阻塞操作可以卸载到 blocking 资源，
+但仍以实际读写结束作为退休边界，不能承诺中断 syscall。DNS 等允许调用方先结束等待的操作，
+则由后台 owner 继续保活原操作；这不能推出文件 data I/O 也支持相同政策。
 每个方向的在途数量、worker affinity和borrow范围由实际流owner约束。
 
 提交/收割尽量批量化并复用有限operation state，容量满产生明确背压而不是无界队列。
