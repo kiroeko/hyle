@@ -19,6 +19,13 @@ struct BatchLayoutGeometry final {
   std::uint32_t max_requests=0,max_query_rows=0,max_kv_rows=0;
   std::uint32_t max_pages=0,max_page_refs=0,page_size=0;
 };
+// Immutable mathematical facts only, in canonical unique-page order. The rows
+// are the maximum logical prefix required by any reference to the page; neither
+// span grants initialized bytes or a page permission. Both borrow the version.
+struct BatchPageFootprint final {
+  std::span<const std::int32_t> pages;
+  std::span<const std::uint32_t> required_rows;
+};
 struct BatchLayoutAccess final {
   // Capacity topology only: this grants neither schema membership nor cache
   // interpretation. Actual K/V storage and original page rights stay separate.
@@ -35,6 +42,9 @@ struct BatchLayoutAccess final {
   // Lazy sorted unique physical page IDs. The immutable span borrows the
   // version; it carries no page permissions and never changes after success.
   HYLE_COMPUTE_BATCH_API static Result<std::span<const std::int32_t>> page_footprint(const BatchLayoutVersion&) noexcept;
+  // Shares the original IDs and lazily caches their required row prefixes once
+  // per layout, so all arenas/layers reuse the same active-sized facts.
+  HYLE_COMPUTE_BATCH_API static Result<BatchPageFootprint> page_requirements(const BatchLayoutVersion&) noexcept;
   static std::array<BatchMetadataSegment,5> row_segments(const RowCacheLayoutVersion&v) noexcept{return segments(v.owner_);}
   static Result<std::span<const std::int32_t>> row_page_footprint(const RowCacheLayoutVersion&v) noexcept{return page_footprint(v.owner_);}
 };

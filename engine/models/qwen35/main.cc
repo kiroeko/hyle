@@ -1114,6 +1114,8 @@ struct StepMember final {
   // callback reads this policy; the original owner keeps it through finish.
   const inference::RequestStopPolicy *stop_policy = nullptr;
   std::unique_ptr<cache::State> next{};
+  hyle::container::SmallVector<c::PagedArenaCommit, 16> key_updates{}, value_updates{};
+  std::array<c::PagedArenaCommit, 2> draft_updates{};
   hyle::container::SmallVector<c::PagedPageAppender, 32> next_tails{};
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
   c::BatchLayoutVersion layout{};
@@ -1127,6 +1129,57 @@ struct StepMember final {
   bool sampled_accept = false;
   GenerationCommitRecord *commit_record = nullptr;
   GenerationLedger *commit_ledger = nullptr;
+
+  const c::PagedArenaFrame &frame(std::size_t layer, bool key) const noexcept {
+    const auto &candidate = key ? next->keys[layer] : next->values[layer];
+    return candidate.valid() ? candidate : key ? base->keys[layer] : base->values[layer];
+  }
+  c::PagedArenaFootprint source(std::size_t layer, bool key) {
+    auto &candidate = key ? next->keys[layer] : next->values[layer];
+    const auto &original = key ? base->keys[layer] : base->values[layer];
+    if (!candidate.valid() && original.sealed())
+      candidate = take(c::PagedArenaFrame::fork(take(original.view())));
+    return take(frame(layer, key).view());
+  }
+  const c::PagedArenaFrame &draft_frame(bool key) const noexcept {
+    const auto &candidate = key ? next->draft->key : next->draft->value;
+    return candidate.valid() ? candidate : key ? base->draft->key : base->draft->value;
+  }
+  c::PagedArenaFootprint draft_source(bool key) {
+    auto &candidate = key ? next->draft->key : next->draft->value;
+    const auto &original = key ? base->draft->key : base->draft->value;
+    if (!candidate.valid() && original.sealed())
+      candidate = take(c::PagedArenaFrame::fork(take(original.view())));
+    return take(draft_frame(key).view());
+  }
+  void preflight_frames() const {
+    for (std::size_t i = 0; i < key_updates.size(); ++i) {
+      check(frame(i, true).validate_commit(key_updates[i]));
+      check(frame(i, false).validate_commit(value_updates[i]));
+    }
+    for (std::size_t i = 0; i < draft_updates.size(); ++i) if (draft_updates[i].valid())
+      check(draft_frame(i == 0).validate_commit(draft_updates[i]));
+  }
+  void publish_frames(cache::State *previous, cache::State &candidate) noexcept {
+    const auto publish = [](c::PagedArenaFrame &destination, c::PagedArenaFrame *old,
+        c::PagedArenaCommit &ticket) noexcept {
+      if (!destination.valid()) {
+        HYLE_FATAL_ASSERT(old && old->valid() && !old->sealed());
+        destination = std::move(*old);
+      }
+      const auto status = destination.commit(std::move(ticket));
+      HYLE_FATAL_ASSERT(status.ok());
+    };
+    for (std::size_t i = 0; i < key_updates.size(); ++i) {
+      publish(candidate.keys[i], previous ? &previous->keys[i] : nullptr, key_updates[i]);
+      publish(candidate.values[i], previous ? &previous->values[i] : nullptr, value_updates[i]);
+    }
+    for (std::size_t i = 0; i < draft_updates.size(); ++i) if (draft_updates[i].valid()) {
+      auto &destination = i == 0 ? candidate.draft->key : candidate.draft->value;
+      auto *old = previous ? (i == 0 ? &previous->draft->key : &previous->draft->value) : nullptr;
+      publish(destination, old, draft_updates[i]);
+    }
+  }
 };
 struct StepState final {
   // Model owns the episode; these strong pins outlive all accepted native work.
@@ -2772,10 +2825,12 @@ public:
           kv{0, static_cast<std::int32_t>(page_ids.size())};
       const std::array last{static_cast<std::int32_t>((next.frontier - 1) % cache::Plan::page_rows + 1)};
       const auto layout = take(attention_schema.version({query, kv, page_ids, last}));
+      const std::array sources{take(work.state.key.view()), take(work.state.value.view())};
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
         auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
+        const auto &source = sources[bank - draft_bank];
         guard.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout,
-            bank == draft_bank ? work.state.key : work.state.value, guard.dirty[bank], guard.tails[bank],
+            source.layout(), std::span(&source, 1), guard.dirty[bank], guard.tails[bank],
             {.resource_budget = cache_budget}));
       }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
@@ -2821,7 +2876,10 @@ public:
       check(g::batch::take_appends(run, std::span(guard.nodes.data() + draft_bank, 2),
           std::span(guard.appends.data() + draft_bank, 2)));
       std::fill_n(guard.bound.begin() + draft_bank, 2, std::uint8_t{});
-      next.key = take(guard.appends[draft_bank].ready()); next.value = take(guard.appends[draft_bank + 1].ready());
+      auto key_delta = take(guard.appends[draft_bank].ready_delta(sources[0], layout));
+      auto value_delta = take(guard.appends[draft_bank + 1].ready_delta(sources[1], layout));
+      auto key_commit = take(work.state.key.prepare_commit(std::move(key_delta)));
+      auto value_commit = take(work.state.value.prepare_commit(std::move(value_delta)));
       std::array<c::PagedPageAppender, 2> tails;
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) for (std::size_t i = 0; i < guard.appends[bank].appender_count(); ++i) {
         auto &tail = take(guard.appends[bank].appender(i)); if (!tail.valid()) continue;
@@ -2831,6 +2889,12 @@ public:
         tails[bank - draft_bank] = std::move(tail);
       }
       check(run.unbind(program.resource_ports));
+      check(work.state.key.validate_commit(key_commit));
+      check(work.state.value.validate_commit(value_commit));
+      next.key = std::move(work.state.key); next.value = std::move(work.state.value);
+      const auto key_status = next.key.commit(std::move(key_commit));
+      const auto value_status = next.value.commit(std::move(value_commit));
+      HYLE_FATAL_ASSERT(key_status.ok() && value_status.ok());
       work.tails = std::move(tails); work.state = std::move(next);
       return output;
     } catch (...) {
@@ -2960,6 +3024,28 @@ public:
     }
   }
 
+  static c::PagedArenaFrame working_frame(c::PagedArenaRead read) {
+    return take(c::PagedArenaFrame::fork(take(c::PagedArenaFootprint::from_read(read))));
+  }
+  static c::PagedArenaFrame snapshot_alias(const c::PagedArenaFrame &frame) {
+    return take(c::PagedArenaFrame::from_frozen(take(frame.snapshot())));
+  }
+  static cache::DraftState fork_draft(const cache::DraftState &source) {
+    cache::DraftState next;
+    next.pages = source.pages; next.frontier = source.frontier;
+    next.lag = source.lag; next.catchup_token = source.catchup_token;
+    next.key = take(c::PagedArenaFrame::fork(take(source.key.view())));
+    next.value = take(c::PagedArenaFrame::fork(take(source.value.view())));
+    return next;
+  }
+  static cache::DraftState alias_draft(const cache::DraftState &source) {
+    cache::DraftState next;
+    next.pages = source.pages; next.frontier = source.frontier;
+    next.lag = source.lag; next.catchup_token = source.catchup_token;
+    next.key = snapshot_alias(source.key); next.value = snapshot_alias(source.value);
+    return next;
+  }
+
   std::unique_ptr<cache::State> reserve_state(cache::WorkingState &owner) {
     auto version = take(cache::VersionRef::acquire(snapshot_versions));
     auto result = owner.acquire_candidate();
@@ -2979,9 +3065,15 @@ public:
       throw std::runtime_error("sampling fork belongs to another model or compiled policy");
     auto next = std::make_shared<cache::State>();
     next->state_origin = base->state_origin ? base->state_origin : base;
-    next->pages = base->pages; next->keys = base->keys; next->values = base->values;
+    next->pages = base->pages;
+    if (!next->keys.try_resize(base->keys.size()) || !next->values.try_resize(base->values.size()))
+      throw std::bad_alloc{};
+    for (std::size_t i = 0; i < base->keys.size(); ++i) {
+      next->keys[i] = snapshot_alias(base->keys[i]); next->values[i] = snapshot_alias(base->values[i]);
+    }
     next->state = base->state; next->carry_hidden = base->carry_hidden;
-    next->prior_hidden = base->prior_hidden; next->draft = base->draft;
+    next->prior_hidden = base->prior_hidden;
+    if (base->draft) next->draft.emplace(alias_draft(*base->draft));
     next->model = base->model; next->math = base->math; next->length = base->length;
     next->next_id = pending; next->sampling = cursor; return next;
   }
@@ -3167,13 +3259,13 @@ public:
       const std::array<std::int32_t, 1> tail{0};
       const auto layout = take(attention_schema.version({empty, empty, {}, tail}));
       for (std::size_t i = 0; i < initial->keys.size(); ++i) {
-        initial->keys[i] = take(page_inventory.keys[i].read(layout, {}));
-        initial->values[i] = take(page_inventory.values[i].read(layout, {}));
+        initial->keys[i] = working_frame(take(page_inventory.keys[i].read(layout, {})));
+        initial->values[i] = working_frame(take(page_inventory.values[i].read(layout, {})));
       }
       if (cache_plan.draft_cache) {
         initial->draft.emplace();
-        initial->draft->key = take(draft_inventory.keys[0].read(layout, {}));
-        initial->draft->value = take(draft_inventory.values[0].read(layout, {}));
+        initial->draft->key = working_frame(take(draft_inventory.keys[0].read(layout, {})));
+        initial->draft->value = working_frame(take(draft_inventory.values[0].read(layout, {})));
         auto zero = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
         check(zero.view()->fill(std::byte{})); initial->carry_hidden = take(zero.publish());
       }
@@ -3268,13 +3360,18 @@ public:
     // copy completion alone does not permit their promotion/reuse.
   }
 
-  void validate_mtp_snapshot(const cache::State &head) const {
+  void validate_mtp_snapshot(const cache::State &head, const StepMember *candidate = nullptr) const {
     if (cache_plan.draft_cache != head.draft.has_value())
       throw std::runtime_error("snapshot does not contain the configured complete MTP state");
     if (!head.draft) return;
     const auto &draft = *head.draft;
+    const auto key = candidate && candidate->draft_updates[0].valid()
+        ? take(candidate->draft_updates[0].view()) : take(draft.key.view());
+    const auto value = candidate && candidate->draft_updates[1].valid()
+        ? take(candidate->draft_updates[1].view()) : take(draft.value.view());
     if (draft.lag > 1 || head.length < draft.lag || draft.frontier != head.length - draft.lag ||
-        !draft.key.valid() || !draft.value.valid() || !head.carry_hidden.valid() ||
+        !key.valid() || !value.valid() || key.layout().facts().kv_rows != draft.frontier ||
+        value.layout().facts().kv_rows != draft.frontier || !head.carry_hidden.valid() ||
         (draft.lag && (!head.prior_hidden.valid() || draft.catchup_token < 0 || draft.catchup_token >= vocabulary)) ||
         (!draft.lag && draft.catchup_token != -1))
       throw std::runtime_error("inconsistent MTP frontier, catch-up token or owned target hidden state");
@@ -3644,12 +3741,12 @@ public:
     step.draft_layout = layout;
     std::vector<std::int32_t> old_query(width == 1 ? 0 : width + 1, 0);
     const auto old_layout = width == 1 ? c::BatchLayoutVersion{} : take(attention_schema.version({old_query, old_ptr, old_ids, old_last}));
-    std::vector<c::PagedArenaRead> sources(width);
+    std::vector<c::PagedArenaFootprint> sources(width);
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
       auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
-      for (std::size_t j = 0; j < width; ++j) sources[j] = bank == draft_bank ? step.members[j].base->draft->key : step.members[j].base->draft->value;
-      const auto previous = width == 1 ? sources[0] : take(arena.reframe(old_layout, sources));
-      step.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous,
+      for (std::size_t j = 0; j < width; ++j) sources[j] = step.members[j].draft_source(bank == draft_bank);
+      const auto previous = width == 1 ? sources[0].layout() : old_layout;
+      step.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
           step.dirty[bank], step.tails[bank], {.resource_budget = cache_budget}));
     }
     phase.draft_positions.write<std::int32_t>(positions);
@@ -3850,19 +3947,18 @@ public:
       const std::vector<std::int32_t> old_query(width == 1 ? 0 : width + 1, 0);
       const auto old_layout = width == 1 ? c::BatchLayoutVersion{}
           : take(attention_schema.version({old_query, old_indptr, old_ids, old_last}));
-      std::vector<c::PagedArenaRead> sources(width == 1 ? 0 : width);
+      std::vector<c::PagedArenaFootprint> sources(width);
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
-        const auto compose = [&](c::PagedArena &arena, bool key) {
-          if (width == 1) return key ? step.members[0].base->keys[layer] : step.members[0].base->values[layer];
+        const auto compose = [&](bool key) {
           for (std::size_t j = 0; j < width; ++j)
-            sources[j] = key ? step.members[j].base->keys[layer] : step.members[j].base->values[layer];
-          return take(arena.reframe(old_layout, sources));
+            sources[j] = step.members[j].source(layer, key);
+          return width == 1 ? sources[0].layout() : old_layout;
         };
         auto &key_arena = page_inventory.keys[layer]; auto &value_arena = page_inventory.values[layer];
         step.appends[layer * 2] = take(g::batch::PagedAppendPages::create(key_arena, phase.attention_layout,
-            compose(key_arena, true), step.dirty[layer * 2], step.tails[layer * 2], {.resource_budget = cache_budget}));
+            compose(true), sources, step.dirty[layer * 2], step.tails[layer * 2], {.resource_budget = cache_budget}));
         step.appends[layer * 2 + 1] = take(g::batch::PagedAppendPages::create(value_arena, phase.attention_layout,
-            compose(value_arena, false), step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
+            compose(false), sources, step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
       for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i))
@@ -4136,22 +4232,24 @@ public:
           std::span(step.appends.data(), append_banks)));
       std::fill_n(step.bound.begin(), append_banks, std::uint8_t{});
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
-        auto key = take(step.appends[layer * 2].ready()), value = take(step.appends[layer * 2 + 1].ready());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
-          member.next->keys[layer] = outputs.size() == 1 && member.accepted_tokens == tokens ? key
-              : take(page_inventory.keys[layer].reframe(member.layout, std::span(&key, 1)));
-          member.next->values[layer] = outputs.size() == 1 && member.accepted_tokens == tokens ? value
-              : take(page_inventory.values[layer].reframe(member.layout, std::span(&value, 1)));
+          if (!member.key_updates.try_resize(page_inventory.keys.size()) ||
+              !member.value_updates.try_resize(page_inventory.keys.size())) throw std::bad_alloc{};
+          auto key = take(step.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
+          auto value = take(step.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
+          member.key_updates[layer] = take(member.frame(layer, true).prepare_commit(std::move(key)));
+          member.value_updates[layer] = take(member.frame(layer, false).prepare_commit(std::move(value)));
         }
       }
       if (has_mtp(phase.family->role)) {
-        auto key = take(step.appends[draft_bank].ready()), value = take(step.appends[draft_bank + 1].ready());
         std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
-          draft.key = outputs.size() == 1 ? key : take(draft_inventory.keys[0].reframe(member.draft_layout, std::span(&key, 1)));
-          draft.value = outputs.size() == 1 ? value : take(draft_inventory.values[0].reframe(member.draft_layout, std::span(&value, 1)));
+          auto key = take(step.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
+          auto value = take(step.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
+          member.draft_updates[0] = take(member.draft_frame(true).prepare_commit(std::move(key)));
+          member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
           owners.emplace_back(draft.pages.back().page(), j);
         }
         std::sort(owners.begin(), owners.end());
@@ -4173,7 +4271,7 @@ public:
       // actual target hidden rows here, before ledger checks or any head swap.
       complete(step);
       if (cache_plan.draft_cache)
-        for (const auto &member : step.members) validate_mtp_snapshot(*member.next);
+        for (const auto &member : step.members) validate_mtp_snapshot(*member.next, &member);
       for (std::size_t j = 0; j < outputs.size(); ++j) if (auto *record = step.members[j].commit_record) {
         const auto &member = step.members[j];
         record->requests = outputs.size(); record->member_index = j;
@@ -4237,6 +4335,7 @@ public:
             member.session->pending != &step ||
             (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
+      for (const auto &member : step.members) member.preflight_frames();
       // All fallible native/export/metadata work is complete. The head swaps
       // below cannot throw. Stopped ordinary members discard their unpublished
       // candidate; every surviving member keeps this original successful work.
@@ -4251,7 +4350,9 @@ public:
         member.next->next_id = next_ids[j];
         member.session->tails = std::move(member.next_tails);
         member.session->draft_tails = std::move(member.next_draft_tails);
-        member.session->head.commit(std::move(member.next), [&](cache::State &previous) noexcept {
+        member.session->head.commit(std::move(member.next),
+            [&](cache::State *previous, cache::State &candidate) noexcept { member.publish_frames(previous, candidate); },
+            [&](cache::State &previous) noexcept {
           // Only an exclusively owned successful old working head reaches
           // here, after Graph withdrawal. Frozen checkpoints stay untouched;
           // try_write also rejects escaped readers and original native uses.
@@ -4344,7 +4445,7 @@ public:
     if (!maximum) return inputs;
     if (inputs.front() < 0 || inputs.front() >= vocabulary || ended(inputs.front()))
       throw std::runtime_error("recursive proposals require a valid nonterminal emitted pending token");
-    DraftWork work; work.state = *session.head->draft;
+    DraftWork work; work.state = fork_draft(*session.head->draft);
     c::ReadLease approximate;
     for (std::size_t i = 0; i < maximum; ++i) {
       std::vector<std::int32_t> ids;
@@ -4371,7 +4472,7 @@ public:
       const auto n = member.accepted_tokens;
       if (!n || member.verification_inputs.size() < n || member.carry_prefix.size() != n)
         throw std::runtime_error("draft repair requires every actually consumed target prefix row");
-      DraftWork repaired; repaired.state = *member.base->draft;
+      DraftWork repaired; repaired.state = fork_draft(*member.base->draft);
       std::vector<std::int32_t> ids;
       std::vector<c::ReadLease> shifted;
       if (repaired.state.lag) { ids.push_back(repaired.state.catchup_token); shifted.push_back(member.base->prior_hidden); }

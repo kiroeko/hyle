@@ -674,6 +674,29 @@ auto alice_only = key_arena.reframe(alice_layout, std::span(&batch_keys, 1)).val
 同名强类型重载支持`RowCacheLayoutVersion`／`PagedRowCacheRead`；pending／writer仍须沿原退休和成功发布链，不能通过重组成为ready。
 帧投影只处理页面读取权限；混合recurrent模型仍须同时保存对应位置的conv／GDN状态。
 
+### 连续追加的工作帧
+
+连续执行可以使用 `<hyle/compute/paged_frame.h>` 的 `PagedArenaFrame`，保存可推进的布局和页权限表，
+不必每步先创建整份不可变帧。它复用同一 arena、页租约和分配器，不另分配 KV payload。
+
+- 从 ready 帧取得 `PagedArenaFootprint::from_read(read)`，再调用 `PagedArenaFrame::fork(view)`，
+  复制当前实际使用的权限元数据，建立独占工作帧。`from_frozen(read)` 只建立永久只读别名。
+- `frame.view()` 返回带 epoch 的 footprint；它不是整个 bank 的读取许可。控制调用须串行，
+  提交后旧 footprint 失效；已经独立取得的 `ReadLease` 继续按自己的范围和寿命有效。
+- Graph 的 `PagedAppendPages::create` 可接受旧批次布局与多个 footprint，直接组合真实页权限。
+  原 Graph 成功、真实退休并取回事务后，`ready_delta(expected, accepted_layout)` 导出本次变化页，
+  `frame.prepare_commit(delta)` 完成可失败准备。可用 `ticket.view()` 检查接受前缀，不先创建整帧。
+- 先为所有 K/V 和其它参与者完成预检，再在同一 owner 下调用各帧的 `validate_commit`／`commit`。
+  两者之间不得插入其它控制调用。成功提交不分配内存；未提交或拒绝的 ticket 不推进旧布局与 epoch。
+  多帧、递归状态、RNG 和会话 head 的共同原子发布仍由上层拥有。
+- 需要保留前缀、分叉或导出快照时，先 `can_seal()`，再 `seal()`，最后 `snapshot()` 取得
+  `PagedArenaRead`。封存永久生效；继续计算要显式 fork，不能因引用计数降为一就重新写旧快照。
+
+元数据按实际页数增长；页集合不变时只替换变化项，结构改变时才准备完整替代表。
+布局事实可由同一版本的多个 K/V bank 共享，但首次准备仍有分配和校验成本。
+这些类型只接收已经 ready 的页，不把 pending 工作、取消或观察错误变成成功；
+MTP 选择较短前缀也不能倒退已发布尾页的物理 frontier，后续仍须遵守原尾写权或 COW 合同。
+
 批次容量中的`max_query_rows`与`max_kv_rows`限制所有请求的行数之和；`max_page_refs`限制页表项总数，
 共享物理页在各请求的页表中仍各占一项。`max_pages`单独限制实际物理页池，不能把每请求上下文上限当成批次总KV容量。
 

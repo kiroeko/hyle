@@ -43,9 +43,9 @@ Bytes read(const c::ReadLease &lease) {
 
 // Inspect only the committed logical rows authorized by the original frame.
 // Physical tails outside that read range are not part of this comparison.
-Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaRead &frame,
+Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaFrame &frame,
                    std::size_t rows) {
-  const auto layout = frame.layout().host();
+  const auto view = q::take(frame.view()); const auto layout = view.layout().host();
   const auto count = (rows + q::cache::Plan::page_rows - 1) / q::cache::Plan::page_rows;
   require(frame.valid() && layout.page_indices.size() == count &&
           frame.page_count() == count && layout.last_page_lengths.size() == 1,
@@ -53,17 +53,13 @@ Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaRead &frame,
   require(!count || (count - 1) * q::cache::Plan::page_rows +
           static_cast<std::size_t>(layout.last_page_lengths[0]) == rows,
           "committed KV frame frontier differs from its complete Snapshot");
+  require(c::detail::PagedArenaAccess::owns(arena, view), "committed KV frame belongs to another arena");
   Bytes bytes(q::cache::multiply(rows, std::size_t{1024}));
-  const auto guards = c::detail::PagedArenaAccess::pages(frame);
   std::size_t offset = 0;
   for (std::size_t logical = 0; logical < count; ++logical) {
-    const c::ReadLease *selected = nullptr;
-    for (const auto &guard : guards)
-      if (q::take(c::detail::PagedArenaAccess::page(arena, guard)) ==
-          static_cast<std::uint32_t>(layout.page_indices[logical])) selected = &guard;
-    require(selected != nullptr, "committed KV page lacks its original ready guard");
+    const auto selected = q::take(view.page_prefix(static_cast<std::uint32_t>(layout.page_indices[logical])));
     const auto length = (std::min)(std::size_t{16 * 1024}, bytes.size() - offset);
-    q::check(q::take(q::take(selected->view()).subview(0, length)).read(
+    q::check(q::take(q::take(selected.view()).subview(0, length)).read(
         std::span(bytes).subspan(offset, length)));
     offset += length;
   }

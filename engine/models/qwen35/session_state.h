@@ -12,7 +12,8 @@
 #include <utility>
 #include <vector>
 
-#include "hyle/compute/paged_arena.h"
+#include "hyle/compute/paged_frame.h"
+#include "hyle/core/assert.h"
 #include "hyle/container/small_vector.h"
 #include "model_geometry.h"
 #include "../../inference/sampling_cursor.h"
@@ -266,7 +267,7 @@ private:
 struct DraftState final {
   // Reverse destruction releases the actual ready frames before page policy.
   std::vector<PageRef> pages;
-  c::PagedArenaRead key, value;
+  c::PagedArenaFrame key, value;
   std::size_t frontier = 0;
   // Committed MTP heads have frontier == target length - lag. Lag1 also
   // requires a valid catchup_token and State.prior_hidden; lag0 has no token.
@@ -291,7 +292,7 @@ struct State final {
   std::vector<PageRef> pages;
   // Inline capacities avoid new hot allocations for current geometries; they
   // are storage optimizations, not supported-model or layer-count limits.
-  hyle::container::SmallVector<c::PagedArenaRead, 16> keys, values;
+  hyle::container::SmallVector<c::PagedArenaFrame, 16> keys, values;
   hyle::container::SmallVector<Recurrent, 64> state;
   c::ReadLease carry_hidden, prior_hidden;
   std::optional<DraftState> draft;
@@ -301,6 +302,25 @@ struct State final {
   std::int32_t next_id = -1; // Valid only at a complete nonempty evaluated boundary.
   SamplingCursor sampling;
   const State *state_identity() const noexcept { return state_origin ? state_origin.get() : this; }
+
+  hyle::Status can_seal() const noexcept {
+    for (const auto &frame : keys) HYLE_RETURN_IF_ERROR(frame.can_seal());
+    for (const auto &frame : values) HYLE_RETURN_IF_ERROR(frame.can_seal());
+    if (draft) {
+      HYLE_RETURN_IF_ERROR(draft->key.can_seal());
+      HYLE_RETURN_IF_ERROR(draft->value.can_seal());
+    }
+    return hyle::Status::Ok();
+  }
+  void seal() noexcept {
+    // The owner preflights the whole collection before publishing a Snapshot.
+    for (auto &frame : keys) { const auto status = frame.seal(); HYLE_FATAL_ASSERT(status.ok()); }
+    for (auto &frame : values) { const auto status = frame.seal(); HYLE_FATAL_ASSERT(status.ok()); }
+    if (draft) {
+      const auto key = draft->key.seal(), value = draft->value.seal();
+      HYLE_FATAL_ASSERT(key.ok() && value.ok());
+    }
+  }
 
   // Called only after the original Graph/native readers have withdrawn. Empty
   // metadata may be reused; no old payload, page policy or version stays pinned.
@@ -349,8 +369,17 @@ public:
   // the caller has already withdrawn the original episode's native readers.
   template<class Recycle>
   void commit(std::unique_ptr<State> candidate, Recycle &&recycle) noexcept {
+    commit(std::move(candidate), [](State *, State &) noexcept {}, std::forward<Recycle>(recycle));
+  }
+  // A prepared collection may transfer the exclusively owned working frames
+  // from its old head and commit their checked deltas before the head swap.
+  // Frozen heads have no mutable previous object and must be forked earlier.
+  template<class Publish, class Recycle>
+  void commit(std::unique_ptr<State> candidate, Publish &&publish, Recycle &&recycle) noexcept {
+    static_assert(std::is_nothrow_invocable_v<Publish &, State *, State &>);
     static_assert(std::is_nothrow_invocable_v<Recycle &, State &>);
     assert(candidate && epoch_ != (std::numeric_limits<std::uint64_t>::max)());
+    publish(current_.get(), *candidate);
     auto previous = std::move(current_);
     current_ = std::move(candidate); frozen_.reset(); ++epoch_;
     if (previous) recycle(*previous);
@@ -365,10 +394,14 @@ public:
   }
   SnapshotRef checkpoint() {
     if (current_) {
+      const auto ready = current_->can_seal();
+      if (!ready.ok()) throw std::runtime_error("model-state frame collection cannot be frozen");
       // unique_ptr -> shared_ptr has no effect on allocation failure. The same
       // State and VersionRef survive; no tensor/frame payload is copied.
-      SnapshotRef frozen(std::move(current_));
-      frozen_.swap(frozen);
+      std::shared_ptr<State> frozen(std::move(current_));
+      // No allocation or failure after the shared control block exists.
+      frozen->seal();
+      frozen_ = std::move(frozen);
     }
     return frozen_;
   }

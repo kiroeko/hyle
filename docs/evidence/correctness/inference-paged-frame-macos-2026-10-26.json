@@ -1,0 +1,2245 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "status": "PASS_WITH_FINITE_SCOPE",
+  "purpose": "Apple validation of current persistent paged Frame wiring through the canonical Qwen host-image consumer.",
+  "platform": {
+    "machine": "MacBook Air Mac16,12",
+    "memory_bytes": 17179869184,
+    "compiler": "Apple clang 21.0.0; recorded /usr/bin/c++ recipes",
+    "architecture": "arm64",
+    "minimum_macos": "14.4",
+    "backend": "Apple/Metal",
+    "hardware_identity_source": "Read-only SSH observation during preparation; commands and flags retained in individual recipes."
+  },
+  "source_root": "C:/public/project-hyle/hyle",
+  "remote": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026",
+  "canonical_consumer": "tests/tools/qwen_host_image_test.cc",
+  "current_image": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/host-image",
+    "bytes": 17196520,
+    "sha256": "01ccc5d29fd28642381ec90422fdac7d8f53c34fc2f59899f4a0767d59d0c949"
+  },
+  "compiled_TUs": 11,
+  "link_processes": 1,
+  "model_processes": 2,
+  "SDK_builds": 0,
+  "HTTP": 0,
+  "build": [
+    {
+      "task": "compile-layout",
+      "process": {
+        "pid": 22321,
+        "exit": 0,
+        "seconds": 0.931322875
+      },
+      "command": "records/compile-layout/command.json",
+      "source": {
+        "path": "src/compute_batch/batch_layout.cc",
+        "bytes": 30781,
+        "sha256": "e38ec4187288be99899b3c10528b5eeaea34b020f300578776da0d0843c91ed3"
+      }
+    },
+    {
+      "task": "compile-arena",
+      "process": {
+        "pid": 22330,
+        "exit": 0,
+        "seconds": 1.4108636670000003
+      },
+      "command": "records/compile-arena/command.json",
+      "source": {
+        "path": "src/compute_batch/paged_arena.cc",
+        "bytes": 75936,
+        "sha256": "0ad35e6d8251b9bbb2507d5bafecccee15cb0a53982e4a026783d9f0a5443616"
+      }
+    },
+    {
+      "task": "compile-append",
+      "process": {
+        "pid": 22336,
+        "exit": 0,
+        "seconds": 1.411063333
+      },
+      "command": "records/compile-append/command.json",
+      "source": {
+        "path": "src/graph_batch/paged_append.cc",
+        "bytes": 63342,
+        "sha256": "bff3c2c8ada46def02729e41571bfd1942b851e10dd832cf9bbb960e7dd2b3c2"
+      }
+    },
+    {
+      "task": "compile-resources",
+      "process": {
+        "pid": 22340,
+        "exit": 0,
+        "seconds": 1.5307988329999995
+      },
+      "command": "records/compile-resources/command.json",
+      "source": {
+        "path": "src/graph/resources.cc",
+        "bytes": 109300,
+        "sha256": "e324ce652c80447f43cb09149a6c0e3c43e4898f8ed1bab07cddc553dde5d78d"
+      }
+    },
+    {
+      "task": "compile-stream",
+      "process": {
+        "pid": 22354,
+        "exit": 0,
+        "seconds": 1.507401416
+      },
+      "command": "records/compile-stream/command.json",
+      "source": {
+        "path": "src/compute_stream/file_stream.cc",
+        "bytes": 54770,
+        "sha256": "0f1695863fd4bac74ef5ef520926023e976b22f8294260fbd9cbbff3a2fac990"
+      }
+    },
+    {
+      "task": "compile-tensor",
+      "process": {
+        "pid": 22356,
+        "exit": 0,
+        "seconds": 0.31022908300000007
+      },
+      "command": "records/compile-tensor/command.json",
+      "source": {
+        "path": "src/compute/tensor_view.cc",
+        "bytes": 2851,
+        "sha256": "ba05b4eaf37e169fa7ed286481eabcbc78ea94f50cb945185aa8a870dec9ddcb"
+      }
+    },
+    {
+      "task": "compile-executable",
+      "process": {
+        "pid": 22358,
+        "exit": 0,
+        "seconds": 6.323592667
+      },
+      "command": "records/compile-executable/command.json",
+      "source": {
+        "path": "src/graph/executable.cc",
+        "bytes": 484058,
+        "sha256": "2ede7fbaa1e9e7c509892e8b79a14dadb842cc0c8e6e33c7ddba4d742b419094"
+      }
+    },
+    {
+      "task": "compile-submission",
+      "process": {
+        "pid": 22363,
+        "exit": 0,
+        "seconds": 1.11149625
+      },
+      "command": "records/compile-submission/command.json",
+      "source": {
+        "path": "src/graph/submission.cc",
+        "bytes": 50928,
+        "sha256": "36d528f2f9ef9592ce6bbd0a3272d7659f17fbde28554682437853d9c1ed4298"
+      }
+    },
+    {
+      "task": "compile-transform",
+      "process": {
+        "pid": 22365,
+        "exit": 0,
+        "seconds": 0.4506201660000002
+      },
+      "command": "records/compile-transform/command.json",
+      "source": {
+        "path": "src/compute_provider_native/transform.cc",
+        "bytes": 7811,
+        "sha256": "f00caa1bcf218c98552dee077221dbb0401aa71b80738746a92bb215db778bbb"
+      }
+    },
+    {
+      "task": "compile-weights",
+      "process": {
+        "pid": 22367,
+        "exit": 0,
+        "seconds": 3.204000958
+      },
+      "command": "records/compile-weights/command.json",
+      "source": {
+        "path": "engine/models/qwen35/weights.cc",
+        "bytes": 48142,
+        "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+      }
+    },
+    {
+      "task": "compile-model",
+      "process": {
+        "pid": 22370,
+        "exit": 0,
+        "seconds": 12.805907458000002
+      },
+      "command": "records/compile-model/command.json",
+      "source": {
+        "path": "tests/tools/qwen_host_image_test.cc",
+        "bytes": 2242,
+        "sha256": "eee798acb44152885042b9a0aa80a3d400990a6d0b92223626e7052c025f30f1"
+      }
+    },
+    {
+      "task": "link",
+      "process": {
+        "pid": 22372,
+        "exit": 0,
+        "seconds": 0.2604641669999985
+      },
+      "command": "records/link/command.json"
+    }
+  ],
+  "runs": [
+    {
+      "task": "run-ordinary-mtp",
+      "process": {
+        "pid": 22379,
+        "exit": 0,
+        "seconds": 32.232072042
+      },
+      "command": "records/run-ordinary-mtp/command.json",
+      "facts": {
+        "status": "PASS",
+        "backend": "apple",
+        "ordinary": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 5,
+          "bytes": 18432,
+          "byte_limit_at_factory": true,
+          "adapter_parking": true,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_value": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            }
+          }
+        },
+        "mtp": {
+          "hidden": 64,
+          "target_layers": 2,
+          "payloads": 7,
+          "bytes": 19200,
+          "byte_limit_at_factory": true,
+          "adapter_parking": false,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 384
+            },
+            "target_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "conv": {
+              "payloads": 1,
+              "bytes": 1152,
+              "nonzero_bytes": 1149
+            },
+            "gdn": {
+              "payloads": 1,
+              "bytes": 16384,
+              "nonzero_bytes": 16333
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 128,
+              "nonzero_bytes": 128
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            },
+            "draft_value": {
+              "payloads": 1,
+              "bytes": 384,
+              "nonzero_bytes": 383
+            }
+          }
+        },
+        "all_initialized_bytes_equal": true,
+        "historical_wrapper_preserved": true,
+        "same_shape_continuation_equal": true,
+        "old_alias_unchanged": true,
+        "cold_resources_expired": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    {
+      "task": "run-lag1",
+      "process": {
+        "pid": 22385,
+        "exit": 0,
+        "seconds": 1.2272166670000004
+      },
+      "command": "records/run-lag1/command.json",
+      "facts": {
+        "status": "PASS",
+        "backend": "apple",
+        "seed_contract": "explicit_verified_prefix",
+        "natural_acceptance_claim": false,
+        "seed_lag": 1,
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "seed_catchup_token": 1,
+        "prior_payloads": 1,
+        "prior_bytes": 128,
+        "prior_nonzero_bytes": 128,
+        "payloads": 8,
+        "bytes": 20096,
+        "continuation_lag": 0,
+        "processed_draft": 2,
+        "processed_target": 1,
+        "all_initialized_bytes_equal": true,
+        "same_shape_catchup_round_equal": true,
+        "old_alias_unchanged": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    }
+  ],
+  "fixture": {
+    "original_manifest_sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515",
+    "adapted_manifest_sha256": "9dc028642ce7af214d4b1f6a0a73f7e47bcb7c29d9a6ebdef449db4c37ced0e5",
+    "bin_sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14",
+    "bin_bytes": 298628,
+    "adaptation": "Only binary file path in validation manifest; geometry/roles/offsets/bytes unchanged.",
+    "HTTP": 0
+  },
+  "reuse": {
+    "baseline": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-host-image-20261026\\mac-model-attempt4\\link\\command.json",
+    "replacements": [
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt4/src--compute_batch--batch_layout.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/layout.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt4/src--compute_batch--paged_arena.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/arena.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt4/src--graph_batch--paged_append.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/append.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt4/src--graph--resources.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/resources.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt2/weights.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/weights.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/inference-native-host-image-20261026/model-attempt2/model.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/model.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/src--compute_stream--file_stream.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/stream.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/qwen-cpu-apple-functional-20261024/attempt1/objects/current--src--graph--executable.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/executable.o"
+      },
+      {
+        "before": "/Users/kiro/hyle-scratch/compute-unified/qwen-pure-cpu-functional-20261024/attempt1/objects/src--compute_provider_native--transform.cc.o",
+        "after": "/Users/kiro/hyle-scratch/compute-unified/inference-paged-frame-20261026/transform.o"
+      }
+    ],
+    "current_retention_objects": [
+      "/Users/kiro/hyle-scratch/compute-unified/inference-copy-public-retention-20261026/device.o",
+      "/Users/kiro/hyle-scratch/compute-unified/inference-copy-public-retention-20261026/batch_transfer2.o",
+      "/Users/kiro/hyle-scratch/compute-unified/inference-copy-public-retention-20261026/apple_copy_program.o",
+      "/Users/kiro/hyle-scratch/compute-unified/inference-transfer-retirement-20261026/completion.o"
+    ],
+    "report": "Existing report object reused; execution observation and reporting header pins unchanged.",
+    "private_header_checks": 59,
+    "private_headers_all_identical": true,
+    "installed_detail_changes": [
+      {
+        "cache": "full-model",
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "old": "772e85be3d76411dcf292105b302d02aca1a5e3dcd1995250fdd505e1f0a9096",
+        "current": "d8e4c004a594fecde40ef3cf42f0c23b3cc6ded165b179d8da3eb260de35d429"
+      },
+      {
+        "cache": "full-model",
+        "path": "include/hyle/compute/detail/paged_arena_access.h",
+        "old": "ffba6a67c84d912e5a95e287ff27579e300c2e46479f8532d58bf54ba531e2e7",
+        "current": "732e9956de3fa99b48be1d6521f27c822f251811bea86ba9aba5885fb43e1038"
+      }
+    ],
+    "detail_abi_review": "batch_provider adds new footprint type/static function; paged_arena_access adds overloads. Existing carrier/vtable fields unchanged. BatchLayoutData stays opaque inside rebuilt layout TU.",
+    "padded_common_behavior": "Rebuild executable/submission/native transform for initialized P and logical copy behavior, although private struct headers are unchanged.",
+    "unexpected_cached_Hyle_public_headers": []
+  },
+  "script_failures": [
+    {
+      "stage": "Local preparation before plan/build",
+      "failure": "Initial filename matcher included whole manifest rows instead of only the quoted binary pathname.",
+      "correction": "Restricted matching to the quoted filename; no remote compile or model process had started."
+    },
+    {
+      "stage": "Dependency accounting after the first four successful compile processes",
+      "failure": "AssertionError on source/src/graph/../compute/shape_program.h because the dependency spelling was not normalized.",
+      "correction": "mac-run2.py resolves dependency paths, verifies and reuses the four already successful processes, and compiles only the remaining seven units.",
+      "compile_retries": 0,
+      "model_retries": 0
+    }
+  ],
+  "limits": [
+    "Small untrained GA/MTP fixture is byte/lifetime coverage, not task-quality oracle.",
+    "No full335/other-model matrix or speed benchmark was run on Mac in this batch.",
+    "Old cached vendor/SDK objects and report reused; changed layout/arena/append/resources/stream/tensor/executable/submission/transform/weights/Model rebuilt.",
+    "Original fixture binary bytes preserved; only manifest binary path adapted in the validation copy.",
+    "This is not a complete Apple SDK/backend matrix; cached unchanged vendor/SDK objects remain reused.",
+    "Explicit verified-prefix lag1 is not a claim about natural MTP acceptance rate."
+  ],
+  "quality_claim": false,
+  "performance_claim": false,
+  "additional_runs_during_publication": 0,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-paged-frame-macos-2026-10-26.zip",
+    "bytes": 1053697,
+    "sha256": "d7dcda57bb07ba21bc3153d36253788c67414952493a797426aa2e6d7ae17b4c",
+    "file_count": 354,
+    "files": [
+      {
+        "path": "preparation/read-only-symbols.json",
+        "bytes": 8477,
+        "sha256": "002edaba6113ccedb242b8787dc411f4c737accb2d5a6c5bdb12b855af718854"
+      },
+      {
+        "path": "records/abi-boundaries.json",
+        "bytes": 18641,
+        "sha256": "39656c4b8764fcdb3de20fe991a6d280d1c14077151e4c1f0723981ff08d9cff"
+      },
+      {
+        "path": "records/compile-append/actual-project-dependencies.json",
+        "bytes": 18032,
+        "sha256": "335dc370d62b4f30189c12ea790bbc2bd6684534bf4aafa251d335b6cc26c4e0"
+      },
+      {
+        "path": "records/compile-append/command.json",
+        "bytes": 5095,
+        "sha256": "5c014b45e265b1a91ddd22c8c5dda25a0175b14995e980efcb82e04c104f1244"
+      },
+      {
+        "path": "records/compile-append/dependencies.json",
+        "bytes": 9351,
+        "sha256": "1658dec0bc185a2184e60dd6a9df09c91c57d09f6d0af29502274ea11d4f99dd"
+      },
+      {
+        "path": "records/compile-append/process.json",
+        "bytes": 58,
+        "sha256": "51c50864cb7051af25b18a4371fd6bec6a03d65484284c51222b6b5077bbe650"
+      },
+      {
+        "path": "records/compile-append/running.json",
+        "bytes": 19,
+        "sha256": "a6a4f9f3503c3823c0e928c45a331fe692d06e3edda525c7716ba36068d43395"
+      },
+      {
+        "path": "records/compile-append/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-append/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-arena/actual-project-dependencies.json",
+        "bytes": 11730,
+        "sha256": "e7fcb76212595de50d4ee09378b11a805518cbc955b9977af9b157cc0215857c"
+      },
+      {
+        "path": "records/compile-arena/command.json",
+        "bytes": 5094,
+        "sha256": "157084b25a2ad390cca99ec25cd63f50af40c0c76cfa25130552298d79e5a733"
+      },
+      {
+        "path": "records/compile-arena/dependencies.json",
+        "bytes": 6116,
+        "sha256": "132d0308026c115cd500641c509a3ff5ab3609d464ed6a2a6adf2d2fee7c9be8"
+      },
+      {
+        "path": "records/compile-arena/process.json",
+        "bytes": 65,
+        "sha256": "e8ae3d8d0caac65b9109ff572e63bb9b535488cb748cadcd493fdf4f294653c4"
+      },
+      {
+        "path": "records/compile-arena/running.json",
+        "bytes": 19,
+        "sha256": "ec39cff30f29c97b46cb4d360ef5a8cf6915557f6b4658bac38c1e9747a5ec07"
+      },
+      {
+        "path": "records/compile-arena/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-arena/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-executable/actual-project-dependencies.json",
+        "bytes": 20478,
+        "sha256": "ecf0bb0c566ad4f0d081c0c2ba463e30400d1a401128e49b534eac4f2329d4b9"
+      },
+      {
+        "path": "records/compile-executable/command.json",
+        "bytes": 5095,
+        "sha256": "f1bfb6abd64252358bb9c529d1d24689e4fb1a0f01f8ca2031e19f677215a8a6"
+      },
+      {
+        "path": "records/compile-executable/dependencies.json",
+        "bytes": 10543,
+        "sha256": "744759425f7a308f12b2d7d8225afe758e8ebb19494f3bdcb7984c7287185d93"
+      },
+      {
+        "path": "records/compile-executable/process.json",
+        "bytes": 58,
+        "sha256": "ad0708eced9922abcdec4cfd51fe7d624ae821d398925e645340a4ed3afbccdf"
+      },
+      {
+        "path": "records/compile-executable/running.json",
+        "bytes": 19,
+        "sha256": "c8d68aaa272aee8046060758d65f9a277d7a28423f165a7ad8d79d904e1afe40"
+      },
+      {
+        "path": "records/compile-executable/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-executable/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-layout/actual-project-dependencies.json",
+        "bytes": 10260,
+        "sha256": "3465656050603e80805134c91faf4aa41c3242434604b14c2856b43c4efd9d8c"
+      },
+      {
+        "path": "records/compile-layout/command.json",
+        "bytes": 5097,
+        "sha256": "b9a7c0d3ea1a56b11b2f6002f06737c31ffb9abab906009612847188a3ad426a"
+      },
+      {
+        "path": "records/compile-layout/dependencies.json",
+        "bytes": 5356,
+        "sha256": "15521bab916da58a7ab37d0b9bed457d129c89e3240db87ef62e70456ae86576"
+      },
+      {
+        "path": "records/compile-layout/process.json",
+        "bytes": 58,
+        "sha256": "b2862b584193489a559a994c266225151ebd047c3ad52a1e532234634d608ab2"
+      },
+      {
+        "path": "records/compile-layout/running.json",
+        "bytes": 19,
+        "sha256": "c5f05b647c40380cbed6d704b009ea20ef3be16bdaf0d6365f464ea93693213c"
+      },
+      {
+        "path": "records/compile-layout/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-layout/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-model/actual-project-dependencies.json",
+        "bytes": 39656,
+        "sha256": "f38f071e5878661fcb4f2c7d264b5b12a2d427d2e7f6dc1fd0d90d413baf73e4"
+      },
+      {
+        "path": "records/compile-model/command.json",
+        "bytes": 4505,
+        "sha256": "640a510c759f96a15b4c2c80b9c1c140bc890858e96b136b42038f4940d56b90"
+      },
+      {
+        "path": "records/compile-model/dependencies.json",
+        "bytes": 21515,
+        "sha256": "8ce4cc60bf5b49b40699ca4fa2ba1ba88ecf4bf9757ec6ad16597c715f4b27d2"
+      },
+      {
+        "path": "records/compile-model/process.json",
+        "bytes": 65,
+        "sha256": "1717fc539dbceead9e5039f4012158c289e56f81ca7b9aa6d35577c941a5e2bd"
+      },
+      {
+        "path": "records/compile-model/running.json",
+        "bytes": 19,
+        "sha256": "ffaac21eb3d3dc9c948db0d4ee079605eb60d8c35491ed5a9513345beb22633e"
+      },
+      {
+        "path": "records/compile-model/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-model/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-resources/actual-project-dependencies.json",
+        "bytes": 18829,
+        "sha256": "8a5ef606c0814b3317331753e115151738158403bf9ed4ba63aff1f52bef0fd1"
+      },
+      {
+        "path": "records/compile-resources/command.json",
+        "bytes": 5092,
+        "sha256": "d91429fd3be90773e186e09b5b0eacd2f0c827e965b4071130f110c5f7c5f5a0"
+      },
+      {
+        "path": "records/compile-resources/dependencies.json",
+        "bytes": 9707,
+        "sha256": "223d923499f59ab428b87abc85aecda91a1879d6579fd5731596ef6f7b0666b8"
+      },
+      {
+        "path": "records/compile-resources/process.json",
+        "bytes": 65,
+        "sha256": "b7aebc19db37f819630c18659183f28639a5f1a8016bc57ee981b6633b6d80b2"
+      },
+      {
+        "path": "records/compile-resources/running.json",
+        "bytes": 19,
+        "sha256": "fcf719a37b0443234eec9f3b82c8f4dd40fb04966193c6e87e32770b712754ef"
+      },
+      {
+        "path": "records/compile-resources/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-resources/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-stream/actual-project-dependencies.json",
+        "bytes": 17718,
+        "sha256": "83f5416a1cfecebc2ae0103edff8dfd5f4b59eadab01df9d72bab05e9f73bc2b"
+      },
+      {
+        "path": "records/compile-stream/command.json",
+        "bytes": 5097,
+        "sha256": "d8ee7476b213e804451110613323e3cc610902d7c3dc8c1d2e505835a03bc7e6"
+      },
+      {
+        "path": "records/compile-stream/dependencies.json",
+        "bytes": 9046,
+        "sha256": "ab3b32dd12601a8c4529284dcd0c0e9905965d53afc317934f9e5807194b68fa"
+      },
+      {
+        "path": "records/compile-stream/process.json",
+        "bytes": 58,
+        "sha256": "4b0e90940bab72f4a8130031187e04b52bdcb1e5531e357cf88d40ce19811860"
+      },
+      {
+        "path": "records/compile-stream/running.json",
+        "bytes": 19,
+        "sha256": "5e96e46dd0312d62b8ca1a7d9647911d16aaf887817ebd6ca0a68f8035a3c544"
+      },
+      {
+        "path": "records/compile-stream/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-stream/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-submission/actual-project-dependencies.json",
+        "bytes": 18582,
+        "sha256": "577cb6069a25f587a10738abc0a7ac68d75029ee16831bc1565b931a892b32b0"
+      },
+      {
+        "path": "records/compile-submission/command.json",
+        "bytes": 5095,
+        "sha256": "4a4da78063197da08cf26c24cfca9d828737ae8dcb56b9287c65eb93b3dd23f9"
+      },
+      {
+        "path": "records/compile-submission/dependencies.json",
+        "bytes": 9573,
+        "sha256": "77ff86e80a14b25087bfbdbc93904e9a521d5521ccacd9954416d8e4df43daf8"
+      },
+      {
+        "path": "records/compile-submission/process.json",
+        "bytes": 57,
+        "sha256": "0e06f60374cceacfec01b22a130720a1218afb6b5efacb02a4c83d3a5df18279"
+      },
+      {
+        "path": "records/compile-submission/running.json",
+        "bytes": 19,
+        "sha256": "2190014bc15496ec6f4292ed6e4ba4beb207689ab8465c4cff83849557420e5b"
+      },
+      {
+        "path": "records/compile-submission/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-submission/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-tensor/actual-project-dependencies.json",
+        "bytes": 3754,
+        "sha256": "6ce2f13fe381a9f2a2b37b265b5e1122d6daf3dd2177c055a03b467fc60cae04"
+      },
+      {
+        "path": "records/compile-tensor/command.json",
+        "bytes": 5090,
+        "sha256": "ce0db504fac281a9da3057ca5ebfff579eb543765f771ea0c27f3f2066e75e49"
+      },
+      {
+        "path": "records/compile-tensor/dependencies.json",
+        "bytes": 2044,
+        "sha256": "d657d3d3312b792992cc49289762c1492506d81fb011bac7cd1301c304c96c2c"
+      },
+      {
+        "path": "records/compile-tensor/process.json",
+        "bytes": 66,
+        "sha256": "329ef3316cdade4b9dfded5920c11e9dc174cdc95568672cc1b8de824a693191"
+      },
+      {
+        "path": "records/compile-tensor/running.json",
+        "bytes": 19,
+        "sha256": "64eb058f660853a0b5cc0d7b4e93ab182aec0f66c367e13848777bb2508c0690"
+      },
+      {
+        "path": "records/compile-tensor/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-tensor/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-transform/actual-project-dependencies.json",
+        "bytes": 7353,
+        "sha256": "15aa4a9cc40d72b3238647373e074430dc8bd6db9aadea652ebf93ab85317371"
+      },
+      {
+        "path": "records/compile-transform/command.json",
+        "bytes": 5110,
+        "sha256": "e099031814641a269085b3db4a96868e29f97673a341f71799c0e5fec925d806"
+      },
+      {
+        "path": "records/compile-transform/dependencies.json",
+        "bytes": 3927,
+        "sha256": "475b49837baf396559149880ef56448c1b734fa4cf5d36a991c1c0fbe2bd7b5b"
+      },
+      {
+        "path": "records/compile-transform/process.json",
+        "bytes": 65,
+        "sha256": "920fca01f68f4c63a76acbbfcd48bf68bf1792f2b764fe9b1a6e4abc8b889634"
+      },
+      {
+        "path": "records/compile-transform/running.json",
+        "bytes": 19,
+        "sha256": "8db563e57dfb7493e00ad6c54c3d0ecb4aad9870173ebed49c57c755c8efe501"
+      },
+      {
+        "path": "records/compile-transform/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-transform/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-weights/actual-project-dependencies.json",
+        "bytes": 31581,
+        "sha256": "a00a30bc2afa10f0de55f92501ff592a2cb34a8ed30ffe065a52ebea552fc329"
+      },
+      {
+        "path": "records/compile-weights/command.json",
+        "bytes": 4505,
+        "sha256": "62d25556c666cfde8da3c931d260ad679541a46483ee32cf17fcf5a83e64ad53"
+      },
+      {
+        "path": "records/compile-weights/dependencies.json",
+        "bytes": 16221,
+        "sha256": "f0710eeb5600f240eb19dd8e49223ba0af3c37652659ab1fed5f2fa9181ec898"
+      },
+      {
+        "path": "records/compile-weights/process.json",
+        "bytes": 58,
+        "sha256": "775142949383ce2eab2c0fb01714f5bf731b7a4042268c18465b2f8cf1cf5148"
+      },
+      {
+        "path": "records/compile-weights/running.json",
+        "bytes": 19,
+        "sha256": "bc11648ff03027da83a6b08872da75589495ca5ebc9af8e419ac41ba37ff43f9"
+      },
+      {
+        "path": "records/compile-weights/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile-weights/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/final-summary.json",
+        "bytes": 17686,
+        "sha256": "b324968d867d4ec646e7b1401734a0258817b7a065f948c59f48a3dc43a9ae98"
+      },
+      {
+        "path": "records/fixture.json",
+        "bytes": 431,
+        "sha256": "1172520c0db2e8bb43e8cf9089e7877445270044810a5e6f7ee56debcaadb6a0"
+      },
+      {
+        "path": "records/fixture/weights.tsv",
+        "bytes": 7312,
+        "sha256": "9dc028642ce7af214d4b1f6a0a73f7e47bcb7c29d9a6ebdef449db4c37ced0e5"
+      },
+      {
+        "path": "records/link/command.json",
+        "bytes": 17310,
+        "sha256": "ce29ea312b22a7fac12c23d04ee71f6fabcf7937d0f395fc1881332400237723"
+      },
+      {
+        "path": "records/link/process.json",
+        "bytes": 65,
+        "sha256": "7fab6462546463d7688d65aace2bfa6c04eca8e98a024010b9659cbc36aff7c8"
+      },
+      {
+        "path": "records/link/running.json",
+        "bytes": 19,
+        "sha256": "0f6dbde3cfbe33fffab0c697ea610f99e1faeeae2c409c42801d0e64a2c10377"
+      },
+      {
+        "path": "records/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/mac-run.py",
+        "bytes": 3548,
+        "sha256": "3acbcdbab944ea509e290c888cbf3825a0aed92748c9513351f658be3f840b03"
+      },
+      {
+        "path": "records/mac-run2.py",
+        "bytes": 3910,
+        "sha256": "05c55b522fe9e2f8dd93a77e5bca111700ae43cc38d30ef3c9032088c351b8f8"
+      },
+      {
+        "path": "records/plan.json",
+        "bytes": 77725,
+        "sha256": "8df68882bb86f020f4ead2b98d4da226ed615b4f5eece23852460d7d6c22657c"
+      },
+      {
+        "path": "records/ready.json",
+        "bytes": 2201,
+        "sha256": "bbc5ec57d8ec7f6f67ba930f9f1a51df78e5b69ef4f8f3538c6721f8656457f0"
+      },
+      {
+        "path": "records/reused-inputs.json",
+        "bytes": 27112,
+        "sha256": "d9e86908dcf0a5078c534c9b9ba095a686a8d822898eae9a36e8fd0a1c78d28e"
+      },
+      {
+        "path": "records/run-lag1/command.json",
+        "bytes": 518,
+        "sha256": "706168a9e993bde46967d1b33700fb4c98d642152ba3808bbf6cb8a1a0c32224"
+      },
+      {
+        "path": "records/run-lag1/process.json",
+        "bytes": 65,
+        "sha256": "40d2e9ca5658142c509796773d1b22d57a8c8b4bd5290c31f444bd069694e42b"
+      },
+      {
+        "path": "records/run-lag1/running.json",
+        "bytes": 19,
+        "sha256": "e7259a1a3274976b90c58c0872a08b4ab1ce9fe7de12ef879779c9ae3b41136b"
+      },
+      {
+        "path": "records/run-lag1/stderr.log",
+        "bytes": 11168,
+        "sha256": "a205c7f6ab92934a44ddbf9be1b6560b7882f0d4d2d24af4299971d8d9495b41"
+      },
+      {
+        "path": "records/run-lag1/stdout.log",
+        "bytes": 518,
+        "sha256": "e255e562920dd64fa34151f99c5d6b12ea5c26ae99110c86315ffcd18348be49"
+      },
+      {
+        "path": "records/run-ordinary-mtp/command.json",
+        "bytes": 500,
+        "sha256": "85aecb11b00b183f2ddd7bb0bcfcd4d7a95612c938317853add0387e9f24d50b"
+      },
+      {
+        "path": "records/run-ordinary-mtp/process.json",
+        "bytes": 59,
+        "sha256": "7884ee955bbb27305c53f95c3a8072a4d853429d52e598667dc0670ae6bc8234"
+      },
+      {
+        "path": "records/run-ordinary-mtp/running.json",
+        "bytes": 19,
+        "sha256": "be007f7f022c5abb90ac6fabea1569cdab34cf4610cb1688b34032529eed1e52"
+      },
+      {
+        "path": "records/run-ordinary-mtp/stderr.log",
+        "bytes": 15737,
+        "sha256": "92a06cae7875b772ce5ebc5811b9e56bdded166342d1067a9c8346efc565ebbb"
+      },
+      {
+        "path": "records/run-ordinary-mtp/stdout.log",
+        "bytes": 1647,
+        "sha256": "4c9e5c98775bbfad7dd6160cfb2ffc4b9ca179d1df3c59b274e001a918d99d22"
+      },
+      {
+        "path": "records/source-freeze.json",
+        "bytes": 40358,
+        "sha256": "abcef98e25be47ae15bb4d850927538aafb38e3860309e490f74f608648be342"
+      },
+      {
+        "path": "records/summary.json",
+        "bytes": 577,
+        "sha256": "5a4d01c7326bdb987d746bbb8dcc57f9074f35c37f1634d56e8cfec879b2eaef"
+      },
+      {
+        "path": "scripts/mac-collect.py",
+        "bytes": 2797,
+        "sha256": "62f9fedc42e9d2e025121606a86b91472e63d4b004d2d921627aa3cc088bdd6c"
+      },
+      {
+        "path": "scripts/mac-prepare.py",
+        "bytes": 7930,
+        "sha256": "b3d1b07a5a717112da75cdc70d2ddf05eec25c24f62b733316541855d221c0a6"
+      },
+      {
+        "path": "scripts/mac-run.py",
+        "bytes": 3548,
+        "sha256": "3acbcdbab944ea509e290c888cbf3825a0aed92748c9513351f658be3f840b03"
+      },
+      {
+        "path": "scripts/mac-run2.py",
+        "bytes": 3910,
+        "sha256": "05c55b522fe9e2f8dd93a77e5bca111700ae43cc38d30ef3c9032088c351b8f8"
+      },
+      {
+        "path": "source/engine/inference/artifact_digest.h",
+        "bytes": 3924,
+        "sha256": "00743b5248ed3066f1205596e4a4870ff8d1422548c19c2fd05940226cb8d128"
+      },
+      {
+        "path": "source/engine/inference/backend.h",
+        "bytes": 28732,
+        "sha256": "4dc28db4386510de821da68e24afd889b9ded3a10821e10ece61e85456d1fd74"
+      },
+      {
+        "path": "source/engine/inference/batch_dispatch.h",
+        "bytes": 2405,
+        "sha256": "bb7b8fdcf4c97b0c3fa94fde120a426c834fe6108696d1f7859be2ce0962ec2f"
+      },
+      {
+        "path": "source/engine/inference/batch_indices.h",
+        "bytes": 2562,
+        "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+      },
+      {
+        "path": "source/engine/inference/ct_block128_graph.h",
+        "bytes": 15879,
+        "sha256": "8f08ff98defad8b8665f27a700aeb6d84f2c962f47e030be14b4b59db56f7f3e"
+      },
+      {
+        "path": "source/engine/inference/evaluation_failure.h",
+        "bytes": 1635,
+        "sha256": "fe95eef0073cb56dca57522e3a1df631f95995679617deffeb630c069be67f04"
+      },
+      {
+        "path": "source/engine/inference/execution_observation.h",
+        "bytes": 1174,
+        "sha256": "79d974007f00939bb27890a24adc54bf4beb1132d8a60075fbddc461e8747f0f"
+      },
+      {
+        "path": "source/engine/inference/execution_resources.h",
+        "bytes": 3820,
+        "sha256": "31e697bc6134b7c7b7b23e8ff08b686783eec08663963982a4cc312cae7be05e"
+      },
+      {
+        "path": "source/engine/inference/host_state_storage.h",
+        "bytes": 5412,
+        "sha256": "8b69545ff466569e23395b1cfe40c6b32d93a24f1e40922e4ed38dd769e415ac"
+      },
+      {
+        "path": "source/engine/inference/host_storage.h",
+        "bytes": 2939,
+        "sha256": "4071f65b26d8e632b6022b9fee7c128bb12551b99bf123f596bdd76ea4cce5e3"
+      },
+      {
+        "path": "source/engine/inference/mtp_acceptance.h",
+        "bytes": 6899,
+        "sha256": "8d72de0dc241901758188fddc78b04f5b3aedde2e500ef521c71ec13a05df9ec"
+      },
+      {
+        "path": "source/engine/inference/output_delivery.h",
+        "bytes": 2599,
+        "sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+      },
+      {
+        "path": "source/engine/inference/prefix_directory.h",
+        "bytes": 15448,
+        "sha256": "29133f31072a5adc2a326529a0b7e4f39ebbd7354eeb265ca9c3cbe0444ca2a1"
+      },
+      {
+        "path": "source/engine/inference/prepared_output.h",
+        "bytes": 7310,
+        "sha256": "e6741e7411b6f6d10f4097238fa8b7862a916d8778f3754b4d669f05beb9bf25"
+      },
+      {
+        "path": "source/engine/inference/readback.h",
+        "bytes": 6207,
+        "sha256": "33dbe5e9eaceaec02564db646ef991c6dd258c1e8c89523c04486c5d98f06189"
+      },
+      {
+        "path": "source/engine/inference/request_loop.h",
+        "bytes": 15797,
+        "sha256": "5f81cbcd1f7ccbf51475f94b7e425885f17a8a6f8db99ac0dc7e94259c4eaa26"
+      },
+      {
+        "path": "source/engine/inference/request_progress.h",
+        "bytes": 12536,
+        "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+      },
+      {
+        "path": "source/engine/inference/request_stop_policy.h",
+        "bytes": 2117,
+        "sha256": "4ef583043217d86fa013f684b3f5a656f19adcd88a097658038d65c6cddf06ae"
+      },
+      {
+        "path": "source/engine/inference/request_window.h",
+        "bytes": 9466,
+        "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+      },
+      {
+        "path": "source/engine/inference/retirement_observation.h",
+        "bytes": 942,
+        "sha256": "984af01e375f8d7f9b2b44862fd341b84928dac43f85b3c53c68d09e57c7fafe"
+      },
+      {
+        "path": "source/engine/inference/reusable_output_storage.h",
+        "bytes": 3624,
+        "sha256": "6d45bf680315df595fba704cd5785cc0ba2928157da691dcdec56653ebf732a2"
+      },
+      {
+        "path": "source/engine/inference/sampling_cursor.h",
+        "bytes": 1200,
+        "sha256": "49e628cceaf7a0767bb6c8bc34df1a7bb47fda4a4a680df1fe3aec75b70d3d58"
+      },
+      {
+        "path": "source/engine/inference/sampling_graph.h",
+        "bytes": 23819,
+        "sha256": "085be10d28ae789a7fb576d372c23b8cdefede0bbc6ac4c8e4c66328d75a17d5"
+      },
+      {
+        "path": "source/engine/inference/session_cache.h",
+        "bytes": 9476,
+        "sha256": "1a33caaac42d9a6e0d13aeedb830a5d0cfbbc6028b47eeaeee416d5825fea891"
+      },
+      {
+        "path": "source/engine/inference/state_transfer.h",
+        "bytes": 17405,
+        "sha256": "69575bdc41253c9136329f0b4785d44caba5f7d3070362488725854c65af40d4"
+      },
+      {
+        "path": "source/engine/inference/token_prefix.h",
+        "bytes": 2068,
+        "sha256": "fdc43b99c1fb398cd968e1047a26269f89deb6e0e5e4b45161161f20b531f7ba"
+      },
+      {
+        "path": "source/engine/inference/version_admission.h",
+        "bytes": 4781,
+        "sha256": "0ea8c418db40e1e0872738bffc98a17522ec71169b4b01f5bdac07376cc30bfe"
+      },
+      {
+        "path": "source/engine/models/qwen35/batch_schedule.h",
+        "bytes": 7902,
+        "sha256": "61f7aebc8d923057769495d108d8c5555c6232bdcaef05e07eead620a1bc8ea4"
+      },
+      {
+        "path": "source/engine/models/qwen35/cache_precision.h",
+        "bytes": 4151,
+        "sha256": "a7f46574940ca8ca74688a558c0425e1cf2d7c3f0320a99018369dc81f22d613"
+      },
+      {
+        "path": "source/engine/models/qwen35/driver.h",
+        "bytes": 166,
+        "sha256": "9a31241d58f1446a845e1fd4c5a6a456a64f1930c08e07641d212aded84db400"
+      },
+      {
+        "path": "source/engine/models/qwen35/ffn_placement.h",
+        "bytes": 2086,
+        "sha256": "ecf000bf5f94296f9e8e12e4f736ce84962cce744f31f7d37a60b5c69dc3919f"
+      },
+      {
+        "path": "source/engine/models/qwen35/fp8_weight_import.h",
+        "bytes": 4915,
+        "sha256": "84ff6e8a775acfaef333a02fb35ab079a3d0f4021fb705f4804e1978e03bf622"
+      },
+      {
+        "path": "source/engine/models/qwen35/generation_schedule.h",
+        "bytes": 9702,
+        "sha256": "ef99737c5e6714e570a269c8d96979de31da86584b7d4d679cb26d3ae721da4f"
+      },
+      {
+        "path": "source/engine/models/qwen35/generation_tokens.h",
+        "bytes": 487,
+        "sha256": "c6278e5f9a07525ed0e5b436cb2dce042b9c413b7f9ad4fb048e69f17570014b"
+      },
+      {
+        "path": "source/engine/models/qwen35/host_image.h",
+        "bytes": 22339,
+        "sha256": "65f5261ea9c19d16bf0b5fa0fc9131c05cd5db9a796351f3198c23deedf445b2"
+      },
+      {
+        "path": "source/engine/models/qwen35/main.cc",
+        "bytes": 486513,
+        "sha256": "b1a5403e1a027764f7d418569c86c8896b1baa3f085faa090326ee75dc12492e"
+      },
+      {
+        "path": "source/engine/models/qwen35/model_geometry.h",
+        "bytes": 6510,
+        "sha256": "718dab27fff7b6c3a184dadcb7773c0edc8fd4ae441bbbc85169d936a3322294"
+      },
+      {
+        "path": "source/engine/models/qwen35/mtp_graph.h",
+        "bytes": 17700,
+        "sha256": "e54d0a6402e4f7d00afb92ad55ae9305253e6b06ead8cf32f0da8ac4fd4e1193"
+      },
+      {
+        "path": "source/engine/models/qwen35/nf4_state.h",
+        "bytes": 5976,
+        "sha256": "76cb76cd0a9a2138eedcd8e63428b7b66241c12d7b656fb432e89b33ba2037e6"
+      },
+      {
+        "path": "source/engine/models/qwen35/nf4_weight_import.h",
+        "bytes": 8024,
+        "sha256": "8532c00f881a6136c3586d0b9160ffc264e98d0faf3f886ed090e88a71c20e25"
+      },
+      {
+        "path": "source/engine/models/qwen35/precision_profile.h",
+        "bytes": 2174,
+        "sha256": "68d9c289d6cb8c092abaa4066d67d397e832fa93ce523f21a85c7c51dcf5f9c1"
+      },
+      {
+        "path": "source/engine/models/qwen35/prefix_cache.h",
+        "bytes": 8385,
+        "sha256": "f992f466e75d1d8cf725b424ca4a7d3916b36a0b89b53f6bc5e383a389154d0f"
+      },
+      {
+        "path": "source/engine/models/qwen35/prepared_gguf_roles.h",
+        "bytes": 12790,
+        "sha256": "9e9b72024611e262cf8debf68e89f96034d41beb3bc858a40dd4d7bdf9d84938"
+      },
+      {
+        "path": "source/engine/models/qwen35/prepared_roles.h",
+        "bytes": 40216,
+        "sha256": "1a26deee958f5408ee9a0183a0939808017083b2c11b9304b54e88c3a1c4895f"
+      },
+      {
+        "path": "source/engine/models/qwen35/projection_binding.h",
+        "bytes": 3626,
+        "sha256": "a30119cfc99ea5d965b9b759920085735ea954c202339728feab26a2edbd96b2"
+      },
+      {
+        "path": "source/engine/models/qwen35/schedule.h",
+        "bytes": 3938,
+        "sha256": "da54254636fde3febe92315b5b9459264e003ed07a1a12e32e92ca409d77f2ca"
+      },
+      {
+        "path": "source/engine/models/qwen35/session_schedule.h",
+        "bytes": 4134,
+        "sha256": "7ce20af02378a4904cda4d522a01ffeb7b047febaaed5b41d1b82c7ab18c31ac"
+      },
+      {
+        "path": "source/engine/models/qwen35/session_state.h",
+        "bytes": 20914,
+        "sha256": "4fb27f049a73c60fbf52fd96892dc46f2aff9a5014fd99c5dae0ce5309bfe2a6"
+      },
+      {
+        "path": "source/engine/models/qwen35/session_transfer.h",
+        "bytes": 15453,
+        "sha256": "809daa6d83bf2ef80b81a784df7eb8abae93f1bc80a59a6e7f9c7442b06d5600"
+      },
+      {
+        "path": "source/engine/models/qwen35/token_ids.h",
+        "bytes": 2200,
+        "sha256": "d696a78d7db5cd8438d793ce63514e19bac68913716de9a4bc65ab532bee920a"
+      },
+      {
+        "path": "source/engine/models/qwen35/weights.cc",
+        "bytes": 48142,
+        "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+      },
+      {
+        "path": "source/engine/models/qwen35/weights.h",
+        "bytes": 6082,
+        "sha256": "c6571a94ec84fb335e43919f9e2891af3f4dec24afc3e98e2bcd28808ae6d44a"
+      },
+      {
+        "path": "source/engine/reporting/execution_report.h",
+        "bytes": 474,
+        "sha256": "50773c0ac5095d711c631f8f842c94d4e506109a89e12d0103113ae838b0bcd3"
+      },
+      {
+        "path": "source/include/hyle/compute/apple.h",
+        "bytes": 11664,
+        "sha256": "5baedfd8caa3dd7bd54d9c4619f3c7e7c7e853189a6d8d7c20ab1ebeb2b7dbd5"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_batch.h",
+        "bytes": 8214,
+        "sha256": "c22b73da2caa1031a99fe5cbcbd81e6c255eec7429cbf542c06b35cd82ad8e98"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_file_stream.h",
+        "bytes": 539,
+        "sha256": "1fc2c6854a03f30a3e1280e549b3abc0a40929e28c0548e502e527b3c1b8db1f"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_memory.h",
+        "bytes": 12524,
+        "sha256": "2bc214aafc11c7d3b45b41cd16235ed393f3051396df9e3bc2304cd0096d8750"
+      },
+      {
+        "path": "source/include/hyle/compute/apple_weights.h",
+        "bytes": 4606,
+        "sha256": "0f74446c0496272df3b902a52e0ec3f0897e6131ddc2f0bc1cdd95e81f228d4f"
+      },
+      {
+        "path": "source/include/hyle/compute/backends/cpu.h",
+        "bytes": 1814,
+        "sha256": "a0b99762a3620c1b44b6856263c172d12fa6e482282fe9c2fcc06aa7d82a1d4d"
+      },
+      {
+        "path": "source/include/hyle/compute/backends/cuda.h",
+        "bytes": 9030,
+        "sha256": "8b1eeec880b852f5d35a98464c55a20abb8de0b1db447421dff4b90ba4a13748"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_execution.h",
+        "bytes": 10480,
+        "sha256": "65c6b09036130af1f7c7681e36240e5f8ef2fcdffa1bddaec777bb85eeb67f46"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_layout.h",
+        "bytes": 11236,
+        "sha256": "62767107ddcff7c67f09024379f87223e2fed62908ffa5ca2a751bcaa302fb2c"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_materialize.h",
+        "bytes": 7245,
+        "sha256": "9f57cfe9748faf89faae485b604a4b14d6f222bc3ce475bc40a1a265b405b50b"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_ops.h",
+        "bytes": 6114,
+        "sha256": "d6dcf9e7c8559280a762d191bc41c4f7b56b0097844d0b31091b4fda361ea077"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_paged_native.h",
+        "bytes": 4723,
+        "sha256": "b42b17bd38435422f06cd830f0b35f6c7deca256916d9d99bff52b9ec0d9f1ce"
+      },
+      {
+        "path": "source/include/hyle/compute/batch_transfer.h",
+        "bytes": 13091,
+        "sha256": "eb573a7cf2b15cce2000061857009799b38312f1331b5bcfa263e348dde4d175"
+      },
+      {
+        "path": "source/include/hyle/compute/completion.h",
+        "bytes": 1959,
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34"
+      },
+      {
+        "path": "source/include/hyle/compute/completion_retention.h",
+        "bytes": 1959,
+        "sha256": "2b485b64d20a006e5fd84f40c35a8a502d3b897776b9278e023b6273c3a3ce10"
+      },
+      {
+        "path": "source/include/hyle/compute/cpu.h",
+        "bytes": 3074,
+        "sha256": "085e3c67c9f312a52647cbc4d0a96354f8513d8fa00f86c4fbebb2de43896de4"
+      },
+      {
+        "path": "source/include/hyle/compute/cpu_file_stream.h",
+        "bytes": 590,
+        "sha256": "c385247f920637cc6bbae90c409617d4f89c295957afabdb0d5389dd5c36263f"
+      },
+      {
+        "path": "source/include/hyle/compute/cuda.h",
+        "bytes": 1457,
+        "sha256": "308beb0703f01239c106d23792f8ef68a57880630b209d1e772a6cd9958918e7"
+      },
+      {
+        "path": "source/include/hyle/compute/cuda_file_stream.h",
+        "bytes": 635,
+        "sha256": "7c89df9fedf1da81fbf6191b47d3557b2b4de115729b91805864e9f04c7208b9"
+      },
+      {
+        "path": "source/include/hyle/compute/cuda_weights.h",
+        "bytes": 5065,
+        "sha256": "1e3ca02148c67fc2d6d6744beb5a03ee93dcb7f7a61ffed16aa5b5e49d5a8079"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/append_lease.h",
+        "bytes": 1944,
+        "sha256": "67b6e87fb0bfbc179d781174c2dc414f1e7487445925cb4c2a4faea579cb7ec5"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/backend_extension.h",
+        "bytes": 3637,
+        "sha256": "f0f7dbadc6929cea96c7ddbda6516b14d5e90725b49de1daf55b3921d8fa0a92"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/batch_provider.h",
+        "bytes": 6439,
+        "sha256": "d8e4c004a594fecde40ef3cf42f0c23b3cc6ded165b179d8da3eb260de35d429"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/command_capture.h",
+        "bytes": 5120,
+        "sha256": "7a6f262d713015806c9936f0108f8945afb6ee5a790c7d213f7005bcf0b46473"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/completion_access.h",
+        "bytes": 4164,
+        "sha256": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/context_ref.h",
+        "bytes": 2563,
+        "sha256": "b1295a6d21d452b2730e3907891ca49993e512a741f8f3a9689976e56f5af3f1"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_ranges.h",
+        "bytes": 1796,
+        "sha256": "86b711e8dd26d63bba37e0ebbd47956f28bfd58b28934ac8073f28df81c543e7"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/copy_stream_access.h",
+        "bytes": 3611,
+        "sha256": "edc3c69aa398ee0f0ca1bbf47463925b0895b117edc8bed0a218b773cf52b681"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/file_stream_access.h",
+        "bytes": 2004,
+        "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/lease_access.h",
+        "bytes": 7980,
+        "sha256": "8b58434d934295921074ef26d9a490b509af783365fa0eda253acfd82a61aa42"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/operation_access.h",
+        "bytes": 992,
+        "sha256": "4bdd60939dea229e91907768308155716b7cd8b78d92150391edc771f2089f34"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/paged_append_backend.h",
+        "bytes": 1442,
+        "sha256": "1a328e8b7a87f6416e4d0b272ecb952ecb906edeb7fac40ab7ca12e5e727ce29"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/paged_append_program.h",
+        "bytes": 2178,
+        "sha256": "586a95867204705cab08f86e1d4a9134f24ed97ac3eaa4eac773f9a1efe0ff70"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/paged_append_wire.h",
+        "bytes": 1153,
+        "sha256": "5706d6d51ddda8887485f7dcc91c9d5c7e58ef3594ff8733ff49f6c21c995eb2"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/paged_arena_access.h",
+        "bytes": 7003,
+        "sha256": "732e9956de3fa99b48be1d6521f27c822f251811bea86ba9aba5885fb43e1038"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/prepared_callbacks.h",
+        "bytes": 3012,
+        "sha256": "a721592ad0985c92ec0a427973dd63ca20cf3d870cb8c1162b57f86afde514ae"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/provider_extension.h",
+        "bytes": 4033,
+        "sha256": "1508099710fe63576cd04faeb6837288cad911a8952214fd070369c6c21c5e58"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/queue_ref.h",
+        "bytes": 1551,
+        "sha256": "a50579827a0b1554ffa4595c3b2fff68cfcbcc9b75caba25c60f78028d49961b"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/queue_sequence.h",
+        "bytes": 9214,
+        "sha256": "d8cc25b000e655468f3de3b1da3f5b17c388329f21d3f9d6f1d06d9e54de8a26"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/resource_binding.h",
+        "bytes": 333,
+        "sha256": "5728b7fc8d0b9e6faf413dd5f8e5ba13e7ddf4d86354a722770f554c1591c6e5"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/resource_budget_access.h",
+        "bytes": 4577,
+        "sha256": "97945d50241d85e895ff2e0cd0e2dc805865f0c1a470ceabf747d5dcae411e7a"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/retained_completion.h",
+        "bytes": 4972,
+        "sha256": "3199644bf8ae58b283fdbea2f9a4fe43331a2b0297380bd948e1fb3780d34d29"
+      },
+      {
+        "path": "source/include/hyle/compute/device.h",
+        "bytes": 8129,
+        "sha256": "473b4cfa04e359b8b30b375486db95f8d89587748caddecc5305d9349e778ea8"
+      },
+      {
+        "path": "source/include/hyle/compute/file_stream.h",
+        "bytes": 10444,
+        "sha256": "04bdf1744afbf18ff734c0c692e00aee891cef61b5412e90cdb542027cfd62ad"
+      },
+      {
+        "path": "source/include/hyle/compute/low_precision.h",
+        "bytes": 10591,
+        "sha256": "71f17f2b191fe7d00166e29fc84a44cf6ac2211aba5fed42b7df1f08f00f56fd"
+      },
+      {
+        "path": "source/include/hyle/compute/model_ops.h",
+        "bytes": 80480,
+        "sha256": "f8b4c68f1fb3d6a72acbaebacf286981c25c7aac13f75702f450c74fe5cdc99a"
+      },
+      {
+        "path": "source/include/hyle/compute/operation.h",
+        "bytes": 28771,
+        "sha256": "280817a4d89de308fead871f3051c6eff5365339c73cf50323dee57322d40fe5"
+      },
+      {
+        "path": "source/include/hyle/compute/ops_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/compute/paged_arena.h",
+        "bytes": 15950,
+        "sha256": "0cfcc76e3cff440a460b0f3eab2060152e6785f3d328ed919b3e0a6bda9d7667"
+      },
+      {
+        "path": "source/include/hyle/compute/paged_frame.h",
+        "bytes": 6442,
+        "sha256": "ffe6dd3c5f2b527d238cdc0322ba55d0c3c14e29c5defc3b42bef543b97f1288"
+      },
+      {
+        "path": "source/include/hyle/compute/prepared_operation.h",
+        "bytes": 20281,
+        "sha256": "03895c56e8665daf2482f66fecf205fd8aacf92046e13c169d9d8ff86fff52d7"
+      },
+      {
+        "path": "source/include/hyle/compute/provider.h",
+        "bytes": 10281,
+        "sha256": "a9737ca3cf64eec23ce768e20b1112407fc7816a32f8031f0b668b16c49f816a"
+      },
+      {
+        "path": "source/include/hyle/compute/providers/flashinfer.h",
+        "bytes": 941,
+        "sha256": "5a8911aa510156602c76be9695ca6e8505ef4a71f1251e0e62cc60ca503f09a4"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_budget.h",
+        "bytes": 5622,
+        "sha256": "f7e35ccf1a277152fc6a8adf01b3344bad2f08cdb29a929be3a48e706b1f001a"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_leases.h",
+        "bytes": 9640,
+        "sha256": "9fd35f1e9ec5f10558024f7b856767ab9fe155857a130045555237d27caf297c"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_requirement.h",
+        "bytes": 749,
+        "sha256": "0a1260090ba84ed86cf26b27ec5d187c8ed5d39b1acda641b632a3b84d3acf76"
+      },
+      {
+        "path": "source/include/hyle/compute/result.h",
+        "bytes": 4704,
+        "sha256": "07a584147b7de3b3f3c1a238207df4ec548130308295b583fc8c93a4d36a4164"
+      },
+      {
+        "path": "source/include/hyle/compute/sampling_ops.h",
+        "bytes": 3673,
+        "sha256": "887faba6ebe6249a0e2f766e2ea4b6bd83900bcf1e85165ad55e3e9be18528da"
+      },
+      {
+        "path": "source/include/hyle/compute/storage_owner.h",
+        "bytes": 10001,
+        "sha256": "34cee5f14b875819b89495a4ebcfa47d1a4405b8ba727568bb1e6b7456a7f1ad"
+      },
+      {
+        "path": "source/include/hyle/compute/tensor.h",
+        "bytes": 2595,
+        "sha256": "c11d1f361fadab5a2b1ecdb142d346361ba8a4c518c8381ce237262d191fc9d9"
+      },
+      {
+        "path": "source/include/hyle/compute/tensor_desc.h",
+        "bytes": 8700,
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      },
+      {
+        "path": "source/include/hyle/compute/transfer.h",
+        "bytes": 2259,
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+      },
+      {
+        "path": "source/include/hyle/compute/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/compute/vulkan.h",
+        "bytes": 17719,
+        "sha256": "14178a51acd2c3b7a86fe0bf3c23768045e60c05c22c6bc0ed6964580a201d1c"
+      },
+      {
+        "path": "source/include/hyle/compute/vulkan_batch.h",
+        "bytes": 8129,
+        "sha256": "204c9dab717224cd6522fb67a50f59c6a125d0fb10cacd1aa3673fac5a4b9cfe"
+      },
+      {
+        "path": "source/include/hyle/compute/vulkan_file_stream.h",
+        "bytes": 543,
+        "sha256": "3b4441d3a5e6f8aedbc517b4c63525fe140a72caffd16f677e5975b66442e78d"
+      },
+      {
+        "path": "source/include/hyle/compute/vulkan_memory.h",
+        "bytes": 13592,
+        "sha256": "dbd83c951f043be5b82303f9769cc4fb9c2292162f7dcba4cb33159b84db5c04"
+      },
+      {
+        "path": "source/include/hyle/compute/vulkan_weights.h",
+        "bytes": 3974,
+        "sha256": "f54d91b380e71b6d073c00175ffea08849442250b57844b23eac839472054bf0"
+      },
+      {
+        "path": "source/include/hyle/compute/weight_assembly.h",
+        "bytes": 2095,
+        "sha256": "c085186c2751371d8e642f29d1b338e53962236e50c9935ea1858a4b188ca3ac"
+      },
+      {
+        "path": "source/include/hyle/compute/weight_import.h",
+        "bytes": 3487,
+        "sha256": "19479024d3e80a6c7357dd55cc79e59347c20b22b621ce6f2779082afaaab6cb"
+      },
+      {
+        "path": "source/include/hyle/compute/workload.h",
+        "bytes": 5017,
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      },
+      {
+        "path": "source/include/hyle/container/detail/flat_hash_probe.h",
+        "bytes": 11389,
+        "sha256": "9415366e42de93d3d7932745783b0964280e5d92f3a484f77b1d109a07d48582"
+      },
+      {
+        "path": "source/include/hyle/container/detail/flat_hash_table.h",
+        "bytes": 44572,
+        "sha256": "fb0acb6e427642614f732330c6f2e8a316b3f04f9420f63344c01fc6ec0ba9d2"
+      },
+      {
+        "path": "source/include/hyle/container/detail/intrusive_member.h",
+        "bytes": 1822,
+        "sha256": "e3ea047e3ed723ab47061422c72ca83526ad107b983d3b6072d47fca91082f80"
+      },
+      {
+        "path": "source/include/hyle/container/flat_hash_map.h",
+        "bytes": 65,
+        "sha256": "0043e05aca5e33ab67af266e59dc44336e65babca9ffeddba696b6741d694b20"
+      },
+      {
+        "path": "source/include/hyle/container/hash.h",
+        "bytes": 28870,
+        "sha256": "4ff2c8bfaf8b2bb683f05c676c741f8bbeca1e4d926061ae0cc58cb524e4e0d0"
+      },
+      {
+        "path": "source/include/hyle/container/intrusive_hlist.h",
+        "bytes": 15077,
+        "sha256": "ec18650198cd65bed765a6ebb83396cfc4b3bb9fff9704a6206bbc6378e4e680"
+      },
+      {
+        "path": "source/include/hyle/container/intrusive_list.h",
+        "bytes": 33222,
+        "sha256": "ad4739927482839590c349e5a6eeb9808f724406b0a27d9c5f46892148b7e688"
+      },
+      {
+        "path": "source/include/hyle/container/small_vector.h",
+        "bytes": 30022,
+        "sha256": "cd04f94cac8c7be603600dfeb2a343a88a576bb5230c914d6d38ae5676b99cee"
+      },
+      {
+        "path": "source/include/hyle/container/visibility.h",
+        "bytes": 180,
+        "sha256": "ba9e9fc47e67b7fcde0e9353f8acfe9384bf3ce440a412f3f950cf5ef1ce5cd3"
+      },
+      {
+        "path": "source/include/hyle/core/assert.h",
+        "bytes": 16114,
+        "sha256": "5596728bc220ea27696be4f25e2f9eb9cf2705930f8eb0461747c4a862615790"
+      },
+      {
+        "path": "source/include/hyle/core/cache.h",
+        "bytes": 3625,
+        "sha256": "96ec55f30f1e6ec2e46c32b0ec01063e2feb0d0ee72ee7a353d1cd29e03e7048"
+      },
+      {
+        "path": "source/include/hyle/core/compiler.h",
+        "bytes": 4287,
+        "sha256": "e31151f0ed73c532e464c6568483acecd80a2da9c1ee7afc7e081db87d6fb687"
+      },
+      {
+        "path": "source/include/hyle/core/detail/compiler_attributes.h",
+        "bytes": 1913,
+        "sha256": "263c7691f9984073e198b69328092330bf572195113d3994d1ab54fe4564d88a"
+      },
+      {
+        "path": "source/include/hyle/core/detail/preprocessor.h",
+        "bytes": 409,
+        "sha256": "1d9872ef98db007dcbed7e0128771244640e1de4092830d52a7a83537f98eb84"
+      },
+      {
+        "path": "source/include/hyle/core/environment.h",
+        "bytes": 6712,
+        "sha256": "3d289765b1b677499a444b38d1dbe366bb5e99f89fcb7670af2d08106fd958fa"
+      },
+      {
+        "path": "source/include/hyle/error/result.h",
+        "bytes": 30856,
+        "sha256": "7718409ab2854eb76959215b356bf8077007134d87db1a24f9384a9b5deff2b5"
+      },
+      {
+        "path": "source/include/hyle/error/status.h",
+        "bytes": 18122,
+        "sha256": "4d6b4b0bfa5628947aad5449320513d4b071e0c84debfac47f7a7d264cecb7f4"
+      },
+      {
+        "path": "source/include/hyle/graph/apple.h",
+        "bytes": 6233,
+        "sha256": "f61ad9e69cb85f731112b2a1ca0ec9b0a1158714e02b911bfc3924fbb0ba03d0"
+      },
+      {
+        "path": "source/include/hyle/graph/batch.h",
+        "bytes": 20959,
+        "sha256": "70d3644cbb1c917f4a72e7b8a68ec5cec10c92df34a27b292d72ed4bbeae08ab"
+      },
+      {
+        "path": "source/include/hyle/graph/compile_report.h",
+        "bytes": 577,
+        "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+      },
+      {
+        "path": "source/include/hyle/graph/cpu.h",
+        "bytes": 919,
+        "sha256": "01165b3d6fe8276d4275495d8cb52186d9a81b11749db49a2684856bfbe088e8"
+      },
+      {
+        "path": "source/include/hyle/graph/cuda.h",
+        "bytes": 2663,
+        "sha256": "658f3dab4eb1a0a90f2dc472652e0c0fa5e694373544abc21331f116adee1373"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/execution_source.h",
+        "bytes": 2094,
+        "sha256": "2caa1aa7dd76f50240012df8dbbada3c18dda5161b1940de2f6c7c4cb652d306"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/input_source.h",
+        "bytes": 4502,
+        "sha256": "027690ba709df8b6fc190a3c5e018c71ca26bd714c7f283f7177b7d1ea662dec"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/region_access.h",
+        "bytes": 19611,
+        "sha256": "e431dcf747a168074849d20da638201d06ba44c5753857653c7e4afe1c32e1bc"
+      },
+      {
+        "path": "source/include/hyle/graph/detail/region_adapter.h",
+        "bytes": 1703,
+        "sha256": "cbc1a56573a6eca49081b65d6f90e5485dc23042ed8faf9049f60addf64621fa"
+      },
+      {
+        "path": "source/include/hyle/graph/executable.h",
+        "bytes": 50892,
+        "sha256": "7b6c1f5b75d8ba7782b1b4a95cbe32b61b179eed57ac362f54077d44439a645a"
+      },
+      {
+        "path": "source/include/hyle/graph/execution_source.h",
+        "bytes": 1859,
+        "sha256": "b89de5c6fe8b84192c9618a6a4e4dcee8ac45393e04a9e335f17b5a2d3ecac3f"
+      },
+      {
+        "path": "source/include/hyle/graph/graph.h",
+        "bytes": 19988,
+        "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+      },
+      {
+        "path": "source/include/hyle/graph/progress.h",
+        "bytes": 901,
+        "sha256": "0d39fc0706f5bfb3706f49e3d6f08d4471c9724cdb9aef13605a392e9f04f6d9"
+      },
+      {
+        "path": "source/include/hyle/graph/region_provider.h",
+        "bytes": 24812,
+        "sha256": "16558cc236133bd76a2306dc7144b9edd08c81e19600d1d1dc6f7c8bc5127949"
+      },
+      {
+        "path": "source/include/hyle/graph/resources.h",
+        "bytes": 430,
+        "sha256": "c9d3075babb4d863f3543c76576d093fe59f9868df67d50fc492db0aebe7015d"
+      },
+      {
+        "path": "source/include/hyle/graph/result.h",
+        "bytes": 2912,
+        "sha256": "362ed95ec873e99565d71c6078e22c00ec1d2f68940e053f064a891b6a414509"
+      },
+      {
+        "path": "source/include/hyle/graph/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/graph/vulkan.h",
+        "bytes": 6893,
+        "sha256": "f9bd3b3d15e0bae59645d1244043b6cd18855b13af0860e032120f9916c1384d"
+      },
+      {
+        "path": "source/include/hyle/graph/weight_binding.h",
+        "bytes": 422,
+        "sha256": "ebcc3eea951953966a3b10b2951872e74d04921af6f0cc8de45ab52ab1ba32bd"
+      },
+      {
+        "path": "source/include/hyle/io/buffer.h",
+        "bytes": 10908,
+        "sha256": "a8f184f572e7d7336bbeddbd6fdf0361173f8e0dd5e96e0ab4b028c9c64982cf"
+      },
+      {
+        "path": "source/include/hyle/io/capabilities.h",
+        "bytes": 5227,
+        "sha256": "b0fb030836a297dd16728b6c250c7e44510ef0b7e3e5d7a6f334d2462c6971f9"
+      },
+      {
+        "path": "source/include/hyle/io/detail/io_context_access.h",
+        "bytes": 1286,
+        "sha256": "898fe60ba5e8604fba78a03d3468be1c9a89b1a13e6f43208fbe80e601214061"
+      },
+      {
+        "path": "source/include/hyle/io/detail/net.h",
+        "bytes": 12231,
+        "sha256": "3b246fdb7db67b571ca2debc85e0f2a15d764dea0937f080f84c71e1c1125956"
+      },
+      {
+        "path": "source/include/hyle/io/detail/net_budget.h",
+        "bytes": 9883,
+        "sha256": "558f0ac110e788bcf845ef9491fe5b0687ecd942913e03a1d68727c9721cb44d"
+      },
+      {
+        "path": "source/include/hyle/io/detail/net_timeout.h",
+        "bytes": 19015,
+        "sha256": "be0801ea66173063ec0bf9e7f7e9a24c9d05141284344e3ee6acfd13c34c24e9"
+      },
+      {
+        "path": "source/include/hyle/io/detail/proactor.h",
+        "bytes": 27949,
+        "sha256": "02aa67a112c705effeb1b39b1e35c0336b8a57792b5de82f7aa3b801eb68f133"
+      },
+      {
+        "path": "source/include/hyle/io/endpoint.h",
+        "bytes": 2885,
+        "sha256": "3396d90bfe96c7a9509faafb6596842f3108bc4333590146a39b603e6e1f79c8"
+      },
+      {
+        "path": "source/include/hyle/io/file.h",
+        "bytes": 12585,
+        "sha256": "d70b57f52cb4cd9da312c4ac116e69680f9bfcd1a8afe7331144e6744b9d8905"
+      },
+      {
+        "path": "source/include/hyle/io/io_context.h",
+        "bytes": 4309,
+        "sha256": "f82cd55aaa3a47536a41026bfc8f8f185eaf9af0a7359c0f00b6053576ad2409"
+      },
+      {
+        "path": "source/include/hyle/io/operation.h",
+        "bytes": 3463,
+        "sha256": "2441917bd0469c74a65a3f5f22e92e0d42926473398c1a420f86882c9c75669e"
+      },
+      {
+        "path": "source/include/hyle/math/scalar.h",
+        "bytes": 17828,
+        "sha256": "10ca4013013fafc5383310bb0128ce6f11f389e77c815648b8c48bb06a00210a"
+      },
+      {
+        "path": "source/include/hyle/mem/alignment.h",
+        "bytes": 3499,
+        "sha256": "75388cd67ecb0f6d9bd48a85ea9994e97d8e1db6658a57a3aa24fc89690c76a8"
+      },
+      {
+        "path": "source/include/hyle/mem/allocator.h",
+        "bytes": 11090,
+        "sha256": "0369680d4769a0187bfb77ee8b565b5e8fb53a03909fabf233458d9c1cbcd011"
+      },
+      {
+        "path": "source/include/hyle/mem/buffer.h",
+        "bytes": 19273,
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+      },
+      {
+        "path": "source/include/hyle/mem/fiber_stack.h",
+        "bytes": 5697,
+        "sha256": "d53e766fdac6fe9ee6fa3d0ba6b730f4fe9aa7d28c43a6d0cd60a0c5131bad30"
+      },
+      {
+        "path": "source/include/hyle/mem/lifetime_plan.h",
+        "bytes": 7018,
+        "sha256": "72277c027d1b76a9c813bcfe7ef3420759274375f5647362ae915e8672bb3b1f"
+      },
+      {
+        "path": "source/include/hyle/mem/mapping.h",
+        "bytes": 7139,
+        "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+      },
+      {
+        "path": "source/include/hyle/mem/quota_allocator.h",
+        "bytes": 7562,
+        "sha256": "da6ac925240a538aa96090045277249ed9b52cf3b6f6227b66ab6e0ffd509e27"
+      },
+      {
+        "path": "source/include/hyle/mem/resource.h",
+        "bytes": 7717,
+        "sha256": "84b0366e658ec63f999b4c9719cf8584ad758f4ff5340baf37f1c3ebd17145cd"
+      },
+      {
+        "path": "source/include/hyle/mem/std_allocator.h",
+        "bytes": 5150,
+        "sha256": "adee9ae71753fa27e001b7b71b1d57b61e14f7ebcfdea57bb3993d2a3e9550e4"
+      },
+      {
+        "path": "source/include/hyle/mem/system_inline.h",
+        "bytes": 8762,
+        "sha256": "d890fe66b1a83a5f1a8f2b22c368276e7b3fadcfd0946df5279692ce055164f1"
+      },
+      {
+        "path": "source/include/hyle/mem/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/obs/trace.h",
+        "bytes": 8554,
+        "sha256": "be0df49a044a0888d46c6c2411a292fdd04908b7bdc393557b87d68a70cf1f6f"
+      },
+      {
+        "path": "source/include/hyle/platform/cpu.h",
+        "bytes": 14870,
+        "sha256": "033953ef33ba5fd57c98af540818bb7c82b8189a4ca1e2502e3297dddde48342"
+      },
+      {
+        "path": "source/include/hyle/platform/fs.h",
+        "bytes": 24891,
+        "sha256": "2af351149fc82762267b89303439ef71626a2eb541d1922ff6f66014136a9ffa"
+      },
+      {
+        "path": "source/include/hyle/platform/fs_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/platform/numa.h",
+        "bytes": 8400,
+        "sha256": "e154f229dc7f6f5ceb1c44f20f769204b48bd422e57c5fed1e53c490607b8fde"
+      },
+      {
+        "path": "source/include/hyle/platform/thread.h",
+        "bytes": 8423,
+        "sha256": "fe5d5dd5ff4a7190f9f9d98e5cbbf924a6d44ce62c30d257556b96ff6f711d1d"
+      },
+      {
+        "path": "source/include/hyle/platform/thread_visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/platform/virtual_memory.h",
+        "bytes": 10485,
+        "sha256": "1b01086d44f330a592a5d3b4946fb213e485095dce904db99bb71103e2a578b8"
+      },
+      {
+        "path": "source/include/hyle/platform/visibility.h",
+        "bytes": 43,
+        "sha256": "87486288e436032a39fe7855aeaa942a06a4ac9826e7dbe3a3462edb519083f1"
+      },
+      {
+        "path": "source/include/hyle/platform/wait.h",
+        "bytes": 4708,
+        "sha256": "460fa7b1cab2f50b65b37a3f738cf0065bb607cde34cabf975cecc6e88f8d61f"
+      },
+      {
+        "path": "source/include/hyle/sched/blocking.h",
+        "bytes": 11177,
+        "sha256": "6ac68f05f6f1dce2ada469956d823bc52827e11aea781a74cc896877f145db41"
+      },
+      {
+        "path": "source/include/hyle/sched/cancel.h",
+        "bytes": 4793,
+        "sha256": "93a50fd56e083cc62938dc9115924f8a1da979ec879b2a8c1ea10e03b43adb43"
+      },
+      {
+        "path": "source/include/hyle/sched/coro.h",
+        "bytes": 11737,
+        "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+      },
+      {
+        "path": "source/include/hyle/sched/fiber.h",
+        "bytes": 12046,
+        "sha256": "64f4dc01aedc6b5a3ae7a481dc8ac70d44dd2f032cf8a8c7dc479245d1eb2a79"
+      },
+      {
+        "path": "source/include/hyle/sched/join.h",
+        "bytes": 33859,
+        "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+      },
+      {
+        "path": "source/include/hyle/sched/priority.h",
+        "bytes": 1391,
+        "sha256": "2e86acbc6a9f8b7d80a9692682be4eca2340f132aacec76b3456a90f2d9aee1e"
+      },
+      {
+        "path": "source/include/hyle/sched/scheduler.h",
+        "bytes": 20496,
+        "sha256": "8ab542f46ed961d13f497004579eba81ce6ad62acdb79a26486a8b55b2741829"
+      },
+      {
+        "path": "source/include/hyle/sched/sync.h",
+        "bytes": 78133,
+        "sha256": "dea8c4ba498d97223a8039718449e4bcf4a6ec9ee3dd5c26779725e49f73d1dc"
+      },
+      {
+        "path": "source/include/hyle/sched/timer.h",
+        "bytes": 3646,
+        "sha256": "2339fc15eae1fcd3401a53bb83d59ffad26fdc4d58e544941aa54906bb7ec2c5"
+      },
+      {
+        "path": "source/include/hyle/sched/waker.h",
+        "bytes": 3374,
+        "sha256": "85c40b6f63b1db04ceffc99681d590a59160ddd15cc1988a6161ad73396e61ed"
+      },
+      {
+        "path": "source/include/hyle/simd/dtype.h",
+        "bytes": 12143,
+        "sha256": "04dc8a2e0a654250413a0edc4bdc667f98c8aa40d85da25264b6bb2054dd51e5"
+      },
+      {
+        "path": "source/include/hyle/simd/types.h",
+        "bytes": 1658,
+        "sha256": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd"
+      },
+      {
+        "path": "source/include/hyle/time/clock.h",
+        "bytes": 30458,
+        "sha256": "383955c82cb45d63addc85ec307fff4f0f5bfd6f44089a489b0ecc1529b4c689"
+      },
+      {
+        "path": "source/include/hyle/time/timer_entry.h",
+        "bytes": 3392,
+        "sha256": "7c4e58dc71513648edeeaf2e3eda9d1b2126356054332ac911c6b2a9743bfa83"
+      },
+      {
+        "path": "source/include/hyle/time/unix_timestamp.h",
+        "bytes": 11791,
+        "sha256": "bcd6bdc860d6ee1e73004ebd15e3b2b2a60ca3dff7a0818deecf9420f95b4496"
+      },
+      {
+        "path": "source/include/hyle/util/ref_counted.h",
+        "bytes": 15535,
+        "sha256": "f72298c5886b8287cfa8e2cbea13a78c25dc7e0a08de5838f4feb4f7cec0bdb4"
+      },
+      {
+        "path": "source/include/hyle/util/scope_guard.h",
+        "bytes": 7234,
+        "sha256": "a473ed57ffb45fe1bb27e85626ed886f5c28b67d15ec0c9ac73f88d89bcbca45"
+      },
+      {
+        "path": "source/include/hyle/util/spin_lock.h",
+        "bytes": 4270,
+        "sha256": "3c0326e4fb09ec6a43b56eccea267b4b45886262094010bcd3dbac759696ea1b"
+      },
+      {
+        "path": "source/include/hyle/visibility.h",
+        "bytes": 11701,
+        "sha256": "893fa73589b6e46f00474c2258af74c28d662b52176b57012290c820812ed486"
+      },
+      {
+        "path": "source/src/compute/completion_internal.h",
+        "bytes": 762,
+        "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+      },
+      {
+        "path": "source/src/compute/native_route.h",
+        "bytes": 317,
+        "sha256": "fe7f47f962414b1ffc77284ca91e641d8df58c16018c80ca9f21cb4c04940ae3"
+      },
+      {
+        "path": "source/src/compute/provider_internal.h",
+        "bytes": 11628,
+        "sha256": "c3e69baa6c9568abf37dee341e752b4e71d7c046ee08d168696ab6561862bca9"
+      },
+      {
+        "path": "source/src/compute/shape_domain.h",
+        "bytes": 4715,
+        "sha256": "2c50da6b169b550e737a4dd95d5be66ab5803ac1843ba628ebc5cc37f2507846"
+      },
+      {
+        "path": "source/src/compute/shape_program.h",
+        "bytes": 3883,
+        "sha256": "1d58ee387d7c7bb21e14c7f9e6330ffa544aaf5eca91d3182b2c08f2927169f1"
+      },
+      {
+        "path": "source/src/compute/tensor_view.cc",
+        "bytes": 2851,
+        "sha256": "ba05b4eaf37e169fa7ed286481eabcbc78ea94f50cb945185aa8a870dec9ddcb"
+      },
+      {
+        "path": "source/src/compute_batch/batch_layout.cc",
+        "bytes": 30781,
+        "sha256": "e38ec4187288be99899b3c10528b5eeaea34b020f300578776da0d0843c91ed3"
+      },
+      {
+        "path": "source/src/compute_batch/paged_arena.cc",
+        "bytes": 75936,
+        "sha256": "0ad35e6d8251b9bbb2507d5bafecccee15cb0a53982e4a026783d9f0a5443616"
+      },
+      {
+        "path": "source/src/compute_ops/view_alias.h",
+        "bytes": 533,
+        "sha256": "a12e5a51e2cce3c30a95e87798e5d3a6995c31f3ce821caf118179c1622782d0"
+      },
+      {
+        "path": "source/src/compute_provider_native/native_plan.h",
+        "bytes": 10966,
+        "sha256": "dd9b7d8254cac0d9357bb29f0164803c330c8f8b5c87be0718415ee9066486ef"
+      },
+      {
+        "path": "source/src/compute_provider_native/transform.cc",
+        "bytes": 7811,
+        "sha256": "f00caa1bcf218c98552dee077221dbb0401aa71b80738746a92bb215db778bbb"
+      },
+      {
+        "path": "source/src/compute_stream/file_stream.cc",
+        "bytes": 54770,
+        "sha256": "0f1695863fd4bac74ef5ef520926023e976b22f8294260fbd9cbbff3a2fac990"
+      },
+      {
+        "path": "source/src/graph/compile_internal.h",
+        "bytes": 696,
+        "sha256": "e1850dcfa418d8e15fe0ea61c8b9ec9c4ce46cdb600d9fe1991e5d695b689baf"
+      },
+      {
+        "path": "source/src/graph/constant_artifact.h",
+        "bytes": 9151,
+        "sha256": "4a97f7536d5c12931ec46bc829d218e8db1d24aa6f0ce69fa92269bf66be172c"
+      },
+      {
+        "path": "source/src/graph/executable.cc",
+        "bytes": 484058,
+        "sha256": "2ede7fbaa1e9e7c509892e8b79a14dadb842cc0c8e6e33c7ddba4d742b419094"
+      },
+      {
+        "path": "source/src/graph/execution_source_internal.h",
+        "bytes": 6898,
+        "sha256": "63030a3f57bafa1bcdb49c572c034aeaad3c4b2f39d5cc99228d6cb9d54abc11"
+      },
+      {
+        "path": "source/src/graph/graph_state.h",
+        "bytes": 9877,
+        "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+      },
+      {
+        "path": "source/src/graph/input_sources.h",
+        "bytes": 2749,
+        "sha256": "f82ab4411c2e9e6c683220111d986ff5e878c8f341df23c48e9f12fbda78400a"
+      },
+      {
+        "path": "source/src/graph/plan_state.h",
+        "bytes": 59252,
+        "sha256": "48adc18109e716e2cb9d441d9842a76f6957cd54ad4b80b6a39675eb3139a8a7"
+      },
+      {
+        "path": "source/src/graph/progress_internal.h",
+        "bytes": 2085,
+        "sha256": "d97358e9b3bfbe6190a204cdd192fa5d774b6b7c90c43ec319cb39a35a4367af"
+      },
+      {
+        "path": "source/src/graph/resource_episode.h",
+        "bytes": 3243,
+        "sha256": "328c52a6aadb1535d36f124db937a7077ccb5d93bfe1fcd156181bebe9d9b23f"
+      },
+      {
+        "path": "source/src/graph/resources.cc",
+        "bytes": 109300,
+        "sha256": "e324ce652c80447f43cb09149a6c0e3c43e4898f8ed1bab07cddc553dde5d78d"
+      },
+      {
+        "path": "source/src/graph/storage_budget.h",
+        "bytes": 9959,
+        "sha256": "22bcacde96a3edabc8e7989fca948cc62e84c7a8633b975883703e06237b385b"
+      },
+      {
+        "path": "source/src/graph/submission.cc",
+        "bytes": 50928,
+        "sha256": "36d528f2f9ef9592ce6bbd0a3272d7659f17fbde28554682437853d9c1ed4298"
+      },
+      {
+        "path": "source/src/graph/submission_internal.h",
+        "bytes": 8234,
+        "sha256": "7936fac7ae53106d095e1f2d796b4afa795cbe7ff31a65652a59f522c713d0cc"
+      },
+      {
+        "path": "source/src/graph/submission_lifetime.h",
+        "bytes": 3453,
+        "sha256": "0ba69ead747e95ca6889467ca1866f314557dc78a3dcae29e24d14857a78f9c6"
+      },
+      {
+        "path": "source/src/graph/view_domain.h",
+        "bytes": 813,
+        "sha256": "d3d24649b326d9e2574203e63742ecd0e81f64f5fecc6f803b28a0def2573872"
+      },
+      {
+        "path": "source/src/graph_batch/native_append_regions.h",
+        "bytes": 2461,
+        "sha256": "159128dc3daea9a253209d483d716f880c6921bc3aa94e4af100dacc9275d4cf"
+      },
+      {
+        "path": "source/src/graph_batch/paged_append.cc",
+        "bytes": 63342,
+        "sha256": "bff3c2c8ada46def02729e41571bfd1942b851e10dd832cf9bbb960e7dd2b3c2"
+      },
+      {
+        "path": "source/src/graph_batch/paged_append.h",
+        "bytes": 2063,
+        "sha256": "d9ef0db1060a1a5d59d8af5a56b1a72ec1f38239478944a01ed071b7d99f2622"
+      },
+      {
+        "path": "source/src/sched/fiber_access.h",
+        "bytes": 1603,
+        "sha256": "7ca4994ebfbb79d84945a4e93f76058bdc37a093d3d047a0c1fa3e391aa8a89b"
+      },
+      {
+        "path": "source/tests/tools/qwen_host_image_case.h",
+        "bytes": 27646,
+        "sha256": "be217e3ad21d3123c32964d0e9fa48d67cedd9b8600bdca88eb21f993ea90540"
+      },
+      {
+        "path": "source/tests/tools/qwen_host_image_test.cc",
+        "bytes": 2242,
+        "sha256": "eee798acb44152885042b9a0aa80a3d400990a6d0b92223626e7052c025f30f1"
+      },
+      {
+        "path": "source/tests/tools/qwen_state_reuse_case.h",
+        "bytes": 11963,
+        "sha256": "a6b0e1c195b42706b9c4b0ef8a89238283fbea36b77eceff0e2f36cfe93fb996"
+      }
+    ],
+    "excludes": [
+      "EXE/OBJ/PDB/static libraries",
+      "SDK/vendor trees",
+      "weight binary",
+      "full335 weights or traces"
+    ]
+  },
+  "windows_receipt_unchanged": {
+    "inference-paged-frame-2026-10-26.json": "5914a7d5631665de3b055db391492894bcc535ac85cdf53999e0d14582522320",
+    "inference-paged-frame-2026-10-26.zip": "cc316be3f9ec96e0fde49f21e0873a8eb93aa889d1771c9989ec9213612536f5"
+  }
+}

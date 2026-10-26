@@ -58,8 +58,10 @@ std::vector<std::byte> sample(const c::ReadLease &lease) {
 // internal permissions to verify retirement; ordinary consumers use the frame.
 std::vector<std::vector<std::byte>> committed_pages(const q::cache::State &head) {
   std::vector<std::vector<std::byte>> result;
-  const auto append = [&](const c::PagedArenaRead &frame) {
-    for (const auto &lease : c::detail::PagedArenaAccess::pages(frame)) {
+  const auto append = [&](const c::PagedArenaFrame &frame) {
+    const auto view = q::take(frame.view()); std::vector<c::ReadLease> guards(view.page_count());
+    q::check(c::detail::PagedArenaAccess::collect_pages(view, guards));
+    for (const auto &lease : guards) {
       auto &bytes = result.emplace_back(lease.size());
       q::check(q::take(lease.view()).read(bytes));
     }
@@ -138,7 +140,7 @@ void complete_mtp(q::Model &model, const q::Session &session) {
   require(session.head && session.head->draft, "MTP session lost its complete head");
   model.validate_mtp_snapshot(*session.head);
   const auto &head = *session.head;
-  const auto exact = [](const c::PagedArenaRead &frame, std::size_t rows,
+  const auto exact = [](const c::PagedArenaFrame &frame, std::size_t rows,
                         const std::vector<q::cache::PageRef> &pages) {
     const auto layout = frame.layout().host();
     const auto count = (rows + q::cache::Plan::page_rows - 1) / q::cache::Plan::page_rows;

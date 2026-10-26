@@ -84,13 +84,15 @@ struct BatchSchemaData final:util::RefCounted<BatchSchemaData> {
   std::atomic<std::uint64_t> next_generation{1};
 };
 struct BatchLayoutData final:util::RefCounted<BatchLayoutData> {
-  BatchLayoutData(BatchSchema s,mem::AllocatorRef a):schema(std::move(s)),allocator(a),page_footprint(mem::StdAllocator<std::int32_t>(a)){}
+  BatchLayoutData(BatchSchema s,mem::AllocatorRef a):schema(std::move(s)),allocator(a),
+      page_footprint(mem::StdAllocator<std::int32_t>(a)),page_required_rows(mem::StdAllocator<std::uint32_t>(a)){}
   void destroy()noexcept{const auto a=allocator;this->~BatchLayoutData();a.deallocate(this,sizeof(*this),alignof(BatchLayoutData));}
   BatchSchema schema;mem::AllocatorRef allocator;
   ReadLease bytes;mem::HostMapping mapping; // mapping dies before its backing
   mutable std::mutex export_lock;
   mutable ReadLease exported;
   mutable std::vector<std::int32_t,mem::StdAllocator<std::int32_t>> page_footprint;
+  mutable std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>> page_required_rows;
   std::uint64_t generation=0;BatchLayoutFacts facts{};
 };
 } // namespace detail
@@ -388,6 +390,40 @@ Result<std::span<const std::int32_t>> detail::BatchLayoutAccess::page_footprint(
     data.page_footprint.swap(next);
   }
   return std::span<const std::int32_t>(data.page_footprint);
+}
+Result<detail::BatchPageFootprint> detail::BatchLayoutAccess::page_requirements(const BatchLayoutVersion&version)noexcept {
+  if(!version.data_)return std::unexpected(Status::FailedPrecondition("batch layout is empty"));
+  auto&data=*version.data_;std::lock_guard guard(data.export_lock);
+  const auto host=version.host();
+  if(data.page_required_rows.empty() && !host.page_indices.empty()){
+    // Stage both caches before publishing either. Once page_footprint has been
+    // returned, never replace its backing while adding the parallel row facts.
+    decltype(data.page_footprint) next_ids(mem::StdAllocator<std::int32_t>(data.allocator));
+    decltype(data.page_required_rows) next_rows(mem::StdAllocator<std::uint32_t>(data.allocator));
+    try{
+      if(data.page_footprint.empty()){
+        if(host.page_indices.size()>next_ids.max_size())return std::unexpected(Status::OutOfRange("batch page footprint extent"));
+        next_ids.assign(host.page_indices.begin(),host.page_indices.end());
+        std::sort(next_ids.begin(),next_ids.end());next_ids.erase(std::unique(next_ids.begin(),next_ids.end()),next_ids.end());
+      }
+      const auto ids=data.page_footprint.empty()?std::span<const std::int32_t>(next_ids):std::span<const std::int32_t>(data.page_footprint);
+      if(ids.size()>next_rows.max_size())return std::unexpected(Status::OutOfRange("batch page requirement extent"));
+      next_rows.resize(ids.size(),0u);
+      const auto full=geometry(data.schema).page_size;
+      for(std::size_t request=0;request<data.facts.requests;++request){
+        const auto end=std::size_t(host.kv_indptr[request+1]);
+        for(auto index=std::size_t(host.kv_indptr[request]);index<end;++index){
+          const auto found=std::lower_bound(ids.begin(),ids.end(),host.page_indices[index]);
+          if(found==ids.end() || *found!=host.page_indices[index])return std::unexpected(Status::Internal("batch page requirement lost its ID"));
+          auto&rows=next_rows[std::size_t(found-ids.begin())];
+          rows=std::max(rows,index+1==end?std::uint32_t(host.last_page_lengths[request]):full);
+        }
+      }
+    }catch(const std::bad_alloc&){return std::unexpected(Status::ResourceExhausted("batch page requirement metadata"));}
+    if(data.page_footprint.empty())data.page_footprint.swap(next_ids);
+    data.page_required_rows.swap(next_rows);
+  }
+  return BatchPageFootprint{data.page_footprint,data.page_required_rows};
 }
 bool BatchLayoutVersion::operator==(const BatchLayoutVersion&v)const noexcept{return data_==v.data_;}
 Status infer_batch_attention(BatchCapacity c,BatchStorage storage,std::span<const TensorDesc> inputs,std::span<TensorDesc> outputs)noexcept {

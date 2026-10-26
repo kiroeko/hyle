@@ -4,6 +4,7 @@
 #include "hyle/compute/batch_materialize.h"
 #include "hyle/compute/batch_paged_native.h"
 #include "hyle/compute/paged_arena.h"
+#include "hyle/compute/paged_frame.h"
 #include <array>
 #include <cstdint>
 #include <string_view>
@@ -176,6 +177,18 @@ public:
       compute::BatchLayoutVersion next,compute::PagedArenaRead previous,
       std::span<compute::PagedPageWriter> dirty,
       std::span<compute::PagedPageAppender> tails,PagedAppendOptions={})noexcept;
+  // The sources prove the old logical prefixes independently of their raw
+  // guard capacities. Construction retains exact original page leases, never
+  // a mutable Frame or an epoch-sensitive footprint across asynchronous work.
+  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create(compute::PagedArena,
+      compute::BatchLayoutVersion next,compute::BatchLayoutVersion previous_layout,
+      std::span<const compute::PagedArenaFootprint> sources,
+      std::span<compute::PagedPageWriter> dirty,PagedAppendOptions={})noexcept;
+  HYLE_GRAPH_BATCH_API static Result<PagedAppendPages> create(compute::PagedArena,
+      compute::BatchLayoutVersion next,compute::BatchLayoutVersion previous_layout,
+      std::span<const compute::PagedArenaFootprint> sources,
+      std::span<compute::PagedPageWriter> dirty,
+      std::span<compute::PagedPageAppender> tails,PagedAppendOptions={})noexcept;
   bool valid()const noexcept{return data_!=nullptr;}
   HYLE_GRAPH_BATCH_API compute::BatchLayoutVersion layout()const noexcept;
   HYLE_GRAPH_BATCH_API std::size_t page_count()const noexcept;
@@ -189,10 +202,16 @@ public:
   // Only take_append after a successful whole Graph authorizes publication.
   // A failed ready-frame allocation may be retried; old snapshots stay ready.
   HYLE_GRAPH_BATCH_API Result<compute::PagedArenaRead> ready()noexcept;
+  // Shares the same whole-Graph success/publication gate as ready(). Retains
+  // only this transaction's changed pages selected by accepted; untouched
+  // prefixes come from expected. No immutable full frame is materialized.
+  HYLE_GRAPH_BATCH_API Result<compute::PagedArenaDelta> ready_delta(
+      compute::PagedArenaFootprint expected,compute::BatchLayoutVersion accepted)noexcept;
 private:
   friend struct detail::PagedAppendAccess;
   static Result<PagedAppendPages> create_impl(compute::PagedArena,
-      compute::BatchLayoutVersion,compute::PagedArenaRead,
+      compute::BatchLayoutVersion,compute::BatchLayoutVersion,
+      std::span<const compute::PagedArenaFootprint>,
       std::span<compute::PagedPageWriter>,std::span<compute::PagedPageAppender>,
       bool appendable,PagedAppendOptions)noexcept;
   explicit PagedAppendPages(detail::PagedAppendData*p)noexcept:data_(p){}

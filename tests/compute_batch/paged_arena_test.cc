@@ -2,11 +2,14 @@
 #include <hyle/compute/backends/cpu.h>
 #include <hyle/compute/batch_transfer.h>
 #include <hyle/compute/state_versions.h>
+#include <hyle/compute/paged_frame.h>
 #include <hyle/compute/detail/lease_access.h>
+#include <hyle/compute/detail/batch_provider.h>
 #include <hyle/mem/quota_allocator.h>
 #include "allocation_fault_fixture.h"
 #include <gtest/gtest.h>
 #include <array>
+#include <limits>
 
 namespace {
 namespace c=hyle::compute;namespace m=hyle::mem;
@@ -305,7 +308,16 @@ TEST(PagedArena, F2MutableWithdrawalPreservesInitializedUntouchedBytesAndRejects
   const std::array<c::CopyRange,1> full{{{{0},{1},{0},0,0,arena.page_bytes()}}};ASSERT_TRUE(copy.prepare_replay(phases,full).ok());
   {auto submitted=copy.submit().value();ASSERT_TRUE(submitted.wait().ok());page=submitted.output({0},{1},0,arena.page_bytes()).value();ASSERT_TRUE(next.complete(page,2).ok());}
   EXPECT_FALSE(copy.unbind_mutable({1}));ASSERT_TRUE(copy.reset().ok());
-  auto doomed=arena.acquire(page).value();ASSERT_TRUE(copy.bind_mutable({1},std::move(doomed.lease())).ok());ASSERT_TRUE(copy.close().ok());EXPECT_FALSE(copy.unbind_mutable({1}));
+  auto doomed=arena.acquire(page).value();const auto generation=doomed.lease().generation();
+  ASSERT_TRUE(copy.bind_mutable({1},std::move(doomed.lease())).ok());ASSERT_TRUE(copy.close().ok());
+  auto recovered=copy.unbind_mutable({1});ASSERT_TRUE(recovered);
+  doomed.lease()=std::move(*recovered);EXPECT_EQ(doomed.lease().generation(),generation);
+  EXPECT_EQ(doomed.initialized_rows(),2u);std::array<std::byte,1> closed_bytes{};
+  ASSERT_TRUE(doomed.lease().view()->subview(0,1)->read(closed_bytes).ok());EXPECT_EQ(closed_bytes[0],std::byte{23});
+  EXPECT_FALSE(copy.submit());auto unused=arena.acquire(2).value();
+  EXPECT_TRUE(copy.bind_mutable({1},std::move(unused.lease())).IsFailedPrecondition());EXPECT_TRUE(unused.lease().valid());
+  page=doomed.publish(2).value();EXPECT_EQ(page.generation(),generation);EXPECT_EQ(first(page),std::byte{23});
+  page.reset();EXPECT_TRUE(arena.acquire(0));
 }
 TEST(PagedArena, PartialPrefixRejectsUnwrittenTailBeforeAllocatingFrame){
   auto schema=c::BatchSchema::create(capacity()).value();m::QuotaAllocator quota(m::system_allocator());
@@ -628,3 +640,228 @@ TEST(CacheSourceBudget, PagedArenaForwardsBothGatesWithoutPerPageCharge) {
   ready.reset();EXPECT_EQ(external(local,source.ref()),0u);EXPECT_EQ(external(shared,source.ref()),0u);
 }
 } } // namespace cache_source_budget
+
+namespace { namespace frame_contract {
+TEST(PagedFrame, LayoutRequiredRowsUseMaximumDuplicatePrefixAndOomKeepsExportedIdsStable) {
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto cap=capacity();cap.max_requests=cap.max_query_rows=4;cap.max_page_refs=5;
+  auto schema=c::BatchSchema::create(cap,{.allocator=metadata.ref()}).value();
+  const std::array<std::int32_t,5> q{0,1,2,3,4},kv{0,1,3,4,5},pages{2,1,2,1,3};
+  const std::array<std::int32_t,4> tails{1,2,1,1};
+  auto version=schema.version({q,kv,pages,tails}).value();
+  auto ids=c::detail::BatchLayoutAccess::page_footprint(version).value();
+  ASSERT_EQ(ids.size(),3u);EXPECT_EQ(ids[0],1);EXPECT_EQ(ids[1],2);EXPECT_EQ(ids[2],3);
+  const auto*identity=ids.data();const auto live=metadata.live;
+  metadata.fail=metadata.attempts;
+  auto failed=c::detail::BatchLayoutAccess::page_requirements(version);ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_EQ(metadata.live,live);
+  auto retained=c::detail::BatchLayoutAccess::page_footprint(version).value();
+  EXPECT_EQ(retained.data(),identity);EXPECT_EQ(retained[0],1);EXPECT_EQ(retained[2],3);
+  metadata.fail=(std::numeric_limits<std::size_t>::max)();
+  auto required=c::detail::BatchLayoutAccess::page_requirements(version);ASSERT_TRUE(required);
+  EXPECT_EQ(required->pages.data(),identity);ASSERT_EQ(required->required_rows.size(),3u);
+  EXPECT_EQ(required->required_rows[0],2u);EXPECT_EQ(required->required_rows[1],2u);EXPECT_EQ(required->required_rows[2],1u);
+  const auto attempts=metadata.attempts;metadata.fail=attempts;
+  auto cached=c::detail::BatchLayoutAccess::page_requirements(version);ASSERT_TRUE(cached);
+  EXPECT_EQ(cached->pages.data(),identity);EXPECT_EQ(cached->required_rows.data(),required->required_rows.data());
+  EXPECT_EQ(metadata.attempts,attempts);
+}
+
+TEST(PagedFrame, SteadyReadyDeltaSurvivesWrapperMoveAndCommitsWithoutAllocation) {
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=metadata.ref()}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=metadata.ref()}).value();
+  auto writer=arena.acquire(0).value();
+  ASSERT_TRUE(writer.lease().view()->subview(0,arena.page_bytes()/2)->fill(std::byte{31}).ok());
+  auto published=writer.publish_appendable(1).value();
+  const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
+  const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
+  auto original=arena.read(one,std::array{published.prefix}).value();
+  auto original_view=c::PagedArenaFootprint::from_read(original).value();
+  auto frame=c::PagedArenaFrame::fork(original_view).value();
+  auto before=frame.view().value();
+  ASSERT_TRUE(published.appender.reserve_rows(1).ok());
+  ASSERT_TRUE(published.appender.view()->fill(std::byte{47}).ok());
+  auto extended=published.appender.publish().value();
+  auto delta=c::PagedArenaDelta::create(before,two,std::array{extended}).value();
+  const auto attempts=metadata.attempts;
+  metadata.fail=attempts;
+  auto prepared=frame.prepare_commit(std::move(delta));ASSERT_TRUE(prepared);
+  EXPECT_EQ(metadata.attempts,attempts);EXPECT_FALSE(delta.valid());
+  auto proposed=prepared->view().value();
+  EXPECT_EQ(proposed.page_prefix(0)->size(),arena.page_bytes());
+  EXPECT_EQ(before.page_prefix(0)->size(),arena.page_bytes()/2);
+  c::PagedArenaFrame moved(std::move(frame));
+  EXPECT_FALSE(frame.valid());ASSERT_TRUE(moved.validate_commit(*prepared).ok());
+  const auto epoch=moved.epoch();
+  ASSERT_TRUE(moved.commit(std::move(*prepared)).ok());
+  EXPECT_EQ(metadata.attempts,attempts);EXPECT_FALSE(prepared->valid());
+  EXPECT_EQ(moved.epoch(),epoch+1);EXPECT_EQ(moved.layout(),two);
+  EXPECT_FALSE(before.valid());EXPECT_FALSE(proposed.valid());
+  EXPECT_TRUE(before.page_prefix(0).error().IsFailedPrecondition());
+  auto current=moved.view().value();auto ready=current.page_prefix(0).value();
+  EXPECT_EQ(ready.generation(),extended.generation());EXPECT_EQ(ready.size(),arena.page_bytes());
+  std::array<std::byte,1> suffix{};
+  ASSERT_TRUE(ready.view()->subview(arena.page_bytes()/2,1)->read(suffix).ok());
+  EXPECT_EQ(first(ready),std::byte{31});EXPECT_EQ(suffix[0],std::byte{47});
+  EXPECT_TRUE(original_view.valid());EXPECT_EQ(original.layout(),one);
+  EXPECT_EQ(original.page_prefix(0)->size(),arena.page_bytes()/2);
+  EXPECT_FALSE(original.page_prefix(0)->subview(arena.page_bytes()/2,1));
+}
+
+TEST(PagedFrame, ProposedForkOwnsItsExactReadyPagesAndOldSealedSnapshotDoesNotGrow) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{17}),one=fill(arena,1,std::byte{23});
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto accepted=layout(schema,std::array<std::int32_t,2>{0,1},1);
+  auto snapshot=arena.read(initial,std::array{zero}).value();
+  auto alias=c::PagedArenaFrame::from_frozen(snapshot).value();
+  EXPECT_TRUE(alias.sealed());EXPECT_EQ(alias.snapshot()->layout(),initial);
+  auto frame=c::PagedArenaFrame::fork(alias.view().value()).value();
+  EXPECT_FALSE(frame.sealed());EXPECT_TRUE(frame.snapshot().error().IsFailedPrecondition());
+  auto delta=c::PagedArenaDelta::create(frame.view().value(),accepted,std::array{one}).value();
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  auto proposed=ticket.view().value();auto fork=c::PagedArenaFrame::fork(proposed).value();
+  EXPECT_EQ(fork.layout(),accepted);EXPECT_EQ(fork.page_count(),2u);
+  ASSERT_TRUE(fork.seal().ok());auto branched=fork.snapshot().value();
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());EXPECT_FALSE(proposed.valid());
+  EXPECT_EQ(frame.layout(),accepted);EXPECT_EQ(branched.layout(),accepted);
+  EXPECT_EQ(branched.page_prefix(1)->size(),arena.page_bytes()/2);
+  EXPECT_EQ(first(branched.page_prefix(1).value()),std::byte{23});
+  EXPECT_EQ(alias.layout(),initial);EXPECT_EQ(snapshot.page_count(),1u);
+  EXPECT_TRUE(snapshot.page_prefix(1).error().IsFailedPrecondition());
+  EXPECT_TRUE(arena.acquire(0).error().IsUnavailable());
+  EXPECT_TRUE(arena.acquire(1).error().IsUnavailable());EXPECT_TRUE(arena.acquire(2));
+  auto sealed_delta=c::PagedArenaDelta::create(alias.view().value(),initial,{}).value();
+  EXPECT_TRUE(alias.prepare_commit(std::move(sealed_delta)).error().IsFailedPrecondition());
+  EXPECT_TRUE(sealed_delta.valid());EXPECT_EQ(alias.layout(),initial);
+}
+
+TEST(PagedFrame, StaleForeignAndSealedTicketsDoNotConsumeTheUpdateOrAdvanceAnyBoundary) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto page=fill(arena,0,std::byte{37});
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto shorter=layout(schema,std::array<std::int32_t,1>{0},1);
+  auto frozen=arena.read(initial,std::array{page}).value();
+  auto source=c::PagedArenaFootprint::from_read(frozen).value();
+  auto frame=c::PagedArenaFrame::fork(source).value(),foreign=c::PagedArenaFrame::fork(source).value();
+  auto before=frame.view().value();const auto epoch=frame.epoch();
+  auto delta=c::PagedArenaDelta::create(before,shorter,{}).value();
+  EXPECT_TRUE(foreign.prepare_commit(std::move(delta)).error().IsInvalidArgument());EXPECT_TRUE(delta.valid());
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  EXPECT_TRUE(foreign.validate_commit(ticket).IsInvalidArgument());
+  EXPECT_TRUE(foreign.commit(std::move(ticket)).IsInvalidArgument());
+  EXPECT_TRUE(ticket.valid());EXPECT_EQ(foreign.epoch(),epoch);EXPECT_EQ(foreign.layout(),initial);
+  auto competing_delta=c::PagedArenaDelta::create(before,initial,{}).value();
+  auto competing=frame.prepare_commit(std::move(competing_delta)).value();
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());EXPECT_EQ(frame.epoch(),epoch+1);
+  EXPECT_TRUE(frame.validate_commit(competing).IsFailedPrecondition());
+  EXPECT_TRUE(frame.commit(std::move(competing)).IsFailedPrecondition());EXPECT_TRUE(competing.valid());
+  EXPECT_TRUE(competing.view().error().IsFailedPrecondition());
+  EXPECT_TRUE(c::PagedArenaDelta::create(before,initial,{}).error().IsFailedPrecondition());
+  auto next_delta=c::PagedArenaDelta::create(frame.view().value(),shorter,{}).value();
+  auto next=frame.prepare_commit(std::move(next_delta)).value();
+  ASSERT_TRUE(frame.seal().ok());
+  EXPECT_TRUE(frame.commit(std::move(next)).IsFailedPrecondition());EXPECT_TRUE(next.valid());
+  EXPECT_EQ(frame.epoch(),epoch+1);EXPECT_EQ(frame.snapshot()->layout(),shorter);
+}
+
+TEST(PagedFrame, PrepareOomLeavesReadyDeltaIntactAndStructuralCommitAllocatesNothing) {
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto schema=c::BatchSchema::create(capacity(),{.allocator=metadata.ref()}).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),
+      {.max_backing_bytes=4096,.allocator=metadata.ref()}).value();
+  auto zero=fill(arena,0,std::byte{41}),one=fill(arena,1,std::byte{43});
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto accepted=layout(schema,std::array<std::int32_t,2>{0,1},1);
+  auto frozen=arena.read(initial,std::array{zero}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
+  auto before=frame.view().value();const auto epoch=frame.epoch();
+  auto delta=c::PagedArenaDelta::create(before,accepted,std::array{one}).value();
+  const auto live=metadata.live;metadata.fail=metadata.attempts;
+  auto failed=frame.prepare_commit(std::move(delta));ASSERT_FALSE(failed);
+  EXPECT_TRUE(failed.error().IsResourceExhausted());EXPECT_TRUE(delta.valid());
+  EXPECT_EQ(metadata.live,live);EXPECT_EQ(frame.layout(),initial);EXPECT_EQ(frame.epoch(),epoch);
+  EXPECT_TRUE(before.valid());EXPECT_EQ(first(one),std::byte{43});
+  metadata.fail=(std::numeric_limits<std::size_t>::max)();
+  auto ticket=frame.prepare_commit(std::move(delta));ASSERT_TRUE(ticket);EXPECT_FALSE(delta.valid());
+  const auto attempts=metadata.attempts;metadata.fail=attempts;
+  ASSERT_TRUE(frame.commit(std::move(*ticket)).ok());
+  EXPECT_EQ(metadata.attempts,attempts);EXPECT_EQ(frame.layout(),accepted);EXPECT_EQ(frame.epoch(),epoch+1);
+  EXPECT_EQ(frame.view()->page_prefix(1)->size(),arena.page_bytes()/2);
+}
+
+TEST(PagedFrame, EveryChangedGuardIsValidatedIncludingUnusedForeignBatchMembers) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto other=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{53}),one=fill(arena,1,std::byte{59}),alien=fill(other,3,std::byte{61});
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto accepted=layout(schema,std::array<std::int32_t,2>{0,1},1);
+  auto frozen=arena.read(initial,std::array{zero}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
+  auto before=frame.view().value();const auto epoch=frame.epoch();
+  auto unused_foreign=c::PagedArenaDelta::create(before,initial,std::array{alien});ASSERT_FALSE(unused_foreign);
+  EXPECT_TRUE(unused_foreign.error().IsInvalidArgument());
+  auto mixed=c::PagedArenaDelta::create(before,accepted,std::array{one,alien});ASSERT_FALSE(mixed);
+  EXPECT_TRUE(mixed.error().IsInvalidArgument());
+  auto cropped=one.subview(0,arena.page_bytes()/2).value();
+  EXPECT_TRUE(c::PagedArenaDelta::create(before,accepted,std::array{cropped}).error().IsInvalidArgument());
+  auto foreign_schema=c::BatchSchema::create(capacity()).value();
+  EXPECT_TRUE(c::PagedArenaDelta::create(before,layout(foreign_schema,std::array<std::int32_t,1>{0}),{}).error().IsInvalidArgument());
+  EXPECT_TRUE(before.valid());EXPECT_EQ(frame.layout(),initial);EXPECT_EQ(frame.epoch(),epoch);
+  EXPECT_EQ(first(one),std::byte{59});EXPECT_EQ(first(alien),std::byte{61});
+  EXPECT_TRUE(c::PagedArenaDelta::create(before,accepted,std::array{one}));
+}
+
+TEST(PagedFrame, LogicalFootprintCannotBorrowAWholeGuardsUnselectedInitializedRows) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto whole=fill(arena,0,std::byte{67});
+  const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
+  const auto two=layout(schema,std::array<std::int32_t,1>{0},2);
+  auto frozen=arena.read(one,std::array{whole}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(frozen).value()).value();
+  auto view=frame.view().value();
+  EXPECT_EQ(view.page_prefix(0)->size(),arena.page_bytes()/2);
+  auto widened=c::PagedArenaDelta::create(view,two,{});ASSERT_FALSE(widened);
+  EXPECT_TRUE(widened.error().IsFailedPrecondition());
+  EXPECT_TRUE(view.page_prefix(1).error().IsFailedPrecondition());
+  EXPECT_TRUE(view.page_prefix(UINT32_MAX).error().IsOutOfRange());
+  std::array<c::ReadLease,2> wrong{whole,{}};
+  EXPECT_TRUE(view.page_prefixes(wrong).IsInvalidArgument());EXPECT_EQ(wrong[0].size(),whole.size());
+  EXPECT_FALSE(wrong[1].valid());
+  // An explicitly supplied ready permission may widen the new working frame;
+  // the immutable source and already exported prefix remain bounded.
+  auto prefix=view.page_prefix(0).value();
+  auto ready_delta=c::PagedArenaDelta::create(view,two,std::array{whole}).value();
+  auto ticket=frame.prepare_commit(std::move(ready_delta)).value();
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());
+  EXPECT_EQ(frame.view()->page_prefix(0)->size(),arena.page_bytes());
+  EXPECT_EQ(prefix.size(),arena.page_bytes()/2);EXPECT_EQ(frozen.page_prefix(0)->size(),prefix.size());
+  EXPECT_FALSE(prefix.subview(prefix.size(),1));EXPECT_EQ(first(prefix),std::byte{67});
+}
+
+TEST(PagedFrame, DeltaDoesNotRetainValidUnusedPagesAndActualReadsOutliveFrameControls) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto zero=fill(arena,0,std::byte{71}),one=fill(arena,1,std::byte{73}),unused=fill(arena,2,std::byte{79});
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto accepted=layout(schema,std::array<std::int32_t,2>{0,1},1);
+  auto original=arena.read(initial,std::array{zero}).value();
+  auto frame=c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(original).value()).value();
+  auto delta=c::PagedArenaDelta::create(frame.view().value(),accepted,std::array{unused,one}).value();
+  unused.reset();EXPECT_TRUE(arena.acquire(2));
+  auto ticket=frame.prepare_commit(std::move(delta)).value();
+  ASSERT_TRUE(frame.commit(std::move(ticket)).ok());ASSERT_TRUE(frame.seal().ok());
+  auto snapshot=frame.snapshot().value();auto prefix=snapshot.page_prefix(1).value();
+  auto uses=c::LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=1}).value();
+  auto native_read=uses.begin().value();ASSERT_TRUE(native_read.read(prefix).ok());
+  original={};zero.reset();one.reset();frame={};snapshot={};prefix.reset();
+  EXPECT_TRUE(arena.acquire(0));EXPECT_TRUE(arena.acquire(1).error().IsUnavailable());
+  native_read={};EXPECT_TRUE(arena.acquire(1));
+}
+} } // namespace frame_contract

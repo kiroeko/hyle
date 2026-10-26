@@ -184,6 +184,10 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
   HYLE_RETURN_IF_ERROR(k.lease().view()->write(std::as_bytes(std::span(zero))));HYLE_RETURN_IF_ERROR(v.lease().view()->write(std::as_bytes(std::span(data))));
   HYLE_ASSIGN_OR_RETURN(old_k[i],k.publish(full?2:1));HYLE_ASSIGN_OR_RETURN(old_v[i],v.publish(full?2:1));}
  c::PagedArenaRead previous_k,previous_v;
+ std::array<c::PagedArenaFrame,2>working_k,working_v;
+ std::array<c::PagedArenaFootprint,2>footprints_k,footprints_v;
+ std::array<c::PagedArenaRead,2>projected_k,projected_v;
+ std::array<c::BatchLayoutVersion,2>projected_layouts;
  if(permuted_shared){
   // Model Sessions retain separate opaque ready frames. Compose those actual
   // permissions, rather than rebuilding a batch from bare physical page IDs.
@@ -195,6 +199,12 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
    const std::array key_guards{old_k[1],old_k[individual]},value_guards{old_v[1],old_v[individual]};
    HYLE_ASSIGN_OR_RETURN(sources_k[request],keys.read(source_layout,key_guards));
    HYLE_ASSIGN_OR_RETURN(sources_v[request],values.read(source_layout,value_guards));
+   HYLE_ASSIGN_OR_RETURN(auto source_k,c::PagedArenaFootprint::from_read(sources_k[request]));
+   HYLE_ASSIGN_OR_RETURN(auto source_v,c::PagedArenaFootprint::from_read(sources_v[request]));
+   HYLE_ASSIGN_OR_RETURN(working_k[request],c::PagedArenaFrame::fork(source_k));
+   HYLE_ASSIGN_OR_RETURN(working_v[request],c::PagedArenaFrame::fork(source_v));
+   HYLE_ASSIGN_OR_RETURN(footprints_k[request],working_k[request].view());
+   HYLE_ASSIGN_OR_RETURN(footprints_v[request],working_v[request].view());
   }
   HYLE_ASSIGN_OR_RETURN(previous_k,keys.reframe(old_layout,sources_k));
   HYLE_ASSIGN_OR_RETURN(previous_v,values.reframe(old_layout,sources_v));
@@ -217,8 +227,37 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
   for(const auto&writer:dirty_k)HYLE_RETURN_IF_ERROR(check(writer.valid(),"shared dirty-page rejection consumed an original reservation"));
   for(auto&writer:dirty_k)HYLE_RETURN_IF_ERROR(check(writer.lease().valid(),"shared dirty-page rejection consumed an original lease"));
  }
- HYLE_ASSIGN_OR_RETURN(auto append_keys,gb::PagedAppendPages::create(keys,layout,previous_k,dirty_k));
- HYLE_ASSIGN_OR_RETURN(auto append_values,gb::PagedAppendPages::create(values,layout,previous_v,dirty_v));
+ if(!permuted_shared){
+  // The full root for page 0 has two ready rows, but this source layout only
+  // grants one. Combining its guard with page 1 cannot enlarge that prefix.
+  const std::array<std::int32_t,2>q{0,1},ptr{0,1};const std::array<std::int32_t,1>last{1};
+  std::array<c::PagedArenaFootprint,2>short_sources;
+  for(std::size_t i=0;i<short_sources.size();++i){
+   const std::array id{std::int32_t(i)};
+   HYLE_ASSIGN_OR_RETURN(auto short_layout,schema.version({q,ptr,id,last}));
+   HYLE_ASSIGN_OR_RETURN(auto short_read,keys.read(short_layout,std::span(&old_k[i],1)));
+   HYLE_ASSIGN_OR_RETURN(short_sources[i],c::PagedArenaFootprint::from_read(short_read));
+  }
+  auto widened=gb::PagedAppendPages::create(keys,layout,old_layout,short_sources,dirty_k);
+  HYLE_RETURN_IF_ERROR(check(!widened && widened.error().IsFailedPrecondition(),"append widened a source layout using its larger ready root"));
+  for(auto&writer:dirty_k)HYLE_RETURN_IF_ERROR(check(writer.lease().valid(),"logical prefix rejection consumed an original writer"));
+ }
+ gb::PagedAppendPages append_keys,append_values;
+ if(permuted_shared){
+  auto missing=gb::PagedAppendPages::create(keys,layout,old_layout,std::span(footprints_k).first(1),dirty_k);
+  HYLE_RETURN_IF_ERROR(check(!missing && missing.error().IsFailedPrecondition(),"append accepted an absent source request prefix"));
+  const std::array foreign_sources{footprints_k[0],footprints_k[1],footprints_v[0]};
+  auto extra=gb::PagedAppendPages::create(keys,layout,old_layout,foreign_sources,dirty_k);
+  HYLE_RETURN_IF_ERROR(check(!extra && extra.error().IsInvalidArgument(),"append ignored an unused foreign source footprint"));
+  for(auto&writer:dirty_k)HYLE_RETURN_IF_ERROR(check(writer.lease().valid(),"source rejection consumed an original writer"));
+  HYLE_ASSIGN_OR_RETURN(append_keys,gb::PagedAppendPages::create(keys,layout,old_layout,footprints_k,dirty_k));
+  HYLE_ASSIGN_OR_RETURN(append_values,gb::PagedAppendPages::create(values,layout,old_layout,footprints_v,dirty_v));
+  auto premature=append_keys.ready_delta(footprints_k[0],layout);
+  HYLE_RETURN_IF_ERROR(check(!premature && premature.error().IsFailedPrecondition(),"unsubmitted append published a working delta"));
+ }else{
+  HYLE_ASSIGN_OR_RETURN(append_keys,gb::PagedAppendPages::create(keys,layout,previous_k,dirty_k));
+  HYLE_ASSIGN_OR_RETURN(append_values,gb::PagedAppendPages::create(values,layout,previous_v,dirty_v));
+ }
  HYLE_ASSIGN_OR_RETURN(auto rows,c::TensorDesc::dense(type,std::array<std::int64_t,3>{query_rows,1,64}));
  if(only_writer)return writer_only(context,queue,schema,rows,layout,keys,values,previous_k,previous_v,old_k,old_v,old_bytes,
   std::move(append_keys),std::move(append_values),failure);
@@ -281,8 +320,33 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
  }
  HYLE_RETURN_IF_ERROR(check(!keys.acquire(permuted_shared?2u:1u) && !values.acquire(permuted_shared?2u:1u),"append overwrote the retained old snapshot"));
  if(failure){HYLE_RETURN_IF_ERROR(check(!returned_k.ready() && !returned_v.ready(),"failed append published ready pages"));
+  HYLE_ASSIGN_OR_RETURN(auto expected,c::PagedArenaFootprint::from_read(previous_k));
+  auto delta=returned_k.ready_delta(expected,layout);
+  HYLE_RETURN_IF_ERROR(check(!delta && delta.error().IsFailedPrecondition(),"failed whole Graph published a ready delta"));
   for(std::size_t i=0;i<dirty_pages.size();++i){HYLE_ASSIGN_OR_RETURN(auto&k,returned_k.page(i));HYLE_ASSIGN_OR_RETURN(auto&v,returned_v.page(i));k.lease().reset();v.lease().reset();HYLE_RETURN_IF_ERROR(k.discard());HYLE_RETURN_IF_ERROR(v.discard());}
   std::puts("paged append accepted-prefix error retains old snapshot, rejects publication, recovers original pages PASS");return Status::Ok();}
+ if(permuted_shared){
+  // Select request 0's first accepted row and request 1's whole two-row
+  // result directly from changes, before asking for any full ready frame.
+  for(std::size_t request=0;request<working_k.size();++request){
+   const auto count=request?3u:2u;
+   const std::array<std::int32_t,2>accepted_query{0,request?2:1},ptr{0,std::int32_t(count)};
+   const std::array<std::int32_t,1>last{request?1:2};
+   HYLE_ASSIGN_OR_RETURN(projected_layouts[request],schema.version({accepted_query,ptr,std::span(new_ids).subspan(request*3,count),last}));
+   HYLE_ASSIGN_OR_RETURN(auto delta_k,returned_k.ready_delta(footprints_k[request],projected_layouts[request]));
+   HYLE_ASSIGN_OR_RETURN(auto delta_v,returned_v.ready_delta(footprints_v[request],projected_layouts[request]));
+   HYLE_ASSIGN_OR_RETURN(auto commit_k,working_k[request].prepare_commit(std::move(delta_k)));
+   HYLE_ASSIGN_OR_RETURN(auto commit_v,working_v[request].prepare_commit(std::move(delta_v)));
+   HYLE_ASSIGN_OR_RETURN(auto proposed,commit_k.view());
+   HYLE_RETURN_IF_ERROR(check(proposed.page_count()==count && proposed.layout()==projected_layouts[request],"append proposed footprint lost accepted request rows"));
+   HYLE_RETURN_IF_ERROR(working_k[request].validate_commit(commit_k));HYLE_RETURN_IF_ERROR(working_v[request].validate_commit(commit_v));
+   HYLE_RETURN_IF_ERROR(working_k[request].commit(std::move(commit_k)));HYLE_RETURN_IF_ERROR(working_v[request].commit(std::move(commit_v)));
+   HYLE_RETURN_IF_ERROR(check(!footprints_k[request].valid() && !footprints_v[request].valid(),"committed append retained a live old working epoch"));
+   HYLE_RETURN_IF_ERROR(working_k[request].seal());HYLE_RETURN_IF_ERROR(working_v[request].seal());
+   HYLE_ASSIGN_OR_RETURN(projected_k[request],working_k[request].snapshot());
+   HYLE_ASSIGN_OR_RETURN(projected_v[request],working_v[request].snapshot());
+  }
+ }
  HYLE_ASSIGN_OR_RETURN(auto next_k,returned_k.ready());HYLE_ASSIGN_OR_RETURN(auto next_v,returned_v.ready());
  if(!actual_correct){
   // Independent ordinary-ready graph on the exact resulting page frames. It
@@ -305,23 +369,24 @@ Status run(bool bf,bool missing_edge,bool failure,bool permuted_shared=false,boo
  const auto ready_pages=permuted_shared?5u:3u;
  HYLE_RETURN_IF_ERROR(check(next_k.layout()==layout && next_v.layout()==layout && next_k.page_count()==ready_pages && next_v.page_count()==ready_pages,"append result is not exact whole ready page frame"));
  if(permuted_shared){
-  // Split the completed batch into independent Session frames using only the
-  // original ready permissions. A projected frame cannot borrow its sibling's
-  // private COW pages merely because the same arena still owns them.
-  std::array<c::PagedArenaRead,2>projected_k,projected_v;
-  const std::array<std::int32_t,2>project_query{0,2},project_ptr{0,3};const std::array<std::int32_t,1>project_tail{1};
-  std::array<c::BatchLayoutVersion,2>projected_layouts;
+  // The direct accepted deltas preserve exactly the same initialized bytes as
+  // legacy ready(), while the first member omits its unaccepted private page.
   for(std::size_t request=0;request<projected_k.size();++request){
-   HYLE_ASSIGN_OR_RETURN(projected_layouts[request],schema.version({project_query,project_ptr,std::span(new_ids).subspan(request*3,3),project_tail}));
-   HYLE_ASSIGN_OR_RETURN(projected_k[request],keys.reframe(projected_layouts[request],std::span(&next_k,1)));
-   HYLE_ASSIGN_OR_RETURN(projected_v[request],values.reframe(projected_layouts[request],std::span(&next_v,1)));
-   HYLE_RETURN_IF_ERROR(check(projected_k[request].page_count()==3 && projected_v[request].page_count()==3 &&
+   const auto count=request?3u:2u;
+   HYLE_RETURN_IF_ERROR(check(projected_k[request].page_count()==count && projected_v[request].page_count()==count &&
     projected_k[request].layout()==projected_layouts[request] && projected_v[request].layout()==projected_layouts[request],
-    "completed batch projection lost the exact per-request frame"));
+    "accepted delta lost its exact per-request footprint"));
+   for(const auto id:projected_layouts[request].host().page_indices){
+    HYLE_ASSIGN_OR_RETURN(auto actual,projected_v[request].page_prefix(std::uint32_t(id)));
+    HYLE_ASSIGN_OR_RETURN(auto reference,next_v.page_prefix(std::uint32_t(id)));
+    std::vector<std::byte>a(actual.size()),b(actual.size());
+    HYLE_RETURN_IF_ERROR(actual.view()->read(a));HYLE_RETURN_IF_ERROR(reference.view()->read(b));
+    HYLE_RETURN_IF_ERROR(check(a==b,"accepted delta bytes differ from immutable whole ready frame"));
+   }
   }
   HYLE_RETURN_IF_ERROR(check(!keys.reframe(projected_layouts[1],std::span(&projected_k[0],1)) &&
    !values.reframe(projected_layouts[0],std::span(&projected_v[1],1)),"projected request borrowed a sibling's private COW pages"));
-  std::puts("paged append opaque Session frame composition and independent ready projection PASS");
+  std::puts("paged append working sources/logical-prefix authority/independent partial deltas/legacy ready equivalence PASS");
  }
  for(std::size_t i=0;i<old_v.size();++i){std::vector<std::uint16_t>unchanged(128);HYLE_RETURN_IF_ERROR(old_v[i].view()->read(std::as_writable_bytes(std::span(unchanged))));
   HYLE_RETURN_IF_ERROR(check(unchanged==old_bytes[i],"COW append changed retained old page bytes or unused tail"));}
@@ -507,22 +572,36 @@ Status exclusive_tail(){
  HYLE_ASSIGN_OR_RETURN(auto first_owner,episode(good,invocation,first,std::move(ak),std::move(av),false,.3125f));
  HYLE_ASSIGN_OR_RETURN(auto first_k,first_owner[0].ready());HYLE_ASSIGN_OR_RETURN(auto first_v,first_owner[1].ready());
  HYLE_RETURN_IF_ERROR(check(first_owner[0].appender_count()==1 && first_owner[1].appender_count()==1,"fresh partial Graph publication lost its unique tail"));
+ HYLE_ASSIGN_OR_RETURN(auto first_footprint_k,c::PagedArenaFootprint::from_read(first_k));
+ HYLE_ASSIGN_OR_RETURN(auto first_footprint_v,c::PagedArenaFootprint::from_read(first_v));
+ HYLE_ASSIGN_OR_RETURN(auto tail_frame_k,c::PagedArenaFrame::fork(first_footprint_k));
+ HYLE_ASSIGN_OR_RETURN(auto tail_frame_v,c::PagedArenaFrame::fork(first_footprint_v));
+ HYLE_ASSIGN_OR_RETURN(auto tail_base_k,tail_frame_k.view());HYLE_ASSIGN_OR_RETURN(auto tail_base_v,tail_frame_v.view());
  std::array<c::PagedPageAppender,1>tails_k,tails_v;
  HYLE_ASSIGN_OR_RETURN(auto&idle_k,first_owner[0].appender(0));HYLE_ASSIGN_OR_RETURN(auto&idle_v,first_owner[1].appender(0));
  tails_k[0]=std::move(idle_k);tails_v[0]=std::move(idle_v);
  HYLE_RETURN_IF_ERROR(tails_k[0].reserve_rows(1));HYLE_RETURN_IF_ERROR(tails_v[0].reserve_rows(1));
- HYLE_ASSIGN_OR_RETURN(ak,gb::PagedAppendPages::create(keys,second,first_k,std::span<c::PagedPageWriter>{},tails_k));
- HYLE_ASSIGN_OR_RETURN(av,gb::PagedAppendPages::create(values,second,first_v,std::span<c::PagedPageWriter>{},tails_v));
+ HYLE_ASSIGN_OR_RETURN(ak,gb::PagedAppendPages::create(keys,second,first,std::span(&tail_base_k,1),std::span<c::PagedPageWriter>{},tails_k));
+ HYLE_ASSIGN_OR_RETURN(av,gb::PagedAppendPages::create(values,second,first,std::span(&tail_base_v,1),std::span<c::PagedPageWriter>{},tails_v));
  HYLE_ASSIGN_OR_RETURN(auto failed_owner,episode(bad,failed,second,std::move(ak),std::move(av),true,0));
  HYLE_RETURN_IF_ERROR(check(!failed_owner[0].ready() && !failed_owner[1].ready(),"failed suffix became ready"));
+ HYLE_RETURN_IF_ERROR(check(!failed_owner[0].ready_delta(tail_base_k,second) && tail_base_k.valid(),"failed suffix published or advanced the working boundary"));
  HYLE_ASSIGN_OR_RETURN(auto&retry_k,failed_owner[0].appender(0));HYLE_ASSIGN_OR_RETURN(auto&retry_v,failed_owner[1].appender(0));
  HYLE_RETURN_IF_ERROR(retry_k.rollback());HYLE_RETURN_IF_ERROR(retry_v.rollback());
  HYLE_RETURN_IF_ERROR(check(retry_k.initialized_rows()==2 && retry_v.initialized_rows()==2,"failed suffix changed committed frontier"));
  tails_k[0]=std::move(retry_k);tails_v[0]=std::move(retry_v);
  HYLE_RETURN_IF_ERROR(tails_k[0].reserve_rows(1));HYLE_RETURN_IF_ERROR(tails_v[0].reserve_rows(1));
- HYLE_ASSIGN_OR_RETURN(ak,gb::PagedAppendPages::create(keys,second,first_k,std::span<c::PagedPageWriter>{},tails_k));
- HYLE_ASSIGN_OR_RETURN(av,gb::PagedAppendPages::create(values,second,first_v,std::span<c::PagedPageWriter>{},tails_v));
+ HYLE_ASSIGN_OR_RETURN(ak,gb::PagedAppendPages::create(keys,second,first,std::span(&tail_base_k,1),std::span<c::PagedPageWriter>{},tails_k));
+ HYLE_ASSIGN_OR_RETURN(av,gb::PagedAppendPages::create(values,second,first,std::span(&tail_base_v,1),std::span<c::PagedPageWriter>{},tails_v));
  HYLE_ASSIGN_OR_RETURN(auto second_owner,episode(good,invocation,second,std::move(ak),std::move(av),false,.375f));
+ HYLE_ASSIGN_OR_RETURN(auto tail_delta_k,second_owner[0].ready_delta(tail_base_k,second));
+ HYLE_ASSIGN_OR_RETURN(auto tail_delta_v,second_owner[1].ready_delta(tail_base_v,second));
+ HYLE_ASSIGN_OR_RETURN(auto tail_commit_k,tail_frame_k.prepare_commit(std::move(tail_delta_k)));
+ HYLE_ASSIGN_OR_RETURN(auto tail_commit_v,tail_frame_v.prepare_commit(std::move(tail_delta_v)));
+ HYLE_RETURN_IF_ERROR(tail_frame_k.validate_commit(tail_commit_k));HYLE_RETURN_IF_ERROR(tail_frame_v.validate_commit(tail_commit_v));
+ HYLE_RETURN_IF_ERROR(tail_frame_k.commit(std::move(tail_commit_k)));HYLE_RETURN_IF_ERROR(tail_frame_v.commit(std::move(tail_commit_v)));
+ HYLE_RETURN_IF_ERROR(check(tail_frame_k.layout()==second && tail_frame_v.layout()==second && first_k.layout()==first && first_v.layout()==first,
+  "ready tail delta changed an older immutable boundary"));
  HYLE_ASSIGN_OR_RETURN(auto second_k,second_owner[0].ready());HYLE_ASSIGN_OR_RETURN(auto second_v,second_owner[1].ready());
  HYLE_ASSIGN_OR_RETURN(auto&same_k,second_owner[0].appender(0));HYLE_ASSIGN_OR_RETURN(auto&same_v,second_owner[1].appender(0));
  HYLE_RETURN_IF_ERROR(check(same_k.page()==2 && same_v.page()==2 && same_k.initialized_rows()==3 && same_v.initialized_rows()==3,

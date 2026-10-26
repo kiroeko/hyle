@@ -55,23 +55,20 @@ struct Blob final { std::string name; bool bf16 = false; Bytes bytes; };
 
 // Read exactly the committed logical rows, independent of physical page IDs.
 // No capacity/whole-bank view is used as permission for an unused tail.
-Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaRead &frame, std::size_t rows) {
-  const auto host = frame.layout().host();
+Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaFrame &frame, std::size_t rows) {
+  const auto view = q::take(frame.view()); const auto host = view.layout().host();
   const auto count = (rows + q::cache::Plan::page_rows - 1) / q::cache::Plan::page_rows;
   require(frame.valid() && host.page_indices.size() == count && frame.page_count() == count &&
           host.last_page_lengths.size() == 1, "MTP frame has the wrong committed page footprint");
   require(!count || (count - 1) * q::cache::Plan::page_rows +
           static_cast<std::size_t>(host.last_page_lengths[0]) == rows, "MTP frame frontier differs from its snapshot");
+  require(c::detail::PagedArenaAccess::owns(arena, view), "MTP frame belongs to another arena");
   Bytes result(q::cache::multiply(rows, std::size_t{1024}));
-  const auto guards = c::detail::PagedArenaAccess::pages(frame);
   std::size_t offset = 0;
   for (std::size_t logical = 0; logical < count; ++logical) {
-    const auto physical = host.page_indices[logical]; const c::ReadLease *selected = nullptr;
-    for (const auto &guard : guards)
-      if (q::take(c::detail::PagedArenaAccess::page(arena, guard)) == static_cast<std::uint32_t>(physical)) selected = &guard;
-    require(selected != nullptr, "logical MTP page lacks its real ready guard");
+    const auto selected = q::take(view.page_prefix(static_cast<std::uint32_t>(host.page_indices[logical])));
     const auto bytes = (std::min)(std::size_t{16 * 1024}, result.size() - offset);
-    q::check(q::take(q::take(selected->view()).subview(0, bytes)).read(std::span(result).subspan(offset, bytes)));
+    q::check(q::take(q::take(selected.view()).subview(0, bytes)).read(std::span(result).subspan(offset, bytes)));
     offset += bytes;
   }
   return result;

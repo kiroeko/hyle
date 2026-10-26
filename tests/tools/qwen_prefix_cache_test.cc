@@ -37,6 +37,23 @@ namespace b = qwen35::benchmark;
 namespace mtp = hyle::inference::mtp;
 void require(bool condition, const char *message) { if (!condition) throw std::runtime_error(message); }
 
+// A real, empty permission footprint: metadata tests do not claim initialized
+// model state, but checkpoint() must still freeze valid working frames.
+p::c::PagedArenaFrame empty_working_frame() {
+  namespace c = hyle::compute;
+  c::BatchCapacity capacity; capacity.page_size = 1;
+  auto schema = c::BatchSchema::create(capacity).value();
+  auto arena = c::PagedArena::create(schema, c::BatchCacheRole::kKey,
+      hyle::mem::system_resource(), {.max_backing_bytes = 1024}).value();
+  const std::array<std::int32_t, 1> zero{0};
+  auto layout = schema.version({zero, zero, {}, {}}).value();
+  auto read = arena.read(layout, {}).value();
+  return c::PagedArenaFrame::fork(c::PagedArenaFootprint::from_read(read).value()).value();
+}
+p::c::PagedArenaFrame frozen_alias(const p::c::PagedArenaFrame &frame) {
+  return p::c::PagedArenaFrame::from_frozen(frame.snapshot().value()).value();
+}
+
 void mtp_prefix_rejection_and_bonus() {
   const std::array<std::int32_t, 1> eos{19};
   std::vector<std::int32_t> emitted;
@@ -301,8 +318,17 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
     candidate->pages.reserve(8);
     if (!candidate->keys.try_resize(3) || !candidate->values.try_resize(3) ||
         !candidate->state.try_resize(2)) throw std::bad_alloc();
+    if (!working)
+      for (std::size_t i = 0; i < candidate->keys.size(); ++i) {
+        candidate->keys[i] = empty_working_frame(); candidate->values[i] = empty_working_frame();
+      }
     candidate->length = length; candidate->next_id = 17; candidate->sampling = {1,2,length};
-    working.commit(std::move(candidate));
+    working.commit(std::move(candidate), [](p::State *previous, p::State &next) noexcept {
+      if (previous)
+        for (std::size_t i = 0; i < next.keys.size(); ++i) {
+          next.keys[i] = std::move(previous->keys[i]); next.values[i] = std::move(previous->values[i]);
+        }
+    }, [](p::State &) noexcept {});
   };
   next(1); const auto *first = working.get();
   next(2); const auto *second = working.get();
@@ -326,6 +352,11 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
 #endif
   require(stable, "ordinary commits allocated/replaced warm metadata or kept an old version");
   const auto *identity = working.get(); const auto epoch = working.epoch();
+  std::array<p::c::PagedArenaFootprint, 6> footprints;
+  for (std::size_t i = 0; i < working->keys.size(); ++i) {
+    footprints[i * 2] = working->keys[i].view().value();
+    footprints[i * 2 + 1] = working->values[i].view().value();
+  }
 #if defined(HYLE_PREFIX_CACHE_STANDALONE)
   bool rejected = false; reject_allocations = true;
   try { (void)working.checkpoint(); }
@@ -335,10 +366,18 @@ void working_state_reuses_metadata_and_freezes_explicitly() {
   require(rejected && working.get() == identity && working.epoch() == epoch && versions.live == 1 &&
       working->length == 130 && working->next_id == 17 && working->sampling == p::SamplingCursor{1,2,130},
       "checkpoint allocation failure changed the unique committed boundary or version");
+  for (std::size_t i = 0; i < working->keys.size(); ++i)
+    require(!working->keys[i].sealed() && !working->values[i].sealed() &&
+        footprints[i * 2].valid() && footprints[i * 2 + 1].valid(),
+        "checkpoint allocation failure sealed or invalidated a working frame");
 #endif
   auto frozen = working.checkpoint();
   require(frozen.get() == identity && working.get() == identity && working.epoch() == epoch && versions.live == 1,
       "checkpoint copied State, changed epoch or counted a second version");
+  for (std::size_t i = 0; i < frozen->keys.size(); ++i)
+    require(frozen->keys[i].sealed() && frozen->values[i].sealed() &&
+        footprints[i * 2].valid() && footprints[i * 2 + 1].valid(),
+        "checkpoint failed to permanently seal the original frame metadata");
   require(working.checkpoint() == frozen, "repeated checkpoint replaced an immutable committed identity");
   working.reset(); require(versions.live == 1 && frozen->length == 130, "reset revoked an escaped checkpoint");
   frozen.reset(); require(!versions.live, "final checkpoint retained a model-state version");
@@ -349,11 +388,17 @@ void working_state_adopts_sampling_origin_without_another_version() {
   auto initial = source.acquire_candidate(); initial->version = p::VersionRef::acquire(versions).value();
   initial->length = 3; initial->next_id = 71; initial->sampling = {1,2,3};
   initial->draft.emplace(); initial->draft->frontier = 2; initial->draft->lag = 1; initial->draft->catchup_token = 5;
+  initial->draft->key = empty_working_frame(); initial->draft->value = empty_working_frame();
   source.commit(std::move(initial)); auto canonical = source.checkpoint();
   fork.adopt(canonical); source.reset();
   require(fork.get() == canonical.get() && versions.live == 1, "checkpoint adoption copied its version");
   auto wrapper = fork.acquire_candidate();
-  wrapper->state_origin = canonical; wrapper->length = canonical->length; wrapper->draft = canonical->draft;
+  wrapper->state_origin = canonical; wrapper->length = canonical->length; wrapper->draft.emplace();
+  wrapper->draft->pages = canonical->draft->pages;
+  wrapper->draft->key = frozen_alias(canonical->draft->key);
+  wrapper->draft->value = frozen_alias(canonical->draft->value);
+  wrapper->draft->frontier = canonical->draft->frontier; wrapper->draft->lag = canonical->draft->lag;
+  wrapper->draft->catchup_token = canonical->draft->catchup_token;
   wrapper->next_id = 81; wrapper->sampling = {11,12,13};
   fork.commit(std::move(wrapper)); auto sampled = fork.checkpoint(); canonical.reset();
   require(versions.live == 1 && sampled->state_identity() == sampled->state_origin.get() &&

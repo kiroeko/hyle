@@ -168,8 +168,11 @@ struct SavedSnapshot final {
 SavedSnapshot save(q::cache::SnapshotRef head) {
   require(static_cast<bool>(head), "missing committed snapshot"); SavedSnapshot result; result.head = std::move(head);
   for (std::size_t i = 0; i < result.head->keys.size(); ++i)
-    for (const auto *frame : {&result.head->keys[i], &result.head->values[i]})
-      for (const auto &guard : c::detail::PagedArenaAccess::pages(*frame)) result.kv.push_back(read_lease(guard));
+    for (const auto *frame : {&result.head->keys[i], &result.head->values[i]}) {
+      const auto view = q::take(frame->view()); std::vector<c::ReadLease> guards(view.page_count());
+      q::check(c::detail::PagedArenaAccess::collect_pages(view, guards));
+      for (const auto &guard : guards) result.kv.push_back(read_lease(guard));
+    }
   for (const auto &state : result.head->state)
     for (const auto *lease : {&state.history, &state.recurrent}) if (lease->valid()) result.recurrent.push_back(read_lease(*lease));
   require(result.recurrent.size() == 36, "snapshot is missing a conv/GDN resource"); return result;

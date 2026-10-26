@@ -99,7 +99,7 @@ Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前�
 
 expected-base及可追加尾权同时核对epoch，避免元数据地址轮换造成身份复用。采样恢复仍从冻结的
 canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fork、旧读者和未知退休继续持有真实
-权限与预算。逐层结果导出、KV帧reframe及部分provider状态复制尚未消除；原生索引状态槽和MTP有界捕获
+权限与预算。KV帧reframe现由下文工作帧及变化页事务替代；逐层递归状态导出及部分provider状态复制仍存在，原生索引状态槽和MTP有界捕获
 复用仍待实现，不能从主机元数据复用推导吞吐收益。[有限主机、CPU 与 CUDA 普通／MTP 对照](../evidence/correctness/inference-working-state-2026-10-26.json)
 记录了这次迁移的实际检查范围和保留边界。
 
@@ -115,13 +115,20 @@ caller-owned的GDN／conv状态现另用共享R容量的FIFO保留原`WriteLease
 和独立NextN共用此接口；它不改变`ready()`或快照布局。有限检查及直接A/B见
 [批量取回](../evidence/performance/inference-bulk-append-2026-10-26.json)，未证明吞吐收益。
 
-下一项KV持续工作帧仍在设计，尚未实现。当前`WorkingState`复用主机对象后，KV仍每步创建、
-合并和拆分整帧；不能靠原地改`PagedArenaRead`消除这些成本。拟由Compute在原arena／页权限上
-维护有界的工作布局、guard表及epoch，Graph完成原append后提供本次变化；引擎完成K/V、GDN、
-采样和expected-base全部预检后，才无失败地一起推进提交边界。checkpoint／fork／换出再通过
-原read／reframe导出独立不可变帧，旧前缀权限不扩大。失败不推进旧边界，未知退休继续保活；
-MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW，或在此提交点才发布。它复用
-原页池、tail、Completion及Graph权限，不另造执行器；每步真实页权限接纳仍不可省略。
+KV持续工作帧由Compute在原arena／页权限上维护工作布局、guard表及epoch；
+`PagedArenaRead`保持永久不可变，`PagedArenaFrame`显式区分可推进工作态与封存态。
+Graph直接接收各会话的footprint，保留本次执行需要的真实页租约；原append成功退休后只导出变化页。
+引擎先为各接受布局准备ticket，并通过ticket的proposed view检查完整MTP续算状态；
+K/V、GDN、采样、ledger和所有expected-base全部预检后，才在无失败发布区移交原工作帧、
+提交ticket并交换会话head。可变基态不提前搬空；冻结基态在准备时显式fork实际guard元数据。
+
+checkpoint先检查整个集合可封存，再分配共享控制块；分配失败保持原State、VersionRef及工作帧，
+成功后无分配地永久seal各帧，再公开只读Snapshot。前缀共享、分叉和换出使用封存帧，
+不按引用计数重新解冻。布局的唯一页与行界限由同一版本共享，稳态只替换变化guard，
+页集合改变才准备完整替代表。失败不推进旧边界，未知退休继续保活；
+MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW。
+这些机制复用原页池、tail、Completion及Graph权限，每步真实页权限接纳仍不可省略。
+接口与控制边界见[工作帧指南](../user/batch-attention.md#连续追加的工作帧)，实际检查范围见进度看板。
 
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。动态未见形状仍可能在请求边界准备，且可能淘汰原N×R范围内的旧exact family。

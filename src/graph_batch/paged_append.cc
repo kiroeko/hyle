@@ -70,17 +70,18 @@ struct PagedAppendData final {
   struct Target final {mem::BufferView storage;std::uint32_t page=0,first_row=0;};
   explicit PagedAppendData(mem::AllocatorRef a):allocator(a),writers(mem::StdAllocator<c::PagedPageWriter>(a)),
       appenders(mem::StdAllocator<c::PagedPageAppender>(a)),
-      ranges(mem::StdAllocator<Range>(a)),ready_pages(mem::StdAllocator<c::ReadLease>(a)),
+      ranges(mem::StdAllocator<Range>(a)),old_pages(mem::StdAllocator<c::ReadLease>(a)),
+      changed_pages(mem::StdAllocator<c::ReadLease>(a)),
       required(mem::StdAllocator<std::uint32_t>(a)),
       writer_ptrs(mem::StdAllocator<const c::WriteLease*>(a)),
       appender_ptrs(mem::StdAllocator<const cd::AppendLease*>(a)),targets(mem::StdAllocator<Target>(a)){}
   void destroy()noexcept{const auto a=allocator;a.destroy(this);}
-  mem::AllocatorRef allocator;c::PagedArena arena;c::BatchLayoutVersion layout;c::PagedArenaRead previous,result;
+  mem::AllocatorRef allocator;c::PagedArena arena;c::BatchLayoutVersion layout,previous_layout;c::PagedArenaRead result;
   PagedAppend descriptor;c::TensorDesc rows;std::size_t row_bytes=0;
   std::vector<c::PagedPageWriter,mem::StdAllocator<c::PagedPageWriter>>writers;
   std::vector<c::PagedPageAppender,mem::StdAllocator<c::PagedPageAppender>>appenders;
   std::vector<Range,mem::StdAllocator<Range>>ranges;
-  std::vector<c::ReadLease,mem::StdAllocator<c::ReadLease>>ready_pages;
+  std::vector<c::ReadLease,mem::StdAllocator<c::ReadLease>>old_pages,changed_pages;
   std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>>required;
   std::vector<const c::WriteLease*,mem::StdAllocator<const c::WriteLease*>>writer_ptrs;
   std::vector<const cd::AppendLease*,mem::StdAllocator<const cd::AppendLease*>>appender_ptrs;
@@ -115,25 +116,76 @@ Result<c::PagedPageAppender&> PagedAppendPages::appender(std::size_t index)noexc
 }
 Result<PagedAppendPages> PagedAppendPages::create(c::PagedArena arena,c::BatchLayoutVersion next,
     c::PagedArenaRead previous,std::span<c::PagedPageWriter>dirty,PagedAppendOptions options)noexcept{
-  return create_impl(std::move(arena),std::move(next),std::move(previous),dirty,{},false,options);
+  if(!previous.valid())return std::unexpected(Status::InvalidArgument("paged append requires its original old frame"));
+  HYLE_ASSIGN_OR_RETURN(auto source,c::PagedArenaFootprint::from_read(previous));
+  return create_impl(std::move(arena),std::move(next),previous.layout(),std::span(&source,1),dirty,{},false,options);
 }
 Result<PagedAppendPages> PagedAppendPages::create(c::PagedArena arena,c::BatchLayoutVersion next,
     c::PagedArenaRead previous,std::span<c::PagedPageWriter>dirty,
     std::span<c::PagedPageAppender>tails,PagedAppendOptions options)noexcept{
-  return create_impl(std::move(arena),std::move(next),std::move(previous),dirty,tails,true,options);
+  if(!previous.valid())return std::unexpected(Status::InvalidArgument("paged append requires its original old frame"));
+  HYLE_ASSIGN_OR_RETURN(auto source,c::PagedArenaFootprint::from_read(previous));
+  return create_impl(std::move(arena),std::move(next),previous.layout(),std::span(&source,1),dirty,tails,true,options);
+}
+Result<PagedAppendPages> PagedAppendPages::create(c::PagedArena arena,c::BatchLayoutVersion next,
+    c::BatchLayoutVersion previous,std::span<const c::PagedArenaFootprint>sources,
+    std::span<c::PagedPageWriter>dirty,PagedAppendOptions options)noexcept{
+  return create_impl(std::move(arena),std::move(next),std::move(previous),sources,dirty,{},false,options);
+}
+Result<PagedAppendPages> PagedAppendPages::create(c::PagedArena arena,c::BatchLayoutVersion next,
+    c::BatchLayoutVersion previous,std::span<const c::PagedArenaFootprint>sources,
+    std::span<c::PagedPageWriter>dirty,std::span<c::PagedPageAppender>tails,PagedAppendOptions options)noexcept{
+  return create_impl(std::move(arena),std::move(next),std::move(previous),sources,dirty,tails,true,options);
+}
+namespace {
+// A source's larger ready root does not authorize a larger logical prefix.
+// Retain only the logical intersection needed by the previous batch; neither
+// a second whole guard table nor a mutable Frame survives this call.
+Status retain_previous_pages(detail::PagedAppendData&p,std::span<const c::PagedArenaFootprint>sources){
+  for(const auto&source:sources)
+    if(!source.valid() || !cd::PagedArenaAccess::owns(p.arena,source))
+      return Status::InvalidArgument("paged append source footprint is stale or belongs to another arena");
+  HYLE_ASSIGN_OR_RETURN(auto needed,cd::BatchLayoutAccess::page_requirements(p.previous_layout));
+  const auto ids=needed.pages;const auto required=needed.required_rows;
+  p.old_pages.resize(ids.size());
+  for(const auto&source:sources){
+    HYLE_ASSIGN_OR_RETURN(auto coverage,cd::BatchLayoutAccess::page_requirements(source.layout()));
+    const auto source_ids=coverage.pages;const auto available=coverage.required_rows;
+    for(std::size_t old=0,i=0;old<ids.size() && i<source_ids.size();){
+      if(ids[old]<source_ids[i])++old;
+      else if(source_ids[i]<ids[old])++i;
+      else{
+        if(available[i]>=required[old] && !p.old_pages[old].valid()){
+          HYLE_ASSIGN_OR_RETURN(auto prefix,source.page_prefix(std::uint32_t(ids[old])));
+          if(required[old]<available[i]){
+            HYLE_ASSIGN_OR_RETURN(auto bounded,prefix.subview(0,std::size_t(required[old])*p.row_bytes));
+            prefix=std::move(bounded);
+          }
+          p.old_pages[old]=std::move(prefix);
+        }
+        ++old;++i;
+      }
+    }
+  }
+  for(const auto&guard:p.old_pages)if(!guard.valid())
+    return Status::FailedPrecondition("paged append previous layout exceeds its source logical prefixes");
+  return Status::Ok();
+}
 }
 Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::BatchLayoutVersion next,
-    c::PagedArenaRead previous,std::span<c::PagedPageWriter>dirty,
-    std::span<c::PagedPageAppender>tails,bool appendable,PagedAppendOptions options)noexcept{
-  if(!arena.valid() || !next.valid() || !previous.valid() || !cd::PagedArenaAccess::owns(arena,previous) ||
+    c::BatchLayoutVersion previous,std::span<const c::PagedArenaFootprint>sources,
+    std::span<c::PagedPageWriter>dirty,std::span<c::PagedPageAppender>tails,
+    bool appendable,PagedAppendOptions options)noexcept{
+  if(!arena.valid() || !next.valid() || !previous.valid() ||
+      !cd::PagedArenaAccess::schema(arena).owns(previous) ||
       !cd::PagedArenaAccess::schema(arena).owns(next) || (dirty.empty() && tails.empty()) || !options.allocator.valid())
-    return std::unexpected(Status::InvalidArgument("paged append requires original arena, old frame, next layout and dirty pages"));
+    return std::unexpected(Status::InvalidArgument("paged append requires original arena, old layout, next layout and dirty pages"));
   auto allocator=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
   auto*p=allocator.construct<detail::PagedAppendData>(allocator);if(!p)return std::unexpected(Status::ResourceExhausted("paged append owner metadata"));
-  PagedAppendPages result(p);p->arena=std::move(arena);p->layout=std::move(next);p->previous=std::move(previous);p->appendable=appendable;
+  PagedAppendPages result(p);p->arena=std::move(arena);p->layout=std::move(next);p->previous_layout=std::move(previous);p->appendable=appendable;
   HYLE_ASSIGN_OR_RETURN(p->descriptor,paged_append(cd::PagedArenaAccess::schema(p->arena),cd::PagedArenaAccess::role(p->arena)));
   HYLE_ASSIGN_OR_RETURN(p->rows,row_description(p->descriptor,p->layout.facts().query_rows));HYLE_ASSIGN_OR_RETURN(auto row_bytes,p->rows.required_bytes());p->row_bytes=row_bytes/p->layout.facts().query_rows;
-  const auto cap=p->descriptor.schema.capacity();const auto old=p->previous.layout();
+  const auto cap=p->descriptor.schema.capacity();const auto old=p->previous_layout;
   if(!p->descriptor.schema.owns(old) || old.facts().requests!=p->layout.facts().requests)
     return std::unexpected(Status::InvalidArgument("paged append old/new request domains differ"));
   try{
@@ -142,7 +194,8 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
     p->writers.reserve(dirty.size());p->writer_ptrs.reserve(dirty.size());p->required.resize(count);p->targets.reserve(count);
     p->appenders.reserve(count);p->appender_ptrs.reserve(tails.size());
     p->ranges.reserve(std::size_t(p->layout.facts().query_rows)+count);
-    p->ready_pages.reserve(p->layout.facts().page_refs);
+    p->changed_pages.reserve(count);
+    HYLE_RETURN_IF_ERROR(retain_previous_pages(*p,sources));
     struct Fact final {const void*root;std::uint32_t page,initialized_rows,reserved_rows;mem::BufferView storage;};
     std::vector<Fact,mem::StdAllocator<Fact>>facts{mem::StdAllocator<Fact>(allocator)};facts.reserve(count);
     // Keep facts/writers in caller order: ranges and page() use that original
@@ -159,10 +212,9 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
     std::sort(writer_order.begin(),writer_order.end(),[&](auto a,auto b){return facts[a].page<facts[b].page;});
     for(std::size_t i=1;i<writer_order.size();++i)if(facts[writer_order[i-1]].page==facts[writer_order[i]].page)
       return std::unexpected(Status::InvalidArgument("paged append repeats a dirty original page"));
-    const auto old_pages=cd::PagedArenaAccess::pages(p->previous);const auto before=old.host(),after=p->layout.host();
-    // read_impl validated and canonicalized these immutable guards against
-    // this exact layout. Holding the frame prevents their pages from being
-    // reclaimed, so its cached footprint preserves the same guard ordinals.
+    const std::span<const c::ReadLease>old_pages=p->old_pages;const auto before=old.host(),after=p->layout.host();
+    // Exact selected source guards keep these original physical pages alive;
+    // no mutable Frame table is borrowed by the asynchronous Graph episode.
     HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(old));
     if(old_ids.size()!=old_pages.size())
       return std::unexpected(Status::Internal("paged append old frame footprint differs from its guards"));
@@ -220,20 +272,6 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
       if(facts[i].initialized_rows)return std::unexpected(Status::InvalidArgument("paged append dirty targets must be fresh uninitialized original pages"));}
     for(std::size_t i=dirty.size();i<facts.size();++i)if(!p->required[i])
       return std::unexpected(Status::InvalidArgument("paged append contains an unused tail authority"));
-    // This immutable layout already owns the canonical ID set, shared by all
-    // its banks. The footprint carries no permission; old guards and every
-    // dirty writer were independently checked above.
-    HYLE_ASSIGN_OR_RETURN(auto final_pages,cd::BatchLayoutAccess::page_footprint(p->layout));
-    // Retain exactly the untouched ready prefix now, using the two canonical
-    // ID sets. These are old readonly guards, not publication of dirty pages;
-    // ready() still requires whole-Graph success and publishes each writer.
-    for(std::size_t old_index=0,final_index=0;old_index<old_ids.size() && final_index<final_pages.size();){
-      const auto final_id=std::uint32_t(final_pages[final_index]);
-      const auto old_id=std::uint32_t(old_ids[old_index]);
-      if(old_id<final_id)++old_index;
-      else if(final_id<old_id)++final_index;
-      else{if(writer_index(final_id)==facts.size())p->ready_pages.push_back(old_pages[old_index]);++old_index;++final_index;}
-    }
     // Last fallible validation/allocation precedes consuming caller writers.
     for(std::size_t i=0;i<facts.size();++i)p->targets.push_back({facts[i].storage,facts[i].page,i<dirty.size()?0u:facts[i].initialized_rows});
     for(auto&writer:dirty)p->writers.push_back(std::move(writer));
@@ -244,20 +282,56 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
   }catch(...){return std::unexpected(Status::ResourceExhausted("paged append fixed metadata"));}
   return result;
 }
-Result<c::PagedArenaRead> PagedAppendPages::ready()noexcept{
-  if(!data_ || !data_->successful)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
-  auto&p=*data_;if(p.result.valid())return p.result;
+namespace {
+Status publish_changed_pages(detail::PagedAppendData&p)noexcept{
+  if(!p.successful)return Status::FailedPrecondition("paged append requires a successful retired whole Graph");
+  // Both vectors were reserved before consuming the caller's transactions.
+  // A failed publication is retryable: already published real guards remain
+  // here and consumed writers/reservations are skipped on the next call.
   for(std::size_t i=0;i<p.writers.size();++i){if(!p.writers[i].lease().valid())continue;
     if(p.appendable){
       HYLE_ASSIGN_OR_RETURN(auto ready,p.writers[i].publish_appendable(p.required[i]));
-      p.ready_pages.push_back(std::move(ready.prefix));
+      p.changed_pages.push_back(std::move(ready.prefix));
       if(ready.appender.valid())p.appenders.push_back(std::move(ready.appender));
-    }else{HYLE_ASSIGN_OR_RETURN(auto ready,p.writers[i].publish(p.required[i]));p.ready_pages.push_back(std::move(ready));}}
+    }else{HYLE_ASSIGN_OR_RETURN(auto ready,p.writers[i].publish(p.required[i]));p.changed_pages.push_back(std::move(ready));}}
   for(std::size_t i=0;i<p.input_appenders;++i){
     if(!p.appenders[i].valid() || !p.appenders[i].reserved_rows())continue;
-    HYLE_ASSIGN_OR_RETURN(auto ready,p.appenders[i].publish());p.ready_pages.push_back(std::move(ready));
+    HYLE_ASSIGN_OR_RETURN(auto ready,p.appenders[i].publish());p.changed_pages.push_back(std::move(ready));
   }
-  HYLE_ASSIGN_OR_RETURN(p.result,p.arena.read(p.layout,p.ready_pages));return p.result;
+  return Status::Ok();
+}
+}
+Result<c::PagedArenaRead> PagedAppendPages::ready()noexcept{
+  if(!data_ || !data_->successful)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
+  auto&p=*data_;if(p.result.valid())return p.result;
+  HYLE_RETURN_IF_ERROR(publish_changed_pages(p));
+  HYLE_ASSIGN_OR_RETURN(auto before,cd::BatchLayoutAccess::page_footprint(p.previous_layout));
+  HYLE_ASSIGN_OR_RETURN(auto after,cd::BatchLayoutAccess::page_footprint(p.layout));
+  try{
+    std::vector<c::ReadLease,mem::StdAllocator<c::ReadLease>>pages{mem::StdAllocator<c::ReadLease>(p.allocator)};
+    pages.reserve(after.size());
+    for(std::size_t old=0,next=0;old<before.size() && next<after.size();){
+      if(before[old]<after[next])++old;
+      else if(after[next]<before[old])++next;
+      else{
+        const auto changed=std::find_if(p.targets.begin(),p.targets.end(),[&](const auto&target){return target.page==std::uint32_t(after[next]);});
+        if(changed==p.targets.end())pages.push_back(p.old_pages[old]);
+        ++old;++next;
+      }
+    }
+    pages.insert(pages.end(),p.changed_pages.begin(),p.changed_pages.end());
+    HYLE_ASSIGN_OR_RETURN(p.result,p.arena.read(p.layout,pages));return p.result;
+  }catch(...){return std::unexpected(Status::ResourceExhausted("paged append immutable frame metadata"));}
+}
+Result<c::PagedArenaDelta> PagedAppendPages::ready_delta(c::PagedArenaFootprint expected,
+    c::BatchLayoutVersion accepted)noexcept{
+  if(!data_ || !data_->successful)return std::unexpected(Status::FailedPrecondition("paged append requires a successful retired whole Graph"));
+  auto&p=*data_;
+  if(!expected.valid() || !cd::PagedArenaAccess::owns(p.arena,expected) ||
+      !p.descriptor.schema.owns(accepted))
+    return std::unexpected(Status::InvalidArgument("paged append delta needs its original arena and accepted layout"));
+  HYLE_RETURN_IF_ERROR(publish_changed_pages(p));
+  return c::PagedArenaDelta::create(std::move(expected),std::move(accepted),p.changed_pages);
 }
 namespace detail {
 namespace {
@@ -364,7 +438,7 @@ const ProviderRegionPreparedVTable table{
        return cd::EnqueueResult::rejected(Status::FailedPrecondition("paged append native carriers differ from its prepared episode"));
      return artifact.native.enqueue(sequence,slot.bindings);
    }
-   bool accepted=false;const auto old=cd::PagedArenaAccess::pages(p->previous);
+   bool accepted=false;const auto old=std::span<const c::ReadLease>(p->old_pages);
    for(const auto&range:p->ranges){auto target=append_target(*p,range);if(!target)return {accepted,target.error()};
      Result<mem::ConstBufferView> source=range.prefix?old[range.source].view():inputs[0].storage().subview(range.source,range.bytes);
      if(!source)return {accepted,source.error()};
@@ -516,7 +590,7 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
   try{
     std::vector<cd::PagedAppendInstruction,mem::StdAllocator<cd::PagedAppendInstruction>>words{mem::StdAllocator<cd::PagedAppendInstruction>(allocator)};
     words.reserve(p.ranges.size());
-    HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(p.previous.layout()));
+    HYLE_ASSIGN_OR_RETURN(auto old_ids,cd::BatchLayoutAccess::page_footprint(p.previous_layout));
     std::uint64_t new_rows=0,prefix_rows=0;
     for(const auto&range:p.ranges){
       if(!range.bytes || range.bytes%p.row_bytes || range.destination%p.row_bytes || (!range.prefix && range.source%p.row_bytes))
@@ -619,7 +693,7 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
       return Status::InvalidArgument("native paged append original reserved suffix changed");
   }
   HYLE_ASSIGN_OR_RETURN(auto input_bytes,p->rows.required_bytes());
-  const auto old=cd::PagedArenaAccess::pages(p->previous);
+  const auto old=std::span<const c::ReadLease>(p->old_pages);
   try{
     std::vector<NativeAppendRange,mem::StdAllocator<NativeAppendRange>>ranges{mem::StdAllocator<NativeAppendRange>(p->allocator)};
     ranges.reserve(p->ranges.size());
@@ -682,7 +756,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection(invocation,graph,cache,capacity,
-      cd::PagedArenaAccess::pages(p.previous),p.writer_ptrs,p.appender_ptrs,f.proof,readers,controls,options));
+      std::span<const c::ReadLease>(p.old_pages),p.writer_ptrs,p.appender_ptrs,f.proof,readers,controls,options));
   f.slot->cache=cache;f.slot->writer_only=false;f.slot->writer_queue={};f.slot->pages=std::move(pages);return Status::Ok();
 }
 Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId node,PagedAppendPages&&pages,
@@ -708,7 +782,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queued->queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
-      cd::PagedArenaAccess::pages(p.previous),p.writer_ptrs,p.appender_ptrs,f.proof,controls,options));
+      std::span<const c::ReadLease>(p.old_pages),p.writer_ptrs,p.appender_ptrs,f.proof,controls,options));
   f.slot->cache={};f.slot->writer_only=true;f.slot->writer_queue=queued->queue;f.slot->pages=std::move(pages);return Status::Ok();
 }
 Result<PagedAppendPages>PagedAppendAccess::take(Invocation&invocation,NodeId node)noexcept{

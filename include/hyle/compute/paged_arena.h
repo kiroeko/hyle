@@ -217,6 +217,8 @@ public:
   HYLE_COMPUTE_BATCH_API Status page_prefixes(std::span<ReadLease> output)const noexcept;
 private:
   friend class PagedArena;
+  friend class PagedArenaFrame;
+  friend class PagedArenaFootprint;
   friend struct detail::PagedArenaAccess;
   explicit PagedArenaRead(detail::PagedArenaReadData*p)noexcept:data_(p){}
   detail::PagedArenaReadData*data_=nullptr;

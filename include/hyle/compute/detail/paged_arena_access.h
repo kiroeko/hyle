@@ -1,5 +1,6 @@
 #pragma once
 #include "hyle/compute/paged_arena.h"
+#include "hyle/compute/paged_frame.h"
 #include "hyle/compute/detail/copy_stream_access.h"
 #include "hyle/mem/std_allocator.h"
 #include <vector>
@@ -74,6 +75,13 @@ struct PagedArenaAccess final {
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaRead&) noexcept;
+  HYLE_COMPUTE_BATCH_API static bool owns(const PagedArena&,const PagedArenaFootprint&) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaFootprint&) noexcept;
+  // Unique physical IDs in the footprint's canonical sorted order. Trusted
+  // adapters only: guards may cover more bytes than their logical layout.
+  // The adapter must retain/admit actual leases; never cache this mutable view.
+  HYLE_COMPUTE_BATCH_API static Status collect_pages(const PagedArenaFootprint&,
+      std::span<ReadLease>) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ConstTensorView> tensor(const PagedArenaPendingRead&) noexcept;
   HYLE_COMPUTE_BATCH_API static Status validate_storage(const PagedArenaPendingRead&,const CacheStorage&) noexcept;
   HYLE_COMPUTE_BATCH_API static std::span<const ReadLease> pages(const PagedArenaPendingRead&) noexcept;

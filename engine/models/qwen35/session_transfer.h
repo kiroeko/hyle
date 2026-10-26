@@ -12,7 +12,7 @@ inline void idle(Model &model, Session *session = nullptr) {
     throw std::runtime_error("complete state transfer requires an idle live committed model boundary");
 }
 
-inline void check_frame(const c::PagedArenaRead &frame, const std::vector<cache::PageRef> &pages,
+inline void check_frame(const c::PagedArenaFrame &frame, const std::vector<cache::PageRef> &pages,
     std::size_t length) {
   if (!frame.valid() || frame.page_count() != pages.size())
     throw std::runtime_error("host image frame has an incomplete page inventory");
@@ -130,7 +130,7 @@ inline std::shared_ptr<const cache::HostImage> Model::export_session(Session &se
   for (std::size_t slot = 0; slot < target_kv_layers; ++slot)
     for (const auto *frame : {&head.keys[slot], &head.values[slot]}) {
       session_transfer::check_frame(*frame, head.pages, head.length);
-      check(frame->page_prefixes(bank));
+      check(take(frame->view()).page_prefixes(bank));
       for (const auto &lease : bank) copies[cursor++].source = lease;
     }
   for (const auto &part : schema.recurrent) {
@@ -143,7 +143,7 @@ inline std::shared_ptr<const cache::HostImage> Model::export_session(Session &se
     bank.resize(head.draft->pages.size());
     for (const auto *frame : {&head.draft->key, &head.draft->value}) {
       session_transfer::check_frame(*frame, head.draft->pages, head.draft->frontier);
-      check(frame->page_prefixes(bank));
+      check(take(frame->view()).page_prefixes(bank));
       for (const auto &lease : bank) copies[cursor++].source = lease;
     }
   }
@@ -241,10 +241,10 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
   }
   const auto target_layout = session_transfer::layout(*this, state.pages, state.length);
   for (std::size_t slot = 0; slot < target_kv_layers; ++slot) {
-    state.keys[slot] = take(page_inventory.keys[slot].read(target_layout,
-        std::span(scope->readers).subspan(slot * 2 * page_count, page_count)));
-    state.values[slot] = take(page_inventory.values[slot].read(target_layout,
-        std::span(scope->readers).subspan((slot * 2 + 1) * page_count, page_count)));
+    state.keys[slot] = working_frame(take(page_inventory.keys[slot].read(target_layout,
+        std::span(scope->readers).subspan(slot * 2 * page_count, page_count))));
+    state.values[slot] = working_frame(take(page_inventory.values[slot].read(target_layout,
+        std::span(scope->readers).subspan((slot * 2 + 1) * page_count, page_count))));
   }
   for (std::size_t i = 0; i < count; ++i) switch (parts[i].role) {
     case cache::HostPayloadRole::kConvHistory: state.state[parts[i].layer].history = scope->readers[i]; break;
@@ -255,10 +255,10 @@ inline std::shared_ptr<Session> Model::restore_session(std::shared_ptr<const cac
   }
   if (state.draft) {
     const auto draft_layout = session_transfer::layout(*this, state.draft->pages, state.draft->frontier);
-    state.draft->key = take(draft_inventory.keys[0].read(draft_layout,
-        std::span(scope->readers).subspan(draft_begin, draft_pages)));
-    state.draft->value = take(draft_inventory.values[0].read(draft_layout,
-        std::span(scope->readers).subspan(draft_begin + draft_pages, draft_pages)));
+    state.draft->key = working_frame(take(draft_inventory.keys[0].read(draft_layout,
+        std::span(scope->readers).subspan(draft_begin, draft_pages))));
+    state.draft->value = working_frame(take(draft_inventory.values[0].read(draft_layout,
+        std::span(scope->readers).subspan(draft_begin + draft_pages, draft_pages))));
   }
   validate_mtp_snapshot(state);
   // Registration and every fallible complete-boundary check precede visibility

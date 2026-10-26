@@ -297,7 +297,7 @@ inline hyle::Status validate_host_image_source(const HostImageSchema &schema, co
   if (evaluated.keys.size() != schema.attention.size() || evaluated.values.size() != schema.attention.size() ||
       evaluated.state.size() != schema.geometry.layers.size() || evaluated.pages.size() != host_image_detail::page_count(evaluated.length))
     return hyle::Status::InvalidArgument("host image source has incomplete target inventories");
-  const auto frame = [](const c::PagedArenaRead &read, std::span<const PageRef> pages, std::size_t rows) {
+  const auto frame = [](const c::PagedArenaFrame &read, std::span<const PageRef> pages, std::size_t rows) {
     if (!read.valid()) return false;
     const auto version = read.layout(); const auto facts = version.facts();
     if (facts.requests != 1 || facts.kv_rows != rows || facts.page_refs != pages.size()) return false;
