@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 03:00（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **66%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 03:05（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **67%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -15,10 +15,10 @@
   - 请求／兼容合批／接纳与缓存编排：约80%（共同循环与取消／交付已实现，有限检查通过）
   - 模型适配、错误类别与输出合同：约60%（取消／交付已接线，有限检查通过）
   - SDK／Provider／依赖与诊断组织：约65%（已补公开页导出、冻结、Completion／CopyBatch保活及Context身份，有限检查通过）
-- 稳态状态协议：约69%（实现中）
+- 稳态状态协议：约70%（实现中）
   - 持续工作态与按需导出不可变快照：约90%（KV已接持续工作帧与按需封存，有限检查通过）
   - KV持续工作帧及无失败事务发布：100%（本批实现完成，Windows／Apple有限功能检查及B2对照完成）
-  - 原生 GDN／conv 的版本化双缓冲与索引状态：约74%（CUDA融合及跨后端槽绑定已有限检查，CPU默认padding已补；原生字节尾部、conv及引擎待完成）
+  - 原生 GDN／conv 的版本化双缓冲与索引状态：约77%（CUDA GDN融合及跨后端槽绑定已有限检查，CPU默认padding与Apple字节尾部已补；Vulkan尾部、conv及引擎待完成）
   - MTP 稳定状态槽及接受／回滚接线：0%（待实现）
 - 其它底层功能补齐：约50%（实现中）
   - 长度分桶、启动预热政策与异长批次：约10%（设计中，已确认真实分块与活跃长度边界）
@@ -35,7 +35,7 @@
 
 ## 正在做
 
-- 稳定状态的可移植引擎接线：约60%（所属：稳态状态协议／索引状态；CPU默认padding已有限检查，正在检查Apple精确字节尾部，并核conv原精度history的冷融合形状；Vulkan字节尾部和完整引擎尚未完成）。
+- 稳定状态的可移植引擎接线：约65%（所属：稳态状态协议／索引状态；正在确定conv原精度history的原生索引合同和引擎统一接线。CPU默认padding与Apple精确字节尾部已有限检查；Vulkan字节尾部、逐层metadata等待及完整引擎尚未完成）。
 
 剩余大项仍包括原生GDN／conv稳定状态、MTP稳定状态槽、形状政策及重叠执行，不能以KV完成代签这些工作。
 
@@ -53,9 +53,11 @@
 
 [可移植源绑定](../evidence/correctness/inference-slot-source-fallback-2026-10-27.json)本批11项有限检查通过：共同冷准备按原Graph关联Store／Gather，CPU稠密及padding源槽可取回重用，替换源ID前先确认合法准备成功、替换后拒绝；CUDA原两融合及公开Gather结果后的默认fallback均与原稠密状态逐位一致。默认CCCL叶子缺失的读取资格已补，未强制换Provider。首次CPU缺输出绑定、CUDA测试误以为无用节点会裁掉，以及缺资格的原失败均保留；通过结果分属实际镜像，不声称同一最终镜像重跑全组。ggml叶子资格已补但本批未单独命中，尚未接引擎／conv或证明提速。
 
-[原生槽写入](../evidence/correctness/inference-native-slot-store-2026-10-27.json)新增Apple 3项（4种载荷）与Vulkan 3项有限检查通过，共同层另有原CPU／CUDA 11项回归通过。三种实际镜像分别记录；共同层回归后的默认初始化拼写修正另经两原生镜像编译，不冒称全组在同一源码镜像重跑。原生路径复用唯一槽事务、原ExecutionSource、FIFO／Completion及真实退休，不伪造Compute Queue；普通Gather保留实际stride、原精度及选行权限。检查覆盖生成结果、结果保活、未选槽／padding和reset回收；当前原生Store仅接4字节对齐item／offset，不把此限制称为硬件上限。CPU默认ggml的padding读取、原生精确字节尾部、conv与完整引擎接线仍待补，未测模型或新速度。
+[原生槽写入](../evidence/correctness/inference-native-slot-store-2026-10-27.json)窗口中，新增Apple 3项（4种载荷）与Vulkan 3项有限检查通过，共同层另有原CPU／CUDA 11项回归通过。三种实际镜像分别记录；共同层回归后的默认初始化拼写修正另经两原生镜像编译，不冒称全组在同一源码镜像重跑。原生路径复用唯一槽事务、原ExecutionSource、FIFO／Completion及真实退休，不伪造Compute Queue；普通Gather保留实际stride、原精度及选行权限。该窗口覆盖生成结果、结果保活、未选槽／padding和reset回收，只检查4字节对齐item／offset；其后CPU与Apple补充见下，conv与完整引擎仍未完成。
 
 [CPU默认选行](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)已补上述CPU缺口，11项有限检查通过：普通Compute／Graph按存储格式复用Native原码选行，保留padding行stride，避免整池CONT及F16／BF16经F32往返；新规则不依赖模型、硬件或Store注解，稠密F32和已有实测规则保留。检查包含默认槽投影、两种普通入口、原7项槽合同和一项既有路由回归，未测模型或速度。仅增量编译5个单元；保留测试编译失败与离线XML汇总修正，不重跑已通过进程。
+
+[Apple精确字节范围](../evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.json)5项有限检查通过：原3项Graph回归，加生成的BF16 2／6字节行及原FIFO拷贝合同。实际对齐范围仍有2次native blit，2字节范围为精确host copy；全部实际范围和别名先验后才写，源失败不重算。保留原事务、结果保活、真实退休及reset回收，不读写额外padding。只增量编译3个单元，保留两次验证配方缺头文件／搜索路径失败；未跑模型、性能或原生故障注入。Vulkan尾部仍需真正的原码索引／copy承载，不能仅放宽4字节transfer门。
 
 KV工作帧已接通Compute、Graph及引擎：41项页存储检查、23组前缀／工作态检查、7个CPU／Vulkan／CUDA功能进程和4个递归MTP对照进程通过。Apple复用缓存增量编译11个单元，tiny普通／MTP及lag1两次运行通过，状态字节、续算、旧快照及最终资源归零一致。旧快照、失败边界、封存失败与较短接受前缀均有有限覆盖；[Windows功能记录](../evidence/correctness/inference-paged-frame-2026-10-26.json)和[Apple功能记录](../evidence/correctness/inference-paged-frame-macos-2026-10-26.json)保留原失败和未验证项。本批没有新Linux运行，4个诊断probe虽已适配但未单独编译；有限检查不代表全平台与模型质量穷尽。
 

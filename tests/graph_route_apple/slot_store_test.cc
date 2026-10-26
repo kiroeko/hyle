@@ -12,6 +12,7 @@
 #include "hyle/graph/apple.h"
 #include "hyle/graph/result.h"
 #include "hyle/graph/slots.h"
+#include "../../src/compute_route_apple/apple_copy_internal.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -21,9 +22,9 @@ namespace s = g::slots;
 
 constexpr std::size_t kElements = 4, kSlots = 5;
 
-std::vector<std::byte> values(c::DataType type, bool second) {
+std::vector<std::byte> values(c::DataType type, bool second, std::size_t elements) {
   const auto unit = c::data_type_size(type);
-  std::vector<std::byte> bytes(kElements * unit);
+  std::vector<std::byte> bytes(elements * unit);
   if (unit == 4) {
     const auto words = second
         ? std::array<std::uint32_t, 4>{0x40000000, 0xbf800000, 1, 0xff800000}
@@ -53,16 +54,19 @@ template<class Lease> std::vector<std::byte> read(const Lease &lease) {
 // A real native producer supplies Store rows. Only two exact source item
 // leases are readable; padding and other pool items have no Graph read rights.
 // No Compute Context/Queue is manufactured for the native route.
-void exercise(c::DataType type, std::size_t stride, bool reset_before_submit) {
+void exercise(c::DataType type, std::size_t stride, bool reset_before_submit,
+    std::size_t elements = kElements) {
   SCOPED_TRACE(::testing::Message() << "dtype=" << static_cast<unsigned>(type)
-      << " stride=" << stride << " reset=" << reset_before_submit);
+      << " elements=" << elements << " stride=" << stride << " reset=" << reset_before_submit);
+  ASSERT_GT(elements, 0u);
+  ASSERT_LE(elements, kElements);
   auto created = a::Context::create();
   ASSERT_TRUE(created) << created.error().message();
   auto context = std::move(*created);
   auto memory = a::MemoryResource::create(context);
   ASSERT_TRUE(memory) << memory.error().message();
   const auto item = c::TensorDesc::dense(type,
-      std::array<std::int64_t, 1>{kElements}).value();
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(elements)}).value();
   const auto bytes = item.required_bytes().value();
   ASSERT_GE(stride, bytes);
   auto pool_created = c::LeasePool::create(memory->ref(), kSlots * stride,
@@ -91,7 +95,7 @@ void exercise(c::DataType type, std::size_t stride, bool reset_before_submit) {
       padding.push_back(std::move(*ready));
     }
   }
-  const auto first = values(type, false), second = values(type, true);
+  const auto first = values(type, false, elements), second = values(type, true, elements);
   ASSERT_TRUE(blocks[1].view()->write(first).ok());
   ASSERT_TRUE(blocks[3].view()->write(second).ok());
   ASSERT_TRUE(blocks[2].view()->write(sentinel).ok());
@@ -178,5 +182,78 @@ TEST(AppleSlotStore, PaddedGeneratedRowsPreserveHalfAndBfloatHistoryBits) {
 }
 TEST(AppleSlotStore, ResetRevokesNativeWritesAndReturnsOriginalTransaction) {
   exercise(c::DataType::kFloat32, 64, true);
+}
+TEST(AppleSlotStore, ByteTailGeneratedRowsPreserveBfloatBitsAndPadding) {
+  exercise(c::DataType::kBFloat16, 64, false, 1); // exact 2-byte rows
+  exercise(c::DataType::kBFloat16, 64, false, 3); // odd element count, including NaN/negative zero
+}
+TEST(AppleSlotStore, ExactHostRangesKeepAlignedBlitsAndRejectAnInvalidTailBeforeWriting) {
+  namespace ad = a::detail;
+  namespace m = hyle::mem;
+  auto created = a::Context::create();
+  ASSERT_TRUE(created) << created.error().message();
+  auto context = std::move(*created);
+  auto memory = a::MemoryResource::create(context);
+  ASSERT_TRUE(memory) << memory.error().message();
+  auto source_created = m::Buffer::create(memory->ref(), 8, 4);
+  ASSERT_TRUE(source_created) << source_created.error().message();
+  auto source_buffer = std::move(*source_created);
+  auto target_created = m::Buffer::create(memory->ref(), 16, 4);
+  ASSERT_TRUE(target_created) << target_created.error().message();
+  auto target = std::move(*target_created);
+  const std::array<std::byte, 8> input{std::byte{0x81}, std::byte{0x3f}, std::byte{0x00},
+      std::byte{0x80}, std::byte{0xc1}, std::byte{0x7f}, std::byte{0x01}, std::byte{0x00}};
+  ASSERT_TRUE(source_buffer.view().write(input).ok());
+  const auto description = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 1>{4}).value();
+  const auto source = c::ConstTensorView::create(description, source_buffer.view()).value();
+  auto copy_created = ad::prepare_copy_recording_runtime(ad::ContextAccess::runtime(context), 2,
+      m::system_allocator(), input.size(), ad::CopyRecordingMode::kReplayable);
+  ASSERT_TRUE(copy_created) << copy_created.error().message();
+  auto copy = std::move(*copy_created);
+  const std::array aligned{ad::HostCopyRange{0, target.view().subview(0, 4).value()},
+      ad::HostCopyRange{4, target.view().subview(8, 4).value()}};
+  std::vector<std::byte> unchanged(16, std::byte{0xa5}), actual(16);
+  ASSERT_TRUE(target.view().write(unchanged).ok());
+  auto status = ad::bind_host_copy_ranges(*copy, source, aligned);
+  ASSERT_TRUE(status.ok()) << status.message();
+  {
+    auto completion = ad::submit_copy_recording(*copy);
+    ASSERT_TRUE(completion) << completion.error().message();
+    status = completion->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+  }
+  EXPECT_EQ(ad::copy_recording_report(*copy).native_calls, 2u);
+  auto expected = unchanged;
+  std::memcpy(expected.data(), input.data(), 4);
+  std::memcpy(expected.data() + 8, input.data() + 4, 4);
+  ASSERT_TRUE(target.view().read(actual).ok());
+  EXPECT_EQ(actual, expected);
+
+  const std::array tails{ad::HostCopyRange{2, target.view().subview(2, 2).value()},
+      ad::HostCopyRange{6, target.view().subview(10, 2).value()}};
+  ASSERT_TRUE(target.view().write(unchanged).ok());
+  status = ad::bind_host_copy_ranges(*copy, source, tails);
+  ASSERT_TRUE(status.ok()) << status.message();
+  {
+    auto completion = ad::submit_copy_recording(*copy);
+    ASSERT_TRUE(completion) << completion.error().message();
+    status = completion->wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+  }
+  EXPECT_EQ(ad::copy_recording_report(*copy).native_calls, 0u);
+  expected = unchanged;
+  std::memcpy(expected.data() + 2, input.data() + 2, 2);
+  std::memcpy(expected.data() + 10, input.data() + 6, 2);
+  ASSERT_TRUE(target.view().read(actual).ok());
+  EXPECT_EQ(actual, expected);
+
+  const std::array invalid_tail{tails[0], ad::HostCopyRange{7, tails[1].destination}};
+  ASSERT_TRUE(target.view().write(unchanged).ok());
+  status = ad::bind_host_copy_ranges(*copy, source, invalid_tail);
+  EXPECT_TRUE(status.IsOutOfRange()) << status.message();
+  EXPECT_FALSE(ad::submit_copy_recording(*copy));
+  ASSERT_TRUE(target.view().read(actual).ok());
+  EXPECT_EQ(actual, unchanged);
 }
 } // namespace

@@ -59,6 +59,21 @@ HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_recording(CopyRecording &,
     InputSource, const TensorDesc &, mem::BufferView destination) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_recording(CopyRecording &,
     ConstTensorView source, mem::BufferView destination, ReadLease source_owner = {}) noexcept;
+// Exact ranges from one dense logical source into original, same-device shared
+// Metal destinations. Destination.size() is the entire writable span; neither
+// source allocation padding nor destination capacity outside that span is used.
+// All coordinates/aliases are checked before any write. The original FIFO Job
+// uses the existing blit only when every actual range meets its 4-byte contract;
+// otherwise it copies the exact bytes through the already coherent host maps.
+// Callers retain the real read/write lease authority through actual retirement.
+struct HostCopyRange final {
+  std::size_t source_offset = 0;
+  mem::BufferView destination;
+};
+HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
+    InputSource, const TensorDesc &, std::span<const HostCopyRange>) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Status bind_host_copy_ranges(CopyRecording &,
+    ConstTensorView source, std::span<const HostCopyRange>, ReadLease source_owner = {}) noexcept;
 HYLE_COMPUTE_ROUTE_APPLE_API Status copy_recording_reuse_gate(const CopyRecording &) noexcept;
 // Cleanup only: actual owners must be retired, but failed terminal work may
 // release imports without reopening its execution slot.

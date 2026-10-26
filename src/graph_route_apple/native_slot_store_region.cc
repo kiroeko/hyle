@@ -35,17 +35,16 @@ struct Artifact final {
 };
 struct Slot final {
   explicit Slot(mem::AllocatorRef allocator, Artifact &owner)
-      : artifact(owner), copies(mem::StdAllocator<cd::CopyBackendRange>(allocator)) {}
+      : artifact(owner), copies(mem::StdAllocator<an::HostCopyRange>(allocator)) {}
   // This is the sole original lease transaction. Native references and the
   // recording are destroyed first, even when a public Completion is abandoned.
   sd::StoreBinding binding;
   Artifact &artifact;
-  Vector<cd::CopyBackendRange> copies;
+  Vector<an::HostCopyRange> copies;
   sd::StoreConfiguration configuration;
   compute::ConstTensorView rows;
   compute::ReadLease rows_owner;
   an::InputSource source;
-  an::CopySpan resolved_rows;
   bool configured = false, bound = false, sealed = false;
   std::shared_ptr<an::CopyRecording> recording;
 };
@@ -59,47 +58,11 @@ bool same_range(mem::ConstBufferView a, mem::ConstBufferView b) noexcept {
   return a.resource() == b.resource() && a.native_handle() == b.native_handle() &&
       a.offset() == b.offset() && a.size() == b.size();
 }
-bool overlaps(const cd::PhysicalCopyResource &a, const cd::PhysicalCopyResource &b) noexcept {
-  if (a.address_space != b.address_space || a.backing != b.backing || !a.capacity || !b.capacity)
-    return false;
-  return a.origin <= b.origin ? b.origin - a.origin < a.capacity : a.origin - b.origin < b.capacity;
-}
 Status clear_native(Slot &slot) noexcept {
   HYLE_RETURN_IF_ERROR(an::clear_copy_recording(*slot.recording));
   slot.source.reset(); slot.rows_owner.reset(); slot.rows = {};
   slot.bound = false; slot.sealed = false;
   return Status::Ok();
-}
-Status check_rows(Slot &slot, const an::CopySpan &rows) noexcept {
-  if (rows.physical.capacity != slot.artifact.input_bytes ||
-      rows.physical.origin % rows.physical.copy_alignment ||
-      rows.physical.capacity % rows.physical.copy_alignment)
-    return Status::InvalidArgument("Apple Store needs its exact aligned logical rows");
-  for (const auto &copy : slot.copies) {
-    HYLE_ASSIGN_OR_RETURN(auto destination, an::copy_span(copy.destination, mem::HostAccess::kWrite));
-    if (overlaps(rows.physical, destination.physical))
-      return Status::InvalidArgument("Apple Store rows overlap an original destination");
-  }
-  return Status::Ok();
-}
-Result<an::CopySpan> resolve_row(void *opaque, std::size_t index) noexcept {
-  auto &slot = *static_cast<Slot *>(opaque);
-  if (index >= slot.copies.size())
-    return std::unexpected(Status::OutOfRange("Apple Store copy index"));
-  auto source = slot.resolved_rows;
-  const auto offset = index * slot.artifact.item_bytes;
-  if (offset > source.physical.capacity || slot.artifact.item_bytes > source.physical.capacity - offset ||
-      offset > SIZE_MAX - source.physical.origin)
-    return std::unexpected(Status::OutOfRange("Apple Store source exceeds actual logical rows"));
-  source.physical.origin += offset;
-  source.physical.capacity = slot.artifact.item_bytes;
-  return source;
-}
-Status preflight(void *opaque) noexcept {
-  auto &slot = *static_cast<Slot *>(opaque);
-  HYLE_ASSIGN_OR_RETURN(slot.resolved_rows, an::native_copy_source(*slot.recording));
-  HYLE_RETURN_IF_ERROR(check_rows(slot, slot.resolved_rows));
-  return an::resolve_result_copy_recording(*slot.recording, slot.copies, &resolve_row, &slot);
 }
 Status bind(void *prepared, void *opaque, std::span<const RegionValue> inputs,
     std::span<const compute::TensorView> outputs) noexcept {
@@ -121,19 +84,14 @@ Status bind(void *prepared, void *opaque, std::span<const RegionValue> inputs,
     return Status::FailedPrecondition("Apple Store has no current original writers");
   for (std::size_t i = 0; i < slot.copies.size(); ++i) {
     HYLE_ASSIGN_OR_RETURN(auto target, transaction->destinations()[i].view());
-    HYLE_ASSIGN_OR_RETURN(auto physical, an::copy_span(target, mem::HostAccess::kWrite));
-    if (target.resource() != artifact.facts.resource || target.size() != artifact.item_bytes ||
-        physical.physical.origin % physical.physical.copy_alignment ||
-        target.size() % physical.physical.copy_alignment)
-      return Status::InvalidArgument("Apple Store destination is not its exact aligned original writer");
-    slot.copies[i] = {target, {}};
+    if (target.resource() != artifact.facts.resource || target.size() != artifact.item_bytes)
+      return Status::InvalidArgument("Apple Store destination is not its exact original writer");
+    slot.copies[i] = {i * artifact.item_bytes, target};
   }
   const auto &input = inputs[artifact.rows_port];
   if (input.reference.valid()) {
     HYLE_ASSIGN_OR_RETURN(slot.source, native_output_source(input.reference, artifact.runtime, artifact.rows));
-    HYLE_RETURN_IF_ERROR(an::bind_result_copy_recording(*slot.recording, slot.copies));
-    HYLE_RETURN_IF_ERROR(an::bind_native_copy_source(*slot.recording, slot.source, artifact.rows));
-    HYLE_RETURN_IF_ERROR(an::set_copy_preflight(*slot.recording, &preflight, &slot));
+    HYLE_RETURN_IF_ERROR(an::bind_host_copy_ranges(*slot.recording, slot.source, artifact.rows, slot.copies));
   } else {
     if (!input.tensor.valid() || input.tensor.description() != artifact.rows)
       return Status::InvalidArgument("Apple Store has no concrete or native rows carrier");
@@ -146,13 +104,8 @@ Status bind(void *prepared, void *opaque, std::span<const RegionValue> inputs,
         return Status::InvalidArgument("Apple Store lease does not cover its actual rows");
       HYLE_ASSIGN_OR_RETURN(slot.rows_owner, input.lease->subview(rows.offset() - owner.offset(), rows.size()));
     }
-    HYLE_ASSIGN_OR_RETURN(auto physical, an::copy_span(rows, mem::HostAccess::kRead));
-    HYLE_RETURN_IF_ERROR(check_rows(slot, physical));
-    for (std::size_t i = 0; i < slot.copies.size(); ++i) {
-      HYLE_ASSIGN_OR_RETURN(slot.copies[i].source, rows.subview(i * artifact.item_bytes, artifact.item_bytes));
-    }
-    HYLE_RETURN_IF_ERROR(an::bind_copy_recording(*slot.recording, slot.copies, true));
-    HYLE_RETURN_IF_ERROR(an::set_copy_preflight(*slot.recording, nullptr, nullptr));
+    HYLE_RETURN_IF_ERROR(an::bind_host_copy_ranges(*slot.recording, input.tensor, slot.copies,
+        std::move(slot.rows_owner)));
     slot.rows = input.tensor;
   }
   slot.bound = true;
@@ -277,9 +230,9 @@ Result<Artifact> describe(const RegionCompileRequest &request) noexcept {
   const auto count = static_cast<std::size_t>(artifact.rows.dimensions()[0]);
   if (!count) return std::unexpected(Status::Unimplemented("Apple Store requires positive row count"));
   artifact.item_bytes = artifact.input_bytes / count;
-  if (count > UINT32_MAX || !artifact.item_bytes || artifact.item_bytes % 4 ||
-      artifact.input_bytes % 4 || artifact.input_bytes > static_cast<std::size_t>(PTRDIFF_MAX))
-    return std::unexpected(Status::Unimplemented("Apple Store logical rows must be Metal-blit aligned"));
+  if (count > UINT32_MAX || !artifact.item_bytes ||
+      artifact.input_bytes > static_cast<std::size_t>(PTRDIFF_MAX))
+    return std::unexpected(Status::Unimplemented("Apple Store logical rows exceed native copy limits"));
   artifact.rows_port = static_cast<std::uint32_t>(rows - request.inputs.begin());
   artifact.facts = {.store = request.nodes[0], .schema = store->schema,
       .destination_indices = ids_value, .destination_input_port = static_cast<std::uint32_t>(ids - request.inputs.begin()),

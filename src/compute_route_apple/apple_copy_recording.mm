@@ -20,11 +20,16 @@ struct CopyCommand final {
   void *source = nullptr, *destination = nullptr;
   std::size_t source_offset = 0, destination_offset = 0, bytes = 0;
 };
+struct HostCopyTarget final {
+  mem::HostMapping mapping;
+  std::span<std::byte> bytes;
+};
 struct CopyRecording final : Job {
   explicit CopyRecording(mem::AllocatorRef allocator)
       : physical(mem::StdAllocator<cd::PhysicalCopyResource>(allocator)),
         inputs(mem::StdAllocator<CopyRange>(allocator)), intervals(mem::StdAllocator<cd::CopyInterval>(allocator)),
-        resolved(mem::StdAllocator<cd::ResolvedCopyRange>(allocator)), commands(mem::StdAllocator<CopyCommand>(allocator)) {}
+        resolved(mem::StdAllocator<cd::ResolvedCopyRange>(allocator)), commands(mem::StdAllocator<CopyCommand>(allocator)),
+        host_targets(mem::StdAllocator<HostCopyTarget>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
   // Both the original worker and public Completion hold a preallocated slot.
   // The worker owner is moved locally before done becomes visible.
@@ -58,6 +63,8 @@ struct CopyRecording final : Job {
   CopyArray<cd::CopyInterval> intervals;
   CopyArray<cd::ResolvedCopyRange> resolved;
   CopyArray<CopyCommand> commands;
+  CopyArray<HostCopyTarget> host_targets;
+  std::size_t host_range_count = 0;
   std::array<std::uint64_t, 1> closure{};
 };
 namespace {
@@ -79,34 +86,112 @@ void finish(CopyRecording &state, Status terminal) noexcept {
   platform::detail::wake_all(&state.done);
   deliver(abandoned, std::move(terminal), hint);
 }
-Status execute_host_copy(CopyRecording &state) noexcept {
-  const void *source = nullptr;
-  std::optional<mlx::core::array> output;
+// Only the original FIFO owner may resolve a pinned producer. The pin keeps
+// its successfully produced array and actual backing alive through finish().
+Result<CopySpan> resolve_native_source(CopyRecording &state) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto output, InvocationAccess::source_output(
+      state.host_source, state.runtime, state.expected_epoch));
+  if (output.shape() != state.host_spec.shape || output.dtype() != state.host_spec.dtype ||
+      !output.flags().row_contiguous || output.nbytes() != state.host_bytes)
+    return std::unexpected(Status::InvalidArgument("Apple native copy producer layout changed"));
+  HYLE_ASSIGN_OR_RETURN(auto storage, MemoryAccess::storage_info(output));
+  if (storage.view_bytes != state.host_bytes)
+    return std::unexpected(Status::InvalidArgument("Apple native copy producer byte span differs"));
+  // The original single-destination API accepts an empty producer without
+  // manufacturing a backing or dereferencing its nil Metal buffer.
+  if (!state.host_bytes)
+    return CopySpan{const_cast<void *>(storage.buffer), {state.device,
+        reinterpret_cast<std::uintptr_t>(storage.buffer), storage.offset_bytes, 0, 4}};
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
+  if (buffer == nil || buffer.storageMode != MTLStorageModeShared ||
+      (state.host_bytes && buffer.contents == nullptr) || storage.offset_bytes > buffer.length ||
+      storage.view_bytes != state.host_bytes || storage.view_bytes > buffer.length - storage.offset_bytes ||
+      reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device) != state.device)
+    return std::unexpected(Status::InvalidArgument("Apple native copy producer backing/Device differs"));
+  return CopySpan{const_cast<void *>(storage.buffer), {state.device,
+      reinterpret_cast<std::uintptr_t>(storage.buffer), storage.offset_bytes, storage.view_bytes, 4}};
+}
+bool overlaps(const cd::PhysicalCopyResource &a, const cd::PhysicalCopyResource &b) noexcept {
+  if (a.address_space != b.address_space || a.backing != b.backing || !a.capacity || !b.capacity)
+    return false;
+  return a.origin <= b.origin ? b.origin - a.origin < a.capacity : a.origin - b.origin < b.capacity;
+}
+Result<CopyBatchReport> validate_host_ranges(CopyRecording &state,
+    cd::PhysicalCopyResource source, bool unresolved_source = false) noexcept {
+  // This byte alignment describes host access only. copy_span and every
+  // existing native blit path retain their original 4-byte contract.
+  source.copy_alignment = 1;
+  state.physical[0] = source;
+  if (!unresolved_source) {
+    for (std::size_t index = 0; index < state.host_range_count; ++index)
+      if (overlaps(source, state.physical[index + 1]))
+        return std::unexpected(Status::InvalidArgument("Apple host ranges overlap their logical source"));
+  }
+  const std::array<CopyPhase, 1> phases{{{}}};
+  const std::array deferred{CopyResourceId{0}};
+  return cd::validate_copy_ranges(std::span(state.physical).first(state.host_range_count + 1),
+      phases, std::span(state.inputs).first(state.host_range_count), state.limits,
+      {state.intervals, state.resolved, state.closure},
+      unresolved_source ? std::span<const CopyResourceId>(deferred) : std::span<const CopyResourceId>{});
+}
+Status execute_host_copy(CopyRecording &state, bool *use_blit) noexcept {
+  *use_blit = false;
+  const std::byte *source = nullptr;
+  CopySpan physical;
   if (state.host_source.valid()) {
-    HYLE_ASSIGN_OR_RETURN(output, InvocationAccess::source_output(
-        state.host_source, state.runtime, state.expected_epoch));
-    if (output->shape() != state.host_spec.shape || output->dtype() != state.host_spec.dtype ||
-        !output->flags().row_contiguous || output->nbytes() != state.host_bytes)
-      return Status::InvalidArgument("Apple copy requires its exact dense native output carrier");
-    HYLE_ASSIGN_OR_RETURN(auto storage, MemoryAccess::storage_info(*output));
-    if (storage.view_bytes != state.host_bytes)
-      return Status::InvalidArgument("Apple copy output byte span differs");
+    HYLE_ASSIGN_OR_RETURN(physical, resolve_native_source(state));
     if (state.host_bytes) {
-      id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
-      if (buffer == nil || buffer.contents == nullptr ||
-          reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device) != state.device)
-        return Status::InvalidArgument("Apple copy output belongs to a foreign Metal Device");
-      source = static_cast<const std::byte *>(buffer.contents) + storage.offset_bytes;
+      id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)physical.buffer;
+      source = static_cast<const std::byte *>(buffer.contents) + physical.physical.origin;
     }
   } else {
     HYLE_RETURN_IF_ERROR(state.host_input.invalidate());
     if (state.host_input.bytes().size() != state.host_bytes)
       return Status::Internal("Apple fixed copy source byte span changed");
     source = state.host_input.bytes().data();
+    if (state.host_range_count) {
+      physical.physical = state.physical[0];
+      physical.buffer = reinterpret_cast<void *>(static_cast<std::uintptr_t>(physical.physical.backing));
+    }
   }
-  // All producer/epoch/layout/device/range checks finish before touching the
-  // cold destination mapping. The original producer has already drained on
-  // this same FIFO; no new eval, host wait, allocation or projection is used.
+  if (state.host_range_count) {
+    HYLE_ASSIGN_OR_RETURN(auto report, validate_host_ranges(state, physical.physical));
+    // Positive, disjoint exact destinations cannot become no-op copies after
+    // resolution. Keep the cold report stable while the public slot is active.
+    if (report.active_copies != state.host_range_count)
+      return Status::Internal("Apple host range descriptor set changed");
+    bool aligned = true;
+    for (std::size_t index = 0; index < state.host_range_count; ++index) {
+      const auto &range = state.resolved[index];
+      const auto &target = state.physical[range.destination];
+      auto &command = state.commands[index];
+      command = {physical.buffer,
+          reinterpret_cast<void *>(static_cast<std::uintptr_t>(target.backing)),
+          physical.physical.origin + range.source_offset, target.origin, range.logical_bytes};
+      aligned = aligned && command.source_offset % 4 == 0 &&
+          command.destination_offset % 4 == 0 && command.bytes % 4 == 0;
+      if (state.host_targets[range.input_index].bytes.size() != command.bytes)
+        return Status::Internal("Apple host destination mapping changed");
+    }
+    if (aligned) {
+      *use_blit = true;
+      return Status::Ok();
+    }
+    // Every producer/epoch/layout/device/range/alias check above completes
+    // before the first byte is changed. This is a legal byte-copy choice,
+    // never a recovery from a failed native command or a model recomputation.
+    for (std::size_t index = 0; index < state.host_range_count; ++index) {
+      const auto &range = state.resolved[index];
+      const auto output = state.host_targets[range.input_index].bytes;
+      std::memmove(output.data(), source + range.source_offset, output.size());
+    }
+    Status terminal;
+    for (std::size_t index = 0; index < state.host_range_count; ++index)
+      terminal.Update(state.host_targets[index].mapping.flush());
+    return terminal;
+  }
+  // Preserve the existing single CPU destination's memmove semantics. Its
+  // original producer has already drained on this FIFO; no eval/wait is added.
   if (state.host_bytes) std::memmove(state.host_output_bytes.data(), source, state.host_bytes);
   return state.host_output.flush();
 }
@@ -120,8 +205,9 @@ void execute_copy(Job *job) noexcept {
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
   if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
-  if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state);
-  else if (terminal.ok() && state.report.active_copies != 0) {
+  bool use_blit = !state.host_copy;
+  if (terminal.ok() && state.host_copy) terminal = execute_host_copy(state, &use_blit);
+  if (terminal.ok() && use_blit && state.report.active_copies != 0) {
     @autoreleasepool {
       try {
         auto &encoder = mlx::core::metal::get_command_encoder(*state.runtime->stream);
@@ -215,6 +301,7 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     state->limits.max_phases = 1; state->limits.max_bytes = max_bytes;
     state->physical.resize(static_cast<std::size_t>(capacity) * 2); state->inputs.resize(capacity);
     state->intervals.resize(static_cast<std::size_t>(capacity) * 2); state->resolved.resize(capacity); state->commands.resize(capacity);
+    state->host_targets.resize(capacity);
     return state;
   } catch (...) { return std::unexpected(native_exception()); }
 }
@@ -227,6 +314,11 @@ Status mutable_recording(const CopyRecording &state) noexcept {
 Status clear_host_copy(CopyRecording &state) noexcept {
   Status result = state.host_input.close();
   result.Update(state.host_output.close());
+  for (std::size_t index = 0; index < state.host_range_count; ++index) {
+    result.Update(state.host_targets[index].mapping.close());
+    state.host_targets[index].bytes = {};
+  }
+  state.host_range_count = 0;
   state.host_source.reset(); state.host_copy = false; state.host_output_bytes = {};
   state.host_owner.reset();
   state.host_bytes = 0; state.consumed_epoch = 0; state.expected_epoch = 0;
@@ -299,6 +391,82 @@ Status bind_host_copy_recording(CopyRecording &state, ConstTensorView source,
   host_copy_report(state, bytes);
   return Status::Ok();
 }
+namespace {
+Status bind_host_ranges(CopyRecording &state, std::size_t source_bytes,
+    const cd::PhysicalCopyResource *source, std::span<const HostCopyRange> ranges) noexcept {
+  state.prepared = false;
+  HYLE_RETURN_IF_ERROR(clear_host_copy(state));
+  if (ranges.empty()) return Status::InvalidArgument("Apple host ranges are empty");
+  if (ranges.size() > state.limits.max_copies)
+    return Status::ResourceExhausted("Apple host range capacity exhausted");
+  state.host_range_count = ranges.size();
+  for (std::size_t index = 0; index < ranges.size(); ++index) {
+    const auto &range = ranges[index];
+    if (!range.destination.size()) return Status::InvalidArgument("Apple host range is empty");
+    HYLE_ASSIGN_OR_RETURN(auto destination, copy_span(range.destination, mem::HostAccess::kWrite));
+    if (destination.physical.address_space != state.device)
+      return Status::InvalidArgument("Apple host range destination Device differs");
+    destination.physical.copy_alignment = 1;
+    state.physical[index + 1] = destination.physical;
+    state.inputs[index] = {{0}, {static_cast<std::uint32_t>(index + 1)}, {0},
+        range.source_offset, 0, range.destination.size()};
+  }
+  const auto physical = source ? *source : cd::PhysicalCopyResource{.capacity = source_bytes};
+  HYLE_ASSIGN_OR_RETURN(auto report, validate_host_ranges(state, physical, source == nullptr));
+  for (std::size_t index = 0; index < ranges.size(); ++index) {
+    auto &target = state.host_targets[index];
+    HYLE_ASSIGN_OR_RETURN(target.mapping, ranges[index].destination.map_host(mem::HostAccess::kWrite));
+    HYLE_ASSIGN_OR_RETURN(target.bytes, target.mapping.writable_bytes());
+    if (target.bytes.size() != ranges[index].destination.size())
+      return Status::Internal("Apple host range mapping byte span differs");
+  }
+  state.host_bytes = source_bytes;
+  state.report = report; state.report.native_metadata_unknown = true;
+  state.prefix_marker = true; state.prepared = true; state.host_copy = true;
+  state.calls.store(0, std::memory_order_relaxed); state.waits.store(0, std::memory_order_relaxed);
+  return Status::Ok();
+}
+Status discard_failed_host_ranges(CopyRecording &state, Status status) noexcept {
+  if (!status.ok()) {
+    state.prepared = false;
+    status.Update(clear_host_copy(state));
+  }
+  return status;
+}
+} // namespace
+Status bind_host_copy_ranges(CopyRecording &state, InputSource source,
+    const TensorDesc &description, std::span<const HostCopyRange> ranges) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  state.prepared = false;
+  if (!source.valid() || (description.is_plain() && !description.is_dense()))
+    return Status::InvalidArgument("Apple host ranges require their dense native producer");
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  HYLE_ASSIGN_OR_RETURN(auto epoch, InvocationAccess::source_epoch(source, state.runtime));
+  HYLE_RETURN_IF_ERROR(discard_failed_host_ranges(state, bind_host_ranges(state, bytes, nullptr, ranges)));
+  state.host_source = std::move(source); state.host_spec = std::move(spec);
+  state.consumed_epoch = epoch;
+  return Status::Ok();
+}
+Status bind_host_copy_ranges(CopyRecording &state, ConstTensorView source,
+    std::span<const HostCopyRange> ranges, ReadLease source_owner) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  HYLE_RETURN_IF_ERROR(mutable_recording(state));
+  state.prepared = false;
+  if (!source.valid() || (source.description().is_plain() && !source.description().is_dense()))
+    return Status::InvalidArgument("Apple fixed host ranges require a dense tensor");
+  HYLE_ASSIGN_OR_RETURN(auto bytes, source.description().required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto range, source.storage().subview(0, bytes));
+  HYLE_ASSIGN_OR_RETURN(auto physical, copy_span(range, mem::HostAccess::kRead));
+  if (physical.physical.address_space != state.device)
+    return Status::InvalidArgument("Apple fixed host ranges source Device differs");
+  HYLE_ASSIGN_OR_RETURN(auto input, range.map_host());
+  HYLE_RETURN_IF_ERROR(discard_failed_host_ranges(state, bind_host_ranges(state, bytes, &physical.physical, ranges)));
+  state.host_input = std::move(input); state.host_owner = std::move(source_owner);
+  return Status::Ok();
+}
+
 Status copy_recording_reuse_gate(const CopyRecording &state) noexcept {
   std::lock_guard lock(state.completion_mutex);
   return mutable_recording(state);
@@ -324,20 +492,7 @@ Status bind_native_copy_source(CopyRecording &state, InputSource source,
 Result<CopySpan> native_copy_source(CopyRecording &state) noexcept {
   if (!state.host_source.valid() || state.host_copy || !state.source_pinned)
     return std::unexpected(Status::FailedPrecondition("Apple native copy producer is not pinned"));
-  HYLE_ASSIGN_OR_RETURN(auto output, InvocationAccess::source_output(
-      state.host_source, state.runtime, state.expected_epoch));
-  if (output.shape() != state.host_spec.shape || output.dtype() != state.host_spec.dtype ||
-      !output.flags().row_contiguous || output.nbytes() != state.host_bytes)
-    return std::unexpected(Status::InvalidArgument("Apple native copy producer layout changed"));
-  HYLE_ASSIGN_OR_RETURN(auto storage, MemoryAccess::storage_info(output));
-  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
-  if (buffer == nil || buffer.storageMode != MTLStorageModeShared ||
-      storage.offset_bytes > buffer.length || storage.view_bytes != state.host_bytes ||
-      storage.view_bytes > buffer.length - storage.offset_bytes ||
-      reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device) != state.device)
-    return std::unexpected(Status::InvalidArgument("Apple native copy producer backing/Device differs"));
-  return CopySpan{const_cast<void *>(storage.buffer), {state.device,
-      reinterpret_cast<std::uintptr_t>(storage.buffer), storage.offset_bytes, storage.view_bytes, 4}};
+  return resolve_native_source(state);
 }
 Status bind_copy_recording(CopyRecording &state, std::span<const cd::CopyBackendRange> ranges, bool prefix_marker) noexcept {
   std::lock_guard lock(state.completion_mutex);

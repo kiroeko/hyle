@@ -100,8 +100,11 @@ CUDA窄链索引GDN另有下述有限集成结果，conv、部分读取／尾部
 接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
 
 逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
-GDN融合从源槽读取，按时间升序直接写各候选槽；conv按窗口从历史槽或新输入取样，
-直接写候选history，避免为取窗口拼接整个稠密history。普通K1与MTP的差别是候选槽数量。
+GDN融合从源槽读取，按时间升序直接写各候选槽。conv的普通图由原精度history Gather、
+与新chunk的Concat、Cast F32及CausalConv组成；每个前缀的history直接Slice原精度samples，
+沿候选轴Concat后reshape为batch-major `[B*K,L*C]`，交原Store，不从F32结果反向降精度。
+原生conv融合应只替换寻址：从history槽或新chunk取样并直接写候选history，保留原F32计算顺序，
+避免整段拼接和窗口物化。普通K1与MTP的差别是候选槽数量；此conv融合尚待实现。
 有普通稠密观察者时仍须物化该结果，不能静默删掉公开值；无索引能力的实现保留合法原路径。
 外部写资格仍对应精确原节点和所选artifact，先支持纯节点与一个外部写节点，
 GDN和history各保独立写区域。所有目标与源及保留快照不重叠，仍走原接纳、Completion、
@@ -138,7 +141,10 @@ Apple／Vulkan现已沿原ExecutionSource装配Store：共同事务持有实际s
 私有索引由该source原冷传输能力准备，Store沿原FIFO／Completion和真实退休回收，不新增执行器。
 Apple原类型选行与Vulkan合格原码选行保留实际stride，不复制整池；资格仍以实际lowering及全部读者核验为准。
 [有限检查](../evidence/correctness/inference-native-slot-store-2026-10-27.json)覆盖两原生路线各3项及共同层11项回归，
-不代表完整引擎提速。当前原生Store仅承载4字节对齐item与offset；此为实现限制，精确字节尾部仍待补。
+不代表完整引擎提速。Apple现复用原CopyRecording按全部实际范围冷准备、FIFO解析成功producer后先验：
+对齐范围仍走原blit，合法的非对齐范围精确host copy；不重算、不扩写padding，原Shared门及退休机制保持。
+[5项有限检查](../evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.json)覆盖2／6字节生成状态及原回归。
+Vulkan目前仍要求4字节对齐item和offset；原码16位选行与精确copy须另补真实原生能力，不能只放宽transfer门。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，

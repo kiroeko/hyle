@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "batch": "inference-apple-slot-byte-ranges-20261027",
+  "status": "PASS",
+  "recorded_at": "2026-10-27T03:07:03.750754+08:00",
+  "scope": "Exactly AppleSlotStore.* 5 GTests: original3 once plus BF16 byte-tail2variants and one exact-range path/failure case. No model inference, native GPU fault injection or performance measurement.",
+  "actual_results": {
+    "compilation": {
+      "distinct_TUs": 3,
+      "compiler_attempts": 5,
+      "successful_compiler_processes": 3,
+      "failed_compiler_processes": 2,
+      "failures_are_validation_recipe_only": true
+    },
+    "links": 1,
+    "images": 1,
+    "test_processes": 1,
+    "tests": 5,
+    "failures": 0,
+    "processes": {
+      "compile-copy": {
+        "pid": 23589,
+        "exit": 1,
+        "seconds": 0.9902843749999999,
+        "timeout": false
+      },
+      "compile2-copy": {
+        "pid": 23632,
+        "exit": 1,
+        "seconds": 0.7501005,
+        "timeout": false
+      },
+      "compile3-copy": {
+        "pid": 23655,
+        "exit": 0,
+        "seconds": 1.0500786249999998,
+        "timeout": false
+      },
+      "compile-store": {
+        "pid": 23658,
+        "exit": 0,
+        "seconds": 0.8704593340000002,
+        "timeout": false
+      },
+      "compile-test": {
+        "pid": 23667,
+        "exit": 0,
+        "seconds": 1.1105461659999998,
+        "timeout": false
+      },
+      "link": {
+        "pid": 23671,
+        "exit": 0,
+        "seconds": 0.21017137499999983,
+        "timeout": false
+      },
+      "run1": {
+        "pid": 23680,
+        "exit": 0,
+        "seconds": 1.377089083,
+        "timeout": false
+      }
+    },
+    "graph_generated_exact_rows_bytes": [
+      2,
+      6
+    ],
+    "concrete_aligned_native_blit_calls": 2,
+    "concrete_two_byte_native_blit_calls": 0,
+    "invalid_final_range": {
+      "stage": "pre-submit validation",
+      "status": "OutOfRange",
+      "all_destinations_unchanged": true
+    },
+    "native_fault_injection": false
+  },
+  "hardware": {
+    "uname": "Darwin Kiros-MacBook-Air.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:02:57 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T8132 arm64\n",
+    "model": "Mac16,12\n",
+    "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n"
+  },
+  "locked_runtime": {
+    "MLX_version": "0.32.2",
+    "MLX_revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+    "actual_files_rechecked": true,
+    "actual_version_source_and_metallib": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source/mlx/version.h",
+        "bytes": 509,
+        "sha256": "1e89a9250cb17196ef80eb9bd65ecc7312033165a356d68bbaf6b09315229b77"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source/mlx/backend/metal/indexing.cpp",
+        "bytes": 26712,
+        "sha256": "6592dec7e5490acbe47301b85fd1d2b9a5186952a29ecb23e7e2ff3442d0917e"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source/mlx/ops.cpp",
+        "bytes": 203048,
+        "sha256": "6eae219354d0f9be37a064cb327c863fc3a12dba6668fd61d428e8d09d6baaf2"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/architecture-refactor-20261019-apple-page-invocation/apple-current-sdk-2026-10-21/build/_deps/mlx-91aee008db1a5528/source/CMakeLists.txt",
+        "bytes": 17323,
+        "sha256": "9b7b58026aa57e49000b5018323bc5ffd4c38d7394baf1f76eaa4f369091d8d6"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/mlx.metallib",
+        "bytes": 1666552,
+        "sha256": "cabb611108c741e6132c3b518d832dc0b8c730868415d3c44789526823095636"
+      }
+    ],
+    "system_libraries": "Actual otool -L retained in archive/runtime-identity.json."
+  },
+  "image": {
+    "path": "/Users/kiro/hyle-scratch/compute-unified/inference-native-slot-byte-ranges-20261027/slot-byte-ranges-test",
+    "bytes": 15864600,
+    "sha256": "0bf201b0986b08f5115f6f98eb6fcf73599887e2b6c016e4cdee594949a59bc3"
+  },
+  "source_identity": {
+    "product_and_test_files": [
+      {
+        "path": "src/compute_route_apple/apple_copy_internal.h",
+        "bytes": 7573,
+        "sha256": "1d618b78238a1dee015d29936fa08831006496af13827564e3ab1691ca7add82"
+      },
+      {
+        "path": "src/compute_route_apple/apple_copy_recording.mm",
+        "bytes": 35861,
+        "sha256": "895d06ac0ff1edc5f2e05267f76af3eebb23186a06918adba03399de3032e571"
+      },
+      {
+        "path": "src/graph_route_apple/native_slot_store_region.cc",
+        "bytes": 17508,
+        "sha256": "8c54b321c4e72a880eb7bd1160e36eead8189265c8c923ccee3bbf2c6a9ea893"
+      },
+      {
+        "path": "tests/graph_route_apple/slot_store_test.cc",
+        "bytes": 12389,
+        "sha256": "f70e03f29c5c9793b5a2bc7bbe0e9ee5e33294dfa49e5fc855bfe3b9ca07206c"
+      }
+    ],
+    "added_existing_private_header": {
+      "path": "src/compute/completion_internal.h",
+      "bytes": 762,
+      "sha256": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+    },
+    "private_ABI": "CopyRecording complete definition and allocation remain private to rebuilt apple_copy_recording.mm. Existing header carriers/functions/vtables stay unchanged. Store Slot is private to its rebuilt TU.",
+    "legacy_shared_gate": "Original apple_memory.mm:554-590 already required Shared storage before the single-target path accessed contents. Actual cached source/hash/excerpt retained; empty nil backing behavior preserved."
+  },
+  "verified": [
+    "Original dense/padded generated Gather-to-Store F32/F16/BF16 bytes and retirement/reset contracts remain passing.",
+    "Generated BF16 one-element (2B) and three-element (6B) rows preserve exact bits, source/unused slots and separately authorized padding.",
+    "Concrete aligned ranges record exactly two original native blit calls.",
+    "Concrete 2B source/destination-offset ranges record zero native blit calls and copy exact bytes without modifying surrounding bytes.",
+    "A final source range exceeding logical bytes is rejected before admission and leaves all destination bytes unchanged."
+  ],
+  "retained_failures": [
+    {
+      "stage": "compile-copy",
+      "reason": "The previous 8-TU source snapshot did not include the existing completion_internal.h needed by this newly compiled .mm. No product parsing occurred."
+    },
+    {
+      "stage": "compile2-copy",
+      "reason": "The supplied private header was not yet reachable because the new overlay src/compute directory was missing from the include path. Recipe-only correction; product source hashes unchanged."
+    }
+  ],
+  "reuse": {
+    "inherited_link_inputs": 114,
+    "all_actual_hashes_match_prior_evidence": true,
+    "prior_public_receipt": {
+      "path": "docs/evidence/correctness/inference-native-slot-store-2026-10-27.json",
+      "bytes": 418615,
+      "sha256": "89a21d7619792a0bdccf052d943e16a135af881680396b3963d268e94f393226"
+    },
+    "prior_public_archive": {
+      "path": "docs/evidence/correctness/inference-native-slot-store-2026-10-27.zip",
+      "bytes": 2420198,
+      "sha256": "482391c6ba3260bfd4dfdb70a72d165a6d7cd60caa9db4b26079c8ae155f20ed"
+    },
+    "source_closure": "Reuse prior native-slot-store source/SDK closure; archive stores only four changed sources and one already existing private header needed by the new .mm compile.",
+    "linked_object_map": "New copy/store/test objects linked directly; old archive apple_copy_recording.mm member and replaced Store/test objects not extracted. No whole-archive/duplicate-ignore."
+  },
+  "limits": [
+    "One Mac16,12 with the pinned original MLX/Metal runtime only; no claim for every Apple GPU or memory storage mode.",
+    "No native GPU fault injection. The invalid-tail case is pre-submit descriptor/range rejection.",
+    "All-ranges-before-write covers source success, descriptor/permission/range/alias checks; no transactional rollback is claimed after a transfer flush error or mid-copy cancellation.",
+    "No model inference, quality assessment, performance benchmark, new SDK/MLX build or HTTP download."
+  ],
+  "performance_claim": false,
+  "engine_runs": 0,
+  "model_runs": 0,
+  "HTTP": 0,
+  "SDK_shader_rebuilds": 0,
+  "MLX_rebuilds": 0,
+  "native_fault_injection": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.zip",
+    "bytes": 86388,
+    "sha256": "5ada9391c5430c3d6dd95c0b929a8c366906df2325ba77dc66c0cae8beef04cc",
+    "members": 64,
+    "verified_source_bytes_and_archive_members": true,
+    "includes": [
+      "Four frozen product/test sources",
+      "One existing private header",
+      "Exact three-TU/link/run recipes and source/dependency pins",
+      "Both recipe failures and final build/test stdout/stderr/processes",
+      "GTest XML, actual hardware/runtime/link map and compact receipt"
+    ],
+    "excludes": [
+      "Objects",
+      "Executable",
+      "SDK/MLX payload",
+      "Model payload",
+      "Prior 900-header source closure"
+    ]
+  }
+}
