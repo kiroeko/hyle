@@ -4,9 +4,11 @@
 
 int main(int argc, char **argv) {
   try {
-    if (argc < 2 || argc > 3 ||
+    const bool lagged = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-lag1";
+    const auto input_argc = argc - static_cast<int>(lagged);
+    if (input_argc < 2 || input_argc > 3 ||
         (std::string_view(argv[1]) != "--cpu" && std::string_view(argv[1]) != "--cuda"))
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda [prepared_input_directory]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda [prepared_input_directory] [--mtp-lag1]");
     const auto backend = std::string_view(argv[1]) == "--cpu"
         ? qwen35::BackendKind::kCpu : qwen35::BackendKind::kCuda;
 #if !defined(HYLE_COMPUTE_CPU)
@@ -16,7 +18,7 @@ int main(int argc, char **argv) {
     if (backend == qwen35::BackendKind::kCuda) { std::cerr << "SKIP: CUDA route is not built\n"; return 77; }
 #endif
     std::string input;
-    if (argc == 3) input = argv[2];
+    if (input_argc == 3) input = argv[2];
     else {
 #if defined(_MSC_VER)
       char *value = nullptr; std::size_t length = 0;
@@ -31,6 +33,7 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return qwen_host_image_case::run(input, backend);
+    return lagged ? qwen_host_image_case::run_lagged(input, backend)
+                  : qwen_host_image_case::run(input, backend);
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

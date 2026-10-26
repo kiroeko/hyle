@@ -341,7 +341,10 @@ if(TARGET hyle_engine AND (TARGET hyle_graph_route_cpu OR TARGET hyle_graph_rout
     if(TARGET hyle_graph_route_${_host_image_backend})
       add_test(NAME hyle_qwen_host_image_${_host_image_backend}_test
         COMMAND hyle_qwen_host_image_test --${_host_image_backend})
-      set_tests_properties(hyle_qwen_host_image_${_host_image_backend}_test PROPERTIES
+      add_test(NAME hyle_qwen_host_image_${_host_image_backend}_lag1_test
+        COMMAND hyle_qwen_host_image_test --${_host_image_backend} --mtp-lag1)
+      set_tests_properties(hyle_qwen_host_image_${_host_image_backend}_test
+        hyle_qwen_host_image_${_host_image_backend}_lag1_test PROPERTIES
         LABELS "tooling;generation;cache;transfer;${_host_image_backend};local-model"
         TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
     endif()

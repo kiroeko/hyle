@@ -127,8 +127,9 @@ CUDA pinned host不承诺CPU／GPU并发coherence；原复制成功并退休之�
 read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当成完成后可读的必要条件。
 `StateTransfer`使用原CopyBatch及Completion接管临时源／目的资源，成功wait后才能取回完整原writer；
 未知退休时不归还容量，不把错误当作退休。模型adapter负责完整清单、新页布局和wrapper恢复。
-共同请求adapter可显式选择主机镜像恢复；未选时仍按原已消费token重建。CPU／CUDA接线的消费者检查
-正在进行；Apple／Vulkan的这一搬运入口明确未实现，不以CPU路径冒充原生支持。
+共同请求adapter可显式选择主机镜像恢复；未选时仍按原已消费token重建。CPU／CUDA普通与MTP已作有限消费者检查，
+CUDA另核lag1／prior完整往返与原catchup续算；[检查范围](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)
+不等于完整任务质量或性能结论。Apple／Vulkan的这一搬运入口尚未实现，不以CPU路径冒充原生支持。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，

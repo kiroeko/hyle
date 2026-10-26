@@ -1,0 +1,141 @@
+{
+  "date": "2026-10-26",
+  "status": "BOUNDED_CUDA_LAG1_PRIOR_ROUNDTRIP_PASSED",
+  "baseline_commit": "132a55be8",
+  "sources": [
+    {
+      "path": "tests/tools/qwen_host_image_case.h",
+      "bytes": 27120,
+      "sha256": "390cbae36ce3cb0d5ec23217ecb433a8fcda3775d96a2fe76de051dd7bab7e5c"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_test.cc",
+      "bytes": 1832,
+      "sha256": "f4ae78be2c5205c9691bf559e3a2b66c87006b3144e03bd0815a0e483e047e0d"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 24976,
+      "sha256": "5ecfa946890ea9b66f2379fb64931ca9908e2abbf2a6305f48dc1e933f3866b4"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-host-image-lag1-2026-10-26.zip",
+    "bytes": 71059,
+    "sha256": "3a23932242f078e90f45f05cae38925ed514e26d28c5afcd1b0a0240ef06c3ea"
+  },
+  "changes": [
+    "Add independently selectable --mtp-lag1 mode to the canonical HostImage consumer and CPU/CUDA CTest entries.",
+    "No Model or Compute/Graph implementation changes in this batch."
+  ],
+  "preparation": "Real Verify T2 executes explicit inputs, selects its own completed second candidate and consumes both rows through original finish_selected_evaluations and repair_recursive_draft. This deterministically creates canonical lag1/prior state without changing head metadata or requiring accidental draft agreement.",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "driver": "617.14"
+  },
+  "build": {
+    "compiled_TUs": 1,
+    "source": "tests/tools/qwen_host_image_test.cc",
+    "record": {
+      "path": ".scratch/inference-host-image-lag1-20261026/ready.json",
+      "bytes": 1998,
+      "sha256": "e1006fd4e6e27b436b6a11e85ac6ac157ff092706291f4859777c9888cf6084c"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-host-image-lag1-20261026\\link\\host-image-lagged-consumer.exe",
+      "bytes": 141242368,
+      "sha256": "a30e99f103c5c1158319095664224919e2082653423f24341f6e6ff97aee7bd4"
+    },
+    "reused": "Exact 223-input CUDA closure; native providers, weights, report and SDK reused without recompilation.",
+    "first_compile_and_link_exit": 0
+  },
+  "results": {
+    "tiny": {
+      "process": {
+        "path": ".scratch/inference-host-image-lag1-20261026/tiny1/process.json",
+        "bytes": 1455,
+        "sha256": "009b1d5b2c0f81a8a580bce6522aee77aabdcf97f3e5d9e5da12a137f7e680cb"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cuda",
+        "seed_contract": "explicit_verified_prefix",
+        "natural_acceptance_claim": false,
+        "seed_lag": 1,
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "seed_catchup_token": 1,
+        "prior_payloads": 1,
+        "prior_bytes": 128,
+        "prior_nonzero_bytes": 127,
+        "payloads": 8,
+        "bytes": 20096,
+        "continuation_lag": 0,
+        "processed_draft": 2,
+        "processed_target": 1,
+        "all_initialized_bytes_equal": true,
+        "same_shape_catchup_round_equal": true,
+        "old_alias_unchanged": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    },
+    "original": {
+      "process": {
+        "path": ".scratch/inference-host-image-lag1-20261026/original1/process.json",
+        "bytes": 1456,
+        "sha256": "b6a37b4b51840542e6eae27faa1ebd65dbc3357ca51c291d4415273205bcc146"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+        "bytes": 56735,
+        "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+      },
+      "result": {
+        "status": "PASS",
+        "backend": "cuda",
+        "seed_contract": "explicit_verified_prefix",
+        "natural_acceptance_claim": false,
+        "seed_lag": 1,
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "seed_catchup_token": 1,
+        "prior_payloads": 1,
+        "prior_bytes": 4096,
+        "prior_nonzero_bytes": 4087,
+        "payloads": 52,
+        "bytes": 19615744,
+        "continuation_lag": 1,
+        "processed_draft": 2,
+        "processed_target": 2,
+        "all_initialized_bytes_equal": true,
+        "same_shape_catchup_round_equal": true,
+        "old_alias_unchanged": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      }
+    }
+  },
+  "checked": [
+    "Complete byte and logical boundary equality after host export/import/export, including nonzero prior_hidden.",
+    "Lag1 draft frontier equals target length minus one; catchup_token remains the final consumed explicit input.",
+    "Original kMtpCatchupRound executes on original and restored same-shape branches; all MtpRoundResult fields and complete resulting images match.",
+    "Retained old snapshot remains unchanged; independent fresh version on restore; final image/version counts and active native episode return to zero."
+  ],
+  "limitations": [
+    "CUDA only for this new lag1 check. CPU CTest entry is registered but was not run; prior lag0 CPU evidence remains separate.",
+    "No native pending/fault injection or Apple/Vulkan state-transfer qualification.",
+    "Seed is an explicit verified prefix, not natural speculative acceptance or whole task quality.",
+    "Tiny fixture is untrained; original fixture uses existing cached original Qwen3.5-2B roles. No downloads.",
+    "No throughput, memory-peak or speedup claim; process durations are diagnostic correctness clocks."
+  ]
+}

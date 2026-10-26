@@ -283,6 +283,116 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
   return report;
 }
 
+// An explicit, fully computed target prefix exercises lag1 independently of
+// whether this fixture's draft happens to agree with its target distribution.
+inline int run_lagged(const std::filesystem::path &input, q::BackendKind kind) {
+  auto source = q::prepare_weight_source(input / "weights.tsv", true);
+  const auto geometry = source.roles.geometry;
+  require(geometry.context_limit >= 16 && geometry.vocabulary >= 4 && geometry.mtp_layers == 1,
+      "lag1 host image case requires C16, four tokens and the original MTP roles");
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, 3,
+      q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 2, true, true);
+  q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
+      {.enabled = true, .policy = {1.F, 8, .9F}, .seed = 123}, 0, {.primary = kind});
+  const std::array prefill{std::size_t{3}}, pair{std::size_t{2}};
+  model.prepare_family(prefill, false, 1, q::GraphRole::kMtpPrefill);
+  model.plan_replay_uses(3, 1, 1, q::GraphRole::kMtpPrefill);
+  model.prepare_family(pair, false, 1, q::GraphRole::kVerify);
+  model.plan_replay_uses(2, 1, 1, q::GraphRole::kVerify);
+  model.prepare_draft_program(1, false);
+  model.prepare_family(pair, false, 1, q::GraphRole::kMtpCatchupRound);
+  model.plan_replay_uses(2, 1, 2, q::GraphRole::kMtpCatchupRound);
+  model.prepare_execution(prefill, 1, q::GraphRole::kMtpPrefill);
+  model.prepare_execution(pair, 1, q::GraphRole::kVerify);
+  model.prepare_execution(pair, 1, q::GraphRole::kMtpCatchupRound);
+  auto session = model.create_session(prefill, {}, q::GraphRole::kMtpPrefill, q::cache::SamplingCursor{123, 7, 0});
+  const std::array<std::int32_t, 3> prompt{1, 2, 3};
+  model.prepare_evaluation(*session, prompt, nullptr, q::GraphRole::kMtpPrefill);
+  model.submit_evaluation(*session);
+  (void)q::finish_evaluation(model, *session, "host-image-lag1-prefill", {}, false);
+  const std::array prefix{session->head->next_id, std::int32_t{1}};
+  const auto sampling_before = session->head->sampling;
+  std::array<std::int32_t, 1> next{-1};
+  {
+    const q::EvaluationIO io{.name = "host-image-explicit-prefix", .trace_states = false};
+    const std::array outputs{q::evaluation_output(model, session, io)};
+    model.prepare_evaluation(*session, prefix, nullptr, q::GraphRole::kVerify);
+    model.submit_evaluation(*session);
+    model.finish_selected_evaluations(outputs, next,
+        [](std::span<const std::int32_t> candidates, q::StepState &step, std::span<std::int32_t> selected) {
+          require(candidates.size() == 2 && step.members.size() == 1 && step.input_tokens == 2,
+              "explicit lag1 prefix differs from its actually completed verifier");
+          step.members[0].accepted_tokens = 2;
+          selected[0] = candidates[1];
+        }, [&](q::StepState &step) { model.repair_recursive_draft(step); },
+        [&](std::size_t at, const q::CompletedEvaluationView &view) {
+          q::observe_completed_evaluation(model, outputs[at], io, view);
+        });
+  }
+  model.validate_mtp_snapshot(*session->head);
+  require(session->head->draft->lag == 1 && session->head->draft->frontier + 1 == session->length() &&
+      session->head->draft->catchup_token == prefix[1] && session->head->prior_hidden.valid() &&
+      session->head->sampling == sampling_before && session->head->next_id == next[0],
+      "actual explicit target prefix did not publish its canonical lag1/prior boundary");
+  auto old_alias = session->checkpoint();
+  auto storage = q::take(i::HostStateStorage::create(model.execution, 2, 256u << 20));
+  auto first = model.export_session(*session, storage);
+  const auto original = read_image(*first);
+  require(original.boundary.draft && original.boundary.draft->lag == 1 && original.boundary.has_prior &&
+      original.boundary.draft->frontier + 1 == original.boundary.length &&
+      original.boundary.draft->catchup_token == prefix[1], "host image lost its complete lag1 boundary");
+  std::size_t prior_payloads = 0, prior_bytes = 0, prior_nonzero = 0;
+  for (std::size_t at = 0; at < original.layout.size(); ++at)
+    if (original.layout[at].role == q::cache::HostPayloadRole::kPriorHidden) {
+      ++prior_payloads; prior_bytes += original.payloads[at].size();
+      prior_nonzero += static_cast<std::size_t>(std::count_if(original.payloads[at].begin(), original.payloads[at].end(),
+          [](std::byte value) { return value != std::byte{}; }));
+    }
+  require(prior_payloads == 1 && prior_bytes == geometry.hidden_bytes() && prior_nonzero,
+      "lag1 host image did not retain one actual nonzero prior-hidden payload");
+  retire(session);
+  auto imported = model.restore_session(first);
+  require(imported->head->state_identity() != old_alias->state_identity(),
+      "lag1 restore reused its retained source state version");
+  auto second = model.export_session(*imported, storage);
+  same_image(original, read_image(*second));
+  require(storage->live_images() == 2, "lag1 roundtrip lost its two actual host-image reservations");
+  first.reset(); second.reset();
+  require(!storage->live_images(), "lag1 roundtrip images did not return their reservations");
+  auto baseline = model.create_session({}, old_alias, q::GraphRole::kMtpCatchupRound);
+  require(q::generation_boundary(*baseline->head) == q::generation_boundary(*imported->head) &&
+      baseline->head->draft->lag == 1 && imported->head->draft->lag == 1,
+      "lag1 catchup branches do not begin at the same complete boundary");
+  const auto expected = round(model, baseline);
+  const auto actual = round(model, imported);
+  same_round(expected, actual);
+  require(expected.processed_draft == 2 && actual.processed_draft == 2,
+      "restored continuation did not execute the original lag1 catchup round");
+  auto continued_baseline = model.export_session(*baseline, storage);
+  auto continued_import = model.export_session(*imported, storage);
+  const auto continued = read_image(*continued_baseline);
+  same_image(continued, read_image(*continued_import));
+  continued_baseline.reset(); continued_import.reset();
+  auto old_reader = model.create_session({}, old_alias, q::GraphRole::kMtpCatchupRound);
+  auto unchanged = model.export_session(*old_reader, storage);
+  same_image(original, read_image(*unchanged));
+  unchanged.reset();
+  retire(old_reader); retire(baseline); retire(imported); old_alias.reset();
+  require(!storage->live_images() && !model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
+      "lag1 host image case retained an image, state version or original native episode");
+  std::cout << "{\"status\":\"PASS\",\"backend\":\"" << (kind == q::BackendKind::kCuda ? "cuda" : "cpu")
+      << "\",\"seed_contract\":\"explicit_verified_prefix\",\"natural_acceptance_claim\":false,\"seed_lag\":1"
+      << ",\"seed_length\":" << original.boundary.length << ",\"seed_frontier\":" << original.boundary.draft->frontier
+      << ",\"seed_catchup_token\":" << original.boundary.draft->catchup_token
+      << ",\"prior_payloads\":" << prior_payloads << ",\"prior_bytes\":" << prior_bytes
+      << ",\"prior_nonzero_bytes\":" << prior_nonzero << ",\"payloads\":" << original.layout.size()
+      << ",\"bytes\":" << original.total_bytes << ",\"continuation_lag\":" << continued.boundary.draft->lag
+      << ",\"processed_draft\":" << actual.processed_draft << ",\"processed_target\":" << actual.processed_target
+      << ",\"all_initialized_bytes_equal\":true,\"same_shape_catchup_round_equal\":true,\"old_alias_unchanged\":true,"
+      "\"final_images\":0,\"final_versions\":0,\"quality_claim\":false,\"performance_claim\":false}\n";
+  return 0;
+}
+
 inline void write_report(const ModeReport &report) {
   constexpr std::array names{"target_key", "target_value", "conv", "gdn", "carry", "prior", "draft_key", "draft_value"};
   std::cout << "{\"hidden\":" << report.hidden << ",\"target_layers\":" << report.target_layers

@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **40%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
+更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **41%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
 
 ## 任务树
 
@@ -21,7 +21,7 @@
   - MTP 稳定状态槽及接受／回滚接线：0%（待实现）
 - 其它底层功能补齐：约35%（实现中）
   - 长度分桶、启动预热政策与异长批次：0%（待实现）
-  - 完整会话主机换出／换入：约75%（CPU／CUDA普通与MTP已检查，其它边界待补）
+  - 完整会话主机换出／换入：约80%（CPU／CUDA普通与MTP、CUDA lag1／prior已检查，其它边界待补）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
 - 重叠执行与完整性能对照：约5%（设计中）
   - 提前准备、设备 token 接力与有序发布：约5%（设计中）
@@ -32,23 +32,17 @@
 
 | 任务 | 所属 | 简述 | 进度 |
 |---|---|---|---|
-| MTP lag1／prior完整镜像边界 | 其它底层功能／完整会话搬运 | 复用真实两token验证前缀形成滞后一位的draft状态，补完整往返与catchup续算检查 | 约10% |
+| SDK 零拷贝冻结与资源保活接口 | 共同引擎核心／SDK边界 | 将已有pool冻结后的resource／allocator保活收进受检公开接口，减少模型层直接使用detail | 约30% |
 
 ## 本批结果与下一步
 
-已补空闲形状预热／真实接纳计时、EOS配置、普通合批单成员取消、共同批次遍历、持续工作态与显式检查点；前几批依据见[工作态迁移](../evidence/correctness/inference-working-state-2026-10-26.json)和[共同请求循环](../evidence/correctness/inference-request-loop-2026-10-26.json)。原生状态导出、KV reframe及相关复制仍存在；主机元数据复用没有自动带来提速结论。
+已补形状预热／接纳计时、EOS配置、普通合批单成员取消、输出credit／ACK、共同请求循环与持续工作态。有限检查和保留的失败见[工作态迁移](../evidence/correctness/inference-working-state-2026-10-26.json)、[共同循环](../evidence/correctness/inference-request-loop-2026-10-26.json)及[取消与交付](../evidence/correctness/inference-request-controls-2026-10-26.json)。原生状态导出、KV reframe和复制仍在；不据元数据复用宣称提速。
 
-本批共同循环已接取消与输出credit／ACK。六组主机合同通过；真实微型CPU消费者验证了排队取消、提交后普通R2单成员撤回、幸存者提交原候选，以及最终输出未ACK时保key但不阻塞peer。页前缀导出的37项原测试通过，覆盖旧append前缀不扩大、编码行边界及原CopyBatch保活。CPU用例首跑准备顺序错误已保留，修正后只重编重跑该用例。
+完整主机镜像已接CPU／CUDA，带独立数量／字节预算、真实CopyBatch退休和全状态恢复；普通／MTP的完整字节、同形状续算、旧快照、历史pending／RNG与失败后资源回收通过有限检查，见[镜像实现](../evidence/correctness/inference-host-image-2026-10-26.json)。新增CUDA小模型与原始Qwen权重的lag1／非零prior往返和原catchup续算均通过，见[lag1边界](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)。这使用明确验证前缀形成状态，不冒充自然draft接受或完整质量；CPU lag1、原生故障／pending及Apple／Vulkan搬运仍待补。固定bank归还槽不代表显存下降。
 
-普通／K1只新增两个原权重CUDA进程，复用已观察控制；全部非时间报告与普通78／MTP68个决策trace哈希相同，包含基线原有3条MTP重算决策变化，见[本批记录](../evidence/correctness/inference-request-controls-2026-10-26.json)。真实取消用例是CPU提交路径，不声称GPU物理pending、第二模型整引擎、完整质量或吞吐通过。
+CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。只做相关增量编译，并清理已替代验证二进制约422MB。本轮没有新完整性能结果。
 
-完整主机镜像、共用搬运及独立数量／字节预算已接线。CPU微型GA与原始Qwen3.5-2B CUDA的普通／MTP消费者通过：CUDA约19.6MB完整初始化状态逐字节往返与同形状续算一致；旧快照、历史pending／RNG、预算拒绝、换入中途分配失败后的页槽回收与重试均检查。修正了pinned host被错误要求并发coherence的问题；38项页测试通过。过程中的测试声明、验证链接配置、provider形状及产品失败均保留于[本批记录](../evidence/correctness/inference-host-image-2026-10-26.json)。
-
-本批MTP只实测lag0，lag1／prior镜像、原生故障／pending注入和Apple／Vulkan搬运仍待补；不记完整质量或提速通过。固定设备bank归还槽不代表显存下降，旧快照继续保活原权限及预算。早期两个默认CLI回归的完整非时间报告与146个trace相同；最终CLI修正后只构建，未重跑该窗口，不冒充新性能结果。
-
-CUDA小通道causal conv缺口已补：ggml如实限定128倍数通道与K3／4／5／9／15，其它合法F32形状由现有native provider承载，默认优先级不变。三项定向检查通过，包括C192／C7／K1数值逐位与同实例重绑、原ggml路由及F16／BF16拒绝；原失败的192通道GA消费者现已完成普通／MTP完整镜像往返与续算，见[本批记录](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。只增量编译4个产品TU与1个测试TU，未重编Model／权重／SDK库；清理3个被替代或已结束的验证二进制约422MB。
-
-现在补MTP lag1／prior镜像边界；之后继续Apple／Vulkan搬运、形状政策、原生版本化状态槽与重叠执行。因果卷积本批没有新吞吐结果，整体review尚未完成。
+正在补SDK冻结／保活接口；之后继续原生平台搬运、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
 
 单carrier不是落后主因。[同设置CPU诊断](../evidence/performance/inference-b2-peer-cpu-critical-2026-10-26.json)的共同90稳态根，GPU／CUDA API外运行区间为99.701／14.365ms；差85.337ms支持减少主机协议工作，但不是全额可删成本。架构合同见[整体设计](../architecture/inference-design.md)，范围见[工程计划](../implementation/inference-roadmap.md)，口径和关闭候选见[性能资料](performance/decode.md)。
 
