@@ -394,8 +394,11 @@ public:
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
 #if defined(HYLE_COMPUTE_CPU)
     if (const auto *endpoint = std::get_if<CpuEndpoint>(&state_->primary)) {
-      HYLE_ASSIGN_OR_RETURN(auto context, compute::detail::ContextRef::acquire(endpoint->context));
-      return context.identity_key();
+      if (!endpoint->context.valid())
+        return std::unexpected(Status::FailedPrecondition("context is invalid"));
+      if (!endpoint->context.is_open())
+        return std::unexpected(Status::FailedPrecondition("context is closed"));
+      return endpoint->context.identity_key();
     }
 #endif
 #if defined(HYLE_COMPUTE_CUDA)

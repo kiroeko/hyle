@@ -102,6 +102,7 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   std::atomic<std::uint32_t> pending{0};
   std::uint32_t users = 1, phase_count = 0, submitted = 0;
   bool prepared = false, closed = false, failed = false;
+  bool retirement_observed = false; // Host observation only; native callbacks never write this.
   Status tail;
   CopyBatchReport report;
   ResultSources*result_sources=nullptr; // Explicit opt-in cold ownership only.
@@ -120,6 +121,24 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   CopyArray<LeaseUseBatch> tickets;
 };
 namespace {
+template<class Visitor>
+std::size_t for_each_retirement_source(CopyInvocationState &state, Visitor &&visit) noexcept {
+  const auto used = [&](std::size_t binding) noexcept {
+    for (std::uint32_t phase = 0; phase < state.submitted; ++phase) {
+      const auto &plan = state.plans[phase];
+      for (std::size_t i = plan.producer_first; i < plan.producer_first + plan.producer_count; ++i)
+        if (state.producers[i] == binding) return true;
+    }
+    return false;
+  };
+  std::size_t index = 0;
+  for (std::size_t i = 0; i < state.bindings.size(); ++i)
+    if (used(i)) visit(state.bindings[i].producer, index++);
+  for (std::uint32_t i = 0; i < state.submitted; ++i)
+    visit(state.phases[i]->completion, index++);
+  return index;
+}
+
 Result<CopySpan> result_source_range(void*opaque,std::size_t index)noexcept {
   auto&phase=*static_cast<CopyNativePhase*>(opaque);auto&state=*phase.owner;
   const auto&plan=state.plans[phase.index];
@@ -243,6 +262,7 @@ CopyBatchReport report(const CopyInvocationState *state) noexcept {
 }
 Status wait(CopyInvocationState *state) noexcept {
   if (!state) return Status::Ok();
+  { std::lock_guard lock(state->observations); state->retirement_observed = true; }
   Status result;
   for (std::uint32_t id = 0; id < state->submitted; ++id) {
     auto &phase = *state->phases[id];
@@ -371,7 +391,8 @@ Result<compute::detail::PhysicalCopyResource> detail::CopyStreamAccess::physical
 Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexcept {
   auto *state = invocation.state_;
   if (!state) return Status::FailedPrecondition("Apple copy invocation is empty");
-  std::lock_guard lock(state->observations); Status result = state->tail;
+  std::lock_guard lock(state->observations); state->retirement_observed = true;
+  Status result = state->tail;
   for (std::uint32_t index = 0; index < state->submitted; ++index) {
     auto &phase = *state->phases[index]; auto observed = phase.completion.poll();
     if (!observed) result.Update(observed.error());
@@ -477,7 +498,8 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
     state_->phases[id]->retired.store(false, std::memory_order_relaxed);
   }
   state_->phase_count = static_cast<std::uint32_t>(phases.size()); state_->submitted = 0;
-  report.native_metadata_unknown = true; state_->report = report; state_->tail = Status::Ok(); state_->prepared = true;
+  report.native_metadata_unknown = true; state_->report = report; state_->tail = Status::Ok();
+  state_->retirement_observed = false; state_->prepared = true;
   return Status::Ok();
 }
 Result<CopyBatchSubmission> CopyBatchInvocation::submit() noexcept {
@@ -522,7 +544,8 @@ Status CopyBatchInvocation::reset() noexcept {
   for (auto &binding : state_->bindings) binding = {};
   if(state_->result_sources){state_->result_sources->results.reset();for(auto&span:state_->result_sources->spans)span={};}
   std::fill(state_->physical.begin(), state_->physical.end(), compute::detail::PhysicalCopyResource{});
-  state_->prepared = false; state_->failed = false; state_->submitted = 0; state_->phase_count = 0; state_->tail = Status::Ok();
+  state_->prepared = false; state_->failed = false; state_->retirement_observed = false;
+  state_->submitted = 0; state_->phase_count = 0; state_->tail = Status::Ok();
   return Status::Ok();
 }
 Status CopyBatchInvocation::close() noexcept {
@@ -544,6 +567,7 @@ Result<ReadLease> CopyBatchSubmission::output(CopyPhaseId phase, CopyResourceId 
   if (phase.value >= state_->submitted) return std::unexpected(state_->tail.ok()
       ? Status::Unavailable("Apple copy phase was not submitted") : state_->tail);
   std::lock_guard lock(state_->observations);
+  state_->retirement_observed = true;
   auto &observed = *state_->phases[phase.value]; auto poll = observed.completion.poll();
   if (!poll) { state_->failed = true; return std::unexpected(poll.error()); }
   if (*poll == CompletionPoll::kPending || !observed.retired.load(std::memory_order_acquire))
@@ -587,6 +611,44 @@ Status detail::CopyUpdateAccess::qualify(const CopyBatchInvocation &invocation,
 }
 Status detail::CopyUpdateAccess::observe(CopyBatchInvocation &invocation) noexcept {
   return detail::CopyStreamAccess::observe(invocation);
+}
+Result<std::size_t> detail::CopyUpdateAccess::retirement_count(
+    const CopyBatchInvocation &invocation, const CopyBatchSubmission &submission) noexcept {
+  HYLE_RETURN_IF_ERROR(qualify(invocation, submission));
+  auto *state = invocation.state_;
+  std::lock_guard lock(state->observations);
+  return detail::for_each_retirement_source(*state, [](Completion &, std::size_t) noexcept {});
+}
+Status detail::CopyUpdateAccess::attach_retention(CopyBatchInvocation &invocation,
+    CopyBatchSubmission &submission, std::size_t index, compute::CompletionRetention &retention,
+    void *retained_state, compute::CompletionRetention::ReleaseFn release) noexcept {
+  HYLE_RETURN_IF_ERROR(qualify(invocation, submission));
+  const auto state = util::retain_ref(invocation.state_);
+  std::lock_guard lock(state->observations);
+  Completion *selected = nullptr;
+  detail::for_each_retirement_source(*state, [&](Completion &source, std::size_t at) noexcept {
+    if (at == index) selected = &source;
+  });
+  if (!selected) return Status::OutOfRange("Apple retirement source index");
+  if (state->retirement_observed)
+    for (std::uint32_t phase = 0; phase < state->submitted; ++phase)
+      if (!state->phases[phase]->retired.load(std::memory_order_acquire))
+        return Status::Unavailable("Apple observation has not established all native retirement");
+  if (!compute::detail::CompletionAccess::has_async_state(*selected)) {
+    for (std::uint32_t phase = 0; phase < state->submitted; ++phase)
+      if (&state->phases[phase]->completion == selected &&
+          !state->phases[phase]->retired.load(std::memory_order_acquire))
+        return Status::Unavailable("Apple source observation did not establish native retirement");
+    const auto original = compute::detail::CompletionAccess::dependency(*selected);
+    const bool phase_source = std::any_of(state->phases.begin(), state->phases.begin() + state->submitted,
+        [&](const auto *phase) noexcept { return &phase->completion == selected; });
+    if (!phase_source && original.terminal_hint && !original.terminal_hint->ok())
+      return Status::Unavailable("Apple producer has no independent successful retirement witness");
+  }
+  // Keep both lookup and attachment under the native observation lock. The
+  // retained original state also outlives the lock if an inline callback
+  // destroys the Update and the caller-owned retention node.
+  return retention.attach(*selected, retained_state, release);
 }
 
 Result<compute::detail::CopyUpdateInput> detail::CopyStreamAccess::input(
@@ -679,22 +741,12 @@ Result<std::size_t> detail::CopyStreamAccess::retirement_sources(
   HYLE_RETURN_IF_ERROR(detail::CopyUpdateAccess::qualify(invocation,submission));
   auto *state=invocation.state_;
   std::lock_guard lock(state->observations);
-  const auto used=[&](std::size_t binding) noexcept {
-    for(std::uint32_t phase=0;phase<state->submitted;++phase) {
-      const auto &plan=state->plans[phase];
-      for(std::size_t i=plan.producer_first;i<plan.producer_first+plan.producer_count;++i)
-        if(state->producers[i]==binding)return true;
-    }
-    return false;
-  };
-  std::size_t count=state->submitted;
-  for(std::size_t i=0;i<state->bindings.size();++i)if(used(i))++count;
+  const auto count=detail::for_each_retirement_source(*state, [](Completion &,std::size_t) noexcept {});
   if(output.empty())return count;
   if(output.size()<count)return std::unexpected(Status::ResourceExhausted("Apple retirement source capacity"));
-  std::size_t at=0;
-  for(std::size_t i=0;i<state->bindings.size();++i)
-    if(used(i))output[at++]=&state->bindings[i].producer;
-  for(std::uint32_t i=0;i<state->submitted;++i)output[at++]=&state->phases[i]->completion;
+  detail::for_each_retirement_source(*state,[&](Completion &source,std::size_t index) noexcept {
+    output[index]=&source;
+  });
   return count;
 }
 void detail::CopyStreamAccess::serialize(CopyBatchUpdate &owner,

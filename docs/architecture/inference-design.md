@@ -137,6 +137,8 @@ read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当�
 未知退休时不归还容量，不把错误当作退休。Apple／Vulkan复用原typed Program／Invocation／Update，
 不伪造common Queue；Apple的退休查询与附件共享原观察锁。临时scope也将实际分配器owner保留到
 共享控制块释放结束。模型adapter负责完整清单、新页布局和wrapper恢复。
+搬运与hidden-output副本通过公开`CopyBatchUpdate`附加保活，不再借出原Completion或由引擎操作Apple观察锁。
+common搬运直接用原Context准备Program／Queue，原对象已保留Context状态；Queue wrapper仍固定在scope中直到真实退休。
 `poll`分别返回状态和真实退休事实，暂时pending不缓存成永久失败；确认退休后重新取得原Update的稳定终态。
 `request_cancel`只转发原端点能力，失败或不支持不替换计算结果，也不授予提前回收权限。
 关闭CopyBatch禁止新接纳，但仍可取回原已成功退休的writer。模型当前的换出／换入调用仍同步，

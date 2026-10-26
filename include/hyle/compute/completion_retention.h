@@ -29,6 +29,9 @@ public:
   // The original runtime releases only after actual retirement. An inline
   // Completion (including an error) may release synchronously during attach,
   // potentially destroying this node. Existing attachments are preserved.
+  // Attach before the first observation of asynchronous work, or only after
+  // actual retirement is independently established. A cached observation
+  // error alone cannot prove that late work or its original attachment ended.
   HYLE_COMPUTE_API Status attach(Completion &completion, void *retained_state,
                                  ReleaseFn release) noexcept;
 

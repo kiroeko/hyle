@@ -106,6 +106,11 @@ struct CopyUpdateAccess final {
   static HYLE_COMPUTE_ROUTE_APPLE_API Status qualify(const CopyBatchInvocation &,
                               const CopyBatchSubmission &) noexcept;
   static HYLE_COMPUTE_ROUTE_APPLE_API Status observe(CopyBatchInvocation &) noexcept;
+  static HYLE_COMPUTE_ROUTE_APPLE_API Result<std::size_t> retirement_count(
+      const CopyBatchInvocation &, const CopyBatchSubmission &) noexcept;
+  static HYLE_COMPUTE_ROUTE_APPLE_API Status attach_retention(
+      CopyBatchInvocation &, CopyBatchSubmission &, std::size_t,
+      compute::CompletionRetention &, void *, compute::CompletionRetention::ReleaseFn) noexcept;
   // Trusted receiver/copy seams only; no ordinary public pending byte view.
   template<class Update> static auto &invocation(Update &owner) noexcept { return owner.invocation_; }
   template<class Update> static auto &submission(Update &owner) noexcept { return owner.submission_; }

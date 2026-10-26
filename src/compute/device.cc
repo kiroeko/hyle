@@ -689,6 +689,8 @@ bool Context::is_open() const noexcept {
   return state_ != nullptr && state_->admission.is_open();
 }
 
+const void *Context::identity_key() const noexcept { return state_; }
+
 Device Context::device() const noexcept {
   return state_ != nullptr ? state_->device : Device{};
 }

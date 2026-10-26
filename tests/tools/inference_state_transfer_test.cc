@@ -305,18 +305,134 @@ void closed_control_admission() {
       !invocation.submit(), "writer recovery reopened closed CopyBatch admission or consumed a rejected writer");
 }
 
+void public_retirement_sources() {
+  auto context = take(c::Context::create(c::cpu::device()));
+  auto queue = take(context.create_queue());
+  auto pool = take(c::LeasePool::create(hyle::mem::system_resource(), 1024, {.max_blocks = 4}));
+  auto source_writer = take(pool.allocate(64));
+  check(take(source_writer.view()).fill(std::byte{0x3a}));
+  auto source = take(source_writer.publish());
+  auto unused_writer = take(pool.allocate(64));
+  check(take(unused_writer.view()).fill(std::byte{0x5b}));
+  auto unused = take(unused_writer.publish());
+  const std::array specs{c::CopyResourceSpec{hyle::mem::system_resource(), 64},
+      c::CopyResourceSpec{hyle::mem::system_resource(), 64},
+      c::CopyResourceSpec{hyle::mem::system_resource(), 64}};
+  auto program = take(c::CopyBatchProgram::prepare(context, specs));
+  const auto make_update = [&](bool producers, bool two_phases) {
+    auto invocation = take(c::CopyBatchInvocation::create(program, queue));
+    auto destination = take(pool.allocate(64));
+    check(invocation.bind_source({0}, source));
+    check(invocation.bind_mutable({1}, std::move(destination)));
+    if (producers) {
+      check(invocation.bind_source({2}, unused));
+      check(invocation.bind_producer({0}, c::Completion::completed()));
+      check(invocation.bind_producer({2}, c::Completion::completed()));
+    }
+    constexpr std::array<c::CopyPhase, 2> phases{{{}, {.dependency_mask = 1}}};
+    const std::array<c::CopyRange, 2> ranges{{
+        {{0}, {1}, {0}, 0, 0, two_phases ? 32u : 64u},
+        {{0}, {1}, {1}, 32, 32, 32}}};
+    const auto count = two_phases ? std::size_t{2} : std::size_t{1};
+    check(invocation.prepare_replay(std::span(phases).first(count), std::span(ranges).first(count)));
+    auto submitted = take(invocation.submit());
+    return take(c::CopyBatchUpdate::take(std::move(invocation), std::move(submitted)));
+  };
+  const auto release = +[](void *opaque) noexcept { ++*static_cast<unsigned *>(opaque); };
+  {
+    auto update = make_update(true, true);
+    // One producer used by both accepted phases occurs once; the other bound
+    // producer is unused and must not enter the episode's source inventory.
+    require(take(update.retirement_count()) == 3, "public copy retirement source inventory is not exact");
+    std::array<c::CompletionRetention, 3> nodes;
+    std::array<unsigned, 3> released{};
+    unsigned rejected = 0;
+    c::CompletionRetention invalid;
+    require(update.attach_retention(3, invalid, &rejected, release).IsOutOfRange() && !rejected &&
+        update.attach_retention(0, invalid, nullptr, release).IsInvalidArgument() &&
+        update.attach_retention(0, invalid, &rejected, nullptr).IsInvalidArgument() && !rejected,
+        "rejected public attachment consumed a reference or accepted an invalid source");
+    for (std::size_t at = 0; at < nodes.size(); ++at)
+      check(update.attach_retention(at, nodes[at], &released[at], release));
+    require(released == std::array<unsigned, 3>{1, 1, 1}, "inline copy sources did not release distinct nodes once");
+    check(update.wait());
+  }
+  {
+    struct SelfOwned final {
+      c::CopyBatchUpdate update;
+      c::CompletionRetention node;
+      unsigned *released;
+    };
+    unsigned released = 0;
+    auto *owner = new SelfOwned{make_update(true, true), {}, &released};
+    check(owner->update.attach_retention(0, owner->node, owner, +[](void *opaque) noexcept {
+      auto *retained = static_cast<SelfOwned *>(opaque);
+      ++*retained->released;
+      delete retained;
+    }));
+    require(released == 1, "inline copy attachment did not safely release its entire Update owner");
+  }
+  {
+    CpuFaultBoundary boundary(context); boundary.delayed = true;
+    auto update = make_update(false, false);
+    require(take(update.retirement_count()) == 1, "single pending copy gained an unrelated source");
+    c::CompletionRetention node;
+    unsigned released = 0, rejected = 0;
+    check(update.attach_retention(0, node, &released, release));
+    require(update.attach_retention(0, node, &rejected, release).IsFailedPrecondition() &&
+        !released && !rejected && update.in_flight(),
+        "duplicate public attachment consumed a reference or released the first pending owner");
+    require(update.observe().IsUnavailable() && !released && !boundary.retirement.callbacks,
+        "pending public attachment retired on observation alone");
+    boundary.retirement.release();
+    check(update.observe());
+    require(released == 1 && !rejected && !update.in_flight(),
+        "original retirement did not release the public attachment exactly once");
+  }
+  {
+    CpuFaultBoundary boundary(context); boundary.delayed = true; boundary.retirement.unknown = true;
+    auto update = make_update(false, false);
+    c::CompletionRetention original, late;
+    unsigned released = 0, rejected = 0;
+    check(update.attach_retention(0, original, &released, release));
+    require(update.observe().IsUnavailable() && update.in_flight() &&
+        boundary.retirement.deferred.valid() && !released,
+        "unknown observation did not retain the already attached original owner");
+    require(update.attach_retention(0, late, &rejected, release).IsUnavailable() &&
+        !released && !rejected && update.in_flight(),
+        "late unknown attachment consumed a reference or fabricated inline retirement");
+    boundary.retirement.release();
+    require(update.observe().IsUnavailable() && !update.in_flight() && released == 1 && !rejected,
+        "actual callback lost the original unknown outcome or released a rejected reference");
+  }
+  {
+    CpuFaultBoundary boundary(context); boundary.reject_at = 2;
+    auto update = make_update(true, true);
+    require(take(update.retirement_count()) == 2,
+        "rejected suffix entered the retirement inventory or erased its accepted prefix");
+    std::array<c::CompletionRetention, 2> nodes;
+    std::array<unsigned, 2> released{};
+    for (std::size_t at = 0; at < nodes.size(); ++at)
+      check(update.attach_retention(at, nodes[at], &released[at], release));
+    require(released == std::array<unsigned, 2>{1, 1} && update.wait().IsResourceExhausted(),
+        "known retired failure refused retention or lost its original accepted-prefix error");
+  }
+}
+
 void run_faults() {
   for (const auto mode : {FaultMode::kPending, FaultMode::kAcceptedPrefix, FaultMode::kUnknown,
           FaultMode::kAbandon, FaultMode::kRejectedFirst, FaultMode::kCancelSupported,
           FaultMode::kCancelUnsupported}) fault_case(mode);
   duplicate_attachment();
   closed_control_admission();
+  public_retirement_sources();
   std::cout << "{\"status\":\"PASS\",\"backend\":\"cpu\",\"real_cpu_copy\":true,"
       "\"controlled_completion_protocol\":true,\"pending_success\":true,\"accepted_prefix_failure\":true,"
       "\"unknown_retirement\":true,\"abandon_keeps_scope\":true,\"first_copy_rejection\":true,"
       "\"nonblocking_success\":true,\"supported_cancel_retirement\":true,\"unsupported_cancel_success\":true,"
       "\"duplicate_attachment_keeps_owner\":true,"
       "\"closed_control_admission_rejected\":true,"
+      "\"public_copy_retention\":true,"
       "\"early_or_failed_writer_publication\":false,\"GPU_driver_fault\":false}\n";
 }
 #endif

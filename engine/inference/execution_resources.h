@@ -39,10 +39,22 @@ template<class Scope> struct RetainedResources final {
     active.store(false, std::memory_order_release);
   }
   hyle::Status attach(hyle::compute::Completion &completion) noexcept {
+    return attach_to([&](auto &node, void *state, auto release) noexcept {
+      return node.attach(completion, state, release);
+    });
+  }
+  template<class CopyUpdate>
+  hyle::Status attach(CopyUpdate &update, std::size_t index) noexcept {
+    return attach_to([&](auto &node, void *state, auto release) noexcept {
+      return update.attach_retention(index, node, state, release);
+    });
+  }
+private:
+  template<class Attach> hyle::Status attach_to(Attach &&attach) noexcept {
     if (!pending() || attached || !owner)
       return hyle::Status::FailedPrecondition("carrier resource scope was not reserved once");
     attached = true;
-    const auto result = retention.attach(completion, this, +[](void *opaque) noexcept {
+    const auto result = attach(retention, this, +[](void *opaque) noexcept {
       auto &node = *static_cast<RetainedResources *>(opaque);
       // Move before publication: a host may reuse an idle serial carrier.
       // The local can destroy this node's whole scope; no access follows.

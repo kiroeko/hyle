@@ -8,6 +8,7 @@
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/queue_ref.h"
 #include "hyle/compute/detail/queue_sequence.h"
+#include "hyle/compute/storage_owner.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/mem/buffer.h"
 
@@ -102,6 +103,9 @@ TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
     Context context = std::move(*created);
     EXPECT_EQ(probe.allocations, 1u);
     EXPECT_EQ(context.metadata_allocator().state(), &probe);
+    const auto identity = context.identity_key();
+    EXPECT_NE(identity, nullptr);
+    EXPECT_EQ(probe.allocations, 1u);
 
     auto queue_result = context.create_queue();
     ASSERT_TRUE(queue_result.has_value());
@@ -112,14 +116,44 @@ TEST(Context, ExplicitAllocatorAndRetainedHandlesHaveOneColdAllocation) {
 
     Context moved = std::move(context);
     EXPECT_FALSE(context.valid()); // NOLINT(bugprone-use-after-move)
+    EXPECT_EQ(context.identity_key(), nullptr); // NOLINT(bugprone-use-after-move)
+    EXPECT_EQ(moved.identity_key(), identity);
     EXPECT_TRUE(queue.is_open());
     EXPECT_TRUE(moved.close().ok());
+    EXPECT_EQ(moved.identity_key(), identity);
     EXPECT_FALSE(queue.is_open());
     EXPECT_EQ(probe.deallocations, 0u);
   }
   EXPECT_EQ(probe.deallocations, 0u);
   queue = Queue{};
   EXPECT_EQ(probe.deallocations, 2u);
+}
+
+TEST(Context, IdentityMatchesRetainedOwnerAndSeparatesSameDeviceContexts) {
+  Context empty;
+  EXPECT_EQ(empty.identity_key(), nullptr);
+  Context first = Context::create(hyle::compute::cpu::device()).value();
+  Context second = Context::create(hyle::compute::cpu::device()).value();
+  EXPECT_EQ(first.device(), second.device());
+  EXPECT_NE(first.identity_key(), second.identity_key());
+  struct HostResource final {
+    hyle::mem::MemoryResourceRef ref() const noexcept {
+      return hyle::mem::system_resource();
+    }
+  };
+  auto owner = hyle::compute::StorageOwner::adopt(first, HostResource{}).value();
+  const auto identity = first.identity_key();
+  EXPECT_EQ(owner.context_identity(), identity);
+  second = std::move(first);
+  EXPECT_EQ(first.identity_key(), nullptr); // NOLINT(bugprone-use-after-move)
+  EXPECT_EQ(second.identity_key(), identity);
+  ASSERT_TRUE(second.close().ok());
+  EXPECT_EQ(second.identity_key(), identity);
+  EXPECT_FALSE(second.create_queue());
+  second = Context{};
+  // Only the retained owner now keeps this identity valid. The query itself
+  // supplied no lifetime or renewed Context admission.
+  EXPECT_EQ(owner.context_identity(), identity);
 }
 
 TEST(Context, RejectsInvalidDeviceAndReportsMetadataOom) {

@@ -62,7 +62,6 @@
 #include "projection_binding.h"
 #include "weights.h"
 #include "hyle/compute/batch_transfer.h"
-#include "hyle/compute/detail/copy_stream_access.h"
 #include "hyle/core/assert.h"
 #include "precision_profile.h"
 #include "cache_precision.h"
@@ -3242,10 +3241,9 @@ public:
     // these accepted-control attachments are capacity-proven and nonallocating.
     auto update = c::CopyBatchUpdate::take(std::move(copy.invocation), std::move(*submitted));
     HYLE_FATAL_ASSERT(update.has_value()); copy.update = std::move(*update);
-    std::array<c::Completion *, 1> original;
-    const auto sources = c::detail::CopyStreamAccess::retirement_sources(copy.update, original);
+    const auto sources = copy.update.retirement_count();
     HYLE_FATAL_ASSERT(sources && *sources == 1);
-    HYLE_FATAL_ASSERT(copy.retirement.attach(*original[0]).ok());
+    HYLE_FATAL_ASSERT(copy.retirement.attach(copy.update, 0).ok());
     check(copy.update.wait());
     for (std::size_t j = 0; j < step.members.size(); ++j) {
       auto &member = step.members[j];

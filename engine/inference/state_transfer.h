@@ -16,14 +16,6 @@
 #include "execution_resources.h"
 #include "retirement_observation.h"
 #include "hyle/compute/batch_transfer.h"
-#include "hyle/compute/detail/context_ref.h"
-#include "hyle/compute/detail/copy_stream_access.h"
-#if defined(HYLE_COMPUTE_APPLE)
-#include "hyle/compute/detail/apple_copy_stream_access.h"
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-#include "hyle/compute/detail/vulkan_copy_stream_access.h"
-#endif
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 
@@ -65,7 +57,6 @@ class StateTransfer final {
     std::shared_ptr<void> lifetime;
   };
   struct CommonControl final {
-    compute::detail::ContextRef context;
     compute::Queue queue;
     compute::CopyBatchProgram program;
     compute::CopyBatchInvocation invocation;
@@ -271,8 +262,8 @@ private:
     case BackendKind::kCpu:
     case BackendKind::kCuda: {
       HYLE_ASSIGN_OR_RETURN(auto *context, backend.common_context());
-      HYLE_ASSIGN_OR_RETURN(std::get<CommonControl>(owner.control).context,
-          compute::detail::ContextRef::acquire(*context));
+      if (!context->valid()) return Status::FailedPrecondition("context is invalid");
+      if (!context->is_open()) return Status::FailedPrecondition("context is closed");
       return {};
     }
 #if defined(HYLE_COMPUTE_APPLE)
@@ -295,13 +286,13 @@ private:
   static Status prepare_control(Backend &backend, Scope &owner,
       std::span<const compute::CopyResourceSpec> resources,
       const compute::CopyBatchOptions &options) noexcept {
-    (void)backend; // Common-only builds use the already acquired ContextRef.
     return std::visit([&](auto &control) noexcept -> Status {
       using Selected = std::remove_cvref_t<decltype(control)>;
       if constexpr (std::is_same_v<Selected, CommonControl>) {
-        HYLE_ASSIGN_OR_RETURN(control.queue, control.context.create_queue());
+        HYLE_ASSIGN_OR_RETURN(auto *context, backend.common_context());
+        HYLE_ASSIGN_OR_RETURN(control.queue, context->create_queue());
         HYLE_ASSIGN_OR_RETURN(control.program,
-            compute::detail::CopyStreamAccess::prepare(control.context, resources, options));
+            compute::CopyBatchProgram::prepare(*context, resources, options));
         HYLE_ASSIGN_OR_RETURN(control.invocation,
             compute::CopyBatchInvocation::create(control.program, control.queue));
       }
@@ -344,33 +335,13 @@ private:
     }
     return status;
   }
-  template<class Access, class Update>
-  static void attach_original(Scope &owner, Update &update) noexcept {
+  template<class Selected>
+  static void attach_retirement(Scope &owner, Selected &control) noexcept {
     // Exactly one phase, no producer bindings and a sole move-only observer.
-    std::array<compute::Completion *, 1> original{};
-    const auto count = Access::retirement_sources(update, original);
+    const auto count = control.update.retirement_count();
     HYLE_FATAL_ASSERT(count && *count == 1);
-    HYLE_FATAL_ASSERT(owner.retirement.attach(*original[0]).ok());
+    HYLE_FATAL_ASSERT(owner.retirement.attach(control.update, 0).ok());
   }
-  static void attach_retirement(Scope &owner, CommonControl &control) noexcept {
-    attach_original<compute::detail::CopyStreamAccess>(owner, control.update);
-  }
-#if defined(HYLE_COMPUTE_APPLE)
-  static void attach_retirement(Scope &owner, AppleControl &control) noexcept {
-    struct Attachment { Scope &owner; compute::apple::CopyBatchUpdate &update; } attachment{owner, control.update};
-    // The original FIFO preflight can observe the same Completion. Both the
-    // source lookup and attachment must share its recursive observation lock.
-    compute::apple::detail::CopyStreamAccess::serialize(control.update, +[](void *opaque) noexcept {
-      auto &call = *static_cast<Attachment *>(opaque);
-      attach_original<compute::apple::detail::CopyStreamAccess>(call.owner, call.update);
-    }, &attachment);
-  }
-#endif
-#if defined(HYLE_COMPUTE_VULKAN)
-  static void attach_retirement(Scope &owner, VulkanControl &control) noexcept {
-    attach_original<compute::vulkan::detail::CopyStreamAccess>(owner, control.update);
-  }
-#endif
   explicit StateTransfer(std::shared_ptr<Scope> scope) noexcept : scope_(std::move(scope)) {}
   void abandon() noexcept {
     auto held = std::move(scope_);

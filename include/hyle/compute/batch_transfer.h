@@ -6,6 +6,7 @@
 #include <span>
 #include <utility>
 
+#include "hyle/compute/completion_retention.h"
 #include "hyle/compute/resource_budget.h"
 #include "hyle/compute/resource_leases.h"
 
@@ -195,6 +196,25 @@ public:
   Status request_cancel() noexcept {
     return submission_.valid() ? submission_.request_cancel() : invocation_.close();
   }
+  // Stable original retirement sources: used producers once each, followed by
+  // accepted phases. Includes failed/unknown work; this does not observe it.
+  // Query/attachment require this sole Update and external synchronization.
+  Result<std::size_t> retirement_count() const noexcept {
+    return Access::retirement_count(invocation_, submission_);
+  }
+  // Attach one existing reference to one source, without exposing Completion
+  // handles or native observation locks. Success consumes that reference;
+  // failure consumes none. Each source needs its own stable node/reference.
+  // An inline source may release synchronously and destroy the node/owner.
+  // Once observation begins, a late attachment can reject with Unavailable
+  // while native work still retires; rejection never releases the owner.
+  // Source indices remain valid only for this accepted episode, before any
+  // controls are recovered. No allocation, wait or data publication occurs.
+  Status attach_retention(std::size_t index, compute::CompletionRetention &node,
+      void *retained_state, compute::CompletionRetention::ReleaseFn release) noexcept {
+    return Access::attach_retention(invocation_, submission_, index, node,
+                                   retained_state, release);
+  }
   // Return caller-owned mutable content after real success. Untouched bytes
   // are still that caller's responsibility; this does not expand F2 output.
   Result<WriteLease> take_mutable(CopyResourceId resource) noexcept {
@@ -225,6 +245,11 @@ struct CopyUpdateAccess final {
   static HYLE_COMPUTE_API Status qualify(const CopyBatchInvocation &,
                               const CopyBatchSubmission &) noexcept;
   static HYLE_COMPUTE_API Status observe(CopyBatchInvocation &) noexcept;
+  static HYLE_COMPUTE_API Result<std::size_t> retirement_count(
+      const CopyBatchInvocation &, const CopyBatchSubmission &) noexcept;
+  static HYLE_COMPUTE_API Status attach_retention(
+      CopyBatchInvocation &, CopyBatchSubmission &, std::size_t,
+      compute::CompletionRetention &, void *, compute::CompletionRetention::ReleaseFn) noexcept;
   // Trusted receiver/copy seams only; no ordinary public pending byte view.
   template<class Update> static auto &invocation(Update &owner) noexcept { return owner.invocation_; }
   template<class Update> static auto &submission(Update &owner) noexcept { return owner.submission_; }

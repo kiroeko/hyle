@@ -1,0 +1,159 @@
+{
+  "status": "FINITE_SCOPE_PASS_WITH_PRESERVED_HEADER_COMPILE_FAILURE",
+  "date": "2026-10-26",
+  "source_base": "61bae1439c143b9283a965b55bbfaa7c300c0c27",
+  "source_patch": "records/product.patch",
+  "changes": [
+    "Public CopyBatchUpdate retirement_count and indexed attach_retention keep source Completion handles and Apple synchronization inside the original factor. Each successful call transfers one existing reference; rejected calls consume none.",
+    "All three original copy factors share their own stable source enumeration with internal composition. Producer bindings referenced by accepted phase plans are deduplicated before accepted phases; rejected phases are excluded. Within a partially accepted phase, not-yet-attempted producer waits may still be conservatively included.",
+    "Original invocation references protect source and Apple mutex across synchronous callbacks that may delete the entire consumer Update/retention owner. Late observation with unretired phases rejects before reading source handles; cached producer errors without retirement proof reject.",
+    "StateTransfer and Qwen hidden-output copies use public retention. StateTransfer prepares through the public original Context; original Program/Queue retain Context state while its Queue wrapper remains stable in Scope.",
+    "Public borrowed Context identity matches StorageOwner identity across move/close, without retention or allocation. Backend no longer reaches into ContextRef for this query."
+  ],
+  "validation": {
+    "windows": {
+      "device_tests": "9/9",
+      "processes": [
+        {
+          "name": "device",
+          "process": {
+            "exit": 0,
+            "pid": 51100,
+            "seconds": 0.554037399997469
+          }
+        },
+        {
+          "name": "cpu-faults",
+          "process": {
+            "exit": 0,
+            "pid": 49464,
+            "seconds": 0.22413470002356917
+          }
+        },
+        {
+          "name": "cpu-closed",
+          "process": {
+            "exit": 0,
+            "pid": 15808,
+            "seconds": 0.19797459995606914
+          }
+        },
+        {
+          "name": "vulkan-closed",
+          "process": {
+            "exit": 0,
+            "pid": 39852,
+            "seconds": 0.5457473000278696
+          }
+        },
+        {
+          "name": "qwen-vulkan",
+          "process": {
+            "exit": 0,
+            "pid": 32964,
+            "seconds": 1.2689541000290774
+          }
+        },
+        {
+          "name": "qwen-vulkan-lag1",
+          "process": {
+            "exit": 0,
+            "pid": 32572,
+            "seconds": 0.9631659000297077
+          }
+        }
+      ],
+      "unique_TUs": 6,
+      "compile_invocations": 7,
+      "compile_failures": 1
+    },
+    "mac": {
+      "model": "Mac16,12",
+      "processes": [
+        {
+          "pid": 21811,
+          "exit": 0,
+          "seconds": 0.9089284579999997
+        },
+        {
+          "pid": 21812,
+          "exit": 0,
+          "seconds": 0.0906997090000008
+        }
+      ],
+      "unique_TUs": 4,
+      "compile_invocations": 5,
+      "compile_failures": 1,
+      "reused_successful_device": true
+    },
+    "contracts": [
+      "Exact two-phase/producer source inventory; unused producer and rejected phase exclusion.",
+      "Invalid index/parameters and active-node duplicate reject without consuming references.",
+      "Inline release can delete the entire Update owner; native original state remains valid through return.",
+      "Pending/unknown observation never releases the existing owner early; late unknown attachment rejects zero-consumption.",
+      "Original seven CPU controlled failure/cancellation/abandonment branches, real CPU/Vulkan/Apple copy and closed-writer recovery.",
+      "Tiny Vulkan ordinary/MTP and explicit-prefix lag1 host-image continuation."
+    ]
+  },
+  "preserved_failure": "The first Windows common-copy and Mac common-copy compile rejected an unqualified public type inside detail namespace. One header was qualified; Windows stopped before other TUs, Mac reused its successful independent device TU. Original outputs and failed header are archived.",
+  "limits": [
+    "No physical GPU driver-failure injection; controlled Completion tests are CPU protocol checks.",
+    "Model host-image export/restore remains synchronous; no asynchronous session parking claim.",
+    "No new CUDA/full335 run, throughput/memory benchmark, task-quality or natural MTP acceptance claim.",
+    "Current selected TUs and exact cached closures were linked; unchanged vendor/SDK/Completion/weights/report were reused.",
+    "Shape bucketing, stable indexed recurrent state, overlap and complete performance comparison remain separate unfinished work."
+  ],
+  "cleanup": {
+    "status": "REMOVED_THREE_EXACT_SUPERSEDED_IMAGES",
+    "command": "& .\\test.ps1 -Delete",
+    "executed_script_sha256": "517eb815a1f8fc6381f29b1233c55e0314907b4efebd6004dd8ed03b4cecc97b",
+    "logical_bytes": 204867584,
+    "targets": [
+      {
+        "bytes": 69550592,
+        "path": ".scratch/inference-transfer-retirement-20261026/case/link/host-image-test.exe",
+        "sha256": "77c126276f2ba1f961a4153ebab7f3f070b7ac8eec62c4e9c78b4bf51a35ddc0"
+      },
+      {
+        "bytes": 67860992,
+        "path": ".scratch/inference-transfer-retirement-20261026/test/link/completion-test.exe",
+        "sha256": "79e0efba50abf14b5fac285442e66b488085f51163bbc470d3f5dfc0526db6bb"
+      },
+      {
+        "bytes": 67456000,
+        "path": ".scratch/inference-transfer-retirement-20261026/transfer/link/state-transfer-test.exe",
+        "sha256": "a9daf759d0c9791ef6804d968899df0244e70c6eac446750a1da00dc88f3bd3e"
+      }
+    ],
+    "current_case_present": true,
+    "current_focused_present": true,
+    "current_transfer_present": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-copy-public-retention-2026-10-26.zip",
+    "bytes": 287940,
+    "sha256": "6e1063072f7f63cacb1fe85af3bbda120802b6614b3a44ddac2f54b02a5f8418",
+    "entries": 196
+  },
+  "review": {
+    "files": [
+      "src/compute/batch_transfer.cc",
+      "src/compute_route_apple/apple_copy_program.cc",
+      "src/compute_route_vulkan/vulkan_copy_program.cc"
+    ],
+    "history": [
+      "61bae1439",
+      "33d488abe",
+      "908ad39d0",
+      "f307dbc50"
+    ],
+    "confirmed_correctness_findings": [],
+    "checked": [
+      "Closed recovery preserves admission, users, failure, actual retirement and writer uniqueness gates.",
+      "Original native state is retained across synchronous deletion; Apple unlocks before dropping its local state reference.",
+      "Vulkan observer entry gate prevents late attachments while abandoned callbacks may still poll source handles; reset/replay only clears proof in an idle sole slot."
+    ],
+    "boundary": "Inventory is accepted-phase-plan producer bindings, not an exact list of accepted native waits. An accepted wait followed by rejection may leave later unattempted producers in that phase inventory. This conservative inherited rule is not proven erroneous; failed-tail CopyOutcomeSource qualification rejects before normal suffix composition.",
+    "limits": "Read-only independent source reviews plus existing finite tests; no new native driver fault injection or throughput claim."
+  }
+}

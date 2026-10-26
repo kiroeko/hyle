@@ -122,6 +122,10 @@ reset撤销本轮租约、页权限与就绪；原生录制按实际资源依赖
 普通消费者可在已保活owner中嵌入稳定的`CompletionRetention`节点，将一份已持有的引用附到原Completion。
 成功才转交引用，失败不消费；原runtime在实际退休时调用release，inline完成可在attach中同步释放。
 节点不可移动或提前析构，取消、观察失败及放弃句柄都不代表退休。该接口复用原附件链，不额外分配或执行工作。
+直接附加须在异步首次观察前完成，或已有独立的真实退休证明；缓存的观察错误不能充当这种证明。
+`CopyBatchUpdate`公开源数量与按索引附加，每源一份节点／引用，原生实现封装Completion和观察锁。
+源范围是已接受phase引用的producer绑定及phase，producer去重；部分phase失败时可能保守包含尚未尝试的producer wait。
+观察后仍有phase未退休时可拒绝迟到附加，失败不消费引用，不能把丢失的原生观察句柄当inline退休。
 
 批量byte copy冷准备固定域、范围/groups/slots与bytes上限。独立copy可重复读取source，
 不能隐含destination重叠或批内依赖；有依赖时用明确阶段。全批预检后仍可能部分接纳，

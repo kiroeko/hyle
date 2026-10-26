@@ -161,6 +161,12 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   bool is_open() const noexcept;
+  // Process-local identity of this actual Context state, not its Device or
+  // public handle address. Empty/moved-from handles return null; moves and
+  // close() preserve the identity. This query neither retains nor reopens it.
+  // Compare only while an original Context/Queue/Program/StorageOwner keeps
+  // that state alive; after the last owner dies the value may be reused.
+  const void *identity_key() const noexcept;
   Device device() const noexcept;
   mem::AllocatorRef metadata_allocator() const noexcept;
   std::size_t provider_count() const noexcept;
