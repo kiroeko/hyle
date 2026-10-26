@@ -60,6 +60,10 @@ struct LeaseAccess final {
   // Original fixed-page adapters only: addressable readonly capacity, not a
   // read permission for the backing or its independently leased page blocks.
   static HYLE_COMPUTE_API Result<mem::ConstBufferView> backing_span(const LeasePool &) noexcept;
+  // Address carrier for a checked fixed-slot layout, not initialized storage
+  // or permission to read any unbound slot or its alignment padding.
+  static HYLE_COMPUTE_API Result<mem::ConstBufferView>
+  slot_capacity(const LeaseSlotLayout &) noexcept;
   // Actual metadata allocator behind a retained budget, or the domain's direct
   // allocator. This ref borrows the allocator object; it does not retain it.
   static HYLE_COMPUTE_API mem::AllocatorRef

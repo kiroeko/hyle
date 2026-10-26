@@ -1,0 +1,678 @@
+{
+  "schema": 1,
+  "date": "2026-10-26",
+  "status": "COMPLETE_RESOURCE_LEASES_TU_PASS",
+  "scope": "Finite Windows CPU Compute validation of LeaseSlotLayout and all existing tests in resource_leases_test.cc. No engine/backend/platform/performance matrix.",
+  "current_sources": [
+    {
+      "path": "include/hyle/compute/lease_slots.h",
+      "bytes": 3494,
+      "sha256": "1130b513bed3ab8dd41fab5f27722954c24b84fb3ea69a7ba19862a7d14ba694"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "bytes": 9759,
+      "sha256": "81eda3fe4f224bf7e9e12602d8c45227722491d0b0847ea79e0f4375fa28510d"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "bytes": 8234,
+      "sha256": "9af085afc7b50b358a7f3c2d56e7ea661e203a6319fd9f47e17d078f1d8ea673"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "bytes": 55718,
+      "sha256": "39d4bef771910a68d8251c5f761f72a61e83551d19a7a04335f2b5230b5c21c2"
+    },
+    {
+      "path": "tests/compute/resource_leases_test.cc",
+      "bytes": 42307,
+      "sha256": "da692c8be07fff6e49a2f5cdcb1edd6e1d474e111ea992eeb7486f4d5d11780c"
+    }
+  ],
+  "canonical_target": "hyle_compute_test: resource_leases_test.cc only, using original GoogleTest main",
+  "compile_contract": "Original pure CPU /O2 /Ob2 /MD /W4 /WX /DHYLE_STATIC recipe; canonical project headers precede cached dependencies after correction.",
+  "current_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-lease-slots-20261026\\link4\\lease-slots-test.exe",
+    "bytes": 67784192,
+    "sha256": "4a3ca0b1147a5d35d6970a310f91082c43ca2714a5f71ebe7d0903f64ea02b66"
+  },
+  "successful_distinct_TUs": 2,
+  "compile_processes": 5,
+  "successful_compile_processes": 4,
+  "link_processes": 3,
+  "test_processes": 3,
+  "process_stages": [
+    {
+      "stage": "compile/core",
+      "exit": 0,
+      "pid": 43520,
+      "seconds": 1.0761582999839447
+    },
+    {
+      "stage": "compile/test",
+      "exit": 2,
+      "pid": 47532,
+      "seconds": 1.0758994999923743
+    },
+    {
+      "stage": "compile2/test",
+      "exit": 0,
+      "pid": 40676,
+      "seconds": 2.4803315000026487
+    },
+    {
+      "stage": "compile3/test",
+      "exit": 0,
+      "pid": 60008,
+      "seconds": 2.5181125000235625
+    },
+    {
+      "stage": "compile4/test",
+      "exit": 0,
+      "pid": 60440,
+      "seconds": 2.4863008999964222
+    },
+    {
+      "stage": "link",
+      "exit": 0,
+      "pid": 35316,
+      "seconds": 1.4056619000039063
+    },
+    {
+      "stage": "link3",
+      "exit": 0,
+      "pid": 20228,
+      "seconds": 1.409122999990359
+    },
+    {
+      "stage": "link4",
+      "exit": 0,
+      "pid": 4284,
+      "seconds": 1.3567514999886043
+    },
+    {
+      "stage": "run1",
+      "exit": 1,
+      "pid": 56736,
+      "seconds": 0.23393119999673218
+    },
+    {
+      "stage": "run2",
+      "exit": 1,
+      "pid": 33008,
+      "seconds": 0.24881700001424178
+    },
+    {
+      "stage": "run3",
+      "exit": 0,
+      "pid": 4488,
+      "seconds": 0.23129470000276342
+    }
+  ],
+  "runs": [
+    {
+      "stage": "run1",
+      "process": {
+        "exit": 1,
+        "pid": 56736,
+        "seconds": 0.23393119999673218
+      },
+      "tests": 25,
+      "passed": 24,
+      "failures": 1,
+      "failed": [
+        {
+          "name": "ResourceLeases.FixedSlotsPreserveDomainAcrossMoveDropAndGenerationReuse",
+          "messages": [
+            "unknown file\nC++ exception with description \"Bad expected access\" thrown in the test body.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "run2",
+      "process": {
+        "exit": 1,
+        "pid": 33008,
+        "seconds": 0.24881700001424178
+      },
+      "tests": 25,
+      "passed": 24,
+      "failures": 1,
+      "failed": [
+        {
+          "name": "ResourceLeases.FixedSlotsPreserveDomainAcrossMoveDropAndGenerationReuse",
+          "messages": [
+            "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc:179\nValue of: pool_result\n  Actual: false\nExpected: true\nshared resource budget is exhausted\n"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "run3",
+      "process": {
+        "exit": 0,
+        "pid": 4488,
+        "seconds": 0.23129470000276342
+      },
+      "tests": 25,
+      "passed": 25,
+      "failures": 0,
+      "failed": []
+    }
+  ],
+  "corrections": [
+    {
+      "kind": "Recipe only",
+      "failure": "First test compile used historical project /I shadow and could not find LeaseAccess::slot_capacity.",
+      "change": "Remove that one /I; keep original failure and use canonical header. Core compiled once and reused in all subsequent attempts."
+    },
+    {
+      "kind": "Test diagnostics only",
+      "failure": "First test run had one Bad expected access exception.",
+      "change": "Root replaces unchecked fallible accesses in the one failing test with explicit Result assertions, without changing budget or product."
+    },
+    {
+      "kind": "Test budget only",
+      "failure": "Second test run identifies LeasePool::create rejection: shared resource budget is exhausted.",
+      "change": "Root changes that test budget from 4096 to 65536 bytes to include backing plus original pool metadata, retaining diagnostics. Final 25/25 pass."
+    }
+  ],
+  "reuse": {
+    "baseline": "inference-paged-frame-20261026/link2: prior 41-test PASS closure",
+    "retained_input_count": 135,
+    "total_input_count": 137,
+    "replacements": [
+      "Direct resource_leases.cc object",
+      "Direct prior GTest test-TU object"
+    ],
+    "archive_rewrites": 0,
+    "ignored_duplicate_symbols": 0,
+    "boundary": "All other Compute/provider/GoogleTest/vendor dependencies reused without recompilation. This run exercises only the selected CPU test TU, not those backend paths."
+  },
+  "SDK_builds": 0,
+  "Model_builds": 0,
+  "model_runs": 0,
+  "HTTP": 0,
+  "performance_claim": false,
+  "source_history": "Original and diagnostic test versions are identified by plan/source-freeze pins and raw outputs; final five canonical sources are snapshotted. Historical shadow header is included solely to document the recipe failure.",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-lease-slots-2026-10-26.zip",
+    "bytes": 174339,
+    "sha256": "5d8d90053de38a987797fed563fb6189931a7a32da0e9a6b071d7d49c1f571e1",
+    "file_count": 94,
+    "files": [
+      {
+        "path": "historical-shadow/lease_access.h",
+        "bytes": 7622,
+        "sha256": "45fb2c10a2224f4c3537a468794ea0c7f40e0d77e22d76a094ffcd7d54b2d9d1"
+      },
+      {
+        "path": "records/build.py",
+        "bytes": 10102,
+        "sha256": "db4b95ba724e5a6c4f5196b34452e036201e6c9c1b61d826aca5d61b15158ae5"
+      },
+      {
+        "path": "records/compile/core/actual-dependencies.json",
+        "bytes": 38229,
+        "sha256": "79a37b02e641163ec71c2286c9ded130c7f1e3a57aaeda45cb7c908ca12b302b"
+      },
+      {
+        "path": "records/compile/core/command.json",
+        "bytes": 1531,
+        "sha256": "82c6d41205f6cb7b9999e50271b7ac953f93f4deb65ef00a687ae50c44600258"
+      },
+      {
+        "path": "records/compile/core/dependencies.json",
+        "bytes": 19333,
+        "sha256": "d04d4bdbb6e69d1566a7bc12f148d0b1ab33c978b4219cadd3f74ee9e05555a5"
+      },
+      {
+        "path": "records/compile/core/process.json",
+        "bytes": 70,
+        "sha256": "6a62ea78ee9508014973d3451ac530d2346a61b6c0584218dc89ca26ffa7206e"
+      },
+      {
+        "path": "records/compile/core/running.json",
+        "bytes": 22,
+        "sha256": "4131e21fdd234dda2dc96d525ddf828c08d4cf14370c80bc120ab5274e6b7278"
+      },
+      {
+        "path": "records/compile/core/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/core/stdout.log",
+        "bytes": 20,
+        "sha256": "bded5058ad1de0d84a50125ca97e77fd3cb59a96f31c9baaf03f3524f3565dae"
+      },
+      {
+        "path": "records/compile/test/command.json",
+        "bytes": 1603,
+        "sha256": "59a604129cc0145067974eb89d8f836dbed49a5587a0f6153508161a92328b05"
+      },
+      {
+        "path": "records/compile/test/dependencies.json",
+        "bytes": 28249,
+        "sha256": "489784757bd051d9d99aa018277fd400064f5a8ad84f3622f5a4cffb4a37ffcd"
+      },
+      {
+        "path": "records/compile/test/process.json",
+        "bytes": 70,
+        "sha256": "96b44f24f637eac2fd33b713b57e5d156a8ab813d07087aa545bebd759f81e6a"
+      },
+      {
+        "path": "records/compile/test/running.json",
+        "bytes": 22,
+        "sha256": "0bbcaacaa3abb87e2b36f11b6f911880d04f7563a43d0b91af9b47406483d0e5"
+      },
+      {
+        "path": "records/compile/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile/test/stdout.log",
+        "bytes": 5089,
+        "sha256": "21799716af9bb8fa1eff11aef087b7846dde4d35807e47e759d8357d3e48b08c"
+      },
+      {
+        "path": "records/compile2/test/actual-dependencies.json",
+        "bytes": 54037,
+        "sha256": "8f5a8073b92c6f7c2bd9add00154bee2ba275311f0bda9e755c56646c04a2f73"
+      },
+      {
+        "path": "records/compile2/test/command.json",
+        "bytes": 1480,
+        "sha256": "0b08d60645fedf9a034ea810dcf8dcf82ecaedee4384f23892fd43bc94535225"
+      },
+      {
+        "path": "records/compile2/test/dependencies.json",
+        "bytes": 28097,
+        "sha256": "d4705df76ef90954ca7c96c02b8fe803880bc8501f66facebb259d556973951e"
+      },
+      {
+        "path": "records/compile2/test/process.json",
+        "bytes": 70,
+        "sha256": "957fff08fdbac5069a00cc9d19896d8c5b4101b851ea140335c5afba4467a5f5"
+      },
+      {
+        "path": "records/compile2/test/running.json",
+        "bytes": 22,
+        "sha256": "ed92d210215ae65bfe2d7a6a7d1ca66d078976a72134643d2b523eccf6a17bec"
+      },
+      {
+        "path": "records/compile2/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile2/test/stdout.log",
+        "bytes": 25,
+        "sha256": "5d391d1d55cd4123d91979c17d2ae4b2ac7bd98d4bafa36a4766dcd50110f043"
+      },
+      {
+        "path": "records/compile3/test/actual-dependencies.json",
+        "bytes": 54037,
+        "sha256": "988a9f0161d97e9c08cfc8cb5d4931f4b15519698ba54307a7c4e8db5b0fb3ce"
+      },
+      {
+        "path": "records/compile3/test/command.json",
+        "bytes": 1480,
+        "sha256": "0ac8ae0cc929910e382b33d9efe8ed74aef609629d54b22d9feeae9fdcfda74e"
+      },
+      {
+        "path": "records/compile3/test/dependencies.json",
+        "bytes": 28097,
+        "sha256": "d4705df76ef90954ca7c96c02b8fe803880bc8501f66facebb259d556973951e"
+      },
+      {
+        "path": "records/compile3/test/process.json",
+        "bytes": 70,
+        "sha256": "2fc970ca350bbee484c8f74c232f367f13a05a2e7bc3009a56cdbc04b881107a"
+      },
+      {
+        "path": "records/compile3/test/running.json",
+        "bytes": 22,
+        "sha256": "77892b49d70a6ea05150a7017888d469431909f40b127374ddb96f41dbdc6075"
+      },
+      {
+        "path": "records/compile3/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile3/test/stdout.log",
+        "bytes": 25,
+        "sha256": "5d391d1d55cd4123d91979c17d2ae4b2ac7bd98d4bafa36a4766dcd50110f043"
+      },
+      {
+        "path": "records/compile4/test/actual-dependencies.json",
+        "bytes": 54037,
+        "sha256": "7d6753de8fc0670472ecffa9076deebb70422bc26062467ee9897d32f5c39ae3"
+      },
+      {
+        "path": "records/compile4/test/command.json",
+        "bytes": 1480,
+        "sha256": "45dd2436fae60ce1526c006a2878b102d0496d16982bdc6aecc334f51cbbdecc"
+      },
+      {
+        "path": "records/compile4/test/dependencies.json",
+        "bytes": 28097,
+        "sha256": "d4705df76ef90954ca7c96c02b8fe803880bc8501f66facebb259d556973951e"
+      },
+      {
+        "path": "records/compile4/test/process.json",
+        "bytes": 70,
+        "sha256": "24c756f6769e97b121342eb8aa6c6a4a3dafc2111ad86ccc2abaf74ffbdd6f69"
+      },
+      {
+        "path": "records/compile4/test/running.json",
+        "bytes": 22,
+        "sha256": "66a0c9ed499f69b9323915e3a35e2bdf7f383ed4fb106dd30698a5c4f74f4bd8"
+      },
+      {
+        "path": "records/compile4/test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/compile4/test/stdout.log",
+        "bytes": 25,
+        "sha256": "5d391d1d55cd4123d91979c17d2ae4b2ac7bd98d4bafa36a4766dcd50110f043"
+      },
+      {
+        "path": "records/link-inputs.json",
+        "bytes": 35511,
+        "sha256": "06ba59782fa81360932441656931f7f2a1bc0b04978d778ae6fa510b4a8d3ae0"
+      },
+      {
+        "path": "records/link/command.json",
+        "bytes": 19396,
+        "sha256": "2b246ea63da42330b9104242791fa50b2105ac195b0bcb494cce4a3d06fd02cc"
+      },
+      {
+        "path": "records/link/process.json",
+        "bytes": 70,
+        "sha256": "0ca494603d352ba4c58c8289d55309cb49e4c1cf797acd80591c414acf150089"
+      },
+      {
+        "path": "records/link/running.json",
+        "bytes": 22,
+        "sha256": "c6b3c114598f0501779c5cb1a7817f3a55a643c07673bdf5dbf208bb5ca0245a"
+      },
+      {
+        "path": "records/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link/stdout.log",
+        "bytes": 209,
+        "sha256": "cd1888b9d0f96f978ab2bcf2b8231f6e808dee2d84587eb0d9c841bda89bf186"
+      },
+      {
+        "path": "records/link3-inputs.json",
+        "bytes": 35511,
+        "sha256": "4887437219dbfb3dc6e88f7ab32d390348a05e6a0a6f93620abea9da94f79c79"
+      },
+      {
+        "path": "records/link3/command.json",
+        "bytes": 19397,
+        "sha256": "79db912c12d807bf30561f66a25fa66dcdc4831c351bba12e06bdc4ab2009988"
+      },
+      {
+        "path": "records/link3/process.json",
+        "bytes": 69,
+        "sha256": "a41e038158f1c1c97466e3aa3c0ccb66148105ac97a16dc2fdb6cdea523cfb89"
+      },
+      {
+        "path": "records/link3/running.json",
+        "bytes": 22,
+        "sha256": "ec1be2b6b0e02469b2e043f8c6718d90e110af8e3b17d03490bda63e359df289"
+      },
+      {
+        "path": "records/link3/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link3/stdout.log",
+        "bytes": 211,
+        "sha256": "afc090690bd1cbe34d880c29d9e7a75e974e65cd5b6fe66b0f52cae9e6f1957c"
+      },
+      {
+        "path": "records/link4-inputs.json",
+        "bytes": 35511,
+        "sha256": "aa3e769f7f3f85c291e0407b98c8ab4a7ce7b41778995f6ba306ba6f279b4a55"
+      },
+      {
+        "path": "records/link4/command.json",
+        "bytes": 19397,
+        "sha256": "dac0007ee4a4c8afa74cf29016a3f267a309e4da11970f9adf4004e0f55bf90f"
+      },
+      {
+        "path": "records/link4/process.json",
+        "bytes": 69,
+        "sha256": "b1b4162ef30d42ae283762f0d725858e76a2e09e77a07a702f3eb38f5518f07e"
+      },
+      {
+        "path": "records/link4/running.json",
+        "bytes": 21,
+        "sha256": "9533dc761f740ca64e2eeeac7a7a052b73379b478f7b1346af27d8fab92ed90e"
+      },
+      {
+        "path": "records/link4/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/link4/stdout.log",
+        "bytes": 211,
+        "sha256": "4a55154bb95ef8943513fc9d419f7019d7573b2d5e430e7c538eda9da7ae5ad0"
+      },
+      {
+        "path": "records/plan.json",
+        "bytes": 6557,
+        "sha256": "7168a201bbdc5446b0ad7080f6c28281b8a0b97208dbd772d647d70957004d16"
+      },
+      {
+        "path": "records/plan2.json",
+        "bytes": 6858,
+        "sha256": "6f3743a2d9d90aa620b4fa84ae9c2c33eb974063ead3653af34ee4a54fafb477"
+      },
+      {
+        "path": "records/plan3.json",
+        "bytes": 6864,
+        "sha256": "5c34dcedc5399e0eccf03d05ee83b898d2cc230e7a933568b8cee7d78f48bc29"
+      },
+      {
+        "path": "records/plan4.json",
+        "bytes": 6906,
+        "sha256": "484e6773a12d3a5ec45798669ddd9eccee157700cea86918392ebad25519f0b1"
+      },
+      {
+        "path": "records/publish.py",
+        "bytes": 6783,
+        "sha256": "a6048af698fb596d46ecce9c157fa279d005469535625713396334345366e18b"
+      },
+      {
+        "path": "records/ready2.json",
+        "bytes": 3015,
+        "sha256": "c22cf3dfcd2f3177cd02c0a2644304e477475df5ddc1d8e154ca2b528711276a"
+      },
+      {
+        "path": "records/ready3.json",
+        "bytes": 3017,
+        "sha256": "457d8fa120e9bd8eef28b4a96d81127e3c31487ebaae68b23eb3c19bffff5e80"
+      },
+      {
+        "path": "records/ready4.json",
+        "bytes": 3017,
+        "sha256": "90d374789f5af34b7c04891726d939575620029511f14b5605486f9d3df41b8e"
+      },
+      {
+        "path": "records/results.xml",
+        "bytes": 7652,
+        "sha256": "0d4fbd8308c732f97b07b97b1719d3b7cf9013f8879237d8c8e186f4a5024bad"
+      },
+      {
+        "path": "records/results2.xml",
+        "bytes": 7796,
+        "sha256": "d499e3ac93d4f0263f87beffdd7beba7af60606943617eb1c441abfa4a3c6e30"
+      },
+      {
+        "path": "records/results3.xml",
+        "bytes": 7375,
+        "sha256": "2ac24d079a0d919de195dfaf1be4e2c5d383790063c1998ecf4282753de226de"
+      },
+      {
+        "path": "records/run1/command.json",
+        "bytes": 343,
+        "sha256": "d2899f9a6188ba79c05f1d6ee19d5371678b127981ab92b49e0996b018748ce3"
+      },
+      {
+        "path": "records/run1/process.json",
+        "bytes": 71,
+        "sha256": "926612fc2fafc7818e02ba3530137f7970ba5726fb500194a9b5bb446f1c236c"
+      },
+      {
+        "path": "records/run1/running.json",
+        "bytes": 22,
+        "sha256": "dfcd79fd70b582d686f3730db23284b3c3341a583e132b44f99c7b62c7d9d36e"
+      },
+      {
+        "path": "records/run1/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/run1/stdout.log",
+        "bytes": 5273,
+        "sha256": "0bc1dfe6fc2fe7728e33db5e7284e06b3838fdb6a686fa9aa5ed8915af0e93cb"
+      },
+      {
+        "path": "records/run2/command.json",
+        "bytes": 345,
+        "sha256": "b3f71f86a1d3186d7464065af126a39cf24097fe76277339a5c038499b301756"
+      },
+      {
+        "path": "records/run2/process.json",
+        "bytes": 71,
+        "sha256": "bf40519e91619eee7599d245305438799fd15e99ff5c7a1c11ed61885bd9bdc0"
+      },
+      {
+        "path": "records/run2/running.json",
+        "bytes": 22,
+        "sha256": "d7fa66eef55db3957bc402f94e24123476a84d9d876a900f82cf9af8bf478b15"
+      },
+      {
+        "path": "records/run2/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/run2/stdout.log",
+        "bytes": 5345,
+        "sha256": "2fa9c75dd576fb970a1a6210abfed67e51d13a6133d749e10e5e586df88a227b"
+      },
+      {
+        "path": "records/run3/command.json",
+        "bytes": 345,
+        "sha256": "2ec1611c7d4cfac8e143563f1ca7907c91ffaa4aafff06b9f83457e38a09c5cb"
+      },
+      {
+        "path": "records/run3/process.json",
+        "bytes": 70,
+        "sha256": "505940c0ad6122761a1b5b7b05ac71aea9e780298cd470d673acf4da6c59386a"
+      },
+      {
+        "path": "records/run3/running.json",
+        "bytes": 21,
+        "sha256": "c02bce410feb40d9a7dd7d15412d53ea586c4a6237654d33c1db7d60a7043824"
+      },
+      {
+        "path": "records/run3/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "records/run3/stdout.log",
+        "bytes": 5031,
+        "sha256": "0c3b35769a0a16b3214a8cf01675c1cea69b60846ac67800a42d15eabf94a16e"
+      },
+      {
+        "path": "records/runtime.json",
+        "bytes": 6894,
+        "sha256": "c46d3d7c3651ea5c2765f0c314ba43ff3efb9215f0bb8a2ab32666604b9564bc"
+      },
+      {
+        "path": "records/runtime3.json",
+        "bytes": 6894,
+        "sha256": "c46d3d7c3651ea5c2765f0c314ba43ff3efb9215f0bb8a2ab32666604b9564bc"
+      },
+      {
+        "path": "records/runtime4.json",
+        "bytes": 6894,
+        "sha256": "c46d3d7c3651ea5c2765f0c314ba43ff3efb9215f0bb8a2ab32666604b9564bc"
+      },
+      {
+        "path": "records/source-freeze.json",
+        "bytes": 8922,
+        "sha256": "9520b0d4a43c2d5335ef7eb5f453b6516d9598f4e30e276587ab9d06c49a33ac"
+      },
+      {
+        "path": "records/source3-freeze.json",
+        "bytes": 8922,
+        "sha256": "f261055dcc8dc833a74329ea3d54c1d1cf6666b481377c883b098b37e1689ef4"
+      },
+      {
+        "path": "records/source4-freeze.json",
+        "bytes": 8922,
+        "sha256": "f4a213ac0c336e93a0c1b8e7d183c91aedaa99fc723c85dc2fe97fe950f3c1af"
+      },
+      {
+        "path": "records/summary.json",
+        "bytes": 2118,
+        "sha256": "d31bea69b776b7b3a43a2050836a84a2e013f08ed92c18b2b611422c37bdbfa6"
+      },
+      {
+        "path": "records/summary2.json",
+        "bytes": 1738,
+        "sha256": "d40fe320661e4bc0caa4f1fe6c4feee2320f4a78cb3fdeac48cffeec92821d8e"
+      },
+      {
+        "path": "records/summary3.json",
+        "bytes": 858,
+        "sha256": "989d19794075142ebf0f74dacc1eabdbe0047bd27c7f1a8d092cd51bf51f1bb3"
+      },
+      {
+        "path": "source/include/hyle/compute/detail/lease_access.h",
+        "bytes": 8234,
+        "sha256": "9af085afc7b50b358a7f3c2d56e7ea661e203a6319fd9f47e17d078f1d8ea673"
+      },
+      {
+        "path": "source/include/hyle/compute/lease_slots.h",
+        "bytes": 3494,
+        "sha256": "1130b513bed3ab8dd41fab5f27722954c24b84fb3ea69a7ba19862a7d14ba694"
+      },
+      {
+        "path": "source/include/hyle/compute/resource_leases.h",
+        "bytes": 9759,
+        "sha256": "81eda3fe4f224bf7e9e12602d8c45227722491d0b0847ea79e0f4375fa28510d"
+      },
+      {
+        "path": "source/src/compute/resource_leases.cc",
+        "bytes": 55718,
+        "sha256": "39d4bef771910a68d8251c5f761f72a61e83551d19a7a04335f2b5230b5c21c2"
+      },
+      {
+        "path": "source/tests/compute/resource_leases_test.cc",
+        "bytes": 42307,
+        "sha256": "da692c8be07fff6e49a2f5cdcb1edd6e1d474e111ea992eeb7486f4d5d11780c"
+      }
+    ]
+  }
+}

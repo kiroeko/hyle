@@ -91,6 +91,20 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
 计算尚未补齐原生能力，不能把K1承载或地址复用记成这些能力已完成。
 
+具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
+只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
+源可共享，候选仍取原独占writer；history与GDN各用自身池的槽号，不假设两池分配次序一致。
+槽资源接口的25项Windows组件检查已通过，Graph绑定、原生索引计算及引擎接线尚未完成。
+接口检查及测试预算修正见[槽资源记录](../evidence/correctness/inference-lease-slots-2026-10-26.json)。
+
+逻辑图保留选槽、原GDN／conv数学和写回效果，冷规划再选择原生融合。
+GDN融合从源槽读取，按时间升序直接写各候选槽；conv按窗口从历史槽或新输入取样，
+直接写候选history，避免为取窗口拼接整个稠密history。普通K1与MTP的差别是候选槽数量。
+有普通稠密观察者时仍须物化该结果，不能静默删掉公开值；无索引能力的实现保留合法原路径。
+外部写资格仍对应精确原节点和所选artifact，先支持纯节点与一个外部写节点，
+GDN和history各保独立写区域。所有目标与源及保留快照不重叠，仍走原接纳、Completion、
+真实退休及联合发布；失败和取消不覆盖旧head，不增加原`N+K×R`载荷容量。
+
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。
 冻结本身不改地址和epoch；分配失败保留原边界。已冻结的对象永不变更或回收为候选。

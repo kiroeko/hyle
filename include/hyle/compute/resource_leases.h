@@ -18,6 +18,7 @@ struct LeaseAccess;
 
 class WriteLease;
 class LeaseUseBatch;
+class LeaseSlotLayout;
 
 struct LeasePoolOptions final {
   std::uint32_t max_blocks = 128;
@@ -69,6 +70,7 @@ private:
   friend class LeasePool;
   friend class LeaseUseBatch;
   friend struct detail::LeaseAccess;
+  friend class LeaseSlotLayout;
   ReadLease(detail::LeaseBlock *block, std::size_t offset, std::size_t size) noexcept
       : block_(block), offset_(offset), size_(size) {}
   detail::LeaseBlock *block_ = nullptr;
@@ -99,6 +101,7 @@ private:
   friend class ReadLease;
   friend class LeaseUseBatch;
   friend struct detail::LeaseAccess;
+  friend class LeaseSlotLayout;
   WriteLease(detail::LeaseBlock *block, std::size_t offset, std::size_t size) noexcept
       : block_(block), offset_(offset), size_(size) {}
   detail::LeaseBlock *block_ = nullptr;
@@ -152,6 +155,7 @@ public:
 private:
   friend class ReadLease;
   friend struct detail::LeaseAccess;
+  friend class LeaseSlotLayout;
   explicit LeasePool(detail::LeaseDomain *state) noexcept : state_(state) {}
   detail::LeaseDomain *state_ = nullptr;
 };

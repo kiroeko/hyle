@@ -12,6 +12,7 @@
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/leased_operation.h"
+#include "hyle/compute/lease_slots.h"
 #include "hyle/compute/resource_leases.h"
 
 namespace {
@@ -57,6 +58,197 @@ const hyle::compute::detail::CompletionVTable kPending{
 static_assert(!std::is_copy_constructible_v<detail::AppendLease>);
 static_assert(!std::is_copy_assignable_v<detail::AppendLease>);
 static_assert(std::is_nothrow_move_constructible_v<detail::AppendLease>);
+
+TEST(ResourceLeases, FixedSlotsBindExactOriginalBlocksAndSharedSources) {
+  const auto item = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 577, {.max_blocks = 3}).value();
+  auto layout = LeaseSlotLayout::create(pool, item, 3, 256).value();
+  EXPECT_EQ(layout.description(), item);
+  EXPECT_EQ(layout.slot_count(), 3u); EXPECT_EQ(layout.stride_bytes(), 256u);
+  auto first = pool.allocate(64).value();
+  ASSERT_TRUE(first.view()->fill(std::byte{23}).ok());
+  auto ready = first.publish().value();
+  const auto alias = ready;
+  std::array<ReadLease, 2> sources{ready, alias};
+  std::array<WriteLease, 2> destinations;
+  destinations[0] = pool.allocate(64).value(); destinations[1] = pool.allocate(64).value();
+  const auto before = pool.stats();
+  std::array<LeaseSlotAddress, 2> inputs{}, outputs{};
+  ASSERT_TRUE(layout.bind_indices(sources, destinations, inputs, outputs).ok());
+  EXPECT_EQ(inputs[0], inputs[1]); EXPECT_EQ(inputs[0].index, 0u);
+  EXPECT_EQ(inputs[0].generation, ready.generation());
+  EXPECT_EQ(outputs[0].index, 1u); EXPECT_EQ(outputs[1].index, 2u);
+  EXPECT_EQ(outputs[0].generation, destinations[0].generation());
+  EXPECT_EQ(outputs[1].generation, destinations[1].generation());
+  EXPECT_FALSE(ready.try_write());
+  EXPECT_EQ(pool.stats().live_blocks, before.live_blocks);
+  EXPECT_EQ(pool.stats().allocated_bytes, before.allocated_bytes);
+  // The carrier is bounded by the final actual item, excluding the pool's
+  // sentinel byte. It is not an initialized tensor or a whole-bank lease.
+  const auto carrier = detail::LeaseAccess::slot_capacity(layout).value();
+  EXPECT_EQ(carrier.size(), 576u);
+  EXPECT_EQ(carrier.native_handle(), ready.view()->native_handle());
+  EXPECT_EQ(carrier.offset() + 256u, destinations[0].view()->offset());
+  std::array<std::byte, 64> retained{};
+  ASSERT_TRUE(alias.view()->read(retained).ok());
+  for (const auto byte : retained) EXPECT_EQ(byte, std::byte{23});
+}
+
+TEST(ResourceLeases, FixedSlotsRejectPartialForeignPaddingAndAppendAuthorities) {
+  const auto item = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 4}).value();
+  auto layout = LeaseSlotLayout::create(pool, item, 4, 256).value();
+  auto oversized = pool.allocate(128).value();
+  auto root = oversized.publish().value();
+  auto partial = root.subview(0, 64).value();
+  EXPECT_TRUE(layout.locate(partial).error().IsInvalidArgument());
+  root.reset(); partial.reset();
+  auto first = pool.allocate(64).value();
+  // A legal allocation in the stride's padding is not a slot, even though
+  // its resource, domain, exact size and alignment are otherwise valid.
+  auto padding = pool.allocate(64, 64).value();
+  EXPECT_TRUE(layout.locate(padding).error().IsOutOfRange());
+  padding.reset();
+  auto foreign_pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 1}).value();
+  auto foreign = foreign_pool.allocate(64).value();
+  EXPECT_TRUE(layout.locate(foreign).error().IsInvalidArgument());
+  auto appendable = detail::LeaseAccess::publish_appendable(first, 64).value();
+  EXPECT_EQ(appendable.prefix.size(), 64u);
+  EXPECT_TRUE(layout.locate(appendable.prefix).error().IsFailedPrecondition());
+  EXPECT_TRUE(appendable.prefix.valid()); EXPECT_TRUE(foreign.valid());
+  EXPECT_TRUE(foreign.view()->fill(std::byte{9}).ok());
+}
+
+TEST(ResourceLeases, FixedSlotsValidateWholeBatchBeforeChangingAnyAddress) {
+  const auto item = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 4}).value();
+  auto layout = LeaseSlotLayout::create(pool, item, 4, 256).value();
+  auto source_writer = pool.allocate(64).value();
+  const auto source = source_writer.publish().value();
+  const std::array sources{source};
+  std::array<WriteLease, 2> destinations;
+  destinations[0] = pool.allocate(64).value();
+  auto foreign_pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 1}).value();
+  destinations[1] = foreign_pool.allocate(64).value();
+  const LeaseSlotAddress sentinel{91, 12345};
+  std::array<LeaseSlotAddress, 1> inputs{sentinel};
+  std::array<LeaseSlotAddress, 2> outputs{sentinel, sentinel};
+  EXPECT_TRUE(layout.bind_indices(sources, destinations, inputs, outputs).IsInvalidArgument());
+  EXPECT_EQ(inputs[0], sentinel); EXPECT_EQ(outputs[0], sentinel); EXPECT_EQ(outputs[1], sentinel);
+  EXPECT_TRUE(destinations[0].valid()); EXPECT_TRUE(destinations[1].valid());
+  destinations[1] = pool.allocate(64).value();
+  std::array<LeaseSlotAddress, 3> overlap{sentinel, sentinel, sentinel};
+  EXPECT_TRUE(layout.bind_indices(sources, destinations, std::span(overlap).first(1),
+      std::span(overlap).first(2)).IsInvalidArgument());
+  for (const auto address : overlap) EXPECT_EQ(address, sentinel);
+  EXPECT_TRUE(layout.bind_indices(sources, destinations, {}, outputs).IsInvalidArgument());
+  EXPECT_EQ(outputs[0], sentinel); EXPECT_EQ(outputs[1], sentinel);
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto episode = uses.begin().value();
+  ASSERT_TRUE(episode.write(destinations[1]).ok());
+  PendingUse pending;
+  auto done = detail::CompletionAccess::make(&kPending, &pending);
+  ASSERT_TRUE(episode.attach(done).ok());
+  EXPECT_TRUE(layout.bind_indices(sources, destinations, inputs, outputs).IsUnavailable());
+  EXPECT_EQ(inputs[0], sentinel); EXPECT_EQ(outputs[0], sentinel); EXPECT_EQ(outputs[1], sentinel);
+  ASSERT_TRUE(done.wait().ok()); done = {};
+  ASSERT_TRUE(layout.bind_indices(sources, destinations, inputs, outputs).ok());
+  // Native failure is not made ready by knowing its address or generation.
+  auto failed_episode = uses.begin().value();
+  ASSERT_TRUE(failed_episode.write(destinations[1]).ok());
+  auto failed = Completion::completed(hyle::Status::Internal("intentional slot output error"));
+  ASSERT_TRUE(failed_episode.attach(failed).ok());
+  failed.wait().IgnoreError(); failed = {};
+  inputs.fill(sentinel); outputs.fill(sentinel);
+  EXPECT_TRUE(layout.bind_indices(sources, destinations, inputs, outputs).IsInternal());
+  EXPECT_EQ(inputs[0], sentinel); EXPECT_EQ(outputs[0], sentinel); EXPECT_EQ(outputs[1], sentinel);
+}
+
+TEST(ResourceLeases, FixedSlotsPreserveDomainAcrossMoveDropAndGenerationReuse) {
+  const auto item = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  // Includes the original pool's range/block metadata, not only 512B payload.
+  const std::array limits{ResourceBudgetLimit{mem::system_resource(), 65536}};
+  auto budget_result = ResourceBudget::create({.limits = limits});
+  ASSERT_TRUE(budget_result) << budget_result.error().message();
+  auto budget = std::move(*budget_result);
+  const auto initial_bytes = budget.usage(mem::system_resource())->live_bytes;
+  LeaseSlotLayout retained;
+  ReadLease alias;
+  {
+    auto pool_result = LeasePool::create(mem::system_resource(), 512,
+        {.max_blocks = 2, .resource_budget = budget});
+    ASSERT_TRUE(pool_result) << pool_result.error().message();
+    auto pool = std::move(*pool_result);
+    auto layout_result = LeaseSlotLayout::create(pool, item, 2, 256);
+    ASSERT_TRUE(layout_result) << layout_result.error().message();
+    auto layout = std::move(*layout_result);
+    auto writer_result = pool.allocate(64);
+    ASSERT_TRUE(writer_result) << writer_result.error().message();
+    auto writer = std::move(*writer_result);
+    const auto old_result = layout.locate(writer);
+    ASSERT_TRUE(old_result) << old_result.error().message();
+    const auto old = *old_result;
+    writer.reset();
+    auto replacement_result = pool.allocate(64);
+    ASSERT_TRUE(replacement_result) << replacement_result.error().message();
+    writer = std::move(*replacement_result);
+    const auto next_result = layout.locate(writer);
+    ASSERT_TRUE(next_result) << next_result.error().message();
+    const auto next = *next_result;
+    EXPECT_EQ(old.index, next.index); EXPECT_GT(next.generation, old.generation);
+    auto moved = std::move(pool);
+    EXPECT_FALSE(pool.valid());
+    const auto moved_pool_address = layout.locate(writer);
+    ASSERT_TRUE(moved_pool_address) << moved_pool_address.error().message();
+    EXPECT_EQ(*moved_pool_address, next);
+    retained = layout;
+    LeaseSlotLayout moved_layout(std::move(layout));
+    EXPECT_FALSE(layout.valid());
+    const auto moved_layout_address = moved_layout.locate(writer);
+    ASSERT_TRUE(moved_layout_address) << moved_layout_address.error().message();
+    EXPECT_EQ(*moved_layout_address, next);
+    auto published = writer.publish();
+    ASSERT_TRUE(published) << published.error().message();
+    alias = std::move(*published);
+    ASSERT_TRUE(moved.close().ok());
+    EXPECT_TRUE(LeaseSlotLayout::create(moved, item, 2, 256).error().IsFailedPrecondition());
+    const auto closed_address = retained.locate(alias);
+    ASSERT_TRUE(closed_address) << closed_address.error().message();
+    EXPECT_EQ(*closed_address, next); // Address query, not admission.
+  }
+  EXPECT_TRUE(retained.locate(alias));
+  auto uses_result = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1});
+  ASSERT_TRUE(uses_result) << uses_result.error().message();
+  auto uses = std::move(*uses_result);
+  auto episode_result = uses.begin();
+  ASSERT_TRUE(episode_result) << episode_result.error().message();
+  auto episode = std::move(*episode_result);
+  EXPECT_TRUE(episode.read(alias).IsFailedPrecondition());
+  auto replacement_pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1});
+  ASSERT_TRUE(replacement_pool) << replacement_pool.error().message();
+  auto replacement = std::move(*replacement_pool);
+  auto other_result = replacement.allocate(64);
+  ASSERT_TRUE(other_result) << other_result.error().message();
+  auto other = std::move(*other_result);
+  EXPECT_TRUE(retained.locate(other).error().IsInvalidArgument());
+  alias.reset();
+  EXPECT_GT(budget.usage(mem::system_resource())->live_bytes, initial_bytes);
+  retained = {};
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, initial_bytes);
+}
+
+TEST(ResourceLeases, FixedSlotGeometryRejectsOverflowAndInsufficientBacking) {
+  const auto item = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  EXPECT_TRUE(LeaseSlotLayout::create({}, item, 1, 256).error().IsFailedPrecondition());
+  EXPECT_TRUE(LeaseSlotLayout::create(pool, item, 0, 256).error().IsInvalidArgument());
+  EXPECT_TRUE(LeaseSlotLayout::create(pool, item, 2, 32).error().IsInvalidArgument());
+  EXPECT_TRUE(LeaseSlotLayout::create(pool, item, 2, 65).error().IsInvalidArgument());
+  EXPECT_TRUE(LeaseSlotLayout::create(pool, item, 3, 256).error().IsOutOfRange());
+  const auto large_stride = (std::numeric_limits<std::size_t>::max)() & ~std::size_t{3};
+  EXPECT_TRUE(LeaseSlotLayout::create(pool, item, 3, large_stride).error().IsOutOfRange());
+  EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
 
 TEST(ResourceLeases, FreezeFullPoolKeepsBudgetAndFutureReadonlyAdmission) {
   const std::array limits{ResourceBudgetLimit{mem::system_resource(), 65536}};

@@ -1186,6 +1186,16 @@ auto ready = output_write_lease.publish().value();
 初始化 host bytes 后才 publish；异步 writer 必须实际成功退休后才 publish，失败不会变成 ready。
 `LeasePool::adopt`/`ReadLease::adopt` 接管唯一 `mem::Buffer` 而不复制 payload，拒绝不消费输入；
 readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
+
+固定状态项可用 `<hyle/compute/lease_slots.h>` 的 `LeaseSlotLayout` 描述同一池内的
+item、槽数和字节 stride。`create(pool, item, slots, stride)` 不分配第二份 payload；
+`locate(lease)` 只接受该原 domain 中、处在完整槽边界的普通整块租约，返回槽号和 generation。
+部分视图、stride 中的 padding、其它池及 append 权限均被拒绝。
+`bind_indices` 对实际 source reader 和连续 destination writer 集合先完整检查，再无分配地填入
+调用者提供的地址数组；失败保持数组和租约不变。源可重复，独占目标不得与源或其它目标重叠。
+地址不是权限，后续仍须保留真实租约并通过原 `LeaseUseBatch` 接纳和退休。
+池关闭后仍可查询保留租约的地址事实，但不能恢复新 native 使用；该接口本身不执行 Gather／Store。
+
 已经通过池完成初始化时，可对唯一、覆盖整个 backing 的普通 writer 调用
 `pool.freeze(std::move(writer))`，直接得到永久只读的租约；成功同时清空 pool 和 writer，
 不复制 payload，仍允许后续只读原生提交。尚有原生在途使用、部分块或失败写入时拒绝，

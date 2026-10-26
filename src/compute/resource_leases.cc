@@ -1,4 +1,5 @@
 #include "hyle/compute/resource_leases.h"
+#include "hyle/compute/lease_slots.h"
 
 #include <atomic>
 #include <limits>
@@ -906,6 +907,145 @@ Result<ReadLease> LeasePool::freeze(WriteLease &&writer) noexcept {
   guard.unlock();
   detail::release_domain(domain);
   return result;
+}
+
+namespace {
+// Caller holds the original domain lock. Block lifetimes themselves remain
+// protected by the supplied handles, not by numeric slot coordinates.
+Result<LeaseSlotAddress> locate_slot(detail::LeaseDomain *domain,
+    std::size_t bytes, std::size_t stride, std::size_t extent, std::uint32_t slots,
+    const detail::LeaseBlock *block, std::size_t offset, std::size_t size,
+    bool writer) noexcept {
+  if (!block || block->domain != domain)
+    return std::unexpected(Status::InvalidArgument("slot lease belongs to another original pool"));
+  if (offset != 0 || size != bytes || block->range.size() != bytes)
+    return std::unexpected(Status::InvalidArgument("slot requires the complete exact original block"));
+  const auto first = block->range.offset();
+  if (first > extent || bytes > extent - static_cast<std::size_t>(first) ||
+      first % stride != 0 || first / stride >= slots)
+    return std::unexpected(Status::OutOfRange("slot block lies outside the fixed item coordinates"));
+  if (!block->generation || block->append_mode || block->writer != writer ||
+      (writer && !block->writable))
+    return std::unexpected(Status::FailedPrecondition("slot needs an ordinary ready reader or original writer"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  if (writer && (!block->is_unique() || block->native_uses != 0))
+    return std::unexpected(Status::Unavailable("slot writer still has admitted native uses"));
+  return LeaseSlotAddress{static_cast<std::uint32_t>(first / stride), block->generation};
+}
+Status disjoint_address_outputs(std::span<LeaseSlotAddress> sources,
+    std::span<LeaseSlotAddress> destinations) noexcept {
+  if (sources.size() > SIZE_MAX / sizeof(LeaseSlotAddress) ||
+      destinations.size() > SIZE_MAX / sizeof(LeaseSlotAddress))
+    return Status::OutOfRange("slot address output extent overflows");
+  const auto first = reinterpret_cast<std::uintptr_t>(sources.data());
+  const auto second = reinterpret_cast<std::uintptr_t>(destinations.data());
+  const auto first_bytes = sources.size_bytes(), second_bytes = destinations.size_bytes();
+  if (first_bytes > UINTPTR_MAX - first || second_bytes > UINTPTR_MAX - second)
+    return Status::OutOfRange("slot address output range overflows");
+  if (first_bytes && second_bytes && first < second + second_bytes && second < first + first_bytes)
+    return Status::InvalidArgument("slot address outputs overlap");
+  return Status::Ok();
+}
+} // namespace
+
+LeaseSlotLayout::LeaseSlotLayout(const LeaseSlotLayout &other) noexcept
+    : domain_(other.domain_), description_(other.description_), bytes_(other.bytes_),
+      stride_(other.stride_), extent_(other.extent_), slots_(other.slots_) {
+  if (domain_) domain_->incref();
+}
+LeaseSlotLayout &LeaseSlotLayout::operator=(const LeaseSlotLayout &other) noexcept {
+  if (this != &other) {
+    LeaseSlotLayout next(other);
+    std::swap(domain_, next.domain_); std::swap(description_, next.description_);
+    std::swap(bytes_, next.bytes_); std::swap(stride_, next.stride_);
+    std::swap(extent_, next.extent_); std::swap(slots_, next.slots_);
+  }
+  return *this;
+}
+LeaseSlotLayout::LeaseSlotLayout(LeaseSlotLayout &&other) noexcept
+    : domain_(std::exchange(other.domain_, nullptr)),
+      description_(std::exchange(other.description_, TensorDesc{})),
+      bytes_(std::exchange(other.bytes_, 0)), stride_(std::exchange(other.stride_, 0)),
+      extent_(std::exchange(other.extent_, 0)), slots_(std::exchange(other.slots_, 0)) {}
+LeaseSlotLayout &LeaseSlotLayout::operator=(LeaseSlotLayout &&other) noexcept {
+  if (this != &other) {
+    LeaseSlotLayout next(std::move(other));
+    std::swap(domain_, next.domain_); std::swap(description_, next.description_);
+    std::swap(bytes_, next.bytes_); std::swap(stride_, next.stride_);
+    std::swap(extent_, next.extent_); std::swap(slots_, next.slots_);
+  }
+  return *this;
+}
+LeaseSlotLayout::~LeaseSlotLayout() { if (domain_) detail::release_domain(domain_); }
+Result<LeaseSlotLayout> LeaseSlotLayout::create(const LeasePool &pool,
+    TensorDesc item, std::uint32_t slots, std::size_t stride) noexcept {
+  if (!pool.state_) return std::unexpected(Status::FailedPrecondition("slot layout pool is empty"));
+  if (!item.valid() || !item.is_plain() || !item.is_dense() || !slots || !stride)
+    return std::unexpected(Status::InvalidArgument("slot layout needs dense plain items and positive geometry"));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, item.required_bytes());
+  const auto alignment = item.required_alignment();
+  if (!bytes || stride < bytes || !alignment || stride % alignment != 0)
+    return std::unexpected(Status::InvalidArgument("slot stride does not cover and align its item"));
+  const auto preceding = static_cast<std::size_t>(slots - 1);
+  if (preceding > (SIZE_MAX - bytes) / stride)
+    return std::unexpected(Status::OutOfRange("slot layout byte extent overflows"));
+  const auto extent = preceding * stride + bytes;
+  auto &domain = *pool.state_;
+  std::lock_guard guard(domain.lock);
+  if (domain.closed) return std::unexpected(Status::FailedPrecondition("slot layout pool is closed"));
+  if (alignment > domain.backing.alignment())
+    return std::unexpected(Status::InvalidArgument("slot item exceeds original backing alignment"));
+  if (extent > domain.backing.size())
+    return std::unexpected(Status::OutOfRange("slot layout exceeds original pool backing"));
+  LeaseSlotLayout result;
+  result.domain_ = &domain; result.description_ = item; result.bytes_ = bytes;
+  result.stride_ = stride; result.extent_ = extent; result.slots_ = slots;
+  domain.incref();
+  return result;
+}
+Result<LeaseSlotAddress> LeaseSlotLayout::locate(const ReadLease &lease) const noexcept {
+  if (!domain_) return std::unexpected(Status::FailedPrecondition("slot layout is empty"));
+  std::lock_guard guard(domain_->lock);
+  return locate_slot(domain_, bytes_, stride_, extent_, slots_,
+      lease.block_, lease.offset_, lease.size_, false);
+}
+Result<LeaseSlotAddress> LeaseSlotLayout::locate(const WriteLease &lease) const noexcept {
+  if (!domain_) return std::unexpected(Status::FailedPrecondition("slot layout is empty"));
+  std::lock_guard guard(domain_->lock);
+  return locate_slot(domain_, bytes_, stride_, extent_, slots_,
+      lease.block_, lease.offset_, lease.size_, true);
+}
+Status LeaseSlotLayout::bind_indices(std::span<const ReadLease> sources,
+    std::span<const WriteLease> destinations, std::span<LeaseSlotAddress> source_addresses,
+    std::span<LeaseSlotAddress> destination_addresses) const noexcept {
+  if (!domain_) return Status::FailedPrecondition("slot layout is empty");
+  if (source_addresses.size() != sources.size() || destination_addresses.size() != destinations.size())
+    return Status::InvalidArgument("slot lease and address counts differ");
+  HYLE_RETURN_IF_ERROR(disjoint_address_outputs(source_addresses, destination_addresses));
+  std::lock_guard guard(domain_->lock);
+  // A contiguous span cannot repeat a move-only WriteLease object. The domain's
+  // original disjoint full-block allocations and ordinary read/write modes
+  // then prove destination uniqueness and source/destination disjointness in
+  // O(actual leases), without a capacity-sized bitmap or quadratic root scan.
+  for (const auto &lease : sources) {
+    HYLE_ASSIGN_OR_RETURN(auto address, locate_slot(domain_, bytes_, stride_, extent_, slots_,
+        lease.block_, lease.offset_, lease.size_, false)); (void)address;
+  }
+  for (const auto &lease : destinations) {
+    HYLE_ASSIGN_OR_RETURN(auto address, locate_slot(domain_, bytes_, stride_, extent_, slots_,
+        lease.block_, lease.offset_, lease.size_, true)); (void)address;
+  }
+  // No fallible work or unlocked domain mutation occurs after the full check.
+  for (std::size_t i = 0; i < sources.size(); ++i)
+    source_addresses[i] = {static_cast<std::uint32_t>(sources[i].block_->range.offset() / stride_), sources[i].block_->generation};
+  for (std::size_t i = 0; i < destinations.size(); ++i)
+    destination_addresses[i] = {static_cast<std::uint32_t>(destinations[i].block_->range.offset() / stride_), destinations[i].block_->generation};
+  return Status::Ok();
+}
+Result<mem::ConstBufferView> detail::LeaseAccess::slot_capacity(const LeaseSlotLayout &layout) noexcept {
+  if (!layout.domain_) return std::unexpected(Status::FailedPrecondition("slot layout is empty"));
+  HYLE_ASSIGN_OR_RETURN(auto range, layout.domain_->backing.view().subview(0, layout.extent_));
+  return mem::ConstBufferView(range);
 }
 
 LeasePoolStats LeasePool::stats() const noexcept {
