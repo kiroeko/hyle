@@ -1,5 +1,7 @@
 #include "hyle/compute/completion.h"
+#include "hyle/compute/completion_retention.h"
 
+#include "hyle/core/assert.h"
 #include "hyle/obs/trace.h"
 
 #include <utility>
@@ -29,6 +31,25 @@ void retained_release(void *state) noexcept {
 }
 
 } // namespace
+
+CompletionRetention::~CompletionRetention() {
+  HYLE_FATAL_ASSERT(!retention_.own.valid() &&
+      !retention_.inherited.valid() && !retention_.attachment.valid());
+}
+
+Status CompletionRetention::attach(Completion &completion, void *retained_state,
+                                    ReleaseFn release) noexcept {
+  if (!retained_state || !release)
+    return Status::InvalidArgument("completion retention requires a retained reference and release callback");
+  if (retention_.own.valid() || retention_.inherited.valid() ||
+      retention_.attachment.valid())
+    return Status::FailedPrecondition("completion retention node is already active");
+  retention_.own = {retained_state, +[](void *, const Status &) noexcept {}, release};
+  const auto attached = detail::CompletionAccess::attach_retention(completion, retention_);
+  if (!attached.ok()) retention_ = {};
+  // On success an inline release may already have destroyed this node.
+  return attached;
+}
 
 Completion
 detail::CompletionAccess::make(const detail::CompletionVTable *vtable,

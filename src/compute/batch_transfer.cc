@@ -79,8 +79,8 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
     retained->decref();
   }
   bool busy() const noexcept { return pending.load(std::memory_order_acquire) != 0; }
-  Status mutable_slot() const noexcept {
-    if (closed) return Status::FailedPrecondition("copy invocation is closed");
+  Status mutable_slot(bool recover_writer = false) const noexcept {
+    if (closed && !recover_writer) return Status::FailedPrecondition("copy invocation is closed");
     if (users != 1 || busy()) return Status::Unavailable("copy submission or native work retains the slot");
     if (failed) return Status::FailedPrecondition("failed copy slot requires explicit reset");
     return Status::Ok();
@@ -130,9 +130,10 @@ void phase_release(void *opaque) noexcept {
   owner->pending.fetch_sub(1, std::memory_order_release);
   owner->decref(); // No access to the phase/node after this drop.
 }
-Status valid_binding(CopyInvocationState *state, CopyResourceId id) noexcept {
+Status valid_binding(CopyInvocationState *state, CopyResourceId id,
+                     bool recover_writer = false) noexcept {
   if (!state) return Status::FailedPrecondition("copy invocation is empty");
-  HYLE_RETURN_IF_ERROR(state->mutable_slot());
+  HYLE_RETURN_IF_ERROR(state->mutable_slot(recover_writer));
   if (id.value >= state->bindings.size()) return Status::InvalidArgument("copy resource ID is invalid");
   return Status::Ok();
 }
@@ -324,7 +325,9 @@ Result<WriteLease> CopyBatchInvocation::unbind_mutable(CopyResourceId id) noexce
 Result<WriteLease> detail::CopyStreamAccess::take_mutable(
     CopyBatchInvocation &invocation, CopyResourceId id) noexcept {
   auto *state = invocation.state_;
-  HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id));
+  // Closing admission cannot strand a successful retired caller-owned writer.
+  // All submission/use/failure gates remain; this never reopens the slot.
+  HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id, true));
   for (std::uint32_t index = 0; index < state->submitted; ++index) {
     const auto &phase = *state->phases[index];
     if (!phase.retired.load(std::memory_order_acquire))

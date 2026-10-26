@@ -8,7 +8,7 @@
 #include <span>
 #include <utility>
 
-#include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/completion_retention.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/graph/executable.h"
 
@@ -19,13 +19,17 @@ namespace hyle::inference {
 // retirement attachment, so observation failure/abandonment cannot release it.
 template<class Scope> struct RetainedResources final {
   std::atomic<bool> active{false};
+  // Host-owner guard only. Native callbacks publish idleness through active;
+  // the next reserve resets this after acquiring that publication.
+  bool attached = false;
   std::shared_ptr<Scope> owner;
-  hyle::compute::detail::CompletionRetention retention;
+  hyle::compute::CompletionRetention retention;
 
   bool pending() const noexcept { return active.load(std::memory_order_acquire); }
   hyle::Status reserve(const std::shared_ptr<Scope> &scope) noexcept {
     if (!scope || pending())
       return hyle::Status::Unavailable("original carrier resource scope is still retained");
+    attached = false;
     owner = scope;
     active.store(true, std::memory_order_release);
     return hyle::Status::Ok();
@@ -35,18 +39,17 @@ template<class Scope> struct RetainedResources final {
     active.store(false, std::memory_order_release);
   }
   hyle::Status attach(hyle::compute::Completion &completion) noexcept {
-    if (!pending() || !owner || retention.own.valid())
+    if (!pending() || attached || !owner)
       return hyle::Status::FailedPrecondition("carrier resource scope was not reserved once");
-    retention.own = {this, +[](void *, const hyle::Status &) noexcept {},
-        +[](void *opaque) noexcept {
-          auto &node = *static_cast<RetainedResources *>(opaque);
-          // Move before publication: a host may reuse an idle serial carrier.
-          // The local can destroy this node's whole scope; no access follows.
-          auto held = std::move(node.owner);
-          node.active.store(false, std::memory_order_release);
-        }};
-    const auto result = hyle::compute::detail::CompletionAccess::attach_retention(completion, retention);
-    if (!result.ok()) { retention = {}; reject(); }
+    attached = true;
+    const auto result = retention.attach(completion, this, +[](void *opaque) noexcept {
+      auto &node = *static_cast<RetainedResources *>(opaque);
+      // Move before publication: a host may reuse an idle serial carrier.
+      // The local can destroy this node's whole scope; no access follows.
+      auto held = std::move(node.owner);
+      node.active.store(false, std::memory_order_release);
+    });
+    if (!result.ok()) { attached = false; reject(); }
     return result;
   }
 };

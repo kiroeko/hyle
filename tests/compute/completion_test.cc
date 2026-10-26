@@ -8,10 +8,12 @@
 #include <memory>
 #include <optional>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 #include "completion_internal.h"
 #include "hyle/compute/completion.h"
+#include "hyle/compute/completion_retention.h"
 #include "hyle/compute/detail/dependent_completion.h"
 #include "hyle/compute/detail/copy_outcome_source.h"
 #include "hyle/compute/detail/generated_result.h"
@@ -21,6 +23,11 @@
 #endif
 
 namespace {
+
+static_assert(!std::is_copy_constructible_v<hyle::compute::CompletionRetention>);
+static_assert(!std::is_move_constructible_v<hyle::compute::CompletionRetention>);
+static_assert(sizeof(hyle::compute::CompletionRetention) ==
+    sizeof(hyle::compute::detail::CompletionRetention));
 
 struct AsyncProbe final {
   bool complete = false;
@@ -155,6 +162,117 @@ void retire_abandoned(AsyncProbe &native) {
   auto lifetime = std::exchange(native.abandoned, {});
   lifetime.terminal(lifetime.state, native.abandoned_hint);
   lifetime.release(lifetime.state);
+}
+
+struct RetireAsyncOnExit final {
+  AsyncProbe &native;
+  hyle::compute::Completion &completion;
+  ~RetireAsyncOnExit() {
+    native.complete = true;
+    completion = {};
+    if (native.abandoned.valid()) retire_abandoned(native);
+  }
+};
+
+TEST(PublicCompletionRetention, InlineSuccessAndErrorReleaseExactlyOnce) {
+  using namespace hyle::compute;
+  CompletionRetention node;
+  LifetimeProbe lifetime;
+  auto success = Completion::completed();
+  ASSERT_TRUE(node.attach(success, &lifetime, &release_lifetime).ok());
+  EXPECT_EQ(lifetime.release_count, 1u);
+  EXPECT_TRUE(success.wait().ok());
+  auto failure = Completion::completed(hyle::Status::Cancelled("inline cancellation"));
+  ASSERT_TRUE(node.attach(failure, &lifetime, &release_lifetime).ok());
+  EXPECT_EQ(lifetime.release_count, 2u);
+  EXPECT_TRUE(failure.wait().IsCancelled());
+  EXPECT_EQ(lifetime.release_count, 2u);
+
+  struct SelfOwned final {
+    CompletionRetention node;
+    unsigned *releases;
+  };
+  unsigned releases = 0;
+  auto *owner = new SelfOwned{{}, &releases};
+  ASSERT_TRUE(owner->node.attach(success, owner, +[](void *opaque) noexcept {
+    auto *retained = static_cast<SelfOwned *>(opaque);
+    ++*retained->releases;
+    delete retained;
+  }).ok());
+  EXPECT_EQ(releases, 1u);
+}
+
+TEST(PublicCompletionRetention, RejectionPreservesCallerReferenceAndActiveAttachment) {
+  using namespace hyle::compute;
+  AsyncProbe native;
+  CompletionRetention node;
+  LifetimeProbe original, rejected;
+  Completion invalid;
+  EXPECT_TRUE(node.attach(invalid, &rejected, &release_lifetime).IsFailedPrecondition());
+  auto other = Completion::completed();
+  EXPECT_TRUE(node.attach(other, nullptr, &release_lifetime).IsInvalidArgument());
+  EXPECT_TRUE(node.attach(other, &rejected, nullptr).IsInvalidArgument());
+  EXPECT_EQ(rejected.release_count, 0u);
+
+  auto completion = detail::CompletionAccess::make(&kAsyncVTable, &native);
+  RetireAsyncOnExit retire{native, completion};
+  ASSERT_TRUE(node.attach(completion, &original, &release_lifetime).ok());
+  EXPECT_TRUE(node.attach(other, &rejected, &release_lifetime).IsFailedPrecondition());
+  EXPECT_EQ(original.release_count, 0u);
+  EXPECT_EQ(rejected.release_count, 0u);
+  EXPECT_EQ(native.polls, 0u);
+  ASSERT_TRUE(completion.wait().ok());
+  EXPECT_EQ(original.release_count, 1u);
+  ASSERT_TRUE(node.attach(other, &rejected, &release_lifetime).ok());
+  EXPECT_EQ(rejected.release_count, 1u);
+}
+
+TEST(PublicCompletionRetention, ObservationErrorRetainsUntilActualRuntimeRetirement) {
+  using namespace hyle::compute;
+  AsyncProbe native;
+  native.observation_failed = true;
+  CompletionRetention node;
+  LifetimeProbe lifetime;
+  auto completion = detail::CompletionAccess::make(&kAsyncVTable, &native);
+  RetireAsyncOnExit retire{native, completion};
+  ASSERT_TRUE(node.attach(completion, &lifetime, &release_lifetime).ok());
+  auto observed = completion.poll();
+  ASSERT_FALSE(observed.has_value());
+  EXPECT_TRUE(observed.error().IsUnavailable());
+  EXPECT_TRUE(native.abandoned.valid());
+  EXPECT_EQ(lifetime.release_count, 0u);
+  completion = {};
+  EXPECT_EQ(lifetime.release_count, 0u);
+  retire_abandoned(native);
+  EXPECT_EQ(lifetime.release_count, 1u);
+}
+
+TEST(PublicCompletionRetention, AbandonedChainPreservesOriginalOwnerAndTailError) {
+  using namespace hyle::compute;
+  AsyncProbe native;
+  LifetimeProbe original, second, third;
+  detail::CompletionLifetime inherited{&original, &observe_terminal, &release_lifetime};
+  CompletionRetention inner, outer;
+  auto completion = detail::CompletionAccess::make(&kAsyncVTable, &native);
+  RetireAsyncOnExit retire{native, completion};
+  ASSERT_TRUE(detail::CompletionAccess::attach_lifetime(completion, inherited).ok());
+  ASSERT_TRUE(inner.attach(completion, &second, &release_lifetime).ok());
+  ASSERT_TRUE(outer.attach(completion, &third, &release_lifetime).ok());
+  detail::CompletionAccess::append_terminal(completion,
+      hyle::Status::Unavailable("accepted prefix then rejected tail"));
+  completion = {};
+  EXPECT_TRUE(native.abandoned.valid());
+  EXPECT_TRUE(native.abandoned_hint.IsUnavailable());
+  EXPECT_EQ(original.release_count, 0u);
+  EXPECT_EQ(second.release_count, 0u);
+  EXPECT_EQ(third.release_count, 0u);
+  EXPECT_EQ(native.waits, 0u);
+  retire_abandoned(native);
+  EXPECT_EQ(original.terminal_count, 1u);
+  EXPECT_EQ(original.terminal_code, hyle::StatusCode::Unavailable);
+  EXPECT_EQ(original.release_count, 1u);
+  EXPECT_EQ(second.release_count, 1u);
+  EXPECT_EQ(third.release_count, 1u);
 }
 
 struct SourceUpdateProbe final {

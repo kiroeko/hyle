@@ -1,5 +1,7 @@
 #include "../../engine/inference/host_state_storage.h"
 #include "../../engine/inference/state_transfer.h"
+#include "../../src/compute/context_state.h"
+#include "../../src/compute/completion_internal.h"
 
 #include <algorithm>
 #include <array>
@@ -37,7 +39,289 @@ struct TransferResources final {
   c::LeasePool source, host, restored;
 };
 
-void run(i::BackendKind kind) {
+#if defined(HYLE_COMPUTE_CPU)
+namespace cd = c::detail;
+
+// The original CPU copies really execute. Only their Completion observation
+// and retirement callback are controlled, as in Compute's AsyncProbe tests.
+// This proves the adapter protocol, not pending GPU work or a driver failure.
+struct ManualRetirement final {
+  bool released = false, unknown = false, cancel_supported = false, cancelled = false;
+  unsigned waits = 0, polls = 0, destroys = 0, callbacks = 0, cancels = 0;
+  cd::CompletionLifetime deferred{};
+  Status hint;
+  void finish(cd::CompletionLifetime lifetime, Status terminal) noexcept {
+    if (!lifetime.valid()) return;
+    if (cancelled) terminal.Update(Status::Cancelled("controlled CPU cancellation"));
+    ++callbacks; lifetime.terminal(lifetime.state, terminal); lifetime.release(lifetime.state);
+  }
+  void release() noexcept {
+    released = true;
+    const auto lifetime = std::exchange(deferred, {});
+    finish(lifetime, hint);
+  }
+  ~ManualRetirement() { release(); } // Exception cleanup, without waiting or executing payload.
+  static const cd::CompletionVTable table;
+};
+
+inline const cd::CompletionVTable ManualRetirement::table{
+      .destroy = +[](void *opaque, cd::CompletionLifetime lifetime, Status terminal) noexcept {
+        auto &self = *static_cast<ManualRetirement *>(opaque); ++self.destroys;
+        if (self.released) self.finish(lifetime, std::move(terminal));
+        else { self.deferred = lifetime; self.hint = std::move(terminal); }
+      },
+      .poll = +[](void *opaque) noexcept -> hyle::Result<c::CompletionPoll> {
+        auto &self = *static_cast<ManualRetirement *>(opaque); ++self.polls;
+        if (!self.released && self.unknown)
+          return std::unexpected(Status::Unavailable("controlled CPU observation is unknown"));
+        if (!self.released) return c::CompletionPoll::kPending;
+        if (self.cancelled) return std::unexpected(Status::Cancelled("controlled CPU cancellation"));
+        return c::CompletionPoll::kComplete;
+      },
+      .wait = +[](void *opaque) noexcept {
+        auto &self = *static_cast<ManualRetirement *>(opaque); ++self.waits;
+        if (!self.released) return Status::Unavailable("controlled CPU retirement is still unknown");
+        return self.cancelled ? Status::Cancelled("controlled CPU cancellation") : Status::Ok();
+      },
+      .request_cancel = +[](void *opaque) noexcept {
+        auto &self = *static_cast<ManualRetirement *>(opaque); ++self.cancels;
+        if (!self.cancel_supported) return Status::Unimplemented("controlled CPU cancellation is unsupported");
+        self.cancelled = true; return Status::Ok();
+      }};
+
+struct CpuFaultBoundary final {
+  cd::ContextRef context_owner;
+  cd::ContextState *context;
+  const cd::BackendVTable *original;
+  cd::BackendVTable table;
+  ManualRetirement retirement;
+  unsigned calls = 0, accepted = 0, reject_at = 0, sequences = 0;
+  bool delayed = false;
+  static inline thread_local CpuFaultBoundary *active = nullptr;
+  explicit CpuFaultBoundary(c::Context &selected)
+      : context_owner(take(cd::ContextRef::acquire(selected))), context(cd::ContextAccess::state(selected)),
+        original(context->backend_vtable), table(*original) {
+    require(!active, "CPU transfer fault boundaries must not overlap");
+    table.copy_async = +[](void *queue, hyle::mem::BufferView destination,
+        hyle::mem::ConstBufferView source) noexcept {
+      auto &self = *active; ++self.calls;
+      if (self.reject_at == self.calls)
+        return cd::EnqueueResult::rejected(Status::ResourceExhausted("controlled CPU copy rejection"));
+      auto result = self.original->copy_async(queue, destination, source);
+      self.accepted += result.accepted; return result;
+    };
+    table.finish_sequence = +[](void *queue, void *sequence, bool accepted, Status terminal) noexcept {
+      auto &self = *active; ++self.sequences;
+      auto completion = self.original->finish_sequence(queue, sequence, accepted, std::move(terminal));
+      if (!self.delayed || !accepted) return completion;
+      // CPU finish is synchronous. Preserve any real error before replacing
+      // only its successful observation with the controlled original callback.
+      const auto status = completion.wait();
+      if (!status.ok()) return c::Completion::completed(status);
+      return cd::CompletionAccess::make(&ManualRetirement::table, &self.retirement);
+    };
+    active = this; context->backend_vtable = &table;
+  }
+  ~CpuFaultBoundary() {
+    // Failure cleanup also releases every saved callback before restoring the
+    // original endpoint. context_owner keeps this exact ContextState alive.
+    retirement.release(); context->backend_vtable = original; active = nullptr;
+  }
+};
+
+struct FaultResources final {
+  std::shared_ptr<i::Backend> backend;
+  std::shared_ptr<i::HostStateStorage> storage;
+  std::shared_ptr<const void> image;
+  c::LeasePool sources, destinations;
+};
+
+enum class FaultMode { kPending, kAcceptedPrefix, kUnknown, kAbandon, kRejectedFirst,
+                       kCancelSupported, kCancelUnsupported };
+
+void fault_case(FaultMode mode) {
+  constexpr std::size_t prefix = 64, extent = 128;
+  auto resources = std::make_shared<FaultResources>();
+  resources->backend = std::make_shared<i::Backend>(take(i::Backend::create({.primary = i::BackendKind::kCpu})));
+  resources->storage = take(i::HostStateStorage::create(*resources->backend, 1, 1u << 20));
+  resources->image = take(resources->storage->reserve_image());
+  const auto budget = resources->storage->budget();
+  resources->sources = take(c::LeasePool::create(resources->backend->device(), 256, {.max_blocks = 1}));
+  resources->destinations = take(c::LeasePool::create(resources->storage->resource(), 1024,
+      {.max_blocks = 3, .resource_budget = budget}));
+  std::array<std::byte, prefix> expected{};
+  for (std::size_t n = 0; n < prefix; ++n) expected[n] = std::byte((n * 37 + 11) & 255);
+  auto writer = take(resources->sources.allocate(prefix));
+  check(take(writer.view()).write(expected)); auto source = take(writer.publish());
+  const auto count = mode == FaultMode::kAcceptedPrefix ? std::size_t{3} : std::size_t{1};
+  std::array<i::StateTransferCopy, 3> copies;
+  for (std::size_t n = 0; n < count; ++n) {
+    auto destination = take(resources->destinations.allocate(extent));
+    check(take(destination.view()).fill(std::byte{0xcd}));
+    copies[n] = {source, std::move(destination), prefix};
+  }
+  const auto generation = copies[0].destination.generation();
+  const auto baseline_bytes = take(resources->storage->usage()).live_bytes;
+  auto *context = take(resources->backend->common_context());
+  CpuFaultBoundary boundary(*context);
+  boundary.delayed = mode != FaultMode::kAcceptedPrefix && mode != FaultMode::kRejectedFirst;
+  boundary.retirement.unknown = mode == FaultMode::kUnknown;
+  boundary.retirement.cancel_supported = mode == FaultMode::kCancelSupported;
+  boundary.reject_at = mode == FaultMode::kAcceptedPrefix ? 2u : mode == FaultMode::kRejectedFirst ? 1u : 0u;
+  auto transfer = take(i::StateTransfer::prepare(*resources->backend, std::span(copies).first(count), resources, budget));
+  require(!transfer.take_writer(0), "prepared transfer returned an unpublished writer");
+  const auto submitted = transfer.submit();
+  if (mode == FaultMode::kRejectedFirst) {
+    require(submitted.IsResourceExhausted() && boundary.calls == 1 && !boundary.accepted && !transfer.in_flight(),
+        "first rejected CPU copy fabricated accepted work or lost its original error");
+    require(transfer.wait().IsResourceExhausted() && !transfer.take_writer(0),
+        "rejected CPU transfer published a writer or lost its error");
+  } else {
+    check(submitted);
+    require(boundary.accepted == 1, "CPU transfer did not execute its original accepted copy");
+    if (mode == FaultMode::kAcceptedPrefix) {
+      require(boundary.calls == 2 && transfer.wait().IsResourceExhausted() && !transfer.in_flight(),
+          "rejected suffix executed a third copy or lost accepted-prefix retirement/error");
+      for (std::size_t n = 0; n < count; ++n)
+        require(!transfer.take_writer(n), "failed accepted CPU prefix published a destination");
+    } else {
+      require(transfer.in_flight() && resources->sources.stats().active_uses &&
+          resources->destinations.stats().active_uses && !transfer.take_writer(0) && !boundary.retirement.callbacks,
+          "controlled pending transfer released permissions or returned an early writer");
+      const auto pending = transfer.poll();
+      require(!pending.retired && pending.status.IsUnavailable() && transfer.in_flight() && !transfer.take_writer(0),
+          "nonblocking observation turned pending/unknown work into retirement or a ready writer");
+      if (mode == FaultMode::kUnknown) {
+        const auto again = transfer.poll();
+        require(!again.retired && again.status.IsUnavailable() && transfer.in_flight() && !transfer.take_writer(0) &&
+            boundary.retirement.deferred.valid() && !boundary.retirement.callbacks,
+            "unknown observation manufactured retirement or a ready writer");
+        boundary.retirement.release();
+        const auto failed = transfer.poll();
+        require(failed.retired && !transfer.in_flight() && failed.status.IsUnavailable() && !transfer.take_writer(0),
+            "later actual callback erased the original unknown error or published failed bytes");
+      } else if (mode == FaultMode::kPending || mode == FaultMode::kCancelUnsupported) {
+        if (mode == FaultMode::kCancelUnsupported) {
+          require(transfer.request_cancel().IsUnimplemented() && boundary.retirement.cancels == 1 &&
+              !boundary.retirement.cancelled && transfer.in_flight() && !transfer.take_writer(0),
+              "unsupported cancellation changed the original transfer or returned its writer");
+        }
+        boundary.retirement.release();
+        const auto completed = transfer.poll(); check(completed.status);
+        require(completed.retired && !boundary.retirement.waits,
+            "successful nonblocking retirement required a wait or retained native work");
+        auto restored = take(transfer.take_writer(0));
+        require(restored.size() == extent && restored.generation() == generation && !transfer.take_writer(0),
+            "successful callback lost the original complete writer or returned it twice");
+        std::array<std::byte, extent> actual{}; check(take(restored.view()).read(actual));
+        require(std::equal(expected.begin(), expected.end(), actual.begin()) &&
+            std::all_of(actual.begin() + prefix, actual.end(), [](auto b) { return b == std::byte{0xcd}; }),
+            "controlled success changed copied bytes or the untouched suffix");
+      } else if (mode == FaultMode::kCancelSupported) {
+        check(transfer.request_cancel());
+        const auto cancelling = transfer.poll();
+        require(boundary.retirement.cancels == 1 && !cancelling.retired && transfer.in_flight() &&
+            !transfer.take_writer(0) && !boundary.retirement.callbacks,
+            "accepted cancellation claimed retirement before its original callback");
+        boundary.retirement.release();
+        const auto cancelled = transfer.poll();
+        require(cancelled.retired && cancelled.status.IsCancelled() && !transfer.in_flight() && !transfer.take_writer(0),
+            "retired cancellation lost its status or published a destination");
+      } else {
+        auto storage = resources->storage;
+        std::weak_ptr<FaultResources> alive = resources;
+        for (auto &copy : copies) copy.source.reset();
+        source.reset(); resources.reset();
+        transfer = {};
+        {
+          const auto retained = alive.lock();
+          require(retained && storage->live_images() == 1 && boundary.retirement.deferred.valid() &&
+              !boundary.retirement.waits && !boundary.retirement.callbacks && retained->sources.stats().active_uses &&
+              retained->destinations.stats().active_uses && take(storage->usage()).live_bytes > baseline_bytes,
+              "abandon waited or released the original resource/allocator/image before its callback");
+        }
+        boundary.retirement.release();
+        require(alive.expired() && !storage->live_images() && take(storage->usage()).live_bytes <= baseline_bytes,
+            "actual callback did not release the abandoned scope and its original budget/image uses");
+      }
+    }
+  }
+  if (resources) {
+    std::array<std::byte, prefix> unchanged{}; check(take(source.view()).read(unchanged));
+    require(unchanged == expected, "failed or successful transfer changed its readonly source");
+    require(!resources->sources.stats().active_uses && !resources->destinations.stats().active_uses,
+        "actually retired CPU transfer retained native use permissions");
+  }
+}
+
+void duplicate_attachment() {
+  auto owner = std::make_shared<unsigned>(7);
+  std::weak_ptr<unsigned> alive = owner;
+  i::RetainedResources<unsigned> retained;
+  ManualRetirement retirement;
+  auto completion = cd::CompletionAccess::make(&ManualRetirement::table, &retirement);
+  check(retained.reserve(owner)); check(retained.attach(completion));
+  owner.reset();
+  require(retained.attach(completion).IsFailedPrecondition() && retained.pending() && !alive.expired() &&
+      !retirement.callbacks, "duplicate carrier attachment rejected its original retained owner");
+  retirement.release();
+  require(take(completion.poll()) == c::CompletionPoll::kComplete && !retained.pending() && alive.expired() &&
+      retirement.callbacks == 1, "original carrier attachment did not release once at its actual callback");
+}
+
+void closed_control_admission() {
+  auto context = take(c::Context::create(c::cpu::device()));
+  auto queue = take(context.create_queue());
+  auto pool = take(c::LeasePool::create(hyle::mem::system_resource(), 512, {.max_blocks = 2}));
+  auto source_writer = take(pool.allocate(64));
+  check(take(source_writer.view()).fill(std::byte{0x3a}));
+  auto source = take(source_writer.publish());
+  auto destination = take(pool.allocate(128));
+  const auto generation = destination.generation();
+  const std::array specs{c::CopyResourceSpec{hyle::mem::system_resource(), 64},
+                         c::CopyResourceSpec{hyle::mem::system_resource(), 128}};
+  auto program = take(c::CopyBatchProgram::prepare(context, specs));
+  auto invocation = take(c::CopyBatchInvocation::create(program, queue));
+  check(invocation.bind_source({0}, source));
+  check(invocation.bind_mutable({1}, std::move(destination)));
+  constexpr std::array<c::CopyPhase, 1> phases{};
+  constexpr std::array<c::CopyRange, 1> ranges{{{{0}, {1}, {0}, 0, 0, 64}}};
+  check(invocation.prepare_replay(phases, ranges));
+  auto submitted = take(invocation.submit()); check(submitted.wait());
+  check(submitted.request_cancel()); // Close only after known successful retirement.
+  submitted = {};
+  const auto replay = invocation.prepare_replay(phases, ranges);
+  const auto resubmitted = invocation.submit();
+  require(replay.IsFailedPrecondition() && replay.message().find("closed") != std::string_view::npos &&
+      !resubmitted && resubmitted.error().IsFailedPrecondition() &&
+      resubmitted.error().message().find("closed") != std::string_view::npos,
+      "closed CopyBatch prepare/submit did not reject at the original closed admission gate");
+  auto recovered = take(invocation.unbind_mutable({1}));
+  require(recovered.size() == 128 && recovered.generation() == generation,
+      "closed successful control did not recover its original complete writer");
+  require(!invocation.bind_source({0}, source).ok() &&
+      !invocation.bind_mutable({1}, std::move(recovered)).ok() && recovered.valid() &&
+      recovered.generation() == generation && !invocation.prepare_replay(phases, ranges).ok() &&
+      !invocation.submit(), "writer recovery reopened closed CopyBatch admission or consumed a rejected writer");
+}
+
+void run_faults() {
+  for (const auto mode : {FaultMode::kPending, FaultMode::kAcceptedPrefix, FaultMode::kUnknown,
+          FaultMode::kAbandon, FaultMode::kRejectedFirst, FaultMode::kCancelSupported,
+          FaultMode::kCancelUnsupported}) fault_case(mode);
+  duplicate_attachment();
+  closed_control_admission();
+  std::cout << "{\"status\":\"PASS\",\"backend\":\"cpu\",\"real_cpu_copy\":true,"
+      "\"controlled_completion_protocol\":true,\"pending_success\":true,\"accepted_prefix_failure\":true,"
+      "\"unknown_retirement\":true,\"abandon_keeps_scope\":true,\"first_copy_rejection\":true,"
+      "\"nonblocking_success\":true,\"supported_cancel_retirement\":true,\"unsupported_cancel_success\":true,"
+      "\"duplicate_attachment_keeps_owner\":true,"
+      "\"closed_control_admission_rejected\":true,"
+      "\"early_or_failed_writer_publication\":false,\"GPU_driver_fault\":false}\n";
+}
+#endif
+
+void run(i::BackendKind kind, bool closed_recovery = false) {
   constexpr std::size_t prefix = 64, extent = 128, limit = 1u << 20;
   std::array<std::byte, extent> expected{};
   expected.fill(std::byte{0xcd});
@@ -84,6 +368,7 @@ void run(i::BackendKind kind) {
     require(transfer.submit().IsFailedPrecondition(), "single-use transfer accepted a second submit");
     check(transfer.wait());
     require(!transfer.in_flight(), "successful wait left original export work pending");
+    if (closed_recovery) check(transfer.request_cancel());
     auto host_writer = take(transfer.take_writer(0));
     require(host_writer.size() == extent && host_writer.generation() == generation,
         "export did not return its original complete writer");
@@ -102,6 +387,7 @@ void run(i::BackendKind kind) {
     import_pending = restore.in_flight();
     check(restore.wait());
     require(!restore.in_flight(), "successful wait left original import work pending");
+    if (closed_recovery) check(restore.request_cancel());
     auto restored = take(restore.take_writer(0));
     require(restored.size() == extent, "import lost its original untouched writer suffix");
     check(take(restored.view()).read(actual));
@@ -122,14 +408,26 @@ void run(i::BackendKind kind) {
   require(take(escaped_storage->usage()).live_bytes <= limit, "host budget exceeded its requested-byte bound");
   std::cout << "state_transfer_pass prefix_bytes=" << prefix << " writer_bytes=" << extent
             << " export_pending_observed=" << export_pending << " import_pending_observed=" << import_pending
-            << " backend_expired=1\n";
+            << " backend_expired=1";
+  if (closed_recovery) std::cout << " closed_recovery=1";
+  std::cout << '\n';
 }
 } // namespace
 
 int main(int argc, char **argv) {
   try {
-    if (argc != 2) throw std::runtime_error("usage: inference_state_transfer_test --cpu|--cuda|--apple|--vulkan");
+    const bool closed_recovery = argc == 3 && std::string_view(argv[2]) == "--closed-recovery";
+    if (argc != 2 && !closed_recovery)
+      throw std::runtime_error("usage: inference_state_transfer_test --cpu|--cuda|--apple|--vulkan [--closed-recovery], or --faults");
     const std::string_view selected(argv[1]);
+    if (selected == "--faults") {
+      if (closed_recovery) throw std::runtime_error("--faults does not take a backend or recovery option");
+#if defined(HYLE_COMPUTE_CPU)
+      run_faults(); return 0;
+#else
+      std::cerr << "SKIP: CPU transfer fault fixture is not built\n"; return 77;
+#endif
+    }
     auto kind = i::BackendKind::kDefault;
     if (selected == "--cpu") kind = i::BackendKind::kCpu;
     else if (selected == "--cuda") kind = i::BackendKind::kCuda;
@@ -140,7 +438,7 @@ int main(int argc, char **argv) {
     if (std::find(compiled.begin(), compiled.end(), kind) == compiled.end()) {
       std::cerr << "SKIP: selected route is not built\n"; return 77;
     }
-    run(kind);
+    run(kind, closed_recovery);
     return 0;
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n'; return 1;

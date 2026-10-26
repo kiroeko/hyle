@@ -133,15 +133,19 @@ CUDA使用pinned host，Apple使用独立shared Metal资源，Vulkan使用原Run
 不保权重、物理页权限、原VersionRef或执行器。借用payload的搬运必须同时保活完整镜像。
 CUDA pinned host不承诺CPU／GPU并发coherence；原复制成功并退休之后才发布ready，通过资源自己的
 read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当成完成后可读的必要条件。
-`StateTransfer`使用原CopyBatch及Completion接管临时源／目的资源，成功wait后才能取回完整原writer；
+`StateTransfer`使用原CopyBatch及Completion接管临时源／目的资源，成功wait或实际退休的poll后才能取回完整原writer；
 未知退休时不归还容量，不把错误当作退休。Apple／Vulkan复用原typed Program／Invocation／Update，
 不伪造common Queue；Apple的退休查询与附件共享原观察锁。临时scope也将实际分配器owner保留到
 共享控制块释放结束。模型adapter负责完整清单、新页布局和wrapper恢复。
+`poll`分别返回状态和真实退休事实，暂时pending不缓存成永久失败；确认退休后重新取得原Update的稳定终态。
+`request_cancel`只转发原端点能力，失败或不支持不替换计算结果，也不授予提前回收权限。
+关闭CopyBatch禁止新接纳，但仍可取回原已成功退休的writer。模型当前的换出／换入调用仍同步，
+这些底层能力不冒充已接通异步会话腾位。
 共同请求adapter可显式选择主机镜像恢复；未选时仍按原已消费token重建。CPU／CUDA普通与MTP已作有限消费者检查，
 CUDA另核lag1／prior完整往返与原catchup续算；[检查范围](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)
 不等于完整任务质量或性能结论。Apple／Vulkan的原生字节合同与原335角色完整普通／MTP／lag1消费者
-均已作[有限检查](../evidence/correctness/inference-native-host-image-2026-10-26.json)；原tiny Vulkan输入仍在加载时
-因流对齐失败，受控pending／设备故障也未补查，不把这些边界写成通过。
+均已作[有限检查](../evidence/correctness/inference-native-host-image-2026-10-26.json)。原tiny Vulkan流对齐问题
+已由[显式初始化载体](../evidence/correctness/inference-stream-padding-2026-10-26.json)修复；受控退休与真实设备故障按各自记录区分。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，

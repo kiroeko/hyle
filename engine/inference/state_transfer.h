@@ -41,7 +41,8 @@ struct StateTransferCopy final {
 // Cold, single-use ownership of one original endpoint's CopyBatch episode.
 // prepare consumes destinations only on success; sources remain unchanged.
 // submit/wait return the original status without discarding this owner. A
-// successful wait permits take_writer; no bytes become ready here implicitly.
+// successful retired observation permits take_writer; no bytes become ready
+// here implicitly. Cancellation is advisory and never proves retirement.
 // lifetime owns ALL borrowed resource/allocator backings, not the application
 // Model. It is held only by this temporary transfer, never copied into an image.
 class StateTransfer final {
@@ -101,7 +102,7 @@ class StateTransfer final {
     RetainedResources<Scope> retirement;
     hyle::Status terminal;
     std::size_t copies = 0;
-    bool attempted = false, successful_wait = false;
+    bool attempted = false, successful_observation = false;
   };
 public:
   StateTransfer() noexcept = default;
@@ -211,14 +212,53 @@ public:
     std::visit([&](auto &control) noexcept {
       if (control.update.valid()) record_retirement_status(owner.terminal, control.update.wait());
     }, owner.control);
-    owner.successful_wait = owner.terminal.ok() && !in_flight();
+    owner.successful_observation = owner.terminal.ok() && !in_flight();
     return owner.terminal;
+  }
+  // Nonblocking status and actual retirement are independent facts. Original
+  // observe() uses Unavailable for both pending and observation failure; leave
+  // that diagnostic with its original owner until retirement is established,
+  // rather than permanently poisoning an ordinary pending transfer.
+  RetirementObservation poll() noexcept {
+    if (!scope_ || !scope_->attempted)
+      return {false, Status::FailedPrecondition("state transfer has not been submitted")};
+    auto &owner = *scope_;
+    const auto observe = [&]() noexcept {
+      return std::visit([](auto &control) noexcept -> Status {
+        return control.update.valid() ? control.update.observe() : Status::Ok();
+      }, owner.control);
+    };
+    const auto observed = observe();
+    const bool retired = !in_flight();
+    if (retired) {
+      // A runtime observer may have retired after the first poll returned
+      // pending. Once idle, take the stable final status, not that stale poll.
+      record_retirement_status(owner.terminal, observe());
+      owner.successful_observation = owner.terminal.ok();
+      return {true, owner.terminal};
+    }
+    auto status = owner.terminal;
+    record_retirement_status(status, observed);
+    return {false, std::move(status)};
+  }
+  // Preserve the endpoint's cancellation capability/result. A rejected or
+  // unsupported request does not replace the eventual copy outcome; accepted
+  // cancellation still needs poll/wait and the original retirement callback.
+  Status request_cancel() noexcept {
+    if (!scope_ || !scope_->attempted)
+      return Status::FailedPrecondition("state transfer has not been submitted");
+    if (!scope_->copies) return scope_->terminal;
+    return std::visit([&](auto &control) noexcept -> Status {
+      if (control.update.valid()) return control.update.request_cancel();
+      if (!scope_->terminal.ok()) return scope_->terminal;
+      return Status::FailedPrecondition("state transfer has no accepted episode");
+    }, scope_->control);
   }
   Result<compute::WriteLease> take_writer(std::size_t index) noexcept {
     if (!scope_ || index >= scope_->copies)
       return std::unexpected(Status::OutOfRange("state transfer destination index"));
     if (!scope_->terminal.ok()) return std::unexpected(scope_->terminal);
-    if (!scope_->successful_wait || in_flight())
+    if (!scope_->successful_observation || in_flight())
       return std::unexpected(Status::FailedPrecondition("state transfer destination requires actual successful retirement"));
     return std::visit([&](auto &control) noexcept {
       return control.update.take_mutable({static_cast<std::uint32_t>(2 * index + 1)});

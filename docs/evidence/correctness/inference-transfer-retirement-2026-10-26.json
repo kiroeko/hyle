@@ -1,0 +1,132 @@
+{
+  "status": "FINITE_SCOPE_PASS_WITH_PRESERVED_FAILURES",
+  "date": "2026-10-26",
+  "source_base": "9ae135d8691605ae372c5210d626eff0578c87ea",
+  "source_patch": "records/product.patch",
+  "changes": [
+    "Public nonmoving CompletionRetention reuses the original intrusive retirement chain without allocation, waits, another executor or a Completion layout change. Success transfers one existing owner reference; failure consumes none.",
+    "Engine RetainedResources uses the public node and a host-only duplicate-attachment guard. Its atomic idle publication remains the reuse authority.",
+    "StateTransfer now exposes nonblocking poll with independent retirement/status and forwards advisory cancellation. Pending diagnostics do not poison successful completion; final status is re-read after observing retirement.",
+    "Common, Vulkan and Apple CopyBatch can return original successful retired writers after close. New binding, replay and submission remain closed; pending, unknown, failed and retained-submission gates remain."
+  ],
+  "validation": {
+    "windows": {
+      "completion": "47/47",
+      "finite_processes": 6,
+      "all_exit_zero": true,
+      "processes": [
+        {
+          "name": "completion",
+          "exit": 0,
+          "pid": 52408,
+          "seconds": 0.22474869998404756
+        },
+        {
+          "name": "cpu-faults",
+          "exit": 0,
+          "pid": 2900,
+          "seconds": 0.2546343000140041
+        },
+        {
+          "name": "cpu-closed",
+          "exit": 0,
+          "pid": 54332,
+          "seconds": 0.20062349998624995
+        },
+        {
+          "name": "vulkan-closed",
+          "exit": 0,
+          "pid": 59264,
+          "seconds": 0.4544525999808684
+        },
+        {
+          "name": "qwen-vulkan",
+          "exit": 0,
+          "pid": 52884,
+          "seconds": 4.824432900000829
+        },
+        {
+          "name": "qwen-vulkan-lag1",
+          "exit": 0,
+          "pid": 19280,
+          "seconds": 0.9116292999824509
+        }
+      ],
+      "unique_TUs": 6,
+      "compile_invocations": 8,
+      "compile_failures": 2,
+      "summary": "records/final-summary.json",
+      "summary_sha256": "e25561bcb2ff1bc5874086a6b4c8bb4628d0b5b22ae81852f9bdc8b4cf4045b8"
+    },
+    "mac": {
+      "model": "Mac16,12",
+      "architecture": "arm64",
+      "apple_closed_recovery": {
+        "tag": "run-apple-closed",
+        "pid": 21694,
+        "exit": 0,
+        "seconds": 0.6041756249999999
+      },
+      "cpu_controlled_faults": {
+        "pid": 21716,
+        "exit": 0,
+        "seconds": 0.0900445
+      },
+      "unique_TUs": 4,
+      "compile_invocations": 5,
+      "summary": "records/mac/records/summary.json",
+      "summary_sha256": "04ca9678fb052222d650ef992ea90ca6ffbbe4b9d8c52afb9ec342f0155e0bc1"
+    },
+    "sdk_header": "Compute ownership and automatically selected install header set checked by configure-only LANGUAGES NONE project."
+  },
+  "checked_contracts": [
+    "Inline success/error release, synchronous self-destruction, failed/duplicate attachment, inherited lifetime chain, unknown observation and abandonment until original retirement.",
+    "Actual CPU copies plus controlled Completion: pending success, accepted prefix then rejected suffix, first-copy rejection, unknown retirement, abandonment scope/budget/image retention, supported and unsupported cancellation.",
+    "Original complete writer and untouched suffix returned once only after success. Failed, pending and unknown work never publish writers. Closed controls reject rebinding/replay/submission after writer recovery.",
+    "Actual Vulkan and Apple export/import with known successful retirement, then close and recover; host bytes remain independent after Backend destruction.",
+    "Unchanged tiny GA/H64 Vulkan ordinary/MTP and explicit-prefix lag1 host-image continuation, snapshot, RNG and resource checks."
+  ],
+  "preserved_failures": [
+    "Windows test fixture used an incomplete class in static table lambdas; moved table definition after complete type. Product compile TUs were not rebuilt.",
+    "Windows and Mac test fixture tried to copy noncopyable LeasePools; replaced with a scoped weak-owner observation, without moving pools or extending their lifetime.",
+    "Mac first CPU fault command used --cpu --faults. Actual standalone --faults was rerun with the same executable; no recompilation or repeated Apple run."
+  ],
+  "remaining": [
+    "No physical GPU driver-failure/unknown-retirement injection in this batch. CPU controlled protocol is not labelled as GPU fault coverage.",
+    "Model export/restore remains synchronous; StateTransfer primitive support does not claim asynchronous request parking is integrated.",
+    "CopyBatch original Completion borrowing/Apple serialization and ContextRef detail remain separate SDK boundaries.",
+    "No new CUDA/full335 model run, throughput/memory benchmark, model quality or natural MTP acceptance claim. Existing SDK/vendor archives were reused, not rebuilt from all current sources."
+  ],
+  "cleanup": {
+    "status": "REMOVED_THREE_EXACT_SUPERSEDED_IMAGES",
+    "command": "& .\\test.ps1 -Delete",
+    "executed_script_sha256": "a2f78eee4d3fa3aa9f8df4999163bece629d65c4f0bbdb8e9f77ae6cd5753d85",
+    "logical_bytes": 206033408,
+    "targets": [
+      {
+        "sha256": "0ba79545243f061d4e0e7bc70a34ef9d6ff5e636b48de7ed9c46bbbd88ae6121",
+        "bytes": 69549568,
+        "path": ".scratch/inference-stream-padding-20261026/case/link/host-image-vulkan-test.exe"
+      },
+      {
+        "sha256": "5b677fad4f868724605e0fd3f22424c3d30935a7eafd16bad58b195c034dd801",
+        "bytes": 69073920,
+        "path": ".scratch/inference-stream-padding-20261026/test3/link/padding-focused-test.exe"
+      },
+      {
+        "sha256": "4c4b05f5fe84cf22d0fea60f420318358ac814b639712c9670ce77ade5614597",
+        "bytes": 67409920,
+        "path": ".scratch/inference-native-host-image-20261026/windows-attempt3/link/state-transfer-test.exe"
+      }
+    ],
+    "current_case_present": true,
+    "current_focused_present": true,
+    "current_transfer_present": true
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-transfer-retirement-2026-10-26.zip",
+    "bytes": 341199,
+    "sha256": "7d06cfa22268b0de9123021547a8a12dd9a6fdcec7d56bc0c6b50cea8fe2f39d",
+    "entries": 235
+  }
+}

@@ -60,8 +60,8 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
         ranges(mem::StdAllocator<cd::CopyBackendRange>(allocator())), tickets(mem::StdAllocator<LeaseUseBatch>(allocator())) { program->incref(); }
   mem::AllocatorRef allocator() const noexcept { return program->allocator; }
   bool busy() const noexcept { return pending.load(std::memory_order_acquire) != 0; }
-  Status mutable_slot() const noexcept {
-    if (closed) return Status::FailedPrecondition("Vulkan copy invocation is closed");
+  Status mutable_slot(bool recover_writer = false) const noexcept {
+    if (closed && !recover_writer) return Status::FailedPrecondition("Vulkan copy invocation is closed");
     if (users != 1 || busy()) return Status::Unavailable("Vulkan copy slot is retained");
     if (failed) return Status::FailedPrecondition("Vulkan failed copy slot needs reset");
     return Status::Ok();
@@ -150,9 +150,10 @@ void phase_release(void *opaque) noexcept {
   auto *owner = static_cast<CopyNativePhase *>(opaque)->owner;
   owner->pending.fetch_sub(1, std::memory_order_release); owner->decref();
 }
-Status valid_binding(CopyInvocationState *state, CopyResourceId id) noexcept {
+Status valid_binding(CopyInvocationState *state, CopyResourceId id,
+                     bool recover_writer = false) noexcept {
   if (!state) return Status::FailedPrecondition("Vulkan copy invocation is empty");
-  HYLE_RETURN_IF_ERROR(state->mutable_slot());
+  HYLE_RETURN_IF_ERROR(state->mutable_slot(recover_writer));
   return id.value >= state->bindings.size() ? Status::InvalidArgument("Vulkan copy resource ID is invalid") : Status::Ok();
 }
 CopyBatchReport report(const CopyInvocationState *state) noexcept {
@@ -263,7 +264,8 @@ Result<WriteLease> CopyBatchInvocation::unbind_mutable(CopyResourceId id) noexce
   return detail::CopyStreamAccess::take_mutable(*this,id);
 }
 Result<WriteLease> detail::CopyStreamAccess::take_mutable(CopyBatchInvocation &invocation, CopyResourceId id) noexcept {
-  auto *state = invocation.state_; HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id));
+  // Recover only original successful retired content; admission stays closed.
+  auto *state = invocation.state_; HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id, true));
   for (std::uint32_t index = 0; index < state->submitted; ++index) {
     const auto &phase = *state->phases[index];
     if (!phase.retired.load(std::memory_order_acquire))

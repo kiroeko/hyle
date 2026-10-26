@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **44%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
+更新：2026-10-26。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **46%**；不沿用上一轮完成比例。先共同引擎核心，再稳态状态协议，最后重叠执行。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。百分比估计开发工作量，不表示测试通过率。
 
 ## 任务树
 
@@ -14,14 +14,15 @@
 - 模型无关的共同引擎核心：约60%（实现中）
   - 请求／兼容合批／接纳与缓存编排：约80%（共同循环与取消／交付已实现，有限检查通过）
   - 模型适配、错误类别与输出合同：约60%（取消／交付已接线，有限检查通过）
-  - SDK／Provider／依赖与诊断组织：约30%（已补公开页导出与零拷贝冻结，待退休附件等调整）
+  - SDK／Provider／依赖与诊断组织：约45%（已补公开页导出、零拷贝冻结与Completion保活节点，原CopyBatch等边界仍待调整）
 - 稳态状态协议：约30%（实现中）
   - 持续工作态与按需导出不可变快照：约80%（已实现，有限检查通过）
   - 原生 GDN／conv 的版本化双缓冲与索引状态：约5%（设计中）
   - MTP 稳定状态槽及接受／回滚接线：0%（待实现）
-- 其它底层功能补齐：约45%（实现中）
+- 其它底层功能补齐：约50%（实现中）
   - 长度分桶、启动预热政策与异长批次：0%（待实现）
-  - 完整会话主机换出／换入：约90%（CPU及三类GPU普通／MTP、lag1／prior已有限检查，故障边界待补）
+  - 完整会话主机换出／换入：约95%（普通／MTP／lag1及受控组件故障已有限检查，原生驱动故障未查）
+  - 状态搬运非阻塞观察／取消：100%（CPU受控合同及CPU／Vulkan／Apple实际关闭后回收通过有限检查）
   - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
 - 重叠执行与完整性能对照：约5%（设计中）
@@ -31,7 +32,7 @@
 
 ## 正在做
 
-本批已完成，下一批尚未启动。下一项为受控pending／原生故障与SDK退休附件边界。
+本批已完成。下一项为CopyBatch公开保活／ContextRef边界，随后处理形状政策与稳定状态槽；尚未启动下一批构建。
 
 ## 本批结果与下一步
 
@@ -41,7 +42,9 @@
 
 原tiny Vulkan加载失败已修：复用F3显式padding，原文件字节／形状不变，实际载体与预算按四字节补齐；Tensor／Graph保留原已初始化的只读范围，普通数学复制仍按逻辑长度。56项定向检查及原tiny Vulkan普通／MTP／lag1、同一程序CPU lag1通过；见[片段接入](../evidence/correctness/inference-stream-padding-2026-10-26.json)。仅两个BF16单元素角色各补2B，普通／MTP实际传输为191240／298632B。首次链接重复输入、3个测试误用提交入口、CPU测试缺DLL位置均保留原记录并修正；没有放宽产品提交、所有权或设备对齐合同。本批未重跑原335或Apple／CUDA新片段消费者，未测性能。
 
-CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。本轮只做相关增量编译，累计经`test.ps1`清理已替代验证二进制约1.41GB，没有新完整性能结果。
+公开`CompletionRetention`已替换引擎资源节点对内部CompletionAccess的直接调用；搬运补非阻塞poll和原端点取消转发，并修复关闭后成功writer不能归还的问题，保持关闭后的接纳拒绝。47项Completion检查、Windows／macOS的CPU受控失败合同、CPU／Vulkan／Apple实际关闭后回收，以及原tiny Vulkan普通／MTP／lag1通过；见[退休与回收](../evidence/correctness/inference-transfer-retirement-2026-10-26.json)。受控Completion不代签GPU驱动故障；模型换出／换入仍同步，CopyBatch原Completion借用、Apple观察锁和ContextRef detail边界仍保留。测试代码的两类编译错误及Mac命令误参均已修正，原记录保留；无新性能结果。
+
+CUDA小通道causal conv已由原native provider补F32后备，ggml能力声明同步收窄，默认优先级不变；三项定向检查和原失败消费者通过，见[算子承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。本轮只做相关增量编译，累计经`test.ps1`清理已替代验证二进制约1.61GB，没有新完整性能结果。
 
 SDK现提供受检零拷贝`StorageOwner::freeze`，权重层已移除直接LeaseAccess调用；8项所有权检查及新权重入口的原始Qwen普通／MTP CUDA消费者通过，见[SDK边界](../evidence/correctness/inference-storage-freeze-2026-10-26.json)。下一步处理故障／退休附件公共边界、形状政策、版本化状态槽与重叠执行。供应商命名、已安装detail头和按数学形状匹配的CPU偏好表本身不是模型白名单问题，不机械改名或删表。
 

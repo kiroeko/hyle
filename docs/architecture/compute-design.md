@@ -119,6 +119,10 @@ reset撤销本轮租约、页权限与就绪；原生录制按实际资源依赖
 资源必须留在仍能推进退休的owner中；若完成状态未知，不能凭Status非OK判断它已经结束。
 这种保活也不能形成失败suffix永远持有producer的引用环。
 
+普通消费者可在已保活owner中嵌入稳定的`CompletionRetention`节点，将一份已持有的引用附到原Completion。
+成功才转交引用，失败不消费；原runtime在实际退休时调用release，inline完成可在attach中同步释放。
+节点不可移动或提前析构，取消、观察失败及放弃句柄都不代表退休。该接口复用原附件链，不额外分配或执行工作。
+
 批量byte copy冷准备固定域、范围/groups/slots与bytes上限。独立copy可重复读取source，
 不能隐含destination重叠或批内依赖；有依赖时用明确阶段。全批预检后仍可能部分接纳，
 需保留实际prefix与所有可能被引用的控制数据。copy保持物理bytes，不替代编码转换。
