@@ -6,6 +6,7 @@
 #include "../compute/custom_kernel_fixture.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/resource_leases.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/result.h"
 #include "test_environment.h"
 
@@ -145,6 +146,66 @@ TEST(InvocationUnbind, InvalidTailLeavesEarlierPortsAndPreparationUnchanged) {
   }
   EXPECT_EQ(read_output(fixture, fixture.outputs[0]),
             (std::array<float, 4>{7, 11, 15, 19}));
+}
+
+TEST(InvocationResults, LazyPublicationCoversAllWritersAndRearmsAfterRejectedReuse) {
+  Fixture fixture;
+  auto reads = pool(), writes = pool(), other_writes = pool();
+  ASSERT_TRUE(bind_owned(fixture, reads, writes, {1, 2, 3, 4}).ok());
+  auto other = other_writes.allocate(16, 64).value();
+  ASSERT_TRUE(fixture.invocation.bind(fixture.outputs[1],
+      custom_test::description(), std::move(other)).ok());
+  const auto submit = [&]() -> Status {
+    HYLE_ASSIGN_OR_RETURN(auto completion, fixture.invocation.submit(fixture.queues));
+    return completion.wait();
+  };
+  ASSERT_TRUE(fixture.invocation.prepare_replay(fixture.queues).ok());
+  ASSERT_TRUE(submit().ok());
+  // Completion alone must not publish: the original writer is reclaimable
+  // until the first result, even when another published port will be read first.
+  auto reclaimed = g::detail::RegionAccess::take_write(
+      fixture.invocation, fixture.outputs[1]);
+  ASSERT_TRUE(reclaimed) << reclaimed.error().message();
+  ASSERT_TRUE(reclaimed->valid());
+  ASSERT_TRUE(fixture.invocation.bind(fixture.outputs[1],
+      custom_test::description(), std::move(*reclaimed)).ok());
+  ASSERT_TRUE(fixture.invocation.prepare_replay(fixture.queues).ok());
+  ASSERT_TRUE(submit().ok());
+
+  const auto expect_retained = [&](g::ValueId value,
+                                   const std::array<float, 4> &expected) {
+    auto output = fixture.invocation.result(value);
+    ASSERT_TRUE(output) << output.error().message();
+    auto lease = output->storage_lease();
+    ASSERT_TRUE(lease) << lease.error().message();
+    std::array<float, 4> actual{};
+    ASSERT_TRUE(lease->view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, expected);
+  };
+  expect_retained(fixture.outputs[0], {7, 11, 15, 19});
+  auto already_published = g::detail::RegionAccess::take_write(
+      fixture.invocation, fixture.outputs[1]);
+  ASSERT_TRUE(already_published) << already_published.error().message();
+  EXPECT_FALSE(already_published->valid()); // First result covered every writer.
+  expect_retained(fixture.outputs[1], {3, 5, 7, 9});
+  expect_retained(fixture.outputs[0], {7, 11, 15, 19});
+
+  c::ReadLease retained;
+  {
+    auto output = fixture.invocation.result(fixture.outputs[1]).value();
+    retained = output.storage_lease().value();
+  }
+  // The next admission can upgrade output 0 before output 1's escaped reader
+  // rejects its upgrade. No new native work ran; the completed output must
+  // remain exportable, including publication of that upgraded prefix writer.
+  auto rejected = fixture.invocation.submit(fixture.queues);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnavailable());
+  expect_retained(fixture.outputs[0], {7, 11, 15, 19});
+  retained.reset();
+  ASSERT_TRUE(submit().ok()); // Same bindings, exclusive reads upgrade again.
+  expect_retained(fixture.outputs[0], {7, 11, 15, 19});
+  expect_retained(fixture.outputs[1], {3, 5, 7, 9});
 }
 
 TEST(InvocationUnbind, CompletionAndResultRetirementGatesRemainRequired) {

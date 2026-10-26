@@ -1,0 +1,218 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "PAIRED_DIAGNOSTIC_COMPLETED_NO_NEW_SPEED_PATCH",
+  "scope": "One instrumented process per engine; identical teacher-forced 99 physical R2 episodes, 3 prefill and 96 decode, 1728 input rows, 198 equal decisions. Not TPS or natural MTP acceptance.",
+  "source_git_before_documentation": "529d8d49578f71db6ddb01a79a52f777076f8f82",
+  "protocol": {
+    "profiles": 2,
+    "extra_model_runs": 0,
+    "new_host_consumer_TUs": 2,
+    "new_Graph_or_device_or_SDK_builds": 0,
+    "downloads": 0,
+    "workload": "ordinary B2 teacher-forced: C1024 N2/R2 prefix off; three P256+32 turns/request; no MTP",
+    "work": "99 physical episodes, 1728 input rows, 198 equal IDs; full non-time reports equal to own unprofiled references"
+  },
+  "baseline": "Current-source Model dfaa530b / sampling085be10d, retained image41 CUDA closure; peer632 B2 consumer with same eight native libraries as peer433, not latest upstream.",
+  "engines": {
+    "hyle": {
+      "decode": {
+        "count": 96,
+        "wall_ms": 1279.679368,
+        "GPU_union_ms": 1037.306757,
+        "wall_without_observed_GPU_ms": 242.372611,
+        "API_library_union_ms": 1172.519727,
+        "wall_outside_API_library_ms": 107.159641
+      },
+      "phases": {
+        "hyle/prepare": {
+          "wall_ms": 103.413174,
+          "GPU_union_ms": 0.331133,
+          "wall_without_observed_GPU_ms": 103.082041,
+          "API_library_union_ms": 36.991073,
+          "wall_outside_API_library_ms": 66.422101
+        },
+        "hyle/prepare_replay": {
+          "wall_ms": 56.690554,
+          "GPU_union_ms": 0.0,
+          "wall_without_observed_GPU_ms": 56.690554,
+          "API_library_union_ms": 21.347964,
+          "wall_outside_API_library_ms": 35.34259
+        },
+        "hyle/submit": {
+          "wall_ms": 91.065907,
+          "GPU_union_ms": 1.124831,
+          "wall_without_observed_GPU_ms": 89.941076,
+          "API_library_union_ms": 83.963013,
+          "wall_outside_API_library_ms": 7.102894
+        },
+        "hyle/wait_publish": {
+          "wall_ms": 1084.887622,
+          "GPU_union_ms": 1035.782992,
+          "wall_without_observed_GPU_ms": 49.10463,
+          "API_library_union_ms": 1051.565641,
+          "wall_outside_API_library_ms": 33.321981
+        },
+        "hyle/completion_wait": {
+          "wall_ms": 1051.574318,
+          "GPU_union_ms": 1035.63338,
+          "wall_without_observed_GPU_ms": 15.940938,
+          "API_library_union_ms": 1048.442407,
+          "wall_outside_API_library_ms": 3.131911
+        },
+        "hyle/postwait_publish": {
+          "wall_ms": 32.907985,
+          "GPU_union_ms": 0.100798,
+          "wall_without_observed_GPU_ms": 32.807187,
+          "API_library_union_ms": 3.123234,
+          "wall_outside_API_library_ms": 29.784751
+        }
+      },
+      "root_exclusive": {
+        "wall_ms": 0.312665,
+        "GPU_union_ms": 0.067801,
+        "wall_without_observed_GPU_ms": 0.244864,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 0.312665
+      },
+      "graph_launch": {
+        "all": {
+          "count": 96,
+          "API_wall_ms": 79.449412,
+          "root_GPU_overlap_union_ms": 0.02688,
+          "API_without_observed_GPU_ms": 79.422532,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        },
+        "record": {
+          "count": 6,
+          "API_wall_ms": 5.407209,
+          "root_GPU_overlap_union_ms": 0.0024,
+          "API_without_observed_GPU_ms": 5.404809,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        },
+        "hot": {
+          "count": 90,
+          "API_wall_ms": 74.042203,
+          "root_GPU_overlap_union_ms": 0.02448,
+          "API_without_observed_GPU_ms": 74.017723,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        }
+      }
+    },
+    "peer": {
+      "decode": {
+        "count": 96,
+        "wall_ms": 1144.362178,
+        "GPU_union_ms": 1024.99563,
+        "wall_without_observed_GPU_ms": 119.366548,
+        "API_library_union_ms": 1111.727155,
+        "wall_outside_API_library_ms": 32.635023
+      },
+      "phases": {
+        "peer/prepare": {
+          "wall_ms": 0.106102,
+          "GPU_union_ms": 0.0,
+          "wall_without_observed_GPU_ms": 0.106102,
+          "API_library_union_ms": 0.0,
+          "wall_outside_API_library_ms": 0.106102
+        },
+        "peer/llama_decode": {
+          "wall_ms": 117.451581,
+          "GPU_union_ms": 14.614528,
+          "wall_without_observed_GPU_ms": 102.837053,
+          "API_library_union_ms": 87.033678,
+          "wall_outside_API_library_ms": 30.417903
+        },
+        "peer/synchronize": {
+          "wall_ms": 1024.236128,
+          "GPU_union_ms": 1010.327975,
+          "wall_without_observed_GPU_ms": 13.908153,
+          "API_library_union_ms": 1023.944838,
+          "wall_outside_API_library_ms": 0.29129
+        },
+        "peer/sample_publish": {
+          "wall_ms": 2.127438,
+          "GPU_union_ms": 0.0,
+          "wall_without_observed_GPU_ms": 2.127438,
+          "API_library_union_ms": 0.748639,
+          "wall_outside_API_library_ms": 1.378799
+        }
+      },
+      "root_exclusive": {
+        "wall_ms": 0.440929,
+        "GPU_union_ms": 0.053127,
+        "wall_without_observed_GPU_ms": 0.387802,
+        "API_library_union_ms": 0.0,
+        "wall_outside_API_library_ms": 0.440929
+      },
+      "graph_launch": {
+        "all": {
+          "count": 93,
+          "API_wall_ms": 53.463922,
+          "root_GPU_overlap_union_ms": 0.0,
+          "API_without_observed_GPU_ms": 53.463922,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        },
+        "record": {
+          "count": 3,
+          "API_wall_ms": 1.804367,
+          "root_GPU_overlap_union_ms": 0.0,
+          "API_without_observed_GPU_ms": 1.804367,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        },
+        "hot": {
+          "count": 90,
+          "API_wall_ms": 51.659555,
+          "root_GPU_overlap_union_ms": 0.0,
+          "API_without_observed_GPU_ms": 51.659555,
+          "correlated_GPU_overlap_union_ms": 0.0,
+          "zero_correlated_GPU_launches": 0,
+          "first_correlated_GPU_started_before_API_return": 0
+        }
+      }
+    }
+  },
+  "interpretation": {
+    "root_wall_difference_ms": 135.31719,
+    "GPU_union_difference_ms": 12.311127,
+    "wall_without_observed_GPU_difference_ms": 123.006063,
+    "priority": "Identify redundant preparation, submission and post-completion result/state publication work before another GPU leaf replacement.",
+    "source_candidate": "Each B2 ordinary episode has 72 GDN state retain calls; each calls Invocation::result and repeats the fixed-writer publication scan. A local optimization is being evaluated separately; no measured gain here.",
+    "head": "Preliminary vocabulary-tail kernel signatures are similar in total time. Unique physical-node identification remains incomplete; no optimization or gain is selected from this observation."
+  },
+  "limits": [
+    "One profiled process per engine. This is attribution, not a new throughput or memory comparison.",
+    "GPU complement includes waiting, untraced work and profiler effects; it is not pure CPU self-time or recoverable time.",
+    "Inclusive parents/children must not be added. cudaGraphLaunch time includes driver and instrumentation effects.",
+    "Hyle root ends at original internal finished endpoint; peer ends after original outer sampling/publication. Native publication contracts and BF16/F32 intermediates differ.",
+    "Recording/hot groups differ across engines; do not use their means as a paired throughput comparison.",
+    "A failed peer host compile from an invalid external-include option is retained; the explicit corrected peer2 build and both actual profiles succeeded.",
+    "Initial preliminary-costs.json *_ns totals were mislabeled milliseconds; superseded by final explicitly named ms and integer-ns facts.",
+    "Existing formal ordinary/MTP and B2 unprofiled performance tables are unchanged."
+  ],
+  "independent_review": "NO_CORE_INTERVAL_BLOCKER_IN_INDEPENDENT_OFFLINE_RECALCULATION",
+  "cleanup": {
+    "status": "COMPLETED_AFTER_ARCHIVE_VERIFICATION",
+    "files": 6,
+    "logical_bytes": 196105371,
+    "method": "Exact file targets and hashes written to root test.ps1, checked within the diagnostic directory, then removed with Remove-Item -LiteralPath. No recursive deletion.",
+    "scope": "Only this diagnostic's rebuildable objects, executables and link sidecars. Source, commands, original failures, reports, SQLite and nsys-rep are retained; baseline/candidate/model/SDK caches are untouched. Archived ready metadata describes historical binaries that have now been removed."
+  },
+  "archive": {
+    "path": "inference-b2-current-attribution-2026-10-26.zip",
+    "bytes": 5675347,
+    "sha256": "5ebc236e244d68cda268659558ddbd04b19d7eb0d14b4deb93e26b4896729505",
+    "members": 112,
+    "verification": "ZIP CRC and every member byte length/SHA256 checked at publication"
+  }
+}

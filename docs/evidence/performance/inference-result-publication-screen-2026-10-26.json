@@ -1,0 +1,1394 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "ADOPTED_REDUNDANT_PUBLICATION_SCAN_ELIMINATION_NO_STABLE_THROUGHPUT_GAIN",
+  "source_git_before_commit": "529d8d49578f71db6ddb01a79a52f777076f8f82",
+  "change": "ResourceEpisode records successful lazy writer publication. First valid result still publishes the original complete caller-writer prefix; later results skip only this already completed scan. Writer bind, new submission before upgrades, reset and unbind rearm it. Failure retains the original retry behavior.",
+  "complexity": "Only the writer-publication scan changes from O(S*B) to O(B+S) per unchanged completed resource episode. Other result/export/range lookup work is unchanged; this is not an overall inference complexity claim.",
+  "decision": "Keep this local elimination of deterministic redundant work. Do not count it as a stable tokens/s improvement or the main B2 bottleneck; do not refill samples or expand this candidate.",
+  "build": {
+    "new_product_TUs": 1,
+    "new_test_TUs": 1,
+    "SDK_or_device_builds": 0,
+    "candidate_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\candidate\\link\\hyle.exe",
+      "bytes": 141462016,
+      "sha256": "f36bda5ebbcfa91140039fb042654d88faf08284f38a8f43ab6e73fca9a6a9f4"
+    },
+    "control_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\batch\\link\\hyle.exe",
+      "bytes": 141462016,
+      "sha256": "41ce916d82910a47ff01a4fa80b286d1886b52b0afc0c6e2e2ad13a0d6c8065d"
+    },
+    "link_delta": {
+      "index": 52,
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\unresolved-host\\compile\\graph--resources_cc\\unit.obj",
+        "bytes": 1583128,
+        "sha256": "1a62688b71f03dec190c71f7e8de2e963491a35764c2e608d7ba98ad59258834"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\candidate\\compile\\unit.obj",
+        "bytes": 1583256,
+        "sha256": "155d07469b7e680629ab96e80379d08ca567805cdcf9a3b7b87cba7b19fb65ea"
+      },
+      "unchanged_inputs": 221
+    },
+    "tool_failure": "Product compile succeeded, then the initial dependency checker compared Windows paths case-sensitively and stopped before link. Explicit link-only resume used normcase after confirming all original header hashes; no compile retry or model run was added."
+  },
+  "validation": {
+    "cpu_contract_tests": {
+      "status": "PASS_5_CPU_CONTRACT_TESTS",
+      "process": {
+        "exit": 0,
+        "pid": 24152,
+        "seconds": 0.5054823000100441
+      },
+      "counts": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "names": [
+        "InvocationResults.LazyPublicationCoversAllWritersAndRearmsAfterRejectedReuse",
+        "InvocationUnbind.CompletionAndResultRetirementGatesRemainRequired",
+        "InvocationUnbind.InvalidTailLeavesEarlierPortsAndPreparationUnchanged",
+        "InvocationUnbind.OwnedPortsReleaseTheirActualPoolsAndKeepOtherBindings",
+        "InvocationUnbind.ResultCleanupDiscountsOnlyTheExactPrivateRetiredOwner"
+      ],
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-result-publication-screen-20261026\\cpu-contract1\\ready.json",
+        "bytes": 2235,
+        "sha256": "60e696021e4bd5a571a1dbed7c908827b805f73e3c6b1ffb38040110b65fef1c"
+      },
+      "model_runs": 0,
+      "GPU_runs": 0,
+      "full_graph_suite_run": false
+    },
+    "independent_source_review": "NO_SOURCE_BLOCKER_WITHIN_REVIEWED_SCOPE",
+    "full_non_time_differences": 0,
+    "output_ID_differences": 0,
+    "process_count": 8,
+    "unmonitored_timing": 6,
+    "independent_memory": 2,
+    "workload": "Ordinary greedy CUDA B2 teacher-forced, C1024 N2/R2 prefix off; three P256+32 turns/request; 99 physical episodes, 1728 input rows, 198 decisions; no MTP.",
+    "extra_warmup_or_behavior_runs": 0,
+    "old_samples_pooled": false
+  },
+  "metrics": {
+    "control": {
+      "prefill_tps": {
+        "count": 3,
+        "min": 7578.489916809298,
+        "median": 7594.86160144777,
+        "max": 7879.978083810955,
+        "samples": [
+          7578.489916809298,
+          7594.86160144777,
+          7879.978083810955
+        ]
+      },
+      "full_decode_tps": {
+        "count": 3,
+        "min": 163.61638570381376,
+        "median": 163.68846027899164,
+        "max": 164.25713427764077,
+        "samples": [
+          163.61638570381376,
+          163.68846027899164,
+          164.25713427764077
+        ]
+      },
+      "session_output_tps": {
+        "count": 3,
+        "min": 143.87856648988256,
+        "median": 143.97820955243066,
+        "max": 145.17895872958147,
+        "samples": [
+          143.87856648988256,
+          143.97820955243066,
+          145.17895872958147
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "min": 1.363834,
+        "median": 1.3752081,
+        "max": 1.3761605,
+        "samples": [
+          1.3761605,
+          1.3752081,
+          1.363834
+        ]
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "min": 2.6634196,
+        "median": 2.6665923,
+        "max": 2.7069423,
+        "samples": [
+          2.7069423,
+          2.6665923,
+          2.6634196
+        ]
+      },
+      "load_seconds": {
+        "count": 3,
+        "min": 0.815251,
+        "median": 0.820266,
+        "max": 0.850814,
+        "samples": [
+          0.850814,
+          0.815251,
+          0.820266
+        ]
+      },
+      "ready_seconds": {
+        "count": 3,
+        "min": 1.29124,
+        "median": 1.29944,
+        "max": 1.33064,
+        "samples": [
+          1.33064,
+          1.29124,
+          1.29944
+        ]
+      },
+      "model_seconds": {
+        "count": 3,
+        "min": 0.895511,
+        "median": 0.899142,
+        "max": 0.93174,
+        "samples": [
+          0.93174,
+          0.895511,
+          0.899142
+        ]
+      },
+      "shape_prepare_seconds": {
+        "count": 3,
+        "min": 0.394847,
+        "median": 0.397816,
+        "max": 0.399284,
+        "samples": [
+          0.397816,
+          0.394847,
+          0.399284
+        ]
+      }
+    },
+    "candidate": {
+      "prefill_tps": {
+        "count": 3,
+        "min": 7605.763941053349,
+        "median": 7892.315115068001,
+        "max": 7945.811222837586,
+        "samples": [
+          7605.763941053349,
+          7892.315115068001,
+          7945.811222837586
+        ]
+      },
+      "full_decode_tps": {
+        "count": 3,
+        "min": 163.74629694572218,
+        "median": 163.94717860994825,
+        "max": 165.18038730671313,
+        "samples": [
+          163.74629694572218,
+          163.94717860994825,
+          165.18038730671313
+        ]
+      },
+      "session_output_tps": {
+        "count": 3,
+        "min": 144.05211019608112,
+        "median": 144.97691242669606,
+        "max": 146.0520256493912,
+        "samples": [
+          144.05211019608112,
+          144.97691242669606,
+          146.0520256493912
+        ]
+      },
+      "session_seconds": {
+        "count": 3,
+        "min": 1.3556813,
+        "median": 1.3657347,
+        "max": 1.3745026,
+        "samples": [
+          1.3745026,
+          1.3657347,
+          1.3556813
+        ]
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "min": 2.6525922,
+        "median": 2.6632093,
+        "max": 2.6930905,
+        "samples": [
+          2.6930905,
+          2.6632093,
+          2.6525922
+        ]
+      },
+      "load_seconds": {
+        "count": 3,
+        "min": 0.82454,
+        "median": 0.827542,
+        "max": 0.835035,
+        "samples": [
+          0.835035,
+          0.82454,
+          0.827542
+        ]
+      },
+      "ready_seconds": {
+        "count": 3,
+        "min": 1.29664,
+        "median": 1.29733,
+        "max": 1.31844,
+        "samples": [
+          1.31844,
+          1.29733,
+          1.29664
+        ]
+      },
+      "model_seconds": {
+        "count": 3,
+        "min": 0.90723,
+        "median": 0.911961,
+        "max": 0.913358,
+        "samples": [
+          0.913358,
+          0.911961,
+          0.90723
+        ]
+      },
+      "shape_prepare_seconds": {
+        "count": 3,
+        "min": 0.384435,
+        "median": 0.388447,
+        "max": 0.404074,
+        "samples": [
+          0.404074,
+          0.384435,
+          0.388447
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "prefill_tps": {
+      "candidate_relative_to_control_percent": 3.9165099935926317,
+      "ranges_overlap": true
+    },
+    "full_decode_tps": {
+      "candidate_relative_to_control_percent": 0.15805532687866997,
+      "ranges_overlap": true
+    },
+    "session_output_tps": {
+      "candidate_relative_to_control_percent": 0.6936486273651843,
+      "ranges_overlap": true
+    },
+    "session_seconds": {
+      "candidate_relative_to_control_percent": -0.6888702880676778,
+      "ranges_overlap": true
+    },
+    "startup_total_seconds": {
+      "candidate_relative_to_control_percent": -0.1268660379766362,
+      "ranges_overlap": true
+    },
+    "load_seconds": {
+      "candidate_relative_to_control_percent": 0.8870293295101694,
+      "ranges_overlap": true
+    },
+    "ready_seconds": {
+      "candidate_relative_to_control_percent": -0.16237763959858764,
+      "ranges_overlap": true
+    },
+    "model_seconds": {
+      "candidate_relative_to_control_percent": 1.4256924935104776,
+      "ranges_overlap": true
+    },
+    "shape_prepare_seconds": {
+      "candidate_relative_to_control_percent": -2.3551088945643284,
+      "ranges_overlap": true
+    }
+  },
+  "memory": {
+    "control": {
+      "sample_count": 302,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1158426624,
+        "observed_os_peak_working_set_bytes": 1158438912,
+        "sampled_max_private_commit_bytes": 6039212032,
+        "observed_os_peak_commit_bytes": 6039212032,
+        "sampled_peak_gpu_dedicated_bytes": 4294000640,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4375789568
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 33,
+        "gpu_shared_bytes": 33,
+        "gpu_total_bytes": 33
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 303584097088200,
+        "first_prefill_marker_ns": 303584097137500,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "actual_sample_gaps_ms": {
+        "count": 284,
+        "min": 0.1137,
+        "median": 15.17475,
+        "max": 16.3405,
+        "samples": [
+          14.6648,
+          15.7325,
+          0.1608,
+          15.8026,
+          15.5074,
+          0.1299,
+          15.936,
+          15.9684,
+          0.1331,
+          16.0993,
+          15.7544,
+          0.1525,
+          15.1051,
+          16.1691,
+          0.1671,
+          15.2509,
+          15.0016,
+          0.1434,
+          15.8782,
+          15.534,
+          0.1416,
+          15.5849,
+          15.1264,
+          0.1516,
+          15.6822,
+          16.3405,
+          0.167,
+          15.5105,
+          16.0001,
+          0.1513,
+          15.7492,
+          15.0158,
+          0.1469,
+          15.4845,
+          15.5858,
+          0.148,
+          15.8965,
+          14.9448,
+          0.1534,
+          15.8201,
+          16.0794,
+          0.2777,
+          15.7552,
+          14.9458,
+          0.1607,
+          14.9574,
+          15.7995,
+          0.2216,
+          15.8398,
+          15.5645,
+          0.1711,
+          15.5709,
+          15.925,
+          0.1663,
+          15.8167,
+          15.927,
+          0.1494,
+          15.8828,
+          15.7316,
+          0.1778,
+          14.9439,
+          15.9087,
+          0.131,
+          15.0853,
+          15.6817,
+          0.1564,
+          15.0371,
+          15.2826,
+          0.1594,
+          15.3971,
+          15.676,
+          0.13,
+          15.705,
+          15.4555,
+          0.1668,
+          14.885,
+          15.2492,
+          0.1559,
+          15.8197,
+          16.0285,
+          0.1703,
+          15.6103,
+          14.8726,
+          0.1542,
+          15.0336,
+          15.5026,
+          0.1576,
+          15.0909,
+          14.9255,
+          0.1778,
+          14.9895,
+          14.9023,
+          0.1537,
+          14.7588,
+          15.2773,
+          0.1611,
+          15.5036,
+          15.544,
+          0.1644,
+          15.2802,
+          15.2031,
+          0.1524,
+          15.604,
+          15.8178,
+          0.1791,
+          15.8107,
+          15.154,
+          0.1647,
+          15.5265,
+          16.0062,
+          0.1567,
+          15.8645,
+          16.0006,
+          0.1598,
+          15.8782,
+          15.0724,
+          0.1551,
+          15.954,
+          15.9,
+          0.1495,
+          15.1955,
+          15.6661,
+          0.1529,
+          14.8295,
+          16.051,
+          0.16,
+          15.3148,
+          15.9608,
+          0.1329,
+          15.841,
+          15.9847,
+          0.161,
+          14.8138,
+          15.1488,
+          0.1448,
+          15.6963,
+          16.0043,
+          0.1394,
+          15.8855,
+          16.0315,
+          0.156,
+          14.7877,
+          14.998,
+          15.4596,
+          0.1435,
+          15.5579,
+          14.604,
+          0.1639,
+          15.8471,
+          15.9544,
+          0.148,
+          14.8514,
+          15.0455,
+          0.1472,
+          15.8478,
+          15.9087,
+          0.119,
+          15.2749,
+          15.9566,
+          0.1586,
+          15.9005,
+          15.8978,
+          0.1567,
+          15.3848,
+          15.2436,
+          0.1553,
+          14.8374,
+          15.3647,
+          0.1622,
+          15.9584,
+          15.8861,
+          0.1839,
+          15.8348,
+          15.9635,
+          0.1611,
+          15.9271,
+          15.9869,
+          0.1379,
+          15.8545,
+          15.414,
+          0.1435,
+          15.3036,
+          15.2381,
+          0.14,
+          15.6772,
+          15.636,
+          0.1281,
+          15.8814,
+          14.9755,
+          0.1503,
+          14.8293,
+          15.1073,
+          0.1532,
+          14.8566,
+          14.8825,
+          15.1258,
+          0.1512,
+          15.2958,
+          15.9551,
+          0.1137,
+          14.9879,
+          15.3754,
+          0.1587,
+          15.5939,
+          14.9477,
+          0.1297,
+          15.8952,
+          15.9704,
+          0.1374,
+          15.8548,
+          16.1135,
+          0.1695,
+          14.8457,
+          15.9707,
+          0.15,
+          15.8078,
+          15.9579,
+          0.1345,
+          15.8011,
+          14.7144,
+          0.1403,
+          15.8613,
+          15.7965,
+          0.172,
+          15.8385,
+          14.9856,
+          0.1428,
+          14.816,
+          15.3493,
+          0.2055,
+          14.972,
+          15.1051,
+          0.1426,
+          15.7678,
+          15.7003,
+          0.1392,
+          15.3912,
+          15.137,
+          0.19,
+          15.8148,
+          15.4246,
+          0.1518,
+          16.0296,
+          15.962,
+          0.1581,
+          15.8816,
+          15.9819,
+          0.1625,
+          15.9343,
+          14.9216,
+          0.1447,
+          15.3606,
+          15.2459,
+          0.1655,
+          14.6194,
+          15.4303,
+          0.1497,
+          14.8164,
+          15.5203,
+          0.1508,
+          15.8803,
+          15.9621,
+          0.1337,
+          15.8947,
+          15.9281,
+          0.1694,
+          15.871,
+          16.0177,
+          0.1444,
+          16.0342,
+          15.8029,
+          0.1803,
+          16.0294,
+          15.8533,
+          0.1615,
+          15.9169,
+          15.8695,
+          0.1626,
+          15.8254,
+          16.01,
+          0.1615,
+          15.8938,
+          15.9492,
+          0.1517
+        ]
+      },
+      "setup_error": null,
+      "thread_error": null
+    },
+    "candidate": {
+      "sample_count": 303,
+      "sampled_peaks": {
+        "sampled_max_working_set_bytes": 1158963200,
+        "observed_os_peak_working_set_bytes": 1158975488,
+        "sampled_max_private_commit_bytes": 6047268864,
+        "observed_os_peak_commit_bytes": 6047268864,
+        "sampled_peak_gpu_dedicated_bytes": 4294000640,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4375789568
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 34,
+        "gpu_shared_bytes": 34,
+        "gpu_total_bytes": 34
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 303587400092700,
+        "first_prefill_marker_ns": 303587400139000,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "actual_sample_gaps_ms": {
+        "count": 283,
+        "min": 0.1155,
+        "median": 15.1372,
+        "max": 16.3663,
+        "samples": [
+          11.2037,
+          16.0377,
+          15.8987,
+          0.1517,
+          16.0639,
+          15.5675,
+          0.1772,
+          15.143,
+          15.0642,
+          0.123,
+          15.808,
+          14.9836,
+          0.1484,
+          15.2672,
+          15.1372,
+          0.1639,
+          15.768,
+          15.0938,
+          0.1795,
+          14.9686,
+          14.9231,
+          0.1494,
+          15.3932,
+          15.4942,
+          0.1367,
+          14.7072,
+          15.1829,
+          0.1653,
+          14.7447,
+          14.8088,
+          15.5473,
+          0.1464,
+          14.5852,
+          15.0421,
+          15.7746,
+          0.1763,
+          15.0671,
+          15.2531,
+          0.1455,
+          15.8702,
+          15.9826,
+          0.1997,
+          15.8866,
+          15.9208,
+          0.2066,
+          15.8692,
+          14.9564,
+          0.1729,
+          15.3572,
+          15.7726,
+          0.1802,
+          15.2942,
+          15.7909,
+          0.1687,
+          15.7546,
+          15.5345,
+          0.168,
+          15.3988,
+          15.0684,
+          0.1667,
+          14.9096,
+          15.9611,
+          0.1637,
+          15.8821,
+          16.0069,
+          0.178,
+          15.2662,
+          15.4166,
+          0.1703,
+          14.7627,
+          14.7611,
+          14.9498,
+          0.1498,
+          15.8863,
+          14.9747,
+          0.1705,
+          15.8436,
+          15.4605,
+          0.1663,
+          15.7783,
+          16.0486,
+          0.1942,
+          15.3238,
+          16.0275,
+          0.1521,
+          15.1532,
+          15.4475,
+          0.1716,
+          15.8489,
+          16.003,
+          0.1991,
+          15.7833,
+          16.0244,
+          0.189,
+          14.7673,
+          16.0613,
+          0.1763,
+          15.7584,
+          15.9652,
+          0.1862,
+          15.9588,
+          16.0406,
+          0.1591,
+          15.993,
+          15.824,
+          0.1566,
+          15.7698,
+          15.9644,
+          0.1648,
+          15.4105,
+          15.2974,
+          0.1705,
+          15.3542,
+          15.6226,
+          0.1521,
+          15.9405,
+          15.1318,
+          0.1644,
+          15.3985,
+          15.9482,
+          0.1407,
+          15.9487,
+          15.5276,
+          0.1852,
+          15.2731,
+          15.7536,
+          0.2114,
+          15.4964,
+          15.2602,
+          0.1668,
+          15.7228,
+          15.6412,
+          0.196,
+          15.8979,
+          15.1666,
+          0.2731,
+          15.8037,
+          15.9594,
+          0.1498,
+          15.9221,
+          15.4942,
+          0.1403,
+          15.5365,
+          16.0055,
+          0.1441,
+          15.8495,
+          15.494,
+          0.1563,
+          15.6819,
+          15.5462,
+          0.1938,
+          15.7988,
+          15.87,
+          0.1775,
+          14.9391,
+          14.8451,
+          16.3663,
+          0.1872,
+          15.4936,
+          16.0411,
+          0.1606,
+          14.8223,
+          15.9826,
+          0.1405,
+          14.8863,
+          16.1135,
+          0.1423,
+          15.7703,
+          16.0237,
+          0.1336,
+          15.8966,
+          14.9378,
+          0.1416,
+          15.8319,
+          15.9627,
+          0.1155,
+          14.9355,
+          15.972,
+          0.1234,
+          15.9545,
+          15.8888,
+          0.1259,
+          14.9058,
+          16.1077,
+          0.1301,
+          14.8965,
+          14.8965,
+          16.0831,
+          0.1466,
+          14.8081,
+          16.0559,
+          0.1426,
+          15.9087,
+          15.9519,
+          0.1442,
+          14.7301,
+          15.9877,
+          0.1535,
+          14.8302,
+          15.0452,
+          0.1495,
+          15.4503,
+          16.0024,
+          0.1386,
+          15.8599,
+          16.0376,
+          0.1201,
+          15.0995,
+          15.9434,
+          0.1542,
+          15.9231,
+          15.4719,
+          0.1506,
+          15.5171,
+          15.0043,
+          0.1689,
+          15.8187,
+          15.5288,
+          0.1758,
+          15.5541,
+          16.0335,
+          0.1661,
+          15.7925,
+          15.2393,
+          0.15,
+          14.8801,
+          15.4307,
+          0.1452,
+          15.6037,
+          14.9744,
+          0.1512,
+          15.8345,
+          16.0211,
+          0.1345,
+          14.845,
+          15.9731,
+          0.1275,
+          15.5664,
+          14.9084,
+          0.1585,
+          15.1658,
+          14.9782,
+          0.1461,
+          15.8882,
+          14.9562,
+          0.1491,
+          14.7653,
+          15.1143,
+          0.1675,
+          15.0288,
+          16.0055,
+          0.1713,
+          15.8718,
+          14.9612,
+          0.1205,
+          14.9176,
+          15.9598,
+          0.1807,
+          16.0869,
+          14.7205,
+          0.161,
+          15.8906,
+          15.448,
+          0.1461,
+          15.4887,
+          15.4674,
+          0.1572,
+          15.3083,
+          15.1917,
+          0.1606,
+          15.8071,
+          15.0189,
+          0.1609,
+          15.143,
+          15.5656,
+          0.1562,
+          15.711,
+          15.5563,
+          0.1601,
+          15.8136,
+          16.0204,
+          0.1596,
+          15.8413
+        ]
+      },
+      "setup_error": null,
+      "thread_error": null
+    }
+  },
+  "independent_result_review": {
+    "status": "INDEPENDENT_OFFLINE_RECALCULATION_PASS",
+    "scope": "Only saved eight-run raw stdout/stderr/process/MemoryProbe records and final summary; no execution/build/profiling.",
+    "checks": {
+      "processes": 8,
+      "timing": 6,
+      "independent_memory": 2,
+      "metrics_recomputed_from_original_producer_endpoints": true,
+      "all_summary_statistics_exact": true,
+      "comparisons_exact": true,
+      "full_non_time_differences": 0,
+      "ID_differences": 0,
+      "memory_peaks_and_null_counts_recomputed": true,
+      "old_samples_pooled": false
+    },
+    "timing": {
+      "control": {
+        "prefill_tps": {
+          "count": 3,
+          "min": 7578.489916809298,
+          "median": 7594.86160144777,
+          "max": 7879.978083810955,
+          "samples": [
+            7578.489916809298,
+            7594.86160144777,
+            7879.978083810955
+          ]
+        },
+        "full_decode_tps": {
+          "count": 3,
+          "min": 163.61638570381376,
+          "median": 163.68846027899164,
+          "max": 164.25713427764077,
+          "samples": [
+            163.61638570381376,
+            163.68846027899164,
+            164.25713427764077
+          ]
+        },
+        "session_output_tps": {
+          "count": 3,
+          "min": 143.87856648988256,
+          "median": 143.97820955243066,
+          "max": 145.17895872958147,
+          "samples": [
+            143.87856648988256,
+            143.97820955243066,
+            145.17895872958147
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.363834,
+          "median": 1.3752081,
+          "max": 1.3761605,
+          "samples": [
+            1.3761605,
+            1.3752081,
+            1.363834
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.6634196,
+          "median": 2.6665923,
+          "max": 2.7069423,
+          "samples": [
+            2.7069423,
+            2.6665923,
+            2.6634196
+          ]
+        },
+        "load_seconds": {
+          "count": 3,
+          "min": 0.815251,
+          "median": 0.820266,
+          "max": 0.850814,
+          "samples": [
+            0.850814,
+            0.815251,
+            0.820266
+          ]
+        },
+        "ready_seconds": {
+          "count": 3,
+          "min": 1.29124,
+          "median": 1.29944,
+          "max": 1.33064,
+          "samples": [
+            1.33064,
+            1.29124,
+            1.29944
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 0.895511,
+          "median": 0.899142,
+          "max": 0.93174,
+          "samples": [
+            0.93174,
+            0.895511,
+            0.899142
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.394847,
+          "median": 0.397816,
+          "max": 0.399284,
+          "samples": [
+            0.397816,
+            0.394847,
+            0.399284
+          ]
+        }
+      },
+      "candidate": {
+        "prefill_tps": {
+          "count": 3,
+          "min": 7605.763941053349,
+          "median": 7892.315115068001,
+          "max": 7945.811222837586,
+          "samples": [
+            7605.763941053349,
+            7892.315115068001,
+            7945.811222837586
+          ]
+        },
+        "full_decode_tps": {
+          "count": 3,
+          "min": 163.74629694572218,
+          "median": 163.94717860994825,
+          "max": 165.18038730671313,
+          "samples": [
+            163.74629694572218,
+            163.94717860994825,
+            165.18038730671313
+          ]
+        },
+        "session_output_tps": {
+          "count": 3,
+          "min": 144.05211019608112,
+          "median": 144.97691242669606,
+          "max": 146.0520256493912,
+          "samples": [
+            144.05211019608112,
+            144.97691242669606,
+            146.0520256493912
+          ]
+        },
+        "session_seconds": {
+          "count": 3,
+          "min": 1.3556813,
+          "median": 1.3657347,
+          "max": 1.3745026,
+          "samples": [
+            1.3745026,
+            1.3657347,
+            1.3556813
+          ]
+        },
+        "startup_total_seconds": {
+          "count": 3,
+          "min": 2.6525922,
+          "median": 2.6632093,
+          "max": 2.6930905,
+          "samples": [
+            2.6930905,
+            2.6632093,
+            2.6525922
+          ]
+        },
+        "load_seconds": {
+          "count": 3,
+          "min": 0.82454,
+          "median": 0.827542,
+          "max": 0.835035,
+          "samples": [
+            0.835035,
+            0.82454,
+            0.827542
+          ]
+        },
+        "ready_seconds": {
+          "count": 3,
+          "min": 1.29664,
+          "median": 1.29733,
+          "max": 1.31844,
+          "samples": [
+            1.31844,
+            1.29733,
+            1.29664
+          ]
+        },
+        "model_seconds": {
+          "count": 3,
+          "min": 0.90723,
+          "median": 0.911961,
+          "max": 0.913358,
+          "samples": [
+            0.913358,
+            0.911961,
+            0.90723
+          ]
+        },
+        "shape_prepare_seconds": {
+          "count": 3,
+          "min": 0.384435,
+          "median": 0.388447,
+          "max": 0.404074,
+          "samples": [
+            0.404074,
+            0.384435,
+            0.388447
+          ]
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_tps": {
+        "candidate_relative_to_control_percent": 3.9165099935926317,
+        "ranges_overlap": true
+      },
+      "full_decode_tps": {
+        "candidate_relative_to_control_percent": 0.15805532687866997,
+        "ranges_overlap": true
+      },
+      "session_output_tps": {
+        "candidate_relative_to_control_percent": 0.6936486273651843,
+        "ranges_overlap": true
+      },
+      "session_seconds": {
+        "candidate_relative_to_control_percent": -0.6888702880676778,
+        "ranges_overlap": true
+      },
+      "startup_total_seconds": {
+        "candidate_relative_to_control_percent": -0.1268660379766362,
+        "ranges_overlap": true
+      },
+      "load_seconds": {
+        "candidate_relative_to_control_percent": 0.8870293295101694,
+        "ranges_overlap": true
+      },
+      "ready_seconds": {
+        "candidate_relative_to_control_percent": -0.16237763959858764,
+        "ranges_overlap": true
+      },
+      "model_seconds": {
+        "candidate_relative_to_control_percent": 1.4256924935104776,
+        "ranges_overlap": true
+      },
+      "shape_prepare_seconds": {
+        "candidate_relative_to_control_percent": -2.3551088945643284,
+        "ranges_overlap": true
+      }
+    },
+    "memory": {
+      "control": {
+        "peaks_bytes": {
+          "sampled_max_working_set_bytes": 1158426624,
+          "observed_os_peak_working_set_bytes": 1158438912,
+          "sampled_max_private_commit_bytes": 6039212032,
+          "observed_os_peak_commit_bytes": 6039212032,
+          "sampled_peak_gpu_dedicated_bytes": 4294000640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4375789568
+        },
+        "total_samples": 302,
+        "running_samples": 285,
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 33,
+          "gpu_shared_bytes": 33,
+          "gpu_total_bytes": 33
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 33,
+          "shared:no_pid_instance": 33
+        },
+        "sample_gaps_ms": {
+          "count": 284,
+          "min": 0.1137,
+          "median": 15.17475,
+          "max": 16.3405
+        },
+        "requested_interval_ms": 10.0,
+        "ready_baseline_unknown": true,
+        "ready_to_first_prefill_received_gap_ns": 49300,
+        "ready_interval_samples": 0,
+        "phase_window_count": 12,
+        "phase_zero_samples": [],
+        "phase_bad_boundaries": [],
+        "setup_error": null,
+        "thread_error": null
+      },
+      "candidate": {
+        "peaks_bytes": {
+          "sampled_max_working_set_bytes": 1158963200,
+          "observed_os_peak_working_set_bytes": 1158975488,
+          "sampled_max_private_commit_bytes": 6047268864,
+          "observed_os_peak_commit_bytes": 6047268864,
+          "sampled_peak_gpu_dedicated_bytes": 4294000640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4375789568
+        },
+        "total_samples": 303,
+        "running_samples": 284,
+        "null_sample_counts": {
+          "working_set_bytes": 0,
+          "private_commit_bytes": 0,
+          "gpu_dedicated_bytes": 34,
+          "gpu_shared_bytes": 34,
+          "gpu_total_bytes": 34
+        },
+        "unavailable_reasons": {
+          "dedicated:no_pid_instance": 34,
+          "shared:no_pid_instance": 34
+        },
+        "sample_gaps_ms": {
+          "count": 283,
+          "min": 0.1155,
+          "median": 15.1372,
+          "max": 16.3663
+        },
+        "requested_interval_ms": 10.0,
+        "ready_baseline_unknown": true,
+        "ready_to_first_prefill_received_gap_ns": 46300,
+        "ready_interval_samples": 0,
+        "phase_window_count": 12,
+        "phase_zero_samples": [],
+        "phase_bad_boundaries": [],
+        "setup_error": null,
+        "thread_error": null
+      }
+    },
+    "processes": [
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 10292,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 14036,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 5336,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 59640,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "timing",
+        "pid": 24780,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "timing",
+        "pid": 55652,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "control",
+        "mode": "memory",
+        "pid": 2932,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      },
+      {
+        "arm": "candidate",
+        "mode": "memory",
+        "pid": 43532,
+        "exit": 0,
+        "full_non_time_differences": 0,
+        "ID_differences": 0
+      }
+    ],
+    "judgment": "Decode median +0.158055% with overlapping ranges: no stable TPS gain demonstrated. Removing a definite repeated publication scan can be a source simplification; this window does not establish that the major bottleneck was fixed.",
+    "limits": [
+      "Three timing samples per arm only; independent memory processes are excluded from timing statistics.",
+      "Both memory runs have no sample between ready and first-prefill receipt, so ready baseline is unknown, not zero.",
+      "GPU null samples reflect no_pid_instance; sampled peaks are lower bounds. WS/commit/dedicated/shared/total describe different things; independent peaks are not additive.",
+      "No runtime certification beyond these frozen Windows CUDA consumers/workload; five CPU contract tests were reported by Root and not rerun by this review."
+    ]
+  },
+  "limits": [
+    "All new prefill/decode/combined sample ranges overlap. Decode median +0.158% and combined +0.694% are not stable gains or statistical significance.",
+    "One independent memory run per arm; sampled peaks are lower bounds and tiny differences do not establish savings. Missing observations remain missing.",
+    "This screen compares two Hyle images. It does not refresh the llama.cpp reference or ordinary/MTP formal table; do not pool earlier peer samples.",
+    "No MTP, Apple/Vulkan, other-model or full Graph suite runtime claim. Shared lazy-publication semantics were checked by the five finite CPU cases and this ordinary CUDA consumer.",
+    "No attribution of the entire 32.908ms postwait phase or B2 wall gap to the eliminated scan. No new profiler was used."
+  ],
+  "cleanup": {
+    "status": "COMPLETED_AFTER_ARCHIVE_VERIFICATION",
+    "files": 5,
+    "logical_bytes": 199495472,
+    "method": "Exact temporary CPU contract object/executable/map/link sidecars written to root test.ps1, resolved and hash-checked in the screen directory, then removed with Remove-Item -LiteralPath.",
+    "preserved": "Source, commands, original tool failure, logs, XML, archive and the candidate resource object/image; baseline/model/SDK caches unchanged. Archived CPU ready metadata describes historical removed test binaries."
+  },
+  "archive": {
+    "path": "inference-result-publication-screen-2026-10-26.zip",
+    "bytes": 406474,
+    "sha256": "8aa9c76cf7209182221524bcc89423056416295c2924c5ac08d121f7fbce9d8e",
+    "members": 147,
+    "verification": "ZIP CRC and every member byte length/SHA256 verified"
+  }
+}

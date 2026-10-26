@@ -68,6 +68,9 @@ struct ResourceEpisode final {
   std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> unbind_steps;
   std::vector<std::uint8_t, mem::StdAllocator<std::uint8_t>> unbind_instances;
   std::size_t fixed_binding_count = 0;
+  // Publication stays lazy at the first successful result(). Later ports in
+  // the same episode need not rescan writers already converted to reads.
+  bool writer_publication_complete = false;
   LeasePermissionSet permissions;
   compute::LeaseUsePool uses;
   compute::LeaseUseBatch batch;
@@ -330,6 +333,7 @@ Status RegionAccess::withdraw_bindings(Invocation &invocation,
   }
   episode->input_lease_candidates.clear();
   episode->permissions.reset();
+  episode->writer_publication_complete = false;
   for (auto value : values) {
     const auto physical = plan.external_instances[value.ordinal()];
     state->readable[physical] = {};
@@ -349,6 +353,7 @@ void reset_resource_bindings(InvocationState &state) noexcept {
   if (!state.resources) return;
   auto &episode = *state.resources.get();
   episode.input_lease_candidates.clear();
+  episode.writer_publication_complete = false;
   // All extra records are anonymous page guards; fixed ValueId slots never
   // move. Shrinking releases exactly the old projected permission suffix.
   episode.bindings.resize(episode.fixed_binding_count);
@@ -1588,6 +1593,7 @@ Status Invocation::bind(ValueId value, compute::TensorDesc description,
   binding = detail::find_binding(state_, value);
   binding->write = std::move(lease); binding->description = description;
   binding->exclusive = true; binding->permissionless = false; binding->borrowed = false;
+  episode->writer_publication_complete = false;
   return Status::Ok();
 }
 Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation,
@@ -1603,6 +1609,9 @@ Result<detail::SubmissionCursor> detail::begin_submission(Invocation &invocation
     return std::unexpected(Status::FailedPrecondition("ordered graph submission requires prepared resources"));
   compute::LeaseUseBatch batch;
   if (episode) {
+    // Rearm before any upgrade: a later failed admission can leave a prefix
+    // of original readers converted back to writers for a result() retry.
+    episode->writer_publication_complete = false;
     for (auto &binding : episode->bindings) {
       if (binding.exclusive && binding.read.valid()) {
         HYLE_ASSIGN_OR_RETURN(binding.write, binding.read.try_write());
@@ -1716,11 +1725,16 @@ Result<GraphOutput> Invocation::result(ValueId value) noexcept {
     auto &episode = *state_->resources.get();
     // Anonymous projected-page records only hold reads or writer pointers;
     // every owned WriteLease remains in the fixed caller-binding prefix.
-    for (std::size_t index = 0; index < episode.fixed_binding_count; ++index) {
-      auto &binding = episode.bindings[index];
-      if (binding.write.valid()) {
-        HYLE_ASSIGN_OR_RETURN(binding.read, binding.write.publish());
+    if (!episode.writer_publication_complete) {
+      for (std::size_t index = 0; index < episode.fixed_binding_count; ++index) {
+        auto &binding = episode.bindings[index];
+        if (binding.write.valid()) {
+          HYLE_ASSIGN_OR_RETURN(binding.read, binding.write.publish());
+        }
       }
+      // A failed publication leaves this false so the remaining original
+      // writers are retried, with the already published reads intact.
+      episode.writer_publication_complete = true;
     }
   }
   return GraphOutput(state_, instance);
