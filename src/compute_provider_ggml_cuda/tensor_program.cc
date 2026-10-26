@@ -612,10 +612,16 @@ bool tensor_operation_supports(Operation operation,
            (INT32_MAX - 1024) / sizeof(float);
   if (operation.custom_as<model_ops::Clamp>())
     return true; // Public inference has already validated the entire domain.
-  if (operation.custom_as<model_ops::CausalConv1d>())
-    return outputs.size() == 1 && inputs.size() == 2 &&
-           inputs[0].data_type() == DataType::kFloat32 &&
-           inputs[1].data_type() == DataType::kFloat32;
+  if (operation.custom_as<model_ops::CausalConv1d>()) {
+    // SSM_CONV has a tiled channel domain and explicit kernel-width variants.
+    // Decline other legal public shapes here so a capable provider can carry
+    // them instead of discovering the mismatch during native graph lowering.
+    const auto taps = inputs[1].dimensions()[1];
+    return inputs[0].data_type() == DataType::kFloat32 &&
+           inputs[1].data_type() == DataType::kFloat32 &&
+           inputs[0].dimensions()[2] % 128 == 0 &&
+           (taps == 3 || taps == 4 || taps == 5 || taps == 9 || taps == 15);
+  }
   if (const auto gather = operation.custom_as<model_ops::GatherElements>())
     return inputs.size() == 2 && outputs.size() == 1 &&
            inputs[0].rank() == 2 && inputs[1].rank() == 2 &&

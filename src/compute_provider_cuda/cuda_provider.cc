@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "concat_provider.h"
+#include "causal_conv_provider.h"
 #include "blockwise_w4a8_provider.h"
 #include "fp8_provider.h"
 #include "float8_quantize_provider.h"
@@ -165,6 +166,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
+    if (request.operation.custom_as<model_ops::CausalConv1d>())
+      return causal_conv::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::Float8BlockQuantize>())
       return float8_quantize::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
@@ -337,6 +340,8 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
+    if (request.route == causal_conv::kRoute)
+      return causal_conv::prepare(state, request, allocator, output);
     if (request.route == float8_quantize::kRoute)
       return float8_quantize::prepare(state, request, allocator, output);
     if (request.route == blockwise_w4a8::kRoute)

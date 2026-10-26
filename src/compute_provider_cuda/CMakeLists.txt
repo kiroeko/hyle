@@ -14,6 +14,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     blockwise_w4a8_provider.cc blockwise_w4a8_kernel.cu
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu
+    causal_conv_provider.cc causal_conv_kernel.cu
     scatter_provider.cc scatter_kernel.cu
     row_cache_provider.cc row_cache_kernel.cu
     float8_quantize_provider.cc float8_quantize_kernel.cu

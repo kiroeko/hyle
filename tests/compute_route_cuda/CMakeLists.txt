@@ -17,4 +17,9 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
 hyle_add_test(compute_route_cuda NAME sampling_consumer
   SOURCES sampling_consumer.cc DEPS hyle_compute_backend_cuda)
 hyle_stage_runtime(hyle_compute_route_cuda_sampling_consumer_test)
+
+hyle_add_test(compute_route_cuda NAME causal_conv
+  SOURCES causal_conv_test.cc
+  DEPS hyle_compute_backend_cuda hyle_compute_provider_cuda hyle_compute_provider_ggml_cuda)
+hyle_stage_runtime(hyle_compute_route_cuda_causal_conv_test)
 endif()

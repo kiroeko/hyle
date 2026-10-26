@@ -1047,6 +1047,11 @@ samples为`[B,W,C]`、weights为`[C,K]`，二者dtype相同；F32累加后一次
 原`[C,1,K]`文件权重由调用方用View整理。该managed路径包含布局/精度转换、原库临时与结果copy，
 不能要求capture、零热分配或已知严格私有内存界；失败slot需要重建。F32继续走原ggml路径。
 
+CUDA 的相同公开操作支持 dense F32 输入。ggml 承载通道数为128倍数且 K 为3／4／5／9／15的形状；
+其它合法通道数与卷积宽度自动选择 native CUDA 后备，无需调用方选择provider。
+后备使用F32有序乘加、零workspace和原共享队列，支持prepared replay／capture；
+地址范围及设备限制仍在冷准备时检查，不扩展公开F16／BF16输入的CUDA支持范围。
+
 ## 设备端单选与可定位随机数
 
 确定性单选直接使用原 `TopK{.count = 1}`，仍返回原存储类型的 values 与 I32 indices，

@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-26",
+  "status": "BOUNDED_CUDA_CORRECTNESS_PASSED",
+  "baseline_commit": "b83710410",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "reported_memory_MiB": 12282,
+    "driver": "617.14",
+    "query": "nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader"
+  },
+  "changes": [
+    "Add dense F32 causal conv to existing native CUDA provider, one kernel, shared queue and original Completion retirement.",
+    "ggml proposal declines channels not divisible by 128 and K outside 3/4/5/9/15; keep existing default preference and admitted ggml shapes.",
+    "No model/public API/new executor/route policy or F16/BF16 support changes."
+  ],
+  "sources": [
+    {
+      "path": "src/compute_provider_cuda/causal_conv_kernel.h",
+      "bytes": 948,
+      "sha256": "d37b11e84115655b6ec206a106ee3ada9b352edb0f2d9a5f959f9f57cda5f0af"
+    },
+    {
+      "path": "src/compute_provider_cuda/causal_conv_kernel.cu",
+      "bytes": 4195,
+      "sha256": "595a2ac03292e4ebe27cc6f62eb8327d1eed0d88196177dca3c97b89e8b4315f"
+    },
+    {
+      "path": "src/compute_provider_cuda/causal_conv_provider.h",
+      "bytes": 743,
+      "sha256": "ee46c53630e49ad8c4d49155b80558a9b03001e4dba3aaa5314f7fb3f04f1e3f"
+    },
+    {
+      "path": "src/compute_provider_cuda/causal_conv_provider.cc",
+      "bytes": 8588,
+      "sha256": "ade6e901226151415f22055ff16c4a01a02e4fc434ba74efbbf0b9883661c4e9"
+    },
+    {
+      "path": "src/compute_provider_cuda/cuda_provider.cc",
+      "bytes": 22345,
+      "sha256": "d2e2adf625b84175c7fbeab297ec708f9dd108275e4737df663697e886ce0df7"
+    },
+    {
+      "path": "src/compute_provider_cuda/CMakeLists.txt",
+      "bytes": 6357,
+      "sha256": "9381e3992cb4cce9c5e00355947a3bced7ff9e84fb7e1a22cfde47a546abf487"
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/tensor_program.cc",
+      "bytes": 63047,
+      "sha256": "5ad72c40989a3c73155580de249bd7628cce0e55f0f518b94dd4587c972bb745"
+    },
+    {
+      "path": "tests/compute_route_cuda/causal_conv_test.cc",
+      "bytes": 7512,
+      "sha256": "7d5992f60ef47ec1ea8109cc06e66722cb4d6f5629d4f4944c3cf79d9bee4d85"
+    },
+    {
+      "path": "tests/compute_route_cuda/CMakeLists.txt",
+      "bytes": 1115,
+      "sha256": "43bfa41a19735fd282e41290e03b63b029398441edcd8054cdeea99b6681d978"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-cuda-causal-conv-2026-10-26.zip",
+    "bytes": 138234,
+    "sha256": "126cdb361e7c49e095015a588fc6b2961f6f68a01fc6abf149940a066d700eca"
+  },
+  "cleanup": {
+    "record": {
+      "path": ".scratch/inference-causal-conv-20261026/cleanup-result.json",
+      "bytes": 1438,
+      "sha256": "d54d67a5714440099c6c90a851af20a4cdc46ab1e4cb5c3585a855fa4a7dc5ab"
+    },
+    "files": 3,
+    "logical_bytes": 422015488,
+    "scope": "Removed superseded CUDA CLI/HostImage images and the finished standalone leaf-test image; retained current CLI/case, reusable objects and all SDK/model caches."
+  },
+  "build": {
+    "product_TUs": 4,
+    "test_TUs": 1,
+    "first_attempts_passed": true,
+    "reused_Model_weights_report_SDK": true,
+    "archive_rewrites": 0,
+    "record": {
+      "path": ".scratch/inference-causal-conv-20261026/ready.json",
+      "bytes": 9250,
+      "sha256": "bad6a82f261085685d07127168c33b01974874853783403c0d6549781d446835"
+    },
+    "images": {
+      "cli": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-causal-conv-20261026\\cli\\link\\hyle.exe",
+        "bytes": 141565440,
+        "sha256": "44094be55795df0f2add3135e35e9e6b96382d9875e9dfd35454f886c218fac7"
+      },
+      "case": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-causal-conv-20261026\\case\\link\\host-image-consumer.exe",
+        "bytes": 141177856,
+        "sha256": "bc07de8f75d3ea3dfa334d1473d0fb5699e38e697eac63107f0d7282cce96d77"
+      },
+      "test": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-causal-conv-20261026\\test\\link\\causal-conv-test.exe",
+        "bytes": 139306496,
+        "sha256": "00801fd31cfb4d3a6dcf4fbf20e415bb5950e1d47b7e60e5f5a4061e01b5887b"
+      }
+    },
+    "note": "Current CLI linked only. HostImage CUDA Model OBJ and exact CUDA feature closure reused."
+  },
+  "tests": {
+    "record": {
+      "path": ".scratch/inference-causal-conv-20261026/test/run1/process.json",
+      "bytes": 1233,
+      "sha256": "174e7b562562081c617c1546aef76ee959a2e025bd5eedb241d346f5e667bf02"
+    },
+    "xml": {
+      "path": ".scratch/inference-causal-conv-20261026/test/run1/result.xml",
+      "bytes": 1169,
+      "sha256": "7a8bb6b1f880f8740bfa58416cf99ec9b9c00810bc03cedcbf4d0b00ac91f545"
+    },
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "numerical_shapes_B_W_C_K": [
+      [
+        2,
+        6,
+        192,
+        4
+      ],
+      [
+        2,
+        7,
+        7,
+        2
+      ],
+      [
+        2,
+        1,
+        1,
+        1
+      ]
+    ],
+    "numerical_scope": "Each shape uses one Prepared/Invocation with two distinct complete input/weight/output allocations; exact bits against ordered host std::fma.",
+    "default_routes": [
+      "C128 K4 ggml",
+      "C192 K4 native",
+      "C7 K2 native",
+      "C128 K2 native"
+    ],
+    "precision_boundary": "Native F16/BF16 requests remain unsupported.",
+    "runtime_facts": "Prepared replay, zero workspace/private bytes, capture-compatible and concurrent; metadata check only for capture/concurrency, no concurrent stress or CUDA Graph capture test."
+  },
+  "model_consumer": {
+    "record": {
+      "path": ".scratch/inference-causal-conv-20261026/case/tiny1/process.json",
+      "bytes": 1414,
+      "sha256": "4ed0666cbfb381068818a8843d37eb6ba3447f7ea007347ad6923cc0c09b2307"
+    },
+    "result": {
+      "status": "PASS",
+      "backend": "cuda",
+      "ordinary": {
+        "hidden": 64,
+        "target_layers": 2,
+        "payloads": 5,
+        "bytes": 18432,
+        "byte_limit_at_factory": true,
+        "adapter_parking": true,
+        "allocation_failure_applicable": true,
+        "pre_submit_failure_preserved": true,
+        "continuation_lag": 0,
+        "roles": {
+          "target_key": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 384
+          },
+          "target_value": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 383
+          },
+          "conv": {
+            "payloads": 1,
+            "bytes": 1152,
+            "nonzero_bytes": 1149
+          },
+          "gdn": {
+            "payloads": 1,
+            "bytes": 16384,
+            "nonzero_bytes": 16335
+          },
+          "carry": {
+            "payloads": 1,
+            "bytes": 128,
+            "nonzero_bytes": 128
+          },
+          "prior": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_key": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_value": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          }
+        }
+      },
+      "mtp": {
+        "hidden": 64,
+        "target_layers": 2,
+        "payloads": 7,
+        "bytes": 19200,
+        "byte_limit_at_factory": true,
+        "adapter_parking": false,
+        "allocation_failure_applicable": true,
+        "pre_submit_failure_preserved": true,
+        "continuation_lag": 0,
+        "roles": {
+          "target_key": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 384
+          },
+          "target_value": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 383
+          },
+          "conv": {
+            "payloads": 1,
+            "bytes": 1152,
+            "nonzero_bytes": 1149
+          },
+          "gdn": {
+            "payloads": 1,
+            "bytes": 16384,
+            "nonzero_bytes": 16335
+          },
+          "carry": {
+            "payloads": 1,
+            "bytes": 128,
+            "nonzero_bytes": 128
+          },
+          "prior": {
+            "payloads": 0,
+            "bytes": 0,
+            "nonzero_bytes": 0
+          },
+          "draft_key": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 384
+          },
+          "draft_value": {
+            "payloads": 1,
+            "bytes": 384,
+            "nonzero_bytes": 383
+          }
+        }
+      },
+      "all_initialized_bytes_equal": true,
+      "historical_wrapper_preserved": true,
+      "same_shape_continuation_equal": true,
+      "old_alias_unchanged": true,
+      "cold_resources_expired": true,
+      "final_images": 0,
+      "final_versions": 0,
+      "quality_claim": false,
+      "performance_claim": false
+    },
+    "scope": "The unchanged previously failing C192 GA+MTP fixture executes through original Compute/Graph and HostImage consumer; ordinary and MTP sequential.",
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\weights.tsv",
+      "bytes": 7861,
+      "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+    },
+    "checks": "Complete initialized bytes and metadata, same-shape continuation, historical pending/RNG, old alias, image budgets, real allocation-failure cleanup/retry, model-independent image lifetime."
+  },
+  "limitations": [
+    "Tiny fixture is untrained component geometry; no full task quality claim.",
+    "This consumer covers lag0, without prior_hidden; lag1/prior remains separate work.",
+    "Default route test proves selected prepared provider; no instrumentation claim about discovery timing.",
+    "No throughput, end-to-end speedup, Apple/Vulkan or F16/BF16 CUDA qualification. Existing formal speed tables unchanged.",
+    "Build records rely on retained cache closure; archive contains source/commands/results, not SDK binaries or weights."
+  ]
+}
