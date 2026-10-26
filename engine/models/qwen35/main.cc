@@ -48,7 +48,7 @@
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
 #include "../../inference/version_admission.h"
-#include "../../inference/batch_indices.h"
+#include "../../inference/batch_dispatch.h"
 #include "../../inference/execution_observation.h"
 #include "../../reporting/execution_report.h"
 #include "generation_schedule.h"
@@ -5993,46 +5993,45 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       std::cerr << "generation_session id=" << request.id << " turn=" << request.progress.turn_index + 1 << " episode=" << request.rounds.size() << '\n';
       calls.push_back(prepare_generation_call(model, request, request.progress.output_limit(), prefix.get(), requests));
     }
-    batch_indices.reset(calls.size());
-    for (std::size_t first = 0; first < calls.size(); ++first) {
-      if (batch_indices.completed(first)) continue;
-      const auto selected = batch_indices.select(first,
-          calls[first].full_hit ? std::size_t{1} : model.cache_plan.active_sequences, [&](std::size_t j) {
+    inference::dispatch_batches(batch_indices, calls.size(),
+        [](std::size_t) { return true; },
+        [&](std::size_t first) { return calls[first].full_hit ? std::size_t{1} : model.cache_plan.active_sequences; },
+        [&](std::size_t first, std::size_t j) {
         return calls[j].full_hit == calls[first].full_hit &&
             calls[j].request->sampling_index == calls[first].request->sampling_index &&
             calls[j].generation == calls[first].generation && calls[j].role == calls[first].role &&
             calls[j].completion == calls[first].completion &&
             calls[j].planned_rows() == calls[first].planned_rows();
-      });
-      hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;
-      if (!bucket.try_reserve(selected.size())) throw std::bad_alloc{};
-      for (auto j : selected) bucket.push_back(calls[j]);
-      while (bucket.size() > 1 && !bucket[0].full_hit && !make_generation_batch_room(model, prefix.get(), std::span(bucket.data(), bucket.size()), requests)) {
-        bucket.pop_back();
-      }
-      std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
-                << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
-      execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests);
-      auto finished = endpoint;
-      hyle::container::SmallVector<std::size_t, 2> members;
-      if (!members.try_reserve(bucket.size())) throw std::bad_alloc{};
-      batch_indices.mark_selected(bucket.size());
-      for (std::size_t j = 0; j < bucket.size(); ++j) {
-        const auto index = active[selected[j]].slot;
-        dispatch.push_back(index); dispatch_turns.push_back(requests[index].progress.turn_index); members.push_back(index);
-        finished = (std::max)(finished, requests[index].endpoint);
-      }
-      const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
-      (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
-      if (!bucket[0].full_hit) {
-        (bucket[0].generation ? actual_decode_calls : actual_prefill_calls)++;
-        actual_step_sum += bucket[0].step_seconds;
-        batches.push_back({drafts_token(bucket[0].role) ? 2 : bucket[0].ids().size(), bucket[0].role, bucket[0].generation, std::move(members)});
-      }
-      peak_resident = (std::max)(peak_resident, resident_count());
-      peak_committed = (std::max)(peak_committed, std::size_t(model.snapshot_versions.live));
-      if (model.snapshot_versions.live > model.cache_plan.resident_sessions) throw std::runtime_error("MTP committed version count exceeds N after publication");
-    }
+        }, [&](std::span<const std::size_t> selected) -> std::size_t {
+          hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;
+          if (!bucket.try_reserve(selected.size())) throw std::bad_alloc{};
+          for (auto j : selected) bucket.push_back(calls[j]);
+          while (bucket.size() > 1 && !bucket[0].full_hit && !make_generation_batch_room(model, prefix.get(), std::span(bucket.data(), bucket.size()), requests)) {
+            bucket.pop_back();
+          }
+          std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
+                    << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
+          execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests);
+          auto finished = endpoint;
+          hyle::container::SmallVector<std::size_t, 2> members;
+          if (!members.try_reserve(bucket.size())) throw std::bad_alloc{};
+          for (std::size_t j = 0; j < bucket.size(); ++j) {
+            const auto index = active[selected[j]].slot;
+            dispatch.push_back(index); dispatch_turns.push_back(requests[index].progress.turn_index); members.push_back(index);
+            finished = (std::max)(finished, requests[index].endpoint);
+          }
+          const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
+          (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
+          if (!bucket[0].full_hit) {
+            (bucket[0].generation ? actual_decode_calls : actual_prefill_calls)++;
+            actual_step_sum += bucket[0].step_seconds;
+            batches.push_back({drafts_token(bucket[0].role) ? 2 : bucket[0].ids().size(), bucket[0].role, bucket[0].generation, std::move(members)});
+          }
+          peak_resident = (std::max)(peak_resident, resident_count());
+          peak_committed = (std::max)(peak_committed, std::size_t(model.snapshot_versions.live));
+          if (model.snapshot_versions.live > model.cache_plan.resident_sessions) throw std::runtime_error("MTP committed version count exceeds N after publication");
+          return bucket.size();
+        });
     for (auto &call : calls) publish_generation_prompt(model, call, prefix.get());
     for (std::size_t at = 0; at < window.active().size();) {
       const auto index = window.active()[at].slot; auto &request = requests[index];
@@ -6941,55 +6940,55 @@ int qwen35::run(int argc, char **argv) {
         for (std::size_t j = 0; j < wave.calls.size(); ++j)
           if (actual_rows[j] > wave.calls[j].query_rows)
             throw std::runtime_error("batch wave actual query exceeds its logical input");
-        batch_indices.reset(wave.calls.size());
-        for (std::size_t first = 0; first < wave.calls.size(); ++first) {
-          if (batch_indices.completed(first) || !actual_rows[first]) continue;
-          const auto kind = wave.calls[first].kind;
-          const auto query_rows = actual_rows[first];
-          const auto selected = batch_indices.select(first, active_slots, [&](std::size_t j) {
-            return wave.calls[j].kind == kind && actual_rows[j] == query_rows;
-          });
-          requests.clear(); outputs.clear(); owners.clear(); members.clear(); next_ids.resize(selected.size());
-          for (const auto j : selected) {
-            const auto &call = wave.calls[j]; auto &run = runs[call.session]; auto &work = prepared[j];
-            requests.push_back({run.session, work.ids});
-            owners.push_back(run.session.get()); members.push_back(call.session);
-            outputs.push_back(qwen35::evaluation_output(model, run.session,
-                {run.observations[call.call].name, &run.trace, trace_states,
-                    multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}},
-                &work.complete_seconds, &run.endpoint, &run.observations[call.call],
-                preparation_diagnostics ? &run.preparation[call.call] : nullptr));
-          }
-          const auto batch_start = qwen35::Clock::now();
-          make_batch_room(owners);
-          inference::PreparationObservation preparation;
-          model.prepare_evaluations(requests, preparation_diagnostics ? &preparation : nullptr);
-          if (preparation_diagnostics) for (const auto j : selected)
-            runs[wave.calls[j].session].preparation[wave.calls[j].call] = preparation;
-          model.submit_evaluations();
-          model.finish_evaluations(outputs, next_ids, [&](std::size_t at, const qwen35::CompletedEvaluationView &view) {
-            const auto &call = wave.calls[selected[at]]; const auto &run = runs[call.session];
-            qwen35::observe_completed_evaluation(model, outputs[at],
-                {run.observations[call.call].name, &run.trace, trace_states,
-                    multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}}, view);
-          });
-          const auto batch_endpoint = runs[members.front()].endpoint;
-          record_batch(kind, query_rows, members, false,
-              std::chrono::duration<double>(batch_endpoint - batch_start).count());
-          for (std::size_t at = 0; at < selected.size(); ++at) {
-            const auto j = selected[at]; const auto &call = wave.calls[j];
-            auto &run = runs[call.session]; auto &work = prepared[j]; work.next = next_ids[at];
-            ++run.graph_participations; run.actual_graph_tokens += work.ids.size();
-            if (prefix_enabled) run.history->append(token_plans[call.session], work.before + work.reused, work.ids.size(), work.next);
-          }
-          // No temporary strong Session owner may retain an old head across
-          // next-wave adoption or eviction outside the charged directory.
-          requests.clear(); outputs.clear();
-          if (model.snapshot_versions.live > cache_slots)
-            throw std::runtime_error("committed batch versions exceed the finite cache budget");
-          note_committed_versions();
-          batch_indices.mark_selected(selected.size());
-        }
+        inference::dispatch_batches(batch_indices, wave.calls.size(),
+            [&](std::size_t index) { return actual_rows[index] != 0; },
+            [&](std::size_t) -> std::size_t { return active_slots; },
+            [&](std::size_t first, std::size_t j) {
+              return wave.calls[j].kind == wave.calls[first].kind && actual_rows[j] == actual_rows[first];
+            }, [&](std::span<const std::size_t> selected) -> std::size_t {
+              const auto kind = wave.calls[selected.front()].kind;
+              const auto query_rows = actual_rows[selected.front()];
+              requests.clear(); outputs.clear(); owners.clear(); members.clear(); next_ids.resize(selected.size());
+              for (const auto j : selected) {
+                const auto &call = wave.calls[j]; auto &run = runs[call.session]; auto &work = prepared[j];
+                requests.push_back({run.session, work.ids});
+                owners.push_back(run.session.get()); members.push_back(call.session);
+                outputs.push_back(qwen35::evaluation_output(model, run.session,
+                    {run.observations[call.call].name, &run.trace, trace_states,
+                        multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}},
+                    &work.complete_seconds, &run.endpoint, &run.observations[call.call],
+                    preparation_diagnostics ? &run.preparation[call.call] : nullptr));
+              }
+              const auto batch_start = qwen35::Clock::now();
+              make_batch_room(owners);
+              inference::PreparationObservation preparation;
+              model.prepare_evaluations(requests, preparation_diagnostics ? &preparation : nullptr);
+              if (preparation_diagnostics) for (const auto j : selected)
+                runs[wave.calls[j].session].preparation[wave.calls[j].call] = preparation;
+              model.submit_evaluations();
+              model.finish_evaluations(outputs, next_ids, [&](std::size_t at, const qwen35::CompletedEvaluationView &view) {
+                const auto &call = wave.calls[selected[at]]; const auto &run = runs[call.session];
+                qwen35::observe_completed_evaluation(model, outputs[at],
+                    {run.observations[call.call].name, &run.trace, trace_states,
+                        multiple_schedules ? std::string_view(run.trace_subdirectory) : std::string_view{}}, view);
+              });
+              const auto batch_endpoint = runs[members.front()].endpoint;
+              record_batch(kind, query_rows, members, false,
+                  std::chrono::duration<double>(batch_endpoint - batch_start).count());
+              for (std::size_t at = 0; at < selected.size(); ++at) {
+                const auto j = selected[at]; const auto &call = wave.calls[j];
+                auto &run = runs[call.session]; auto &work = prepared[j]; work.next = next_ids[at];
+                ++run.graph_participations; run.actual_graph_tokens += work.ids.size();
+                if (prefix_enabled) run.history->append(token_plans[call.session], work.before + work.reused, work.ids.size(), work.next);
+              }
+              // No temporary strong Session owner may retain an old head across
+              // next-wave adoption or eviction outside the charged directory.
+              requests.clear(); outputs.clear();
+              if (model.snapshot_versions.live > cache_slots)
+                throw std::runtime_error("committed batch versions exceed the finite cache budget");
+              note_committed_versions();
+              return selected.size();
+            });
         for (std::size_t j = 0; j < wave.calls.size(); ++j) {
           const auto &scheduled_call = wave.calls[j];
           const auto s = scheduled_call.session, index = scheduled_call.call;

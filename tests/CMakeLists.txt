@@ -187,6 +187,22 @@ add_test(NAME hyle_inference_request_window_test COMMAND hyle_inference_request_
 set_tests_properties(hyle_inference_request_window_test PROPERTIES
   LABELS "tooling;generation;admission" TIMEOUT 30)
 
+# BatchIndices uses SmallVector's existing system allocator; do not select an
+# otherwise unused memory product just to build this host-only engine check.
+if(TARGET hyle_mem)
+  add_executable(hyle_inference_batch_dispatch_test tools/inference_batch_dispatch_test.cc)
+  target_link_libraries(hyle_inference_batch_dispatch_test PRIVATE hyle_build_contract hyle_mem)
+  target_compile_features(hyle_inference_batch_dispatch_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_batch_dispatch_test)
+  hyle_apply_sanitizer(hyle_inference_batch_dispatch_test)
+  set_target_properties(hyle_inference_batch_dispatch_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_batch_dispatch_test)
+  add_test(NAME hyle_inference_batch_dispatch_test COMMAND hyle_inference_batch_dispatch_test)
+  set_tests_properties(hyle_inference_batch_dispatch_test PROPERTIES
+    LABELS "tooling;generation;batch" TIMEOUT 30)
+endif()
+
 add_executable(hyle_inference_request_progress_test tools/inference_request_progress_test.cc)
 target_link_libraries(hyle_inference_request_progress_test PRIVATE hyle_build_contract)
 target_compile_features(hyle_inference_request_progress_test PRIVATE cxx_std_23)

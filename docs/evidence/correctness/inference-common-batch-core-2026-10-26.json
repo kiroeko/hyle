@@ -1,0 +1,821 @@
+{
+  "status": "BOUNDED_COMMON_BATCH_CORE_RESULTS",
+  "baseline_commit": "6505c25f80ec7a3df7903919f248cc13e8953815",
+  "publication_head": "6505c25f80ec7a3df7903919f248cc13e8953815",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\batch_dispatch.h",
+      "bytes": 2405,
+      "sha256": "bb7b8fdcf4c97b0c3fa94fde120a426c834fe6108696d1f7859be2ce0962ec2f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 475592,
+      "sha256": "188f805d7d6b6749926ee2d44dd2cce3e0f4c520f85d804ba431263173f7ae12"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_batch_dispatch_test.cc",
+      "bytes": 7695,
+      "sha256": "747c468272b72a5647a2599d9ed0ab6f192e4200e0b412e2370abc88c6ee7bf9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 21552,
+      "sha256": "baa91bad22511cf1cdee77447dff0e9c2fba66060d8da8790ecaf11ebe9e66e1"
+    }
+  ],
+  "baseline": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\link\\hyle.exe",
+    "bytes": 141470720,
+    "sha256": "8c19bca934096c43647312da9af38617642ff068b0e8b8d22f785499cc72d6b3"
+  },
+  "candidate": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\link\\hyle.exe",
+    "bytes": 141476352,
+    "sha256": "c29e7aaeac368a453e3dcad0f704b5cc2c3a77ba2cf93dc8c60766f2b683cabb"
+  },
+  "host": {
+    "status": "FINITE_BATCH_CORE_HOST_PASS",
+    "source_pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_batch_dispatch_test.cc",
+        "bytes": 7695,
+        "sha256": "747c468272b72a5647a2599d9ed0ab6f192e4200e0b412e2370abc88c6ee7bf9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\batch_dispatch.h",
+        "bytes": 2405,
+        "sha256": "bb7b8fdcf4c97b0c3fa94fde120a426c834fe6108696d1f7859be2ce0962ec2f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\batch_indices.h",
+        "bytes": 2562,
+        "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+      }
+    ],
+    "dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-core-20261026\\host1\\actual-dependencies.json",
+      "bytes": 27932,
+      "sha256": "7485f938d48b3a8d9584259080f732d16ae8a185bbced51bc95d1b5a4c4e51a3"
+    },
+    "compile": {
+      "exit": 0,
+      "pid": 6996,
+      "seconds": 0.6207442000159062
+    },
+    "link": {
+      "exit": 0,
+      "pid": 35232,
+      "seconds": 0.043699199974071234
+    },
+    "run": {
+      "exit": 0,
+      "pid": 59728,
+      "seconds": 0.035999500018078834
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batch-core-20261026\\host1\\link\\inference_batch_dispatch_test.exe",
+      "bytes": 143872,
+      "sha256": "8980abaacdc6a13949bd364fb72a8b12c84c13dfa804d8dc9b0e3067bdae7133"
+    },
+    "reused_native_allocator": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\mimalloc_static.lib",
+      "bytes": 989658,
+      "sha256": "6e92620e93dddd66497fb57f6bb43ad36b525e050812c4f1df7e04b66c439858"
+    },
+    "compiled_TUs": 1,
+    "Model_GPU_SDK_builds": 0,
+    "model_runs": 0,
+    "limits": [
+      "Five finite host contracts, not a Model/GPU/numerical or TPS result.",
+      "Repeated waves check stable pre-reserved selection storage and zero C++ operator-new calls. The hook does not count mimalloc backend calls; source bounds and unchanged selected storage establish index reuse."
+    ]
+  },
+  "CLI_comparisons": {
+    "natural/comparison.cuda.json": {
+      "status": "PASS",
+      "case": "natural",
+      "backend": "cuda",
+      "method": "Exact JSON types, all remaining keys/values, full arrays and order; no tolerance and no token grep. Only these exact paths excluded. Raw stdout and stderr remain untouched.",
+      "excluded_time_paths": [
+        "/decode_output_tokens_per_second",
+        "/decode_seconds",
+        "/first_token_elapsed_seconds",
+        "/output_tokens_per_second",
+        "/participation_step_sum_seconds",
+        "/post_endpoint_seconds",
+        "/prefill_seconds",
+        "/prefill_tokens_per_second",
+        "/restore_seconds",
+        "/restore_step_seconds",
+        "/session_seconds",
+        "/sessions/0/result/between_turn_seconds",
+        "/sessions/0/result/decode_output_tokens_per_second",
+        "/sessions/0/result/decode_seconds",
+        "/sessions/0/result/decode_step_sum_seconds",
+        "/sessions/0/result/first_token_elapsed_seconds",
+        "/sessions/0/result/output_tokens_per_second",
+        "/sessions/0/result/prefill_seconds",
+        "/sessions/0/result/prefill_step_seconds",
+        "/sessions/0/result/prefill_tokens_per_second",
+        "/sessions/0/result/session_seconds",
+        "/sessions/0/result/startup_to_endpoint_seconds",
+        "/sessions/0/result/startup_to_ready_seconds",
+        "/sessions/0/result/startup_total_seconds",
+        "/sessions/0/result/step_sum_seconds",
+        "/sessions/0/result/turns/0/decode_seconds",
+        "/sessions/0/result/turns/0/prefill_seconds",
+        "/sessions/0/result/turns/1/decode_seconds",
+        "/sessions/0/result/turns/1/prefill_seconds",
+        "/sessions/1/result/between_turn_seconds",
+        "/sessions/1/result/decode_output_tokens_per_second",
+        "/sessions/1/result/decode_seconds",
+        "/sessions/1/result/decode_step_sum_seconds",
+        "/sessions/1/result/first_token_elapsed_seconds",
+        "/sessions/1/result/output_tokens_per_second",
+        "/sessions/1/result/prefill_seconds",
+        "/sessions/1/result/prefill_step_seconds",
+        "/sessions/1/result/prefill_tokens_per_second",
+        "/sessions/1/result/session_seconds",
+        "/sessions/1/result/startup_to_endpoint_seconds",
+        "/sessions/1/result/startup_to_ready_seconds",
+        "/sessions/1/result/startup_total_seconds",
+        "/sessions/1/result/step_sum_seconds",
+        "/sessions/1/result/turns/0/decode_seconds",
+        "/sessions/1/result/turns/0/prefill_seconds",
+        "/sessions/1/result/turns/1/decode_seconds",
+        "/sessions/1/result/turns/1/prefill_seconds",
+        "/sessions/2/result/between_turn_seconds",
+        "/sessions/2/result/decode_output_tokens_per_second",
+        "/sessions/2/result/decode_seconds",
+        "/sessions/2/result/decode_step_sum_seconds",
+        "/sessions/2/result/first_token_elapsed_seconds",
+        "/sessions/2/result/output_tokens_per_second",
+        "/sessions/2/result/prefill_seconds",
+        "/sessions/2/result/prefill_step_seconds",
+        "/sessions/2/result/prefill_tokens_per_second",
+        "/sessions/2/result/session_seconds",
+        "/sessions/2/result/startup_to_endpoint_seconds",
+        "/sessions/2/result/startup_to_ready_seconds",
+        "/sessions/2/result/startup_total_seconds",
+        "/sessions/2/result/step_sum_seconds",
+        "/sessions/2/result/turns/0/decode_seconds",
+        "/sessions/2/result/turns/0/prefill_seconds",
+        "/sessions/3/result/between_turn_seconds",
+        "/sessions/3/result/decode_output_tokens_per_second",
+        "/sessions/3/result/decode_seconds",
+        "/sessions/3/result/decode_step_sum_seconds",
+        "/sessions/3/result/first_token_elapsed_seconds",
+        "/sessions/3/result/output_tokens_per_second",
+        "/sessions/3/result/prefill_seconds",
+        "/sessions/3/result/prefill_step_seconds",
+        "/sessions/3/result/prefill_tokens_per_second",
+        "/sessions/3/result/session_seconds",
+        "/sessions/3/result/startup_to_endpoint_seconds",
+        "/sessions/3/result/startup_to_ready_seconds",
+        "/sessions/3/result/startup_total_seconds",
+        "/sessions/3/result/step_sum_seconds",
+        "/sessions/3/result/turns/0/decode_seconds",
+        "/sessions/3/result/turns/0/prefill_seconds",
+        "/sessions/3/result/turns/1/decode_seconds",
+        "/sessions/3/result/turns/1/prefill_seconds",
+        "/startup_to_endpoint_seconds",
+        "/startup_to_ready_seconds",
+        "/startup_total_seconds",
+        "/step_sum_seconds"
+      ],
+      "coverage": {
+        "session_ids": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "seven_turns": true,
+        "mixed_T": true,
+        "R1_R2": true,
+        "partial_prefix_reuse_rows": 0,
+        "same_wave_prefix_isolation": true,
+        "all_reported_token_state_cache_batch_facts_compared": true
+      },
+      "non_time_facts_sha256": "83e6ccbb5e43c71d0aeb51cf740bf52010120b79f1d39187db8d01aa95721875",
+      "baseline": {
+        "path": ".scratch\\inference-common-core-20261026\\consumer-cases\\natural\\baseline.cuda.stdout.json",
+        "sha256": "2216dd1a591b3fe5ec438864cf7f93595cffa3cd638ca70e18feceb3d4c8fe37"
+      },
+      "candidate": {
+        "path": ".scratch\\inference-common-core-20261026\\consumer-cases\\natural\\candidate.cuda.stdout.json",
+        "sha256": "2126a70b44266c7ed35fc69698a438da67f81f10716d433339ac61650598049e"
+      }
+    },
+    "teacher/comparison.cuda.json": {
+      "status": "PASS",
+      "case": "teacher",
+      "backend": "cuda",
+      "method": "Exact JSON types, all remaining keys/values, full arrays and order; no tolerance and no token grep. Only these exact paths excluded. Raw stdout and stderr remain untouched.",
+      "excluded_time_paths": [
+        "/batches/0/seconds",
+        "/batches/1/seconds",
+        "/batches/10/seconds",
+        "/batches/11/seconds",
+        "/batches/2/seconds",
+        "/batches/3/seconds",
+        "/batches/4/seconds",
+        "/batches/5/seconds",
+        "/batches/6/seconds",
+        "/batches/7/seconds",
+        "/batches/8/seconds",
+        "/batches/9/seconds",
+        "/interleaved_seconds",
+        "/sessions/0/cache_prepare_seconds",
+        "/sessions/0/phases/0/seconds",
+        "/sessions/0/phases/0/step_sum_seconds",
+        "/sessions/0/phases/1/seconds",
+        "/sessions/0/phases/1/step_sum_seconds",
+        "/sessions/0/phases/2/seconds",
+        "/sessions/0/phases/2/step_sum_seconds",
+        "/sessions/0/phases/3/seconds",
+        "/sessions/0/phases/3/step_sum_seconds",
+        "/sessions/0/session_seconds",
+        "/sessions/0/startup_total_seconds",
+        "/sessions/0/step_sum_seconds",
+        "/sessions/1/cache_prepare_seconds",
+        "/sessions/1/phases/0/seconds",
+        "/sessions/1/phases/0/step_sum_seconds",
+        "/sessions/1/phases/1/seconds",
+        "/sessions/1/phases/1/step_sum_seconds",
+        "/sessions/1/phases/2/seconds",
+        "/sessions/1/phases/2/step_sum_seconds",
+        "/sessions/1/phases/3/seconds",
+        "/sessions/1/phases/3/step_sum_seconds",
+        "/sessions/1/session_seconds",
+        "/sessions/1/startup_total_seconds",
+        "/sessions/1/step_sum_seconds",
+        "/sessions/2/cache_prepare_seconds",
+        "/sessions/2/phases/0/seconds",
+        "/sessions/2/phases/0/step_sum_seconds",
+        "/sessions/2/phases/1/seconds",
+        "/sessions/2/phases/1/step_sum_seconds",
+        "/sessions/2/session_seconds",
+        "/sessions/2/startup_total_seconds",
+        "/sessions/2/step_sum_seconds",
+        "/sessions/3/cache_prepare_seconds",
+        "/sessions/3/phases/0/seconds",
+        "/sessions/3/phases/0/step_sum_seconds",
+        "/sessions/3/phases/1/seconds",
+        "/sessions/3/phases/1/step_sum_seconds",
+        "/sessions/3/phases/2/seconds",
+        "/sessions/3/phases/2/step_sum_seconds",
+        "/sessions/3/phases/3/seconds",
+        "/sessions/3/phases/3/step_sum_seconds",
+        "/sessions/3/session_seconds",
+        "/sessions/3/startup_total_seconds",
+        "/sessions/3/step_sum_seconds",
+        "/startup_total_seconds",
+        "/step_sum_seconds",
+        "/waves/0/seconds",
+        "/waves/1/seconds",
+        "/waves/2/seconds",
+        "/waves/3/seconds",
+        "/waves/4/seconds",
+        "/waves/5/seconds",
+        "/waves/6/seconds",
+        "/waves/7/seconds",
+        "/waves/8/seconds"
+      ],
+      "coverage": {
+        "session_ids": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "seven_turns": true,
+        "mixed_T": true,
+        "R1_R2": true,
+        "partial_prefix_reuse_rows": 3,
+        "same_wave_prefix_isolation": false,
+        "all_reported_token_state_cache_batch_facts_compared": true
+      },
+      "non_time_facts_sha256": "338b520d1fc1bf57ed28814aefe8d3f5ad93fc0f420e0d71402e799d8db5b2f8",
+      "baseline": {
+        "path": ".scratch\\inference-common-core-20261026\\consumer-cases\\teacher\\baseline.cuda.stdout.json",
+        "sha256": "8c6a2faf4ba882506a2540810d0cab494aaff9da49858e740980e497dd4b1db5"
+      },
+      "candidate": {
+        "path": ".scratch\\inference-common-core-20261026\\consumer-cases\\teacher\\candidate.cuda.stdout.json",
+        "sha256": "7f1001fafaf23fd45d2cb1533d69b649f7c58d74b7815550fa3299b83bcc7566"
+      }
+    }
+  },
+  "GPU_attempts": {
+    "run1": {
+      "pid": 33008,
+      "exit": 1,
+      "timeout": false,
+      "seconds": 31.17653449997306,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+        "bytes": 141046272,
+        "sha256": "cf0f7e546c093d38b2e266da4ddd9de5edc93dad2cbf3c0470ecf8e706ab3547"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "Generated ordinary AA/E4 CUDA physical-pending single-member and whole-batch cancellation; no full-model/performance claim."
+    },
+    "run2": {
+      "pid": 35736,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 1.2756039000232704,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\e4-gpu-cancel.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\e4-gpu-cancel.exe",
+        "bytes": 141072896,
+        "sha256": "e88d0a1b1e37170ef793f378e3af41fee32fc7a879a9020560883402bd4471c8"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "Generated ordinary AA/E4 CUDA physical-pending single-member and whole-batch cancellation; no full-model/performance claim."
+    }
+  },
+  "GPU_final": {
+    "status": "FINITE_CUDA_PHYSICAL_PENDING_ORDINARY_CANCELLATION_PASS",
+    "actual": {
+      "pid": 35736,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 1.2756039000232704,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\e4-gpu-cancel.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\e4-gpu-cancel.exe",
+        "bytes": 141072896,
+        "sha256": "e88d0a1b1e37170ef793f378e3af41fee32fc7a879a9020560883402bd4471c8"
+      },
+      "native": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link2b\\hyle_ggml_cpu_gdn_scale_v3.dll",
+        "bytes": 1206784,
+        "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+      },
+      "fixture": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+        "bytes": 5889,
+        "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+      },
+      "scope": "Generated ordinary AA/E4 CUDA physical-pending single-member and whole-batch cancellation; no full-model/performance claim."
+    },
+    "fixture_result": {
+      "status": "PASS",
+      "backend": "cuda",
+      "generated_AA_E4_fixture": true,
+      "actual_R2_T2_warmup_finished_retired": true,
+      "native_callback_entered": true,
+      "native_event_not_ready_before_and_after_stop": true,
+      "original_completion_pending": true,
+      "single_member_discard": true,
+      "same_survivor_candidate": true,
+      "cancelled_head_rng_ledger_unchanged": true,
+      "survivor_continues": true,
+      "all_cancel_abort": true,
+      "final_versions": 0,
+      "greedy_only": true,
+      "model_quality": false,
+      "performance_claim": false,
+      "HTTP": 0
+    },
+    "proven": [
+      "After one normally finished/retired exact R2/T2 Model warmup, the canonical native queue gate callback entered. Same-queue post-Model CUDA event was NotReady and original Model Completion Pending before and after partial stop/drain checks.",
+      "Stopping A plus A.try_retire/A.drain/B.drain did not abort, retire or publish the shared physically pending episode. Explicit release finished the original B candidate, published only B, reported A kCancelled, left A head/boundary and uncommitted ledger unchanged, and B continued another ordinary step.",
+      "A separate physically pending R2/T2 all-member stop retained whole-episode cancellation; after explicit release, original abort/retirement completed with old heads unchanged and final_versions0."
+    ],
+    "actual_route_facts": [
+      {
+        "gpu_cancel_routes": "warmup_R2_T2",
+        "route": "1",
+        "ordered": "0",
+        "synchronous_source": "0",
+        "device_wait": "0",
+        "host_wait": "0",
+        "immediate_transfers": "0",
+        "queued_transfers": "0",
+        "input_sources": "0",
+        "input_host_wait": "0",
+        "input_device_wait": "0"
+      },
+      {
+        "gpu_cancel_routes": "partial_R2_T2",
+        "route": "1",
+        "ordered": "0",
+        "synchronous_source": "0",
+        "device_wait": "0",
+        "host_wait": "0",
+        "immediate_transfers": "0",
+        "queued_transfers": "0",
+        "input_sources": "0",
+        "input_host_wait": "0",
+        "input_device_wait": "0"
+      },
+      {
+        "gpu_cancel_routes": "all_cancel_R2_T2",
+        "route": "1",
+        "ordered": "0",
+        "synchronous_source": "0",
+        "device_wait": "0",
+        "host_wait": "0",
+        "immediate_transfers": "0",
+        "queued_transfers": "0",
+        "input_sources": "0",
+        "input_host_wait": "0",
+        "input_device_wait": "0"
+      }
+    ],
+    "first_failure": {
+      "process": {
+        "pid": 33008,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 31.17653449997306,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+          "bytes": 141046272,
+          "sha256": "cf0f7e546c093d38b2e266da4ddd9de5edc93dad2cbf3c0470ecf8e706ab3547"
+        },
+        "native": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "fixture": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+          "bytes": 5889,
+          "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+        },
+        "scope": "Generated ordinary AA/E4 CUDA physical-pending single-member and whole-batch cancellation; no full-model/performance claim."
+      },
+      "meaning": "The first gated attempt failed at watchdog assertion before any successful cancellation proof. Original phase boundaries were not logged, so the specific blocking Model submit/marker call and specific CUDA API are unknown.",
+      "inference": "The passing run first executes and retires the same exact original R2/T2 path, moving native first-use work outside the gate. This supports a first-use boundary interaction but does not prove a particular cudaMalloc, cuBLAS or module-load call caused run1. Native/Graph product code and watchdog were not relaxed. Successful pending proof with zero explicit host-wait routes also refutes a blanket claim that Commands must always complete synchronously."
+    },
+    "private_compile_failure": {
+      "process": {
+        "exit": 2,
+        "pid": 34804,
+        "seconds": 5.001887499995064
+      },
+      "meaning": "Private warmup test initially omitted the mandatory observer argument. Only the private fixture was corrected to observe both normal warmup publications; failed source2/compile2 receipts remain. No native consumer was run from that failed compilation."
+    },
+    "actual_final_build": {
+      "compile": {
+        "exit": 0,
+        "pid": 43092,
+        "seconds": 19.146464899997227
+      },
+      "link": {
+        "exit": 0,
+        "pid": 51276,
+        "seconds": 1.745082999987062
+      },
+      "compiled_host_TUs": 1,
+      "reused_report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\report\\unit.obj",
+        "bytes": 106268,
+        "sha256": "8b42988100e5de37df4298576226fbb42ed63b031b348996908fa0bd5a1cb144"
+      },
+      "SDK_device_Graph_provider_builds": 0
+    },
+    "limits": [
+      "One generated ordinary AA/H64/D64 E4 calibrated CUDA fixture on the RTX4070; greedy control, not trained-model quality or a broad numerical/platform/model matrix.",
+      "Cancelled member keeps its stored RNG boundary unchanged in this greedy fixture; stochastic draw advancement is not verified.",
+      "Native faults/export-error injection, MTP cancellation changes and global performance are not tested. No extra run is required for this bounded result.",
+      "Diagnostic warmup/phase timings are instrumented single-run facts, not prefill/decode/TPS measurements or a speedup claim."
+    ],
+    "records": {
+      "reproduction_files": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\reproduction-files.json",
+        "bytes": 13029,
+        "sha256": "626e34adaeb691056042d486c75f7e9821cb243335935de084f36d610e262242"
+      },
+      "cleanup_candidates": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\cleanup-candidates.json",
+        "bytes": 3913,
+        "sha256": "31d595c702618976175b92d852324cd636fdd371243dd1f86ee6b7aa42f95b09"
+      },
+      "diagnosis": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\failure1-diagnosis.json",
+        "bytes": 4828,
+        "sha256": "8ca9b71774d67a4e10b23809f18cb304a3fb335071204990d75dd9b54af583ec"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\source2b-freeze.json",
+        "bytes": 35363,
+        "sha256": "cabe014496b3106f39a76dfab26e1b06d0b360feb534ad75348eb91ae1fec307"
+      }
+    },
+    "model_runs_by_this_agent": 0,
+    "deletions_by_this_agent": 0
+  },
+  "retained_failures": [
+    {
+      "scope": "CLI natural/baseline",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\baseline.process.json",
+        "bytes": 863,
+        "sha256": "c5616f894a592059006aa927a553b9f16913a732b96ce4ba79ba9deee058342e"
+      },
+      "result": {
+        "case": "natural",
+        "arm": "baseline",
+        "pid": 4408,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 0.8296771000023,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\link\\hyle.exe",
+          "--inputs",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa",
+          "--backend",
+          "cpu",
+          "--mtp",
+          "off",
+          "--capacity",
+          "16",
+          "--max-sessions",
+          "4",
+          "--active-sequences",
+          "3",
+          "--cache-bytes",
+          "auto",
+          "--prefix-cache",
+          "auto",
+          "--sampling",
+          "greedy",
+          "--progress",
+          "direct",
+          "--replay",
+          "commands",
+          "--session-schedules",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\sessions.tsv"
+        ]
+      }
+    },
+    {
+      "scope": "GPU compile2",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\compile2\\process.json",
+        "bytes": 69,
+        "sha256": "9b9070a4abba6c36d620d7665332dc680db77977066d3f0c5aea492de31229c6"
+      },
+      "result": {
+        "exit": 2,
+        "pid": 34804,
+        "seconds": 5.001887499995064
+      }
+    },
+    {
+      "scope": "GPU run1",
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\run1\\process.json",
+        "bytes": 1205,
+        "sha256": "e9b2157d139d0a57747af82d18487d4b4079e935fed01c22bf2356182d5ebc18"
+      },
+      "result": {
+        "pid": 33008,
+        "exit": 1,
+        "timeout": false,
+        "seconds": 31.17653449997306,
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa"
+        ],
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\e4-gpu-cancel.exe",
+          "bytes": 141046272,
+          "sha256": "cf0f7e546c093d38b2e266da4ddd9de5edc93dad2cbf3c0470ecf8e706ab3547"
+        },
+        "native": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-gpu-cancel-20261026\\link\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "fixture": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa\\weights.tsv",
+          "bytes": 5889,
+          "sha256": "5191a1d49dd18015a1392fdc0f45cdee0fe3498540162c0c7da8047dcadb032d"
+        },
+        "scope": "Generated ordinary AA/E4 CUDA physical-pending single-member and whole-batch cancellation; no full-model/performance claim."
+      }
+    },
+    {
+      "scope": "Natural comparison first coverage assumption",
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\comparison-attempt1.json",
+        "bytes": 3846,
+        "sha256": "52009d2dd9a266f1ea1e9e44be836dd22451788fd9039a3d6034c1b79d8a0d2a"
+      },
+      "result": {
+        "status": "FAIL_EXPECTED_COVERAGE_ASSUMPTION_NOT_PRODUCT_DIFFERENCE",
+        "case": "natural",
+        "backend": "cuda",
+        "original_comparator": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\compare-attempt1.py",
+          "bytes": 7253,
+          "sha256": "01757d7257d38dcda8eb63390864458f929c9d52fd72cd4b053a4191c9bc69d1"
+        },
+        "raw_baseline": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\baseline.cuda.stdout.json",
+          "bytes": 25961,
+          "sha256": "2216dd1a591b3fe5ec438864cf7f93595cffa3cd638ca70e18feceb3d4c8fe37"
+        },
+        "raw_candidate": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\candidate.cuda.stdout.json",
+          "bytes": 26009,
+          "sha256": "2126a70b44266c7ed35fc69698a438da67f81f10716d433339ac61650598049e"
+        },
+        "actual_baseline_process": {
+          "case": "natural",
+          "arm": "baseline",
+          "pid": 49084,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 0.7955652000382543,
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-review-fixes-20261026\\product2\\link\\hyle.exe",
+            "--inputs",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa",
+            "--backend",
+            "cuda",
+            "--mtp",
+            "off",
+            "--capacity",
+            "16",
+            "--max-sessions",
+            "4",
+            "--active-sequences",
+            "3",
+            "--cache-bytes",
+            "auto",
+            "--prefix-cache",
+            "auto",
+            "--sampling",
+            "greedy",
+            "--progress",
+            "direct",
+            "--replay",
+            "commands",
+            "--session-schedules",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\sessions.tsv"
+          ]
+        },
+        "actual_candidate_process": {
+          "case": "natural",
+          "arm": "candidate",
+          "pid": 25824,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 1.222939100000076,
+          "command": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\link\\hyle.exe",
+            "--inputs",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\ct-e4-aa",
+            "--backend",
+            "cuda",
+            "--mtp",
+            "off",
+            "--capacity",
+            "16",
+            "--max-sessions",
+            "4",
+            "--active-sequences",
+            "3",
+            "--cache-bytes",
+            "auto",
+            "--prefix-cache",
+            "auto",
+            "--sampling",
+            "greedy",
+            "--progress",
+            "direct",
+            "--replay",
+            "commands",
+            "--session-schedules",
+            "C:\\public\\project-hyle\\hyle\\.scratch\\inference-common-core-20261026\\consumer-cases\\natural\\sessions.tsv"
+          ]
+        },
+        "full_non_time_json_comparison": "PASS before the coverage assertion; independently reproduced offline with unchanged old comparator functions",
+        "coverage_error": {
+          "type": "AssertionError",
+          "message": "expected cross-cohort partial prefix reuse absent; retain failure, do not weaken comparison",
+          "offline_reproduced": true
+        },
+        "incorrect_assumption": "R=3 was assumed to constrain the natural RequestWindow to three requests. The natural window admits up to N=4 resident request owners; R=3 only bounds each execution batch. All four first prompt lookups occur in the same owner wave before any new checkpoint publication.",
+        "observed": {
+          "prefix_hits": 0,
+          "prefix_misses": 4,
+          "prefix_full_hits": 0,
+          "reused_tokens": 0
+        },
+        "meaning": "The actual input exercises same-wave checkpoint isolation; D must execute T4 even though A/C T2 committed earlier in that wave. It does not demonstrate natural partial prefix reuse.",
+        "model_reruns": 0
+      }
+    }
+  ],
+  "architecture_review": {
+    "status": "BOUNDED_INDEPENDENT_SOURCE_REVIEW_NO_BLOCKER_FOUND",
+    "scope": "Current small generic batch traversal and Qwen natural/teacher-forced integrations; no product edit, build, model execution or test run by reviewer. Not a runtime pass.",
+    "sources": [
+      {
+        "path": "engine/inference/batch_dispatch.h",
+        "bytes": 2405,
+        "sha256": "bb7b8fdcf4c97b0c3fa94fde120a426c834fe6108696d1f7859be2ce0962ec2f"
+      },
+      {
+        "path": "engine/inference/batch_indices.h",
+        "bytes": 2562,
+        "sha256": "f0bb89ff4fa0707b87f5941d34bbda2c91fc3bdc946d69845f1a2de16c080230"
+      },
+      {
+        "path": "tests/tools/inference_batch_dispatch_test.cc",
+        "bytes": 7695,
+        "sha256": "747c468272b72a5647a2599d9ed0ab6f192e4200e0b412e2370abc88c6ee7bf9"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "bytes": 21552,
+        "sha256": "baa91bad22511cf1cdee77447dff0e9c2fba66060d8da8790ecaf11ebe9e66e1"
+      },
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "bytes": 475592,
+        "sha256": "188f805d7d6b6749926ee2d44dd2cce3e0f4c520f85d804ba431263173f7ae12"
+      }
+    ],
+    "reviewed_contracts": [
+      "Eligible first must select itself; fixed BatchIndices bound rejects invalid limit, candidate count or oversized completion before marking any prefix. Zero completion throws; no retry loop.",
+      "Selection maintains existing original candidate order and exact compatibility. Natural admission may shrink only a selected prefix; teacher-forced zero-row cache hits stay ineligible.",
+      "Both consumers retain original execution/observer/ledger logic. Generic callbacks neither admit/retire requests nor own payloads, model state, RNG, Completion or rollback.",
+      "Same-wave checkpoint lookup preparation precedes all dispatch and publication remains after all dispatch; new heads cannot feed a peer in the same wave.",
+      "Observer/accounting exceptions exit immediately. The new helper marks local dispatch completion after adapter bookkeeping; unlike old mark position, an exception can leave indices unmarked after actual commit, but there is no resumed pass/retry and model ledger reconciliation remains authoritative.",
+      "RequestWindow active borrow is not mutated in dispatch; release/retirement follows after the wave. Borrowed selected indices are used synchronously and not retained.",
+      "Core uses static callables and original cold index storage; it introduces no vector, virtual/type-erased call, queue, worker or executor."
+    ],
+    "test_source_review": [
+      "Partial resource admission with mixed classes/ineligible members; exact successful order and once-only visits.",
+      "Singleton limit, empty and wholly ineligible waves.",
+      "Original observer exception identity and no automatic retry or claimed rollback.",
+      "Zero/oversized completion and incompatible first rejected.",
+      "128 repeated waves preserve selected storage; ordinary C++ new counter stays in source test scope, not a process-wide memory guarantee."
+    ],
+    "remaining_validation": "Parent owns focused host compilation/run and actual consumer regression; this source-only review does not certify numerical/native behavior or performance."
+  },
+  "steady_state_design": {
+    "status": "BOUNDED_DESIGN_PROPOSAL_NOT_IMPLEMENTED_OR_BENCHMARKED",
+    "implemented": false,
+    "benchmarked": false,
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-architecture-audit-20261026\\steady-state-design.json",
+      "bytes": 18174,
+      "sha256": "9b4e0c45ca5c83c39bd835987bc9bea0fb6033f92241974844d735af8dbec6c3"
+    }
+  },
+  "scope": "Static compatible-index traversal extraction. Five host contracts and exact finite CLI non-time report comparisons use generated AA/E4 weights; GPU pending/cancel checks have their own raw attempts.",
+  "limits": [
+    "No full-model quality, throughput or performance gain claim. CUDA-only product rejected the initial CPU CLI configuration; retain that failure.",
+    "Each process/comparison reports its actual outcome. GPU run1 failed; its diagnosis is a hypothesis, not a successful pending/cancellation proof.",
+    "Other model families, MTP runtime, Metal/Vulkan, CPU product build, overlap and server ingress are not established by this batch.",
+    "Archive excludes executables, objects, PDBs, complete dependency manifests/trees, SDKs and model weights. Local paths/pins remain in receipts."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-common-batch-core-2026-10-26.zip",
+    "bytes": 281133,
+    "sha256": "06f47908fccc8a9bced48562ebb69ce832b62b488f706a230b5d23a964fb9d03"
+  }
+}
