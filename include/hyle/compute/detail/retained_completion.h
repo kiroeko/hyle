@@ -64,6 +64,8 @@ public:
   HYLE_COMPUTE_API ~RetainedCompletion();
   HYLE_COMPUTE_API static Result<RetainedCompletion> create(mem::AllocatorRef allocator) noexcept;
   HYLE_COMPUTE_API bool available() const noexcept;
+  // Identity only. Neither observes nor consumes this original public proxy.
+  HYLE_COMPUTE_API bool owns(const Completion &) const noexcept;
   // The caller checks available before accepting native work. A public proxy
   // retains this slot until observation/abandonment; no hot allocation occurs.
   HYLE_COMPUTE_API Completion publish(Completion completion, bool deferred_retirement = false) noexcept;

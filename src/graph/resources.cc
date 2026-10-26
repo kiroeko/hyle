@@ -1,6 +1,8 @@
 #include "hyle/graph/executable.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/result.h"
+#include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/detail/input_source.h"
 
 #include <algorithm>
 #include <array>
@@ -11,12 +13,14 @@
 #include <vector>
 
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/completion_retention.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/append_lease.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/spin_lock.h"
 #include "plan_state.h"
+#include "input_sources.h"
 #include "resource_episode.h"
 #include "submission_internal.h"
 #include "submission_lifetime.h"
@@ -1767,6 +1771,308 @@ Result<compute::ReadLease> output_storage(InvocationState &state,
     }
   }
   return std::unexpected(Status::Internal("generated graph output has no native producer"));
+}
+} // namespace detail
+
+namespace detail {
+struct OutputStorageRetention final {
+  explicit OutputStorageRetention(compute::StorageOwner value) noexcept
+      : storage(std::move(value)) {}
+  static void release(void *opaque) noexcept {
+    auto *self = static_cast<OutputStorageRetention *>(opaque);
+    const auto owner = self->storage;
+    const auto allocator = owner.allocator();
+    self->~OutputStorageRetention();
+    allocator.deallocate(self, sizeof(OutputStorageRetention), alignof(OutputStorageRetention));
+  }
+  compute::StorageOwner storage;
+  compute::CompletionRetention retirement;
+};
+struct OutputSourceState final : util::RefCounted<OutputSourceState> {
+  OutputSourceState(InvocationState *original, const compute::WriteLease *lease,
+      const compute::ReadLease *published,
+      compute::ConstTensorView view, compute::detail::QueueRef queue_value,
+      compute::StorageOwner storage, compute::Completion submission) noexcept
+      : producer(original), writer(lease), ready(published), tensor(view), queue(std::move(queue_value)),
+        storage_owner(std::move(storage)), completion(std::move(submission)) {
+    retain(producer);
+    producer->results.fetch_add(1, std::memory_order_relaxed);
+  }
+  void destroy() noexcept {
+    auto storage = storage_owner;
+    const auto allocator = storage.allocator();
+    auto *original = producer;
+    this->~OutputSourceState();
+    allocator.deallocate(this, sizeof(OutputSourceState), alignof(OutputSourceState));
+    original->results.fetch_sub(1, std::memory_order_release);
+    release(original);
+  }
+  InvocationState *producer = nullptr;
+  const compute::WriteLease *writer = nullptr;
+  const compute::ReadLease *ready = nullptr;
+  compute::ConstTensorView tensor;
+  compute::detail::QueueRef queue;
+  // This real resource/allocator owner outlives both the original Completion
+  // and its leased backing, including the final metadata deallocation above.
+  compute::StorageOwner storage_owner;
+  compute::Completion completion;
+  std::mutex observation;
+  // One-shot borrowed identity only; never a back-reference owning consumer.
+  InvocationState *consumer = nullptr;
+  ValueId input{};
+  bool preparing = false, submitted = false;
+};
+namespace {
+Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
+  const auto &plan = *state.plan;
+  if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1)
+    return std::unexpected(Status::Unimplemented("output relay requires one original shared segment"));
+  const auto lane = plan.segments.front().lane;
+  if (!shared_lane(plan, lane) || plan.segments.front().blocks_host ||
+      lane.ordinal() >= state.queues.size() || !state.queues[lane.ordinal()].valid())
+    return std::unexpected(Status::Unimplemented("output relay requires one nonblocking prepared Queue"));
+  HYLE_ASSIGN_OR_RETURN(auto endpoint,
+      compute::detail::QueueSequence::completion_endpoint(state.queues[lane.ordinal()]));
+  if (!endpoint.valid())
+    return std::unexpected(Status::Unimplemented("output relay requires an actual asynchronous endpoint"));
+  return state.queues[lane.ordinal()];
+}
+Result<compute::CompletionPoll> poll_output(void *opaque) noexcept {
+  auto &source = *static_cast<OutputSourceState *>(opaque);
+  std::lock_guard guard(source.observation);
+  return source.completion.poll();
+}
+Status wait_output(void *opaque) noexcept {
+  auto &source = *static_cast<OutputSourceState *>(opaque);
+  std::lock_guard guard(source.observation);
+  return source.completion.wait();
+}
+const InputSourceVTable output_source_table{
+    [](void *opaque) noexcept { static_cast<OutputSourceState *>(opaque)->incref(); },
+    [](void *opaque) noexcept { static_cast<OutputSourceState *>(opaque)->decref(); },
+    [](void *opaque, const compute::detail::QueueRef *queue) noexcept
+        -> Result<InputDependencyRoute> {
+      const auto &source = *static_cast<OutputSourceState *>(opaque);
+      if (!source.preparing)
+        return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only Commands preparation"));
+      if (!queue || !source.queue.same_owner(*queue))
+        return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
+      return InputDependencyRoute::kDeviceWait;
+    },
+    &poll_output, &wait_output,
+    [](void *opaque, compute::detail::QueueSequence &sequence) noexcept {
+      auto &source = *static_cast<OutputSourceState *>(opaque);
+      if (!source.queue.same_owner(sequence))
+        return compute::detail::EnqueueResult::rejected(
+            Status::InvalidArgument("output relay sequence differs from its producer Queue"));
+      std::lock_guard guard(source.observation);
+      auto ready = source.completion.poll();
+      if (!ready) return compute::detail::EnqueueResult::rejected(ready.error());
+      if (*ready == compute::CompletionPoll::kComplete)
+        return compute::detail::EnqueueResult::no_op();
+      auto dependency = compute::detail::RetainedCompletion::native_dependency(source.completion);
+      if (!dependency) return compute::detail::EnqueueResult::rejected(dependency.error());
+      // Even on the same Queue this records an actual accepted dependency.
+      // InputSource then reconciles the full original producer verdict before
+      // publishing consumer success; the event is never that verdict itself.
+      return sequence.enqueue_resolved_wait(*dependency);
+    },
+    &wait_output};
+Result<InputSource> output_input_source(OutputSourceState *state) noexcept {
+  if (!state) return std::unexpected(Status::FailedPrecondition("output source is empty"));
+  return InputSource::acquire(state, &output_source_table, state);
+}
+Status check_output_consumer(Invocation &invocation, ValueId input,
+    OutputSourceState *source, std::span<const QueueBinding> queues,
+    bool require_binding) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!source || state == source->producer)
+    return Status::InvalidArgument("output relay source is empty or refers to its own consumer");
+  const auto &plan = *state->plan;
+  if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+      !shared_lane(plan, plan.segments.front().lane) || plan.segments.front().blocks_host)
+    return Status::Unimplemented("output relay consumer requires one nonblocking shared segment");
+  for (const auto &step : plan.steps) {
+    if (step.region.valid() && (step.region.prepares_bindings() || step.region.seals_bindings() ||
+        !RegionAccess::borrows_tensor_views_only(step.region)))
+      return Status::Unimplemented("pending output relay does not qualify native binding callbacks");
+    const auto runtime = step.runtime_properties();
+    if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
+        runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
+      return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
+  }
+  if (!queues.empty() && (queues.size() != 1 || !queues.front().queue ||
+      queues.front().lane != plan.segments.front().lane ||
+      !source->queue.same_owner(*queues.front().queue)))
+    return Status::InvalidArgument("output relay requires the producer's actual Queue and consumer lane");
+  if (source->consumer && (source->consumer != state || source->input != input))
+    return Status::FailedPrecondition("output source already names a different original consumer input");
+  if (require_binding) {
+    HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(source));
+    if (!input_source_matches(*state, input, owner))
+      return Status::FailedPrecondition("output relay input owner was reset or replaced");
+    HYLE_ASSIGN_OR_RETURN(auto bound, RegionAccess::has_input_binding(state, input, source->tensor));
+    if (!bound) return Status::FailedPrecondition("output relay input storage was reset or replaced");
+    const auto *binding = find_binding(state, input);
+    if (!binding || binding->borrowed || binding->exclusive || binding->read.valid() ||
+        binding->permissionless || binding->description != source->tensor.description())
+      return Status::FailedPrecondition("output relay lost its original pending read requirement");
+  }
+  return Status::Ok();
+}
+} // namespace
+OutputSource::OutputSource(OutputSource &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+OutputSource &OutputSource::operator=(OutputSource &&other) noexcept {
+  if (this != &other) {
+    if (state_) state_->decref();
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+OutputSource::~OutputSource() { if (state_) state_->decref(); }
+Result<OutputSource> OutputSource::create(Invocation &invocation, ValueId output,
+    compute::Completion &&submission, const compute::StorageOwner &storage,
+    const compute::LeasePool &pool) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  if (!state || !storage || !state->observation.owns(submission))
+    return std::unexpected(Status::InvalidArgument("output source requires its exact submitted Invocation proxy and storage owner"));
+  const auto phase = state->phase.load(std::memory_order_acquire);
+  if (phase != InvocationPhase::kRunning &&
+      !(phase == InvocationPhase::kIdle && state->outputs_ready.load(std::memory_order_acquire)))
+    return std::unexpected(Status::FailedPrecondition("output source requires an accepted successful-or-pending producer"));
+  const auto &plan = *state->plan;
+  const auto published = std::find(plan.output_ids.begin(), plan.output_ids.end(), output);
+  if (published == plan.output_ids.end())
+    return std::unexpected(Status::InvalidArgument("output source value is not an original published output"));
+  auto *binding = find_binding(state, output);
+  if (!binding || binding->input || !binding->exclusive || !binding->write.valid() ||
+      binding->scope != BindingScope::kCaller)
+    return std::unexpected(Status::Unimplemented("output relay requires its original caller-owned output writer"));
+  const auto &description = binding->description;
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  if (description.data_type() != compute::DataType::kInt32 ||
+      !description.is_plain() || !description.is_dense() || !bytes)
+    return std::unexpected(Status::Unimplemented("output relay requires a nonempty dense I32 output"));
+  const auto instance = plan.external_instances[output.ordinal()];
+  if (instance >= state->writable.size() || !state->writable[instance].valid())
+    return std::unexpected(Status::Unimplemented("output relay requires fixed writable output storage"));
+  const auto domain = plan.instance_storage[instance];
+  if (domain >= plan.storage_domains.size() || !plan.storage_domains[domain].owner ||
+      plan.storage_domains[domain].owner.ref() != storage.ref() ||
+      plan.storage_domains[domain].owner.context_identity() != storage.context_identity())
+    return std::unexpected(Status::FailedPrecondition(
+        "output relay requires the original Plan to retain its actual storage owner"));
+  HYLE_ASSIGN_OR_RETURN(auto writer_view, compute::detail::LeaseAccess::ordered_view(binding->write));
+  const auto tensor = state->writable[instance].as_const();
+  const auto view = tensor.storage();
+  if (tensor.description() != description || view.resource() != storage.ref() ||
+      view.resource() != writer_view.resource() || view.native_handle() != writer_view.native_handle() ||
+      view.offset() != writer_view.offset() || view.size() != bytes || writer_view.size() != bytes)
+    return std::unexpected(Status::InvalidArgument("output relay writer/storage/extent differs from its actual output"));
+  HYLE_ASSIGN_OR_RETURN(auto allocator, compute::detail::LeaseAccess::freeze_owner_allocator(pool, binding->write));
+  const auto system = mem::system_allocator();
+  if (!storage.owns_allocator(allocator) && !(allocator.alloc_fn() == system.alloc_fn() &&
+      allocator.free_fn() == system.free_fn() && allocator.realloc_fn() == system.realloc_fn() &&
+      allocator.state() == system.state()))
+    return std::unexpected(Status::InvalidArgument("output storage owner cannot retain the original pool allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state));
+  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source));
+  if (context->identity_key() != storage.context_identity())
+    return std::unexpected(Status::InvalidArgument("output storage owner belongs to another Context"));
+  // Check the exact known retained/native bridge before consuming the proxy.
+  HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
+  (void)dependency;
+  auto *memory = storage.allocator().allocate(sizeof(OutputSourceState), alignof(OutputSourceState));
+  if (!memory) return std::unexpected(Status::ResourceExhausted("output source cold owner metadata"));
+  auto *retention_memory = storage.allocator().allocate(sizeof(OutputStorageRetention), alignof(OutputStorageRetention));
+  if (!retention_memory) {
+    storage.allocator().deallocate(memory, sizeof(OutputSourceState), alignof(OutputSourceState));
+    return std::unexpected(Status::ResourceExhausted("output source storage retirement metadata"));
+  }
+  auto *retained_storage = ::new (retention_memory) OutputStorageRetention(storage);
+  const auto attached = retained_storage->retirement.attach(submission, retained_storage,
+      &OutputStorageRetention::release);
+  if (!attached.ok()) {
+    OutputStorageRetention::release(retained_storage);
+    storage.allocator().deallocate(memory, sizeof(OutputSourceState), alignof(OutputSourceState));
+    return std::unexpected(attached);
+  }
+  auto *owner = ::new (memory) OutputSourceState(state, &binding->write, &binding->read, tensor,
+      std::move(queue), storage, std::move(submission));
+  return OutputSource(owner);
+}
+Result<compute::CompletionPoll> OutputSource::poll() noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("output source is empty"));
+  return poll_output(state_);
+}
+Status OutputSource::wait() noexcept {
+  if (!state_) return Status::FailedPrecondition("output source is empty");
+  return wait_output(state_);
+}
+Status bind_output(Invocation &invocation, ValueId input, const OutputSource &source) noexcept {
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, {}, false));
+  if (source.state_->consumer)
+    return Status::FailedPrecondition("output source has already bound its one original consumer");
+  auto *state = InvocationAccess::state(invocation);
+  auto *binding = find_binding(state, input);
+  if (!binding || !binding->input)
+    return Status::InvalidArgument("output relay requires a prepared original external input resource");
+  if (source.state_->submitted)
+    return Status::FailedPrecondition("output source has already submitted its one original consumer");
+  HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(source.state_));
+  HYLE_RETURN_IF_ERROR(InputAccess::bind(invocation, input, source.state_->tensor, std::move(owner)));
+  // Unlike an immutable ready weight, these bytes require the exact ordered
+  // read admission below. Ordinary Invocation::submit sees a missing read and
+  // rejects before native acceptance instead of treating this as a raw view.
+  binding = find_binding(state, input);
+  binding->borrowed = false; binding->permissionless = false;
+  binding->exclusive = false; binding->description = source.state_->tensor.description();
+  source.state_->consumer = state;
+  source.state_->input = input;
+  return Status::Ok();
+}
+Status prepare_output(Invocation &invocation, ValueId input, const OutputSource &source,
+    std::span<const QueueBinding> queues) noexcept {
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, queues, true));
+  if (queues.size() != 1) return Status::InvalidArgument("output relay requires one actual Queue");
+  if (source.state_->submitted) return Status::FailedPrecondition("output source consumer was already submitted");
+  source.state_->preparing = true;
+  struct EndPreparation final {
+    OutputSourceState *source;
+    ~EndPreparation() { source->preparing = false; }
+  } end{source.state_};
+  return invocation.prepare_replay(queues,
+      {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
+}
+Result<compute::Completion> submit_output(Invocation &invocation, ValueId input,
+    const OutputSource &source, std::span<const QueueBinding> queues) noexcept {
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, queues, true));
+  if (queues.size() != 1 || invocation.replay_route() != ReplayRoute::kCommands)
+    return std::unexpected(Status::FailedPrecondition("output relay needs its prepared Commands route"));
+  if (source.state_->submitted)
+    return std::unexpected(Status::FailedPrecondition("output source consumer was already submitted"));
+  const OrderedGraphSubmission ordered{
+      [](void *opaque, ExecutionLaneId, compute::detail::QueueSequence &sequence,
+          compute::LeaseUseBatch &uses) noexcept -> Status {
+        auto &owner = *static_cast<OutputSourceState *>(opaque);
+        if (!owner.queue.same_owner(sequence))
+          return Status::InvalidArgument("ordered output reader has another actual Queue");
+        // result() may have published this very writer after producer success.
+        // That is an original ready permission, not a synthesized conversion.
+        if (owner.writer->valid())
+          return compute::detail::LeaseAccess::ordered_read_unique(uses, *owner.writer);
+        return compute::detail::LeaseAccess::read_unique(uses, *owner.ready);
+      },
+      [](void *, compute::Completion &&completion) noexcept { return std::move(completion); },
+      source.state_,
+      [](void *opaque, ValueId value) noexcept {
+        return static_cast<OutputSourceState *>(opaque)->input == value;
+      }};
+  auto result = RegionAccess::submit(invocation, queues, ordered);
+  if (result) source.state_->submitted = true;
+  return result;
 }
 } // namespace detail
 

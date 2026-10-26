@@ -250,6 +250,10 @@ Result<RetainedCompletion> RetainedCompletion::create(mem::AllocatorRef allocato
   return RetainedCompletion(std::construct_at(static_cast<RetainedCompletionState *>(storage), allocator));
 }
 bool RetainedCompletion::available() const noexcept { return state_ && state_->is_unique(); }
+bool RetainedCompletion::owns(const Completion &completion) const noexcept {
+  const auto proxy = CompletionAccess::dependency(completion);
+  return state_ && proxy.vtable == &proxy_vtable && proxy.state == state_;
+}
 CompletionLifetime RetainedCompletion::reserve_retirement() noexcept {
   HYLE_FATAL_ASSERT(available());
   {

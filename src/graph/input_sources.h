@@ -9,6 +9,7 @@ namespace hyle::graph::detail {
 struct InvocationState;
 struct InputSourcesState;
 struct InputSourceBinding;
+class InputSource;
 
 // The original readonly binding checks and commit, shared by ordinary single
 // binds and the atomic immutable-input bundle. Candidate ranges only override
@@ -53,6 +54,8 @@ HYLE_GRAPH_API void note_borrowed_input_source(InvocationState &, ValueId) noexc
 HYLE_GRAPH_API void reset_input_source_preparation(InvocationState &) noexcept;
 HYLE_GRAPH_API void reset_input_source_bindings(InvocationState &) noexcept;
 HYLE_GRAPH_API bool has_input_source(const InvocationState &, ValueId) noexcept;
+HYLE_GRAPH_API bool input_source_matches(const InvocationState &, ValueId,
+    const InputSource &) noexcept;
 HYLE_GRAPH_API Status reconcile_input_sources(
     InvocationState &, const Status &graph_terminal) noexcept;
 } // namespace hyle::graph::detail

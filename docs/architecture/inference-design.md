@@ -105,10 +105,11 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 - Graph的`InputSource`可保留尚未完成的不可变生产者，按原Queue选择device／host wait，
   在消费者真实退休后补核生产者完整Status。`OrderedGraphSubmission`及typed pending frame
   已用于原批次搬运组合，Compute已有有序读取writer的内部权限原语。
-- `Invocation::result/output`只导出成功终结的输出，尚无可交给引擎的在途token出口。
-  不把裸device地址或pending writer包装成ready `ReadLease`。最小纵切片先限定原两个Invocation、
-  一个真实共享Queue与固定caller-owned I32输出，保留原生产者、存储、提交代际和终结观察；
-  自身依赖、未提交生产者及未经证明的拓扑拒绝接纳，不增加执行器。
+- `Invocation::result/output`继续只导出成功终结的输出。同build的窄`detail::OutputSource`
+  已接一个真实共享Queue、固定caller-owned I32输出和原两个Invocation；不公开pending tensor或伪造ready租约。
+  创建时核对原提交proxy身份、原writer／pool、完整范围及Plan保留的真实`StorageOwner`，成功才消费proxy。
+  原生退休另保独立资源owner，source与consumer句柄提前释放不缩短真实工作寿命。
+  自身依赖、未提交生产者及未经证明的拓扑拒绝，不增加执行器。
 - 一次A→B依赖链与持续有限槽轮换分别实现。`GraphOutput`保留原Invocation并阻止重绑；
   B仍借读A时，即使A已完成，也不能重用A的槽。持续轮换还需分清输出存储／本次终结owner
   与可重用载体的寿命，按真实读者退休归还权限；一次链通过不表示双槽重叠已完成。
@@ -127,8 +128,13 @@ EOS、停止或背压使无效后继只退休、不发布token或推进RNG，提
 候选长度，不能按全接受页界执行。`slots::SlotBindings`及Graph append目前仍从成功退休的输出
 取得ready状态，其pending适配要另行实现。
 
-实施先证明一次设备token依赖链及前驱失败传播，再证明有界槽连续轮换，最后接普通请求的
-有序发布、额度和停止，MTP另核接受／修复。以上是待实现设计，尚无重叠执行或提速结论。
+一次设备token依赖链及前驱checked错误传播已取得[有限CUDA检查](../evidence/correctness/inference-graph-output-source-2026-10-27.json)：
+host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正确结果；前驱完整错误阻断后继发布，真实权限随后退休。
+消费者只走Commands与已有metadata-only准备合同，普通submit不能绕过原有序读权限，capture准备也拒绝；
+成功返回Completion后才消费一次提交资格，接纳前拒绝仍可修正后重试。原producer若已将writer成功发布为read，
+提交使用该真实只读权限，不制造第二份状态。ready分支未在本批单独运行。
+该适配保留producer槽，尚未接引擎。接下来实现有界槽连续轮换，再接普通请求有序发布、额度与停止，
+MTP另核接受／修复；没有持续重叠执行或提速结论。
 
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
