@@ -14,6 +14,7 @@
 #include "hyle/graph/result.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/vulkan.h"
+#include "../../src/compute_route_vulkan/vulkan_copy_internal.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -138,22 +139,116 @@ TEST(VulkanSlotStore, Float32DenseGeneratedRowsKeepExactOwnersAcrossReset) {
 TEST(VulkanSlotStore, Bfloat16PaddedGeneratedRowsDoNotReadOrWriteGaps) {
   exercise(c::DataType::kBFloat16, 16, 64);
 }
-TEST(VulkanSlotStore, RejectsTwoByteItemsBeforeNativeSubmission) {
+void exercise_halfword_store(std::size_t elements) {
   auto context = take(v::Context::create(), "Vulkan Context");
   auto device = take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "device");
+  auto staging = take(v::MemoryResource::create(context, v::MemoryKind::kStaging), "staging");
+  const auto bytes = elements * 2, stride = bytes + 4;
   const auto item = take(c::TensorDesc::dense(c::DataType::kBFloat16,
-      std::array<std::int64_t, 1>{1}), "two-byte item");
-  const auto schema = take(s::Schema::create(item, 2, 4), "schema");
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(elements)}), "halfword item");
+  const auto schema = take(s::Schema::create(item, 5, stride), "schema");
+  std::vector<std::byte> original(5 * stride, std::byte{0xa5});
+  auto backing = take(m::Buffer::create(device.ref(), original.size(), 64), "pool backing");
+  ASSERT_TRUE(backing.view().write(original).ok());
+  const m::ConstBufferView diagnostic = backing.view();
+  auto pool = take(c::LeasePool::adopt(std::move(backing), {.max_blocks = 10}), "pool");
+  const auto layout = take(c::LeaseSlotLayout::create(pool, item, 5, stride), "layout");
+  std::array<c::WriteLease, 5> blocks, gaps;
+  for (std::size_t slot = 0; slot < blocks.size(); ++slot) {
+    blocks[slot] = take(pool.allocate(bytes, 2), "exact item");
+    ASSERT_EQ(take(layout.locate(blocks[slot]), "slot address").index, slot);
+    gaps[slot] = take(pool.allocate(4, 2), "unowned row padding");
+  }
+  const auto untouched = take(blocks[2].publish(), "unused initialized item");
+  std::array destinations{std::move(blocks[4]), std::move(blocks[1])};
   auto builder = take(g::GraphBuilder::create(), "builder");
-  const auto rows = take(builder.input(take(c::TensorDesc::dense(c::DataType::kBFloat16,
-      std::array<std::int64_t, 2>{1, 1}), "rows")), "rows input");
+  const auto row_desc = take(c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 2>{2, static_cast<std::int64_t>(elements)}), "rows");
+  const auto rows = take(builder.input(row_desc), "rows input");
   const auto ids = take(builder.input(take(c::TensorDesc::dense(c::DataType::kInt32,
-      std::array<std::int64_t, 1>{1}), "IDs")), "IDs input");
-  (void)take(builder.add_node(c::Operation::custom(s::Store{schema}), std::array{rows,ids}), "Store");
+      std::array<std::int64_t, 1>{2}), "IDs")), "IDs input");
+  const auto store = take(builder.add_node(c::Operation::custom(s::Store{schema}), std::array{rows,ids}), "Store");
   const auto graph = take(std::move(builder).finish(), "Graph");
   const auto source = take(g::vulkan::execution_source(context), "source");
-  const std::array storage{g::StorageDomain{device.ref()}};
+  const std::array storage{g::StorageDomain{device.ref()}, g::StorageDomain{staging.ref()}};
   const std::array targets{g::ExecutionTarget{source, g::StorageDomainId{0}}};
-  EXPECT_FALSE(g::compile(graph, {.storage_domains=storage,.targets=targets}));
+  auto compiled = take(g::compile(graph, {.storage_domains=storage,.targets=targets}), "halfword compile");
+  auto invocation = take(compiled.executable.create_invocation(), "Invocation");
+  auto input = take(m::Buffer::create(device.ref(), bytes * 2, 2), "source rows");
+  // Includes raw BF16 NaN payloads and signed zero; copying must not convert.
+  std::vector<std::byte> payload(bytes * 2);
+  for (std::size_t byte = 0; byte < payload.size(); ++byte)
+    payload[byte] = static_cast<std::byte>((byte * 79 + 0x81) & 255u);
+  payload[0] = std::byte{0x81}; payload[1] = std::byte{0x7f};
+  ASSERT_TRUE(input.view().write(payload).ok());
+  const auto tensor = take(c::ConstTensorView::create(row_desc, input.view()), "source tensor");
+  ASSERT_TRUE(invocation.bind(rows, tensor).ok());
+  auto status = s::prepare(invocation, {}, {.host_workspace=staging.ref()});
+  ASSERT_TRUE(status.ok()) << status.message();
+  auto transaction = take(s::SlotBindings::create(layout, {}, destinations), "writers");
+  status = s::bind(invocation, graph, store, std::move(transaction));
+  ASSERT_TRUE(status.ok()) << status.message();
+  status = invocation.prepare_replay({}); ASSERT_TRUE(status.ok()) << status.message();
+  auto done = invocation.submit(); ASSERT_TRUE(done) << done.error().message();
+  EXPECT_FALSE(s::take(invocation, store));
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  auto returned = s::take(invocation, store); ASSERT_TRUE(returned) << returned.error().message();
+  auto expected = original;
+  std::copy_n(payload.begin(), bytes, expected.begin()+4*stride);
+  std::copy_n(payload.begin()+bytes, bytes, expected.begin()+stride);
+  std::vector<std::byte> observed(original.size());
+  ASSERT_TRUE(diagnostic.read(observed).ok()); EXPECT_EQ(observed, expected);
+  // Replay retains the original range owners and re-records updated controls;
+  // swapping writer order must not reuse the first episode's descriptor views.
+  transaction = std::move(*returned);
+  std::array reversed{std::move(transaction.destinations()[1]), std::move(transaction.destinations()[0])};
+  transaction.clear(); ASSERT_TRUE(transaction.refill({}, reversed).ok());
+  status = s::bind(invocation, graph, store, std::move(transaction));
+  ASSERT_TRUE(status.ok()) << status.message();
+  status = invocation.prepare_replay({}); ASSERT_TRUE(status.ok()) << status.message();
+  done = invocation.submit(); ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok()); *done = {};
+  returned = s::take(invocation, store); ASSERT_TRUE(returned) << returned.error().message();
+  std::copy_n(payload.begin(), bytes, expected.begin()+stride);
+  std::copy_n(payload.begin()+bytes, bytes, expected.begin()+4*stride);
+  ASSERT_TRUE(diagnostic.read(observed).ok()); EXPECT_EQ(observed, expected);
+  ASSERT_TRUE(untouched.valid());
+  status = s::bind(invocation, graph, store, std::move(*returned));
+  ASSERT_TRUE(status.ok()) << status.message();
+  status = invocation.prepare_replay({}); ASSERT_TRUE(status.ok()) << status.message();
+  ASSERT_TRUE(invocation.reset().ok());
+  EXPECT_FALSE(invocation.submit()); EXPECT_FALSE(invocation.prepare_replay({}).ok());
+  returned = s::take(invocation, store); ASSERT_TRUE(returned) << returned.error().message();
+  ASSERT_TRUE(diagnostic.read(observed).ok()); EXPECT_EQ(observed, expected);
+}
+TEST(VulkanSlotStore, TwoByteItemsUseExactStorageCopyAndKeepPadding) {
+  exercise_halfword_store(1);
+}
+TEST(VulkanSlotStore, SixByteItemsUseExactStorageCopyAndKeepPadding) {
+  exercise_halfword_store(3);
+}
+TEST(VulkanSlotStore, HalfwordCompletionOutlivesItsRecordingWrapper) {
+  namespace vd = v::detail;
+  auto context = take(v::Context::create(), "Vulkan Context");
+  auto device = take(v::MemoryResource::create(context, v::MemoryKind::kDevice), "device");
+  auto input = take(m::Buffer::create(device.ref(), 8, 4), "source");
+  auto output = take(m::Buffer::create(device.ref(), 8, 4), "destination");
+  const std::array payload{std::byte{0x80},std::byte{0x7f},std::byte{0x31},std::byte{0x42},
+      std::byte{0x53},std::byte{0x64},std::byte{0x75},std::byte{0x86}};
+  ASSERT_TRUE(input.view().write(payload).ok());
+  ASSERT_TRUE(output.view().fill(std::byte{0xa5}).ok());
+  auto recording = take(vd::prepare_copy_recording_runtime(vd::Access::runtime(context), 1,
+      m::system_allocator(), 2, vd::CopyRecordingMode::kOnce, vd::CopyGranularity::kHalfword), "halfword recording");
+  const std::array<c::detail::CopyBackendRange, 1> copies{{{
+      take(output.view().subview(2, 2), "exact destination"),
+      take(input.view().subview(0, 2), "exact source")}}};
+  const auto status = vd::bind_copy_recording(*recording, copies);
+  ASSERT_TRUE(status.ok()) << status.message();
+  auto done = take(vd::submit_copy_recording(*recording), "actual copy submission");
+  recording.reset();
+  ASSERT_TRUE(done.wait().ok()); done = {};
+  std::array<std::byte, 8> observed{}, expected;
+  expected.fill(std::byte{0xa5}); expected[2]=payload[0]; expected[3]=payload[1];
+  ASSERT_TRUE(output.view().read(observed).ok()); EXPECT_EQ(observed, expected);
 }
 } // namespace

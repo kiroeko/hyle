@@ -56,10 +56,11 @@ bool same(mem::ConstBufferView a, mem::ConstBufferView b) noexcept {
   return a.resource() == b.resource() && a.native_handle() == b.native_handle() &&
       a.offset() == b.offset() && a.size() == b.size();
 }
-Status four_bytes(const Artifact &a, mem::ConstBufferView view) noexcept {
+Status copy_alignment(const Artifact &a, mem::ConstBufferView view) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto span, vn::MemoryAccess::copy_span(a.runtime, view));
-  return span.offset % 4 || view.size() % 4
-      ? Status::Unimplemented("Vulkan slot Store needs exact four-byte copy ranges") : Status::Ok();
+  const auto alignment = a.description.item_bytes % 4 || a.description.store.schema.stride_bytes() % 4 ? 2u : 4u;
+  return span.offset % alignment || view.size() % alignment
+      ? Status::Unimplemented("Vulkan slot Store violates its exact copy alignment") : Status::Ok();
 }
 Result<Description> describe(const RegionCompileRequest &r) noexcept {
   if (!r.graph || r.graph->dimension_count() || r.route != kNativeSlotStoreRoute ||
@@ -101,8 +102,8 @@ Result<Description> describe(const RegionCompileRequest &r) noexcept {
   if (d.rows_description.dimensions()[0] <= 0)
     return std::unexpected(Status::Unimplemented("Vulkan Store needs nonempty original rows"));
   d.item_bytes = bytes / static_cast<std::size_t>(d.rows_description.dimensions()[0]);
-  if (d.item_bytes % 4)
-    return std::unexpected(Status::Unimplemented("Vulkan Store item bytes must be a multiple of four"));
+  if (d.item_bytes % 2 || d.store.schema.stride_bytes() % 2)
+    return std::unexpected(Status::Unimplemented("Vulkan Store item and stride bytes must be a multiple of two"));
   return d;
 }
 Status validate(const Artifact &a, Slot &s, c::ConstTensorView rows,
@@ -117,13 +118,13 @@ Status validate(const Artifact &a, Slot &s, c::ConstTensorView rows,
     return Status::FailedPrecondition("Vulkan Store original writers differ");
   HYLE_ASSIGN_OR_RETURN(auto bytes, a.description.rows_description.required_bytes());
   HYLE_ASSIGN_OR_RETURN(auto input, rows.storage().subview(0, bytes));
-  HYLE_RETURN_IF_ERROR(four_bytes(a, input));
+  HYLE_RETURN_IF_ERROR(copy_alignment(a, input));
   HYLE_ASSIGN_OR_RETURN(auto source, vn::MemoryAccess::copy_span(a.runtime, input));
   for (std::size_t i = 0; i < s.copies.size(); ++i) {
     HYLE_ASSIGN_OR_RETURN(auto target, transaction->destinations()[i].view());
     if (target.size() != a.description.item_bytes)
       return Status::InvalidArgument("Vulkan Store writer is not its original whole item");
-    HYLE_RETURN_IF_ERROR(four_bytes(a, target));
+    HYLE_RETURN_IF_ERROR(copy_alignment(a, target));
     HYLE_ASSIGN_OR_RETURN(auto destination, vn::MemoryAccess::copy_span(a.runtime, target));
     if (source.physical.address_space == destination.physical.address_space &&
         source.physical.backing == destination.physical.backing &&
@@ -191,7 +192,9 @@ const ProviderRegionPreparedVTable table{
       catch (...) { return Status::ResourceExhausted("Vulkan Store exact copy metadata"); }
       HYLE_ASSIGN_OR_RETURN(auto bytes, a.description.rows_description.required_bytes());
       HYLE_ASSIGN_OR_RETURN(s->recording, vn::prepare_copy_recording_runtime(a.runtime,
-          static_cast<std::uint32_t>(s->copies.size()), allocator, bytes, vn::CopyRecordingMode::kReplayable));
+          static_cast<std::uint32_t>(s->copies.size()), allocator, bytes, vn::CopyRecordingMode::kReplayable,
+          a.description.item_bytes % 4 || a.description.store.schema.stride_bytes() % 4
+              ? vn::CopyGranularity::kHalfword : vn::CopyGranularity::kWord));
       return Status::Ok();
     },
     .destroy_invocation = [](void *s, mem::AllocatorRef allocator) noexcept { allocator.destroy(static_cast<Slot *>(s)); },

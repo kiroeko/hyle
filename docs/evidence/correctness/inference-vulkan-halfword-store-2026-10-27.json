@@ -1,0 +1,686 @@
+{
+  "schema": 1,
+  "title": "Vulkan exact halfword native Store",
+  "date": "2026-10-27",
+  "status": "IMPLEMENTED_FINITE_CHECKS_PASS",
+  "implementation": "Existing Vulkan CopyRecording/Run gains an opt-in exact two-byte storage-copy mode. Original four-byte transfer path and five-argument preparation symbol remain. Complete interval, device-usage, descriptor-origin/range and dispatch checks precede data command recording. The existing Runtime FIFO, Completion and retirement controller are reused; Run.recording_owner retains the shader pipeline independently of the wrapper.",
+  "current_sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_copy_internal.h",
+      "bytes": 3112,
+      "sha256": "b2f3451cd0228ee6bfe5f8ba46621992e958d1e087357dc395439c3c222dc57f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_route_vulkan\\vulkan_copy_recording.cc",
+      "bytes": 23935,
+      "sha256": "28117b78c6db67879fbd94e63ce06bbbb82a5be29b2dd387bd77f3baab006054"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_route_vulkan\\native_slot_store.cc",
+      "bytes": 17522,
+      "sha256": "c420b40948d41f124c1df95f0144d35d4f2085816982d44735298e51bacbc6f9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+      "bytes": 15343,
+      "sha256": "48ecd783af3631d87b89b77a20923a3f857efce89490fcb2c11e9a10bf72ad2c"
+    }
+  ],
+  "changes": [
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+      "summary": "Private opt-in halfword granularity overload; ordinary word preparation unchanged."
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "summary": "Original linked pure16 copy shader, cold descriptor sets, exact selected native spans, original Run and independent pipeline retention."
+    },
+    {
+      "path": "src/graph_route_vulkan/native_slot_store.cc",
+      "summary": "Even-byte item/stride Store selects the appropriate original copy mode; no padding enlargement."
+    },
+    {
+      "path": "tests/graph_route_vulkan/slot_store_test.cc",
+      "summary": "Real 2/6-byte Store with 2mod4 origins, gaps, writer reorder, Completion/reset and wrapper-drop lifetime case."
+    }
+  ],
+  "measured": {
+    "first_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\bin\\halfword-store.exe",
+      "bytes": 68448768,
+      "sha256": "c047a09a6f39484f7a7227641ee7ef5551d469576af579fadd2ba9f44f01722c"
+    },
+    "first_compile_processes": [
+      {
+        "exit": 0,
+        "pid": 13284,
+        "seconds": 1.7871276999940164
+      },
+      {
+        "exit": 0,
+        "pid": 39416,
+        "seconds": 1.9672969999955967
+      },
+      {
+        "exit": 0,
+        "pid": 48564,
+        "seconds": 2.802611799968872
+      }
+    ],
+    "first_link": {
+      "exit": 0,
+      "pid": 55576,
+      "seconds": 1.3773324000067078
+    },
+    "first_results": {
+      "status": "FOUR_STORE_CASES_PASS",
+      "process": {
+        "exit": 0,
+        "pid": 50764,
+        "seconds": 0.6962870999705046
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\ready.json",
+        "bytes": 5062,
+        "sha256": "ad05988885c26765614c8adbfee10f413978da331393a7cd4938a6b5eb4b1c33"
+      },
+      "results": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\results.xml",
+        "bytes": 1431,
+        "sha256": "f43260aed75d4d213d3d55f38d63d0f19e89aed23eda308208c90461a98d8728"
+      },
+      "cases": [
+        {
+          "name": "Float32DenseGeneratedRowsKeepExactOwnersAcrossReset",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+          "line": "135",
+          "status": "run",
+          "result": "completed",
+          "time": "0.227",
+          "timestamp": "2026-10-27T05:01:19.819",
+          "classname": "VulkanSlotStore"
+        },
+        {
+          "name": "Bfloat16PaddedGeneratedRowsDoNotReadOrWriteGaps",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+          "line": "138",
+          "status": "run",
+          "result": "completed",
+          "time": "0.081",
+          "timestamp": "2026-10-27T05:01:20.047",
+          "classname": "VulkanSlotStore"
+        },
+        {
+          "name": "TwoByteItemsUseExactStorageCopyAndKeepPadding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+          "line": "223",
+          "status": "run",
+          "result": "completed",
+          "time": "0.071",
+          "timestamp": "2026-10-27T05:01:20.129",
+          "classname": "VulkanSlotStore"
+        },
+        {
+          "name": "SixByteItemsUseExactStorageCopyAndKeepPadding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+          "line": "226",
+          "status": "run",
+          "result": "completed",
+          "time": "0.062",
+          "timestamp": "2026-10-27T05:01:20.200",
+          "classname": "VulkanSlotStore"
+        }
+      ],
+      "scope": "Exact device-native two/six-byte Store plus original F32/BF16 aligned generated Gather/Store. Original FIFO, Completion, take/reset and full pool/padding bytes checked. No two-byte Gather or engine/performance claim."
+    },
+    "final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\retention\\bin\\halfword-retention.exe",
+      "bytes": 68455424,
+      "sha256": "08acb45be669275cefe80d12533af6f98f78245b8c74e419386a9f724476af34"
+    },
+    "final_compile_processes": [
+      {
+        "exit": 0,
+        "pid": 49812,
+        "seconds": 1.8090492999763228
+      },
+      {
+        "exit": 0,
+        "pid": 36892,
+        "seconds": 2.956824599998072
+      }
+    ],
+    "final_link": {
+      "exit": 0,
+      "pid": 48984,
+      "seconds": 1.3756611000280827
+    },
+    "final_results": {
+      "status": "COMPLETION_LIFETIME_CASE_PASS",
+      "process": {
+        "exit": 0,
+        "pid": 54252,
+        "seconds": 0.4361680999863893
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\retention\\ready.json",
+        "bytes": 4106,
+        "sha256": "dbdf473775fa9612ac7a3401005fa72fef5455e9bc9950d8edcef45cc55c3922"
+      },
+      "results": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\retention\\results.xml",
+        "bytes": 613,
+        "sha256": "49efbee6ca3d6c52abd535797bb9ba9f9ccf9f9cda7655e77e599d6c3850cc5a"
+      },
+      "case": {
+        "name": "HalfwordCompletionOutlivesItsRecordingWrapper",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_vulkan\\slot_store_test.cc",
+        "line": "230",
+        "status": "run",
+        "result": "completed",
+        "time": "0.189",
+        "timestamp": "2026-10-27T05:03:56.112",
+        "classname": "VulkanSlotStore"
+      },
+      "previous_four_cases": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-vulkan-halfword-store-20261027\\summary.json",
+        "bytes": 2303,
+        "sha256": "d06bf4c407f68e08516a65e32e7fbc0111ab97358c137a9fb11fc095bf6276cc"
+      },
+      "scope": "Original four cases were not repeated. This case drops CopyRecording after actual native submission, waits on only the original Completion, and checks exact destination bytes/padding."
+    },
+    "distinct_CXX_TUs": 3,
+    "compiler_processes": 5,
+    "links": 2,
+    "actual_test_processes": 2,
+    "total_GTests": 5,
+    "failed_build_or_run_attempts": 0,
+    "SDK_builds": 0,
+    "shader_compiles": 0,
+    "models": 0,
+    "downloads": 0
+  },
+  "source_window": "Four Store cases ran on first frozen copy/test source. Independent review then found missing Run-owned pipeline lifetime; one-line original Run owner retention and one dedicated wrapper-drop case were compiled and run on the second image. Original four cases were not repeated, as authorized. Their snapshots are retained separately; no final-source snapshot substitutes for an earlier window.",
+  "shader_identity": {
+    "shader": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\vulkan-shaders.spv\\contig_cpy_f16_f16.spv",
+      "bytes": 3136,
+      "sha256": "8908d771683fa0bdf6d3316f37be08b5b5a3239922720fd3b2a1e8a0dd7334ea"
+    },
+    "actual_linked_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan\\ggml-vulkan.lib",
+      "bytes": 52599004,
+      "sha256": "405a127ffa10f9c08734dbf6caffb8bd4a91a3c438aa1ce338dcda01bbe6e91f"
+    },
+    "blob_offset": 44648881,
+    "capabilities": [
+      1,
+      4433
+    ],
+    "OpFConvert_count": 0,
+    "feature_gate": "device.provider.native().storage_buffer16 is the actual logical-device enabled fact; 128-lane and push/descriptor/dispatch limits are checked before acceptance.",
+    "bit_contract": "Original same-type load/store shader, no floating conversion or arithmetic. BF16 bytes use these exact 16-bit storage lanes without numerical reinterpretation."
+  },
+  "verified_boundaries": [
+    "Device-native 2-byte and 6-byte BF16 item copies with stride6/10 and non-word origins; full byte comparisons include untouched items and padding.",
+    "Two replays reverse actual writer order and use the updated original descriptors.",
+    "Original generated F32 dense and BF16 padded word-row Gather-to-Store cases still pass.",
+    "Unobserved Completion/result retention blocks take; reset withdraws actual authority and retired writers can be recovered.",
+    "Dedicated direct copy drops CopyRecording after native submission, waits on the original Completion and checks exact destination and adjacent bytes."
+  ],
+  "unverified": [
+    "Two-byte raw Gather is not implemented by this batch: existing four-byte I32 raw Gather is supported, while floating F16/BF16 GET_ROWS conversion cannot certify raw NaN bits.",
+    "The new halfword path requires real enabled storageBuffer16BitAccess, legal 128-lane dispatch, even-byte item/stride and two-byte-aligned original device storage. It does not support arbitrary odd-byte ranges.",
+    "Original staging buffers have transfer-only usage; this path rejects them rather than dispatching a shader against unsupported storage usage.",
+    "No complete inference, throughput, multi-device hardware matrix, fault injection, validation-layer run or new SDK/native shader rebuild."
+  ],
+  "members": [
+    {
+      "name": "build.py",
+      "bytes": 6800,
+      "sha256": "2dec678f31204fab9b4dc0be68b125a1b868b8fa5f147eaafdaaa16f3d518a5e"
+    },
+    {
+      "name": "compile/copy/actual-dependencies.json",
+      "bytes": 47990,
+      "sha256": "6c2d2f0419803d1cd608d073d152fb35bb75e71622afe7aad1991b65d9e138ff"
+    },
+    {
+      "name": "compile/copy/command.json",
+      "bytes": 3071,
+      "sha256": "3ffcc8b87f8c56d77ef008ab3d42f70a836954bf010ebf8e0404d1e9a4933899"
+    },
+    {
+      "name": "compile/copy/dependencies.json",
+      "bytes": 24335,
+      "sha256": "817e73756eb19a7e956362a6bf075e6dc050787d3e02c9c0b982e2e433c50ac9"
+    },
+    {
+      "name": "compile/copy/process.json",
+      "bytes": 70,
+      "sha256": "eddd446b7706a9943deec40f26cf4860c3bee0bb717736aed69d2e7d3f75a0c3"
+    },
+    {
+      "name": "compile/copy/running.json",
+      "bytes": 22,
+      "sha256": "68998fec29b8a95a325348238c957afe8ac2baacb4c7242c8308182a2bc873b6"
+    },
+    {
+      "name": "compile/copy/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/copy/stdout.log",
+      "bytes": 26,
+      "sha256": "daed7e5d8c9f2240f2d0ed410e4fd0d3a9a317c78e3e1943e52963f6454bf17e"
+    },
+    {
+      "name": "compile/store/actual-dependencies.json",
+      "bytes": 53375,
+      "sha256": "57fc6667cf2c24f0a814bbbc9d7a0770f17c52e75df8f1c165672a7f49247dee"
+    },
+    {
+      "name": "compile/store/command.json",
+      "bytes": 3984,
+      "sha256": "dd8b2f1e62f8fe82b254a6d48cc8844a6318e9251ca47d2079cf4a272e85147a"
+    },
+    {
+      "name": "compile/store/dependencies.json",
+      "bytes": 26673,
+      "sha256": "115e28d2f3ac95b666b3d31fa65b19b40d7e9c7a905fb192549aa1145ea3b007"
+    },
+    {
+      "name": "compile/store/process.json",
+      "bytes": 70,
+      "sha256": "d22de43e55b1a6d753d3f2ddc20ec24c7666a3ec551b1f9bcb6548dee3c0f1e5"
+    },
+    {
+      "name": "compile/store/running.json",
+      "bytes": 22,
+      "sha256": "3af1b19be0c6b280a41f1d1a620e7a4b0d861438c7dffd28e26b07d9ab9aad6f"
+    },
+    {
+      "name": "compile/store/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/store/stdout.log",
+      "bytes": 22,
+      "sha256": "384dbbd5c4f16e76aae4213f800a01109d1ad0cf2fcdfe48776a94ad4d2d4c66"
+    },
+    {
+      "name": "compile/test/actual-dependencies.json",
+      "bytes": 63340,
+      "sha256": "1a4446935782f18ab5692ca752cee50edca01a8500aa4bbcff0069c8637521e5"
+    },
+    {
+      "name": "compile/test/command.json",
+      "bytes": 3981,
+      "sha256": "6a9a622693c36c0d7b67f684c7bb608832e663a9d3eb1979bcd064ddfcda599f"
+    },
+    {
+      "name": "compile/test/dependencies.json",
+      "bytes": 32755,
+      "sha256": "512b6409c6fff6f657715a9e5186ddbeae2c1ccd6133b1f9aa66b2d79d89a27f"
+    },
+    {
+      "name": "compile/test/process.json",
+      "bytes": 69,
+      "sha256": "879f0d35e834703a7f59a7dd67fda3541fad71bd4302f86d4a0fc6c0e20577dd"
+    },
+    {
+      "name": "compile/test/running.json",
+      "bytes": 22,
+      "sha256": "687470a7bb6d7fd55f2e0ace426aba3a7f93fbb178245d17c739475c5fe7a48e"
+    },
+    {
+      "name": "compile/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/test/stdout.log",
+      "bytes": 20,
+      "sha256": "25b0caf2cfcbb2444a4baa4bbe76e5fd44c492cd0a9ffc2ea906f6580c69c87d"
+    },
+    {
+      "name": "freeze.json",
+      "bytes": 3199,
+      "sha256": "e511188b700cbd4c0b063cf01098d416658c864f6f417e4ebca9a86d7e9779cb"
+    },
+    {
+      "name": "link-inputs.json",
+      "bytes": 37219,
+      "sha256": "6de85b959e836a6c444a56fbdfef1a8b1f1de2de83fa1702807faa5bb3e2af09"
+    },
+    {
+      "name": "link/command.json",
+      "bytes": 20249,
+      "sha256": "eed342cdc94c93cdcb6db6d23271abeb2efbdd337eb6e23c4da951b689e47b66"
+    },
+    {
+      "name": "link/process.json",
+      "bytes": 70,
+      "sha256": "7a692a24a62a614de4f70dd0ec6b101db37a99a27db4b488193d2fde58fcb992"
+    },
+    {
+      "name": "link/running.json",
+      "bytes": 22,
+      "sha256": "9d9bbe41d92e5c7022bcb3f63a0225bf896751b91f98fd5e52a99f2cf4ff905f"
+    },
+    {
+      "name": "link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "link/stdout.log",
+      "bytes": 223,
+      "sha256": "545b5d3ccf32fc496571fad0830266f616390d5f48519a6fabd7ac39f931d610"
+    },
+    {
+      "name": "native-shader/contig_cpy_f16_f16.spv",
+      "bytes": 3136,
+      "sha256": "8908d771683fa0bdf6d3316f37be08b5b5a3239922720fd3b2a1e8a0dd7334ea"
+    },
+    {
+      "name": "partial-build.json",
+      "bytes": 3623,
+      "sha256": "ba340d3f1d39b1e5631e5988592290d1f1f7f1ef581b0450835151b327a6a601"
+    },
+    {
+      "name": "publish.py",
+      "bytes": 7764,
+      "sha256": "5b95ce71c881ada1998ea08ad79765542e28dd7e65685846e529807d079c3fb8"
+    },
+    {
+      "name": "raw16-gather-design.json",
+      "bytes": 4452,
+      "sha256": "30fc47d3ae58c06a381246035fa332cab945d59e229790cc21051109bee590e4"
+    },
+    {
+      "name": "ready.json",
+      "bytes": 5062,
+      "sha256": "ad05988885c26765614c8adbfee10f413978da331393a7cd4938a6b5eb4b1c33"
+    },
+    {
+      "name": "recipes/copy.json",
+      "bytes": 3071,
+      "sha256": "3ffcc8b87f8c56d77ef008ab3d42f70a836954bf010ebf8e0404d1e9a4933899"
+    },
+    {
+      "name": "recipes/store.json",
+      "bytes": 3984,
+      "sha256": "dd8b2f1e62f8fe82b254a6d48cc8844a6318e9251ca47d2079cf4a272e85147a"
+    },
+    {
+      "name": "recipes/test.json",
+      "bytes": 3981,
+      "sha256": "6a9a622693c36c0d7b67f684c7bb608832e663a9d3eb1979bcd064ddfcda599f"
+    },
+    {
+      "name": "results.xml",
+      "bytes": 1431,
+      "sha256": "f43260aed75d4d213d3d55f38d63d0f19e89aed23eda308208c90461a98d8728"
+    },
+    {
+      "name": "retain.py",
+      "bytes": 5373,
+      "sha256": "f61f4ced5caedf1738524e134686dba70da3478cdef7e99910dd1f38778826f0"
+    },
+    {
+      "name": "retention/compile/copy/actual-dependencies.json",
+      "bytes": 47990,
+      "sha256": "81e0064cf3cd769e31139835312de55e70026b59abe7ac4c6b4a948eb10a88b9"
+    },
+    {
+      "name": "retention/compile/copy/command.json",
+      "bytes": 3104,
+      "sha256": "2851f12b0439290e942043afa8c3950ec8dc2db1d8674e2f9bf2eccf2f9be5ab"
+    },
+    {
+      "name": "retention/compile/copy/dependencies.json",
+      "bytes": 24335,
+      "sha256": "817e73756eb19a7e956362a6bf075e6dc050787d3e02c9c0b982e2e433c50ac9"
+    },
+    {
+      "name": "retention/compile/copy/process.json",
+      "bytes": 70,
+      "sha256": "a21407d278784a8bfa982fa10bd68b45c3797f81de0a9d413178574b3d37532b"
+    },
+    {
+      "name": "retention/compile/copy/running.json",
+      "bytes": 22,
+      "sha256": "c39f3b9f838d31a8d19f56b5bd1cfe3853a6440684847578c74d2f635baaf02e"
+    },
+    {
+      "name": "retention/compile/copy/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "retention/compile/copy/stdout.log",
+      "bytes": 26,
+      "sha256": "daed7e5d8c9f2240f2d0ed410e4fd0d3a9a317c78e3e1943e52963f6454bf17e"
+    },
+    {
+      "name": "retention/compile/test/actual-dependencies.json",
+      "bytes": 67247,
+      "sha256": "a8acd13187e15210eeb91851c298e91bac608b5b729095332206d1943be8a386"
+    },
+    {
+      "name": "retention/compile/test/command.json",
+      "bytes": 4014,
+      "sha256": "f39d5d184d251d599991d69b6f9715a6960fcb4a4972cd8a793963066f60e30f"
+    },
+    {
+      "name": "retention/compile/test/dependencies.json",
+      "bytes": 34515,
+      "sha256": "c62d5c60bd44f4bfdaa507a58133138a4a02d3456a0d031d550fac8f3a757927"
+    },
+    {
+      "name": "retention/compile/test/process.json",
+      "bytes": 69,
+      "sha256": "8ae9fde929ef7755523af3c7b551e293d0f18bb3e998426a3561b236489f0795"
+    },
+    {
+      "name": "retention/compile/test/running.json",
+      "bytes": 22,
+      "sha256": "15742b2dd8eecf6f972f5e5500c3b374eb5b9cec38e8228792c925def0374636"
+    },
+    {
+      "name": "retention/compile/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "retention/compile/test/stdout.log",
+      "bytes": 20,
+      "sha256": "25b0caf2cfcbb2444a4baa4bbe76e5fd44c492cd0a9ffc2ea906f6580c69c87d"
+    },
+    {
+      "name": "retention/freeze.json",
+      "bytes": 2073,
+      "sha256": "757871e1518c83607a035c5bb3ba52b8fce89e1c06bdd118780bf4f8c8b032da"
+    },
+    {
+      "name": "retention/link-inputs.json",
+      "bytes": 37242,
+      "sha256": "d4f68aee70ed9e11f211ef02713566f3c6af5000d8a31abc4e18232699710d29"
+    },
+    {
+      "name": "retention/link/command.json",
+      "bytes": 20286,
+      "sha256": "57fe5c3a15c3b9bb065c368498ff5c35e7881b19d4bcc5e839cce55d67be9503"
+    },
+    {
+      "name": "retention/link/process.json",
+      "bytes": 70,
+      "sha256": "17b7e3dfac5ebb7bdab9033fa7f9a7dcde2105a2eeca2060e87ab6637c944e83"
+    },
+    {
+      "name": "retention/link/running.json",
+      "bytes": 22,
+      "sha256": "0daf02ec217755ba1879d723a4514fd3806a80670c41cca11cac6ca7e33523bb"
+    },
+    {
+      "name": "retention/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "retention/link/stdout.log",
+      "bytes": 251,
+      "sha256": "7041153e0b5e50e9322698256fa3554755d1407445b0605d16292f9702de55ce"
+    },
+    {
+      "name": "retention/partial-build.json",
+      "bytes": 2469,
+      "sha256": "77c0c4c429d44757524452dcd3f184783ec3d58681bccc715569acb9a092b57a"
+    },
+    {
+      "name": "retention/ready.json",
+      "bytes": 4106,
+      "sha256": "dbdf473775fa9612ac7a3401005fa72fef5455e9bc9950d8edcef45cc55c3922"
+    },
+    {
+      "name": "retention/recipes/copy.json",
+      "bytes": 3104,
+      "sha256": "2851f12b0439290e942043afa8c3950ec8dc2db1d8674e2f9bf2eccf2f9be5ab"
+    },
+    {
+      "name": "retention/recipes/test.json",
+      "bytes": 4014,
+      "sha256": "f39d5d184d251d599991d69b6f9715a6960fcb4a4972cd8a793963066f60e30f"
+    },
+    {
+      "name": "retention/results.xml",
+      "bytes": 613,
+      "sha256": "49efbee6ca3d6c52abd535797bb9ba9f9ccf9f9cda7655e77e599d6c3850cc5a"
+    },
+    {
+      "name": "retention/run/command.json",
+      "bytes": 471,
+      "sha256": "41e44084a740cc2df0e57aacac0f1cd5d944a10e131974a901b1246b227a3e4e"
+    },
+    {
+      "name": "retention/run/process.json",
+      "bytes": 70,
+      "sha256": "2b04e2a5138b51664a0f5cc71948dfc1b2875ddfb7b3aa3a5fcfa0d6adb1d36c"
+    },
+    {
+      "name": "retention/run/running.json",
+      "bytes": 22,
+      "sha256": "22f844dcffbf05735ec5ada8f3c954cb37540cc129f40b4f8f20722ba8c4bca6"
+    },
+    {
+      "name": "retention/run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "retention/run/stdout.log",
+      "bytes": 719,
+      "sha256": "cafa41fe90588e87db96371f7e2c3e5f17274d38b54bdbbfb5c8d036b558a6b7"
+    },
+    {
+      "name": "retention/runtime.json",
+      "bytes": 7200,
+      "sha256": "a25b4ed464dd80a435e82595c20fb0b7631075b6a4e90343e4d0307fed94279a"
+    },
+    {
+      "name": "retention/source-freeze.json",
+      "bytes": 16546,
+      "sha256": "4939a2f876ad8d4289e24f8f07823107907972f89347554ac7891b323a3980f0"
+    },
+    {
+      "name": "retention/source/src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "bytes": 23935,
+      "sha256": "28117b78c6db67879fbd94e63ce06bbbb82a5be29b2dd387bd77f3baab006054"
+    },
+    {
+      "name": "retention/source/tests/graph_route_vulkan/slot_store_test.cc",
+      "bytes": 15343,
+      "sha256": "48ecd783af3631d87b89b77a20923a3f857efce89490fcb2c11e9a10bf72ad2c"
+    },
+    {
+      "name": "retention/summary.json",
+      "bytes": 1429,
+      "sha256": "f6194db88cb494742fbb01b314977b819f7c452d433442c0972cf93f466dcf2e"
+    },
+    {
+      "name": "run/command.json",
+      "bytes": 401,
+      "sha256": "03e8b77d5460af93fd538ceee150f082e3523e9a189d76bb7bb6d43a5a316c0c"
+    },
+    {
+      "name": "run/process.json",
+      "bytes": 70,
+      "sha256": "72b589c4cfda6ffde62cb00e434f436b121d7d965458be3278e21d8319e019d8"
+    },
+    {
+      "name": "run/running.json",
+      "bytes": 22,
+      "sha256": "52af97e9d191ab93d8d27c9ffa916c131c68304ffcc305440679ef8fb48c6d91"
+    },
+    {
+      "name": "run/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run/stdout.log",
+      "bytes": 1176,
+      "sha256": "c2180b94a95c1a0fb4579547e9da5eb8c52f0d0801cd97040027f71a1606440b"
+    },
+    {
+      "name": "runtime.json",
+      "bytes": 7090,
+      "sha256": "42571c3a8f9cd3b8328582a88fa9eaf641fbc402718a791f38d91ecdfaa22c3c"
+    },
+    {
+      "name": "shader-identity.json",
+      "bytes": 1111,
+      "sha256": "591c722bd588b89ee0623115cadcddd52a20564ffadc0870b146da3cc8043d91"
+    },
+    {
+      "name": "source-freeze.json",
+      "bytes": 18796,
+      "sha256": "95b9aa81bad35783ff7fcc6ea062df361f324a6861e4876cdb6e98675db1e2c0"
+    },
+    {
+      "name": "source/src/compute_route_vulkan/vulkan_copy_internal.h",
+      "bytes": 3112,
+      "sha256": "b2f3451cd0228ee6bfe5f8ba46621992e958d1e087357dc395439c3c222dc57f"
+    },
+    {
+      "name": "source/src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "bytes": 23716,
+      "sha256": "e1529aa573352e60dacbfbc90ac35902559b429c99414dfc44fb8f1ffb5d46a1"
+    },
+    {
+      "name": "source/src/graph_route_vulkan/native_slot_store.cc",
+      "bytes": 17522,
+      "sha256": "c420b40948d41f124c1df95f0144d35d4f2085816982d44735298e51bacbc6f9"
+    },
+    {
+      "name": "source/tests/graph_route_vulkan/slot_store_test.cc",
+      "bytes": 13737,
+      "sha256": "9d9a08743f7cc55a1bdcbcbe5566507f0c319e55adb42e94465cddd48e26f058"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 2303,
+      "sha256": "d06bf4c407f68e08516a65e32e7fbc0111ab97358c137a9fb11fc095bf6276cc"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-vulkan-halfword-store-2026-10-27.zip",
+    "bytes": 186549,
+    "sha256": "1f827a5eeebcff50187801dbf431a1787328db0b92b5a4b7043a075d6a036313"
+  },
+  "archive_manifest_sha256": "f3db907a7ac856d58d2fec514e08d09fa8b12e7f01c1bcb9daece8d7358cce00",
+  "archive_integrity": "Every member reopened and compared byte-for-byte; CRC test passed."
+}

@@ -170,7 +170,10 @@ Apple原类型选行与Vulkan合格原码选行保留实际stride，不复制整
 对齐范围仍走原blit，合法的非对齐范围精确host copy；不重算、不扩写padding，原Shared门及退休机制保持。
 [5项有限检查](../evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.json)覆盖2／6字节生成状态及原回归。
 Vulkan的整行与pitch均4字节对齐时，原lowering已可按I32字别名选行并保持F16／BF16原码，
-不会经浮点数值转换。非4字节尾部或pitch仍需原码16位选行与精确copy能力，不能只放宽transfer门。
+不会经浮点数值转换。Store的精确偶数字节复制现沿原Run使用原码16位shader，4字节对齐范围仍走transfer；
+先验全部真实范围、feature与dispatch，Completion通过原Run保活pipeline，不能依赖外壳仍在。
+[五项有限检查](../evidence/correctness/inference-vulkan-halfword-store-2026-10-27.json)分属两实际镜像，包含2／6字节及外壳先释放。
+非4字节行或pitch的Gather仍缺原码16位承载，不能只放宽transfer或投影资格。
 CPU默认路线对plain非稠密及F16／BF16 Gather复用原Native选行，按真实stride直接搬原码，
 不依赖模型或硬件白名单；稠密F32／I32及encoded路线保留原选择。
 [11项有限检查](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)覆盖普通Compute／Graph、默认槽投影及相邻回归，
