@@ -5,7 +5,20 @@
 这里只保留当前基线、待验证假设、执行顺序和完成条件；原始实验留在 `docs/evidence`。
 每次完整对比固定报告prefill、decode、显存变化和多轮会话综合速度，定义见[统一测量口径](README.md#推理对比固定报告)。
 
-2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。下面保留各独立窗口及边界，不跨窗累加。当前CUDA／MTP配对诊断已完成，下一步沿录制时replay准备定位主机工作；状态索引／参数重绑尚无可直接实施的安全补丁或净收益量级，正式余差未刷新。
+2026-10-26当前顺序：hidden输出稳定、CPU冷配置和同步报告输出已合入，CUDA已完成32进程正式对照。宽Lt、typed BF16 MMF、K2辅助图强制捕获及GDN双向固定工作IO均无稳定完整净收益，保持关闭。四请求普通随机批量采样decode＋10.76%、综合＋9.83%，已合入；Hybrid关闭。CPU已修参考ISA、Context共享团队和等待策略，并为当前延迟负载选择调用线程；最新常量View聚合主要减少内存并改善prefill，未取得稳定decode收益，CPU decode比同窗AVX2参考慢约4.9%。本轮录制主机调查已结束，无大块外层Graph成本或可采用补丁；新增普通B2完整窗口仍慢9.75%，下一步优先归因真实双请求执行。各独立窗口不混样或累加，单请求／MTP正式表未刷新。
+
+[普通双请求新完整窗口](../../evidence/performance/inference-b2-current-window-2026-10-26.json)复用未插桩`41ce916d`及B2参考`632cc09c`，N2／R2、C1024、prefix off、三轮P256＋32固定decode输入，无MTP。六个交错测速及两个独立内存进程均正常结束；每臂完整非时间报告稳定，1728输入行／198决策／99个R2 episode、全部198个新旧及跨引擎ID均一致。仍有BF16／F32中间数学与不可变／可变状态、失败合同差异，不能代签逐位数学或任务质量。参考和`433`共用8个库及运行环境，但消费者／两个调度头不同，未升级上游。
+
+| B2当前中位数 | Hyle | llama.cpp |
+|---|---:|---:|
+| prefill tok/s | 7791.635 | 6450.984 |
+| decode合计 tok/s | 163.452 | 181.111 |
+| 综合合计 tok/s | 144.200 | 152.128 |
+| dedicated显存采样峰GiB | 3.999 | 4.743 |
+
+prefill＋20.78%、decode−9.75%、综合−5.21%，三组新范围均不重叠；三样本不签显著性。WS／private commit峰为Hyle1.081／5.630、参考4.106／5.927GiB；内存各一次下界，不称稳定节省。ready基线两端未知，GPU缺样32／13保留；实际采样中位约15.13／15.07ms。加载／ready／入口到末输出中位为Hyle0.838／1.322／2.700s、参考1.678／1.714／3.003s，内部加载边界不同且未清OS缓存，不排名冷盘。速度分母为原P／D wave和全旅程端点，不叠加重叠成员时间。旧17.65%只作为调查动机，不与本窗相减归因，也不代签自然生成、R4随机或服务吞吐。
+
+[录制主机有限诊断](../../evidence/performance/inference-cuda-recording-host-attribution-2026-10-26.json)只重编两个私有Graph host TU并重链，唯一Hyle进程通过原完整工作门。21个有录制decode的replay共71.512ms，全部同父siblings65.549ms、父余5.963ms；其中dispatch43.909ms内step并集42.804ms，外部循环／NVTX余量1.105ms。4446个GGML桥型step的未覆盖部分18.715ms，2015个cuBLAS型1.823ms、448个未唯一归属2.888ms，均含仪器／未记录原生工作，不能称可回收。13次Instantiate16.346ms、14次Update1.509ms全成功，未见更新失败回退。结束本批N1录制调查，不造新的Graph调度／参数重绑机制或继续细分kernel；下一项看B2实际执行。首私有编译因Windows interface宏污染失败，隔离后严格编链通过，原失败保留；归档校验后精确清理5个可重建文件147438426B，不动模型／参考／依赖缓存。诊断不刷新TPS表。
 
 [当前CUDA／MTP双引擎诊断](../../evidence/performance/inference-cuda-mtp-current-attribution-2026-10-26.json)各仅一个新Nsight进程，均正常结束、完整非时间报告与各自参考一致；当前Model／sampling身份与冻结依赖闭包明确列出，未重编SDK或设备内核。Hyle66个合并decode episode的墙时／GPU活动并集为1043.67／895.99ms；其中21个有录制episode的replay准备71.48ms，可见API区间并集40.63ms，其余30.85ms尚未归因，不能称纯CPU或承诺可回收。45个无录制episode墙时／GPU并集为662.66／612.89ms；差值含等待和仪器，不等于Graph开销。父子区间不相加。
 

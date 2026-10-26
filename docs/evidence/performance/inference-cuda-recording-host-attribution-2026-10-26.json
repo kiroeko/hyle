@@ -1,0 +1,450 @@
+{
+  "schema": "hyle.performance.evidence.v1",
+  "date": "2026-10-26",
+  "status": "CLOSED_ONE_HYLE_RECORDING_DIAGNOSTIC_NO_PRODUCT_OR_THROUGHPUT_CHANGE",
+  "local_cleanup_after_publication": {
+    "removed_rebuildable_private_files": 5,
+    "removed_file_bytes": 147438426,
+    "targets": ["diagnostic2/compile/executable/unit.obj", "diagnostic2/compile/submission/unit.obj", "diagnostic2/hyle/link/consumer.exe", "diagnostic2/hyle/link/consumer.exp", "diagnostic2/hyle/link/consumer.lib"],
+    "method": "Repository test.ps1 checked exact resolved private targets, bytes and SHA256 plus the published archive SHA256 before native PowerShell Remove-Item. No recursive deletion.",
+    "retained": "Source, patch, commands, actual dependency identities, raw reports, SQLite and published archive. Model/reference/dependency caches unchanged; original build-ready records are historical identities."
+  },
+  "source_git": "cf3a3e819d20e840743898aa25e099337edce932",
+  "scope": "Qwen3.5-2B BF16 pure CUDA; retained current-Model consumer; two natural P154+64 turns; greedy K1 MTP. Two private Graph host objects replaced, all native/vendor/math/kernel/report inputs retained.",
+  "findings": {
+    "status": "CLOSED_SINGLE_HYLE_NVTX_DIAGNOSTIC_NO_PRODUCT_PATCH_OR_SPEED_CLAIM",
+    "decision": "No evidence of a large removable outer Graph traversal/scheduling cost. End N1 recording investigation here; no further profile or kernel classification proposed.",
+    "actual_run": {
+      "exit": 0,
+      "nsys_pid": 48212,
+      "seconds": 6.328547400014941,
+      "timeout": false
+    },
+    "work_gate": true,
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\source-pins.json",
+      "bytes": 2608,
+      "sha256": "48b25a7f27c5f2303d46154bb5d097fb81a41c53091adf0f3aa7866b8e264fdd"
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\hyle\\ready.json",
+      "bytes": 3401,
+      "sha256": "37196f0a2595ecc6e66a551c46cdc0406f4f8abcef7b634a311fcd3ac576efcf"
+    },
+    "analyzers": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\analyze.py",
+        "bytes": 10968,
+        "sha256": "9ca44140df5dc3399be043dba28637c32b062c54ab562821ca3999e238967b28"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\classify_steps.py",
+        "bytes": 5644,
+        "sha256": "e3f976824c4d506d896f706d3388dd6c7b09b7ffdd595c113a2aa3856d5773b9"
+      }
+    ],
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\summary.json",
+      "bytes": 26382,
+      "sha256": "a848162d028cdf2811518fe584b1f1ed37d70c1a4bdace0b94b506b6fc973ac6"
+    },
+    "step_signature_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\step-signature-summary.json",
+      "bytes": 18752,
+      "sha256": "7c7a07ca4843a384e06dea9a8f3c5f3b09e24bc72bcf00dbcea9db5772d00f5c"
+    },
+    "counts": {
+      "roots": 68,
+      "parents": 68,
+      "prefill": 2,
+      "decode_record": 21,
+      "decode_no_record": 45,
+      "outcomes": {
+        "graph/capture_record": 27,
+        "graph/capture_reuse_variant": 94,
+        "graph/capture_reuse_retained": 11
+      },
+      "stages": 186,
+      "emitted_capture_steps": 6909
+    },
+    "measured_same_trace": {
+      "record_parent": {
+        "count": 21,
+        "wall_ms": 71.51194,
+        "api_library_union_ms": 39.536209,
+        "uncovered_ms": 31.975731,
+        "all_sibling_union_ms": 65.548916,
+        "all_siblings_outside_ms": 5.963024,
+        "note": "All42lookups in the21record parents included:27record lookup0.207265ms+15reuse lookup0.374699ms. Remainder is exclusive to every sibling, not just successful recordings."
+      },
+      "all_decode_lookup": {
+        "count": 132,
+        "wall_ms": 2.143522
+      },
+      "dispatch": {
+        "count": 27,
+        "wall_ms": 43.908905,
+        "api_library_union_ms": 19.377217,
+        "uncovered_ms": 24.531688,
+        "emitted_steps": 6909,
+        "step_union_ms": 42.803505,
+        "step_fraction_percent": 97.48251522100132,
+        "outside_steps_ms": 1.1054,
+        "note": "Step scopes include setup/subspans, selected enqueue, status handling and original sequence.record. Their NVTX overhead is included, so outside-step is not a proved removable loop tax."
+      },
+      "step_kinds": {
+        "operation": {
+          "count": 4160,
+          "wall_ms": 22.890729,
+          "visible_union_ms": 12.97454,
+          "uncovered_ms": 9.916189
+        },
+        "region": {
+          "count": 2749,
+          "wall_ms": 19.912776,
+          "visible_union_ms": 6.402677,
+          "uncovered_ms": 13.510099
+        }
+      },
+      "disjoint_native_signatures": {
+        "other_or_unqualified_provider": {
+          "count": 448,
+          "wall_ms": 3.587935,
+          "visible_union_ms": 0.699694,
+          "uncovered_ms": 2.888241
+        },
+        "GGML_recording_bridge_signature_source_supported": {
+          "count": 4446,
+          "wall_ms": 28.456361,
+          "visible_union_ms": 9.741633,
+          "uncovered_ms": 18.714728
+        },
+        "cuBLAS_library_observed": {
+          "count": 2015,
+          "wall_ms": 10.759209,
+          "visible_union_ms": 8.93589,
+          "uncovered_ms": 1.823319
+        }
+      },
+      "finalize": {
+        "count": 27,
+        "wall_ms": 21.058047,
+        "api_library_union_ms": 20.06063,
+        "uncovered_ms": 0.997417,
+        "largest_API": {
+          "cudaGraphInstantiateWithFlags_v11040": {
+            "count": 13,
+            "union_ns": 16345596,
+            "return_values": {
+              "0": 13
+            }
+          },
+          "cudaGraphExecUpdate_v10020": {
+            "count": 14,
+            "union_ns": 1508844,
+            "return_values": {
+              "0": 14
+            }
+          },
+          "cudaGraphDestroy_v10000": {
+            "count": 27,
+            "union_ns": 1521860,
+            "return_values": {
+              "0": 27
+            }
+          },
+          "cudaStreamEndCapture_v10000": {
+            "count": 27,
+            "union_ns": 519148,
+            "return_values": {
+              "0": 27
+            }
+          }
+        }
+      }
+    },
+    "source_inference": {
+      "GGML_signature": "4446steps each contain exactly1StreamIsCapturing+2ThreadExchangeCaptureMode. Pinned submit1172/1212 and native_bridge RecordingModeScope203-214 / record_on_admitted_stream257-266 support the GGML recording bridge path. This is not an emitted ProviderInstanceId or its internal self-time.",
+      "relevant_envelope_ms": 18.714728,
+      "minimum_future_boundary_if_independently_justified": "Inside the existing GGML record_on_admitted_stream, around original bind/record-compatible/native encode work; retain all original stream/workspace/recording/error/retirement guards. This memo does not authorize or propose another diagnostic run.",
+      "no_redundant_work_proven": "No specific guard, binding validation, native launch or capture artifact has been proved safely deletable. No product change justified by these buckets alone.",
+      "other_native": "cuBLAS library NVTX is directly observed;1.823319ms of its step wall remains uncovered.448other/unqualified steps retain2.888241ms uncovered, with no guessed provider/math identity."
+    },
+    "failure_history": {
+      "instrumentation_compile_failures": 1,
+      "failed_model_or_profile_processes": 0,
+      "first": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\instrumentation-correction.json",
+        "bytes": 3547,
+        "sha256": "c021218de5f0f74226413ff4c9b565dcfc184b7ab3c4c087ddd56f96a8688a47"
+      },
+      "cpp_evidence_correction": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\instrumentation-correction-cpp-note.json",
+        "bytes": 368,
+        "sha256": "656ab99060fa547a0fd4f3259110676df17abd088fedd807d6cc77c3326d437b"
+      },
+      "fix": "Only private helper isolates the Windows interface macro with push_macro/pop_macro. Two Graph source files identical to initial frozen diagnostic. No source logic or original helper changed."
+    },
+    "arithmetic_and_scope": [
+      "Every stage is a sibling within its original replay parent; emitted steps are children of dispatch. Do not add inclusive parent/child numbers.",
+      "Runtime, driver (if present) and cuBLAS native intervals are unioned, not added. Individual API figures can overlap and cannot be summed blindly.",
+      "31.975731ms uncovered is an instrumented packet: scheduler/profiler/OS/unobserved native work remain. Not pure CPU, removable overhead, or evidence to close a9-10percent complete throughput gap.",
+      "Do not subtract old provider15.29ms or prior paired71.48/30.85ms from this new trace. Their profilers/events/processes differ.",
+      "Per-step NVTX itself perturbs dispatch. Largest first-record outliers do not establish steady cost. No unprofiled TPS/return-on-investment claim.",
+      "Original consumer/app/weights/report and remaining link closure retained; only2Graph host objects changed. Does not certify all current CPU/SDK source.",
+      "Normal68roots/68phase pairs,27record+105reuse,0error/fallback, no missing ends; unique actual same-trace correlation and unknown boundaries retained.",
+      "No additional model, profile, compile, product edit, broad source audit or kernel grouping follows this handoff."
+    ]
+  },
+  "independent_interval_check": {
+    "status": "PASS_FINITE_INDEPENDENT_RANGE_COUNT_AND_NESTING_CHECK",
+    "sqlite_sha256": "b68ed2aa7f9c1887bf38bf652f0ef0992d1c05a440982ed5c8f2fe374682f713",
+    "roots": 68,
+    "decode_roots": 66,
+    "totals": {
+      "graph/capture_lookup": {
+        "count": 132,
+        "wall_ns": 2143522
+      },
+      "graph/capture_dispatch": {
+        "count": 27,
+        "wall_ns": 43908905
+      },
+      "graph/capture_step/operation": {
+        "count": 4160,
+        "wall_ns": 22890729
+      },
+      "graph/capture_step/region": {
+        "count": 2749,
+        "wall_ns": 19912776
+      },
+      "graph/capture_finalize": {
+        "count": 27,
+        "wall_ns": 21058047
+      }
+    },
+    "limits": "Fixed P154 two-turn K1 experiment; target_T<=2 identifies decode here. Steps are nested in dispatch and never additive with it. This does not attribute provider self-cost or prove removable work."
+  },
+  "source_review": {
+    "status": "NO_SOURCE_BLOCKER_WITHIN_FROZEN_PRIVATE_DIAGNOSTIC",
+    "reviewer": "mtp_architecture_audit",
+    "new_builds": 0,
+    "new_model_or_GPU_processes": 0,
+    "product_changes": 0,
+    "source_pins": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\source-pins.json",
+      "bytes": 2602,
+      "sha256": "0a4773896da3b962a83c2c442fc7600e07a1a0ff369946a43b8200bb2946c149"
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\source.patch",
+      "bytes": 4044,
+      "sha256": "696491ecc25326e9462aa53a391a57df5d1ff6854454b6c63de83a8a80865ef2"
+    },
+    "reviewed_sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\source\\src\\graph\\executable.cc",
+        "bytes": 481946,
+        "sha256": "338c917d03ce9f9ca9e3871ab5d3db6bf4f75605f1e812f32e9c4391d13a3378"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\source\\src\\graph\\submission.cc",
+        "bytes": 50281,
+        "sha256": "98060ba674ecfd20ee8ea9b745c0105c95a5e9d6423145b69961d46875eda12e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\graph_capture_trace.h",
+        "bytes": 3358,
+        "sha256": "d161a906a0803a3268fcfb9eb5c8be7a251bb60b506b7f4adaf91272a875ce91"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\logical_trace.h",
+        "bytes": 1931,
+        "sha256": "b6ef6f6bee8f6261202cde0292c1703dd8ee2ddddfbabdb6f6a009b01e16cb26"
+      }
+    ],
+    "baseline_closure": {
+      "record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\baseline-dependencies.json",
+        "bytes": 141469,
+        "sha256": "18a07f967e1218117ec23511a923515214bbf85dabd414f3c83613e617ad37d4"
+      },
+      "project_dependencies": {
+        "executable": {
+          "original_actual_count": 86,
+          "declared_current_count": 86,
+          "original_actual_pins_equal_current": true
+        },
+        "submission": {
+          "original_actual_count": 78,
+          "declared_current_count": 78,
+          "original_actual_pins_equal_current": true
+        }
+      },
+      "all_recorded_current_project_dependency_bytes_and_SHA256_match_actual_files": true,
+      "before_source_baseline_source_object_recipe_and_original_dependency_file_pins_match": true,
+      "planned_host_TUs": 2,
+      "planned_object_replacements": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\drift8\\graph--executable_cc\\unit.obj",
+          "bytes": 5135131,
+          "sha256": "089c45bf494bb013ceb6ff2f61eff415a497737f1f0885df67c5db6400a44250"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\graph--submission_cc\\unit.obj",
+          "bytes": 628070,
+          "sha256": "00792a793801da1fe57920b923fa6af23a8e0de43d9afdc273264c58ed0cbf03"
+        }
+      ],
+      "retained_input_count": 220,
+      "note": "Prebuild review of frozen source and planned closure only; actual compiler dependencies, image/link equality and runtime markers must be checked by the authorized runner."
+    },
+    "blocking_findings": [],
+    "checks": [
+      {
+        "subject": "Three Candidate stages and outcomes",
+        "result": "lookup begins at the original range candidate. dispatch finishes lookup before original enqueue_segment_steps; end_dispatch closes dispatch before checking recorded status. finalize starts only after successful enqueue and ends by destructor. Therefore normal stages are siblings, not overlapping or additive to their preparation parent. Retained/variant reuse explicitly set distinct outcomes and RAII closes lookup on continue. Query/begin/end Unimplemented fallback sets fallback; all other exits default to error. payload is existing uint32 begin/count packed into uint64, no owner or extra registry."
+      },
+      {
+        "subject": "Original errors and actual retirement",
+        "result": "No original condition, return, Status, argument, or ordering changed. enqueue failure still aborts capture, calls original finish_preparation, unprepares and returns original error; successful dispatch still ends capture then sequence.finish, retain_preparation_completion and actual completion.wait before stable identity/key/range publication. End Unimplemented fallback still requires finished.ok; failed retirement cannot become a usable fallback. RAII only adds NVTX APIs."
+      },
+      {
+        "subject": "Submission per-step scope",
+        "result": "Only original emits_command steps construct Step; inactive outside sequence.recording. PlanStepKind definitions confirm operation=0, region=1, copy=2, view=3. step.region.valid retains precedence over kind exactly as original routing. Scope covers original input/output spans, provider/operation/copy enqueue and sequence.record, closes on both loop continuation and original error return. No original executor, Queue, Completion, use token, resource or numerical path is replaced."
+      },
+      {
+        "subject": "Private helper/global lifetime",
+        "result": "Helper reuses retained logical_trace domain initialized by original Model RunScope; does not initialize/reset domain, sequence or logical finished-range counters. Labels are static and payload is scalar; no diagnostic C++ heap/IO/provider registry/new owner added. Observation APIs themselves add profiling overhead and may instrument library internals; this image is diagnostic, not unprofiled TPS. No new concurrency claim is inferred."
+      }
+    ],
+    "interpretation_limits": [
+      "Per-step marker identifies static step index and kind/region only. Recover a provider identity from the existing exact cold Plan/source mapping when available; do not infer a provider by region label alone.",
+      "On enqueue failure, abort/finish cleanup occurs after dispatch closes and before function return; there is an error outcome but no claim that the three sibling stages cover the whole error path. Early lookup failures can include original cleanup in lookup.",
+      "lookup includes original candidate/key/backend query/begin preparation before enqueue. finalize includes actual end, finish/wait and original key/publication. Their durations are envelopes, not independently recoverable host cost. Step ranges are nested inside dispatch and must not be added to it.",
+      "Range handles have RAII closure for admitted normal/early error paths. The reviewer did not execute fault injection, compile, model, export completeness, overflow/event-loss or timing checks.",
+      "Baseline has exact Graph source 6476518e and submission6a4d92d0 with current86/78 self-project dependencies, within the previously explicit frozen CUDA consumer/native closure. This does not recertify all current CPU/SDK/platform code."
+    ]
+  },
+  "correction_review": {
+    "status": "NO_SOURCE_BLOCKER_FOR_PRIVATE_MACRO_ISOLATION",
+    "reviewer": "mtp_architecture_audit",
+    "review_scope": "Only diagnostic2 include-boundary correction; previous review checked logic/planned dependency identity and was not a compilation pass. Reviewer made no product edit, build, link or model run.",
+    "pins": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\graph_capture_trace.h",
+        "bytes": 3421,
+        "sha256": "d8f38e4ca322d99146c6920f7590baf495f940a1e857ea932c483ce6ba8b98e4"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\source-pins.json",
+        "bytes": 2608,
+        "sha256": "48b25a7f27c5f2303d46154bb5d097fb81a41c53091adf0f3aa7866b8e264fdd"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\instrumentation-correction.patch",
+        "bytes": 392,
+        "sha256": "ac1953ffb7766cc46eb0db59f5a72640a515ffeda216292a166548a5426d5180"
+      }
+    ],
+    "retained_failure": {
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\compile\\executable\\process.json",
+        "bytes": 69,
+        "sha256": "32954163ce07be06362868d883a51b35b73c336954e2c8261cc10cf0f252f933"
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic\\compile\\executable\\stdout.log",
+        "bytes": 10820,
+        "sha256": "fb88a652ebe715008c3cfc49060f88a670a8737416830142991ab6364e3e5e9a"
+      },
+      "actual": "PID52616, exit2; first error region_adapter.h:25 expected field interface became struct. No link/model."
+    },
+    "cause_chain": [
+      "graph_capture_trace.h first include -> logical_trace.h -> NVTX implementation nvtxImpl.h:44 includes windows.h.",
+      "Windows SDK10.0.26100.0 combaseapi.h C++ branch :158/:167/:168 defines __STRUCT__ as struct and interface as __STRUCT__. :211 is the alternative C/CINTERFACE definition, not the direct C++ branch.",
+      "Original Graph region_adapter.h:25 and existing local identifiers intentionally use interface as an ordinary C++ identifier. No product ABI or field name change is necessary."
+    ],
+    "correction": "Exact two-line private-only addition: push_macro(\"interface\") before original logical_trace.h include and pop_macro(\"interface\") after it. Restores the caller macro state, including undefined state; leaves NVTX header implementation and original helper unchanged.",
+    "unchanged": {
+      "executable_cc": "338c917d03ce9f9ca9e3871ab5d3db6bf4f75605f1e812f32e9c4391d13a3378",
+      "submission_cc": "98060ba674ecfd20ee8ea9b745c0105c95a5e9d6423145b69961d46875eda12e",
+      "two_Graph_sources_byte_identical_to_v1": true,
+      "original_logical_trace_unchanged": true,
+      "all_v1_lifecycle_and_range_review_limits_still_apply": true
+    },
+    "limits": [
+      "This corrects the identified interface macro leak; it is not a general Windows-header macro quarantine or a claim that compilation has passed. Actual strict build remains required.",
+      "No change to status/control/finish/wait/retirement, numerical paths, instrumentation scopes or source baseline."
+    ]
+  },
+  "quality": {
+    "status": "PASS",
+    "full_non_time_equal": true,
+    "logical_roots": 68,
+    "expected_roots": 68,
+    "end_markers": [
+      [
+        "68",
+        "476",
+        "0"
+      ]
+    ],
+    "phase_counts": {
+      "hyle/prepare": 68,
+      "hyle/prepare_replay": 68,
+      "hyle/submit": 68,
+      "hyle/wait_publish": 68,
+      "hyle/completion_wait": 68,
+      "hyle/postwait_publish": 68
+    },
+    "prepare_count": 68,
+    "missing_nvtx_ends": [],
+    "activity_rows": {
+      "CUPTI_ACTIVITY_KIND_KERNEL": 54388,
+      "CUPTI_ACTIVITY_KIND_RUNTIME": 59883
+    },
+    "role_assignment": "Pending offline same-trace correlation/signature verification; no old-count attribution",
+    "artifacts": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\hyle\\trace1\\trace.sqlite",
+        "bytes": 11206656,
+        "sha256": "b68ed2aa7f9c1887bf38bf652f0ef0992d1c05a440982ed5c8f2fe374682f713"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\hyle\\trace1\\trace.nsys-rep",
+        "bytes": 4031660,
+        "sha256": "6c837caae86a07fd361ef92cd7965afee970cf8a9cf45bf89652c19946a79e29"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\hyle\\trace1\\native-stdout.log",
+        "bytes": 77482,
+        "sha256": "75ef67a45367e7af95350cf2bcff1325483092c49f5f202129ce15fbed4dbde9"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\host-source-followup\\diagnostic2\\hyle\\trace1\\native-stderr.log",
+        "bytes": 25988,
+        "sha256": "9007dcf7122dfb9d925cfbb3047cb78f524adbf0344e0181f36fa8e3c501c629"
+      }
+    ]
+  },
+  "references": {
+    "paired_diagnostic": "inference-cuda-mtp-current-attribution-2026-10-26.json",
+    "formal_window": "inference-current-window-2026-10-26.json"
+  },
+  "limits": [
+    "Diagnostic timings include NVTX/Nsight perturbation; they are not uninstrumented throughput, provider self-cost or recoverable savings. Formal four-item tables are unchanged.",
+    "Step ranges are nested in dispatch; the three range stages are siblings. Counts and parent/child walls are never added as independent costs.",
+    "Provider signatures use same-trace API/kernel evidence plus the known source chain. Generic operation/region labels alone do not identify a provider; unknown groups remain explicit.",
+    "The first private instrumentation compilation failed due to the Windows interface macro. Its logs and exact correction are retained. The corrected two compilations/link and the only model profile completed.",
+    "Ready status and model_runs=0 are historical build checkpoints. Final process/quality evidence records the completed profile.",
+    "No new correctness/platform/general quality claim, no current CPU runtime certification, no peer rerun and no source/dependency/model download."
+  ],
+  "archive": {
+    "path": "inference-cuda-recording-host-attribution-2026-10-26.zip",
+    "bytes": 3369896,
+    "sha256": "70670e2d798c97c4a48bb680935e2de1e951ad99e2d7f9614a747b2f4a7bbd0e",
+    "members": 68,
+    "verification": "ZIP CRC and every manifest length/SHA256 passed"
+  }
+}

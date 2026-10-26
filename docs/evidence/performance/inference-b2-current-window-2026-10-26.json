@@ -1,0 +1,603 @@
+{
+  "status": "CURRENT_B2_COMPLETE_WINDOW_RETAINED_GAP_NO_CAUSAL_CHANGE_CLAIM",
+  "date": "2026-10-26",
+  "activity": "Offline summary/archive only after root completed the frozen8 processes. No additional model, profiler, build, service, network or samples.",
+  "images": {
+    "hyle": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-sampling-three-arm-20261026\\batch\\link\\hyle.exe",
+      "bytes": 141462016,
+      "sha256": "41ce916d82910a47ff01a4fa80b286d1886b52b0afc0c6e2e2ad13a0d6c8065d"
+    },
+    "peer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cli-batch-20261022\\peer\\checks\\attempt1\\peer.exe",
+      "bytes": 35816448,
+      "sha256": "632cc09c9a6bb0e46780ca5c6efc490b741a760206160e1d8f45be12602b41c5"
+    }
+  },
+  "protocol": {
+    "timing_processes": 6,
+    "timing_per_arm": 3,
+    "independent_memory_processes": 2,
+    "memory_per_arm": 1,
+    "timing_order": [
+      "hyle",
+      "peer",
+      "peer",
+      "hyle",
+      "hyle",
+      "peer"
+    ],
+    "memory_order": [
+      "hyle",
+      "peer"
+    ],
+    "all8_exit0": true,
+    "historical_samples_pooled": false,
+    "teacher_forced": true,
+    "synthetic": true,
+    "logical_capacity": 1024,
+    "sessions": 2,
+    "active_requests": 2,
+    "prefix_cache": "off",
+    "input_rows": 1728,
+    "returned_decisions": 198,
+    "prefill_rows": 1536,
+    "decode_rows": 192,
+    "actual_graph_calls": 99,
+    "physical_episode_order_equal": true
+  },
+  "speed_units": "tokens/s",
+  "speeds": {
+    "prefill_tps": {
+      "hyle": {
+        "count": 3,
+        "samples": [
+          7791.634645381707,
+          7569.425827511709,
+          7797.825137832652
+        ],
+        "min": 7569.425827511709,
+        "median": 7791.634645381707,
+        "max": 7797.825137832652
+      },
+      "peer": {
+        "count": 3,
+        "samples": [
+          6329.812924357087,
+          6450.984279085707,
+          6550.204374052491
+        ],
+        "min": 6329.812924357087,
+        "median": 6450.984279085707,
+        "max": 6550.204374052491
+      },
+      "hyle_relative_to_peer_percent": 20.782105618245428,
+      "ranges_overlap": false
+    },
+    "full_decode_tps": {
+      "hyle": {
+        "count": 3,
+        "samples": [
+          163.2727061524132,
+          163.45160759763934,
+          163.8426843985412
+        ],
+        "min": 163.2727061524132,
+        "median": 163.45160759763934,
+        "max": 163.8426843985412
+      },
+      "peer": {
+        "count": 3,
+        "samples": [
+          181.1111451742605,
+          180.5862280427839,
+          182.0969660653768
+        ],
+        "min": 180.5862280427839,
+        "median": 181.1111451742605,
+        "max": 182.0969660653768
+      },
+      "hyle_relative_to_peer_percent": -9.750663085714361,
+      "ranges_overlap": false
+    },
+    "session_output_tps": {
+      "hyle": {
+        "count": 3,
+        "samples": [
+          144.2000342875637,
+          143.72920372714506,
+          144.6481816518165
+        ],
+        "min": 143.72920372714506,
+        "median": 144.2000342875637,
+        "max": 144.6481816518165
+      },
+      "peer": {
+        "count": 3,
+        "samples": [
+          151.9568706493232,
+          152.12769014386208,
+          153.59361348446427
+        ],
+        "min": 151.9568706493232,
+        "median": 152.12769014386208,
+        "max": 153.59361348446427
+      },
+      "hyle_relative_to_peer_percent": -5.211185319912137,
+      "ranges_overlap": false
+    }
+  },
+  "memory": {
+    "hyle": {
+      "independent_processes": 1,
+      "sampled_peaks_bytes": {
+        "sampled_max_working_set_bytes": 1160511488,
+        "observed_os_peak_working_set_bytes": 1160515584,
+        "sampled_max_private_commit_bytes": 6044643328,
+        "observed_os_peak_commit_bytes": 6044643328,
+        "sampled_peak_gpu_dedicated_bytes": 4294000640,
+        "sampled_peak_gpu_shared_bytes": 96468992,
+        "sampled_peak_gpu_total_bytes": 4375789568
+      },
+      "sampled_peaks_GiB": {
+        "sampled_max_working_set_bytes": 1.080810546875,
+        "observed_os_peak_working_set_bytes": 1.0808143615722656,
+        "sampled_max_private_commit_bytes": 5.629512786865234,
+        "observed_os_peak_commit_bytes": 5.629512786865234,
+        "sampled_peak_gpu_dedicated_bytes": 3.9990997314453125,
+        "sampled_peak_gpu_shared_bytes": 0.08984375,
+        "sampled_peak_gpu_total_bytes": 4.0752716064453125
+      },
+      "sample_count": 306,
+      "running_sample_count": 287,
+      "requested_sample_interval_seconds": 0.01,
+      "actual_sample_gaps_ms": {
+        "count": 286,
+        "min": 0.1256,
+        "median": 15.13105,
+        "max": 17.2299
+      },
+      "sample_cost_ms": {
+        "count": 287,
+        "min": 0.0562,
+        "median": 0.1339,
+        "max": 0.2863
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 32,
+        "gpu_shared_bytes": 32,
+        "gpu_total_bytes": 32
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 32,
+        "shared:no_pid_instance": 32
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 300433322897600,
+        "first_prefill_marker_ns": 300433322938800,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "phase_window_count": 12,
+      "zero_sample_phase_windows": [],
+      "bad_boundary_phase_windows": [],
+      "exact_phase_boundary_values": false,
+      "setup_error": null,
+      "thread_error": null
+    },
+    "peer": {
+      "independent_processes": 1,
+      "sampled_peaks_bytes": {
+        "sampled_max_working_set_bytes": 4408881152,
+        "observed_os_peak_working_set_bytes": 4409544704,
+        "sampled_max_private_commit_bytes": 6364041216,
+        "observed_os_peak_commit_bytes": 6364844032,
+        "sampled_peak_gpu_dedicated_bytes": 5093068800,
+        "sampled_peak_gpu_shared_bytes": 104857600,
+        "sampled_peak_gpu_total_bytes": 5197926400
+      },
+      "sampled_peaks_GiB": {
+        "sampled_max_working_set_bytes": 4.106090545654297,
+        "observed_os_peak_working_set_bytes": 4.106708526611328,
+        "sampled_max_private_commit_bytes": 5.926975250244141,
+        "observed_os_peak_commit_bytes": 5.927722930908203,
+        "sampled_peak_gpu_dedicated_bytes": 4.743289947509766,
+        "sampled_peak_gpu_shared_bytes": 0.09765625,
+        "sampled_peak_gpu_total_bytes": 4.840946197509766
+      },
+      "sample_count": 340,
+      "running_sample_count": 334,
+      "requested_sample_interval_seconds": 0.01,
+      "actual_sample_gaps_ms": {
+        "count": 333,
+        "min": 0.1117,
+        "median": 15.0733,
+        "max": 18.935
+      },
+      "sample_cost_ms": {
+        "count": 334,
+        "min": 0.0566,
+        "median": 0.1298,
+        "max": 0.3273
+      },
+      "null_sample_counts": {
+        "working_set_bytes": 0,
+        "private_commit_bytes": 0,
+        "gpu_dedicated_bytes": 13,
+        "gpu_shared_bytes": 13,
+        "gpu_total_bytes": 13
+      },
+      "unavailable_reasons": {
+        "dedicated:no_pid_instance": 13,
+        "shared:no_pid_instance": 13
+      },
+      "ready_baseline": {
+        "ready_marker_ns": 300436760028400,
+        "first_prefill_marker_ns": 300436760106000,
+        "sample": null,
+        "unknown": true,
+        "definition": "Last process-running sample between received ready and earliest actual prefill-begin; null when none exists."
+      },
+      "phase_window_count": 12,
+      "zero_sample_phase_windows": [],
+      "bad_boundary_phase_windows": [],
+      "exact_phase_boundary_values": false,
+      "setup_error": null,
+      "thread_error": null
+    }
+  },
+  "loading_and_startup_seconds": {
+    "hyle": {
+      "load_seconds": {
+        "count": 3,
+        "samples": [
+          0.84059,
+          0.837693,
+          0.825947
+        ],
+        "min": 0.825947,
+        "median": 0.837693,
+        "max": 0.84059
+      },
+      "ready_seconds": {
+        "count": 3,
+        "samples": [
+          1.33997,
+          1.32228,
+          1.30165
+        ],
+        "min": 1.30165,
+        "median": 1.32228,
+        "max": 1.33997
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "samples": [
+          2.7132081,
+          2.7000192,
+          2.6706337
+        ],
+        "min": 2.6706337,
+        "median": 2.7000192,
+        "max": 2.7132081
+      }
+    },
+    "peer": {
+      "load_seconds": {
+        "count": 3,
+        "samples": [
+          1.7097629,
+          1.6379863,
+          1.6780077
+        ],
+        "min": 1.6379863,
+        "median": 1.6780077,
+        "max": 1.7097629
+      },
+      "ready_seconds": {
+        "count": 3,
+        "samples": [
+          1.745822,
+          1.6743207,
+          1.7142726
+        ],
+        "min": 1.6743207,
+        "median": 1.7142726,
+        "max": 1.745822
+      },
+      "startup_total_seconds": {
+        "count": 3,
+        "samples": [
+          3.0488873,
+          2.9759231,
+          3.0034527
+        ],
+        "min": 2.9759231,
+        "median": 3.0034527,
+        "max": 3.0488873
+      }
+    }
+  },
+  "hyle_only_initialization_seconds": {
+    "model_seconds": {
+      "count": 3,
+      "samples": [
+        0.931647,
+        0.915438,
+        0.903054
+      ],
+      "min": 0.903054,
+      "median": 0.915438,
+      "max": 0.931647
+    },
+    "shape_prepare_seconds": {
+      "count": 3,
+      "samples": [
+        0.40741,
+        0.40587,
+        0.397722
+      ],
+      "min": 0.397722,
+      "median": 0.40587,
+      "max": 0.40741
+    }
+  },
+  "metrics_not_comparable": {
+    "hyle": [
+      "model_seconds",
+      "shape_prepare_seconds"
+    ],
+    "peer": []
+  },
+  "work": {
+    "within_arm_complete_nontime_differences": 0,
+    "historical_generated_ID_differences_each_of8": 0,
+    "cross_engine_generated_ID_differences": 0,
+    "returned_decisions_compared_between_engines": 198,
+    "each_arm_report_count": 4,
+    "whole_raw_and_all_normalization_audits_retained": true,
+    "explicit_nonwork_exception": "Only memory[].device_global_free_bytes global device-free telemetry is excluded from semantic stability. Original values and all excluded time/rate paths retained in each normalization-audit; all remaining non-time fields compared."
+  },
+  "conclusion": "The current finite B2 window establishes Hyle prefill+20.78%, decode-9.75%, combined-5.21% versus the named retained B2 peer632. All three observed ranges are separated. The decode/combined throughput gap remains; this window does not attribute its cause or establish benefit from a specific change. The historical17.65% B2 gap belongs to another window and must not be subtracted to claim improvement.",
+  "boundaries": [
+    "Three timing samples per engine, no significance claim. Independent memory samples never enter the six unmonitored timing denominators.",
+    "This exact ordinary equal-T fixed-input two-session journey is not natural generation, R4 random, MTP, dynamic admission/eviction/cancellation, serving latency or a multi-platform claim.",
+    "Cross-engine198 IDs and every historical output match in this finite journey; BF16/F32 recurrent/intermediate math and failure/state ownership still differ, so this is not bit-identical math or task-quality certification.",
+    "Hyle41ce916d uses frozen dfaa Model/085 sampling plus inherited2a94 CUDA closure, not later CPU-only implementations. Peer632 is a different consumer from reference433; both use the same8 actual library hashes and runtime receipt, retained d9e03 llama/raw456 resource-patched native closure, not latest upstream.",
+    "Hyle logical cache backing103710768B/130x16 physical rows, peer105971712B/native2048 rows and4 sequence quota. Logical C/N/R and input equality do not make physical bytes or rollback contracts equal.",
+    "Sampled WS/commit/dedicated/shared peaks are one-process lower-bound observations, not exact allocations or proven savings. WS, private commit and GPU/shared counters have different meanings and cannot be added. Dedicated/shared separate peaks cannot be summed; reported total uses simultaneous counters.",
+    "Hyle/peer both have unknown ready baseline: no sample fell into their ready-to-first-prefill interval. Each has12 uniquely named P/D phase windows with interior samples and no missing/ambiguous/reversed boundaries, but stderr receipt/bracket times do not give exact boundary values or allocation attribution.",
+    "GPU PID counters have32 Hyle/13 peer nulls with no_pid_instance; preserve missing values, never replace them with zero. Probe setup and thread errors are null.",
+    "Hyle weights_load_seconds and initialized startup_to_ready_seconds are original stderr fields; peer model_load_seconds/ready_seconds are original native-consumer fields. Loading sub-boundaries and representation differ; OS page cache is not cleared, so do not rank cold-disk load or infer eliminated work.",
+    "startup_total_seconds preserves each producer startup-through-last-output endpoint. It is not parent process launch-to-exit wall, and post-endpoint reporting/teardown are not silently added to decode/combined. Hyle model_seconds/shape_prepare_seconds remain retained but have no peer counterpart.",
+    "Prefill1536/sum(P wave seconds), decode192/sum(D wave seconds), combined198/global interleaved_seconds (Hyle) or session_seconds (peer). Never sum overlapping per-session/request times or substitute step_sum_seconds."
+  ],
+  "raw_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\summary.json",
+    "bytes": 266214,
+    "sha256": "af030d7066e73e690b0a3c4011df6cbd6c464cc7fc41fd0fc2f773b9cbb313ae"
+  },
+  "artifact_stages": {
+    "plan_and_runner_ready": "Historical pre-execution NOT_RUN freeze checkpoints, preserved unchanged. They are not the final execution status.",
+    "summary": "Actual COMPLETE_8_WITH_FULL_WITHIN_ARM_WORK_STABLE result:8 real processes all exit0, no refill.",
+    "inherited_plan_limit": "Raw summary retains plan.fairness_limits including a sentence that the plan alone claims no result. It is a planning-scope quotation, not a claim that the subsequently completed window was unrun. Final result boundaries are explicitly stated here."
+  },
+  "schema": "hyle.performance.evidence.v1",
+  "source_git_before_documentation": "cf3a3e819d20e840743898aa25e099337edce932",
+  "independent_result_review": {
+    "status": "NO_BLOCKING_RESULT_OR_REDUCER_FINDING_IN_FINITE_OFFLINE_RECOMPUTATION",
+    "reviewer": "mtp_architecture_audit",
+    "new_builds": 0,
+    "new_model_or_profile_or_sampler_processes": 0,
+    "inputs": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\summary.json",
+        "bytes": 266214,
+        "sha256": "af030d7066e73e690b0a3c4011df6cbd6c464cc7fc41fd0fc2f773b9cbb313ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\run.py",
+        "bytes": 16193,
+        "sha256": "2a5dfcfd568e85114f4491ec483f1a2f74482a2f7b070a4b98d69b3fca904655"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\runner-ready.json",
+        "bytes": 2937,
+        "sha256": "9d4c7ce5a37b6a8e64e86c3af7fd06e4cb4231cb2bf3e25c2948fc23d91e8276"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\expected-work.json",
+        "bytes": 53328,
+        "sha256": "8d7340d922af8953fe37013e36b620cd2a6de6e41a5fd24b1800ace0055940bf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-b2-current-window-20261026\\independent-result-recalculation.json",
+        "bytes": 4942,
+        "sha256": "f52421131ab8bda84f723d8c95ce70ef1f7be086eabc8d5d7fcf54ffc6dd1e9a"
+      }
+    ],
+    "method": "Read eight original reports/results, two raw memory probes plus summaries, frozen expected tapes/work and both historical reports. Independently sum wave seconds and numerators, compute per-process rates then median/min/max; do not import or execute the runner, retained parser, harness or any model. Recompute all seven memory peak fields directly from raw per-sample values; full non-time comparison uses explicit original clock/rate plus memory-global-free telemetry exclusions only.",
+    "blocking_findings": [],
+    "main_speeds": {
+      "hyle": {
+        "prefill_tps": {
+          "samples": [
+            7791.634645381707,
+            7569.425827511709,
+            7797.825137832652
+          ],
+          "min": 7569.425827511709,
+          "median": 7791.634645381707,
+          "max": 7797.825137832652
+        },
+        "full_decode_tps": {
+          "samples": [
+            163.2727061524132,
+            163.45160759763934,
+            163.8426843985412
+          ],
+          "min": 163.2727061524132,
+          "median": 163.45160759763934,
+          "max": 163.8426843985412
+        },
+        "session_output_tps": {
+          "samples": [
+            144.2000342875637,
+            143.72920372714506,
+            144.6481816518165
+          ],
+          "min": 143.72920372714506,
+          "median": 144.2000342875637,
+          "max": 144.6481816518165
+        }
+      },
+      "peer": {
+        "prefill_tps": {
+          "samples": [
+            6329.812924357087,
+            6450.984279085707,
+            6550.204374052491
+          ],
+          "min": 6329.812924357087,
+          "median": 6450.984279085707,
+          "max": 6550.204374052491
+        },
+        "full_decode_tps": {
+          "samples": [
+            181.1111451742605,
+            180.5862280427839,
+            182.0969660653768
+          ],
+          "min": 180.5862280427839,
+          "median": 181.1111451742605,
+          "max": 182.0969660653768
+        },
+        "session_output_tps": {
+          "samples": [
+            151.9568706493232,
+            152.12769014386208,
+            153.59361348446427
+          ],
+          "min": 151.9568706493232,
+          "median": 152.12769014386208,
+          "max": 153.59361348446427
+        }
+      }
+    },
+    "comparisons": {
+      "prefill_tps": {
+        "relative_percent": 20.782105618245428,
+        "ranges_overlap": false
+      },
+      "full_decode_tps": {
+        "relative_percent": -9.750663085714361,
+        "ranges_overlap": false
+      },
+      "session_output_tps": {
+        "relative_percent": -5.211185319912137,
+        "ranges_overlap": false
+      }
+    },
+    "processes": {
+      "count": 8,
+      "timing": 6,
+      "independent_memory": 2,
+      "actual_order": [
+        "hyle",
+        "peer",
+        "peer",
+        "hyle",
+        "hyle",
+        "peer",
+        "hyle",
+        "peer"
+      ],
+      "all_exit0_no_timeout_reader_error": true,
+      "commands_image_and_memory_mode_equal_frozen_plan": true
+    },
+    "work_and_outputs": {
+      "all_eight": {
+        "processed_and_actual_rows": 1728,
+        "prefill_rows": 1536,
+        "decode_rows": 192,
+        "returned_decisions": 198,
+        "physical_R2_episodes": 99,
+        "sessions": 2,
+        "turns_per_session": 3,
+        "max_visible_per_session": 864,
+        "prefix_reused_restore_eviction": 0
+      },
+      "all_expected_waves_episode_order_phase_contexts_match": true,
+      "current_Hyle_consumed_decode_ID_tapes_exact": true,
+      "full_within_arm_non_time_reports_equal": true,
+      "IDs_per_report": 198,
+      "all_current_reports_IDs_equal_corresponding_historical_arm": true,
+      "current_cross_engine_IDs_equal": true,
+      "qualification": "IDs and forced input work agree; this is not bitwise intermediate math, natural generation quality or equal physical failure/state contract certification."
+    },
+    "memory": {
+      "hyle": {
+        "requested_interval_s": 0.01,
+        "samples": 306,
+        "running_samples": 287,
+        "recomputed_peaks": {
+          "sampled_max_working_set_bytes": 1160511488,
+          "observed_os_peak_working_set_bytes": 1160515584,
+          "sampled_max_private_commit_bytes": 6044643328,
+          "observed_os_peak_commit_bytes": 6044643328,
+          "sampled_peak_gpu_dedicated_bytes": 4294000640,
+          "sampled_peak_gpu_shared_bytes": 96468992,
+          "sampled_peak_gpu_total_bytes": 4375789568
+        },
+        "actual_gap_ms": {
+          "median": 15.13105,
+          "min": 0.1256,
+          "max": 17.2299
+        },
+        "gpu_null_samples": 32,
+        "ready_baseline_unknown": true
+      },
+      "peer": {
+        "requested_interval_s": 0.01,
+        "samples": 340,
+        "running_samples": 334,
+        "recomputed_peaks": {
+          "sampled_max_working_set_bytes": 4408881152,
+          "observed_os_peak_working_set_bytes": 4409544704,
+          "sampled_max_private_commit_bytes": 6364041216,
+          "observed_os_peak_commit_bytes": 6364844032,
+          "sampled_peak_gpu_dedicated_bytes": 5093068800,
+          "sampled_peak_gpu_shared_bytes": 104857600,
+          "sampled_peak_gpu_total_bytes": 5197926400
+        },
+        "actual_gap_ms": {
+          "median": 15.0733,
+          "min": 0.1117,
+          "max": 18.935
+        },
+        "gpu_null_samples": 13,
+        "ready_baseline_unknown": true
+      }
+    },
+    "reducer_review": "Three-rate calculations match every saved run metric and final median/min/max and comparison exactly. Only the six timing entries feed reducers; memory-run rates are excluded. Original per-wave and whole-journey endpoints retained. Hyle-specific model_seconds/shape_prepare_seconds remain present without fabricated peer values. No unresolved parser namespace or key-set issue remains after freeze3.",
+    "limits": [
+      "The new three-sample timing ranges do not overlap for the three main speed metrics, but this is a finite descriptive window, not a significance/stability certificate or a task-quality win.",
+      "The historical decode gap17.65% and new9.750663% come from different windows/consumer/source conditions. Their difference cannot be causally attributed to one change or treated as a paired optimization gain. No old samples entered these medians.",
+      "Each arm has only one independent memory process. Sampled dedicated/shared/total VRAM and sampled WS/private peaks are observed lower bounds, not complete allocator totals/caps or repeated-window statistics; independent dedicated and shared maxima are not additive. OS-reported peak fields remain distinct.",
+      "Requested10ms probe interval is not actual10ms sampling: raw running-sample gaps median15.13105/15.0733ms, max17.2299/18.935ms. GPU-null samples32/13 are retained. Both ready-baseline samples are null/unknown and must not be replaced by zero.",
+      "Load/ready timing reports keep each producer original stages and different preparation/mapping/context boundaries. Their numeric ratios do not by themselves establish equal cold-disk IO or equal ready-state work. OS cache was not cleared.",
+      "Uninstrumented image41/frozen CUDA closure and retained peer632 version/source qualifiers remain as in the independent plan/runner review; no latest-upstream or current CPU/View/full-platform certification follows.",
+      "Teacher-forced two-session synchronized ordinary work is not natural output, MTP, eviction/recovery/cancellation or general serving fairness. No extension of scope or new execution was performed."
+    ]
+  },
+  "archive": {
+    "path": "inference-b2-current-window-2026-10-26.zip",
+    "bytes": 638445,
+    "sha256": "d8d4e436a563318905d3603b3b254d7cb6f376f3429b05d48ab3987ac7de2cf6",
+    "members": 158,
+    "verification": "ZIP CRC and every allowlisted member length/SHA256 passed independently at publication"
+  }
+}
