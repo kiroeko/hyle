@@ -1789,8 +1789,8 @@ struct OutputStorageRetention final {
   compute::CompletionRetention retirement;
 };
 struct OutputSourceState final : util::RefCounted<OutputSourceState> {
-  OutputSourceState(InvocationState *original, const compute::WriteLease *lease,
-      const compute::ReadLease *published,
+  OutputSourceState(InvocationState *original, compute::WriteLease *lease,
+      compute::ReadLease *published,
       compute::ConstTensorView view, compute::detail::QueueRef queue_value,
       compute::StorageOwner storage, compute::Completion submission) noexcept
       : producer(original), writer(lease), ready(published), tensor(view), queue(std::move(queue_value)),
@@ -1804,17 +1804,22 @@ struct OutputSourceState final : util::RefCounted<OutputSourceState> {
     auto *original = producer;
     this->~OutputSourceState();
     allocator.deallocate(this, sizeof(OutputSourceState), alignof(OutputSourceState));
-    original->results.fetch_sub(1, std::memory_order_release);
-    release(original);
+    if (original) {
+      original->results.fetch_sub(1, std::memory_order_release);
+      release(original);
+    }
   }
   InvocationState *producer = nullptr;
-  const compute::WriteLease *writer = nullptr;
-  const compute::ReadLease *ready = nullptr;
+  compute::WriteLease *writer = nullptr;
+  compute::ReadLease *ready = nullptr;
   compute::ConstTensorView tensor;
   compute::detail::QueueRef queue;
   // This real resource/allocator owner outlives both the original Completion
   // and its leased backing, including the final metadata deallocation above.
   compute::StorageOwner storage_owner;
+  // A real original read permission, declared after its actual resource owner
+  // so it is destroyed first. Once detached no producer binding is borrowed.
+  compute::ReadLease retained_output;
   compute::Completion completion;
   std::mutex observation;
   // One-shot borrowed identity only; never a back-reference owning consumer.
@@ -2011,6 +2016,37 @@ Status OutputSource::wait() noexcept {
   if (!state_) return Status::FailedPrecondition("output source is empty");
   return wait_output(state_);
 }
+Status OutputSource::detach() noexcept {
+  if (!state_) return Status::FailedPrecondition("output source is empty");
+  auto &source = *state_;
+  std::lock_guard guard(source.observation);
+  if (!source.producer) return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+  if (observed == compute::CompletionPoll::kPending)
+    return Status::Unavailable("output producer is still pending");
+  auto *original = source.producer;
+  if (original->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+      !original->outputs_ready.load(std::memory_order_acquire) ||
+      original->preparation_uses.load(std::memory_order_acquire) != 0)
+    return Status::Unavailable("successful output producer has not actually retired");
+  // results kept both original binding objects stable through this point.
+  // No native producer write remains, but ordered read uses may still own the
+  // block. Keep the original binding's ready alias for ordinary output().
+  if (!source.writer->valid() && !source.ready->valid())
+    return Status::FailedPrecondition("successful output has no original read permission");
+  if (source.writer->valid()) {
+    HYLE_ASSIGN_OR_RETURN(auto published,
+        compute::detail::LeaseAccess::publish_after_writes(*source.writer));
+    *source.ready = std::move(published);
+  }
+  source.retained_output = *source.ready;
+  // The successful Completion is already settled and caches this generation's
+  // complete verdict. Never consult the producer's next observation slot.
+  source.writer = nullptr; source.ready = nullptr; source.producer = nullptr;
+  original->results.fetch_sub(1, std::memory_order_release);
+  release(original);
+  return Status::Ok();
+}
 Status bind_output(Invocation &invocation, ValueId input, const OutputSource &source) noexcept {
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, {}, false));
   if (source.state_->consumer)
@@ -2059,6 +2095,9 @@ Result<compute::Completion> submit_output(Invocation &invocation, ValueId input,
         auto &owner = *static_cast<OutputSourceState *>(opaque);
         if (!owner.queue.same_owner(sequence))
           return Status::InvalidArgument("ordered output reader has another actual Queue");
+        std::lock_guard guard(owner.observation);
+        if (owner.retained_output.valid())
+          return compute::detail::LeaseAccess::read_unique(uses, owner.retained_output);
         // result() may have published this very writer after producer success.
         // That is an original ready permission, not a synthesized conversion.
         if (owner.writer->valid())

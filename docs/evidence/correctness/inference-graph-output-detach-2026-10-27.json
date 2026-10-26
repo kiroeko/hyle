@@ -1,0 +1,417 @@
+{
+  "schema": "hyle.inference.graph-output-detach.correctness.v1",
+  "date": "2026-10-27",
+  "status": "PASS",
+  "head_at_capture": "44cd53d4453af445086fa1a26275adfe876d9f09",
+  "scope": "Successful actually retired fixed I32 producer detaches original ready lease/terminal facts. A second original Invocation remains a pending reader while the original producer rebinds a different real writer and submits a new generation on the same Queue.",
+  "implementation": {
+    "api": "detail::OutputSource::detach() noexcept -> Status",
+    "facts": [
+      "Nonblocking pending and computational-error outcomes preserve original producer pin; error alone is never retirement.",
+      "Full successful original Completion plus original Invocation idle/outputs_ready/no preparation uses are required.",
+      "Existing publish_after_writes produces the actual original ReadLease while admitted ordered readers may remain; no payload copy, synthetic ready lease, new pool or executor.",
+      "Original binding keeps a real ready alias for normal output semantics. Source independently retains the same original lease and StorageOwner, clears all producer/binding borrowed pointers and returns its original results/ref pin.",
+      "Already settled original Completion caches the old generation verdict; old Source does not inspect the producer next submission.",
+      "Original ordered admission serializes with detach using the same ordinary source mutex; detached source admits its own ready lease.",
+      "Two genuinely distinct fixed pool blocks are explicitly reserved by the test; producer rebinds the second writer. No implicit overwrite of an in-flight source block."
+    ]
+  },
+  "checks": {
+    "process": {
+      "exit": 0,
+      "pid": 49440,
+      "seconds": 0.5445669000037014
+    },
+    "tests": [
+      {
+        "name": "PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "256",
+        "status": "run",
+        "result": "completed",
+        "time": "0.089",
+        "timestamp": "2026-10-27T07:07:35.389",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "257",
+        "status": "run",
+        "result": "completed",
+        "time": "0.003",
+        "timestamp": "2026-10-27T07:07:35.479",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "258",
+        "status": "run",
+        "result": "completed",
+        "time": "0.003",
+        "timestamp": "2026-10-27T07:07:35.483",
+        "classname": "GraphOutputSourceCuda"
+      }
+    ],
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "assertions": [
+      "Original two pending-relay/checked-error tests pass; early detach returns Unavailable and checked producer failure preserves its original code/message.",
+      "Two bounded original Queue host gates make A actually retire while B remains in-flight with an admitted read of A old writer.",
+      "A detach succeeds idempotently, then A binds a separately allocated real writer at a different original pool offset, prepares and submits its next generation while B is still pending.",
+      "Old Source poll/wait remain successful/complete while A next submission is pending.",
+      "After release B reads old token2 embedding [30,31]; A next output is token1.",
+      "Neither ten-second watchdog fires; original Invocations retire and pools native-use counts return to zero; final handle release returns both output blocks."
+    ]
+  },
+  "counts": {
+    "distinct_CXX_TUs": 2,
+    "compiler_attempts": 2,
+    "successful_compiles": 2,
+    "failed_compiles": 0,
+    "links": 1,
+    "images": 1,
+    "test_processes": 1,
+    "test_cases": 3,
+    "NVCC": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "model_processes": 0,
+    "benchmarks": 0
+  },
+  "failures": [],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 3648,
+      "sha256": "155c0e7b07552e33c812caaaa5208acfe9c3472eedbc5c4406b2b1a71bac10a6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 143048,
+      "sha256": "9f2ca26463249dc881277caf3d152db21407202d541fb56df539c68db6cc99a8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 12781,
+      "sha256": "f48403320ce5560dd6522f37f513ee1977b32de06fe845645de2962fa81aa1c6"
+    }
+  ],
+  "post_validation_source_changes": [
+    {
+      "path": "include/hyle/graph/detail/output_source.h",
+      "sha256": "31a2abfddd875bc913cd3a41c377abd1d4c5d509f1b32e51d34579aa3424a6fa",
+      "kind": "comment-only",
+      "note": "Narrowed detach wording to no wait for a pending producer and idempotent success. Final owner release retains ordinary destructor/allocator cleanup cost. Tested frozen bytes and archive remain unchanged; no additional compile or run."
+    }
+  ],
+  "source_freeze": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\source-freeze.json",
+    "bytes": 603,
+    "sha256": "77c5775602a27c5b491b71362cbe44ed2d0f1e22505bbffa0f26290df7d54054"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\bin\\output-detach-test.exe",
+    "bytes": 143881216,
+    "sha256": "858ef8095beae2c411bbde97a186ef6adbd5dd0c29b860eef95152f6ba9719af"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\ready.json",
+    "bytes": 3194,
+    "sha256": "e888bdc88258a4958fa154eccc2eaee424d993502762e7b64b67618710274704"
+  },
+  "compiled": [
+    {
+      "name": "resources",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 143048,
+        "sha256": "9f2ca26463249dc881277caf3d152db21407202d541fb56df539c68db6cc99a8"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\unit.obj",
+        "bytes": 1379839,
+        "sha256": "6e2cdc35e0123d42808f6554328a34247571d47ae1006c862618fc0f7a147467"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 19352,
+        "seconds": 2.3345568000222556
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\actual-dependencies.json",
+        "bytes": 48427,
+        "sha256": "fb428481923c85c7ce75a366321be6ef944e9ecb077b864841076d4c44319b1f"
+      }
+    },
+    {
+      "name": "test",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "bytes": 12781,
+        "sha256": "f48403320ce5560dd6522f37f513ee1977b32de06fe845645de2962fa81aa1c6"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\unit.obj",
+        "bytes": 1374636,
+        "sha256": "2afd2eea4722dacf4d8bed4d1e25e90aae4140aeefcb3bf521e3fcfe2a9a737d"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 52732,
+        "seconds": 3.5968729999731295
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\actual-dependencies.json",
+        "bytes": 59515,
+        "sha256": "a8ee1832ccf6a99e0009c39e755471f29eea2fb077bb63bcbbc117b668007b54"
+      }
+    }
+  ],
+  "link": {
+    "exit": 0,
+    "pid": 52536,
+    "seconds": 1.779989000002388
+  },
+  "retained_inputs": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link-inputs.json",
+    "bytes": 59382,
+    "sha256": "84438f2ec23ded18925ddf06adf6a98792918017eebab8f491c789650a8e4fae"
+  },
+  "baseline": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-graph-output-source-2026-10-27.json",
+      "bytes": 32293,
+      "sha256": "ea8635c4be293f3f89f0e5cad5742803cb5f913af98ac60b59ed5aeb6294d95f"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-graph-output-source-2026-10-27.zip",
+      "bytes": 196384,
+      "sha256": "7baa818edd139c81f9587c0e30121f4f5f428d87477cdbd83107bd9abc0ee978"
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-source-20261027\\ready.json",
+      "bytes": 5004,
+      "sha256": "cd80913679a4760525de8376890664d86235c0fe0eb755b4a965da71d68fee70"
+    },
+    "replacement_count": 2,
+    "retained_inputs": 228,
+    "total_inputs": 230,
+    "note": "Prior native/SDK/Graph closure remains unchanged; only resources.cc and same test TU are replaced. No dependency/header tree or object/binary/model archive."
+  },
+  "limits": [
+    "This is a fixed-I32, single-shared-Queue, one-consumer-per-source component slice, not complete engine or finite-slot state/KV/MTP overlap.",
+    "A original observer must prove successful actual retirement before detach. Checked logical failure is tested; arbitrary driver faults/unknown native-observation failures are not injected.",
+    "No tensor capture/replay optimization or performance conclusion.",
+    "The pre-existing original producer.result() ready-read compatibility branch is not separately exercised.",
+    "Source can keep old read data immutable across producer reuse; this does not authorize reusing that same old payload block for writes while readers retain it.",
+    "Original external pool-root and arbitrary Graph metadata allocator contracts remain unchanged."
+  ],
+  "archive_members": [
+    {
+      "member": "build.py",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\build.py",
+      "bytes": 5693,
+      "sha256": "bbc991225385295016aeff4796d7c01f56f53e68836fc5ea9adc87132d1bed62"
+    },
+    {
+      "member": "plan.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\plan.json",
+      "bytes": 6425,
+      "sha256": "72f3ae641f67e3b83ab29c02dc52c1ba1e992ec8179e17358af4a54bc325aa0c"
+    },
+    {
+      "member": "closure.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\closure.json",
+      "bytes": 17973,
+      "sha256": "51313daa4da4d05c847ca2fee3b5591501258edc5f35f2e61ab2075d79a2a6c7"
+    },
+    {
+      "member": "source-freeze.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\source-freeze.json",
+      "bytes": 603,
+      "sha256": "77c5775602a27c5b491b71362cbe44ed2d0f1e22505bbffa0f26290df7d54054"
+    },
+    {
+      "member": "compiled-partial.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compiled-partial.json",
+      "bytes": 1789,
+      "sha256": "918726e4cd477e0a0abb78bd4a826dcdd16f7783565c0b855a78e6fb656707a1"
+    },
+    {
+      "member": "link-inputs.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link-inputs.json",
+      "bytes": 59382,
+      "sha256": "84438f2ec23ded18925ddf06adf6a98792918017eebab8f491c789650a8e4fae"
+    },
+    {
+      "member": "runtime.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\runtime.json",
+      "bytes": 21280,
+      "sha256": "fed0d6338b94d1289f7670b7373f9e24215638226dbda9c1434b8c052c443df7"
+    },
+    {
+      "member": "ready.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\ready.json",
+      "bytes": 3194,
+      "sha256": "e888bdc88258a4958fa154eccc2eaee424d993502762e7b64b67618710274704"
+    },
+    {
+      "member": "summary.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\summary.json",
+      "bytes": 1973,
+      "sha256": "82c829921f8e185e25a647677feca7a09c6f1910e5a25e2a879e7b2f88280f2f"
+    },
+    {
+      "member": "results.xml",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\results.xml",
+      "bytes": 1207,
+      "sha256": "f61f9542e25932f85cfcc6995b9cc56356b6e2d0a4bf1d6668c8a804d43a3f61"
+    },
+    {
+      "member": "source/include/hyle/graph/detail/output_source.h",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\source\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 3648,
+      "sha256": "155c0e7b07552e33c812caaaa5208acfe9c3472eedbc5c4406b2b1a71bac10a6"
+    },
+    {
+      "member": "source/src/graph/resources.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\source\\src\\graph\\resources.cc",
+      "bytes": 143048,
+      "sha256": "9f2ca26463249dc881277caf3d152db21407202d541fb56df539c68db6cc99a8"
+    },
+    {
+      "member": "source/tests/graph/output_source_cuda_test.cc",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\source\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 12781,
+      "sha256": "f48403320ce5560dd6522f37f513ee1977b32de06fe845645de2962fa81aa1c6"
+    },
+    {
+      "member": "compile/resources/command.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\command.json",
+      "bytes": 1628,
+      "sha256": "c87aaab85a9057a37708099f82fb4ab78c9cd489dddf0187132b058da2b57616"
+    },
+    {
+      "member": "compile/resources/process.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\process.json",
+      "bytes": 70,
+      "sha256": "6daa646963a16b349ef58c4dcfbcbe822bb1ac27ae87ac001c0bfa1907fd1053"
+    },
+    {
+      "member": "compile/resources/stdout.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\stdout.log",
+      "bytes": 14,
+      "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+    },
+    {
+      "member": "compile/resources/stderr.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "compile/resources/dependencies.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\dependencies.json",
+      "bytes": 23874,
+      "sha256": "d3ad40cde386f7cbf4c9b91d72b09689c699e50930d888c43df67571d64dd1ee"
+    },
+    {
+      "member": "compile/resources/actual-dependencies.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\resources\\actual-dependencies.json",
+      "bytes": 48427,
+      "sha256": "fb428481923c85c7ce75a366321be6ef944e9ecb077b864841076d4c44319b1f"
+    },
+    {
+      "member": "compile/test/command.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\command.json",
+      "bytes": 2076,
+      "sha256": "21190d3935819d45d13dc125b100f1bde61555d7195e6a29c025400297a78d83"
+    },
+    {
+      "member": "compile/test/process.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\process.json",
+      "bytes": 70,
+      "sha256": "becd2417a163aef9aa5e25bddf9862b30a7be3f5da90be8bbeb2eaefb4e2e2a9"
+    },
+    {
+      "member": "compile/test/stdout.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\stdout.log",
+      "bytes": 28,
+      "sha256": "f46340415a8144d00504dac4c63103e73046ec973c879220bd71983f34df1331"
+    },
+    {
+      "member": "compile/test/stderr.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "compile/test/dependencies.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\dependencies.json",
+      "bytes": 31251,
+      "sha256": "c7e1b70708dcb6130ad9a6d2d593c3c27319345aa2c084ca376fcb0fed2feb29"
+    },
+    {
+      "member": "compile/test/actual-dependencies.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\compile\\test\\actual-dependencies.json",
+      "bytes": 59515,
+      "sha256": "a8ee1832ccf6a99e0009c39e755471f29eea2fb077bb63bcbbc117b668007b54"
+    },
+    {
+      "member": "link/command.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link\\command.json",
+      "bytes": 32097,
+      "sha256": "e6df2fd7ede7b38c24b4a7451e791ef180132a5e204c44bb684c63b29cdd1c7f"
+    },
+    {
+      "member": "link/process.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link\\process.json",
+      "bytes": 69,
+      "sha256": "79eef1fc394944494c341038361248bb86520ab57a9a96f556bd89256b2aa2c2"
+    },
+    {
+      "member": "link/stdout.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link\\stdout.log",
+      "bytes": 249,
+      "sha256": "b768bc82bf3f99cae42e7a35e2601452c55d58ede75e0a1784c6baf7b4ce557f"
+    },
+    {
+      "member": "link/stderr.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\link\\stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "member": "run/command.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\run\\command.json",
+      "bytes": 407,
+      "sha256": "4142e4a837d27e2bb98d6bb4c80bcfe1b639b8440872d0c8442bb41e298b0f99"
+    },
+    {
+      "member": "run/process.json",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\run\\process.json",
+      "bytes": 70,
+      "sha256": "b09499b77e26783aff5b8857a4f8aaffc959c6643e2285a6bd5f290a07852b49"
+    },
+    {
+      "member": "run/stdout.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\run\\stdout.log",
+      "bytes": 1139,
+      "sha256": "302ad06535494e5216d7ee28df0a31e6f9e399c3353cbb06ac656f658db198e0"
+    },
+    {
+      "member": "run/stderr.log",
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\run\\stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-graph-output-detach-2026-10-27.zip",
+    "bytes": 106982,
+    "sha256": "6572f74a79e8a33d72ed48b19eeed1a5e0c0fefc76044f89e639ebaff937a01a"
+  }
+}

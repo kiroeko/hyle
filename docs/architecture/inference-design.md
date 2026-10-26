@@ -110,9 +110,11 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
   创建时核对原提交proxy身份、原writer／pool、完整范围及Plan保留的真实`StorageOwner`，成功才消费proxy。
   原生退休另保独立资源owner，source与consumer句柄提前释放不缩短真实工作寿命。
   自身依赖、未提交生产者及未经证明的拓扑拒绝，不增加执行器。
-- 一次A→B依赖链与持续有限槽轮换分别实现。`GraphOutput`保留原Invocation并阻止重绑；
-  B仍借读A时，即使A已完成，也不能重用A的槽。持续轮换还需分清输出存储／本次终结owner
-  与可重用载体的寿命，按真实读者退休归还权限；一次链通过不表示双槽重叠已完成。
+- 一次A→B依赖链与持续有限槽轮换分别实现。pending `OutputSource`保留原Invocation并阻止重绑；
+  原提交完整成功且实际退休后，`detach()`保留原只读输出与该提交的终结事实，归还producer的结果引用。
+  B仍读旧输出时，A可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
+  pending／失败不解除保留；不等待pending生产者，最后owner释放仍有正常析构／分配器清理成本。
+  输出存储与执行载体由此可分开，完整状态及KV的pending权限仍须另接，不能由token链代签。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
 
@@ -133,8 +135,12 @@ host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正
 消费者只走Commands与已有metadata-only准备合同，普通submit不能绕过原有序读权限，capture准备也拒绝；
 成功返回Completion后才消费一次提交资格，接纳前拒绝仍可修正后重试。原producer若已将writer成功发布为read，
 提交使用该真实只读权限，不制造第二份状态。ready分支未在本批单独运行。
-该适配保留producer槽，尚未接引擎。接下来实现有界槽连续轮换，再接普通请求有序发布、额度与停止，
-MTP另核接受／修复；没有持续重叠执行或提速结论。
+后续[有限CUDA检查](../evidence/correctness/inference-graph-output-detach-2026-10-27.json)另验证：
+A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一代，B仍读取旧值，旧source的终结事实不受新提交影响。
+实际使用两块输出缓冲，未减少其容量；没有复制载荷或增加执行器。该适配尚未接引擎，
+接下来按同一次原Graph提交共用依赖与完整终结owner，再接状态／KV的精确pending视图及有界轮换。
+Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
+不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；

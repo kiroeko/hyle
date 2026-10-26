@@ -7,8 +7,9 @@ namespace hyle::graph::detail {
 struct OutputSourceState;
 
 // One immutable output of one already-submitted original Invocation. This
-// first adapter pins that Invocation through all source/consumer references;
-// it is not a rotating execution pipeline. Control calls, including producer
+// pending adapter pins that Invocation. Successful detach preserves its
+// original ready output independently, allowing a different producer writer;
+// this is not a complete rotating inference pipeline. Control calls, including producer
 // drain, are externally serialized. Native callbacks and source observations
 // share the source's ordinary mutex.
 class OutputSource final {
@@ -33,6 +34,14 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_API Result<compute::CompletionPoll> poll() noexcept;
   HYLE_GRAPH_API Status wait() noexcept;
+  // Does not wait for a pending producer; idempotent after success. Requires
+  // whole-producer success AND actual retirement. Pending/error keeps its pin.
+  // Final owner release retains ordinary destructor/allocator cleanup cost.
+  // Publishes only the original writer after its last write; already admitted
+  // ordered readers may still be running. No payload copy or new execution.
+  // The original Invocation retains a ready alias until reset/rebind. Reusing
+  // it requires another genuine writer while this source remains immutable.
+  HYLE_GRAPH_API Status detach() noexcept;
 
 private:
   friend HYLE_GRAPH_API Status bind_output(Invocation &, ValueId,

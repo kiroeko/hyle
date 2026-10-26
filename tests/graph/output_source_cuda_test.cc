@@ -53,7 +53,7 @@ struct Gate final {
   }
 };
 
-void relay(bool bad_producer_index) {
+void relay(bool bad_producer_index, bool reuse_producer = false) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -70,7 +70,9 @@ void relay(bool bad_producer_index) {
   const auto row_f32 = c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t, 2>{1, 2}).value();
   auto inputs = c::LeasePool::create(storage.ref(), 3 * 256, {.max_blocks = 3}).value();
-  auto source_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  const auto source_blocks = reuse_producer ? 2u : 1u;
+  auto source_pool = c::LeasePool::create(storage.ref(), source_blocks * 256,
+      {.max_blocks = source_blocks}).value();
   auto output_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
   auto table = inputs.allocate(4 * sizeof(std::int32_t), 256).value();
   auto index = inputs.allocate(sizeof(std::int32_t), 256).value();
@@ -83,6 +85,18 @@ void relay(bool bad_producer_index) {
   ASSERT_TRUE(embedding.view()->write(std::as_bytes(std::span(rows))).ok());
   auto table_ready = table.publish().value(), index_ready = index.publish().value();
   auto embedding_ready = embedding.publish().value();
+  // Prepare every new payload/allocation before any native host gate. The
+  // reuse step itself only binds these existing genuine owners.
+  c::LeasePool next_index_pool;
+  c::ReadLease next_index;
+  c::WriteLease next_token_writer;
+  if (reuse_producer) {
+    next_index_pool = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+    auto prepared_index = next_index_pool.allocate(sizeof(std::int32_t), 256).value();
+    constexpr std::array<std::int32_t, 1> other_index{1};
+    ASSERT_TRUE(prepared_index.view()->write(std::as_bytes(std::span(other_index))).ok());
+    next_index = prepared_index.publish().value();
+  }
 
   auto first = g::GraphBuilder::create().value();
   const auto first_table = first.input(table_i32).value();
@@ -97,6 +111,13 @@ void relay(bool bad_producer_index) {
   ASSERT_TRUE(producer.bind(first_table, table_i32, table_ready).ok());
   ASSERT_TRUE(producer.bind(first_index, i32, index_ready).ok());
   auto token_writer = source_pool.allocate(sizeof(std::int32_t), 256).value();
+  if (reuse_producer) {
+    next_token_writer = source_pool.allocate(sizeof(std::int32_t), 256).value();
+    const auto original_storage = token_writer.view().value();
+    const auto next_storage = next_token_writer.view().value();
+    EXPECT_EQ(original_storage.native_handle(), next_storage.native_handle());
+    EXPECT_NE(original_storage.offset(), next_storage.offset());
+  }
   ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
 
   auto second = g::GraphBuilder::create().value();
@@ -117,6 +138,7 @@ void relay(bool bad_producer_index) {
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
 
   Gate gate;
+  Gate reader_gate;
   gate.arm(c::cuda::stream(queue).value());
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
@@ -132,6 +154,7 @@ void relay(bool bad_producer_index) {
   EXPECT_FALSE(submitted->valid());
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
+  EXPECT_TRUE(source.detach().IsUnavailable());
   EXPECT_FALSE(producer.reset().ok());
   EXPECT_FALSE(gd::bind_output(producer, first_index, source).ok());
   const auto bound = gd::bind_output(consumer, second_index, source);
@@ -149,6 +172,12 @@ void relay(bool bad_producer_index) {
   // The ordinary public entry cannot silently treat pending bytes as ready.
   EXPECT_FALSE(consumer.submit(queues));
   EXPECT_FALSE(consumer.in_flight());
+  if (reuse_producer) {
+    // The producer's original completion precedes this gate; B's actual read
+    // follows it. Thus A can retire while B still owns a pending native read.
+    reader_gate.arm(gate.stream);
+    ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
+  }
   auto consumed = gd::submit_output(consumer, second_index, source, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   auto pending = consumed->poll();
@@ -157,9 +186,44 @@ void relay(bool bad_producer_index) {
   EXPECT_TRUE(producer.in_flight()); EXPECT_TRUE(consumer.in_flight());
   EXPECT_GT(source_pool.stats().active_uses, 0u);
   gate.release();
+  c::Completion next_submission;
+  if (reuse_producer) {
+    const auto first_status = source.wait();
+    ASSERT_TRUE(first_status.ok()) << first_status.message();
+    ASSERT_FALSE(producer.in_flight());
+    ASSERT_TRUE(consumer.in_flight());
+    EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+    const auto detached = source.detach();
+    ASSERT_TRUE(detached.ok()) << detached.message();
+    EXPECT_TRUE(source.detach().ok());
+    ASSERT_TRUE(producer.bind(first_index, i32, next_index).ok());
+    ASSERT_TRUE(producer.bind(token, i32, std::move(next_token_writer)).ok());
+    const auto prepared_next = producer.prepare_replay(queues,
+        {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(prepared_next.ok()) << prepared_next.message();
+    auto next = producer.submit(queues);
+    ASSERT_TRUE(next) << next.error().message();
+    next_submission = std::move(*next);
+    EXPECT_TRUE(producer.in_flight()); EXPECT_TRUE(consumer.in_flight());
+    EXPECT_EQ(*next_submission.poll(), c::CompletionPoll::kPending);
+    // The old source's terminal identity no longer names A's observation slot.
+    EXPECT_EQ(*source.poll(), c::CompletionPoll::kComplete);
+    EXPECT_TRUE(source.wait().ok());
+    reader_gate.release();
+  }
   const auto consumer_status = consumed->wait();
   const auto producer_status = source.wait();
+  if (reuse_producer) {
+    const auto next_status = next_submission.wait();
+    ASSERT_TRUE(next_status.ok()) << next_status.message();
+    std::array<std::int32_t, 1> actual_next{};
+    ASSERT_TRUE(producer.output(token)->storage().read(
+        std::as_writable_bytes(std::span(actual_next))).ok());
+    EXPECT_EQ(actual_next, (std::array<std::int32_t, 1>{1}));
+    EXPECT_TRUE(source.detach().ok());
+  }
   EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_FALSE(reader_gate.timed_out.load(std::memory_order_acquire));
   EXPECT_FALSE(producer.in_flight()); EXPECT_FALSE(consumer.in_flight());
   EXPECT_EQ(source_pool.stats().active_uses, 0u);
   EXPECT_EQ(output_pool.stats().active_uses, 0u);
@@ -168,6 +232,10 @@ void relay(bool bad_producer_index) {
     EXPECT_EQ(consumer_status.code(), producer_status.code());
     EXPECT_EQ(consumer_status.message(), producer_status.message());
     EXPECT_FALSE(consumer.output(selected));
+    const auto detached = source.detach();
+    EXPECT_FALSE(detached.ok());
+    EXPECT_EQ(detached.code(), producer_status.code());
+    EXPECT_EQ(detached.message(), producer_status.message());
   } else {
     ASSERT_TRUE(producer_status.ok()) << producer_status.message();
     ASSERT_TRUE(consumer_status.ok()) << consumer_status.message();
@@ -176,7 +244,7 @@ void relay(bool bad_producer_index) {
         std::as_writable_bytes(std::span(actual))).ok());
     EXPECT_EQ(actual, (std::array<float, 2>{30, 31}));
     // Successful observation does not drop the immutable producer pin.
-    EXPECT_FALSE(producer.reset().ok());
+    if (!reuse_producer) EXPECT_FALSE(producer.reset().ok());
   }
   *consumed = {};
   source = {};
@@ -187,4 +255,5 @@ void relay(bool bad_producer_index) {
 
 TEST(GraphOutputSourceCuda, PendingI32UsesOriginalQueueAndLeasesForCheckedGather) { relay(false); }
 TEST(GraphOutputSourceCuda, ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement) { relay(true); }
+TEST(GraphOutputSourceCuda, RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter) { relay(false, true); }
 } // namespace
