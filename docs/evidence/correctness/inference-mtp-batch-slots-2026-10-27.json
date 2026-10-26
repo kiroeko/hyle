@@ -1,0 +1,509 @@
+{
+  "date": "2026-10-27",
+  "platform": "Windows, existing mixed CPU/CUDA validation closure",
+  "status": "PASS_WITH_PRESERVED_TEST_AUTHORING_FAILURES",
+  "purpose": "Real B2/K3 MTP verification commits different accepted prefixes into the original per-layer conv/GDN lease pools, then continues with reversed lengths. This is controlled state-wiring coverage, not natural acceptance quality.",
+  "counts": {
+    "distinct_translation_units": 1,
+    "compiler_attempts": 3,
+    "successful_compilations": 2,
+    "links": 2,
+    "images": 2,
+    "runtime_processes": 3,
+    "successful_CPU_processes": 1,
+    "successful_CUDA_processes": 1,
+    "setup_failed_CPU_processes": 1,
+    "SDK_rebuilds": 0,
+    "NVCC_compiles": 0,
+    "downloads": 0
+  },
+  "source_versions": [
+    {
+      "attempts": [
+        "compile1 failed",
+        "compile2 and its CPU setup-failure process"
+      ],
+      "main_sha256": "3b1a2c6996a8c7a3cd3c654526abd1bbb9a033a0a809e68ff6063ede8b61812f",
+      "main_archive_reference": "prior engine-slot-state ZIP source/engine/models/qwen35/main.cc"
+    },
+    {
+      "attempts": [
+        "compile3",
+        "final CPU and CUDA processes"
+      ],
+      "main_sha256": "2709af3dc68494634b106cc2d0b7bce6efcde0de4ff023838a6f10080b469a42",
+      "main_archive_member": "source/engine/models/qwen35/main-2709af3d.cc",
+      "performance_measured": false
+    }
+  ],
+  "session_header_sha256": "e393af9522901f73bab16801054e7c4761ca836f87b15003902f6b7c279ce2bd",
+  "observed_independent_pool_indices": {
+    "backends": [
+      "cpu",
+      "cuda"
+    ],
+    "round": 2,
+    "conv_source_ids": [
+      0,
+      7
+    ],
+    "gdn_source_ids": [
+      0,
+      7
+    ],
+    "conv_destination_ids": [
+      1,
+      4,
+      5,
+      6,
+      8,
+      9
+    ],
+    "gdn_destination_ids": [
+      4,
+      5,
+      8,
+      9,
+      10,
+      1
+    ],
+    "selected_conv_ids": [
+      5,
+      6
+    ],
+    "selected_gdn_ids": [
+      8,
+      9
+    ],
+    "interpretation": "The independently allocated destination tables genuinely differ. Source IDs happen to coincide in this observation; no different-source-ID claim is made. Every selected bank was checked against its own original writer address/generation and raw bytes."
+  },
+  "fixture_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+    "bytes": 7861,
+    "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+  },
+  "scope": {
+    "fixture": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+    "same_image_two_backends": true,
+    "N": 6,
+    "R": 2,
+    "K": 3,
+    "state_slots": 12,
+    "B": 2,
+    "context_limit": 16,
+    "rounds": 2,
+    "accepted_prefixes": [
+      [
+        1,
+        3
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "controlled_pending": [
+      [
+        11,
+        12
+      ],
+      [
+        13,
+        14
+      ]
+    ],
+    "checks": [
+      "original retired Store candidates j*K+p and exact pool address/generation",
+      "independent conv/GDN source/destination indices, pairwise nonoverlap",
+      "selected state bytes, carry/prior rows, KV frontier and initialized old prefix",
+      "controlled RNG/pending/draft lag and continuation",
+      "original and preceding-round frozen checkpoints remain unchanged",
+      "unaccepted candidate slots reusable by allocation from the original pool after actual retirement",
+      "all committed versions retired to zero"
+    ]
+  },
+  "successful_runs": [
+    {
+      "backend": "cpu",
+      "process": {
+        "exit": 0,
+        "pid": 44168,
+        "seconds": 0.8108963000122458
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cpu\\command.json",
+        "bytes": 375,
+        "sha256": "ac6c502cb875c0a7b4016c61218479bcf3c63b60ac76b77afb0e2ffa4965d35b"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cpu\\report.json",
+        "bytes": 1482,
+        "sha256": "dd434490ca14b9d8486728852ce104cecf3e0546c831aa4d84a21061d2c0bf6c"
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cpu",
+        "requests": 2,
+        "verify_rows": 3,
+        "candidate_prefixes": 3,
+        "rounds": 2,
+        "accepted": [
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "checked_selected_bytes": 70144,
+        "reclaimed_unselected_slots": 16,
+        "banks": [
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              1,
+              4,
+              5,
+              6,
+              8,
+              9
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              4,
+              5,
+              8,
+              9,
+              10,
+              1
+            ]
+          }
+        ],
+        "same_width_original_candidates": true,
+        "old_snapshots_unchanged": true,
+        "final_versions": 0,
+        "controlled_prefix_pending": true,
+        "controlled_rng_unchanged": true,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cpu\\stdout.log",
+        "bytes": 755,
+        "sha256": "b6464b94fc33eef6a34bcd38935ff3d12ef96f8fa5c2f3f9ad3f7973ab781a6c"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cpu\\stderr.log",
+        "bytes": 4760,
+        "sha256": "eb82ee30dce188ce990a0a7a5e8ecfc88d614299bad358b77d579079dd1f3ac8"
+      }
+    },
+    {
+      "backend": "cuda",
+      "process": {
+        "exit": 0,
+        "pid": 34484,
+        "seconds": 0.7694906999822706
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cuda\\command.json",
+        "bytes": 376,
+        "sha256": "aaf856f3d3356fac514a9072234d95ffe2a88ec26c613fe013b3ba73a62e98e1"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cuda\\report.json",
+        "bytes": 1483,
+        "sha256": "09e467ccf9816c33c8282c9c5bc6978ff44a33e51a39293291dd7efcca84d163"
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cuda",
+        "requests": 2,
+        "verify_rows": 3,
+        "candidate_prefixes": 3,
+        "rounds": 2,
+        "accepted": [
+          [
+            1,
+            3
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "checked_selected_bytes": 70144,
+        "reclaimed_unselected_slots": 16,
+        "banks": [
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              2,
+              3
+            ],
+            "candidate_slot_ids": [
+              0,
+              1,
+              4,
+              5,
+              6,
+              7
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "conv",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              1,
+              4,
+              5,
+              6,
+              8,
+              9
+            ]
+          },
+          {
+            "layer": 0,
+            "role": "gdn",
+            "source_slot_ids": [
+              0,
+              7
+            ],
+            "candidate_slot_ids": [
+              4,
+              5,
+              8,
+              9,
+              10,
+              1
+            ]
+          }
+        ],
+        "same_width_original_candidates": true,
+        "old_snapshots_unchanged": true,
+        "final_versions": 0,
+        "controlled_prefix_pending": true,
+        "controlled_rng_unchanged": true,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false
+      },
+      "stdout": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cuda\\stdout.log",
+        "bytes": 756,
+        "sha256": "144448c30caf85fba5f4b3341e5669747504d794da15aa7f6e4c4889995ab4ef"
+      },
+      "stderr": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\run-cuda\\stderr.log",
+        "bytes": 6056,
+        "sha256": "a84b6243847bf0baadac73ae60699e8f592207d99ce000b611c116f784f6a9d3"
+      }
+    }
+  ],
+  "preserved_failures": [
+    {
+      "kind": "TEST_COMPILE_API_USAGE",
+      "process": {
+        "exit": 2,
+        "pid": 61976,
+        "seconds": 5.727979800023604
+      },
+      "reason": "Test applied Result-only q::take to direct HostBatchLayout returned by layout.host(). Corrected test helper; no product change.",
+      "failure": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\failure-build.json",
+        "bytes": 837,
+        "sha256": "81d18c194b9e45c9b4146431c3b7e6019296eebe42d0584a2e9afaa547a2fbd7"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\freeze.json",
+        "bytes": 2717,
+        "sha256": "04b3963e3328979ffac1bb2015ee1359ed90c6667a20df8f8aac11600554237c"
+      }
+    },
+    {
+      "kind": "TEST_SESSION_SETUP",
+      "process": {
+        "exit": 1,
+        "pid": 60332,
+        "seconds": 0.8315214000176638
+      },
+      "reason": "Initial empty call plan and absent B1 MtpPrefill family correctly rejected by create_session before prefill. Added cold B1 admission family/use plan and nonempty calls; actual work remains B2.",
+      "failure": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt2\\failure-run-cpu.json",
+        "bytes": 777,
+        "sha256": "80dc26c0ad9dd4ce449ed7bf6606aaff40c4a45836f4c38b750eee0d75d8c212"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt2\\freeze.json",
+        "bytes": 2777,
+        "sha256": "18b5fcd8d97138ba8e94fdf9d3643e6fd57ffd85fc91ab05be51af254b50ea76"
+      },
+      "failed_image_ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt2\\ready.json",
+        "bytes": 1816,
+        "sha256": "854062e43056a842f3c34e9fcf818be25645f22439fc9dad11aa9ed558f1824b"
+      },
+      "CUDA_run": false
+    }
+  ],
+  "actual_final_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\ready.json",
+    "bytes": 1816,
+    "sha256": "ed8b1649dd38dacab7ae4c5cfae48694f09c7995c0e3ad521e7484acf7a8a462"
+  },
+  "compile_processes": [
+    {
+      "exit": 2,
+      "pid": 61976,
+      "seconds": 5.727979800023604
+    },
+    {
+      "exit": 0,
+      "pid": 58932,
+      "seconds": 21.33564549998846
+    },
+    {
+      "exit": 0,
+      "pid": 55816,
+      "seconds": 21.473380099982023
+    }
+  ],
+  "link_processes": [
+    {
+      "exit": 0,
+      "pid": 58352,
+      "seconds": 1.7681932999985293
+    },
+    {
+      "exit": 0,
+      "pid": 56840,
+      "seconds": 1.785972399986349
+    }
+  ],
+  "closure": {
+    "baseline_public_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-engine-slot-state-2026-10-27.json",
+      "bytes": 37549,
+      "sha256": "d370e581b22f0deb7da8d6b28e8192f05d8874f2596019f89556928b7d4dccbc"
+    },
+    "baseline_public_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-engine-slot-state-2026-10-27.zip",
+      "bytes": 1256349,
+      "sha256": "83d62a1fefeae39a646d58030609fbac6c7d6873ea144351cddb879c2efa0dcb"
+    },
+    "baseline_member": "records/mixed/link-inputs.json",
+    "baseline_input_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\mixed\\link-inputs.json",
+      "bytes": 57698,
+      "sha256": "f8016f7b15aa586f865bbad3454db4a19c70fbca62b7ea9436c514a4172552a0"
+    },
+    "final_input_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\link-inputs.json",
+      "bytes": 57708,
+      "sha256": "3a439e732a2cede44eddb9106c769766330014226777c2e19b3e4681fe071043"
+    },
+    "baseline_inputs": 223,
+    "final_inputs": 223,
+    "identical_reused_inputs": 222,
+    "removed": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\mixed\\compile\\probe\\unit.obj",
+        "bytes": 15795837,
+        "sha256": "76999558d0e93e3b0e808816a46d922e5d3fac89c92d18393ffafac15e1992d2"
+      }
+    ],
+    "added": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\b2-mtp-state\\attempt3\\compile\\unit.obj",
+        "bytes": 16366895,
+        "sha256": "990b45753f55e82d840bf12e07e1d05e094a9b2bc29021840c07b7d586ace2f2"
+      }
+    ],
+    "derivation": "Retain the 222 exact baseline inputs and replace only the old combined probe object with the final compiled combined probe. The original weights/report/common/native objects and SDKs are reused, not rebuilt.",
+    "standalone_Model_or_engine_entry_object_included": false,
+    "new_translation_unit": "tests/tools/qwen_host_image_test.cc (includes the exact frozen main.cc and all case headers)"
+  },
+  "limitations": [
+    "Controlled prefix/pending selection tests state wiring; not a natural acceptance quality or task-quality claim.",
+    "No CPU/CUDA numerical equality requirement and no cross-width numeric oracle.",
+    "Selected original pool bytes are compared within each same-width Graph episode.",
+    "No performance measurement, hardware-memory-release claim, fault injection or broad full-model coverage.",
+    "The test validates original Store authority; selected provider policy IDs are not asserted by this consumer.",
+    "Final ready.json remains its immutable build-time BUILT_NOT_RUN record; these run receipts are the later execution facts."
+  ],
+  "archive_policy": "Only new source snapshots, commands, dependency identities, bounded receipts and stdout/stderr are included. Baseline 223-input closure and identical sources are referenced by exact prior public archive. No SDK/header tree, weights payload, OBJ, library, executable or PDB is archived.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mtp-batch-slots-2026-10-27.zip",
+    "bytes": 261305,
+    "sha256": "b35a0dad3908e09a4e70d75bcf90f7313f4bce98c4c2697c29ed5bea9e93669f",
+    "entries": 70,
+    "uncompressed_bytes": 1176543,
+    "member_sha256_and_crc_verified": true
+  }
+}
