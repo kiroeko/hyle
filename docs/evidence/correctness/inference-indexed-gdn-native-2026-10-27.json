@@ -1,0 +1,617 @@
+{
+  "status": "PRIVATE_NATIVE_INDEXED_GDN_3_PASS",
+  "batch_date": "2026-10-27",
+  "scope": "Direct private GGML CUDA native numerical/address contract; not public provider, Graph or engine integration.",
+  "hardware": "NVIDIA GeForce RTX 4070; hardware and toolchain raw output retained",
+  "final": {
+    "status": "PRIVATE_NATIVE_INDEXED_GDN_THREE_CASES_PASS",
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\ready2.json",
+      "bytes": 4084,
+      "sha256": "14690a21e9c52916e24e13d3bf8a4c3bbf950784290af363628296e79fbab95c"
+    },
+    "results": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\results2.xml",
+      "bytes": 1179,
+      "sha256": "ff776724aa2b6f8f57689dadf812cd85b3e6780ff61af24b4d79384b0a18f201"
+    },
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\summary2.json",
+      "bytes": 838,
+      "sha256": "1213453fc6350e6b63fc068beb393841f3ae8249d9d8c7b20c31e29fabec8744"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\native-freeze2.json",
+      "bytes": 19364,
+      "sha256": "cd18f752d6dc5e14298a5ffb0bd9ae5b40c0c30d93804bdda6623d2d68b7ce03"
+    },
+    "canonical": [
+      {
+        "path": "third_party\\ggml_cuda_runtime\\patches.json",
+        "bytes": 595399,
+        "sha256": "3797dde6bc8c2db8ccfe1a26c7d313bcf471234e95bf0e41b974f906c0dcde70"
+      },
+      {
+        "path": "third_party\\ggml_cuda_runtime\\NOTICE.md",
+        "bytes": 27068,
+        "sha256": "9543a39d61b741c793b21f4e97d4d329acbc22221bedaf834b38790720a9e39a"
+      },
+      {
+        "path": "cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "77746f0129fa7a207efe160e1bdd8052a1a9aecdd38c19e19e1496df83f09a9b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\indexed_gdn_test.cc",
+        "bytes": 9991,
+        "sha256": "638d53413509c9b195ef7a072323387e32990f2243cd4a698385a60adfdfd400"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\CMakeLists.txt",
+        "bytes": 1814,
+        "sha256": "c768e29b4002115ea6e4bb2dbf93c51b081153b85a71e6eb2e7dc778b0d78027"
+      }
+    ],
+    "native_objects": [
+      {
+        "name": "gdn",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\native-overlay\\src\\ggml-cuda\\gated_delta_net.cu",
+          "bytes": 26667,
+          "sha256": "450c6ea7cf2f4468be2639e4b82c0d5a6827517be6dfb6fddedaf10ed52474ed"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile\\gdn\\unit.obj",
+          "bytes": 1518528,
+          "sha256": "814c6e2e34a5b7ebdde14aa712ed3c26cb8bb70e799335cdb4b77b4d2a0b72bf"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 39132,
+          "seconds": 6.53006949997507
+        }
+      },
+      {
+        "name": "dispatcher",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\native-overlay\\src\\ggml-cuda\\ggml-cuda.cu",
+          "bytes": 334914,
+          "sha256": "5f8e81ed589c77b98e4f4cbfaf2d354778d2ecf75f1c0ea18b39c7d33b72a0de"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\compile2\\dispatcher\\unit.obj",
+          "bytes": 1651315,
+          "sha256": "5dda051084f30ea6ee8337ad50009a0a5ed54ac8c644e528dfc97082b3703092"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 3648,
+          "seconds": 4.445458000001963
+        }
+      }
+    ],
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\link2\\indexed-gdn-test.exe",
+      "bytes": 139364352,
+      "sha256": "9afa735c853eb444d57e789cdaa03615fcd474d957462de7a7de3fa55dee9a6a"
+    },
+    "test_process": {
+      "exit": 0,
+      "pid": 62180,
+      "seconds": 0.517119999974966
+    },
+    "tests": [
+      {
+        "name": "FinalStatePreservesNoncontiguousSlotsAndPadding",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\indexed_gdn_test.cc",
+        "line": "186",
+        "status": "run",
+        "result": "completed",
+        "time": "0.075",
+        "timestamp": "2026-10-27T00:58:18.133",
+        "classname": "GgmlCudaIndexedGdn"
+      },
+      {
+        "name": "LastKIsChronologicalWhenTokensExceedK",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\indexed_gdn_test.cc",
+        "line": "189",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T00:58:18.209",
+        "classname": "GgmlCudaIndexedGdn"
+      },
+      {
+        "name": "BfloatValuesAndBetaMatchRoundedLegacyMath",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_provider_ggml_cuda\\indexed_gdn_test.cc",
+        "line": "192",
+        "status": "run",
+        "result": "completed",
+        "time": "0.001",
+        "timestamp": "2026-10-27T00:58:18.210",
+        "classname": "GgmlCudaIndexedGdn"
+      }
+    ],
+    "prior_failed_process": {
+      "exit": 1,
+      "pid": 15136,
+      "seconds": 0.5096537999925204
+    },
+    "prior_results": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\results.xml",
+      "bytes": 1384,
+      "sha256": "3a639e094d7e237b4b461718573d0b2a667d7fcf8885477a66eda5659b9e2df9"
+    },
+    "prior_dispatcher_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\dispatcher-attempt1.cu",
+      "bytes": 334879,
+      "sha256": "6f63a49d03ae8561246e16ba0a8e87547ea43abeaf11991522c4e06a856e8ac3"
+    },
+    "correction": {
+      "prior_run": "run1",
+      "prior_process": {
+        "exit": 1,
+        "pid": 15136,
+        "seconds": 0.5096537999925204
+      },
+      "prior_dispatcher_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-state-20261027\\dispatcher-attempt1.cu",
+        "sha256": "6f63a49d03ae8561246e16ba0a8e87547ea43abeaf11991522c4e06a856e8ac3"
+      },
+      "reason": "BF16 indexed mode reached a legacy typed_bound check inside the old fusion preflight, before regular indexed dispatch. Skip the whole old fusion block for the new mode. GDN/test objects and all arithmetic unchanged."
+    },
+    "arithmetic_body_identical": true,
+    "legacy_fused_struct_unchanged": true,
+    "public_provider_connected": false,
+    "Graph_indexed_state_effect_assembly_connected": false,
+    "engine_connected": false,
+    "SDK_builds": 0,
+    "model_runs": 0,
+    "downloads": 0,
+    "performance_claim": false
+  },
+  "attempts": [
+    {
+      "run": "run1",
+      "pid": 15136,
+      "exit": 1,
+      "passed": 2,
+      "failed": 1,
+      "reason": "BF16 indexed state entered old dense typed-bound fusion preflight."
+    },
+    {
+      "run": "run2",
+      "pid": 62180,
+      "exit": 0,
+      "passed": 3,
+      "failed": 0,
+      "correction": "Exclude indexed mode from entire old fusion preflight; only dispatcher recompiled."
+    }
+  ],
+  "coverage": [
+    "K1 final state; B2 noncontiguous source/destination slots and padded pool stride",
+    "T4>K2 last-K chronological snapshots",
+    "BF16 V/beta compared with rounded original dense F32 path",
+    "Activation/state bits, full pool including source/unused slots/padding, immutable inputs"
+  ],
+  "exclusions": [
+    "No public Compute/provider/Graph effect/engine connection claim",
+    "No arbitrary device ID validation claim: caller must prove admitted immutable lease-to-I32 IDs",
+    "No performance, model-quality or broad shape/platform claim",
+    "No current uncompiled Compute program/tensor/provider source included",
+    "No SDK rebuild, downloads or model inference runs"
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-indexed-gdn-native-2026-10-27.zip",
+    "bytes": 495786,
+    "sha256": "36daf1d242d7a203cb881850c1a33bedf845c5c1db4fc67c1e2e4ceb72f7a782",
+    "members": 81
+  },
+  "members": [
+    {
+      "path": "native-headers/include/ggml-alloc.h",
+      "bytes": 3753,
+      "sha256": "94e4cd069b9313b2ceb35dacec901981e0bb478d8bb31035b7126be091998c23"
+    },
+    {
+      "path": "native-headers/include/ggml-backend.h",
+      "bytes": 25374,
+      "sha256": "46d84cb998105f871240864fd0f55446939a2fe86c5c281afa63a010fb1f65a2"
+    },
+    {
+      "path": "native-headers/include/ggml-cuda.h",
+      "bytes": 1565,
+      "sha256": "9cbfcea49f6da4d07f41dc22fa8dbf870825faaa2a68e34e65fe30ea6c41e042"
+    },
+    {
+      "path": "native-headers/include/ggml.h",
+      "bytes": 116114,
+      "sha256": "bc70d20c63d0b155c8895e4933bc0e084970416ccbed6945e47df91084572940"
+    },
+    {
+      "path": "native-headers/include/gguf.h",
+      "bytes": 11355,
+      "sha256": "e56714aab702e5ce62ee587a409643c08f7e93e8fbb77f48ef7cc85075f96fa4"
+    },
+    {
+      "path": "native-headers/src/compute_ggml_runtime/gated_delta_scale.h",
+      "bytes": 1991,
+      "sha256": "53a26f36b92f63ed52f250e1e29c5173e541d6a4ad45bc3114dbc8c6a6f861d4"
+    },
+    {
+      "path": "native-headers/src/compute_provider_ggml_cuda/native_bridge.h",
+      "bytes": 3810,
+      "sha256": "1391fe90f6e47baa229ab475caca045bebb529be6894f19c618e771cf2718286"
+    },
+    {
+      "path": "native-headers/src/compute_provider_ggml_cuda/native_bridge_impl.h",
+      "bytes": 13109,
+      "sha256": "ebd8f22fcb89d1d3858bf7717eac78c88b78e843184b40bf1d028ba16ae89feb"
+    },
+    {
+      "path": "native-headers/src/ggml-common.h",
+      "bytes": 197219,
+      "sha256": "79c8eb4f98df7e7f5daa3a31dba9346b5dc8c68b649e9badbace78f61fb89444"
+    },
+    {
+      "path": "native-headers/src/ggml-cuda/common.cuh",
+      "bytes": 66308,
+      "sha256": "07e2ef062fea2d49c9ef3307bf949347900d0fdd7fce11e7cf553c7427644a9c"
+    },
+    {
+      "path": "native-headers/src/ggml-cuda/convert.cuh",
+      "bytes": 2386,
+      "sha256": "fc32372473421c99494d7eea21ab510a8cea61d637f572afe34ed9db32b0d6ce"
+    },
+    {
+      "path": "native-headers/src/ggml-cuda/vendors/cuda.h",
+      "bytes": 741,
+      "sha256": "e7847065d5d741f892d2f1f7aaaa8f418a41e3b983d1e6f09010055d4d1c38d1"
+    },
+    {
+      "path": "native-headers/src/ggml-impl.h",
+      "bytes": 25821,
+      "sha256": "43564db0238aebb7ed68501e346c194866b5dac218d1d37b26baff9f458c00d3"
+    },
+    {
+      "path": "native/dispatcher-attempt1.cu",
+      "bytes": 334879,
+      "sha256": "6f63a49d03ae8561246e16ba0a8e87547ea43abeaf11991522c4e06a856e8ac3"
+    },
+    {
+      "path": "native/gated_delta_net.cu",
+      "bytes": 26667,
+      "sha256": "450c6ea7cf2f4468be2639e4b82c0d5a6827517be6dfb6fddedaf10ed52474ed"
+    },
+    {
+      "path": "native/gated_delta_net.cuh",
+      "bytes": 2855,
+      "sha256": "77e2440062d4bdef69430688e8ad00fcd47e7edaa4f7f8cd5c5ce9ebab4f62e3"
+    },
+    {
+      "path": "native/ggml-cuda.cu",
+      "bytes": 334914,
+      "sha256": "5f8e81ed589c77b98e4f4cbfaf2d354778d2ecf75f1c0ea18b39c7d33b72a0de"
+    },
+    {
+      "path": "records/build-plan.json",
+      "bytes": 15906,
+      "sha256": "9750562098339cefc2d72a30aadf1a20ea5fdd966fd2bbf3c59b4289b72bbe80"
+    },
+    {
+      "path": "records/build-plan2.json",
+      "bytes": 16666,
+      "sha256": "68b19c6aa0b64ad947b74232b46f8ed8c8fe3450d04ce3c66a051ec22b47c652"
+    },
+    {
+      "path": "records/build.py",
+      "bytes": 8350,
+      "sha256": "5168cf8ddcd4c9525d7235e88a62d42519d44f3d2e073863139068713b1b4d3c"
+    },
+    {
+      "path": "records/compile/dispatcher/actual-dependencies.json",
+      "bytes": 73649,
+      "sha256": "7e34ac695719a386450cb726f5dd55a5507ea1538fe06750ded8bbf481e3d4b0"
+    },
+    {
+      "path": "records/compile/dispatcher/command.json",
+      "bytes": 4545,
+      "sha256": "57ad2bd8d7dfa9d4f12134f1993b6e02b5c44d8b946a1d9ae7a0d0dce748dc81"
+    },
+    {
+      "path": "records/compile/dispatcher/process.json",
+      "bytes": 69,
+      "sha256": "c3484742c63bcb2c5660e55481162ed4030b6c5b9e462ce2fdeaf2a01889c437"
+    },
+    {
+      "path": "records/compile/dispatcher/stderr.log",
+      "bytes": 17800,
+      "sha256": "f8b472d26d9729813e2579c4b66238b4efec0afbfb21fd62a2dd63938ab26d85"
+    },
+    {
+      "path": "records/compile/dispatcher/stdout.log",
+      "bytes": 64,
+      "sha256": "ecfbd165ca0c7a73971852fe2e9df511c79c5255918d5c28cb19165e04d75023"
+    },
+    {
+      "path": "records/compile/gdn/actual-dependencies.json",
+      "bytes": 50126,
+      "sha256": "98807db2f3b50866b8d592aefc14f95134013ce51a1ca9005cf0a8289b74ef8f"
+    },
+    {
+      "path": "records/compile/gdn/command.json",
+      "bytes": 4880,
+      "sha256": "8cd3fb8d74283d492faa7a1dac7cad997edd0faf96234e6d1ceda4ae206c8793"
+    },
+    {
+      "path": "records/compile/gdn/process.json",
+      "bytes": 68,
+      "sha256": "e9dc2944815875d221b0000916b8139aeb7ba5e417fe1f9d902f370f1f0be239"
+    },
+    {
+      "path": "records/compile/gdn/stderr.log",
+      "bytes": 18246,
+      "sha256": "963d7d9798ebf34194d414ec758783206f23cc4563486f4ca918f33d9ed99b3b"
+    },
+    {
+      "path": "records/compile/gdn/stdout.log",
+      "bytes": 76,
+      "sha256": "523a52bfe9731160b8721fec913b176415a4fc6aa50c01261210b9ffb312315c"
+    },
+    {
+      "path": "records/compile/test/actual-dependencies.json",
+      "bytes": 49667,
+      "sha256": "c6dc4e1b04ab0dd57a39b63b3d81404b1d17cbba3fb977d72f8ac23520daf8fd"
+    },
+    {
+      "path": "records/compile/test/command.json",
+      "bytes": 2019,
+      "sha256": "7a23d38dd9a0d626436e1b11d68e8f07fd3ed95beff4b3e1c714c12f5e311976"
+    },
+    {
+      "path": "records/compile/test/process.json",
+      "bytes": 69,
+      "sha256": "cfc6d185580a58120f3298fbf1d6345934d49b50fc8d3ae02cca0700dfbf8115"
+    },
+    {
+      "path": "records/compile/test/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/compile/test/stdout.log",
+      "bytes": 21,
+      "sha256": "3b1513dd93a1f84ed0aa18a084c31e227bafd521ae185358a5c27a08b6a8644c"
+    },
+    {
+      "path": "records/compile2/dispatcher/actual-dependencies.json",
+      "bytes": 73649,
+      "sha256": "b6c0e664ff9261c4405536e598dac486814e4612572361f7c3bd01350e32d6e0"
+    },
+    {
+      "path": "records/compile2/dispatcher/command.json",
+      "bytes": 4549,
+      "sha256": "cf704509cca40ecf43d1c93c8187cd78732270a3944d98e973d48c39e5035c38"
+    },
+    {
+      "path": "records/compile2/dispatcher/process.json",
+      "bytes": 68,
+      "sha256": "dc8b4b7a1ca930247d77bef4006aafcdd74cb7ab8c3cab15420550360f9093c0"
+    },
+    {
+      "path": "records/compile2/dispatcher/stderr.log",
+      "bytes": 17800,
+      "sha256": "f8b472d26d9729813e2579c4b66238b4efec0afbfb21fd62a2dd63938ab26d85"
+    },
+    {
+      "path": "records/compile2/dispatcher/stdout.log",
+      "bytes": 64,
+      "sha256": "7cab44ef7dfef5b5990b9314fd7137abcc030b4d101a7ece32d537fa9c24a99f"
+    },
+    {
+      "path": "records/fix_dispatch.py",
+      "bytes": 4408,
+      "sha256": "884b7d92b0f40263c65816152d92aa836af228d6ca8d4cd0ca82efa8d7d15b29"
+    },
+    {
+      "path": "records/implement.py",
+      "bytes": 24625,
+      "sha256": "3b1120b95f5878ecd47cd3d6d7028bb5a668ddb5c07ea69334698014d1c1d54f"
+    },
+    {
+      "path": "records/link-inputs.json",
+      "bytes": 57507,
+      "sha256": "62f7c5e6c790090f1cbd13e2c5bdd0996c1c5f82f5158f020e605ac26da3fa4e"
+    },
+    {
+      "path": "records/link/command.json",
+      "bytes": 31306,
+      "sha256": "e8711814ab21446037702cce70f89326409461468cefba32864b756c750764a5"
+    },
+    {
+      "path": "records/link/process.json",
+      "bytes": 69,
+      "sha256": "0d98d1b2abb694d03ff9e902f4a17adb00d30fdfc440811c7e90d84e6953edb4"
+    },
+    {
+      "path": "records/link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link/stdout.log",
+      "bytes": 213,
+      "sha256": "2b22474093c77a08c0f4c6910af9a4cf1b8537efef10367c8149f43baf8afcbf"
+    },
+    {
+      "path": "records/link2-inputs.json",
+      "bytes": 57508,
+      "sha256": "ba4c689f8be533491fbee162b1703dc8b11575e15475b21f796d48110d49179f"
+    },
+    {
+      "path": "records/link2/command.json",
+      "bytes": 31310,
+      "sha256": "c59b30bc27e351ee88ec4d86971b03ea36b9caf860bcefeed06846c6d8f9a34d"
+    },
+    {
+      "path": "records/link2/process.json",
+      "bytes": 69,
+      "sha256": "ec0e555f67f9d6231b0f3cba2b9ef7aff37bd9ca78214bf632654b232e8565ee"
+    },
+    {
+      "path": "records/link2/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "records/link2/stdout.log",
+      "bytes": 215,
+      "sha256": "a035d9b1b7cf0de0309b5b594314ef6a4bb14d7df6f916f2c40d91f6ff501a5b"
+    },
+    {
+      "path": "records/native-final.json",
+      "bytes": 6421,
+      "sha256": "728ca404df723ce827dd736a58c48b3f9067d0e8b72f2a291449b0e575f591b3"
+    },
+    {
+      "path": "records/native-freeze.json",
+      "bytes": 18703,
+      "sha256": "1365e2b9a402f95143c283a21a943fe49933665787a30777bbf940ce58479d17"
+    },
+    {
+      "path": "records/native-freeze2.json",
+      "bytes": 19364,
+      "sha256": "cd18f752d6dc5e14298a5ffb0bd9ae5b40c0c30d93804bdda6623d2d68b7ce03"
+    },
+    {
+      "path": "records/native-implementation.json",
+      "bytes": 3540,
+      "sha256": "3526416e7d61a9a865d2caa1206251db41e80676ba4ea9d8acfaa4f97b326161"
+    },
+    {
+      "path": "records/preparation.json",
+      "bytes": 28556,
+      "sha256": "167a689e8f0d6c992463607496713abb16701b5e1daceb5c8a28241cb338c15e"
+    },
+    {
+      "path": "records/prepare.py",
+      "bytes": 9626,
+      "sha256": "b3524aa9febad33d7d08f766213b11a8be3daf9eb0eef3b4f7df64ed1cff6f9c"
+    },
+    {
+      "path": "records/publish.py",
+      "bytes": 5712,
+      "sha256": "51aafbba9244ad5c64280abe52d94c79eeeed087ac1188348d9cfe6cf6e070a4"
+    },
+    {
+      "path": "records/ready.json",
+      "bytes": 4048,
+      "sha256": "e67165bc6217975e055cf33c17954fa914dc51d0597fc5231df1ed2caf45e60b"
+    },
+    {
+      "path": "records/ready2.json",
+      "bytes": 4084,
+      "sha256": "14690a21e9c52916e24e13d3bf8a4c3bbf950784290af363628296e79fbab95c"
+    },
+    {
+      "path": "records/refine.py",
+      "bytes": 6242,
+      "sha256": "8f3ce2179ab76a50b53c57c5657a65a0f66eff9967ef61a2ab992d9eb746f9d0"
+    },
+    {
+      "path": "records/results.xml",
+      "bytes": 1384,
+      "sha256": "3a639e094d7e237b4b461718573d0b2a667d7fcf8885477a66eda5659b9e2df9"
+    },
+    {
+      "path": "records/results2.xml",
+      "bytes": 1179,
+      "sha256": "ff776724aa2b6f8f57689dadf812cd85b3e6780ff61af24b4d79384b0a18f201"
+    },
+    {
+      "path": "records/run1/command.json",
+      "bytes": 392,
+      "sha256": "5fb87c8a8341c421acb2ea7b211cd735822278291105fb3fc6d40eae51baf827"
+    },
+    {
+      "path": "records/run1/process.json",
+      "bytes": 70,
+      "sha256": "df9a88e9b1c0475885325597ff9f40255d2f21082ffd9d43b2e69353601e37e6"
+    },
+    {
+      "path": "records/run1/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "records/run1/stdout.log",
+      "bytes": 1202,
+      "sha256": "a9d331704bfd454bf892bc70af3f10739fb3ce6c0263e639498a173652aba455"
+    },
+    {
+      "path": "records/run2/command.json",
+      "bytes": 394,
+      "sha256": "2e935013e268434753a2772db242e1c57fdc16f465e1b5e2e43731f05be3f879"
+    },
+    {
+      "path": "records/run2/process.json",
+      "bytes": 69,
+      "sha256": "c7c686e5e6941ca00ff06fda0491e369d8a5adb22863ccd5e5a8ceeae70b38e1"
+    },
+    {
+      "path": "records/run2/stderr.log",
+      "bytes": 151,
+      "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+    },
+    {
+      "path": "records/run2/stdout.log",
+      "bytes": 1002,
+      "sha256": "680d7726f11c38a1b4f856e3281cfb779cdf6c10248178aceb96f35a8567ed57"
+    },
+    {
+      "path": "records/runtime.json",
+      "bytes": 8447,
+      "sha256": "d022b7032a847499c1d8e58308a9ad029e95b1fe9324495747b03d8d7233ef1b"
+    },
+    {
+      "path": "records/runtime2.json",
+      "bytes": 8447,
+      "sha256": "d022b7032a847499c1d8e58308a9ad029e95b1fe9324495747b03d8d7233ef1b"
+    },
+    {
+      "path": "records/summary2.json",
+      "bytes": 838,
+      "sha256": "1213453fc6350e6b63fc068beb393841f3ae8249d9d8c7b20c31e29fabec8744"
+    },
+    {
+      "path": "records/test-source-freeze.json",
+      "bytes": 429,
+      "sha256": "8be168d6c4da176064ea1b7764446909b80ec760ca25fca63f8d0dfb2b4643a9"
+    },
+    {
+      "path": "source/cmake/HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "77746f0129fa7a207efe160e1bdd8052a1a9aecdd38c19e19e1496df83f09a9b"
+    },
+    {
+      "path": "source/tests/compute_provider_ggml_cuda/CMakeLists.txt",
+      "bytes": 1814,
+      "sha256": "c768e29b4002115ea6e4bb2dbf93c51b081153b85a71e6eb2e7dc778b0d78027"
+    },
+    {
+      "path": "source/tests/compute_provider_ggml_cuda/indexed_gdn_test.cc",
+      "bytes": 9991,
+      "sha256": "638d53413509c9b195ef7a072323387e32990f2243cd4a698385a60adfdfd400"
+    },
+    {
+      "path": "source/third_party/ggml_cuda_runtime/NOTICE.md",
+      "bytes": 27068,
+      "sha256": "9543a39d61b741c793b21f4e97d4d329acbc22221bedaf834b38790720a9e39a"
+    },
+    {
+      "path": "source/third_party/ggml_cuda_runtime/patches.json",
+      "bytes": 595399,
+      "sha256": "3797dde6bc8c2db8ccfe1a26c7d313bcf471234e95bf0e41b974f906c0dcde70"
+    }
+  ]
+}

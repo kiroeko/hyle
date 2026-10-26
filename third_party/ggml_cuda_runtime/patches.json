@@ -43,7 +43,7 @@
     {
       "path": "src/ggml-cuda/ggml-cuda.cu",
       "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
-      "after_sha256": "fe7d6967343b512dcaf986d9e069c24f19f93467172583d5c276e709217351fa",
+      "after_sha256": "747f54fce5d811f948d27bccaf1671547e071dfb11f8ca29c8f7ad056d049176",
       "edits": [
         {
           "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
@@ -656,6 +656,30 @@
         {
           "before": "    if (node->op == GGML_OP_GATED_DELTA_NET) {\n        ggml_cuda_gated_delta_net_fused_cache fused_state_cpy;\n",
           "after": "    if (node->op == GGML_OP_GATED_DELTA_NET) {\n        ggml_cuda_gdn_state_output_match direct_state;\n        if (ggml_cuda_match_gdn_state_output(cgraph, i, cuda_ctx->device, true, direct_state)) {\n            ggml_cuda_gated_delta_net_fused_cache state{\n                static_cast<float *>(direct_state.state->data), 0};\n            ggml_cuda_op_gated_delta_net_fused_cache(*cuda_ctx, node, state);\n            // Preserve the original score payload and CONT implementation.\n            ggml_cuda_dup(*cuda_ctx, direct_state.scores);\n            return direct_state.count - 1;\n        }\n        ggml_cuda_gated_delta_net_fused_cache fused_state_cpy;\n"
+        },
+        {
+          "before": "// No CUDA pointer query on the hot path: resource admission already binds\n",
+          "after": "\n// Real native buffers and complete original pool/ID/Y extents only. Device ID\n// contents are the admitted upper-layer lease encoding, not validated here.\nstatic bool ggml_cuda_gdn_indexed_bound(const ggml_tensor * dst, int device) {\n    if (!ggml_cuda_supports_gated_delta_net_indexed(dst) ||\n        !GGML_CUDA_CC_IS_NVIDIA(ggml_cuda_info().devices[device].cc) ||\n        dst->src[2]->ne[3] > ggml_cuda_mmvq_grid_y[device]) return false;\n    const auto bounded = [device](const ggml_tensor * tensor) {\n        if (!tensor || !tensor->data || !tensor->buffer || !ggml_backend_buffer_is_cuda(tensor->buffer)) return false;\n        const auto * owner = static_cast<const ggml_backend_cuda_buffer_context *>(tensor->buffer->context);\n        if (owner->device != device || !owner->dev_ptr) return false;\n        const uintptr_t base = reinterpret_cast<uintptr_t>(owner->dev_ptr);\n        const uintptr_t begin = reinterpret_cast<uintptr_t>(tensor->data);\n        const size_t capacity = ggml_backend_buffer_get_size(tensor->buffer);\n        const size_t bytes = ggml_nbytes(tensor); // qualification already proved all products/strides\n        return begin % ggml_type_size(tensor->type) == 0 && begin >= base &&\n            begin - base <= capacity && bytes <= capacity - (begin - base) && bytes <= UINTPTR_MAX - begin;\n    };\n    const auto overlap = [](const ggml_tensor * a, const ggml_tensor * b) {\n        const uintptr_t x = reinterpret_cast<uintptr_t>(a->data), y = reinterpret_cast<uintptr_t>(b->data);\n        return x < y + ggml_nbytes(b) && y < x + ggml_nbytes(a);\n    };\n    if (!bounded(dst)) return false;\n    for (int port = 0; port < 8; ++port) {\n        if (!bounded(dst->src[port]) || overlap(dst, dst->src[port])) return false;\n    }\n    // Only the explicit pool may be mutated; protect all original math and\n    // index payloads. Selected source/destination slot disjointness remains the\n    // actual LeaseSlotLayout/Graph proof, not a guessed whole-pool alias rule.\n    for (int port = 0; port < 8; ++port) {\n        if (port != 5 && overlap(dst->src[5], dst->src[port])) return false;\n    }\n    return true;\n}\n\n// No CUDA pointer query on the hot path: resource admission already binds\n"
+        },
+        {
+          "before": "        case GGML_OP_GATED_DELTA_NET:\n            if (ggml_cuda_gdn_uses_typed_loads(dst) && !ggml_cuda_gdn_typed_bound(dst, ctx.device)) {",
+          "after": "        case GGML_OP_GATED_DELTA_NET:\n            if (ggml_cuda_gdn_is_indexed(dst)) {\n                if (!ggml_cuda_gdn_indexed_bound(dst, ctx.device)) {\n                    hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid bound indexed GDN pool/indices/output\");\n                }\n                ggml_cuda_op_gated_delta_net_indexed(ctx, dst);\n                break;\n            }\n            if (ggml_cuda_gdn_uses_typed_loads(dst) && !ggml_cuda_gdn_typed_bound(dst, ctx.device)) {"
+        },
+        {
+          "before": "    if (gdn->op != GGML_OP_GATED_DELTA_NET || gdn->view_src ||\n",
+          "after": "    if (gdn->op != GGML_OP_GATED_DELTA_NET || ggml_cuda_gdn_is_indexed(gdn) || gdn->view_src ||\n"
+        },
+        {
+          "before": "    if (gdn->op != GGML_OP_GATED_DELTA_NET || gdn->type != GGML_TYPE_F32 ||\n",
+          "after": "    if (gdn->op != GGML_OP_GATED_DELTA_NET || ggml_cuda_gdn_is_indexed(gdn) || gdn->type != GGML_TYPE_F32 ||\n"
+        },
+        {
+          "before": "#else\n            if (ggml_cuda_gdn_uses_typed_loads(op)) {\n",
+          "after": "#else\n            if (ggml_cuda_gdn_is_indexed(op)) {\n                return ggml_cuda_supports_gated_delta_net_indexed(op) &&\n                    GGML_CUDA_CC_IS_NVIDIA(ggml_cuda_info().devices[dev_ctx->device].cc) &&\n                    op->src[2]->ne[3] <= ggml_cuda_mmvq_grid_y[dev_ctx->device];\n            }\n            if (ggml_cuda_gdn_uses_typed_loads(op)) {\n"
+        },
+        {
+          "before": "    if (node->op == GGML_OP_GATED_DELTA_NET) {\n        ggml_cuda_gdn_state_output_match direct_state;",
+          "after": "    if (node->op == GGML_OP_GATED_DELTA_NET && !ggml_cuda_gdn_is_indexed(node)) {\n        ggml_cuda_gdn_state_output_match direct_state;"
         }
       ]
     },
@@ -1321,9 +1345,137 @@
         {
           "before": "    const float scale = 1.0f / sqrtf((float) S_v);",
           "after": "    const float scale = hyle::compute::ggml_runtime::gdn_output_scale(\n        dst, 1.0f / sqrtf((float) S_v));"
+        },
+        {
+          "before": "template <int S_v, bool KDA, bool keep_rs_t, typename TV, typename TB>\n",
+          "after": "\nbool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst) {\n    if (!ggml_cuda_gdn_is_indexed(dst) || dst->type != GGML_TYPE_F32) return false;\n    const auto * q = dst->src[0], * k = dst->src[1], * v = dst->src[2];\n    const auto * g = dst->src[3], * beta = dst->src[4], * pool = dst->src[5];\n    const auto * sources = dst->src[6], * destinations = dst->src[7];\n    if (!q || !k || !v || !g || !beta || !pool || !sources || !destinations ||\n        q->type != GGML_TYPE_F32 || k->type != GGML_TYPE_F32 || g->type != GGML_TYPE_F32 ||\n        pool->type != GGML_TYPE_F32 || sources->type != GGML_TYPE_I32 || destinations->type != GGML_TYPE_I32 ||\n        (v->type != GGML_TYPE_F32 && v->type != GGML_TYPE_BF16) ||\n        (beta->type != GGML_TYPE_F32 && beta->type != GGML_TYPE_BF16)) return false;\n    for (int port = 8; port < GGML_MAX_SRC; ++port) if (dst->src[port]) return false;\n    const int64_t S = v->ne[0], H = v->ne[1], T = v->ne[2], B = v->ne[3], P = pool->ne[3];\n    const int K = ggml_get_op_params_i32(dst, 0);\n    if ((S != 16 && S != 32 && S != 64 && S != 128) || H <= 0 || H > INT32_MAX ||\n        T <= 0 || T > INT32_MAX || B <= 0 || B > UINT32_MAX || P <= 0 || P > INT32_MAX ||\n        K < 1 || K > T || !ggml_are_same_shape(q, k) || !ggml_are_same_stride(q, k) ||\n        q->ne[0] != S || q->ne[1] <= 0 || H % q->ne[1] || q->ne[2] != T ||\n        q->ne[3] <= 0 || B % q->ne[3] ||\n        (g->ne[0] != 1 && g->ne[0] != S) || beta->ne[0] != 1 ||\n        g->ne[1] != H || g->ne[2] != T || g->ne[3] != B ||\n        beta->ne[1] != H || beta->ne[2] != T || beta->ne[3] != B ||\n        pool->ne[0] != S || pool->ne[1] != S || pool->ne[2] != H ||\n        sources->ne[0] != B || sources->ne[1] != 1 || sources->ne[2] != 1 || sources->ne[3] != 1 ||\n        destinations->ne[0] != K || destinations->ne[1] != B || destinations->ne[2] != 1 || destinations->ne[3] != 1 ||\n        !ggml_are_same_shape(dst, v)) return false;\n    // Prove every byte/element offset before calling contiguous/byte helpers.\n    const ggml_tensor * tensors[] = {q, k, v, g, beta, pool, sources, destinations, dst};\n    for (const auto * tensor : tensors) {\n        const size_t element = ggml_type_size(tensor->type);\n        if (tensor->nb[0] != element) return false;\n        size_t bytes = element;\n        for (int axis = 0; axis < GGML_MAX_DIMS; ++axis) {\n            if (tensor->ne[axis] <= 0 ||\n                (tensor->ne[axis] > 1 && tensor->nb[axis] % element)) return false;\n            const uint64_t extent = uint64_t(tensor->ne[axis] - 1);\n            if (extent && tensor->nb[axis] > (uint64_t(INT64_MAX) - bytes) / extent) return false;\n            bytes += extent * tensor->nb[axis];\n        }\n    }\n    const uint64_t item_bytes = uint64_t(S) * S * H * sizeof(float);\n    return pool->nb[1] == uint64_t(S) * sizeof(float) &&\n        pool->nb[2] == uint64_t(S) * S * sizeof(float) &&\n        pool->nb[3] >= item_bytes && pool->nb[3] % sizeof(float) == 0 &&\n        ggml_is_contiguous_rows(q) && ggml_is_contiguous_rows(k) && ggml_is_contiguous_rows(v) &&\n        ggml_is_contiguous(g) && ggml_is_contiguous(beta) &&\n        ggml_is_contiguous(sources) && ggml_is_contiguous(destinations) && ggml_is_contiguous(dst);\n}\n\n// Only addressing facts vary. The original GDN arithmetic below is shared by\n// legacy and indexed instantiations; no second recurrent algorithm is added.\nstruct ggml_cuda_gdn_indexed_state {\n    const int32_t * sources = nullptr;\n    const int32_t * destinations = nullptr;\n    int64_t slot_stride = 0; // F32 elements, actual outer pool stride\n    int32_t slots = 0;\n};\n\ntemplate <int S_v, bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false>\n"
+        },
+        {
+          "before": "                                     int           K) {",
+          "after": "                                     int           K,\n                                     ggml_cuda_gdn_indexed_state indexed) {"
+        },
+        {
+          "before": "    const int64_t state_in_offset      = sequence * H * S_v * S_v + h_idx * S_v * S_v;\n    const int64_t state_out_offset     = (sequence * H + h_idx) * S_v * S_v;\n",
+          "after": "    int64_t state_in_offset;\n    int64_t state_out_offset;\n    if constexpr (Indexed) {\n        // These tables are a stable lease-address encoding, not arbitrary user\n        // IDs. Defensive range guards do not confer checked-index authority or\n        // report a user-visible result for a violated private precondition.\n        const int32_t source = indexed.sources[sequence];\n        if (source < 0 || source >= indexed.slots) return;\n        for (int c = 0; c < K; ++c) {\n            const int32_t destination = indexed.destinations[int64_t(sequence) * K + c];\n            if (destination < 0 || destination >= indexed.slots) return;\n        }\n        state_in_offset = int64_t(source) * indexed.slot_stride + int64_t(h_idx) * S_v * S_v;\n        state_out_offset = int64_t(h_idx) * S_v * S_v;\n        if constexpr (!keep_rs_t) {\n            state_out_offset += int64_t(indexed.destinations[sequence]) * indexed.slot_stride;\n        }\n    } else {\n        state_in_offset = sequence * H * S_v * S_v + h_idx * S_v * S_v;\n        state_out_offset = (sequence * H + h_idx) * S_v * S_v;\n    }\n"
+        },
+        {
+          "before": "            const int target_slot = (int) n_tokens - 1 - t;\n            if (target_slot >= 0 && target_slot < K) {\n                float * curr_state = state + target_slot * state_slot_stride;\n",
+          "after": "            const int target_slot = Indexed ? t - (int(n_tokens) - K) : (int) n_tokens - 1 - t;\n            if (target_slot >= 0 && target_slot < K) {\n                float * curr_state;\n                if constexpr (Indexed) {\n                    const int32_t destination = indexed.destinations[int64_t(sequence) * K + target_slot];\n                    curr_state = state + int64_t(destination) * indexed.slot_stride;\n                } else {\n                    curr_state = state + target_slot * state_slot_stride;\n                }\n"
+        },
+        {
+          "before": "template <bool KDA, bool keep_rs_t, typename TV, typename TB>\n",
+          "after": "template <bool KDA, bool keep_rs_t, typename TV, typename TB, bool Indexed = false>\n"
+        },
+        {
+          "before": "        float scale, int64_t state_slot_stride, int K, cudaStream_t stream) {",
+          "after": "        float scale, int64_t state_slot_stride, int K, cudaStream_t stream,\n        ggml_cuda_gdn_indexed_state indexed = {}) {"
+        },
+        {
+          "before": "gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB>",
+          "after": "gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB, Indexed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB>",
+          "after": "gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB, Indexed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB>",
+          "after": "gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB, Indexed>"
+        },
+        {
+          "before": "gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB>",
+          "after": "gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB, Indexed>"
+        },
+        {
+          "before": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K);",
+          "after": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<16, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K, indexed);"
+        },
+        {
+          "before": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K);",
+          "after": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<32, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K, indexed);"
+        },
+        {
+          "before": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K);",
+          "after": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<64, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K, indexed);"
+        },
+        {
+          "before": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K);",
+          "after": "            ggml_cuda_kernel_launch(gated_delta_net_cuda<128, KDA, keep_rs_t, TV, TB, Indexed>, launch_params,\n                q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d, H,\n                n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1_magic, rq3_magic, scale, state_slot_stride, K, indexed);"
+        },
+        {
+          "before": "template <typename TV, typename TB>\nstatic void ggml_cuda_op_gated_delta_net_impl(",
+          "after": "template <typename TV, typename TB, bool Indexed = false>\nstatic void ggml_cuda_op_gated_delta_net_impl("
+        },
+        {
+          "before": "    GGML_ASSERT(ggml_is_contiguous(src_state));",
+          "after": "    if constexpr (!Indexed) GGML_ASSERT(ggml_is_contiguous(src_state));"
+        },
+        {
+          "before": "    // recurrent state -> gdn_out tail (after attention scores), or the cache when fusing\n    float * state_d           = dst_d + S_v * H * n_tokens * n_seqs;\n    int64_t state_slot_stride = S_v * S_v * H * n_seqs;\n    if (cache != nullptr) {\n        state_d           = cache->data;\n        state_slot_stride = cache->slot_stride;\n    }\n",
+          "after": "    float * state_d;\n    int64_t state_slot_stride;\n    ggml_cuda_gdn_indexed_state indexed;\n    if constexpr (Indexed) {\n        // The selected original writes are admitted by the outer Graph effect.\n        // The real pool is neither relabelled as B states nor copied/compacted.\n        state_d = static_cast<float *>(src_state->data);\n        state_slot_stride = 0;\n        indexed.sources = static_cast<const int32_t *>(dst->src[6]->data);\n        indexed.destinations = static_cast<const int32_t *>(dst->src[7]->data);\n        indexed.slot_stride = int64_t(src_state->nb[3] / sizeof(float));\n        indexed.slots = int32_t(src_state->ne[3]);\n    } else {\n        // Original packed tail/cache output and reverse snapshot order.\n        state_d = dst_d + S_v * H * n_tokens * n_seqs;\n        state_slot_stride = S_v * S_v * H * n_seqs;\n        if (cache != nullptr) {\n            state_d = cache->data;\n            state_slot_stride = cache->slot_stride;\n        }\n    }\n"
+        },
+        {
+          "before": "            launch_gated_delta_net<true, true>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream);",
+          "after": "            launch_gated_delta_net<true, true, TV, TB, Indexed>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);"
+        },
+        {
+          "before": "            launch_gated_delta_net<true, false>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream);",
+          "after": "            launch_gated_delta_net<true, false, TV, TB, Indexed>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);"
+        },
+        {
+          "before": "            launch_gated_delta_net<false, true>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream);",
+          "after": "            launch_gated_delta_net<false, true, TV, TB, Indexed>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);"
+        },
+        {
+          "before": "            launch_gated_delta_net<false, false>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream);",
+          "after": "            launch_gated_delta_net<false, false, TV, TB, Indexed>(q_d, k_d, v_d, g_d, b_d, s_d, dst_d, state_d,\n                S_v, H, n_tokens, n_seqs, sq1, sq2, sq3, sv1, sv2, sv3,\n                sg1, sg2, sg3, sb1, sb2, sb3, neqk1, rq3, scale, state_slot_stride, K, stream, indexed);"
+        },
+        {
+          "before": "static void ggml_cuda_dispatch_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst,",
+          "after": "template <bool Indexed = false>\nstatic void ggml_cuda_dispatch_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst,"
+        },
+        {
+          "before": "    if (dst->src[2]->type != GGML_TYPE_F32 || dst->src[4]->type != GGML_TYPE_F32) {\n        if (!ggml_cuda_supports_gated_delta_net_typed(dst)) {",
+          "after": "    if constexpr (Indexed) {\n        if (cache || !ggml_cuda_supports_gated_delta_net_indexed(dst)) {\n            hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"invalid indexed GDN metadata\");\n        }\n    }\n    if (dst->src[2]->type != GGML_TYPE_F32 || dst->src[4]->type != GGML_TYPE_F32) {\n        if (!(Indexed ? ggml_cuda_supports_gated_delta_net_indexed(dst) : ggml_cuda_supports_gated_delta_net_typed(dst))) {"
+        },
+        {
+          "before": "ggml_cuda_op_gated_delta_net_impl<nv_bfloat16, nv_bfloat16>(ctx, dst, cache);",
+          "after": "ggml_cuda_op_gated_delta_net_impl<nv_bfloat16, nv_bfloat16, Indexed>(ctx, dst, cache);"
+        },
+        {
+          "before": "ggml_cuda_op_gated_delta_net_impl<nv_bfloat16, float>(ctx, dst, cache);",
+          "after": "ggml_cuda_op_gated_delta_net_impl<nv_bfloat16, float, Indexed>(ctx, dst, cache);"
+        },
+        {
+          "before": "ggml_cuda_op_gated_delta_net_impl<float, nv_bfloat16>(ctx, dst, cache);",
+          "after": "ggml_cuda_op_gated_delta_net_impl<float, nv_bfloat16, Indexed>(ctx, dst, cache);"
+        },
+        {
+          "before": "ggml_cuda_op_gated_delta_net_impl<float, float>(ctx, dst, cache);",
+          "after": "ggml_cuda_op_gated_delta_net_impl<float, float, Indexed>(ctx, dst, cache);"
+        },
+        {
+          "before": "void ggml_cuda_op_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    ggml_cuda_dispatch_gated_delta_net(ctx, dst, nullptr);\n}",
+          "after": "void ggml_cuda_op_gated_delta_net_indexed(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    ggml_cuda_dispatch_gated_delta_net<true>(ctx, dst, nullptr);\n}\n\nvoid ggml_cuda_op_gated_delta_net(ggml_backend_cuda_context & ctx, ggml_tensor * dst) {\n    if (ggml_cuda_gdn_is_indexed(dst)) {\n        hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"indexed GDN requires its private entry\");\n    }\n    ggml_cuda_dispatch_gated_delta_net(ctx, dst, nullptr);\n}"
+        },
+        {
+          "before": "        ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_cuda_gated_delta_net_fused_cache cache) {\n    ggml_cuda_dispatch_gated_delta_net(ctx, dst, &cache);",
+          "after": "        ggml_backend_cuda_context & ctx, ggml_tensor * dst, ggml_cuda_gated_delta_net_fused_cache cache) {\n    if (ggml_cuda_gdn_is_indexed(dst)) {\n        hyle::compute::ggml_cuda::bridge::fail(cudaErrorInvalidValue, \"indexed GDN cannot use dense fused cache\");\n    }\n    ggml_cuda_dispatch_gated_delta_net(ctx, dst, &cache);"
+        },
+        {
+          "before": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_output_scale_contract() {\n    return hyle::compute::ggml_runtime::kGdnOutputScaleContract;\n}\n",
+          "after": "extern \"C\" std::int32_t ggml_hyle_cuda_gdn_output_scale_contract() {\n    return hyle::compute::ggml_runtime::kGdnOutputScaleContract;\n}\n\nextern \"C\" std::int32_t ggml_hyle_cuda_gdn_indexed_state_contract() {\n    return ggml_cuda_gdn_indexed_contract;\n}\n"
+        },
+        {
+          "before": "    const uint32_t sequence = blockIdx.y;\n",
+          "after": "    const uint32_t sequence = blockIdx.y;\n    // Index tables are inputs too: observe the original PDL producer before reading them.\n    if constexpr (Indexed) ggml_cuda_pdl_sync();\n"
+        },
+        {
+          "before": "    ggml_cuda_pdl_sync();\n#pragma unroll\n",
+          "after": "    if constexpr (!Indexed) ggml_cuda_pdl_sync();\n#pragma unroll\n"
         }
       ],
-      "after_sha256": "309c8cf3d384bc2a13a1dd479274b119f355bd5636307b0f911fa1dfc57c1d21"
+      "after_sha256": "0ef41888f286b8eba0f91038ce86dca58f3d165c258929d407e9bf2b78c3032d"
     },
     {
       "path": "src/ggml-cuda/gated_delta_net.cuh",
@@ -1332,9 +1484,17 @@
         {
           "before": "\n// same op, but writes the snapshot(s) into the cache instead of dst (see ggml_cuda_try_gdn_cache_fusion)\nvoid ggml_cuda_op_gated_delta_net_fused_cache(ggml_backend_cuda_context & ctx, ggml_tensor * dst,\n                                              ggml_cuda_gated_delta_net_fused_cache cache);\n",
           "after": "\n// same op, but writes the snapshot(s) into the cache instead of dst (see ggml_cuda_try_gdn_cache_fusion)\nvoid ggml_cuda_op_gated_delta_net_fused_cache(ggml_backend_cuda_context & ctx, ggml_tensor * dst,\n                                              ggml_cuda_gated_delta_net_fused_cache cache);\n\n// Metadata-only qualification for private typed V/beta loads; no address is required.\nbool ggml_cuda_supports_gated_delta_net_typed(const ggml_tensor * dst);\n"
+        },
+        {
+          "before": "bool ggml_cuda_supports_gated_delta_net_typed(const ggml_tensor * dst);",
+          "after": "bool ggml_cuda_supports_gated_delta_net_typed(const ggml_tensor * dst);\n\n// Private indexed-state v1 carrier. This does not change ggml op/tensor/backend\n// layout or the legacy fused-cache struct. op_params 0/1/2/3 retain K, direct-\n// state planning and the output-scale contract; only slot 4 selects this mode.\ninline constexpr int ggml_cuda_gdn_indexed_parameter = 4;\ninline constexpr int32_t ggml_cuda_gdn_indexed_contract = 0x47444931;\ninline bool ggml_cuda_gdn_is_indexed(const ggml_tensor * node) {\n    return node && node->op == GGML_OP_GATED_DELTA_NET &&\n        ggml_get_op_params_i32(node, ggml_cuda_gdn_indexed_parameter) == ggml_cuda_gdn_indexed_contract;\n}\n\n// src[0..4]: original Q/K/V/log-decay/beta and their original types/strides.\n// src[5]: one actual F32 pool [S,S,H,P], with its real outer slot stride.\n// src[6]: contiguous I32[B] source slots.\n// src[7]: contiguous I32[K,B] in ggml order, dst_slots[b*K+c] in memory.\n// dst: contiguous F32 activation [S,H,T,B], no packed state tail.\n// K=1 writes the final state; K>1 writes the last K post-token boundaries in\n// chronological order: c=t-(T-K). K remains in [1,T], as in the public schema.\n// Metadata qualification DOES NOT inspect device index values or grant pool\n// permissions. The sole caller is an admitted Hyle indexed-state lowering:\n// it must encode stable actual lease addresses, prove 0<=IDs<P, unique whole\n// destination slots disjoint from every source slot, retain the exact pools/\n// tables, and declare the selected pool writes as the original Graph effect.\n// Arbitrary mutable I32 tensors are not a checked-index capability. No ordinary\n// Compute Gather guard may be skipped on account of this private contract.\nbool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst);\nvoid ggml_cuda_op_gated_delta_net_indexed(ggml_backend_cuda_context & ctx, ggml_tensor * dst);\n"
+        },
+        {
+          "before": "bool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst);",
+          "after": "// The C++ lowering must check this real linked native symbol before using the mode.\nextern \"C\" int32_t ggml_hyle_cuda_gdn_indexed_state_contract();\nbool ggml_cuda_supports_gated_delta_net_indexed(const ggml_tensor * dst);"
         }
       ],
-      "after_sha256": "781e568bcb83571f2f7f70b5a812f67fd6212d361d9fa8dc74f22deaaa6cad9e"
+      "after_sha256": "2fd1e7d6ffaa156cf7392c6f7e177539ac95f37b9dc76c089106ab34fe03bb70"
     },
     {
       "path": "src/ggml-cuda/ssm-conv.cu",

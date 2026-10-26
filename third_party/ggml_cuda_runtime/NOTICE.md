@@ -364,3 +364,30 @@ typed loads, reduction, nonfinite behavior and F32 stores are unchanged. New
 state storage must be disjoint from old state. Existing Invocation, capture,
 Completion and failed-prefix retirement ownership remain in effect; no new
 public API, executor, state version or peak-memory reduction is introduced.
+
+The original GDN kernel also supports an explicit private indexed-state v1
+carrier. The real F32 pool keeps its physical slot capacity/outer stride;
+separate I32 source and chronological destination tables encode original
+admitted lease slots. K=1 writes only the final boundary; K>1 writes the last K
+post-token boundaries chronologically. The activation output has V's original
+four-dimensional shape and no packed state tail. This reuses the original
+register update, F32 reductions, typed V/beta loads and output-scale math.
+
+The mode occupies only private op-parameter slot four. Snapshot count (zero),
+cold direct-state qualification (one) and output-scale bits (two/three) retain
+their contracts. Existing ggml enum/tensor/backend layouts, legacy GDN entry
+signatures and the fused-cache struct are unchanged. Indexed mode has explicit
+metadata/device-buffer qualification and execution dispatch, and is excluded
+from both old dense-state-output and rollback-cache copy fusion. It neither
+compacts the pool nor grants generic permission to mutate an input tensor.
+
+Device index contents are not validated by a metadata predicate. The private
+caller must retain immutable actual lease-to-I32 encodings with in-range source
+IDs and unique destinations disjoint from every source, and nominate the pool
+write as the original Graph effect. Defensive kernel range guards are not an
+arbitrary-device-ID validation/status protocol or a generic Gather exemption.
+
+The indexed C++ lowering must also check the real linked native
+ggml_hyle_cuda_gdn_indexed_state_contract symbol, not infer kernel support from
+a header or a provider name. Indexed ID reads observe the original CUDA PDL
+producer before touching tables; the legacy synchronization position remains.

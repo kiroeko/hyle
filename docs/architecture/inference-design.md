@@ -89,7 +89,8 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
 固定槽不自动消除provider复制：CUDA ggml的K1闭合片段已有GDN直接状态输出，不能再把旧的
 packed状态拆分复制当作当前K1热点；Apple仍分配packed输出。K>1的前缀槽及非连续多请求索引
-计算尚未补齐原生能力，不能把K1承载或地址复用记成这些能力已完成。
+计算需独立承载：私有CUDA GDN已通过下述原生检查，Graph、conv和引擎仍未接完，
+不能把K1承载或地址复用记成整段能力已完成。
 
 具体实施沿原`LeasePool`的单份backing增加`LeaseSlotLayout`：固定item、stride与容量，
 只从同一domain的完整原租约推导槽号和generation；地址载体不变成整池读／写许可。
@@ -117,6 +118,18 @@ reset后保留事务不代表可继续执行；真实退休后可以take回收ow
 [13项有限检查](../evidence/correctness/inference-slot-store-2026-10-27.json)包括5个实际Store检查与8个相邻合同。
 这条fallback未接引擎、不支持capture，索引上传可能等待；原生融合仍须消除状态物化和逐层metadata等待，
 不能拿这个正确性入口代替性能实现。共同绑定与退休应继续复用，不能在每个Provider再复制一套事务。
+下一段迁移保持`slots::prepare/bind/take`入口，提取唯一的内部槽绑定owner，
+fallback与融合region只各持一个实例；selected-artifact冷扩展交回该实例，不新增热分派表。
+融合从原Store回溯到同item的GDN和Gather，只消解无逃逸读者的稠密状态，Y可有外部读者。
+源码侧的原生Recipe需要显式effect roots：即使Y不逃出，也必须在原ggml graph中执行状态写入，
+不能用伪公开输出维持活性。源ID与目的ID共用一次小metadata上传，保持各自原真实权限；
+绑定失败回滚本次权限后保留调用方事务，换载体前销毁原录制。
+这些融合与共用owner仍是待实现项，当前Store检查不替代它们。
+私有CUDA索引GDN沿原内核的F32运算体寻址：pool保留真实`[S,S,H,P]`及槽stride，
+源为I32`[B]`，目的为batch-major I32`[B,K]`，K>1写最后K个边界的时间升序状态。
+它保留原op／tensor／backend及旧fused-cache布局，冷接线须核真实native契约符号；
+元数据检查不把任意device IDs变成权限。[三组原生逐位检查](../evidence/correctness/inference-indexed-gdn-native-2026-10-27.json)
+覆盖K1、T>K和BF16载荷，包含旧融合预检遗漏的失败及修正；不代签Graph接线或吞吐。
 原生工作真实退休后，集成层可用`release_read_projection`只撤回指定ready容量及其guard和透明alias，
 使旧源槽有机会重新取得写权；其它绑定、payload与pending来源不被重置。
 原生导入沿原反向释放链清理，只有精确reader和实际backend同时证明时才保留录制。
