@@ -1,5 +1,6 @@
 #pragma once
 #include "hyle/compute/apple_memory.h"
+#if defined(HYLE_COMPUTE_APPLE)
 #include "hyle/compute/detail/copy_stream_access.h"
 
 namespace hyle::compute::apple::detail {
@@ -35,3 +36,4 @@ struct CopyStreamAccess final {
   static HYLE_COMPUTE_ROUTE_APPLE_API Status observe(CopyBatchInvocation &) noexcept;
 };
 } // namespace hyle::compute::apple::detail
+#endif

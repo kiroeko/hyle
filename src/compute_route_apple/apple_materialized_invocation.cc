@@ -1,6 +1,6 @@
 #include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/materialized_native_controller.h"
-#include "apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "apple_copy_internal.h"
 
 namespace hyle::compute::apple {

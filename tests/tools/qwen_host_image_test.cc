@@ -6,17 +6,19 @@ int main(int argc, char **argv) {
   try {
     const bool lagged = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-lag1";
     const auto input_argc = argc - static_cast<int>(lagged);
-    if (input_argc < 2 || input_argc > 3 ||
-        (std::string_view(argv[1]) != "--cpu" && std::string_view(argv[1]) != "--cuda"))
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda [prepared_input_directory] [--mtp-lag1]");
-    const auto backend = std::string_view(argv[1]) == "--cpu"
-        ? qwen35::BackendKind::kCpu : qwen35::BackendKind::kCuda;
-#if !defined(HYLE_COMPUTE_CPU)
-    if (backend == qwen35::BackendKind::kCpu) { std::cerr << "SKIP: CPU route is not built\n"; return 77; }
-#endif
-#if !defined(HYLE_COMPUTE_CUDA)
-    if (backend == qwen35::BackendKind::kCuda) { std::cerr << "SKIP: CUDA route is not built\n"; return 77; }
-#endif
+    if (input_argc < 2 || input_argc > 3)
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1]");
+    const std::string_view selected(argv[1]);
+    auto backend = qwen35::BackendKind::kDefault;
+    if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
+    else if (selected == "--cuda") backend = qwen35::BackendKind::kCuda;
+    else if (selected == "--apple") backend = qwen35::BackendKind::kApple;
+    else if (selected == "--vulkan") backend = qwen35::BackendKind::kVulkan;
+    else throw std::runtime_error("unknown host-image-test backend");
+    const auto compiled = qwen35::Backend::compiled_backends();
+    if (std::find(compiled.begin(), compiled.end(), backend) == compiled.end()) {
+      std::cerr << "SKIP: selected route is not built\n"; return 77;
+    }
     std::string input;
     if (input_argc == 3) input = argv[2];
     else {

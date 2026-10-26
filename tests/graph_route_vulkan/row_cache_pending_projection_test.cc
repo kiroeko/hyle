@@ -16,7 +16,7 @@
 
 #include "../compute_batch/native_vulkan_failure_fixture.h"
 #include "../compute_models/row_cache_native_fixture.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "../../src/graph_batch/row_cache_node.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/vulkan_memory.h"

@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <array>
+#include <locale>
 #include <utility>
 
 namespace {
@@ -650,6 +651,34 @@ void nf4_original_state_and_six_role_contract(const fs::path &directory) {
   require(raw.size() == 171 && actual.logical_shape == std::array<std::int64_t,2>{1024,5120} &&
       actual.offset_f32_bits == 0x3d2fd550 && actual.decode_dtype == "F16" && actual.compute_dtype == "F16",
       "original NF4 JSON must preserve source decode type, original shape and F32 offset bits");
+  const auto with_offset = [&](std::string_view token) {
+    auto json = raw;
+    const auto first = json.find(':', json.find("\"nested_offset\"")) + 1;
+    json.replace(first, json.find('}', first) - first, token);
+    return json;
+  };
+  require(p::parse_nf4_state(with_offset("4.292804002761841e-2")).offset_f32_bits == 0x3d2fd550,
+      "NF4 scientific notation must preserve original F32 offset bits");
+  require(p::parse_nf4_state(with_offset("-0")).offset_f32_bits == 0x80000000 &&
+      p::parse_nf4_state(with_offset("0e-999")).offset_f32_bits == 0 &&
+      p::parse_nf4_state(with_offset("1e-50")).offset_f32_bits == 0 &&
+      p::parse_nf4_state(with_offset("-1e-50")).offset_f32_bits == 0x80000000,
+      "NF4 offset conversion must preserve negative zero and bounded F32 underflow");
+  require(p::parse_nf4_state(with_offset("340282346638528859811704183484516925440")).offset_f32_bits == 0x7f7fffff,
+      "NF4 offset must accept the largest finite F32 value");
+  for (const auto token : {"3.4028236e38", "-3.4028236e38", "1e309", "-1e309", "1e-999", "-1e-999", "1e+", "1.0x", "0,1"})
+    rejects([&]{(void)p::parse_nf4_state(with_offset(token));},"invalid original NF4");
+  {
+    struct DecimalComma final : std::numpunct<char> {
+      char do_decimal_point() const override { return ','; }
+    };
+    struct RestoreLocale final {
+      std::locale previous;
+      ~RestoreLocale() { std::locale::global(previous); }
+    } restore{std::locale::global(std::locale(std::locale::classic(), new DecimalComma))};
+    require(p::parse_nf4_state(raw).offset_f32_bits == 0x3d2fd550,
+        "NF4 JSON decimal parsing must be independent of the global locale");
+  }
   p::validate_nf4_state_values(raw, actual);
   actual.logical_shape[0] = 3;
   rejects([&]{p::validate_nf4_state_values(raw,actual);},"values differ");

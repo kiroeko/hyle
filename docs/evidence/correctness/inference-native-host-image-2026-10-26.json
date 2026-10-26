@@ -1,0 +1,517 @@
+{
+  "date": "2026-10-26",
+  "status": "CPU_NATIVE_TRANSFER_AND_CUDA_APPLE_VULKAN_COMPLETE_IMAGES_PASSED_WITH_OPEN_VULKAN_STREAM_GAP",
+  "baseline_commit": "86cf305dc",
+  "sources": [
+    {
+      "path": "bench/inference_resident_sdpa/apple_encoded_page_bench.cc",
+      "bytes": 16891,
+      "sha256": "61f88455ee4f538895d192f5805ae529174a0d2d46625a6e3b7402dda38d0fa1"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/native_page_bench.cc",
+      "bytes": 16011,
+      "sha256": "891aacedf4377bef465f849e288ac7f23f60c29edc891a080423767b711e25e7"
+    },
+    {
+      "path": "bench/inference_resident_sdpa/vulkan_encoded_page_bench.cc",
+      "bytes": 16469,
+      "sha256": "93005b11a21aaaedfb5dcb1a8e1bcf65b614acf7915affde31c45107ff6564eb"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "bytes": 52873,
+      "sha256": "3fc212a03bb805e6627d54a7b2b328f64475cca1ca2fcc8a6fd6663f32b5cf4d"
+    },
+    {
+      "path": "engine/inference/backend.h",
+      "bytes": 28581,
+      "sha256": "00a75a20848071ee0cea2497c0434511ebde227df78a8a9444d2343e8bc4db38"
+    },
+    {
+      "path": "engine/inference/host_state_storage.h",
+      "bytes": 5412,
+      "sha256": "8b69545ff466569e23395b1cfe40c6b32d93a24f1e40922e4ed38dd769e415ac"
+    },
+    {
+      "path": "engine/inference/state_transfer.h",
+      "bytes": 16720,
+      "sha256": "44b5011ccbf2d2399864827435226dc499ad25609babdc175d0e7b08daa7b5d8"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 480125,
+      "sha256": "1c0fe8d1f6eb365b58a0d02ee9986857a72803c371fd4fd9ed488f1cbde1d50b"
+    },
+    {
+      "path": "engine/models/qwen35/nf4_state.h",
+      "bytes": 5976,
+      "sha256": "76cb76cd0a9a2138eedcd8e63428b7b66241c12d7b656fb432e89b33ba2037e6"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "bytes": 45108,
+      "sha256": "a4ceb1376af0b4771b63d4291c096e5a32f2a200af1fdc06571ba81aa7783eff"
+    },
+    {
+      "path": "src/compute_route_apple/apple_leased_invocation.cc",
+      "bytes": 5136,
+      "sha256": "681302f9e36df0793c662ae48b9c51de3d094d2b5933d6d4fc85021b500106e3"
+    },
+    {
+      "path": "src/compute_route_apple/apple_materialized_invocation.cc",
+      "bytes": 11047,
+      "sha256": "bcc244571168aae0f2c547a1dc51912deddb8c876642dc9ad90bfba453d42663"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "bytes": 37694,
+      "sha256": "93c15ad88ebb83a96bb69d9de96e90b8a20cb91b90f4e19f21765f8149c8eb8b"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "bytes": 10872,
+      "sha256": "805032d8a14a0cfc7e35ec81d837dbecb4880d4503909e3fe7c8c8037bcca0c1"
+    },
+    {
+      "path": "src/compute_stream_apple/file_stream.cc",
+      "bytes": 1086,
+      "sha256": "aed89cb98d0814caad237d9c76953b3305c74c3c5e8d144e71998458693f4ce0"
+    },
+    {
+      "path": "src/compute_stream_vulkan/file_stream.cc",
+      "bytes": 1091,
+      "sha256": "31836c302b6f972d2afee53dee16f225f40aad3b9e8eb61680167e6c0bc777a2"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_pending.h",
+      "bytes": 1338,
+      "sha256": "26070641693be20aedc305619d2aff93ef7a51b7bb25b93dbf0c71bde91ff515"
+    },
+    {
+      "path": "src/graph_route_apple/native_paged_region.cc",
+      "bytes": 49608,
+      "sha256": "b38df01b1e97a478f33c3afd0aa9d2a278c4852035842b91c81375826c9dd311"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_pending.h",
+      "bytes": 1404,
+      "sha256": "0bc533d580ac9b9c0ea27855a2173305717ba15acddbfe07b5ed20485c8a63d9"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_paged_region.cc",
+      "bytes": 49254,
+      "sha256": "90a59238d8d39d524849517f2f1a11b8e4e97c625897c06f1353936b4e5c5e9b"
+    },
+    {
+      "path": "src/graph_route_vulkan/native_ragged_region.cc",
+      "bytes": 22295,
+      "sha256": "fbe02259b2a5847280b34b2e1bc73fa4352258da65b204404a666a133117403d"
+    },
+    {
+      "path": "tests/CMakeLists.txt",
+      "bytes": 25848,
+      "sha256": "6e2b8088bcf2b95f40c3d9c7511dbbefcc0fda90a6bb252370ed1d344759d15d"
+    },
+    {
+      "path": "tests/compute_batch/copy_update_vulkan_risks.cc",
+      "bytes": 6794,
+      "sha256": "069310ff473582e6a70aac41443eb63f4bd87a678a003d42d2947a6671ccf932"
+    },
+    {
+      "path": "tests/compute_batch/native_result_copy_risks.cc",
+      "bytes": 15183,
+      "sha256": "873f4141177646e8d85ea025af783b65c2e312dd3fa4bbe988b2b8b0a743f722"
+    },
+    {
+      "path": "tests/compute_batch/paged_arena_pending_native_probe.cc",
+      "bytes": 7843,
+      "sha256": "3625d1e5155b8ccc20c6dd8b03db77271ed64a3e93dbc42cd038a1b684d999a7"
+    },
+    {
+      "path": "tests/compute_batch/pending_attention_receiver_probe.cc",
+      "bytes": 10110,
+      "sha256": "d044cacc0493ac1f43df29403e331a0b6838dd3f126cf68411c8ad8de0b5a2dd"
+    },
+    {
+      "path": "tests/compute_batch/pending_attention_receiver_vulkan_probe.cc",
+      "bytes": 9196,
+      "sha256": "f7ba320d7b2a2a6437ff0e5cf89c105f11bffb564da8d8727331bd77e00c7fc0"
+    },
+    {
+      "path": "tests/compute_batch/pending_copy_owner_probe.cc",
+      "bytes": 13744,
+      "sha256": "068ab275db6445d5f53d1e015bb7b0241d40b3e4fab69e971b1598afb2f7bddc"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_apple_probe.cc",
+      "bytes": 10283,
+      "sha256": "add26aab803a38e7ed08b6a19bf519252e21eada7dcb8cbdd1d066df518cfc4a"
+    },
+    {
+      "path": "tests/compute_batch/pending_outcome_owner_vulkan_probe.cc",
+      "bytes": 12934,
+      "sha256": "aa1beb4fe88b6e32a534d1e6be497667534831d3ebfea4b3acc9356a3de64d87"
+    },
+    {
+      "path": "tests/compute_batch/pending_paged_receiver_native_risks.cc",
+      "bytes": 10921,
+      "sha256": "5c76d089bd8110d3d1de8a8f332a0a32f5438d6869086311a2c913b5561c5b38"
+    },
+    {
+      "path": "tests/graph_batch/native_pending_joint_risks.cc",
+      "bytes": 22992,
+      "sha256": "28cbcf892d7e140a89bdb1352d0a6721b7c5f585112e0834ab9cca660e302158"
+    },
+    {
+      "path": "tests/graph_batch/native_row_cache_indexer_pending.inc",
+      "bytes": 11499,
+      "sha256": "b41a8b5c8186969dc141088d3b1a910fffe248eb07e720beb1ee9fb1e8530af4"
+    },
+    {
+      "path": "tests/graph_route_apple/row_cache_pending_projection_test.cc",
+      "bytes": 33804,
+      "sha256": "98a258cd259d2422cbe275a207044d5b18fb582a2a999352eff23685dabdf665"
+    },
+    {
+      "path": "tests/graph_route_vulkan/row_cache_pending_projection_test.cc",
+      "bytes": 22516,
+      "sha256": "1411b4301097b7850c92a9ae44daaac64309f0f6467ef06a556cd4b22e36df91"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_case.h",
+      "bytes": 27364,
+      "sha256": "547c1c4705034be0a60aa1f18b784cd15250d48e1006dc631ba25fb024772f96"
+    },
+    {
+      "path": "tests/tools/qwen_host_image_test.cc",
+      "bytes": 2013,
+      "sha256": "72cfbb46464715ec88dcf3070ac42f00170b38fa251438b3a09f1dcbbb7b93d9"
+    },
+    {
+      "path": "tests/tools/qwen_prepared_roles_test.cc",
+      "bytes": 70343,
+      "sha256": "951168ec5b916781d73f08b07946a989b5cb1bad64069118251f58e6de434d36"
+    },
+    {
+      "path": "engine/inference/host_storage.h",
+      "bytes": 2939,
+      "sha256": "4071f65b26d8e632b6022b9fee7c128bb12551b99bf123f596bdd76ea4cce5e3"
+    },
+    {
+      "path": "include/hyle/compute/detail/apple_copy_stream_access.h",
+      "bytes": 2551,
+      "sha256": "b8152b49629bda8985d2027ae2ca75cd5617f213a4971fe34d4514c086d70f82"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_copy_stream_access.h",
+      "bytes": 1976,
+      "sha256": "8610d8d3c86d68c0fae185cc3e120d5e2828747b28bdcfaeb92429f1e193d2a5"
+    },
+    {
+      "path": "tests/tools/inference_state_transfer_test.cc",
+      "bytes": 7353,
+      "sha256": "51fda98ef7d1f6cfe4dc95fe32a2a3e664fe9b080d3fdcd7aca32615977de4e9"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-native-host-image-2026-10-26.zip",
+    "bytes": 1654890,
+    "sha256": "e4cf1e648f7dc4f6c67553724757d49d8fd1f71a87cda8e82ff32e69ceaa24ff"
+  },
+  "changes": [
+    "Independent HostStorage retains only real common StorageOwner or typed host resource and stable empty Backend identity. Apple shared Metal and Vulkan staging preserve original native resource ownership; no Model or Backend State is retained.",
+    "StateTransfer selects original common/Apple/Vulkan Program/Invocation/Update. Apple original observation lock covers retirement source lookup and attachment. No duplicate executor or common Queue shell.",
+    "ScopeAllocator preserves the actual allocator owner until allocate_shared control-block deallocation. Preparation failure recovers every successfully bound original writer; successful wait and real retirement precede complete writer recovery.",
+    "Two native CopyStreamAccess declaration headers moved to installed route-owned detail headers; all old includes updated, no shim or native implementation/symbol change. Configure-only component ownership check passed.",
+    "Full HostImage test accepts all four compiled backends. Fix Clang dependent-template syntax, complete aggregate initializers, and bounded locale-independent NF4 decimal parsing at existing macOS14.4 deployment floor.",
+    "Fix test-only Apple/Vulkan output labels after measured runs. Raw reports and their incorrect cpu labels remain unchanged; actual native argv/loader and source snapshots are retained. No new run for display-only edit."
+  ],
+  "checks": {
+    "small_windows": {
+      "path": ".scratch/inference-native-host-image-20261026/windows-final-summary.json",
+      "bytes": 15564,
+      "sha256": "f176043ee384b0b459b1b33607f3c10f52a65980729bc4f9ba7236645e414268"
+    },
+    "small_apple": {
+      "path": ".scratch/inference-native-host-image-20261026/mac-attempt1/summary.json",
+      "bytes": 1574,
+      "sha256": "ebb34b46e1e3ccb8ede597724600cca8f788468bf3438267f9919f7bdd6c86f3"
+    },
+    "full_apple": {
+      "path": ".scratch/inference-native-host-image-20261026/mac-model-attempt4/final-summary.json",
+      "bytes": 10590,
+      "sha256": "fae0e592d7f48de810d12dcc682c794dec99ae26dcb538100b90897625df5cbe"
+    },
+    "full_cuda": {
+      "ready": {
+        "path": ".scratch/inference-native-host-image-20261026/cuda-model-attempt3/ready.json",
+        "bytes": 2119,
+        "sha256": "b49a96ce50983e829b0693ebb22e4bbc968576cc6b4fc8359e7ebe5707f58b5c"
+      },
+      "ordinary_mtp": {
+        "status": "PASS",
+        "backend": "cuda",
+        "ordinary": {
+          "hidden": 2048,
+          "target_layers": 24,
+          "payloads": 49,
+          "bytes": 19578880,
+          "byte_limit_at_factory": true,
+          "adapter_parking": true,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18383
+            },
+            "target_value": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18394
+            },
+            "conv": {
+              "payloads": 18,
+              "bytes": 663552,
+              "nonzero_bytes": 662092
+            },
+            "gdn": {
+              "payloads": 18,
+              "bytes": 18874368,
+              "nonzero_bytes": 18807043
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 4096,
+              "nonzero_bytes": 4090
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_value": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            }
+          }
+        },
+        "mtp": {
+          "hidden": 2048,
+          "target_layers": 24,
+          "payloads": 51,
+          "bytes": 19585024,
+          "byte_limit_at_factory": true,
+          "adapter_parking": false,
+          "allocation_failure_applicable": true,
+          "pre_submit_failure_preserved": true,
+          "continuation_lag": 0,
+          "roles": {
+            "target_key": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18383
+            },
+            "target_value": {
+              "payloads": 6,
+              "bytes": 18432,
+              "nonzero_bytes": 18394
+            },
+            "conv": {
+              "payloads": 18,
+              "bytes": 663552,
+              "nonzero_bytes": 662092
+            },
+            "gdn": {
+              "payloads": 18,
+              "bytes": 18874368,
+              "nonzero_bytes": 18807043
+            },
+            "carry": {
+              "payloads": 1,
+              "bytes": 4096,
+              "nonzero_bytes": 4090
+            },
+            "prior": {
+              "payloads": 0,
+              "bytes": 0,
+              "nonzero_bytes": 0
+            },
+            "draft_key": {
+              "payloads": 1,
+              "bytes": 3072,
+              "nonzero_bytes": 3067
+            },
+            "draft_value": {
+              "payloads": 1,
+              "bytes": 3072,
+              "nonzero_bytes": 3067
+            }
+          }
+        },
+        "all_initialized_bytes_equal": true,
+        "historical_wrapper_preserved": true,
+        "same_shape_continuation_equal": true,
+        "old_alias_unchanged": true,
+        "cold_resources_expired": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "lag1": {
+        "status": "PASS",
+        "backend": "cuda",
+        "seed_contract": "explicit_verified_prefix",
+        "natural_acceptance_claim": false,
+        "seed_lag": 1,
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "seed_catchup_token": 1,
+        "prior_payloads": 1,
+        "prior_bytes": 4096,
+        "prior_nonzero_bytes": 4087,
+        "payloads": 52,
+        "bytes": 19615744,
+        "continuation_lag": 1,
+        "processed_draft": 2,
+        "processed_target": 2,
+        "all_initialized_bytes_equal": true,
+        "same_shape_catchup_round_equal": true,
+        "old_alias_unchanged": true,
+        "final_images": 0,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "processes": [
+        {
+          "exit": 0,
+          "pid": 15164,
+          "seconds": 3.851606599986553
+        },
+        {
+          "exit": 0,
+          "pid": 54172,
+          "seconds": 2.2270339999813586
+        }
+      ]
+    },
+    "full_vulkan": {
+      "summary": {
+        "path": ".scratch/inference-native-host-image-20261026/windows-final-summary.json",
+        "bytes": 15564,
+        "sha256": "f176043ee384b0b459b1b33607f3c10f52a65980729bc4f9ba7236645e414268"
+      },
+      "ready": {
+        "path": ".scratch/inference-native-host-image-20261026/vulkan-model-attempt7/ready.json",
+        "bytes": 1191,
+        "sha256": "43647ebf9b765ac8673d518eff860c67550a1259e62909b0cfb209bca9afd4ec"
+      },
+      "ordinary_mtp_process": {
+        "exit": 0,
+        "pid": 44864,
+        "seconds": 12.75308260001475
+      },
+      "actual_backend": "vulkan",
+      "raw_backend_label": "cpu"
+    },
+    "nf4_and_prepared_roles": {
+      "summary": {
+        "path": ".scratch/inference-native-host-image-20261026/nf4-parser-check/summary.json",
+        "bytes": 1071,
+        "sha256": "b90eea0b5aaa1af94f957b5bbc9d3a3a65674f2b5b95e13bd9fae2f781df66ef"
+      },
+      "stdout": "PASS 13937 checks: dense335, pinned Q01/Q03/CT physical metadata, MTP selection, bounded inventory and malformed ranges\n"
+    },
+    "header_ownership": {
+      "process": {
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-host-image-20261026\\header-owner\\source",
+          "-B",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-host-image-20261026\\header-owner\\build"
+        ],
+        "exit": 0,
+        "seconds": 1.077999999979511,
+        "SDK_downloads": 0,
+        "compiler_builds": 0
+      },
+      "stdout": "-- Building for: Visual Studio 18 2026\n-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.\n-- HYLE products: requested='util' available='core,error,util' production='core,container_intrusive,util_core,error,platform,mem,container,container_text,util_runtime' test-fixtures='' engine=FALSE\n-- native copy header ownership PASS\n-- Configuring done (1.0s)\n-- Generating done (0.0s)\n-- Build files have been written to: C:/public/project-hyle/hyle/.scratch/inference-native-host-image-20261026/header-owner/build\n"
+    }
+  },
+  "build_scope": [
+    "Incremental matching-feature Model/weights and specific stale core/caller leaves only; original SDK/vendor/native binaries reused. No shader/vendor/SDK rebuild or model download.",
+    "Windows and Apple cache ABI changes were diagnosed from exact symbols/linker extraction, including removed public schema() and current origin_schema(). Not a mere return-type claim; no compatibility thunk or duplicate-ignore option.",
+    "Source-identical current CUDA Graph resources was already selected from the publication-screen candidate object; an initial assumption that it used the older unresolved-host object was corrected before any CUDA relink.",
+    "Windows COFF symbol-table ordering was not archive-member ordering. That attribution was corrected; final actual public.lib pull was identified through /VERBOSE:LIB as vulkan_program.cc.",
+    "Apple original335 manifest changes only the physical path to existing local safetensors; all335 role/dtype/shape/offset/bytes and source identity checked against local header. No model body copied or downloaded."
+  ],
+  "retained_failures": [
+    "MSVC small test initially used unsupported no-argument Status::ToString; fixed and recompiled.",
+    "Common-only StateTransfer compile exposed an unused backend parameter under /WX; fixed without changing native behavior.",
+    "Apple full consumer exposed floating from_chars availability and three strict Clang errors; repaired at unchanged platform floor.",
+    "Old validation cache link failures and setup-script path/lookup mistakes are preserved. Their logs do not prove product failure or a passing runtime.",
+    "Unchanged tiny GA/MTP Vulkan consumer failed before inference: stream native range/chunk alignment is unsupported. Full335 was checked separately; tiny failure remains open and was not replaced with a different fixture."
+  ],
+  "new_gap": {
+    "name": "Vulkan non-four-byte file input ranges",
+    "status": "OPEN",
+    "failure": {
+      "path": ".scratch/inference-native-host-image-20261026/vulkan-model-attempt7/run-tiny/stderr.log",
+      "bytes": 52,
+      "sha256": "e21affce4d09bc38f27a52eb0aa847e959a4a9cf9a4f49e9ce86257fba97c11d"
+    },
+    "exact_failing_role_from_runtime": "NOT_REPORTED",
+    "source_basis": [
+      "src/compute_stream/file_stream.cc check_range requires physical range/chunk to satisfy original endpoint alignment.",
+      "load_selected_weight_roles presently allocates and submits only exact role.bytes, leaving StreamReadRange.physical_bytes unset.",
+      "Original FileResourcePipeline already supports explicit initialized tail padding and publishes only logical bytes. Next check should reuse this facility with actual owned padded allocation and budget, not widen an arbitrary lease or alter source/model math."
+    ]
+  },
+  "limits": [
+    "Successful real native pending observations are not a controlled pending gate, device-fault or unknown-retirement injection.",
+    "CPU lag1 not newly run; full quality, cross-backend bit identity and complete throughput comparison not claimed.",
+    "Host image restore checks cover unchanged original335 short-context ordinary/MTP/lag1 on CUDA/Apple/Vulkan. Tiny Vulkan remains failed; no all-fixtures or all-models completion claim.",
+    "Fixed device banks return logical slots, not necessarily physical VRAM. Public general retirement-attachment SDK contract remains unfinished.",
+    "Current label helper is a display-only follow-up to archived runs. No raw evidence relabeling."
+  ],
+  "HTTP_model_or_dependency_download_bytes": 0,
+  "quality_claim": false,
+  "performance_claim": false,
+  "cleanup": {
+    "status": "REMOVED_TWO_EXACT_SUPERSEDED_IMAGES",
+    "command": "& .\\test.ps1 -Delete",
+    "exit": 0,
+    "executed_script_sha256": "2b80884897b726874ccf64bfa455342913a45bdd916e662fd18ccd78484102bd",
+    "executed_script_archive_entry": "records/test.ps1",
+    "logical_bytes": 282489856,
+    "files": [
+      {
+        "path": ".scratch/inference-storage-freeze-20261026/case/link/host-image-lagged-consumer.exe",
+        "bytes": 141243904,
+        "sha256": "a964f455d93dac622210425fc345ca0e51aaea59747bf88bf718cfd1b647dccd",
+        "removed": true
+      },
+      {
+        "path": ".scratch/inference-native-host-image-20261026/cuda-model-attempt2/link/host-image-consumer.exe",
+        "bytes": 141245952,
+        "sha256": "dff58199927096d42870cee7ae450d46cec4f5165c250c1fee24cef8097614ff",
+        "removed": true
+      }
+    ],
+    "current_cuda_vulkan_and_cli_images_present": true,
+    "earlier_rejection": "cleanup-blocked.json",
+    "resolution": "User explicitly instructed execution of the already prepared test.ps1; exact script invocation succeeded. No other deletion method or permission workaround used."
+  }
+}

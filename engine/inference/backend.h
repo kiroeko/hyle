@@ -10,6 +10,7 @@
 #include <utility>
 #include <variant>
 
+#include "host_storage.h"
 #include "hyle/compute/file_stream.h"
 #include "hyle/compute/storage_owner.h"
 #include "hyle/graph/batch.h"
@@ -89,6 +90,9 @@ private:
   };
 #endif
   struct State final {
+    // Independent identity only. Escaped typed host storage may retain this
+    // empty token without keeping endpoints, model state or weights alive.
+    std::shared_ptr<const void> host_storage_identity;
     // Endpoints are constructed in place once. Their Contexts are declared
     // first and destroyed last; cached sources/owners below die before them.
     std::variant<std::monostate
@@ -216,6 +220,12 @@ private:
       return std::unexpected(Status::ResourceExhausted("cannot allocate the cold backend state"));
     auto &state = *result.state_;
     state.selection = selection;
+    if (selection.primary == BackendKind::kApple || selection.primary == BackendKind::kVulkan) {
+      try { state.host_storage_identity = std::make_shared<const unsigned char>(0); }
+      catch (const std::bad_alloc &) {
+        return std::unexpected(Status::ResourceExhausted("native Backend identity metadata"));
+      }
+    }
     compute::StorageOwner staging_owner;
     switch (selection.primary) {
 #if defined(HYLE_COMPUTE_CPU)
@@ -333,10 +343,10 @@ public:
   mem::MemoryResourceRef host_device() const noexcept { return state_ ? state_->host : mem::MemoryResourceRef{}; }
   mem::MemoryResourceRef staging() const noexcept { return state_ ? state_->staging : mem::MemoryResourceRef{}; }
 
-  // Independent cold host-storage scope for complete parked state. CUDA uses
-  // its original Context's pinned resource, never the CPU-assist allocator or
-  // the Backend's borrowed staging object. This retains no model/device bank.
-  Result<compute::StorageOwner> create_host_storage() const noexcept {
+  // Independent cold host-storage scope for complete parked state. Every
+  // native route uses its own original host resource, never CPU assistance
+  // or the Backend's borrowed staging object. No model/device bank is retained.
+  Result<HostStorage> create_host_storage() const noexcept {
     if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
 #if defined(HYLE_COMPUTE_CPU)
     if (const auto *endpoint = std::get_if<CpuEndpoint>(&state_->primary)) {
@@ -346,18 +356,54 @@ public:
         mem::MemoryResourceRef resource;
         mem::MemoryResourceRef ref() const noexcept { return resource; }
       };
-      return compute::StorageOwner::adopt(endpoint->context, HostResource{endpoint->memory});
+      HYLE_ASSIGN_OR_RETURN(auto owner,
+          compute::StorageOwner::adopt(endpoint->context, HostResource{endpoint->memory}));
+      return HostStorage::retain(std::move(owner));
     }
 #endif
 #if defined(HYLE_COMPUTE_CUDA)
     if (const auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary)) {
       HYLE_ASSIGN_OR_RETURN(auto memory, compute::cuda::MemoryResource::create(
           endpoint->context, compute::cuda::MemoryKind::kPinnedHost));
-      return compute::StorageOwner::adopt(endpoint->context, std::move(memory));
+      HYLE_ASSIGN_OR_RETURN(auto owner, compute::StorageOwner::adopt(endpoint->context, std::move(memory)));
+      return HostStorage::retain(std::move(owner));
+    }
+#endif
+#if defined(HYLE_COMPUTE_APPLE) && defined(__APPLE__)
+    if (const auto *endpoint = std::get_if<AppleEndpoint>(&state_->primary)) {
+      // Shared Metal storage has its own allocation controller. Host reads do
+      // not require retaining MLX jobs, the execution Context or any model bank.
+      HYLE_ASSIGN_OR_RETURN(auto memory, compute::apple::MemoryResource::create(endpoint->context));
+      return HostStorage::adopt(std::move(memory), state_->host_storage_identity);
+    }
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+    if (const auto *endpoint = std::get_if<VulkanEndpoint>(&state_->primary)) {
+      // This resource retains the original Runtime/device and uses its own
+      // process-lifetime system allocator. It owns no Backend execution state.
+      HYLE_ASSIGN_OR_RETURN(auto memory, compute::vulkan::MemoryResource::create(
+          endpoint->context, compute::vulkan::MemoryKind::kStaging));
+      return HostStorage::adopt(std::move(memory), state_->host_storage_identity);
     }
 #endif
     return std::unexpected(Status::Unimplemented(
-        "selected native backend requires its typed host-state transfer adapter"));
+        "selected backend has no independent host storage"));
+  }
+
+  Result<const void *> host_storage_identity() const noexcept {
+    if (!state_) return std::unexpected(Status::FailedPrecondition("Backend is not initialized"));
+#if defined(HYLE_COMPUTE_CPU)
+    if (const auto *endpoint = std::get_if<CpuEndpoint>(&state_->primary)) {
+      HYLE_ASSIGN_OR_RETURN(auto context, compute::detail::ContextRef::acquire(endpoint->context));
+      return context.identity_key();
+    }
+#endif
+#if defined(HYLE_COMPUTE_CUDA)
+    if (const auto *endpoint = std::get_if<CudaEndpoint>(&state_->primary))
+      return endpoint->memory.context_identity();
+#endif
+    if (state_->host_storage_identity) return state_->host_storage_identity.get();
+    return std::unexpected(Status::FailedPrecondition("Backend has no selected host-storage identity"));
   }
 
   Result<mem::MemoryResourceRef> resource_for(graph::StorageDomainId domain) const noexcept {

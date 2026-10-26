@@ -2,7 +2,7 @@
 #include <cstring>
 #include "hyle/compute/detail/materialized_native_controller.h"
 #include "hyle/compute/detail/vulkan_batch_access.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "perf_process.h"
 #include <nanobench.h>
 #include <algorithm>

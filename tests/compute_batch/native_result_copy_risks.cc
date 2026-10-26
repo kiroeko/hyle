@@ -1,9 +1,9 @@
 #if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include "native_apple_failure_fixture.h"
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #else
 #include "native_vulkan_failure_fixture.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #endif
 #include "allocation_fault_fixture.h"
 #include <algorithm>

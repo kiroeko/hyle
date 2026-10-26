@@ -12,7 +12,7 @@
 #include <new>
 
 #include "../compute_route_vulkan/vulkan_composition_access.h"
-#include "../compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "../compute_route_vulkan/vulkan_memory_internal.h"
 #include "../compute_route_vulkan/vulkan_program_internal.h"
 #include "../graph_batch/native_batch_regions.h"

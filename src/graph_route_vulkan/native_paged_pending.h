@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../graph_batch/native_pending_regions.h"
-#include "../compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "hyle/compute/detail/copy_outcome_source.h"
 
 namespace hyle::graph::vulkan::detail {

@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "../compute_models/row_cache_native_fixture.h"
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #include "../../src/graph_batch/row_cache_node.h"
 #include "hyle/compute/apple_memory.h"

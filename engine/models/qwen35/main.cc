@@ -616,7 +616,7 @@ struct Recipe final {
         auto &row_map = assembly.literal(dense(Type::kInt32, {n}));
         std::vector<std::int32_t> rows(static_cast<std::size_t>(n));
         for (std::size_t i = 0; i < rows.size(); ++i) rows[i] = static_cast<std::int32_t>(i / 128);
-        row_map.write<std::int32_t>(rows);
+        row_map.template write<std::int32_t>(rows);
         const auto row_value = constant(row_map);
         const auto literal = [&](std::uint16_t bits) -> math::Operand {
           auto &value = assembly.literal(dense(Type::kBFloat16, {}));
@@ -1601,7 +1601,7 @@ public:
                  std::filesystem::path probe = {}, bool progress = false,
                   ReplayPolicy replay = ReplayPolicy::kAuto,
                   std::size_t max_cache_bytes = (std::numeric_limits<std::size_t>::max)(),
-                  Sampling sampling_configuration = {false, {}, 0},
+                  Sampling sampling_configuration = {false, {}, 0, {}},
                   std::size_t cpu_ffn_layer_count = 0,
                   BackendSelection backend_selection = {}, std::span<const SamplingConfiguration> additional_sampling = {})
        : Model(prepare_weight_source(manifest, selected_cache.draft_cache), model_geometry, selected_capacity,
@@ -7036,7 +7036,7 @@ int qwen35::run(int argc, char **argv) {
               requests.clear(); outputs.clear(); owners.clear(); members.clear(); next_ids.resize(selected.size());
               for (const auto j : selected) {
                 const auto &call = wave.calls[j]; auto &run = runs[call.session]; auto &work = prepared[j];
-                requests.push_back({run.session, work.ids});
+                requests.push_back({run.session, work.ids, nullptr, {}});
                 owners.push_back(run.session.get()); members.push_back(call.session);
                 outputs.push_back(qwen35::evaluation_output(model, run.session,
                     {run.observations[call.call].name, &run.trace, trace_states,

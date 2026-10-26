@@ -1,6 +1,6 @@
 #include "hyle/compute/detail/vulkan_batch_access.h"
 #include "hyle/compute/detail/materialized_native_controller.h"
-#include "vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "vulkan_internal.h"
 
 namespace hyle::compute::vulkan {

@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <locale>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -88,9 +90,18 @@ inline Nf4State parse_nf4_state(std::string_view raw) {
       result.logical_shape[1] = integer(); expect(']');
     } else {
       const auto token = number(); double value = 0;
-      const auto parsed = std::from_chars(token.data(), token.data()+token.size(), value);
-      if (parsed.ec != std::errc{} || parsed.ptr != token.data()+token.size() || !std::isfinite(value) ||
+      // This bounded token already passed the JSON number grammar. Classic
+      // locale keeps decimal parsing independent of the host locale, including
+      // standard libraries without floating from_chars at our deployment floor.
+      std::istringstream parsed{std::string(token)};
+      parsed.imbue(std::locale::classic());
+      parsed >> std::noskipws;
+      if (!(parsed >> value) || parsed.peek() != std::char_traits<char>::eof() || !std::isfinite(value) ||
           value > (std::numeric_limits<float>::max)() || value < -(std::numeric_limits<float>::max)()) fail();
+      // Some num_get implementations silently round a double underflow to
+      // zero. Preserve the original range rejection without rejecting -0.
+      if (value == 0 && token.substr(0, token.find_first_of("eE")).find_first_of("123456789") !=
+          std::string_view::npos) fail();
       const auto offset = static_cast<float>(value);
       if (!std::isfinite(offset)) fail();
       result.offset_f32_bits = std::bit_cast<std::uint32_t>(offset);

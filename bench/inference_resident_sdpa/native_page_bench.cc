@@ -2,10 +2,10 @@
 #include "hyle/compute/detail/materialized_native_controller.h"
 #if defined(HYLE_PAGE_APPLE_BENCH)
 #include "hyle/compute/detail/apple_batch_access.h"
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #else
 #include "hyle/compute/detail/vulkan_batch_access.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #endif
 #include "../common/perf_process.h"
 #include <nanobench.h>

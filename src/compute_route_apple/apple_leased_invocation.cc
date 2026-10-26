@@ -1,6 +1,6 @@
 #include "hyle/compute/apple_memory.h"
 #include "hyle/compute/detail/apple_batch_access.h"
-#include "apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 
 #include <memory>
 #include <new>

@@ -443,7 +443,8 @@ _hyle_declare_component(compute_route_apple
   PRIVATE_DEPS container platform_thread util_core compute_provider_ggml_metal
   PUBLIC_DEPS core compute compute_ops error mem compute_batch
   PUBLIC_TYPE_DEPS compute_batch
-  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/apple_batch.h hyle/compute/apple_row_cache.h hyle/compute/detail/apple_plan.h hyle/compute/detail/apple_batch_access.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/apple_batch.h hyle/compute/apple_row_cache.h hyle/compute/detail/apple_plan.h hyle/compute/detail/apple_batch_access.h
+    hyle/compute/detail/apple_copy_stream_access.h)
 _hyle_declare_component(graph_route_apple
   TRACE
   PRIVATE_DEPS graph_batch compute container mem util_core
@@ -458,7 +459,8 @@ _hyle_declare_component(compute_route_vulkan
   PRIVATE_DEPS time util_core compute_provider_ggml_vulkan compute_provider_iree_vulkan
   PUBLIC_DEPS core compute compute_ops error mem compute_batch
   PUBLIC_TYPE_DEPS compute_batch
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/vulkan_row_cache.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/vulkan_row_cache.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h
+    hyle/compute/detail/vulkan_copy_stream_access.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
   PRIVATE_DEPS graph_batch compute container util_core

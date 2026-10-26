@@ -1,5 +1,6 @@
 #pragma once
 #include "hyle/compute/vulkan_memory.h"
+#if defined(HYLE_COMPUTE_VULKAN)
 #include "hyle/compute/detail/copy_stream_access.h"
 
 namespace hyle::compute::vulkan::detail {
@@ -27,3 +28,4 @@ struct CopyStreamAccess final {
   static HYLE_COMPUTE_ROUTE_VULKAN_API Status observe(CopyBatchInvocation &) noexcept;
 };
 } // namespace hyle::compute::vulkan::detail
+#endif

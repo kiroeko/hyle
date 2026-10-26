@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../graph_batch/native_pending_regions.h"
-#include "../compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "hyle/compute/detail/copy_outcome_source.h"
 
 namespace hyle::graph::apple::detail {

@@ -7,11 +7,11 @@
 #include <utility>
 
 #if defined(HYLE_NATIVE_ROW_INDEXER_APPLE)
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../../src/compute_route_apple/apple_runtime_internal.h"
 #else
 #include "../compute_batch/native_vulkan_failure_fixture.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #endif
 
 namespace {

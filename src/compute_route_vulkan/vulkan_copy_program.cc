@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "vulkan_copy_internal.h"
-#include "vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "hyle/compute/detail/copy_control.h"
 #include "hyle/compute/detail/native_lease_inputs.h"
 #include "hyle/compute/detail/lease_access.h"

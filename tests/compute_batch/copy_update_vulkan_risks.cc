@@ -1,6 +1,6 @@
 #include "dirty_page_native_risk_fixture.h"
 #include "native_vulkan_failure_fixture.h"
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 
 namespace {
 namespace r = hyle_g03_dirty_risk;

@@ -1,7 +1,7 @@
 #define HYLE_G01_PAGE_RISK_APPLE 1
 #include "dirty_page_native_risk_fixture.h"
 #include "native_apple_failure_fixture.h"
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include <hyle/compute/detail/apple_batch_access.h>
 #include <hyle/compute/detail/apple_plan.h>

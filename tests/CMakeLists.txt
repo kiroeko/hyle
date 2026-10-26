@@ -329,7 +329,25 @@ if(_HYLE_COMPUTE_HAVE_CUDA AND _HYLE_COMPUTE_REQUEST_CPU
   hyle_stage_runtime(hyle_graph_route_cpu_cuda_qwen_backend_test)
 endif()
 
-if(TARGET hyle_engine AND (TARGET hyle_graph_route_cpu OR TARGET hyle_graph_route_cuda))
+if(TARGET hyle_engine)
+  add_executable(hyle_inference_state_transfer_test tools/inference_state_transfer_test.cc)
+  hyle_configure_engine_target(hyle_inference_state_transfer_test)
+  set_target_properties(hyle_inference_state_transfer_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_state_transfer_test)
+  foreach(_transfer_backend IN ITEMS cpu cuda apple vulkan)
+    if(TARGET hyle_graph_route_${_transfer_backend})
+      add_test(NAME hyle_inference_state_transfer_${_transfer_backend}_test
+        COMMAND hyle_inference_state_transfer_test --${_transfer_backend})
+      set_tests_properties(hyle_inference_state_transfer_${_transfer_backend}_test PROPERTIES
+        LABELS "tooling;generation;cache;transfer;${_transfer_backend}"
+        TIMEOUT 60 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+    endif()
+  endforeach()
+  unset(_transfer_backend)
+endif()
+
+if(TARGET hyle_engine)
   # The complete-state consumer is available on CPU-only builds as well.
   add_executable(hyle_qwen_host_image_test tools/qwen_host_image_test.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
@@ -337,7 +355,7 @@ if(TARGET hyle_engine AND (TARGET hyle_graph_route_cpu OR TARGET hyle_graph_rout
   set_target_properties(hyle_qwen_host_image_test PROPERTIES
     FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
   add_dependencies(hyle_tests hyle_qwen_host_image_test)
-  foreach(_host_image_backend IN ITEMS cpu cuda)
+  foreach(_host_image_backend IN ITEMS cpu cuda apple vulkan)
     if(TARGET hyle_graph_route_${_host_image_backend})
       add_test(NAME hyle_qwen_host_image_${_host_image_backend}_test
         COMMAND hyle_qwen_host_image_test --${_host_image_backend})

@@ -5,7 +5,7 @@
 #include "native_region.h"
 
 #include "../compute_route_apple/apple_copy_internal.h"
-#include "../compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../graph_batch/native_batch_regions.h"
 #include "hyle/compute/batch_ops.h"
 #include "hyle/compute/detail/apple_batch_access.h"

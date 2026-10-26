@@ -1,7 +1,7 @@
 #include "hyle/compute/vulkan_file_stream.h"
 #include "hyle/compute/vulkan_memory.h"
 
-#include "../compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "hyle/compute/detail/file_stream_copy.h"
 
 namespace hyle::compute::vulkan {

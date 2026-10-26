@@ -15,6 +15,15 @@ namespace qwen_host_image_case {
 namespace q = qwen35;
 namespace i = hyle::inference;
 inline void require(bool value, const char *message) { if (!value) throw std::runtime_error(message); }
+inline const char *backend_name(q::BackendKind kind) noexcept {
+  switch (kind) {
+  case q::BackendKind::kCpu: return "cpu";
+  case q::BackendKind::kCuda: return "cuda";
+  case q::BackendKind::kApple: return "apple";
+  case q::BackendKind::kVulkan: return "vulkan";
+  default: return "unselected";
+  }
+}
 
 struct ImageBytes final {
   q::cache::HostImageIdentity identity;
@@ -380,7 +389,7 @@ inline int run_lagged(const std::filesystem::path &input, q::BackendKind kind) {
   retire(old_reader); retire(baseline); retire(imported); old_alias.reset();
   require(!storage->live_images() && !model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
       "lag1 host image case retained an image, state version or original native episode");
-  std::cout << "{\"status\":\"PASS\",\"backend\":\"" << (kind == q::BackendKind::kCuda ? "cuda" : "cpu")
+  std::cout << "{\"status\":\"PASS\",\"backend\":\"" << backend_name(kind)
       << "\",\"seed_contract\":\"explicit_verified_prefix\",\"natural_acceptance_claim\":false,\"seed_lag\":1"
       << ",\"seed_length\":" << original.boundary.length << ",\"seed_frontier\":" << original.boundary.draft->frontier
       << ",\"seed_catchup_token\":" << original.boundary.draft->catchup_token
@@ -412,7 +421,7 @@ inline void write_report(const ModeReport &report) {
 inline int run(const std::filesystem::path &inputs, qwen35::BackendKind kind) {
   const auto ordinary = run_mode(inputs, kind, false);
   const auto mtp = run_mode(inputs, kind, true);
-  std::cout << "{\"status\":\"PASS\",\"backend\":\"" << (kind == q::BackendKind::kCuda ? "cuda" : "cpu")
+  std::cout << "{\"status\":\"PASS\",\"backend\":\"" << backend_name(kind)
       << "\",\"ordinary\":";
   write_report(ordinary); std::cout << ",\"mtp\":"; write_report(mtp);
   std::cout << ",\"all_initialized_bytes_equal\":true,\"historical_wrapper_preserved\":true,"

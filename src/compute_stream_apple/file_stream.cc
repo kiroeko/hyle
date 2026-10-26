@@ -1,7 +1,7 @@
 #include "hyle/compute/apple_file_stream.h"
 #include "hyle/compute/apple_memory.h"
 
-#include "../compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "hyle/compute/detail/file_stream_copy.h"
 
 namespace hyle::compute::apple {

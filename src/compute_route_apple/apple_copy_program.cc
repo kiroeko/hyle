@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "apple_copy_internal.h"
-#include "apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "hyle/compute/detail/copy_control.h"
 #include "hyle/compute/detail/native_lease_inputs.h"
 #include "hyle/compute/detail/lease_access.h"

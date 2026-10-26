@@ -3,11 +3,11 @@
 #if defined(HYLE_G01_PAGE_RISK_APPLE)
 #include "native_apple_failure_fixture.h"
 #include <hyle/compute/detail/apple_plan.h>
-#include "../../src/compute_route_apple/apple_file_stream_access.h"
+#include "hyle/compute/detail/apple_copy_stream_access.h"
 #include "../../src/compute_route_apple/apple_copy_internal.h"
 #include "../../src/compute_route_apple/apple_internal.h"
 #else
-#include "../../src/compute_route_vulkan/vulkan_file_stream_access.h"
+#include "hyle/compute/detail/vulkan_copy_stream_access.h"
 #include "../../src/compute_route_vulkan/vulkan_internal.h"
 #endif
 

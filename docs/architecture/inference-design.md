@@ -84,6 +84,11 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
 索引GDN／conv状态池是另一项候选：稳定物理池和版本化旧／新槽必须同时成立，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同，尚未实现，也没有完整提速结论。
+先复用现有独立状态端口、`LeasePool`及`ReadLease::try_write`表达槽权限：普通会话优先轮换两槽，
+旧Snapshot／prefix／fork仍占用时从原有界容量取得备用槽，不能保证所有场景只用两槽。
+真实退休并撤回绑定后才回收；MTP每个可接受前缀保留独立候选槽，接受时选槽，不按奇偶覆盖旧版本。
+固定槽不自动消除provider复制：现有ggml GDN仍生成packed结果再拆分，Apple也仍分配packed输出；
+直接状态输出及非连续多请求索引计算需分别补原生能力，不能把地址复用记成这些能力已完成。
 
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。
@@ -119,17 +124,24 @@ canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fo
 按不可变layout的逻辑引用顺序导出每个前缀，重复物理页分别受各请求自己的末页长度限制。
 它先检查全部输出再替换句柄，无分配，按原已排序guard二分查找，复杂度O(P log U)，避免逐页扫描的平方成本。
 
-`HostStateStorage`只保原同Context的独立主机资源，CUDA使用pinned host；复用`ResourceBudget`限制
+`HostStateStorage`只保原Backend身份下的独立主机资源；CPU／CUDA沿用原`StorageOwner`，
+CUDA使用pinned host，Apple使用独立shared Metal资源，Vulkan使用原Runtime的staging资源。
+原生身份token只防跨Backend及地址复用，不保活Backend或Model；Vulkan资源保留其设备所需Runtime。
+复用`ResourceBudget`限制
 实际托管backing及原池／搬运已纳入预算的元数据字节，并独立限制镜像数量。逻辑描述等标准容器元数据
 仍由模型上下文和镜像数约束，不冒充完整进程内存上限。镜像只保存逻辑层／页、完整有效字节和弱模型身份，
 不保权重、物理页权限、原VersionRef或执行器。借用payload的搬运必须同时保活完整镜像。
 CUDA pinned host不承诺CPU／GPU并发coherence；原复制成功并退休之后才发布ready，通过资源自己的
 read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当成完成后可读的必要条件。
 `StateTransfer`使用原CopyBatch及Completion接管临时源／目的资源，成功wait后才能取回完整原writer；
-未知退休时不归还容量，不把错误当作退休。模型adapter负责完整清单、新页布局和wrapper恢复。
+未知退休时不归还容量，不把错误当作退休。Apple／Vulkan复用原typed Program／Invocation／Update，
+不伪造common Queue；Apple的退休查询与附件共享原观察锁。临时scope也将实际分配器owner保留到
+共享控制块释放结束。模型adapter负责完整清单、新页布局和wrapper恢复。
 共同请求adapter可显式选择主机镜像恢复；未选时仍按原已消费token重建。CPU／CUDA普通与MTP已作有限消费者检查，
 CUDA另核lag1／prior完整往返与原catchup续算；[检查范围](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)
-不等于完整任务质量或性能结论。Apple／Vulkan的这一搬运入口尚未实现，不以CPU路径冒充原生支持。
+不等于完整任务质量或性能结论。Apple／Vulkan的原生字节合同与原335角色完整普通／MTP／lag1消费者
+均已作[有限检查](../evidence/correctness/inference-native-host-image-2026-10-26.json)；原tiny Vulkan输入仍在加载时
+因流对齐失败，受控pending／设备故障也未补查，不把这些边界写成通过。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，
