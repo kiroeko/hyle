@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "title": "Q64 binary prefill tails with a real Qwen consumer",
+  "status": "REAL_CONSUMER_PASS",
+  "sources": [
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "sha256": "0f73055bd8b6590a67d0af4621584848b5e66316750cab97b09cb03a11648eac",
+      "bytes": 495611
+    },
+    {
+      "path": "engine/inference/prefill_plan.h",
+      "sha256": "a895777146bc942bc0fbfac566172f4839ad23c81cf1a66cd1750ee2759f5493",
+      "bytes": 3253
+    },
+    {
+      "path": "tests/tools/qwen_chunked_prefill_case.h",
+      "sha256": "909f712689f59f17b043fc2590ad14fdc8e64f4438094abdf2ebd2ee07590c4b",
+      "bytes": 12577
+    }
+  ],
+  "changed_source": "tests/tools/qwen_chunked_prefill_case.h only; product main/prefill logic belongs to the separately frozen bounded-prefill batch.",
+  "problem": "The existing real-model fixture assumed Q64 ends P154 in 26 rows and pending+130 in 3 rows. The new finite binary-tail policy actually makes five/four chunks, leaving the old third-call completion, ledger and prefix-history assertions invalid.",
+  "change": "Use independent explicit journeys A154=64+64+16+8+2 and next input131=64+64+2+1, including every intermediate no-output/no-RNG boundary and final output exactly once. B uses the original prompt first16 tokens instead of15 to remain a ready one-episode short request; this changes B actual committed work by one row, rather than weakening its starvation/independent-session check. Expected traces are fixed literals, never generated from PrefillPolicy.",
+  "fixture": {
+    "manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    "prompt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\geometry-v2-check\\original\\prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    "source_id": "4a76decdfa58a5fd6e15acea7ff410e84fd3e81cb6c39db8a658eeb23d869fbe",
+    "geometry": "hidden2048, FFN6144, vocabulary248320, 24 target layers GGGAGGGAGGGAGGGAGGGAGGGA; original prepared 320 physical target roles, no MTP roles.",
+    "payload": "Existing local weight ranges reused, not copied/downloaded or archived. This is a real ordinary Qwen3.5-2B fixture, distinct from the untrained tiny CLI fixture."
+  },
+  "builds": {
+    "CXX_TUs": 1,
+    "links": 1,
+    "compile": {
+      "exit": 0,
+      "pid": 43548,
+      "seconds": 20.697856400045566
+    },
+    "link": {
+      "exit": 0,
+      "pid": 55832,
+      "seconds": 1.7613874000380747
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-chunked-prefill-tail-20261027\\bin\\chunked-prefill-test.exe",
+      "bytes": 141729280,
+      "sha256": "5d4696d65297734c7c090f571fb0ba6b288d1d6f20e0403fa0e5e193663545d3"
+    },
+    "object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-chunked-prefill-tail-20261027\\compile\\unit.obj",
+      "bytes": 15390890,
+      "sha256": "4a74e5f9e240d4afc0f8cd3fd74e8decb27d4ebc1155dd6b7b1f9871482f7e02"
+    },
+    "input_count": 223,
+    "inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-chunked-prefill-tail-20261027\\link-inputs.json",
+      "bytes": 57748,
+      "sha256": "3b7e07a99d355a214dbccb0697cae2133167988f97ba21a1975ca5e588a3aba3"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\ready.json",
+      "bytes": 3143,
+      "sha256": "bfc35b6220ec603a3f394e33d8055dd1f0b029e0dc17503b351e389d10b4d9e8"
+    },
+    "reuse": "Current bounded-prefill formal CUDA link closure, removing its standalone Model object and entry object. The one scratch wrapper includes actual current main plus this unique product test fixture. Matching existing weights/provider/native objects reused; no full lifecycle matrix, SDK, NVCC or shader rebuild.",
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "execution": {
+    "actual_processes": 1,
+    "process": {
+      "exit": 0,
+      "pid": 37052,
+      "seconds": 2.926968300016597
+    },
+    "report": {
+      "status": "PASS",
+      "ordinary": true,
+      "physical_text_roles": 320,
+      "physical_mtp_roles": 0,
+      "Q": 64,
+      "dispatch": [
+        "B:16",
+        "A:64",
+        "B:1",
+        "A:64",
+        "B:1",
+        "A:16",
+        "A:8",
+        "A:2",
+        "A:64",
+        "A:64",
+        "A:2",
+        "A:1",
+        "A:1"
+      ],
+      "actual_committed_input_rows": 304,
+      "A_commits": 10,
+      "B_commits": 3,
+      "A_draw": 3,
+      "B_draw": 3,
+      "partial_rebuild_rows": 64,
+      "partial_gdn_and_carry_exact": true,
+      "submitted_inflight_at_abort": true,
+      "hardware_completion_at_abort": "unknown",
+      "A_ids": [
+        71093,
+        66814,
+        466
+      ]
+    },
+    "checks": [
+      "Two real sessions interleaved; ready B decode runs between A full chunks.",
+      "Retired A rebuild of its first64 input rows preserves exact GDN and carry bytes and original cursor.",
+      "Cancel an actually submitted chunk, retain original A head/input offset/ledger/RNG and B boundary; retry commits once.",
+      "State-only64/16/8/2 graphs expose no logits, sampler or ID output; actual intermediate chunks emit nothing and do not advance RNG.",
+      "The complete initial prefix retains five actual chunk modes: four state-only, then one emitting boundary.",
+      "Later pending+130 tail and final pending-only turn consume each pending token once; fixed A10/B3 commits, A3/B3 draws,304 committed input rows and no active request/episode at the end."
+    ],
+    "quality_claim": false,
+    "performance_claim": false
+  },
+  "failures_preserved": {
+    "record": "plan-failure.json",
+    "explanation": "Initial preparation-only helper rejected a scratch wrapper as a product root before any CXX/native run. Corrected closure roots to the two actual product files and explicitly pinned the wrapper. First compiler, link and native consumer attempts all passed; no product retry."
+  },
+  "limits": [
+    "No quality/throughput comparison, MTP, second backend, positive speculative acceptance or old full lifecycle suite rerun.",
+    "Logical submitted-inflight was true at abort; exact GPU completion time at that observation is unknown. No device fault was injected.",
+    "This validates the known real Q64 tail journeys and their original cancellation/rebuild/frontier contracts; unknown-prefix shape enumeration is separately checked by the bounded-prefill batch."
+  ],
+  "members": [
+    {
+      "name": "build.py",
+      "bytes": 6133,
+      "sha256": "14b478e20c70b23d3def631e0ca3fce74e99654378802144e70cdf4abbc5f17c"
+    },
+    {
+      "name": "compile/actual-dependencies.json",
+      "bytes": 77395,
+      "sha256": "bb5dfc539363bd4be4ba87e494ae7119665872050e85eef1faf62482b4eef5d6"
+    },
+    {
+      "name": "compile/command.json",
+      "bytes": 2942,
+      "sha256": "fdb9e7a25758c0c774dfc8d69f1fa073ea5417df524dab25ad8e8fdc614d973f"
+    },
+    {
+      "name": "compile/dependencies.json",
+      "bytes": 38250,
+      "sha256": "1015c386b28fe989be54817429ce92a29fb58d3a61b8b0feb3c3c16b666314af"
+    },
+    {
+      "name": "compile/process.json",
+      "bytes": 70,
+      "sha256": "36b029b3271313f670879a85279cf98426e62e3d7eb34109d789eca7934d5722"
+    },
+    {
+      "name": "compile/running.json",
+      "bytes": 22,
+      "sha256": "19431d8375b194d9fef18a1193d7b8d7db95e40d966ee6b4a56126129b73f721"
+    },
+    {
+      "name": "compile/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compile/stdout.log",
+      "bytes": 13,
+      "sha256": "0783b64eefc9f51a9885db9832469d2fa7b1926361643e4cf40f89693bec5ed4"
+    },
+    {
+      "name": "consumer.cc",
+      "bytes": 204,
+      "sha256": "b2c6f862306e807710d294752156fc86681b4b94420a9b10e574233ea7e70976"
+    },
+    {
+      "name": "fixture/prompt.ids",
+      "bytes": 733,
+      "sha256": "b6a10feefb0af4687ee536285c9666bfbdf093fc9e484ab0461834345a5993a4"
+    },
+    {
+      "name": "fixture/weights.tsv",
+      "bytes": 56735,
+      "sha256": "bf81e4e411347a5d4253a01eb13665d55b6b3052922295292dd1e020857f86e1"
+    },
+    {
+      "name": "link-inputs.json",
+      "bytes": 57748,
+      "sha256": "3b7e07a99d355a214dbccb0697cae2133167988f97ba21a1975ca5e588a3aba3"
+    },
+    {
+      "name": "link/command.json",
+      "bytes": 31326,
+      "sha256": "8ca856ac0adb1cd625539c0b3e31d0e69dc50d2a9fe21c56f66c6a4fae8b7fe2"
+    },
+    {
+      "name": "link/process.json",
+      "bytes": 70,
+      "sha256": "8f69c8806f6a2bae8f2bb15a2b299987d42435ce875e68fcef000cf2c71c6b15"
+    },
+    {
+      "name": "link/running.json",
+      "bytes": 22,
+      "sha256": "e893fe03931f620cac87f312595e85b6443aae4538f9519f9ea583dac52040b4"
+    },
+    {
+      "name": "link/stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "link/stdout.log",
+      "bytes": 233,
+      "sha256": "4e45623e0add5d6d0fa3fbc3da72a90c12089ed798916fb651b31c5fe20f39c2"
+    },
+    {
+      "name": "plan-failure.json",
+      "bytes": 875,
+      "sha256": "dc2e3001c2a014bc44ee1989bed6ce395b2251a4d6845908d4e7d27e921bbe47"
+    },
+    {
+      "name": "plan.json",
+      "bytes": 3061,
+      "sha256": "d3dbc22656f7f6dbcf515e60350737fd39545bff6e5fe0549bf9cfb054cfe708"
+    },
+    {
+      "name": "publish.py",
+      "bytes": 6384,
+      "sha256": "d023a7c672457efe76b4d3f6d71b32fdfc308d7fd045599ea1f747a7e14b42be"
+    },
+    {
+      "name": "ready.json",
+      "bytes": 1423,
+      "sha256": "83f976d61ece4352e430930a2e9d5afb1befbbb15cf549c936372cbf87f82688"
+    },
+    {
+      "name": "recipe.json",
+      "bytes": 2942,
+      "sha256": "fdb9e7a25758c0c774dfc8d69f1fa073ea5417df524dab25ad8e8fdc614d973f"
+    },
+    {
+      "name": "retained-inputs.json",
+      "bytes": 57514,
+      "sha256": "382dc30534934dec069b7f6eb59ad157198bb934d74fffc4d5b53b0e82e843d1"
+    },
+    {
+      "name": "run/command.json",
+      "bytes": 325,
+      "sha256": "4b0ad2f240c14529cb71772e6bea5e0d3edc40009455e8f2c906e7f0ee671588"
+    },
+    {
+      "name": "run/process.json",
+      "bytes": 69,
+      "sha256": "7d73b0a9446024eeb9f53ef7ec6b362c91cac82e4277613f203470e660fcb29e"
+    },
+    {
+      "name": "run/running.json",
+      "bytes": 22,
+      "sha256": "0eb0e433e53ab358aeddacdd174fa2a7f1464086fe0d62489a6099c1ec852533"
+    },
+    {
+      "name": "run/stderr.log",
+      "bytes": 73007,
+      "sha256": "8aaad3f7b7a4ffdbdf59284270bca2f972d608bedd6a2079e52e645d0393311a"
+    },
+    {
+      "name": "run/stdout.log",
+      "bytes": 436,
+      "sha256": "9dd86137b60adc26477420b115ee1f973a8bf1d434e2bf9c291f7b3b061c8cc3"
+    },
+    {
+      "name": "runtime.json",
+      "bytes": 21708,
+      "sha256": "6b0272af73085e514fc24592c0afa4a9adde18d1ccbc17b57952cc8ed093d514"
+    },
+    {
+      "name": "source-freeze.json",
+      "bytes": 36143,
+      "sha256": "0cf6b4d0a46cdaf37f0593471235138bd60ae011779e032ebe3b0dc445360fdd"
+    },
+    {
+      "name": "source/engine/inference/prefill_plan.h",
+      "bytes": 3253,
+      "sha256": "a895777146bc942bc0fbfac566172f4839ad23c81cf1a66cd1750ee2759f5493"
+    },
+    {
+      "name": "source/engine/models/qwen35/main.cc",
+      "bytes": 495611,
+      "sha256": "0f73055bd8b6590a67d0af4621584848b5e66316750cab97b09cb03a11648eac"
+    },
+    {
+      "name": "source/engine/models/qwen35/session_state.h",
+      "bytes": 21165,
+      "sha256": "e393af9522901f73bab16801054e7c4761ca836f87b15003902f6b7c279ce2bd"
+    },
+    {
+      "name": "source/tests/tools/qwen_chunked_prefill_case.h",
+      "bytes": 12577,
+      "sha256": "909f712689f59f17b043fc2590ad14fdc8e64f4438094abdf2ebd2ee07590c4b"
+    },
+    {
+      "name": "summary.json",
+      "bytes": 1398,
+      "sha256": "04c501b73cf1c4df7249b5f6744b1d88e833df3ccfb70720a09b99d2053ac3d7"
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-chunked-prefill-tail-2026-10-27.zip",
+    "bytes": 208300,
+    "sha256": "2b1bea78e26951cd39ea5c81d9edda7f304ac66aec6cbd17c575ac7e634ab68f"
+  },
+  "archive_manifest_sha256": "2f9b0a73d16b2d9e1c6bce9a5d6952a31c010881c1effc11b2273bead30d8a3d",
+  "integrity": "Every archive member reopened and compared bytes/SHA256; CRC passed. Source snapshots, current fixture and original stdout checked. No binary/SDK/model payload."
+}

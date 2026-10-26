@@ -1654,6 +1654,7 @@ public:
   std::map<FamilyKey, std::unique_ptr<Family>> &families, &probe_families;
   std::vector<FamilyKey> admitted_exact_keys;
   std::size_t exact_admissions = 0, exact_evictions = 0;
+  std::size_t exact_shape_capacity = 0;
   // One carrier per actually prepared finite shape. Serial admission borrows
   // its one slot and shared IO through native retirement and all result reads.
   std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;
@@ -2647,8 +2648,16 @@ public:
 
   // A generated-token checkpoint can expose a suffix whose length was unknown
   // at model setup. Specialize only that actual cold request. The same original
-  // Family/Phase owners remain bounded by N*R; decoded hot-loop shapes stay in
-  // their original immutable finite families.
+  // Family/Phase owners remain bounded by the frozen cold shape plan; decoded
+  // hot-loop shapes stay in their original immutable finite families.
+  void freeze_shape_plan() {
+    if (exact_shape_capacity) return;
+    if (!admitted_exact_keys.empty()) throw std::logic_error("freeze the original shape plan before dynamic admission");
+    exact_shape_capacity = (std::max)(std::size_t{1}, planned_slot_uses.size());
+    std::cerr << "cold_shape_plan planned_shapes=" << planned_slot_uses.size()
+              << " extra_capacity=" << exact_shape_capacity << '\n';
+  }
+
   void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
     if (find_family(requests, tokens, role, false, completion, sampling_index)) return;
@@ -2657,7 +2666,10 @@ public:
         !requests || requests > cache_plan.active_sequences ||
         cache::multiply(tokens, requests) > cache_plan.max_query_rows || verifies_prefix(role))
       throw std::runtime_error("actual suffix admission exceeds the idle model's original query/state bounds");
-    const auto limit = cache::multiply(cache_plan.resident_sessions, cache_plan.active_sequences);
+    // Direct component consumers may not call the explicit startup boundary.
+    // Freeze before the first extra shape can mutate the original inventory.
+    freeze_shape_plan();
+    const auto limit = exact_shape_capacity;
     if (admitted_exact_keys.capacity() < limit) admitted_exact_keys.reserve(limit);
     if (admitted_exact_keys.size() == limit) {
       const auto victim = admitted_exact_keys.front();
@@ -4976,7 +4988,7 @@ std::size_t generation_record_capacity(std::span<const inference::GenerationTurn
   for (std::size_t turn = 0; turn < turns.size(); ++turn) {
     const auto rows = cache::add(turns[turn].prompt.size(), turn ? 1u : 0u);
     if (!rows || !turns[turn].max_outputs) throw std::runtime_error("generation requires nonempty turn input and positive quota");
-    const auto chunks = prefill.parts(rows);
+    const auto chunks = turn == 0 && imported_records ? prefill.parts_bound(rows) : prefill.parts(rows);
     count = cache::add(count, cache::add(chunks, turns[turn].max_outputs - 1));
   }
   return count;
@@ -6183,9 +6195,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   std::map<PromptKey, std::map<std::size_t, std::size_t>> prompt_uses;
   std::map<PromptKey, std::map<std::size_t, std::vector<std::size_t>>> support;
   const auto note_prompt = [&](GraphRole role, std::size_t tokens, std::size_t member,
-                               TextCompletion completion = TextCompletion::kEmitNext) {
+                               TextCompletion completion = TextCompletion::kEmitNext, bool possible = false) {
     const PromptKey key{role, completion};
-    auto &count = prompt_uses[key][tokens]; count = cache::add(count, 1);
+    auto &count = prompt_uses[key][tokens];
+    count = possible ? (std::max)(count, std::size_t{1}) : cache::add(count, 1);
     auto &members = support[key][tokens];
     if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
   };
@@ -6206,6 +6219,15 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     std::sort(suffixes.begin(), suffixes.end()); suffixes.erase(std::unique(suffixes.begin(), suffixes.end()), suffixes.end());
     for (auto tokens : suffixes) note_prefill(tokens, i);
+    if constexpr (!mtp) if (prefix && prefill.bounded()) {
+      // A generated checkpoint may match inside this prompt at any token, not
+      // only at another request's original prompt boundary. Register its real
+      // finite tail shapes and potential batch members before any carrier exists.
+      prefill.for_each_shape(requests[i].prompt.size(), [&](std::size_t rows, bool complete) {
+        note_prompt(GraphRole::kText, rows, i,
+            complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
+      });
+    }
     for (std::size_t turn = 1; turn < requests[i].progress.turns().size(); ++turn) {
       const auto tokens = cache::add(requests[i].progress.turns()[turn].prompt.size(), 1);
       note_prefill(tokens, i);
@@ -6259,6 +6281,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   }
   if (mtp && decode_bound && model.recursive_mtp()) model.prepare_recursive_round_programs();
+  model.freeze_shape_plan();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
     const auto shapes = model.prepare_planned_execution();
@@ -7083,6 +7106,7 @@ int qwen35::run(int argc, char **argv) {
       (void)model.cache_usage();
       run.cache_prepare_seconds += std::chrono::duration<double>(qwen35::Clock::now() - begin).count();
     };
+    model.freeze_shape_plan();
     if (warmup_planned_shapes) {
       const auto begin = qwen35::Clock::now();
       const auto shapes = model.prepare_planned_execution();

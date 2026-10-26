@@ -34,17 +34,21 @@ inline int run(const std::filesystem::path &input){try{
   q::Model model(input/"weights.tsv",geometry,512,plan,{},true,q::ReplayPolicy::kCommands,1073741824,
       {.enabled=true,.policy={1,8,.9F},.seed=123},0,{.primary=q::BackendKind::kCuda});
   require(model.physical_text_roles==320&&!model.physical_mtp_roles&&!model.cache_plan.draft_cache,"not original ordinary Model");
-  const std::array state_shapes{std::size_t{64}};
-  const std::array emit_shapes{std::size_t{1},std::size_t{3},std::size_t{15},std::size_t{26}};
+  // Independent fixed journeys: A154 = 64+64+16+8+2, its next turn's
+  // pending+130 input = 64+64+2+1. B16 remains a ready short decode.
+  const std::array state_shapes{std::size_t{2},std::size_t{8},std::size_t{16},std::size_t{64}};
+  const std::array emit_shapes{std::size_t{1},std::size_t{2},std::size_t{16}};
   model.prepare_family(state_shapes,false,1,q::GraphRole::kText,false,q::TextCompletion::kStateOnly);
   model.prepare_family(emit_shapes);
   for(auto rows:state_shapes)model.plan_replay_uses(rows,1,16,q::GraphRole::kText,q::TextCompletion::kStateOnly);
   for(auto rows:emit_shapes)model.plan_replay_uses(rows,1,16);
   model.prepare_execution(state_shapes,1,q::GraphRole::kText,q::TextCompletion::kStateOnly);model.prepare_execution(emit_shapes);
-  const auto *state_family=model.find_family(1,64,q::GraphRole::kText,false,q::TextCompletion::kStateOnly);
-  require(state_family&&!state_family->logits_port&&!state_family->id_port&&!state_family->sampling_identity_port&&!state_family->sampling_valid_port,"state-only graph has a score/sampler/ID port");
+  for(auto rows:state_shapes){
+    const auto *state_family=model.find_family(1,rows,q::GraphRole::kText,false,q::TextCompletion::kStateOnly);
+    require(state_family&&!state_family->logits_port&&!state_family->id_port&&!state_family->sampling_identity_port&&!state_family->sampling_valid_port,"state-only graph has a score/sampler/ID port");
+  }
   std::vector<i::GenerationTurn> turns_a{{prompt,1},{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+130),1},{{},1}};
-  std::vector<i::GenerationTurn> turns_b{{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+15),3}};
+  std::vector<i::GenerationTurn> turns_b{{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+16),3}};
   std::vector<q::GenerationRequest> requests;requests.reserve(2);requests.emplace_back("A",prompt,std::filesystem::path{},3);requests.emplace_back("B",turns_b[0].prompt,std::filesystem::path{},3);
   for(std::size_t index=0;index<2;++index){
     auto &request=requests[index];const auto &turns=index?turns_b:turns_a;request.progress.bind_turns(turns);
@@ -80,21 +84,25 @@ inline int run(const std::filesystem::path &input){try{
   require(!model.active_step&&!model.carrier_borrowed&&!a.session->pending&&a.session->head.get()==cancel_base&&a.turn_input_consumed==64&&a.ledger->committed_count==1&&a.session->head->sampling.draw==0&&q::generation_boundary(*b.session->head)==before_b,"cancelled chunk published or advanced input");
   execute(0);require(a.turn_input_consumed==128&&!a.progress.prefilled&&a.progress.generated.empty()&&a.session->head->sampling.draw==0,"second state-only chunk changed RNG/output");window.requeue(key_a);
   require(window.waiting_front()==key_b,"decode lost second FIFO turn");window.admitted(key_b);execute(1);require(b.progress.request_done()&&b.session->head->sampling.draw==3,"B decode did not complete");window.release_turn(key_b,false);retire(b);window.release(key_b);
-  window.admitted(key_a);execute(0);require(a.turn_input_consumed==154&&a.progress.turn_done&&a.progress.generated.size()==1&&a.session->head->sampling.draw==1&&a.ledger->committed_count==3,"final chunk did not emit exactly once");
+  window.admitted(key_a);execute(0);require(a.turn_input_consumed==144&&!a.progress.prefilled&&a.progress.generated.empty()&&a.session->head->sampling.draw==0&&a.ledger->committed_count==3,"first binary tail chunk emitted output or RNG");window.requeue(key_a);window.admitted(key_a);
+  execute(0);require(a.turn_input_consumed==152&&!a.progress.prefilled&&a.progress.generated.empty()&&a.session->head->sampling.draw==0&&a.ledger->committed_count==4,"second binary tail chunk emitted output or RNG");window.requeue(key_a);window.admitted(key_a);
+  execute(0);require(a.turn_input_consumed==154&&a.progress.turn_done&&a.progress.generated.size()==1&&a.session->head->sampling.draw==1&&a.ledger->committed_count==5,"final chunk did not emit exactly once");
   // Only the complete final boundary enters the existing directory; keep actual chunk modes.
-  q::cache::PrefixCache prefix(1);q::publish_generation_completed(model,a,&prefix);require(prefix.size()==1&&a.completed_checkpoint.replay.chunks==3,"final prefix omitted actual state-only history");
+  q::cache::PrefixCache prefix(1);q::publish_generation_completed(model,a,&prefix);require(prefix.size()==1&&a.completed_checkpoint.replay.chunks==5,"final prefix omitted actual state-only history");
   auto hit=prefix.lookup(*a.completed_checkpoint.input,154,154,&model,model.math_identity());require(bool(hit),"complete final prefix not reusable");
-  require(hit.payload.replay.history->chunks[0].state_only&&hit.payload.replay.history->chunks[1].state_only&&!hit.payload.replay.history->chunks[2].state_only,"prefix history lost chunk modes");hit.reset();prefix.evict_one();
+  require(hit.payload.replay.history->chunks[0].state_only&&hit.payload.replay.history->chunks[1].state_only&&hit.payload.replay.history->chunks[2].state_only&&hit.payload.replay.history->chunks[3].state_only&&!hit.payload.replay.history->chunks[4].state_only,"prefix history lost chunk modes");hit.reset();prefix.evict_one();
   window.release_turn(key_a,true);a.progress.advance_turn();window.admitted(key_a);const auto pending=a.session->head->next_id;a.prompt=a.progress.begin_turn(*a.warm_inputs[1],pending);
-  execute(0);require(a.turn_input_consumed==64&&a.session->head->sampling.draw==1&&!a.progress.prefilled&&a.session->head->next_id==-1&&a.ledger->records[3].ids()[0]==pending,"long suffix duplicated pending or sampled early");window.requeue(key_a);window.admitted(key_a);
+  execute(0);require(a.turn_input_consumed==64&&a.session->head->sampling.draw==1&&!a.progress.prefilled&&a.session->head->next_id==-1&&a.ledger->records[5].ids()[0]==pending,"long suffix duplicated pending or sampled early");window.requeue(key_a);window.admitted(key_a);
   execute(0);require(a.turn_input_consumed==128&&a.session->head->sampling.draw==1&&!a.progress.prefilled,"long suffix intermediate sampled");window.requeue(key_a);window.admitted(key_a);
+  execute(0);require(a.turn_input_consumed==130&&a.session->head->sampling.draw==1&&!a.progress.prefilled&&a.progress.generated.size()==1,"long suffix binary tail emitted output or RNG");window.requeue(key_a);window.admitted(key_a);
   execute(0);require(a.turn_input_consumed==131&&a.progress.generated.size()==2&&a.session->head->sampling.draw==2&&a.progress.turn_done,"long suffix final failed");
   window.release_turn(key_a,true);a.progress.advance_turn();window.admitted(key_a);const auto pending_only=a.session->head->next_id;a.prompt=a.progress.begin_turn(*a.warm_inputs[2],pending_only);execute(0);
-  require(a.progress.request_done()&&a.turn_input_consumed==1&&a.progress.generated.size()==3&&a.session->head->sampling.draw==3&&a.session->length()==286&&a.ledger->committed_count==7&&a.ledger->records[6].ids().size()==1&&a.ledger->records[6].ids()[0]==pending_only,"pending-only final consumed history twice");
+  require(a.progress.request_done()&&a.turn_input_consumed==1&&a.progress.generated.size()==3&&a.session->head->sampling.draw==3&&a.session->length()==286&&a.ledger->committed_count==10&&a.ledger->records[9].ids().size()==1&&a.ledger->records[9].ids()[0]==pending_only,"pending-only final consumed history twice");
   const auto ids=a.progress.generated;window.release_turn(key_a,false);retire(a);window.release(key_a);require(window.active().empty()&&!window.waiting_front()&&!model.active_step,"request resources remain");
+  require(token_rows==304,"fixed A/B journeys lost or duplicated input rows");
   std::cout<<"{\"status\":\"PASS\",\"ordinary\":true,\"physical_text_roles\":"<<model.physical_text_roles<<",\"physical_mtp_roles\":"<<model.physical_mtp_roles<<",\"Q\":64,\"dispatch\":[";
   for(std::size_t at=0;at<dispatch.size();++at)std::cout<<(at?",":"")<<'"'<<dispatch[at]<<'"';
-  std::cout<<"],\"actual_committed_input_rows\":"<<token_rows<<",\"A_commits\":7,\"B_commits\":3,\"A_draw\":3,\"B_draw\":3,\"partial_rebuild_rows\":"<<restored.target_rows<<",\"partial_gdn_and_carry_exact\":true,\"submitted_inflight_at_abort\":"<<(submitted_inflight?"true":"false")<<",\"hardware_completion_at_abort\":\"unknown\",\"A_ids\":[";
+  std::cout<<"],\"actual_committed_input_rows\":"<<token_rows<<",\"A_commits\":10,\"B_commits\":3,\"A_draw\":3,\"B_draw\":3,\"partial_rebuild_rows\":"<<restored.target_rows<<",\"partial_gdn_and_carry_exact\":true,\"submitted_inflight_at_abort\":"<<(submitted_inflight?"true":"false")<<",\"hardware_completion_at_abort\":\"unknown\",\"A_ids\":[";
   for(std::size_t at=0;at<ids.size();++at)std::cout<<(at?",":"")<<ids[at];std::cout<<"]}\n";return 0;
 }catch(const std::exception &error){std::cerr<<"chunked_failure="<<error.what()<<'\n';return 1;}}
 

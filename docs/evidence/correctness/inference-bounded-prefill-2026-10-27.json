@@ -1,0 +1,219 @@
+{
+  "status": "PASS_FINITE_BOUNDED_PREFILL_WITH_COVERAGE_SETUP_CORRECTION",
+  "date": "2026-10-27",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 495611,
+    "sha256": "0f73055bd8b6590a67d0af4621584848b5e66316750cab97b09cb03a11648eac"
+  },
+  "header": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\prefill_plan.h",
+    "bytes": 3253,
+    "sha256": "a895777146bc942bc0fbfac566172f4839ad23c81cf1a66cd1750ee2759f5493"
+  },
+  "test": {
+    "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+    "bytes": 6365,
+    "sha256": "3c1d1b75b755b643a9ea4dc6c43f18d7a3c3049261d664472cdc49aaac4e9762"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\image\\hyle.exe",
+    "bytes": 142053888,
+    "sha256": "2989cd63aefe1c426eeb25593c116d8bd2502295d517ea387d5d87435316cca4"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\ready.json",
+    "bytes": 3143,
+    "sha256": "bfc35b6220ec603a3f394e33d8055dd1f0b029e0dc17503b351e389d10b4d9e8"
+  },
+  "changes": [
+    "Finite Q consumes full Q blocks and exact bit_floor tail blocks; default SIZE_MAX and explicit finite-Q MTP rejection remain.",
+    "Exact parts uses quotient+popcount; parts_bound covers the nonmonotonic count of shorter unknown prefix suffixes.",
+    "Possible ordinary prefix tail rows/completion/member support join the existing finite Family and complete B/sampling keys before carrier preparation.",
+    "Original extra exact FIFO capacity is frozen once from initial planned complete keys (minimum1), independent of N; same owners, drain and budgets."
+  ],
+  "counts": {
+    "CXX_TUs": 2,
+    "links": 2,
+    "host_groups": 6,
+    "host_processes": 1,
+    "CUDA_processes": 2,
+    "baseline_reruns": 0,
+    "MTP_reruns": 0,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "build": {
+    "model": {
+      "exit": 0,
+      "pid": 47792,
+      "seconds": 20.791145899973344
+    },
+    "CLI_link": {
+      "exit": 0,
+      "pid": 45076,
+      "seconds": 1.7467347999918275
+    },
+    "host_compile": {
+      "exit": 0,
+      "pid": 35812,
+      "seconds": 0.49913770001148805
+    },
+    "host_link": {
+      "exit": 0,
+      "pid": 31772,
+      "seconds": 0.040586099959909916
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\compile\\actual-dependencies.json",
+      "bytes": 76968,
+      "sha256": "75dfe65e0adf20f2d0d44a5bc0a3ab15e93f9e6e59c8174daea8a11fbec5563c"
+    },
+    "host_actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\host\\compile\\actual-dependencies.json",
+      "bytes": 21756,
+      "sha256": "c34970a6fe21d54ac489540990b7f85e61a870436336f64a937d815af8e97ec4"
+    },
+    "retained_CLI_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\retained-inputs.json",
+      "bytes": 57744,
+      "sha256": "eb2b80f958228e46b01379ee9232769310b3a95a782f72fc76f896f5187877cd"
+    },
+    "failed_CXX_or_link_processes": 0
+  },
+  "results": {
+    "host": {
+      "process": {
+        "exit": 0,
+        "pid": 7188,
+        "seconds": 0.038093000010121614
+      },
+      "groups": 6,
+      "scope": "Real partition examples, exact/upper-bound counts, all possible first suffix keys for Q1/2/3/5/8/16 and remaining0..40, invalid cursor and SIZE_MAX."
+    },
+    "generated_prefix_tail": {
+      "process": {
+        "exit": 0,
+        "pid": 3192,
+        "seconds": 0.7380281999940053
+      },
+      "sessions": {
+        "A": {
+          "generated_ids": [
+            37,
+            0
+          ],
+          "visible": 4,
+          "reused": 0,
+          "imported_rows": 0,
+          "actual_rows": [
+            3,
+            1
+          ]
+        },
+        "C": {
+          "generated_ids": [
+            54,
+            51
+          ],
+          "visible": 2,
+          "reused": 0,
+          "imported_rows": 0,
+          "actual_rows": [
+            1,
+            1
+          ]
+        },
+        "B": {
+          "generated_ids": [
+            42
+          ],
+          "visible": 6,
+          "reused": 4,
+          "imported_rows": 4,
+          "actual_rows": [
+            2
+          ]
+        },
+        "D": {
+          "generated_ids": [
+            44
+          ],
+          "visible": 6,
+          "reused": 4,
+          "imported_rows": 4,
+          "actual_rows": [
+            2
+          ]
+        }
+      },
+      "actual_graph_calls": 4,
+      "actual_target_rows": 10,
+      "source_initial_prompt_rows": 3,
+      "source_generated_checkpoint_rows": 4,
+      "adopted_prefix_rows_each": 4,
+      "remaining_real_rows_each": 2,
+      "physical_batch_requests": 2,
+      "planned_shapes": 8,
+      "extra_shape_capacity": 8,
+      "N": 2,
+      "R": 2,
+      "N_times_R": 4,
+      "cold_exact_admissions": 0,
+      "cold_exact_evictions": 0,
+      "compiled_after_ready": 0
+    }
+  },
+  "first_attempt": {
+    "process": {
+      "exit": 0,
+      "pid": 49136,
+      "seconds": 1.1473082000156865
+    },
+    "classification": "Native success, intended coverage not reached; post-run expectation failed.",
+    "actual_graph_calls": 5,
+    "actual_target_rows": 18,
+    "prefix_hits": 0,
+    "cold_exact_admissions": 0,
+    "cause": "N4 admitted all four requests in one wave; R2 only limited physical buckets. Same-wave prefix lookup isolation correctly hid the new source checkpoint.",
+    "correction": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-bounded-prefill-20261027\\fixture-correction.json",
+      "bytes": 745,
+      "sha256": "64237b33da0fb39b92f911eb79acd8d1fde6544d7736536f9565006ebffc5fb4"
+    },
+    "scope": "Only N4 to N2, same image/input/seed/R2. Root authorized one extra process; no rebuild or host rerun."
+  },
+  "reuse": {
+    "previous_evidence": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-error-identity-2026-10-27.json",
+      "bytes": 7052,
+      "sha256": "8c0a487b5a511ec63cfe79fac20ec0a607bb85b2e8d530fef8a252833a8b93b1"
+    },
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-error-identity-20261027\\image\\hyle.exe",
+      "bytes": 142052864,
+      "sha256": "d78a4706ef05144dca977af5f778ad222f70b9c54849d917857e54ef5e8b575e"
+    },
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "weights_rebuilds": 0,
+    "report_rebuilds": 0,
+    "downloads": 0
+  },
+  "limits": [
+    "One successful targeted untrained tiny CUDA generated-prefix journey after one preserved coverage setup mismatch; six standalone host groups.",
+    "Q3 actual B2 tail was checked; extra binary tail episodes for Q8 and other finite quantums were host contracts, not additional model runs.",
+    "No padding or new varlen/provider execution semantics, no full-model/platform matrix, no MTP rerun or native fault injection.",
+    "Different real chunk widths can change legal GEMM/attention rounding and add episodes; no cross-chunk bitwise quality or performance benefit claim.",
+    "Only one sampling configuration was exercised by this CUDA journey. Complete sampler-key handling was source-reviewed.",
+    "The neighboring qwen_chunked_prefill_case migration and its execution are a separate consumer/evidence owned by the parent team."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-bounded-prefill-2026-10-27.zip",
+    "bytes": 241347,
+    "sha256": "beeab75f6e9665b098336ec58ef9243e542463d50d67d9c268ff03c88e8133b6",
+    "members": 79,
+    "CRC_and_member_SHA256_verified": true
+  }
+}
