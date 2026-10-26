@@ -242,6 +242,18 @@ set_tests_properties(hyle_inference_output_delivery_test PROPERTIES
 # Retirement observations use the existing Status implementation; do not pull
 # an unselected product into a standalone header-only/util test configuration.
 if(TARGET hyle_error)
+  add_executable(hyle_inference_request_loop_test tools/inference_request_loop_test.cc)
+  target_link_libraries(hyle_inference_request_loop_test PRIVATE hyle_build_contract hyle_error)
+  target_compile_features(hyle_inference_request_loop_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_inference_request_loop_test)
+  hyle_apply_sanitizer(hyle_inference_request_loop_test)
+  set_target_properties(hyle_inference_request_loop_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_inference_request_loop_test)
+  add_test(NAME hyle_inference_request_loop_test COMMAND hyle_inference_request_loop_test)
+  set_tests_properties(hyle_inference_request_loop_test PROPERTIES
+    LABELS "tooling;generation;admission;retirement" TIMEOUT 30)
+
   add_executable(hyle_inference_session_cache_test tools/inference_session_cache_test.cc)
   target_link_libraries(hyle_inference_session_cache_test PRIVATE hyle_build_contract hyle_error)
   target_compile_features(hyle_inference_session_cache_test PRIVATE cxx_std_23)
@@ -334,6 +346,11 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_test(NAME hyle_qwen_sampling_policy_test
     COMMAND hyle_qwen_request_lifecycle_test --sampling-policies)
   if(TARGET hyle_graph_route_cpu)
+    add_test(NAME hyle_qwen_request_loop_test
+      COMMAND hyle_qwen_request_lifecycle_test --request-loop)
+    set_tests_properties(hyle_qwen_request_loop_test PROPERTIES
+      LABELS "tooling;generation;admission;retirement;cpu;local-model" TIMEOUT 120
+      SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
     add_test(NAME hyle_qwen_e4_cache_test
       COMMAND hyle_qwen_request_lifecycle_test --e4-cache)
     set_tests_properties(hyle_qwen_e4_cache_test PROPERTIES

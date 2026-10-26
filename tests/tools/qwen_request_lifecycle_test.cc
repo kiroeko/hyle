@@ -15,6 +15,7 @@
 #include "qwen_sampling_budget_case.h"
 #include "qwen_request_ledger_case.h"
 #include "qwen_e4_cache_case.h"
+#include "qwen_request_loop_case.h"
 namespace q = qwen35;
 namespace i = hyle::inference;
 namespace {
@@ -82,9 +83,10 @@ int main(int argc,char **argv){
   const bool sampling_budget=argc>1 && std::string_view(argv[1])=="--sampling-budget";
   const bool request_ledger=argc>1 && std::string_view(argv[1])=="--request-ledger";
   const bool e4_cache=argc>1 && std::string_view(argv[1])=="--e4-cache";
-  const int argument=(chunked||dual||sampling||logits||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache)?2:1;
-  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--logits-modifiers|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache] [prepared_input_directory]");
-  const char *input_environment=e4_cache?"HYLE_QWEN_E4_INPUTS":"HYLE_QWEN_REQUEST_INPUTS";
+  const bool request_loop=argc>1 && std::string_view(argv[1])=="--request-loop";
+  const int argument=(chunked||dual||sampling||logits||turn_context||retirement||midturn||participant_failure||stop_policy||sampling_budget||request_ledger||e4_cache||request_loop)?2:1;
+  if(argc>argument+1)throw std::runtime_error("usage: qwen_request_lifecycle_test [--chunked-prefill|--dual-model|--sampling-policies|--logits-modifiers|--turn-context|--retirement-observation|--midturn-resume|--participant-failure|--stop-policies|--sampling-budget|--request-ledger|--e4-cache|--request-loop] [prepared_input_directory]");
+  const char *input_environment=e4_cache?"HYLE_QWEN_E4_INPUTS":request_loop?"HYLE_QWEN_REQUEST_LOOP_INPUTS":"HYLE_QWEN_REQUEST_INPUTS";
   const std::string input_directory=argc==argument+1?argv[argument]:input_directory_from_environment(input_environment);
   if(input_directory.empty()){std::cerr<<"SKIP: pass prepared input directory or set "<<input_environment<<'\n';return 77;}
   const std::filesystem::path input=input_directory;
@@ -100,6 +102,7 @@ int main(int argc,char **argv){
   if(sampling_budget)return qwen_sampling_budget_case::run(input);
   if(request_ledger)return qwen_request_ledger_case::run(input);
   if(e4_cache)return qwen_e4_cache_case::run(input);
+  if(request_loop)return qwen_request_loop_case::run(input);
   const auto geometry=q::read_weight_geometry(input/"weights.tsv");
   const auto prompt=q::read_ids(input/"prompt.ids",geometry.vocabulary,192);require(prompt.size()==154,"expected original P154 prompt");
   // This case uses the original plain 16-bit K/V cache carriers.

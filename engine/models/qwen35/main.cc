@@ -47,6 +47,7 @@
 #include "../../inference/request_progress.h"
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
+#include "../../inference/request_loop.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
 #include "../../inference/execution_observation.h"
@@ -5137,7 +5138,15 @@ void preflight_generation_sampling(const Model &model, const GenerationRequest &
       !model.sampling_configuration(request.sampling_index).configuration.enabled) return;
   const auto &progress = request.progress;
   std::size_t outputs = 0;
-  if (progress.turn_started()) outputs = progress.remaining_outputs();
+  if (progress.turn_started() && progress.turn_done && progress.more_turns()) {
+    // Open input may append its successor while the finished turn is paused.
+    // Prove that actual next quota before the shared owner evicts any peer.
+    outputs = progress.turns()[progress.turn_index + 1].max_outputs;
+    if (progress.generated.size() > progress.maximum_outputs() ||
+        outputs > progress.maximum_outputs() - progress.generated.size())
+      throw std::runtime_error("request turn exceeds its prepared output limit");
+  }
+  else if (progress.turn_started()) outputs = progress.remaining_outputs();
   else {
     if (progress.generated.size() > progress.maximum_outputs())
       throw std::runtime_error("request outputs exceed its prepared output limit");
@@ -5659,6 +5668,59 @@ inference::RetirementObservation retire_generation_request(GenerationRequest &re
   return request.session->try_retire();
 }
 
+// Model-specific state and execution only. RequestLoop owns FIFO, idle
+// selection and turn/key transitions; no native work is owned by this adapter.
+template<class ExecuteWave>
+struct GenerationRequestAdapter final {
+  Model &model;
+  cache::PrefixCache *prefix;
+  std::span<GenerationRequest> requests;
+  bool trace_states;
+  std::vector<std::size_t> *evictions;
+  ExecuteWave &execute;
+
+  inference::RequestProgress &progress(inference::RequestKey key) const noexcept {
+    return requests[key.slot].progress;
+  }
+  bool resident(inference::RequestKey key) const noexcept {
+    return bool(requests[key.slot].session);
+  }
+  void admission_preflight(inference::RequestKey key) const {
+    auto &request = requests[key.slot];
+    preflight_generation_sampling(model, request);
+    request.admission_start = Clock::now();
+  }
+  void admit(inference::RequestKey key, std::span<const inference::RequestKey>) const {
+    auto &request = requests[key.slot];
+    if (!request.session)
+      restore_generation_session(model, request, prefix, trace_states, requests);
+    if (request.progress.turn_index && !request.session)
+      throw std::runtime_error("later generation turn requires its rebuilt complete head");
+    if (!request.progress.turn_started()) {
+      request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
+          request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
+      request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
+    }
+  }
+  void execute_wave(std::span<const inference::RequestKey> active) const { execute(active); }
+  void publish_turn(inference::RequestKey key) const {
+    publish_generation_completed(model, requests[key.slot], prefix);
+  }
+  inference::RetirementObservation retire(inference::RequestKey key, inference::RequestRetirement reason) const {
+    auto &request = requests[key.slot];
+    if (!request.session) return {true, {}};
+    const auto retired = retire_generation_request(request);
+    if (retired.retired) {
+      request.session.reset();
+      if (reason == inference::RequestRetirement::kEvicted) {
+        ++request.idle_evictions;
+        if (evictions) evictions->push_back(key.slot);
+      }
+    }
+    return retired;
+  }
+};
+
 void print_generation_rebuild(const GenerationRestoreStats &stats, bool draft_cache) {
   std::cout << ",\"restore_contract\":\"recompute_committed_inputs\",\"restored_graph_calls\":" << stats.graph_calls
       << ",\"restored_target_rows\":" << stats.target_rows;
@@ -5937,10 +5999,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         model.prepare_execution(decode, 1, GraphRole::kText, TextCompletion::kEmitNext, i);
   }
   if (mtp && decode_bound && model.max_drafts() == 1 && !model.recursive_mtp()) for (auto role : roles) if (drafts_token(role)) model.prepare_execution(pair, 1, role);
-  inference::RequestWindow window;
-  window.prepare(requests.size(), model.cache_plan.resident_sessions);
+  inference::RequestLoop request_loop;
+  request_loop.prepare(requests.size(), model.cache_plan.resident_sessions);
   for (std::size_t index = 0; index < requests.size(); ++index)
-    requests[index].request_key = window.enqueue(index);
+    requests[index].request_key = request_loop.enqueue(index);
   std::vector<std::size_t> dispatch, dispatch_turns;
   dispatch.reserve(requested_outputs); dispatch_turns.reserve(requested_outputs);
   std::vector<std::size_t> evictions; evictions.reserve(total_turns);
@@ -5961,43 +6023,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             << "measure_memory name=ready_before_first\n";
   const auto start = Clock::now(); auto endpoint = start;
   double prefill_seconds = 0, decode_seconds = 0;
-  while (completed != requests.size()) {
-    while (const auto next = window.waiting_front()) {
-      const auto index = next->slot; auto &request = requests[index];
-      preflight_generation_sampling(model, request);
-      request.admission_start = Clock::now();
-      if (!request.session) {
-        // Earlier new requests in this wave have no head until prepare below.
-        // Their reserved slots still count when admitting/restoring a peer.
-        const auto active = window.active();
-        const auto reserved_heads = static_cast<std::size_t>(std::count_if(active.begin(), active.end(),
-            [&](auto member) { return !requests[member.slot].session; }));
-        while (cache::add(resident_count(), reserved_heads) >= model.cache_plan.resident_sessions) {
-          const auto victim = window.idle_victim([&](auto member) { return bool(requests[member].session); },
-              [&](auto member) { return requests[member].last_idle; });
-          if (!victim) throw std::runtime_error("all MTP heads are generating; no idle owner may be evicted");
-          const auto retired = retire_generation_request(requests[*victim]);
-          if (retired.retired) {
-            requests[*victim].session.reset();
-            ++requests[*victim].idle_evictions; evictions.push_back(*victim);
-          }
-          check(retired.status);
-          if (!retired.retired)
-            throw std::runtime_error("idle generation request still retains an in-flight episode");
-        }
-        restore_generation_session(model, request, prefix.get(), trace_states, requests);
-      }
-      if (request.progress.turn_index && !request.session)
-        throw std::runtime_error("later generation turn requires its rebuilt complete head");
-      if (!request.progress.turn_started()) {
-        request.prompt = request.progress.begin_turn(*request.warm_inputs[request.progress.turn_index],
-            request.progress.turn_index ? std::optional<std::int32_t>(request.session->head->next_id) : std::nullopt);
-        request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
-      }
-      window.admitted(*next); ++admitted;
-    }
-    const auto active = window.active();
-    if (active.empty()) throw std::runtime_error("MTP admission has no runnable resident request");
+  const auto execute_wave = [&](std::span<const inference::RequestKey> active) {
     // Resolve every lookup/admission in this wave before any checkpoint is
     // published. A same-wave prompt cannot observe another member's new head.
     hyle::container::SmallVector<PreparedGenerationCall, 2> calls;
@@ -6047,25 +6073,16 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           return bucket.size();
         });
     for (auto &call : calls) publish_generation_prompt(model, call, prefix.get());
-    for (std::size_t at = 0; at < window.active().size();) {
-      const auto index = window.active()[at].slot; auto &request = requests[index];
-      if (!request.progress.turn_done) { ++at; continue; }
-      publish_generation_completed(model, request, prefix.get());
-      const auto more = request.progress.more_turns();
-      const auto idle_order = window.release_turn(request.request_key, more);
-      if (!more) {
-        const auto retired = retire_generation_request(request);
-        if (retired.retired) {
-          request.session.reset();
-          window.release(request.request_key);
-          ++completed;
-        }
-        check(retired.status);
-        if (!retired.retired)
-          throw std::runtime_error("finished generation request still retains an in-flight episode");
-      }
-      else { request.last_idle = idle_order; request.progress.advance_turn(); }
-    }
+  };
+  GenerationRequestAdapter adapter{model, prefix.get(), std::span(requests), trace_states, &evictions, execute_wave};
+  while (completed != requests.size()) {
+    const auto pumped = request_loop.pump_once(adapter);
+    completed = cache::add(completed, pumped.completed);
+    admitted = cache::add(admitted, pumped.admitted);
+    if (pumped.waiting_retirement)
+      throw std::runtime_error("generation request still retains an in-flight episode");
+    if (!pumped.executed && completed != requests.size())
+      throw std::runtime_error("generation admission has no runnable resident request");
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();
   const auto session_seconds = std::chrono::duration<double>(endpoint - start).count();

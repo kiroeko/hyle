@@ -9,8 +9,9 @@
 自然请求循环；后端装配、输出事实、读回和退休保活已共享。
 `RequestProgress` 已共用主机进度、turn 输入、额度／停止和提交观察；版本接纳查询和执行观察事实已共用，
 CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共同的请求窗口、目录和进度规则。
-这不代表完整引擎调度已经模型无关：完整自然请求循环、合批政策与恢复编排仍在Qwen实现中，
-GLM／DeepSeek／Kimi仍为组件消费者，尚无第二个完整引擎模型验证整套编排复用。
+`RequestLoop`现承载自然请求的FIFO、驻留腾位、turn切换和待退休身份；Qwen的静态适配器提供实际状态与执行。
+兼容合批政策、模型恢复算法和数学阶段仍在Qwen实现中；GLM／DeepSeek／Kimi仍为组件消费者，
+尚无第二个完整引擎模型验证整套编排复用。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 职责与依赖
@@ -46,6 +47,20 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 移除可淘汰项。每次移除后重查；别名被删而版本数不变是合法结果，容量增长或目录不减则拒绝。
 尝试次数受初始目录项数限制。它不推定页、原生工作或字节已经退休，亦不取代`SessionCache`的原账本。
 
+`RequestLoop::pump_once`只推进一波，可在owner事件之间暂停。它复用原`RequestWindow`，
+自己保存有限的空闲顺序与待退休key，不拥有Session、RNG、pending或设备工作。静态适配边界为
+进度／真实驻留查询、接纳预检、完整恢复与开始turn、执行一波、发布完整turn、原生退休观察。
+预检先于淘汰；未创建Session的活动请求也预留名额。执行适配器先解析整波前缀查找，再提交并发布。
+完整turn按“发布→离开active→原生退休→归还身份”推进，未知退休保留原key，下次只观察原owner。
+普通稳态不遍历历史slot寻找待退休项。`RequestLoopFailure`保留逻辑请求key、原Status及真实退休事实，
+不把请求slot解释为某个模型batch的成员索引。
+
+开放输入没有后续turn时保留请求并pause；新输入到达后用同一个key唤醒，关闭空闲输入不重新执行旧turn。
+中途pause／wake不重置已消费输入、已观察输出或额度。适配器必须在返回前观察真实提交；晚观察抛错
+不能撤回已提交结果。固定输入teacher的cohort与phase规则不同，继续只复用共同批次遍历，不冒充自然FIFO消费者。
+[有限主机、真实CPU续接及CUDA普通／MTP对照](../evidence/correctness/inference-request-loop-2026-10-26.json)
+支持这次迁移；新循环的统一取消和输出credit／ACK接线仍待补齐，不以有限CLI日程代签完整请求控制。
+
 当前控制由单owner串行驱动；这与设备执行并发是两个维度。未来应用可向owner投递请求、取消和输出额度，
 观察有序事件，不能直接并发改Session。已有错误事实包括底层`Status`和带成员／退休信息的`EvaluationFailure`，
 尚未统一全部引擎异常。后续API需同时保留错误类别、影响范围（成员／批次／模型）和真实原生退休事实；
@@ -79,6 +94,11 @@ canonical状态派生pending／RNG wrapper，不覆盖其原预测。前缀、fo
 会话淘汰后的完整恢复当前仍可重算已消费输入；已有页复制／传输不等于完整会话换出。
 待补的主机状态镜像须涵盖KV、递归／卷积状态、pending、RNG和来源配置，分别计量主机／设备预算，
 保留共享页、旧版本及真实退休，恢复时不复用失效设备指针。此项属于底层状态能力，HTTP不是前置条件。
+镜像还须分别保存canonical已计算预测与请求自己的历史pending／RNG，保留采样wrapper的语义。
+换出使用原CopyBatch、租约及Completion；完整复制成功并真实退休后才发布镜像、退役原Session。
+换入在原池中重建真实PageRef及完整State，全部成功后安装新head，不重放输入或重新采样。
+当前状态bank是固定backing；释放一个会话只归还槽，不保证显存占用下降。仍被旧快照保留的页和版本
+继续计费；真正缩减设备backing需要单独的池容量机制，不能由逻辑换出推导。
 
 `SessionCache` 的逻辑驻留目录已归入 `engine/inference`，不再依赖 Qwen 或 benchmark 命名空间。
 它只管理独占 pin、空闲 LRU、撤回和原 owner 的退休回调；`PrefixDirectory` 管前缀索引，

@@ -1,0 +1,980 @@
+{
+  "status": "BOUNDED_REQUEST_LOOP_CORRECTNESS_RESULTS",
+  "baseline_commit": "8e488136f",
+  "publication_head": "8e488136fc043e25240e7a361a1a86b024491554",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_loop.h",
+      "bytes": 9214,
+      "sha256": "f55a4d02a49ca8e60fc76f97b2e5f4d783f9cf94881db0cac0610af522662f9a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_window.h",
+      "bytes": 9466,
+      "sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_progress.h",
+      "bytes": 12536,
+      "sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\retirement_observation.h",
+      "bytes": 942,
+      "sha256": "984af01e375f8d7f9b2b44862fd341b84928dac43f85b3c53c68d09e57c7fafe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 477308,
+      "sha256": "fbe2ba8e2c5c7a167fd220c4a017acdea5707198dff41c14e31aacffcabc4dfd"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+      "bytes": 21738,
+      "sha256": "377b49b1edada42d4ab84eeda8be4b99c5aaf866a213e730661f1ca512b46ea0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_loop_case.h",
+      "bytes": 6882,
+      "sha256": "954eecf37d0d63c029f806ba8ac88c27218b8ae3ea6173f2702b22a8078f3b8b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_loop_test.cc",
+      "bytes": 14551,
+      "sha256": "aa59981e769ac436987e1bdea89b14823e77e8b5d72957bbffd9d50e275d2145"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 23395,
+      "sha256": "d36245ac7121d1d5e2d173da51ca336035aab07fe7593099eeb4219693d14477"
+    }
+  ],
+  "builds": {
+    "status": "THREE_INCREMENTAL_TUS_BUILT_NOT_RUN",
+    "baseline_commit": "8e488136f",
+    "targets": [
+      {
+        "target": "host",
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\ready.json",
+          "bytes": 1961,
+          "sha256": "cafbc23514f2a55b79eadf775c1862d5e0863ea440d3761552536a2f79d4f6f2"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\link\\request-driver-test.exe",
+          "bytes": 54272,
+          "sha256": "102b23da756474ccd7852548dbd0684103e9a214396f93786a58b490b8d10019"
+        },
+        "compile": {
+          "exit": 0,
+          "pid": 40736,
+          "seconds": 0.8049967000260949
+        },
+        "link": {
+          "exit": 0,
+          "pid": 56324,
+          "seconds": 0.04066970001440495
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_loop_test.cc",
+          "bytes": 14551,
+          "sha256": "aa59981e769ac436987e1bdea89b14823e77e8b5d72957bbffd9d50e275d2145"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\source-freeze.json",
+          "bytes": 1589,
+          "sha256": "308ce1b0f437af6176dc84e7ae733c758744dbc0978f1cae9fe40146ff82b5d2"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\actual-dependencies.json",
+          "bytes": 27221,
+          "sha256": "79589922cc1874789318aa1bc5bf37e559f0ccfc75e09563a9002d936b25cb93"
+        },
+        "run": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\link\\request-driver-test.exe"
+        ]
+      },
+      {
+        "target": "cuda",
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\ready.json",
+          "bytes": 2847,
+          "sha256": "731f76619eb20194144d4693b73b4ab4880868f0c5e7ed4a588027bbb443e7b2"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\link\\hyle.exe",
+          "bytes": 141482496,
+          "sha256": "d8043a964bead9d36ecf4bf05a91706ff9741ba5126262db657fc4e0b9b79b10"
+        },
+        "compile": {
+          "exit": 0,
+          "pid": 44776,
+          "seconds": 20.488866800034884
+        },
+        "link": {
+          "exit": 0,
+          "pid": 41464,
+          "seconds": 1.7605241000419483
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 477308,
+          "sha256": "fbe2ba8e2c5c7a167fd220c4a017acdea5707198dff41c14e31aacffcabc4dfd"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\source-freeze.json",
+          "bytes": 33335,
+          "sha256": "7f48a322de1046e8922ec1483f02df1382d64309acc53c458e42e276fa08eb21"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\actual-dependencies.json",
+          "bytes": 74587,
+          "sha256": "91d1dfbe9e109db51a85fff58c9f03451066fdbe78b064e6132186a26a021bea"
+        },
+        "run": null
+      },
+      {
+        "target": "cpu",
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\ready.json",
+          "bytes": 3606,
+          "sha256": "042752cd79e25b3d8cf4a94eeed39b8cc7c0cb1d6c28eadd3b355b79354b13aa"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\link\\request-loop-consumer.exe",
+          "bytes": 141241344,
+          "sha256": "006fe79875d2b57219dd36d4beceebbbadf67a5f6d42fce1fbe8682d9e2133bf"
+        },
+        "compile": {
+          "exit": 0,
+          "pid": 23720,
+          "seconds": 20.599431900016498
+        },
+        "link": {
+          "exit": 0,
+          "pid": 56096,
+          "seconds": 1.7418510999996215
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\request-loop-consumer.cc",
+          "bytes": 344,
+          "sha256": "62ddcc02e5daf18cd4ff04c14465e7fb06d9e38ee3b303a782febd04fabf35d9"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\source-freeze.json",
+          "bytes": 33535,
+          "sha256": "ad20cb0ef8765ee53893608ee186b747f0e17cf127691aa5947a32274930acf2"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\actual-dependencies.json",
+          "bytes": 76425,
+          "sha256": "af678e0230b448aeb37f11817fafaee4639598f1d8ddeb06a93d8f5f3d87fa76"
+        },
+        "run": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\link\\request-loop-consumer.exe",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture"
+        ]
+      }
+    ],
+    "compiled_TUs": 3,
+    "SDK_native_provider_report_builds": 0,
+    "consumer_runs": 0,
+    "notes": [
+      "Host links one retained hyle_error library and Kernel32; no product-library compilation.",
+      "CUDA replaces one Model TU among 222 total inputs; CPU replaces one E4 wrapper among 221 total inputs.",
+      "Retained report ABI dependencies matched; original Model objects were already deleted and used solely as replacement keys."
+    ]
+  },
+  "common_core": "RequestLoop owns bounded request identities/FIFO/turn scheduling and observed retirement. Qwen GenerationRequestAdapter owns model admission/rebuild/publication/native retirement; ordinary and MTP share this request owner.",
+  "host": {
+    "process": {
+      "pid": 44340,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 0.05261200002860278,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\link\\request-driver-test.exe"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\host\\link\\request-driver-test.exe",
+        "bytes": 54272,
+        "sha256": "102b23da756474ccd7852548dbd0684103e9a214396f93786a58b490b8d10019"
+      }
+    },
+    "result": "request loop: 6 host contract groups passed; no model/device loaded\n",
+    "passed_contract_groups": 6,
+    "scope": "Host owner contracts with explicit retirement/error test inputs, not proof of native-device completion or physical capacity release."
+  },
+  "tiny_CPU": {
+    "process": {
+      "pid": 61296,
+      "exit": 0,
+      "timeout": false,
+      "seconds": 0.8669810999999754,
+      "command": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\link\\request-loop-consumer.exe",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture"
+      ],
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\cpu\\link\\request-loop-consumer.exe",
+        "bytes": 141241344,
+        "sha256": "006fe79875d2b57219dd36d4beceebbbadf67a5f6d42fce1fbe8682d9e2133bf"
+      }
+    },
+    "result": {
+      "status": "PASS",
+      "fixture": "untrained_A_H64",
+      "shared_cli_adapter": true,
+      "open_input_pause": true,
+      "idle_evictions": 2,
+      "restores": 2,
+      "midturn_boundary_equal": true,
+      "sampling_draw": 3,
+      "final_versions": 0
+    },
+    "scope": "Actual tiny untrained A/H64 Model and the same GenerationRequestAdapter: open-input pause/wake, two idle evictions/restores and finite mid-turn resume.",
+    "limits": [
+      "generation_boundary comparison covers its declared scalar fields and sampling cursor, not all target/draft KV, recurrent, hidden or checkpoint-alias bytes.",
+      "Final zero live versions is actual finite accounting, not a claim of process VRAM release or trained-model quality."
+    ]
+  },
+  "original_Qwen35_2B": {
+    "processes": {
+      "status": "TWO_REUSED_CONTROLS_PLUS_TWO_CANDIDATES_OBSERVED_EXIT0",
+      "processes": [
+        {
+          "id": "ordinary-baseline",
+          "reused_observed_control": true,
+          "pid": 40988,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 2.467120499990415,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\ordinary-candidate\\process.json",
+            "bytes": 1692,
+            "sha256": "9b5df963837eb18c52453383d8b3be6090fb44d2b33603b9f2c709b27dffd68b"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\ordinary-candidate\\stdout.json",
+            "bytes": 24643,
+            "sha256": "e06b9c8293c90d608b91f161199bbce44733539c9960bb048bec61d1eda560db"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\ordinary-candidate\\stderr.log",
+            "bytes": 103110,
+            "sha256": "2dd1d506efe308739a8e6f91a09a8a6f573474316fd9538cfdd5859909a78530"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\cuda\\link\\hyle.exe",
+            "bytes": 141481472,
+            "sha256": "8eca64f2e961735fd90def860121962ae903e29b2206ebe2fac9b61c9d02cdcb"
+          }
+        },
+        {
+          "id": "ordinary-candidate",
+          "reused_observed_control": false,
+          "pid": 14708,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 2.8352695999783464,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\ordinary-candidate\\process.json",
+            "bytes": 1913,
+            "sha256": "fcc20ff25d382423118742802a20f840f37ea55951f318a14df4285c1fd4f201"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\ordinary-candidate\\stdout.json",
+            "bytes": 24672,
+            "sha256": "d2f521e4408654266fc36f04a44a708285cfd5cdb6c0e913631da715be2e663b"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\ordinary-candidate\\stderr.log",
+            "bytes": 103107,
+            "sha256": "3c0bb0aaba78b9ade472e3043a81bb8a2bdca0c0ff0fa326a5c697e68b6de3c7"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\link\\hyle.exe",
+            "bytes": 141482496,
+            "sha256": "d8043a964bead9d36ecf4bf05a91706ff9741ba5126262db657fc4e0b9b79b10"
+          }
+        },
+        {
+          "id": "mtp-k1-baseline",
+          "reused_observed_control": true,
+          "pid": 42372,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 3.1426433000015095,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\mtp-k1-candidate\\process.json",
+            "bytes": 1761,
+            "sha256": "1cf09fb1152043162baa2980eb4ce9521e65ad0eb004e1faef2405407ff3a2a4"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\mtp-k1-candidate\\stdout.json",
+            "bytes": 23318,
+            "sha256": "1f57e5ca0b106c4dabf4634a13a9626ad0b42004e36785bcd0973907f8943e56"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\runs2\\mtp-k1-candidate\\stderr.log",
+            "bytes": 134464,
+            "sha256": "8df27cf89fa6a5a8f006fd23fac18c5d43fa79fb92aa64b77b809e93477e45f8"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\cuda\\link\\hyle.exe",
+            "bytes": 141481472,
+            "sha256": "8eca64f2e961735fd90def860121962ae903e29b2206ebe2fac9b61c9d02cdcb"
+          }
+        },
+        {
+          "id": "mtp-k1-candidate",
+          "reused_observed_control": false,
+          "pid": 27220,
+          "exit": 0,
+          "timeout": false,
+          "seconds": 3.063969900016673,
+          "process": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\process.json",
+            "bytes": 1980,
+            "sha256": "d88375f4a89c5870bb94ba868dd27a0637fce5483b280c955dd226ac01481def"
+          },
+          "stdout": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stdout.json",
+            "bytes": 23263,
+            "sha256": "9c1c6f9c795c81e0af389ad0cde749870c54f038c32aa774dfbfd22deb1eb3aa"
+          },
+          "stderr": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\runs\\mtp-k1-candidate\\stderr.log",
+            "bytes": 134457,
+            "sha256": "37758cafeba03867808ae3417a2c8f8ca0f5cb235e891472bb0eb43a6942a723"
+          },
+          "image": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\link\\hyle.exe",
+            "bytes": 141482496,
+            "sha256": "d8043a964bead9d36ecf4bf05a91706ff9741ba5126262db657fc4e0b9b79b10"
+          }
+        }
+      ],
+      "new_model_processes": 2,
+      "reused_observed_model_processes": 2,
+      "additional_analyzer_model_runs": 0,
+      "original_V1_rejection": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\consumer-cases\\input-v2-correction.json",
+        "bytes": 1533,
+        "sha256": "35f75c61a4a973e99784c0c055a7853b0a0b2251f37cc2c75c9f6fc7dead5fcc"
+      }
+    },
+    "comparisons": {
+      "status": "PASS",
+      "method": "Exact complete recursive JSON type/value/presence excluding only enumerated clocks/rates; no resource/path exclusions. Independently hash every trace file in both arms.",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\manifest.json",
+        "bytes": 23836,
+        "sha256": "a7e200c6d78fb0f867412d0b1b8368c47ae0c093c0d2adcf8273468befc534f3"
+      },
+      "analyzer": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\compare.py",
+        "bytes": 11088,
+        "sha256": "90ff563daaa4c2846170c5e0ffcf275772a2c8e388a1685ac8b1196bfc969755"
+      },
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\ready.json",
+        "bytes": 2847,
+        "sha256": "731f76619eb20194144d4693b73b4ab4880868f0c5e7ed4a588027bbb443e7b2"
+      },
+      "pairs": [
+        {
+          "mode": "ordinary",
+          "status": "PASS",
+          "all_non_time_JSON_equal": true,
+          "normalized_baseline_report_sha256": "1bc6638e1366789bf823330f343efcc05f549f520304f05d6b9906194892e7d8",
+          "ignored_time_rate_paths": [
+            "$.restore_step_seconds",
+            "$.restore_seconds",
+            "$.prefill_seconds",
+            "$.decode_seconds",
+            "$.session_seconds",
+            "$.step_sum_seconds",
+            "$.participation_step_sum_seconds",
+            "$.post_endpoint_seconds",
+            "$.startup_total_seconds",
+            "$.startup_to_endpoint_seconds",
+            "$.startup_to_ready_seconds",
+            "$.first_token_elapsed_seconds",
+            "$.prefill_tokens_per_second",
+            "$.decode_output_tokens_per_second",
+            "$.output_tokens_per_second",
+            "$.sessions[0].result.prefill_seconds",
+            "$.sessions[0].result.decode_seconds",
+            "$.sessions[0].result.session_seconds",
+            "$.sessions[0].result.startup_total_seconds",
+            "$.sessions[0].result.startup_to_endpoint_seconds",
+            "$.sessions[0].result.startup_to_ready_seconds",
+            "$.sessions[0].result.first_token_elapsed_seconds",
+            "$.sessions[0].result.prefill_step_seconds",
+            "$.sessions[0].result.decode_step_sum_seconds",
+            "$.sessions[0].result.step_sum_seconds",
+            "$.sessions[0].result.prefill_tokens_per_second",
+            "$.sessions[0].result.decode_output_tokens_per_second",
+            "$.sessions[0].result.output_tokens_per_second",
+            "$.sessions[0].result.between_turn_seconds",
+            "$.sessions[0].result.turns[0].prefill_seconds",
+            "$.sessions[0].result.turns[0].decode_seconds",
+            "$.sessions[0].result.turns[1].prefill_seconds",
+            "$.sessions[0].result.turns[1].decode_seconds",
+            "$.sessions[0].result.turns[2].prefill_seconds",
+            "$.sessions[0].result.turns[2].decode_seconds",
+            "$.sessions[1].result.prefill_seconds",
+            "$.sessions[1].result.decode_seconds",
+            "$.sessions[1].result.session_seconds",
+            "$.sessions[1].result.startup_total_seconds",
+            "$.sessions[1].result.startup_to_endpoint_seconds",
+            "$.sessions[1].result.startup_to_ready_seconds",
+            "$.sessions[1].result.first_token_elapsed_seconds",
+            "$.sessions[1].result.prefill_step_seconds",
+            "$.sessions[1].result.decode_step_sum_seconds",
+            "$.sessions[1].result.step_sum_seconds",
+            "$.sessions[1].result.prefill_tokens_per_second",
+            "$.sessions[1].result.decode_output_tokens_per_second",
+            "$.sessions[1].result.output_tokens_per_second",
+            "$.sessions[1].result.between_turn_seconds",
+            "$.sessions[1].result.turns[0].prefill_seconds",
+            "$.sessions[1].result.turns[0].decode_seconds",
+            "$.sessions[1].result.turns[1].prefill_seconds",
+            "$.sessions[1].result.turns[1].decode_seconds",
+            "$.sessions[1].result.turns[2].prefill_seconds",
+            "$.sessions[1].result.turns[2].decode_seconds"
+          ],
+          "ignored_resource_or_path_fields": [],
+          "non_time_differences": [],
+          "trace_file_count": 78,
+          "trace_bytes_per_arm": 36019875,
+          "trace_differences": [],
+          "coverage_equal": true,
+          "baseline_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  2997,
+                  5675,
+                  11,
+                  9637,
+                  5433,
+                  14733,
+                  3497,
+                  11
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  37435,
+                  198,
+                  50346
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 12,
+            "double_token_verifications": 0,
+            "selected_prefix_rows": {},
+            "accepted_proposal_rounds": 0,
+            "rejected_proposal_rounds": 0,
+            "draft_rounds": 0,
+            "consumed_drafts": 0,
+            "normalized_lag_rows": 0,
+            "recomputed_decision_changes": 0
+          },
+          "candidate_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  2997,
+                  5675,
+                  11,
+                  9637,
+                  5433,
+                  14733,
+                  3497,
+                  11
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  37435,
+                  198,
+                  50346
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 9,
+                "draft_frontier": null,
+                "draft_lag": null,
+                "ledger_records": 9,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 12,
+            "double_token_verifications": 0,
+            "selected_prefix_rows": {},
+            "accepted_proposal_rounds": 0,
+            "rejected_proposal_rounds": 0,
+            "draft_rounds": 0,
+            "consumed_drafts": 0,
+            "normalized_lag_rows": 0,
+            "recomputed_decision_changes": 0
+          }
+        },
+        {
+          "mode": "mtp-k1",
+          "status": "PASS",
+          "all_non_time_JSON_equal": true,
+          "normalized_baseline_report_sha256": "b73b5c99463a690ecd54d161faea2e6816ca31240b1147aeefda39cead46b158",
+          "ignored_time_rate_paths": [
+            "$.restore_step_seconds",
+            "$.restore_seconds",
+            "$.prefill_seconds",
+            "$.decode_seconds",
+            "$.session_seconds",
+            "$.step_sum_seconds",
+            "$.participation_step_sum_seconds",
+            "$.post_endpoint_seconds",
+            "$.startup_total_seconds",
+            "$.startup_to_endpoint_seconds",
+            "$.startup_to_ready_seconds",
+            "$.first_token_elapsed_seconds",
+            "$.prefill_tokens_per_second",
+            "$.decode_output_tokens_per_second",
+            "$.output_tokens_per_second",
+            "$.sessions[0].result.prefill_seconds",
+            "$.sessions[0].result.decode_seconds",
+            "$.sessions[0].result.session_seconds",
+            "$.sessions[0].result.startup_total_seconds",
+            "$.sessions[0].result.startup_to_endpoint_seconds",
+            "$.sessions[0].result.startup_to_ready_seconds",
+            "$.sessions[0].result.first_token_elapsed_seconds",
+            "$.sessions[0].result.prefill_step_seconds",
+            "$.sessions[0].result.decode_step_sum_seconds",
+            "$.sessions[0].result.step_sum_seconds",
+            "$.sessions[0].result.prefill_tokens_per_second",
+            "$.sessions[0].result.decode_output_tokens_per_second",
+            "$.sessions[0].result.output_tokens_per_second",
+            "$.sessions[0].result.between_turn_seconds",
+            "$.sessions[0].result.turns[0].prefill_seconds",
+            "$.sessions[0].result.turns[0].decode_seconds",
+            "$.sessions[0].result.turns[1].prefill_seconds",
+            "$.sessions[0].result.turns[1].decode_seconds",
+            "$.sessions[0].result.turns[2].prefill_seconds",
+            "$.sessions[0].result.turns[2].decode_seconds",
+            "$.sessions[1].result.prefill_seconds",
+            "$.sessions[1].result.decode_seconds",
+            "$.sessions[1].result.session_seconds",
+            "$.sessions[1].result.startup_total_seconds",
+            "$.sessions[1].result.startup_to_endpoint_seconds",
+            "$.sessions[1].result.startup_to_ready_seconds",
+            "$.sessions[1].result.first_token_elapsed_seconds",
+            "$.sessions[1].result.prefill_step_seconds",
+            "$.sessions[1].result.decode_step_sum_seconds",
+            "$.sessions[1].result.step_sum_seconds",
+            "$.sessions[1].result.prefill_tokens_per_second",
+            "$.sessions[1].result.decode_output_tokens_per_second",
+            "$.sessions[1].result.output_tokens_per_second",
+            "$.sessions[1].result.between_turn_seconds",
+            "$.sessions[1].result.turns[0].prefill_seconds",
+            "$.sessions[1].result.turns[0].decode_seconds",
+            "$.sessions[1].result.turns[1].prefill_seconds",
+            "$.sessions[1].result.turns[1].decode_seconds",
+            "$.sessions[1].result.turns[2].prefill_seconds",
+            "$.sessions[1].result.turns[2].decode_seconds"
+          ],
+          "ignored_resource_or_path_fields": [],
+          "non_time_differences": [],
+          "trace_file_count": 68,
+          "trace_bytes_per_arm": 34167094,
+          "trace_differences": [],
+          "coverage_equal": true,
+          "baseline_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  3584,
+                  28,
+                  15,
+                  11,
+                  3269,
+                  539,
+                  28,
+                  15
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 24,
+                "draft_lag": 1,
+                "ledger_records": 7,
+                "decision_changes": [
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 4,
+                    "historical_next": 3269,
+                    "fresh_next": 9637
+                  }
+                ]
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  1879,
+                  10206,
+                  248046
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 25,
+                "draft_lag": 0,
+                "ledger_records": 7,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 8,
+            "double_token_verifications": 6,
+            "selected_prefix_rows": {
+              "1": 2,
+              "2": 4
+            },
+            "accepted_proposal_rounds": 4,
+            "rejected_proposal_rounds": 2,
+            "draft_rounds": 6,
+            "consumed_drafts": 4,
+            "normalized_lag_rows": 3,
+            "recomputed_decision_changes": 3
+          },
+          "candidate_coverage": {
+            "sessions": [
+              {
+                "session_id": "alice",
+                "generated_ids": [
+                  3269,
+                  3584,
+                  28,
+                  15,
+                  11,
+                  3269,
+                  539,
+                  28,
+                  15
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 0,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 24,
+                "draft_lag": 1,
+                "ledger_records": 7,
+                "decision_changes": [
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 1,
+                    "historical_next": 3584,
+                    "fresh_next": 2997
+                  },
+                  {
+                    "episode": 4,
+                    "historical_next": 3269,
+                    "fresh_next": 9637
+                  }
+                ]
+              },
+              {
+                "session_id": "bob",
+                "generated_ids": [
+                  264,
+                  4434,
+                  12654,
+                  4536,
+                  24141,
+                  14733,
+                  1879,
+                  10206,
+                  248046
+                ],
+                "turn_count": 3,
+                "visible_tokens": 25,
+                "restore_count": 2,
+                "sampling_stream": 1,
+                "sampling_draw_cursor": 13,
+                "draft_frontier": 25,
+                "draft_lag": 0,
+                "ledger_records": 7,
+                "decision_changes": []
+              }
+            ],
+            "turns": 6,
+            "outputs": 18,
+            "restores": 4,
+            "idle_evictions": 4,
+            "pending_flushed": 4,
+            "generation_ledger_records": 8,
+            "double_token_verifications": 6,
+            "selected_prefix_rows": {
+              "1": 2,
+              "2": 4
+            },
+            "accepted_proposal_rounds": 4,
+            "rejected_proposal_rounds": 2,
+            "draft_rounds": 6,
+            "consumed_drafts": 4,
+            "normalized_lag_rows": 3,
+            "recomputed_decision_changes": 3
+          }
+        }
+      ],
+      "important_existing_fact": "Retain the three alice replay historical-vs-fresh changes exactly: episode1 3584->2997 twice; episode4 3269->9637 once. They are not hidden/excluded or required to become zero.",
+      "limits": [
+        "No performance ranking or ordinary-to-MTP equality.",
+        "Decision-level traces do not prove complete target/draft KV, GDN/conv, carry/prior bytes or old-checkpoint alias immutability.",
+        "Same 2 sessions x3 turns,4 restores/evictions/pending flushes,18 outputs. K1 control covers6 double verifications with4 accepted drafts and2 rejected proposals; report any candidate mismatch without adding runs."
+      ]
+    },
+    "tracehashes": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\consumer-cases\\tracehashes.json",
+      "bytes": 18823,
+      "sha256": "50c71cbf7ca7c439293735cf7cc2138fe4822ded1675280b376522fa566b7397"
+    },
+    "scope": "Cached original BF16 V2 335 roles, ordinary/K1, two sessions x three turns; two new candidates versus two reused observed WorkingState controls, no control rerun.",
+    "existing_recompute_fact": "Retain the three alice replay historical-vs-fresh changes exactly: episode1 3584->2997 twice; episode4 3269->9637 once. They are not hidden/excluded or required to become zero."
+  },
+  "tiny_CUDA_E4": {
+    "comparison": {
+      "status": "PASS",
+      "case": "natural",
+      "backend": "cuda",
+      "method": "Exact JSON types, all remaining keys/values, full arrays and order; no tolerance and no token grep. Only these exact paths excluded. Raw stdout and stderr remain untouched.",
+      "excluded_time_paths": [
+        "/decode_output_tokens_per_second",
+        "/decode_seconds",
+        "/first_token_elapsed_seconds",
+        "/output_tokens_per_second",
+        "/participation_step_sum_seconds",
+        "/post_endpoint_seconds",
+        "/prefill_seconds",
+        "/prefill_tokens_per_second",
+        "/restore_seconds",
+        "/restore_step_seconds",
+        "/session_seconds",
+        "/sessions/0/result/between_turn_seconds",
+        "/sessions/0/result/decode_output_tokens_per_second",
+        "/sessions/0/result/decode_seconds",
+        "/sessions/0/result/decode_step_sum_seconds",
+        "/sessions/0/result/first_token_elapsed_seconds",
+        "/sessions/0/result/output_tokens_per_second",
+        "/sessions/0/result/prefill_seconds",
+        "/sessions/0/result/prefill_step_seconds",
+        "/sessions/0/result/prefill_tokens_per_second",
+        "/sessions/0/result/session_seconds",
+        "/sessions/0/result/startup_to_endpoint_seconds",
+        "/sessions/0/result/startup_to_ready_seconds",
+        "/sessions/0/result/startup_total_seconds",
+        "/sessions/0/result/step_sum_seconds",
+        "/sessions/0/result/turns/0/decode_seconds",
+        "/sessions/0/result/turns/0/prefill_seconds",
+        "/sessions/0/result/turns/1/decode_seconds",
+        "/sessions/0/result/turns/1/prefill_seconds",
+        "/sessions/1/result/between_turn_seconds",
+        "/sessions/1/result/decode_output_tokens_per_second",
+        "/sessions/1/result/decode_seconds",
+        "/sessions/1/result/decode_step_sum_seconds",
+        "/sessions/1/result/first_token_elapsed_seconds",
+        "/sessions/1/result/output_tokens_per_second",
+        "/sessions/1/result/prefill_seconds",
+        "/sessions/1/result/prefill_step_seconds",
+        "/sessions/1/result/prefill_tokens_per_second",
+        "/sessions/1/result/session_seconds",
+        "/sessions/1/result/startup_to_endpoint_seconds",
+        "/sessions/1/result/startup_to_ready_seconds",
+        "/sessions/1/result/startup_total_seconds",
+        "/sessions/1/result/step_sum_seconds",
+        "/sessions/1/result/turns/0/decode_seconds",
+        "/sessions/1/result/turns/0/prefill_seconds",
+        "/sessions/1/result/turns/1/decode_seconds",
+        "/sessions/1/result/turns/1/prefill_seconds",
+        "/sessions/2/result/between_turn_seconds",
+        "/sessions/2/result/decode_output_tokens_per_second",
+        "/sessions/2/result/decode_seconds",
+        "/sessions/2/result/decode_step_sum_seconds",
+        "/sessions/2/result/first_token_elapsed_seconds",
+        "/sessions/2/result/output_tokens_per_second",
+        "/sessions/2/result/prefill_seconds",
+        "/sessions/2/result/prefill_step_seconds",
+        "/sessions/2/result/prefill_tokens_per_second",
+        "/sessions/2/result/session_seconds",
+        "/sessions/2/result/startup_to_endpoint_seconds",
+        "/sessions/2/result/startup_to_ready_seconds",
+        "/sessions/2/result/startup_total_seconds",
+        "/sessions/2/result/step_sum_seconds",
+        "/sessions/2/result/turns/0/decode_seconds",
+        "/sessions/2/result/turns/0/prefill_seconds",
+        "/sessions/3/result/between_turn_seconds",
+        "/sessions/3/result/decode_output_tokens_per_second",
+        "/sessions/3/result/decode_seconds",
+        "/sessions/3/result/decode_step_sum_seconds",
+        "/sessions/3/result/first_token_elapsed_seconds",
+        "/sessions/3/result/output_tokens_per_second",
+        "/sessions/3/result/prefill_seconds",
+        "/sessions/3/result/prefill_step_seconds",
+        "/sessions/3/result/prefill_tokens_per_second",
+        "/sessions/3/result/session_seconds",
+        "/sessions/3/result/startup_to_endpoint_seconds",
+        "/sessions/3/result/startup_to_ready_seconds",
+        "/sessions/3/result/startup_total_seconds",
+        "/sessions/3/result/step_sum_seconds",
+        "/sessions/3/result/turns/0/decode_seconds",
+        "/sessions/3/result/turns/0/prefill_seconds",
+        "/sessions/3/result/turns/1/decode_seconds",
+        "/sessions/3/result/turns/1/prefill_seconds",
+        "/startup_to_endpoint_seconds",
+        "/startup_to_ready_seconds",
+        "/startup_total_seconds",
+        "/step_sum_seconds"
+      ],
+      "coverage": {
+        "session_ids": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "seven_turns": true,
+        "mixed_T": true,
+        "R1_R2": true,
+        "partial_prefix_reuse_rows": 0,
+        "same_wave_prefix_isolation": true,
+        "all_reported_token_state_cache_batch_facts_compared": true
+      },
+      "non_time_facts_sha256": "83e6ccbb5e43c71d0aeb51cf740bf52010120b79f1d39187db8d01aa95721875",
+      "baseline": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\e4-cli\\natural.stdout.json",
+        "sha256": "3dd9d67b0e1e9ac2f5b413c3ec63782fbc8b7c3b91ffd32ccd9533cf5659524f"
+      },
+      "candidate": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-request-driver-20261026\\e4-cli\\natural.stdout.json",
+        "sha256": "932653ef548cfbde917d14a42370cb3e46cad531c52e979014121f163a316e32"
+      }
+    },
+    "scope": "One existing natural generated-E4 schedule: four sessions, seven turns, mixed T and real R1/R2/R3 batching plus same-wave prefix isolation; reused WorkingState output, 85 explicit clock fields excluded, no teacher rerun."
+  },
+  "future_host_image_design": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-working-state-20261026\\host-image-design.json",
+      "bytes": 17309,
+      "sha256": "06ee8472d21c45fe3d7c0330bb00d65f25cc8971f43030eca86a7985c3098e27"
+    },
+    "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+    "scope": "Complete byte-preserving host image/swap remains future work; current ledger replay restore is not this implementation."
+  },
+  "failures": "No new build or consumer failure was observed in this batch. Historical V1 input rejection and MTP replay decision differences remain in the explicit retained references.",
+  "not_implemented": [
+    "Complete session host-image swap",
+    "Native indexed GDN path",
+    "Eliminating existing KV reframe/export work",
+    "Execution overlap"
+  ],
+  "limits": [
+    "No speedup, performance ranking, cross-platform or broader model-quality conclusion.",
+    "qwen_request_lifecycle_test.cc migration is source-only here; its individual lifecycle CLI modes were not separately built/run. The new real tiny case is compiled through the one CPU wrapper TU.",
+    "Decision-level traces do not prove complete target/draft KV, GDN/conv, hidden payload or old-checkpoint alias immutability.",
+    "Only explicit small sources/commands/logs/JSON/schedule/token text is archived; no EXE/OBJ/PDB/DLL/LIB/SDK/weight/fulltrace payload or dependency-directory walk."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-loop-2026-10-26.zip",
+    "bytes": 282054,
+    "sha256": "fd3778f40dbb97b4d572dc04e8a401a91a3e0ace3147c16fb71fc007390dbc99"
+  }
+}
