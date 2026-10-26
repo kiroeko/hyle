@@ -82,6 +82,7 @@ struct SlotBindingsData final {
   std::vector<c::WriteLease, mem::StdAllocator<c::WriteLease>> destinations;
   std::vector<c::LeaseSlotAddress, mem::StdAllocator<c::LeaseSlotAddress>> source_addresses;
   std::vector<c::LeaseSlotAddress, mem::StdAllocator<c::LeaseSlotAddress>> destination_addresses;
+  bool populated = false;
 };
 } // namespace detail
 
@@ -125,16 +126,40 @@ Result<SlotBindings> SlotBindings::create(c::LeaseSlotLayout layout,
   } catch (...) {
     return std::unexpected(Status::ResourceExhausted("slot binding selected metadata"));
   }
-  HYLE_RETURN_IF_ERROR(layout.bind_indices(sources, destinations,
-      data->source_addresses, data->destination_addresses));
+  data->layout = std::move(layout);
+  HYLE_RETURN_IF_ERROR(result.refill(sources, destinations));
+  return result;
+}
+
+Status SlotBindings::refill(std::span<const c::ReadLease> sources,
+    std::span<c::WriteLease> destinations) noexcept {
+  if (!data_)
+    return Status::FailedPrecondition("slot refill needs its prepared original owner");
+  auto &data = *data_;
+  if (sources.size() != data.sources.size() || destinations.size() != data.destinations.size())
+    return Status::InvalidArgument("slot refill must preserve its prepared source and destination counts");
+  for (const auto &writer : data.destinations)
+    if (writer.valid())
+      return Status::FailedPrecondition("handle original slot destinations before refilling their transaction");
+  HYLE_RETURN_IF_ERROR(data.layout.bind_indices(sources, destinations,
+      data.source_addresses, data.destination_addresses));
   // The complete batch was validated under its original domain lock. These
   // assignments cannot allocate, fail or publish a native result.
-  data->layout = std::move(layout);
   for (std::size_t i = 0; i < sources.size(); ++i)
-    data->sources[i] = sources[i];
+    data.sources[i] = sources[i];
   for (std::size_t i = 0; i < destinations.size(); ++i)
-    data->destinations[i] = std::move(destinations[i]);
-  return result;
+    data.destinations[i] = std::move(destinations[i]);
+  data.populated = true;
+  return Status::Ok();
+}
+
+void SlotBindings::clear() noexcept {
+  if (!data_) return;
+  for (auto &source : data_->sources) source = {};
+  for (auto &destination : data_->destinations) destination = {};
+  for (auto &address : data_->source_addresses) address = {};
+  for (auto &address : data_->destination_addresses) address = {};
+  data_->populated = false;
 }
 
 c::LeaseSlotLayout SlotBindings::layout() const noexcept {
@@ -147,23 +172,23 @@ std::size_t SlotBindings::destination_count() const noexcept {
   return data_ ? data_->destinations.size() : 0;
 }
 std::span<const c::ReadLease> SlotBindings::sources() const noexcept {
-  return data_ ? std::span<const c::ReadLease>{data_->sources}
+  return data_ && data_->populated ? std::span<const c::ReadLease>{data_->sources}
                : std::span<const c::ReadLease>{};
 }
 std::span<c::WriteLease> SlotBindings::destinations() noexcept {
-  return data_ ? std::span<c::WriteLease>{data_->destinations}
+  return data_ && data_->populated ? std::span<c::WriteLease>{data_->destinations}
                : std::span<c::WriteLease>{};
 }
 std::span<const c::WriteLease> SlotBindings::destinations() const noexcept {
-  return data_ ? std::span<const c::WriteLease>{data_->destinations}
+  return data_ && data_->populated ? std::span<const c::WriteLease>{data_->destinations}
                : std::span<const c::WriteLease>{};
 }
 std::span<const c::LeaseSlotAddress> SlotBindings::source_addresses() const noexcept {
-  return data_ ? std::span<const c::LeaseSlotAddress>{data_->source_addresses}
+  return data_ && data_->populated ? std::span<const c::LeaseSlotAddress>{data_->source_addresses}
                : std::span<const c::LeaseSlotAddress>{};
 }
 std::span<const c::LeaseSlotAddress> SlotBindings::destination_addresses() const noexcept {
-  return data_ ? std::span<const c::LeaseSlotAddress>{data_->destination_addresses}
+  return data_ && data_->populated ? std::span<const c::LeaseSlotAddress>{data_->destination_addresses}
                : std::span<const c::LeaseSlotAddress>{};
 }
 

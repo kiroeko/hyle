@@ -83,6 +83,21 @@ public:
       std::span<compute::WriteLease> destinations,
       SlotBindingsOptions = {}) noexcept;
 
+  // Refill a caller-owned transaction for its original layout and fixed counts,
+  // without allocating. Every old destination must first be published, moved
+  // out or cleared. All real leases are validated before replacing any saved
+  // fact or consuming a caller writer; rejection preserves this owner and all
+  // caller handles.
+  HYLE_GRAPH_API Status refill(std::span<const compute::ReadLease> sources,
+      std::span<compute::WriteLease> destinations) noexcept;
+  // Release caller-owned handles without executing or publishing them. Keep the
+  // original layout, counts and allocated metadata for refill. A moved-from
+  // object remains empty; a prepared owner remains valid but exposes no lease
+  // or address spans until a successful refill.
+  HYLE_GRAPH_API void clear() noexcept;
+
+  // valid/counts describe the prepared metadata owner, including after clear;
+  // they are not evidence of populated leases or execution readiness.
   bool valid() const noexcept { return data_ != nullptr; }
   HYLE_GRAPH_API compute::LeaseSlotLayout layout() const noexcept;
   HYLE_GRAPH_API std::size_t source_count() const noexcept;
@@ -124,8 +139,9 @@ HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
 // source IDs. The arithmetic between Gather and Store remains ordinary Graph
 // math and may execute as separate operations or as a fused region.
 struct SourceBinding final { NodeId store, gather; };
-// Prepares one private [source IDs | destination IDs] carrier per associated
-// Store. The original Graph establishes geometry and input identities; actual
+// Stores on the same actual execution source, Queue and resource share one
+// private fixed carrier, with a [source IDs | destination IDs] slice per Store.
+// The original Graph establishes geometry and input identities; actual
 // selected readers still prove their bounded access during binding. Duplicate
 // Stores/readers/pools and shared or published control inputs are rejected.
 HYLE_GRAPH_API Status prepare(Invocation &, const Graph &,
@@ -141,6 +157,15 @@ HYLE_GRAPH_API Status prepare(Invocation &, const Graph &,
 // provider selection is created here.
 HYLE_GRAPH_API Status bind(Invocation &, const Graph &, NodeId store,
     SlotBindings &&) noexcept;
+// Borrowed requests; no transaction is consumed unless the entire call
+// succeeds. Every touched carrier group must participate in full, and all its
+// previous transactions must have been taken. The single-Store overload uses
+// this same rule and rejects a partial group. Other groups are not changed.
+// Controls are uploaded once per actual source/Queue/resource group. Fixed
+// per-Store slice addresses remain stable across accepted binding episodes.
+struct BindRequest final { NodeId store; SlotBindings *bindings; };
+HYLE_GRAPH_API Status bind(Invocation &, const Graph &,
+    std::span<const BindRequest>) noexcept;
 // No implicit wait or publication: returns the original transaction only
 // after the whole Graph's work/results/observations have actually retired,
 // including failed or closed recovery. The caller observes execution success

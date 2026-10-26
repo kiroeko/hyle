@@ -136,7 +136,15 @@ Y发布与仅写状态、reset撤权回收及原13项Store／投影合同；实�
 conv复用相同Artifact、Invocation、StoreBinding与退休回调，不另建执行器或公开模型专用算子。
 [7项有限GPU检查](../evidence/correctness/inference-indexed-conv-graph-2026-10-27.json)覆盖conv与原GDN回归，
 包括更换目标ID后的真实录制复用；未代签引擎接受／回滚或完整吞吐。
-当前一次上传针对一个region，尚须在共同层合并逐层metadata等待、复用事务并接引擎；
+共同层按真实ExecutionSource、Queue与resource分组固定小索引载体，各Store保留独立切片和原事务。
+整组绑定先验全部实际租约，再一次上传该组控制；配置及权限全部成功后才无失败地移交所有owner。
+拒绝时撤回本次已安装的写效果和源投影，不消费调用方事务。原生路线仍用真实ExecutionSource，
+不伪造Compute Queue。组内尚有未取回事务时不得重写共享载体，各组不隐式互相重绑。
+取回的SlotBindings可clear旧source／候选后refill，保留原layout、计数、预算与元数据容量，
+仍核完整真实租约及generation，不缓存裸槽号代替权限。引擎迁移与完整性能对照仍待完成；
+共同机制已有[有限CPU／CUDA检查](../evidence/correctness/inference-batched-slot-controls-2026-10-27.json)，
+覆盖同组全体绑定、固定切片、未全部取回时拒绝重写及晚期权限失败回滚。
+原生copy仍可有每组临时元数据分配，不把事务refill零分配推广为所有后端bind零分配。
 拒绝融合时仍须由实际reader证明合法投影，不能让模型按Provider分叉构图或伪造整池ReadLease。
 可移植接线由冷准备关联原Graph的Store与源Gather，不包含Provider身份；
 共同层核checked axis0读取、池几何和私有ID，再由实际选中实现证明只读选中行。

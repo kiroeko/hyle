@@ -1,0 +1,1264 @@
+{
+  "status": "29_UNIQUE_COMPONENT_CASES_PASS_ACROSS_TWO_IMAGES",
+  "date": "2026-10-27",
+  "scope": "SlotBindings metadata reuse/refill and grouped private slot controls; CPU/CUDA component contracts only.",
+  "counts": {
+    "distinct_CXX_translation_units": 6,
+    "compiler_attempts": 9,
+    "successful_compiles": 8,
+    "failed_compiles": 1,
+    "links": 2,
+    "built_images": 2,
+    "executed_images": 2,
+    "test_processes": 4,
+    "test_executions": 32,
+    "unique_cases": 29,
+    "final_unique_passes": 29,
+    "initial_case_failures": 3,
+    "skipped": 0,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "model_runs": 0,
+    "benchmarks": 0,
+    "downloads": 0
+  },
+  "outcome": "Image 1 ran CPU20 and CUDA9: 26 passed, three new batch fixtures failed before their intended execution. Only those three fixtures were rebuilt and retried on image 2; all passed. Image 2 did not rerun the other 26 cases.",
+  "implementation": [
+    "SlotBindings::clear releases old lease/address facts while retaining prepared metadata and counts; refill checks all original domain/generation/extent facts before consuming any caller writer.",
+    "Common Store controls group by actual resource, ExecutionSource and original Queue identity; one fixed I32 carrier holds disjoint per-Store source/destination slices and uploads once per original group.",
+    "Batch bind validates a complete cohort, duplicate owners and real permissions before moving transactions. A late read-projection failure withdraws earlier installed permissions and returns all original caller transactions.",
+    "A partial take cannot overwrite a shared carrier while another transaction remains. Real result/completion retirement and reset revocation retain the original guards and owner-return contracts.",
+    "The two resource reservation callers now pass only their new required reads; reserve_reads itself already includes the existing bindings."
+  ],
+  "checked_contracts": {
+    "refill": "Two new GraphSlots cases verify unchanged metadata addresses and no new attempts from the rejecting metadata allocator, old read guards released, live-writer/count/foreign-domain rejection and unchanged caller ownership.",
+    "accounting": "The retained metadata-failure case checks failed-allocation cleanup, metadata-only ResourceBudget charges, unchanged payload pool allocation, clear retaining its metadata charge, and full refund when the transaction owner is destroyed.",
+    "batch_cpu": "Two new cases check same carrier/different slice offsets over two rounds, changed slot order via refill, partial/duplicate cohort rejection, partial-take gating, reset recovery and a deliberately late real permission failure with successful retry after removing only the blocker.",
+    "batch_cuda": "The new double-Store case runs two rounds on the original CUDA Queue, verifies one device carrier with fixed disjoint offsets and changed IDs, checks copied values and untouched sentinel slots; partial bind leaves caller owners intact.",
+    "retained_cuda_regressions": "The original indexed GDN3 and conv4 cases all passed on image 1 after the product changes, including the conv F32 two RequireCapture submissions with record1/reuse0 then changed-destination record0/reuse1, BF16 long chunk, F16 raw history bits, and legal escaping-Gather fallback."
+  },
+  "boundaries": [
+    "No claim that the whole bind/submit path performs zero allocations: only the explicit refill metadata allocator contract and fixed carrier identities were tested.",
+    "The Apple/Vulkan original-native ExecutionSource upload branch was not run in this batch. Its temporary helper metadata uses the selected/budget allocator; queried native payload scratch is separately reserved and refunded on success, retained on possibly accepted failure. This is source-reviewed accounting, not native-fault injection or a measured no-allocation claim.",
+    "CPU direct-host and common CUDA Queue controls executed. CUDA Store/GDN/conv kernels did execute; zero NVCC means no native recompilation, not absence of GPU execution.",
+    "No real GPU fault, unknown-retirement fault injection, full model/engine run, MTP quality assessment, tokens/s measurement, memory performance comparison or speedup conclusion.",
+    "GTest/process durations are preserved for provenance and are not performance benchmarks.",
+    "The complete final image did not rerun all 29 cases: final status combines 26 prior passes with three successful fixture-only retries."
+  ],
+  "failures": [
+    {
+      "kind": "C++ compile",
+      "source": "src/graph/slots_region.cc:850",
+      "pid": 12580,
+      "observed": "Unqualified single-request wrapper bind with std::array participated in std::bind overload resolution; C2440.",
+      "correction": "Qualify the existing slots::bind overload and pass an explicit span. The same final source also clears borrowed scratch references on every return without allocation.",
+      "retained_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source\\src\\graph\\slots_region.cc",
+        "bytes": 61975,
+        "sha256": "a30906729482bc26825f847e6def6fa6235861416f6307b656b9d996766a9ada"
+      },
+      "corrected_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source2\\src\\graph\\slots_region.cc",
+        "bytes": 62450,
+        "sha256": "02e741f9ceec0c976ef094f66051e7c7b18d5912d6432946ddf6d8acad88d3ca"
+      }
+    },
+    {
+      "kind": "Three test-fixture failures",
+      "observed": "Three new batch fixtures threw Bad expected access.",
+      "diagnosis": "Source inspection located the unchecked GraphBuilder.finish result: two unknown external Store effects lacked the required explicit ordering edge.",
+      "correction": "Only CPU/CUDA test fixtures add Store1 depends_on Store0 and clearer Result status diagnostics. Product objects are identical between the two executed images.",
+      "original_sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source\\tests\\graph\\slots_execution_test.cc",
+          "bytes": 44571,
+          "sha256": "cf31bf05a87c1fb3f1607b0652c41fa84ecbae6fbdaf84fbcdb8d58880fa68e5"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source\\tests\\graph\\slots_cuda_execution_test.cc",
+          "bytes": 12975,
+          "sha256": "33708fb2479e7df9bd80befce57e65775a4cfffa007e0c10d17227349359c170"
+        }
+      ],
+      "corrected_sources": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source3\\tests\\graph\\slots_execution_test.cc",
+          "bytes": 46230,
+          "sha256": "ca744f82c2ac2a4457414e807d849cb32b72a8a6a31a2cc91b047da47871c780"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source3\\tests\\graph\\slots_cuda_execution_test.cc",
+          "bytes": 13120,
+          "sha256": "ad73749cad5d10de65a2c9e4754bc8ffee9a429c6d832311a466ffe6129e7bf0"
+        }
+      ],
+      "retried_exact_cases": [
+        "GraphSlotsCudaExecution.TwoStoresShareFixedControlsAndKeepIndependentPoolSlots",
+        "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+        "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup"
+      ]
+    }
+  ],
+  "provenance": {
+    "baseline": {
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\ready2.json",
+        "bytes": 7294,
+        "sha256": "9976d94313c5d988a1c1978ac11fc332b5bc3a95f05c4dea0777aea5a89e25e8"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link2-inputs.json",
+        "bytes": 58932,
+        "sha256": "e3c5284036bab2b4198e2207c10f8a1036f4cb116d67bfdb064e2fd87790ea20"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link2\\command.json",
+        "bytes": 31971,
+        "sha256": "ab9c808ef33a632738d837d3f81e248c61fb1d590edd2e65394477ee1edaacda"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\runtime2.json",
+        "bytes": 20923,
+        "sha256": "2933982d1eab9bf242ed705531810221c101c1201e47edac829a817374dc59c6"
+      }
+    },
+    "original_closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-indexed-conv-graph-2026-10-27.json",
+      "bytes": 22224,
+      "sha256": "219a22afe6a4e0b0d45d73018c79c223ba6f750ea85c2f894bfaf000352c724b"
+    },
+    "original_closure_archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-indexed-conv-graph-2026-10-27.zip",
+      "bytes": 484521,
+      "sha256": "0331bcee2978624da0b50029c497bacf84c191a3afae74023957b329902782f8"
+    },
+    "original_inputs": 228,
+    "final_inputs": 229,
+    "initial_replaced_objects": 5,
+    "initial_added_objects": 1,
+    "second_image_replaced_objects": 2,
+    "product_objects_rebuilt_for_second_image": 0,
+    "final_input_metadata": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\link2-inputs.json",
+      "bytes": 59182,
+      "sha256": "966a37c7ac7e92487b5c0c7d9679439d32e2b31276061697eac479ecc3af6f8e"
+    },
+    "first_input_metadata": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\link-inputs.json",
+      "bytes": 59180,
+      "sha256": "27af007b3cce8656c2c09aa8ae1a198d70e4cb44a5a8ba5918546eed7c059364"
+    },
+    "images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      }
+    ],
+    "ready": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\ready.json",
+        "bytes": 7291,
+        "sha256": "96435bfbb55b436a376338efd2cf4c1c4d04efd2183c40d6caa0f8b829df3f29"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\ready2.json",
+        "bytes": 7304,
+        "sha256": "c9838e48ae2b72eb308a3c2cd0bb690b4ceb7df01e949799a55ac7d34a638c4a"
+      }
+    ],
+    "freezes": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\frozen-plan.json",
+        "bytes": 19129,
+        "sha256": "aa0cd0bc29491a369db61dfdc50ba8c246561bfcc1a2b1b28bec8b9b351242d0"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\frozen-plan2.json",
+        "bytes": 19389,
+        "sha256": "8c34fe3495db332d3a47918a33081f294cd539914084b8cfb7f0562a02dfad2b"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\frozen-plan3.json",
+        "bytes": 19397,
+        "sha256": "5298dff2babee9f5fb9b57a10c9b40cb4cf8146445ca9cb7de9afdf665a36a16"
+      }
+    ],
+    "source_closure_hash_records": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source-freeze.json",
+        "bytes": 20107,
+        "sha256": "53bc4364559d492992c5a5493d202ebc564dcc3df2a35044caab58739d93613c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source-freeze2.json",
+        "bytes": 20107,
+        "sha256": "f09654645be2dfbc663568058897335187ac7bf3e666517ab375f6c849c05281"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\source-freeze3.json",
+        "bytes": 20107,
+        "sha256": "6787b0c466cc78a86d7035d2fc22136992fef061e1b76bd79317d3d6eb5b52e8"
+      }
+    ],
+    "source_hash_record_count": 101,
+    "compiler_attempts": [
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "process": {
+          "exit": 0,
+          "pid": 50756,
+          "seconds": 2.366786599974148
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\resources\\command.json",
+          "bytes": 1634,
+          "sha256": "66a038d34c03063a15da32f7f74ffdc32f16dcb2bd9822ca79d8b167faf4032e"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots.cc",
+        "process": {
+          "exit": 0,
+          "pid": 41612,
+          "seconds": 1.2306094000232406
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\slots\\command.json",
+          "bytes": 1544,
+          "sha256": "191dcb5119788d2befd43fc5642337a74311712c1dc813543cdab45541305e99"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+        "process": {
+          "exit": 2,
+          "pid": 12580,
+          "seconds": 1.4714481999981217
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\common\\command.json",
+          "bytes": 1694,
+          "sha256": "18a09644c30fe4e8b19ac6d06330764721da7db942a9b41637981604f6b2ff0b"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+        "process": {
+          "exit": 0,
+          "pid": 61276,
+          "seconds": 2.6188903999864124
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile2\\common\\command.json",
+          "bytes": 1697,
+          "sha256": "a71a26fa6be1d1589e29a7241f4a183be1f48b258c83e9419d0c5d60b867cdae"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+        "process": {
+          "exit": 0,
+          "pid": 50240,
+          "seconds": 2.387867700017523
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\bindings-test\\command.json",
+          "bytes": 1583,
+          "sha256": "cc4b667363f5ba1ff8625970167c42625f2bce43924b10f9c1efbb7d4f68ceb9"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+        "process": {
+          "exit": 0,
+          "pid": 41880,
+          "seconds": 2.792762400000356
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\cpu-test\\command.json",
+          "bytes": 1806,
+          "sha256": "b9d0248f5e3b46e24e196ffdf7a10678c42f231d04a611664abe01d5a2f13287"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_cuda_execution_test.cc",
+        "process": {
+          "exit": 0,
+          "pid": 35876,
+          "seconds": 2.505637700029183
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile\\cuda-test\\command.json",
+          "bytes": 2099,
+          "sha256": "790a14f9b7321896384c12fdd8e4f7ad20218da5d626dbf4193e52a75d89a274"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+        "process": {
+          "exit": 0,
+          "pid": 22260,
+          "seconds": 2.8380100000067614
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile3\\cpu-test\\command.json",
+          "bytes": 1809,
+          "sha256": "afdd33dd352a6792a4f6f9da02eea21338ea33d5b4820cb5b8277850fd638424"
+        }
+      },
+      {
+        "source": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_cuda_execution_test.cc",
+        "process": {
+          "exit": 0,
+          "pid": 12032,
+          "seconds": 2.5323379000183195
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\compile3\\cuda-test\\command.json",
+          "bytes": 2102,
+          "sha256": "c5b84f7588b15c50c1dfaee37b33be247ab26685cffc9f42100361c7cbb7fefb"
+        }
+      }
+    ],
+    "links": [
+      {
+        "process": {
+          "exit": 0,
+          "pid": 46768,
+          "seconds": 1.818829800002277
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\link\\command.json",
+          "bytes": 32038,
+          "sha256": "acd6cf5fb84ec511325245f6368b99d2cf99dbb609aacf1a2082ae87048bff1a"
+        }
+      },
+      {
+        "process": {
+          "exit": 0,
+          "pid": 15100,
+          "seconds": 1.7684935999568552
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\link2\\command.json",
+          "bytes": 32043,
+          "sha256": "193b5fe3a8d89739eb7fc73e651e8bf3fb4ff11bf188e6b6d34ac1a81e3f2a91"
+        }
+      }
+    ],
+    "runtime": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\runtime.json",
+        "bytes": 21018,
+        "sha256": "0ffecbb452fdc6fd92e7dfb193305f9a96a9e7cb8c32063b1ba0811f1a184637"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\runtime2.json",
+        "bytes": 21108,
+        "sha256": "a54aafd97f2f752117038282ff783ef80820f0703f8f0bcd9116396123e1d4ce"
+      }
+    ],
+    "hardware": "Actual CUDA stderr reports NVIDIA GeForce RTX 4070, capability 8.9, 12281 MiB; full toolchain/device identities are referenced from the unchanged indexed-conv baseline receipt, not freshly queried here."
+  },
+  "runs": [
+    {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "process": {
+        "exit": 1,
+        "pid": 42148,
+        "seconds": 0.4360920999897644
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run-cpu\\process.json",
+        "bytes": 70,
+        "sha256": "f887540ecbd41366d023f5d09ac5b205a735b9b571c40bc5b497e4a8c6895260"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run-cpu\\command.json",
+        "bytes": 1899,
+        "sha256": "00b02ed562921498246ed5d6c5b9402dafebf7432aa218251dc5439e923d30cd"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\results-cpu.xml",
+        "bytes": 6644,
+        "sha256": "f779f5d2d780e2fdf0445690ae7b9fc14dabcc4c2bf09efff8e36b7cbfd047be"
+      },
+      "tests": [
+        {
+          "name": "GraphSlotsExecution.RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+          "status": "PASS",
+          "attributes": {
+            "name": "RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "104",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.859",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+          "status": "PASS",
+          "attributes": {
+            "name": "ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "190",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.859",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.SourceDestinationOverlapIsRejectedBeforeAnyStore",
+          "status": "PASS",
+          "attributes": {
+            "name": "SourceDestinationOverlapIsRejectedBeforeAnyStore",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "226",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+          "status": "PASS",
+          "attributes": {
+            "name": "ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "252",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+          "status": "PASS",
+          "attributes": {
+            "name": "SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "439",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+          "status": "PASS",
+          "attributes": {
+            "name": "SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "442",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+          "status": "PASS",
+          "attributes": {
+            "name": "DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "445",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+          "status": "PASS",
+          "attributes": {
+            "name": "InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "449",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+          "status": "FAIL",
+          "attributes": {
+            "name": "BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "719",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.860",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": [
+            "unknown file\nC++ exception with description \"Bad expected access\" thrown in the test body.\n"
+          ]
+        },
+        {
+          "name": "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+          "status": "FAIL",
+          "attributes": {
+            "name": "BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "789",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.861",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": [
+            "unknown file\nC++ exception with description \"Bad expected access\" thrown in the test body.\n"
+          ]
+        },
+        {
+          "name": "CpuStorageGather.OrdinaryDefaultComputePreservesRawRowsAndChecksAllIdsBeforeWriting",
+          "status": "PASS",
+          "attributes": {
+            "name": "OrdinaryDefaultComputePreservesRawRowsAndChecksAllIdsBeforeWriting",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "593",
+            "status": "run",
+            "result": "completed",
+            "time": "0.002",
+            "timestamp": "2026-10-27T04:01:57.861",
+            "classname": "CpuStorageGather"
+          },
+          "failures": []
+        },
+        {
+          "name": "CpuStorageGather.OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotations",
+          "status": "PASS",
+          "attributes": {
+            "name": "OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotations",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "600",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "CpuStorageGather"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.SchemaPreservesPaddingAndRejectsInvalidGeometry",
+          "status": "PASS",
+          "attributes": {
+            "name": "SchemaPreservesPaddingAndRejectsInvalidGeometry",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "30",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.StoreInfersExactDenseWholeItemsAndIsAnExternalEffect",
+          "status": "PASS",
+          "attributes": {
+            "name": "StoreInfersExactDenseWholeItemsAndIsAnExternalEffect",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "61",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.LateForeignSourceAndWriterNeverConsumeCallerDestinations",
+          "status": "PASS",
+          "attributes": {
+            "name": "LateForeignSourceAndWriterNeverConsumeCallerDestinations",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "109",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.FailedLateWriterIsNotTurnedIntoAnOwnedReadyResult",
+          "status": "PASS",
+          "attributes": {
+            "name": "FailedLateWriterIsNotTurnedIntoAnOwnedReadyResult",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "139",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.MetadataFailureDoesNotConsumeAndBudgetTracksOnlySelectedOwners",
+          "status": "PASS",
+          "attributes": {
+            "name": "MetadataFailureDoesNotConsumeAndBudgetTracksOnlySelectedOwners",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "164",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.864",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.OwnsExactAddressesAcrossPoolMoveDropAndTransactionMove",
+          "status": "PASS",
+          "attributes": {
+            "name": "OwnsExactAddressesAcrossPoolMoveDropAndTransactionMove",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "208",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.865",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.ClearAndRefillReuseMetadataAndReleaseOldSlotGuardsWithoutAllocation",
+          "status": "PASS",
+          "attributes": {
+            "name": "ClearAndRefillReuseMetadataAndReleaseOldSlotGuardsWithoutAllocation",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "250",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.865",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlots.RefillRejectsLiveWritersCountsAndLateForeignHandlesWithoutMutation",
+          "status": "PASS",
+          "attributes": {
+            "name": "RefillRejectsLiveWritersCountsAndLateForeignHandlesWithoutMutation",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slot_bindings_test.cc",
+            "line": "331",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:01:57.865",
+            "classname": "GraphSlots"
+          },
+          "failures": []
+        }
+      ],
+      "count": 20,
+      "passed": 18,
+      "failed": 2,
+      "skipped": 0
+    },
+    {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "process": {
+        "exit": 1,
+        "pid": 668,
+        "seconds": 0.5656594000174664
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run-cuda\\process.json",
+        "bytes": 68,
+        "sha256": "0c59cb82622a1091fa91606c45b27ca7603f3c6f051f4962ee5ffeea4b399d7e"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run-cuda\\command.json",
+        "bytes": 1073,
+        "sha256": "5a05ae0ee95dd9307a7af1066fada1481759e17cedd5451a9f0a2ec023b052e5"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\results-cuda.xml",
+        "bytes": 3567,
+        "sha256": "9f130cfb169beb57b6decd91d60272b06e4e6aadf32e5777a387e8037a8ff68d"
+      },
+      "tests": [
+        {
+          "name": "GraphSlotsCudaExecution.DeviceStoreUpdatesPrivateIndicesOnTheOriginalQueue",
+          "status": "PASS",
+          "attributes": {
+            "name": "DeviceStoreUpdatesPrivateIndicesOnTheOriginalQueue",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_cuda_execution_test.cc",
+            "line": "21",
+            "status": "run",
+            "result": "completed",
+            "time": "0.083",
+            "timestamp": "2026-10-27T04:03:15.203",
+            "classname": "GraphSlotsCudaExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsCudaExecution.TwoStoresShareFixedControlsAndKeepIndependentPoolSlots",
+          "status": "FAIL",
+          "attributes": {
+            "name": "TwoStoresShareFixedControlsAndKeepIndependentPoolSlots",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_cuda_execution_test.cc",
+            "line": "125",
+            "status": "run",
+            "result": "completed",
+            "time": "0.003",
+            "timestamp": "2026-10-27T04:03:15.287",
+            "classname": "GraphSlotsCudaExecution"
+          },
+          "failures": [
+            "unknown file\nC++ exception with description \"Bad expected access\" thrown in the test body.\n"
+          ]
+        },
+        {
+          "name": "GgmlCudaIndexedStateGraph.PublishedActivationAndCandidateSlotsMatchDenseGdn",
+          "status": "PASS",
+          "attributes": {
+            "name": "PublishedActivationAndCandidateSlotsMatchDenseGdn",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+            "line": "372",
+            "status": "run",
+            "result": "completed",
+            "time": "0.016",
+            "timestamp": "2026-10-27T04:03:15.290",
+            "classname": "GgmlCudaIndexedStateGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedStateGraph.EffectRootWritesCandidatesWithoutPublishedActivation",
+          "status": "PASS",
+          "attributes": {
+            "name": "EffectRootWritesCandidatesWithoutPublishedActivation",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+            "line": "375",
+            "status": "run",
+            "result": "completed",
+            "time": "0.006",
+            "timestamp": "2026-10-27T04:03:15.306",
+            "classname": "GgmlCudaIndexedStateGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedStateGraph.EscapingGatherUsesCheckedProjectedFallback",
+          "status": "PASS",
+          "attributes": {
+            "name": "EscapingGatherUsesCheckedProjectedFallback",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+            "line": "378",
+            "status": "run",
+            "result": "completed",
+            "time": "0.005",
+            "timestamp": "2026-10-27T04:03:15.312",
+            "classname": "GgmlCudaIndexedStateGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedConvGraph.Float32BatchedFinalWindowUsesOriginalStateAndReset",
+          "status": "PASS",
+          "attributes": {
+            "name": "Float32BatchedFinalWindowUsesOriginalStateAndReset",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+            "line": "290",
+            "status": "run",
+            "result": "completed",
+            "time": "0.008",
+            "timestamp": "2026-10-27T04:03:15.317",
+            "classname": "GgmlCudaIndexedConvGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedConvGraph.Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+          "status": "PASS",
+          "attributes": {
+            "name": "Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+            "line": "293",
+            "status": "run",
+            "result": "completed",
+            "time": "0.007",
+            "timestamp": "2026-10-27T04:03:15.326",
+            "classname": "GgmlCudaIndexedConvGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedConvGraph.Float16HistoryPreservesOriginalBitsForEveryPrefix",
+          "status": "PASS",
+          "attributes": {
+            "name": "Float16HistoryPreservesOriginalBitsForEveryPrefix",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+            "line": "296",
+            "status": "run",
+            "result": "completed",
+            "time": "0.005",
+            "timestamp": "2026-10-27T04:03:15.333",
+            "classname": "GgmlCudaIndexedConvGraph"
+          },
+          "failures": []
+        },
+        {
+          "name": "GgmlCudaIndexedConvGraph.EscapingGatherKeepsLegalProjectedFallback",
+          "status": "PASS",
+          "attributes": {
+            "name": "EscapingGatherKeepsLegalProjectedFallback",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+            "line": "299",
+            "status": "run",
+            "result": "completed",
+            "time": "0.006",
+            "timestamp": "2026-10-27T04:03:15.339",
+            "classname": "GgmlCudaIndexedConvGraph"
+          },
+          "failures": []
+        }
+      ],
+      "count": 9,
+      "passed": 8,
+      "failed": 1,
+      "skipped": 0
+    },
+    {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 44744,
+        "seconds": 0.4073544999700971
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run2-cpu\\process.json",
+        "bytes": 70,
+        "sha256": "25c0df9ebedf6e8e2bdae36ed833f1312a0fb15d17b53cd806da0095f50dbdc8"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run2-cpu\\command.json",
+        "bytes": 572,
+        "sha256": "80509cd34209a28b3e8df965f609a499aa8febe7955075e30c526590a76b7014"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\results2-cpu.xml",
+        "bytes": 911,
+        "sha256": "014f593ca92435b8708a6e434db32ed43c337cf0e36bffb3c1f0c34270d7f3ad"
+      },
+      "tests": [
+        {
+          "name": "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+          "status": "PASS",
+          "attributes": {
+            "name": "BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "733",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:06:24.035",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        },
+        {
+          "name": "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+          "status": "PASS",
+          "attributes": {
+            "name": "BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+            "line": "803",
+            "status": "run",
+            "result": "completed",
+            "time": "0.",
+            "timestamp": "2026-10-27T04:06:24.036",
+            "classname": "GraphSlotsExecution"
+          },
+          "failures": []
+        }
+      ],
+      "count": 2,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 58872,
+        "seconds": 0.4881399999721907
+      },
+      "process_receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run2-cuda\\process.json",
+        "bytes": 70,
+        "sha256": "92565733f906f41dc52ed6439755823ecf3ed2abea16a3810347bd5a6e30498a"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\run2-cuda\\command.json",
+        "bytes": 482,
+        "sha256": "eb5ca010323dfc0c9b26a775018745ba38bfce96f923b762787c67c25da7bc42"
+      },
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\results2-cuda.xml",
+        "bytes": 635,
+        "sha256": "b551708dd5b7eba3185c01bfa44a35a1aa12a8a4dabc118a82d3013c39b90fb5"
+      },
+      "tests": [
+        {
+          "name": "GraphSlotsCudaExecution.TwoStoresShareFixedControlsAndKeepIndependentPoolSlots",
+          "status": "PASS",
+          "attributes": {
+            "name": "TwoStoresShareFixedControlsAndKeepIndependentPoolSlots",
+            "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_cuda_execution_test.cc",
+            "line": "125",
+            "status": "run",
+            "result": "completed",
+            "time": "0.081",
+            "timestamp": "2026-10-27T04:06:30.090",
+            "classname": "GraphSlotsCudaExecution"
+          },
+          "failures": []
+        }
+      ],
+      "count": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "final_unique_case_results": {
+    "GraphSlotsExecution.RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.SourceDestinationOverlapIsRejectedBeforeAnyStore": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      },
+      "pid": 44744
+    },
+    "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      },
+      "pid": 44744
+    },
+    "CpuStorageGather.OrdinaryDefaultComputePreservesRawRowsAndChecksAllIdsBeforeWriting": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "CpuStorageGather.OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotations": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.SchemaPreservesPaddingAndRejectsInvalidGeometry": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.StoreInfersExactDenseWholeItemsAndIsAnExternalEffect": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.LateForeignSourceAndWriterNeverConsumeCallerDestinations": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.FailedLateWriterIsNotTurnedIntoAnOwnedReadyResult": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.MetadataFailureDoesNotConsumeAndBudgetTracksOnlySelectedOwners": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.OwnsExactAddressesAcrossPoolMoveDropAndTransactionMove": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.ClearAndRefillReuseMetadataAndReleaseOldSlotGuardsWithoutAllocation": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlots.RefillRejectsLiveWritersCountsAndLateForeignHandlesWithoutMutation": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 42148
+    },
+    "GraphSlotsCudaExecution.DeviceStoreUpdatesPrivateIndicesOnTheOriginalQueue": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GraphSlotsCudaExecution.TwoStoresShareFixedControlsAndKeepIndependentPoolSlots": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "dec5829c56ec0afb172f47d2080f68380819f6325e08bf33d715ef742cfd2f9b"
+      },
+      "pid": 58872
+    },
+    "GgmlCudaIndexedStateGraph.PublishedActivationAndCandidateSlotsMatchDenseGdn": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedStateGraph.EffectRootWritesCandidatesWithoutPublishedActivation": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedStateGraph.EscapingGatherUsesCheckedProjectedFallback": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedConvGraph.Float32BatchedFinalWindowUsesOriginalStateAndReset": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedConvGraph.Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedConvGraph.Float16HistoryPreservesOriginalBitsForEveryPrefix": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    },
+    "GgmlCudaIndexedConvGraph.EscapingGatherKeepsLegalProjectedFallback": {
+      "status": "PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin\\batched-slot-controls-test.exe",
+        "bytes": 143787520,
+        "sha256": "3d92234b75345d0c70495b576c3659657c1ef35245ae7cc316e2195fa5573b75"
+      },
+      "pid": 668
+    }
+  },
+  "archive_policy": "Only necessary new source snapshots, commands, logs, XML, dependency and object-closure hash metadata. No SDK/header tree, executable, object, library, DLL or model payload.",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-batched-slot-controls-2026-10-27.zip",
+    "bytes": 368076,
+    "sha256": "53a03135d7701dd0c7b590eaeccce3b7652ebf0b6d63301b6854a6eac76442f7"
+  },
+  "archived_files": 129,
+  "archive_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\archive-files.json",
+    "bytes": 36347,
+    "sha256": "b123b7ea89ce97ba32e2cd91326d0c65c71ef0fd40e6199ea147e1e028165ea1"
+  }
+}

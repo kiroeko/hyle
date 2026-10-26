@@ -196,6 +196,11 @@ TEST(GraphSlots, MetadataFailureDoesNotConsumeAndBudgetTracksOnlySelectedOwners)
         usage.live_bytes);
     EXPECT_EQ(pool.stats().allocated_bytes, before.allocated_bytes);
     EXPECT_EQ(pool.stats().live_blocks, before.live_blocks);
+    bindings.clear();
+    EXPECT_TRUE(bindings.valid());
+    EXPECT_EQ(bindings.source_count(), 1u);
+    EXPECT_EQ(bindings.destination_count(), 1u);
+    EXPECT_EQ(budget.usage(m::system_resource())->live_bytes, usage.live_bytes);
   }
   EXPECT_EQ(budget.usage(m::system_resource())->live_bytes, initial);
 }
@@ -240,6 +245,149 @@ TEST(GraphSlots, OwnsExactAddressesAcrossPoolMoveDropAndTransactionMove) {
   EXPECT_TRUE(bindings.sources().empty());
   EXPECT_EQ(moved.destination_addresses()[0], destination_address);
   EXPECT_EQ(moved.layout().locate(moved.sources()[0]).value(), source_address);
+}
+
+TEST(GraphSlots, ClearAndRefillReuseMetadataAndReleaseOldSlotGuardsWithoutAllocation) {
+  hyle_f5_fault_fixture::Allocator metadata;
+  auto pool_result = c::LeasePool::create(m::system_resource(), 1024, {.max_blocks = 4});
+  ASSERT_TRUE(pool_result) << pool_result.error().message();
+  auto pool = std::move(*pool_result);
+  auto layout_result = c::LeaseSlotLayout::create(pool, item(), 4, 256);
+  ASSERT_TRUE(layout_result) << layout_result.error().message();
+  const auto layout = *layout_result;
+  auto initial_result = pool.allocate(64, 256);
+  ASSERT_TRUE(initial_result) << initial_result.error().message();
+  auto source_result = initial_result->publish();
+  ASSERT_TRUE(source_result) << source_result.error().message();
+  auto old_source = std::move(*source_result);
+  std::array sources{old_source};
+  std::array<c::WriteLease, 2> destinations;
+  for (auto &destination : destinations) {
+    auto allocated = pool.allocate(64, 256);
+    ASSERT_TRUE(allocated) << allocated.error().message();
+    destination = std::move(*allocated);
+  }
+  auto selected = s::SlotBindings::create(layout, sources, destinations,
+      {.allocator = metadata.ref()});
+  ASSERT_TRUE(selected) << selected.error().message();
+  auto returned = std::move(*selected); // Same move used to return the retired owner.
+  const auto *source_storage = returned.sources().data();
+  const auto *destination_storage = returned.destinations().data();
+  const auto *source_addresses = returned.source_addresses().data();
+  const auto *destination_addresses = returned.destination_addresses().data();
+  const auto chosen_address = returned.destination_addresses()[0];
+  const auto discarded_generation = returned.destination_addresses()[1].generation;
+  auto chosen_view = returned.destinations()[0].view();
+  ASSERT_TRUE(chosen_view) << chosen_view.error().message();
+  ASSERT_TRUE(chosen_view->fill(std::byte{37}).ok());
+  auto chosen_result = returned.destinations()[0].publish();
+  ASSERT_TRUE(chosen_result) << chosen_result.error().message();
+  const auto chosen = std::move(*chosen_result);
+  sources[0] = {};
+  const auto attempts = metadata.attempts, live = metadata.live;
+  metadata.fail = attempts;
+  returned.clear();
+  EXPECT_TRUE(returned.valid());
+  EXPECT_TRUE(returned.layout().valid());
+  EXPECT_EQ(returned.source_count(), 1u);
+  EXPECT_EQ(returned.destination_count(), 2u);
+  EXPECT_TRUE(returned.sources().empty());
+  EXPECT_TRUE(returned.destinations().empty());
+  EXPECT_TRUE(returned.source_addresses().empty());
+  EXPECT_TRUE(returned.destination_addresses().empty());
+  // clear withdrew the transaction's old source guard, so the external head
+  // can regain its original writer instead of remaining pinned by metadata.
+  auto recycled = old_source.try_write();
+  ASSERT_TRUE(recycled) << recycled.error().message();
+  destinations[0] = std::move(*recycled);
+  auto next_destination = pool.allocate(64, 256);
+  ASSERT_TRUE(next_destination) << next_destination.error().message();
+  destinations[1] = std::move(*next_destination);
+  const auto next_generation = destinations[1].generation();
+  const std::array next_sources{chosen};
+  auto moved = std::move(returned);
+  returned.clear();
+  EXPECT_TRUE(returned.refill(next_sources, destinations).IsFailedPrecondition());
+  const auto status = moved.refill(next_sources, destinations);
+  ASSERT_TRUE(status.ok()) << status.message();
+  EXPECT_FALSE(destinations[0].valid());
+  EXPECT_FALSE(destinations[1].valid());
+  EXPECT_EQ(moved.sources().data(), source_storage);
+  EXPECT_EQ(moved.destinations().data(), destination_storage);
+  EXPECT_EQ(moved.source_addresses().data(), source_addresses);
+  EXPECT_EQ(moved.destination_addresses().data(), destination_addresses);
+  EXPECT_EQ(moved.source_addresses()[0], chosen_address);
+  EXPECT_EQ(moved.destination_addresses()[1].generation, next_generation);
+  EXPECT_NE(next_generation, discarded_generation);
+  EXPECT_EQ(metadata.attempts, attempts);
+  EXPECT_EQ(metadata.live, live);
+  std::array<std::byte, 64> bytes{};
+  auto current_source = moved.sources()[0].view();
+  ASSERT_TRUE(current_source) << current_source.error().message();
+  ASSERT_TRUE(current_source->read(bytes).ok());
+  for (auto byte : bytes) EXPECT_EQ(byte, std::byte{37});
+}
+
+TEST(GraphSlots, RefillRejectsLiveWritersCountsAndLateForeignHandlesWithoutMutation) {
+  auto pool_result = c::LeasePool::create(m::system_resource(), 2048, {.max_blocks = 8});
+  ASSERT_TRUE(pool_result) << pool_result.error().message();
+  auto pool = std::move(*pool_result);
+  auto layout_result = c::LeaseSlotLayout::create(pool, item(), 8, 256);
+  ASSERT_TRUE(layout_result) << layout_result.error().message();
+  const auto layout = *layout_result;
+  auto initial = pool.allocate(64, 256);
+  ASSERT_TRUE(initial) << initial.error().message();
+  auto ready = initial->publish();
+  ASSERT_TRUE(ready) << ready.error().message();
+  const std::array sources{*ready, *ready};
+  std::array<c::WriteLease, 2> original, replacement;
+  for (auto *writers : {&original, &replacement}) for (auto &writer : *writers) {
+    auto allocated = pool.allocate(64, 256);
+    ASSERT_TRUE(allocated) << allocated.error().message();
+    writer = std::move(*allocated);
+  }
+  auto selected = s::SlotBindings::create(layout, sources, original);
+  ASSERT_TRUE(selected) << selected.error().message();
+  auto &bindings = *selected;
+  const std::array saved_sources{bindings.source_addresses()[0], bindings.source_addresses()[1]};
+  const std::array saved_destinations{bindings.destination_addresses()[0], bindings.destination_addresses()[1]};
+  const auto first_generation = replacement[0].generation();
+  EXPECT_TRUE(bindings.refill(sources, replacement).IsFailedPrecondition());
+  EXPECT_EQ(bindings.destination_addresses()[0], saved_destinations[0]);
+  EXPECT_TRUE(replacement[0].valid());
+  EXPECT_TRUE(replacement[1].valid());
+  for (auto &writer : bindings.destinations()) writer = {};
+  EXPECT_TRUE(bindings.refill({}, replacement).IsInvalidArgument());
+  auto foreign_pool = c::LeasePool::create(m::system_resource(), 512, {.max_blocks = 2});
+  ASSERT_TRUE(foreign_pool) << foreign_pool.error().message();
+  auto foreign_writer = foreign_pool->allocate(64, 256);
+  ASSERT_TRUE(foreign_writer) << foreign_writer.error().message();
+  auto foreign = foreign_writer->publish();
+  ASSERT_TRUE(foreign) << foreign.error().message();
+  std::array next_sources{sources[0], *foreign};
+  EXPECT_TRUE(bindings.refill(next_sources, replacement).IsInvalidArgument());
+  auto wrong_destination = foreign_pool->allocate(64, 256);
+  ASSERT_TRUE(wrong_destination) << wrong_destination.error().message();
+  replacement[1] = std::move(*wrong_destination);
+  const auto foreign_generation = replacement[1].generation();
+  next_sources[1] = sources[1];
+  EXPECT_TRUE(bindings.refill(next_sources, replacement).IsInvalidArgument());
+  EXPECT_EQ(bindings.source_addresses()[0], saved_sources[0]);
+  EXPECT_EQ(bindings.source_addresses()[1], saved_sources[1]);
+  EXPECT_EQ(bindings.destination_addresses()[0], saved_destinations[0]);
+  EXPECT_EQ(bindings.destination_addresses()[1], saved_destinations[1]);
+  EXPECT_EQ(bindings.sources()[0].generation(), sources[0].generation());
+  EXPECT_EQ(replacement[0].generation(), first_generation);
+  EXPECT_EQ(replacement[1].generation(), foreign_generation);
+  EXPECT_TRUE(replacement[0].valid());
+  EXPECT_TRUE(replacement[1].valid());
+  auto valid_destination = pool.allocate(64, 256);
+  ASSERT_TRUE(valid_destination) << valid_destination.error().message();
+  replacement[1] = std::move(*valid_destination);
+  const auto status = bindings.refill(next_sources, replacement);
+  ASSERT_TRUE(status.ok()) << status.message();
+  EXPECT_FALSE(replacement[0].valid());
+  EXPECT_FALSE(replacement[1].valid());
 }
 
 } // namespace

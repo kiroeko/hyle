@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -603,6 +605,244 @@ TEST(CpuStorageGather, OrdinaryDefaultGraphPreservesRawRowsWithoutStoreAnnotatio
       SCOPED_TRACE(::testing::Message() << "type=" << static_cast<int>(type) << " padded=" << padded);
       exercise_default_gather(type, padded, true);
     }
+}
+
+// Two independent logical pools share one original Queue/resource. The
+// resource adapter, not the caller, groups their private source/destination IDs.
+template <class T> T batch_fixture(hyle::Result<T> value, const char *stage) {
+  if (!value) throw std::runtime_error(std::string(stage) + ": " + std::string(value.error().message()));
+  return std::move(*value);
+}
+void batch_fixture_status(hyle::Status status, const char *stage) {
+  if (!status.ok()) throw std::runtime_error(std::string(stage) + ": " + std::string(status.message()));
+}
+struct BatchedSourceProgram final {
+  c::Context context = batch_fixture(c::Context::create(c::cpu::device(), c::native::provider()), "batch Context");
+  c::Queue queue = batch_fixture(context.create_queue(), "batch Queue");
+  s::Schema schema = batch_fixture(s::Schema::create(item_description(), 5, kStride), "batch schema");
+  c::TensorDesc ids_description = batch_fixture(c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{2}), "batch IDs description");
+  std::array<g::ValueId, 2> pools{}, gathered{};
+  std::array<g::NodeId, 2> gathers{}, stores{};
+  std::array<m::Buffer, 2> outputs;
+  g::Graph graph;
+  g::CompiledGraph compiled;
+  g::Invocation invocation;
+  const std::array<g::QueueBinding, 1> queues{{{g::ExecutionLaneId{0}, &queue}}};
+  BatchedSourceProgram() {
+    auto builder = batch_fixture(g::GraphBuilder::create(), "batch GraphBuilder");
+    for (std::size_t i = 0; i < stores.size(); ++i) {
+      pools[i] = batch_fixture(builder.input(batch_fixture(schema.capacity_description(), "batch capacity")), "batch pool input");
+      const auto sources = batch_fixture(builder.input(ids_description), "batch source IDs input");
+      const auto destinations = batch_fixture(builder.input(ids_description), "batch destination IDs input");
+      gathers[i] = batch_fixture(builder.add_node(c::Operation(c::Gather{.axis = 0,
+          .bounds = c::IndexBoundsPolicy::kChecked}), std::array{pools[i], sources}), "batch Gather");
+      gathered[i] = batch_fixture(builder.result(gathers[i], 0), "batch Gather result");
+      stores[i] = batch_fixture(builder.add_node(c::Operation::custom(s::Store{schema}),
+          std::array{gathered[i], destinations}), "batch Store");
+      // Store deliberately has an external effect rather than a named pool
+      // resource. Independent pools still require its explicit Graph order.
+      if (i) batch_fixture_status(builder.depends_on(stores[i], stores[i - 1]), "batch effect dependency");
+      batch_fixture_status(builder.publish(gathered[i]), "batch publish Gather");
+    }
+    graph = batch_fixture(std::move(builder).finish(), "batch finish Graph");
+    compiled = batch_fixture(g::cpu::compile(graph, context), "batch compile Graph");
+    invocation = batch_fixture(compiled.executable.create_invocation(), "batch create invocation");
+    for (std::size_t i = 0; i < outputs.size(); ++i)
+      outputs[i] = batch_fixture(m::Buffer::create(m::system_resource(), 2 * kItemBytes, 64), "batch output allocation");
+    bind_outputs();
+  }
+  void bind_outputs() {
+    for (std::size_t i = 0; i < outputs.size(); ++i)
+      batch_fixture_status(invocation.bind(gathered[i], batch_fixture(c::TensorView::create(
+          batch_fixture(graph.value_description(gathered[i]), "batch output description"), outputs[i].view()),
+          "batch output view")), "batch bind output");
+  }
+  std::array<s::SourceBinding, 2> associations() const {
+    return {{{stores[0], gathers[0]}, {stores[1], gathers[1]}}};
+  }
+};
+
+struct BatchedSourceStorage final {
+  c::LeasePool pool;
+  c::LeaseSlotLayout layout;
+  m::ConstBufferView diagnostic;
+  std::array<c::ReadLease, 2> sources;
+  std::array<c::WriteLease, 2> destinations;
+  c::ReadLease sentinel;
+  std::array<c::ReadLease, 5> padding;
+  std::vector<std::byte> expected = std::vector<std::byte>(5 * kStride, std::byte{0xa5});
+  explicit BatchedSourceStorage(float offset = 0) {
+    const std::array<float, 4> first{1 + offset, 2 + offset, 3 + offset, 4 + offset};
+    const std::array<float, 4> second{11 + offset, 12 + offset, 13 + offset, 14 + offset};
+    const auto put = [&](std::size_t slot, const auto &item) {
+      std::memcpy(expected.data() + slot * kStride, item.data(), kItemBytes);
+    };
+    put(0, kUntouched); put(1, first); put(2, kSentinel); put(3, second); put(4, kUntouched);
+    auto backing = batch_fixture(m::Buffer::create(m::system_resource(), expected.size(), 64), "batch pool backing");
+    batch_fixture_status(backing.view().write(expected), "batch initialize backing"); diagnostic = backing.view();
+    pool = batch_fixture(c::LeasePool::adopt(std::move(backing), {.max_blocks = 10}), "batch adopt backing");
+    layout = batch_fixture(c::LeaseSlotLayout::create(pool, item_description(), 5, kStride), "batch slot layout");
+    std::array<c::WriteLease, 5> blocks;
+    for (std::size_t i = 0; i < blocks.size(); ++i) {
+      blocks[i] = batch_fixture(pool.allocate(kItemBytes, kStride), "batch item writer");
+      EXPECT_EQ(batch_fixture(layout.locate(blocks[i]), "batch item coordinates").index, i);
+      auto gap = batch_fixture(pool.allocate(kStride - kItemBytes, 1), "batch padding writer");
+      padding[i] = batch_fixture(gap.publish(), "batch publish padding");
+    }
+    sources[0] = batch_fixture(blocks[1].publish(), "batch publish source 0");
+    sources[1] = batch_fixture(blocks[3].publish(), "batch publish source 1");
+    sentinel = batch_fixture(blocks[2].publish(), "batch publish sentinel");
+    destinations[0] = std::move(blocks[0]); destinations[1] = std::move(blocks[4]);
+  }
+  void expect_storage() const {
+    std::vector<std::byte> actual(expected.size());
+    ASSERT_TRUE(diagnostic.read(actual).ok()); EXPECT_EQ(actual, expected);
+  }
+  void expect_stored(const s::SlotBindings &transaction) {
+    for (std::size_t i = 0; i < 2; ++i) {
+      const auto value = read_item(sources[i]);
+      EXPECT_EQ(read_item(transaction.destinations()[i]), value);
+      const auto id = batch_fixture(layout.locate(transaction.destinations()[i]), "batch stored coordinates").index;
+      std::memcpy(expected.data() + id * kStride, value.data(), kItemBytes);
+    }
+    expect_storage();
+  }
+};
+
+std::array<c::ConstTensorView, 2> batched_control_views(BatchedSourceProgram &program) {
+  struct Call final {
+    const std::array<g::NodeId, 2> &stores;
+    std::array<c::ConstTensorView, 2> ids{};
+  } call{program.stores};
+  EXPECT_TRUE(g::detail::RegionAccess::visit_bound(program.invocation,
+      +[](void *opaque, const g::detail::RegionAccessView &view) noexcept -> hyle::Status {
+        auto &call = *static_cast<Call *>(opaque);
+        for (std::size_t i = 0; i < call.stores.size(); ++i) {
+          bool selected = false;
+          for (const auto node : view.node_ordinals) selected |= node == call.stores[i].ordinal();
+          if (!selected) continue;
+          for (const auto &input : view.inputs)
+            if (input.description().data_type() == c::DataType::kInt32) call.ids[i] = input;
+        }
+        return hyle::Status::Ok();
+      }, &call).ok());
+  return call.ids;
+}
+
+TEST(GraphSlotsExecution, BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup) {
+  BatchedSourceProgram program;
+  std::array<BatchedSourceStorage, 2> storage{BatchedSourceStorage{0}, BatchedSourceStorage{100}};
+  const auto associations = program.associations();
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
+  std::array<s::SlotBindings, 2> transactions;
+  for (std::size_t i = 0; i < transactions.size(); ++i)
+    transactions[i] = s::SlotBindings::create(storage[i].layout, storage[i].sources, storage[i].destinations).value();
+  const std::array requests{s::BindRequest{program.stores[0], &transactions[0]},
+      s::BindRequest{program.stores[1], &transactions[1]}};
+  EXPECT_TRUE(s::bind(program.invocation, program.graph, program.stores[0], std::move(transactions[0])).IsInvalidArgument());
+  EXPECT_TRUE(transactions[0].valid()); EXPECT_TRUE(transactions[1].valid());
+  const std::array duplicated{s::BindRequest{program.stores[0], &transactions[0]},
+      s::BindRequest{program.stores[1], &transactions[0]}};
+  EXPECT_TRUE(s::bind(program.invocation, program.graph, duplicated).IsInvalidArgument());
+  EXPECT_TRUE(transactions[0].valid()); EXPECT_TRUE(transactions[1].valid());
+  std::array<c::ConstTensorView, 2> first_controls{};
+  for (std::size_t round = 0; round < 2; ++round) {
+    ASSERT_TRUE(s::bind(program.invocation, program.graph, requests).ok());
+    ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+    const auto controls = batched_control_views(program);
+    ASSERT_TRUE(controls[0].valid()); ASSERT_TRUE(controls[1].valid());
+    EXPECT_EQ(controls[0].storage().native_handle(), controls[1].storage().native_handle());
+    EXPECT_EQ(controls[0].storage().resource(), controls[1].storage().resource());
+    EXPECT_NE(controls[0].storage().offset(), controls[1].storage().offset());
+    if (!round) first_controls = controls;
+    for (std::size_t i = 0; i < controls.size(); ++i) {
+      EXPECT_EQ(controls[i].storage().native_handle(), first_controls[i].storage().native_handle());
+      EXPECT_EQ(controls[i].storage().offset(), first_controls[i].storage().offset());
+      std::array<std::int32_t, 2> actual{};
+      ASSERT_TRUE(controls[i].storage().read(std::as_writable_bytes(std::span(actual))).ok());
+      EXPECT_EQ(actual, (round ? std::array<std::int32_t, 2>{4, 0} : std::array<std::int32_t, 2>{0, 4}));
+    }
+    auto done = program.invocation.submit(program.queues).value();
+    EXPECT_FALSE(s::take(program.invocation, program.stores[0]));
+    ASSERT_TRUE(done.wait().ok()); done = {};
+    transactions[0] = s::take(program.invocation, program.stores[0]).value();
+    // A complete next cohort cannot modify the carrier while the other
+    // original transaction is still retained, even though work has retired.
+    BatchedSourceStorage spare(200);
+    auto replacement = s::SlotBindings::create(spare.layout, spare.sources, spare.destinations).value();
+    const std::array partial{s::BindRequest{program.stores[0], &transactions[0]},
+        s::BindRequest{program.stores[1], &replacement}};
+    EXPECT_TRUE(s::bind(program.invocation, program.graph, partial).IsFailedPrecondition());
+    EXPECT_TRUE(transactions[0].valid()); EXPECT_TRUE(replacement.valid()); spare.expect_storage();
+    transactions[1] = s::take(program.invocation, program.stores[1]).value();
+    for (std::size_t i = 0; i < storage.size(); ++i) {
+      storage[i].expect_stored(transactions[i]);
+      if (!round) {
+        std::array<c::ReadLease, 2> ready;
+        for (std::size_t row = 0; row < ready.size(); ++row)
+          ready[row] = transactions[i].destinations()[row].publish().value();
+        transactions[i].clear();
+        std::array<c::WriteLease, 2> reversed{ready[1].try_write().value(), ready[0].try_write().value()};
+        ASSERT_TRUE(transactions[i].refill(storage[i].sources, reversed).ok());
+      }
+    }
+  }
+  // Third legal preparation is revoked by the original reset, not by an
+  // invented Store lifetime. The same caller owners are returned, unpublished.
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, requests).ok());
+  ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+  ASSERT_TRUE(program.invocation.reset().ok()); program.bind_outputs();
+  EXPECT_FALSE(program.invocation.prepare_replay(program.queues).ok());
+  for (std::size_t i = 0; i < storage.size(); ++i) {
+    transactions[i] = s::take(program.invocation, program.stores[i]).value();
+    storage[i].expect_stored(transactions[i]);
+  }
+}
+
+TEST(GraphSlotsExecution, BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction) {
+  BatchedSourceProgram program;
+  std::array<std::size_t, 2> selected_steps{SIZE_MAX, SIZE_MAX};
+  for (std::size_t step = 0; step < program.compiled.report.step_count(); ++step)
+    for (std::size_t node = 0; node < program.compiled.report.step(step)->node_count; ++node)
+      for (std::size_t i = 0; i < program.stores.size(); ++i)
+        if (program.compiled.report.step_node(step, node).value() == program.stores[i]) selected_steps[i] = step;
+  ASSERT_LT(selected_steps[0], selected_steps[1]); // The blocker is deliberately AFTER the first installation.
+  ASSERT_NE(selected_steps[1], SIZE_MAX);
+  std::array<BatchedSourceStorage, 2> storage{BatchedSourceStorage{0}, BatchedSourceStorage{100}};
+  const auto associations = program.associations();
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
+  const auto capacity = program.schema.capacity_description().value();
+  auto blocking_buffer = m::Buffer::create(m::system_resource(), capacity.required_bytes().value(), 64).value();
+  std::vector<std::byte> initialized(blocking_buffer.size(), std::byte{0x5a});
+  ASSERT_TRUE(blocking_buffer.view().write(initialized).ok());
+  auto blocker = c::ReadLease::adopt(std::move(blocking_buffer)).value();
+  ASSERT_TRUE(program.invocation.bind(program.pools[1], capacity, blocker).ok());
+  std::array<s::SlotBindings, 2> transactions;
+  for (std::size_t i = 0; i < transactions.size(); ++i)
+    transactions[i] = s::SlotBindings::create(storage[i].layout, storage[i].sources, storage[i].destinations).value();
+  const std::array requests{s::BindRequest{program.stores[0], &transactions[0]},
+      s::BindRequest{program.stores[1], &transactions[1]}};
+  const auto rejected = s::bind(program.invocation, program.graph, requests);
+  EXPECT_TRUE(rejected.IsFailedPrecondition());
+  EXPECT_EQ(rejected.message(), "read projection needs reset before rebinding");
+  for (std::size_t i = 0; i < transactions.size(); ++i) {
+    ASSERT_TRUE(transactions[i].valid());
+    EXPECT_EQ(transactions[i].destination_addresses()[0].index, 0u);
+    EXPECT_EQ(transactions[i].destination_addresses()[1].index, 4u);
+    storage[i].expect_storage(); EXPECT_FALSE(s::take(program.invocation, program.stores[i]));
+  }
+  // No reset: withdrawing only the intentional blocker and successfully
+  // rebinding proves that the earlier effect AND source projection rolled back.
+  ASSERT_TRUE(program.invocation.unbind(program.pools[1]).ok());
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, requests).ok());
+  ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+  auto done = program.invocation.submit(program.queues).value();
+  ASSERT_TRUE(done.wait().ok()); done = {};
+  for (std::size_t i = 0; i < transactions.size(); ++i) {
+    transactions[i] = s::take(program.invocation, program.stores[i]).value();
+    storage[i].expect_stored(transactions[i]);
+  }
 }
 
 } // namespace

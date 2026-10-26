@@ -946,7 +946,7 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
       controls.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size() ||
       episode->bindings.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
     return Status::ResourceExhausted("projected writer permission count overflows");
-  HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(episode->bindings.size()+pages.size()+writers.size()+appenders.size()+controls.size()),options));
+  HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(pages.size()+writers.size()+appenders.size()+controls.size()),options));
   // The common read projection validates all physical consumers, aliases and
   // actual ready ranges before committing. Pending here means no ready lease
   // is invented for pages written earlier in this very Graph.
@@ -988,7 +988,7 @@ Status RegionAccess::bind_write_effect(Invocation&invocation,const Graph&graph,
       controls.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size() ||
       episode->bindings.size()>UINT32_MAX-pages.size()-writers.size()-appenders.size()-controls.size())
     return Status::ResourceExhausted("write-effect permission count overflows");
-  HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(episode->bindings.size()+pages.size()+writers.size()+appenders.size()+controls.size()),options));
+  HYLE_RETURN_IF_ERROR(reserve_reads(invocation,std::uint32_t(pages.size()+writers.size()+appenders.size()+controls.size()),options));
   HYLE_RETURN_IF_ERROR(revoke_preparation(invocation));
   // No caller input or capacity lease is installed. All fallible validation
   // and growth precedes these infallible anonymous ownership records.

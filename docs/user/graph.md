@@ -1163,15 +1163,23 @@ CPU+CUDA同样使用本节的GraphOutput与资源合同，pending权重的typed�
 
 普通 CPU／CUDA 和 Apple／Vulkan 原生编译入口自动装配 Store，无需用户选择 Provider。调用顺序是：
 
-1. `slots::prepare(run, queues, options)` 准备固定的小索引载体；CUDA 的
+1. `slots::prepare(run, queues, options)` 按真实执行源、Queue 和资源合并固定的小索引载体；CUDA 的
    `options.host_workspace` 使用同一 Context 的 pinned／managed host resource。
    纯 Apple／Vulkan 原生路线的 `queues` 传空，复用原 ExecutionSource；混合计划只为共享 Compute lane 提供真实 Queue。
 2. `SlotBindings::create(layout, sources, destinations)` 完整检查实际租约，成功才移走
    destination writers；然后 `slots::bind(run, graph, store_node, std::move(bindings))`。
    bind 根据真实槽号设置私有索引，失败不消费事务；普通 rows 输入仍由调用者绑定。
+   同一控制载体中有多个Store时，使用`BindRequest{store_node, &bindings}`数组交给span形式的
+   `slots::bind(run, graph, requests)`，一次提供该组全部事务。每组只上传一次，所有事务成功后才移交owner；
+   不完整组会拒绝，不能借单Store重绑覆盖其它成员的控制数据。不同真实执行源的组可以独立绑定。
 3. 沿原 `prepare_replay`、`submit` 和 Completion 观察执行。原生工作、完成观察和旧
    GraphOutput 均退休后，`slots::take(run, store_node)` 取回原事务；仅在 whole Graph
    成功时发布 writers，失败时按原租约规则释放或重建。take 成功本身不表示计算成功。
+   可以逐Store取回，但同组全部取回后才能重写控制载体。
+
+取回的事务可在处理完旧writers后调用`refill(sources, destinations)`，复用原layout、计数和元数据，
+不必每步重新`create`。需要释放旧source和未采用候选时用`clear()`；它保留元数据及预算，
+但清空lease／地址spans。`valid()`只表示元数据owner存在，不能代替真实租约、执行成功或退休检查。
 
 Store 不授予整池读写权限。普通 rows 不得与任意目标重叠；源槽、未选择槽和 padding
 保持原权限。reset 撤回权限后不能继续执行旧事务，但实际退休后仍可 take 回收 owner。
