@@ -177,9 +177,12 @@ struct OrderedGraphSubmission final {
   // Only these exact inputs defer their missing ready permission to admit.
   // Every other binding still goes through the ordinary lease checks.
   bool (*pending_input)(void*,ValueId) noexcept = nullptr;
+  // Exact hidden read already registered by the original selected effect.
+  // Without both this fact and actual ordered admission, submit must reject.
+  bool (*pending_effect)(void*,std::uint32_t,mem::ConstBufferView) noexcept = nullptr;
   bool valid() const noexcept {
     const bool mapped = map && pending_input && owner;
-    return mapped || (!admit && !map && !pending_input && !owner);
+    return mapped || (!admit && !map && !pending_input && !pending_effect && !owner);
   }
 };
 // One optional typed resource owner, destroyed after borrowing native slots.
@@ -296,12 +299,15 @@ struct RegionAccess final {
   // Same-Graph write then read. Checks the original Graph control edges and
   // exact selected artifacts; only the supplied independent page writers are
   // admitted to the original resource episode. No whole-bank write is granted.
+  // requires_source also retains a predecessor contract with no physical copy
+  // (for example when an append starts exactly at a page boundary).
   HYLE_GRAPH_API static Status bind_written_projection(Invocation&,const Graph&,
       ValueId,compute::ConstTensorView,std::span<const compute::ReadLease>,
       std::span<const compute::WriteLease*const>,
       std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
       std::span<const ProjectedReader>,std::span<const compute::ReadLease> controls,
-      ResourceOptions) noexcept;
+      ResourceOptions,std::span<const mem::ConstBufferView> pending_reads = {},
+      bool requires_source = false) noexcept;
   // Actual retired outcome only, including failure/closed recovery. Revokes
   // the original preparation before an adapter takes back its page owners.
   HYLE_GRAPH_API static Status release_written_projection(Invocation&,ValueId) noexcept;
@@ -312,7 +318,13 @@ struct RegionAccess final {
       compute::ConstTensorView,std::span<const compute::ReadLease>,
       std::span<const compute::WriteLease*const>,
       std::span<const compute::detail::AppendLease*const>,ProjectedWriter,
-      std::span<const compute::ReadLease> controls,ResourceOptions) noexcept;
+      std::span<const compute::ReadLease> controls,ResourceOptions,
+      std::span<const mem::ConstBufferView> pending_reads = {},bool requires_source = false) noexcept;
+  // Pure exact registration query, including an explicitly empty read set.
+  // The ranges carry no authority by
+  // themselves; the original ordered submission must admit their source.
+  HYLE_GRAPH_API static Result<bool> has_pending_effect(const InvocationState*,
+      ProjectedWriter,std::span<const mem::ConstBufferView>) noexcept;
   // Cold synchronized query of the original resource episode, never admission
   // or retirement proof. The stable parent state survives moving Invocation.
   // False after reset/release; a foreign artifact or mismatched live authority

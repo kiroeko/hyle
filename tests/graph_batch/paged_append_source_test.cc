@@ -379,4 +379,251 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
 TEST(GraphPagedAppendSourceCuda, OwnedLayoutMirrorPreservesPendingPageSource) {
   pending_original_pages_publish_while_attention_reads(true);
 }
+
+void pending_append_inherits_published_pages(bool full_page_boundary) {
+  SCOPED_TRACE(full_page_boundary ? "full page boundary" : "partial page COW");
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto device = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(device)).value();
+  auto staging = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto plain = c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const c::BatchCapacity capacity{
+      .storage = c::BatchStorage::kPaged,
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .key_storage = plain, .value_storage = plain,
+      .max_requests = 1, .max_query_rows = 3, .max_kv_rows = 7,
+      .max_pages = 4, .max_page_refs = 4,
+      .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
+      .value_head_dim = 64, .page_size = 2};
+  auto schema = c::BatchSchema::create(capacity).value();
+  const std::int32_t a_count = full_page_boundary ? 3 : 2;
+  const std::array<std::int32_t, 2> one_query{0, 1}, a_queries{0, a_count};
+  const std::array<std::int32_t, 2> old_ptr{0, 2}, a_ptr{0, 3};
+  const std::array<std::int32_t, 2> b_ptr{0, full_page_boundary ? 4 : 3};
+  const std::array<std::int32_t, 2> old_ids{0, 1};
+  const std::array<std::int32_t, 3> a_ids{0, 1, 2}, cow_ids{0, 1, 3};
+  const std::array<std::int32_t, 4> boundary_ids{0, 1, 2, 3};
+  const std::span<const std::int32_t> b_ids = full_page_boundary
+      ? std::span<const std::int32_t>(boundary_ids) : std::span<const std::int32_t>(cow_ids);
+  const std::array<std::int32_t, 1> one_tail{1}, a_tail_rows{full_page_boundary ? 2 : 1};
+  const std::array<std::int32_t, 1> b_tail_rows{full_page_boundary ? 1 : 2};
+  const auto old_layout = schema.version({one_query, old_ptr, old_ids, one_tail}).value();
+  const auto a_layout = schema.version({a_queries, a_ptr, a_ids, a_tail_rows}).value();
+  const auto b_layout = schema.version({one_query, b_ptr, b_ids, b_tail_rows}).value();
+  auto arena = c::PagedArena::create(schema, c::BatchCacheRole::kValue,
+      storage.ref(), {.max_backing_bytes = 4096}).value();
+  auto old_full = arena.acquire(0).value(), old_tail = arena.acquire(1).value();
+  std::array<std::uint16_t, 128> old_full_bytes{}, old_tail_bytes{};
+  std::fill_n(old_full_bytes.begin(), 64, bf16(.125F));
+  std::fill(old_full_bytes.begin() + 64, old_full_bytes.end(), bf16(.25F));
+  std::fill_n(old_tail_bytes.begin(), 64, bf16(.375F));
+  std::fill(old_tail_bytes.begin() + 64, old_tail_bytes.end(), std::uint16_t{0x7fc1});
+  ASSERT_TRUE(old_full.lease().view()->write(std::as_bytes(std::span(old_full_bytes))).ok());
+  ASSERT_TRUE(old_tail.lease().view()->write(std::as_bytes(std::span(old_tail_bytes))).ok());
+  const auto old_full_ready = old_full.publish(2).value();
+  auto tail_publication = old_tail.publish_appendable(1).value();
+  const auto old_tail_ready = std::move(tail_publication.prefix);
+  const std::array old_guards{old_full_ready, old_tail_ready};
+  const auto old_frame = arena.read(old_layout, old_guards).value();
+  std::array<c::PagedPageAppender, 1> tails{std::move(tail_publication.appender)};
+  ASSERT_TRUE(tails.front().reserve_rows(1).ok());
+  std::array<c::PagedPageWriter, 1> a_dirty{arena.acquire(2).value()};
+  std::array<c::PagedPageWriter, 1> b_dirty{arena.acquire(3).value()};
+  ASSERT_TRUE(a_dirty.front().lease().view()->fill(std::byte{0x55}).ok());
+  ASSERT_TRUE(b_dirty.front().lease().view()->fill(std::byte{0x66}).ok());
+  auto a_pages = gb::PagedAppendPages::create(arena, a_layout, old_frame, a_dirty, tails).value();
+  const auto a_rows = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{a_count, 1, 64}).value();
+  const auto b_rows = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 3>{1, 1, 64}).value();
+  auto payload = c::LeasePool::create(storage.ref(), 1024, {.max_blocks = 2}).value();
+  auto a_input_writer = payload.allocate(a_rows.required_bytes().value(), 256).value();
+  auto b_input_writer = payload.allocate(b_rows.required_bytes().value(), 256).value();
+  std::array<std::uint16_t, 192> a_values{};
+  std::array<std::uint16_t, 64> b_values{};
+  std::fill_n(a_values.begin(), 64, bf16(.5F));
+  std::fill_n(a_values.begin() + 64, 64, bf16(.625F));
+  std::fill(a_values.begin() + 128, a_values.end(), bf16(.75F));
+  std::fill(b_values.begin(), b_values.end(), bf16(full_page_boundary ? .875F : .75F));
+  ASSERT_TRUE(a_input_writer.view()->write(
+      std::as_bytes(std::span(a_values).first(std::size_t(a_count) * 64))).ok());
+  ASSERT_TRUE(b_input_writer.view()->write(std::as_bytes(std::span(b_values))).ok());
+  const auto a_input_ready = a_input_writer.publish().value();
+  const auto b_input_ready = b_input_writer.publish().value();
+
+  auto a_builder = g::GraphBuilder::create().value();
+  const auto a_input = a_builder.input(a_rows).value();
+  const auto a_append = a_builder.add_node(c::Operation::custom(
+      gb::paged_append(schema, c::BatchCacheRole::kValue).value()), std::array{a_input}).value();
+  const auto a_graph = std::move(a_builder).finish().value();
+  auto a_plan = g::cuda::compile(a_graph, context, storage).value();
+  auto producer = a_plan.executable.create_invocation().value();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const gb::PrepareOptions options{.host_workspace = staging.ref()};
+  ASSERT_TRUE(gb::prepare(producer, queues, {}, options).ok());
+  ASSERT_TRUE(gb::bind_append(producer, a_graph, a_append, std::move(a_pages)).ok());
+  ASSERT_TRUE(producer.bind(a_input, a_rows, a_input_ready).ok());
+  auto source_result = gbd::PagedAppendSource::prepare(producer, a_append, storage);
+  ASSERT_TRUE(source_result) << source_result.error().message();
+  auto source = std::move(*source_result);
+  // Cold geometry only: B owns a distinct fresh destination. It receives no
+  // fake ready lease for A's pending tail and never borrows A's tail authority.
+  auto b_pages_result = gbd::make_append_from_source(arena, b_layout, source, b_dirty);
+  ASSERT_TRUE(b_pages_result) << b_pages_result.error().message();
+  auto b_builder = g::GraphBuilder::create().value();
+  const auto b_input = b_builder.input(b_rows).value();
+  const auto b_append = b_builder.add_node(c::Operation::custom(
+      gb::paged_append(schema, c::BatchCacheRole::kValue).value()), std::array{b_input}).value();
+  const auto b_graph = std::move(b_builder).finish().value();
+  auto b_plan = g::cuda::compile(b_graph, context, storage).value();
+  auto consumer = b_plan.executable.create_invocation().value();
+  ASSERT_TRUE(gb::prepare(consumer, queues, {}, options).ok());
+  const auto bound_pages = gb::bind_append(consumer, b_graph, b_append, std::move(*b_pages_result));
+  ASSERT_TRUE(bound_pages.ok()) << bound_pages.message();
+  ASSERT_TRUE(consumer.bind(b_input, b_rows, b_input_ready).ok());
+  ASSERT_TRUE(producer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+
+  PageSourceGate producer_gate, consumer_gate;
+  producer_gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(producer_gate.stream, &PageSourceGate::wait, &producer_gate), cudaSuccess);
+  auto submitted = producer.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(common_result) << common_result.error().message();
+  auto common = std::move(*common_result);
+  ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
+  const auto captured = source.capture(common);
+  ASSERT_TRUE(captured.ok()) << captured.message();
+  auto binding_result = gbd::append_binding(consumer, b_append, source);
+  ASSERT_TRUE(binding_result) << binding_result.error().message();
+  // There is no pending tensor input in this bundle: the original append's
+  // The selected effect consumes the same submission terminal even when a
+  // full-page boundary requires no COW read of any pending payload.
+  EXPECT_FALSE(binding_result->input.valid());
+  const std::array bindings{*binding_result};
+  ASSERT_NE(binding_result->resource, nullptr);
+  if (full_page_boundary) {
+    EXPECT_TRUE(binding_result->effect_reads.empty());
+  } else {
+    ASSERT_EQ(binding_result->effect_reads.size(), 1u);
+    const auto prefix = binding_result->effect_reads.front();
+    ASSERT_EQ(prefix.size(), 128u);
+    ASSERT_LT(prefix.size(), arena.page_bytes());
+    const auto capacity_view = cd::PagedArenaAccess::tensor(arena).value().storage();
+    ASSERT_EQ(prefix.resource(), capacity_view.resource());
+    ASSERT_EQ(prefix.native_handle(), capacity_view.native_handle());
+    ASSERT_GE(prefix.offset(), capacity_view.offset());
+    const auto overread = capacity_view.subview(prefix.offset() - capacity_view.offset(), prefix.size() + 1);
+    ASSERT_TRUE(overread) << overread.error().message();
+    const auto covered = binding_result->resource->covers_range(prefix);
+    ASSERT_TRUE(covered.ok()) << covered.message();
+    const auto uncovered = binding_result->resource->covers_range(*overread);
+    EXPECT_TRUE(uncovered.IsInvalidArgument()) << uncovered.message();
+    const std::array invalid_reads{*overread};
+    auto invalid_binding = *binding_result;
+    invalid_binding.effect_reads = invalid_reads;
+    const std::array invalid_bindings{invalid_binding};
+    // This byte is inside A's original full page but outside its genuinely
+    // written prefix. The source-range query above checks initialized coverage;
+    // this separate registration rejection must leave the real bundle intact.
+    const auto rejected = gd::bind_outputs(consumer, invalid_bindings);
+    EXPECT_TRUE(rejected.IsInvalidArgument()) << rejected.message();
+  }
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
+  const auto dependency = consumer.input_source_report().value();
+  EXPECT_EQ(dependency.source_count, 1u);
+  EXPECT_EQ(dependency.device_wait_count, 1u);
+  EXPECT_EQ(dependency.host_wait_count, 0u);
+  EXPECT_FALSE(consumer.submit(queues));
+  consumer_gate.arm(producer_gate.stream);
+  ASSERT_EQ(cudaLaunchHostFunc(consumer_gate.stream, &PageSourceGate::wait, &consumer_gate), cudaSuccess);
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  producer_gate.release();
+  ASSERT_TRUE(common.wait().ok());
+  ASSERT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  ASSERT_TRUE(common.detach().ok());
+  auto returned_a_result = gb::take_append(producer, a_append);
+  ASSERT_TRUE(returned_a_result) << returned_a_result.error().message();
+  auto returned_a = std::move(*returned_a_result);
+  auto a_frame_result = source.ready(returned_a);
+  ASSERT_TRUE(a_frame_result) << a_frame_result.error().message();
+  auto a_frame = std::move(*a_frame_result);
+  ASSERT_EQ(a_frame.page_count(), 3u);
+  c::PagedPageAppender a_tail;
+  if (full_page_boundary) {
+    ASSERT_EQ(returned_a.appender_count(), 1u);
+    EXPECT_FALSE(returned_a.appender(0)->valid());
+  } else {
+    ASSERT_EQ(returned_a.appender_count(), 2u);
+    a_tail = std::move(returned_a.appender(1).value());
+    ASSERT_TRUE(a_tail.valid());
+    EXPECT_EQ(a_tail.page(), 2u);
+    EXPECT_EQ(a_tail.initialized_rows(), 1u);
+    EXPECT_TRUE(a_tail.reserve_rows(1).IsUnavailable());
+  }
+  const auto a_written_prefix = a_frame.page_prefix(2).value();
+  // B's later untouched-page inheritance must use Source's actual ready
+  // cache, not a pointer into the returned transaction or this local frame.
+  returned_a = {};
+  a_frame = {};
+  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  consumer_gate.release();
+  ASSERT_TRUE(consumed->wait().ok());
+  *consumed = {};
+  auto returned_b = gb::take_append(consumer, b_append);
+  ASSERT_TRUE(returned_b) << returned_b.error().message();
+  auto final_result = returned_b->ready();
+  ASSERT_TRUE(final_result) << final_result.error().message();
+  const auto final_frame = std::move(*final_result);
+  EXPECT_EQ(final_frame.layout(), b_layout);
+  ASSERT_EQ(final_frame.page_count(), b_ids.size());
+  const std::size_t total_rows = full_page_boundary ? 7 : 6;
+  constexpr std::array<float, 7> expected{.125F, .25F, .375F, .5F, .625F, .75F, .875F};
+  for (std::size_t page = 0; page < b_ids.size(); ++page) {
+    auto prefix = final_frame.page_prefix(std::uint32_t(b_ids[page])).value();
+    std::array<std::uint16_t, 128> actual{};
+    const auto words = 64 * std::min(std::size_t{2}, total_rows - 2 * page);
+    ASSERT_TRUE(prefix.view()->read(std::as_writable_bytes(std::span(actual).first(words))).ok());
+    for (std::size_t word = 0; word < words; ++word)
+      EXPECT_EQ(actual[word], bf16(expected[2 * page + word / 64]));
+  }
+  EXPECT_EQ(final_frame.page_prefix(0)->generation(), old_full_ready.generation());
+  std::array<std::uint16_t, 128> old_actual{};
+  ASSERT_TRUE(old_full_ready.view()->read(std::as_writable_bytes(std::span(old_actual))).ok());
+  EXPECT_EQ(old_actual, old_full_bytes);
+  std::array<std::uint16_t, 64> old_prefix{};
+  std::array<std::uint16_t, 128> a_prefix{};
+  ASSERT_TRUE(old_tail_ready.view()->read(std::as_writable_bytes(std::span(old_prefix))).ok());
+  const std::size_t a_words = full_page_boundary ? 128 : 64;
+  ASSERT_TRUE(a_written_prefix.view()->read(std::as_writable_bytes(std::span(a_prefix).first(a_words))).ok());
+  for (const auto word : old_prefix) EXPECT_EQ(word, bf16(.375F));
+  for (std::size_t word = 0; word < a_words; ++word)
+    EXPECT_EQ(a_prefix[word], bf16(word < 64 ? .625F : .75F));
+  EXPECT_EQ(old_frame.layout(), old_layout);
+  EXPECT_EQ(old_frame.page_prefix(1)->size(), 128u);
+  if (!full_page_boundary) {
+    ASSERT_TRUE(a_tail.reserve_rows(1).ok());
+    ASSERT_TRUE(a_tail.rollback().ok());
+  }
+  EXPECT_FALSE(producer_gate.timed_out.load());
+  EXPECT_FALSE(consumer_gate.timed_out.load());
+}
+
+TEST(GraphPagedAppendSourceCuda, PendingAppendCopiesOriginalTailAndInheritsPublishedPages) {
+  pending_append_inherits_published_pages(false);
+}
+
+TEST(GraphPagedAppendSourceCuda, PageBoundaryAppendRetainsSourceWithoutCowReads) {
+  pending_append_inherits_published_pages(true);
+}
 } // namespace

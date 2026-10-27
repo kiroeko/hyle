@@ -94,6 +94,13 @@ struct InputSourceBinding final {
   compute::ConstTensorView tensor{};
   InputSource source{};
 };
+// A real command step's implicit resource read, without a synthetic tensor
+// input. This attaches the producer's terminal dependency only; the original
+// resource effect and ordered lease admission must separately prove authority.
+struct EffectSourceBinding final {
+  NodeId node{};
+  InputSource source{};
+};
 
 struct InputAccess final {
   // Cold binding retains the actual immutable owner without taking the
@@ -106,6 +113,12 @@ struct InputAccess final {
   // and preparation; successful commit cannot allocate or fail.
   HYLE_GRAPH_API static Status bind(Invocation &,
       std::span<const InputSourceBinding>) noexcept;
+  // One atomic cold update of tensor and implicit-effect dependencies. Either
+  // span may be empty, but not both. Effects replace the same original node's
+  // attachment; other existing attachments survive. Preparation is revoked.
+  HYLE_GRAPH_API static Status bind(Invocation &,
+      std::span<const InputSourceBinding>,
+      std::span<const EffectSourceBinding>) noexcept;
 };
 
 } // namespace hyle::graph::detail

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "hyle/graph/detail/input_source.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/scope_guard.h"
@@ -72,11 +73,14 @@ std::uint32_t root_instance(const PlanState &plan, std::uint32_t instance) noexc
 struct InputSourcesState final {
   explicit InputSourcesState(mem::AllocatorRef owner) noexcept
       : allocator(owner), bindings(mem::StdAllocator<Binding>(owner)),
+        effects(mem::StdAllocator<EffectSourceBinding>(owner)),
         active(owner), candidate(owner),
         roots(mem::StdAllocator<RootSource>(owner)),
         consumers(mem::StdAllocator<Consumer>(owner)) {}
   mem::AllocatorRef allocator;
   Vector<Binding> bindings;
+  // Sparse actual command sites only. No node-sized owner/permission table.
+  Vector<EffectSourceBinding> effects;
   Prepared active;
   Prepared candidate;
   // Cold scratch belongs to this original slot, outside the replay transaction.
@@ -92,6 +96,23 @@ Binding *find_binding(InputSourcesState &state, ValueId value) noexcept {
         return binding.value.ordinal() < wanted.ordinal();
       });
   return found != state.bindings.end() && found->value == value ? &*found : nullptr;
+}
+const EffectSourceBinding *find_effect(const InputSourcesState &state, NodeId node) noexcept {
+  const auto found = std::lower_bound(state.effects.begin(), state.effects.end(), node,
+      [](const EffectSourceBinding &binding, NodeId wanted) {
+        return binding.node.ordinal() < wanted.ordinal();
+      });
+  return found != state.effects.end() && found->node == node ? &*found : nullptr;
+}
+Result<std::size_t> effect_segment(const PlanState &plan, NodeId node) noexcept {
+  if (!node.valid() || GraphIdentity::generation(node) != plan.generation ||
+      node.ordinal() >= plan.node_steps.size())
+    return std::unexpected(Status::InvalidArgument("effect source requires its original graph node"));
+  const auto step = plan.node_steps[node.ordinal()];
+  if (step >= plan.steps.size() || step >= plan.step_segments.size() ||
+      !plan.steps[step].emits_command() || plan.step_segments[step] >= plan.segments.size())
+    return std::unexpected(Status::InvalidArgument("effect source node has no actual command segment"));
+  return plan.step_segments[step];
 }
 void invalidate(InputSourcesState &state) noexcept {
   state.active.clear(); state.candidate.clear();
@@ -154,9 +175,15 @@ Status InputAccess::bind(Invocation &invocation, ValueId value,
 }
 Status InputAccess::bind(Invocation &invocation,
     std::span<const InputSourceBinding> incoming) noexcept {
+  return bind(invocation, incoming, {});
+}
+Status InputAccess::bind(Invocation &invocation,
+    std::span<const InputSourceBinding> incoming,
+    std::span<const EffectSourceBinding> effects) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
-  if (incoming.empty() || incoming.size() > state->plan->input_ids.size())
+  if ((incoming.empty() && effects.empty()) || incoming.size() > state->plan->input_ids.size() ||
+      effects.size() > state->plan->node_steps.size())
     return Status::InvalidArgument("immutable input bundle has an invalid size");
   for (std::size_t i = 0; i < incoming.size(); ++i) {
     const auto &item = incoming[i];
@@ -170,6 +197,15 @@ Status InputAccess::bind(Invocation &invocation,
       if (incoming[j].value == item.value)
         return Status::InvalidArgument("immutable input bundle repeats a graph input");
   }
+  for (std::size_t i = 0; i < effects.size(); ++i) {
+    if (!effects[i].source.valid())
+      return Status::InvalidArgument("immutable effect source is empty");
+    HYLE_ASSIGN_OR_RETURN(auto segment, effect_segment(*state->plan, effects[i].node));
+    (void)segment;
+    for (std::size_t j = 0; j < i; ++j)
+      if (effects[j].node == effects[i].node)
+        return Status::InvalidArgument("immutable input bundle repeats an effect node");
+  }
   const bool had_sources = static_cast<bool>(state->input_sources);
   HYLE_RETURN_IF_ERROR(require_owner(*state));
   // Attaching even an empty, unprepared source state changes ordinary replay.
@@ -180,6 +216,26 @@ Status InputAccess::bind(Invocation &invocation,
   }};
   HYLE_RETURN_IF_ERROR(prepare_submission_lifetime(*state, state->allocator));
   auto &sources = *state->input_sources.get();
+  Vector<EffectSourceBinding> candidate_effects{mem::StdAllocator<EffectSourceBinding>(state->allocator)};
+  if (!effects.empty()) {
+    if (effects.size() > candidate_effects.max_size() ||
+        sources.effects.size() > candidate_effects.max_size() - effects.size())
+      return Status::ResourceExhausted("immutable effect attachment count overflows");
+    try {
+      candidate_effects.reserve(sources.effects.size() + effects.size());
+      candidate_effects.assign(sources.effects.begin(), sources.effects.end());
+      for (const auto &effect : effects) {
+        const auto found = std::lower_bound(candidate_effects.begin(), candidate_effects.end(), effect.node,
+            [](const EffectSourceBinding &binding, NodeId wanted) {
+              return binding.node.ordinal() < wanted.ordinal();
+            });
+        if (found != candidate_effects.end() && found->node == effect.node) found->source = effect.source;
+        else candidate_effects.insert(found, effect);
+      }
+    } catch (const std::bad_alloc &) {
+      return Status::ResourceExhausted("allocating immutable effect attachment owners");
+    }
+  }
   struct Previous final { Binding *binding = nullptr; InputSource source{}; };
   container::SmallVector<Previous, 4, mem::AllocatorRef> previous(state->allocator);
   if (!previous.try_resize(incoming.size()))
@@ -199,6 +255,10 @@ Status InputAccess::bind(Invocation &invocation,
       return status;
     }
   }
+  // A pure effect update has no raw tensor hook to revoke the old launch
+  // preparation. Reuse the same original control gate; dormant eligible
+  // recordings retain their ordinary physical-argument rules.
+  if (incoming.empty()) HYLE_RETURN_IF_ERROR(RegionAccess::revoke_preparation(invocation));
   // No fallible operation remains. The original raw hook clears each marker
   // while invalidating old native imports; reinstall its already-retained
   // incoming source immediately, without allocation or producer observation.
@@ -207,6 +267,7 @@ Status InputAccess::bind(Invocation &invocation,
     commit_read_binding(*state, item.value, item.tensor);
     previous[i].binding->source = item.source;
   }
+  if (!effects.empty()) sources.effects.swap(candidate_effects);
   invalidate(sources);
   restore_new_owner.dismiss();
   return Status::Ok();
@@ -228,6 +289,7 @@ void reset_input_source_bindings(InvocationState &state) noexcept {
   reset_input_source_preparation(state);
   if (!state.input_sources) return;
   for (auto &binding : state.input_sources.get()->bindings) binding.source.reset();
+  state.input_sources.get()->effects.clear();
 }
 bool has_input_source(const InvocationState &state, ValueId value) noexcept {
   if (!state.input_sources) return false;
@@ -236,14 +298,23 @@ bool has_input_source(const InvocationState &state, ValueId value) noexcept {
 }
 bool has_input_source_table(const InvocationState &state, const InputSourceVTable *table) noexcept {
   if (!state.input_sources || !table) return false;
-  return std::ranges::any_of(state.input_sources.get()->bindings, [&](const auto &binding) {
+  const auto &sources = *state.input_sources.get();
+  const auto matches = [&](const auto &binding) {
     return binding.source.valid() && binding.source.vtable() == table;
-  });
+  };
+  return std::ranges::any_of(sources.bindings, matches) || std::ranges::any_of(sources.effects, matches);
 }
 bool input_source_matches(const InvocationState &state, ValueId value,
     const InputSource &source) noexcept {
   if (!state.input_sources) return false;
   const auto *binding = find_binding(*state.input_sources.get(), value);
+  return binding && binding->source.valid() && binding->source.same_owner(source) &&
+      binding->source.state() == source.state();
+}
+bool effect_source_matches(const InvocationState &state, NodeId node,
+    const InputSource &source) noexcept {
+  if (!state.input_sources) return false;
+  const auto *binding = find_effect(*state.input_sources.get(), node);
   return binding && binding->source.valid() && binding->source.same_owner(source) &&
       binding->source.state() == source.state();
 }
@@ -270,6 +341,7 @@ Status prepare_input_sources(InvocationState &state,
   try {
     for (const auto &binding : state.input_sources.get()->bindings)
       if (binding.source.valid()) candidate.sources.push_back(binding.source);
+    for (const auto &binding : sources.effects) candidate.sources.push_back(binding.source);
     std::sort(candidate.sources.begin(), candidate.sources.end(), source_less);
     candidate.sources.erase(std::unique(candidate.sources.begin(), candidate.sources.end(),
         [](const InputSource &a, const InputSource &b) { return a.same_owner(b); }),
@@ -287,20 +359,24 @@ Status prepare_input_sources(InvocationState &state,
     std::sort(roots.begin(), roots.end(), [](const RootSource &a, const RootSource &b) {
       return std::tie(a.root, a.source) < std::tie(b.root, b.source);
     });
+    const auto queue_group = [&](std::size_t segment) -> Result<std::uint32_t> {
+      const auto lane = plan.segments[segment].lane;
+      auto group = lane.ordinal();
+      if (shared_lane(plan, lane)) {
+        const auto &queue = state.candidate_queues[lane.ordinal()];
+        if (!queue.valid()) return std::unexpected(Status::Internal("immutable input reader has no Queue"));
+        for (std::uint32_t earlier = 0; earlier < lane.ordinal(); ++earlier)
+          if (queue.same_owner(state.candidate_queues[earlier])) { group = earlier; break; }
+      }
+      return group;
+    };
     for (std::size_t index = 0; index < plan.steps.size(); ++index) {
       const auto &step = plan.steps[index];
       if (!step.emits_command()) continue;
       const auto segment = plan.step_segments[index];
       if (segment >= plan.segments.size())
         return Status::Internal("immutable input reader has no graph segment");
-      const auto lane = plan.segments[segment].lane;
-      auto group = lane.ordinal();
-      if (shared_lane(plan, lane)) {
-        const auto &queue = state.candidate_queues[lane.ordinal()];
-        if (!queue.valid()) return Status::Internal("immutable input reader has no Queue");
-        for (std::uint32_t earlier = 0; earlier < lane.ordinal(); ++earlier)
-          if (queue.same_owner(state.candidate_queues[earlier])) { group = earlier; break; }
-      }
+      HYLE_ASSIGN_OR_RETURN(auto group, queue_group(segment));
       for (std::size_t port = 0; port < step.input_count; ++port) {
         const auto root = root_instance(plan, plan.node_inputs[step.input_begin + port]);
         auto found = std::lower_bound(roots.begin(), roots.end(), root,
@@ -308,6 +384,14 @@ Status prepare_input_sources(InvocationState &state,
         for (; found != roots.end() && found->root == root; ++found)
           consumers.push_back({segment, found->source, group});
       }
+    }
+    for (const auto &effect : sources.effects) {
+      HYLE_ASSIGN_OR_RETURN(auto segment, effect_segment(plan, effect.node));
+      HYLE_ASSIGN_OR_RETURN(auto group, queue_group(segment));
+      const auto source = static_cast<std::size_t>(std::lower_bound(
+          candidate.sources.begin(), candidate.sources.end(), effect.source, source_less) -
+          candidate.sources.begin());
+      consumers.push_back({segment, source, group});
     }
     // A published input or required metadata alias is observed directly by
     // the caller. Its producer must be terminal before the original Graph

@@ -12,6 +12,7 @@ struct ResourceSourceCounts final {
 struct ResourceFullRange final {
   const compute::WriteLease *writer = nullptr;
   mem::ConstBufferView range{};
+  std::size_t readable_bytes = 0;
 };
 struct ResourceAppendRange final {
   const compute::detail::AppendLease *appender = nullptr;
@@ -51,6 +52,9 @@ public:
   // Typed publication must additionally preserve its own layout/frontier
   // contract. These tickets alone never establish whole-producer success.
   HYLE_GRAPH_API Status successful_outcome() const noexcept;
+  // Bounded initialized/prospective prefix of this original contribution.
+  // Pure identity/range query, never a ready view or new work admission.
+  HYLE_GRAPH_API Status covers_range(mem::ConstBufferView) const noexcept;
 private:
   friend struct OutputSourceAccess;
   explicit ResourceSource(ResourceSourceState *state) noexcept : state_(state) {}

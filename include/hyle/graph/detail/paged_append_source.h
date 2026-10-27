@@ -45,4 +45,17 @@ private:
 // combines it with token/Store views in the original single bind_outputs call.
 HYLE_GRAPH_BATCH_API Result<graph::detail::OutputBinding> reader_binding(Invocation &,
     ValueId bank, PagedAppendSource &, compute::BatchLayoutVersion read_layout) noexcept;
+// COW continuation of an original prepared/submitted append. The successor
+// owns only fresh dirty pages; it never borrows the predecessor's tail right.
+// Actual copies consume the predecessor's same-submission resource authority.
+// Final ready()/ready_delta() inherits only after previous.ready()/ready_delta()
+// published the predecessor's genuine guards. Exporting another pending
+// generation from this continuation requires inherited tickets and is rejected.
+HYLE_GRAPH_BATCH_API Result<PagedAppendPages> make_append_from_source(compute::PagedArena,
+    compute::BatchLayoutVersion next, PagedAppendSource &previous,
+    std::span<compute::PagedPageWriter> dirty, PagedAppendOptions = {}) noexcept;
+// Cold descriptor of the original bound append's implicit prefix reads. Mix
+// this effect entry with any tensor entries in one bind_outputs call.
+HYLE_GRAPH_BATCH_API Result<graph::detail::OutputBinding> append_binding(Invocation &,
+    NodeId append, PagedAppendSource &previous) noexcept;
 } // namespace hyle::graph::batch::detail

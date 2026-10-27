@@ -205,10 +205,15 @@ ready／fresh／已有尾页／真实COW、不同query布局、0新增录制的�
 [owned-layout补充检查](../evidence/correctness/inference-paged-owned-source-2026-10-27.json)中两种实际shared Queue reader同镜像通过，
 非法末控制项整束拒绝后原束仍可绑定；owned节点仅Q／K／V三端口。相同layout仍可准备，改page IDs被真实mirror guard拒绝，
 原metadata全部字节不变；未推证失败后原capture仍可复用。delegated路径仍待补，不能造ready frame绕过。
-此处B只读attention；完整下一步decode还要从pending前驱构造append／COW previous，当前构造仍要求ready足迹。
-下一片按原资源effect登记B真正的旧prefix读依赖，与token／state／KV共用一个Source和原子bundle，不能寄生无用input。
-pending前驱的尾权仍封存，B先用原arena的不同fresh页COW；继承的未改页须等A真实发布后取得真ready guards，
-不能将票据冒充ready。连续B→C的票据继承及同尾有序写仍需分别接线。
+首批B只读attention；现`make_append_from_source`可在A提交前按其真实布局和地址创建B的原append交易，
+B持共享typed事实，不留A writer指针。COW沿原Ranges及原生程序复制到同arena的不同fresh页，不夺A尾权。
+实际COW prefix作为原effect读登记，按该真实step加入原InputSources，和token／state／KV共用Source及原子bundle；
+普通submit缺精确ordered map时拒绝。新full来源另记真实可读前缀，不能把整页padding算作已初始化。
+提交只接纳实际copy覆盖的票据；满页边界没有copy时仍登记完整前驱依赖，不发明range或tensor输入。
+A沿原发布桥取得真ReadLease后填固定共享cache，B成功退休后才从该cache继承未改页；票据不能冒充ready。
+[两条真实CUDA追加检查](../evidence/correctness/inference-pending-append-source-2026-10-27.json)覆盖COW及满页新页、
+一次Source／device-wait、原take／发布／快照、真实数据与128／129字节边界。B→C继承票据仍明确拒绝，
+连续来源扁平继承、索引状态接力及同尾有序写仍需分别接线。
 完整模型、连续轮换及吞吐尚未验证，不能把本片当作KV流水完成。
 
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。

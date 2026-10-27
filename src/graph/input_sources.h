@@ -60,6 +60,10 @@ HYLE_GRAPH_API bool has_input_source_table(const InvocationState &,
 // Exact retained adapter binding; producer deduplication instead uses same_owner.
 HYLE_GRAPH_API bool input_source_matches(const InvocationState &, ValueId,
     const InputSource &) noexcept;
+// Exact retained adapter at an original implicit-effect site, independent of
+// producer identity deduplication and of its separately registered read rights.
+HYLE_GRAPH_API bool effect_source_matches(const InvocationState &, NodeId,
+    const InputSource &) noexcept;
 HYLE_GRAPH_API Status reconcile_input_sources(
     InvocationState &, const Status &graph_terminal) noexcept;
 } // namespace hyle::graph::detail

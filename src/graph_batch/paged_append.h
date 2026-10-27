@@ -43,10 +43,14 @@ struct PagedAppendAccess final {
   static Status reset(Invocation&)noexcept;
 };
 struct PagedAppendSourceAccess final {
+  static Result<PagedAppendPages> make(compute::PagedArena,compute::BatchLayoutVersion,
+      PagedAppendSource&,std::span<compute::PagedPageWriter>,PagedAppendOptions) noexcept;
   static Result<AppendFacts> facts(const PagedAppendSource&) noexcept;
   static Status covers(const PagedAppendSource&,compute::BatchLayoutVersion) noexcept;
   static Result<graph::detail::OutputBinding> binding(PagedAppendSource&,ValueId,
       compute::BatchLayoutVersion,std::span<const graph::detail::ProjectedReader>,
       std::span<const graph::detail::ResourceReadyInput>) noexcept;
+  static Result<graph::detail::OutputBinding> effect_binding(Invocation&,NodeId,
+      PagedAppendSource&) noexcept;
 };
 } // namespace hyle::graph::batch::detail

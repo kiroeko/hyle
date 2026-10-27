@@ -54,6 +54,11 @@ struct OutputBinding final {
   const ResourceSource *resource = nullptr;
   std::span<const ProjectedReader> readers{};
   std::span<const ResourceReadyInput> ready_inputs{};
+  // A real selected effect's implicit reads, rather than an external tensor
+  // port. Resource entries use either input/readers or effect/effect_reads.
+  // An empty effect read set still imports the complete predecessor verdict.
+  ProjectedWriter effect{};
+  std::span<const mem::ConstBufferView> effect_reads{};
 };
 
 // Cold atomic bundle of distinct inputs from the same submission.

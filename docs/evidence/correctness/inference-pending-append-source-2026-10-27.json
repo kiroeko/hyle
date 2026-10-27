@@ -1,0 +1,808 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Real shared-Queue CUDA A-to-B PagedAppend continuation with exact COW or empty-read page-boundary dependence; finite common Source regressions.",
+  "environment": {
+    "platform": "Windows",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "evidence": "Actual run/stderr.log, without a new hardware query or frequency/exclusivity claim."
+  },
+  "build": {
+    "distinct_CXX_TUs": 10,
+    "compile_attempts": 10,
+    "compile_failures": 0,
+    "link_attempts": 2,
+    "successful_links": 1,
+    "runnable_images": 1,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "baseline_inputs": 233,
+    "final_inputs": 233,
+    "retained_inputs": 223,
+    "replaced_inputs": 10,
+    "compiled": [
+      {
+        "name": "resources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2644002,
+          "sha256": "41f1447fbf491a9a30eb476010920a7964ae3ca90e037626d0686ae79524cbd9"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 56852,
+          "seconds": 3.594812600000296
+        }
+      },
+      {
+        "name": "inputs",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\inputs\\unit.obj",
+          "bytes": 917945,
+          "sha256": "e7c4dc7f3c8e151d55cb1bb4763b1f91d48dd57c4d7603718090dfd7491445d8"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 49024,
+          "seconds": 2.1247897000284865
+        }
+      },
+      {
+        "name": "submission",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\submission\\unit.obj",
+          "bytes": 643334,
+          "sha256": "6785f0bb17fc8d46e82a877576787e1a96b7d54d1ba9a5c7fc0e0e30057e210f"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 56376,
+          "seconds": 1.8504096000106074
+        }
+      },
+      {
+        "name": "progress",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\progress\\unit.obj",
+          "bytes": 546750,
+          "sha256": "6068603a24491524deb9aa76cf77018b91197e20c122308153530de6c15066aa"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 36832,
+          "seconds": 2.3060379000380635
+        }
+      },
+      {
+        "name": "slots",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\slots\\unit.obj",
+          "bytes": 1420785,
+          "sha256": "348bb0683f5b2737fa4ec5738e66a27a430186b1f394285db20e765301203ddc"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 54056,
+          "seconds": 2.682074299955275
+        }
+      },
+      {
+        "name": "batch",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\batch\\unit.obj",
+          "bytes": 2367429,
+          "sha256": "f37ea990f09a7a7be406592a65fd51e56d1933301a2d15e4a7e1d19a8ad0217d"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 44356,
+          "seconds": 3.0206352999666706
+        }
+      },
+      {
+        "name": "append",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\append\\unit.obj",
+          "bytes": 2346945,
+          "sha256": "ca6468db7e20bfc1ee604727d81f1adc9386868f610b13927e59d9777f7d0bfc"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 55320,
+          "seconds": 2.691814399964642
+        }
+      },
+      {
+        "name": "graph-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\graph-test\\unit.obj",
+          "bytes": 2855465,
+          "sha256": "cd65e37f5b6ec8cb3665cd92d42f53b6036001f2bc01b8a2837dc4e5931ff923"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 48672,
+          "seconds": 7.213641999987885
+        }
+      },
+      {
+        "name": "paged-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1587945,
+          "sha256": "bcbef03f352cd9d115d66f50712d6d1de4787344f751f79c73a5904151e96b37"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 49792,
+          "seconds": 5.281361899978947
+        }
+      },
+      {
+        "name": "region-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\region-test\\unit.obj",
+          "bytes": 14818086,
+          "sha256": "b32936975612a585b3a591d5ee97e1c3a1a8c4be8ead59dedad051399fed5678"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 58292,
+          "seconds": 13.088583700009622
+        }
+      }
+    ],
+    "first_link": {
+      "exit": 1120,
+      "pid": 18820,
+      "seconds": 1.0171560000162572
+    },
+    "final_link": {
+      "exit": 0,
+      "pid": 55884,
+      "seconds": 1.864886099996511
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\bin\\pending-append-test.exe",
+      "bytes": 145685504,
+      "sha256": "1ddbe661d11a86326b973f3b3c83e585064d65c58209700bdd72a8ceef906034"
+    },
+    "closure_correction": "Initial recipe confused a slots.cc object directory with slots_region.cc. The failed link reported duplicate and missing definitions and produced no runnable image. Compiler Data.Source located the exact original slots_region object; only that link mapping was corrected. All ten successful compiled objects were reused without recompilation or source changes.",
+    "mapping_receipt": {
+      "path": ".scratch/inference-pending-append-20261027/relink-map.json",
+      "bytes": 1030,
+      "sha256": "f5c62446a25d6be6703f0dda68b56cf51ce55f1b4aeb5b6314a5481967dd9d79"
+    }
+  },
+  "run": {
+    "exit": 0,
+    "pid": 56572,
+    "seconds": 0.6538839000277221,
+    "gtest_timestamp": "2026-10-27T10:12:20.535",
+    "tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      "GraphRouteBoundary.ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+      "GraphRouteBoundary.ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+      "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+      "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+      "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+      "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads"
+    ]
+  },
+  "implementation_scope": [
+    "One original SubmissionSource terminal supports effect-only continuations with no pending tensor input. Source-required registration is retained even when the real COW read list is empty.",
+    "ResourceFullRange.readable_bytes bounds full-writer tickets to genuinely written prefixes. Effect admission selects only original ready/full/append permissions covering the actual registered read ranges; an empty read list grants none.",
+    "The successor owns fresh targets and retains the predecessor Source metadata owner, not its writer/tail or returned transaction pointer. Final ready inheritance clones real bounded guards from the successfully published predecessor cache."
+  ],
+  "checked": [
+    "COW variant: original three-row snapshot, A appends two rows to five, B copies A partial tail to its distinct page and appends one row to six. Exact BF16 row values, original snapshot and A prefix remain correct.",
+    "Page-boundary variant: A appends three rows to six, B adds one row to a new page with no COW effect reads. It still reports one Source/device wait and zero host waits and rejects ordinary submit.",
+    "Both variants use actual pending A, one original Queue and a controlled pending B. A retires and detaches; its returned transaction is published while B stays pending. That transaction and local A frame are destroyed before B ready inheritance.",
+    "COW source coverage accepts the original 128 bytes and rejects 129 bytes inside the same physical page. A separately malformed effect descriptor is rejected before the unchanged complete bundle binds successfully.",
+    "COW A tail reservation is unavailable while its admitted B reader remains active, then succeeds and rolls back after B retirement.",
+    "The same final process also passes two nominated-effect boundary checks, ten token/Store/Hybrid Source cases and the retained explicit/private metadata attention cases."
+  ],
+  "limitations": [
+    "The finite tests exercise selective and empty read paths; they do not instrument every native lease counter or every possible permission combination.",
+    "No B-to-C continuation chain, indexed-state path, complete model execution/task quality, performance result, other platform or new GPU/driver-fault test is claimed."
+  ],
+  "failures": {
+    "first_link_setup_failure_preserved": true,
+    "failed_test_processes": 0,
+    "expected_negative_checks_are_not_test_failures": true,
+    "first_failed_link_had_no_runnable_image": true
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 220142,
+      "sha256": "0f21f5961d86cfdc5f951ae05be2b114bbcd2767d35c394a062db31179dd4ff5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.cc",
+      "bytes": 28410,
+      "sha256": "d6adfc1f99286e36e2753041646987a81332fbf68e5ff284b648cbb19f0aa609"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission.cc",
+      "bytes": 50928,
+      "sha256": "36d528f2f9ef9592ce6bbd0a3272d7659f17fbde28554682437853d9c1ed4298"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_progress\\progress.cc",
+      "bytes": 14994,
+      "sha256": "07d111f3fa19df6fc76ce28cfdd052c2b401c0ea9c80094bbf64bfa25744e7df"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+      "bytes": 65898,
+      "sha256": "d12e0617b5d4887a596397f958b678deb23455a68f433b133ded2fccc28c0799"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 100831,
+      "sha256": "c40939aa576e13c74fca72563580e62ea0411b650180981e3bfb082607395d8d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 86579,
+      "sha256": "60ded09beb0ea710a3d0ad3f8f7355a7dc3c39e17c1c5427a4ca4c74385cde43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 83464,
+      "sha256": "a307db2bc111143426704e52a7318ee51d80fc2479a8149cec4220edeec68a75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 35480,
+      "sha256": "fe9382d520248d9a008dadc938e29c7c2e32bbebde5d2f849f5dbf6eeddd99e1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+      "bytes": 650127,
+      "sha256": "c4bb40dffbc2795c1996d1a8dace717c9d06551f6a07cb1d79c6462fcb90a265"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\input_source.h",
+      "bytes": 5197,
+      "sha256": "40cf53c34348fae9c8189355eb1851839d26065c8ddcef3e504678f3918d25ae"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 4603,
+      "sha256": "78fc2a8fb798f510712be4f86d0cb3f9e5b948edf57faaa423c6846f281091fc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 24727,
+      "sha256": "4a9c0b9c7963a5d86386980780df8b7ecb0f7a331247767f1246019203d2d2fa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\resource_source.h",
+      "bytes": 3426,
+      "sha256": "4c15c63bda0690017d459d878db4312a79477f9d1f39d4473571a52df14d6e35"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\paged_append_source.h",
+      "bytes": 3842,
+      "sha256": "196b3c61812ce2ce123ca4cc6db0d664ee4c631bc46e85412df4354c3612bb71"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h",
+      "bytes": 21192,
+      "sha256": "33bb3f17bd60ff2e862b2b87939da7549dac01f1b6afdf27759c6c0055a3d8be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.h",
+      "bytes": 3365,
+      "sha256": "e7cfaf799fd51a90221c07fdacd0486ddc79fd0f21cf865b4fb69f819c99d331"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 2843,
+      "sha256": "470b65c7027839a320b6ae1ee9fc00fae58b357590218e92e96c78835628b09a"
+    }
+  ],
+  "reuse": {
+    "prior_receipt": {
+      "path": "docs/evidence/correctness/inference-paged-owned-source-2026-10-27.json",
+      "bytes": 19371,
+      "sha256": "823640d6952326d5e7d4c9aa8063694163456c702464445de3b4b1c238c53e4d"
+    },
+    "baseline_link_inputs": {
+      "path": ".scratch/inference-paged-owned-source-20261027/link-inputs-final.json",
+      "bytes": 60083,
+      "sha256": "5711b9c78aa7fe0646308041a4189a812061709936052075b69235307773a92c"
+    },
+    "boundary": "Native kernels, vendor libraries and other cached Compute/SDK objects are reused. Ten CXX objects replace ten exact source-matched inputs. No SDK/native/model rebuild, model download or new performance window."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-pending-append-source-2026-10-27.zip",
+    "bytes": 357521,
+    "sha256": "3518113ac5564557f7c98b0c7a6bbb42acd88033d19ee0a6d5d007225afca415",
+    "members": [
+      {
+        "member": "source/src/graph/resources.cc",
+        "bytes": 220142,
+        "sha256": "0f21f5961d86cfdc5f951ae05be2b114bbcd2767d35c394a062db31179dd4ff5"
+      },
+      {
+        "member": "source/src/graph/input_sources.cc",
+        "bytes": 28410,
+        "sha256": "d6adfc1f99286e36e2753041646987a81332fbf68e5ff284b648cbb19f0aa609"
+      },
+      {
+        "member": "source/src/graph/submission.cc",
+        "bytes": 50928,
+        "sha256": "36d528f2f9ef9592ce6bbd0a3272d7659f17fbde28554682437853d9c1ed4298"
+      },
+      {
+        "member": "source/src/graph_progress/progress.cc",
+        "bytes": 14994,
+        "sha256": "07d111f3fa19df6fc76ce28cfdd052c2b401c0ea9c80094bbf64bfa25744e7df"
+      },
+      {
+        "member": "source/src/graph/slots_region.cc",
+        "bytes": 65898,
+        "sha256": "d12e0617b5d4887a596397f958b678deb23455a68f433b133ded2fccc28c0799"
+      },
+      {
+        "member": "source/src/graph_batch/batch.cc",
+        "bytes": 100831,
+        "sha256": "c40939aa576e13c74fca72563580e62ea0411b650180981e3bfb082607395d8d"
+      },
+      {
+        "member": "source/src/graph_batch/paged_append.cc",
+        "bytes": 86579,
+        "sha256": "60ded09beb0ea710a3d0ad3f8f7355a7dc3c39e17c1c5427a4ca4c74385cde43"
+      },
+      {
+        "member": "source/tests/graph/output_source_cuda_test.cc",
+        "bytes": 83464,
+        "sha256": "a307db2bc111143426704e52a7318ee51d80fc2479a8149cec4220edeec68a75"
+      },
+      {
+        "member": "source/tests/graph_batch/paged_append_source_test.cc",
+        "bytes": 35480,
+        "sha256": "fe9382d520248d9a008dadc938e29c7c2e32bbebde5d2f849f5dbf6eeddd99e1"
+      },
+      {
+        "member": "source/tests/graph/region_provider_test.cc",
+        "bytes": 650127,
+        "sha256": "c4bb40dffbc2795c1996d1a8dace717c9d06551f6a07cb1d79c6462fcb90a265"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/input_source.h",
+        "bytes": 5197,
+        "sha256": "40cf53c34348fae9c8189355eb1851839d26065c8ddcef3e504678f3918d25ae"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/output_source.h",
+        "bytes": 4603,
+        "sha256": "78fc2a8fb798f510712be4f86d0cb3f9e5b948edf57faaa423c6846f281091fc"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/region_access.h",
+        "bytes": 24727,
+        "sha256": "4a9c0b9c7963a5d86386980780df8b7ecb0f7a331247767f1246019203d2d2fa"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/resource_source.h",
+        "bytes": 3426,
+        "sha256": "4c15c63bda0690017d459d878db4312a79477f9d1f39d4473571a52df14d6e35"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/paged_append_source.h",
+        "bytes": 3842,
+        "sha256": "196b3c61812ce2ce123ca4cc6db0d664ee4c631bc46e85412df4354c3612bb71"
+      },
+      {
+        "member": "source/include/hyle/graph/batch.h",
+        "bytes": 21192,
+        "sha256": "33bb3f17bd60ff2e862b2b87939da7549dac01f1b6afdf27759c6c0055a3d8be"
+      },
+      {
+        "member": "source/src/graph/input_sources.h",
+        "bytes": 3365,
+        "sha256": "e7cfaf799fd51a90221c07fdacd0486ddc79fd0f21cf865b4fb69f819c99d331"
+      },
+      {
+        "member": "source/src/graph_batch/paged_append.h",
+        "bytes": 2843,
+        "sha256": "470b65c7027839a320b6ae1ee9fc00fae58b357590218e92e96c78835628b09a"
+      },
+      {
+        "member": "records/evidence.py",
+        "bytes": 9168,
+        "sha256": "1c73c09c72dc3b08b51638ee20e930cea4d7eeaf5bcc9bdc776a90e0d2d0597e"
+      },
+      {
+        "member": "records/check.py",
+        "bytes": 6948,
+        "sha256": "6c960e0845521d804476ce28246c7ae4b7f294dc7a09dc8d813363f37ac9bec2"
+      },
+      {
+        "member": "records/relink.py",
+        "bytes": 2955,
+        "sha256": "fcd39f9f9b8a65e805c037e62ae7677a99db2c71f69f96ce85a10c47cfca80b1"
+      },
+      {
+        "member": "records/plan.json",
+        "bytes": 34038,
+        "sha256": "c8db496def84ab95c4078e21768e07acf933c7be2d565eb5771d236993aff5a4"
+      },
+      {
+        "member": "records/compiled.json",
+        "bytes": 3938,
+        "sha256": "5bb7124a20695af589d7d40c7794e1ad55baa9c139dfb2b076be31a5233afc7c"
+      },
+      {
+        "member": "records/ready.json",
+        "bytes": 5495,
+        "sha256": "5e5e63fd85285209d0b0bcc67568ca8fd8469c00645e9d1140d86dd0ecfb30c5"
+      },
+      {
+        "member": "records/relink-map.json",
+        "bytes": 1030,
+        "sha256": "f5c62446a25d6be6703f0dda68b56cf51ce55f1b4aeb5b6314a5481967dd9d79"
+      },
+      {
+        "member": "records/link-inputs.json",
+        "bytes": 60018,
+        "sha256": "0a05e1c90f8090336dd9d08c100672f86cab7d44ba3fd960bc04b6fcc4a5c593"
+      },
+      {
+        "member": "records/link-inputs-final.json",
+        "bytes": 60017,
+        "sha256": "abf52ffe88886cbc36ff8f90cf6aaa670dff1bcc8bd0ba9f4b1764ff4de4c0f1"
+      },
+      {
+        "member": "records/build-failure.json",
+        "bytes": 732,
+        "sha256": "53bd7eef2e9d009e8dd18c0d0fef6fd96bea03d6b752803c22b882bf58972eac"
+      },
+      {
+        "member": "records/summary.json",
+        "bytes": 10084,
+        "sha256": "9b9012ba887b835fa6c7dd21932447b789801e65bebe93799e62c8d91d7e1409"
+      },
+      {
+        "member": "records/results.xml",
+        "bytes": 5176,
+        "sha256": "11b6d20dd4cf3a3d05f0582df5a14493c8292906e054a834002ba1cb0420a9bb"
+      },
+      {
+        "member": "records/compile/resources/command.json",
+        "bytes": 1613,
+        "sha256": "d1699c370017665b261c41f05867aba99225b2c8696e248d8bea0bf2c407634e"
+      },
+      {
+        "member": "records/compile/resources/dependencies.json",
+        "bytes": 24494,
+        "sha256": "6b88e52938a59b29872c4e399f27a17bdf2d5585699c564608756aa7b5da3ad4"
+      },
+      {
+        "member": "records/compile/resources/process.json",
+        "bytes": 69,
+        "sha256": "8ae3869c77f013ea351811f2fb26a7dfeca0f1e93b26b3828cad898884e8352a"
+      },
+      {
+        "member": "records/compile/resources/stdout.log",
+        "bytes": 14,
+        "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+      },
+      {
+        "member": "records/compile/resources/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/inputs/command.json",
+        "bytes": 2487,
+        "sha256": "7056e41d03d71654d71f6ad5b7b3d9c43a1811d608caf37d13b8013e75371301"
+      },
+      {
+        "member": "records/compile/inputs/dependencies.json",
+        "bytes": 22622,
+        "sha256": "8f29ed8a7dc7afc96031cb8630041af082f27a4b1534357f3e1e15a9acf3c4ea"
+      },
+      {
+        "member": "records/compile/inputs/process.json",
+        "bytes": 70,
+        "sha256": "55e117596acc37c9a8f24982c38a8223ee58fd1daf08ac91988288c3ceebbcd8"
+      },
+      {
+        "member": "records/compile/inputs/stdout.log",
+        "bytes": 18,
+        "sha256": "fe7692e8f7e342f21df1837084ddfed0f3dd3a2bb8a02adec922e47d92d51ed9"
+      },
+      {
+        "member": "records/compile/inputs/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/submission/command.json",
+        "bytes": 2496,
+        "sha256": "c6ff0f43090a64480f7cd66b22eb68ccc7e8047a33b533916faccd0e896994e3"
+      },
+      {
+        "member": "records/compile/submission/dependencies.json",
+        "bytes": 23500,
+        "sha256": "03b00a8316dffb1d8e50cdc714d2c99d87e3ac6877306848e42cfb1a41ef7b9a"
+      },
+      {
+        "member": "records/compile/submission/process.json",
+        "bytes": 70,
+        "sha256": "235c2897c4e2dda7e137f963c17cc70cd1ed22fe21a0ce7ec9833dc3638d9c20"
+      },
+      {
+        "member": "records/compile/submission/stdout.log",
+        "bytes": 15,
+        "sha256": "3ff5f092b8c864db986945a7bbf58261f81c1a261f713a4ef7777af143b30be4"
+      },
+      {
+        "member": "records/compile/submission/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/progress/command.json",
+        "bytes": 2497,
+        "sha256": "0f0782c771885eb8d538aa372d72c61177443955062ed42dc92fc4d86b65b676"
+      },
+      {
+        "member": "records/compile/progress/dependencies.json",
+        "bytes": 29162,
+        "sha256": "1ffee58d6627835c309b8390d4513c0efa18e96bad3e853de13050bd4d65508b"
+      },
+      {
+        "member": "records/compile/progress/process.json",
+        "bytes": 70,
+        "sha256": "8528c276ded9f1a62eeea59704dbf43fb87c0dff7a0d09d24daeb1f59f9cb762"
+      },
+      {
+        "member": "records/compile/progress/stdout.log",
+        "bytes": 13,
+        "sha256": "5c256c7a0a53ff6c789f3a1c67534ce72c51786e976ea65adcc2ab6a92d08c43"
+      },
+      {
+        "member": "records/compile/progress/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/slots/command.json",
+        "bytes": 1530,
+        "sha256": "191723515657e5eec4003dc1bb62d304bf5d862b16bc73c33ed6036af1114ded"
+      },
+      {
+        "member": "records/compile/slots/dependencies.json",
+        "bytes": 22685,
+        "sha256": "4e8988e9ea7fb5232bd7eb29b92848159f6797fff931904673e485532e6864d7"
+      },
+      {
+        "member": "records/compile/slots/process.json",
+        "bytes": 69,
+        "sha256": "8f500216da85ad7b96ac726133a9e781466d3dca579da0a5d2fcd7205fb88b82"
+      },
+      {
+        "member": "records/compile/slots/stdout.log",
+        "bytes": 17,
+        "sha256": "1836ada6ce79313c8f22f93145e6c21aaf7333fc7a41a7762e7d4b951e2bb43f"
+      },
+      {
+        "member": "records/compile/slots/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/batch/command.json",
+        "bytes": 2482,
+        "sha256": "a2c22b15244652ab2d1fb88ee26ace0af67f0c8d3f7ced5c417bc7d55ea77737"
+      },
+      {
+        "member": "records/compile/batch/dependencies.json",
+        "bytes": 22739,
+        "sha256": "51abfe7ca714ddff4229a94316b0d66a4fb7234c4ebe55b65219c46946f33087"
+      },
+      {
+        "member": "records/compile/batch/process.json",
+        "bytes": 70,
+        "sha256": "84abd89279590c3c26d1570f2466c0e86d519f885cba3d17b921ec9be05d7c5c"
+      },
+      {
+        "member": "records/compile/batch/stdout.log",
+        "bytes": 10,
+        "sha256": "f78e890749312f5ce2777295c394d4b71f47fac9e89486bdcb48d5fa361974fd"
+      },
+      {
+        "member": "records/compile/batch/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/append/command.json",
+        "bytes": 3046,
+        "sha256": "0c191c128335c8c58b29a2c89c3988154ceac42926f33aa5f4a5387c63c7d090"
+      },
+      {
+        "member": "records/compile/append/dependencies.json",
+        "bytes": 21474,
+        "sha256": "8e4d7d20a6716a64ec6a4ebd208157d0a76e5189888a37fa481f917b8ed0778d"
+      },
+      {
+        "member": "records/compile/append/process.json",
+        "bytes": 69,
+        "sha256": "ea675c03cad2cf6922ebd17762896061f85b001eb7f5656f9fe3406281ad1b4e"
+      },
+      {
+        "member": "records/compile/append/stdout.log",
+        "bytes": 17,
+        "sha256": "d603c718335c17dd70dce3272dc46b28f8fe49da285d5ebb4daaa091a14f0987"
+      },
+      {
+        "member": "records/compile/append/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/graph-test/command.json",
+        "bytes": 2079,
+        "sha256": "a5985f732be9382c430463a9674759dcdc4896b77dd934ed47fb85f26c9a036f"
+      },
+      {
+        "member": "records/compile/graph-test/dependencies.json",
+        "bytes": 33136,
+        "sha256": "e45481684f6f848dd5e7b8d016c70f4cf53da5fbc9b4fff43cda17e6d62e26b3"
+      },
+      {
+        "member": "records/compile/graph-test/process.json",
+        "bytes": 69,
+        "sha256": "e10a9b2ef02cf4c7f3367c2332076f7471900876535fe2788af4753b46d6eff9"
+      },
+      {
+        "member": "records/compile/graph-test/stdout.log",
+        "bytes": 28,
+        "sha256": "f46340415a8144d00504dac4c63103e73046ec973c879220bd71983f34df1331"
+      },
+      {
+        "member": "records/compile/graph-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/paged-test/command.json",
+        "bytes": 2086,
+        "sha256": "40159fbf8346f77296659d034270f9273bd9d29cbd98b20954fb7e38b6115a1f"
+      },
+      {
+        "member": "records/compile/paged-test/dependencies.json",
+        "bytes": 34123,
+        "sha256": "03c7ea639629bf1f4d79505f0e9a4841f430fb858de3661326161a6c67b9d07d"
+      },
+      {
+        "member": "records/compile/paged-test/process.json",
+        "bytes": 69,
+        "sha256": "1e26c34a0a402e01a06a4ca1bc7815a2278fb2d94a17d560b90f30c83118bbac"
+      },
+      {
+        "member": "records/compile/paged-test/stdout.log",
+        "bytes": 29,
+        "sha256": "68cff0459ade6f741681d440584b8ac95c42ccfa232cec79ef05adde03d50c9a"
+      },
+      {
+        "member": "records/compile/paged-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/region-test/command.json",
+        "bytes": 1632,
+        "sha256": "dab06cf1b5be554efbccdae79cce11add682d69a8d0dab0a6968ea881f3b0782"
+      },
+      {
+        "member": "records/compile/region-test/dependencies.json",
+        "bytes": 33592,
+        "sha256": "b473c40421eba723bea2d4240fbc028d53f46010923da5f03c711230183c40ea"
+      },
+      {
+        "member": "records/compile/region-test/process.json",
+        "bytes": 70,
+        "sha256": "fa2966efe15d18b6852f81ed8301725a0875d786b54302b9d78968c4aebee585"
+      },
+      {
+        "member": "records/compile/region-test/stdout.log",
+        "bytes": 25,
+        "sha256": "d9c2de6704012da4ff0e7bc64b2d398fe2980e12672b04d8f83f50f7b788a5f7"
+      },
+      {
+        "member": "records/compile/region-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/link/command.json",
+        "bytes": 32337,
+        "sha256": "354d70138a02fbe326989e51210ef81bb81d26fcbbe6a0783aa8d806bb693d3a"
+      },
+      {
+        "member": "records/link/process.json",
+        "bytes": 73,
+        "sha256": "b275164fe7855c1ba220d4ead742eac3cbf176d330df0cb954097c268787af8b"
+      },
+      {
+        "member": "records/link/stdout.log",
+        "bytes": 38526,
+        "sha256": "55e6011eab25f922d6d4d41a7e56b5e410330e9dd68b275bb85c701220651982"
+      },
+      {
+        "member": "records/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/link-final/command.json",
+        "bytes": 32337,
+        "sha256": "018a5644d970c1ac29ebd3f524c2941df49f511673f210c192f455de93d5d920"
+      },
+      {
+        "member": "records/link-final/process.json",
+        "bytes": 69,
+        "sha256": "beed934b81c8e4cff2a6d03365b1b713fb54e452e3f64fb45e21c70009cc9816"
+      },
+      {
+        "member": "records/link-final/stdout.log",
+        "bytes": 219,
+        "sha256": "d58d7218a712d583099a6f3dcc322de32e030ba8177450f3a9ee8e247a62abff"
+      },
+      {
+        "member": "records/link-final/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/run/command.json",
+        "bytes": 1594,
+        "sha256": "e530c3828148284244b403b0161d560bfd4bc716f9a2523d345a8e7c8dacd241"
+      },
+      {
+        "member": "records/run/process.json",
+        "bytes": 70,
+        "sha256": "134e6cdd1b720cc0ea89561d82cc95d3ff4fc3a7dc0152800abe90d3b2e39331"
+      },
+      {
+        "member": "records/run/stdout.log",
+        "bytes": 4974,
+        "sha256": "05f782173091f7b05c7498c2dfbdfd433e8da1e56730a5077ab54f265dc73c5f"
+      },
+      {
+        "member": "records/run/stderr.log",
+        "bytes": 151,
+        "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+      },
+      {
+        "member": "records/runtime.json",
+        "bytes": 21665,
+        "sha256": "aeb836f46d7c5be685e02acfe49bcf4560672892564522256878e362785f3359"
+      }
+    ]
+  }
+}
