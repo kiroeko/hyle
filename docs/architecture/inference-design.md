@@ -120,7 +120,11 @@ tiny P3八条路径与真实2B P154十条路径覆盖额度1／2、暂停、停�
 真实续文的额外停止token已检查A命中后，已接纳的B不发布而实际退休，A的完整状态与ledger保持串行等价；
 extraStop不冒充模型EOS。[普通多成员接力](../evidence/correctness/inference-generation-batch-continuation-2026-10-27.json)
 另以tiny／真实2B检查正常R2、真实额度1、已接纳B后的单成员取消及幸存者R1继续，核完整状态与逐成员ledger／RNG。
-pending MTP、真正模型EOS及自然路径冷tuple拒绝仍未运行相应检查。
+[后续边界检查](../evidence/correctness/inference-generation-native-boundaries-2026-10-27.json)已用本地合成GA权重，
+经原kernel和默认Qwen EOS规则在R1／R2停止；已接纳B只退休、不发布，R2幸存者按R1继续。
+另在真实闲置carrier更换输出owner并保活旧分配，原pending捕获tuple拒绝B，已接纳A仍正常发布且continuation停用；
+不得补录pending输入、伪造ready或丢掉A。完整状态／ledger／RNG与原串行一致，最终无遗留版本。
+它不证明模型任务质量或真实驱动故障；pending MTP接受子集仍未接线。
 同机[短窗筛查](../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)
 未见净decode提速，并增加了共享backing与冷准备成本；backing不是峰值显存，本轮也未重跑参考引擎。
 元数据准备与设备提交分别推进；设备token接力需要真实生产者、依赖fence和未发布候选的权限；

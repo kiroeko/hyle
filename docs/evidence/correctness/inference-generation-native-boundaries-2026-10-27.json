@@ -1,0 +1,3240 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Finite original CUDA R1/R2 RequestLoop model-EOS and cold-capture tuple boundaries, plus unchanged tiny regressions.",
+  "counts": {
+    "CXX": 2,
+    "distinct_TUs": 2,
+    "links": 2,
+    "processes": 4,
+    "first_attempt_passes": 4,
+    "failed_attempts": 0,
+    "reruns": 0,
+    "boundary_processes": 2,
+    "boundary_serial_and_relay_arms": 8,
+    "regression_processes": 2,
+    "regression_serial_and_relay_arms": 14,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "new_peer_processes": 0,
+    "MTP_processes": 0
+  },
+  "source": {
+    "main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 544472,
+      "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+    },
+    "graph": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 498671,
+      "sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f"
+    },
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+      "bytes": 9967,
+      "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+    },
+    "geometry": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_geometry_fixture.h",
+      "bytes": 1527,
+      "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+    },
+    "frozen_units": [
+      {
+        "name": "r1",
+        "sources": [
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_relay_probe.cc",
+              "bytes": 25375,
+              "sha256": "b8ab52efb40dd4ce6a383344040d144dca4d6575480a80d4ec932fece2acb6c4"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_generation_relay_probe.cc",
+              "bytes": 25375,
+              "sha256": "b8ab52efb40dd4ce6a383344040d144dca4d6575480a80d4ec932fece2acb6c4"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+              "bytes": 9967,
+              "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_generation_state_case.h",
+              "bytes": 9967,
+              "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_geometry_fixture.h",
+              "bytes": 1527,
+              "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_geometry_fixture.h",
+              "bytes": 1527,
+              "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+              "bytes": 544472,
+              "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\engine\\models\\qwen35\\main.cc",
+              "bytes": 544472,
+              "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+            }
+          }
+        ]
+      },
+      {
+        "name": "r2",
+        "sources": [
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+              "bytes": 29224,
+              "sha256": "1f71562c83d30367b4811df8c3f55622fe87303d4905672f8016467c0f2f68a7"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+              "bytes": 29224,
+              "sha256": "1f71562c83d30367b4811df8c3f55622fe87303d4905672f8016467c0f2f68a7"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+              "bytes": 9967,
+              "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_generation_state_case.h",
+              "bytes": 9967,
+              "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_geometry_fixture.h",
+              "bytes": 1527,
+              "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_geometry_fixture.h",
+              "bytes": 1527,
+              "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+            }
+          },
+          {
+            "original": {
+              "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+              "bytes": 544472,
+              "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+            },
+            "snapshot": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\engine\\models\\qwen35\\main.cc",
+              "bytes": 544472,
+              "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "build": {
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\build-plan.json",
+      "bytes": 80102,
+      "sha256": "4e23b8748206e82aff637d398c1cd93ed229efd9ab080348c914f4234afdbc65"
+    },
+    "units": {
+      "r1": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r1.json",
+          "bytes": 4990,
+          "sha256": "e9b596b995ca69ef34c864d204a7049680e35eec4e02b0f14a66810fddf143c5"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r1-boundaries-probe.exe",
+          "bytes": 142183936,
+          "sha256": "7c9153974e3a10d1bddcf0f1e9ec88d9c09ad3fb4e954dd841a4154c632fe0f2"
+        },
+        "compiled": {
+          "name": "r1",
+          "sources": [
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_relay_probe.cc",
+                "bytes": 25375,
+                "sha256": "b8ab52efb40dd4ce6a383344040d144dca4d6575480a80d4ec932fece2acb6c4"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_generation_relay_probe.cc",
+                "bytes": 25375,
+                "sha256": "b8ab52efb40dd4ce6a383344040d144dca4d6575480a80d4ec932fece2acb6c4"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+                "bytes": 9967,
+                "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_generation_state_case.h",
+                "bytes": 9967,
+                "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_geometry_fixture.h",
+                "bytes": 1527,
+                "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_geometry_fixture.h",
+                "bytes": 1527,
+                "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+                "bytes": 544472,
+                "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\engine\\models\\qwen35\\main.cc",
+                "bytes": 544472,
+                "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+              }
+            }
+          ],
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r1\\unit.obj",
+            "bytes": 20222289,
+            "sha256": "b1f2bd333bbc515f1644e3886e2f27c7b5507434a6dab85b3ddc57685c163ed7"
+          },
+          "process": {
+            "exit": 0,
+            "pid": 55640,
+            "seconds": 27.109807100030594
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\logs\\r1\\command.json",
+            "bytes": 3180,
+            "sha256": "738ed602926616cf2970e6356d886a207a6a25493e1cdfdd3e1840ae9b6a8760"
+          },
+          "compiler_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r1\\dependencies.json",
+            "bytes": 40080,
+            "sha256": "6de79dd1f5788e8e970545858c2e08960d2e236d090fdf429ec43085e917c937"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r1\\actual-dependencies.json",
+            "bytes": 81147,
+            "sha256": "b1dccce2fae26d8c0dec8a81a20f7f42e76127c89a20822941959873de846c34"
+          }
+        },
+        "graph": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\unit.obj",
+          "bytes": 5200790,
+          "sha256": "5c53c0dda40ff7e00fff47d0e682eb1cc598238fff126c2c7ddc9c8daa216758"
+        },
+        "verified_dependencies": 372,
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\r1-link-inputs.json",
+          "bytes": 57648,
+          "sha256": "e89a356fcad0f83e25a43c69ce927b3ff108d1664959ebd097af1ec7da1856ea"
+        },
+        "input_count": 223,
+        "link": {
+          "exit": 0,
+          "pid": 45232,
+          "seconds": 1.7625721999793313
+        },
+        "exactly_two_replacements": true,
+        "removed": [
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\unit.obj",
+            "bytes": 5200570,
+            "sha256": "cb3a047fa54ca9aecfca3a4593951794de34496167293a761d293b8d25ee7a43",
+            "count": 1
+          },
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\compile\\r1-probe1\\unit.obj",
+            "bytes": 19411455,
+            "sha256": "82b41549bd8ca39e1c0dc5bbdc666eef2af158c6cc95d7dfc2f1d7c2214e19cc",
+            "count": 1
+          }
+        ],
+        "added": [
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\unit.obj",
+            "bytes": 5200790,
+            "sha256": "5c53c0dda40ff7e00fff47d0e682eb1cc598238fff126c2c7ddc9c8daa216758",
+            "count": 1
+          },
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r1\\unit.obj",
+            "bytes": 20222289,
+            "sha256": "b1f2bd333bbc515f1644e3886e2f27c7b5507434a6dab85b3ddc57685c163ed7",
+            "count": 1
+          }
+        ]
+      },
+      "r2": {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r2.json",
+          "bytes": 5002,
+          "sha256": "65ca75e88e0acac098aa3f6c695c5aa832c763d8147d6df68fc0cb607ac8b066"
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r2-boundaries-probe.exe",
+          "bytes": 142190080,
+          "sha256": "5f7b6f2068fa968e2ae3fdff59103c65316466afeafdbd573da6d3978a77b17b"
+        },
+        "compiled": {
+          "name": "r2",
+          "sources": [
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+                "bytes": 29224,
+                "sha256": "1f71562c83d30367b4811df8c3f55622fe87303d4905672f8016467c0f2f68a7"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_generation_batch_relay_probe.cc",
+                "bytes": 29224,
+                "sha256": "1f71562c83d30367b4811df8c3f55622fe87303d4905672f8016467c0f2f68a7"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_state_case.h",
+                "bytes": 9967,
+                "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_generation_state_case.h",
+                "bytes": 9967,
+                "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_geometry_fixture.h",
+                "bytes": 1527,
+                "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_geometry_fixture.h",
+                "bytes": 1527,
+                "sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"
+              }
+            },
+            {
+              "original": {
+                "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+                "bytes": 544472,
+                "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+              },
+              "snapshot": {
+                "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\engine\\models\\qwen35\\main.cc",
+                "bytes": 544472,
+                "sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+              }
+            }
+          ],
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r2\\unit.obj",
+            "bytes": 20032794,
+            "sha256": "ff414efb2252376e48df922c94fb20ea89966bad3db89edda1b1a5a91498f76f"
+          },
+          "process": {
+            "exit": 0,
+            "pid": 59404,
+            "seconds": 26.723080900032073
+          },
+          "command": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\logs\\r2\\command.json",
+            "bytes": 3186,
+            "sha256": "461f73e5e4f4a915c6edb1b1b6089e3f18082d1a5196248b939d88e36232e09c"
+          },
+          "compiler_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r2\\dependencies.json",
+            "bytes": 40086,
+            "sha256": "1cd7535912978a9f0e91ececdb808b8ab392b38c49d1cd4622a1e840c3e6eaf2"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r2\\actual-dependencies.json",
+            "bytes": 81153,
+            "sha256": "3fa7a1fc4fdb0f3f3cca5fea2805b4c88613f395afda8b16b6936e73112cf462"
+          }
+        },
+        "graph": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\unit.obj",
+          "bytes": 5200790,
+          "sha256": "5c53c0dda40ff7e00fff47d0e682eb1cc598238fff126c2c7ddc9c8daa216758"
+        },
+        "verified_dependencies": 372,
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\r2-link-inputs.json",
+          "bytes": 57648,
+          "sha256": "526e2574d325814ce2b13fe467cd35fdee000336813b38e1398a9a732ff39a92"
+        },
+        "input_count": 223,
+        "link": {
+          "exit": 0,
+          "pid": 52052,
+          "seconds": 1.7623679999960586
+        },
+        "exactly_two_replacements": true,
+        "removed": [
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\unit.obj",
+            "bytes": 5200570,
+            "sha256": "cb3a047fa54ca9aecfca3a4593951794de34496167293a761d293b8d25ee7a43",
+            "count": 1
+          },
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\compile\\probe1\\unit.obj",
+            "bytes": 19178151,
+            "sha256": "935f809a460221f1c9a91acb8b4f282ebc9dab2698dba0af8f65959147ea0cb1",
+            "count": 1
+          }
+        ],
+        "added": [
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\unit.obj",
+            "bytes": 5200790,
+            "sha256": "5c53c0dda40ff7e00fff47d0e682eb1cc598238fff126c2c7ddc9c8daa216758",
+            "count": 1
+          },
+          {
+            "path": "c:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\compile\\r2\\unit.obj",
+            "bytes": 20032794,
+            "sha256": "ff414efb2252376e48df922c94fb20ea89966bad3db89edda1b1a5a91498f76f",
+            "count": 1
+          }
+        ]
+      }
+    },
+    "reused_graph": {
+      "name": "executable",
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\source\\src\\graph\\executable.cc",
+        "bytes": 498671,
+        "sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f"
+      },
+      "original_source": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 498671,
+        "sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\source\\src\\graph\\executable.cc",
+        "bytes": 498671,
+        "sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\unit.obj",
+        "bytes": 5200790,
+        "sha256": "5c53c0dda40ff7e00fff47d0e682eb1cc598238fff126c2c7ddc9c8daa216758"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\logs\\executable\\command.json",
+        "bytes": 2642,
+        "sha256": "556148f9033c944b51aab20d84d2e18ba3b7b583316388781f474eb58beb29e5"
+      },
+      "compiler_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\dependencies.json",
+        "bytes": 24223,
+        "sha256": "b31a79512d675c573f1a6e6f026f96dda6c544137bfef52245ce9e8434ab0111"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\compile\\executable\\actual-dependencies.json",
+        "bytes": 49229,
+        "sha256": "b99e46c1211adfb752e3f47805ba54bd6429d6abc713505a32487472c5fbc1f5"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 50580,
+        "seconds": 6.330855999956839
+      }
+    },
+    "reused_graph_verified_dependencies": 223,
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runtime.json",
+      "bytes": 11351,
+      "sha256": "83910d2ce04c23d8e053aa997ebdaafc278e11ae1ee6c1b44c1620d75d7d9909"
+    },
+    "closure": "Each original223-input combined-probe closure replaces exactly Graph and its probe object. No SDK rebuild or separate Model/CLI duplicate."
+  },
+  "correctness": {
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\run-summary.json",
+      "bytes": 4449,
+      "sha256": "6921d28803043b1f85cbd21b988fdee4cc1d89e1cd765a947e154bdc7d3a3b25"
+    },
+    "processes": [
+      {
+        "status": "PASS",
+        "name": "r1",
+        "mode": "boundaries",
+        "process": {
+          "exit": 0,
+          "pid": 35444,
+          "seconds": 1.1308714000042528
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r1-boundaries-probe.exe",
+          "bytes": 142183936,
+          "sha256": "7c9153974e3a10d1bddcf0f1e9ec88d9c09ad3fb4e954dd841a4154c632fe0f2"
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-boundaries\\report.json",
+          "bytes": 630,
+          "sha256": "48fcdcd159770d5e347c9caf3a9f6474910fbd8ded10aa12a052d219a47d75d6"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r1.json",
+          "bytes": 4990,
+          "sha256": "e9b596b995ca69ef34c864d204a7049680e35eec4e02b0f14a66810fddf143c5"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-boundaries\\command.json",
+          "bytes": 476,
+          "sha256": "6a3a96bd5d79fbb6f14867cec42fc55454e00004e4ddb202f7bd6b3afc2fc30b"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-boundaries\\stdout.log",
+          "bytes": 528,
+          "sha256": "c4f3cfcac8a7856224faa966ccec9472ba7541a1188971c8909386cd774e5173"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-boundaries\\stderr.log",
+          "bytes": 14042,
+          "sha256": "87c5da3a5c4dadcf94794abb3c0ab0543454341c650bceaaf7224d7e0e96e052"
+        }
+      },
+      {
+        "status": "PASS",
+        "name": "r1",
+        "mode": "regression",
+        "process": {
+          "exit": 0,
+          "pid": 5088,
+          "seconds": 0.8303448999649845
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r1-boundaries-probe.exe",
+          "bytes": 142183936,
+          "sha256": "7c9153974e3a10d1bddcf0f1e9ec88d9c09ad3fb4e954dd841a4154c632fe0f2"
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-regression\\report.json",
+          "bytes": 1402,
+          "sha256": "f888e02daf5012ac9af88fb308ba3ef46d9b5ae6ac1c8720707b8875e72cde0f"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r1.json",
+          "bytes": 4990,
+          "sha256": "e9b596b995ca69ef34c864d204a7049680e35eec4e02b0f14a66810fddf143c5"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-regression\\command.json",
+          "bytes": 359,
+          "sha256": "20f99bf1bc63dd24d43afc9229724c590d6d20882435f0b666bb96e38ba8b974"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-regression\\stdout.log",
+          "bytes": 1025,
+          "sha256": "0e7ec9e68ea7ee6ac8a554499f94d4b1b9405caa11238f6c0406cdb82a847845"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-regression\\stderr.log",
+          "bytes": 22331,
+          "sha256": "a8be34fdd29a466a829d20d902f683b8e34d15bf74984e9572bca103b2b927c3"
+        }
+      },
+      {
+        "status": "PASS",
+        "name": "r2",
+        "mode": "boundaries",
+        "process": {
+          "exit": 0,
+          "pid": 41540,
+          "seconds": 1.2379655999829993
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r2-boundaries-probe.exe",
+          "bytes": 142190080,
+          "sha256": "5f7b6f2068fa968e2ae3fdff59103c65316466afeafdbd573da6d3978a77b17b"
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-boundaries\\report.json",
+          "bytes": 682,
+          "sha256": "1869f60ad2cdc197264cb18fe00e6176e64d83ffb5087bf23dc95f736bc06678"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r2.json",
+          "bytes": 5002,
+          "sha256": "65ca75e88e0acac098aa3f6c695c5aa832c763d8147d6df68fc0cb607ac8b066"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-boundaries\\command.json",
+          "bytes": 476,
+          "sha256": "52c9cce23762db6abbc86fa371d1bc7bbb2f11caf160cb12097c73892d781a87"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-boundaries\\stdout.log",
+          "bytes": 570,
+          "sha256": "0d46aba54880ae5dcb83967464162b6f5f9a9f868049c3da2672d7c2ee7c8d39"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-boundaries\\stderr.log",
+          "bytes": 28995,
+          "sha256": "ec80e9b58c5b379b09bb385baeea19ae7ba2489b24b022a7729187cda6bbc942"
+        }
+      },
+      {
+        "status": "PASS",
+        "name": "r2",
+        "mode": "regression",
+        "process": {
+          "exit": 0,
+          "pid": 58816,
+          "seconds": 0.7820254999678582
+        },
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\bin\\qwen-generation-r2-boundaries-probe.exe",
+          "bytes": 142190080,
+          "sha256": "5f7b6f2068fa968e2ae3fdff59103c65316466afeafdbd573da6d3978a77b17b"
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-regression\\report.json",
+          "bytes": 16640,
+          "sha256": "030b21bb5278901523524fcefdce40b87219e774a5d8deddf23c39fe56e75b0f"
+        },
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\ready-r2.json",
+          "bytes": 5002,
+          "sha256": "65ca75e88e0acac098aa3f6c695c5aa832c763d8147d6df68fc0cb607ac8b066"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-regression\\command.json",
+          "bytes": 359,
+          "sha256": "9879bfc6945c65b69f350de3fd08a122d30ad655e3d92a6978874398d35b1a20"
+        },
+        "stdout": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-regression\\stdout.log",
+          "bytes": 6727,
+          "sha256": "afc0897b2aafedece7204bf046759e8ff5b9921f3ecc907bea3baec952d01d8e"
+        },
+        "stderr": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-regression\\stderr.log",
+          "bytes": 42950,
+          "sha256": "4dad2c147616285b1472ae774692762802b40e0141f6e969eea9991295e3804f"
+        }
+      }
+    ],
+    "complete_reports": {
+      "r1-boundaries": {
+        "status": "PASS",
+        "backend": "cuda",
+        "requests": 1,
+        "serial_and_relay_arms": 4,
+        "fixture": "untrained_one_hot_GA_wide_vocab",
+        "model_eos_run": true,
+        "extra_stop_ids": false,
+        "eos_outputs": 10,
+        "eos_successor_submissions": 1,
+        "eos_successor_publications": 0,
+        "eos_successor_discards": 1,
+        "cold_ignores_model_eos": true,
+        "natural_cold_tuple_run": true,
+        "cold_tuple_outputs": 14,
+        "cold_successor_refusals": 1,
+        "cold_successor_submissions": 0,
+        "complete_state_ledger_rng_equal": true,
+        "final_live_versions": 0,
+        "model_quality_claim": false,
+        "performance_claim": false
+      },
+      "r1-regression": {
+        "status": "PASS",
+        "backend": "cuda",
+        "sampling": "greedy",
+        "request_loop": true,
+        "prompt_tokens": 3,
+        "capacity": 16,
+        "serial_and_relay_arms": 8,
+        "credit1": true,
+        "credit2": true,
+        "pause_resume": true,
+        "extra_stop": true,
+        "model_eos_run": false,
+        "late_extra_stop_run": false,
+        "late_extra_stop_missing_unique_token": true,
+        "after_submit_cancel": true,
+        "complete_state_equal": true,
+        "final_live_versions": 0,
+        "controlled_pending_gate": false,
+        "unknown_capture_tuple_run": false,
+        "performance_claim": false,
+        "continuous_pipeline_claim": false,
+        "waves": [
+          14,
+          12,
+          3,
+          9
+        ],
+        "continuations": [
+          {
+            "completed_steps": 13,
+            "successor_submissions": 0,
+            "successor_publications": 0,
+            "successor_discards": 0,
+            "successor_refusals": 0
+          },
+          {
+            "completed_steps": 13,
+            "successor_submissions": 2,
+            "successor_publications": 2,
+            "successor_discards": 0,
+            "successor_refusals": 0
+          },
+          {
+            "completed_steps": 2,
+            "successor_submissions": 0,
+            "successor_publications": 0,
+            "successor_discards": 0,
+            "successor_refusals": 0
+          },
+          {
+            "completed_steps": 7,
+            "successor_submissions": 0,
+            "successor_publications": 0,
+            "successor_discards": 0,
+            "successor_refusals": 0
+          }
+        ]
+      },
+      "r2-boundaries": {
+        "status": "PASS",
+        "backend": "cuda",
+        "requests": 2,
+        "serial_and_relay_arms": 4,
+        "fixture": "untrained_one_hot_GA_wide_vocab",
+        "model_eos_run": true,
+        "extra_stop_ids": false,
+        "eos_outputs": 9,
+        "peer_outputs": 14,
+        "survivor_r1": 5,
+        "eos_successor_submissions": 1,
+        "eos_successor_publications": 0,
+        "eos_successor_discards": 1,
+        "cold_ignores_model_eos": true,
+        "natural_cold_tuple_run": true,
+        "cold_successor_refusals": 1,
+        "cold_successor_submissions": 0,
+        "complete_state_ledger_rng_equal": true,
+        "actual_batch_keys_checked": true,
+        "final_live_versions": 0,
+        "model_quality_claim": false,
+        "performance_claim": false
+      },
+      "r2-regression": {
+        "status": "PASS",
+        "backend": "cuda",
+        "sampling": "greedy",
+        "requests": 2,
+        "prompt_tokens": 3,
+        "capacity": 16,
+        "resident_sessions": 2,
+        "active_sequences": 2,
+        "in_flight_batches": 2,
+        "state_slots": 6,
+        "serial_and_relay_arms": 6,
+        "outputs_per_live_member": 14,
+        "distinct_prompt_payloads": true,
+        "complete_initialized_state_equal": true,
+        "ledger_and_rng_equal": true,
+        "actual_batch_keys_checked": true,
+        "real_member_credit1_blocks_b": true,
+        "accepted_b_whole_discard": true,
+        "survivor_r1_continues": true,
+        "peer_not_permanently_stopped": true,
+        "model_eos_run": false,
+        "native_fault_injection": false,
+        "performance_claim": false,
+        "final_versions": 0,
+        "relay": [
+          {
+            "waves": 12,
+            "actual_batches": 14,
+            "published_members": 28,
+            "completed_steps": 13,
+            "successor_submissions": 2,
+            "successor_publications": 2,
+            "successor_discards": 0,
+            "successor_refusals": 0,
+            "survivor_r1": 0,
+            "batch_facts": [
+              {
+                "rows": 3,
+                "generation": false,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "waves": 14,
+            "actual_batches": 14,
+            "published_members": 28,
+            "completed_steps": 13,
+            "successor_submissions": 0,
+            "successor_publications": 0,
+            "successor_discards": 0,
+            "successor_refusals": 0,
+            "survivor_r1": 0,
+            "batch_facts": [
+              {
+                "rows": 3,
+                "generation": false,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "waves": 14,
+            "actual_batches": 15,
+            "published_members": 22,
+            "completed_steps": 13,
+            "successor_submissions": 1,
+            "successor_publications": 0,
+            "successor_discards": 1,
+            "successor_refusals": 0,
+            "survivor_r1": 5,
+            "batch_facts": [
+              {
+                "rows": 3,
+                "generation": false,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 1
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 2
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 0,
+                    "key_generation": 1,
+                    "disposition": 2
+                  },
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 2
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              },
+              {
+                "rows": 1,
+                "generation": true,
+                "members": [
+                  {
+                    "slot": 1,
+                    "key_generation": 2,
+                    "disposition": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "previous_regression_comparison": {
+      "r1": {
+        "previous": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\probe-runs\\r1-probe1-tiny\\report.json",
+          "bytes": 1402,
+          "sha256": "f888e02daf5012ac9af88fb308ba3ef46d9b5ae6ac1c8720707b8875e72cde0f"
+        },
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-regression\\report.json",
+          "bytes": 1402,
+          "sha256": "f888e02daf5012ac9af88fb308ba3ef46d9b5ae6ac1c8720707b8875e72cde0f"
+        },
+        "complete_reports_byte_identical": true
+      },
+      "r2": {
+        "previous": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\probe-runs\\probe1-tiny\\report.json",
+          "bytes": 16640,
+          "sha256": "030b21bb5278901523524fcefdce40b87219e774a5d8deddf23c39fe56e75b0f"
+        },
+        "current": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-regression\\report.json",
+          "bytes": 16640,
+          "sha256": "030b21bb5278901523524fcefdce40b87219e774a5d8deddf23c39fe56e75b0f"
+        },
+        "complete_reports_byte_identical": true
+      }
+    },
+    "EOS": "The independent EOS arms use the original default Qwen stop policy, genuine vocabulary IDs248044/248046, and an actually accepted native B. A commits EOS; B retires with no publication. R2 peer survives and continues as R1.",
+    "cold_tuple": "Separate cold-tuple arms intentionally ignore model EOS. After original imported capture is warmed and idle, replace the actual successor output owner, retaining the old backing. Original Graph bind revokes that capture; pending B refuses without recording/submitting; A and the subsequent ordinary path retain correct state.",
+    "equality": "Serial versus relay generated IDs and original committed ledger facts, epochs, initialized KV/GDN/conv payloads, pending and RNG agree at comparable prefixes. Physical pages/padding are excluded. R2 ledger quota is checked against each actual credit and normalized only across serial/relay comparisons; membership is checked against actual batches.",
+    "unrun": [
+      "Original tiny R1 late extra-stop arm remains UNRUN because no unique token occurs at its warmed predecessor boundary. The independent wide-vocabulary default-EOS arm does not change that fact.",
+      "No injected native fault, MTP successor, continuous pipeline, non-CUDA backend, task quality or performance result is claimed."
+    ]
+  },
+  "fixtures": {
+    "identity_receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\fixture-identity.json",
+      "bytes": 4623,
+      "sha256": "b2f303cb05cd75ace07723b6b977c91acffc1737c8876ab9e87cea290aa9cb5a"
+    },
+    "generated": [
+      {
+        "name": "r1",
+        "files": {
+          "manifest": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\weights.tsv",
+            "bytes": 5506,
+            "sha256": "fd5c90b081896010e74e6bb1984a4b7b255f537e3b0dfd95afee699d790db057"
+          },
+          "prompt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\prompt.ids",
+            "bytes": 7,
+            "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+          },
+          "generated_payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "bytes": 63549184,
+            "sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          }
+        },
+        "geometry": "geometry 64 128 248047 1 1 64 64 64 1 1 64 64 4 32 10000 9.99999997e-07 0 0 grouped \"GA\"",
+        "signature": "HYLE_QWEN_ROLE_FILES_V2",
+        "claimed_test_fixture_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "prompt_ids": "1 2 3",
+        "generated_by": {
+          "header": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r1\\tests\\tools\\qwen_generation_state_case.h",
+            "bytes": 9967,
+            "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+          },
+          "function": "qwen_generation_state_case::model_eos_fixture"
+        },
+        "source_fixture": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+        "boundary_report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r1-boundaries\\report.json",
+          "bytes": 630,
+          "sha256": "48fcdcd159770d5e347c9caf3a9f6474910fbd8ded10aa12a052d219a47d75d6"
+        }
+      },
+      {
+        "name": "r2",
+        "files": {
+          "manifest": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\weights.tsv",
+            "bytes": 5506,
+            "sha256": "4ff2f8fe5fe7dd3773300c159ca54196b486cd80bf092ad164aec182321a2ef6"
+          },
+          "prompt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\prompt.ids",
+            "bytes": 7,
+            "sha256": "d0bd45d1262e6c4df3e45026a6f9852c04a3b806be64f4d614ddd37a8561be0a"
+          },
+          "generated_payload": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "bytes": 63549184,
+            "sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          }
+        },
+        "geometry": "geometry 64 128 248047 1 1 64 64 64 1 1 64 64 4 32 10000 9.99999997e-07 0 0 grouped \"GA\"",
+        "signature": "HYLE_QWEN_ROLE_FILES_V2",
+        "claimed_test_fixture_identity": "9999999999999999999999999999999999999999999999999999999999999999",
+        "prompt_ids": "1 2 3",
+        "generated_by": {
+          "header": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\source\\r2\\tests\\tools\\qwen_generation_state_case.h",
+            "bytes": 9967,
+            "sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"
+          },
+          "function": "qwen_generation_state_case::model_eos_fixture"
+        },
+        "source_fixture": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+        "boundary_report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\runs\\r2-boundaries\\report.json",
+          "bytes": 682,
+          "sha256": "1869f60ad2cdc197264cb18fe00e6176e64d83ffb5087bf23dc95f736bc06678"
+        }
+      }
+    ],
+    "selected_roles": {
+      "r1": {
+        "manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\weights.tsv",
+          "bytes": 5506,
+          "sha256": "fd5c90b081896010e74e6bb1984a4b7b255f537e3b0dfd95afee699d790db057"
+        },
+        "signature": "HYLE_QWEN_ROLE_FILES_V2",
+        "test_identity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "geometry": "geometry 64 128 248047 1 1 64 64 64 1 1 64 64 4 32 10000 9.99999997e-07 0 0 grouped \"GA\"",
+        "roles": [
+          {
+            "name": "lm_head.weight",
+            "dtype": "BF16",
+            "shape": [
+              248047,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 0,
+            "bytes": 31750016,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.embed_tokens.weight",
+            "dtype": "BF16",
+            "shape": [
+              248047,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 31750016,
+            "bytes": 31750016,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.layers.0.input_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8192,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.A_log",
+            "dtype": "BF16",
+            "shape": [
+              1
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8320,
+            "bytes": 2,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+            "dtype": "BF16",
+            "shape": [
+              192,
+              1,
+              4
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8322,
+            "bytes": 1536,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "d5fdc450211a051ac9eb6ff1044c2e23f6008a9c28a28c105d8c55e099de2c38"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.dt_bias",
+            "dtype": "BF16",
+            "shape": [
+              1
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9858,
+            "bytes": 2,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_a.weight",
+            "dtype": "BF16",
+            "shape": [
+              1,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9860,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "6fc7bd12c2e1077810c7f0c08375006710e3078f3d8efeb3a1dfd892d94e71a0"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_b.weight",
+            "dtype": "BF16",
+            "shape": [
+              1,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9988,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "98a54e635f73abdba98c31d7611f7a397b2050d1ea9edf326532163597e78139"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_qkv.weight",
+            "dtype": "BF16",
+            "shape": [
+              192,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 10116,
+            "bytes": 24576,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "702fe5ff81e175069210a26cb6f141e85771c2b5c9eb7532a4becb0635bd0854"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_z.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 34692,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "ff360e3cc8a046222592b579b53cda40348118a28413200bdff11673bc6c24df"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 42884,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 63500032,
+            "bytes": 8192,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.down_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              128
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 63508224,
+            "bytes": 16384,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 67588,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "e9fb60409444fbd2d07c2b2e16292f282321fae376a6640d9e5f57880f56215b"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.up_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 83972,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "404492666d65214b0a5ff759ff6f490164cfe9662f45677b39ff021a2e0bb6aa"
+          },
+          {
+            "name": "model.language_model.layers.0.post_attention_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 100356,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.input_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 100484,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.down_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              128
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 63524608,
+            "bytes": 16384,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.gate_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 116996,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "04938c1fe4a390c01e4d1b135807f0cc877dde1c3df837b78402f512cfbf7697"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.up_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 133380,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "792aafee7b7e67f17a9f945f6da79e78916b6db6568715899df496fc5e2170a6"
+          },
+          {
+            "name": "model.language_model.layers.1.post_attention_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 149764,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.k_norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 149892,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.k_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 150020,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "510832504c072991034e403a25768167c0bfa5d33fa99b3aa9e88c0c85ef99af"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.o_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r1\\boundary-weights.bin",
+            "offset": 63540992,
+            "bytes": 8192,
+            "generated_payload_sha256": "46fa9fc3fb08881122165d9221b6057d6fd207ff0d8197aba63105c2a708185d"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.q_norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 166404,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.q_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 166532,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "82cd1c8e4880dbf3b92d206221b8c78ecec1727062180594eec870b0789a5479"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.v_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 182916,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "c86cc346f690f0221d41f60b752468390fda18763a8e6a0e1a55f58dff8ae354"
+          },
+          {
+            "name": "model.language_model.norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 191108,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          }
+        ]
+      },
+      "r2": {
+        "manifest": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\weights.tsv",
+          "bytes": 5506,
+          "sha256": "4ff2f8fe5fe7dd3773300c159ca54196b486cd80bf092ad164aec182321a2ef6"
+        },
+        "signature": "HYLE_QWEN_ROLE_FILES_V2",
+        "test_identity": "9999999999999999999999999999999999999999999999999999999999999999",
+        "geometry": "geometry 64 128 248047 1 1 64 64 64 1 1 64 64 4 32 10000 9.99999997e-07 0 0 grouped \"GA\"",
+        "roles": [
+          {
+            "name": "lm_head.weight",
+            "dtype": "BF16",
+            "shape": [
+              248047,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 0,
+            "bytes": 31750016,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.embed_tokens.weight",
+            "dtype": "BF16",
+            "shape": [
+              248047,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 31750016,
+            "bytes": 31750016,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.layers.0.input_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8192,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.A_log",
+            "dtype": "BF16",
+            "shape": [
+              1
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8320,
+            "bytes": 2,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+            "dtype": "BF16",
+            "shape": [
+              192,
+              1,
+              4
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 8322,
+            "bytes": 1536,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "d5fdc450211a051ac9eb6ff1044c2e23f6008a9c28a28c105d8c55e099de2c38"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.dt_bias",
+            "dtype": "BF16",
+            "shape": [
+              1
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9858,
+            "bytes": 2,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_a.weight",
+            "dtype": "BF16",
+            "shape": [
+              1,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9860,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "6fc7bd12c2e1077810c7f0c08375006710e3078f3d8efeb3a1dfd892d94e71a0"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_b.weight",
+            "dtype": "BF16",
+            "shape": [
+              1,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 9988,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "98a54e635f73abdba98c31d7611f7a397b2050d1ea9edf326532163597e78139"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_qkv.weight",
+            "dtype": "BF16",
+            "shape": [
+              192,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 10116,
+            "bytes": 24576,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "702fe5ff81e175069210a26cb6f141e85771c2b5c9eb7532a4becb0635bd0854"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.in_proj_z.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 34692,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "ff360e3cc8a046222592b579b53cda40348118a28413200bdff11673bc6c24df"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 42884,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 63500032,
+            "bytes": 8192,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.down_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              128
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 63508224,
+            "bytes": 16384,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 67588,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "e9fb60409444fbd2d07c2b2e16292f282321fae376a6640d9e5f57880f56215b"
+          },
+          {
+            "name": "model.language_model.layers.0.mlp.up_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 83972,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "404492666d65214b0a5ff759ff6f490164cfe9662f45677b39ff021a2e0bb6aa"
+          },
+          {
+            "name": "model.language_model.layers.0.post_attention_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 100356,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.input_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 100484,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.down_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              128
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 63524608,
+            "bytes": 16384,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.gate_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 116996,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "04938c1fe4a390c01e4d1b135807f0cc877dde1c3df837b78402f512cfbf7697"
+          },
+          {
+            "name": "model.language_model.layers.1.mlp.up_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 133380,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "792aafee7b7e67f17a9f945f6da79e78916b6db6568715899df496fc5e2170a6"
+          },
+          {
+            "name": "model.language_model.layers.1.post_attention_layernorm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 149764,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.k_norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 149892,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.k_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 150020,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "510832504c072991034e403a25768167c0bfa5d33fa99b3aa9e88c0c85ef99af"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.o_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-native-boundaries-20261027\\eos-r2\\boundary-weights.bin",
+            "offset": 63540992,
+            "bytes": 8192,
+            "generated_payload_sha256": "590983cea928107030c3dfb28ba5dfc1090df3e7061a05946fd714eebf64a36c"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.q_norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 166404,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.q_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              128,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 166532,
+            "bytes": 16384,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "82cd1c8e4880dbf3b92d206221b8c78ecec1727062180594eec870b0789a5479"
+          },
+          {
+            "name": "model.language_model.layers.1.self_attn.v_proj.weight",
+            "dtype": "BF16",
+            "shape": [
+              64,
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 182916,
+            "bytes": 8192,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "c86cc346f690f0221d41f60b752468390fda18763a8e6a0e1a55f58dff8ae354"
+          },
+          {
+            "name": "model.language_model.norm.weight",
+            "dtype": "BF16",
+            "shape": [
+              64
+            ],
+            "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "offset": 191108,
+            "bytes": 128,
+            "source_identity": {
+              "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+              "bytes": 298628,
+              "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+            },
+            "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+          }
+        ]
+      }
+    },
+    "original_tiny": {
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "signature": "HYLE_QWEN_ROLE_FILES_V2",
+      "test_identity": "6666666666666666666666666666666666666666666666666666666666666666",
+      "geometry": "geometry 64 128 64 1 1 64 64 64 1 1 64 64 4 16 10000 1e-6 1 1 grouped \"GA\"",
+      "roles": [
+        {
+          "name": "model.language_model.embed_tokens.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 0,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "6beeeadb685433c320e493b6185177aa2759c920be0144ccdacc2339c0d5e4b3"
+        },
+        {
+          "name": "model.language_model.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8192,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.A_log",
+          "dtype": "BF16",
+          "shape": [
+            1
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8320,
+          "bytes": 2,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+          "dtype": "BF16",
+          "shape": [
+            192,
+            1,
+            4
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8322,
+          "bytes": 1536,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "d5fdc450211a051ac9eb6ff1044c2e23f6008a9c28a28c105d8c55e099de2c38"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.dt_bias",
+          "dtype": "BF16",
+          "shape": [
+            1
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9858,
+          "bytes": 2,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "96a296d224f285c67bee93c30f8a309157f0daa35dc5b87e410b78630a09cfc7"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_a.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9860,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "6fc7bd12c2e1077810c7f0c08375006710e3078f3d8efeb3a1dfd892d94e71a0"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9988,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "98a54e635f73abdba98c31d7611f7a397b2050d1ea9edf326532163597e78139"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_qkv.weight",
+          "dtype": "BF16",
+          "shape": [
+            192,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 10116,
+          "bytes": 24576,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "702fe5ff81e175069210a26cb6f141e85771c2b5c9eb7532a4becb0635bd0854"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_z.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 34692,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "ff360e3cc8a046222592b579b53cda40348118a28413200bdff11673bc6c24df"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 42884,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 43012,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "4d9eca398a8d6dd32b800dbe2c7c2e4be3d9a7ce79b869344f5f154754aac2ce"
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 51204,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "6fe1430b910a737bfac85c5b8869178c43ea997235e3a7e22953d333314499a0"
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 67588,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "e9fb60409444fbd2d07c2b2e16292f282321fae376a6640d9e5f57880f56215b"
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 83972,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "404492666d65214b0a5ff759ff6f490164cfe9662f45677b39ff021a2e0bb6aa"
+        },
+        {
+          "name": "model.language_model.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100356,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.1.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100484,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100612,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "2d918fa3f965e9331ea456ab2e48d413b4ba90685baee1ac93bc6d1227bdf0ee"
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 116996,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "04938c1fe4a390c01e4d1b135807f0cc877dde1c3df837b78402f512cfbf7697"
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 133380,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "792aafee7b7e67f17a9f945f6da79e78916b6db6568715899df496fc5e2170a6"
+        },
+        {
+          "name": "model.language_model.layers.1.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 149764,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 149892,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 150020,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "510832504c072991034e403a25768167c0bfa5d33fa99b3aa9e88c0c85ef99af"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 158212,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "5783b4a13872465ab8f5976eb5b1ec85bab909cd71cb927dfc214b563f6334d5"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 166404,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 166532,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "82cd1c8e4880dbf3b92d206221b8c78ecec1727062180594eec870b0789a5479"
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 182916,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "c86cc346f690f0221d41f60b752468390fda18763a8e6a0e1a55f58dff8ae354"
+        },
+        {
+          "name": "model.language_model.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 191108,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.fc.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 191236,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "accb5da6cea4e0235095ca47f55d81ee1ad2dad4de8a43b37e4cf756fcb20951"
+        },
+        {
+          "name": "mtp.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 207620,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 207748,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "c10ad6007d3bd236c4aa8c29a3fdb8afa45777d16892ffc1f73d63c2a8062dd1"
+        },
+        {
+          "name": "mtp.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 224132,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "4140c3a1d14a4da173c01f531155810955f04debda7b993e1fd60a1b41a31202"
+        },
+        {
+          "name": "mtp.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 240516,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "fb4f9be6576f766c239bdd55abc7b7586723198e087cbcce9a564705b4bde1e1"
+        },
+        {
+          "name": "mtp.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 256900,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 257028,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 257156,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "3b204268592803c0d8ecd81a9c3fcdd77d001eb5264d81a7231a7db08ee7c06a"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 265348,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "836c2921f0d32d1f180298a2e0b52b4be6f9f261fb214cf83c45322951d1682d"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 273540,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 273668,
+          "bytes": 16384,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "771591407d1f339e818b3f1a141f22d64e2b066de1af4fee7253b75a2a1d4896"
+        },
+        {
+          "name": "mtp.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 290052,
+          "bytes": 8192,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "eec624b54ce9dd8dbd8b90fd5825d69fe9cba131954bcc1de0e22dce393230db"
+        },
+        {
+          "name": "mtp.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 298244,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.pre_fc_norm_embedding.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 298372,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        },
+        {
+          "name": "mtp.pre_fc_norm_hidden.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 298500,
+          "bytes": 128,
+          "source_identity": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+            "bytes": 298628,
+            "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+          },
+          "range_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
+        }
+      ]
+    },
+    "original_tiny_constructor": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\gdn.cc",
+      "bytes": 14740,
+      "sha256": "65d53c02bba491023c53e6b2f5cd1e01c2a3e4c8af2c34447fe00612d7545a0c"
+    },
+    "original_prompt_and_manifest_recipe": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\recursive.py",
+      "bytes": 6291,
+      "sha256": "4d6edc4f6dc452289859f0d6fe876d7d34c943ca40b91b6b9a9cdaabc8acd05e"
+    },
+    "payload_hash_validation": "Generated body SHA256 values are the actual CPU-build owner receipt, with current size checked here; not recomputed by this package. Reused original source and each selected range SHA256 are verified here.",
+    "limitations": "Untrained complete GA one-hot fixtures with zero residual output projections. Original state-producing branches still execute, but outputs give no trained-model quality, accuracy or real speed conclusion. Constructor and small manifests are included; all weight payloads excluded."
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-generation-native-boundaries-2026-10-27.zip",
+    "files": 313,
+    "member_manifest": "archive-manifest.json",
+    "binaries_SDK_models": false,
+    "boundary": "Commands, frozen source/header closure, dependency/link SHA receipts and logs permit reproduction with the retained external toolchain/cache. This archive does not redistribute SDKs, libraries, binaries or weights."
+  }
+}

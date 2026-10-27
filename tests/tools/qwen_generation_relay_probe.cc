@@ -44,7 +44,7 @@ std::vector<CommitFact> commit_facts(const q::GenerationRequest &request) {
   return result;
 }
 
-enum class Arm { kCreditOne, kCreditTwoPause, kExtraStop, kAfterSubmitCancel, kLateExtraStop };
+enum class Arm { kCreditOne, kCreditTwoPause, kExtraStop, kAfterSubmitCancel, kLateExtraStop, kModelEos, kColdTuple };
 const char *arm_name(Arm arm) {
   switch (arm) {
   case Arm::kCreditOne: return "credit1";
@@ -52,6 +52,8 @@ const char *arm_name(Arm arm) {
   case Arm::kExtraStop: return "extra_stop";
   case Arm::kAfterSubmitCancel: return "after_submit_cancel";
   case Arm::kLateExtraStop: return "late_extra_stop";
+  case Arm::kModelEos: return "model_eos";
+  case Arm::kColdTuple: return "cold_tuple";
   }
   throw std::logic_error("unknown finite generation arm");
 }
@@ -65,6 +67,7 @@ struct ArmResult final {
   std::size_t completed_steps = 0, successor_submissions = 0,
       successor_publications = 0, successor_discards = 0, successor_refusals = 0;
   bool manual_pause = false, cancel_after_submit = false, cancellation_exception = false;
+  bool cold_tuple_changed = false, cold_refusal_observed = false, accepted_eos_successor = false;
 };
 
 ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm, bool relay,
@@ -74,7 +77,8 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
   const std::array turns{i::GenerationTurn{{prompt.begin(), prompt.end()}, kOutputLimit}};
   const std::array stop_ids{extra_stop};
   const auto stop = arm == Arm::kExtraStop || arm == Arm::kLateExtraStop
-      ? i::RequestStopPolicy(stop_ids) : i::RequestStopPolicy{};
+      ? i::RequestStopPolicy(stop_ids)
+      : arm == Arm::kColdTuple ? i::RequestStopPolicy({}, true) : i::RequestStopPolicy{};
   std::vector<q::GenerationRequest> requests;
   requests.emplace_back(arm_name(arm), turns[0].prompt, std::filesystem::path{}, kOutputLimit, 0, stop);
   auto &request = requests.front();
@@ -95,6 +99,8 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
   std::vector<std::weak_ptr<q::StepSources>> source_lifetimes;
   std::optional<q::GenerationBoundary> cancelled_head;
   std::size_t cancelled_commits = 0;
+  std::optional<q::PreparedReadback> displaced_output;
+  std::array<bool, q::execution_slot_count> imported_captures{};
   struct StopView final {
     q::GenerationRequest &request;
     hyle::Status stop(i::RequestKey) const noexcept {
@@ -126,7 +132,25 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
         ? (std::min)(available, 8 - before_outputs) : available;
     std::array calls{q::prepare_generation_call(model, request, request.progress.output_limit(),
         nullptr, requests, credit)};
+    const auto refused_before = continuation.successor_refusals;
+    if (arm == Arm::kColdTuple && relay && !result.cold_tuple_changed && credit >= 2 &&
+        continuation.matches(calls) && continuation.ready_steps >= 6 &&
+        continuation.direction_warm[(continuation.next_slot + 1) % q::execution_slot_count]) {
+      require(imported_captures[(continuation.next_slot + 1) % q::execution_slot_count],
+          "cold R1 tuple replacement did not target an actually captured imported carrier");
+      displaced_output = qwen_generation_state_case::replace_successor_output(model, continuation, 1);
+      result.cold_tuple_changed = true;
+    }
     const auto submitted = [&] {
+      if (model.active_step && model.active_step->phase->imported_sources &&
+          model.active_step->capture_recorded + model.active_step->capture_reused > 0)
+        imported_captures[model.active_step->state_slot] = true;
+      if (arm == Arm::kModelEos && model.successor_step && model.successor_step->submitted) {
+        require(model.active_step && model.active_step->has_completion() && model.successor_step->has_completion() &&
+            model.successor_step->capture_reused > 0 && model.successor_step->capture_recorded == 0,
+            "model EOS fixture did not observe the original accepted A/B completions");
+        result.accepted_eos_successor = true;
+      }
       if (arm != Arm::kAfterSubmitCancel || result.cancel_after_submit || before_outputs < 8) return;
       require(model.active_step && model.active_step->submitted && model.active_step->has_completion(),
           "cancellation did not observe an original accepted submission");
@@ -155,6 +179,14 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
           request.progress.generated.size() == before_outputs,
           "cancelled episode published an output through its exceptional finish");
       result.cancellation_exception = true;
+    }
+    if (continuation.successor_refusals != refused_before) {
+      require(arm == Arm::kColdTuple && result.cold_tuple_changed &&
+          continuation.successor_refusals == refused_before + 1 && continuation.unavailable &&
+          !continuation.successor_submissions && request.progress.generated.size() == before_outputs + 1 &&
+          calls[0].disposition == q::EvaluationDisposition::kPublished,
+          "natural cold tuple refusal lost A, accepted B, or failed to disable relay");
+      result.cold_refusal_observed = true;
     }
     for (auto &call : calls) q::publish_generation_prompt(model, call, nullptr);
     ++result.waves;
@@ -237,6 +269,10 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
     if (arm == Arm::kExtraStop || arm == Arm::kLateExtraStop)
       require(!result.ids.empty() && result.ids.back() == extra_stop && result.ids.size() < kOutputLimit &&
           result.commits.back().stopped, "extra stop policy did not stop on its real selected token");
+    else if (arm == Arm::kModelEos)
+      require(request.stop_policy.is_default() && result.ids.size() == 10 &&
+          q::is_end_of_generation(result.ids.back()) && result.commits.back().stopped,
+          "default model EOS did not stop on its real tenth selected token");
     else require(result.ids.size() == kOutputLimit, "ordinary request lost an output token");
   }
   if (arm == Arm::kCreditTwoPause) require(result.manual_pause, "manual pause/resume was not exercised");
@@ -250,14 +286,20 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
   result.successor_publications = continuation.successor_publications;
   result.successor_discards = continuation.successor_discards;
   result.successor_refusals = continuation.successor_refusals;
-  if (relay) {
+  if (relay && arm == Arm::kColdTuple) {
+    require(result.cold_tuple_changed && result.cold_refusal_observed && continuation.unavailable &&
+        result.successor_refusals == 1 && !result.successor_submissions && !result.successor_discards,
+        "natural cold tuple was silently recorded, downgraded, retried or accepted");
+  } else if (relay) {
     require(!continuation.unavailable &&
         result.completed_steps + request.prefill_graph_calls == result.commits.size() &&
         !result.successor_refusals &&
         result.successor_publications + result.successor_discards == result.successor_submissions,
         "ordinary continuation silently fell back or lost an accepted/published step");
-    if (arm == Arm::kLateExtraStop)
-      require(result.successor_discards == 1,
+    if (arm == Arm::kLateExtraStop || arm == Arm::kModelEos)
+      require(result.successor_discards == 1 &&
+          (arm != Arm::kModelEos || (result.accepted_eos_successor && result.successor_submissions == 1 &&
+              result.successor_publications == 0)),
           "late extra stop did not retire exactly one accepted, unpublished successor");
     else require(!result.successor_discards, "ordinary arm discarded an unexpected successor");
     if (arm == Arm::kCreditOne || arm == Arm::kExtraStop)
@@ -274,7 +316,7 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
   return result;
 }
 
-int run(const std::filesystem::path &input) {
+int run(const std::filesystem::path &input, bool boundaries = false) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
   const auto context_limit = static_cast<std::size_t>(geometry.context_limit);
@@ -293,6 +335,26 @@ int run(const std::filesystem::path &input) {
   model.plan_replay_uses(prompt.size(), 1, 10);
   model.plan_replay_uses(1, 1, kOutputLimit * 10);
   model.freeze_shape_plan(); model.prepare_execution(shapes); model.prepare_relay_execution();
+  if (boundaries) {
+    const auto cold_serial = run_arm(model, prompt, Arm::kColdTuple, false);
+    const auto cold = run_arm(model, prompt, Arm::kColdTuple, true, &cold_serial);
+    const auto eos_serial = run_arm(model, prompt, Arm::kModelEos, false);
+    const auto eos = run_arm(model, prompt, Arm::kModelEos, true, &eos_serial);
+    require(eos.ids.back() == q::model_eos_tokens.front() && eos.commits.back().stopped,
+        "model EOS boundary was replaced by request extra-stop policy");
+    std::cout << "{\"status\":\"PASS\",\"backend\":\"cuda\",\"requests\":1,"
+        "\"serial_and_relay_arms\":4,\"fixture\":\"untrained_one_hot_GA_wide_vocab\","
+        "\"model_eos_run\":true,\"extra_stop_ids\":false,\"eos_outputs\":" << eos.ids.size()
+        << ",\"eos_successor_submissions\":" << eos.successor_submissions
+        << ",\"eos_successor_publications\":" << eos.successor_publications
+        << ",\"eos_successor_discards\":" << eos.successor_discards
+        << ",\"cold_ignores_model_eos\":true,\"natural_cold_tuple_run\":true,\"cold_tuple_outputs\":" << cold.ids.size()
+        << ",\"cold_successor_refusals\":" << cold.successor_refusals
+        << ",\"cold_successor_submissions\":" << cold.successor_submissions
+        << ",\"complete_state_ledger_rng_equal\":true,\"final_live_versions\":0,"
+        "\"model_quality_claim\":false,\"performance_claim\":false}\n";
+    return 0;
+  }
   const auto serial_credit_one = run_arm(model, prompt, Arm::kCreditOne, false);
   const auto credit_one = run_arm(model, prompt, Arm::kCreditOne, true, &serial_credit_one);
   const auto serial_credit_two = run_arm(model, prompt, Arm::kCreditTwoPause, false);
@@ -349,13 +411,15 @@ int run(const std::filesystem::path &input) {
 int main(int argc, char **argv) {
   try {
     if (argc == 1) { std::cerr << "SKIP: pass --cuda PREPARED_LOCAL_INPUTS\n"; return 77; }
-    if (argc != 3 || std::string_view(argv[1]) != "--cuda")
-      throw std::runtime_error("usage: qwen_generation_relay_probe --cuda PREPARED_LOCAL_INPUTS");
+    const bool boundaries = argc == 4 && std::string_view(argv[1]) == "--cuda-boundaries";
+    if (!boundaries && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
+      throw std::runtime_error("usage: qwen_generation_relay_probe --cuda INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR");
     const auto compiled = q::Backend::compiled_backends();
     if (std::find(compiled.begin(), compiled.end(), q::BackendKind::kCuda) == compiled.end()) {
       std::cerr << "SKIP: CUDA route is not built\n"; return 77;
     }
-    return run(argv[2]);
+    return boundaries ? run(qwen_generation_state_case::model_eos_fixture(argv[2], argv[3], 10), true)
+        : run(argv[2]);
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n'; return 1;
   }

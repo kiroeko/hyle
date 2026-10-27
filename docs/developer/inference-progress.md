@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 18:27（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **97%**；百分比按实现工作量估计，不表示测试通过率。普通CUDA greedy自然请求已从R1扩至有序多成员的两步有界接力；tiny与真实2B的R2正常、额度1和后继已提交后取消均通过有限检查，取消后幸存成员按R1继续，完整状态／ledger／RNG保持一致。选项仍默认关闭，未证明净提速。当前版本32进程完整窗口已完成，普通decode慢约5%～6%，MTP慢约10%～12%；四项对照见文末。当前继续定位绑定／replay重复工作，并补模型原生EOS与自然冷拒绝检查；MTP设备后继、迁移复查及其它工况完整性能对照仍未完成。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 18:32（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **97%**；百分比按实现工作量估计，不表示测试通过率。普通CUDA greedy自然请求已从R1扩至有序多成员的两步有界接力；tiny与真实2B的R2正常、额度1和后继已提交后取消均通过有限检查，取消后幸存成员按R1继续，完整状态／ledger／RNG保持一致。选项仍默认关闭，未证明净提速。最近32进程完整窗口已完成，普通decode慢约5%～6%，MTP慢约10%～12%；四项对照见文末。本批R1／R2的模型EOS及真实冷tuple拒绝已通过有限检查；继续定位绑定／replay成本，MTP设备后继、迁移复查及其它工况完整性能对照仍未完成。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -34,10 +34,10 @@
     - 共同提交事实与独立块读凭据：100%（本批有限检查通过）
     - Store到受检Gather的在途读接线：100%（单共享Queue有限CUDA检查通过）
     - KV／索引融合读取及有界槽轮换：约96%（普通R1／R2有界两步接力已有限检查，MTP接受子集未完成）
-  - CPU提前准备与引擎有序发布：约85%（普通自然R1／R2及MTP有限主机预备通过有限检查；模型EOS、自然冷拒绝和MTP设备后继仍未完成）
+  - CPU提前准备与引擎有序发布：约90%（普通R1／R2、模型EOS／冷拒绝和MTP有限主机预备已有限检查；MTP设备后继仍未完成）
     - MTP有限主机元数据预备：100%（本批实现及CPU／CUDA有限检查完成，未声称GPU后继或提速）
     - 普通多成员有界接力：100%（本批实现及tiny／真实2B的R2与R1有限检查完成）
-    - 模型EOS与自然冷拒绝：约60%（检查代码已实现，待增量编译及运行）
+    - 模型EOS与自然冷拒绝：100%（普通R1／R2合成GA有限检查通过）
   - CPU／GPU／混合参考与完整四项对照：约30%（当前CUDA普通／MTP四臂32进程完成，其它工况仍待完成）
 - 遗漏复查与资料收敛：约45%（进行中）
   - 文档恢复、事实校正与阅读入口：100%（本轮修正完成）
@@ -49,11 +49,10 @@
 ## 正在做
 
 - 接力绑定／replay的主机成本：约70%（所属：CPU提前准备与引擎有序发布；恒等replacement简化取得5项有限通过结果，12交错A/B未证净提速。继续查实际绑定／replay成本，不以源码复杂度改善代签收益）。
-- 模型EOS与自然冷拒绝：约60%（所属：CPU提前准备与引擎有序发布；R1／R2边界检查及本地合成wide-vocab夹具已实现，使用原kernel／默认EOS及真实输出owner换址测试，待编译运行，不用extraStop或假抛错替代）。
 
 剩余大项包括MTP接受子集的设备接力、重叠执行的净收益、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
-[自然请求有界接力](../evidence/correctness/inference-generation-continuation-2026-10-27.json)已接普通CUDA R1 greedy的真实RequestLoop与ledger：两份实际信用才允许B，A成功观察后才绑定B的输入与边界，信用归零释放ready Source。tiny八条、真实P154十条串行／接力旅程检查额度1／2、暂停／ACK、额外stop及提交后取消，完整状态和提交事实一致；真实晚stop实际接纳1个B、发布0、丢弃1，A状态仍与串行相同。最终97输出入口另发布44个后继，全部非时间单请求结果一致，最终版本为0。另有七项相邻Graph检查及四条CPU／CUDA普通／MTP B2回归通过，分别对应实际镜像。模型原生EOS及自然冷tuple拒绝未覆盖，不将extraStop或组件证明代签。
+[自然请求有界接力](../evidence/correctness/inference-generation-continuation-2026-10-27.json)已接普通CUDA R1 greedy的真实RequestLoop与ledger：两份实际信用才允许B，A成功观察后才绑定B的输入与边界，信用归零释放ready Source。tiny八条、真实P154十条串行／接力旅程检查额度1／2、暂停／ACK、额外stop及提交后取消，完整状态和提交事实一致；真实晚stop实际接纳1个B、发布0、丢弃1，A状态仍与串行相同。最终97输出入口另发布44个后继，全部非时间单请求结果一致，最终版本为0。另有七项相邻Graph检查及四条CPU／CUDA普通／MTP B2回归通过，分别对应实际镜像。该批未覆盖模型EOS及自然冷tuple拒绝；后续边界检查另列，不将extraStop或组件证明代签。
 [六进程候选筛选](../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)在P154＋96decode上每个auto实际发布44个后继，完整非时间单请求结果一致；prefill2122.69→2164.08、decode90.37→90.27、综合85.48→85.49 tok/s，范围重叠，不称提速。shared backing为42,418,224→62,152,752B，ready中位多39.83ms；这不是全显存峰值，未新跑参考或MTP性能。`--decode-overlap`默认off，最新完整跨引擎表保持下方原窗口。
 
 该统计缺口现已修复：[实际子批事实](../evidence/correctness/inference-generation-batch-facts-2026-10-27.json)由每个真实完成子批同步给出成员、行数及耗时，普通A／B也各记一次，缓存完整命中只记逻辑dispatch。共享target时间计一次、各成员串行proposal都保留，移除旧physical_episodes猜测。CPU／CUDA各通过异宽T2／T3两批、同宽R2一批，以及B先执行后受控报错仍映射原B的三场景；原Status与真实退休保留，状态／账簿／额度不额外推进。四条普通／MTP B2及真实97输出的完整非时间报告仍一致，晚stop丢弃后继也回归通过。异宽由真实草稿前缀控制，不冒充自然EOS；没有新TPS结论。
@@ -66,7 +65,9 @@
 
 [MTP有界主机预备](../evidence/correctness/inference-mtp-ahead-2026-10-27.json)已与普通预备共用每成员弱身份缓存，只存候选target整数页号和接受长度范围。真实发布后核epoch／长度／全部页前缀，再按实际下一图行数准备positions，支持换序及子组消费，不猜draft状态或取得设备权限。2个C++单元、2次链接；CPU／CUDA各一个combined消费者通过ordinary三次命中、MTP两次命中、K3异前缀、停止及T3→T2 lag1，完整初始化状态／RNG／旧快照一致。四条tiny双请求及四条真实2B CUDA双请求检查通过，除三个明确新增预备计数及原时间／重放字段外，完整报告逐工况一致；真实MTP实际命中3次，最终版本归零。首条real命令误把MTP参数传给off，在加载前被拒绝，修正命令后通过；另一次编译后漏header预登记已机械核同字节，未重编。它不接GPU后继，不更新TPS或内存峰表。
 
-[普通多成员接力](../evidence/correctness/inference-generation-batch-continuation-2026-10-27.json)按完整有序成员组借用真实token／Store／KV来源，逐成员预留和绑定ledger，按实际批宽统计参与及执行行数。3个C++单元、3次链接和12个模型进程通过；tiny／真实2B的自然R2各发布3个后继，完整非时间请求结果与off一致。定向R2各验证正常2次发布、额度1时零后继提交、晚取消后已提交B只退休不发布，幸存成员再按R1执行5批；完整初始化状态／旧快照／ledger／RNG一致。原R1回归通过，真实模型的额外stop分支已运行；tiny无合适token，该分支未运行。第一次自然报告比较误纳CPU预备计数，保留原失败观察，修正后仅重解析原结果，没有重跑模型。未测R2净提速，原生EOS、自然冷拒绝及MTP设备接力仍未覆盖。
+[普通多成员接力](../evidence/correctness/inference-generation-batch-continuation-2026-10-27.json)按完整有序成员组借用真实token／Store／KV来源，逐成员预留和绑定ledger，按实际批宽统计参与及执行行数。3个C++单元、3次链接和12个模型进程通过；tiny／真实2B的自然R2各发布3个后继，完整非时间请求结果与off一致。定向R2各验证正常2次发布、额度1时零后继提交、晚取消后已提交B只退休不发布，幸存成员再按R1执行5批；完整初始化状态／旧快照／ledger／RNG一致。原R1回归通过，真实模型的额外stop分支已运行；tiny无合适token，该分支未运行。第一次自然报告比较误纳CPU预备计数，保留原失败观察，修正后仅重解析原结果，没有重跑模型。该批未测R2净提速、原生EOS或自然冷拒绝，后续边界检查另列；MTP设备接力仍未覆盖。
+
+[模型EOS与冷tuple边界](../evidence/correctness/inference-generation-native-boundaries-2026-10-27.json)共2个C++单元、2次链接、4个CUDA进程，全部首次通过。两个本地合成GA夹具经原kernel选择Qwen EOS，无extra stop；R1第10输出、R2首成员第9输出结束，已接纳B均提交1／发布0／丢弃1，R2幸存者按R1继续5批至14输出。闲置carrier真实换输出owner并保活旧池后，pending B各拒绝1次、提交0，A保留，后续单步完成。完整初始化状态／旧快照／ledger／RNG与串行一致，最终版本归零；两原tiny入口也回归通过。无下载、不证明任务质量／性能或真实驱动故障，原tiny晚extraStop未运行项仍保留原状态。
 
 [完整生产者与混束接力](../evidence/correctness/inference-model-submission-source-2026-10-27.json)已分别验证：真实Qwen3.5-2B普通greedy的三次K1导出／发布与原串行路径逐位一致，核对78,372,864字节初始化KV／GDN／conv、旧快照、epoch和RNG，最终无遗留版本；组件真实ready token／Store／KV可首次录制Hybrid，再以原token View和同物理tuple读取pending来源，0次新录制。47个不同GTest通过结果分属记录中的实际镜像，未重跑最终全量套件；首夹具错误、原managed TopK与共享append记账拒绝、alias重用拒绝和被析构掩盖的原失败均保留。未接完整模型后继流水、sampling或MTP接受子集，也未测新速度。
 
