@@ -112,7 +112,7 @@ int main(int argc,char **argv){
   const q::cache::KvRowBytes cache_rows{
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
-  const auto plan=q::cache::plan(geometry, cache_rows,192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
+  const auto plan=q::cache::plan(geometry, {.target = cache_rows},192,3,154,q::recurrent_bytes(q::state_schema_for(geometry,192),geometry),2,1,false,true);
   event("load_original_ordinary");
   q::Model model(input/"weights.tsv",geometry,192,plan,{},true,q::ReplayPolicy::kCommands,1073741824,
       {.enabled=true,.policy={1,8,.9F},.seed=123},0,{.primary=q::BackendKind::kCuda});

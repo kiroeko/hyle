@@ -11,6 +11,7 @@
 #include "qwen_mtp_stop_case.h"
 #include "qwen_mtp_sampling_case.h"
 #include "qwen_mtp_logits_case.h"
+#include "qwen_mtp_e4_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
@@ -27,9 +28,10 @@ int main(int argc, char **argv) {
     const bool mtp_stop = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-stop";
     const bool mtp_sampling = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-sampling";
     const bool mtp_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-logits";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits);
+    const bool mtp_e4 = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-e4";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -57,7 +59,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return mtp_logits ? qwen_mtp_logits_case::run(input, backend)
+    return mtp_e4 ? qwen_mtp_e4_case::run(input, backend)
+           : mtp_logits ? qwen_mtp_logits_case::run(input, backend)
            : mtp_sampling ? qwen_mtp_sampling_case::run(input, backend)
            : mtp_stop ? qwen_mtp_stop_case::run(input, backend)
            : logits_preflight ? qwen_logits_preflight_case::run(input, backend)

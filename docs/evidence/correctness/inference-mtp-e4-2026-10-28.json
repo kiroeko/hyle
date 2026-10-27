@@ -1,0 +1,423 @@
+{
+  "status": "PASS_BOUNDED_TARGET_E4_WITH_PLAIN_MTP_CACHE",
+  "created_utc": "2026-10-27T23:49:03.124385+00:00",
+  "base": "01bafa448",
+  "implementation": [
+    "PreparedWeightSource carries independent actual target/draft row extents. Source preparation derives target from its calibrated carrier and draft from plain source activation, zero without MTP.",
+    "Cache Plan and actual arenas account for target and draft banks independently, including every bank sentinel; checked arithmetic and original resource budget remain.",
+    "Original authenticated target calibration and CT policy are retained; MTP is no longer categorically rejected. No NextN calibration, quantization, kernel, executor or ownership mechanism is invented."
+  ],
+  "counts": {
+    "actual_CXX": 5,
+    "successful_CXX": 5,
+    "actual_links": 4,
+    "successful_links": 4,
+    "roles_link_embedded_in_CXX": 1,
+    "recorded_test_and_model_processes": 7,
+    "successful": 6,
+    "retained_host_failure": 1,
+    "model_processes": 4,
+    "sequential_Model_instances": 5,
+    "separately_root_reported_Python_test_processes": 1,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "builds": {
+    "CXX": [
+      {
+        "unit": "weights",
+        "pid": 49844,
+        "exit": 0,
+        "started": 1793144437.5066118,
+        "seconds": 5.7032623291015625,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "unit": "tiny",
+        "pid": 54940,
+        "exit": 0,
+        "started": 1793144475.9588406,
+        "seconds": 43.639766454696655,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "unit": "host",
+        "pid": 43696,
+        "exit": 0,
+        "started": 1793144449.1741958,
+        "seconds": 3.0868430137634277,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "unit": "roles",
+        "pid": 19812,
+        "exit": 0,
+        "started": 1793144457.7764804,
+        "seconds": 4.275024652481079,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "unit": "host-corrected",
+        "pid": 40444,
+        "exit": 0,
+        "started": 1793144783.3044295,
+        "seconds": 3.1501405239105225,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "links": [
+      {
+        "image": "tiny",
+        "pid": 57876,
+        "exit": 0,
+        "started": 1793144535.2651312,
+        "seconds": 1.8005321025848389,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "image": "host",
+        "pid": 41148,
+        "exit": 0,
+        "started": 1793144468.5098493,
+        "seconds": 1.8412389755249023,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "image": "roles",
+        "embedded_in_CXX": true,
+        "pid": 19812,
+        "exit": 0,
+        "started": 1793144457.7764804,
+        "seconds": 4.275024652481079,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "image": "host-corrected",
+        "pid": 57760,
+        "exit": 0,
+        "started": 1793144792.5503128,
+        "seconds": 1.8020524978637695,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "current_Tiny_inputs": 228,
+    "current_host_inputs": 237,
+    "current_Tiny_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.exe",
+      "bytes": 143582208,
+      "sha256": "1abef01147b1900dd9372bc0d742119cf9923fbde40a0f0d9170a57b23aa2905"
+    },
+    "corrected_host_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\bin\\host.exe",
+      "bytes": 142828544,
+      "sha256": "1e0a164c7d10356b499f5aea5b5e9770c0e1fafc7cef2f3e2ba78ee02cacfe26"
+    },
+    "weights_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\weights\\unit.obj",
+      "bytes": 3468178,
+      "sha256": "4ea50f96ddfcf29097f3051b692ffdc6b74d1729d8ca64e321627b7d36cfd2be"
+    }
+  },
+  "E4_runs": [
+    {
+      "backend": "cpu",
+      "process": {
+        "pid": 19396,
+        "exit": 0,
+        "started": 1793144675.0982423,
+        "seconds": 0.9674534797668457,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "complete_initialized_state_byte_equal_checks": 11,
+      "cache_backing_bytes": 314119,
+      "target": {
+        "dtype": "E4M3FN",
+        "row_bytes": 64,
+        "calibration_roles": 2
+      },
+      "draft": {
+        "dtype": "BF16",
+        "row_bytes": 128
+      },
+      "final_versions": 0
+    },
+    {
+      "backend": "cuda",
+      "process": {
+        "pid": 14048,
+        "exit": 0,
+        "started": 1793144682.072693,
+        "seconds": 1.0232295989990234,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "complete_initialized_state_byte_equal_checks": 11,
+      "cache_backing_bytes": 314119,
+      "target": {
+        "dtype": "E4M3FN",
+        "row_bytes": 64,
+        "calibration_roles": 2
+      },
+      "draft": {
+        "dtype": "BF16",
+        "row_bytes": 128
+      },
+      "final_versions": 0
+    }
+  ],
+  "regressions": [
+    {
+      "arm": "sampler-cpu",
+      "process": {
+        "pid": 2944,
+        "exit": 0,
+        "started": 1793144688.7542038,
+        "seconds": 0.7087843418121338,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "byte_equal_state_checks": 17,
+        "sequential_models": 2,
+        "natural_R": 1,
+        "natural_policy_groups": 3
+      }
+    },
+    {
+      "arm": "preflight-cpu",
+      "process": {
+        "pid": 56896,
+        "exit": 0,
+        "started": 1793144697.5048165,
+        "seconds": 0.4502122402191162,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "ordinary_plain_source": true,
+        "draft_source_facts_zero": true,
+        "typed_metadata_no_submit": true,
+        "same_key_peer_continues": true
+      }
+    },
+    {
+      "arm": "roles",
+      "process": {
+        "pid": 50920,
+        "exit": 0,
+        "started": 1793144664.787912,
+        "seconds": 0.8856635093688965,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "checks": 13938,
+        "external_actual_E4_manifest": true
+      }
+    }
+  ],
+  "host": {
+    "first_failure": {
+      "pid": 44220,
+      "exit": 1,
+      "started": 1793144599.5341532,
+      "seconds": 0.43916845321655273,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "corrected_pass": {
+      "pid": 47320,
+      "exit": 0,
+      "started": 1793144800.8167503,
+      "seconds": 0.43585991859436035,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "test": "QwenSessionState.BatchCapacityPreservesSingleAndBoundsAllCandidates",
+    "cause": "Test expected 158515251 incorrectly used twelve A layers; this Qwen fixture has twenty-four total layers and six A layers.",
+    "correction": "171491379-(1081345-540673)*2*6 = 165003315, plus explanatory comment; no product change.",
+    "dependency_proof": {
+      "path": ".scratch/inference-mtp-e4-20261028/validation/host-refinement/reuse-proof.json",
+      "bytes": 2027,
+      "sha256": "48085ebd387b4ca4c802080f21741538c59ec448baa0bcd5a4baca64b100652d"
+    },
+    "failure_logs_retained": true,
+    "no_successful_model_rerun": true
+  },
+  "Python_targeted": {
+    "basis": "Root actual tool receipt, not a new execution by this script",
+    "command": "python -B tests/tooling/qwen_hf_roles_test.py OriginalHfRolesTest.test_ct_channel_local_and_bf16_cache_omission_are_separate_contracts",
+    "tool_chunk": "e50d24",
+    "exit": 0,
+    "reported_test_seconds": 0.026,
+    "test_count": 1,
+    "result": "OK",
+    "raw_file_unavailable": true
+  },
+  "source_freezes": {
+    "owned": {
+      "path": ".scratch/inference-mtp-e4-20261028/product-source-freeze.json",
+      "bytes": 4002,
+      "sha256": "d6b9172afbba3dc579a4cf216abe1a1a7576370887bcc249ecc430e627ddb2dc"
+    },
+    "main": {
+      "path": ".scratch/inference-mtp-e4-20261028/product-main/source-freeze.json",
+      "bytes": 2105,
+      "sha256": "7272afc12ea75c687166165125a79fe099d97f5c8c99c6ce23fc73dbcded421a"
+    },
+    "initial_changed_sources": {
+      "path": ".scratch/inference-mtp-e4-20261028/validation/expected-sources.json",
+      "bytes": 3247,
+      "sha256": "faf39647d5f683d3dd9fab998e01e13682817cbd23c915cf1172fd582286ce16"
+    },
+    "corrected_host": {
+      "path": ".scratch/inference-mtp-e4-20261028/validation/host-refinement/source-freeze.json",
+      "bytes": 10794,
+      "sha256": "38103360fb09939fb0c2e9daf666fac35e485ac64b56a0ae8d917590f7eff16a"
+    }
+  },
+  "source_boundary": "The initial 29-file planned pin set is broader than actual compilation includes. Actual MSVC dependency receipts prove prefix test constant/comment changes are absent from Tiny, weights and roles; only host was rebuilt.",
+  "fixture": {
+    "manifest": {
+      "path": ".scratch/inference-mtp-e4-20261028/fixture/weights.tsv",
+      "bytes": 8572,
+      "sha256": "9ebfc62aa339c530aee5fa817de7f1580be75570ed0d00965915a6bff0cbfefd"
+    },
+    "provenance": {
+      "path": ".scratch/inference-mtp-e4-20261028/fixture/provenance.json",
+      "bytes": 2879,
+      "sha256": "908a34301cea44a3ab25a0e0d0c820fe2f83a8a542ac0f7a897cad9c63542347"
+    },
+    "receipt": {
+      "path": ".scratch/inference-mtp-e4-20261028/fixture/preparation-receipt.json",
+      "bytes": 13653,
+      "sha256": "2319faed3e675f4fae3e39617012b47e47a35c32a560cc7fe200446536e6b4e1"
+    },
+    "geometry": "Untrained GA/H64/D64/V64/C16 + all fifteen original cached BF16 MTP weight roles",
+    "metadata_roles": 45,
+    "weight_roles": 43,
+    "target_calibration_roles": 2,
+    "existing_payloads_referenced": 3,
+    "payload_bytes_created": 0,
+    "payload_bytes_copied": 0,
+    "scale_scope": "Report available=4 refers to the old AA fixture calibration bindings; the full borrowed 64-byte scalar pool contains thirty-two target roles, and this GA fixture selects exactly two. No mtp.* calibration exists or is used."
+  },
+  "exercised": [
+    "R1 real K1 and recursive K2 repeated controls, exact initialized target/draft/GDN/conv/hidden state and retained checkpoints.",
+    "Q1 StateOnly chunks, no output/RNG draw before EmitNext, partial HostImage restore under the original request key, then recursive continuation.",
+    "B2 original submitted K3 verifier with controlled accepted prefixes [1,2], real repair and unchanged RNG, compared against a same-geometry full-state control.",
+    "Another actual B2 submission is wholly aborted after one member stops; both prior heads remain unchanged and the survivor continues as R1."
+  ],
+  "limits": [
+    "CPU/CUDA finite synthetic consumer only; no quality, random acceptance-rate, throughput, native fault or other-platform claim.",
+    "The new E4 consumer uses Commands replay. This does not establish captured E4+MTP replay or device continuation.",
+    "All eleven initialized-state comparisons per backend are byte-exact; no cross-backend bit-identity claim.",
+    "Draft remains plain BF16. No all-E4 draft cache or original NextN calibration support is claimed.",
+    "Old ordinary E4 entry was not scheduled. Ordinary non-E4 target-only new source facts are covered by logits-preflight CPU; older ordinary E4 evidence is historical.",
+    "Recorded durations are provenance, not performance results. Inventory/version checks do not imply a complete native allocator live-zero proof.",
+    "No whole-SDK ABI/header audit: engine-private changed consumers and actual local dependencies were refreshed; unchanged external SDK/runtime objects are reused."
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/correctness/inference-mtp-logits-2026-10-28.json",
+      "bytes": 10890,
+      "sha256": "d454597569ada32cdc6e1555546dcb04be1ec67a03834d1920fd663a2c7b2ef2"
+    }
+  ],
+  "reproduction": {
+    "build_helper": ".scratch/inference-mtp-e4-20261028/validation/build.py",
+    "run_helper": ".scratch/inference-mtp-e4-20261028/validation/run.py",
+    "host_correction_helper": ".scratch/inference-mtp-e4-20261028/validation/host-refinement/build.py",
+    "policy": "Explicit single-use actions, preserve failure; parser repair is offline and never reruns successful consumers."
+  },
+  "cleanup_candidates": {
+    "operation": "CANDIDATES_ONLY_NO_DELETE",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\host.exe",
+        "bytes": 142828544
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\host.exp",
+        "bytes": 24978
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\host.lib",
+        "bytes": 41384
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\host\\unit.obj",
+        "bytes": 2922918
+      }
+    ],
+    "count": 4,
+    "bytes": 145817824,
+    "excluded_from_current_228_and_corrected_237_inputs": true,
+    "protected_ready": [
+      {
+        "path": ".scratch/inference-mtp-e4-20261028/validation/ready-tiny.json",
+        "bytes": 4323,
+        "sha256": "53830bac87ccca3714428d22270f56a2082f4eff776b93384df0e72454ce6405"
+      },
+      {
+        "path": ".scratch/inference-mtp-e4-20261028/validation/host-refinement/ready-host.json",
+        "bytes": 2990,
+        "sha256": "f805206e648495044bfcc1bce0f92a5f02727894042061dd2744632fcb499ede"
+      }
+    ],
+    "preserve": "All sources, recipes, logs, failed/successful ready receipts, evidence, successful weights and final Tiny/host; retained sampler-v4 is untouched."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-mtp-e4-2026-10-28.zip",
+    "bytes": 664002,
+    "sha256": "6ab716e39a2fe373f7302ff8cac220e8c7c41838250c66378a0b2ee99128fe29",
+    "files": 197,
+    "CRC_and_member_SHA256_verified": true
+  },
+  "cleanup_executed": {
+    "command": ".\\test.ps1 -Execute",
+    "files": 4,
+    "bytes": 145817824,
+    "receipt": {
+      "path": ".scratch/inference-mtp-e4-20261028/cleanup-execute-20261027T2352169940347Z.json",
+      "bytes": 1352,
+      "sha256": "b0051791c6cabd6ac98a12309e9eed8ba548830902340f57280f32303e91593b"
+    },
+    "script_sha256": "912b2fe3817de8e4b25db5a4d7a3181d15e1c02577361da38ca379ee4aead5f3",
+    "preserved_closures": [
+      {
+        "Inputs": 228,
+        "Ready": ".scratch\\inference-mtp-e4-20261028\\validation\\ready-tiny.json"
+      },
+      {
+        "Inputs": 237,
+        "Ready": ".scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\ready-host.json"
+      },
+      {
+        "Inputs": 228,
+        "Ready": ".scratch\\inference-mtp-logits-20261028\\refinement\\ready-tiny.json"
+      },
+      {
+        "Inputs": 228,
+        "Ready": ".scratch\\inference-mtp-sampling-20261028\\refinement-v4\\ready-tiny.json"
+      },
+      {
+        "Inputs": 237,
+        "Ready": ".scratch\\inference-mtp-stop-policy-20261028\\ready-host.json"
+      }
+    ],
+    "initial_preview_correction": "Initial preview stopped before deletion because DirectoryInfo ancestry was tested with a provider-only property; corrected to an explicit DirectoryInfo type check, preview and execute then succeeded."
+  }
+}

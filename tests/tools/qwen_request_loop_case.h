@@ -18,7 +18,7 @@ inline int run(const std::filesystem::path &input) {
   const q::cache::KvRowBytes rows{
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
-  const auto plan = q::cache::plan(geometry, rows, 16, 1, 3,
+  const auto plan = q::cache::plan(geometry, {.target = rows}, 16, 1, 3,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, true);
   q::Model model(input / "weights.tsv", geometry, 16, plan, {}, false,
       q::ReplayPolicy::kCommands, 16u << 20,

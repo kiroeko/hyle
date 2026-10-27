@@ -477,8 +477,6 @@ def prepare_role_files(path: Path, mtp: bool, config: dict, fp8_reader: str | No
 
 
 def _prepare_role_records(original, mtp, config, authenticate, fp8_reader=None, kv_cache_dtype=None):
-    if mtp and kv_cache_dtype == "e4m3fn":
-        raise ValueError("E4 KV currently supports ordinary inference only, not MTP")
     if fp8_reader not in (None, FP8_READER, CT_MIXED_READER, STATIC_FP8_READER):
         raise ValueError("unknown fixed FP8 reference reader")
     model_geometry = geometry.from_hf(config)
@@ -710,7 +708,7 @@ def main() -> None:
     parser.add_argument("--fp8-reader", choices=[FP8_READER, CT_MIXED_READER, STATIC_FP8_READER],
                         help="explicit fixed reference-reader arithmetic for original FP8/CT sources")
     parser.add_argument("--kv-cache-dtype", choices=['bf16','e4m3fn'],
-                        help="explicit BF16 KV omission or ordinary E4M3FN KV with the original authenticated K/V scales")
+                        help="explicit BF16 KV omission or target E4M3FN KV with original K/V scales; NextN KV remains plain activation storage")
     args = parser.parse_args()
     if args.output.exists():
         raise ValueError("output directory must be new")

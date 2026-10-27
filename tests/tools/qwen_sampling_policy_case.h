@@ -89,7 +89,7 @@ inline int run(const std::filesystem::path &input) {
   const q::cache::KvRowBytes cache_rows{
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
-  const auto plan = q::cache::plan(geometry, cache_rows, capacity, 2, 5,
+  const auto plan = q::cache::plan(geometry, {.target = cache_rows}, capacity, 2, 5,
       q::recurrent_bytes(q::state_schema_for(geometry, capacity), geometry), 2, 1, false, true);
   const std::array additional{q::SamplingConfiguration{true, {1.F, 1, 1.F}},
       q::SamplingConfiguration{true, {.7F, (std::min)(std::size_t{8}, static_cast<std::size_t>(geometry.vocabulary)), .9F}},

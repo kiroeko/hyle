@@ -33,7 +33,7 @@ inline int run(const std::filesystem::path &input){try{
   const q::cache::KvRowBytes cache_rows{
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.key_depth)), 2),
       q::cache::multiply(q::cache::multiply(static_cast<std::size_t>(geometry.kv_heads), static_cast<std::size_t>(geometry.value_depth)), 2)};
-  const auto plan=q::cache::plan(geometry, cache_rows,512,3,128,q::recurrent_bytes(q::state_schema_for(geometry,512),geometry),2,1,false,true);
+  const auto plan=q::cache::plan(geometry, {.target = cache_rows},512,3,128,q::recurrent_bytes(q::state_schema_for(geometry,512),geometry),2,1,false,true);
   q::Model model(input/"weights.tsv",geometry,512,plan,{},true,q::ReplayPolicy::kCommands,1073741824,
       {.enabled=true,.policy={1,8,.9F},.seed=123},0,{.primary=q::BackendKind::kCuda});
   require(model.physical_text_roles==320&&!model.physical_mtp_roles&&!model.cache_plan.draft_cache,"not original ordinary Model");

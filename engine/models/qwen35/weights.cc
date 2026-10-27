@@ -441,11 +441,16 @@ PreparedWeightSource prepare_weight_source(const std::filesystem::path &manifest
   auto roles = read_weight_roles(manifest, include_mtp);
   auto storage = read_cache_calibration(roles);
   const auto plain = take(c::CacheStorage::plain(PrecisionProfile::from_roles(roles).activation_type()));
-  const auto rows = cache_storage_row_bytes(roles.geometry, storage.empty() ? CacheStoragePair{plain, plain} : storage.front());
+  const auto plain_rows = cache_storage_row_bytes(roles.geometry, {plain, plain});
+  const auto target_rows = storage.empty() ? plain_rows : cache_storage_row_bytes(roles.geometry, storage.front());
   for (const auto &pair : storage)
-    if (cache_storage_row_bytes(roles.geometry, pair) != rows)
-      throw std::runtime_error("selected cache layers require different physical row extents");
-  return {std::move(roles), std::move(storage), {rows[0], rows[1]},
+    if (cache_storage_row_bytes(roles.geometry, pair) != target_rows)
+      throw std::runtime_error("selected target cache layers require different physical row extents");
+  // Original calibration selects target storage only. NextN keeps the source
+  // activation's actual plain carrier, independently of target E4 byte size.
+  cache::CacheRowBytes rows{{target_rows[0], target_rows[1]}, {}};
+  if (include_mtp) rows.draft = {plain_rows[0], plain_rows[1]};
+  return {std::move(roles), std::move(storage), rows,
       std::chrono::duration<double>(Clock::now() - start).count()};
 }
 Type role_type(std::string_view dtype) {

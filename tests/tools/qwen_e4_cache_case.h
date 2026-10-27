@@ -20,7 +20,7 @@ inline BankBytes read_pages(q::Model &model, const q::cache::State &head) {
       const auto view = q::take(pages.front().view());
       // Only the committed rows are compared: an appendable old reader never
       // gains authority to inspect a subsequently written suffix.
-      const auto bytes = head.length * model.cache_plan.row_bytes.key;
+      const auto bytes = head.length * model.cache_plan.row_bytes.target.key;
       require(bytes <= view.size(), "ready E4 frame does not cover its committed rows");
       std::vector<std::byte> values(bytes);
       q::check(model.execution.read(q::take(view.subview(0, bytes)), values));
@@ -122,10 +122,11 @@ inline int run(const std::filesystem::path &input,
   const auto storage = source.cache_storage;
   require(storage[0][0] != storage[0][1] && storage[0] != storage[1] &&
       storage[1][0] != storage[1][1], "fixture must distinguish per-layer and K/V storage");
-  require(source.cache_row_bytes == q::cache::KvRowBytes{64, 64}, "E4 plan inferred 16-bit rows");
+  require(source.cache_row_bytes.target == q::cache::KvRowBytes{64, 64} &&
+      source.cache_row_bytes.draft == q::cache::KvRowBytes{}, "ordinary E4 plan inferred 16-bit or draft rows");
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 4, 8,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 2);
-  const auto plain_plan = q::cache::plan(geometry, {128, 128}, 16, 4, 8, 0, 2);
+  const auto plain_plan = q::cache::plan(geometry, {.target = {128, 128}}, 16, 4, 8, 0, 2);
   require(plan.backing_bytes - 4 == (plain_plan.backing_bytes - 4) / 2,
       "physical E4 bank payload was not halved independently of arena sentinels");
   q::Model model(std::move(source), geometry, 16, plan, {}, false,

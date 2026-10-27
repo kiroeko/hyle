@@ -1213,15 +1213,25 @@ block128 编码 carrier 的 `[K,N]` 保留独立解释。这不改变编码、�
 普通 CT 制品的缓存政策与权重／activation 精度分开：准备器显式选择 BF16 校准省略或
 E4 原校准，保留按实际 attention 层排序的独立 K/V BF16 标量。冷期一次读取精确两字节并扩宽，
 同一份已准备来源给出实际 carrier 行字节，随后规划容量并移入 Model；容量搜索不重复源读取。
-`Plan::row_bytes` 显式承载物理事实，不再由模型几何硬编码两字节。GDN／conv／hidden 不随之改变。
+`Plan::row_bytes`分别承载target／draft的实际行字节，不由目标存储或模型几何推定另一银行的精度。
+准备器从各自typed carrier派生一次，容量规划及Model共同消费这份事实；有可用draft但不选择它时不计入银行容量。
+GDN／conv／hidden不随目标KV编码改变。
 每层原 Arena、append 和 typed attention 使用同一存储变体；K 在原 norm／RoPE 之后、V 在原投影之后
 各编码一次，仅处理新行，旧编码页直接共享或 COW。可追加页按实际行字节保留旧前缀与后缀权限，
-不放宽 fresh generation、成功发布、真实退休及后端复制对齐条件。E4＋MTP 仍冷拒绝。
+不放宽fresh generation、成功发布、真实退休及后端复制对齐条件。
 [有限检查](../evidence/correctness/ordinary-e4-kv-2026-10-25.json)覆盖准备器／角色、物理字节规划、
 CPU分页六项、CPU默认BF16及CPU／CUDA双层实际Model续算、分叉和旧读者；生成夹具借入四个原标量，
 不代表原27B数学／质量或吞吐。Apple另用原生编码→同页追加→reader核独立字节、输出与预算归还；
 Vulkan本批仅严格host编译。CLI的初始化诊断另加回前移的metadata准备耗时，未把参数规划时间算成模型加载；
 该报表修正只做源码检查，实际运行的Model定义与最终源码相同。
+
+MTP现可使用原校准的E4目标KV与原plain activation的draft KV。两者共享元数据域和页几何，
+各自使用真实schema、独立arena、行字节与银行上限；目标校准不授权量化draft，不能套用某个目标层的scale。
+backing按目标attention层数与独立draft银行分别计费，state、hidden及旧页COW继续沿原机制。
+HostImage已有两组存储描述，直接按实际初始化字节换出换入，不新增格式兼容层或转码。
+[CPU／CUDA有限消费者](../evidence/correctness/inference-mtp-e4-2026-10-28.json)各通过11次完整状态字节比较，
+覆盖K1／K2、StateOnly、原key及部分镜像恢复、真实B2验证和取消后幸存请求续算；
+B2的不同接受前缀为受控状态检查，MTP取消仍按原整episode合同。该批没有新增整模型质量、原生平台或速度结论。
 
 追加的逻辑token行数与物理carrier第一维分别表达：由原`cache_carrier_description`的单token描述取得首轴倍率，
 恢复query_rows后再核完整描述和strides，不另列dtype／codec白名单；例如Q8_0将头数合入U8第一维。

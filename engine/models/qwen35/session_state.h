@@ -51,21 +51,30 @@ struct KvRowBytes final {
   friend constexpr bool operator==(const KvRowBytes &, const KvRowBytes &) noexcept = default;
 };
 
+// Original physical source facts, including an available but unused draft.
+// One bank's carrier never implies another bank's dtype, scale or row extent.
+struct CacheRowBytes final {
+  KvRowBytes target, draft;
+  friend constexpr bool operator==(const CacheRowBytes &, const CacheRowBytes &) noexcept = default;
+};
+
 // Target and draft inventories use the same page geometry but independent
-// arena blocks and policy references; this policy is not a Compute owner.
+// typed arena blocks and byte extents; this policy is not a Compute owner.
 struct Plan final {
   static constexpr std::uint32_t page_rows = 16;
-  KvRowBytes row_bytes;
+  CacheRowBytes row_bytes;
   std::size_t resident_sessions = 0, active_sequences = 1, recurrent_payload_bytes = 0;
   std::uint32_t max_requests = 0, max_query_rows = 0, max_kv_rows = 0;
   std::uint32_t max_pages = 0, max_page_refs = 0, state_slots = 0;
   std::uint32_t snapshot_slots = 0, candidate_boundaries = 1, hidden_slots = 0;
   std::uint32_t in_flight_batches = 1;
-  std::size_t key_bank_bytes = 0, value_bank_bytes = 0, hidden_row_bytes = 0, hidden_bytes = 0, backing_bytes = 0;
+  std::size_t key_bank_bytes = 0, value_bank_bytes = 0; // Per target layer.
+  std::size_t draft_key_bank_bytes = 0, draft_value_bank_bytes = 0; // Zero without a draft plan.
+  std::size_t hidden_row_bytes = 0, hidden_bytes = 0, backing_bytes = 0;
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
 };
-inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
+inline Plan plan(const ModelGeometry &geometry, CacheRowBytes row_bytes,
                  std::size_t context, std::size_t residents,
                  std::size_t query_rows_per_request, std::size_t recurrent_payload,
                   std::size_t active_sequences = 1,
@@ -73,8 +82,10 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
                    bool draft_cache = false, bool frontier_hidden = false,
                    std::size_t in_flight_batches = 1) {
   geometry.validate();
-  if (!row_bytes.key || !row_bytes.value)
-    throw std::runtime_error("cache plan requires positive actual K/V row byte extents");
+  if (!row_bytes.target.key || !row_bytes.target.value ||
+      ((!row_bytes.draft.key) != (!row_bytes.draft.value)) ||
+      (draft_cache && (!row_bytes.draft.key || !row_bytes.draft.value)))
+    throw std::runtime_error("cache plan requires actual target K/V row extents and an independent complete draft pair when used");
   if (context > static_cast<std::size_t>(geometry.context_limit) || (draft_cache && geometry.mtp_layers != 1))
     throw std::runtime_error("cache context or NextN selection exceeds source geometry");
   if (!context || !residents || !query_rows_per_request || query_rows_per_request > context ||
@@ -127,11 +138,17 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
   result.draft_cache = draft_cache;
   result.hidden_row_bytes = geometry.hidden_bytes();
   result.attention_layers = geometry.attention_layers(); result.recurrent_layers = geometry.recurrent_layers();
-  result.key_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), row_bytes.key), 1);
-  result.value_bank_bytes = add(multiply(multiply(pages, Plan::page_rows), row_bytes.value), 1);
-  // Every real arena/pool contributes its own final byte, independently of
-  // shape. Draft K/V has one additional pair, never aliases of target banks.
-  const auto arena_layers = add(result.attention_layers, draft_cache ? 1u : 0u);
+  const auto bank_rows = multiply(pages, Plan::page_rows);
+  result.key_bank_bytes = add(multiply(bank_rows, row_bytes.target.key), 1);
+  result.value_bank_bytes = add(multiply(bank_rows, row_bytes.target.value), 1);
+  if (draft_cache) {
+    result.draft_key_bank_bytes = add(multiply(bank_rows, row_bytes.draft.key), 1);
+    result.draft_value_bank_bytes = add(multiply(bank_rows, row_bytes.draft.value), 1);
+  }
+  // Each real arena contributes its own final byte. An available unused draft
+  // remains in row_bytes but has no arena or backing charge in this plan.
+  const auto arena_bytes = add(multiply(add(result.key_bank_bytes, result.value_bank_bytes),
+      result.attention_layers), add(result.draft_key_bank_bytes, result.draft_value_bank_bytes));
   std::size_t recurrent_padding = 0;
   if (result.recurrent_layers) {
     const auto history_bytes = multiply(multiply(static_cast<std::size_t>(geometry.conv_kernel - 1),
@@ -142,7 +159,7 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
     recurrent_padding = multiply(multiply(add(state_pool_padding(history_bytes),
         state_pool_padding(recurrent_bytes)), states - 1), result.recurrent_layers);
   }
-  result.backing_bytes = add(add(multiply(add(result.key_bank_bytes, result.value_bank_bytes), arena_layers),
+  result.backing_bytes = add(add(arena_bytes,
       add(add(multiply(recurrent_payload, result.state_slots), multiply(2, result.recurrent_layers)),
           recurrent_padding)), hidden_bytes);
   return result;

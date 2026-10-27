@@ -797,10 +797,11 @@ void aligned_state_pool_capacity() {
   rejects(128, (std::numeric_limits<std::size_t>::max)());
 }
 
-p::KvRowBytes bf16_cache_rows(const qwen35::ModelGeometry &g) {
-  // These host capacity fixtures explicitly model plain BF16 K/V rows.
-  return {p::multiply(p::multiply(static_cast<std::size_t>(g.kv_heads), static_cast<std::size_t>(g.key_depth)), 2),
+p::CacheRowBytes bf16_cache_rows(const qwen35::ModelGeometry &g) {
+  // These host capacity fixtures explicitly describe both available banks.
+  const p::KvRowBytes rows{p::multiply(p::multiply(static_cast<std::size_t>(g.kv_heads), static_cast<std::size_t>(g.key_depth)), 2),
       p::multiply(p::multiply(static_cast<std::size_t>(g.kv_heads), static_cast<std::size_t>(g.value_depth)), 2)};
+  return {.target = rows, .draft = rows};
 }
 
 void batch_state_capacity() {
@@ -831,10 +832,12 @@ void batch_state_capacity() {
       overlapped.backing_bytes - serial_frontier.backing_bytes == payload + 12 * 16 * 1024 + 4096,
       "lag1 needs committed/A/B state versions, two COW tails and one extra hidden row without widening the batch");
   const auto bf16_rows = bf16_cache_rows(geometry);
-  const p::KvRowBytes e4_rows{bf16_rows.key / 2, bf16_rows.value / 2};
-  const auto e4 = p::plan(geometry, e4_rows, 256, 4, 16, payload, 2);
-  const auto mixed_widths = p::plan(geometry, {e4_rows.key, bf16_rows.value}, 256, 4, 16, payload, 2);
-  require(batch.row_bytes == bf16_rows && e4.row_bytes == e4_rows &&
+  const p::KvRowBytes e4_rows{bf16_rows.target.key / 2, bf16_rows.target.value / 2};
+  const auto e4 = p::plan(geometry, {.target = e4_rows}, 256, 4, 16, payload, 2);
+  const auto mixed_widths = p::plan(geometry, {.target = {e4_rows.key, bf16_rows.target.value}}, 256, 4, 16, payload, 2);
+  require(batch.row_bytes == bf16_rows && e4.row_bytes.target == e4_rows &&
+      !batch.draft_key_bank_bytes && !batch.draft_value_bank_bytes &&
+      !e4.draft_key_bank_bytes && !e4.draft_value_bank_bytes &&
       e4.key_bank_bytes == (batch.key_bank_bytes - 1) / 2 + 1 &&
       e4.value_bank_bytes == (batch.value_bank_bytes - 1) / 2 + 1 &&
       batch.backing_bytes - e4.backing_bytes ==
@@ -861,6 +864,13 @@ void batch_state_capacity() {
   require(two.state_slots==8 && two.hidden_slots==12 &&
       two.hidden_bytes==49153 && two.backing_bytes==171491379,
       "existing two-boundary MTP state/hidden/backing numbers must remain unchanged");
+  const auto e4_mtp = p::plan(geometry, {.target = e4_rows, .draft = bf16_rows.draft}, 256, 4, 16, payload, 2, 2, true);
+  require(e4_mtp.key_bank_bytes == 540673 && e4_mtp.value_bank_bytes == 540673 &&
+      e4_mtp.draft_key_bank_bytes == 1081345 && e4_mtp.draft_value_bank_bytes == 1081345 &&
+      // Six target attention layers save 6*2*540672 bytes; NextN does not.
+      e4_mtp.backing_bytes == 165003315 && e4_mtp.hidden_bytes == two.hidden_bytes &&
+      e4_mtp.state_slots == two.state_slots && e4_mtp.max_pages == two.max_pages,
+      "E4 target banks must not halve the independent BF16 NextN bank, states or hidden storage");
   const auto no_draft=p::plan(geometry, bf16_cache_rows(geometry), 1,1,1,0,1,1,true);
   require(no_draft.candidate_boundaries==1 && no_draft.state_slots==2 &&
       no_draft.hidden_slots==3 && no_draft.hidden_bytes==12289 && no_draft.backing_bytes==471091,
@@ -888,11 +898,14 @@ void batch_state_capacity() {
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,0,true); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,257,true); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,1,false,false,0); });
-  rejects([&] { return p::plan(geometry, {0, 1024}, 256, 4, 16, payload, 1); });
-  rejects([&] { return p::plan(geometry, {1024, 0}, 256, 4, 16, payload, 1); });
+  rejects([&] { return p::plan(geometry, {.target = {0, 1024}}, 256, 4, 16, payload, 1); });
+  rejects([&] { return p::plan(geometry, {.target = {1024, 0}}, 256, 4, 16, payload, 1); });
+  rejects([&] { return p::plan(geometry, {.target = e4_rows}, 256, 4, 16, payload, 1, 2, true); });
+  rejects([&] { return p::plan(geometry, {.target = e4_rows, .draft = {1024, 0}}, 256, 4, 16, payload, 1, 2, true); });
   const auto maximum = (std::numeric_limits<std::size_t>::max)();
-  rejects([&] { return p::plan(geometry, {maximum, 1024}, 1, 1, 1, 0); });
-  rejects([&] { return p::plan(geometry, {1024, maximum}, 1, 1, 1, 0); });
+  rejects([&] { return p::plan(geometry, {.target = {maximum, 1024}}, 1, 1, 1, 0); });
+  rejects([&] { return p::plan(geometry, {.target = {1024, maximum}}, 1, 1, 1, 0); });
+  rejects([&] { return p::plan(geometry, {.target = e4_rows, .draft = {maximum, 1024}}, 1, 1, 1, 0, 1, 1, true); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), maximum, 1, 1, payload, 1); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,maximum,true); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,1,false,false,maximum); });

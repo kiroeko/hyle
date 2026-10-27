@@ -1596,6 +1596,8 @@ public:
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
   const cache::Plan cache_plan;
+  // The original plain storage/layout root also serves draft attention.
+  // Calibrated target storage views share this metadata domain, not its dtype.
   c::BatchSchema attention_schema;
   std::vector<c::BatchSchema> attention_schemas;
   const c::BatchSchema &target_attention_schema(std::size_t layer) const {
@@ -1719,15 +1721,29 @@ public:
     const auto &source_roles = source.roles;
     if (source_roles.geometry != geometry) throw std::runtime_error("source geometry changed before weight loading");
     const bool calibrated = resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration;
-    if ((calibrated && resources_->attention_storage.size() != target_kv_layers) ||
-        (!calibrated && !resources_->attention_storage.empty()) || (calibrated && cache_plan.draft_cache))
-      throw std::runtime_error("prepared E4 cache storage requires its complete ordinary target pairs");
+    if ((calibrated && (!target_kv_layers || resources_->attention_storage.size() != target_kv_layers)) ||
+        (!calibrated && !resources_->attention_storage.empty()))
+      throw std::runtime_error("prepared E4 cache storage requires its complete original target calibration pairs");
+    const auto plain = take(c::CacheStorage::plain(precision.activation_type()));
+    const auto plain_rows = cache_storage_row_bytes(geometry, {plain, plain});
+    const auto target_rows = calibrated ? cache_storage_row_bytes(geometry, resources_->attention_storage.front()) : plain_rows;
+    const cache::KvRowBytes actual_target{target_rows[0], target_rows[1]}, actual_draft{plain_rows[0], plain_rows[1]};
+    if (source.cache_row_bytes.target != actual_target ||
+        ((source.cache_row_bytes.draft.key || source.cache_row_bytes.draft.value || cache_plan.draft_cache) &&
+            source.cache_row_bytes.draft != actual_draft) ||
+        std::ranges::any_of(resources_->attention_storage, [&](const auto &pair) {
+          return cache_storage_row_bytes(geometry, pair) != target_rows;
+        }))
+      throw std::runtime_error("prepared target/draft row extents differ from their actual typed source carriers");
+    const auto bank_rows = cache::multiply(cache_plan.max_pages, cache::Plan::page_rows);
     if (cache_plan.row_bytes != source.cache_row_bytes ||
-        cache_plan.key_bank_bytes != cache::add(cache::multiply(cache::multiply(cache_plan.max_pages,
-            cache::Plan::page_rows), source.cache_row_bytes.key), 1) ||
-        cache_plan.value_bank_bytes != cache::add(cache::multiply(cache::multiply(cache_plan.max_pages,
-            cache::Plan::page_rows), source.cache_row_bytes.value), 1))
-      throw std::runtime_error("cache backing plan differs from prepared physical storage");
+        cache_plan.key_bank_bytes != cache::add(cache::multiply(bank_rows, source.cache_row_bytes.target.key), 1) ||
+        cache_plan.value_bank_bytes != cache::add(cache::multiply(bank_rows, source.cache_row_bytes.target.value), 1) ||
+        cache_plan.draft_key_bank_bytes != (cache_plan.draft_cache
+            ? cache::add(cache::multiply(bank_rows, source.cache_row_bytes.draft.key), 1) : 0) ||
+        cache_plan.draft_value_bank_bytes != (cache_plan.draft_cache
+            ? cache::add(cache::multiply(bank_rows, source.cache_row_bytes.draft.value), 1) : 0))
+      throw std::runtime_error("cache backing plan differs from independent target/draft physical storage");
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
@@ -1873,6 +1889,12 @@ public:
     if (resources_->cache_policy == prepared::CachePolicy::kFloat8OriginalCalibration)
       result += ",\"kv_cache_dtype\":\"E4M3FN\",\"original_cache_calibration_roles\":" +
           std::to_string(resources_->attention_storage.size() * 2);
+    if (cache_plan.draft_cache) {
+      const auto plain_dtype = precision.is_f16() ? "F16" : "BF16";
+      result += ",\"target_kv_cache_dtype\":\"" + std::string(resources_->cache_policy ==
+          prepared::CachePolicy::kFloat8OriginalCalibration ? "E4M3FN" : plain_dtype) +
+          "\",\"draft_kv_cache_dtype\":\"" + plain_dtype + "\"";
+    }
     return result;
   }
   Tensor caller_tensor(mem::MemoryResourceRef resource, c::TensorDesc description, bool caller = true) const {
@@ -2027,12 +2049,13 @@ public:
     if (cache_plan.draft_cache) {
       prepared_draft.prepare(cache_plan.max_pages, 1);
       prepared_draft.keys[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kKey,
-          execution.device(), {.max_backing_bytes = cache_plan.key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
+          execution.device(), {.max_backing_bytes = cache_plan.draft_key_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
       prepared_draft.values[0] = take(c::PagedArena::create(prepared_schema, c::BatchCacheRole::kValue,
-          execution.device(), {.max_backing_bytes = cache_plan.value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
+          execution.device(), {.max_backing_bytes = cache_plan.draft_value_bank_bytes, .resource_budget = cache_budget}, allocation_budget));
     }
-    const auto prepared_bytes = cache::multiply(cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes),
-        target_kv_layers + (cache_plan.draft_cache ? 1u : 0u));
+    const auto prepared_bytes = cache::add(cache::multiply(
+        cache::add(cache_plan.key_bank_bytes, cache_plan.value_bank_bytes), target_kv_layers),
+        cache::add(cache_plan.draft_key_bank_bytes, cache_plan.draft_value_bank_bytes));
     // No PageRef exists until this complete cold source tuple is published.
     // Leave the schema sentinel invalid on failure so released quota can retry.
     static_assert(std::is_nothrow_move_assignable_v<cache::PageInventory>);

@@ -288,8 +288,6 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
     throw std::runtime_error("prepared NF4 reader cannot mix unrelated precision policies");
   if (ct_asymmetric_policy.enabled && (float8_policy.enabled || ct_mixed_policy.enabled() || cache_policy != CachePolicy::kDefault))
     throw std::runtime_error("prepared CT asymmetric reader cannot mix unrelated precision policies");
-  if (cache_policy == CachePolicy::kFloat8OriginalCalibration && include_mtp)
-    throw std::runtime_error("prepared E4 KV currently supports ordinary inference only, not MTP");
   if (include_mtp && ct_mixed_policy.kind == CtMixedPolicy::Kind::kBlock128)
     throw std::runtime_error("prepared CT block128 mixed reader currently supports ordinary inference only");
   if (nf4_policy.enabled != !nf4_states.empty()) throw std::runtime_error("prepared NF4 policy/state inventory differs");
@@ -478,7 +476,9 @@ inline Roles select_roles(const std::map<std::string, Role> &all, std::string id
     }
   }
   // Cache metadata has one original role table, independent of weight operands.
-  // BF16 may omit existing pairs; E4 must retain every full-attention pair.
+  // BF16 may omit existing pairs; E4 retains every target full-attention pair.
+  // NextN cache storage remains the plain activation carrier; these scales
+  // never authorize reinterpreting or quantizing a draft bank.
   for (std::size_t i = 0; i < geometry.layers.size(); ++i) if (!geometry.is_gdn(i)) {
     const auto base = "model.language_model.layers." + std::to_string(i) + ".self_attn.";
     if (!all.contains(base + "k_scale") && !all.contains(base + "v_scale")) {

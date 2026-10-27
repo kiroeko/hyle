@@ -354,8 +354,11 @@ class OriginalHfRolesTest(unittest.TestCase):
         self.assertNotEqual(e4_receipt['source_id'],same_source_bf16['source_id'])
         self.assertEqual({r['f32_bits'] for r in e4_receipt['cache_calibration']['original_roles']},
                          {'3d000000','3e000000'})
-        with self.assertRaisesRegex(ValueError,'ordinary inference only'):
-            roles._prepare_role_records(e4,True,e4_config,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        mtp_lines,mtp_e4=roles._prepare_role_records(e4,True,e4_config,e4_auth,roles.CT_MIXED_READER,'e4m3fn')
+        self.assertEqual(mtp_e4['physical_roles'],339)
+        self.assertEqual(mtp_e4['cache_calibration'],e4_receipt['cache_calibration'])
+        self.assertTrue(any(line.startswith('mtp.') for line in mtp_lines))
+        self.assertFalse(any(r['name'].startswith('mtp.') for r in mtp_e4['cache_calibration']['original_roles']))
         incomplete=deepcopy(e4)
         incomplete['roles']=[r for r in incomplete['roles']if r['name']!='model.language_model.layers.7.self_attn.v_scale']
         with self.assertRaisesRegex(ValueError,'calibration pair'):

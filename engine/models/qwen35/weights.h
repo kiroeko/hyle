@@ -114,7 +114,7 @@ enum class WeightSelection { kText, kTextAndMtp };
 struct PreparedWeightSource {
   prepared::Roles roles;
   std::vector<CacheStoragePair> cache_storage;
-  cache::KvRowBytes cache_row_bytes;
+  cache::CacheRowBytes cache_row_bytes;
   double metadata_prepare_seconds = 0;
 };
 namespace projection_detail {

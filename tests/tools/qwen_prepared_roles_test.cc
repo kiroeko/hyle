@@ -213,8 +213,12 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
         "calibration order must follow actual attention slots, not lexical layer names");
     ++slot;
   }
-  rejects([&] { (void)p::select_roles(e4, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
-      p::CachePolicy::kFloat8OriginalCalibration); }, "ordinary inference only");
+  const auto e4_mtp = p::select_roles(e4, identity, true, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
+      p::CachePolicy::kFloat8OriginalCalibration);
+  require(e4_mtp.selected.size() == all.selected.size() && e4_mtp.bytes == all.bytes &&
+      e4_mtp.cache_calibration.size() == selected.cache_calibration.size() &&
+      std::ranges::none_of(e4_mtp.cache_calibration, [](const auto &role) { return role.name.starts_with("mtp."); }),
+      "target E4 must retain original NextN weights without inventing draft calibration");
   invalid = e4; invalid.erase(cache + "k_scale"); invalid.erase(cache + "v_scale");
   rejects([&] { (void)p::select_roles(invalid, identity, false, geometry, {}, {p::CtMixedPolicy::Kind::kChannelToken},
       p::CachePolicy::kFloat8OriginalCalibration); }, "missing original E4 cache calibration pair");
@@ -224,8 +228,9 @@ void ct_mixed_and_cache_policy(const fs::path &directory) {
   serialized = manifest(e4);
   serialized.insert(at + 1, std::string(p::ct_mixed_policy_line) + '\n' + std::string(p::float8_cache_policy_line) + '\n');
   write(path, serialized);
-  require(p::read_roles(path, false).cache_policy == p::CachePolicy::kFloat8OriginalCalibration,
-      "ordinary E4 policy must roundtrip without reading scalar payloads");
+  require(p::read_roles(path, false).cache_policy == p::CachePolicy::kFloat8OriginalCalibration &&
+      p::read_roles(path, true).selected.size() == all.selected.size(),
+      "target E4 with ordinary or NextN weights must roundtrip without reading scalar payloads");
   serialized.insert(at + 1 + p::ct_mixed_policy_line.size() + 1,
       std::string(p::bf16_cache_policy_line) + '\n');
   write(path, serialized);
