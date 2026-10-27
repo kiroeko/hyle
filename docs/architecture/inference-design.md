@@ -150,6 +150,7 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 
 - 一次原Graph提交只持一份proxy、观察锁、实际依赖及完整终结事实。token、Store和KV视图共用此提交身份，
   沿原`InputSource`按owner及实际Queue去重等待／终结核对；每个值的实际读权限仍单独接纳。
+  去重要求共同terminal adapter与提交identity同时相同，不能为Store／KV各造新vtable后仅复用identity。
   不用Plan代际表示提交代，不为每层状态搬动Completion或增设观察者／执行器。
   `poll/wait`只观察，不隐式关闭导出；各typed view先独立，调用方再显式关闭该代导出并归还producer保留。
   此控制须核实际退休，与数学成功分开：失败不产生ready权限，但不应因后继仍保留终结记录而永久挡住原事务回收。
@@ -157,12 +158,19 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
   它不是ready租约，不公开pending字节；仅原typed owner可导出，不能借任意TensorView取得权限。
   前驱成功实际退休、所有借用指针已分离后，才解除原结果保留并沿原take／publication发布。
   初次发行应在原producer成功submit之后：提前增加block引用会触发现有writer唯一性门，不能全局放宽该门来迁就凭据。
+  导出封住本写代的新写接纳和可写地址出口；只在原publication后、所有读者归还、真实独占的try_write中开启下一写代。
 - Store发布须证明原writer已退休，允许已接纳的只读者存续；KV另须支持受检的pending前缀读取及原epoch发布。
   新append仍须等旧读者，或使用真实独立／COW页，不能把原保护门整体移除。
   `WorkingFrame`继续只表示已提交ready范围，不承载未发布候选权限。
 - 深度二按实际候选增加状态／页／载体预算，先支持已证明的单shared Queue。
   真实多segment／managed路径还须由原提交游标给出可等待frontier并保留完整聚合Status，
   不把最后一个event当成整图成功，也不以单Queue组件通过代签完整模型。
+
+普通完整writer的独立`PendingReadTicket`已实现，不含writer指针、可读视图或第二Completion。
+它保原block／domain／generation／精确范围，并允许同一原有序读接纳跨越writer移动与真实publication；
+新的写接纳和可写地址出口由本写代的封写标记机械拒绝。
+[有限检查](../evidence/correctness/inference-captured-submission-2026-10-27.json)覆盖受控Completion下的寿命、
+失败分离、关闭与唯一ready重开写；尚未接Store目的槽、KV append或真实GPU状态ticket。
 
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。
@@ -174,8 +182,17 @@ miss在begin capture及variant eviction之前拒绝，不新录制、不降回ma
 `prepare_outputs`固定该bundle选择的Commands或既有capture模式，submit仍核实际完整路由与原有序读权限。
 [有限CUDA检查](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)证明原ggml Gather→Add区域
 在生产者pending时取得0次新录制／1次复用，物理tuple不匹配时拒绝，原块读写权限交接及结果正确。
-仍执行原metadata hook／预算及权限准备，不表示零分配；静态host-blocking生产者及多segment未准入，
+仍执行原metadata hook／预算及权限准备，不表示零分配；生产者现仅按原实际完整capture覆盖准入静态host-blocking路径，
+真实双Concat I32生产者的pending接力已通过有限CUDA检查；未覆盖managed command、Hybrid及多segment仍未准入，
 不能将外层capture的实际重放资格改写成整个Provider的静态能力或完整引擎流水结论。
+
+真实Qwen接力另有已核实的接线缺口：`PreparedReadback`目前以裸TensorView绑定token输出，
+不是Graph持有的完整writer；普通最终ID为dense I32 `[B,1]`，下一Text T1输入为`[B]`。
+优先用既有typed reshape统一普通最终token端口与原writer所有权，不为该消费者另造Source reshape机制。
+已有正式CUDA窗口的ordinary与MTP decode均为Hybrid；记录未保留逐gap覆盖，不能声称完整capture。
+后续按原`captured_ranges`／`capture_spans`与提交游标区分已捕获command和Prepared／nonblocking gap，
+保留同一Queue、原完整Status与reuse-only物理tuple／私有参数检查。缺失范围拒绝，不新录制pending输入，
+也不改写公开RequireCapture的完整覆盖语义。token接力不能替代validity、KV／状态、RNG及停止的联合发布。
 
 普通多成员请求已先接[CPU整数准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)：
 冷阶段按执行元数据预算预留scratch，GPU执行期间仅填下一步位置与旧页拓扑，不提前取得状态／tail或布局版本。

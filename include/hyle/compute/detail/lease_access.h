@@ -5,6 +5,34 @@
 #include "hyle/compute/detail/append_lease.h"
 
 namespace hyle::compute::detail {
+// Independent permission/lifetime for an ordered read of one original full
+// writer. It is not initialized storage: there is deliberately no view,
+// tensor, publication, Completion or Queue API. Copies only retain the block.
+// Resource/Context/allocator owners retain the original LeasePool contract.
+class PendingReadTicket final {
+public:
+  PendingReadTicket() noexcept = default;
+  HYLE_COMPUTE_API PendingReadTicket(const PendingReadTicket &) noexcept;
+  HYLE_COMPUTE_API PendingReadTicket &operator=(const PendingReadTicket &) noexcept;
+  HYLE_COMPUTE_API PendingReadTicket(PendingReadTicket &&) noexcept;
+  HYLE_COMPUTE_API PendingReadTicket &operator=(PendingReadTicket &&) noexcept;
+  HYLE_COMPUTE_API ~PendingReadTicket();
+  bool valid() const noexcept { return block_ != nullptr; }
+  explicit operator bool() const noexcept { return valid(); }
+  std::size_t size() const noexcept { return block_ ? size_ : 0; }
+  std::uint64_t generation() const noexcept { return block_ ? generation_ : 0; }
+  HYLE_COMPUTE_API void reset() noexcept;
+private:
+  friend struct LeaseAccess;
+  PendingReadTicket(LeaseBlock *block, LeaseDomain *domain, std::uint64_t generation,
+      std::size_t offset, std::size_t size) noexcept
+      : block_(block), domain_(domain), generation_(generation), offset_(offset), size_(size) {}
+  LeaseBlock *block_ = nullptr;
+  LeaseDomain *domain_ = nullptr;
+  std::uint64_t generation_ = 0;
+  std::size_t offset_ = 0, size_ = 0;
+};
+
 struct LeaseBackingInfo final {
   const void *identity = nullptr;
   mem::MemoryResourceRef resource{};
@@ -102,6 +130,22 @@ struct LeaseAccess final {
   // permission/lifetime operations, not execution or dependency validation.
   static HYLE_COMPUTE_API Status read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept;
   static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept;
+  // Export only after the F2 owner successfully submits this original writer;
+  // that owner proves the original complete producer status and dependency.
+  // A write counter is not submission proof (and can already be zero after a
+  // fast completion). Export seals this writer against new native writes and
+  // new mutable views; existing writes retire normally. No payload is exposed.
+  static HYLE_COMPUTE_API Result<PendingReadTicket> pending_read(const WriteLease &) noexcept;
+  // Pure identity/extent proof against an already known address carrier, not
+  // readiness or new admission. Closed domains retain this query but reject
+  // new ordered use. A different block or a wider capacity never matches.
+  static HYLE_COMPUTE_API Status matches_pending_read(const PendingReadTicket &,
+      mem::ConstBufferView) noexcept;
+  // The same original ordered admission/retirement, independent of any writer
+  // object. Supports both its pending writer and its genuine published read;
+  // the owning F2 adapter must still prove the complete producer dependency.
+  static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &,
+      const PendingReadTicket &) noexcept;
   // Borrow only into an F2 controller that records the declared producer
   // before use; this never exposes a mutable alias through the public lease.
   static HYLE_COMPUTE_API Result<mem::BufferView> ordered_view(const WriteLease &lease) noexcept;

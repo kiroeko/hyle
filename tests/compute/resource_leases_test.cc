@@ -499,6 +499,177 @@ TEST(AppendLeases, AbandonedTailWaitsForOriginalNativeRetirement) {
   EXPECT_FALSE(page.prefix.try_write().has_value());
 }
 
+// These are resource handoff protocol tests, not a native ordering proof.
+// The original F2 producer/consumer still supplies the real device dependency.
+static_assert(std::is_nothrow_copy_constructible_v<detail::PendingReadTicket>);
+static_assert(std::is_nothrow_move_constructible_v<detail::PendingReadTicket>);
+static_assert(!std::is_convertible_v<detail::PendingReadTicket, ReadLease>);
+static_assert(!std::is_convertible_v<detail::PendingReadTicket, WriteLease>);
+
+TEST(PendingReadTickets, ExactRangeSurvivesWriterObjectAndGenuinePublication) {
+  auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 3}).value();
+  auto uses = LeaseUsePool::create({.max_batches = 3, .max_resources_per_batch = 1}).value();
+  detail::PendingReadTicket ticket;
+  WriteLease returned;
+  mem::ConstBufferView original;
+  PendingUse producing, consuming;
+  Completion producer;
+  {
+    auto writer = pool.allocate(64).value();
+    ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+    original = mem::ConstBufferView(*writer.view());
+    auto batch = uses.begin().value();
+    ASSERT_TRUE(batch.write(writer).ok());
+    producer = detail::CompletionAccess::make(&kPending, &producing);
+    ASSERT_TRUE(batch.attach(producer).ok());
+    auto exported = detail::LeaseAccess::pending_read(writer);
+    ASSERT_TRUE(exported) << exported.error().message();
+    ticket = std::move(*exported);
+    EXPECT_EQ(ticket.size(), 64u);
+    EXPECT_EQ(ticket.generation(), writer.generation());
+    returned = std::move(writer);
+  } // The original WriteLease object no longer exists.
+  auto copy = ticket;
+  detail::PendingReadTicket moved(std::move(copy));
+  EXPECT_FALSE(copy.valid()); EXPECT_EQ(copy.size(), 0u); EXPECT_EQ(copy.generation(), 0u);
+  ASSERT_TRUE(detail::LeaseAccess::matches_pending_read(moved, original).ok());
+  auto other = pool.allocate(64).value();
+  const auto other_view = mem::ConstBufferView(*other.view());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read(ticket, other_view).IsInvalidArgument());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read(ticket,
+      original.subview(0, 63).value()).IsInvalidArgument());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read(ticket,
+      detail::LeaseAccess::backing_span(pool).value()).IsInvalidArgument());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read({}, original).IsFailedPrecondition());
+  auto reader = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(reader, moved).ok());
+  auto consumer = detail::CompletionAccess::make(&kPending, &consuming);
+  ASSERT_TRUE(reader.attach(consumer).ok());
+  EXPECT_TRUE(detail::LeaseAccess::publish_after_writes(returned).error().IsUnavailable());
+  ASSERT_TRUE(producer.wait().ok());
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  EXPECT_FALSE(returned.publish()); // The ordinary all-reference rule remains.
+  auto published = detail::LeaseAccess::publish_after_writes(returned);
+  ASSERT_TRUE(published) << published.error().message();
+  auto ready = std::move(*published);
+  EXPECT_FALSE(returned.valid());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read(ticket, original).ok());
+  // The same ticket also works after genuine publication; it never consults a
+  // moved/taken writer object or synthesizes another ready permission.
+  auto later_reader = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(later_reader, ticket).ok());
+  auto later = Completion::completed();
+  ASSERT_TRUE(later_reader.attach(later).ok());
+  ASSERT_TRUE(later.wait().ok());
+  EXPECT_FALSE(ready.try_write());
+  EXPECT_EQ(*consumer.poll(), CompletionPoll::kPending);
+  ASSERT_TRUE(consumer.wait().ok());
+  EXPECT_FALSE(ready.try_write()); // Tickets themselves still retain this block.
+  ticket.reset(); moved.reset();
+  std::array<std::byte, 64> bytes{};
+  ASSERT_TRUE(ready.view()->read(bytes).ok());
+  for (const auto byte : bytes) EXPECT_EQ(byte, std::byte{37});
+  auto writable = ready.try_write();
+  ASSERT_TRUE(writable) << writable.error().message();
+  EXPECT_TRUE(writable->view());
+}
+
+TEST(PendingReadTickets, ExportSealsNewWritesUntilUniqueReadyPromotionWithoutAllocation) {
+  const std::array limits{ResourceBudgetLimit{mem::system_resource(), 65536}};
+  auto budget = ResourceBudget::create({.limits = limits}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 256,
+      {.max_blocks = 1, .resource_budget = budget}).value();
+  auto writer = pool.allocate(64).value();
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto original_write = uses.begin().value();
+  ASSERT_TRUE(original_write.write(writer).ok());
+  auto producer = Completion::completed();
+  ASSERT_TRUE(original_write.attach(producer).ok());
+  ASSERT_TRUE(producer.wait().ok()); // Fast-complete producers must also export.
+  const auto usage_before = budget.usage(mem::system_resource())->live_bytes;
+  const auto blocks_before = pool.stats().live_blocks;
+  auto exported = detail::LeaseAccess::pending_read(writer);
+  ASSERT_TRUE(exported) << exported.error().message();
+  auto ticket = std::move(*exported);
+  auto copy = ticket;
+  detail::PendingReadTicket assigned;
+  assigned = copy;
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, usage_before);
+  EXPECT_EQ(pool.stats().live_blocks, blocks_before);
+  auto rejected = uses.begin().value();
+  EXPECT_TRUE(rejected.write(writer).IsFailedPrecondition());
+  EXPECT_TRUE(detail::LeaseAccess::write_unique(rejected, writer, false).IsFailedPrecondition());
+  EXPECT_TRUE(detail::LeaseAccess::write_unique(rejected, writer, true).IsFailedPrecondition());
+  EXPECT_FALSE(writer.view());
+  EXPECT_FALSE(detail::LeaseAccess::ordered_view(writer));
+  ticket.reset(); copy.reset(); assigned.reset();
+  // Even after every ticket disappears, the original writer cannot silently
+  // start a new native write or hand out a mutable address in the sealed epoch.
+  EXPECT_TRUE(rejected.write(writer).IsFailedPrecondition());
+  EXPECT_TRUE(detail::LeaseAccess::write_unique(rejected, writer, true).IsFailedPrecondition());
+  EXPECT_FALSE(writer.view());
+  EXPECT_FALSE(detail::LeaseAccess::ordered_view(writer));
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  auto ready = writer.publish();
+  ASSERT_TRUE(ready) << ready.error().message();
+  auto next = ready->try_write();
+  ASSERT_TRUE(next) << next.error().message();
+  EXPECT_TRUE(next->view());
+  ASSERT_TRUE(rejected.write(*next).ok());
+  rejected = {}; // Unsubmitted use restores the original normal mutable state.
+  auto whole = next->publish().value();
+  auto slice = whole.subview(16, 32).value(); whole.reset();
+  auto partial_writer = slice.try_write().value();
+  const auto rejected_partial = detail::LeaseAccess::pending_read(partial_writer);
+  ASSERT_FALSE(rejected_partial);
+  EXPECT_TRUE(rejected_partial.error().IsInvalidArgument());
+  EXPECT_TRUE(partial_writer.view()); // Rejection did not seal or consume it.
+}
+
+TEST(PendingReadTickets, ReaderFailureDoesNotPoisonProducerAndClosedDomainsRejectNewUse) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto writer = pool.allocate(64).value();
+  auto bad_writer = pool.allocate(64).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  const auto original = mem::ConstBufferView(*writer.view());
+  auto uses = LeaseUsePool::create({.max_batches = 3, .max_resources_per_batch = 1}).value();
+  PendingUse producing, bad_producing, consuming;
+  auto produced = uses.begin().value(), bad_produced = uses.begin().value();
+  ASSERT_TRUE(produced.write(writer).ok()); ASSERT_TRUE(bad_produced.write(bad_writer).ok());
+  auto producer = detail::CompletionAccess::make(&kPending, &producing);
+  auto bad_producer = detail::CompletionAccess::make(&kPending, &bad_producing);
+  ASSERT_TRUE(produced.attach(producer).ok()); ASSERT_TRUE(bad_produced.attach(bad_producer).ok());
+  auto ticket = detail::LeaseAccess::pending_read(writer).value();
+  auto bad_ticket = detail::LeaseAccess::pending_read(bad_writer).value();
+  auto reading = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(reading, ticket).ok());
+  auto consumer = detail::CompletionAccess::make(&kPending, &consuming);
+  ASSERT_TRUE(reading.attach(consumer).ok());
+  detail::CompletionAccess::append_terminal(consumer, hyle::Status::Cancelled("ticket reader cancelled"));
+  ASSERT_TRUE(producer.wait().ok());
+  auto published = detail::LeaseAccess::publish_after_writes(writer);
+  ASSERT_TRUE(published) << published.error().message();
+  auto ready = std::move(*published);
+  EXPECT_EQ(*consumer.poll(), CompletionPoll::kPending);
+  EXPECT_TRUE(consumer.wait().IsCancelled()); // A read failure is not a write failure.
+  std::array<std::byte, 64> actual{};
+  ASSERT_TRUE(ready.view()->read(actual).ok());
+  for (const auto byte : actual) EXPECT_EQ(byte, std::byte{19});
+  detail::CompletionAccess::append_terminal(bad_producer, hyle::Status::Internal("ticket producer failed"));
+  EXPECT_TRUE(detail::LeaseAccess::publish_after_writes(bad_writer).error().IsUnavailable());
+  EXPECT_TRUE(bad_producer.wait().IsInternal());
+  auto failed_publication = detail::LeaseAccess::publish_after_writes(bad_writer);
+  ASSERT_FALSE(failed_publication);
+  EXPECT_TRUE(failed_publication.error().IsInternal());
+  auto rejected = uses.begin().value();
+  EXPECT_TRUE(detail::LeaseAccess::ordered_read_unique(rejected, bad_ticket).IsInternal());
+  EXPECT_TRUE(detail::LeaseAccess::pending_read(bad_writer).error().IsInternal());
+  ASSERT_TRUE(pool.close().ok());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_read(ticket, original).ok()); // Identity, not admission.
+  EXPECT_TRUE(detail::LeaseAccess::ordered_read_unique(rejected, ticket).IsFailedPrecondition());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+}
+
 // F2 control protocol only. These tests do not certify native ordering; the
 // copy owner must separately prove the original device/phase dependency.
 TEST(CopyLeaseHandoff, SuccessfulProducerCanPublishWhileOrderedReaderRemainsPending) {

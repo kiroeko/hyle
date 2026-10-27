@@ -41,6 +41,10 @@ struct LeaseBlock final : util::RefCounted<LeaseBlock> {
   std::uint32_t native_uses = 0;
   bool writer = true;
   bool writable = true;
+  // Opt-in handoff of this mutable epoch. Pending read tickets never reopen
+  // writes, even when their own handles are dropped before native readers.
+  // Only a later genuine unique ReadLease::try_write starts a mutable epoch.
+  bool pending_read_sealed = false;
   // One opt-in tail, not a general range permission map. Allocation generation
   // and committed readers survive an independently failed append epoch.
   bool append_mode = false;
@@ -334,7 +338,8 @@ void release_episode(void *opaque) noexcept {
   if (last_pool) pool->decref();
 }
 
-template<bool Unique = false, bool Ordered = false, bool ExclusiveRead = false>
+template<bool Unique = false, bool Ordered = false, bool ExclusiveRead = false,
+         bool PendingRead = false>
 Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept {
   if (episode == nullptr || block == nullptr)
     return Status::FailedPrecondition("resource use or lease is empty");
@@ -354,8 +359,14 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
     if (domain->closed) return Status::FailedPrecondition("lease domain is closed");
     if (block->append_reserved != 0)
       return Status::Unavailable("append suffix is reserved for its ordered use");
-    if (block->writer != (write || ExclusiveRead))
+    if constexpr (PendingRead) {
+      if (write || !block->pending_read_sealed || block->append_mode)
+        return Status::FailedPrecondition("ordered ticket no longer names its original sealed writer");
+    } else if (block->writer != (write || ExclusiveRead)) {
       return Status::FailedPrecondition("resource use does not match lease permission");
+    }
+    if (write && block->pending_read_sealed)
+      return Status::FailedPrecondition("pending read export sealed this writer against new writes");
     if (!block->failure.ok()) return block->failure;
     if (block->native_uses == UINT32_MAX)
       return Status::ResourceExhausted("resource native use count exhausted");
@@ -568,6 +579,8 @@ Result<mem::BufferView> LeaseAccess::ordered_view(const WriteLease &lease) noexc
   std::lock_guard guard(lease.block_->domain->lock);
   if (lease.block_->domain->closed || !lease.block_->writer)
     return std::unexpected(Status::FailedPrecondition("copy mutable lease domain is closed"));
+  if (lease.block_->pending_read_sealed)
+    return std::unexpected(Status::FailedPrecondition("pending read export sealed this writer against mutable views"));
   if (!lease.block_->failure.ok()) return std::unexpected(lease.block_->failure);
   return lease_view(lease.block_, lease.offset_, lease.size_);
 }
@@ -664,6 +677,91 @@ Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLease &le
 Status detail::LeaseAccess::ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept {
   return detail::add_use<true, true, true>(uses.state_, lease.block_, false);
 }
+
+namespace detail {
+namespace {
+Status validate_pending_read_identity(LeaseBlock *block, LeaseDomain *domain,
+    std::uint64_t generation, std::size_t offset, std::size_t size) noexcept {
+  if (!block)
+    return Status::FailedPrecondition("pending read ticket is empty");
+  // The strong block reference prevents allocation/domain ABA. Keep the
+  // captured generation and exact range explicit, not an address-only proof.
+  if (block->domain != domain || !generation || block->generation != generation ||
+      offset != 0 || !size || std::cmp_not_equal(size, block->range.size()))
+    return Status::InvalidArgument("pending read ticket differs from its original full block");
+  return Status::Ok();
+}
+} // namespace
+
+PendingReadTicket::PendingReadTicket(const PendingReadTicket &other) noexcept
+    : block_(other.block_), domain_(other.domain_), generation_(other.generation_),
+      offset_(other.offset_), size_(other.size_) {
+  if (block_) block_->incref();
+}
+PendingReadTicket &PendingReadTicket::operator=(const PendingReadTicket &other) noexcept {
+  if (this != &other) {
+    if (other.block_) other.block_->incref();
+    reset();
+    block_ = other.block_; domain_ = other.domain_; generation_ = other.generation_;
+    offset_ = other.offset_; size_ = other.size_;
+  }
+  return *this;
+}
+PendingReadTicket::PendingReadTicket(PendingReadTicket &&other) noexcept
+    : block_(std::exchange(other.block_, nullptr)), domain_(std::exchange(other.domain_, nullptr)),
+      generation_(std::exchange(other.generation_, 0)),
+      offset_(std::exchange(other.offset_, 0)), size_(std::exchange(other.size_, 0)) {}
+PendingReadTicket &PendingReadTicket::operator=(PendingReadTicket &&other) noexcept {
+  if (this != &other) {
+    reset();
+    block_ = std::exchange(other.block_, nullptr);
+    domain_ = std::exchange(other.domain_, nullptr);
+    generation_ = std::exchange(other.generation_, 0);
+    offset_ = std::exchange(other.offset_, 0); size_ = std::exchange(other.size_, 0);
+  }
+  return *this;
+}
+PendingReadTicket::~PendingReadTicket() { reset(); }
+void PendingReadTicket::reset() noexcept {
+  if (auto *block = std::exchange(block_, nullptr)) block->decref();
+  domain_ = nullptr; generation_ = 0; offset_ = size_ = 0;
+}
+Result<PendingReadTicket> LeaseAccess::pending_read(const WriteLease &lease) noexcept {
+  auto *block = lease.block_;
+  if (!block) return std::unexpected(Status::FailedPrecondition("pending read writer is empty"));
+  auto *domain = block->domain;
+  std::lock_guard guard(domain->lock);
+  if (domain->closed || !block->writer || !block->writable || block->append_mode)
+    return std::unexpected(Status::FailedPrecondition("pending read requires an open ordinary writer"));
+  HYLE_RETURN_IF_ERROR(validate_pending_read_identity(block, domain, block->generation,
+      lease.offset_, lease.size_));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  // Only the already-submitted F2 owner can establish when export is legal.
+  // No additional writes or mutable address exports are legal in this epoch.
+  block->incref();
+  block->pending_read_sealed = true;
+  return PendingReadTicket(block, domain, block->generation, lease.offset_, lease.size_);
+}
+Status LeaseAccess::matches_pending_read(const PendingReadTicket &ticket,
+    mem::ConstBufferView view) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_read_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.offset_, ticket.size_));
+  std::lock_guard guard(ticket.domain_->lock);
+  if (!view.valid()) return Status::InvalidArgument("pending read address carrier is empty");
+  HYLE_ASSIGN_OR_RETURN(auto original, lease_view(ticket.block_, ticket.offset_, ticket.size_));
+  if (view.resource() != original.resource() || view.native_handle() != original.native_handle() ||
+      view.offset() != original.offset() || view.size() != original.size())
+    return Status::InvalidArgument("pending read address carrier differs from its exact original range");
+  return Status::Ok();
+}
+Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,
+    const PendingReadTicket &ticket) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_read_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.offset_, ticket.size_));
+  return add_use<true, true, false, true>(uses.state_, ticket.block_, false);
+}
+} // namespace detail
+
 Status detail::LeaseAccess::write_unique(LeaseUseBatch &uses, const WriteLease &lease,
                                        bool ordered_after_prior) noexcept {
   return ordered_after_prior ? detail::add_use<true, true>(uses.state_, lease.block_, true)
@@ -766,6 +864,8 @@ Result<WriteLease> ReadLease::try_write() noexcept {
   std::lock_guard guard(block_->domain->lock);
   if (block_->domain->closed || !block_->writable || !block_->is_unique())
     return std::unexpected(Status::Unavailable("lease is not exclusively writable"));
+  if (!block_->failure.ok()) return std::unexpected(block_->failure);
+  block_->pending_read_sealed = false;
   block_->writer = true;
   return WriteLease(std::exchange(block_, nullptr), offset_, size_);
 }
@@ -788,6 +888,8 @@ std::uint64_t WriteLease::generation() const noexcept { return block_ ? block_->
 Result<mem::BufferView> WriteLease::view() const noexcept {
   if (!block_) return std::unexpected(Status::FailedPrecondition("lease is empty"));
   std::lock_guard guard(block_->domain->lock);
+  if (block_->pending_read_sealed)
+    return std::unexpected(Status::FailedPrecondition("pending read export sealed this writer against mutable views"));
   if (!block_->is_unique())
     return std::unexpected(Status::Unavailable("lease has admitted native uses"));
   if (!block_->failure.ok()) return std::unexpected(block_->failure);

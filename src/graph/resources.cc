@@ -1880,14 +1880,50 @@ struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   bool preparing = false, submitted = false, capture_consumer = false;
 };
 namespace {
+bool output_fully_captured(const InvocationState &state) noexcept {
+  const auto &plan = *state.plan;
+  if (!state.replay_prepared || state.replay_route != ReplayRoute::kCaptured ||
+      state.replay_report.route != ReplayRoute::kCaptured ||
+      state.replay_report.immediate_transfer_count ||
+      state.replay_report.host_wait_dependency_count ||
+      state.capture_spans.size() != 1 || !plan.command_count)
+    return false;
+  const auto &segment = plan.segments.front();
+  const auto span = state.capture_spans.front();
+  if (span.begin != 0 || span.count != state.captured_ranges.size() || !span.count)
+    return false;
+  std::size_t cursor = segment.step_begin;
+  if (cursor > plan.steps.size() || segment.step_count > plan.steps.size() - cursor)
+    return false;
+  const std::size_t end = cursor + segment.step_count;
+  for (const auto &range : state.captured_ranges) {
+    if (!range.commands.valid() || !range.step_count ||
+        range.step_begin < cursor || range.step_begin > end ||
+        range.step_count > end - range.step_begin)
+      return false;
+    // Match the original submit cursor: only metadata-only gaps may remain
+    // outside the actual retained command ranges, never an uncovered command.
+    while (cursor < range.step_begin)
+      if (plan.steps[cursor++].emits_command()) return false;
+    cursor = std::size_t{range.step_begin} + range.step_count;
+  }
+  while (cursor < end)
+    if (plan.steps[cursor++].emits_command()) return false;
+  return true;
+}
 Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1)
     return std::unexpected(Status::Unimplemented("output relay requires one original shared segment"));
   const auto lane = plan.segments.front().lane;
-  if (!shared_lane(plan, lane) || plan.segments.front().blocks_host ||
+  if (!shared_lane(plan, lane) ||
       lane.ordinal() >= state.queues.size() || !state.queues[lane.ordinal()].valid())
-    return std::unexpected(Status::Unimplemented("output relay requires one nonblocking prepared Queue"));
+    return std::unexpected(Status::Unimplemented("output relay requires one original shared Queue"));
+  // The exact unobserved submit proxy prevents binding/replay mutation. These
+  // are the original submission's actual ranges, not static provider promises.
+  if (plan.segments.front().blocks_host && !output_fully_captured(state))
+    return std::unexpected(Status::Unimplemented(
+        "output relay requires nonblocking commands or complete actual command capture"));
   HYLE_ASSIGN_OR_RETURN(auto endpoint,
       compute::detail::QueueSequence::completion_endpoint(state.queues[lane.ordinal()]));
   if (!endpoint.valid())

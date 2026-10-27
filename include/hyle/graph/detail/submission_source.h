@@ -9,7 +9,8 @@ struct SubmissionSourceState;
 // One exact original Graph submission: one proxy, Queue and whole verdict.
 // Typed views share this identity, but keep their own actual resource proofs.
 // Control calls are externally serialized; source observations use one mutex.
-// This first slice requires one prepared, nonblocking shared producer Queue.
+// Requires one original shared producer Queue: nonblocking prepared commands
+// or complete actual command capture, retaining the original provider runtime.
 class SubmissionSource final {
 public:
   SubmissionSource() noexcept = default;
