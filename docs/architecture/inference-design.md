@@ -648,7 +648,7 @@ read／map接口读字节，不能把额外的`HostDeviceCoherent`属性误当�
 未知退休时不归还容量，不把错误当作退休。Apple／Vulkan复用原typed Program／Invocation／Update，
 不伪造common Queue；Apple的退休查询与附件共享原观察锁。临时scope也将实际分配器owner保留到
 共享控制块释放结束。模型adapter负责完整清单、新页布局和wrapper恢复。
-搬运与hidden-output副本通过公开`CopyBatchUpdate`附加保活，不再借出原Completion或由引擎操作Apple观察锁。
+状态搬运通过公开`CopyBatchUpdate`附加保活，不再借出原Completion或由引擎操作Apple观察锁。
 common搬运直接用原Context准备Program／Queue，原对象已保留Context状态；Queue wrapper仍固定在scope中直到真实退休。
 `poll`分别返回状态和真实退休事实，暂时pending不缓存成永久失败；确认退休后重新取得原Update的稳定终态。
 `request_cancel`只转发原端点能力，失败或不支持不替换计算结果，也不授予提前回收权限。
@@ -1021,12 +1021,17 @@ Provider 的调优策略受完整冷容量和原字节预算约束，查询与�
 不能按 CUDA／Apple 名字猜测。形状相同也不代表捕获的资源／权限身份仍有效。
 未知 suffix 只在有界的冷接纳处准备实际 child，不预编全部 context，不引入热动态图解释器。
 
-计算工作区与已发布状态可以有不同寿命。当前 K1 MTP 对实际 caller-owned hidden 输出
-保留地址稳定的 Phase 工作块，在原 Graph 成功及接受前缀确定后，经原 CopyBatch 只复制
-选定 carry／prior 到原 canonical 池；旧 Snapshot 继续持有独立租约。复制实际退休、原
-Graph 解绑且全部别名退出后，才能恢复工作块 writer。工作块和复制控制走原执行预算，
-不占用缓存状态额度，不增加状态所有者或执行器。其它输出保持原路；是否采用此类暂存
-取决于完整消费者收益，不把分页 KV 推广成所有循环状态和输出都已地址稳定。
+计算工作区与已发布状态可以有不同寿命。canonical hidden 现与 GDN／conv 一样使用
+原固定池及真实行租约：carry／prior 通过 checked Gather 和私有槽号读取；target 验证的
+每个候选前缀及递归 NextN 产出通过原 Store 写入各自候选行。原 Graph 成功、真实退休、
+普通结果读完及 KV append 取回后，才取回 Store writer，按接受长度各发布一次；
+carry／prior 和多草稿修复保留同一已发布行的别名，未接受候选丢弃。旧 Snapshot 仍保留
+独立租约，不能仅凭固定池地址取得整池权限或复用旧行。
+
+这条接线删除了独立 hidden 工作输出／CopyBatch 复制链，沿用同一状态绑定、Queue、预算和
+退休机制；只读前沿维护仍走原图，不添加虚假 Store。[有限状态检查](../evidence/correctness/inference-hidden-indexed-2026-10-28.json)
+覆盖 CPU／CUDA 不同接受前缀、lag/catch-up、CPU 主机恢复与真实 K2 对照；未新增 Apple／Vulkan 实跑。
+录制是否保留仍由实际 reader／writer 和 Provider 契约证明，不把固定地址等同于可重放。
 
 模型构图使用冷装配提供的常量、字面量和位置，不直接挑 Backend 资源或 Queue。
 当前 Qwen 已将这些职责从 Recipe 移入 GraphAssembly；CPU FFN 放置在数学调用之外，

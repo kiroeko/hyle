@@ -1,0 +1,179 @@
+{
+  "status": "FINITE_COMPONENT_PASS_NO_PERFORMANCE_CLAIM",
+  "date": "2026-10-28",
+  "scope": "Scratch-only generic ConstantConcat(axis0)+MatMul+two readonly Views versus original two MatMuls; default current native route, no product changes.",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\source3\\small_projection_test.cc",
+    "bytes": 16947,
+    "sha256": "98548156fc371d583bc949858f08d957202e29d854f36cdd3f5b096926753147"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\bin\\small-projection-test3.exe",
+    "bytes": 141191168,
+    "sha256": "81780cf13c33ce5419e150e905cd488f163869720e945459e302f248fa6594a0"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\ready3.json",
+    "bytes": 2972,
+    "sha256": "2fe4daeaef420d33394cbff1271661963e0675920cd2561b0d88e94d297a0ad3"
+  },
+  "baseline": {
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\ready-component.json",
+      "bytes": 16157,
+      "sha256": "abe7333f318015c1998247ed30b720d1db31f4c7f88b7cc49f3c5351db8d5802"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\bin\\indexed-store-test.exe",
+      "bytes": 141108224,
+      "sha256": "1d7ece3dfcb476871cc034900d8315daf3fccd229cc041295f2d555c623c76c9"
+    },
+    "inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\component-link-inputs.json",
+      "bytes": 58679,
+      "sha256": "fbf474249efa803d0de6a6e05622227218e1b922ef19cc2580838c34b542551c"
+    },
+    "inherited_objects": 228,
+    "candidate_objects": 229,
+    "delta": "Append exactly one new candidate test OBJ; all 228 inherited input pins unchanged."
+  },
+  "actual_counts": {
+    "host_CXX_attempts": 3,
+    "host_CXX_success": 2,
+    "compiler_failures": 1,
+    "successful_links": 2,
+    "GPU_component_processes": 2,
+    "pre_submit_setup_failures": 1,
+    "successful_component_processes": 1,
+    "successful_GTests_same_image": 3,
+    "successful_Graph_submissions": 6,
+    "product_edits": 0,
+    "Model_processes": 0,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "failures": [
+    {
+      "PID": 40552,
+      "exit": 2,
+      "kind": "Scratch ReplayReport Result misuse at compile; preserved."
+    },
+    {
+      "PID": 3328,
+      "exit": 1,
+      "kind": "Factory owned-resource setup rejection before Graph submit; M2/T154 skipped; preserved."
+    }
+  ],
+  "final_process": {
+    "pid": 45564,
+    "exit": 0,
+    "started": 1793121038.8186007,
+    "seconds": 0.8709709644317627,
+    "state": "TERMINAL",
+    "timed_out": false
+  },
+  "finite_rows": [
+    {
+      "rows": 1,
+      "declared_dispatches_original_candidate": [
+        3,
+        3
+      ],
+      "workspace_bytes_original_candidate": [
+        0,
+        0
+      ],
+      "original_paired_steps": 1,
+      "candidate_cold_packed_bytes": 131072,
+      "candidate_strided_raw_outputs": 2,
+      "raw_BF16_bit_differences": 0
+    },
+    {
+      "rows": 2,
+      "declared_dispatches_original_candidate": [
+        4,
+        3
+      ],
+      "workspace_bytes_original_candidate": [
+        0,
+        128
+      ],
+      "original_paired_steps": 0,
+      "candidate_cold_packed_bytes": 131072,
+      "candidate_strided_raw_outputs": 2,
+      "raw_BF16_bit_differences": 0
+    },
+    {
+      "rows": 154,
+      "declared_dispatches_original_candidate": [
+        4,
+        3
+      ],
+      "workspace_bytes_original_candidate": [
+        78848,
+        157696
+      ],
+      "original_paired_steps": 0,
+      "candidate_cold_packed_bytes": 131072,
+      "candidate_strided_raw_outputs": 2,
+      "raw_BF16_bit_differences": 0
+    }
+  ],
+  "routing": [
+    "M1 original: ggml-cuda paired; packed: cublasLt.",
+    "M2 and T154 original: two cublasLt MatMuls; packed: one cublasLt.",
+    "Cast remains ggml-cuda; Sigmoid changes ggml-cuda to hyle-cuda."
+  ],
+  "cold_proof": "Actual retained ConstantArtifact contains exact cached a||b BF16 bits; one 131072-byte packed payload per candidate family/layer. Originals remain; 18 layers imply 2.25MiB logical extra payload, not VRAM peak.",
+  "fixture_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\fixture-manifest.json",
+    "bytes": 1913,
+    "sha256": "ba830f906f6171cfef3bda56d55f8c72ef5651a98a3338789ce44c8dff19d329"
+  },
+  "cache_read_bytes": 131072,
+  "fixture_payload_included": false,
+  "numerical_contract": "Both raw arms independently meet FP64/F32-reduction-to-BF16 bound; a cast is exact; finite b sigmoid tolerance 0.004. No general bitwise or nonfinite claim.",
+  "capture": "Each arm recorded one range and same-tuple metadata-only reprepare reused one without recording; six Graph submissions total.",
+  "materialization": "All Graph copy_bytes/materializing-View counts are zero; candidate aliases are strided. Provider-private copies/kernels are not measured by these counters.",
+  "model_boundary": "Dense-BF16 Stored MatMul{} defaults to F32, matching leaf explicit F32; no explicit Model MatMulPolicy found. Whole finite Model topology/routing and old N16 kernel identity/performance are not certified.",
+  "decision": {
+    "product_integration_justified_now": false,
+    "reason": "M1 already pairs and remains 3 declared episodes; M2/T154 reduce 4 to 3 but select a different suffix and add workspace. Declared dispatches are backend episodes, not measured kernel launches or speed.",
+    "next_bounded_experiment_if_scheduled": "Measure original versus candidate captured native execution including the Cast/Sigmoid suffix for M1/M2/T154 under the same context, and inspect private materialization. Keep M1 as a regression/control; only then consider a generic cold grouping transformation. No model/provider policy change is warranted from the present counts.",
+    "no_new_experiment_started": true
+  },
+  "reproduction": {
+    "helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\build.py",
+      "bytes": 14114,
+      "sha256": "b9e7a7a7628c43faeeb8dcbfa9ddcdcade8ee49b4d128a0504502c3d0197aa09"
+    },
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\plan3.json",
+      "bytes": 6979,
+      "sha256": "e54642899da7f041f0711144be5c9a963ccb7da6657ac996261cb82ce60cf99a"
+    },
+    "actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\compile3\\candidate\\actual-dependencies.json",
+      "bytes": 73851,
+      "sha256": "006b1c90d292e2af51db621df7935f7e18b0b714f9eea7cae61ddf4d4a9a3b5d"
+    },
+    "local_source_dependencies_verified": 91,
+    "external_and_binary_pins": "Recorded in original compile/link receipts; not recopied or rehashed by packaging."
+  },
+  "limits": [
+    "No actual kernel timing/count, TPS, whole-model token/quality result or peak VRAM measurement.",
+    "The current dense-BF16 Model operation attributes agree, but this leaf does not certify whole-model routing or identify old N16 trace kernels.",
+    "Graph dispatches denote backend episodes; zero Graph copies/Views do not exclude provider-private materialization.",
+    "Finite deterministic BF16 X and cached original layer0 weights; zero observed raw differences is not a bitwise contract.",
+    "Packed weights add 128KiB per family/layer while original weights remain; 18 layers imply 2.25MiB logical payload only; cross-family sharing unverified."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-small-projection-candidate-2026-10-28.zip",
+    "bytes": 625151,
+    "sha256": "938afc13d7e9119ccc117a8b97a2bbd5c24dca8b73178b46b9fa9d2987b24dde",
+    "members": 238,
+    "readback": "Every member byte count/SHA256 and ZIP CRC verified; full routes/analysis/failures/refinements inside."
+  }
+}

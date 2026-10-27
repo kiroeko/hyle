@@ -12,13 +12,19 @@
 单会话普通／MTP的最近完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+[hidden索引接线与状态检查](../../evidence/correctness/inference-hidden-indexed-2026-10-28.json)已完成：carry／prior、接受前缀和递归NextN改用原固定池Gather／Store，删除独立hidden输出复制链。普通两轮、MTP单轮／两轮及当前K2完整非计时对照差异0；CPU／CUDA不同接受前缀、lag/catch-up和CPU主机恢复通过。单轮重录11→2，旧d9两轮15→2；两者历史基线不同，不能把计数换算为提速。保留首次冷图effect依赖失败及CPU DLL缺失，分别修正依赖链和原DLL同目录硬链接后检查通过。
+
+最新[hidden接线完整窗口](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)于北京时间2026-10-28 **01:10:56～01:14:13**完成40进程，固定`b59fe852`／`433e7051`、原五臂与端点。普通auto比本窗off的decode快2.64%／5.95%，比参考慢1.81%／0.59%；MTP比参考慢7.38%／5.48%，综合慢2.12%／3.72%。各臂完整非计时报告稳定；跨引擎续文第18位置的既存差异、实际接受与计算行数均保留，不称逐位相同算量或跨窗单项收益。
+
+[a/b冷分组候选](../../evidence/performance/inference-small-projection-candidate-2026-10-28.json)用原权重128KiB通过M1／M2／T154及真实Cast／Sigmoid后缀的有限检查。M1已配对，声明执行段3→3；M2／T154为4→3，但后缀选路与workspace改变，私有物化和GPU耗时未测。尚未修改产品策略，不用执行段计数推算kernel数或整模收益。
+
 [跨轮warm提示候选](../../evidence/performance/inference-cross-turn-warm-screen-2026-10-28.json)已撤回。
 只编一个Model并运行一次真实两轮：进程exit0、生成内容和其它完整非计时事实一致，但后继提交／发布110→108、拒绝0→1；
 唯一拒绝在committed375／candidate376，原捕获门报告最终物理tuple无既有完整capture。
 保留Model／R／sampling提示不足以证明跨轮真实载体仍可复用；没有首差端口，不能借MTP诊断把普通路径拒绝归因hidden。
 原候选及筛选失败保留，产品恢复；未跑EOS或完整TPS窗，也不把这次有限拒绝写成已测吞吐回归。
 
-最新[固定拓扑attention完整窗口](../../evidence/performance/inference-stable-attention-current-window-2026-10-27.json)于北京时间2026-10-27 **23:10:34～23:20:05**完成40进程，使用`d9a2fe2c`与保留参考`433e7051`。每场景五臂各3次计时、1次独立内存采样，全部完整非计时报告在各臂内稳定。
+前一[固定拓扑attention完整窗口](../../evidence/performance/inference-stable-attention-current-window-2026-10-27.json)于北京时间2026-10-27 **23:10:34～23:20:05**完成40进程，使用`d9a2fe2c`与保留参考`433e7051`。每场景五臂各3次计时、1次独立内存采样，全部完整非计时报告在各臂内稳定。
 auto相对当前off的decode中位单轮＋1.81%、两轮＋5.30%；相对参考普通decode仍慢5.23%／0.52%，综合输出慢0.45%／快0.013%。这只是本窗口描述，三样本不签显著性，也不与旧窗口拼算代码收益。
 
 [Review核实与MTP诊断](../../evidence/performance/inference-capture-review-2026-10-27.json)确认旧40窗口的重录位置。当前W17单次诊断复现11次MTP录制，其中2次初始、9次已有key的首失配；16个有效变体首失配均为`prior_hidden`／`carry_hidden`的池内offset轮换，无显式key失效事件。只记录首差，不排除后续端口也变；完整历史非计时报告按原单会话导出规则归一后差异0。保留首次比较器别名失败与启动后离线关联修正，不据此声称新性能。
@@ -26,7 +32,7 @@ auto相对当前off的decode中位单轮＋1.81%、两轮＋5.30%；相对参考
 [固定拓扑原型](../../evidence/correctness/inference-stable-attention-2026-10-27.json)仅对普通paged F16/BF16、均长T1/T2、causal全窗口、D64/128/256启用原生graph调度；补全block mask和设备总行数绑定。只读query先比较完整原生plan拓扑与偏移，共同层核原carrier和runtime后才保capture；实际metadata replan仍上传、等待并保留accepted错误退休。用已有metadata Queue规划，执行Queue不变，未加公开配置项。
 BF16 D256的96次Graph检查覆盖R1/R2、T1/T2、127/128/129与383/384/385/1023、双槽、fresh和形状变化，FP64参考最大绝对误差0.000156995；这组未代签F16及其余域。三项真实模型检查除预期流水计数外完整非计时内容相同：两轮off捕获3→1，auto15→7、发布102→110、拒绝1→0；MTP单轮仍11。记录次数不是kernel数，也不能直接换算墙时收益。
 
-随后[小工作区预算与CLI回归](../../evidence/correctness/inference-attention-budget-fallback-2026-10-27.json)补齐优化的资源边界：固定grid超显式workspace cap时只读重查原调度，实际plan消费相同模式，原调度仍不足则保留容量错误，不增加公开开关。100次组件检查通过；原3,026,432B浮点需求在1MiB cap下，KV127／128实际需0B，129及fresh需131,584B，沿用同一FP64／tail／guard检查。最终镜像`91ebdde8`包含该回退与普通帮助隐藏内部off，唯一自然两轮检查完整非计时差异0。保留辅助脚本的路径与缺参措辞错误及离线修正，不重跑成功模型。下表40进程仍只对应已测`d9a2fe2c`，未将后续预算／帮助改动冒充新完整测速。
+随后[小工作区预算与CLI回归](../../evidence/correctness/inference-attention-budget-fallback-2026-10-27.json)补齐优化的资源边界：固定grid超显式workspace cap时只读重查原调度，实际plan消费相同模式，原调度仍不足则保留容量错误，不增加公开开关。100次组件检查通过；原3,026,432B浮点需求在1MiB cap下，KV127／128实际需0B，129及fresh需131,584B，沿用同一FP64／tail／guard检查。最终镜像`91ebdde8`包含该回退与普通帮助隐藏内部off，唯一自然两轮检查完整非计时差异0。保留辅助脚本的路径与缺参措辞错误及离线修正，不重跑成功模型。该批本身未重测完整速度；后续已测镜像与结果以上文最新窗口为准。
 
 此前[长输入完整窗口](../../evidence/performance/inference-long-input-current-window-2026-10-27.json)于北京时间2026-10-27 **22:23:44～22:27:18**完成16进程，使用默认auto的`aa864724`与保留参考`433e7051`。
 P1024／C2048与P4032／C4096均整段prefill、最多64个自然输出；实际分别46（EOS）／64个输出，两边全部ID相同。
@@ -166,18 +172,18 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 ## 目标与当前基线
 
-**最新短输入／多轮／MTP：2026-10-27 23:10:34～23:20:05，`d9a2fe2c`／`433e7051`。** N1／R1、C1024、BF16、CUDA greedy、prefix off；单轮P154与两轮真实pending-flush配方保持原样，各格为Hyle／参考，速度为tok/s，显存为独立采样dedicated峰GiB。
+**最新短输入／多轮／MTP：2026-10-28 01:10:56～01:14:13，`b59fe852`／`433e7051`。** N1／R1、C1024、BF16、CUDA greedy、prefix off；单轮P154与两轮真实pending-flush配方保持原样，各格为Hyle／参考，速度为tok/s，显存为独立采样dedicated峰GiB。两轮不是B2多用户。
 
 | 工况 | prefill | decode | 综合输出 | dedicated峰GiB |
 |---|---:|---:|---:|---:|
-| 普通auto单轮 | 2240.82／1579.21 | 95.89／101.17 | 88.23／88.63 | 4.034／3.728 |
-| 普通auto两轮 | 2628.35／2499.20 | 96.25／96.76 | 89.79／89.78 | 4.165／3.728 |
-| MTP单轮 | 2165.00／1554.02 | 116.62／134.14 | 104.60／112.83 | 4.108／3.896 |
-| MTP两轮 | 2569.82／2359.12 | 120.70／133.14 | 110.00／118.51 | 4.245／3.896 |
+| 普通auto单轮 | 2182.57／1544.85 | 94.18／95.92 | 86.54／84.47 | 4.034／3.728 |
+| 普通auto两轮 | 2594.92／2519.85 | 96.17／96.74 | 89.84／89.54 | 4.165／3.728 |
+| MTP单轮 | 2085.45／1537.94 | 120.02／129.59 | 106.89／109.20 | 4.091／3.896 |
+| MTP两轮 | 2581.58／2297.29 | 125.17／132.43 | 113.49／117.87 | 4.226／3.896 |
 
-本窗口ordinary off的单轮／两轮decode为94.18／91.41、综合86.71／85.46tok/s；auto实际发布55／110个后继，无拒绝或丢弃。MTP的自然接受与验证行数按各引擎实际工作计入，未人为改为相同行数；其decode仍落后约13.06%／9.35%，hidden接线尚未修。共同执行资源层、跨turn预热、MTP设备后继及GPU热点均纳入[当前goal](../../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)，不以本批有限结果结束工作。
+本窗口ordinary off的单轮／两轮decode为91.75／90.77、综合84.49／85.17tok/s；auto实际发布55／110个后继，无拒绝或丢弃。MTP的自然接受与验证行数按各引擎实际工作计入，未人为改为相同行数；其decode仍落后约7.38%／5.48%，hidden接线与原生索引Store已在镜像中。各臂完整报告稳定，跨引擎第18位置的续文分歧已存在于前一d9窗口；不据此签质量或逐位数学等价。共同执行资源层、跨turn预热、MTP设备后继及GPU热点均纳入[当前goal](../../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)，不以本批有限结果结束工作。
 
-auto／参考WS峰为单轮1.142／4.072GiB、两轮1.174／4.075GiB，private commit为5.811／4.673及5.999／4.675GiB；各项不相加成物理RAM。十个独立内存进程的ready基线都未知，实际采样间隔中位约15.15～15.30ms（请求10ms），峰值是采样下界。auto／参考ready中位单轮1.2691／1.6344s、两轮1.3056／1.6451s；原始范围、shared、phase变化和完整端点见[完整证据](../../evidence/performance/inference-stable-attention-current-window-2026-10-27.json)。未清OS缓存，不据此排名冷盘；不把减少捕获或跨窗TPS变化宣称为确定代码收益。
+auto／参考WS峰为单轮1.143／4.072GiB、两轮1.174／4.075GiB，private commit为5.811／4.673及5.992／4.675GiB；各项不相加成物理RAM。十个独立内存进程的ready基线都未知，实际采样间隔中位约15.09～15.25ms（请求10ms），峰值是采样下界。auto／参考ready中位单轮1.2509／1.6656s、两轮1.3075／1.6552s；原始范围、shared、phase变化和完整端点见[完整证据](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)。未清OS缓存，不据此排名冷盘；不把减少捕获或跨窗TPS变化宣称为确定代码收益。
 
 **最新长输入：2026-10-27 22:23:44～22:27:18，Hyle默认auto `aa864724`，参考 `433e7051`。** N1／R1、纯CUDA、普通greedy，固定相同输入、容量及整段prefill；12个计时与4个独立内存进程全成功，无新编译、下载、重跑或带仪器测速。每臂3次的完整非时间报告与输出ID均稳定，原端点与PSAPI／PDH采样器沿用，首对暂停检查后只续未运行项。以下均为各臂中位数：
 

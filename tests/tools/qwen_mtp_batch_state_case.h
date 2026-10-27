@@ -59,15 +59,6 @@ inline StateImage image(q::Model &model, const q::cache::State &state) {
   result.payloads.push_back(read(model, state.prior_hidden));
   return result;
 }
-inline Bytes output(q::Model &model, q::StepState &step, q::V port) {
-  auto result = q::take(step.run->result(port));
-  if (auto tensor = result.tensor(); tensor) {
-    Bytes bytes(q::take(tensor->description().required_bytes()));
-    q::check(model.execution.read(tensor->storage(), bytes));
-    return bytes;
-  }
-  return read(model, q::take(result.storage_lease()));
-}
 struct Bank final {
   std::size_t layer = 0;
   bool recurrent = false;
@@ -75,11 +66,14 @@ struct Bank final {
   std::array<c::LeaseSlotAddress, 6> candidates{};
   std::array<Bytes, 6> bytes;
 };
-inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent) {
+inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent,
+    bool hidden = false) {
   require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.states_bound &&
       gd::RegionAccess::successful_outcome(*step.run), "B2 inspection requires its successful original K3 Graph");
-  const auto &ports = recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;
-  const auto item = recurrent ? model.state_schema[layer].recurrent : model.state_schema[layer].history;
+  const auto &ports = hidden ? step.phase->hidden_state
+      : recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;
+  const auto item = hidden ? q::dense(model.precision.activation_type(), {1, model.hidden})
+      : recurrent ? model.state_schema[layer].recurrent : model.state_schema[layer].history;
   Bank bank{layer, recurrent, {}, {}, {}};
   for (auto &bytes : bank.bytes) bytes.resize(q::take(item.required_bytes()));
   struct Visit final {
@@ -88,8 +82,9 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
     const q::StatePorts *ports;
     c::TensorDesc item;
     Bank *bank;
+    bool hidden = false;
     bool found = false;
-  } visit{&model, &step, &ports, item, &bank};
+  } visit{&model, &step, &ports, item, &bank, hidden};
   q::check(gd::RegionAccess::visit_retired(*step.run, ports.store,
       +[](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
         auto &v = *static_cast<Visit *>(opaque);
@@ -103,7 +98,7 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
         const hyle::graph::ProviderRegionPrepared prepared{.vtable = view.prepared_vtable, .state = view.prepared};
         HYLE_ASSIGN_OR_RETURN(auto facts, extension->inspect(prepared, view.invocation));
         if (facts.store != v.ports->store || facts.destination_indices != v.ports->destination_ids ||
-            facts.destination_count != 6 || (facts.source.count &&
+            facts.destination_count != 6 || (v.hidden && facts.source.count) || (facts.source.count &&
                 (facts.source.count != 2 || facts.source.gather != v.ports->gather ||
                  facts.source.capacity != v.ports->pool || facts.source.indices != v.ports->source_ids)))
           return hyle::Status::InvalidArgument("B2 Store facts differ from its actual ports");
@@ -111,16 +106,17 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
         if (!binding) return hyle::Status::FailedPrecondition("B2 Store lost its original owner");
         HYLE_RETURN_IF_ERROR(binding->validate_authority());
         const auto *transaction = binding->transaction();
-        if (!transaction || transaction->source_count() != 2 || transaction->destination_count() != 6 ||
-            transaction->sources().size() != 2 || transaction->destinations().size() != 6 ||
-            transaction->source_addresses().size() != 2 || transaction->destination_addresses().size() != 6)
+        const std::size_t source_count = v.hidden ? 0 : 2;
+        if (!transaction || transaction->source_count() != source_count || transaction->destination_count() != 6 ||
+            transaction->sources().size() != source_count || transaction->destinations().size() != 6 ||
+            transaction->source_addresses().size() != source_count || transaction->destination_addresses().size() != 6)
           return hyle::Status::FailedPrecondition("B2 Store no longer owns its full original cohort");
         const auto layout = transaction->layout();
         HYLE_ASSIGN_OR_RETURN(auto schema, hyle::graph::slots::Schema::create(
             v.item, layout.slot_count(), layout.stride_bytes()));
         if (layout.description() != v.item || facts.schema != schema)
           return hyle::Status::InvalidArgument("B2 Store schema differs from its original pool");
-        for (std::size_t j = 0; j < 2; ++j) {
+        for (std::size_t j = 0; j < source_count; ++j) {
           const auto &base = v.step->members[j].base->state[v.bank->layer];
           HYLE_ASSIGN_OR_RETURN(auto address, layout.locate(v.bank->recurrent ? base.recurrent : base.history));
           if (address != transaction->source_addresses()[j])
@@ -132,11 +128,16 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
           HYLE_ASSIGN_OR_RETURN(auto address, layout.locate(writer));
           if (address != transaction->destination_addresses()[index])
             return hyle::Status::InvalidArgument("B2 Store candidate changed slot/generation");
+          if (v.hidden) {
+            HYLE_ASSIGN_OR_RETURN(auto original, v.model->hidden_layout.locate(writer));
+            if (original != address)
+              return hyle::Status::InvalidArgument("B2 hidden candidate belongs to another original pool");
+          }
           for (std::size_t prior = 0; prior < index; ++prior)
             if (v.bank->candidates[prior].index == address.index)
               return hyle::Status::InvalidArgument("B2 candidate slots overlap");
-          for (const auto &source : v.bank->sources)
-            if (source.index == address.index)
+          for (std::size_t j = 0; j < source_count; ++j)
+            if (v.bank->sources[j].index == address.index)
               return hyle::Status::InvalidArgument("B2 candidate overlaps an immutable source");
           HYLE_ASSIGN_OR_RETURN(auto storage, writer.view());
           if (storage.resource() != facts.resource || storage.size() != v.bank->bytes[index].size())
@@ -147,7 +148,7 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
         v.found = true;
         return hyle::Status::Ok();
       }, &visit));
-  require(visit.found && bank.sources[0].index != bank.sources[1].index,
+  require(visit.found && (hidden || bank.sources[0].index != bank.sources[1].index),
       "B2 state sources must be distinct original slots");
   return bank;
 }
@@ -237,9 +238,10 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         [&](auto, q::StepState &step, auto selected) {
           for (std::size_t layer = 0; layer < geometry.layers.size(); ++layer) if (geometry.is_gdn(layer))
             for (const bool recurrent : {false, true}) banks.push_back(inspect(model, step, layer, recurrent));
+          const auto hidden = inspect(model, step, 0, false, true);
           for (std::size_t j = 0; j < 2; ++j) {
-            carry[j] = output(model, step, step.phase->carry_ports[j].at(accepted[j] - 1));
-            if (accepted[j] > 1) prior[j] = output(model, step, step.phase->carry_ports[j].at(accepted[j] - 2));
+            carry[j] = hidden.bytes[j * step.phase->prefix_rows + accepted[j] - 1];
+            if (accepted[j] > 1) prior[j] = hidden.bytes[j * step.phase->prefix_rows + accepted[j] - 2];
             step.members[j].accepted_tokens = accepted[j]; selected[j] = pending[j];
           }
         }, [&](q::StepState &step) { model.repair_recursive_draft(step); }, observe);
@@ -252,7 +254,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           actual.frontier + actual.lag == actual.length && actual.catchup == (actual.lag ? ids[j][accepted[j] - 1] : -1),
           "B2 selected length/pending/unchanged controlled RNG/draft frontier differs");
       require(read(model, head.carry_hidden) == carry[j] && read(model, head.prior_hidden) == prior[j],
-          "B2 carry/prior did not retain its own exact selected Graph row");
+          "B2 carry/prior did not retain its own exact selected Store row");
       require(actual.target.size() == before[j].target.size(), "B2 target KV layer count changed");
       for (std::size_t bank = 0; bank < actual.target.size(); ++bank)
         require(actual.target[bank].size() * before[j].length == before[j].target[bank].size() * actual.length &&

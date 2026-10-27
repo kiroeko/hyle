@@ -12,16 +12,9 @@ struct PrefixValueCase final {
   HeadImage selected, continued;
   std::size_t graph_prefix_bytes = 0, kv_prefix_bytes = 0, draft_reference_bytes = 0;
 };
-Bytes original_result(q::Model &model, q::StepState &step, q::V port) {
-  auto result = q::take(step.run->result(port));
-  if (auto tensor = result.tensor(); tensor) {
-    Bytes value(q::take(tensor->description().required_bytes()));
-    q::check(model.execution.read(tensor->storage(), value)); return value;
-  }
-  return read(q::take(result.storage_lease()));
-}
 Bytes original_slot_result(q::Model &model, q::StepState &step,
-    const q::StatePorts &ports, const c::TensorDesc &item, std::size_t prefix) {
+    const q::StatePorts &ports, const c::TensorDesc &item, std::size_t prefix,
+    std::size_t source_count = 1, const c::LeaseSlotLayout *expected_layout = nullptr) {
   namespace gd = hyle::graph::detail;
   namespace sd = hyle::graph::slots::detail;
   require(step.run && step.phase && step.states_bound && step.members.size() == 1 &&
@@ -36,11 +29,12 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
     q::Model *model;
     const q::StatePorts *ports;
     c::TensorDesc item;
-    std::size_t prefix, destinations;
+    std::size_t prefix, destinations, sources;
+    const c::LeaseSlotLayout *expected_layout;
     std::span<std::byte> bytes;
     bool found = false;
   } observation{&model, &ports, item, prefix,
-      q::cache::multiply(step.members.size(), step.phase->prefix_rows), bytes};
+      q::cache::multiply(step.members.size(), step.phase->prefix_rows), source_count, expected_layout, bytes};
   q::check(gd::RegionAccess::visit_retired(*step.run, ports.store,
       +[](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
         auto &request = *static_cast<Read *>(opaque);
@@ -63,7 +57,9 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
         if (!binding) return hyle::Status::FailedPrecondition("prefix Store has no original binding owner");
         HYLE_RETURN_IF_ERROR(binding->validate_authority());
         const auto *transaction = binding->transaction();
-        if (!transaction || transaction->source_count() != 1 ||
+        if (!transaction || transaction->source_count() != request.sources ||
+            transaction->sources().size() != request.sources ||
+            transaction->source_addresses().size() != request.sources ||
             transaction->destination_count() != request.destinations ||
             transaction->destinations().size() != request.destinations ||
             transaction->destination_addresses().size() != request.destinations)
@@ -79,6 +75,11 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
         HYLE_ASSIGN_OR_RETURN(auto address, layout.locate(writer));
         if (address != transaction->destination_addresses()[request.prefix])
           return hyle::Status::InvalidArgument("prefix candidate writer changed its original slot or generation");
+        if (request.expected_layout) {
+          HYLE_ASSIGN_OR_RETURN(auto original, request.expected_layout->locate(writer));
+          if (original != address)
+            return hyle::Status::InvalidArgument("prefix candidate belongs to another original pool");
+        }
         HYLE_ASSIGN_OR_RETURN(auto storage, writer.view());
         if (storage.resource() != facts.resource || storage.size() != request.bytes.size())
           return hyle::Status::InvalidArgument("prefix candidate writer has a different resource or byte extent");
@@ -122,7 +123,7 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
       [&](auto, q::StepState &step, auto selected) {
         // Observe actual candidate writers still held by this same completed
         // verifier. No final-head self comparison, T1/cross-width arithmetic or
-        // early take that could revoke the still-needed carry outputs.
+        // early take that could revoke the still-needed hidden transaction.
         for (std::size_t layer = 0; layer < model.geometry.layers.size(); ++layer)
           if (model.geometry.is_gdn(layer)) {
             const auto &ports = step.phase->layers[layer];
@@ -132,7 +133,8 @@ PrefixValueCase check_prefix(q::Model &model, const q::cache::SnapshotRef &base,
                 original_slot_result(model,step,ports.recurrent,model.state_schema[layer].recurrent,consumed-1)});
           }
         for (std::size_t row = 0; row < consumed; ++row)
-          carry.push_back(original_result(model,step,step.phase->carry_ports[0].at(row)));
+          carry.push_back(original_slot_result(model, step, step.phase->hidden_state,
+              q::dense(model.precision.activation_type(), {1, model.hidden}), row, 0, &model.hidden_layout));
         expected.push_back({"carry.bf16",true,carry.back()});
         expected.push_back({"prior.bf16",true,consumed > 1 ? carry[consumed-2] : Bytes{}});
         step.members[0].accepted_tokens = consumed; selected[0] = 16;

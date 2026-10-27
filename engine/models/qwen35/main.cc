@@ -863,10 +863,9 @@ struct FamilyPorts {
   std::vector<g::slots::SourceBinding> state_sources;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
-  std::vector<std::array<V, 2>> draft_hidden_inputs;
+  StatePorts hidden_state;
   g::NodeId draft_attention_node;
   std::vector<V> state_resource_ports;
-  std::vector<std::vector<V>> carry_ports;
   std::array<V, 9> probe_ports;
   std::vector<Ports> layers;
 };
@@ -905,53 +904,12 @@ struct Family final : FamilyPorts {
 // may still retain the preceding carrier after its producer publishes.
 constexpr std::size_t execution_slot_count = 3;
 using ResourceRetention = inference::RetainedResources<ColdResources>;
-struct HiddenOutputCopy final {
-  std::vector<Tensor> scratch;
-  std::vector<c::ReadLease> readers;
-  std::vector<c::CopyRange> ranges;
-  c::CopyBatchProgram program;
-  c::CopyBatchInvocation invocation;
-  c::CopyBatchUpdate update;
-  ResourceRetention retirement;
-
-  // Copy controls borrow the original Queue. Their accepted Completion, not
-  // a lease or observed error, retains ColdResources until actual retirement.
-  hyle::Result<bool> recover(hyle::Status &terminal) noexcept {
-    bool failed = false;
-    if (update.valid()) {
-      const auto observed = update.observe();
-      inference::record_retirement_status(terminal, observed);
-      if (update.in_flight()) return false;
-      failed = !observed.ok();
-      HYLE_ASSIGN_OR_RETURN(invocation, update.release_invocation());
-    }
-    if (invocation.valid()) {
-      if (invocation.in_flight()) return false;
-      HYLE_RETURN_IF_ERROR(invocation.reset());
-      // reset cannot reopen a closed failed slot. Recreate only after the
-      // original controls and every accepted native use actually retire.
-      if (failed) invocation = {};
-    }
-    return !retirement.pending();
-  }
-  // Call only after original Graph unbind/reset AND copy binding withdrawal.
-  // A native/escaped alias rejects promotion instead of exposing a writer.
-  hyle::Status restore_writers() noexcept {
-    for (std::size_t i = 0; i < scratch.size(); ++i) if (!scratch[i].writer) {
-      if (readers[i]) {
-        HYLE_ASSIGN_OR_RETURN(scratch[i].writer, readers[i].try_write());
-      } else {
-        // Abort before result export: Graph reset returned the original range.
-        HYLE_ASSIGN_OR_RETURN(const auto bytes, scratch[i].description.required_bytes());
-        HYLE_ASSIGN_OR_RETURN(scratch[i].writer, scratch[i].pool.allocate(bytes, cache::state_pool_alignment));
-      }
-    }
-    return hyle::Status::Ok();
-  }
-};
+enum class StateBankKind { kHistory, kRecurrent, kHidden };
 struct StateBinding final {
   std::size_t layer = 0;
-  bool recurrent = false;
+  StateBankKind kind = StateBankKind::kHistory;
+  g::NodeId store;
+  std::size_t source_index = SIZE_MAX; // Only a real paired Gather has a Source.
   g::slots::SlotBindings transaction;
   std::vector<c::ReadLease> sources;
   std::vector<c::WriteLease> destinations;
@@ -985,7 +943,6 @@ struct Phase final : FamilyPorts {
     return child->state_graph.valid() ? child->state_graph : family->graph;
   }
   std::array<ResourceRetention, execution_slot_count> retirement;
-  std::array<HiddenOutputCopy, execution_slot_count> hidden_output;
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
   std::array<g::ReplayMode, execution_slot_count> replay_modes{};
@@ -1166,7 +1123,6 @@ struct StepState final {
   // retired. Return it only after publication and final result reads, or after
   // complete abort cleanup.
   std::size_t *candidate_admission = nullptr;
-  HiddenOutputCopy *hidden_output = nullptr;
   void release_admission() noexcept {
     if (candidate_admission) {
       auto *count = std::exchange(candidate_admission, nullptr);
@@ -1200,10 +1156,6 @@ struct StepState final {
       }
       sources.reset(); // Unescaped tickets must end before writer discard.
     }
-    if (hidden_output) {
-      HYLE_ASSIGN_OR_RETURN(auto retired, hidden_output->recover(terminal));
-      if (!retired) return false;
-    }
     if (run) {
       if (run->in_flight()) return false;
       for (std::size_t i = 0; i < appends.size(); ++i) if (bound[i]) {
@@ -1219,7 +1171,7 @@ struct StepState final {
       if (phase) for (std::size_t i = 0; i < phase->state_bindings[state_slot].size(); ++i) {
         auto &bank = phase->state_bindings[state_slot][i];
         if (states_bound && !bank.transaction.valid()) {
-          auto recovered = g::slots::take(*run, phase->state_sources[i].store);
+          auto recovered = g::slots::take(*run, bank.store);
           if (!recovered) {
             if (recovered.error().IsUnavailable()) return false;
             return std::unexpected(recovered.error());
@@ -1236,12 +1188,6 @@ struct StepState final {
       }
       incoming.reset(); predecessor_episode.reset();
       *run = {}; // Release failed ordinary outputs and their original bindings.
-    }
-    if (hidden_output) {
-      const auto restored = hidden_output->restore_writers();
-      if (restored.IsUnavailable()) return false;
-      HYLE_RETURN_IF_ERROR(restored);
-      hidden_output = nullptr;
     }
     const auto recover = [](c::PagedPageWriter &page) noexcept -> hyle::Status {
       if (!page.valid()) return hyle::Status::Ok(); // Already successfully published.
@@ -1428,12 +1374,16 @@ struct DraftProgram final {
   ResourceRetention retirement;
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
   std::vector<V> hidden_inputs, resource_ports;
+  StatePorts hidden_state;
+  g::slots::SlotBindings hidden_transaction;
+  std::vector<c::ReadLease> hidden_sources;
+  std::array<c::WriteLease, 1> hidden_destination;
   mtp::AppendNodes append;
   g::NodeId attention;
   Tensor token_values, position_values, identity_values;
   PreparedReadback id_value, valid_value, probability_value;
   c::LeasePool probability_pool;
-  PreparedOutputFacts hidden_output, probabilities_output;
+  PreparedOutputFacts probabilities_output;
 };
 struct DraftWork final {
   cache::DraftState state;
@@ -1503,6 +1453,7 @@ struct ColdResources final {
   cache::PageInventory page_inventory, draft_inventory;
   std::vector<cache::StatePools> state_pools;
   c::LeasePool hidden_pool;
+  c::LeaseSlotLayout hidden_layout;
   std::vector<std::unique_ptr<PreparedSampling>> sampling_configurations;
   const bool retain_sampling_frontier;
   std::map<FamilyKey, std::unique_ptr<Family>> families, probe_families;
@@ -1542,7 +1493,6 @@ struct ColdResources final {
       for (const auto &[shape, phase] : *cache) {
         (void)shape;
         for (const auto &pin : phase->retirement) if (pin.pending()) return true;
-        for (const auto &copy : phase->hidden_output) if (copy.retirement.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
       (void)shape; if (program->retirement.pending()) return true;
@@ -1561,7 +1511,6 @@ struct ColdResources final {
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[shape, phase] : *cache) {
         (void)shape; for (auto &run : phase->slots) run = {};
-        for (auto &copy : phase->hidden_output) { copy.update = {}; copy.invocation = {}; }
       }
     for (auto &[shape, program] : draft_programs) { (void)shape; program->run = {}; }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->run = {}; }
@@ -1635,8 +1584,6 @@ public:
   c::ResourceBudget &cache_budget, &execution_budget, &allocation_budget;
   std::size_t known_cache_backing_bytes = 0;
   bool state_storage_prepared = false;
-  bool hidden_writers = false;
-  bool generated_state_outputs = false;
   const cache::Plan cache_plan;
   c::BatchSchema attention_schema;
   std::vector<c::BatchSchema> attention_schemas;
@@ -1650,6 +1597,7 @@ public:
   cache::PageInventory &page_inventory, &draft_inventory;
   std::vector<cache::StatePools> &state_pools;
   c::LeasePool &hidden_pool;
+  c::LeaseSlotLayout &hidden_layout;
   // Family/child owners are shared by sessions; no session addresses enter compile.
   std::map<FamilyKey, std::unique_ptr<Family>> &families, &probe_families;
   std::vector<FamilyKey> admitted_exact_keys;
@@ -1737,7 +1685,7 @@ public:
          allocation_budget(resources_->allocation_budget),
          cache_plan(selected_cache), snapshot_versions(resources_->snapshot_versions), carrier_borrowed(resources_->carrier_borrowed),
          page_inventory(resources_->page_inventory), draft_inventory(resources_->draft_inventory),
-         state_pools(resources_->state_pools), hidden_pool(resources_->hidden_pool),
+         state_pools(resources_->state_pools), hidden_pool(resources_->hidden_pool), hidden_layout(resources_->hidden_layout),
          families(resources_->families), probe_families(resources_->probe_families),
          phases(resources_->phases), probe_phases(resources_->probe_phases),
          draft_programs(resources_->draft_programs), prefix_sampling_programs(resources_->prefix_sampling_programs),
@@ -1925,8 +1873,7 @@ public:
     const auto usage = take(cache_budget.usage(execution.device()));
     const auto metadata = usage.live_by_category[static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata)];
     const auto payload = usage.live_bytes - metadata;
-    if (payload < known_cache_backing_bytes ||
-        (!generated_state_outputs && payload != known_cache_backing_bytes))
+    if (payload != known_cache_backing_bytes)
       throw std::runtime_error("actual cache backing differs: payload=" + std::to_string(payload) +
           " known=" + std::to_string(known_cache_backing_bytes) + " metadata=" + std::to_string(metadata));
     return usage;
@@ -2037,23 +1984,6 @@ public:
         << " native_private_unknown=1 shared_requested_byte_limit=unlimited physical_vram_cap=0\n";
   }
 
-  void validate_state_output(const PreparedOutputFacts &output, const c::TensorDesc &expected) const {
-    if (output.description != expected)
-      throw std::runtime_error("prepared state output differs from its model state description");
-    if (output.caller_owned() && take(execution.resource_for(output.storage)) != execution.device())
-      throw std::runtime_error("prepared state output is outside its original state pool resource");
-  }
-
-  c::ReadLease retain_state_storage(g::Invocation &run, const PreparedOutputFacts &output) const {
-    auto retained = inference::retain_output(run, output, cache_budget, allocation_budget);
-    if (retained) return std::move(*retained);
-    const auto usage = cache_usage();
-    throw std::runtime_error("cache retained-state admission failed before snapshot publication: " +
-        std::string(retained.error().message()) + "; live=" + std::to_string(usage.live_bytes) +
-        ", limit=" + std::to_string(usage.limit_bytes) +
-        "; adjust the exhausted cache/shared byte limit or reduce retained sessions/context; old snapshots remain valid");
-  }
-
   void prepare_cache() {
     preparation_started_ = true;
     if (attention_schema.valid()) {
@@ -2107,14 +2037,14 @@ public:
     preparation_started_ = true;
     if (state_storage_prepared) return;
     prepare_sampling_frontier();
-    // History and recurrence always use the original versioned state pools.
-    // Hidden results keep their actual caller/generated output contract.
+    // Every canonical state row uses its original versioned pool. Logical
+    // Store outputs do not depend on a provider's ordinary output ownership.
     // Publish together so a failed allocation releases its temporary backing
     // and leaves this Model ready for a later admission attempt.
     std::vector<cache::StatePools> prepared_pools(geometry.layers.size());
     c::LeasePool prepared_hidden;
+    c::LeaseSlotLayout prepared_hidden_layout;
     auto prepared_bytes = known_cache_backing_bytes;
-    const auto initial_slots = static_cast<std::uint32_t>(cache_plan.resident_sessions);
     for (std::size_t i = 0; i < state_schema.size(); ++i) if (geometry.is_gdn(i)) {
       const auto &description = state_schema[i]; auto &pools = prepared_pools[i];
       const auto history_slots = cache_plan.state_slots;
@@ -2138,11 +2068,14 @@ public:
       prepared_bytes = cache::add(prepared_bytes, cache::add(history_bytes, recurrent_bytes));
     }
     if (cache_plan.hidden_bytes) {
-      const auto slots = hidden_writers ? cache_plan.hidden_slots : initial_slots;
+      const auto slots = cache_plan.hidden_slots;
       const auto bytes = cache::state_pool_backing_bytes(geometry.hidden_bytes(), slots);
       prepared_hidden = take(c::LeasePool::create(execution.device(), bytes,
           {.max_blocks = slots, .backing_alignment = cache::state_pool_alignment,
            .resource_budget = cache_budget}, allocation_budget));
+      prepared_hidden_layout = take(c::LeaseSlotLayout::create(prepared_hidden,
+          dense(precision.activation_type(), {1, hidden}), slots,
+          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
       prepared_bytes = cache::add(prepared_bytes, bytes);
     }
     const auto usage = take(cache_budget.usage(execution.device()));
@@ -2150,6 +2083,7 @@ public:
             static_cast<std::size_t>(c::ResourceBudgetCategory::kMetadata)] != prepared_bytes)
       throw std::runtime_error("shared cache backing inventory differs from the actual reserved bytes");
     state_pools = std::move(prepared_pools); hidden_pool = std::move(prepared_hidden);
+    hidden_layout = std::move(prepared_hidden_layout);
     known_cache_backing_bytes = prepared_bytes;
     state_storage_prepared = true;
   }
@@ -2208,10 +2142,6 @@ public:
     definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
     definition.admitted_exact = admitted_exact;
     definition.state_resource_ports.reserve(ports_per_request * requests);
-    if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) {
-      definition.carry_ports.resize(requests);
-      for (auto &ports : definition.carry_ports) ports.resize(prefix_rows);
-    }
     for (const auto tokens : planned_chunks) {
       if (tokens == 0 || tokens > capacity)
         throw std::runtime_error("finite text chunk outside nonempty context capacity");
@@ -2224,6 +2154,14 @@ public:
     Recipe r(weights, projections, assembly, geometry, max_query_rows, requests, &weight_meanings);
     const auto t = r.token_rows, packed = r.packed_rows;
     const auto batch = f(static_cast<std::int64_t>(requests));
+    g::slots::Schema hidden_schema;
+    if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) {
+      hidden_schema = take(g::slots::Schema::create(dense(precision.activation_type(), {1, hidden}),
+          cache_plan.hidden_slots,
+          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+      definition.hidden_state.destination_ids = r.input(dense(Type::kInt32,
+          {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
+    }
     definition.last_row = r.last_row;
     if (requests > cache_plan.active_sequences || cache::multiply(requests, max_query_rows) > cache_plan.max_query_rows)
       throw std::runtime_error("finite family exceeds the configured batch capacity");
@@ -2266,17 +2204,15 @@ public:
     };
     D draft_sequence_rows = f(0), draft_packed_rows = f(0);
     if (has_mtp(role)) {
-      std::vector<V> carries, priors;
-      definition.draft_hidden_inputs.resize(requests);
-      for (auto &inputs : definition.draft_hidden_inputs) {
-        inputs[0] = r.input(dense(precision.activation_type(), {1, hidden}));
-        definition.state_resource_ports.push_back(inputs[0]); carries.push_back(inputs[0]);
-        if (draft_lag(role)) {
-          inputs[1] = r.input(dense(precision.activation_type(), {1, hidden}));
-          definition.state_resource_ports.push_back(inputs[1]); priors.push_back(inputs[1]);
-        }
-      }
-      definition.carry_input_port = r.concat(carries, 0, r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
+      auto &port = definition.hidden_state;
+      const auto source_rows = f(static_cast<std::int64_t>(cache::multiply(requests, draft_lag(role) + 1)));
+      port.pool = r.input(take(hidden_schema.capacity_description()));
+      port.source_ids = r.input(r.dense_spec(Type::kInt32, {source_rows}));
+      const auto gathered = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {source_rows, f(hidden)}), &port.gather);
+      // One fixed pool and private IDs; the original ready leases still prove
+      // exactly these rows. Source order is [all carries, all priors at lag1].
+      definition.carry_input_port = r.slice(gathered, 0, f(0), batch);
       const auto draft_rows = is_mtp_prefill(role)
           ? (draft_lag(role) ? D(take(r.builder.dimension_sum(t, f(1)))) : t)
           : f(static_cast<std::int64_t>(draft_lag(role) + 1));
@@ -2287,7 +2223,7 @@ public:
       definition.draft_position_port = r.input(requests == 1 ? r.dense_spec(Type::kInt32, {draft_rows})
           : r.dense_spec(Type::kInt32, {batch, draft_rows}));
       if (draft_lag(role)) {
-        definition.prior_input_port = r.concat(priors, 0, r.dense_spec(precision.activation_type(), {batch, f(hidden)}));
+        definition.prior_input_port = r.slice(gathered, 0, batch, batch);
         definition.catchup_token_port = r.input(r.dense_spec(Type::kInt32, {batch}));
       }
       if (drafts_token(role) || !is_mtp_prefill(role)) {
@@ -2499,20 +2435,21 @@ public:
       const auto append = mtp::append_kv(r, attention_schema, kv);
       if (has_prior_append) check(r.builder.depends_on(append.key, prior_append));
       definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
+      prior_append = append.value; has_prior_append = true;
     }
     auto last = verifies_prefix(role) ? r.copy(normalized_last) :
         (requests == 1 ? r.copy(r.slice(normalized_last, 0, D(r.last_row), f(1))) :
         r.one(c::Gather{}, {normalized_last, definition.last_ids_port},
             r.dense_spec(precision.activation_type(), {batch, f(hidden)})));
-    if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) for (std::size_t request = 0; request < requests; ++request)
-      for (std::size_t row = 0; row < prefix_rows; ++row) {
-        const auto carry = r.copy(r.slice(normalized_last, 0,
-            verifies_prefix(role) ? f(static_cast<std::int64_t>(request * prefix_rows + row)) :
-                (requests == 1 ? D(r.last_row) : D(take(r.builder.dimension_sum(
-                    D(take(r.builder.dimension_product(t, f(static_cast<std::int64_t>(request))))), D(r.last_row))))), f(1)));
-        definition.carry_ports[request][row] = carry;
-        r.publish(carry); definition.state_resource_ports.push_back(carry);
-      }
+    if (hidden_schema.valid()) {
+      auto &port = definition.hidden_state;
+      // Verifiers retain every target prefix; prefill/single retain only the
+      // same final row per member as their existing complete boundary.
+      r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
+          {verifies_prefix(role) ? normalized_last : last, port.destination_ids}, {}, &port.store);
+      if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
+      if (has_mtp(role)) definition.state_sources.push_back({port.store, port.gather});
+    }
     definition.hidden_port = last;
     if (completion == TextCompletion::kEmitNext) {
       definition.logits_port = r.scores(last, std::string(geometry.head_role()));
@@ -2632,19 +2569,19 @@ public:
             concrete_states = false;
           }
       }
+      if (definition.hidden_state.store.valid())
+        for (const auto value : {take(definition.graph.node_input(definition.hidden_state.store, 0)),
+                 take(definition.graph.node_input(definition.hidden_state.store, 1))})
+          if (auto description = definition.graph.value_description(value); !description) {
+            if (!description.error().IsFailedPrecondition()) check(description.error());
+            concrete_states = false;
+          }
       if (!concrete_states) {
         auto specialized = take(g::specialize_exact(definition.graph, bindings[index],
             take(execution_budget.metadata_allocator())));
         if (specialized.signature != child->compiled.executable.specialization())
           throw std::runtime_error("state graph specialization differs from its selected child");
         child->state_graph = std::move(specialized.graph);
-      }
-      for (const auto &ports : definition.carry_ports) for (const auto value : ports) {
-        if (!value.valid()) continue;
-        const auto &output = child->output(value);
-        validate_state_output(output, dense(precision.activation_type(), {1, hidden}));
-        hidden_writers = hidden_writers || output.caller_owned();
-        generated_state_outputs = generated_state_outputs || !output.caller_owned();
       }
       definition.children.push_back(std::move(child));
     }
@@ -2702,12 +2639,9 @@ public:
       planned_slot_uses.erase(shape); families.erase(old);
       admitted_exact_keys.erase(admitted_exact_keys.begin()); ++exact_evictions;
     }
-    const auto before_hidden = hidden_writers, before_generated = generated_state_outputs;
     const auto key = FamilyKey::exact(requests, role, tokens, completion, sampling_index);
     try {
       const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion, sampling_index);
-      if (!before_hidden && hidden_writers)
-        throw std::runtime_error("new suffix requires caller-written hidden storage absent from the original cache plan; reconfigure the idle model");
       planned_slot_uses[{requests, tokens, role, completion, sampling_index}].fill(1);
       admitted_exact_keys.push_back(key); ++exact_admissions;
       std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
@@ -2716,7 +2650,6 @@ public:
                 << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
     } catch (...) {
       families.erase(key);
-      hidden_writers = before_hidden; generated_state_outputs = before_generated;
       throw;
     }
   }
@@ -2737,11 +2670,28 @@ public:
     const auto count = f(static_cast<std::int64_t>(rows));
     program.tokens = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.positions = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
-    for (std::size_t row = 0; row < rows; ++row) {
-      program.hidden_inputs.push_back(r.input(dense(precision.activation_type(), {1, hidden})));
-      program.resource_ports.push_back(program.hidden_inputs.back());
+    V shifted;
+    g::slots::Schema hidden_schema;
+    if (head) {
+      hidden_schema = take(g::slots::Schema::create(dense(precision.activation_type(), {1, hidden}),
+          cache_plan.hidden_slots,
+          cache::add(geometry.hidden_bytes(), cache::state_pool_padding(geometry.hidden_bytes()))));
+      auto &port = program.hidden_state;
+      port.pool = r.input(take(hidden_schema.capacity_description()));
+      port.source_ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+      port.destination_ids = r.input(dense(Type::kInt32, {1}));
+      shifted = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+          {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {count, f(hidden)}), &port.gather);
+      program.hidden_sources.resize(rows);
+    } else {
+      // This maintenance graph only reads hidden and writes draft KV. Keep
+      // its original ready-leaf Commands path; no dummy Store or pool reader.
+      for (std::size_t row = 0; row < rows; ++row) {
+        program.hidden_inputs.push_back(r.input(dense(precision.activation_type(), {1, hidden})));
+        program.resource_ports.push_back(program.hidden_inputs.back());
+      }
+      shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(precision.activation_type(), {count, f(hidden)}));
     }
-    const auto shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(precision.activation_type(), {count, f(hidden)}));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
     for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
     auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
@@ -2776,7 +2726,10 @@ public:
         }
         r.publish(program.valid);
       }
-      r.publish(program.hidden); r.publish(program.id);
+      r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
+          {program.hidden, program.hidden_state.destination_ids}, {}, &program.hidden_state.store);
+      check(r.builder.depends_on(program.hidden_state.store, program.append.value));
+      r.publish(program.id);
     } else program.append = mtp::append_kv(r, attention_schema, kv);
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, static_cast<std::int64_t>(rows - 1)}};
@@ -2792,17 +2745,13 @@ public:
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     if (head) {
-      program.hidden_output = take(inference::prepare_output(program.compiled, program.hidden));
-      validate_state_output(program.hidden_output, dense(precision.activation_type(), {1, hidden}));
       if (default_sampler.enabled) program.probabilities_output =
           take(inference::prepare_output(program.compiled, program.log_probabilities));
     }
     for (std::size_t output = 0; output < program.compiled.executable.output_count(); ++output) {
       if (take(program.compiled.executable.output_ownership(output)) != g::OutputOwnership::kCaller) continue;
       const auto port = take(program.compiled.executable.output_id(output));
-      if (port == program.hidden) {
-        hidden_writers = true; program.resource_ports.push_back(port);
-      } else if (port == program.log_probabilities) {
+      if (port == program.log_probabilities) {
         program.resource_ports.push_back(port);
         const auto bytes = cache::multiply(vocabulary * sizeof(float), cache_plan.candidate_boundaries);
         program.probability_pool = take(c::LeasePool::create(
@@ -2834,6 +2783,11 @@ public:
     }
     if (program.head && (default_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
     if (program.head && min_draft_probability() > 0) check(program.probability_value.bind(program.run));
+    if (program.head) {
+      const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
+      check(g::slots::prepare(program.run, program.graph, inference::queue_span(program.queues), sources,
+          {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
+    }
   }
 
   // Append to an unpublished draft only. The first append uses COW; later
@@ -2902,11 +2856,16 @@ public:
             {.resource_budget = cache_budget}));
       }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
-      for (std::size_t row = 0; row < ids.size(); ++row)
+      if (head) {
+        std::copy(shifted.begin(), shifted.end(), program.hidden_sources.begin());
+        program.hidden_destination[0] = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
+        if (program.hidden_transaction.valid())
+          check(program.hidden_transaction.refill(program.hidden_sources, program.hidden_destination));
+        else program.hidden_transaction = take(g::slots::SlotBindings::create(hidden_layout,
+            program.hidden_sources, program.hidden_destination, {.resource_budget = cache_budget}));
+        for (auto &source : program.hidden_sources) source = {};
+      } else for (std::size_t row = 0; row < ids.size(); ++row)
         check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
-      if (program.hidden_output.value && program.hidden_output.caller_owned())
-        check(run.bind(program.hidden_output.value, program.hidden_output.description,
-            take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment))));
       if (head && default_sampler.enabled) {
         program.identity_values.write<std::uint32_t>(identity);
         if (program.probabilities_output.caller_owned()) check(run.bind(program.probabilities_output.value,
@@ -2922,6 +2881,8 @@ public:
         else check(g::batch::bind_append(run, program.graph, guard.nodes[bank], std::move(guard.appends[bank])));
         guard.bound[bank] = true;
       }
+      if (head) check(g::slots::bind(run, program.graph, program.hidden_state.store,
+          std::move(program.hidden_transaction)));
       check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
@@ -2939,11 +2900,15 @@ public:
         }
         check(program.id_value.read(execution, run, std::as_writable_bytes(std::span(&output.id, 1))));
         if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
-        output.hidden = retain_state_storage(run, program.hidden_output);
       }
       check(g::batch::take_appends(run, std::span(guard.nodes.data() + draft_bank, 2),
           std::span(guard.appends.data() + draft_bank, 2)));
       std::fill_n(guard.bound.begin() + draft_bank, 2, std::uint8_t{});
+      if (head) {
+        program.hidden_transaction = take(g::slots::take(run, program.hidden_state.store));
+        output.hidden = take(program.hidden_transaction.destinations()[0].publish());
+        program.hidden_transaction.clear();
+      }
       auto key_delta = take(guard.appends[draft_bank].ready_delta(sources[0], layout));
       auto value_delta = take(guard.appends[draft_bank + 1].ready_delta(sources[1], layout));
       auto key_commit = take(work.state.key.prepare_commit(std::move(key_delta)));
@@ -2970,6 +2935,9 @@ public:
       run.close().IgnoreError(); execution.drain_retired(run).IgnoreError();
       auto recovered = guard.try_abort();
       if (!recovered || !*recovered) run = {};
+      program.hidden_transaction.clear();
+      for (auto &source : program.hidden_sources) source = {};
+      for (auto &writer : program.hidden_destination) writer = {};
       throw;
     }
   }
@@ -3371,63 +3339,6 @@ public:
       const std::shared_ptr<inference::HostStateStorage> &storage);
   std::shared_ptr<Session> restore_session(std::shared_ptr<const cache::HostImage> image);
 
-  void copy_selected_hidden_outputs(StepState &step) {
-    if (!step.hidden_output) return;
-    auto &copy = *step.hidden_output; auto &phase = *step.phase; auto &run = *step.run;
-    const auto count = copy.scratch.size();
-    copy.ranges.clear();
-    // Export ALL fixed outputs before take_append revokes results. The unused
-    // rows are retained only until Graph withdrawal to recover their writer.
-    for (std::size_t j = 0; j < step.members.size(); ++j)
-      for (std::size_t row = 0; row < phase.prefix_rows; ++row) {
-        const auto index = j * phase.prefix_rows + row;
-        copy.readers[index] = take(inference::retain_output(run, phase.child->output(phase.carry_ports[j][row])));
-      }
-    for (std::size_t j = 0; j < step.members.size(); ++j) {
-      const auto last = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
-      const auto bind = [&](std::size_t row) {
-        const auto index = j * phase.prefix_rows + row;
-        const auto bytes = take(copy.scratch[index].description.required_bytes());
-        check(copy.invocation.bind_source({static_cast<std::uint32_t>(index)}, copy.readers[index]));
-        check(copy.invocation.bind_mutable({static_cast<std::uint32_t>(count + index)},
-            take(hidden_pool.allocate(bytes, cache::state_pool_alignment))));
-        copy.ranges.push_back({{static_cast<std::uint32_t>(index)}, {static_cast<std::uint32_t>(count + index)}, {0}, 0, 0, bytes});
-      };
-      bind(last);
-      if (verifies_prefix(phase.family->role) && step.members[j].accepted_tokens > 1) bind(last - 1);
-    }
-    constexpr std::array<c::CopyPhase, 1> copy_phases{};
-    check(copy.invocation.prepare_replay(copy_phases, copy.ranges));
-    check(copy.retirement.reserve(resources_));
-    auto submitted = copy.invocation.submit();
-    if (!submitted) { copy.retirement.reject(); (void)take(std::move(submitted)); }
-    // One original phase, no producer bindings, sole move-only observer:
-    // these accepted-control attachments are capacity-proven and nonallocating.
-    auto update = c::CopyBatchUpdate::take(std::move(copy.invocation), std::move(*submitted));
-    HYLE_FATAL_ASSERT(update.has_value()); copy.update = std::move(*update);
-    const auto sources = copy.update.retirement_count();
-    HYLE_FATAL_ASSERT(sources && *sources == 1);
-    HYLE_FATAL_ASSERT(copy.retirement.attach(copy.update, 0).ok());
-    check(copy.update.wait());
-    for (std::size_t j = 0; j < step.members.size(); ++j) {
-      auto &member = step.members[j];
-      const auto last = verifies_prefix(phase.family->role) ? member.accepted_tokens - 1 : 0;
-      const auto ready = [&](std::size_t row) {
-        auto writer = take(copy.update.take_mutable({static_cast<std::uint32_t>(count + j * phase.prefix_rows + row)}));
-        // The exact full row was copied and actually retired; no padding or
-        // untouched half is published as initialized canonical state.
-        return take(writer.publish());
-      };
-      member.next->carry_hidden = ready(last);
-      if (verifies_prefix(phase.family->role) && member.accepted_tokens > 1) member.next->prior_hidden = ready(last - 1);
-    }
-    hyle::Status terminal;
-    if (!take(copy.recover(terminal))) throw std::runtime_error("fixed hidden output copy retirement is pending");
-    check(terminal);
-    // readers stay readonly until original Graph unbind below. In particular,
-    // copy completion alone does not permit their promotion/reuse.
-  }
-
   void validate_mtp_snapshot(const cache::State &head, const StepMember *candidate = nullptr) const {
     if (cache_plan.draft_cache != head.draft.has_value())
       throw std::runtime_error("snapshot does not contain the configured complete MTP state");
@@ -3445,54 +3356,9 @@ public:
       throw std::runtime_error("inconsistent MTP frontier, catch-up token or owned target hidden state");
   }
 
-  void initialize_hidden_output(Phase &phase, std::size_t slot) {
-    if (!drafts_token(phase.family->role) ||
-        recursive_mtp() || max_drafts() != 1 ||
-        phase.replay_modes[slot] != g::ReplayMode::kPreferCapture) return;
-    auto &copy = phase.hidden_output[slot];
-    // Gate before touching a writer or a Graph binding, even on recovery.
-    if (copy.retirement.pending() || copy.update.in_flight() || copy.invocation.in_flight())
-      throw std::runtime_error("fixed hidden output still retains original copy work");
-    if (!copy.program.valid()) {
-      const auto description = dense(precision.activation_type(), {1, hidden});
-      const auto bytes = take(description.required_bytes());
-      const auto count = cache::multiply(phase.family->requests, phase.prefix_rows);
-      if (!count || count > UINT32_MAX / 2) throw std::runtime_error("fixed hidden output capacity overflow");
-      // Ownership and actual resource are compiled facts, not backend names.
-      for (const auto &ports : phase.carry_ports) for (auto port : ports) {
-        const auto &output = phase.child->output(port);
-        if (!output.caller_owned()) return;
-        validate_state_output(output, description);
-      }
-      auto context = execution.common_context(); auto queue = execution.common_queue();
-      if (!context || !queue) return; // No selected common CopyBatch endpoint.
-      std::vector<Tensor> scratch; std::vector<c::CopyResourceSpec> specs;
-      scratch.reserve(count); specs.reserve(count * 2);
-      for (std::size_t i = 0; i < count; ++i) {
-        Tensor value; value.description = description;
-        value.pool = take(c::LeasePool::create(execution.device(), bytes,
-            {.max_blocks = 1, .backing_alignment = cache::state_pool_alignment,
-             .resource_budget = execution_budget}));
-        value.writer = take(value.pool.allocate(bytes, cache::state_pool_alignment));
-        scratch.push_back(std::move(value)); specs.push_back({execution.device(), bytes});
-      }
-      for (std::size_t i = 0; i < count; ++i) specs.push_back({execution.device(), bytes});
-      auto program = take(c::CopyBatchProgram::prepare(**context, specs,
-          {.max_resources = static_cast<std::uint32_t>(count * 2),
-           .max_copies = static_cast<std::uint32_t>(count), .max_phases = 1,
-           .max_bytes = cache::multiply(count, bytes), .resource_budget = execution_budget}));
-      auto invocation = take(c::CopyBatchInvocation::create(program, **queue));
-      copy.readers.resize(count); copy.ranges.reserve(count);
-      copy.scratch = std::move(scratch); copy.program = std::move(program); copy.invocation = std::move(invocation);
-    } else if (!copy.invocation.valid())
-      copy.invocation = take(c::CopyBatchInvocation::create(copy.program, *take(execution.common_queue())));
-    check(copy.restore_writers());
-  }
-
   void initialize_slot(Phase &phase, std::size_t slot) {
     if (slot >= phase.slot_count) throw std::runtime_error("execution slot is outside its cold carrier plan");
     auto &io = phase.io[slot];
-    initialize_hidden_output(phase, slot);
     if (phase.slots[slot].valid()) return;
     const auto &definition = *phase.family;
     const auto &selected_sampler = definition.sampling->configuration;
@@ -3523,7 +3389,7 @@ public:
     if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
         check(run.bind(output->value, io.probe_outputs[i].view()));
-    if (!phase.state_sources.empty())
+    if (!phase.state_bindings[slot].empty())
       check(g::slots::prepare(run, phase.state_graph(), inference::queue_span(phase.queues), phase.state_sources,
           {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
     // Cold preparation can also run without a pending StepState. Publish only
@@ -3570,17 +3436,27 @@ public:
     phase.family = &definition; phase.variant_index = index;
     for (std::size_t slot = 0; slot < phase.slot_count; ++slot) {
       auto &banks = phase.state_bindings[slot];
-      banks.reserve(phase.state_sources.size());
+      banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
+      const auto add_bank = [&](StateBinding bank, std::size_t sources) {
+        const auto paired = std::ranges::find(phase.state_sources, bank.store, &g::slots::SourceBinding::store);
+        if (paired != phase.state_sources.end())
+          bank.source_index = static_cast<std::size_t>(paired - phase.state_sources.begin());
+        if (!imported_sources) bank.sources.resize(sources);
+        bank.destinations.resize(cache::multiply(requests, phase.prefix_rows));
+        banks.push_back(std::move(bank));
+      };
       for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
         for (const bool recurrent : {false, true}) {
-          StateBinding bank{.layer = layer, .recurrent = recurrent};
-          if (!imported_sources) bank.sources.resize(requests);
-          bank.destinations.resize(cache::multiply(requests, phase.prefix_rows));
-          banks.push_back(std::move(bank));
+          const auto &port = recurrent ? phase.layers[layer].recurrent : phase.layers[layer].history;
+          add_bank({.layer = layer, .kind = recurrent ? StateBankKind::kRecurrent : StateBankKind::kHistory,
+              .store = port.store}, requests);
         }
+      if (phase.hidden_state.store.valid())
+        add_bank({.kind = StateBankKind::kHidden, .store = phase.hidden_state.store},
+            has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
       phase.state_requests[slot].resize(banks.size());
       for (std::size_t bank = 0; bank < banks.size(); ++bank)
-        phase.state_requests[slot][bank] = {phase.state_sources[bank].store, &banks[bank].transaction};
+        phase.state_requests[slot][bank] = {banks[bank].store, &banks[bank].transaction};
     }
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
@@ -3830,7 +3706,7 @@ public:
   // Selection and equal-T bucketing belong to the caller. A batch owns one
   // original Invocation, IO loan, Completion and publication transaction.
   void prepare_draft_append(StepState &step, GraphRole role) {
-    auto &phase = *step.phase; auto &run = *step.run;
+    auto &phase = *step.phase;
     auto &io = phase.io[step.state_slot];
     const auto width = step.members.size();
     const auto rows = is_mtp_prefill(role) ? cache::add(step.input_tokens, draft_lag(role)) : draft_lag(role) + 1;
@@ -3895,11 +3771,8 @@ public:
       const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(rows)}, one_kv{0, static_cast<std::int32_t>(count)};
       member.draft_layout = take(attention_schema.version({one_query, one_kv, std::span(next_ids).subspan(begin, count), std::span(&next_last.back(), 1)}));
       for (std::size_t i = 0; i < rows; ++i) positions.push_back(static_cast<std::int32_t>(old.frontier + i));
-      const auto &ports = phase.draft_hidden_inputs[j];
-      check(run.bind(ports[0], dense(precision.activation_type(), {1, hidden}), member.base->carry_hidden));
       if (draft_lag(role)) {
         catchups.push_back(old.catchup_token);
-        check(run.bind(ports[1], dense(precision.activation_type(), {1, hidden}), member.base->prior_hidden));
       }
     }
     const auto layout = width == 1 ? step.members[0].draft_layout : take(attention_schema.version({query, next_ptr, next_ids, next_last}));
@@ -4347,35 +4220,35 @@ public:
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
       for (auto &bank : phase.state_bindings[slot]) {
-        auto &pools = state_pools[bank.layer];
-        const auto &description = bank.recurrent ? state_schema[bank.layer].recurrent : state_schema[bank.layer].history;
+        const bool is_hidden = bank.kind == StateBankKind::kHidden;
+        const bool recurrent = bank.kind == StateBankKind::kRecurrent;
+        const auto description = is_hidden ? dense(precision.activation_type(), {1, hidden})
+            : recurrent ? state_schema[bank.layer].recurrent : state_schema[bank.layer].history;
         const auto bytes = take(description.required_bytes());
-        for (std::size_t j = 0; !relay && j < width; ++j) {
-          const auto &state = step.members[j].base->state[bank.layer];
-          bank.sources[j] = bank.recurrent ? state.recurrent : state.history;
+        if (!relay) for (std::size_t j = 0; j < width; ++j) {
+          if (is_hidden) {
+            if (has_mtp(role)) {
+              bank.sources[j] = step.members[j].base->carry_hidden;
+              if (draft_lag(role)) bank.sources[width + j] = step.members[j].base->prior_hidden;
+            }
+          } else {
+            const auto &state = step.members[j].base->state[bank.layer];
+            bank.sources[j] = recurrent ? state.recurrent : state.history;
+          }
         }
         for (auto &writer : bank.destinations)
-          writer = take(bank.recurrent ? pools.acquire_recurrent(bytes) : pools.acquire_history(bytes));
+          writer = is_hidden ? take(hidden_pool.allocate(bytes, cache::state_pool_alignment))
+              : take(recurrent ? state_pools[bank.layer].acquire_recurrent(bytes)
+                  : state_pools[bank.layer].acquire_history(bytes));
         if (bank.transaction.valid()) check(bank.transaction.refill(bank.sources, bank.destinations));
         else bank.transaction = take(g::slots::SlotBindings::create(
-            bank.recurrent ? pools.recurrent_layout : pools.history_layout,
+            is_hidden ? hidden_layout : recurrent ? state_pools[bank.layer].recurrent_layout
+                : state_pools[bank.layer].history_layout,
             bank.sources, bank.destinations, {.resource_budget = cache_budget}));
         // The transaction now owns these source guards. Do not keep a second
         // Phase reader that would block old-head recovery after take/clear.
         for (auto &source : bank.sources) source = {};
       }
-      auto &fixed_output = phase.hidden_output[slot];
-      if (fixed_output.program.valid()) step.hidden_output = &fixed_output;
-      std::size_t carry_index = 0;
-      if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) for (const auto &ports : phase.carry_ports)
-        for (std::size_t i = 0; i < phase.prefix_rows; ++i, ++carry_index)
-          if (const auto &output = phase.child->output(ports[i]); output.caller_owned()) {
-            // Still a leased Graph OUTPUT: original write/native-use admission
-            // owns it until retirement/publication. Never bind writer.view().
-            auto writer = fixed_output.program.valid() ? std::move(fixed_output.scratch[carry_index].writer)
-                : take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
-            check(run.bind(output.value, output.description, std::move(writer)));
-          }
       std::vector<g::batch::NodeLayout> layouts;
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
       for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
@@ -4418,7 +4291,7 @@ public:
         check(g::detail::bind_outputs(run, input.bindings)); input.bound = true;
       }
       check(g::slots::bind(run, phase.state_graph(), phase.state_requests[slot]));
-      step.states_bound = !phase.state_sources.empty();
+      step.states_bound = !phase.state_requests[slot].empty();
       const auto batch_end = Clock::now();
       if (relay) check(g::detail::prepare_outputs(run, step.incoming->bindings, queues));
       else check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
@@ -4665,24 +4538,6 @@ public:
           member.layout = take(attention_schema.version({query, kv, ids, last}));
         }
       }
-      // Export every participant's ordinary outputs before taking ANY append:
-      // the first take_append revokes Graph output-ready for the entire batch.
-      copy_selected_hidden_outputs(step);
-      if (!step.hidden_output && (verifies_prefix(phase.family->role) || has_mtp(phase.family->role) || retains_sampling_frontier()))
-        for (std::size_t j = 0; j < outputs.size(); ++j) {
-          auto &member = step.members[j];
-          const auto &ports = phase.carry_ports[j];
-          member.next->carry_hidden = retain_state_storage(run,
-              phase.child->output(ports[verifies_prefix(phase.family->role) ? member.accepted_tokens - 1 : 0]));
-          if (verifies_prefix(phase.family->role) && member.accepted_tokens > 1) {
-            member.next->prior_hidden = retain_state_storage(run, phase.child->output(ports[member.accepted_tokens - 2]));
-          }
-          if (phase.family->role == GraphRole::kVerify && cache_plan.draft_cache) {
-            member.carry_prefix.reserve(member.accepted_tokens);
-            for (std::size_t row = 0; row < member.accepted_tokens; ++row)
-              member.carry_prefix.push_back(retain_state_storage(run, phase.child->output(ports[row])));
-          }
-        }
       if (has_mtp(phase.family->role)) for (auto &member : step.members) {
         auto &draft = *member.next->draft;
         draft.lag = static_cast<std::uint32_t>(member.next->length - draft.frontier);
@@ -4708,16 +4563,31 @@ public:
       // Graph completion above remains the success witness for every bank.
       for (std::size_t bank_index = 0; bank_index < phase.state_bindings[step.state_slot].size(); ++bank_index) {
         auto &bank = phase.state_bindings[step.state_slot][bank_index];
-        bank.transaction = take(g::slots::take(run, phase.state_sources[bank_index].store));
+        bank.transaction = take(g::slots::take(run, bank.store));
         for (std::size_t j = 0; j < outputs.size(); ++j) {
+          auto &member = step.members[j];
+          if (bank.kind == StateBankKind::kHidden) {
+            const auto count = verifies_prefix(phase.family->role) ? member.accepted_tokens : 1;
+            const bool repair = phase.family->role == GraphRole::kVerify && cache_plan.draft_cache;
+            if (repair) member.carry_prefix.reserve(count);
+            for (std::size_t row = 0; row < count; ++row) {
+              // Exactly one publication of each accepted canonical row. The
+              // final head and draft repair share aliases of that same lease.
+              auto ready = take(bank.transaction.destinations()[j * phase.prefix_rows + row].publish());
+              if (row + 1 == count) member.next->carry_hidden = ready;
+              if (row + 2 == count) member.next->prior_hidden = ready;
+              if (repair) member.carry_prefix.push_back(std::move(ready));
+            }
+            continue;
+          }
           const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
           const auto selected = j * phase.prefix_rows + prefix;
-          auto ready = step.sources ? take(step.sources->states[bank_index].publish(
+          auto ready = step.sources ? take(step.sources->states[bank.source_index].publish(
               selected, bank.transaction.destinations()[selected]))
               : take(bank.transaction.destinations()[selected].publish());
-          if (step.sources) step.sources->published_states[bank_index * outputs.size() + j] = ready;
+          if (step.sources) step.sources->published_states[bank.source_index * outputs.size() + j] = ready;
           auto &state = step.members[j].next->state[bank.layer];
-          (bank.recurrent ? state.recurrent : state.history) = std::move(ready);
+          (bank.kind == StateBankKind::kRecurrent ? state.recurrent : state.history) = std::move(ready);
         }
         // Release old source guards before the joint head-commit recycle hook.
         // Unaccepted MTP candidates are discarded, never made visible.
@@ -4827,10 +4697,6 @@ public:
         check(run.unbind(step.incoming->outside_inputs));
         step.incoming.reset(); step.predecessor_episode.reset();
       } else check(run.unbind(phase.state_resource_ports));
-      if (step.hidden_output) {
-        check(step.hidden_output->restore_writers());
-        step.hidden_output = nullptr;
-      }
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
             member.session->pending != &step ||
