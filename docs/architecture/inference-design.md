@@ -248,6 +248,13 @@ Store视图自身元数据已预冷；共同Source、混合bundle及原prepare�
 前驱退休而后继仍读、真实数学错误及退休清理；当前是完整目的集／K1承载，MTP非连续接受子集、有界持续轮换、
 完整模型和吞吐仍未完成，不能把组件检查当作完整模型重叠执行已交付。
 
+当前Qwen入口仍用一个串行载体；下一步接入有以下具体约束：
+
+- 普通token输入`[B*T]`与采样输出`[B,1]`不一致，可将外部输入改为`[B*T,1]`后立即用原Graph View展平，T1直接沿同一资源接力。`PreparedReadback`当前仍绑定裸TensorView，设备接力需按实际输出事实移交full writer，并从Graph发布的原租约读回。
+- I/O须按执行槽独立持有，不能只改槽数。普通K1保留old head与两代候选时，[状态预算](../../engine/models/qwen35/session_state.h)下界为N＋2R，额外KV COW尾页至少2R；首次真实边界／新shape可串行，稳态两个载体须均已冷备imported来源及真实tuple捕获。
+- [batch准备](../../src/compute_batch/batch_execution.cc)和[append布局上传](../../src/compute_batch/paged_append_program.cc)仍同步等待原Queue。完整流水须安排真实提前准备或有所有权及退休证明的异步承载，不能删wait后把未初始化metadata当ready。
+- finish须沿原Store／Paged Source受检发布及整束退休清理，不能再对在途读页用普通publish／unbind。设备token读须checked；采样valid、EOS、取消、expected-base、ledger及RNG仍在原host提交门判断，后继只写独立候选，不能提前发布head。
+
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。
 ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同步路径，保留managed／host-blocking事实；
