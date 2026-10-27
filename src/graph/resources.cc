@@ -2105,6 +2105,9 @@ struct StoreSourceState final : util::RefCounted<StoreSourceState> {
   slots::detail::StoreBinding *prepared_binding = nullptr;
   NodeId node{};
   slots::Schema schema{};
+  // The fixed read view may cover only a consecutive part of the original
+  // Store. The original transaction must still contain this full count.
+  std::size_t original_destination_count = 0, first_destination = 0;
   util::Ref<SubmissionSourceState> submission;
   compute::LeaseSlotLayout layout;
   compute::ConstTensorView capacity{}, indices{};
@@ -2675,6 +2678,18 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
     if (step.emits_command() && (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
         runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
       commands = false;
+  }
+  if (!bundle.all_ready) {
+    const bool retained = std::ranges::any_of(state->captured_ranges,
+        [](const auto &range) { return range.commands.valid(); }) ||
+        std::ranges::any_of(state->capture_rebuilds, [](const auto &range) {
+          return range.storage.valid() || std::ranges::any_of(range.variants,
+              [](const auto &variant) { return variant.commands.valid(); });
+        });
+    // Commands preparation destroys these native artifacts. A pending producer
+    // must not incur that driver cleanup; require the existing complete tuple
+    // below, even when every ordinary command is otherwise nonblocking.
+    if (retained) commands = false;
   }
   auto route = bundle.consumer ? bundle.consumer_route
       : commands ? ReplayRoute::kCommands : ReplayRoute::kUnprepared;
@@ -3430,29 +3445,9 @@ struct PrepareStoreSource final {
   ExecutionLaneId lane{};
   mem::MemoryResourceRef resource{};
 };
-} // namespace
-StoreSource::StoreSource(StoreSource &&other) noexcept
-    : state_(std::exchange(other.state_, nullptr)) {}
-StoreSource &StoreSource::operator=(StoreSource &&other) noexcept {
-  if (this != &other) {
-    if (state_) state_->decref();
-    state_ = std::exchange(other.state_, nullptr);
-  }
-  return *this;
-}
-StoreSource::~StoreSource() { if (state_) state_->decref(); }
-bool StoreSource::valid() const noexcept { return state_ && state_->submission; }
-std::size_t StoreSource::destination_count() const noexcept { return state_ ? state_->tickets.size() : 0; }
-Result<OutputBinding> StoreSource::reader_binding(Invocation &invocation, const Graph &graph,
-    NodeId store, std::span<const compute::ReadLease> ready) const noexcept {
-  if (!valid()) return std::unexpected(Status::FailedPrecondition("Store reader needs its captured original source"));
-  HYLE_ASSIGN_OR_RETURN(auto projection, slots::detail::source_projection(invocation, store));
-  HYLE_RETURN_IF_ERROR(validate_store_reader(&graph, projection, *state_, *InvocationAccess::state(invocation)));
-  HYLE_RETURN_IF_ERROR(validate_store_ready(*state_, ready));
-  return OutputBinding{.store = this, .projection = projection, .graph = &graph, .store_ready = ready};
-}
-Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
-    const compute::StorageOwner &storage, ResourceOptions options) noexcept {
+Result<StoreSourceState *> prepare_store_source(Invocation &invocation, NodeId node,
+    const compute::StorageOwner &storage, const StoreDestinationRange *selected,
+    ResourceOptions options) noexcept {
   auto *parent = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(parent));
   if (!storage || !options.allocator.valid())
@@ -3479,6 +3474,10 @@ Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
         call.count = facts.destination_count; call.lane = view.lane; call.resource = facts.resource;
         return Status::Ok();
       }, &call));
+  const auto first = selected ? selected->first : 0;
+  const auto count = selected ? selected->count : call.count;
+  if (!count || first > call.count || count > call.count - first)
+    return std::unexpected(Status::InvalidArgument("Store source destination range is outside its original transaction"));
   const auto &plan = *parent->plan;
   if (!call.binding || call.resource != storage.ref() ||
       std::ranges::none_of(plan.storage_domains, [&](const auto &domain) {
@@ -3502,11 +3501,43 @@ Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
   owner->options = options; owner->options.allocator = allocator;
   owner->prepared_parent = parent; retain(parent);
   owner->prepared_binding = call.binding; owner->node = node; owner->schema = call.schema;
-  try { owner->tickets.resize(call.count); owner->addresses.resize(call.count); }
+  owner->original_destination_count = call.count; owner->first_destination = first;
+  try { owner->tickets.resize(count); owner->addresses.resize(count); }
   catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("Store source fixed ticket/coordinate metadata"));
   }
-  return StoreSource(owner.release());
+  return owner.release();
+}
+} // namespace
+StoreSource::StoreSource(StoreSource &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+StoreSource &StoreSource::operator=(StoreSource &&other) noexcept {
+  if (this != &other) {
+    if (state_) state_->decref();
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+StoreSource::~StoreSource() { if (state_) state_->decref(); }
+bool StoreSource::valid() const noexcept { return state_ && state_->submission; }
+std::size_t StoreSource::destination_count() const noexcept { return state_ ? state_->tickets.size() : 0; }
+Result<OutputBinding> StoreSource::reader_binding(Invocation &invocation, const Graph &graph,
+    NodeId store, std::span<const compute::ReadLease> ready) const noexcept {
+  if (!valid()) return std::unexpected(Status::FailedPrecondition("Store reader needs its captured original source"));
+  HYLE_ASSIGN_OR_RETURN(auto projection, slots::detail::source_projection(invocation, store));
+  HYLE_RETURN_IF_ERROR(validate_store_reader(&graph, projection, *state_, *InvocationAccess::state(invocation)));
+  HYLE_RETURN_IF_ERROR(validate_store_ready(*state_, ready));
+  return OutputBinding{.store = this, .projection = projection, .graph = &graph, .store_ready = ready};
+}
+Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
+    const compute::StorageOwner &storage, ResourceOptions options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto state, prepare_store_source(invocation, node, storage, nullptr, options));
+  return StoreSource(state);
+}
+Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
+    const compute::StorageOwner &storage, StoreDestinationRange selected, ResourceOptions options) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto state, prepare_store_source(invocation, node, storage, &selected, options));
+  return StoreSource(state);
 }
 Status StoreSource::capture(const SubmissionSource &submission) noexcept {
   if (!state_ || !submission.state_)
@@ -3522,8 +3553,10 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
       !(phase == InvocationPhase::kIdle && source.producer->outputs_ready.load(std::memory_order_acquire)))
     return Status::FailedPrecondition("Store source requires a successful-or-pending original producer");
   HYLE_ASSIGN_OR_RETURN(auto exported, view.prepared_binding->export_pending());
-  if (!exported.transaction || exported.transaction->destination_count() != view.tickets.size() ||
-      exported.transaction->destination_addresses().size() != view.addresses.size() ||
+  if (!exported.transaction || exported.transaction->destination_count() != view.original_destination_count ||
+      exported.transaction->destination_addresses().size() != view.original_destination_count ||
+      view.first_destination > view.original_destination_count ||
+      view.tickets.size() > view.original_destination_count - view.first_destination ||
       exported.capacity.storage().resource() != view.storage_owner.ref() ||
       exported.indices.storage().resource() != view.storage_owner.ref() ||
       source.metadata_owner.context_identity() != view.storage_owner.context_identity())
@@ -3539,6 +3572,15 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
     if (!source_retains_allocator(view.storage_owner,
             compute::detail::LeaseAccess::metadata_backing_allocator(writer)))
       return Status::InvalidArgument("Store source owner cannot retain its destination allocator");
+  if (view.first_destination > SIZE_MAX / sizeof(std::int32_t) ||
+      view.tickets.size() > SIZE_MAX / sizeof(std::int32_t) ||
+      view.tickets.size() > static_cast<std::uint64_t>(INT64_MAX))
+    return Status::OutOfRange("Store source destination-ID range overflows");
+  HYLE_ASSIGN_OR_RETURN(auto indices_guard, exported.indices_guard.subview(
+      view.first_destination * sizeof(std::int32_t), view.tickets.size() * sizeof(std::int32_t)));
+  HYLE_ASSIGN_OR_RETURN(auto indices_description, compute::TensorDesc::dense(compute::DataType::kInt32,
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(view.tickets.size())}));
+  HYLE_ASSIGN_OR_RETURN(auto indices, indices_guard.tensor(indices_description));
   // All allocations, selected authority, coordinates, carrier and allocator
   // checks precede the first seal. Rejection never escapes a partial ticket set.
   struct DiscardTickets final {
@@ -3546,14 +3588,15 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
     bool committed = false;
     ~DiscardTickets() { if (!committed) for (auto &ticket : view.tickets) ticket.reset(); }
   } rollback{view};
-  for (std::size_t i = 0; i < writers.size(); ++i) {
-    HYLE_ASSIGN_OR_RETURN(auto ticket, compute::detail::LeaseAccess::pending_read(writers[i]));
+  for (std::size_t i = 0; i < view.tickets.size(); ++i) {
+    const auto original = view.first_destination + i;
+    HYLE_ASSIGN_OR_RETURN(auto ticket, compute::detail::LeaseAccess::pending_read(writers[original]));
     view.tickets[i] = std::move(ticket);
-    view.addresses[i] = exported.transaction->destination_addresses()[i];
+    view.addresses[i] = exported.transaction->destination_addresses()[original];
   }
   view.layout = std::move(layout);
-  view.capacity = exported.capacity; view.indices = exported.indices;
-  view.indices_guard = std::move(exported.indices_guard);
+  view.capacity = exported.capacity; view.indices = indices;
+  view.indices_guard = std::move(indices_guard);
   view.submission = util::retain_ref(&source);
   auto *original = std::exchange(view.prepared_parent, nullptr);
   view.prepared_binding = nullptr;
@@ -3565,7 +3608,8 @@ Status StoreSource::capture(const SubmissionSource &submission) noexcept {
 }
 Result<compute::ReadLease> StoreSource::publish(std::size_t destination,
     compute::WriteLease &writer) const noexcept {
-  if (!valid() || destination >= state_->tickets.size())
+  if (!valid() || destination < state_->first_destination ||
+      destination - state_->first_destination >= state_->tickets.size())
     return std::unexpected(Status::InvalidArgument("Store source destination is not captured"));
   auto &source = *state_->submission;
   std::lock_guard guard(source.observation);
@@ -3576,7 +3620,8 @@ Result<compute::ReadLease> StoreSource::publish(std::size_t destination,
       !source.producer->outputs_ready.load(std::memory_order_acquire) ||
       source.producer->preparation_uses.load(std::memory_order_acquire)))
     return std::unexpected(Status::Unavailable("Store source producer has not actually retired"));
-  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::matches_pending_read(state_->tickets[destination], writer));
+  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::matches_pending_read(
+      state_->tickets[destination - state_->first_destination], writer));
   return compute::detail::LeaseAccess::publish_after_writes(writer);
 }
 Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindings) noexcept {

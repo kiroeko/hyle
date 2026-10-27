@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "status": "PASS_AFTER_RECORDED_FAILURE",
+  "date": "2026-10-27",
+  "subject": "Fixed continuous original Store destination Source and pending capture retention",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 258292,
+      "sha256": "c832a89c704bc4b50ffea8ffa8b2068e0854f3d3925246b8942c761980599d4a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\store_source.h",
+      "bytes": 3316,
+      "sha256": "a125ed55f5d57ef2ad58fa929328fc6af7fd4082746e1b86f90425d611757a89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 107083,
+      "sha256": "40d8b80da3417601fe17a1fb2dbd90d07ba8e5a67456d990c1f12b943bb53ba7"
+    }
+  ],
+  "implementation": [
+    "prepare range {first,count} fixes a nonempty consecutive original destination interval; original whole overload and old methods remain.",
+    "capture first validates the complete original M-writer transaction; only selected full-writer tickets are sealed, using the real bounded I32 IDs subview without upload or copy.",
+    "destination_count is view count; publish uses original ordinals and rejects unselected or mismatched returned writers.",
+    "Pending consumers with any retained capture commands/rebuild storage/variants require original complete reuse-only qualification. A tuple miss returns Unavailable; no record, Commands fallback or artifact destruction.",
+    "Without retained artifacts, original Prepared nonblocking Commands remain available. All-ready retains original PreferCapture behavior."
+  ],
+  "validation": {
+    "final_process": {
+      "exit": 0,
+      "pid": 57680,
+      "seconds": 0.5680536000290886
+    },
+    "final_tests": [
+      "GraphOutputSourceCuda.ContinuousStoreRangeReusesExactReadyCaptureAndOriginalOrdinals",
+      "GraphOutputSourceCuda.ContinuousStoreRangePreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.PendingF32FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather"
+    ],
+    "final_passed": 6,
+    "final_skipped": 0,
+    "actual_checks": [
+      "Whole and {1,1} views capture one original submitted generation; real pending Gather reads only the selected row.",
+      "Genuine ready RequireCapture followed by exact guard withdrawal and same-generation writer reuse; final pending preparation reuses existing capture with zero recording while A remains gated.",
+      "Original ordinal publication, failed producer complete Status and actual retirement, count/root/generation/range ready rejection, preserved old snapshots and padding.",
+      "Original whole-source pair plus F32/I32 prepared consumer regressions."
+    ],
+    "cumulative": {
+      "CXX": 3,
+      "links": 4,
+      "GPU_test_processes": 2,
+      "SDK": 0,
+      "NVCC": 0,
+      "model": 0
+    },
+    "builds": [
+      {
+        "process": {
+          "exit": 0,
+          "pid": 53680,
+          "seconds": 4.3717565999832
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\compile\\resources\\unit.obj",
+          "bytes": 3107462,
+          "sha256": "beb0080c7bd35bce89f84b432838b6fda8a36cccacb33979bef95e3e8b5a0239"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\source\\src\\graph\\resources.cc",
+          "bytes": 257610,
+          "sha256": "41d1c2d644a88d1fb8100cea509739ee7482c252f56fcf650ee214f93c6537bc"
+        }
+      },
+      {
+        "process": {
+          "exit": 0,
+          "pid": 12196,
+          "seconds": 9.663701200042851
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\compile\\output-test\\unit.obj",
+          "bytes": 3416113,
+          "sha256": "9f8b496cf46b16c9b0f36417360f9b3f9d471845e5800bef1a370a8680543f7c"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\source\\tests\\graph\\output_source_cuda_test.cc",
+          "bytes": 107083,
+          "sha256": "40d8b80da3417601fe17a1fb2dbd90d07ba8e5a67456d990c1f12b943bb53ba7"
+        }
+      },
+      {
+        "process": {
+          "exit": 0,
+          "pid": 35232,
+          "seconds": 4.100697899993975
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\compile\\resources2\\unit.obj",
+          "bytes": 3130772,
+          "sha256": "e520b8e53f8e775a985fb2d359a5d4183be175d4e1e01030a241d51171dd23e0"
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\source2\\src\\graph\\resources.cc",
+          "bytes": 258292,
+          "sha256": "c832a89c704bc4b50ffea8ffa8b2068e0854f3d3925246b8942c761980599d4a"
+        }
+      }
+    ],
+    "images": {
+      "cli": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\bin\\hyle.exe",
+          "bytes": 142416384,
+          "sha256": "d9dcb533e92c7704040e3fd297aeb0358521b3775d159961d98b54342925bd1a"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 49716,
+          "seconds": 1.7861358000081964
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\cli-link-inputs.json",
+          "bytes": 57877,
+          "sha256": "30a8c9c131ce38336d6b54cde7a2357b821fbfc89247af7a1a2b703f7dfa0225"
+        },
+        "scope": "linked; not run"
+      },
+      "component": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\bin\\generic-output-source-test.exe",
+          "bytes": 148007424,
+          "sha256": "f8b2cd88b229dba54a67f26ea544a294a178070245d2263a0aabb524e3f46327"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 55072,
+          "seconds": 2.0029461999656633
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\component-link-inputs.json",
+          "bytes": 62062,
+          "sha256": "65e54fac44854db729cf10e5114182faa136073ba2a7ae3d595f515a4db537f8"
+        },
+        "scope": "initial 2pass/1fail/1skip"
+      },
+      "cli2": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\bin2\\hyle.exe",
+          "bytes": 142416896,
+          "sha256": "15295e7147de8a6894797a79853ea73238cdd30820cad9125b747bbc7f214760"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 60580,
+          "seconds": 1.8014473000075668
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\cli-link-inputs2.json",
+          "bytes": 57878,
+          "sha256": "5b9d3993de4a20b7f5168ebc9e80ea396e379b4a849b090214365628dc35fcc4"
+        },
+        "scope": "linked; not run"
+      },
+      "component2": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\bin2\\store-source-range-test.exe",
+          "bytes": 148007424,
+          "sha256": "93a3ac29e8986be536ed26d45d8fcd33244384a0b07f91c7f130d2dc63a4a2df"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 21872,
+          "seconds": 1.914381599985063
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\component-link-inputs2.json",
+          "bytes": 62063,
+          "sha256": "410cf1ee853e372aec8540015c5f37c1d0045270cf27a418794b4aef8b0c5a04"
+        },
+        "scope": "final 6pass"
+      }
+    },
+    "header_reuse_exception": {
+      "before": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\source\\store_source-before.h",
+        "bytes": 2477,
+        "sha256": "0de7a2cfd6a50ad5fc9399d39001f7c883ef222871a2ae51c38adb2253acb541"
+      },
+      "after": {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\store_source.h",
+        "bytes": 3316,
+        "sha256": "a125ed55f5d57ef2ad58fa929328fc6af7fd4082746e1b86f90425d611757a89"
+      },
+      "old_tokens_unchanged_after_removing_only_two_additions": true,
+      "additions": [
+        "StoreDestinationRange type",
+        "one new static prepare overload without a default ResourceOptions"
+      ],
+      "unchanged": "All original declarations, defaults, inline definitions and private pointer field; StoreSource object layout unchanged.",
+      "boundary": "Only resources.cc-private State grows; it is recompiled. No general changed-header/ABI waiver."
+    }
+  },
+  "recorded_failure": {
+    "process": {
+      "exit": 1,
+      "pid": 27220,
+      "seconds": 10.573556700022891
+    },
+    "result": {
+      "passed": 2,
+      "failed": 1,
+      "skipped_fail_fast": 1
+    },
+    "observation": "Prepared consumer initially chose Commands; A gate watchdog released after 10s and existing capture was not reused.",
+    "static_cause": "Commands preparation reset captured artifacts; CUDA capture status destruction calls cudaFree. The blocking-call attribution is static ownership/timing inference, not direct debugger proof.",
+    "correction": "Local pending Source route selection preserves artifacts and enforces existing reuse-only proof; unchanged test object and assertions then passed.",
+    "not_run_initially": "GraphOutputSourceCuda.ContinuousStoreRangePreservesWholeProducerFailure"
+  },
+  "harness_failure": {
+    "stage": "check2.py parser before CXX",
+    "error": "one extra ')' corrected",
+    "evidence": "check2-attempt1.py and failure2-freeze-parse.json retained"
+  },
+  "boundaries": [
+    "No nonconsecutive R2 selection/compact IDs, accepted-prefix device selection, complete MTP successor or full engine pipeline validation.",
+    "No model, performance, SDK/NVCC rebuild, download, multi-platform or new fault-injection run.",
+    "Two CLI images only linked. Component evidence does not claim throughput or universal asynchronous driver cleanup."
+  ],
+  "evidence": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-store-source-range-2026-10-27.zip",
+      "bytes": 372637,
+      "sha256": "a28c97f4d5cf374cb6281baf636a1f5ce2425c26e49f369f3e2ec747adf386eb"
+    },
+    "members": 96,
+    "all_member_bytes_and_sha_read_back": true,
+    "omitted": "EXE/OBJ/PDB/DLL/LIB/EXP, SDK, shader binaries and model payloads"
+  }
+}

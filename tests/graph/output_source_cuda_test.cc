@@ -824,7 +824,7 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
   EXPECT_EQ(tokens_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
-void store_relay(bool failed_producer) {
+void store_relay(bool failed_producer, bool selected_range = false) {
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -849,6 +849,8 @@ void store_relay(bool failed_producer) {
       std::array<std::int64_t, 2>{4, 2}).value();
   const auto row_desc = c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t, 2>{1, 2}).value();
+  const auto read_ids_desc = selected_range ? i32 : ids_desc;
+  const auto read_rows_desc = selected_range ? row_desc : rows_desc;
   constexpr std::size_t stride = 256, item_bytes = 2 * sizeof(float);
   auto backing = hyle::mem::Buffer::create(storage.ref(), 4 * stride, stride).value();
   ASSERT_TRUE(backing.view().fill(std::byte{0x5a}).ok());
@@ -914,26 +916,24 @@ void store_relay(bool failed_producer) {
   ASSERT_TRUE(producer.bind(index_input, i32, index_ready).ok());
   ASSERT_TRUE(producer.bind(row_input, rows_desc, rows_ready).ok());
   auto token_writer = token_pool.allocate(sizeof(std::int32_t), stride).value();
-  ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
+  c::ReadLease warm_token;
+  if (selected_range) {
+    constexpr std::array<std::int32_t, 1> warm_value{2};
+    ASSERT_TRUE(token_writer.view()->write(std::as_bytes(std::span(warm_value))).ok());
+    warm_token = token_writer.publish().value();
+  } else {
+    ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
+  }
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
   ASSERT_TRUE(g::slots::prepare(producer, queues, {.host_workspace = staging.ref()}).ok());
   auto transaction = g::slots::SlotBindings::create(layout, {}, destinations).value();
   ASSERT_TRUE(g::slots::bind(producer, first_graph, store, std::move(transaction)).ok());
-  // Reserve the typed state metadata before accepting the predecessor. No
-  // writer is copied or sealed until capture names its exact real submission.
-  auto state_result = gd::StoreSource::prepare(producer, store, storage);
-  ASSERT_TRUE(state_result) << state_result.error().message();
-  auto state = std::move(*state_result);
-  auto another_result = gd::StoreSource::prepare(producer, store, storage);
-  ASSERT_TRUE(another_result) << another_result.error().message();
-  auto another_view = std::move(*another_result);
-
   auto second = g::GraphBuilder::create().value();
   const auto embedding_input = second.input(embedding_desc).value();
   const auto token_input = second.input(i32).value();
   const auto bank_input = second.input(
       g::slots::Schema::create(item, 4, stride)->capacity_description().value()).value();
-  const auto source_ids = second.input(ids_desc).value();
+  const auto source_ids = second.input(read_ids_desc).value();
   const auto unrelated_ids = second.input(ids_desc).value();
   const auto token_row = second.add(c::Gather{.axis = 0}, embedding_input, token_input).value();
   const auto gather = second.add_node(c::Operation(c::Gather{.axis = 0}),
@@ -948,14 +948,109 @@ void store_relay(bool failed_producer) {
   auto consumer = consumer_plan->executable.create_invocation().value();
   ASSERT_TRUE(consumer.prepare_resources().ok());
   ASSERT_TRUE(consumer.bind(embedding_input, embedding_desc, embedding_ready).ok());
-  ASSERT_TRUE(consumer.bind(source_ids, ids_desc, old_ids_ready).ok());
+  auto previous_ids = selected_range ? old_ids_ready.subview(0, sizeof(std::int32_t)).value()
+                                     : old_ids_ready;
+  ASSERT_TRUE(consumer.bind(source_ids, read_ids_desc, previous_ids).ok());
   ASSERT_TRUE(consumer.bind(unrelated_ids, ids_desc, decoy_ids_ready).ok());
   auto token_row_writer = output_pool.allocate(item_bytes, stride).value();
-  auto state_rows_writer = output_pool.allocate(2 * item_bytes, stride).value();
+  auto state_rows_writer = output_pool.allocate(selected_range ? item_bytes : 2 * item_bytes, stride).value();
   auto decoy_rows_writer = output_pool.allocate(2 * item_bytes, stride).value();
   ASSERT_TRUE(consumer.bind(token_row, row_desc, std::move(token_row_writer)).ok());
-  ASSERT_TRUE(consumer.bind(state_rows, rows_desc, std::move(state_rows_writer)).ok());
+  ASSERT_TRUE(consumer.bind(state_rows, read_rows_desc, std::move(state_rows_writer)).ok());
   ASSERT_TRUE(consumer.bind(decoy_rows, rows_desc, std::move(decoy_rows_writer)).ok());
+  g::Invocation guard_probe;
+  if (selected_range) {
+    guard_probe = consumer_plan->executable.create_invocation().value();
+    ASSERT_TRUE(guard_probe.prepare_resources().ok());
+  }
+  std::size_t recorded_ranges = 0;
+  if (selected_range) {
+    // Prime the exact future physical tuple with genuinely initialized ready
+    // state. The cold original Store has not run; both old payloads are real.
+    struct ColdControl final { c::ConstTensorView capacity{}, indices{}; c::ReadLease ids; } control;
+    ASSERT_TRUE(gd::RegionAccess::visit(producer, store,
+        [](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
+          auto &result = *static_cast<ColdControl *>(opaque);
+          const auto *extension = static_cast<const g::slots::detail::StoreRegionVTable *>(
+              view.prepared_vtable->query_extension(view.prepared, g::slots::detail::kStoreBindingExtensionId));
+          if (!extension || !extension->binding) return hyle::Status::Unimplemented("Store export missing");
+          HYLE_ASSIGN_OR_RETURN(auto exported, extension->binding(view.invocation)->export_pending());
+          result.capacity = exported.capacity; result.indices = exported.indices;
+          result.ids = std::move(exported.indices_guard);
+          return hyle::Status::Ok();
+        }, &control).ok());
+    auto cold_returned = g::slots::take(producer, store);
+    ASSERT_TRUE(cold_returned) << cold_returned.error().message();
+    std::array<c::ReadLease, 2> warm_state;
+    std::array<std::uint64_t, 2> generations{};
+    std::array<hyle::mem::ConstBufferView, 2> old_storage;
+    for (std::size_t i = 0; i < warm_state.size(); ++i) {
+      warm_state[i] = cold_returned->destinations()[i].publish().value();
+      generations[i] = warm_state[i].generation(); old_storage[i] = warm_state[i].view().value();
+    }
+    const auto token_generation = warm_token.generation();
+    const auto old_token_storage = warm_token.view().value();
+    auto selected_ids = control.ids.subview(sizeof(std::int32_t), sizeof(std::int32_t)).value();
+    const auto selected_storage = selected_ids.view().value();
+    EXPECT_EQ(selected_storage.native_handle(), control.indices.storage().native_handle());
+    EXPECT_EQ(selected_storage.offset(), control.indices.storage().offset() + sizeof(std::int32_t));
+    EXPECT_EQ(selected_storage.size(), sizeof(std::int32_t));
+    ASSERT_TRUE(consumer.bind(token_input, i32, warm_token).ok());
+    ASSERT_TRUE(consumer.bind(source_ids, read_ids_desc, selected_ids).ok());
+    ASSERT_TRUE(gd::RegionAccess::reserve_reads(consumer, 1, {}).ok());
+    const std::array access{gather};
+    ASSERT_TRUE(gd::RegionAccess::bind_read_projection(consumer,
+        {bank_input, {}, access}, control.capacity, std::span<const c::ReadLease>(warm_state).subspan(1, 1)).ok());
+    const auto warm = consumer.prepare_replay(queues,
+        {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(warm.ok()) << warm.message();
+    ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
+    recorded_ranges = consumer.replay_report()->recorded_capture_range_count;
+    ASSERT_GT(recorded_ranges, 0u);
+    EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, 0u);
+    ASSERT_TRUE(gd::RegionAccess::release_read_projection(consumer, bank_input).ok());
+    ASSERT_TRUE(consumer.unbind(std::array{source_ids, token_input}).ok());
+    selected_ids = {}; control.ids = {};
+    for (std::size_t i = 0; i < warm_state.size(); ++i) {
+      auto reclaimed = warm_state[i].try_write();
+      ASSERT_TRUE(reclaimed) << reclaimed.error().message();
+      EXPECT_EQ(reclaimed->generation(), generations[i]);
+      const auto actual = reclaimed->view().value();
+      EXPECT_EQ(actual.resource(), old_storage[i].resource());
+      EXPECT_EQ(actual.native_handle(), old_storage[i].native_handle());
+      EXPECT_EQ(actual.offset(), old_storage[i].offset()); EXPECT_EQ(actual.size(), old_storage[i].size());
+      destinations[i] = std::move(*reclaimed);
+    }
+    auto reclaimed_token = warm_token.try_write();
+    ASSERT_TRUE(reclaimed_token) << reclaimed_token.error().message();
+    EXPECT_EQ(reclaimed_token->generation(), token_generation);
+    EXPECT_EQ(reclaimed_token->view()->offset(), old_token_storage.offset());
+    ASSERT_TRUE(producer.bind(token, i32, std::move(*reclaimed_token)).ok());
+    auto actual = g::slots::SlotBindings::create(layout, {}, destinations).value();
+    ASSERT_TRUE(g::slots::bind(producer, first_graph, store, std::move(actual)).ok());
+    // Empty and out-of-bounds ranges must not affect the original transaction.
+    for (const auto invalid : std::array{gd::StoreDestinationRange{0, 0},
+             gd::StoreDestinationRange{2, 1}, gd::StoreDestinationRange{1, 2},
+             gd::StoreDestinationRange{SIZE_MAX, 1}}) {
+      auto rejected = gd::StoreSource::prepare(producer, store, storage, invalid, {});
+      ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument());
+    }
+  }
+  // Both overloads share one cold preparation path. Explicit {} retains its
+  // original ResourceOptions meaning rather than becoming an ambiguous range.
+  auto state_result = gd::StoreSource::prepare(producer, store, storage, {});
+  ASSERT_TRUE(state_result) << state_result.error().message();
+  auto state = std::move(*state_result);
+  auto another_result = selected_range
+      ? gd::StoreSource::prepare(producer, store, storage, gd::StoreDestinationRange{1, 1}, {})
+      : gd::StoreSource::prepare(producer, store, storage);
+  ASSERT_TRUE(another_result) << another_result.error().message();
+  auto another_view = std::move(*another_result);
+  gd::StoreSource proof_view;
+  if (selected_range) {
+    auto proof = gd::StoreSource::prepare(producer, store, storage, gd::StoreDestinationRange{1, 1}, {});
+    ASSERT_TRUE(proof) << proof.error().message(); proof_view = std::move(*proof);
+  }
   ASSERT_TRUE(producer.prepare_replay(queues,
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
 
@@ -973,15 +1068,21 @@ void store_relay(bool failed_producer) {
   // immutable generation after its first ticket sealed further mutation.
   const auto captured_again = another_view.capture(common);
   ASSERT_TRUE(captured_again.ok()) << captured_again.message();
-  EXPECT_EQ(another_view.destination_count(), 2u);
-  another_view = {};
+  EXPECT_EQ(state.destination_count(), 2u);
+  EXPECT_EQ(another_view.destination_count(), selected_range ? 1u : 2u);
+  if (selected_range) {
+    const auto captured_proof = proof_view.capture(common);
+    ASSERT_TRUE(captured_proof.ok()) << captured_proof.message();
+  } else {
+    another_view = {};
+  }
   auto token_result = gd::OutputSource::create(common, token, storage, token_pool);
   ASSERT_TRUE(token_result) << token_result.error().message();
   auto token_source = std::move(*token_result);
   const std::array access{gather};
   const std::array bindings{
       gd::OutputBinding{token_input, &token_source},
-      gd::OutputBinding{.store = &state,
+      gd::OutputBinding{.store = selected_range ? &another_view : &state,
           .projection = {bank_input, source_ids, gather, access,
               c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
   auto bad_bindings = bindings;
@@ -995,6 +1096,11 @@ void store_relay(bool failed_producer) {
   const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  if (selected_range) {
+    EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
+    EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
+    EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, recorded_ranges);
+  }
   const auto report = consumer.input_source_report().value();
   EXPECT_EQ(report.source_count, 1u); EXPECT_EQ(report.device_wait_count, 1u);
   EXPECT_EQ(report.host_wait_count, 0u);
@@ -1019,19 +1125,49 @@ void store_relay(bool failed_producer) {
     auto rejected = state.publish(0, foreign_writer);
     ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument());
     EXPECT_TRUE(foreign_writer.valid());
+    if (selected_range) {
+      // Original ordinals never become dense subset ordinals. Both rejected
+      // calls leave their original returned writers intact.
+      EXPECT_FALSE(another_view.publish(0, returned->destinations()[0]));
+      EXPECT_TRUE(returned->destinations()[0].valid());
+      EXPECT_FALSE(another_view.publish(1, returned->destinations()[0]));
+      EXPECT_TRUE(returned->destinations()[0].valid());
+    }
     for (std::size_t i = 0; i < published.size(); ++i) {
       EXPECT_FALSE(returned->destinations()[i].publish());
-      auto value = state.publish(i, returned->destinations()[i]);
+      auto value = selected_range && i == 1
+          ? another_view.publish(i, returned->destinations()[i])
+          : state.publish(i, returned->destinations()[i]);
       ASSERT_TRUE(value) << value.error().message();
       published[i] = std::move(*value);
-      EXPECT_FALSE(published[i].try_write());
+      if (!selected_range || i == 1) EXPECT_FALSE(published[i].try_write());
+    }
+    if (selected_range) {
+      // A complete producer succeeded and truly retired. These checks therefore
+      // reach the exact guard validator, not a pending/result/output gate.
+      auto guard_binding = bindings[1]; guard_binding.store = &proof_view;
+      const auto rejects_ready = [&](std::span<const c::ReadLease> ready,
+                                    const char *message) {
+        auto bad = guard_binding; bad.store_ready = ready;
+        const auto status = gd::bind_outputs(guard_probe, std::span(&bad, 1));
+        EXPECT_TRUE(status.IsInvalidArgument()) << status.message();
+        EXPECT_EQ(status.message(), message);
+      };
+      rejects_ready(published, "ready Store source needs every original destination in order");
+      rejects_ready(std::span<const c::ReadLease>(published).first(1),
+          "ready Store destination differs from its original ticket root or generation");
+      EXPECT_NE(sentinels[0].generation(), published[1].generation());
+      rejects_ready(std::span<const c::ReadLease>(sentinels).first(1),
+          "ready Store destination differs from its original ticket root or generation");
+      const std::array partial{published[1].subview(0, sizeof(float)).value()};
+      rejects_ready(partial, "slot requires the complete exact original block");
     }
     // Independent tickets and bounded control guards survive the original
     // transaction's take and reset while the successor still has a native use.
     EXPECT_TRUE(producer.reset().ok());
   } else {
     ASSERT_FALSE(original_status.ok());
-    auto rejected = state.publish(0, foreign_writer);
+    auto rejected = selected_range ? another_view.publish(1, foreign_writer) : state.publish(0, foreign_writer);
     ASSERT_FALSE(rejected);
     EXPECT_EQ(rejected.error().code(), original_status.code());
     EXPECT_EQ(rejected.error().message(), original_status.message());
@@ -1046,7 +1182,7 @@ void store_relay(bool failed_producer) {
   } else {
     ASSERT_TRUE(consumer_status.ok()) << consumer_status.message();
     std::array<float, 2> actual_token_row{};
-    std::array<float, 4> actual_state_rows{};
+    std::vector<float> actual_state_rows(selected_range ? 2u : 4u);
     std::array<float, 4> actual_decoy_rows{};
     ASSERT_TRUE(consumer.output(token_row)->storage().read(
         std::as_writable_bytes(std::span(actual_token_row))).ok());
@@ -1055,7 +1191,8 @@ void store_relay(bool failed_producer) {
     ASSERT_TRUE(consumer.output(decoy_rows)->storage().read(
         std::as_writable_bytes(std::span(actual_decoy_rows))).ok());
     EXPECT_EQ(actual_token_row, (std::array<float, 2>{30, 31}));
-    EXPECT_EQ(actual_state_rows, incoming);
+    EXPECT_EQ(actual_state_rows, (selected_range ? std::vector<float>{7, 11}
+                                               : std::vector<float>{3, 5, 7, 11}));
     EXPECT_EQ(actual_decoy_rows, (std::array<float, 4>{10, 11, 20, 21}));
   }
   EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
@@ -1077,11 +1214,13 @@ void store_relay(bool failed_producer) {
     ASSERT_TRUE(common.detach().ok());
     auto returned = g::slots::take(producer, store);
     ASSERT_TRUE(returned) << returned.error().message();
-    auto rejected = state.publish(0, returned->destinations()[0]);
+    auto rejected = selected_range ? another_view.publish(1, returned->destinations()[1])
+                                   : state.publish(0, returned->destinations()[0]);
     ASSERT_FALSE(rejected); EXPECT_EQ(rejected.error().code(), original_status.code());
+    EXPECT_EQ(rejected.error().message(), original_status.message());
     EXPECT_FALSE(returned->destinations()[0].publish());
   }
-  state = {}; common = {}; producer = {};
+  state = {}; another_view = {}; proof_view = {}; common = {}; producer = {};
   if (!failed_producer) {
     for (auto &ready : published) {
       auto writer = ready.try_write();
@@ -1097,6 +1236,12 @@ TEST(GraphOutputSourceCuda, StoreAndTokenShareOnePendingSubmissionAcrossTakeAndP
 }
 TEST(GraphOutputSourceCuda, StorePendingReaderPreservesWholeProducerFailure) {
   store_relay(true);
+}
+TEST(GraphOutputSourceCuda, ContinuousStoreRangeReusesExactReadyCaptureAndOriginalOrdinals) {
+  store_relay(false, true);
+}
+TEST(GraphOutputSourceCuda, ContinuousStoreRangePreservesWholeProducerFailure) {
+  store_relay(true, true);
 }
 TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   auto context_result = g::cuda::create_context();

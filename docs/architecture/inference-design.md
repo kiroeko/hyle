@@ -305,9 +305,16 @@ token、capacity及真实ready IDs沿原`InputAccess::bind`整束提交，失败
 同形状诱饵IDs拒绝与旧绑定、第二视图、失败传播及未选槽／padding；不是KV append、索引GDN／conv后继读取或完整模型流水证明。
 Store视图自身元数据已预冷；共同Source、混合bundle及原prepare仍可能分配冷元数据，完整模型接入前须在N之前按真实预算有界预留。
 
+Store现可在提交前固定连续原目的区间`{first,count}`：capture仍验证完整原事务，只封选中writer，
+IDs沿原ready guard取真实子视图，不上传或复制；发布仍使用原目的编号。
+[有限区间检查](../evidence/correctness/inference-store-source-range-2026-10-27.json)覆盖`{1,1}`、完整来源同代并存、
+ready首录后pending复用、原编号与错误guard拒绝、完整失败和退休。非连续多成员子集仍未实现。
+该检查还暴露了已保留capture时误选Commands的问题：pending来源现在沿原完整资格复用已有artifact，
+tuple miss保留拒绝；没有旧artifact的合法Prepared Commands不变，避免准备阶段无谓销毁原生捕获资源。
+
 索引状态现在用`slots::SourceMode::kImported`在冷准备时区分源投影和目的槽。后继只持自己的目的writer／IDs，
 前驱原pool、ready IDs及读权限由同一Source束拥有；冷桥从实际Store／Gather及已选region生成投影，不让引擎识别Provider。
-`store_ready`只接受该真实StoreSource全部目的的原root／generation／坐标及成功退休证明，用于首次真实捕获；
+`store_ready`只接受该真实StoreSource所选完整目的区间的原root／generation／坐标及成功退休证明，用于首次真实捕获；
 不带ready guards的在途来源仍只能复用已有捕获。查询重核实际束附件、完整投影及IDs guard，裸TensorView不能冒充来源。
 同一真实成功提交的token detach、完整Store ready及KV已发布范围可共同准备首个捕获；
 KV权限按当前贡献的精确bound裁剪，不能继承origin的更宽前缀。已装入原资源绑定的ready读
