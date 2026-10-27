@@ -1253,7 +1253,7 @@ struct EvaluationRequest final {
   std::shared_ptr<Session> session;
   std::span<const std::int32_t> ids;
   const inference::RequestStopPolicy *stop_policy = nullptr;
-  LogitsInputs logits;
+  LogitsInputs logits{};
 };
 
 // CPU topology only, never a candidate/head or permission. A weak identity and
