@@ -596,7 +596,7 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 每块返回原RequestLoop，不在模型内部循环独占完整prompt。无界或未计划prefix尾长仍走原有界exact接纳，
 后续turn的pending只进入首块一次，取消／重建保留真实分块和采样边界。
 [有限CLI检查](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)覆盖三条CUDA旅程及参数拒绝；
-当前仅普通自然生成，不是MTP分块、全模型varlen或设备执行预热。
+该记录只覆盖普通自然生成；MTP分块现已接通，范围见下文，不表示全模型varlen或设备执行预热。
 
 分片事实归共同层`PrefillPolicy`：`next(total, consumed)`返回原输入起点、实际行数及末块标志，
 `parts`计算剩余片数；零量子／越界游标明确拒绝，整前缀命中返回零行且完成，计数避免SIZE_MAX加法溢出。
@@ -657,7 +657,15 @@ B2的hidden源为原carry、lag1时的prior及target hidden，lag1 token源为�
 冷预留的固定I32选择表按每个真实offset形成Li＋lag行，物理尾部完整初始化为合法索引。
 沿原checked Gather构图，不以成员边界切换权限，也不新增热分配或退休路径；exact Single／Verify与原repair保留。
 [B2有限检查](../evidence/correctness/inference-mtp-ragged-prefill-2026-10-28.json)覆盖CPU／CUDA完整状态与真实2B自然异长首批；
-当前载体仍可能含padding，不据此宣称省显存或提速。MTP有限分块／StateOnly及其它适用组合仍未接通。
+当前载体仍可能含padding，不据此宣称省显存或提速。
+MTP有限分块复用相同`TextCompletion`：Prefill／CatchupPrefill与Single／CatchupSingle可以提交StateOnly，
+proposal／Verify仍要求完整输出。中间块保完整target／draft状态与carry，不构造score／sampler／ID端口，
+next为−1且不推进draw；末块才生成首token。catch-up只在首块按旧lag执行，之后draft frontier已对齐。
+真实尾块行数决定Single或Prefill，严格ledger重放保留completion、输入偏移与末块事实；
+部分检查点仍沿原HostImage或账簿重建，不放宽完整prefix发布／恢复门。
+[有限检查](../evidence/correctness/inference-mtp-chunked-prefill-2026-10-28.json)覆盖CPU／CUDA的Q1、提交后取消、
+部分账簿重建、真实lag1后的2＋2＋1及next=−1的HostImage独立恢复，另核真实2B双会话Q64入口。
+CatchupSingle StateOnly已接线但本批未直接实跑，其它平台、格式及组合按实际运行范围分别记录。
 纯数学叶复用原Store，不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与
@@ -841,7 +849,7 @@ host 用例覆盖 pending 时不写入，未注入原生设备故障。
 排队撤回只将该请求标为 Retiring；终态请求经原资源实际退休、owner 显式 `release` 后，槽才可复用。
 Qwen 有限消费者和 GLM 原组件消费者已迁移到该合同；真实生命周期检查及其范围见下文。
 
-普通分块 prefill 沿原 `Text` 图族增加冷输出模式 `TextCompletion`，不增加推理阶段或执行器。
+普通与MTP teacher-forced分块 prefill 沿原图族使用冷输出模式 `TextCompletion`，不增加推理阶段或执行器。
 中间块提交完整状态，pending 为 -1，不构造词表投影、采样或主机 token 读回；最后一块才生成下一 token。
 输入偏移只在真实 ledger 提交被观察后推进。同一请求通过原窗口重新排到队尾，让就绪 decode 有机会执行。
 历史记录保留每块的输出模式，恢复时按原分段重放；只有具有有效 pending 的完整前缀可以发布到缓存目录。

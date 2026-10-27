@@ -1,0 +1,271 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "e8acf58fe",
+  "status": "Finite checks passed",
+  "scope": "Natural MTP bounded prefill and StateOnly with original request, ledger, target/draft state and retirement; not full varlen/platform or performance closure.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 577597,
+      "sha256": "55613f03f60ca30d1c4fc62720a65a8fa741df234a458b32d03d5891d00d195a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\execution_mode.h",
+      "bytes": 1954,
+      "sha256": "ae5a0dea6906e728a0bf7770c35ac2f5d785a3db4868854f85b7538ae0259b59"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 3840,
+      "sha256": "b03a15ffe4fd087a0062d677c9dce9b7df736ddad514e12de8682695f7e7cc24"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_chunked_prefill_case.h",
+      "bytes": 21330,
+      "sha256": "af035d0a21d0ea418596b73b0bce3c9e800ab3b4077556d9ddf57b8c9f44c1f6"
+    }
+  ],
+  "implementation": [
+    "Shared completion eligibility admits teacher-forced MTP Prefill/CatchupPrefill and Single/CatchupSingle; proposal/Verify retain original complete-output contract.",
+    "Only final input chunk emits a next token. Intermediate chunks commit original target/draft KV and full state without sampling or a completed prefix.",
+    "Cold natural planning uses catchup only on the first real input chunk, actual suffix rows choose Single, and strict replay preserves completion/input offset/finality.",
+    "Original partial boundary next_id=-1, complete-prefix gates, transactions, whole Completion and real retirement remain unchanged."
+  ],
+  "tiny": {
+    "cpu": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\tiny-cpu-run\\report.json",
+        "bytes": 2269,
+        "sha256": "751cff5fbfd2e4c005dcc742e27a7b44efc9e0aac378f1e2eeef6d34b9d2958e"
+      },
+      "status": "PASS",
+      "maximum_absolute_gdn_error": 3.49246e-10,
+      "Q1": {
+        "real_commits": 4,
+        "state_only_commits": 3,
+        "final_draw": 1,
+        "cancelled_submitted": true,
+        "hardware_inflight_at_abort": false,
+        "ledger_rebuilt_rows": 2
+      },
+      "lag1": {
+        "parts": [
+          2,
+          2,
+          1
+        ],
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "host_restored_length": 7,
+        "host_restored_pending": -1,
+        "final_length": 10,
+        "final_frontier": 10,
+        "final_draw": 2
+      },
+      "old_checkpoints_byte_unchanged": true,
+      "partial_restore_byte_equal": true,
+      "state_only_score_sampler_id_ports_absent": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    },
+    "cuda": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\tiny-cuda-run\\report.json",
+        "bytes": 2266,
+        "sha256": "e5586546707146f986abd9edafd6122c616542de866cbf9815842aa3ac026bce"
+      },
+      "status": "PASS",
+      "maximum_absolute_gdn_error": 3.49246e-10,
+      "Q1": {
+        "real_commits": 4,
+        "state_only_commits": 3,
+        "final_draw": 1,
+        "cancelled_submitted": true,
+        "hardware_inflight_at_abort": true,
+        "ledger_rebuilt_rows": 2
+      },
+      "lag1": {
+        "parts": [
+          2,
+          2,
+          1
+        ],
+        "seed_length": 5,
+        "seed_frontier": 4,
+        "host_restored_length": 7,
+        "host_restored_pending": -1,
+        "final_length": 10,
+        "final_frontier": 10,
+        "final_draw": 2
+      },
+      "old_checkpoints_byte_unchanged": true,
+      "partial_restore_byte_equal": true,
+      "state_only_score_sampler_id_ports_absent": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    }
+  },
+  "real_cli": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\bin\\model.exe",
+      "bytes": 142673408,
+      "sha256": "22fe2b8cdca6310dfddc8b0b8b961e31bf8104a71131d923e859cfcde48b1468"
+    },
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\cli-mtp-run\\report.json",
+      "bytes": 32669,
+      "sha256": "192a58c521bf6d2d2fe6bc51a0e724c161d71022938cbcf79f5dd8a857f5d6ca"
+    },
+    "input_lengths": [
+      154,
+      130
+    ],
+    "query_quantum": 64,
+    "first_batches": [
+      [
+        64,
+        64
+      ],
+      [
+        64,
+        64
+      ],
+      [
+        26,
+        2
+      ]
+    ],
+    "active_prefill_rows": 284,
+    "physical_prefill_rows": 384,
+    "cold_exact_admissions": 0,
+    "generated_ids": [
+      [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      [
+        35358,
+        248046
+      ]
+    ],
+    "second_session_stopped_at_eos": true,
+    "performance_claim": false
+  },
+  "natural_Q1": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\cli-q1-run\\report.json",
+      "bytes": 14162,
+      "sha256": "f7bf67a06ad95a4d9b046d86e47de96869a5f25cc302fdd6593888626268bce4"
+    },
+    "inputs": 4,
+    "query_quantum": 1,
+    "max_drafts": 4,
+    "output_quota": 1,
+    "actual_single_input_calls": 4,
+    "next_ids": [
+      -1,
+      -1,
+      -1,
+      41
+    ],
+    "cold_exact_admissions": 0
+  },
+  "numerical_contract": "Only recomputed finite F32 GDN payloads use the existing 3e-6 component absolute budget. Other payloads, previous checkpoints and state boundaries remain strict.",
+  "processes": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\cli-mtp-run\\process.json",
+      "pid": 55760,
+      "exit": 0,
+      "started": 1793132925.3139236,
+      "seconds": 4.14501428604126,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\cli-q1-run\\process.json",
+      "pid": 51188,
+      "exit": 0,
+      "started": 1793132996.8248324,
+      "seconds": 0.8175435066223145,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\link\\model\\process.json",
+      "pid": 46900,
+      "exit": 0,
+      "started": 1793132917.411718,
+      "seconds": 1.7748613357543945,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\link\\tiny\\process.json",
+      "pid": 60032,
+      "exit": 0,
+      "started": 1793133110.0240135,
+      "seconds": 1.7960708141326904,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\logs\\model\\process.json",
+      "pid": 56852,
+      "exit": 0,
+      "started": 1793132875.438261,
+      "seconds": 27.894851446151733,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\logs\\tiny\\process.json",
+      "pid": 40164,
+      "exit": 0,
+      "started": 1793133015.3276465,
+      "seconds": 31.37839698791504,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\tiny-cpu-run\\process.json",
+      "pid": 21404,
+      "exit": 0,
+      "started": 1793133119.277183,
+      "seconds": 0.881434440612793,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-chunked-prefill-20261028\\tiny-cuda-run\\process.json",
+      "pid": 42040,
+      "exit": 0,
+      "started": 1793133124.9927762,
+      "seconds": 0.8345656394958496,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "cost": {
+    "CXX": 2,
+    "links": 2,
+    "consumer_processes": 4,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "remaining": [
+    "Other platform/provider/dtype combinations",
+    "Shared execution architecture and current full performance comparison"
+  ],
+  "limits": [
+    "Direct controlled StateOnly journey runs Single, Prefill and CatchupPrefill; CatchupSingle eligibility is implemented but was not directly executed in this finite case.",
+    "Controlled verifier seeds real lag1 state, not a natural acceptance-rate or task-quality claim.",
+    "Synthetic tiny test cancellation records actual pending/inflight observation; submission is not a promise the hardware remained busy until abort.",
+    "New HostImage session has its own local epoch; only same-owner commit epoch increment is asserted.",
+    "No refreshed full performance or cross-engine window."
+  ]
+}

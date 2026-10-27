@@ -22,4 +22,21 @@ constexpr std::size_t draft_lag(GraphRole role) noexcept {
 }
 enum class TextCompletion { kEmitNext, kStateOnly };
 
+// Completion changes whether this input episode emits a sampled next token.
+// Prefill and teacher-forced single rows can commit state alone; speculative
+// proposal/verification episodes keep their original complete-output contract.
+constexpr bool supports_state_only(GraphRole role) noexcept {
+  return role == GraphRole::kText || is_mtp_prefill(role) ||
+      role == GraphRole::kMtpSingle || role == GraphRole::kMtpCatchupSingle;
+}
+constexpr bool supports_completion(GraphRole role, TextCompletion completion) noexcept {
+  return completion == TextCompletion::kEmitNext ||
+      (completion == TextCompletion::kStateOnly && supports_state_only(role));
+}
+constexpr bool supports_commit_completion(GraphRole role, TextCompletion completion,
+                                         bool generation, bool prefill_complete) noexcept {
+  return supports_completion(role, completion) &&
+      (completion != TextCompletion::kStateOnly || (!generation && !prefill_complete));
+}
+
 } // namespace qwen35

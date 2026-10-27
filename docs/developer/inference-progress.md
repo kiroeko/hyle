@@ -1,17 +1,17 @@
 # 推理底座进度
 
-更新：2026-10-28 04:23（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 04:33（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约70%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约71%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：普通及B2 MTP异长prefill已接通，正在补MTP有限分块／StateOnly。** 目标与草稿共用有界输入行准备；CPU／CUDA的逐成员hidden／token移位、部分接受和lag1追赶检查已通过。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
+**当前位置：普通及B2 MTP异长、MTP有限分块／StateOnly已接通。** CPU／CUDA完成中间块无采样、提交后取消、部分账簿重建及HostImage恢复检查，正在复查剩余组合与共同执行边界。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
 
 ## 任务树
 
-- 功能与工程边界：约89%（进行中）
+- 功能与工程边界：约90%（进行中）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
-  - 有效长度／varlen prefill：约88%（普通及B2 MTP异长有限检查完成，其它组合未齐）
-  - 特性组合与分类错误：约75%（待穷尽复查）
+  - 有效长度／varlen prefill：约92%（普通及B2 MTP异长、分块有限检查完成，其它组合未齐）
+  - 特性组合与分类错误：约80%（MTP分块接通，继续复查）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
   - 完整路由可选ATen：约35%（未完成）
@@ -45,13 +45,13 @@
 
 ## 正在做
 
-- **MTP有限分块／StateOnly**｜所属：功能与工程边界／有效长度prefill及特性组合｜约10%。中间块只提交真实target／draft状态，不采样或推进RNG；覆盖单行块、lag1首次追赶、部分恢复及原请求账簿。
+- **剩余有效长度组合及共同执行边界复查**｜所属：功能与工程边界／特性组合、共同执行架构｜约15%。复查其它路线与单行追赶组合，梳理普通／后继／NextN重复的原Append绑定和失败回收，保持原权限及退休。
 
-刚完成：B2 MTP在CPU／CUDA各完成七批、14次成员发布，包含异长、换序及两次真实Verify K3接受前2行后的原修复；最终两个会话length＝frontier＝16、各draw5，原KV等载荷和旧快照严格核对，仅F32 GDN最大差9.31×10⁻¹⁰。真实2B正常入口首批[154,37]对应A191／R308，生成各4 token、0新增exact接纳，原R1 MTP CUDA回归通过。本批只编译两个消费者、复用原SDK，无下载，无新性能窗；MTP有限分块／StateOnly及其它平台／组合仍未完成。[本批数据](../evidence/correctness/inference-mtp-ragged-prefill-2026-10-28.json)
+刚完成：MTP StateOnly在CPU／CUDA完成Q1真实请求、提交后取消、两行账簿重建；真实lag1后按2＋2＋1继续，部分HostImage往返及旧快照严格不变，最终length＝frontier＝10，只有末块推进draw。F32 GDN最大差3.50×10⁻¹⁰，其它载荷严格核对。真实2B双会话以三批[64,64]、[64,64]、[26,2]消费284行；单行Q1自然入口也通过，均0新增exact。只编译两个消费者，复用SDK与权重，无下载、无新性能窗；CatchupSingle StateOnly未直接实跑，其它平台／组合仍待复查。[本批数据](../evidence/correctness/inference-mtp-chunked-prefill-2026-10-28.json) · [B2异长结果](../evidence/correctness/inference-mtp-ragged-prefill-2026-10-28.json)
 
 ## 接下来
 
-1. 补MTP有限分块／StateOnly与其它适用组合；继续收敛共同边界。
+1. 补齐剩余适用组合，收拢原Append事务的绑定与失败回收，继续抽离真实共同执行步骤。
 2. 保留M1原路径，评估a/b在整模型中的收益；处理普通真实载体、跨轮预热，并补当前跟踪及A/A。
 3. 推进MTP设备后继、词表候选与更深GPU融合／带宽优化。
 

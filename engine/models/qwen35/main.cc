@@ -2122,11 +2122,10 @@ public:
     const auto &selected_sampler = prepared_sampling.configuration;
     if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
       throw std::runtime_error("nondefault sampling is ordinary Text only");
-    if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
-        (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
-      throw std::runtime_error("state-only completion requires an ordinary Text family");
+    if (!supports_completion(role, completion))
+      throw std::runtime_error("state-only completion requires a Text or teacher-forced MTP input family");
     if (packed_prefill && (diagnostic || admitted_exact ||
-        (role != GraphRole::kText && (!is_mtp_prefill(role) || completion != TextCompletion::kEmitNext))))
+        (role != GraphRole::kText && !is_mtp_prefill(role))))
       throw std::runtime_error("packed prefill requires an original cold Text or MTP prefill family");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
@@ -4230,9 +4229,8 @@ public:
                            std::size_t physical_prefill_rows = 0) {
     const auto predecessor = incoming && active_step ? active_step : std::shared_ptr<StepState>{};
     const bool relay = bool(incoming);
-    if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
-        (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
-      throw std::runtime_error("state-only evaluation requires ordinary Text");
+    if (!supports_completion(role, completion))
+      throw std::runtime_error("state-only evaluation requires Text or teacher-forced MTP input");
     if (requests.empty() || requests.size() > cache_plan.active_sequences)
       throw std::runtime_error("batch width exceeds the configured active sequence capacity");
     if (!relay && (carrier_borrowed || active_step))
@@ -5602,8 +5600,8 @@ GenerationCommitRecord &prepare_generation_record(GenerationLedger &ledger, cons
     GraphRole role, std::span<const std::int32_t> ids, bool generation,
     std::size_t quota, std::size_t turn, std::shared_ptr<const void> owner = {}, std::size_t maximum = 0,
     TextCompletion completion = TextCompletion::kEmitNext, std::size_t input_begin = 0, bool prefill_complete = true) {
-  if (completion == TextCompletion::kStateOnly && (role != GraphRole::kText || generation || prefill_complete))
-    throw std::runtime_error("state-only ledger entry requires an incomplete ordinary prefill");
+  if (!supports_commit_completion(role, completion, generation, prefill_complete))
+    throw std::runtime_error("state-only ledger entry requires an incomplete teacher-forced prefill");
   if (ids.empty() || !session.head || (generation && ids.size() != 1))
     throw std::runtime_error("MTP replay record requires its actual input and complete base");
   auto &record = ledger.next();
@@ -5659,9 +5657,9 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.prefill_complete = !part.state_only;
     record.input_begin = part.first;
     record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
-    record.stopped = !draft_cache
+    record.stopped = !part.state_only && (!draft_cache
         ? ledger.stop_policy().stopped(part.next_id, is_end_of_generation(part.next_id))
-        : is_end_of_generation(part.next_id);
+        : is_end_of_generation(part.next_id));
     record.user_output = full_hit && i + 1 == prefix.chunks;
     record.imported = true;
     record.requests = 0; // Role-only source history does not claim original batch geometry.
@@ -5690,7 +5688,8 @@ void observe_generation_commits(GenerationRequest &request) {
          record.ids().data() != request.prompt.data() + request.turn_input_consumed ||
          record.prefill_complete != (record.ids().size() == request.prompt.size() - request.turn_input_consumed)))
       throw std::runtime_error("committed prefill input is not the next actual turn slice");
-    const bool stopped = record.role == GraphRole::kText ? record.stopped : is_end_of_generation(record.after.next_id);
+    const bool stopped = record.completion == TextCompletion::kEmitNext &&
+        (record.role == GraphRole::kText ? record.stopped : is_end_of_generation(record.after.next_id));
     if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped))
       continue;
     if (record.user_output && record.generation &&
@@ -5789,7 +5788,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     throw std::runtime_error("retire the old MTP head before restoring within N committed versions");
   const auto &first = ledger.records[0];
   const std::array calls{first.ids().size()};
-  auto session = model.create_session(calls, {}, first.role, first.before.sampling);
+  auto session = model.create_session(calls, {}, first.role, first.before.sampling, false, first.completion);
   GenerationLedger actual(ledger.committed_count, model.cache_plan.candidate_boundaries);
   actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
   const auto &eos = model_eos_tokens;
@@ -5800,16 +5799,17 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       const auto pending = expected.pending_input;
       const auto ids = expected.generation ? std::span<const std::int32_t>(&pending, 1) : expected.ids();
       prepare_generation_record(actual, *session, expected.role, ids, expected.generation,
-          expected.quota, expected.turn, expected.input_owner, expected.draft_limit);
+          expected.quota, expected.turn, expected.input_owner, expected.draft_limit,
+          expected.completion, expected.input_begin, expected.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
       std::vector<c::ReadLease> q;
       const auto verification = expected.role == GraphRole::kVerify
           ? model.propose_recursive(*session, expected.draft_limit, eos, &q) : std::vector<std::int32_t>{};
       if (!expected.generation && is_mtp_prefill(expected.role)) {
         const std::array input{EvaluationRequest{session, ids}};
-        model.prepare_prefill_evaluations(input, nullptr, expected.role);
+        model.prepare_prefill_evaluations(input, nullptr, expected.role, expected.completion);
       } else model.prepare_evaluation(*session, expected.role == GraphRole::kVerify ? std::span<const std::int32_t>(verification) : ids,
-          nullptr, expected.role);
+          nullptr, expected.role, expected.completion);
       model.submit_evaluation(*session);
       if (stats) {
         ++stats->graph_calls;
@@ -6220,8 +6220,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     throw std::runtime_error("request sampling cannot change after Session admission");
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
   const auto &sampler = prepared_sampling.configuration;
-  if (!max_prefill_rows || (model.cache_plan.draft_cache && max_prefill_rows != SIZE_MAX))
-    throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
+  if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
   // Credit belongs to this episode, not the turn's immutable output quota.
   // Reject before prefix lookup, session creation or any other admission work.
@@ -6289,7 +6288,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         if (!suffix_part.complete) hit_name += "_chunk" + std::to_string(reused_tokens);
         const std::array chunks{suffix_rows};
         const auto prior_sampling_seconds = model.frontier_sampling_seconds;
-        const auto suffix_role = !model.cache_plan.draft_cache ? GraphRole::kText : (suffix == 1 || request.prompt.size() == 1)
+        const auto suffix_role = !model.cache_plan.draft_cache ? GraphRole::kText : suffix_rows == 1
             ? (cached_lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)
             : (cached_lag ? GraphRole::kMtpCatchupPrefill : GraphRole::kMtpPrefill);
         // Keep every new request fact local until the actual Session/frontier
@@ -6775,9 +6774,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         (!packed_prefill && call.role != GraphRole::kVerify && call.ids().size() != calls[0].ids().size()))
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
     if (!call.full_hit) {
-      if (call.completion == TextCompletion::kStateOnly &&
-          (call.role != GraphRole::kText || call.generation || call.prefill_complete))
-        throw std::runtime_error("state-only ledger entry requires an incomplete ordinary prefill");
+      if (!supports_commit_completion(call.role, call.completion, call.generation, call.prefill_complete))
+        throw std::runtime_error("state-only ledger entry requires an incomplete teacher-forced prefill");
       if (call.ids().empty() || (call.role == GraphRole::kVerify && !call.generation))
         throw std::runtime_error("generation call requires its actual prepared input");
       (void)request.ledger->next();
@@ -7274,8 +7272,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     std::size_t max_prefill_rows = SIZE_MAX, bool warmup_planned_shapes = false,
     bool decode_overlap = false) {
   constexpr bool mtp = Mode == GenerationMode::kMtp;
-  if (!max_prefill_rows || (mtp && max_prefill_rows != SIZE_MAX))
-    throw std::runtime_error("bounded prefill rows require a positive ordinary Text quantum");
+  if (!max_prefill_rows) throw std::runtime_error("prefill rows require a positive quantum");
   const inference::PrefillPolicy prefill(max_prefill_rows);
   if (!stop_policies.empty() && stop_policies.size() != schedules.size())
     throw std::runtime_error("one immutable stop policy is required per request");
@@ -7364,7 +7361,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     for (std::size_t consumed = 0; consumed < tokens;) {
       const auto part = prefill.next(tokens, consumed);
       const auto completion = part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-      const auto role = prompt_role(part.rows, lag);
+      // A committed prefill consumes an old catch-up row exactly once and
+      // leaves a complete draft frontier for every later input chunk.
+      const auto role = prompt_role(part.rows, lag && consumed == 0);
       note_prompt(role, part.rows, member, completion);
       if (role == GraphRole::kText || is_mtp_prefill(role))
         note_carrier(role, (std::min)(tokens, max_prefill_rows), member, completion);
@@ -7380,13 +7379,29 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
     std::sort(suffixes.begin(), suffixes.end()); suffixes.erase(std::unique(suffixes.begin(), suffixes.end()), suffixes.end());
     for (auto tokens : suffixes) note_prefill(tokens, i);
-    if constexpr (!mtp) if (prefix && prefill.bounded()) {
-      // A generated checkpoint may match inside this prompt at any token, not
-      // only at another request's original prompt boundary. Register its real
-      // finite tail shapes and potential batch members before any carrier exists.
+    if (prefix && prefill.bounded()) {
+      // A generated checkpoint can leave any real suffix. Keep one capacity
+      // per completion/role, including the original T1 path, rather than an
+      // exact graph for every possible suffix length.
       prefill.for_each_capacity(requests[i].prompt.size(), [&](std::size_t rows, bool complete) {
-        note_carrier(GraphRole::kText, rows, i, complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
+        const auto completion = complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
+        const auto note_suffix = [&](bool lag) {
+          // A nonempty prefix already consumed at least one target row. Its
+          // catch-up carrier need not exceed the complete prompt capacity.
+          const auto suffix_rows = lag ? (std::min)(rows, requests[i].prompt.size() - 1) : rows;
+          if (!suffix_rows) return;
+          const auto role = prompt_role(suffix_rows, lag);
+          if (role == GraphRole::kText || is_mtp_prefill(role)) note_carrier(role, suffix_rows, i, completion, true);
+          else note_prompt(role, 1, i, completion, true);
+        };
+        note_suffix(false);
+        if constexpr (mtp) note_suffix(true);
       });
+      if constexpr (mtp) {
+        note_prompt(GraphRole::kMtpSingle, 1, i, TextCompletion::kEmitNext, true);
+        if (requests[i].prompt.size() > 1)
+          note_prompt(GraphRole::kMtpCatchupSingle, 1, i, TextCompletion::kEmitNext, true);
+      }
     }
     for (std::size_t turn = 1; turn < requests[i].progress.turns().size(); ++turn) {
       const auto tokens = cache::add(requests[i].progress.turns()[turn].prompt.size(), 1);
@@ -7399,7 +7414,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   // Normal rebuild preserves original committed chunks, not original proposals.
   // Every consumed verifier prefix can become a teacher-forced prefill chunk.
   prompt_uses[{prompt_role(1), TextCompletion::kEmitNext}].try_emplace(1, 0);
-  if constexpr (mtp) for (std::size_t rows = 2; rows <= model.cache_plan.candidate_boundaries; ++rows)
+  if constexpr (mtp) for (std::size_t rows = 2;
+      rows <= (std::min)(model.cache_plan.candidate_boundaries, model.cache_plan.max_query_rows); ++rows)
     prompt_uses[{GraphRole::kMtpPrefill, TextCompletion::kEmitNext}].try_emplace(rows, 0);
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
@@ -7426,10 +7442,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (mtp && decode_bound && width <= policy_decoding_requests && model.recursive_mtp())
       for (std::size_t rows = 1; rows <= model.cache_plan.candidate_boundaries; ++rows)
         shapes[{GraphRole::kVerify, TextCompletion::kEmitNext}][rows] = decode_bound;
-    // R1 restoration also needs lag0 versions of each original warm chunk.
-    if (mtp && width == 1) for (const auto &[tokens, uses] : prompt_uses[{GraphRole::kMtpCatchupPrefill, TextCompletion::kEmitNext}]) {
-      (void)uses; shapes[{GraphRole::kMtpPrefill, TextCompletion::kEmitNext}].try_emplace(tokens, restore_bound);
-    }
+    // Committed-token reconstruction normalizes lag while retaining each
+    // chunk's completion. Strict replay instead preserves its recorded role.
+    if constexpr (mtp) if (width == 1)
+      for (const auto completion : {TextCompletion::kEmitNext, TextCompletion::kStateOnly})
+        for (const auto role : {GraphRole::kMtpCatchupPrefill, GraphRole::kMtpCatchupSingle}) {
+          const auto normalized = role == GraphRole::kMtpCatchupPrefill ? GraphRole::kMtpPrefill : GraphRole::kMtpSingle;
+          const auto found = prompt_uses.find({role, completion});
+          if (found != prompt_uses.end()) for (const auto &[tokens, uses] : found->second) {
+            (void)uses; shapes[{normalized, completion}].try_emplace(tokens, restore_bound);
+          }
+        }
     for (const auto &[key, controls] : carrier_support) {
       std::set<std::size_t> eligible;
       for (const auto &[rows, members] : controls) {
@@ -7826,7 +7849,7 @@ int qwen35::run(int argc, char **argv) {
         "  --seed N                     Unsigned 64-bit random seed (default: 0)\n"
         "  --steps N                   Maximum output tokens (default: 4)\n"
         "  --capacity N                Total context capacity (default: 128)\n"
-        "  --prefill-chunk-tokens N    Maximum real rows per ordinary prefill episode\n"
+        "  --prefill-chunk-tokens N    Maximum real rows per natural prefill episode\n"
         "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
         "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
@@ -8005,8 +8028,8 @@ int qwen35::run(int argc, char **argv) {
     const bool natural_single = !scheduled && !explicit_continuation && !explicit_decode_ids &&
         layer0_probe.empty() && !preparation_diagnostics;
     const bool natural_generation = natural_schedule || natural_single;
-    if (max_prefill_rows != SIZE_MAX && (!natural_generation || mtp_enabled))
-      throw std::runtime_error("--prefill-chunk-tokens requires ordinary natural generation; MTP and fixed replay are not supported");
+    if (max_prefill_rows != SIZE_MAX && !natural_generation)
+      throw std::runtime_error("--prefill-chunk-tokens requires natural generation; fixed replay is not supported");
     if (mtp_enabled && grammar == Grammar::kFixedInput)
       throw std::runtime_error("--mtp on requires natural prompt/generate requests; decode IDSFILE is fixed replay");
     if (natural_schedule && (!layer0_probe.empty() || preparation_diagnostics))
@@ -8065,8 +8088,12 @@ int qwen35::run(int argc, char **argv) {
     if (natural_generation) {
       for (const auto &request : generation_schedules) for (std::size_t i = 0; i < request.turns.size(); ++i) {
         const auto tokens = qwen35::cache::add(request.turns[i].prompt.size(), i ? 1 : 0);
-        planned_chunks.push_back(prefill.next(tokens).rows);
-        if (mtp_enabled) mtp_schema_rows = (std::max)(mtp_schema_rows, qwen35::cache::add(tokens, i ? 1 : 0));
+        const auto chunk_rows = prefill.next(tokens).rows;
+        planned_chunks.push_back(chunk_rows);
+        // The first nonempty prefix leaves at most tokens-1 new rows. Later
+        // turns can consume the full carrier plus their historical catch-up.
+        if (mtp_enabled) mtp_schema_rows = (std::max)(mtp_schema_rows,
+            qwen35::cache::add(chunk_rows, i || (prefix_enabled && tokens > chunk_rows) ? 1 : 0));
         mtp_has_decode = mtp_has_decode || request.turns[i].max_outputs > 1;
       }
     } else if (scheduled) {
@@ -8154,7 +8181,7 @@ int qwen35::run(int argc, char **argv) {
     if (!trace.empty()) model.trace_routes = trace / "routes";
     if (natural_generation) {
       if (mtp_enabled) return qwen35::run_generation_sessions<qwen35::GenerationMode::kMtp>(model,
-          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, SIZE_MAX, warmup_planned_shapes);
+          generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes);
       return qwen35::run_generation_sessions<qwen35::GenerationMode::kText>(model,
           generation_schedules, trace, trace_states, startup, constructed, prefix_enabled, token_plans, {}, {}, max_prefill_rows, warmup_planned_shapes, overlap_selected);
     }
