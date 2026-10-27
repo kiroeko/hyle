@@ -9526,42 +9526,89 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
 }
 
 namespace {
-Result<bool> reusable_capture_tuple(const detail::InvocationState &state,
+template <class Range>
+ReplayRoute shared_replay_coverage(const detail::PlanState &plan,
+    const detail::PlanSegment &segment, std::span<const Range> ranges) noexcept {
+  std::size_t cursor = segment.step_begin;
+  if (cursor > plan.steps.size() || segment.step_count > plan.steps.size() - cursor)
+    return ReplayRoute::kUnprepared;
+  const std::size_t end = cursor + segment.step_count;
+  std::size_t captured_commands = 0, gap_commands = 0;
+  const auto gap = [&](std::size_t stop) noexcept {
+    while (cursor < stop) {
+      const auto &step = plan.steps[cursor++];
+      if (!step.emits_command()) continue;
+      const auto runtime = step.runtime_properties();
+      if (runtime.mode != compute::ProviderRuntimeMode::kSharedQueue ||
+          runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host)
+        return false;
+      ++gap_commands;
+    }
+    return true;
+  };
+  for (const auto &range : ranges) {
+    if (!range.step_count || range.step_begin < cursor || range.step_begin > end ||
+        range.step_count > end - range.step_begin || !gap(range.step_begin))
+      return ReplayRoute::kUnprepared;
+    const auto before = captured_commands;
+    const std::size_t range_end = std::size_t{range.step_begin} + range.step_count;
+    while (cursor < range_end) {
+      const auto &step = plan.steps[cursor++];
+      if (!step.emits_command()) continue;
+      if (step.runtime_properties().mode != compute::ProviderRuntimeMode::kSharedQueue)
+        return ReplayRoute::kUnprepared;
+      ++captured_commands;
+    }
+    if (captured_commands == before) return ReplayRoute::kUnprepared;
+  }
+  if (!gap(end) || captured_commands + gap_commands != plan.command_count)
+    return ReplayRoute::kUnprepared;
+  return !captured_commands ? ReplayRoute::kCommands
+      : gap_commands ? ReplayRoute::kHybrid : ReplayRoute::kCaptured;
+}
+
+Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     std::span<const detail::ReplayInputBinding> replacements) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
-      plan.capture_command_count != plan.command_count || !plan.command_count)
-    return false;
+      !plan.command_count)
+    return ReplayRoute::kUnprepared;
   const auto lane = plan.segments.front().lane;
   if (!shared_lane(plan, lane) || lane.ordinal() >= state.queues.size() ||
       !state.queues[lane.ordinal()].valid() || !state.queues[lane.ordinal()].is_open())
-    return false;
-  for (std::size_t i = 0; i < plan.steps.size(); ++i) {
-    const auto &step = plan.steps[i];
-    if (!step.emits_command()) continue;
-    if (step.runtime_properties().mode != compute::ProviderRuntimeMode::kSharedQueue ||
-        !state.step_bindings[i].stable_binding_identity || state.step_bindings[i].native_inputs)
-      return false;
-    if (step.region.valid()) {
-      if (!detail::RegionAccess::borrows_tensor_views_only(step.region) ||
-          !detail::RegionAccess::preserves_capture_bindings(state.invocations[i].region))
-        return false;
-    } else if (step.kind == detail::PlanStepKind::kOperation) {
-      HYLE_ASSIGN_OR_RETURN(const auto preserves,
-          compute::detail::OperationPreparationAccess::preserves_capture_bindings(
-              state.invocations[i].operation));
-      if (!preserves) return false;
-    } else {
-      return false;
-    }
-  }
+    return ReplayRoute::kUnprepared;
+  const auto route = shared_replay_coverage(plan, plan.segments.front(),
+      std::span<const detail::PlanCaptureRange>(plan.capture_ranges.data(), plan.capture_ranges.size()));
+  if (route != ReplayRoute::kCaptured && route != ReplayRoute::kHybrid)
+    return ReplayRoute::kUnprepared;
   for (const auto &candidate : plan.capture_ranges) {
+    // Only recorded steps need stable capture keys/private arguments. Gaps
+    // retain their original metadata preparation and ordinary Queue encoder.
+    for (std::size_t i = candidate.step_begin;
+         i < std::size_t{candidate.step_begin} + candidate.step_count; ++i) {
+      const auto &step = plan.steps[i];
+      if (!step.emits_command()) continue;
+      if (!state.step_bindings[i].stable_binding_identity || state.step_bindings[i].native_inputs)
+        return ReplayRoute::kUnprepared;
+      if (step.region.valid()) {
+        if (!detail::RegionAccess::borrows_tensor_views_only(step.region) ||
+            !detail::RegionAccess::preserves_capture_bindings(state.invocations[i].region))
+          return ReplayRoute::kUnprepared;
+      } else if (step.kind == detail::PlanStepKind::kOperation) {
+        HYLE_ASSIGN_OR_RETURN(const auto preserves,
+            compute::detail::OperationPreparationAccess::preserves_capture_bindings(
+                state.invocations[i].operation));
+        if (!preserves) return ReplayRoute::kUnprepared;
+      } else {
+        return ReplayRoute::kUnprepared;
+      }
+    }
     const auto saved = std::ranges::find_if(state.capture_rebuilds, [&](const auto &range) {
       return range.step_begin == candidate.step_begin && range.step_count == candidate.step_count;
     });
     if (saved == state.capture_rebuilds.end() || !saved->qualification_valid ||
         !saved->preserves_private_arguments)
-      return false;
+      return ReplayRoute::kUnprepared;
     const auto matches = [&](const detail::CaptureBindingVariant &variant) noexcept {
       if (!variant.key_valid) return false;
       std::size_t port = 0;
@@ -9600,9 +9647,9 @@ Result<bool> reusable_capture_tuple(const detail::InvocationState &state,
       for (const auto &variant : saved->variants)
         if (variant.commands.valid() && variant.commands.tensor_bindings_have_stable_identity() &&
             matches(variant)) found = true;
-    if (!found) return false;
+    if (!found) return ReplayRoute::kUnprepared;
   }
-  return !plan.capture_ranges.empty();
+  return route;
 }
 
 Status prepare_replay_impl(detail::InvocationState *state_,
@@ -9626,7 +9673,7 @@ Status prepare_replay_impl(detail::InvocationState *state_,
   if (options.mode != ReplayMode::kCommands &&
       state_->plan->invocation_storage &&
       state_->plan->invocation_storage->rejects_unknown()) {
-    if (options.mode == ReplayMode::kRequireCapture)
+    if (options.mode == ReplayMode::kRequireCapture || reuse_only)
       return Status::ResourceExhausted(
           "graph command capture storage has no declared upper bound");
     options.mode = ReplayMode::kCommands;
@@ -9807,7 +9854,7 @@ Status prepare_replay_impl(detail::InvocationState *state_,
   if (reuse_only) {
     HYLE_ASSIGN_OR_RETURN(const auto reusable,
         reusable_capture_tuple(*state_, {}));
-    if (!reusable)
+    if (reusable != ReplayRoute::kCaptured && reusable != ReplayRoute::kHybrid)
       return Status::Unavailable("existing captures do not cover the complete prepared tuple");
   }
 
@@ -9933,6 +9980,8 @@ Status prepare_replay_impl(detail::InvocationState *state_,
       evicted.key_valid = false;
       evicted.bindings.clear();
     }
+    // Reuse-only must never reach a recording/fallback path, independently of
+    // the selected provider's private-key qualifications above.
     if (reuse_only)
       return Status::Unavailable("an existing prepared capture range is missing");
     compute::Queue *queue = candidate_queue(queues, segment.lane);
@@ -10038,6 +10087,33 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
   return prepare_replay_impl(state_, queues, options, false);
 }
 
+ReplayRoute detail::submitted_shared_replay_route(const InvocationState &state) noexcept {
+  const auto &plan = *state.plan;
+  if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
+      !shared_lane(plan, plan.segments.front().lane) || !state.replay_prepared ||
+      state.replay_report.route != state.replay_route ||
+      state.replay_report.immediate_transfer_count || state.replay_report.host_wait_dependency_count)
+    return ReplayRoute::kUnprepared;
+  // Dormant retained artifacts are not proof of what this submission launched.
+  // Commands executes only its prepared gaps; inspect no capture cache for it.
+  if (state.replay_route == ReplayRoute::kCommands)
+    return shared_replay_coverage(plan, plan.segments.front(),
+        std::span<const CapturedStepRange>{});
+  if ((state.replay_route != ReplayRoute::kCaptured && state.replay_route != ReplayRoute::kHybrid) ||
+      state.capture_spans.size() != 1)
+    return ReplayRoute::kUnprepared;
+  const auto span = state.capture_spans.front();
+  if (span.begin > state.captured_ranges.size() ||
+      span.count > state.captured_ranges.size() - span.begin)
+    return ReplayRoute::kUnprepared;
+  const auto ranges = std::span<const CapturedStepRange>(
+      state.captured_ranges.data(), state.captured_ranges.size()).subspan(span.begin, span.count);
+  for (const auto &range : ranges)
+    if (!range.commands.valid()) return ReplayRoute::kUnprepared;
+  const auto route = shared_replay_coverage(plan, plan.segments.front(), ranges);
+  return route == state.replay_route ? route : ReplayRoute::kUnprepared;
+}
+
 Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocation,
     std::span<const ReplayInputBinding> replacements) noexcept {
   const auto *state = InvocationAccess::state(invocation);
@@ -10058,7 +10134,8 @@ Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocatio
     if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal()))
       return false;
   }
-  return reusable_capture_tuple(*state, replacements);
+  HYLE_ASSIGN_OR_RETURN(const auto route, reusable_capture_tuple(*state, replacements));
+  return route == ReplayRoute::kCaptured || route == ReplayRoute::kHybrid;
 }
 
 Status detail::ReplayAccess::prepare_reuse(Invocation &invocation,
@@ -10067,15 +10144,15 @@ Status detail::ReplayAccess::prepare_reuse(Invocation &invocation,
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   HYLE_ASSIGN_OR_RETURN(const auto reusable,
       reusable_capture_tuple(*state, {}));
-  if (!reusable)
+  if (reusable != ReplayRoute::kCaptured && reusable != ReplayRoute::kHybrid)
     return Status::Unavailable("no existing capture covers the current physical tuple");
   const auto lane = state->plan->segments.front().lane;
   if (queues.size() != 1 || queues.front().lane != lane || !queues.front().queue ||
       !state->queues[lane.ordinal()].same_owner(*queues.front().queue))
     return Status::InvalidArgument("capture reuse requires its original actual Queue");
   HYLE_RETURN_IF_ERROR(prepare_replay_impl(state, queues,
-      {.mode = ReplayMode::kRequireCapture, .host_wait = HostWaitPolicy::kReject}, true));
-  if (state->replay_route != ReplayRoute::kCaptured ||
+      {.mode = ReplayMode::kPreferCapture, .host_wait = HostWaitPolicy::kReject}, true));
+  if (state->replay_route != reusable ||
       state->replay_report.recorded_capture_range_count ||
       state->replay_report.immediate_transfer_count ||
       state->replay_report.host_wait_dependency_count)

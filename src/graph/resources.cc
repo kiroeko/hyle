@@ -323,8 +323,20 @@ Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,
   if (ready_projection) {
     const auto *binding = find_binding(state, values.front());
     for (const auto &consumer : projected_input_consumers(plan, values.front().ordinal())) {
-      if (!idle || !binding->permission_changes_preserve_commands ||
-          !state->step_bindings[consumer.step].stable_binding_identity)
+      const auto &step = plan.steps[consumer.step];
+      const auto &arguments = state->step_bindings[consumer.step];
+      bool preserves = binding->permission_changes_preserve_commands;
+      // Ordinary selected readers can prove this without a region adapter:
+      // the original capture backend retained stable physical arguments and
+      // the actual operation keeps no private permission-dependent carrier.
+      // A region still needs its existing explicit flag and release contract.
+      if (idle && !preserves && arguments.stable_binding_identity &&
+          !arguments.native_inputs && step.kind == PlanStepKind::kOperation) {
+        HYLE_ASSIGN_OR_RETURN(preserves,
+            compute::detail::OperationPreparationAccess::preserves_capture_bindings(
+                state->invocations[consumer.step].operation));
+      }
+      if (!idle || !preserves || !arguments.stable_binding_identity)
         steps[consumer.step] |= discard_recording;
     }
   }
@@ -1945,40 +1957,10 @@ struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   std::vector<ReplayInputBinding, mem::StdAllocator<ReplayInputBinding>> replacements;
   std::vector<NodeId, mem::StdAllocator<NodeId>> access_nodes;
   InvocationState *consumer = nullptr;
-  bool preparing = false, submitted = false, capture_consumer = false;
+  ReplayRoute consumer_route = ReplayRoute::kUnprepared;
+  bool preparing = false, submitted = false;
 };
 namespace {
-bool output_fully_captured(const InvocationState &state) noexcept {
-  const auto &plan = *state.plan;
-  if (!state.replay_prepared || state.replay_route != ReplayRoute::kCaptured ||
-      state.replay_report.route != ReplayRoute::kCaptured ||
-      state.replay_report.immediate_transfer_count ||
-      state.replay_report.host_wait_dependency_count ||
-      state.capture_spans.size() != 1 || !plan.command_count)
-    return false;
-  const auto &segment = plan.segments.front();
-  const auto span = state.capture_spans.front();
-  if (span.begin != 0 || span.count != state.captured_ranges.size() || !span.count)
-    return false;
-  std::size_t cursor = segment.step_begin;
-  if (cursor > plan.steps.size() || segment.step_count > plan.steps.size() - cursor)
-    return false;
-  const std::size_t end = cursor + segment.step_count;
-  for (const auto &range : state.captured_ranges) {
-    if (!range.commands.valid() || !range.step_count ||
-        range.step_begin < cursor || range.step_begin > end ||
-        range.step_count > end - range.step_begin)
-      return false;
-    // Match the original submit cursor: only metadata-only gaps may remain
-    // outside the actual retained command ranges, never an uncovered command.
-    while (cursor < range.step_begin)
-      if (plan.steps[cursor++].emits_command()) return false;
-    cursor = std::size_t{range.step_begin} + range.step_count;
-  }
-  while (cursor < end)
-    if (plan.steps[cursor++].emits_command()) return false;
-  return true;
-}
 Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1)
@@ -1989,9 +1971,9 @@ Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noe
     return std::unexpected(Status::Unimplemented("output relay requires one original shared Queue"));
   // The exact unobserved submit proxy prevents binding/replay mutation. These
   // are the original submission's actual ranges, not static provider promises.
-  if (plan.segments.front().blocks_host && !output_fully_captured(state))
+  if (submitted_shared_replay_route(state) == ReplayRoute::kUnprepared)
     return std::unexpected(Status::Unimplemented(
-        "output relay requires nonblocking commands or complete actual command capture"));
+        "output relay requires actual captured ranges and prepared nonblocking command gaps"));
   HYLE_ASSIGN_OR_RETURN(auto endpoint,
       compute::detail::QueueSequence::completion_endpoint(state.queues[lane.ordinal()]));
   if (!endpoint.valid())
@@ -2064,12 +2046,18 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
         runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
       commands = false;
   }
-  const bool captured = bundle.consumer ? bundle.capture_consumer : !commands;
-  if (captured) {
+  auto route = bundle.consumer ? bundle.consumer_route
+      : commands ? ReplayRoute::kCommands : ReplayRoute::kUnprepared;
+  if (route != ReplayRoute::kCommands) {
     HYLE_ASSIGN_OR_RETURN(const auto reusable,
         ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
     if (!reusable)
       return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+    const auto expected = plan.capture_command_count == plan.command_count
+        ? ReplayRoute::kCaptured : ReplayRoute::kHybrid;
+    if (bundle.consumer && route != expected)
+      return Status::FailedPrecondition("pending output bundle changed its original replay coverage");
+    route = expected;
     const auto lane = plan.segments.front().lane;
     if (!source.queue.same_owner(state->queues[lane.ordinal()]))
       return Status::InvalidArgument("pending captured outputs require the producer's actual Queue");
@@ -2114,7 +2102,7 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
       }
     }
   } else {
-    bundle.capture_consumer = captured;
+    bundle.consumer_route = route;
   }
   return Status::Ok();
 }
@@ -2633,7 +2621,8 @@ Status prepare_outputs(Invocation &invocation, std::span<const OutputBinding> bi
     OutputBindingBundle *bundle;
     ~EndPreparation() { bundle->preparing = false; }
   } end{bundle};
-  if (bundle->capture_consumer) return ReplayAccess::prepare_reuse(invocation, queues);
+  if (bundle->consumer_route != ReplayRoute::kCommands)
+    return ReplayAccess::prepare_reuse(invocation, queues);
   return invocation.prepare_replay(queues,
       {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
 }
@@ -2641,7 +2630,7 @@ Result<compute::Completion> submit_outputs(Invocation &invocation,
     std::span<const OutputBinding> bindings, std::span<const QueueBinding> queues) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto bundle, bound_output_bundle(invocation, bindings));
   HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
-  const auto expected = bundle->capture_consumer ? ReplayRoute::kCaptured : ReplayRoute::kCommands;
+  const auto expected = bundle->consumer_route;
   if (queues.size() != 1 || invocation.replay_route() != expected)
     return std::unexpected(Status::FailedPrecondition("output relay lost its selected prepared replay route"));
   if (bundle->submitted)

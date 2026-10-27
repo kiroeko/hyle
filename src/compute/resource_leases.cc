@@ -469,14 +469,174 @@ Status LeaseAccess::append_unique(LeaseUseBatch &uses, const AppendLease &lease)
     if (!block->append_failure.ok()) return block->append_failure;
     if (block->native_uses != 0)
       return Status::Unavailable("append lease still has admitted native uses");
+    if (block->pending_read_sealed)
+      return Status::FailedPrecondition("pending append read sealed this epoch against new writes");
     epoch = block->append_epoch;
+    ++block->writes;
     ++block->native_uses;
     block->incref();
     domain->uses.fetch_add(1, std::memory_order_relaxed);
   }
-  std::construct_at(entries(episode) + episode->count, block, false, epoch);
+  std::construct_at(entries(episode) + episode->count, block, true, epoch);
   ++episode->count;
   return Status::Ok();
+}
+
+namespace {
+Status validate_pending_append_identity(LeaseBlock *block, LeaseDomain *domain,
+    std::uint64_t generation, std::uint64_t epoch, std::size_t committed,
+    std::size_t reserved) noexcept {
+  if (!block) return Status::FailedPrecondition("pending append read ticket is empty");
+  if (block->domain != domain || !generation || block->generation != generation ||
+      !epoch || !reserved || committed > block->range.size() ||
+      reserved > block->range.size() - committed)
+    return Status::InvalidArgument("pending append read differs from its original block/prefix");
+  return Status::Ok();
+}
+// The original domain lock is held. Publication changes only the frontier,
+// while reserve starts a different epoch and invalidates the old ticket.
+Status validate_pending_append_epoch(const LeaseBlock &block, std::uint64_t epoch,
+    std::size_t committed, std::size_t reserved) noexcept {
+  if (!block.append_mode || block.writer || block.writable || !block.pending_read_sealed ||
+      block.append_epoch != epoch)
+    return Status::FailedPrecondition("pending append read no longer names its sealed epoch");
+  const bool pending = block.append_committed == committed && block.append_reserved == reserved;
+  const bool published = block.append_committed == committed + reserved && block.append_reserved == 0;
+  return pending || published ? Status::Ok()
+      : Status::FailedPrecondition("pending append read original frontier changed");
+}
+Status match_append_prefix_storage(const LeaseBlock &block, std::size_t bytes,
+    mem::ConstBufferView view) noexcept {
+  if (!view.valid()) return Status::InvalidArgument("pending append prefix carrier is empty");
+  const auto &backing = block.domain->backing;
+  HYLE_ASSIGN_OR_RETURN(auto original, backing.view().subview(
+      static_cast<std::size_t>(block.range.offset()), bytes));
+  if (view.resource() != original.resource() || view.native_handle() != original.native_handle() ||
+      view.offset() != original.offset() || view.size() != original.size())
+    return Status::InvalidArgument("pending append prefix differs from its exact original range");
+  return Status::Ok();
+}
+} // namespace
+
+PendingAppendReadTicket::PendingAppendReadTicket(const PendingAppendReadTicket &other) noexcept
+    : block_(other.block_), domain_(other.domain_), generation_(other.generation_),
+      epoch_(other.epoch_), committed_(other.committed_), reserved_(other.reserved_) {
+  if (block_) block_->incref();
+}
+PendingAppendReadTicket &PendingAppendReadTicket::operator=(const PendingAppendReadTicket &other) noexcept {
+  if (this != &other) {
+    if (other.block_) other.block_->incref();
+    reset();
+    block_ = other.block_; domain_ = other.domain_; generation_ = other.generation_;
+    epoch_ = other.epoch_; committed_ = other.committed_; reserved_ = other.reserved_;
+  }
+  return *this;
+}
+PendingAppendReadTicket::PendingAppendReadTicket(PendingAppendReadTicket &&other) noexcept
+    : block_(std::exchange(other.block_, nullptr)), domain_(std::exchange(other.domain_, nullptr)),
+      generation_(std::exchange(other.generation_, 0)), epoch_(std::exchange(other.epoch_, 0)),
+      committed_(std::exchange(other.committed_, 0)), reserved_(std::exchange(other.reserved_, 0)) {}
+PendingAppendReadTicket &PendingAppendReadTicket::operator=(PendingAppendReadTicket &&other) noexcept {
+  if (this != &other) {
+    reset();
+    block_ = std::exchange(other.block_, nullptr); domain_ = std::exchange(other.domain_, nullptr);
+    generation_ = std::exchange(other.generation_, 0); epoch_ = std::exchange(other.epoch_, 0);
+    committed_ = std::exchange(other.committed_, 0); reserved_ = std::exchange(other.reserved_, 0);
+  }
+  return *this;
+}
+PendingAppendReadTicket::~PendingAppendReadTicket() { reset(); }
+void PendingAppendReadTicket::reset() noexcept {
+  if (auto *block = std::exchange(block_, nullptr)) block->decref();
+  domain_ = nullptr; generation_ = epoch_ = 0; committed_ = reserved_ = 0;
+}
+Result<PendingAppendReadTicket> LeaseAccess::pending_append_read(const AppendLease &lease,
+    mem::ConstBufferView exact_prefix) noexcept {
+  auto *block = lease.block_;
+  if (!block) return std::unexpected(Status::FailedPrecondition("pending append writer is empty"));
+  auto *domain = block->domain;
+  std::lock_guard guard(domain->lock);
+  if (domain->closed || !block->append_mode || !block->append_owner || block->writer || block->writable)
+    return std::unexpected(Status::FailedPrecondition("pending append read requires its open original tail"));
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(block, domain, block->generation,
+      block->append_epoch, block->append_committed, block->append_reserved));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  if (!block->append_failure.ok()) return std::unexpected(block->append_failure);
+  HYLE_RETURN_IF_ERROR(match_append_prefix_storage(*block,
+      block->append_committed + block->append_reserved, exact_prefix));
+  // No failure remains after sealing. Submission/order are the F2 owner's
+  // proof, including when a fast producer already released its write use.
+  block->incref();
+  block->pending_read_sealed = true;
+  return PendingAppendReadTicket(block, domain, block->generation, block->append_epoch,
+      block->append_committed, block->append_reserved);
+}
+Status LeaseAccess::matches_pending_append_read(const PendingAppendReadTicket &ticket,
+    mem::ConstBufferView view) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.epoch_, ticket.committed_, ticket.reserved_));
+  std::lock_guard guard(ticket.domain_->lock);
+  HYLE_RETURN_IF_ERROR(validate_pending_append_epoch(*ticket.block_, ticket.epoch_,
+      ticket.committed_, ticket.reserved_));
+  return match_append_prefix_storage(*ticket.block_, ticket.size(), view);
+}
+Status LeaseAccess::matches_pending_append_read(const PendingAppendReadTicket &ticket,
+    const AppendLease &lease) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.epoch_, ticket.committed_, ticket.reserved_));
+  std::lock_guard guard(ticket.domain_->lock);
+  if (lease.block_ != ticket.block_)
+    return Status::InvalidArgument("pending append read owner differs from its original block");
+  return validate_pending_append_epoch(*ticket.block_, ticket.epoch_, ticket.committed_, ticket.reserved_);
+}
+Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,
+    const PendingAppendReadTicket &ticket) noexcept {
+  auto *episode = uses.state_;
+  if (!episode) return Status::FailedPrecondition("pending append read use is empty");
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.epoch_, ticket.committed_, ticket.reserved_));
+  if (episode->count == episode->pool->capacity)
+    return Status::ResourceExhausted("resource use metadata capacity exhausted");
+  auto *block = ticket.block_;
+  auto *domain = ticket.domain_;
+  {
+    std::lock_guard guard(domain->lock);
+    if (domain->closed) return Status::FailedPrecondition("lease domain is closed");
+    HYLE_RETURN_IF_ERROR(validate_pending_append_epoch(*block, ticket.epoch_, ticket.committed_, ticket.reserved_));
+    if (!block->failure.ok()) return block->failure;
+    if (!block->append_failure.ok()) return block->append_failure;
+    if (block->native_uses == UINT32_MAX)
+      return Status::ResourceExhausted("resource native use count exhausted");
+    ++block->native_uses;
+    block->incref();
+    domain->uses.fetch_add(1, std::memory_order_relaxed);
+  }
+  // The captured epoch is a permission check, not receiver error ownership.
+  // Only the producer's real append entry may poison append_failure.
+  std::construct_at(entries(episode) + episode->count, block, false, std::uint64_t{0});
+  ++episode->count;
+  return Status::Ok();
+}
+Result<ReadLease> LeaseAccess::publish_append_after_writes(AppendLease &lease,
+    const PendingAppendReadTicket &ticket) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.epoch_, ticket.committed_, ticket.reserved_));
+  auto *block = ticket.block_;
+  std::lock_guard guard(ticket.domain_->lock);
+  if (lease.block_ != block)
+    return std::unexpected(Status::InvalidArgument("pending append publication owner differs from its ticket"));
+  HYLE_RETURN_IF_ERROR(validate_pending_append_epoch(*block, ticket.epoch_, ticket.committed_, ticket.reserved_));
+  if (ticket.domain_->closed || !block->append_owner ||
+      block->append_committed != ticket.committed_ || block->append_reserved != ticket.reserved_)
+    return std::unexpected(Status::FailedPrecondition("pending append publication lost its original open reservation"));
+  if (block->writes != 0)
+    return std::unexpected(Status::Unavailable("append producer still has admitted writes"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  if (!block->append_failure.ok()) return std::unexpected(block->append_failure);
+  block->append_committed += block->append_reserved;
+  block->append_reserved = 0;
+  block->incref();
+  return ReadLease(block, 0, block->append_committed);
 }
 
 AppendLease::AppendLease(AppendLease &&other) noexcept
@@ -540,6 +700,7 @@ Status AppendLease::reserve(std::size_t bytes) noexcept {
   ++block->append_epoch;
   block->append_reserved = bytes;
   block->append_failure = Status::Ok();
+  block->pending_read_sealed = false;
   return Status::Ok();
 }
 Result<mem::BufferView> AppendLease::view() const noexcept {
@@ -548,6 +709,8 @@ Result<mem::BufferView> AppendLease::view() const noexcept {
   std::lock_guard guard(block->domain->lock);
   if (block->domain->closed || !block->append_owner || block->append_reserved == 0)
     return std::unexpected(Status::FailedPrecondition("append lease has no open reservation"));
+  if (block->pending_read_sealed)
+    return std::unexpected(Status::FailedPrecondition("pending append read sealed this epoch against mutable views"));
   if (block->native_uses != 0)
     return std::unexpected(Status::Unavailable("append lease has admitted native uses"));
   if (!block->append_failure.ok()) return std::unexpected(block->append_failure);

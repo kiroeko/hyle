@@ -1301,6 +1301,11 @@ struct InvocationState final : util::RefCounted<InvocationState> {
   bool dependencies_prepared = false;
 };
 
+// Cold inspection of the actual prepared/submitted range partition. A native
+// command outside captured ranges must be a prepared, nonblocking shared-Queue
+// command. This grants neither input permission nor a new recording route.
+HYLE_GRAPH_API ReplayRoute submitted_shared_replay_route(const InvocationState &) noexcept;
+
 // Original cold/idle mutation seam. Destroy covering commands before changing
 // a selected invocation's configuration or resources, including failed changes.
 HYLE_GRAPH_API void invalidate_step_recording(

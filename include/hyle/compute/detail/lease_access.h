@@ -33,6 +33,38 @@ private:
   std::size_t offset_ = 0, size_ = 0;
 };
 
+// One exact append epoch's prospective prefix. This is an independent block
+// reference, not a ready lease or a borrow of the movable AppendLease owner.
+// The prefix consists only of the old committed bytes and its exact reserved
+// successor, never the remaining capacity. A new reserve invalidates it.
+class PendingAppendReadTicket final {
+public:
+  PendingAppendReadTicket() noexcept = default;
+  HYLE_COMPUTE_API PendingAppendReadTicket(const PendingAppendReadTicket &) noexcept;
+  HYLE_COMPUTE_API PendingAppendReadTicket &operator=(const PendingAppendReadTicket &) noexcept;
+  HYLE_COMPUTE_API PendingAppendReadTicket(PendingAppendReadTicket &&) noexcept;
+  HYLE_COMPUTE_API PendingAppendReadTicket &operator=(PendingAppendReadTicket &&) noexcept;
+  HYLE_COMPUTE_API ~PendingAppendReadTicket();
+  bool valid() const noexcept { return block_ != nullptr; }
+  explicit operator bool() const noexcept { return valid(); }
+  std::size_t size() const noexcept { return block_ ? committed_ + reserved_ : 0; }
+  std::size_t committed_bytes() const noexcept { return block_ ? committed_ : 0; }
+  std::size_t reserved_bytes() const noexcept { return block_ ? reserved_ : 0; }
+  std::uint64_t generation() const noexcept { return block_ ? generation_ : 0; }
+  std::uint64_t epoch() const noexcept { return block_ ? epoch_ : 0; }
+  HYLE_COMPUTE_API void reset() noexcept;
+private:
+  friend struct LeaseAccess;
+  PendingAppendReadTicket(LeaseBlock *block, LeaseDomain *domain, std::uint64_t generation,
+      std::uint64_t epoch, std::size_t committed, std::size_t reserved) noexcept
+      : block_(block), domain_(domain), generation_(generation), epoch_(epoch),
+        committed_(committed), reserved_(reserved) {}
+  LeaseBlock *block_ = nullptr;
+  LeaseDomain *domain_ = nullptr;
+  std::uint64_t generation_ = 0, epoch_ = 0;
+  std::size_t committed_ = 0, reserved_ = 0;
+};
+
 struct LeaseBackingInfo final {
   const void *identity = nullptr;
   mem::MemoryResourceRef resource{};
@@ -61,6 +93,26 @@ struct LeaseAccess final {
   // every write is the exact reservation, and original writer->reader ordering.
   static HYLE_COMPUTE_API Status append_unique(LeaseUseBatch &uses,
                                                const AppendLease &lease) noexcept;
+  // The F2 owner must first prove this original append was actually submitted
+  // and order every receiver behind its complete verdict. All fallible range
+  // checks precede sealing the epoch against new writes and mutable views.
+  static HYLE_COMPUTE_API Result<PendingAppendReadTicket> pending_append_read(
+      const AppendLease &, mem::ConstBufferView exact_prefix) noexcept;
+  // Pure original epoch/range queries; closed admission does not erase them.
+  // Successful publication of this same prefix is still the same epoch.
+  static HYLE_COMPUTE_API Status matches_pending_append_read(
+      const PendingAppendReadTicket &, mem::ConstBufferView) noexcept;
+  static HYLE_COMPUTE_API Status matches_pending_append_read(
+      const PendingAppendReadTicket &, const AppendLease &) noexcept;
+  // Root-deduplicated readonly admission through the original native-use pool.
+  // A receiver failure never becomes this append producer's epoch failure.
+  static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &,
+      const PendingAppendReadTicket &) noexcept;
+  // The F2 owner also proves whole-producer success. Only actual append writes
+  // must have retired; already admitted readonly successors may remain. The
+  // ordinary AppendLease::publish keeps its original all-native-use gate.
+  static HYLE_COMPUTE_API Result<ReadLease> publish_append_after_writes(
+      AppendLease &, const PendingAppendReadTicket &) noexcept;
   // Read existing backing identity/capacity for composite admission accounting.
   // Different blocks of one pool share this identity; no new metadata is added.
   static HYLE_COMPUTE_API Result<LeaseBackingInfo> backing(const ReadLease &lease) noexcept;

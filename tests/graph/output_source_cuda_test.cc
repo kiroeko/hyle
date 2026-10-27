@@ -19,6 +19,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/graph.h"
+#include "../../src/graph/slots_region.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -1077,5 +1078,378 @@ TEST(GraphOutputSourceCuda, StoreAndTokenShareOnePendingSubmissionAcrossTakeAndP
 }
 TEST(GraphOutputSourceCuda, StorePendingReaderPreservesWholeProducerFailure) {
   store_relay(true);
+}
+TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(12).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  auto staging = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto index_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  const auto token_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 2>{1, 1}).value();
+  const auto table_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 2>{4, 1}).value();
+  const auto copied_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 2>{2, 1}).value();
+  const auto item = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto rows_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 2}).value();
+  const auto ids_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{2}).value();
+  constexpr std::size_t stride = 256, item_bytes = 2 * sizeof(float);
+  const auto schema = g::slots::Schema::create(item, 4, stride).value();
+  const auto capacity_desc = schema.capacity_description().value();
+  auto backing = hyle::mem::Buffer::create(storage.ref(), 4 * stride, stride).value();
+  ASSERT_TRUE(backing.view().fill(std::byte{0x5a}).ok());
+  auto state_pool = c::LeasePool::adopt(std::move(backing), {.max_blocks = 8}).value();
+  const auto layout = c::LeaseSlotLayout::create(state_pool, item, 4, stride).value();
+  std::array<c::WriteLease, 4> initial;
+  std::array<c::ReadLease, 4> padding;
+  for (std::size_t i = 0; i < initial.size(); ++i) {
+    initial[i] = state_pool.allocate(item_bytes, stride).value();
+    ASSERT_EQ(layout.locate(initial[i])->index, i);
+    const std::array<float, 2> old{100.0f + static_cast<float>(i), 200.0f + static_cast<float>(i)};
+    ASSERT_TRUE(initial[i].view()->write(std::as_bytes(std::span(old))).ok());
+    auto gap = state_pool.allocate(stride - item_bytes, 1).value();
+    padding[i] = gap.publish().value();
+  }
+  std::array<c::ReadLease, 2> sentinels{
+      initial[1].publish().value(), initial[3].publish().value()};
+  std::array<c::WriteLease, 2> destinations{std::move(initial[0]), std::move(initial[2])};
+  auto inputs = c::LeasePool::create(storage.ref(), 5 * stride, {.max_blocks = 5}).value();
+  auto table = inputs.allocate(4 * sizeof(std::int32_t), stride).value();
+  auto index = inputs.allocate(sizeof(std::int32_t), stride).value();
+  auto rows = inputs.allocate(4 * sizeof(float), stride).value();
+  auto marker = inputs.allocate(sizeof(std::int32_t), stride).value();
+  auto other_marker = inputs.allocate(sizeof(std::int32_t), stride).value();
+  constexpr std::array<std::int32_t, 4> token_table{2, 1, 3, 0};
+  constexpr std::array<std::int32_t, 1> select{0}, marker_value{7}, warm_value{1};
+  constexpr std::array<float, 4> incoming{3, 5, 7, 11};
+  ASSERT_TRUE(table.view()->write(std::as_bytes(std::span(token_table))).ok());
+  ASSERT_TRUE(index.view()->write(std::as_bytes(std::span(select))).ok());
+  ASSERT_TRUE(rows.view()->write(std::as_bytes(std::span(incoming))).ok());
+  ASSERT_TRUE(marker.view()->write(std::as_bytes(std::span(marker_value))).ok());
+  ASSERT_TRUE(other_marker.view()->write(std::as_bytes(std::span(marker_value))).ok());
+  auto table_ready = table.publish().value(), index_ready = index.publish().value();
+  auto rows_ready = rows.publish().value(), marker_ready = marker.publish().value();
+  auto other_marker_ready = other_marker.publish().value();
+  const auto marker_storage = marker_ready.view().value();
+  const auto other_marker_storage = other_marker_ready.view().value();
+  EXPECT_EQ(marker_storage.native_handle(), other_marker_storage.native_handle());
+  ASSERT_NE(marker_storage.offset(), other_marker_storage.offset());
+  auto token_pool = c::LeasePool::create(storage.ref(), stride, {.max_blocks = 1}).value();
+  auto token_writer = token_pool.allocate(sizeof(std::int32_t), stride).value();
+  ASSERT_TRUE(token_writer.view()->write(std::as_bytes(std::span(warm_value))).ok());
+  auto warm_token = token_writer.publish().value();
+  const auto token_generation = warm_token.generation();
+  const auto token_view = warm_token.tensor(token_desc).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), stride, {.max_blocks = 1}).value();
+  auto copied_writer = output_pool.allocate(2 * sizeof(std::int32_t), stride).value();
+  auto destination_pool = c::LeasePool::create(storage.ref(), 2 * stride, {.max_blocks = 2}).value();
+  const auto destination_layout = c::LeaseSlotLayout::create(destination_pool, item, 2, stride).value();
+  std::array<c::WriteLease, 2> result_writers;
+  for (auto &writer : result_writers) writer = destination_pool.allocate(item_bytes, stride).value();
+
+  auto first = g::GraphBuilder::create().value();
+  const auto table_input = first.input(table_desc).value();
+  const auto index_input = first.input(index_desc).value();
+  const auto row_input = first.input(rows_desc).value();
+  const auto first_ids = first.input(ids_desc).value();
+  const auto token = first.add(c::Gather{.axis = 0}, table_input, index_input).value();
+  ASSERT_TRUE(first.publish(token).ok());
+  const auto store = first.add_node(c::Operation::custom(g::slots::Store{schema}),
+      std::array{row_input, first_ids}).value();
+  const auto first_graph = std::move(first).finish().value();
+  auto producer_plan = g::cuda::compile(first_graph, context, storage);
+  ASSERT_TRUE(producer_plan) << producer_plan.error().message();
+  ASSERT_EQ(producer_plan->report.segment_count(), 1u);
+  auto producer = producer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(producer.prepare_resources().ok());
+  ASSERT_TRUE(producer.bind(table_input, table_desc, table_ready).ok());
+  ASSERT_TRUE(producer.bind(index_input, index_desc, index_ready).ok());
+  ASSERT_TRUE(producer.bind(row_input, rows_desc, rows_ready).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(g::slots::prepare(producer, queues, {.host_workspace = staging.ref()}).ok());
+  auto transaction = g::slots::SlotBindings::create(layout, {}, destinations).value();
+  ASSERT_TRUE(g::slots::bind(producer, first_graph, store, std::move(transaction)).ok());
+  // The real A carrier is already initialized by cold binding. Keep only its
+  // bounded IDs lease and capacity description; never retain a writer pointer
+  // or the borrowed transaction across the following cold take.
+  struct ColdExport final { c::ConstTensorView capacity{}, indices{}; c::ReadLease ids; } control;
+  const auto exported = gd::RegionAccess::visit(producer, store,
+      [](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
+        auto &result = *static_cast<ColdExport *>(opaque);
+        const auto *extension = view.prepared_vtable && view.prepared_vtable->query_extension
+            ? static_cast<const g::slots::detail::StoreRegionVTable *>(
+                view.prepared_vtable->query_extension(view.prepared,
+                    g::slots::detail::kStoreBindingExtensionId)) : nullptr;
+        if (!extension || !extension->binding)
+          return hyle::Status::Unimplemented("cold Store has no original binding export");
+        auto *binding = extension->binding(view.invocation);
+        if (!binding) return hyle::Status::FailedPrecondition("cold Store binding is absent");
+        HYLE_ASSIGN_OR_RETURN(auto source, binding->export_pending());
+        result.capacity = source.capacity; result.indices = source.indices;
+        result.ids = std::move(source.indices_guard);
+        return hyle::Status::Ok();
+      }, &control);
+  ASSERT_TRUE(exported.ok()) << exported.message();
+  ASSERT_TRUE(gd::RegionAccess::outcome_available(producer));
+  auto cold_returned = g::slots::take(producer, store);
+  ASSERT_TRUE(cold_returned) << cold_returned.error().message();
+  std::array<c::ReadLease, 2> warm_sources;
+  std::array<std::uint64_t, 2> generations{};
+  std::array<hyle::mem::ConstBufferView, 2> source_storage;
+  for (std::size_t i = 0; i < warm_sources.size(); ++i) {
+    warm_sources[i] = cold_returned->destinations()[i].publish().value();
+    generations[i] = warm_sources[i].generation();
+    source_storage[i] = warm_sources[i].view().value();
+  }
+
+  auto second = g::GraphBuilder::create().value();
+  const auto token_input = second.input(token_desc).value();
+  const auto marker_input = second.input(token_desc).value();
+  const auto copy0 = second.add_node(c::Operation(c::Concat{.axis = 0}),
+      std::array{token_input, marker_input}).value();
+  const auto intermediate = second.result(copy0).value();
+  const auto copy1 = second.add_node(c::Operation(c::Concat{.axis = 0}),
+      std::array{intermediate}).value();
+  const auto copied_token = second.result(copy1).value();
+  const auto bank_input = second.input(capacity_desc).value();
+  const auto source_ids = second.input(ids_desc).value();
+  const auto second_ids = second.input(ids_desc).value();
+  const auto gather = second.add_node(c::Operation(c::Gather{.axis = 0}),
+      std::array{bank_input, source_ids}).value();
+  const auto gathered = second.result(gather).value();
+  const auto result_schema = g::slots::Schema::create(item, 2, stride).value();
+  const auto result_store = second.add_node(c::Operation::custom(g::slots::Store{result_schema}),
+      std::array{gathered, second_ids}).value();
+  ASSERT_TRUE(second.publish(copied_token).ok());
+  const auto second_graph = std::move(second).finish().value();
+  auto consumer_plan = g::cuda::compile(second_graph, context, storage);
+  ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
+  ASSERT_EQ(consumer_plan->report.segment_count(), 1u);
+  bool captured_math = false, prepared_gap = false;
+  for (std::size_t i = 0; i < consumer_plan->report.step_count(); ++i) {
+    const auto step = consumer_plan->report.step(i).value();
+    bool has_copy = false, has_store = false;
+    for (std::size_t j = 0; j < step.node_count; ++j) {
+      const auto node = consumer_plan->report.step_node(i, j).value();
+      has_copy |= node == copy0 || node == copy1;
+      has_store |= node == result_store;
+    }
+    if (has_copy) {
+      EXPECT_EQ(step.kind, g::CompileStepKind::kProviderRegion);
+      EXPECT_EQ(step.node_count, 2u);
+      EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kManaged);
+      EXPECT_TRUE(step.runtime.blocks_host); captured_math = true;
+    }
+    if (has_store) {
+      EXPECT_EQ(step.runtime.mode, c::ProviderRuntimeMode::kSharedQueue);
+      EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
+      EXPECT_FALSE(step.runtime.blocks_host);
+      EXPECT_FALSE(step.runtime.capture_compatible); prepared_gap = true;
+    }
+  }
+  ASSERT_TRUE(captured_math); ASSERT_TRUE(prepared_gap);
+  auto consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(consumer.prepare_resources().ok());
+  ASSERT_TRUE(consumer.bind(token_input, token_desc, warm_token).ok());
+  ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
+  ASSERT_TRUE(consumer.bind(source_ids, ids_desc, control.ids).ok());
+  ASSERT_TRUE(consumer.bind(copied_token, copied_desc, std::move(copied_writer)).ok());
+  ASSERT_TRUE(g::slots::prepare(consumer, queues, {.host_workspace = staging.ref()}).ok());
+  auto result_transaction = g::slots::SlotBindings::create(destination_layout, {}, result_writers).value();
+  ASSERT_TRUE(g::slots::bind(consumer, second_graph, result_store, std::move(result_transaction)).ok());
+  ASSERT_TRUE(gd::RegionAccess::reserve_reads(consumer, 2, {}).ok());
+  const std::array access{gather};
+  ASSERT_TRUE(gd::RegionAccess::bind_read_projection(consumer,
+      {bank_input, {}, access}, control.capacity, warm_sources).ok());
+  const auto warm = consumer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kPreferCapture, .host_wait = g::HostWaitPolicy::kReject});
+  ASSERT_TRUE(warm.ok()) << warm.message();
+  ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
+  const auto recorded_ranges = consumer.replay_report()->recorded_capture_range_count;
+  ASSERT_GT(recorded_ranges, 0u);
+  EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, 0u);
+  EXPECT_EQ(consumer.replay_report()->immediate_transfer_count, 0u);
+  EXPECT_EQ(consumer.replay_report()->host_wait_dependency_count, 0u);
+  EXPECT_FALSE(consumer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject}).ok());
+  const auto restored = gd::ReplayAccess::prepare_reuse(consumer, queues);
+  ASSERT_TRUE(restored.ok()) << restored.message();
+  ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
+  EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
+  EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, recorded_ranges);
+  // A real captured input changes address while retaining the same value.
+  // A miss cannot record this tuple or silently execute managed Commands.
+  ASSERT_TRUE(consumer.bind(marker_input, token_desc, other_marker_ready).ok());
+  const auto reusable = gd::ReplayAccess::can_reuse_capture(consumer,
+      std::array{gd::ReplayInputBinding{token_input, token_view}});
+  ASSERT_TRUE(reusable) << reusable.error().message();
+  EXPECT_FALSE(*reusable);
+  EXPECT_FALSE(gd::ReplayAccess::prepare_reuse(consumer, queues).ok());
+  EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
+  EXPECT_FALSE(consumer.replay_report());
+  ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
+  // Only the exact ready permissions are withdrawn. Both genuine blocks
+  // must become writable again without changing generation or coordinates.
+  const auto released = gd::RegionAccess::release_read_projection(consumer, bank_input);
+  ASSERT_TRUE(released.ok()) << released.message();
+  const std::array old_inputs{source_ids, token_input};
+  ASSERT_TRUE(consumer.unbind(old_inputs).ok());
+  control.ids = {};
+  for (std::size_t i = 0; i < warm_sources.size(); ++i) {
+    auto writer = warm_sources[i].try_write();
+    ASSERT_TRUE(writer) << writer.error().message();
+    EXPECT_EQ(writer->generation(), generations[i]);
+    const auto actual = writer->view().value();
+    EXPECT_EQ(actual.resource(), source_storage[i].resource());
+    EXPECT_EQ(actual.native_handle(), source_storage[i].native_handle());
+    EXPECT_EQ(actual.offset(), source_storage[i].offset());
+    EXPECT_EQ(actual.size(), source_storage[i].size());
+    destinations[i] = std::move(*writer);
+  }
+  auto reclaimed_token = warm_token.try_write();
+  ASSERT_TRUE(reclaimed_token) << reclaimed_token.error().message();
+  EXPECT_EQ(reclaimed_token->generation(), token_generation);
+  const auto actual_token_storage = reclaimed_token->view().value();
+  EXPECT_EQ(actual_token_storage.native_handle(), token_view.storage().native_handle());
+  EXPECT_EQ(actual_token_storage.offset(), token_view.storage().offset());
+  EXPECT_EQ(actual_token_storage.size(), token_view.storage().size());
+  ASSERT_TRUE(producer.bind(token, token_desc, std::move(*reclaimed_token)).ok());
+  auto actual_transaction = g::slots::SlotBindings::create(layout, {}, destinations).value();
+  const auto rebound = g::slots::bind(producer, first_graph, store, std::move(actual_transaction));
+  ASSERT_TRUE(rebound.ok()) << rebound.message();
+  ColdExport current;
+  const auto same_carrier = gd::RegionAccess::visit(producer, store,
+      [](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
+        auto &result = *static_cast<ColdExport *>(opaque);
+        const auto *extension = static_cast<const g::slots::detail::StoreRegionVTable *>(
+            view.prepared_vtable->query_extension(view.prepared, g::slots::detail::kStoreBindingExtensionId));
+        if (!extension || !extension->binding) return hyle::Status::Internal("Store export disappeared");
+        HYLE_ASSIGN_OR_RETURN(auto source, extension->binding(view.invocation)->export_pending());
+        result.indices = source.indices;
+        return hyle::Status::Ok();
+      }, &current);
+  ASSERT_TRUE(same_carrier.ok()) << same_carrier.message();
+  EXPECT_EQ(current.indices.description(), control.indices.description());
+  EXPECT_EQ(current.indices.storage().resource(), control.indices.storage().resource());
+  EXPECT_EQ(current.indices.storage().native_handle(), control.indices.storage().native_handle());
+  EXPECT_EQ(current.indices.storage().offset(), control.indices.storage().offset());
+  EXPECT_EQ(current.indices.storage().size(), control.indices.storage().size());
+  auto state_result = gd::StoreSource::prepare(producer, store, storage);
+  ASSERT_TRUE(state_result) << state_result.error().message();
+  auto state = std::move(*state_result);
+  ASSERT_TRUE(producer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+
+  Gate gate, reader_gate;
+  gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
+  auto submitted = producer.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(common_result) << common_result.error().message();
+  auto common = std::move(*common_result);
+  ASSERT_TRUE(state.capture(common).ok());
+  auto token_result = gd::OutputSource::create(common, token, storage, token_pool);
+  ASSERT_TRUE(token_result) << token_result.error().message();
+  auto token_source = std::move(*token_result);
+  const std::array bindings{
+      gd::OutputBinding{token_input, &token_source},
+      gd::OutputBinding{.store = &state,
+          .projection = {bank_input, source_ids, gather, access,
+              c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
+  ASSERT_TRUE(consumer.bind(marker_input, token_desc, other_marker_ready).ok());
+  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
+  EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
+  EXPECT_FALSE(consumer.replay_report());
+  ASSERT_TRUE(common.poll());
+  EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);
+  EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
+  EXPECT_EQ(consumer.replay_report()->reused_capture_range_count, recorded_ranges);
+  EXPECT_EQ(consumer.replay_report()->immediate_transfer_count, 0u);
+  EXPECT_EQ(consumer.replay_report()->host_wait_dependency_count, 0u);
+  const auto dependency = consumer.input_source_report().value();
+  EXPECT_EQ(dependency.source_count, 1u); EXPECT_EQ(dependency.device_wait_count, 1u);
+  EXPECT_EQ(dependency.host_wait_count, 0u);
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  EXPECT_FALSE(consumer.submit(queues));
+  reader_gate.arm(gate.stream);
+  ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  // The same Hybrid execution is also a producer of its original submission;
+  // transfer that one exact proxy, without adding a view, graph or observer.
+  auto successor_result = gd::SubmissionSource::create(consumer, std::move(*consumed), storage);
+  ASSERT_TRUE(successor_result) << successor_result.error().message();
+  auto successor = std::move(*successor_result);
+  EXPECT_FALSE(consumed->valid());
+  ASSERT_TRUE(successor.poll());
+  EXPECT_EQ(*successor.poll(), c::CompletionPoll::kPending);
+  gate.release();
+  ASSERT_TRUE(common.wait().ok());
+  EXPECT_TRUE(consumer.in_flight());
+  EXPECT_EQ(*successor.poll(), c::CompletionPoll::kPending);
+  ASSERT_TRUE(token_source.detach().ok()); ASSERT_TRUE(common.detach().ok());
+  auto returned = g::slots::take(producer, store);
+  ASSERT_TRUE(returned) << returned.error().message();
+  std::array<c::ReadLease, 2> published;
+  for (std::size_t i = 0; i < published.size(); ++i) {
+    auto ready = state.publish(i, returned->destinations()[i]);
+    ASSERT_TRUE(ready) << ready.error().message();
+    published[i] = std::move(*ready);
+    EXPECT_FALSE(published[i].try_write());
+  }
+  EXPECT_TRUE(producer.reset().ok());
+  reader_gate.release();
+  const auto terminal = successor.wait();
+  ASSERT_TRUE(terminal.ok()) << terminal.message();
+  ASSERT_TRUE(successor.detach().ok());
+  std::array<std::int32_t, 2> actual_token{};
+  ASSERT_TRUE(consumer.output(copied_token)->storage().read(
+      std::as_writable_bytes(std::span(actual_token))).ok());
+  EXPECT_EQ(actual_token, (std::array<std::int32_t, 2>{2, 7}));
+  auto result = g::slots::take(consumer, result_store);
+  ASSERT_TRUE(result) << result.error().message();
+  for (std::size_t i = 0; i < 2; ++i) {
+    auto ready = result->destinations()[i].publish();
+    ASSERT_TRUE(ready) << ready.error().message();
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(ready->view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, (std::array<float, 2>{incoming[2 * i], incoming[2 * i + 1]}));
+  }
+  EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_FALSE(reader_gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_EQ(state_pool.stats().active_uses, 0u);
+  EXPECT_EQ(destination_pool.stats().active_uses, 0u);
+  for (std::size_t i = 0; i < sentinels.size(); ++i) {
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(sentinels[i].view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    const auto slot = i == 0 ? 1.0f : 3.0f;
+    EXPECT_EQ(actual, (std::array<float, 2>{100.0f + slot, 200.0f + slot}));
+  }
+  for (const auto &guard : padding) {
+    std::array<std::byte, stride - item_bytes> bytes{};
+    ASSERT_TRUE(guard.view()->read(bytes).ok());
+    for (const auto byte : bytes) EXPECT_EQ(byte, std::byte{0x5a});
+  }
+  successor = {}; token_source = {}; consumer = {}; state = {}; common = {}; producer = {};
+  for (auto &ready : published) EXPECT_TRUE(ready.try_write());
+  EXPECT_EQ(token_pool.stats().live_blocks, 0u);
+  EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
 } // namespace

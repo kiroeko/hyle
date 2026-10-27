@@ -172,6 +172,16 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 [有限检查](../evidence/correctness/inference-captured-submission-2026-10-27.json)覆盖受控Completion下的寿命、
 失败分离、关闭与唯一ready重开写；该批次未接Store目的槽、KV append或真实GPU状态ticket。
 
+已有append页的在途读另用独立`PendingAppendReadTicket`保原block、generation、epoch和
+`committed+reserved`精确前缀，不持`AppendLease`指针，不提供ready视图。发行前由F2 owner证明
+原追加实际提交，发行后封住本epoch的新写接纳和可写地址；实际追加登记为write，读者只登记read，
+其取消或失败不污染前驱append epoch。原追加成功且所有真实write退休后，受检发布桥可在只读后继
+仍在途时发布该精确前缀。旧ReadLease不扩界，公开publish及reserve／rollback仍保原全部native-use限制；
+新reserve才开启下一epoch并使旧票据失效。此处仅已有页的资源权限原语；fresh page转换、Graph KV视图、
+原队列接力及连续COW轮换尚待接通，不能据此声称完整KV流水可用。
+[有限检查](../evidence/correctness/inference-hybrid-append-2026-10-27.json)中的三项新增append合同
+使用受控Completion，不是GPU KV接力证明；四项原append合同及原ticket相邻检查同镜像通过。
+
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。
 成功原提交后`capture`重核原交易、代际、范围与资源，再封写导出票据；之后不留writer指针。
 原destination IDs以精确bounded ready guard保活，不另上传、不取得整池ready权限；同代第二视图的几何检查
@@ -191,22 +201,27 @@ Region的prepare／seal已统一为metadata、资源、owner及未提交recordin
 ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同步路径，保留managed／host-blocking事实；
 `record_compatible`只表示原encoder可录制，不是普通执行无阻塞的证明。
 Graph已增加窄`detail::ReplayAccess`沿原准备实现复用已完成的捕获：核同一实际Queue、物理key、
-稳定地址／私有参数及完整覆盖，pending输入只允许复用，所有range预检命中后才选择原记录。
+稳定地址／私有参数及实际range／gap覆盖，pending输入只允许复用，所有range预检命中后才选择原记录。
 miss在begin capture及variant eviction之前拒绝，不新录制、不降回managed Commands，普通`ReplayOptions`不扩维。
-`prepare_outputs`固定该bundle选择的Commands或既有capture模式，submit仍核实际完整路由与原有序读权限。
+`prepare_outputs`固定该bundle选择的Commands、Captured或Hybrid模式，submit仍核实际完整路由与原有序读权限。
 [有限CUDA检查](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)证明原ggml Gather→Add区域
 在生产者pending时取得0次新录制／1次复用，物理tuple不匹配时拒绝，原块读写权限交接及结果正确。
-仍执行原metadata hook／预算及权限准备，不表示零分配；生产者现仅按原实际完整capture覆盖准入静态host-blocking路径，
-真实双Concat I32生产者的pending接力已通过有限CUDA检查；未覆盖managed command、Hybrid及多segment仍未准入，
-不能将外层capture的实际重放资格改写成整个Provider的静态能力或完整引擎流水结论。
+仍执行原metadata hook／预算及权限准备，不表示零分配。真实双Concat I32生产者的pending接力另已通过有限CUDA检查。
+当前共同冷分类也允许真实Hybrid：range必须有序、合法且持有效原捕获，未覆盖的command仅允许
+SharedQueue／Prepared／非阻塞，所有managed／blocking command仍须实际覆盖。生产者核本次真正launch的span，
+Commands不拿休眠的记录作覆盖证明。消费者仍核每段既有物理tuple与私有参数，缺任一段就拒绝，
+公开RequireCapture仍要求全部command可捕获。单个[真实Hybrid检查](../evidence/correctness/inference-hybrid-append-2026-10-27.json)
+已覆盖两Concat＋checked Gather捕获段与Store间隙、换址miss、同carrier ready→pending、0新增录制和B原proxy接管。
+撤回ready投影时仅实际Operation的稳定后端绑定、无native输入与原私有参数保持证明允许保记录；Region仍保原显式合同。
+未覆盖managed间隙、多segment、完整模型或持续轮换，不能改写Provider静态能力或推证吞吐。
 
 真实Qwen接力另有已核实的接线缺口：`PreparedReadback`目前以裸TensorView绑定token输出，
 不是Graph持有的完整writer；普通最终ID为dense I32 `[B,1]`，下一Text T1输入为`[B]`。
 优先用既有typed reshape统一普通最终token端口与原writer所有权，不为该消费者另造Source reshape机制。
 已有正式CUDA窗口的ordinary与MTP decode均为Hybrid；记录未保留逐gap覆盖，不能声称完整capture。
-后续按原`captured_ranges`／`capture_spans`与提交游标区分已捕获command和Prepared／nonblocking gap，
-保留同一Queue、原完整Status与reuse-only物理tuple／私有参数检查。缺失范围拒绝，不新录制pending输入，
-也不改写公开RequireCapture的完整覆盖语义。token接力不能替代validity、KV／状态、RNG及停止的联合发布。
+当前已按原`captured_ranges`／`capture_spans`与提交游标区分已捕获command和Prepared／nonblocking gap，
+保留同一Queue、原完整Status与reuse-only物理tuple／私有参数检查；实际模型仍需逐gap核查其资格。
+token接力不能替代validity、KV／状态、RNG及停止的联合发布。
 
 普通多成员请求已先接[CPU整数准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)：
 冷阶段按执行元数据预算预留scratch，GPU执行期间仅填下一步位置与旧页拓扑，不提前取得状态／tail或布局版本。

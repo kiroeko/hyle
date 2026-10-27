@@ -670,6 +670,174 @@ TEST(PendingReadTickets, ReaderFailureDoesNotPoisonProducerAndClosedDomainsRejec
   EXPECT_EQ(pool.stats().active_uses, 0u);
 }
 
+// Append tickets prove the original epoch and bounded prefix, not readiness.
+// Native dependency ordering remains the responsibility of the F2 owner.
+static_assert(std::is_nothrow_copy_constructible_v<detail::PendingAppendReadTicket>);
+static_assert(std::is_nothrow_move_constructible_v<detail::PendingAppendReadTicket>);
+static_assert(!std::is_convertible_v<detail::PendingAppendReadTicket, ReadLease>);
+
+TEST(PendingAppendReadTickets, ExactEpochSurvivesMovedOwnerAndPublishesWithReaderPending) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  const auto capacity = mem::ConstBufferView(*writer.view());
+  const auto exact = capacity.subview(0, 96).value();
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  ASSERT_TRUE(page.appender.view()->fill(std::byte{47}).ok());
+  auto uses = LeaseUsePool::create({.max_batches = 3, .max_resources_per_batch = 1}).value();
+  auto writing = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::append_unique(writing, page.appender).ok());
+  PendingUse producing, consuming;
+  auto producer = detail::CompletionAccess::make(&kPending, &producing);
+  ASSERT_TRUE(writing.attach(producer).ok());
+  auto exported = detail::LeaseAccess::pending_append_read(page.appender, exact);
+  ASSERT_TRUE(exported) << exported.error().message();
+  auto ticket = std::move(*exported);
+  EXPECT_EQ(ticket.size(), 96u); EXPECT_EQ(ticket.committed_bytes(), 64u);
+  EXPECT_EQ(ticket.reserved_bytes(), 32u); EXPECT_EQ(ticket.epoch(), 1u);
+  auto copy = ticket;
+  detail::PendingAppendReadTicket moved(std::move(copy));
+  EXPECT_FALSE(copy.valid()); EXPECT_EQ(copy.size(), 0u);
+  auto returned = std::move(page.appender);
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_append_read(moved, returned).ok());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_append_read(ticket, exact).ok());
+  EXPECT_FALSE(detail::LeaseAccess::matches_pending_append_read(ticket, capacity).ok());
+  EXPECT_FALSE(detail::LeaseAccess::matches_pending_append_read(ticket,
+      capacity.subview(0, 64).value()).ok());
+  auto other_writer = pool.allocate(256).value();
+  const auto other_range = mem::ConstBufferView(*other_writer.view()).subview(0, 96).value();
+  EXPECT_FALSE(detail::LeaseAccess::matches_pending_append_read(ticket, other_range).ok());
+  auto other = detail::LeaseAccess::publish_appendable(other_writer, 64).value();
+  ASSERT_TRUE(other.appender.reserve(32).ok());
+  EXPECT_FALSE(detail::LeaseAccess::matches_pending_append_read(ticket, other.appender).ok());
+  auto reading = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(reading, moved).ok());
+  auto consumer = detail::CompletionAccess::make(&kPending, &consuming);
+  ASSERT_TRUE(reading.attach(consumer).ok());
+  EXPECT_TRUE(detail::LeaseAccess::publish_append_after_writes(returned, ticket).error().IsUnavailable());
+  ASSERT_TRUE(producer.wait().ok());
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  EXPECT_FALSE(returned.publish()); // The public all-native-use gate remains.
+  auto publication = detail::LeaseAccess::publish_append_after_writes(returned, ticket);
+  ASSERT_TRUE(publication) << publication.error().message();
+  auto ready = std::move(*publication);
+  EXPECT_EQ(ready.size(), 96u); EXPECT_EQ(page.prefix.size(), 64u);
+  EXPECT_EQ(returned.committed_bytes(), 96u); EXPECT_EQ(returned.reserved_bytes(), 0u);
+  EXPECT_TRUE(returned.reserve(16).IsUnavailable());
+  EXPECT_TRUE(returned.rollback().IsUnavailable());
+  EXPECT_EQ(*consumer.poll(), CompletionPoll::kPending);
+  ASSERT_TRUE(consumer.wait().ok());
+  std::array<std::byte, 96> bytes{};
+  ASSERT_TRUE(ready.view()->read(bytes).ok());
+  for (std::size_t i = 0; i < bytes.size(); ++i)
+    EXPECT_EQ(bytes[i], i < 64 ? std::byte{19} : std::byte{47});
+  auto later = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(later, ticket).ok());
+  later = {}; // No accepted native work; normal admission rollback.
+  ASSERT_TRUE(returned.reserve(16).ok());
+  EXPECT_EQ(returned.epoch(), 2u);
+  EXPECT_FALSE(detail::LeaseAccess::matches_pending_append_read(ticket, exact).ok());
+  auto stale = uses.begin().value();
+  EXPECT_FALSE(detail::LeaseAccess::ordered_read_unique(stale, moved).ok());
+  EXPECT_FALSE(detail::LeaseAccess::publish_append_after_writes(returned, ticket));
+  EXPECT_EQ(page.prefix.size(), 64u); EXPECT_EQ(ready.size(), 96u);
+  ASSERT_TRUE(returned.rollback().ok());
+}
+
+TEST(PendingAppendReadTickets, RejectedExportDoesNotSealAndDroppingTicketsDoesNotReopenEpoch) {
+  const std::array limits{ResourceBudgetLimit{mem::system_resource(), 65536}};
+  auto budget = ResourceBudget::create({.limits = limits}).value();
+  auto pool = LeasePool::create(mem::system_resource(), 256,
+      {.max_blocks = 1, .resource_budget = budget}).value();
+  auto writer = pool.allocate(256).value();
+  const auto capacity = mem::ConstBufferView(*writer.view());
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  ASSERT_TRUE(page.appender.reserve(32).ok());
+  EXPECT_FALSE(detail::LeaseAccess::pending_append_read(page.appender, capacity));
+  EXPECT_TRUE(page.appender.view());
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto writing = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::append_unique(writing, page.appender).ok());
+  auto producer = Completion::completed();
+  ASSERT_TRUE(writing.attach(producer).ok()); ASSERT_TRUE(producer.wait().ok());
+  const auto before = budget.usage(mem::system_resource())->live_bytes;
+  auto ticket = detail::LeaseAccess::pending_append_read(page.appender,
+      capacity.subview(0, 96).value()).value();
+  auto copy = ticket;
+  detail::PendingAppendReadTicket assigned; assigned = copy;
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, before);
+  ticket.reset(); copy.reset(); assigned.reset();
+  EXPECT_FALSE(page.appender.view());
+  auto rejected = uses.begin().value();
+  EXPECT_FALSE(detail::LeaseAccess::append_unique(rejected, page.appender).ok());
+  // Genuine public publication still works once every native use retired.
+  auto ready = page.appender.publish();
+  ASSERT_TRUE(ready) << ready.error().message();
+  ASSERT_TRUE(page.appender.reserve(16).ok());
+  EXPECT_TRUE(page.appender.view());
+  ASSERT_TRUE(page.appender.rollback().ok());
+}
+
+TEST(PendingAppendReadTickets, FailedProducerCannotPublishAndReaderFailureDoesNotPoisonAppend) {
+  auto pool = LeasePool::create(mem::system_resource(), 256, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  const auto capacity = mem::ConstBufferView(*writer.view());
+  auto page = detail::LeaseAccess::publish_appendable(writer, 64).value();
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  for (const bool fail_producer : {false, true}) {
+    ASSERT_TRUE(page.appender.reserve(32).ok());
+    const auto boundary = page.appender.committed_bytes() + 32;
+    ASSERT_TRUE(page.appender.view()->fill(std::byte{47}).ok());
+    auto writing = uses.begin().value();
+    ASSERT_TRUE(detail::LeaseAccess::append_unique(writing, page.appender).ok());
+    PendingUse producing, consuming;
+    auto producer = detail::CompletionAccess::make(&kPending, &producing);
+    ASSERT_TRUE(writing.attach(producer).ok());
+    auto ticket = detail::LeaseAccess::pending_append_read(page.appender,
+        capacity.subview(0, boundary).value()).value();
+    auto reading = uses.begin().value();
+    ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(reading, ticket).ok());
+    auto consumer = detail::CompletionAccess::make(&kPending, &consuming);
+    ASSERT_TRUE(reading.attach(consumer).ok());
+    detail::CompletionAccess::append_terminal(consumer, hyle::Status::Cancelled("append reader cancelled"));
+    if (fail_producer)
+      detail::CompletionAccess::append_terminal(producer, hyle::Status::Internal("append producer failed"));
+    const auto produced = producer.wait();
+    EXPECT_EQ(produced.IsInternal(), fail_producer);
+    auto published = detail::LeaseAccess::publish_append_after_writes(page.appender, ticket);
+    if (fail_producer) {
+      ASSERT_FALSE(published); EXPECT_TRUE(published.error().IsInternal());
+      EXPECT_EQ(page.appender.committed_bytes(), boundary - 32);
+      EXPECT_TRUE(page.appender.rollback().IsUnavailable());
+    } else {
+      ASSERT_TRUE(published) << published.error().message();
+      EXPECT_EQ(published->size(), boundary);
+    }
+    EXPECT_TRUE(consumer.wait().IsCancelled());
+    if (fail_producer) ASSERT_TRUE(page.appender.rollback().ok());
+    EXPECT_EQ(page.prefix.size(), 64u);
+    std::array<std::byte, 64> old{};
+    ASSERT_TRUE(page.prefix.view()->read(old).ok());
+    for (auto byte : old) EXPECT_EQ(byte, std::byte{19});
+  }
+  ASSERT_TRUE(page.appender.reserve(16).ok());
+  const auto exact = capacity.subview(0, page.appender.committed_bytes() + 16).value();
+  auto last_write = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::append_unique(last_write, page.appender).ok());
+  auto last_producer = Completion::completed();
+  ASSERT_TRUE(last_write.attach(last_producer).ok()); ASSERT_TRUE(last_producer.wait().ok());
+  auto ticket = detail::LeaseAccess::pending_append_read(page.appender, exact).value();
+  ASSERT_TRUE(pool.close().ok());
+  EXPECT_TRUE(detail::LeaseAccess::matches_pending_append_read(ticket, exact).ok());
+  auto rejected = uses.begin().value();
+  EXPECT_TRUE(detail::LeaseAccess::ordered_read_unique(rejected, ticket).IsFailedPrecondition());
+  EXPECT_FALSE(detail::LeaseAccess::publish_append_after_writes(page.appender, ticket));
+  ASSERT_TRUE(page.appender.rollback().ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+}
+
 // F2 control protocol only. These tests do not certify native ordering; the
 // copy owner must separately prove the original device/phase dependency.
 TEST(CopyLeaseHandoff, SuccessfulProducerCanPublishWhileOrderedReaderRemainsPending) {
