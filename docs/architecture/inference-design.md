@@ -99,22 +99,28 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
 
 默认`--decode-overlap off`保留逐episode推进，普通B2参考也逐episode同步；单槽不是已证实的差距原因。
-自然请求显式选择`auto`时，只有CUDA普通greedy、R1、caller-owned输出、无scheduler／Commands／完整张量trace，
+自然请求显式选择`auto`时，只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，
 且存在输出上限至少10的turn，才准备D2；其它情况保持D1。D2使用三个物理IO载体、最多两个未发布候选，
 共用原FamilyChild、Queue、状态池与Graph提交；普通Phase仍只准备一个槽。
 每个wave最多执行A、B两个普通T1 episode，返回前沿原路径退休全部工作，只让最新成功的ready Source跨wave保留。
 prefill继续使用原Completion；真实decode建立来源并完成六次实际imported-ready轮换后，才尝试pending B，
 其完整物理tuple仍须命中原捕获。预热步数不代替资格检查，也不执行虚假推理预热。
 
-A的真实finish及主机观察完成后才绑定B的实际输入。量子用同一输出credit覆盖两次输出，B只使用扣除A后的额度；
-EOS／stop使无效B沿原abort路径实际退休，不发布其token、状态或RNG。credit耗尽、turn／key切换时释放ready Source。
+A的真实finish及主机观察完成后才绑定B的实际输入。量子内每个成员都须有两份真实输出credit，B只使用扣除A后的额度；
+共享Source对应完整有序成员组，逐成员保存RequestKey、turn及真实发布边界。只有组宽、顺序、身份与边界均匹配，
+才可跨wave复用；缩组或换序先释放原Source，不把R2来源投给R1。容量在冷路径按实际R准备，热路径不另造成员状态池。
+A中一个成员停止时，原批次仍可发布其它成功成员；已接纳的B则整批沿原abort路径实际退休，
+不发布其token、状态或RNG。幸存者保留成功A，再由共同请求循环按实际子组继续。未发布ledger只在真实退休后撤回。
+任一成员credit耗尽或turn／key改变，均释放整组ready Source。
 首次无native错误的`Unavailable`后继准备拒绝，只能在A完成且原清理实际退尽后退回单步，并停用该Model的continuation；
 native或清理错误仍传播。单次`SubmissionSource::create`遇到无native错误的`Unimplemented`／`Unavailable`，
 则保留未移交的原Completion正常完成A。
 [自然请求有限检查](../evidence/correctness/inference-generation-continuation-2026-10-27.json)读取各目录的真实prompt，
 tiny P3八条路径与真实2B P154十条路径覆盖额度1／2、暂停、停止、取消和完整状态。
 真实续文的额外停止token已检查A命中后，已接纳的B不发布而实际退休，A的完整状态与ledger保持串行等价；
-extraStop不冒充模型EOS。pending MTP、多成员持续接力、真正模型EOS及自然路径冷tuple拒绝仍未运行相应检查。
+extraStop不冒充模型EOS。[普通多成员接力](../evidence/correctness/inference-generation-batch-continuation-2026-10-27.json)
+另以tiny／真实2B检查正常R2、真实额度1、已接纳B后的单成员取消及幸存者R1继续，核完整状态与逐成员ledger／RNG。
+pending MTP、真正模型EOS及自然路径冷tuple拒绝仍未运行相应检查。
 同机[短窗筛查](../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)
 未见净decode提速，并增加了共享backing与冷准备成本；backing不是峰值显存，本轮也未重跑参考引擎。
 元数据准备与设备提交分别推进；设备token接力需要真实生产者、依赖fence和未发布候选的权限；
@@ -150,7 +156,7 @@ extraStop不冒充模型EOS。pending MTP、多成员持续接力、真正模型
   B仍读旧输出时，A才可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
   `poll/wait`不隐式关闭导出。数学失败不发布ready；失败已实际退休且没有借用时仍可归还载体，原错误继续传播。
   detach不等待pending工作，最后owner释放仍有正常析构／分配器清理成本。
-KV、索引融合与轮换的逐批结果见后文；自然普通R1的有界量子见上述有限检查，不能推广为MTP接受子集或持续多成员流水。
+KV、索引融合与轮换的逐批结果见后文；自然普通请求使用上述两步有界量子，不能推广为MTP接受子集或无限在途流水。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
 
@@ -190,8 +196,8 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 reset释放原绑定后的同池重新allocate也是原有合法路径。
 [三项合同及四条CPU／CUDA双会话检查](../evidence/correctness/inference-relay-carriers-2026-10-27.json)
 验证当时普通／MTP单槽路径；当时独立诊断入口只适配源码，未单独编译。后续普通Model三载体及双在途
-有限检查见[Model后继接线](../evidence/correctness/inference-model-successor-2026-10-27.json)；自然普通R1随后接入上述两步量子，
-不代表多成员持续流水，也没有净提速结论。
+有限检查见[Model后继接线](../evidence/correctness/inference-model-successor-2026-10-27.json)；自然普通请求随后接入上述两步量子，
+仍没有净提速结论。
 
 剩余接线按以下共同职责收敛，尚未实现的部分不能由现有token检查代签：
 
