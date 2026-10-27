@@ -202,7 +202,12 @@ inline int run(const std::filesystem::path &input) {
   auto good = c.logits; c.logits.allowed.description = q::dense(q::Type::kBool, {model.vocabulary});
   const auto *partial = c.session->head.get(); const auto consumed = c.turn_input_consumed;
   bool rank_rejected = false;
-  try { (void)prepare(c, 1); } catch (const std::runtime_error &) { rank_rejected = true; }
+  try { (void)prepare(c, 1); }
+  catch (const i::RequestExecutionFailure &failure) {
+    const auto &evaluation = failure.evaluation();
+    rank_rejected = failure.request_key() == key_c && evaluation.status().IsInvalidArgument() &&
+        !evaluation.status().has_native_error() && !evaluation.participant() && !evaluation.retirement_observed();
+  }
   require(rank_rejected && c.session->head.get() == partial && c.turn_input_consumed == consumed &&
       c.ledger->committed_count == 1 && c.progress.generated.empty() && !model.active_step,
       "invalid typed modifier changed an admitted request before rejection");

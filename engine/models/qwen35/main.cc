@@ -801,19 +801,43 @@ bool same_sampling_configuration(const SamplingConfiguration &a, const SamplingC
       a.policy.top_k == b.policy.top_k && a.policy.top_p == b.policy.top_p && a.modifiers == b.modifiers;
 }
 
+// Only deterministic port/descriptor facts: no payload reads, lease admission
+// or numeric distribution checks. Those remain with their original owners.
+hyle::Status logits_inputs_metadata_status(const SamplingConfiguration &configuration,
+    const LogitsInputs &inputs, std::int64_t vocabulary) noexcept {
+  const auto require = [&](const LogitsInput &input, bool enabled, Type type) -> hyle::Status {
+    if (input.lease.valid() != enabled || input.description.valid() != enabled)
+      return hyle::Status::InvalidArgument("logits input does not match its cold port configuration");
+    if (enabled) {
+      const std::array<std::int64_t, 2> shape{1, vocabulary};
+      HYLE_ASSIGN_OR_RETURN(const auto expected, c::TensorDesc::dense(type, shape));
+      if (input.description != expected)
+        return hyle::Status::InvalidArgument("logits input requires the exact cold dense [1,V] descriptor");
+    }
+    return hyle::Status::Ok();
+  };
+  HYLE_RETURN_IF_ERROR(require(inputs.bias, configuration.modifiers.bias, Type::kFloat32));
+  return require(inputs.allowed, configuration.modifiers.allowed, Type::kBool);
+}
+void validate_logits_input_leases(const SamplingConfiguration &configuration, const LogitsInputs &inputs) {
+  if (configuration.modifiers.bias) (void)take(inputs.bias.lease.tensor(inputs.bias.description));
+  if (configuration.modifiers.allowed) (void)take(inputs.allowed.lease.tensor(inputs.allowed.description));
+}
 void validate_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
                             std::int64_t vocabulary) {
-  const auto require = [&](const LogitsInput &input, bool enabled, Type type) {
-    if (input.lease.valid() != enabled || input.description.valid() != enabled)
-      throw std::runtime_error("logits input does not match its cold port configuration");
-    if (enabled) {
-      if (input.description != dense(type, {1, vocabulary}))
-        throw std::runtime_error("logits input requires the exact cold dense [1,V] descriptor");
-      (void)take(input.lease.tensor(input.description));
-    }
-  };
-  require(inputs.bias, configuration.modifiers.bias, Type::kFloat32);
-  require(inputs.allowed, configuration.modifiers.allowed, Type::kBool);
+  check(logits_inputs_metadata_status(configuration, inputs, vocabulary));
+  validate_logits_input_leases(configuration, inputs);
+}
+// A registered request has its own complete key before any bucket or native
+// episode exists. Do not manufacture EvaluationFailure.participant from it.
+void validate_request_logits_inputs(const SamplingConfiguration &configuration, const LogitsInputs &inputs,
+    std::int64_t vocabulary, inference::RequestKey key) {
+  auto status = logits_inputs_metadata_status(configuration, inputs, vocabulary);
+  if (status.IsInvalidArgument() && !status.has_native_error() && key.generation &&
+      key.slot != (std::numeric_limits<std::size_t>::max)())
+    throw inference::RequestExecutionFailure::from_preflight(std::move(status), key);
+  check(std::move(status)); // Unregistered/raw consumers retain their original error path.
+  validate_logits_input_leases(configuration, inputs);
 }
 sampling::LogitsInputsFor<V> prepare_logits_inputs(Recipe &r, sampling::LogitsPolicy policy) {
   sampling::LogitsInputsFor<V> result;
@@ -6206,7 +6230,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
       }
       emits = prefill.next(request.prompt.size(), consumed).complete;
     }
-    if (emits) validate_logits_inputs(sampler, request.logits, model.vocabulary);
+    if (emits) validate_request_logits_inputs(sampler, request.logits, model.vocabulary, request.request_key);
   }
   if (!request.progress.turn_started()) (void)request.progress.begin_turn();
   if (request.progress.turn_done) throw std::runtime_error("MTP request has already completed");
@@ -6730,7 +6754,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if (&request.session->sampling_configuration() != &sampling)
       throw std::runtime_error("request sampling cannot change after Session admission");
     request.ledger->validate_sampling(sampling, model.resources_);
-    if (call.completion == TextCompletion::kEmitNext) validate_logits_inputs(sampling.configuration, call.logits, model.vocabulary);
+    if (call.completion == TextCompletion::kEmitNext)
+      validate_request_logits_inputs(sampling.configuration, call.logits, model.vocabulary, request.request_key);
     if (request.ledger->stop_policy() != request.stop_policy)
       throw std::runtime_error("generation ledger stop policy differs from its admitted episode");
     if ((call.full_hit && calls.size() != 1) ||

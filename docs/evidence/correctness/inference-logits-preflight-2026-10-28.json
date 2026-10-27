@@ -1,0 +1,331 @@
+{
+  "schema": "hyle.correctness.logits_preflight.v1",
+  "status": "PASS",
+  "base_commit": "adb2ee9a97301bd443ddd80ed1aba254be93b445",
+  "source_identity": {
+    "product": [
+      {
+        "path": "engine/models/qwen35/main.cc",
+        "snapshot": ".scratch/inference-logits-preflight-20261028/main.cc.frozen",
+        "bytes": 577635,
+        "sha256": "028a5957d1e6e76a635f31f9a51c048737bce08e2cb801c9918efeda13e36306"
+      },
+      {
+        "path": "engine/inference/request_execution_failure.h",
+        "snapshot": ".scratch/inference-logits-preflight-20261028/request_execution_failure.h.frozen",
+        "bytes": 2800,
+        "sha256": "753d41a8d760c00c54c00aeaa2e033ae55fcc5697b5a93a2c38cc91dc2333656"
+      }
+    ],
+    "consumers": [
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+          "bytes": 577635,
+          "sha256": "028a5957d1e6e76a635f31f9a51c048737bce08e2cb801c9918efeda13e36306"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\engine\\models\\qwen35\\main.cc",
+          "bytes": 577635,
+          "sha256": "028a5957d1e6e76a635f31f9a51c048737bce08e2cb801c9918efeda13e36306"
+        }
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_execution_failure.h",
+          "bytes": 2800,
+          "sha256": "753d41a8d760c00c54c00aeaa2e033ae55fcc5697b5a93a2c38cc91dc2333656"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\engine\\inference\\request_execution_failure.h",
+          "bytes": 2800,
+          "sha256": "753d41a8d760c00c54c00aeaa2e033ae55fcc5697b5a93a2c38cc91dc2333656"
+        }
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+          "bytes": 4104,
+          "sha256": "47c6ab82adfcffb243322582fdb920d7a8617815da68ac915818f2231a208964"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\tests\\tools\\qwen_host_image_test.cc",
+          "bytes": 4104,
+          "sha256": "47c6ab82adfcffb243322582fdb920d7a8617815da68ac915818f2231a208964"
+        }
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_logits_preflight_case.h",
+          "bytes": 13668,
+          "sha256": "c747bcabedb9aa48620a9bf240f17419bf548be8ae4d1dc78ddea966911f6ad2"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\tests\\tools\\qwen_logits_preflight_case.h",
+          "bytes": 13668,
+          "sha256": "c747bcabedb9aa48620a9bf240f17419bf548be8ae4d1dc78ddea966911f6ad2"
+        }
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_request_lifecycle_test.cc",
+          "bytes": 21983,
+          "sha256": "8439c7606502da39d6729aff673985cbb420ab45f25a2896596d84455cfe8226"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\tests\\tools\\qwen_request_lifecycle_test.cc",
+          "bytes": 21983,
+          "sha256": "8439c7606502da39d6729aff673985cbb420ab45f25a2896596d84455cfe8226"
+        }
+      },
+      {
+        "original": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_logits_modifier_case.h",
+          "bytes": 18216,
+          "sha256": "159e75644fc71da44b1f6b3c125f7d363521d7c61ac9686a9c9f03bf11ef6b4c"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\source\\tests\\tools\\qwen_logits_modifier_case.h",
+          "bytes": 18216,
+          "sha256": "159e75644fc71da44b1f6b3c125f7d363521d7c61ac9686a9c9f03bf11ef6b4c"
+        }
+      }
+    ]
+  },
+  "scope": "Ordinary known-request logits metadata preflight and original key attribution; shared RequestLoop/Model/Graph ownership.",
+  "actual_window_utc": {
+    "first_compile_started": "2026-10-27T21:22:04.240910+00:00",
+    "last_consumer_completed": "2026-10-27T21:23:43.846224+00:00"
+  },
+  "builds": {
+    "tiny": {
+      "compile": {
+        "pid": 60592,
+        "exit": 0,
+        "started": 1793136124.2453978,
+        "seconds": 36.725457191467285,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 13824,
+        "exit": 0,
+        "started": 1793136201.2163968,
+        "seconds": 1.8265697956085205,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin\\tiny.exe",
+        "bytes": 142953984,
+        "sha256": "0380f524851bfad316c983cdf9927e1c17722366feb8260df048ad17b8445835"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\compile\\tiny\\unit.obj",
+        "bytes": 24037958,
+        "sha256": "a5e7f587ec74e7340710b25cd98cfd6f048e6d1464d5f024cfd38e4302a3f9ad"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\inputs-tiny.json",
+        "bytes": 58741,
+        "sha256": "38db0eb3086f734b240a5fde30d6ae39e99cbcf3d871eafec113c7935558fb0a"
+      }
+    },
+    "lifecycle": {
+      "compile": {
+        "pid": 38208,
+        "exit": 0,
+        "started": 1793136124.24091,
+        "seconds": 35.57280158996582,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 51996,
+        "exit": 0,
+        "started": 1793136211.2084508,
+        "seconds": 1.7786195278167725,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin\\lifecycle.exe",
+        "bytes": 142929920,
+        "sha256": "0b351c49f353a6a6cec69add142e9b3bcb269b3cc2efdb343f38f946e9c3f76a"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\compile\\lifecycle\\unit.obj",
+        "bytes": 22373194,
+        "sha256": "b2bb24605d81f29f97e9fb28ea79050f6c7098e9f13639bb785da91a0a0f3704"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\inputs-lifecycle.json",
+        "bytes": 58746,
+        "sha256": "a469b1ee4437c9aac3d140a9cb0761352b232e4ac77ed8d77a012f95bef87f77"
+      }
+    }
+  },
+  "budgets": {
+    "actual_CXX": 2,
+    "actual_links": 2,
+    "link_inputs_each": 228,
+    "actual_consumer_processes": 3,
+    "failed_attempts": 0,
+    "reruns": 0,
+    "NVCC": 0,
+    "standalone_Model_TU": 0,
+    "SDK_rebuild": 0,
+    "downloads": 0
+  },
+  "runs": {
+    "tiny-cpu": {
+      "process": {
+        "pid": 39676,
+        "exit": 0,
+        "started": 1793136213.944363,
+        "seconds": 0.8520834445953369,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "case": "logits-preflight",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "valid_prefill_submissions": 1,
+        "preflight_submissions": 0,
+        "peer_decode_submissions": 1,
+        "typed_invalid_argument": true,
+        "original_key": true,
+        "batch_position": 0,
+        "key_slot": 1,
+        "complete_state_unchanged": true,
+        "all_ledger_records_unchanged": true,
+        "old_checkpoints_unchanged": true,
+        "same_key_peer_continued": true,
+        "allfalse_numeric_retested": false,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin\\tiny.exe",
+          "--cpu",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--logits-preflight"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 240
+      }
+    },
+    "tiny-cuda": {
+      "process": {
+        "pid": 55252,
+        "exit": 0,
+        "started": 1793136221.8124628,
+        "seconds": 0.7266666889190674,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cuda",
+        "case": "logits-preflight",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "valid_prefill_submissions": 1,
+        "preflight_submissions": 0,
+        "peer_decode_submissions": 1,
+        "typed_invalid_argument": true,
+        "original_key": true,
+        "batch_position": 0,
+        "key_slot": 1,
+        "complete_state_unchanged": true,
+        "all_ledger_records_unchanged": true,
+        "old_checkpoints_unchanged": true,
+        "same_key_peer_continued": true,
+        "allfalse_numeric_retested": false,
+        "final_versions": 0,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin\\tiny.exe",
+          "--cuda",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+          "--logits-preflight"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 240
+      }
+    },
+    "modifiers": {
+      "process": {
+        "pid": 10488,
+        "exit": 0,
+        "started": 1793136223.0116725,
+        "seconds": 0.8345510959625244,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "status": "PASS",
+        "backend": "cpu",
+        "dynamic_inputs": true,
+        "greedy_draws": 0,
+        "fullhit_random_draws": 1,
+        "allmasked_survivor": true,
+        "state_only_without_inputs": true,
+        "same_key_restore": true,
+        "final_versions": 0,
+        "GPU": false,
+        "HTTP": false,
+        "quality_claim": false
+      },
+      "command": {
+        "command": [
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin\\lifecycle.exe",
+          "--logits-modifiers",
+          "C:\\public\\project-hyle\\hyle\\.scratch\\inference-e4-model-20261025\\fixture-preparation\\bf16-original"
+        ],
+        "cwd": "C:\\public\\project-hyle\\hyle",
+        "timeout_seconds": 240
+      }
+    }
+  },
+  "original_allfalse_numeric_failure": [
+    "modifier_invalid_batch participant=0 status=sampling distribution or proposal is invalid; no session or RNG cursor was published retirement_seen=1 retired=1 cleanup=",
+    "modifier_invalid_facts qualified=1 slot=1 same_A=1 same_B=1 B_boundary=1 outputs=0,0 commits=0,0 active=0 carrier=0"
+  ],
+  "checked_contracts": [
+    "Two registered requests first publish a real R2 prefill; each output is acknowledged through the original delivery owner.",
+    "B keeps its valid ready Bool lease but replaces dense [1,V] metadata with [V]. Its original key slot is 1 while its actual next cohort position is 0.",
+    "The resulting RequestExecutionFailure preserves InvalidArgument and the complete original B key, without inventing a decoded participant, native error or retirement observation.",
+    "No new native submission occurs; both full initialized HostImage payloads, scalar boundaries, head pointers/epochs, RNG cursors, generated outputs and all committed/reserved ledger records remain exact.",
+    "The original RequestLoop owner cancels B. A keeps its original key and continues through exactly one original R1 decode; old checkpoints remain exact and final versions/pages/episodes retire.",
+    "The separately retained original CPU modifier journey still sends the valid all-false mask to actual Graph execution and gets EvaluationFailure with participant0 and successful true retirement; it is not classified as metadata preflight.",
+    "Original dynamic input replacement, StateOnly-without-inputs, same-key ledger restoration and new-request full-prefix own-input sampling remain covered by that finite modifier consumer."
+  ],
+  "artifact_boundaries": [
+    "Untrained cached GA/H64/V64 C16 fixture for CPU/CUDA preflight; original cached A/H64/V64 C16 fixture for CPU modifier regression.",
+    "Complete state/checkpoint payloads were compared in-process by the frozen test source; no new raw HostImage payload dumps were emitted or fabricated.",
+    "The six owned source snapshots, base commit, patch, actual dependency manifests, retained link-input identities, commands and raw logs support reproduction with the same existing caches.",
+    "Archive excludes SDK contents, object files, executables, PDBs, DLL bodies and model weights. Recorded image/object identities identify actual processes; their payloads are retained separately in scratch.",
+    "No speed, quality, server, unknown hardware fault, generalized runtime attribution or renewed MTP-function claim."
+  ],
+  "quality_claim": false,
+  "performance_claim": false,
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-logits-preflight-2026-10-28.zip",
+    "bytes": 266089,
+    "sha256": "9b2d4ba92a172b0cb432c78bf339521271264af3732dd7d8fc78e096ef13c0eb",
+    "members": 65,
+    "crc": "PASS",
+    "all_member_sha256": "PASS",
+    "manifest_member": "manifest.json",
+    "summary_member": "summary.json"
+  }
+}

@@ -3,18 +3,32 @@
 #include <concepts>
 #include <cstddef>
 #include <exception>
+#include <limits>
 #include <optional>
+#include <stdexcept>
+#include <utility>
 
 #include "evaluation_failure.h"
 #include "request_window.h"
 
 namespace hyle::inference {
 
-// Error facts only. A key attributes the original qualified participant; it
-// does not grant retirement, retry, cancellation or request-release permission.
+// Error facts only. A key names an original qualified output participant or
+// explicit argument preflight, without retirement, retry or release permission.
 // Preserve the evaluation error and its cleanup observation independently.
 class RequestExecutionFailure final : public std::exception {
 public:
+  // Only an explicit argument check at a known request boundary may use this
+  // path. The caller supplies that registered request's complete original key;
+  // this factory does not infer a participant, native acceptance or retirement.
+  // Lease/device/runtime errors must keep their original evaluation path.
+  static RequestExecutionFailure from_preflight(Status status, RequestKey original) {
+    if (!status.IsInvalidArgument() || status.has_native_error() || !original.generation ||
+        original.slot == (std::numeric_limits<std::size_t>::max)())
+      throw std::logic_error("request preflight failure requires an argument error and an original request key");
+    return RequestExecutionFailure(EvaluationFailure(std::move(status)), original);
+  }
+
   // Call while the actual submitted bucket is still available. key_of returns
   // that bucket member's original complete key, never active/member/slot index
   // arithmetic. Unknown, invalid or native-fault attribution stays batch-wide.
