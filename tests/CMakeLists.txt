@@ -408,6 +408,18 @@ if(TARGET hyle_engine)
   unset(_host_image_backend)
 endif()
 
+if(TARGET hyle_engine)
+  add_executable(hyle_qwen_generation_batch_facts_probe tools/qwen_generation_batch_facts_probe.cc
+    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+  hyle_configure_engine_target(hyle_qwen_generation_batch_facts_probe)
+  set_target_properties(hyle_qwen_generation_batch_facts_probe PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_generation_batch_facts_probe)
+  add_test(NAME hyle_qwen_generation_batch_facts_probe COMMAND hyle_qwen_generation_batch_facts_probe)
+  set_tests_properties(hyle_qwen_generation_batch_facts_probe PROPERTIES
+    LABELS "tooling;generation;cache;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+endif()
+
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_executable(hyle_qwen_generation_relay_probe tools/qwen_generation_relay_probe.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")

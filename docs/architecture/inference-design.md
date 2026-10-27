@@ -85,6 +85,13 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 [有限检查](../evidence/correctness/inference-request-error-identity-2026-10-27.json)覆盖四组主机身份／错误事实及正常B2多轮CUDA报告一致；
 未注入真实模型或设备故障，不把正常生成通过当作失败隔离证明。
 
+递归MTP按实际proposal宽度拆批时，child成员索引先映射回原bucket索引，再关联完整RequestKey；
+原计算Status与独立退休观察保持不变。统计也来自每个实际完成子批的同步借用事实，不从计划bucket推测Graph数。
+同宽R2只计一次，异宽子批及普通A／B分别计数；完整缓存命中只计逻辑dispatch。共享target耗时计一次，
+各成员串行proposal耗时全部保留，重叠episode时间之和不是墙时并集。观察者必须立即复制身份，不保留成员span；
+报告观察抛错不重发或重算，已提交账簿保留，尚在途后继仍沿原清理路径处理。
+[CPU／CUDA有限检查](../evidence/correctness/inference-generation-batch-facts-2026-10-27.json)区分真实拆批、同宽及受控错误，未伪造自然EOS或设备故障。
+
 Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../../include/hyle/compute/providers/cuda.h)按数学、类型、形状及设备接纳，
 不读取模型身份。CPU的`kWins`只在锁定的已测构建／硬件条件下调整合法候选的[冷偏好](../../src/compute_route_cpu/default_policy.cc)，
 未命中仍保留正常候选。完整CUDA组合仍自动携带ATen模块，覆盖稳定Softplus、BF16融合SDPA及部分制品解码；

@@ -1,0 +1,51 @@
+{
+  "schema": "hyle.inference-generation-prepare-diagnostic.v1",
+  "status": "PASS",
+  "date": "2026-10-27",
+  "platform": "Windows x64; MSVC 14.50.35717 /O2 /MD /W4 /WX; existing CUDA13.3 runtime, RTX4070 CC8.9/12281MiB from run logs",
+  "base_head": "04fd0a12bfdf708e80ff69e2d5ef18d4945e6996",
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-generation-batch-facts-2026-10-27.zip",
+    "bytes": 760788,
+    "sha256": "d8076f1159ff8285c2e178d1212b633b7825e7c55b553397f81163286ab23b31",
+    "members": 154,
+    "uncompressed_bytes": 4428994,
+    "all_members_read_back_and_verified": true
+  },
+  "archive_relative_link": "../correctness/inference-generation-batch-facts-2026-10-27.zip",
+  "scope": "One off/auto diagnostic pair using frozen old Model3 with retained A query; three existing-clock prepare buckets. Not current-main TPS or CPU-busy/GPU-time measurement.",
+  "actual_build": {
+    "source": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\source\\main.cc","bytes":534729,"sha256":"479247c0cb895c63169e61c48ef07e032de164d0ae6d1ed8eca7df032628e04d"},
+    "header": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\source\\relay_diag.h","bytes":4986,"sha256":"32d6308700501be72d5d7d9590dd0ff7dee69a79b5565ace61247f97d25e9eb1"},
+    "base_product_snapshot": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\source\\model3\\main.cc","bytes":531641,"sha256":"3069eb808b3908b034283268a3002cad515940c9af781651897c6f39e6cac1b9"},
+    "image": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\bin\\hyle-prepare-diag.exe","bytes":142415872,"sha256":"bd0541fbbf4f057380c5e038a6c2b9354a8363070f5ac5f964ec2c9dd9c98bac"},
+    "compiler_process": {"exit":0,"pid":55828,"seconds":23.23334989999421},
+    "linker_process": {"exit":0,"pid":16924,"seconds":1.7980028000310995},
+    "inputs": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\link-inputs.json","bytes":57870,"sha256":"9ea3e07b8c56307fb167d2e485a9369fea508fbc359c15a92ee7b84d55bf5513"},
+    "actual_dependencies": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\compile\\model\\actual-dependencies.json","bytes":80724,"sha256":"28ec0f404e23cfe5e17bcd78f41f26926e7c1086fa831da3079ff2025810295b"},
+    "fresh_cxx": 1,
+    "links": 1
+  },
+  "runs": [
+    {"mode":"off","process":{"exit":0,"pid":15828,"seconds":3.296068399969954},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\bin\\hyle-prepare-diag.exe","bytes":142415872,"sha256":"bd0541fbbf4f057380c5e038a6c2b9354a8363070f5ac5f964ec2c9dd9c98bac"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\run-off\\report.json","bytes":165440,"sha256":"8c9af41514f9ae6619c898f6ac5a0762c75ca1052ff4ba8d46f3849f270f105d"},"diagnostic":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\run-off\\diagnostic.json","bytes":8038,"sha256":"ce6c7e2c69bf5f05e5a856a8e61a7b4678c235d3e962e7f33579ddf0307d65ba"},"complete_97_ids_and_original_screen_facts_equal":true,"scope":"Frozen Model3/query diagnostic; host-call wall only, nested metrics not additive, no formal TPS update."},
+    {"mode":"auto","process":{"exit":0,"pid":52352,"seconds":2.894584499998018},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\bin\\hyle-prepare-diag.exe","bytes":142415872,"sha256":"bd0541fbbf4f057380c5e038a6c2b9354a8363070f5ac5f964ec2c9dd9c98bac"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\run-auto\\report.json","bytes":165405,"sha256":"f24bb9035c729ff71719b282c852ae2c4a4a4eec6b1fbbb323cc7b5fced7ce18"},"diagnostic":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-prepare-20261027\\run-auto\\diagnostic.json","bytes":8418,"sha256":"7c8dc9a7c51f6d73c00d19e2204976116a19a64bba96afd60a18d537f0f4f60b"},"complete_97_ids_and_original_screen_facts_equal":true,"scope":"Frozen Model3/query diagnostic; host-call wall only, nested metrics not additive, no formal TPS update."}
+  ],
+  "correctness": "Both processes preserve exact97 IDs and complete original screen session-result facts (same original six cache-accounting exclusions plus time/replay keys); decode96, zero refusals/discards, zero live versions; auto44 publications.",
+  "measurements": {
+    "off": {"first8":{"episodes":8,"recorded":1,"seconds":{"model_prepare_total":0.0081151,"prepare_layout_admission":0.0003927,"prepare_batch_source_slot_bind":0.0023254,"prepare_replay":0.0050152,"residual":0.00038179999999999985}},"remaining88":{"episodes":88,"recorded":0,"seconds":{"model_prepare_total":0.0414406,"prepare_layout_admission":0.0045864,"prepare_batch_source_slot_bind":0.0200662,"prepare_replay":0.0120467,"residual":0.004741300000000004}},"all96":{"episodes":96,"recorded":1,"seconds":{"model_prepare_total":0.0495557,"prepare_layout_admission":0.0049791,"prepare_batch_source_slot_bind":0.022391599999999998,"prepare_replay":0.0170619,"residual":0.0051230999999999985}},"steady_bucket_means_us":{"steady_single":{"episodes":88,"metrics":{"model_prepare_total":470.91590909090905,"prepare_layout_admission":52.11818181818182,"prepare_batch_source_slot_bind":228.025,"prepare_replay":136.8943181818182}},"steady_pair_a":{"episodes":0,"metrics":{"model_prepare_total":0,"prepare_layout_admission":0,"prepare_batch_source_slot_bind":0,"prepare_replay":0}},"steady_pair_b":{"episodes":0,"metrics":{"model_prepare_total":0,"prepare_layout_admission":0,"prepare_batch_source_slot_bind":0,"prepare_replay":0}}},"source_metadata_and_capture_seconds":0},
+    "auto": {"first8":{"episodes":8,"recorded":5,"seconds":{"model_prepare_total":0.0264743,"prepare_layout_admission":0.0003882,"prepare_batch_source_slot_bind":0.0075745,"prepare_replay":0.0178667,"residual":0.0006449000000000003}},"remaining88":{"episodes":88,"recorded":0,"seconds":{"model_prepare_total":0.077461,"prepare_layout_admission":0.0034713,"prepare_batch_source_slot_bind":0.0463036,"prepare_replay":0.0246052,"residual":0.0030808999999999975}},"all96":{"episodes":96,"recorded":5,"seconds":{"model_prepare_total":0.10393530000000001,"prepare_layout_admission":0.0038595,"prepare_batch_source_slot_bind":0.0538781,"prepare_replay":0.0424719,"residual":0.003725800000000015}},"steady_bucket_means_us":{"steady_single":{"episodes":1,"metrics":{"model_prepare_total":908.0,"prepare_layout_admission":44.9,"prepare_batch_source_slot_bind":596.0,"prepare_replay":231.9}},"steady_pair_a":{"episodes":43,"metrics":{"model_prepare_total":866.6976744186046,"prepare_layout_admission":43.20697674418605,"prepare_batch_source_slot_bind":564.5139534883721,"prepare_replay":211.9}},"steady_pair_b":{"episodes":44,"metrics":{"model_prepare_total":892.8409090909091,"prepare_layout_admission":35.64772727272727,"prepare_batch_source_slot_bind":487.125,"prepare_replay":346.8545454545455}}},"source_metadata_and_capture_seconds":0.0152306},
+    "auto_minus_off_seconds": {"first8":{"model_prepare_total":0.0183592,"prepare_layout_admission":-4.500000000000001e-06,"prepare_batch_source_slot_bind":0.0052491,"prepare_replay":0.012851499999999998,"residual":0.0002631000000000005},"remaining88":{"model_prepare_total":0.0360204,"prepare_layout_admission":-0.0011151,"prepare_batch_source_slot_bind":0.0262374,"prepare_replay":0.0125585,"residual":-0.0016604000000000063},"all96":{"model_prepare_total":0.05437960000000001,"prepare_layout_admission":-0.0011196000000000001,"prepare_batch_source_slot_bind":0.0314865,"prepare_replay":0.02541,"residual":-0.0013972999999999833}},
+    "contract": {"base_product":"Model3 3069eb808b3908b034283268a3002cad515940c9af781651897c6f39e6cac1b9 with A query retained","first8":"Actual first eight decode ordinals, includes the first pair A. Remaining88 is A43+B44+tail1 for auto and88 singles for off.","timings":"Host-call wall only. Three prepare phases are disjoint; residual=model_prepare_total minus phases. Do not add these children to their parent prepare total.","sources":"Source prepare/create/capture is measured outside Model prepare and must not be added twice.","comparison":"This is one diagnostic off/auto pair, not an exact decomposition of a different previous run or an update to formal TPS.","gpu":"Both original97 IDs/full non-timefacts passed; two processes only; GPU released."}
+  },
+  "interpretation": [
+    "Three child prepare phases are disjoint; residual=Model prepare total minus those phases. Do not add children again to the parent total.",
+    "First8 actual decode ordinals include first pair A. Remaining88 auto=A43+B44+tail1, off=88 singles; capture recordings first8 off1/auto5 and steady0.",
+    "Source metadata/create/capture is outside Model prepare; do not double-count it. One off/auto observation does not establish statistical significance.",
+    "Host-call durations may contain waits. They are not CPU utilization or GPU duration, and cannot decompose a separate earlier measurement window.",
+    "No refreshed formal TPS result; current batch-facts fix is correctness/accounting only, and current main has removed the redundant A query retained in this diagnostic."
+  ],
+  "limitations": [
+    "No additional samples, memory peak study, new reference-engine peer, MTP performance, native-fault or cross-platform diagnosis.",
+    "Raw ready.json is a build-stage LINKED_NOT_RUN record; subsequent run-summary/process/log records establish the two actual successful runs."
+  ]
+}
