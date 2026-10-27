@@ -2604,7 +2604,7 @@ Result<bool> output_bundle_ready(const OutputBindingBundle &bundle) noexcept {
   for (const auto &entry : bundle.entries) {
     if (entry.view) {
       const auto &view = *entry.view;
-      // detach() retains only this exact original caller-owned I32 result.
+      // detach() retains only this exact original caller-owned tensor result.
       if (!view.retained_output.valid()) return false;
       HYLE_ASSIGN_OR_RETURN(auto ready, view.retained_output.view());
       if (!same_resource_range(ready, view.tensor.storage()))
@@ -3313,9 +3313,8 @@ Result<OutputSource> OutputSource::create(const SubmissionSource &submission, Va
     return std::unexpected(Status::Unimplemented("output relay requires its original caller-owned output writer"));
   const auto &description = binding->description;
   HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
-  if (description.data_type() != compute::DataType::kInt32 ||
-      !description.is_plain() || !description.is_dense() || !bytes)
-    return std::unexpected(Status::Unimplemented("output relay requires a nonempty dense I32 output"));
+  if (!description.is_plain() || !description.is_dense() || !bytes)
+    return std::unexpected(Status::Unimplemented("output relay requires a nonempty plain dense output"));
   const auto instance = plan.external_instances[output.ordinal()];
   if (instance >= state->writable.size() || !state->writable[instance].valid())
     return std::unexpected(Status::Unimplemented("output relay requires fixed writable output storage"));

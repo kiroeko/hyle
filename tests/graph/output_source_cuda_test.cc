@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
+#include <bit>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
 #include <span>
 #include <thread>
+#include <vector>
 
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
@@ -1472,5 +1475,222 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
   for (auto &ready : published) EXPECT_TRUE(ready.try_write());
   EXPECT_EQ(token_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+}
+// Raw exactly representable finite values make the half/bfloat checks test
+// transport and real native reads, without an unrelated conversion oracle.
+std::vector<std::byte> floating_rows(c::DataType type) {
+  constexpr std::array<float, 8> floats{10.5F, -11.25F, 20.5F, -21.25F, 30.5F, -31.25F, 40.5F, -41.25F};
+  std::vector<std::byte> result;
+  if (type == c::DataType::kFloat32) {
+    const auto bytes = std::as_bytes(std::span(floats)); result.assign(bytes.begin(), bytes.end());
+  } else {
+    std::array<std::uint16_t, 8> encoded{};
+    if (type == c::DataType::kBFloat16) {
+      for (std::size_t i = 0; i < floats.size(); ++i)
+        encoded[i] = static_cast<std::uint16_t>(std::bit_cast<std::uint32_t>(floats[i]) >> 16);
+    } else {
+      EXPECT_EQ(type, c::DataType::kFloat16);
+      encoded = {0x4940, 0xc9a0, 0x4d20, 0xcd50, 0x4fa0, 0xcfd0, 0x5110, 0xd128};
+    }
+    const auto bytes = std::as_bytes(std::span(encoded)); result.assign(bytes.begin(), bytes.end());
+  }
+  return result;
+}
+
+void mixed_full_writer_relay(c::DataType type, bool failed_producer = false) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  const auto i32 = c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{1}).value();
+  const auto indices = c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{4}).value();
+  const auto table_desc = c::TensorDesc::dense(type, std::array<std::int64_t, 2>{4, 2}).value();
+  const auto row_desc = c::TensorDesc::dense(type, std::array<std::int64_t, 2>{1, 2}).value();
+  const auto payload = floating_rows(type);
+  const auto row_bytes = row_desc.required_bytes().value();
+  auto inputs = c::LeasePool::create(storage.ref(), 8 * 256, {.max_blocks = 8}).value();
+  auto sources = c::LeasePool::create(storage.ref(), 4 * 256, {.max_blocks = 4}).value();
+  auto outputs = c::LeasePool::create(storage.ref(), 256, {.max_blocks = 1}).value();
+  const auto upload = [&](std::span<const std::byte> bytes) {
+    auto writer = inputs.allocate(bytes.size(), 256).value();
+    const auto status = writer.view()->write(bytes);
+    EXPECT_TRUE(status.ok()) << status.message();
+    return writer.publish().value();
+  };
+  constexpr std::array<std::int32_t, 4> token_values{2, 1, 3, 0},
+      permutation{3, 1, 0, 2}, next_permutation{0, 2, 3, 1};
+  const std::array<std::int32_t, 1> wanted{failed_producer ? 4 : 0};
+  constexpr std::array<std::int32_t, 1> next_wanted{1}, previous_wanted{3};
+  auto tokens_ready = upload(std::as_bytes(std::span(token_values)));
+  auto rows_ready = upload(payload);
+  auto wanted_ready = upload(std::as_bytes(std::span(wanted)));
+  auto permutation_ready = upload(std::as_bytes(std::span(permutation)));
+  auto next_wanted_ready = upload(std::as_bytes(std::span(next_wanted)));
+  auto next_permutation_ready = upload(std::as_bytes(std::span(next_permutation)));
+  auto previous_ready = upload(std::as_bytes(std::span(previous_wanted)));
+  // New-generation writers are prepared before either host gate is armed.
+  auto token_writer = sources.allocate(sizeof(std::int32_t), 256).value();
+  auto rows_writer = sources.allocate(payload.size(), 256).value();
+  auto next_token_writer = sources.allocate(sizeof(std::int32_t), 256).value();
+  auto next_rows_writer = sources.allocate(payload.size(), 256).value();
+
+  auto first = g::GraphBuilder::create().value();
+  const auto first_tokens = first.input(indices).value(), first_index = first.input(i32).value();
+  const auto first_rows = first.input(table_desc).value(), first_permutation = first.input(indices).value();
+  const auto token = first.add(c::Gather{.axis = 0}, first_tokens, first_index).value();
+  const auto floats = first.add(c::Gather{.axis = 0}, first_rows, first_permutation).value();
+  ASSERT_TRUE(first.publish(token).ok()); ASSERT_TRUE(first.publish(floats).ok());
+  const auto first_graph = std::move(first).finish().value();
+  auto producer_plan = g::cuda::compile(first_graph, context, storage);
+  ASSERT_TRUE(producer_plan) << producer_plan.error().message();
+  auto producer = producer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(producer.prepare_resources().ok());
+  ASSERT_TRUE(producer.bind(first_tokens, indices, tokens_ready).ok());
+  ASSERT_TRUE(producer.bind(first_rows, table_desc, rows_ready).ok());
+  ASSERT_TRUE(producer.bind(first_index, i32, wanted_ready).ok());
+  ASSERT_TRUE(producer.bind(first_permutation, indices, permutation_ready).ok());
+  ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
+  ASSERT_TRUE(producer.bind(floats, table_desc, std::move(rows_writer)).ok());
+
+  auto second = g::GraphBuilder::create().value();
+  const auto second_index = second.input(i32).value(), second_rows = second.input(table_desc).value();
+  const auto selected = second.add(c::Gather{.axis = 0}, second_rows, second_index).value();
+  ASSERT_TRUE(second.publish(selected).ok());
+  const auto second_graph = std::move(second).finish().value();
+  auto consumer_plan = g::cuda::compile(second_graph, context, storage);
+  ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
+  auto consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(consumer.prepare_resources().ok());
+  ASSERT_TRUE(consumer.bind(second_index, i32, previous_ready).ok());
+  ASSERT_TRUE(consumer.bind(second_rows, table_desc, rows_ready).ok());
+  ASSERT_TRUE(consumer.bind(selected, row_desc, outputs.allocate(row_bytes, 256).value()).ok());
+  for (const auto *plan : {&*producer_plan, &*consumer_plan})
+    for (std::size_t i = 0; i < plan->report.step_count(); ++i) {
+      const auto step = plan->report.step(i).value();
+      ASSERT_EQ(step.runtime.mode, c::ProviderRuntimeMode::kSharedQueue);
+      ASSERT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
+      ASSERT_FALSE(step.runtime.blocks_host);
+    }
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(producer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+  ASSERT_TRUE(consumer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+  Gate gate, reader_gate;
+  gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
+  auto submitted = producer.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(common_result) << common_result.error().message();
+  auto common = std::move(*common_result);
+  auto token_result = gd::OutputSource::create(common, token, storage, sources);
+  auto float_result = gd::OutputSource::create(common, floats, storage, sources);
+  ASSERT_TRUE(token_result) << token_result.error().message();
+  ASSERT_TRUE(float_result) << float_result.error().message();
+  std::array<gd::OutputSource, 2> views{std::move(*token_result), std::move(*float_result)};
+  EXPECT_FALSE(gd::OutputSource::create(common, first_rows, storage, inputs)); // An input is not an owned output.
+  EXPECT_TRUE(views[1].detach().IsUnavailable());
+  const std::array rejected{gd::OutputBinding{second_index, &views[0]},
+                            gd::OutputBinding{first_rows, &views[1]}};
+  EXPECT_FALSE(gd::bind_outputs(consumer, rejected).ok());
+  EXPECT_FALSE(previous_ready.try_write()); // The first old binding was not consumed by a late error.
+  ASSERT_TRUE(consumer.replay_report()); // Its preexisting preparation also survived.
+  EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
+  const std::array bindings{gd::OutputBinding{second_index, &views[0]},
+                            gd::OutputBinding{second_rows, &views[1]}};
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  ASSERT_TRUE(common.poll()); EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
+  const auto report = consumer.input_source_report().value();
+  EXPECT_EQ(report.source_count, 1u); EXPECT_EQ(report.device_wait_count, 1u); EXPECT_EQ(report.host_wait_count, 0u);
+  EXPECT_FALSE(consumer.submit(queues));
+  if (!failed_producer) {
+    // A can retire and be rebound while B still retains both old payloads.
+    reader_gate.arm(gate.stream);
+    ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
+  }
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  ASSERT_TRUE(consumed->poll()); EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  EXPECT_TRUE(producer.in_flight()); EXPECT_TRUE(consumer.in_flight());
+  gate.release();
+  c::Completion next;
+  const auto original_status = common.wait();
+  if (!failed_producer) {
+    ASSERT_TRUE(original_status.ok()) << original_status.message();
+    ASSERT_TRUE(consumer.in_flight());
+    ASSERT_TRUE(views[0].detach().ok()); ASSERT_TRUE(views[1].detach().ok());
+    ASSERT_TRUE(common.detach().ok());
+    ASSERT_TRUE(gd::RegionAccess::outcome_available(producer));
+    ASSERT_TRUE(producer.bind(first_index, i32, next_wanted_ready).ok());
+    ASSERT_TRUE(producer.bind(first_permutation, indices, next_permutation_ready).ok());
+    ASSERT_TRUE(producer.bind(token, i32, std::move(next_token_writer)).ok());
+    ASSERT_TRUE(producer.bind(floats, table_desc, std::move(next_rows_writer)).ok());
+    ASSERT_TRUE(producer.prepare_replay(queues,
+        {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+    auto reused = producer.submit(queues);
+    ASSERT_TRUE(reused) << reused.error().message(); next = std::move(*reused);
+    ASSERT_TRUE(next.poll()); EXPECT_EQ(*next.poll(), c::CompletionPoll::kPending);
+    EXPECT_EQ(*common.poll(), c::CompletionPoll::kComplete);
+    reader_gate.release();
+  }
+  const auto status = consumed->wait();
+  EXPECT_FALSE(consumer.in_flight());
+  if (failed_producer) {
+    EXPECT_FALSE(producer.in_flight());
+    ASSERT_FALSE(original_status.ok()); ASSERT_FALSE(status.ok());
+    EXPECT_EQ(status.code(), original_status.code()); EXPECT_EQ(status.message(), original_status.message());
+    EXPECT_FALSE(consumer.output(selected));
+    for (auto &view : views) {
+      const auto detached = view.detach();
+      EXPECT_EQ(detached.code(), original_status.code()); EXPECT_EQ(detached.message(), original_status.message());
+    }
+  } else {
+    ASSERT_TRUE(status.ok()) << status.message(); ASSERT_TRUE(next.wait().ok());
+    EXPECT_FALSE(producer.in_flight());
+    std::vector<std::byte> actual(row_bytes);
+    ASSERT_TRUE(consumer.output(selected)->storage().read(actual).ok());
+    EXPECT_TRUE(std::equal(actual.begin(), actual.end(), payload.begin())); // A's old permutation row2 was original row0.
+    std::array<std::int32_t, 1> next_token{};
+    ASSERT_TRUE(producer.output(token)->storage().read(std::as_writable_bytes(std::span(next_token))).ok());
+    EXPECT_EQ(next_token, (std::array<std::int32_t, 1>{1}));
+    std::vector<std::byte> next_rows(payload.size()), expected;
+    for (auto row : next_permutation)
+      expected.insert(expected.end(), payload.begin() + row * row_bytes, payload.begin() + (row + 1) * row_bytes);
+    ASSERT_TRUE(producer.output(floats)->storage().read(next_rows).ok()); EXPECT_EQ(next_rows, expected);
+  }
+  EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_FALSE(reader_gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_EQ(sources.stats().active_uses, 0u); EXPECT_EQ(outputs.stats().active_uses, 0u);
+  *consumed = {}; views = {}; consumer = {};
+  if (failed_producer) {
+    ASSERT_TRUE(common.detach().ok()); EXPECT_TRUE(gd::RegionAccess::outcome_available(producer));
+    const auto retained = common.wait();
+    EXPECT_EQ(retained.code(), original_status.code()); EXPECT_EQ(retained.message(), original_status.message());
+  }
+  common = {}; producer = {};
+  next_token_writer = {}; next_rows_writer = {};
+  EXPECT_EQ(sources.stats().live_blocks, 0u); EXPECT_EQ(outputs.stats().live_blocks, 0u);
+}
+
+TEST(GraphOutputSourceCuda, PendingF32FullWriterSharesIntegerSubmission) {
+  mixed_full_writer_relay(c::DataType::kFloat32);
+}
+TEST(GraphOutputSourceCuda, PendingF16FullWriterSharesIntegerSubmission) {
+  mixed_full_writer_relay(c::DataType::kFloat16);
+}
+TEST(GraphOutputSourceCuda, PendingBF16FullWriterSharesIntegerSubmission) {
+  mixed_full_writer_relay(c::DataType::kBFloat16);
+}
+TEST(GraphOutputSourceCuda, MixedFullWritersPreserveOriginalProducerFailure) {
+  mixed_full_writer_relay(c::DataType::kFloat32, true);
 }
 } // namespace

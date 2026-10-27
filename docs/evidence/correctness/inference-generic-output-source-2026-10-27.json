@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "date": "2026-10-27",
+  "platform": "Windows / actual CUDA shared Queue",
+  "subject": "Generic full caller-owned dense tensor OutputSource",
+  "implementation": [
+    "Removed only the dense-I32 creation policy; retained nonempty plain dense, complete original caller-owned writer and exact tensor/resource/range checks.",
+    "Original StorageOwner, pool, actual Queue, one submission Completion and whole Status/retirement contracts remain.",
+    "No subview, hidden-source adapter, new executor, native kernel or provider flag changes."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 255299,
+      "sha256": "1f9d1859b6b444b719d1d163ac00448705d7b8bd40666767d0035bd41f86ae38"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 5614,
+      "sha256": "cd6c66d50ad62ac78f51b31b64581f1ed7dbc9c3f62de483cfc62a0c9ed01799"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 98039,
+      "sha256": "5681c509acaba32d68af7c3a0bd48c27525e0da8d02ab7db550e99af579d6fc7"
+    }
+  ],
+  "validation": {
+    "counts": {
+      "CXX": 2,
+      "links": 2,
+      "GPU_test_processes": 1,
+      "passed": 8,
+      "model_processes": 0,
+      "SDK": 0,
+      "NVCC": 0,
+      "downloads": 0
+    },
+    "tests": [
+      "GraphOutputSourceCuda.PendingF32FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.PendingF16FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.PendingBF16FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.MixedFullWritersPreserveOriginalProducerFailure",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather"
+    ],
+    "process": {
+      "exit": 0,
+      "pid": 62276,
+      "seconds": 0.6464347000000998
+    },
+    "new_cases": [
+      "GraphOutputSourceCuda.PendingF32FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.PendingF16FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.PendingBF16FullWriterSharesIntegerSubmission",
+      "GraphOutputSourceCuda.MixedFullWritersPreserveOriginalProducerFailure"
+    ],
+    "adjacent_cases": [
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather"
+    ],
+    "actual_checks": [
+      "Each finite F32/F16/BF16 case shares one actual I32 plus floating-output submission, then consumes both through a real native checked Gather.",
+      "Host gate keeps A pending while B prepares/submits; source_count=1, device_wait_count=1, host_wait_count=0.",
+      "Bad last foreign bundle input rejects atomically; ordinary submit rejects pending input; exact output bytes and true retirement are checked.",
+      "Both views and common source detach after producer retirement while B remains pending; A reuses different writers and B still reads the original bytes.",
+      "Invalid producer index preserves complete native code/message through consumer and detach control cleanup."
+    ],
+    "builds": [
+      {
+        "name": "resources",
+        "process": {
+          "exit": 0,
+          "pid": 45412,
+          "seconds": 3.9827956999652088
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\resources\\unit.obj",
+          "bytes": 3095464,
+          "sha256": "2cfa451af7683e0199d40c255599f9c6ea95a4cbd7ca6b612b42217155739074"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\resources\\dependencies.json",
+          "bytes": 24554,
+          "sha256": "b2a6226135a47ad1be0f40d8159531b3bb7fa960eedd7a44fcc3ff1e1ac107a4"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\resources\\actual-dependencies.json",
+          "bytes": 49900,
+          "sha256": "c30f98377296c7dc735b6020d7b4b0a63a118bff8d43bb1f7262ec37b42e4283"
+        }
+      },
+      {
+        "name": "output-test",
+        "process": {
+          "exit": 0,
+          "pid": 18416,
+          "seconds": 7.524885700026061
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\output-test\\unit.obj",
+          "bytes": 3228187,
+          "sha256": "99d71197b3d39a41be7896f7bacb8e75f28e3fe3347e1fac9042fb18bc0ce59a"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\output-test\\dependencies.json",
+          "bytes": 33196,
+          "sha256": "11a9ae5a492fadb869245d149979496c6f12b53f39c52cb50d1ff651a8f6dbe6"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\compile\\output-test\\actual-dependencies.json",
+          "bytes": 63610,
+          "sha256": "5fd93c53b0efc728c7cb3c814604dd6ca334eb2273f36a006d56362db1c4c33a"
+        }
+      }
+    ],
+    "images": {
+      "cli": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\bin\\hyle.exe",
+          "bytes": 142414336,
+          "sha256": "f0296307dbc0fe967e79b8e67395face3bb18600acfb7068d6c15566bbc256f3"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 27652,
+          "seconds": 1.7425370999844745
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\cli-link-inputs.json",
+          "bytes": 57880,
+          "sha256": "b06ac121d5b045634b2fafdfa385a1eb91272ed44a8eb001db5f38ec7187aa14"
+        },
+        "execution": "linked; not run in this window"
+      },
+      "component": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\bin\\generic-output-source-test.exe",
+          "bytes": 147979776,
+          "sha256": "0d61d2539c7af312be74b77781abd9ee4501e6e76b317c2df2d8c2626b07a438"
+        },
+        "link": {
+          "exit": 0,
+          "pid": 53332,
+          "seconds": 1.8817836999660358
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\component-link-inputs.json",
+          "bytes": 62068,
+          "sha256": "c138d7dd409a4c4212481133831a64482f6c3d30a0d87c31a9fad3523786b47d"
+        },
+        "execution": "selected component tests"
+      }
+    },
+    "reuse": {
+      "cli_inputs": 224,
+      "component_inputs": 241,
+      "cli_replaced_objects": 1,
+      "component_replaced_objects": 2,
+      "unchanged_graph_sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f",
+      "detail_header_exception": {
+        "before": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\source\\output_source-before.h",
+          "bytes": 5603,
+          "sha256": "4a887058838e5e8121d0f27056f3ec626c918d7205285f7a9ea05af61c30f3ae"
+        },
+        "after": {
+          "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+          "bytes": 5614,
+          "sha256": "cd6c66d50ad62ac78f51b31b64581f1ed7dbc9c3f62de483cfc62a0c9ed01799"
+        },
+        "tokens_equal": true,
+        "reason": "Only comments changed in detail header; declarations/layout unchanged. Reuse Model/Graph/other old objects."
+      },
+      "note": "Only comment tokens changed in the reused header. Actual original SDK/include pins and build contract are retained; no SDK copy or rebuild."
+    },
+    "failure": {
+      "kind": "Harness freeze mapping only",
+      "record": "failure-freeze.log",
+      "detail": "First freeze indexed executable.cc by canonical product path, but actual compiler Data.Source was the frozen W7 source. KeyError occurred before CXX/link/GPU; corrected unique compiler-source suffix plus exact source SHA check. Original script and traceback retained."
+    },
+    "first_product_build_and_run_attempts": "Both CXX, both links and the one eight-case CUDA process passed on their first actual attempts."
+  },
+  "boundaries": [
+    "Finite native Gather consumers prove raw tensor handoff, not all floating-type operators, arbitrary nonfinite inputs or numeric-model quality.",
+    "Only full original writers are supported by this change; selected Store prefixes and complete cross-round MTP continuation are separate work.",
+    "No model, performance, CPU, Apple, Vulkan, multi-Queue or new native fault-injection run occurred in this window.",
+    "The CLI was only relinked; its new image is available for separate diagnosis and is not a model validation claim.",
+    "Baseline component EXE had already been removed. Its retained objects/recipes/dependencies were reused without requiring or rehashing that old image."
+  ],
+  "evidence": {
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-generic-output-source-2026-10-27.zip",
+      "bytes": 249577,
+      "sha256": "92cd2239ee1bc3bdb986105cc4725b10c3196b095e1bba648de0732edd55e773"
+    },
+    "file_count": 62,
+    "uncompressed_member_bytes": 1167417,
+    "member_manifest": "manifest.json",
+    "every_member_read_back": true,
+    "omitted": "EXE/OBJ/PDB/DLL/LIB/EXP, SDK, shaders and model payloads"
+  }
+}

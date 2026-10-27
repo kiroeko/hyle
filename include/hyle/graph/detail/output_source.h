@@ -9,9 +9,9 @@ struct OutputSourceState;
 struct OutputBinding;
 class StoreSource;
 
-// One fixed caller-owned dense I32 output of a SubmissionSource. Its real
-// storage owner and original permission are retained independently of other
-// values; it never exposes pending bytes or creates a second observer.
+// One fixed nonempty plain dense output of a SubmissionSource. Its actual
+// TensorDesc and complete caller-owned writer are preserved, independently of
+// other values; it never exposes pending bytes or creates a second observer.
 class OutputSource final {
 public:
   OutputSource() noexcept = default;
@@ -88,7 +88,7 @@ HYLE_GRAPH_API Status release_outputs(Invocation &, std::span<const OutputBindin
 // Prepared nonblocking Commands or complete existing capture reuse. The full
 // final tuple is checked together; a miss never records pending values or
 // falls back to managed Commands. A successfully retired bundle with detached
-// I32 results, original published Store destinations and actual ready resource
+// tensor results, original published Store destinations and actual ready resource
 // guards can use the original PreferCapture path for its first recording,
 // including qualified Hybrid gaps. Original metadata-only binding hooks apply.
 HYLE_GRAPH_API Status prepare_outputs(Invocation &, std::span<const OutputBinding>,

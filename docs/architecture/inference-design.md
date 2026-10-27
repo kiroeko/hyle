@@ -151,7 +151,7 @@ extraStop不冒充模型EOS。[普通多成员接力](../evidence/correctness/in
   在消费者真实退休后补核生产者完整Status。`OrderedGraphSubmission`及typed pending frame
   已用于原批次搬运组合，Compute已有有序读取writer的内部权限原语。
 - `Invocation::result/output`继续只导出成功终结的输出。同build的`detail::SubmissionSource`
-  接管一次原提交proxy、Queue和完整终结事实，只有一个producer保留；`OutputSource`是固定caller-owned I32视图，
+  接管一次原提交proxy、Queue和完整终结事实，只有一个producer保留；`OutputSource`借用固定caller-owned完整dense／plain输出，
   各自核原writer／pool、精确范围及Plan强持的真实`StorageOwner`，不公开pending字节或制造ready租约。
   一组视图用原子`OutputBinding` bundle绑定，依赖按共同Source身份去重，实际资源权限仍逐值接纳。
   bundle保全部视图寿命，Source不反持bundle；原生退休另保真实owner，不增加观察者或执行器。
@@ -160,6 +160,8 @@ extraStop不冒充模型EOS。[普通多成员接力](../evidence/correctness/in
   B仍读旧输出时，A才可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
   `poll/wait`不隐式关闭导出。数学失败不发布ready；失败已实际退休且没有借用时仍可归还载体，原错误继续传播。
   detach不等待pending工作，最后owner释放仍有正常析构／分配器清理成本。
+  [浮点载荷检查](../evidence/correctness/inference-generic-output-source-2026-10-27.json)已覆盖与I32混束的F32／F16／BF16真实Gather、
+  前驱退休后换writer及原错误传播；这只解除Source的元素类型限制，各Provider的算子／类型支持仍由原计划判断，不允许任意子视图。
 KV、索引融合与轮换的逐批结果见后文；自然普通请求使用上述两步有界量子，不能推广为MTP接受子集或无限在途流水。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
@@ -308,7 +310,7 @@ KV权限按当前贡献的精确bound裁剪，不能继承origin的更宽前缀�
 前驱退休而后继仍读、真实数学错误及退休清理；该批是完整目的集／K1承载，不代签MTP非连续接受子集、
 持续轮换或完整模型吞吐；后续自然普通R1的有限范围见前述请求检查。
 
-当前Qwen入口默认仍用一个串行载体，显式选择的普通R1量子才使用D2；完整生产者通过`StepSources`桥，
+当前Qwen入口默认仍用一个串行载体，显式选择的普通R1／有序R2量子才使用D2；完整生产者通过`StepSources`桥，
 将唯一原Completion移交共同Source，导出原token、所有Store及KV来源。
 成功路径仍是wait、token detach、读回／pin普通结果、共同detach、take append、take Store、
 受检发布及原head提交；取消转发到同一原Completion，不能把请求取消当成实际退休。
@@ -361,6 +363,13 @@ GPU执行期间只记录原候选的target页前缀及有限接受长度范围�
 MTP只复用接受并repair后的target整数拓扑；draft frontier／lag／hidden、部分接受后的尾页COW、布局版本及所有设备权限仍走原路径。
 CPU／CUDA有限检查覆盖K3异前缀、换序、停止及存活子组T2 catch-up的完整初始化状态／RNG／旧快照；
 真实2B双请求另核多页及完整非时间报告。它不是GPU后继提交或MTP深度二，也没有新吞吐结论。
+
+MTP设备后继尚未实现。K1的候选边界必须同时包含target的两行、draft实际前沿、前后两份hidden及各层状态，
+不能只传bonus token。拟投机的B使用A完整计算两行的候选base，而非把未接受状态登记成会话head；
+只有A实际接受两行且未停止、未取消、expected-base和额度仍成立时，B才可沿原账簿发布。
+其它结果只退休并丢弃B，A仍按真实接受前缀发布。完整输出Source已可承载浮点hidden；
+bonus须由图产生独立完整输出，Store接受子集仍需精确目的票据及真实IDs载体，不能放宽完整范围或伪造连续索引。
+这条路径先限定R1／K1／greedy／同一CUDA Queue；随机采样、递归宽度和多成员必须另核实际接受／修复依赖。
 
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；
