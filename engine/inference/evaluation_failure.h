@@ -11,9 +11,11 @@
 namespace hyle::inference {
 
 // Ephemeral error facts only: no Session, native work, lease or cleanup owner.
-// A participant index is qualified only by successful exact output decoding:
-// one ordinary Text/EmitNext member is 0 and every other member is 1.
-// No index means the owner must not classify this as a request-local failure.
+// A participant names an original submitted member proven by exact validity
+// decoding (one 0, all others 1) or that member's explicit prefix validator.
+// Private auxiliary work has no invented target participant. An absent index
+// provides no batch attribution; a separate original-request boundary can
+// supply its qualified key without granting retirement or retry permission.
 class EvaluationFailure final : public std::runtime_error {
 public:
   explicit EvaluationFailure(Status status, std::optional<std::size_t> participant = {})

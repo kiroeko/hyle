@@ -778,8 +778,9 @@ struct SamplingConfiguration final {
   sampling::Policy policy;
   sampling::LogitsPolicy modifiers;
 };
-// Typed ready inputs for one ordinary output episode. Copies only retain the
-// original read permission. Use a lease carrying its existing StorageOwner,
+// Typed ready inputs for one output episode. All conditional MTP rows share
+// the same immutable [1,V] snapshot, not a per-prefix grammar. Copies retain
+// the original read permission. Use a lease carrying its existing StorageOwner,
 // or keep its borrowed allocator/resource/Context alive through every retained
 // copy and native use. Owners may supply different leases next episode; no
 // modifier payload enters a Snapshot, commit ledger or KV cache.
@@ -1025,6 +1026,7 @@ struct StepMember final {
   // Synchronous episode borrow, like its original request input. No native
   // callback reads this policy; the original owner keeps it through finish.
   const inference::RequestStopPolicy *stop_policy = nullptr;
+  LogitsInputs logits{}; // Original admitted episode snapshot, never history.
   std::unique_ptr<cache::State> next{};
   hyle::container::SmallVector<c::PagedArenaCommit, 16> key_updates{}, value_updates{};
   std::array<c::PagedArenaCommit, 2> draft_updates{};
@@ -1378,6 +1380,7 @@ struct DraftProgram final {
   g::Invocation run;
   ResourceRetention retirement;
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
+  V bias, allowed;
   std::vector<V> hidden_inputs, resource_ports;
   StatePorts hidden_state;
   inference::SlotTransactions hidden_transactions;
@@ -1406,7 +1409,7 @@ struct PrefixSamplingProgram final {
   g::CompiledGraph compiled;
   g::Invocation run;
   ResourceRetention retirement;
-  V logits, identities, ids;
+  V logits, identities, ids, bias, allowed;
   std::vector<V> q, accepted, final_ids, valid;
   std::vector<V> resource_ports;
   Tensor identity_values, id_values;
@@ -1728,9 +1731,6 @@ public:
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
-    if (cache_plan.draft_cache && std::ranges::any_of(resources_->sampling_configurations,
-        [](const auto &entry) { return !entry->configuration.modifiers.empty(); }))
-      throw std::runtime_error("logits modifiers are currently ordinary Text only");
     if (retains_sampling_frontier() && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
       throw std::runtime_error("sampling requires a cache plan with retained frontier storage");
     const std::array limits{c::ResourceBudgetLimit{execution.device(), max_cache_bytes},
@@ -2124,8 +2124,6 @@ public:
                       bool packed_prefill = false) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
-      throw std::runtime_error("logits modifiers are ordinary Text only");
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only completion requires a Text or teacher-forced MTP input family");
     if (packed_prefill && (diagnostic || admitted_exact ||
@@ -2227,7 +2225,14 @@ public:
     V target_tokens = role == GraphRole::kText
         ? r.reshape(definition.token_port, {packed}) : definition.token_port;
     std::vector<sampling::Distribution> draft_distributions;
-    std::vector<V> proposal_ids;
+    std::vector<V> proposal_ids, draft_valid;
+    std::vector<sampling::LogitsInputsFor<V>> logits_inputs(requests);
+    if (completion == TextCompletion::kEmitNext && role != GraphRole::kVerify && !selected_sampler.modifiers.empty())
+      for (auto &inputs : logits_inputs) {
+        inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+        if (inputs.bias) { definition.logits_bias_ports.push_back(*inputs.bias); definition.state_resource_ports.push_back(*inputs.bias); }
+        if (inputs.allowed) { definition.logits_allowed_ports.push_back(*inputs.allowed); definition.state_resource_ports.push_back(*inputs.allowed); }
+      }
     definition.batched_text_sampling = requests > 1 && role == GraphRole::kText &&
         completion == TextCompletion::kEmitNext && selected_sampler.enabled &&
         selected_sampler.modifiers.empty() && selected_sampler.policy.top_p == 1.F &&
@@ -2301,13 +2306,20 @@ public:
               {attention_schema, definition.draft_key_port, definition.draft_value_port, definition.draft_metadata_port},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry);
           append = head.append_nodes; definition.draft_attention_node = head.attention_node;
-          if (!selected_sampler.enabled) definition.draft_id_port = r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
-              {r.dense_spec(Type::kFloat32, {batch, f(1)}), r.dense_spec(Type::kInt32, {batch, f(1)})})[1];
-          if (selected_sampler.enabled) {
+          if (!selected_sampler.enabled && selected_sampler.modifiers.empty())
+            definition.draft_id_port = r.op(c::Operation(c::TopK{.count = 1}), {head.logits},
+                {r.dense_spec(Type::kFloat32, {batch, f(1)}), r.dense_spec(Type::kInt32, {batch, f(1)})})[1];
+          else {
             for (std::size_t request = 0; request < requests; ++request) {
-              draft_distributions.push_back(sampling::distribution(r, sampling_row(head.logits, request), selected_sampler.policy));
-              proposal_ids.push_back(r.one(c::sampling_ops::categorical(),
-                  {draft_distributions.back().log_probabilities, sampling_identity(request, 0)}));
+              const auto processed = sampling::process_logits(r, sampling_row(head.logits, request), logits_inputs[request]);
+              if (selected_sampler.enabled) {
+                draft_distributions.push_back(sampling::processed_distribution(r, processed, selected_sampler.policy));
+                proposal_ids.push_back(r.one(c::sampling_ops::categorical(),
+                    {draft_distributions.back().log_probabilities, sampling_identity(request, 0)}));
+              } else {
+                const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
+                proposal_ids.push_back(r.reshape(selection.id, {f(1)})); draft_valid.push_back(*selection.valid);
+              }
             }
             definition.draft_id_port = r.reshape(r.concat(proposal_ids, 0,
                 r.dense_spec(Type::kInt32, {batch})), {batch, f(1)});
@@ -2584,27 +2596,40 @@ public:
             {p.log_probabilities, definition.sampling_identity_port}), {batch, f(1)});
         definition.sampling_valid_port = r.host_predicate(r.reshape(p.valid, {batch}));
         r.publish(definition.sampling_valid_port);
-      } else if (!selected_sampler.modifiers.empty()) {
+      } else if (!selected_sampler.enabled) {
         std::vector<V> ids, valid;
+        V false_value;
+        if (drafts_token(role)) false_value = r.cast(r.scalar(0), Type::kBool);
         for (std::size_t request = 0; request < requests; ++request) {
-          const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
-          if (inputs.bias) { definition.logits_bias_ports.push_back(*inputs.bias); definition.state_resource_ports.push_back(*inputs.bias); }
-          if (inputs.allowed) { definition.logits_allowed_ports.push_back(*inputs.allowed); definition.state_resource_ports.push_back(*inputs.allowed); }
-          const auto selection = sampling::ordinary_selection(r, sampling_row(definition.logits_port, request),
-              selected_sampler.enabled ? std::optional<V>(sampling_identity(request, 0)) : std::nullopt,
-              selected_sampler.policy, inputs);
-          ids.push_back(r.reshape(selection.id, {f(1)})); valid.push_back(*selection.valid);
+          const auto first_row = drafts_token(role) ? request * 2 : request;
+          const auto selection = sampling::processed_selection(r,
+              sampling::process_logits(r, sampling_row(definition.logits_port, first_row), logits_inputs[request]),
+              std::optional<V>{}, selected_sampler.policy);
+          ids.push_back(r.reshape(selection.id, {f(1)}));
+          auto ok = *selection.valid;
+          if (drafts_token(role)) {
+            const auto bonus = sampling::processed_selection(r,
+                sampling::process_logits(r, sampling_row(definition.logits_port, first_row + 1), logits_inputs[request]),
+                std::optional<V>{}, selected_sampler.policy);
+            ids.push_back(r.reshape(bonus.id, {f(1)}));
+            ok = r.one(c::Select{}, {ok, draft_valid[request], false_value});
+            ok = r.one(c::Select{}, {ok, *bonus.valid, false_value});
+          }
+          valid.push_back(ok);
         }
-        definition.id_port = r.reshape(r.concat(ids, 0, r.dense_spec(Type::kInt32, {batch})), {batch, f(1)});
+        definition.id_port = r.reshape(r.concat(ids, 0,
+            r.dense_spec(Type::kInt32, {drafts_token(role) ? packed : batch})),
+            {drafts_token(role) ? packed : batch, f(1)});
         definition.sampling_valid_port = r.host_predicate(r.concat(valid, 0, r.dense_spec(Type::kBool, {batch})));
         r.publish(definition.sampling_valid_port);
       } else {
         std::vector<V> ids, valid, accepted;
         for (std::size_t request = 0; request < requests; ++request) {
-          const auto p = sampling::distribution(r, sampling_row(definition.logits_port,
-              verifies_prefix(role) ? request * 2 : request), selected_sampler.policy);
+          const auto p = sampling::processed_distribution(r, sampling::process_logits(r,
+              sampling_row(definition.logits_port, drafts_token(role) ? request * 2 : request), logits_inputs[request]), selected_sampler.policy);
           if (drafts_token(role)) {
-            const auto bonus = sampling::distribution(r, sampling_row(definition.logits_port, request * 2 + 1), selected_sampler.policy);
+            const auto bonus = sampling::processed_distribution(r, sampling::process_logits(r,
+                sampling_row(definition.logits_port, request * 2 + 1), logits_inputs[request]), selected_sampler.policy);
             const auto decision = sampling::decision(r, p.log_probabilities,
                 draft_distributions[request].log_probabilities, bonus.log_probabilities,
                 proposal_ids[request], sampling_identity(request, 1), sampling_identity(request, 2));
@@ -2827,8 +2852,6 @@ public:
       throw std::runtime_error("prepare a positive NextN width before selected cache storage");
     const auto selected_index = head ? sampling_index : 0;
     const auto &selected_sampler = sampling_configuration(selected_index).configuration;
-    if (!selected_sampler.modifiers.empty())
-      throw std::runtime_error("NextN logits modifiers are not supported");
     const auto key = std::tuple{rows, head, selected_index};
     if (draft_programs.contains(key)) return;
     prepare_cache();
@@ -2878,24 +2901,40 @@ public:
           {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry);
       program.append = result.append_nodes; program.attention = result.attention_node;
       program.hidden = result.selected_hidden;
-      if (!selected_sampler.enabled) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
-          {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1];
+      const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+      if (inputs.bias) { program.bias = *inputs.bias; program.resource_ports.push_back(program.bias); }
+      if (inputs.allowed) { program.allowed = *inputs.allowed; program.resource_ports.push_back(program.allowed); }
+      const auto processed = sampling::process_logits(r, result.logits, inputs);
+      if (!selected_sampler.enabled) {
+        if (selected_sampler.modifiers.empty()) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
+            {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1];
+        else if (min_draft_probability() == 0) {
+          const auto selection = sampling::processed_selection(r, processed, std::optional<V>{}, selected_sampler.policy);
+          program.id = selection.id; program.valid = r.host_predicate(*selection.valid);
+        }
+      }
       if (selected_sampler.enabled || min_draft_probability() > 0) {
-        const auto distribution = sampling::distribution(r, result.logits,
+        const auto distribution = sampling::processed_distribution(r, processed,
             selected_sampler.enabled ? selected_sampler.policy : sampling::Policy{});
         program.log_probabilities = distribution.log_probabilities; program.valid = r.host_predicate(distribution.valid);
         if (selected_sampler.enabled) {
           program.identity = r.input(dense(Type::kUInt32, {1, 4}));
           program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
           r.publish(program.log_probabilities);
+        } else if (!selected_sampler.modifiers.empty()) {
+          // Threshold already requires this one distribution's complete
+          // validity. Reuse it for a safe greedy ID instead of validating the
+          // same processed row a second time.
+          const auto safe = r.one(c::Select{}, {distribution.valid, processed.logits, r.scalar(0)});
+          program.id = r.op(c::Operation(c::TopK{.count = 1}), {safe})[1];
         }
         if (min_draft_probability() > 0) {
           const auto maximum = r.copy(r.reshape(r.one(c::Reduce{.kind = c::ReductionKind::kMaximum,
               .accumulation_type = Type::kFloat32}, {program.log_probabilities}), {f(1)}));
           program.probability = r.unary(c::UnaryKind::kExp, maximum); r.publish(program.probability);
         }
-        r.publish(program.valid);
       }
+      if (program.valid) r.publish(program.valid);
       r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
           {program.hidden, program.hidden_state.destination_ids}, {}, &program.hidden_state.store);
       check(r.builder.depends_on(program.hidden_state.store, program.append.value));
@@ -2935,7 +2974,7 @@ public:
     }
     if (head) {
       program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution, allocation_budget));
-      if (selected_sampler.enabled || min_draft_probability() > 0)
+      if (program.valid)
         program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution, allocation_budget));
       if (min_draft_probability() > 0)
         program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution, allocation_budget));
@@ -2967,7 +3006,7 @@ public:
       if (!program.identity_values.caller_owned()) program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
       check(program.run.bind(program.identity, program.identity_values.read()));
     }
-    if (program.head && (selected_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
+    if (program.head && program.valid) check(program.valid_value.bind(program.run));
     if (program.head && min_draft_probability() > 0) check(program.probability_value.bind(program.run));
     if (program.head) {
       const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
@@ -2981,7 +3020,7 @@ public:
   // never borrowed, so aborting proposal/verification leaves the old head valid.
   DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
       std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
-      std::size_t sampling_index = 0) {
+      std::size_t sampling_index = 0, const LogitsInputs &logits = {}) {
     if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
         work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
       throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
@@ -2989,6 +3028,7 @@ public:
     if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
     auto &program = *found->second;
     const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
+    if (head) validate_logits_inputs(selected_sampler, logits, vocabulary);
     auto &guard = program.guard;
     if (guard.cleanup_pending) {
       // Keep the same original failed episode and all its append/state facts
@@ -3059,6 +3099,8 @@ public:
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
         check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
+      if (program.bias) check(run.bind(program.bias, logits.bias.description, logits.bias.lease));
+      if (program.allowed) check(run.bind(program.allowed, logits.allowed.description, logits.allowed.lease));
       if (head && selected_sampler.enabled) {
         program.identity_values.write<std::uint32_t>(identity);
         if (program.probabilities_output.caller_owned()) check(run.bind(program.probabilities_output.value,
@@ -3075,9 +3117,11 @@ public:
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
       if (head) {
-        if (selected_sampler.enabled || min_draft_probability() > 0) {
+        if (program.valid) {
           const auto flag = take(program.valid_value.predicate(execution, run));
-          if (flag != 1) throw std::runtime_error("recursive draft distribution is invalid; no head or RNG was published");
+          if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+              "recursive draft distribution is invalid; no head or RNG was published"));
+          if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
           if (selected_sampler.enabled) output.log_probabilities =
               take(inference::retain_output(run, program.probabilities_output, execution_budget));
           if (min_draft_probability() > 0) {
@@ -3120,6 +3164,17 @@ public:
       for (auto &bank : guard.tails) bank.clear();
       guard.run = nullptr; guard.state_transactions = nullptr;
       return output;
+    } catch (inference::EvaluationFailure &failure) {
+      // This validator has no target Step participant. Keep its original
+      // private guard's actual retirement observation for a known caller key.
+      inference::record_retirement_status(guard.terminal, run.close());
+      inference::record_retirement_status(guard.terminal, execution.drain_retired(run));
+      guard.cleanup_pending = true;
+      const auto recovered = guard.try_abort();
+      if (!recovered) inference::record_retirement_status(guard.terminal, recovered.error());
+      failure.observe_retirement({recovered && *recovered, guard.terminal});
+      if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
+      throw;
     } catch (...) {
       // An unsuccessful private append is never a partially published head.
       run.close().IgnoreError(); execution.drain_retired(run).IgnoreError();
@@ -3135,9 +3190,7 @@ public:
   void prepare_prefix_sampling(std::size_t proposals, std::size_t sampling_index = 0) {
     preparation_started_ = true;
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
-    if (!selected_sampler.modifiers.empty())
-      throw std::runtime_error("speculative logits modifiers are not supported");
-    if (!selected_sampler.enabled || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
+    if ((!selected_sampler.enabled && selected_sampler.modifiers.empty()) || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
       throw std::runtime_error("prepare bounded speculative-sampling widths before cache storage");
     const auto key = std::pair{proposals, sampling_index};
     if (prefix_sampling_programs.contains(key)) return;
@@ -3147,14 +3200,28 @@ public:
     Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
     program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
-    program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
-    if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-    auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
-        program.ids, selected_sampler.policy);
-    program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
-    program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
+    const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
+    if (inputs.bias) { program.bias = *inputs.bias; program.resource_ports.push_back(program.bias); }
+    if (inputs.allowed) { program.allowed = *inputs.allowed; program.resource_ports.push_back(program.allowed); }
+    if (selected_sampler.enabled) {
+      program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
+      if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
+      auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
+          program.ids, selected_sampler.policy, inputs);
+      program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
+      program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
+    } else {
+      // A greedy verifier still needs the exact processed target of every row;
+      // no proposal-q or RNG ports belong to this program.
+      for (std::size_t row = 0; row <= proposals; ++row) {
+        const auto raw = r.copy(r.slice(program.logits, 0, f(static_cast<std::int64_t>(row)), f(1)));
+        const auto selection = sampling::processed_selection(r,
+            sampling::process_logits(r, raw, inputs), std::optional<V>{}, selected_sampler.policy);
+        program.final_ids.push_back(selection.id); program.valid.push_back(*selection.valid);
+      }
+    }
     for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
-      if (proposals) {
+      if (!program.accepted.empty()) {
         program.accepted[row] = r.host_predicate(program.accepted[row]);
         r.publish(program.accepted[row]);
       }
@@ -3172,16 +3239,19 @@ public:
     program.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), program.compiled.report));
     record_execution_plan(program.compiled.report, assembly.constants);
     program.literals = std::move(assembly.literals);
-    program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
-    input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
-    if (proposals) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
+    if (program.identities) {
+      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
+      input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
+    }
+    if (program.ids) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
     const auto prepare = [&](const std::vector<V> &ports, std::vector<PreparedReadback> &values) {
       values.reserve(ports.size());
       for (const auto port : ports) values.push_back(take(PreparedReadback::prepare(program.compiled, port, execution, allocation_budget)));
     };
-    if (proposals) prepare(program.accepted, program.accepted_values);
+    prepare(program.accepted, program.accepted_values);
     prepare(program.final_ids, program.final_values); prepare(program.valid, program.valid_values);
-    program.resource_ports = program.q; program.resource_ports.push_back(program.logits);
+    program.resource_ports.insert(program.resource_ports.end(), program.q.begin(), program.q.end());
+    program.resource_ports.push_back(program.logits);
     initialize_prefix_sampling(program);
     prefix_sampling_programs.emplace(key, std::move(prepared));
   }
@@ -3190,8 +3260,8 @@ public:
     program.run = take(program.compiled.executable.create_invocation(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
     if (scheduler) check(g::prepare_progress(program.run, *scheduler, *workers));
-    check(program.run.bind(program.identities, program.identity_values.read()));
-    if (program.proposals) check(program.run.bind(program.ids, program.id_values.read()));
+    if (program.identities) check(program.run.bind(program.identities, program.identity_values.read()));
+    if (program.ids) check(program.run.bind(program.ids, program.id_values.read()));
     for (auto &output : program.accepted_values) check(output.bind(program.run));
     for (auto &output : program.final_values) check(output.bind(program.run));
     for (auto &output : program.valid_values) check(output.bind(program.run));
@@ -3201,11 +3271,10 @@ public:
   // every recursive consumer shares this model's actual NextN/sampler programs.
   void prepare_recursive_round_programs(std::size_t sampling_index = 0) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
-    if (!selected_sampler.modifiers.empty())
-      throw std::runtime_error("recursive logits modifiers are not supported");
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
-      if (selected_sampler.enabled && (rows > 1 || min_draft_probability() > 0)) prepare_prefix_sampling(rows - 1, sampling_index);
+      if ((selected_sampler.enabled || !selected_sampler.modifiers.empty()) && (rows > 1 || min_draft_probability() > 0))
+        prepare_prefix_sampling(rows - 1, sampling_index);
     }
     prepare_draft_program(1, true, sampling_index);
     if (capacity > 1) prepare_draft_program(2, true, sampling_index);
@@ -3213,46 +3282,60 @@ public:
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
       std::span<const std::int32_t> proposals, std::span<const c::ReadLease> q,
-      cache::SamplingCursor cursor, std::size_t sampling_index = 0) {
+      cache::SamplingCursor cursor, std::size_t sampling_index = 0, const LogitsInputs &inputs = {}) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
-    if (!selected_sampler.enabled || !selected_sampler.modifiers.empty() || proposals.size() != q.size())
-      throw std::runtime_error("speculative sampling requires every actual proposal distribution");
+    if ((selected_sampler.enabled ? proposals.size() != q.size() : !q.empty() || selected_sampler.modifiers.empty()))
+      throw std::runtime_error("speculative sampling requires its actual proposal distributions or greedy modifiers");
+    validate_logits_inputs(selected_sampler, inputs, vocabulary);
     auto found = prefix_sampling_programs.find({proposals.size(), sampling_index});
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
     auto &program = *found->second;
+    if (program.retirement.pending())
+      throw std::runtime_error("original prefix decision resource scope is still retained");
     if (!program.run) initialize_prefix_sampling(program);
     auto &run = program.run;
     const auto count = proposals.size();
-    (void)cursor.advanced(cache::add(cache::multiply(2, count), 1));
-    auto &identities = input_scratch.sampling_identities;
-    identities.clear();
-    for (std::size_t row = 0; row <= count; ++row) {
-      const auto identity = cursor.identity(row == count ? 2 * count : 2 * row + 1);
-      identities.insert(identities.end(), identity.begin(), identity.end());
+    if (selected_sampler.enabled) {
+      (void)cursor.advanced(cache::add(cache::multiply(2, count), 1));
+      auto &identities = input_scratch.sampling_identities;
+      identities.clear();
+      for (std::size_t row = 0; row <= count; ++row) {
+        const auto identity = cursor.identity(row == count ? 2 * count : 2 * row + 1);
+        identities.insert(identities.end(), identity.begin(), identity.end());
+      }
+      program.identity_values.write<std::uint32_t>(identities);
+      if (count) program.id_values.write<std::int32_t>(proposals);
     }
-    program.identity_values.write<std::uint32_t>(identities);
-    if (count) program.id_values.write<std::int32_t>(proposals);
     try {
-    check(run.bind(program.logits, logits));
-    for (std::size_t row = 0; row < count; ++row)
-      check(run.bind(program.q[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
-    const auto queues = inference::queue_span(program.queues);
-    check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
-    auto done = submit_retained(run, queues, program.retirement); check(done.wait());
-    ++prefix_decision_graph_calls;
-    PrefixSamplingResult result; result.accepted.resize(count); result.final_ids.resize(program.final_ids.size());
-    for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
-      const auto valid = take(program.valid_values[row].predicate(execution, run));
-      if (valid != 1) throw std::runtime_error("recursive target/q/residual distribution is invalid; no head or RNG was published");
-      if (count) result.accepted[row] = take(program.accepted_values[row].predicate(execution, run));
-      check(program.final_values[row].read(execution, run, std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
-    }
-    check(run.unbind(program.resource_ports));
-    return result;
+      check(run.bind(program.logits, logits));
+      if (program.bias) check(run.bind(program.bias, inputs.bias.description, inputs.bias.lease));
+      if (program.allowed) check(run.bind(program.allowed, inputs.allowed.description, inputs.allowed.lease));
+      for (std::size_t row = 0; row < q.size(); ++row)
+        check(run.bind(program.q[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
+      const auto queues = inference::queue_span(program.queues);
+      check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+      auto done = submit_retained(run, queues, program.retirement); check(done.wait());
+      ++prefix_decision_graph_calls;
+      PrefixSamplingResult result; result.accepted.resize(program.accepted.size()); result.final_ids.resize(program.final_ids.size());
+      for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
+        const auto valid = take(program.valid_values[row].predicate(execution, run));
+        if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+            "recursive target/q/residual distribution is invalid; no head or RNG was published"));
+        if (valid != 1) throw std::runtime_error("recursive target validity is outside its predicate encoding");
+        if (!result.accepted.empty()) result.accepted[row] = take(program.accepted_values[row].predicate(execution, run));
+        check(program.final_values[row].read(execution, run, std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
+      }
+      check(run.unbind(program.resource_ports));
+      return result;
+    } catch (inference::EvaluationFailure &failure) {
+      hyle::Status retirement = run.close();
+      inference::record_retirement_status(retirement, execution.drain_retired(run));
+      failure.observe_retirement({!run.in_flight() && !program.retirement.pending(), retirement});
+      run = {};
+      throw;
     } catch (...) {
-      // Failed p/q validation or native work must release the same transient
-      // input pins as success. A later explicit retry recreates only this
-      // original finite invocation, never a Session or an RNG cursor.
+      // The outer target episode retains its original member proof and drives
+      // actual retirement; this finite private consumer releases only its pins.
       run.close().IgnoreError(); execution.drain_retired(run).IgnoreError(); run = {};
       throw;
     }
@@ -3370,25 +3453,34 @@ public:
     // the original immutable hidden lease and returns only two scalar results.
     auto run = take(frontier.compiled.executable.create_invocation(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
-    if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
-    if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
-    check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
-    if (selected_sampler.enabled) check(run.bind(frontier.identity_port, frontier.identity.read()));
-    if (frontier.bias_port) check(run.bind(frontier.bias_port, inputs.bias.description, inputs.bias.lease));
-    if (frontier.allowed_port) check(run.bind(frontier.allowed_port, inputs.allowed.description, inputs.allowed.lease));
-    check(frontier.id.bind(run)); if (frontier.valid_port) check(frontier.valid.bind(run));
-    const auto queues = inference::queue_span(frontier.queues);
-    check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
-    auto done = submit_retained(run, queues, frontier.retirement); check(done.wait());
-    ++frontier_sampling_graph_calls;
-    const auto valid = frontier.valid_port ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
-    std::int32_t pending = -1;
-    check(frontier.id.read(execution, run, std::as_writable_bytes(std::span(&pending, 1))));
-    if (valid != 1 || pending < 0 || pending >= vocabulary)
-      throw std::runtime_error("cached frontier sampling is invalid; no request RNG cursor was published");
-    auto next = sampling_fork(std::move(base), next_cursor, pending);
-    frontier_sampling_seconds += std::chrono::duration<double>(Clock::now() - started).count();
-    return next;
+    try {
+      if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
+      if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
+      check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
+      if (selected_sampler.enabled) check(run.bind(frontier.identity_port, frontier.identity.read()));
+      if (frontier.bias_port) check(run.bind(frontier.bias_port, inputs.bias.description, inputs.bias.lease));
+      if (frontier.allowed_port) check(run.bind(frontier.allowed_port, inputs.allowed.description, inputs.allowed.lease));
+      check(frontier.id.bind(run)); if (frontier.valid_port) check(frontier.valid.bind(run));
+      const auto queues = inference::queue_span(frontier.queues);
+      check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
+      auto done = submit_retained(run, queues, frontier.retirement); check(done.wait());
+      ++frontier_sampling_graph_calls;
+      const auto valid = frontier.valid_port ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
+      std::int32_t pending = -1;
+      check(frontier.id.read(execution, run, std::as_writable_bytes(std::span(&pending, 1))));
+      if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+          "cached frontier sampling is invalid; no request RNG cursor was published"));
+      if (valid != 1 || pending < 0 || pending >= vocabulary)
+        throw std::runtime_error("cached frontier sampling is outside its declared result domain");
+      auto next = sampling_fork(std::move(base), next_cursor, pending);
+      frontier_sampling_seconds += std::chrono::duration<double>(Clock::now() - started).count();
+      return next;
+    } catch (inference::EvaluationFailure &failure) {
+      hyle::Status retirement = run.close();
+      inference::record_retirement_status(retirement, execution.drain_retired(run));
+      failure.observe_retirement({!run.in_flight() && !frontier.retirement.pending(), retirement});
+      throw;
+    }
   }
 
   const void *math_identity() const noexcept {
@@ -3432,8 +3524,6 @@ public:
                                          const LogitsInputs &logits = {}) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
-      throw std::runtime_error("logits modifiers are ordinary Text only");
     if (resample_frontier) validate_logits_inputs(selected_sampler, logits, vocabulary);
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
@@ -3580,7 +3670,7 @@ public:
     }
     if (phase.sampling_valid_port) {
       check(io.sampling_valid.bind(run));
-      if (drafts_token(definition.role)) check(io.sampling_accept.bind(run));
+      if (phase.sampling_accept_port) check(io.sampling_accept.bind(run));
     }
     if ((definition.requests != 1 || definition.packed_prefill) && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, io.last_ids.read()));
     if (definition.packed_prefill) check(run.bind(phase.history_select_port, io.history_select.read()));
@@ -3692,7 +3782,7 @@ public:
         io.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
         io.sampling_valid_values.resize(requests);
         bool float_predicates = io.sampling_valid.facts.description.data_type() == Type::kFloat32;
-        if (drafts_token(role)) {
+        if (phase.sampling_accept_port) {
           io.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution, allocation_budget));
           io.sampling_accept_values.resize(requests);
           float_predicates = float_predicates || io.sampling_accept.facts.description.data_type() == Type::kFloat32;
@@ -4270,8 +4360,6 @@ public:
     const auto &prepared_sampling = requests.front().session->sampling_configuration();
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
-      throw std::runtime_error("logits modifiers are ordinary Text only");
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
     const bool packed_prefill = physical_prefill_rows != 0;
     auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
@@ -4343,7 +4431,9 @@ public:
       candidate->members.push_back({.session = request.session, .owner_state = &request.session->head,
           .base = predecessor ? predecessor->members[j].next.get() : request.session->head.get(),
           .base_epoch = request.session->head.epoch() + (predecessor ? 1u : 0u),
-          .stop_policy = request.stop_policy, .input_tokens = packed_prefill ? request.ids.size() : tokens});
+          .stop_policy = request.stop_policy,
+          .logits = completion == TextCompletion::kEmitNext ? request.logits : LogitsInputs{},
+          .input_tokens = packed_prefill ? request.ids.size() : tokens});
       candidate->members.back().first_input = relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
       if (role == GraphRole::kVerify)
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
@@ -4816,22 +4906,19 @@ public:
               step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())].session->stopping)
             bad = std::find_if(bad + 1, io.sampling_valid_values.end(), [](auto value) { return value != 1; });
         if (bad != io.sampling_valid_values.end()) {
-          if (phase.family->role == GraphRole::kText) {
-            std::optional<std::size_t> participant;
-            // Everything before the first bad value is already proven 1.
-            // Only the failure path inspects the remainder for a unique 0.
-            bool unique = true;
-            for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
-              if (*it != 1 && !(step.discard_stopped_members &&
-                  step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())].session->stopping)) unique = false;
-            if (*bad == 0 && unique)
-              participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
-            throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
-                "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
-          }
-          throw std::runtime_error("sampling distribution or proposal is invalid; no session or RNG cursor was published");
+          std::optional<std::size_t> participant;
+          // Everything before the first bad value is already proven 1.
+          // Only the failure path inspects the remainder for a unique 0.
+          bool unique = true;
+          for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
+            if (*it != 1 && !(step.discard_stopped_members &&
+                step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())].session->stopping)) unique = false;
+          if (*bad == 0 && unique)
+            participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
+          throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+              "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
         }
-        if (drafts_token(phase.family->role)) {
+        if (phase.sampling_accept_port) {
           check(io.sampling_accept.predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
           for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
         }
@@ -5080,7 +5167,13 @@ public:
       return_readback.admission = std::exchange(step.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
     } catch (inference::EvaluationFailure &failure) {
-      failure.observe_retirement(abort_episode());
+      // A nested private validator can still own native work independently of
+      // this target episode. Its negative observation cannot be overwritten
+      // by retiring only the target; retain it until its original owner drains.
+      const bool private_pending = failure.retirement_observed() && !failure.retirement().retired;
+      auto retired = abort_episode();
+      retired.retired = retired.retired && !private_pending;
+      failure.observe_retirement(retired);
       throw;
     } catch (...) { (void)abort_episode(); throw; }
     const auto finished = Clock::now();
@@ -5139,11 +5232,12 @@ public:
   // private pages; it is never installed in a committed draft cache.
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
-      const inference::RequestStopPolicy *stop_policy = nullptr) {
+      const inference::RequestStopPolicy *stop_policy = nullptr, const LogitsInputs &logits = {}) {
     if (session.model_ != this)
       throw std::runtime_error("recursive proposal Session belongs to another model");
     const auto &selected_sampling = session.sampling_configuration();
     const auto &selected_sampler = selected_sampling.configuration;
+    validate_logits_inputs(selected_sampler, logits, vocabulary);
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
         !session.head || !session.head->draft || (selected_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
@@ -5164,7 +5258,7 @@ public:
       if (!i && work.state.lag) { ids.push_back(work.state.catchup_token); shifted.push_back(session.head->prior_hidden); }
       ids.push_back(inputs.back()); shifted.push_back(i ? approximate : session.head->carry_hidden);
       auto proposal = execute_draft(work, ids, shifted, true,
-          selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{}, selected_sampling.index);
+          selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{}, selected_sampling.index, logits);
       // Stop on a distribution property, not the sampled proposal's own
       // probability. The stopping condition is independent of this draw; its
       // unpublished address may then be the target's final draw at 2*m.
@@ -5227,7 +5321,7 @@ public:
         [&](std::span<const std::int32_t> candidates, StepState &step, std::span<std::int32_t> selected) {
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
-      if (selected_sampler.enabled) {
+      if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
         auto &logits = step.phase->io[step.state_slot].logits;
         if (logits.caller_owned()) logits_storage = logits.storage();
         else {
@@ -5242,24 +5336,41 @@ public:
         const auto width = step.input_tokens;
         const auto rows = candidates.subspan(j * width, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
-        result.auxiliary_graph_calls = width + (selected_sampler.enabled ? 1u : 0u);
+        result.auxiliary_graph_calls = width + (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
         hyle::inference::mtp::AcceptedPrefix accepted;
-        if (selected_sampler.enabled) {
-          if (selection.draft_log_probabilities.size() != width - 1)
+        if (selected_sampler.enabled || !selected_sampler.modifiers.empty()) {
+          if (selected_sampler.enabled && selection.draft_log_probabilities.size() != width - 1)
             throw std::runtime_error("stochastic verification requires every actual q row");
           const auto bytes = cache::multiply(cache::multiply(width, vocabulary), sizeof(float));
           const auto logits = take(c::ConstTensorView::create(dense(Type::kFloat32,
               {static_cast<std::int64_t>(width), vocabulary}), take(logits_storage.subview(j * bytes, bytes))));
-          const auto decision = sample_recursive_prefix(logits,
-              std::span<const std::int32_t>(member.verification_inputs).subspan(1),
-              selection.draft_log_probabilities, member.base->sampling, selected_sampling.index);
-          accepted = hyle::inference::mtp::select_sampled_prefix(member.verification_inputs, decision.accepted, decision.final_ids,
-              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
-          member.next->sampling = member.base->sampling.advanced(cache::add(cache::multiply(2, width - 1), 1));
-          result.target_first = result.emitted.front();
-          result.target_second = result.emitted.size() > 1 ? result.emitted[1] : -1;
+          PrefixSamplingResult decision;
+          try {
+            decision = sample_recursive_prefix(logits,
+                std::span<const std::int32_t>(member.verification_inputs).subspan(1),
+                selection.draft_log_probabilities, member.base->sampling, selected_sampling.index, member.logits);
+          } catch (const inference::EvaluationFailure &failure) {
+            // Exact private validation of this original submitted member's
+            // target rows; neither a request bucket nor a q-pool index.
+            if (!failure.status().IsInvalidArgument() || failure.status().has_native_error() || failure.participant() ||
+                !failure.retirement_observed() || !failure.retirement().retired || failure.retirement().status.has_native_error()) throw;
+            inference::EvaluationFailure mapped(failure.status(), j);
+            if (failure.retirement_observed()) mapped.observe_retirement(failure.retirement());
+            throw mapped;
+          }
+          if (selected_sampler.enabled) {
+            accepted = hyle::inference::mtp::select_sampled_prefix(member.verification_inputs, decision.accepted, decision.final_ids,
+                selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
+            member.next->sampling = member.base->sampling.advanced(cache::add(cache::multiply(2, width - 1), 1));
+            result.target_first = result.emitted.front();
+            result.target_second = result.emitted.size() > 1 ? result.emitted[1] : -1;
+          } else {
+            result.target_first = decision.final_ids[0]; result.target_second = width > 1 ? decision.final_ids[1] : -1;
+            accepted = hyle::inference::mtp::select_greedy_prefix(member.verification_inputs, decision.final_ids,
+                selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
+          }
         } else {
           accepted = hyle::inference::mtp::select_greedy_prefix(member.verification_inputs, rows,
               selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
@@ -5582,7 +5693,7 @@ struct GenerationRequest {
   std::vector<std::shared_ptr<std::vector<std::int32_t>>> warm_inputs;
   std::size_t last_idle = 0;
   const std::size_t sampling_index;
-  LogitsInputs logits; // Owner may replace ready inputs between output episodes.
+  LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
   std::size_t input_turn = SIZE_MAX, turn_input_consumed = 0;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
@@ -6224,8 +6335,6 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   request.stop_policy.validate(model.vocabulary);
   request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
-  if (model.cache_plan.draft_cache && !prepared_sampling.configuration.modifiers.empty())
-    throw std::runtime_error("request logits modifiers are ordinary Text only");
   if (request.session && &request.session->sampling_configuration() != &prepared_sampling)
     throw std::runtime_error("request sampling cannot change after Session admission");
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
@@ -6305,9 +6414,19 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         // succeeds. Failed native/resource admission must permit the same retry.
         const auto admission_role = !model.cache_plan.draft_cache ? GraphRole::kText
             : suffix ? suffix_role : request.prompt.size() == 1 ? GraphRole::kMtpSingle : GraphRole::kMtpPrefill;
-        auto adopted = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
-            hit.payload.snapshot, admission_role,
-            request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index, call.logits);
+        std::shared_ptr<Session> adopted;
+        try {
+          adopted = model.create_session(suffix ? std::span<const std::size_t>(chunks) : std::span<const std::size_t>{},
+              hit.payload.snapshot, admission_role,
+              request.progress.initial_sampling, suffix == 0, suffix_completion, request.sampling_index, call.logits);
+        } catch (const inference::EvaluationFailure &failure) {
+          const auto key = request.request_key;
+          if (failure.status().IsInvalidArgument() && !failure.status().has_native_error() && !failure.participant() &&
+              failure.retirement_observed() && failure.retirement().retired && !failure.retirement().status.has_native_error() &&
+              key.generation && key.slot != (std::numeric_limits<std::size_t>::max)())
+            throw inference::RequestExecutionFailure::from_request_evaluation(failure, key);
+          throw;
+        }
         if (!suffix) history->chunks.back().next_id = adopted->head->next_id;
         // Only original reserved metadata remains. Preconditions are unchanged
         // since preflight; no allocation or native work follows this commit.
@@ -6808,8 +6927,19 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         throw std::runtime_error("recursive MTP batch requires generation verifiers only");
       if (call.verification_ids.empty()) {
         const auto begin = Clock::now();
-        call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
-            &call.draft_log_probabilities, &call.request->ledger->stop_policy());
+        try {
+          call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
+              &call.draft_log_probabilities, &call.request->ledger->stop_policy(), call.logits);
+        } catch (const inference::EvaluationFailure &failure) {
+          const auto key = call.request->request_key;
+          // The original one-request q validator has no target participant.
+          // Preserve unknown/native/unfinished failures without reclassifying.
+          if (failure.status().IsInvalidArgument() && !failure.status().has_native_error() && !failure.participant() &&
+              failure.retirement_observed() && failure.retirement().retired && !failure.retirement().status.has_native_error() &&
+              key.generation && key.slot != (std::numeric_limits<std::size_t>::max)())
+            throw inference::RequestExecutionFailure::from_request_evaluation(failure, key);
+          throw;
+        }
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
       }
     }
@@ -7299,8 +7429,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if (!sampling_indices.empty() && sampling_indices.size() != schedules.size())
     throw std::runtime_error("one cold sampling choice is required per request");
   for (const auto index : sampling_indices) {
-    const auto &configuration = model.sampling_configuration(index).configuration;
-    if (mtp && !configuration.modifiers.empty()) throw std::runtime_error("request logits modifiers are ordinary Text only");
+    (void)model.sampling_configuration(index);
   }
   if (schedules.empty() || model.cache_plan.draft_cache != mtp)
     throw std::runtime_error("natural generation mode differs from its complete model/cache plan");
@@ -7469,6 +7598,21 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             (void)uses; shapes[{normalized, completion}].try_emplace(tokens, restore_bound);
           }
         }
+    if (width == 1 && !model.sampling_configuration(sampling_index).configuration.modifiers.empty()) {
+      // A modifier history contains consumed IDs and the original pending/RNG,
+      // not old bias/mask bytes. Prepare its state-only reconstruction before
+      // storage freezes, including every bounded accepted verifier prefix.
+      for (const auto &[key, entries] : prompt_uses) {
+        const auto original = key.first;
+        const auto role = original == GraphRole::kMtpCatchupPrefill ? GraphRole::kMtpPrefill
+            : original == GraphRole::kMtpCatchupSingle ? GraphRole::kMtpSingle : original;
+        if (!supports_state_only(role)) continue;
+        for (const auto &[tokens, uses] : entries) {
+          (void)uses;
+          shapes[{role, TextCompletion::kStateOnly}].try_emplace(tokens, restore_bound);
+        }
+      }
+    }
     for (const auto &[key, controls] : carrier_support) {
       std::set<std::size_t> eligible;
       for (const auto &[rows, members] : controls) {
@@ -7496,10 +7640,35 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
               capacities.push_back(rows);
           }
         }
+        if (width == 1 && completion == TextCompletion::kStateOnly &&
+            !model.sampling_configuration(sampling_index).configuration.modifiers.empty()) {
+          // A dynamic prefix suffix may have used any real length within its
+          // original EmitNext carrier. Rebuild can reuse that cold capacity
+          // without retaining historical modifier values or admitting hot L.
+          for (const auto &[source_key, source_controls] : carrier_support) {
+            const auto source_role = source_key.first == GraphRole::kMtpCatchupPrefill
+                ? GraphRole::kMtpPrefill : source_key.first;
+            if (source_role != role) continue;
+            for (const auto &[rows, members] : source_controls)
+              if (rows <= model.cache_plan.max_query_rows && std::ranges::any_of(members,
+                  [&](auto member) { return requests[member].sampling_index == sampling_index; }))
+                capacities.push_back(rows);
+          }
+          std::sort(capacities.begin(), capacities.end());
+          capacities.erase(std::unique(capacities.begin(), capacities.end()), capacities.end());
+        }
         if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width, role);
         if (packed) {
-          for (const auto rows : capacities) model.plan_replay_uses(rows, width,
-              cache::add(carrier_uses.at(key).at(rows), width == 1 ? restore_bound : 0), role, completion, sampling_index, true);
+          for (const auto rows : capacities) {
+            std::size_t uses = 0;
+            const auto found = carrier_uses.find(key);
+            if (found != carrier_uses.end()) {
+              const auto count = found->second.find(rows);
+              if (count != found->second.end()) uses = count->second;
+            }
+            model.plan_replay_uses(rows, width, cache::add(uses, width == 1 ? restore_bound : 0),
+                role, completion, sampling_index, true);
+          }
           // Decode still has its original T1 mathematics and source ports.
           if (role == GraphRole::kText && completion == TextCompletion::kEmitNext && decode_bound && width <= policy_decoding_requests) {
             const std::array decode{std::size_t{1}};

@@ -47,6 +47,12 @@ template<class Value> struct LogitsInputsFor final {
   std::optional<Value> bias;    // F32[1,V]; every value must be finite.
   std::optional<Value> allowed; // Bool[1,V]; false removes that token.
 };
+template<class Value> struct ProcessedLogitsFor final {
+  Value logits;
+  // Pre-mask raw-row/bias validity. The distribution or greedy consumer must
+  // also validate the resulting row before publishing any ID/state/RNG.
+  std::optional<Value> valid;
+};
 template<class Value> struct SelectionFor final {
   Value id;
   std::optional<Value> valid; // Present for categorical or any modifier.
@@ -150,26 +156,36 @@ DistributionFor<Value> distribution(R &r, Value logits, Policy policy = {}) {
   return {normalized, select(input_valid, valid_mass(normalized), no)};
 }
 
-// Ordinary precommit selection. The empty modifier branch emits the original
-// greedy/temperature-top-k-top-p graph, without new ports or validity work.
-// Raw NaN/+Inf must not disappear behind a mask. Dynamic bias itself must be
-// finite even in disallowed columns. All-masked greedy has valid=false too.
-// Failed rows only produce unusable placeholders: owners MUST check valid
-// before publishing state, IDs or the original RNG cursor.
+namespace detail {
+// One-row unnormalized logits validity, shared by modifier processing and its
+// greedy consumer. Distribution keeps its original centered-policy check.
 template<class R, class Value>
-SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> identity,
-    Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
-  if (!inputs.bias && !inputs.allowed) {
-    if (!identity) return {r.op(c::Operation(c::TopK{.count = 1}), {raw}).at(1), {}};
-    const auto p = distribution(r, raw, policy);
-    return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}), p.valid};
-  }
+Value logits_row_valid(R &r, Value row, Value no, Value yes) {
+  const auto reduce = [&](c::ReductionKind kind, Value value) {
+    return r.copy(r.reshape(r.one(c::Reduce{.kind = kind,
+        .accumulation_type = Type::kFloat32}, {value}), {fixed(1)}));
+  };
+  const auto centered = r.binary(c::BinaryKind::kSubtract, row,
+      reduce(c::ReductionKind::kMaximum, row));
+  const auto mass = reduce(c::ReductionKind::kSum, r.unary(c::UnaryKind::kExp, centered));
+  const auto nonfinite = r.cast(r.binary(c::BinaryKind::kSubtract, mass, mass), Type::kBool);
+  return r.one(c::Select{}, {r.cast(mass, Type::kBool), r.one(c::Select{}, {nonfinite, no, yes}), no});
+}
+} // namespace detail
+
+// Shared immutable per-episode logits processing. Empty inputs are an exact
+// identity with no Graph nodes, ports, validation or outputs added. Raw NaN/
+// +Inf must not disappear behind a mask; bias must be finite even in removed
+// columns. Apply this once to raw logits, never to supplied normalized q_i.
+template<class R, class Value>
+ProcessedLogitsFor<Value> process_logits(R &r, Value raw, LogitsInputsFor<Value> inputs = {}) {
+  if (!inputs.bias && !inputs.allowed) return {raw, {}};
   const auto description = r.spec(raw);
   if (description.data_type() != Type::kFloat32 || description.rank() != 2 ||
       description.dimensions()[0] != fixed(1) || !description.dimensions()[1].is_fixed() ||
       description.dimensions()[1].fixed_value() <= 0 ||
       description.dimensions()[1].fixed_value() > (std::numeric_limits<std::int32_t>::max)())
-    throw std::runtime_error("ordinary selection requires one F32[1,V] row");
+    throw std::runtime_error("logits modifiers require one F32[1,V] row");
   const auto require_input = [&](Value value, Type type) {
     const auto spec = r.spec(value);
     if (spec.data_type() != type || spec.rank() != 2 ||
@@ -187,14 +203,7 @@ SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> ide
     return r.copy(r.reshape(r.one(c::Reduce{.kind = kind,
         .accumulation_type = Type::kFloat32}, {value}), {fixed(1)}));
   };
-  const auto row_valid = [&](Value row) {
-    const auto centered = r.binary(c::BinaryKind::kSubtract, row,
-        reduce(c::ReductionKind::kMaximum, row));
-    const auto mass = reduce(c::ReductionKind::kSum, r.unary(c::UnaryKind::kExp, centered));
-    const auto nonfinite = r.cast(r.binary(c::BinaryKind::kSubtract, mass, mass), Type::kBool);
-    return select(r.cast(mass, Type::kBool), select(nonfinite, no, yes), no);
-  };
-  auto valid = row_valid(raw), processed = raw;
+  auto valid = detail::logits_row_valid(r, raw, no, yes), processed = raw;
   if (inputs.bias) {
     // Every finite x has x-x==0, without overflowing a sum of large biases.
     // NaN and either infinity produce NaN, including masked columns.
@@ -206,14 +215,47 @@ SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> ide
   }
   if (inputs.allowed) processed = select(*inputs.allowed, processed,
       r.scalar(-(std::numeric_limits<float>::infinity)()));
-  if (identity) {
-    const auto p = distribution(r, processed, policy);
-    return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}),
-        select(valid, p.valid, no)};
+  return {processed, valid};
+}
+
+// Normalize one processed target/proposal row using the original policy. The
+// pre-mask proof is joined exactly once; distribution validates post-bias/mask
+// support and normalization. Empty processing preserves the original graph.
+template<class R, class Value>
+DistributionFor<Value> processed_distribution(R &r, ProcessedLogitsFor<Value> processed, Policy policy = {}) {
+  auto p = distribution(r, processed.logits, policy);
+  if (processed.valid) {
+    const auto no = r.cast(r.scalar(0), Type::kBool);
+    p.valid = r.one(c::Select{}, {*processed.valid, p.valid, no});
   }
-  const auto combined = select(valid, row_valid(processed), no);
-  const auto safe = select(combined, processed, zero);
+  return p;
+}
+
+// IDs remain unusable until the optional validity output passes the original
+// owner's publication gate. All-masked greedy fails too; eager placeholders
+// are safe. No modifier-free greedy validity work is introduced.
+template<class R, class Value>
+SelectionFor<Value> processed_selection(R &r, ProcessedLogitsFor<Value> processed,
+    std::optional<Value> identity, Policy policy = {}) {
+  if (identity) {
+    const auto p = processed_distribution(r, processed, policy);
+    return {r.one(c::sampling_ops::categorical(), {p.log_probabilities, *identity}), p.valid};
+  }
+  if (!processed.valid) return {r.op(c::Operation(c::TopK{.count = 1}), {processed.logits}).at(1), {}};
+  const auto zero = r.scalar(0), one = r.scalar(1);
+  const auto no = r.cast(zero, Type::kBool), yes = r.cast(one, Type::kBool);
+  const auto combined = r.one(c::Select{}, {*processed.valid,
+      detail::logits_row_valid(r, processed.logits, no, yes), no});
+  const auto safe = r.one(c::Select{}, {combined, processed.logits, zero});
   return {r.op(c::Operation(c::TopK{.count = 1}), {safe}).at(1), combined};
+}
+
+// Original ordinary entry point; empty inputs keep their original greedy or
+// temperature/top-k/top-p nodes and output contract.
+template<class R, class Value>
+SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> identity,
+    Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
+  return processed_selection(r, process_logits(r, raw, inputs), identity, policy);
 }
 
 // log_p/log_q/log_bonus are F32[1,V], already normalized AFTER the caller's
@@ -344,7 +386,7 @@ using PrefixDecisions = PrefixDecisionsFor<g::ValueId>;
 
 template<class R, class Value>
 PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identities,
-                                  Value proposals, Policy policy = {}) {
+                                  Value proposals, Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
   const auto shape = r.spec(logits), keys = r.spec(identities);
   if (shape.data_type() != Type::kFloat32 || shape.rank() != 2 ||
       !shape.dimensions()[0].is_fixed() || shape.dimensions()[0].fixed_value() <= 0 ||
@@ -362,8 +404,8 @@ PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identitie
   PrefixDecisionsFor<Value> result;
   std::vector<DistributionFor<Value>> target;
   for (std::size_t row = 0; row <= count; ++row)
-    target.push_back(distribution(r,r.copy(r.slice(logits,0,
-        fixed(static_cast<std::int64_t>(row)),fixed(1))),policy));
+    target.push_back(processed_distribution(r,process_logits(r,r.copy(r.slice(logits,0,
+        fixed(static_cast<std::int64_t>(row)),fixed(1))),inputs),policy));
   const auto final_identity = r.copy(r.slice(identities,0,fixed(static_cast<std::int64_t>(count)),fixed(1)));
   if (!count) {
     result.final_ids.push_back(r.one(c::sampling_ops::categorical(),{target[0].log_probabilities,final_identity}));

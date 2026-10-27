@@ -14,7 +14,8 @@
 namespace hyle::inference {
 
 // Error facts only. A key names an original qualified output participant or
-// explicit argument preflight, without retirement, retry or release permission.
+// explicit argument preflight/retired private validator. A key never grants
+// retirement, retry or release permission.
 // Preserve the evaluation error and its cleanup observation independently.
 class RequestExecutionFailure final : public std::exception {
 public:
@@ -27,6 +28,18 @@ public:
         original.slot == (std::numeric_limits<std::size_t>::max)())
       throw std::logic_error("request preflight failure requires an argument error and an original request key");
     return RequestExecutionFailure(EvaluationFailure(std::move(status)), original);
+  }
+
+  // An explicit one-request private numeric validator (for example proposal
+  // q before target submission) has no submitted target participant. Only its
+  // actual observed retirement can qualify this original caller key. This
+  // adds error attribution, never cleanup, retry or publication permission.
+  static RequestExecutionFailure from_request_evaluation(const EvaluationFailure &failure, RequestKey original) {
+    if (!failure.status().IsInvalidArgument() || failure.status().has_native_error() || failure.participant() ||
+        !failure.retirement_observed() || !failure.retirement().retired || failure.retirement().status.has_native_error() ||
+        !original.generation || original.slot == (std::numeric_limits<std::size_t>::max)())
+      throw std::logic_error("request numeric failure requires its original key and actual retired private validator");
+    return RequestExecutionFailure(failure, original);
   }
 
   // Call while the actual submitted bucket is still available. key_of returns

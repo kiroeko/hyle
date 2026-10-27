@@ -1164,7 +1164,20 @@ Backend 仍负责实际端点与资源，NextN 保原主端点。[元数据及�
 身份提取和抽样的原构图顺序；完整前缀则直接提供身份。端口形状、批量 greedy
 TopK、读回和发布属于各自调用者，不为合并几行装配增加地址描述或延迟回调。
 
-受控logits已沿`sampling::ordinary_selection`接入普通批图和完整前缀重采样。冷配置只决定bias／allowed端口是否存在，每个episode借入typed ready租约，owner可以在下一步换值；载荷不进入KV、快照或历史账簿。默认图保原批量greedy和读回，不增加modifier端口。原logits的NaN／正无穷、非有限bias及全mask在head／ledger／RNG发布前拒绝；可定位的坏行沿原退休和幸存请求重排机制处理。StateOnly不需要这些输入；历史恢复只重建已消费状态并恢复原pending／游标，不能用当前mask重采历史。原CPU小Model的[有限请求流程](../evidence/correctness/inference-logits-modifiers-2026-10-25.json)已通过，不代表其它后端、质量或吞吐；MTP没有新增此政策。
+受控logits的共同处理由`sampling::process_logits`表达，再接原分布或greedy选择；
+`ordinary_selection`保持原调用入口，MTP的q、p和bonus复用同体。冷配置决定bias／allowed端口，
+每个episode借入只读F32／Bool[1,V]租约，所有假设行使用同一快照。准备完成后owner替换输入，
+不会改变本次调用；外部已归一化q直接进入接受／拒绝数学，不重复加bias或mask。
+空modifier分支不增加处理节点、端口或验证；默认批量greedy与读回保留原图。
+载荷不进入KV、快照或历史账簿，逐假设前缀动态语法／惩罚另需输入合同。
+
+原logits的NaN／正无穷、非有限bias及全mask在head／ledger／RNG发布前拒绝；
+原提交批次的确定坏行保留原成员身份。私有proposal或前沿采样没有虚构的target成员，
+只有实际观察到原工作退休后，明确的一请求边界才补充其完整RequestKey；该key不授予退休、释放或重试权限。
+StateOnly不读取modifier或消耗draw；历史重建恢复原pending／游标，不能用当前mask重采历史。
+严格决策回放因未保留历史载荷继续明确拒绝。原普通[有限请求流程](../evidence/correctness/inference-logits-modifiers-2026-10-25.json)
+和本片[CPU／CUDA MTP检查](../evidence/correctness/inference-mtp-logits-2026-10-28.json)分别记录实际范围；
+后者覆盖K1／多草稿、greedy／随机、B2、StateOnly、前缀及失败后同key重试，未新增原生平台、任务质量或吞吐结论。
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。
 

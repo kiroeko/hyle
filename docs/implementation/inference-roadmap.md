@@ -42,7 +42,15 @@ Apple／Vulkan现有Q1／Q2及随机采样的原生exact回落已有限实跑；
 组合复查发现的缺项包括MTP逐请求采样配置及logits变换。无modifier的采样配置已沿原Session／冷程序接齐，
 CPU／CUDA三配置交错执行的各17项完整状态比较逐字节通过，另通过同配置真实B2／K2及自然入口三配置检查。
 本片还修复验证宽度拆分漏传配置索引、完成调用继续持有q，以及按每成员候选数误配cohort概率池；原预算仍生效。
-bias／mask仍未接通，原生路线新增组合未运行，不能从有限检查推导完整任务质量或速度。[本片记录](../evidence/correctness/inference-mtp-request-sampling-2026-10-28.json)。
+上述无modifier范围见[采样接线记录](../evidence/correctness/inference-mtp-request-sampling-2026-10-28.json)。
+逐请求bias／mask现已接通K1／多草稿、greedy／随机、原B2快照及完整前缀重采样；
+共用处理只作用于原logits，外部已归一化q不重复变换，p、q及bonus使用同一episode输入。
+CPU／CUDA各10项完整状态对照逐字节相同，独立有限分布、拒绝残差与bonus检查通过；
+元数据前置拒绝、私有q及前沿数值失败、同key重试、StateOnly和历史重建亦已检查。
+当前输入是单episode只读[1,V]，不表达逐假设前缀动态语法／惩罚；严格历史决策回放没有保留modifier载荷，继续明确拒绝。
+原生路线新增组合未运行，不从有限检查推导完整任务质量或速度。[本片记录](../evidence/correctness/inference-mtp-logits-2026-10-28.json)。
+组合复查还须处理逐假设前缀的动态logits输入，以及当前仍冷拒绝的E4 KV＋MTP存储合同；
+它们不包含在本片固定输入通过结论中。
 逐请求停止政策已接齐提案、接受、观察、缓存命中及恢复，host与CPU／CUDA有限完整状态检查通过；该旅程未运行真实模型EOS，ignoreEOS为host规则检查。
 普通请求坏logits元数据的分类和原key归属已补，CPU／CUDA双请求及原数值失败回归通过。
 停止政策属于请求／账簿，不进入快照或模型状态；采样与logits变换须同时核p、q和拒绝残差，不能只删除入口限制。

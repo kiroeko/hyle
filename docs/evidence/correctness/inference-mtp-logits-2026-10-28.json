@@ -1,0 +1,228 @@
+{
+  "status": "PASS_BOUNDED_MTP_REQUEST_MODIFIERS",
+  "created_utc": "2026-10-27T23:26:06.705049+00:00",
+  "baseline": "5e52d4a0e; retained sampling-v4 228-input CPU/CUDA consumer closure",
+  "sources": [
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/engine/models/qwen35/main.cc",
+      "bytes": 591309,
+      "sha256": "d5042c4e793f64f903fad43fb2f5ebed854eb63f4f5fb3b890c4b3e538b641d5"
+    },
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\engine\\inference\\sampling_graph.h",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/engine/inference/sampling_graph.h",
+      "bytes": 25985,
+      "sha256": "86b6e2b028c18d799bbb0a54c1f89fa56a50a4f09dae4ee99fec476101e44fcb"
+    },
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_execution_failure.h",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/engine/inference/request_execution_failure.h",
+      "bytes": 3772,
+      "sha256": "6e209329f503f4de876d66c233155a3d6a36d15871c912b3f59bc220097a1ca2"
+    },
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\engine\\inference\\evaluation_failure.h",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/engine/inference/evaluation_failure.h",
+      "bytes": 1792,
+      "sha256": "8459a891c80ef1c5bf2fb0c8dd51fc3a1530260a8e2225c15150de808e164841"
+    },
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_logits_case.h",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/tests/tools/qwen_mtp_logits_case.h",
+      "bytes": 39954,
+      "sha256": "7facbb77023e56289c586bbe7f65b67b1404d803e4d1ce3dafbeb4c0357d26e8"
+    },
+    {
+      "source": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source/tests/tools/qwen_host_image_test.cc",
+      "bytes": 4770,
+      "sha256": "8bc5440fc02718d956acf8a3ba5794d0f1050512fd8750cf91e4e535717c1d26"
+    }
+  ],
+  "counts": {
+    "actual_CXX": 2,
+    "successful_CXX": 1,
+    "failed_CXX": 1,
+    "actual_links": 1,
+    "successful_links": 1,
+    "actual_model_processes": 4,
+    "successful_model_processes": 4,
+    "sequential_model_instances": 5,
+    "standalone_Model_CXX": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "build": {
+    "failed_initial_CXX": {
+      "pid": 48268,
+      "exit": 2,
+      "started": 1793143160.7391574,
+      "seconds": 6.681209087371826,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "successful_CXX": {
+      "pid": 59856,
+      "exit": 0,
+      "seconds": 42.26711297035217
+    },
+    "link": {
+      "pid": 39580,
+      "exit": 0,
+      "seconds": 1.79176926612854
+    },
+    "inputs": 228,
+    "original_inputs_reused": 227,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\bin\\tiny.exe",
+      "bytes": 143492608,
+      "sha256": "71afb593a269ba9d056d9266e753acb38ac7b69718d311ccf515c9c9fb9a169f"
+    },
+    "ready": {
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/ready-tiny.json",
+      "bytes": 2626,
+      "sha256": "679935831612e9e764442c3f702fc6b9fc9acee92daaf9ea1b32f910490feb3b"
+    },
+    "actual_dependencies": {
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/compile/tiny/dependencies.json",
+      "bytes": 41660,
+      "sha256": "2ce13ff3871e61620d9a013f28f82ea9a940970a8cf39713c93a394b2ec4cda4"
+    }
+  },
+  "retained_failure": {
+    "cause": "C2668: two unqualified test unchanged calls collided with SavedRequest ADL.",
+    "correction": "Only qualify those two test calls; no product, oracle assertion, driver or runtime-policy change.",
+    "failed_case_sha256": "32cebe1fa66dfb690ce24011c7c2081193b524ea306c7452636449a3711e1cde",
+    "retry_case_sha256": "7facbb77023e56289c586bbe7f65b67b1404d803e4d1ce3dafbeb4c0357d26e8",
+    "patch": {
+      "path": ".scratch/inference-mtp-logits-20261028/refinement/source-refinement.diff",
+      "bytes": 1238,
+      "sha256": "1e511ce6bffc650ed6482ec3c44980e80a5c65e40baa7684c8c9dc8fe6db70d8"
+    },
+    "model_processes_before_correction": 0
+  },
+  "modifier_runs": [
+    {
+      "backend": "cpu",
+      "pid": 58888,
+      "exit": 0,
+      "seconds": 0.9983458518981934,
+      "models": 1,
+      "state_comparisons": 10,
+      "all_initialized_payloads_byte_equal": true,
+      "max_recorded_GDN_absolute_difference": 0.0,
+      "other_initialized_payloads_exact": true,
+      "finite_math_branches": 2,
+      "numeric_q_failures": 2,
+      "original_B2_episode_guards": true,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    },
+    {
+      "backend": "cuda",
+      "pid": 45892,
+      "exit": 0,
+      "seconds": 1.0764350891113281,
+      "models": 1,
+      "state_comparisons": 10,
+      "all_initialized_payloads_byte_equal": true,
+      "max_recorded_GDN_absolute_difference": 0.0,
+      "other_initialized_payloads_exact": true,
+      "finite_math_branches": 2,
+      "numeric_q_failures": 2,
+      "original_B2_episode_guards": true,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    }
+  ],
+  "regressions": [
+    {
+      "arm": "sampler-cpu",
+      "pid": 59876,
+      "exit": 0,
+      "seconds": 0.7166168689727783,
+      "facts": {
+        "state_comparisons": 17,
+        "actual_B2_simultaneous_q": 4,
+        "sequential_models": 2,
+        "natural_R": 1,
+        "natural_configuration_groups": 3
+      }
+    },
+    {
+      "arm": "preflight-cpu",
+      "pid": 9824,
+      "exit": 0,
+      "seconds": 0.424314022064209,
+      "facts": {
+        "models": 1,
+        "preflight_submissions": 0,
+        "batch_position": 0,
+        "key_slot": 1
+      }
+    }
+  ],
+  "finite_math": {
+    "branches_per_backend": 2,
+    "reference": "Independent double probability normalization and original test Philox; CPU inverse-CDF / CUDA Gumbel checked against actual residual-rejection and bonus-acceptance branches.",
+    "repeat_transform_distinguished": "Finite identity search chooses draws that differ if q or bonus is incorrectly processed twice; the normalized q input stays unchanged.",
+    "submissions_per_backend": 2,
+    "total_submissions": 4
+  },
+  "graph_contract": [
+    "process_logits extracts the original raw NaN/+Inf and finite-bias checks before allowed-mask application.",
+    "Empty modifiers return raw/nullopt before Recipe work; original distribution and decision mathematics remain source-identical after EOL normalization.",
+    "Processed distribution/selection join raw pre-mask and post-processing validity. Each target conditional row receives the same admitted snapshot; normalized q_i is never transformed again.",
+    "Caller reuses one processed distribution for stochastic selection/threshold. Greedy recursive modifiers use real per-row IDs/valid flags, without q/RNG ports."
+  ],
+  "ownership_contract": [
+    "One original ready [1,V] ReadLease snapshot per episode, copied into call/Step; replacing request payload after prepare cannot replace the admitted guards.",
+    "Original Model/Graph/Queue/Completion, successful q retirement and checked R*bound pools remain the only execution/resource owners.",
+    "Explicit numeric flag0 maps only to an original member or known complete key after real private-validator retirement; native/unknown/pending errors remain unqualified.",
+    "Modifier payload is not in KV/ledger/HostImage history. Strict modifier replay rejects; committed-token StateOnly rebuild restores the recorded pending/cursor."
+  ],
+  "preparation": {
+    "exclusive_save_FileExists": "Root reported initial refinement of prepared metadata hit exclusive save; no CXX/link/model was started, original preparation-before receipts retained.",
+    "common_math_EOL_check": "A separate static source comparison required CRLF/LF normalization; its original attempt and correction are retained, no compile/runtime failure.",
+    "archive_only_encoding": "Initial package helper tried UTF-8 for the original MSVC Chinese raw log; it now checks ASCII diagnostic bytes without re-encoding the archived log. No archive or consumer was produced by that failed packaging call.",
+    "offline_summary_KeyError": "Root temporary statistics guessed bytes_equal rather than actual payloads_byte_equal; corrected by reading the existing reports, with no model rerun."
+  },
+  "dependency_reuse": "No public SDK layout/vtable changed. Adjacent actualdeps identify the replaced Tiny plus retained weights (evaluation_failure.h comment-only, executable tokens equal). 105/228 inputs lack adjacent MSVC metadata; no blanket dependency/ABI proof is claimed. See dependency-reuse-review.json.",
+  "limits": [
+    "Cached untrained GA/H64/V64/C16; no quality, acceptance-rate, target-only random trajectory or new upstream claim.",
+    "CPU/CUDA finite consumers only; no cross-backend bit identity or new Apple/Vulkan/native fault proof.",
+    "Mask/bias is one immutable per-episode [1,V] snapshot; no per-prefix grammar, changing penalty/history table or MTP cross-episode overlap is implemented.",
+    "GDN-only inherited absolute tolerance is 3e-6; all other initialized state roles remain exact. Actual payload equality is listed separately.",
+    "No performance window or TPS claim; recorded process durations are provenance only. Engine inventory/live-version checks do not imply native allocator live-zero."
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/correctness/inference-mtp-request-sampling-2026-10-28.json",
+      "bytes": 13435,
+      "sha256": "1deeb88fe7d41c12e84b02571cb251861c169c77006adb1d27b21ed10c2cba06"
+    },
+    {
+      "path": "docs/evidence/correctness/inference-logits-preflight-2026-10-28.json",
+      "bytes": 13760,
+      "sha256": "0e1e65a5b97a367450b05016fb5dbf0062e0410435285dbfb1b7530a9a390b09"
+    }
+  ],
+  "reproduction": {
+    "directory": ".scratch/inference-mtp-logits-20261028/refinement",
+    "actions": "build.py compile; build.py link; run.py run mods-cpu; mods-cuda; sampler-cpu; preflight-cpu",
+    "failures": "Every action single-use. Preserve failure; use run.py parse ARM offline, never rerun a successful process for parser repair."
+  },
+  "implementation_scope": "Per-episode bias and allowed-mask only. Row/prefix-dependent grammar and history-dependent penalties remain design work, not implemented evidence.",
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-mtp-logits-2026-10-28.zip",
+    "bytes": 406291,
+    "sha256": "45d287dfb7c15a89ce2670b46d0963148b3fed77af378b2dd6e6379fe1dfc740",
+    "files": 116,
+    "verified_readback": true
+  }
+}
