@@ -45,10 +45,11 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 候选顺序等待，不插队。载荷、接纳、模型执行、提交观察及退休仍归调用者。执行或晚观察抛错时
 直接退出，不自动重试或回滚已提交事实；该提取不是完整模型无关调度器。
 
-连续跨pump设备流水目前尚未接入Qwen消费者。共同`RequestLoop`已改用同一个`execute_wave`合同，
+普通CUDA greedy的完整同序cohort已在Qwen自然消费者接通跨pump流水。共同`RequestLoop`使用同一个`execute_wave`合同，
 由现有owner冷预留有序RequestKey／代际、成员组、进度基线及输出额度；适配器返回实际观察与剩余退休事实，
 在途组保留到后续pump。原StepState／Source继续唯一持有Completion和会话；在途时可接收ACK、取消和输入意图，
-不能转turn、淘汰、缩组、重排或复用这组身份。后续pump可先提交N+1，再观察N，但Qwen当前适配器仍同步完成整波。
+不能转turn、淘汰、缩组、重排或复用这组身份。后续pump先提交N+1，再观察N，留下原N+1进入下一pump；
+只有host调用元数据跨pump保存，原Step／Source仍唯一持有设备工作。异形多bucket保留原同步分组，MTP尚未接此设备后继。
 额度区分已经扣留的候选与本次可新增输出，实际观察与剩余候选之和不能超过两者；EOS后的候选也须等真正丢弃才归还额度。
 适配器同时返回原异常及真实退休事实；失败后只观察原工作，不启动新一波，已观察的状态／ledger／RNG不回滚。
 可显式请求yield：停止接纳后继、完成已接纳工作，真实退休并处理正常turn／取消后，未结束成员保留原key／turn回到现有FIFO。
@@ -118,13 +119,23 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 自然请求显式选择`auto`时，只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，
 且存在输出上限至少10的turn，才准备D2；其它情况保持D1。D2使用三个物理IO载体、最多两个未发布候选，
 共用原FamilyChild、Queue、状态池与Graph提交；普通Phase仍只准备一个槽。
-每个wave最多执行A、B两个普通T1 episode，返回前沿原路径退休全部工作，只让最新成功的ready Source跨wave保留。
+自然请求的单一完整兼容cohort可在wave返回时保留一个已提交后继，下一pump复用该原active Step推进，
+不重做`prepare_generation_call`或再次提交它。非连续的组件消费者显式使用同步wave，仍由同一普通continuation实现完成有界量子。
 prefill继续使用原Completion；真实decode建立来源并完成六次实际imported-ready轮换后，才尝试pending B，
 其完整物理tuple仍须命中原捕获。预热步数不代替资格检查，也不执行虚假推理预热。
 
 A的真实finish及主机观察完成后才绑定B的实际输入。量子内每个成员都须有两份真实输出credit，B只使用扣除A后的额度；
 共享Source对应完整有序成员组，逐成员保存RequestKey、turn及真实发布边界。只有组宽、顺序、身份与边界均匹配，
 才可跨wave复用；缩组或换序先释放原Source，不把R2来源投给R1。容量在冷路径按实际R准备，热路径不另造成员状态池。
+跨pump后B原记录已绑定；后续ACK可由RequestLoop给它续授本pump预算，只更新未提交普通T1记录的quota，
+不改已提交A、MTP选择规则或delivery账本。信用不足时观察完B而不提交C，原B真实退休后才暂停或让位。
+完成帧预检、全部delta／尾权移交及原Graph撤权后，消费已返回的append交易，再作无失败head发布；
+这避免B保留A时额外钉住A已替换的旧尾页，不增加D3页预算。驻留N统计扣除原active／successor尚未发布的candidate，
+物理版本容量仍受原snapshot_slots约束。
+
+[本批有限检查](../evidence/correctness/inference-continuous-wave-2026-10-27.json)覆盖真实2B普通R1／R2的88个后继发布，
+以及tiny的背压、跨pump单成员取消、yield／恢复和C32尾页容量。输出及完整初始化状态、epoch、RNG与各自控制一致；
+未新增跨pump模型EOS、真实驱动故障、MTP设备后继、其它后端或完整性能结论，默认overlap仍关闭。
 A中一个成员停止时，原批次仍可发布其它成功成员；已接纳的B则整批沿原abort路径实际退休，
 不发布其token、状态或RNG。幸存者保留成功A，再由共同请求循环按实际子组继续。未发布ledger只在真实退休后撤回。
 任一成员credit耗尽或turn／key改变，均释放整组ready Source。

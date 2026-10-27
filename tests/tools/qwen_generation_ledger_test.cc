@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdio>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 
@@ -186,6 +187,94 @@ void ordinary_and_mtp_records_keep_their_existing_contract() {
       record.emitted.empty() && record.accepted_inputs.empty() && record.verification_inputs.empty(),
       "ordinary/MTP discard no longer preserves its original prepared storage");
 }
+
+void renewed_owner_grant_extends_only_the_pending_ordinary_record() {
+  q::GenerationLedger ledger(5, 8);
+  prepare(ledger.next(), 2);
+  const auto *storage = ledger.records.data();
+  const auto b_capacity = capacities(ledger.records[1]);
+  (void)ledger.reserve_successor(0, 1, 2, 2, 1);
+  const auto a_after = commit(ledger, 23);
+  const auto committed_a = ledger.records[0];
+  // A has published, but B's actual input has not yet been observed/bound.
+  rejects([&] { (void)ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1); });
+  auto &b = ledger.bind_successor(a_after, 1, 2, 23);
+  auto expected_b = b;
+  rejects([&] { (void)ledger.reserve_successor(1, 1, 2, 2, 1); });
+  require(b.quota == 1 && !ledger.successor_ordinal(), "old exhausted grant unexpectedly authorized C");
+  expected_b.quota = 2;
+  require(&ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1) == &b &&
+      b.same_result(expected_b) && b.pending_input == 23 && b.before == a_after &&
+      ledger.records[0].same_result(committed_a) && ledger.committed_count == 1 &&
+      capacities(b) == b_capacity && ledger.records.data() == storage,
+      "fresh owner credit changed committed A, pending B input/base or prepared storage");
+  auto &c = ledger.reserve_successor(1, 1, 2, 2, 1);
+  rejects([&] { (void)ledger.renew_ordinary_quota(a_after, 1, 2, 3, 1, 1); });
+  const auto b_after = commit(ledger, 31);
+  const auto committed_b = ledger.records[1];
+  require(&ledger.bind_successor(b_after, 2, 2, 31) == &c && c.quota == 1,
+      "renewed pending B did not preserve C's original deferred bind");
+  (void)ledger.renew_ordinary_quota(b_after, 2, 2, 2, 1, 1);
+  (void)ledger.reserve_successor(2, 1, 2, 2, 1);
+  const auto c_after = commit(ledger, 41);
+  (void)ledger.bind_successor(c_after, 3, 2, 41);
+  (void)commit(ledger, 43);
+  require(ledger.committed_count == 4 && !ledger.successor_ordinal() &&
+      ledger.records[0].same_result(committed_a) && ledger.records[1].same_result(committed_b) &&
+      ledger.records[2].quota == 2 && ledger.records[3].quota == 1 && ledger.records.data() == storage &&
+      capacities(ledger.records[1]) == b_capacity,
+      "successive fresh grants rewrote committed history or failed to continue the same bounded chain");
+
+  const auto invalid = [](auto mutate, auto renew) {
+    q::GenerationLedger candidate(3, 8); prepare(candidate.next(), 1); mutate(candidate);
+    const auto records = candidate.records;
+    const auto before_count = candidate.committed_count;
+    const auto before_successor = candidate.successor_ordinal();
+    const std::array caps{capacities(candidate.records[0]), capacities(candidate.records[1]), capacities(candidate.records[2])};
+    rejects([&] { renew(candidate); });
+    require(candidate.committed_count == before_count && candidate.successor_ordinal() == before_successor,
+        "rejected renewal changed its committed prefix or unknown-input reservation");
+    for (std::size_t at = 0; at < records.size(); ++at)
+      require(candidate.records[at].same_result(records[at]) && candidate.records[at].committed == records[at].committed &&
+          candidate.records[at].pending_input == records[at].pending_input && capacities(candidate.records[at]) == caps[at],
+          "rejected renewal changed a record, input or prepared capacity");
+  };
+  const auto renew = [](auto &candidate) {
+    (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 1, 1);
+  };
+  invalid([](auto &candidate) { candidate.records[0].role = q::GraphRole::kMtpRound; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].generation = false; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].completion = q::TextCompletion::kStateOnly; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].user_output = false; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].imported = true; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].input_deferred = true; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].pending_input = -1; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].committed = true; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].quota = 0; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].accepted = 1; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].verified_rows = 1; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].emitted_count = 1; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].stopped = true; }, renew);
+  invalid([](auto &candidate) { candidate.records[0].draft_limit = 1; }, renew);
+  invalid([](auto &) {}, [](auto &candidate) {
+    auto boundary = candidate.records[0].before; ++boundary.sampling.draw;
+    (void)candidate.renew_ordinary_quota(boundary, 0, 2, 2, 1, 1);
+  });
+  invalid([](auto &) {}, [](auto &candidate) {
+    auto boundary = candidate.records[0].before; ++boundary.next_id;
+    (void)candidate.renew_ordinary_quota(boundary, 0, 2, 2, 1, 1);
+  });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 1, 2, 2, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 3, 2, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 0, 1, 0); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 0, 1); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 2, 2, 0); });
+  invalid([](auto &) {}, [](auto &candidate) { (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2, 1, 1, 1); });
+  invalid([](auto &) {}, [](auto &candidate) {
+    (void)candidate.renew_ordinary_quota(candidate.records[0].before, 0, 2,
+        (std::numeric_limits<std::size_t>::max)(), 1, (std::numeric_limits<std::size_t>::max)());
+  });
+}
 } // namespace
 
 int main() {
@@ -194,7 +283,8 @@ int main() {
     cancellation_preserves_capacity_and_committed_prefix();
     reservation_rejects_without_mutation();
     ordinary_and_mtp_records_keep_their_existing_contract();
-    std::puts("{\"status\":\"PASS\",\"groups\":4,\"device_execution\":false}");
+    renewed_owner_grant_extends_only_the_pending_ordinary_record();
+    std::puts("{\"status\":\"PASS\",\"groups\":5,\"device_execution\":false}");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "%s\n", error.what()); return 1;

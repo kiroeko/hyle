@@ -4836,6 +4836,10 @@ public:
             (member.session->stopping && !step.discard_stopped_members))
           throw std::runtime_error("batch snapshot expected-base conflict");
       for (const auto &member : step.members) member.preflight_frames();
+      // Every delta owns its changed guards and every tail has transferred.
+      // A successor still retains this original Step, but must not thereby
+      // pin replaced input tails from its consumed returned append wrappers.
+      for (auto &append : step.appends) append = {};
       // All fallible native/export/metadata work is complete. The head swaps
       // below cannot throw. Stopped ordinary members discard their unpublished
       // candidate; every surviving member keeps this original successful work.
@@ -5912,9 +5916,9 @@ void observe_generation_batch(Observer &observer, std::span<const PreparedGenera
         rows, members, seconds});
 }
 
-// Serialized owner policy only. A wave still retires every original episode;
-// only its latest successful ready Source crosses waves. The exact Model and
-// Graph checks, not these warm-direction hints, authorize pending execution.
+// Serialized host metadata only. Original Step/Source owns all native work;
+// a deferred ordinary call may cross pumps without exporting another head.
+// Exact Model/Graph checks, not warm-direction hints, authorize execution.
 struct GenerationContinuation final {
   struct Member final {
     inference::RequestKey key;
@@ -5928,11 +5932,13 @@ struct GenerationContinuation final {
   std::array<bool, execution_slot_count> direction_warm{};
   std::size_t ready_steps = 0;
   std::shared_ptr<StepSources> ready;
+  hyle::container::SmallVector<PreparedGenerationCall, 2> pending_calls;
+  bool drain_requested = false;
   std::size_t completed_steps = 0, successor_submissions = 0, successor_publications = 0,
       successor_discards = 0, successor_refusals = 0;
 
   void prepare(std::size_t maximum_members) {
-    if (!members.try_reserve(maximum_members)) throw std::bad_alloc{};
+    if (!members.try_reserve(maximum_members) || !pending_calls.try_reserve(maximum_members)) throw std::bad_alloc{};
   }
   void release_ready() noexcept {
     ready.reset(); ready_slot.reset(); next_slot = 0;
@@ -5960,7 +5966,10 @@ struct GenerationContinuation final {
         })) reset();
   }
   void release(inference::RequestKey selected) noexcept {
-    if (std::ranges::any_of(members, [&](const auto &member) { return member.key == selected; })) reset();
+    if (std::ranges::any_of(members, [&](const auto &member) { return member.key == selected; })) {
+      if (!pending_calls.empty()) drain_requested = true;
+      else reset();
+    }
   }
   bool matches(std::span<const PreparedGenerationCall> calls) const noexcept {
     if (!ready || calls.size() != members.size() || ready->boundaries.size() != calls.size()) return false;
@@ -6225,8 +6234,19 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call) {
 
 template<class AfterSubmit, class BatchObserver>
 bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCall> calls, bool trace_states,
-    GenerationContinuation &continuation, AfterSubmit &after_submit, BatchObserver &batch_observer) {
-  if (!continuation.enabled || continuation.unavailable || model.cache_plan.in_flight_batches < 2 ||
+    GenerationContinuation &continuation, AfterSubmit &after_submit, BatchObserver &batch_observer,
+    bool defer_successor = false, std::span<const inference::RequestCreditGrant> credits = {},
+    bool drain_requested = false) {
+  const bool resumed = !continuation.pending_calls.empty();
+  struct RetiredCalls final {
+    Model &model; GenerationContinuation &continuation;
+    ~RetiredCalls() {
+      if (!model.active_step && !model.successor_step) {
+        continuation.pending_calls.clear(); continuation.drain_requested = false;
+      }
+    }
+  } retired_calls{model, continuation};
+  if (!resumed && (!continuation.enabled || continuation.unavailable || model.cache_plan.in_flight_batches < 2 ||
       model.cache_plan.draft_cache || model.scheduler || model.execution.host_only() ||
       model.execution.native_generated_storage() || model.execution.has_cpu_assist() ||
       std::ranges::any_of(calls, [&](const auto &call) {
@@ -6235,16 +6255,20 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
         return sampling.enabled || !sampling.modifiers.empty() || call.role != GraphRole::kText ||
             call.completion != TextCompletion::kEmitNext || call.full_hit || !call.generation ||
             (trace_states && !request.trace.empty());
-      })) {
+      }))) {
     continuation.reset(); return false;
   }
-  if (!continuation.select(calls)) return false;
-  if (continuation.ready && !continuation.matches(calls)) {
+  if (resumed && (calls.data() != continuation.pending_calls.data() ||
+      calls.size() != continuation.pending_calls.size() || !model.active_step || model.successor_step ||
+      !model.active_step->submitted || model.active_step->members.size() != calls.size()))
+    throw std::logic_error("ordinary wave lost its original pending batch");
+  if (!resumed && !continuation.select(calls)) return false;
+  if (!resumed && continuation.ready && !continuation.matches(calls)) {
     continuation.reset(); if (!continuation.select(calls)) return false;
   }
-  const auto slot = continuation.next_slot;
+  const auto slot = resumed ? model.active_step->state_slot : continuation.next_slot;
   const auto prior_slot = continuation.ready_slot;
-  const bool imported = continuation.matches(calls);
+  const bool imported = resumed || continuation.matches(calls);
   hyle::container::SmallVector<PreparedGenerationCall, 2> second;
   hyle::container::SmallVector<EvaluationRequest, 2> direct, relay;
   hyle::container::SmallVector<EvaluationOutput, 2> outputs;
@@ -6313,24 +6337,31 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
   try {
     for (auto &call : calls) {
       auto &request = *call.request;
-      prepare_generation_record(*request.ledger, *request.session, call.role, call.ids(), call.generation,
-          call.quota, request.progress.turn_index, {}, call.maximum, call.completion,
-          call.input_begin, call.prefill_complete);
+      if (!resumed)
+        prepare_generation_record(*request.ledger, *request.session, call.role, call.ids(), call.generation,
+            call.quota, request.progress.turn_index, {}, call.maximum, call.completion,
+            call.input_begin, call.prefill_complete);
       direct.push_back({request.session, call.ids(), &request.ledger->stop_policy(), call.logits});
       relay.push_back({request.session, {}, &request.ledger->stop_policy(), call.logits});
     }
-    auto &a = imported ? model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), continuation.ready, slot)
+    auto &a = resumed ? *model.active_step
+        : imported ? model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), continuation.ready, slot)
         : (model.prepare_evaluations(std::span(direct.data(), direct.size()), nullptr, GraphRole::kText), *model.active_step);
-    first_start = a.step_start; a_source = model.prepare_submission_sources(a);
-    model.submit_evaluations(a, true);
-    if (!a.sources) a_source.reset();
-    notify();
+    first_start = a.step_start;
+    if (resumed) a_source = a.sources;
+    else {
+      a_source = model.prepare_submission_sources(a);
+      model.submit_evaluations(a, true);
+      if (!a.sources) a_source.reset();
+      notify();
+    }
     const auto abort_a = [&] {
       // Ordinary withdrawal can leave A's other members publishable. Only a
       // real whole-episode cancellation/failure takes this abort branch.
       return a.cancelled || std::ranges::any_of(calls, [](const auto &call) { return call.request->session->failed; });
     };
     if (abort_a()) {
+      if (resumed) ++continuation.successor_discards;
       require_retired(release_and_abort()); discard_records();
       observe_cancelled(calls, first_start, Clock::now()); return true;
     }
@@ -6338,10 +6369,22 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
       finish(calls); ++continuation.completed_steps; discard_records();
       continuation.reset(); continuation.unavailable = true; return true;
     }
+    const bool draining = drain_requested || continuation.drain_requested ||
+        std::ranges::any_of(credits, [](const auto &grant) { return grant.cancelled; });
+    if (resumed && !draining) {
+      if (credits.size() != calls.size()) throw std::logic_error("pending batch lost its original request grants");
+      for (std::size_t j = 0; j < calls.size(); ++j) {
+        auto &call = calls[j]; auto &request = *call.request;
+        if (credits[j].cancelled || request.session->stopping || request.progress.turn_done) continue;
+        call.quota = request.ledger->renew_ordinary_quota(generation_boundary(*request.session->head),
+            request.progress.observed_commits(), request.progress.turn_index, request.progress.remaining_outputs(),
+            credits[j].reserved, credits[j].additional).quota;
+      }
+    }
     const auto next_slot = (slot + 1) % execution_slot_count;
     // Original B prepare/submit checks its complete tuple and Source. A's
     // possible future replay is not authority for B; warm flags are hints.
-    if (imported && continuation.ready_steps >= 6 && continuation.direction_warm[next_slot] &&
+    if (!draining && imported && continuation.ready_steps >= 6 && continuation.direction_warm[next_slot] &&
         std::ranges::all_of(calls, [&](const auto &call) {
           const auto &request = *call.request; const auto &ledger = *request.ledger;
           return !request.session->stopping && !request.session->failed && call.quota >= 2 &&
@@ -6377,12 +6420,14 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
     }
     if (abort_a()) {
       if (submitted_second) ++continuation.successor_discards;
+      if (resumed) ++continuation.successor_discards;
       require_retired(release_and_abort()); discard_records();
       const auto retired_at = Clock::now(); observe_cancelled(calls, first_start, retired_at);
       if (submitted_second) observe_cancelled(std::span(second.data(), second.size()), second_start, retired_at);
       return true;
     }
     finish(calls); ++continuation.completed_steps;
+    if (resumed) ++continuation.successor_publications;
     continuation.ready.reset();
     if (refused_second) {
       inference::RetirementObservation retired{!model.active_step && !model.successor_step, {}};
@@ -6421,6 +6466,15 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
             request.progress.observed_commits(), request.progress.turn_index, request.progress.generated.back());
         second[j].pending = record.pending_input;
       }
+      if (defer_successor) {
+        // All borrowed A metadata has been observed. B's native owner remains
+        // the original promoted active_step; only its host call crosses pumps.
+        continuation.pending_calls.clear();
+        for (auto &call : second) continuation.pending_calls.push_back(std::move(call));
+        continuation.drain_requested = false;
+        continuation.next_slot = (next_slot + 1) % execution_slot_count;
+        return true;
+      }
       finish(std::span(second.data(), second.size())); ++continuation.completed_steps; ++continuation.successor_publications;
       a_source.reset(); continuation.ready = std::move(b_source); continuation.ready_slot = next_slot;
       continuation.next_slot = (next_slot + 1) % execution_slot_count;
@@ -6439,6 +6493,8 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
           return call.disposition != EvaluationDisposition::kPublished || request.progress.turn_done ||
               request.session->stopping || request.session->failed;
         }) || continuation.unavailable) continuation.reset();
+    else if (draining || std::ranges::any_of(calls, [](const auto &call) { return call.quota <= 1; }))
+      continuation.release_ready();
     return true;
   } catch (inference::EvaluationFailure &failure) {
     failure.observe_retirement(release_and_abort()); observe_commits();
@@ -6459,7 +6515,8 @@ template<class AfterSubmit = std::nullptr_t, class BatchObserver = std::nullptr_
 void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> calls, bool trace_states,
     cache::PrefixCache *prefix = nullptr, std::span<const GenerationRequest> requests = {},
     AfterSubmit &&after_submit = nullptr, GenerationContinuation *continuation = nullptr,
-    BatchObserver &&batch_observer = nullptr) {
+    BatchObserver &&batch_observer = nullptr, bool defer_successor = false,
+    std::span<const inference::RequestCreditGrant> credits = {}) {
   if (calls.empty()) return;
   // Validate every request's cold metadata before prefix eviction, proposal
   // work or preparing even the first uncommitted ledger slot.
@@ -6503,7 +6560,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   if (!make_generation_batch_room(model, prefix, calls, requests)) throw std::runtime_error("MTP batch exceeds committed head budget");
   if (continuation) {
     if (execute_ordinary_continuation(model, calls, trace_states, *continuation,
-        after_submit, batch_observer)) return;
+        after_submit, batch_observer, defer_successor, credits)) return;
     continuation->reset();
   }
   const auto &eos = model_eos_tokens;
@@ -6680,6 +6737,79 @@ inference::RetirementObservation retire_generation_request(GenerationRequest &re
   return request.session->try_retire();
 }
 
+// Explicit synchronous consumer, including component drivers. The request
+// adapter below has one wave contract for both synchronous and pipelined use.
+template<class Execute>
+struct SynchronousGenerationWave final {
+  Model &model; Execute &execute;
+  inference::RequestWaveResult operator()(inference::RequestWave wave,
+      std::span<std::size_t> remaining_reserved) const {
+    std::ranges::fill(remaining_reserved, std::size_t{0});
+    if (wave.observe_only || wave.drain_requested)
+      return {.remaining = model.try_retire_episode()};
+    try {
+      execute(wave.keys);
+      if (model.active_step || model.successor_step)
+        throw std::logic_error("synchronous request wave retained an unfinished episode");
+      return {.advanced = true, .remaining = {true, {}}};
+    } catch (...) {
+      const auto failure = std::current_exception();
+      return {.advanced = true, .remaining = model.abort_episode(), .failure = failure};
+    }
+  }
+};
+
+// The request owner supplies one exact cohort and its current credit grant.
+// Native work stays in the Model's original Step/Source; this driver retains
+// only the deferred call metadata required to observe it on the next pump.
+template<class Ready, class AfterSubmit = std::nullptr_t, class BatchObserver = std::nullptr_t>
+inference::RequestWaveResult advance_generation_wave(Model &model, inference::RequestWave wave,
+    std::span<std::size_t> remaining_reserved, bool trace_states, GenerationContinuation &continuation,
+    Ready &&execute_ready, AfterSubmit &&after_submit = nullptr, BatchObserver &&batch_observer = nullptr) {
+  if (wave.keys.size() != wave.credits.size() || wave.keys.size() != remaining_reserved.size())
+    throw std::logic_error("generation wave lost its original credit extent");
+  std::ranges::fill(remaining_reserved, std::size_t{0});
+  const auto clear_retired = [&](inference::RetirementObservation retired) {
+    if (retired.retired) { continuation.pending_calls.clear(); continuation.reset(); }
+    return retired;
+  };
+  if (wave.observe_only) return {.remaining = clear_retired(model.try_retire_episode())};
+  try {
+    if (!continuation.pending_calls.empty()) {
+      auto calls = std::span(continuation.pending_calls.data(), continuation.pending_calls.size());
+      if (calls.size() != wave.keys.size()) throw std::logic_error("pending generation wave changed its cohort width");
+      for (std::size_t j = 0; j < calls.size(); ++j)
+        if (calls[j].request->request_key != wave.keys[j] || wave.credits[j].reserved != 1)
+          throw std::logic_error("pending generation wave changed its identity or reserved output");
+      try {
+        if (!execute_ordinary_continuation(model, calls, trace_states, continuation,
+            after_submit, batch_observer, true, wave.credits, wave.drain_requested))
+          throw std::logic_error("pending generation wave lost its original continuation");
+      } catch (const inference::EvaluationFailure &failure) {
+        throw inference::RequestExecutionFailure::from_evaluation(failure, wave.keys.size(),
+            [&](std::size_t j) { return wave.keys[j]; });
+      }
+    } else if (!wave.drain_requested) {
+      for (const auto &credit : wave.credits)
+        if (credit.reserved) throw std::logic_error("generation wave retained credit without its original call");
+      execute_ready(wave);
+    } else continuation.reset();
+    const bool pending = !continuation.pending_calls.empty();
+    if (pending) {
+      if (!model.active_step || model.successor_step || !model.active_step->submitted ||
+          continuation.pending_calls.size() != wave.keys.size())
+        throw std::logic_error("generation wave retained metadata without its original submission");
+      std::ranges::fill(remaining_reserved, std::size_t{1});
+    } else if (model.active_step || model.successor_step)
+      throw std::logic_error("generation wave lost the host metadata for its original submission");
+    return {.advanced = true, .remaining = {!pending, {}}};
+  } catch (...) {
+    const auto failure = std::current_exception();
+    std::ranges::fill(remaining_reserved, std::size_t{0});
+    return {.advanced = true, .remaining = clear_retired(model.abort_episode()), .failure = failure};
+  }
+}
+
 // Model-specific state and execution only. RequestLoop owns FIFO, idle
 // selection and turn/key transitions; no native work is owned by this adapter.
 template<class ExecuteWave>
@@ -6732,20 +6862,7 @@ struct GenerationRequestAdapter final {
       std::span<std::size_t> remaining_reserved) const {
     if (remaining_reserved.size() != wave.keys.size())
       throw std::logic_error("request wave reservation extent differs from its original cohort");
-    // This synchronous consumer leaves no publishable candidate across pumps.
-    // Failed native work can remain owned by the original Model for retirement.
-    std::ranges::fill(remaining_reserved, std::size_t{0});
-    if (wave.observe_only || wave.drain_requested)
-      return {.remaining = model.try_retire_episode()};
-    try {
-      execute(wave.keys);
-      if (model.active_step || model.successor_step)
-        throw std::logic_error("synchronous request wave retained an unfinished episode");
-      return {.advanced = true, .remaining = {true, {}}};
-    } catch (...) {
-      const auto failure = std::current_exception();
-      return {.advanced = true, .remaining = model.abort_episode(), .failure = failure};
-    }
+    return execute(wave, remaining_reserved);
   }
   hyle::Status stop(inference::RequestKey key) const noexcept {
     if (continuation) continuation->release(key);
@@ -7136,6 +7253,18 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             << "measure_memory name=ready_before_first\n";
   const auto start = Clock::now(); auto endpoint = start;
   double prefill_seconds = 0, decode_seconds = 0;
+  const auto observe_capacity = [&] {
+    std::size_t candidates = 0;
+    for (const auto *step : {model.active_step.get(), model.successor_step.get()})
+      if (step) for (const auto &member : step->members) candidates += bool(member.next);
+    const auto live = std::size_t(model.snapshot_versions.live);
+    if (candidates > live) throw std::logic_error("generation candidates exceed their actual version ownership");
+    const auto committed = live - candidates;
+    if (committed > model.cache_plan.resident_sessions)
+      throw std::runtime_error("generation committed version count exceeds N after publication");
+    peak_resident = (std::max)(peak_resident, resident_count());
+    peak_committed = (std::max)(peak_committed, committed);
+  };
   const auto observe_batch = [&](const GenerationBatchFacts &facts) {
     const auto participations = cache::add(actual_fresh_participations, facts.members.size());
     const auto rows = cache::add(actual_fresh_target_rows, cache::multiply(facts.input_rows, facts.members.size()));
@@ -7160,8 +7289,14 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     ++(facts.generation ? actual_decode_calls : actual_prefill_calls);
     actual_fresh_participations = participations; actual_fresh_target_rows = rows;
     actual_step_sum += facts.step_seconds;
+    auto finished = endpoint;
+    for (const auto &member : facts.members) finished = (std::max)(finished, member.request->endpoint);
+    const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
+    (facts.generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
+    observe_capacity();
   };
-  const auto execute_wave = [&](std::span<const inference::RequestKey> active) {
+  const auto execute_ready = [&](inference::RequestWave wave) {
+    const auto active = wave.keys;
     // Resolve every lookup/admission in this wave before any checkpoint is
     // published. A same-wave prompt cannot observe another member's new head.
     hyle::container::SmallVector<PreparedGenerationCall, 2> calls;
@@ -7192,7 +7327,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
                     << " role=" << static_cast<int>(bucket[0].role) << " full_hit=" << bucket[0].full_hit << '\n';
           try {
             execute_generation_calls(model, std::span(bucket.data(), bucket.size()), trace_states, prefix.get(), requests,
-                nullptr, decode_overlap ? &continuation : nullptr, observe_batch);
+                nullptr, decode_overlap ? &continuation : nullptr, observe_batch,
+                bucket.size() == active.size(), wave.credits);
           } catch (const inference::EvaluationFailure &failure) {
             // The final submitted bucket may be smaller or differently ordered
             // than the active request wave. Attribute only its original member.
@@ -7208,11 +7344,13 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             }
             finished = (std::max)(finished, requests[index].endpoint);
           }
-          const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
-          (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
-          peak_resident = (std::max)(peak_resident, resident_count());
-          peak_committed = (std::max)(peak_committed, std::size_t(model.snapshot_versions.live));
-          if (model.snapshot_versions.live > model.cache_plan.resident_sessions) throw std::runtime_error("MTP committed version count exceeds N after publication");
+          // Real Graph batches report their own completion above, including
+          // a successor observed on a later pump. A full hit has no Graph.
+          if (bucket[0].full_hit) {
+            const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
+            (bucket[0].generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
+          }
+          observe_capacity();
           return bucket.size();
         });
     for (auto &call : calls) publish_generation_prompt(model, call, prefix.get());
@@ -7222,15 +7360,16 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           continuation.release_ready(); break;
         }
   };
+  const auto execute_wave = [&](inference::RequestWave wave, std::span<std::size_t> reserved) {
+    return advance_generation_wave(model, wave, reserved, trace_states, continuation, execute_ready, nullptr, observe_batch);
+  };
   GenerationRequestAdapter adapter{model, prefix.get(), std::span(requests), trace_states, &evictions, execute_wave,
       {}, decode_overlap ? &continuation : nullptr};
   while (completed != requests.size()) {
     const auto pumped = request_loop.pump_once(adapter);
     completed = cache::add(completed, pumped.completed);
     admitted = cache::add(admitted, pumped.admitted);
-    if (pumped.waiting_retirement)
-      throw std::runtime_error("generation request still retains an in-flight episode");
-    if (!pumped.executed && completed != requests.size())
+    if (!pumped.executed && !pumped.waiting_retirement && completed != requests.size())
       throw std::runtime_error("generation admission has no runnable resident request");
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();

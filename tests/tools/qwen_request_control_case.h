@@ -100,8 +100,9 @@ inline int run(const std::filesystem::path &input) {
     for (auto &call : calls) q::publish_generation_prompt(model, call, &prefix);
     ++physical_waves;
   };
+  q::SynchronousGenerationWave wave{model, execute};
   q::GenerationRequestAdapter adapter{model, &prefix, std::span(requests), false,
-      static_cast<std::vector<std::size_t> *>(nullptr), execute};
+      static_cast<std::vector<std::size_t> *>(nullptr), wave};
   a.request_key = loop.enqueue(0, &delivery[0]);
   b.request_key = loop.enqueue(1, &delivery[1]);
   d.request_key = loop.enqueue(3, &delivery[3]);

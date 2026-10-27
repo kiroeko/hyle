@@ -217,8 +217,9 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
     if (relay && !loop.credit(request.request_key, request.progress.generated.size()))
       continuation.release_ready();
   };
+  q::SynchronousGenerationWave wave{model, execute};
   q::GenerationRequestAdapter adapter{model, static_cast<q::cache::PrefixCache *>(nullptr),
-      std::span(requests), false, static_cast<std::vector<std::size_t> *>(nullptr), execute,
+      std::span(requests), false, static_cast<std::vector<std::size_t> *>(nullptr), wave,
       {}, relay ? &continuation : nullptr};
   request.request_key = loop.enqueue(0, &delivery);
   const auto key = request.request_key;

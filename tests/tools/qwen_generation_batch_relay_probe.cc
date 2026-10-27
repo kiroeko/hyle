@@ -1,5 +1,6 @@
 #include "../../engine/models/qwen35/main.cc"
 #include "qwen_generation_state_case.h"
+#include "qwen_continuous_generation_case.h"
 
 // Finite CUDA RequestLoop consumer. The original Model owns all target work,
 // Source permissions and retirement. No native gate or output is fabricated.
@@ -254,8 +255,9 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
           return !loop.credit(key, requests[key.slot].progress.generated.size());
         })) continuation.release_ready();
   };
+  q::SynchronousGenerationWave wave{model, execute};
   q::GenerationRequestAdapter adapter{model, static_cast<q::cache::PrefixCache *>(nullptr), std::span(requests),
-      false, static_cast<std::vector<std::size_t> *>(nullptr), execute, {}, relay ? &continuation : nullptr};
+      false, static_cast<std::vector<std::size_t> *>(nullptr), wave, {}, relay ? &continuation : nullptr};
   for (std::size_t member = 0; member < 2; ++member)
     requests[member].request_key = result.keys[member] = loop.enqueue(member, &deliveries[member]);
   require(result.keys[0] != result.keys[1], "R2 cohort did not receive distinct original request keys");
@@ -427,14 +429,19 @@ int run(const std::filesystem::path &input, bool boundaries = false) {
 int main(int argc, char **argv) {
   try {
     if (argc == 1) { std::cerr << "SKIP: pass --cuda PREPARED_LOCAL_INPUTS\n"; return 77; }
+    if (argc == 2 && std::string_view(argv[1]) == "--cuda-continuous") {
+      std::cerr << "SKIP: pass --cuda-continuous CONTEXT32_TINY_INPUT\n"; return 77;
+    }
+    const bool continuous = argc == 3 && std::string_view(argv[1]) == "--cuda-continuous";
     const bool boundaries = argc == 4 && std::string_view(argv[1]) == "--cuda-boundaries";
-    if (!boundaries && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
-      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR");
+    if (!continuous && !boundaries && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
+      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-continuous CONTEXT32_TINY_INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR");
     const auto compiled = q::Backend::compiled_backends();
     if (std::find(compiled.begin(), compiled.end(), q::BackendKind::kCuda) == compiled.end()) {
       std::cerr << "SKIP: CUDA route is not built\n"; return 77;
     }
-    return boundaries ? run(qwen_generation_state_case::model_eos_fixture(argv[2], argv[3], 9), true)
+    return continuous ? qwen_continuous_generation_case::run(argv[2])
+        : boundaries ? run(qwen_generation_state_case::model_eos_fixture(argv[2], argv[3], 9), true)
         : run(argv[2]);
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -74,8 +74,9 @@ inline int run(const std::filesystem::path &input) {
     q::execute_generation_calls(model, calls, false, nullptr, requests);
     q::publish_generation_prompt(model, calls[0], nullptr);
   };
+  q::SynchronousGenerationWave wave{model, execute};
   q::GenerationRequestAdapter adapter{model, static_cast<q::cache::PrefixCache *>(nullptr),
-      std::span(requests), false, &evictions, execute};
+      std::span(requests), false, &evictions, wave};
   a.request_key = loop.enqueue(0);
   const auto key = a.request_key;
   const auto first = loop.pump_once(adapter);

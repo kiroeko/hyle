@@ -133,6 +133,30 @@ public:
     return record;
   }
 
+  // The original request owner may renew the budget of an already bound,
+  // still-pending ordinary T1 record when a later pump grants fresh credit.
+  // It supplies its actual current boundary/observation and RequestLoop grant;
+  // this ledger neither owns delivery credit nor creates a new reservation.
+  // The caller has checked the same submitted Step/cohort and may not renew
+  // cancelled, draining or completed turns. No committed result is changed.
+  GenerationCommitRecord &renew_ordinary_quota(const GenerationBoundary &actual,
+      std::size_t observed_commits, std::size_t turn, std::size_t remaining_outputs,
+      std::size_t reserved_outputs, std::size_t additional_outputs) {
+    auto &record = next();
+    if (successor_ordinal_ || observed_commits != committed_count ||
+        record.role != GraphRole::kText || !record.generation ||
+        record.completion != TextCompletion::kEmitNext || !record.user_output || record.imported ||
+        record.ids().size() != 1 || record.pending_input < 0 || record.pending_input != actual.next_id ||
+        record.before != actual || record.turn != turn || !record.quota ||
+        record.accepted || record.verified_rows || record.emitted_count || record.stopped || record.draft_limit ||
+        reserved_outputs != 1 || reserved_outputs > remaining_outputs ||
+        additional_outputs > remaining_outputs - reserved_outputs)
+      throw std::runtime_error("ordinary quota renewal requires its bound pending record and actual owner grant");
+    // Subtraction above proves both the turn bound and addition overflow safety.
+    record.quota = reserved_outputs + additional_outputs;
+    return record;
+  }
+
   // One unknown-input successor of the current ordinary T1 episode. These
   // counters are facts supplied by the serialized request owner, not a second
   // progress/RNG/credit authority. All actual Model capacity, base, epoch,

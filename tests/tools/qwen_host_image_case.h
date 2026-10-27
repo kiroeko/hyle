@@ -205,8 +205,9 @@ inline ModeReport run_mode(const std::filesystem::path &input, q::BackendKind ki
       parked[0].session = std::move(session); (void)parked[0].progress.begin_turn();
       bool executed = false;
       const auto no_execution = [&](std::span<const i::RequestKey>) { executed = true; };
+      q::SynchronousGenerationWave wave{model, no_execution};
       q::GenerationRequestAdapter adapter{model, static_cast<q::cache::PrefixCache *>(nullptr), std::span(parked),
-          false, static_cast<std::vector<std::size_t> *>(nullptr), no_execution, storage};
+          false, static_cast<std::vector<std::size_t> *>(nullptr), wave, storage};
       i::RequestKey key; key.slot = 0; key.generation = 1;
       const auto retired = adapter.retire(key, i::RequestRetirement::kEvicted); q::check(retired.status);
       require(retired.retired && !parked[0].session && parked[0].host_image && storage->live_images() == 2,

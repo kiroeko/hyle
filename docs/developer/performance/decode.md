@@ -12,6 +12,12 @@
 
 最新[普通／MTP完整四臂窗口](../../evidence/performance/inference-batch-continuation-current-window-2026-10-27.json)于北京时间2026-10-27 **18:01:05～18:03:47**完成32进程，四项完整对照更新于[当前基线](#目标与当前基线)。普通decode慢约5%～6%，MTP慢约10%～12%；不与旧窗口或下列局部A/B拼算收益。
 
+随后[普通连续wave接线](../../evidence/correctness/inference-continuous-wave-2026-10-27.json)在同一RequestLoop下跨pump保留原后继。
+真实Qwen3.5-2B的R1／自然R2各完成97／194个输出，auto的后继提交和发布由44增至88；逐模式完整非时间报告仅这两个顶层计数改变。
+十个tiny控制臂另比较每个已提交前缀的完整状态、epoch和RNG，并覆盖信用耗尽、跨pump单成员取消及yield／恢复。
+本批还消费已返回的append交易以释放被替换旧尾页，区分驻留版本N与在途candidate。5次C++编译、5链接通过，复用SDK／原生内核；
+只有有限功能检查，没有新统计吞吐／内存窗口，不从单次运行更新上表，默认overlap仍关闭。
+
 随后[自然R1两步接力筛查](../../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)用同一镜像交错运行六进程，P154＋96decode的完整非时间单请求结果一致。
 每个auto进程实际发布44个后继；off／auto的prefill中位2122.69／2164.08、decode90.37／90.27、综合85.48／85.49 tok/s，范围重叠，未证明净提速。
 ready中位增加39.83ms，共享cache backing增加18.82MiB；未采样全显存峰值，未新跑参考或MTP，不刷新上述完整表。

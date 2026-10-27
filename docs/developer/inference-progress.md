@@ -1,242 +1,53 @@
-# 推理架构 Review 进度
+# 推理底座进度
 
-更新：2026-10-27 20:29（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。新Review复核发现，原“共同引擎核心100%”把请求原语与执行编排混为一项，整体97%也漏算了执行层收敛，现撤回该总体估计，按下列分项报告；百分比仍是工作量估计，不是测试通过率。共同请求层已支持跨pump保留原成员组与信用，载体、准备／提交／退休及两步接力仍主要在Qwen中，真实消费者的连续跨pump流水尚未接通。普通CUDA R1／R2有界两步接力已有有限功能检查，默认关闭且未证明净提速；MTP设备后继仍未完成。最近双引擎32进程完整窗口中普通decode慢约5%～6%，MTP慢约10%～12%；文末另补冻结Vulkan／混合放置的8进程窗口，不混用这些工况。当前仍以底层支持为主，HTTP／通用loader／tokenizer不是前置。
+更新：2026-10-27 21:16（北京时间）。百分比为工作量估计，不是测试通过率。
+
+**当前位置：普通 CUDA 连续流水已接通，刚通过一轮功能检查；共同执行编排尚未抽离，MTP 连续流水尚未接通。** 新的正式速度结论还没有。
 
 ## 任务树
 
-- Review 事实核实与范围收敛：100%（已完成）
-  - 源码／性能／依赖／第二消费者核查：100%（已完成）
-  - 因果修正与实施顺序：100%（已完成）
-- 首批功能与接线修正：100%（已完成）
-  - 空闲新形状预热与真实接纳计时：100%（已完成）
-  - 普通合批单成员取消与明确结果：100%（有限 CPU／CUDA 检查通过）
-  - 模型 EOS 配置集中与诊断迁移：100%（已完成）
-- 共同请求层与执行层收敛：约70%（请求原语与跨pump合同已接通，执行编排仍待抽离）
-  - 请求／兼容合批／接纳与缓存编排：100%（本轮约定共同原语已接通，有限检查通过）
-  - 冷计划与运行时的共享prefill分片事实：100%（四组主机合同与原B2有限CUDA检查通过）
-  - 模型适配、错误类别与输出合同：100%（取消／交付及执行错误请求身份桥接已接线，有限检查通过）
-  - SDK／Provider／依赖与诊断组织：100%（公开资源与保活已补；来源身份、CPU偏好及ATen职责已核，capture说明已修）
-  - 共同episode寿命与载体编排：约35%（有界cohort／信用／退休合同已实现，模型执行编排待提取）
-- 稳态状态协议：100%（本轮单episode工作态与原池状态接线已实现，有限检查通过）
-  - 持续工作态与按需导出不可变快照：100%（KV持续工作帧、按需封存及原池状态已接通）
-  - KV持续工作帧及无失败事务发布：100%（本批实现完成，Windows／Apple有限功能检查及B2对照完成）
-  - 原生 GDN／conv 的版本化双缓冲与索引状态：100%（CPU／CUDA有限功能及真实CUDA融合、Apple／Vulkan普通与K3 tiny入口通过）
-  - MTP 稳定状态槽及接受／回滚接线：100%（本批CPU／CUDA异成员接受通过；性能和其它平台边界另列）
-- 其它底层功能补齐：100%（本轮已发现功能及形状政策已实现，有限检查通过）
-  - 有限尾块、已计划载体准备与异长分组：100%（未知prefix尾长B2冷键与真实长prefill消费者检查通过）
-  - 完整会话主机换出／换入：100%（本轮实现完成；普通／MTP／lag1及受控故障有有限检查，未注入真实驱动故障）
-  - 状态搬运非阻塞观察／取消：100%（CPU受控合同及CPU／Vulkan／Apple实际关闭后回收通过有限检查）
-  - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
-  - Vulkan精确半字同步I/O：100%（本批功能完成，三组有限GPU检查通过）
-  - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
-- 重叠执行与完整性能对照：约78%（有界接力及跨pump共同合同已实现，真实连续流水未接通）
-  - 原Graph在途设备token与既有capture接力：100%（单Queue固定I32／Store及真实Hybrid生产者与消费者通过有限CUDA检查）
-  - 有界槽轮换与完整状态pending权限：约94%（实现中）
-    - 共同提交事实与独立块读凭据：100%（本批有限检查通过）
-    - Store到受检Gather的在途读接线：100%（单共享Queue有限CUDA检查通过）
-    - 完整输出Source的浮点载荷：100%（F32／F16／BF16混束的8项有限CUDA检查通过）
-    - Store连续目的区间的在途读取：100%（连续区间有限CUDA检查通过，非连续子集另计）
-    - KV／索引融合读取及有界槽轮换：约96%（普通R1／R2有界两步接力已有限检查，MTP接受子集未完成）
-  - CPU提前准备与引擎有序发布：约90%（普通R1／R2、模型EOS／冷拒绝和MTP有限主机预备已有限检查；MTP设备后继仍未完成）
-    - MTP有限主机元数据预备：100%（本批实现及CPU／CUDA有限检查完成，未声称GPU后继或提速）
-    - 普通多成员有界接力：100%（本批实现及tiny／真实2B的R2与R1有限检查完成）
-    - 模型EOS与自然冷拒绝：100%（普通R1／R2合成GA有限检查通过）
-  - 跨pump有界在途所有权与连续流水：约35%（共同合同及有限主机检查通过，Qwen仍同步完成整波）
-  - 本批普通／MTP双引擎跟踪：100%（8个成功诊断进程与原生关联完成，不是完整吞吐／内存窗口）
-  - CPU／GPU／混合参考与完整四项对照：约45%（CUDA四臂与冻结Vulkan／混合放置完成，其它工况仍待完成）
-- 遗漏复查与资料收敛：约45%（进行中）
-  - 文档恢复、事实校正与阅读入口：100%（本轮修正完成）
-  - 剩余功能与迁移遗漏复查：约40%（本批共同请求／传输原语源码复查未新增确证缺项，其它范围仍在复查）
-  - 递归MTP异宽分组的实际执行统计：100%（实现完成；CPU／CUDA同宽、异宽与子批错误身份三场景有限检查通过）
-
-本批[有限迁移复查](../evidence/research/inference-migration-followup-2026-10-27.json)未发现新增确证缺项；有限审查不代表完整性证明。
+- Review 核实与首批修复：100%（已完成）
+  - 冷形状预热、EOS 配置与单成员取消：100%（已完成）
+  - 完整会话换出／换入及 SDK 接线修正：100%（本批完成）
+- 共同架构收敛：约70%（进行中）
+  - 请求、缓存、额度及退休边界：100%（本批完成）
+  - 模型无关的执行编排与载体管理：约35%（尚未抽离）
+- 普通连续流水：约75%（进行中）
+  - CUDA R1／R2 跨 pump 推进：100%（有限检查完成）
+  - 额度耗尽、单成员取消、让位／恢复：100%（有限检查完成）
+  - EOS、失败及其它适用配置复查：约40%（待继续）
+  - 本轮完整性能对照：约10%（准备中）
+- MTP 性能改进：约35%（进行中）
+  - 重录原因定位：约60%（已收窄，具体端口待定位）
+  - 设备后继与连续流水：约20%（尚未接通）
+- 其余性能与遗漏复查：约45%（进行中）
+  - 小投影、融合及主机准备热点：约40%（调查中）
+  - CPU／GPU／混合与跨平台剩余对照：约45%（待继续）
 
 ## 正在做
 
-- 共同执行编排与真实跨pump接线：约35%（所属：共同episode寿命与载体编排；共同cohort合同已实现，下一步分离原Step的推进／观察；原Completion与会话仍由模型持有）。
-- 共同replay与Source冷／热拆分：约35%（所属：CPU提前准备与引擎有序发布；8个诊断进程已确认主机侧量级、剩余小拷贝与MTP16／6次捕获，继续查具体重录／准备失效边界，未定位项保留）。
+- **本批实现归档**｜所属：普通连续流水｜约95%。整理真实 R1／R2 和十个控制臂的结果，明确未验证边界。
+- **完整对照准备**｜所属：本轮完整性能对照｜约10%。准备普通 off／auto、MTP 与 llama.cpp 的同窗比较。
 
-Store连续区间已完成有限检查与失败修复，暂不扩展新的接力分支；同时收敛本次全局执行边界。浮点Source已通过8项有限CUDA检查并合入，MTP完整设备后继尚未接线。
+刚完成：真实 Qwen3.5-2B 的 R1／R2 后继提交和发布由44次变为88次，输出及其它非时间结果一致；十个有限控制臂的完整状态、epoch、RNG 和最终资源回收一致。**这证明连续推进已接通，不证明提速。**
 
-[共同RequestWave](../evidence/correctness/inference-request-wave-2026-10-27.json)保留原有序成员、已扣留信用和剩余退休事实，允许后续pump先提交N+1再观察N；失败只观察原工作，显式yield在真实退休后让幸存者保留key／turn回到FIFO。11组主机合同、四条tiny CPU／CUDA普通／K3 MTP及两条原CPU请求消费者通过有限检查；四CLI完整非时间报告与原控制相同。Qwen适配器仍同步完成整波，这些检查不证明真实连续流水或净提速。保留一次不可移植的跨rethrow异常指针断言失败，以及旧E4测试使用已删除Frame detail重载的编译失败；前者改查原派生类型与载荷，后者改用公开Footprint有界读取，未新运行E4场景本体。
+## 接下来
 
-[Store连续区间](../evidence/correctness/inference-store-source-range-2026-10-27.json)保完整原事务验证与真实IDs子视图，支持`{1,1}`独立在途读取，原编号发布及guard检查不变。累计3次C++编译、4链接、2个CUDA进程；首镜像旧2过、新1失败、另1未运行，原日志保留。修复pending消费者误选Commands销毁旧capture的问题后，复用同一测试OBJ／断言，最终新2、旧whole2及F32／I32相关2项全部通过，gate未超时且原capture实际复用。静态cudaFree等待链是原因分析，未声称断点直接证实。无模型／速度、R2非连续子集或完整MTP后继结论。
-
-[新Review的共同90步校正](../evidence/research/inference-review-common90-2026-10-27.json)只重读10-26旧SQLite：原脚本比较Hyle90／参考93步，参考多3个eager根。改为相同seq且各有一个native launch的90／90后，每根墙时12.876／11.670ms，全部GPU活动并集10.784／10.688ms；差额仍主要在GPU活动外。Hyle132次D2D共0.137ms／根，不能解释1.206ms墙差，更不能称当前索引状态版仍有这些拷贝或已全部消失。该次离线复算不刷新TPS；后续8个新诊断结果另列。
-
-[普通／MTP本批跟踪](../evidence/research/inference-current-review-profile-2026-10-27.json)使用冻结已验证Model，而非后续Store区间／RequestWave镜像。共同88个无录制单launch根中，普通R1的Hyle／参考墙时11.209／10.508ms、GPU并集9.591／9.716ms；自然R2为12.522／11.781ms、10.547／10.812ms。剩余D2D每根R1为19次／约0.015ms，R2为60次／约0.050ms，不足以直接解释墙差。B2双方36个单warp小kernel合计约0.415ms，支持review的小投影量级，逻辑节点唯一归属仍需核实。MTP捕获16／6、Instantiate5／2、Update11／6；终端新T1及拒绝后角色重入已有记录，其余具体失效未全部定位，不把16次都称冗余。auto仍44个后继，按root并集计有部分重叠且GPU时间略增；诊断单样本不作TPS／显存更新，完整表仍为18:01窗口。
-
-剩余大项包括MTP接受子集的设备接力、重叠执行的净收益、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
-
-[完整输出浮点Source](../evidence/correctness/inference-generic-output-source-2026-10-27.json)沿原权限机制移除I32限定，仍要求非空dense／plain描述、原完整caller writer及真实StorageOwner。2个C++单元、2次链接首次通过；同一CUDA进程8项检查覆盖F32／F16／BF16与I32混束的实际Gather、原子坏绑定拒绝、前驱退休后换writer、旧结果及完整失败传播。保留一次编译前freeze脚本KeyError；未因此重编或重跑。没有新kernel、SDK／NVCC重建、下载或MTP后继／TPS结论。
-
-[绑定互斥分段](../evidence/performance/inference-source-bind-attribution-2026-10-27.json)仅跑off／auto各一个实际模型，逐模式97个ID及完整非时间报告与控制相同。auto的95次bundle绑定10.216ms，原子输入绑定含子桶5.461ms；逐输入扫描7,087,570项但只有1.957ms、零native命中，不作为大热点。slot完整观察12.037→15.338ms，IDs含等待未增加；auto完整prepare_outputs为38.317ms，其中replay其余31.039ms。off普通replay未按同入口拆分，不能把它当额外31ms，更不能与旧Model3的26ms混减。首个scratch插桩语法失败、成功OBJ的元数据修正及归档时canonical漂移拒绝均保留；共3次C++尝试、2个不同单元、1链接、2模型进程，无新TPS结论。
-
-[自然请求有界接力](../evidence/correctness/inference-generation-continuation-2026-10-27.json)已接普通CUDA R1 greedy的真实RequestLoop与ledger：两份实际信用才允许B，A成功观察后才绑定B的输入与边界，信用归零释放ready Source。tiny八条、真实P154十条串行／接力旅程检查额度1／2、暂停／ACK、额外stop及提交后取消，完整状态和提交事实一致；真实晚stop实际接纳1个B、发布0、丢弃1，A状态仍与串行相同。最终97输出入口另发布44个后继，全部非时间单请求结果一致，最终版本为0。另有七项相邻Graph检查及四条CPU／CUDA普通／MTP B2回归通过，分别对应实际镜像。该批未覆盖模型EOS及自然冷tuple拒绝；后续边界检查另列，不将extraStop或组件证明代签。
-[六进程候选筛选](../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)在P154＋96decode上每个auto实际发布44个后继，完整非时间单请求结果一致；prefill2122.69→2164.08、decode90.37→90.27、综合85.48→85.49 tok/s，范围重叠，不称提速。shared backing为42,418,224→62,152,752B，ready中位多39.83ms；这不是全显存峰值，未新跑参考或MTP性能。`--decode-overlap`默认off，最新完整跨引擎表保持下方原窗口。
-
-该统计缺口现已修复：[实际子批事实](../evidence/correctness/inference-generation-batch-facts-2026-10-27.json)由每个真实完成子批同步给出成员、行数及耗时，普通A／B也各记一次，缓存完整命中只记逻辑dispatch。共享target时间计一次、各成员串行proposal都保留，移除旧physical_episodes猜测。CPU／CUDA各通过异宽T2／T3两批、同宽R2一批，以及B先执行后受控报错仍映射原B的三场景；原Status与真实退休保留，状态／账簿／额度不额外推进。四条普通／MTP B2及真实97输出的完整非时间报告仍一致，晚stop丢弃后继也回归通过。异宽由真实草稿前缀控制，不冒充自然EOS；没有新TPS结论。
-
-[三段prepare诊断](../evidence/performance/inference-generation-prepare-2026-10-27.json)是另一个冻结Model3窗口，off／auto各一次且97输出及完整非时间结果一致。前8步prepare多18.36ms，随后88步多36.02ms，其中绑定多26.24ms、replay多12.56ms，layout与residual略省；稳态零新增捕获。该窗口不与前一诊断的47.40ms差额混加；下一步只改已确认的无效查找路径，仍保留本代权限与别名检查。
-
-[alias角色过滤A/B](../evidence/performance/inference-alias-role-filter-2026-10-27.json)只提前原有self／无workspace／纯input-input的Ok分支，不改输出重叠、不可变Source或事务提交。3个C++单元及5项定向检查通过；12个交错进程中，off的decode中位91.37→91.22、auto为91.45→91.58 tok/s，范围重叠，无净提速证据。prefill中位分别−2.56%／−2.65%，范围也重叠；完整非时间报告逐模式一致。共享cache backing逐模式相同，未采样全显存峰，未新跑参考或MTP，原完整表不变。本批保留为局部查找简化，不继续补样或把源码复杂度当成实测收益。
-
-[恒等replacement筛选](../evidence/performance/inference-identical-capture-inputs-2026-10-27.json)保留完整capture／alias／private资格，只移除已绑定恒等输入的重复替换查找。5个不同定向用例取得通过结果，首镜像旧LRU销毁计数失败已保留，按现行不可执行seed合同修正并只复验该项；共3次C++编译、3次链接。12个交错进程完整非时间报告逐模式一致，off／auto的decode中位分别96.70→96.67／96.68→96.78，范围重叠，未证明净提速；auto prefill中位−6.18%且范围重叠，也保留。没有新参考／MTP或显存峰结论，完整表不刷新；采用为局部简化，不补样。
-
-[MTP有界主机预备](../evidence/correctness/inference-mtp-ahead-2026-10-27.json)已与普通预备共用每成员弱身份缓存，只存候选target整数页号和接受长度范围。真实发布后核epoch／长度／全部页前缀，再按实际下一图行数准备positions，支持换序及子组消费，不猜draft状态或取得设备权限。2个C++单元、2次链接；CPU／CUDA各一个combined消费者通过ordinary三次命中、MTP两次命中、K3异前缀、停止及T3→T2 lag1，完整初始化状态／RNG／旧快照一致。四条tiny双请求及四条真实2B CUDA双请求检查通过，除三个明确新增预备计数及原时间／重放字段外，完整报告逐工况一致；真实MTP实际命中3次，最终版本归零。首条real命令误把MTP参数传给off，在加载前被拒绝，修正命令后通过；另一次编译后漏header预登记已机械核同字节，未重编。它不接GPU后继，不更新TPS或内存峰表。
-
-[普通多成员接力](../evidence/correctness/inference-generation-batch-continuation-2026-10-27.json)按完整有序成员组借用真实token／Store／KV来源，逐成员预留和绑定ledger，按实际批宽统计参与及执行行数。3个C++单元、3次链接和12个模型进程通过；tiny／真实2B的自然R2各发布3个后继，完整非时间请求结果与off一致。定向R2各验证正常2次发布、额度1时零后继提交、晚取消后已提交B只退休不发布，幸存成员再按R1执行5批；完整初始化状态／旧快照／ledger／RNG一致。原R1回归通过，真实模型的额外stop分支已运行；tiny无合适token，该分支未运行。第一次自然报告比较误纳CPU预备计数，保留原失败观察，修正后仅重解析原结果，没有重跑模型。该批未测R2净提速、原生EOS或自然冷拒绝，后续边界检查另列；MTP设备接力仍未覆盖。
-
-[模型EOS与冷tuple边界](../evidence/correctness/inference-generation-native-boundaries-2026-10-27.json)共2个C++单元、2次链接、4个CUDA进程，全部首次通过。两个本地合成GA夹具经原kernel选择Qwen EOS，无extra stop；R1第10输出、R2首成员第9输出结束，已接纳B均提交1／发布0／丢弃1，R2幸存者按R1继续5批至14输出。闲置carrier真实换输出owner并保活旧池后，pending B各拒绝1次、提交0，A保留，后续单步完成。完整初始化状态／旧快照／ledger／RNG与串行一致，最终版本归零；两原tiny入口也回归通过。无下载、不证明任务质量／性能或真实驱动故障，原tiny晚extraStop未运行项仍保留原状态。
-
-[完整生产者与混束接力](../evidence/correctness/inference-model-submission-source-2026-10-27.json)已分别验证：真实Qwen3.5-2B普通greedy的三次K1导出／发布与原串行路径逐位一致，核对78,372,864字节初始化KV／GDN／conv、旧快照、epoch和RNG，最终无遗留版本；组件真实ready token／Store／KV可首次录制Hybrid，再以原token View和同物理tuple读取pending来源，0次新录制。47个不同GTest通过结果分属记录中的实际镜像，未重跑最终全量套件；首夹具错误、原managed TopK与共享append记账拒绝、alias重用拒绝和被析构掩盖的原失败均保留。未接完整模型后继流水、sampling或MTP接受子集，也未测新速度。
-
-本批[Model后继接线](../evidence/correctness/inference-model-successor-2026-10-27.json)用tiny及真实2B各运行串行、正常接力、拒绝后继三个arm，每arm为3行prefill及10步decode。普通三载体按0／1／2轮换；前驱被host gate阻止时，后继仍准备及提交，pending步0新增录制；前驱实际发布时后继仍pending。真实模型逐边界比较215,998,464字节初始化状态，旧检查点／epoch／RNG保持，各代Source及最终版本归零。故意拒绝后继也不等待gated前驱，不提前归还候选，不提升失败后继，后续串行结果一致。最终组件镜像7项、ledger四组主机合同及CPU／CUDA普通／MTP双会话四进程通过有限检查；早期失败、诊断与所属镜像分别保留。未改数值kernel、未重建SDK或下载模型；没有自然请求调度、持续双在途、采样／MTP接力或新速度证明。
-
-## 本批结果与下一步
-
-[共用元数据Queue](../evidence/correctness/inference-metadata-queue-2026-10-27.json)通过同一进程43项定向检查及四条CPU／CUDA普通／MTP双会话tiny路径。Graph原ResourceEpisode按真实Context／lane缓存稳定Queue，attention、KV append和状态IDs共用；只传输metadata，计算／Source／proof与capture仍走原执行Queue。上传仍实际等待后发布ready，失败与退休合同保留。实际阻挡计算stream时，改变页号和目的槽号仍完成准备，原捕获继续复用，状态／padding与原dense基准相符；旧快照与失败回归也通过。7个C++单元、两次链接均首次成功，无SDK／NVCC重建或下载。四条tiny输出ID与上一批完全一致；无完整模型重叠、新tokens/s或Apple／Vulkan新运行结论。下一步接完整模型的原Source及有序发布，不再扩建pending-control执行体系。
-
-[模型载体前提](../evidence/correctness/inference-relay-carriers-2026-10-27.json)通过三项容量／读回合同及四条tiny双会话路径：CPU／CUDA普通和MTP-K3，每会话各生成8 token，真实B2执行及最终请求／版本退休已核。容量按实际在途深度D计算，各槽独立持I/O与布局，非空caller读回交出原完整writer；reset后的同池重绑与同Invocation连续提交不混为同一代。普通Text端口已统一为可接原采样输出的二维形状。四个不同C++单元，共五次编译、两次链接，首次readback误用LeasePool布尔转换的失败保留；无SDK／NVCC重建或下载。诊断源码已适配但未逐个编译。实际仍单槽、Commands，无完整模型重叠、capture或新tokens/s结论。下一片把真实元数据上传放到独立原Queue并保留实际等待／ready发布，避免为此增加第二套pending-control执行机制。
-
-[索引状态在途来源](../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)在一个CUDA进程通过38项检查：3项新增GDN／conv／checked失败旅程，及35项相关CPU／CUDA回归。先由真实退休A的完整published guards认证ready来源并实际执行B首录，再释放整束来源、复用原地址接A新一代pending状态；B只持独立目的writer和目的IDs，源pool／IDs来自原Source束，不复制状态。两种F32融合均0新增／1复用捕获，source／device-wait各1；A成功退休、take及原受检发布时B仍pending，原dense结果逐位一致，旧快照／padding不变。另核同数同长foreign ready guards拒绝、未take／pending释放拒绝，以及真实数学失败的原错误传播和退休清理。修正了同值IDs仍重复上传并等同Queue的问题：只复用已成功发布且值不变的真实carrier，实际权限仍每次检查，变值保原上传门。12个C++单元、一次链接、一个测试进程均首次成功，包含两项结构扩展所需的当前闭包ABI刷新；无SDK／NVCC重建或下载。仅完整目的集、F32／K1有限证明，未接MTP接受子集、完整模型有界流水或新速度；冷元数据也不是零分配。下一步接连续轮换与真实模型。
-
-[连续KV来源继承](../evidence/correctness/inference-inherited-page-source-2026-10-27.json)在一个CUDA进程通过18项定向检查。B的冷来源可在A提交前准备；capture将未改页逐项继承到原资源权限，不保递归Source／终结观察链。A真实发布后，C沿同一权限来源读取真实ready页及B仍在途的新页，原捕获0新增／1复用，BF16均值分别为0.5／0.4375；旧快照保持。满页及COW两条A→B→C旅程另核完整异根guard拒绝、pending发布拒绝，以及B／C真实退休后只回收被COW替换的原页、不提前回收仍用页。三个C++单元、一次链接、一个测试进程均首次成功，无SDK／NVCC重建或下载。普通ready贡献的原双层权限核对仍在；本批在途继承不走该路径，不声称所有准备成本已消除。尚未接完整模型连续轮换，也无新tokens/s或故障注入结论；下一步是索引GDN／conv在途源读取。
-
-[在途前驱的后继追加](../evidence/correctness/inference-pending-append-source-2026-10-27.json)在一个CUDA进程通过16项定向检查：10项原Source、2项原KV读取、2项新增实际append及2项原effect合同。新增COW路径3→5→6行、满页无COW路径3→6→7行，均沿原effect-only附件共用一次Source／device-wait，普通submit不能绕过；COW仅接纳实际128B源前缀，129B被直接范围查询拒绝。A退休而B仍pending时take／原发布填真cache，销毁A交易与本地frame后B仍能继承未改页并得到精确BF16数据；旧快照及尾权正确。10个不同C++单元均一次编译成功；首次链接配方混淆slots.cc和slots_region.cc，经编译器Data.Source纠正原对象映射后重链通过，没有重编或重跑。共2次链接、1实际测试进程，无SDK／NVCC重建或下载。当时连续B→C仍明确拒绝，现已由上方继承批次补通；索引状态、完整模型流水及新速度未完成。
-
-[内部布局元数据接力](../evidence/correctness/inference-paged-owned-source-2026-10-27.json)通过同一CUDA进程12项检查，含原10项Source回归及显式／owned布局两条完整KV读取旅程。owned节点仅Q／K／V三端口，真实mirror guard沿原selected region导出，bind／prepare／submit逐项复核，原native read按root冷去重接纳；未造输入或执行器。前驱pending时后继0新增／1复用捕获，A退休而B仍读时原交易可take和受检发布，BF16结果及旧prefix保持。末项非法ordinal整束拒绝后正常束仍可绑定；同layout可准备，换页ID被guard阻止且原metadata字节不变。共4个不同C++单元、2次链接、1个实际测试进程；首次增量配方漏算容器元素布局变化的append单元，首镜像未运行，补编时复用其余3对象。无SDK／NVCC重建或下载。后继append／COW、索引融合、连续完整模型流水和新速度仍未完成。
-
-[首批KV真实接力](../evidence/correctness/inference-paged-submission-source-2026-10-27.json)在同一进程通过26项检查。新增CUDA旅程中，A的K／V两资源各含ready2／full3／append1，含真实COW；B用不同query_indptr和原显式ready metadata，只在A前预录，A仍pending时复用原捕获（0新增／1复用），source／device-wait各1。A真实退休而B仍读时，原bulk take返回交易，K沿delta提交WorkingFrame，V沿ready及重试发布；BF16 attention精确得到两请求的0.5／1.0，原快照和新页前缀正确。三项Paged合同另核fresh发布、旧full票据晚接纳拒绝、非法ticket／行数／旧页和append失败回滚。9个C++单元、1次链接、1进程均首次成功，复用224链接输入并新增2测试对象；无SDK／NVCC重建或下载。CMake头归属目录检查通过；辅助检查配方先有三次模式／选项错误，未重复C++或GPU测试。本片未接owned-layout／delegated入口，B也未从pending前驱继续append／COW；索引融合、完整模型流水及新速度仍未完成。
-
-[真实Hybrid及append权限](../evidence/correctness/inference-hybrid-append-2026-10-27.json)在一个CUDA进程通过22项检查：10项Graph Source、4项原append、3项新append票据及5项相邻租约合同。真实两Concat／Gather捕获段和Store间隙在A仍pending时接B，0新增录制、复用数等于预录数，source／device-wait各1；B原proxy也能由共同Source接管。内容相同但地址不同的捕获输入会拒绝，公开RequireCapture仍拒绝不全覆盖。ready投影撤权限只在实际Operation及后端证明参数保持时保录制。已有append页可在原写成功退休、后继读仍在途时受检发布精确前缀；reader取消不毒化前驱，producer失败不发布，新epoch使旧票据失效。5个C++单元、1次链接、1进程均首次成功，复用226个链接输入，无SDK／NVCC重建或下载。append检查为受控协议，尚无Graph KV／fresh转换／索引融合后继／连续模型流水，也无新tokens/s结论。
-
-[Store精确在途读](../evidence/correctness/inference-pending-store-source-2026-10-27.json)通过同一镜像14项检查：原7项Source、2项真实CUDA Store混束及5项相邻租约检查。Store元数据在前驱提交前准备，capture后不留writer指针；原精确IDs只读guard与独立票据保活。同一B的token／bank／IDs整束只登记一次source与device-wait；同形状诱饵IDs在绑定前拒绝，旧第三Gather结果保持。第二个预冷视图可导出同一sealed代。A实际退休、B仍被reader gate阻住时完成detach／take／受检发布／reset；原错误则禁止B全部输出及Store发布，未选槽／padding不变。只编4个单元、链接1次、运行1进程；一次ready记录路径错误经离线修正，没有重编／重链／重跑。未接KV／索引融合后继／真实Hybrid或连续模型流水，没有新速度结论。原IDs guard会阻挡旧控制载体过早改写，完整流水仍需有界轮换与冷预算。
-
-[独立读凭据及captured生产者](../evidence/correctness/inference-captured-submission-2026-10-27.json)通过同一镜像12项检查：原6项Source、1项真实CUDA双Concat生产者、3项Compute受控协议及2项相邻回归。实际完整capture可保留原managed属性接原Source；未捕获command仍拒绝。票据只持原block／generation／精确范围，不含writer指针或第二Completion；导出封住本写代的新写及可写地址，真实发布后全部读者归还才能try_write。3项票据检查不是GPU Store接力证明。只编4个单元、链接1次、运行1进程，无SDK／NVCC／模型或性能重跑；Store／KV及真实Hybrid流水仍待接线。
-
-[共同提交owner](../evidence/correctness/inference-submission-source-2026-10-27.json)将一次proxy、Queue、观察锁与完整Status集中在SubmissionSource，I32视图各保实际资源权限，原单输出入口已删除。原子bundle保所有视图，两个不同输出送入同B两个输入，source／device-wait均为1；无效后项不部分替换旧绑定。poll／wait不关闭导出，view独立后显式关闭共同Source；失败已实际退休时可归还pin，原数学错误仍保留且不发布ready。一个CUDA进程六项检查全部通过，含原错误、region、capture复用和载体重用；四不同单元共五次编译、两次链接，首镜像未运行，补编仅增加失败退休断言。尚未接Store／KV pending或引擎连续流水，无新速度结论。
-
-[既有capture接力](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)已接原Graph准备／重放逻辑，不改Provider静态属性。一个真实ggml Gather→Add消费者检查通过：ready预录后原unbind释放旧读权，同块try_write交给生产者；生产者仍pending时复用原捕获，报告0次新录制／1次复用并取得精确结果。两个真实物理tuple miss均拒绝，普通submit仍不能绕过原权限。三个单元一次编译、一次链接、一个GPU进程，无SDK重建。reuse-only仍有原metadata hook／预算／权限检查，不表示零分配；未接静态阻塞的生产者、多segment、状态／KV或引擎连续流水，也未测吞吐。
-
-早期[CPU提前准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)当时只针对普通B>1整批可继续的旅程，在冷预算内预留整数scratch。原AfterSubmit控制先执行，再准备位置／旧页拓扑；下一次完整匹配owner、epoch、长度、顺序及采样形状才使用。布局创建、状态／tail接纳和设备绑定仍在下一真实prepare，R1／MTP跳过。一个tiny CUDA进程共10次Graph调用、18输出，9条完整非时间提交记录、IDs和RNG一致，实际命中1次，换序／暂停取消后丢弃2次。首次fixture漏begin_turn在Graph前拒绝，修正后通过；一个不同单元编译两次。未测完整速度，也不声称隐藏整段cold_batch。
-
-[Region准备合同](../evidence/correctness/inference-graph-output-region-2026-10-27.json)明确prepare／seal只处理metadata／资源／未提交recording，不读写载荷或接纳设备工作，移除按hook存在与否拒绝的过度gate。真实CUDA Store region在生产者仍pending时完成准备，最终写入精确值并归还原权限，一项定向检查通过。首次Gather→Add实际选中managed／host-blocking ggml region，被原runtime门正确拒绝；完整保留失败，不放宽该门。两不同单元共三次编译、两次链接与两进程，无SDK重建。尚未支持该ggml路径、pending Store源／KV或完整引擎流水。
-
-[输出与载体分离](../evidence/correctness/inference-graph-output-detach-2026-10-27.json)取得三项有限CUDA通过结果：A完整成功且实际退休后，B仍读取旧输出时，A可detach并绑定另一块真实writer提交下一代。B取得旧值，旧source的Status不随新提交改变；pending／原错误均不解除原保留。两单元、两次编译、一次链接、一个GPU进程，无载荷复制或新执行器。该检查实际使用两块输出缓冲，不代表完整状态／KV接力或引擎持续流水已接通，也没有提速结论。
-
-[在途设备token接力](../evidence/correctness/inference-graph-output-source-2026-10-27.json)沿原Invocation、Queue、InputSource及有序读权限实现一次链。两项CUDA检查通过：host gate实际阻止生产者完成时后继仍可提交并取得正确值；生产者checked-index错误使后继保留原code／message并拒绝发布，实际native uses归零。普通submit与capture绕过均拒绝。四个不同单元、五次编译尝试、一次链接、一个GPU进程；首次漏直接include及准备脚本错误保留。只支持已列明的固定I32／单Queue合同，未接引擎持续轮换、MTP或性能；ready只读分支和真实驱动故障未单独运行。
-
-[有限尾块政策](../evidence/correctness/inference-bounded-prefill-2026-10-27.json)让有限Q使用满块与二次幂真尾块，不做padding。可能的prefix尾块按完整B／completion／sampler键进入原冷计划；额外exact容量从初始冷键数冻结，解除N×R直接耦合。六组主机合同通过，CUDA实际复用生成后的4行前缀，剩余T2以B2执行，请求期间新增编译和淘汰均为0。第一次N4配置未命中该覆盖，记录保留；改N2后才命中。默认无界行为及MTP有限Q拒绝保留，没有吞吐或跨分块数值一致性结论。
-
-[相邻长prefill消费者](../evidence/correctness/inference-chunked-prefill-tail-2026-10-27.json)已适配Q64的真实尾块：P154为`64+64+16+8+2`，下一轮131行为`64+64+2+1`。一条真实Qwen消费者通过取消后旧head保留、首64行精确重建、末边界prefix历史及pending／RNG检查；A10／B3次提交共304行。B输入从15改为16以保留单次短prefill后穿插decode的原检查目的，不把改变后的工作量作旧性能对照。仅增量编译一个单元并链接一次，未扩测试矩阵。
-
-[Apple完整消费者](../evidence/correctness/inference-apple-engine-slots-2026-10-27.json)按冻结的`bfe7159d4`源码增量编译六个单元并链接一次，普通／MTP K3两条tiny入口均通过，最终无遗留版本。两臂输出一致，MTP接受草稿数为零，不证明正向多token接受或任务质量；该窗不代签之后的尾块政策。未重建SDK／shader或下载，运行墙时不作为性能结论。
-
-稳态状态及主机镜像的100%指本轮已实现合同，真实驱动故障未注入和有限平台／制品覆盖仍如实保留，不再把未运行故障等同于尚缺实现。深度二候选、有序后继及在途读取是重叠执行的新合同，单列在对应分支，不用现有双槽或tiny通过代签。
-
-[执行错误身份桥接](../evidence/correctness/inference-request-error-identity-2026-10-27.json)在最终缩批后的实际bucket内，将原错误关联到完整RequestKey，保留计算Status及独立退休事实；未知成员和native故障保持批次级。四组主机合同及正常B2多轮CUDA检查通过，完整非时间报告一致；只编两个单元，无真实模型错误或设备故障注入。
-
-共同循环、取消／ACK／背压、兼容dispatch、目录、版本接纳及prefill已各有真实消费者和有限检查，旧的65／80／60估计本批已据实际余项收敛。Provider来源身份与CPU实测偏好不构成模型白名单；完整CUDA保留ATen能力覆盖，修正了MLX capture过时注释。模型完整状态恢复保留在模型适配层，未以机械搬文件或新增server API作为收口条件；其它分支仍未完成。
-
-[Vulkan完整消费者](../evidence/correctness/inference-vulkan-engine-slots-2026-10-27.json)复用145个链接输入，只编Model／匹配weights两个单元；普通与MTP K3各一条原tiny入口通过，均8输出且最终无遗留版本。MTP实际运行6轮验证／修复，但接受草稿数为0；输出一致只是此制品观察，不证明正向多token接受或任务质量。两次纯准备脚本错误保留，未重建SDK或shader。
-
-[共享prefill事实](../evidence/correctness/inference-prefill-facts-2026-10-27.json)已将容量估算、冷形状、query上界、modifier输出预检、prefix尾部及实际切片接到同一无状态策略。四组主机边界检查通过，包含SIZE_MAX与零行完整命中；一条原Q2／B2多轮CUDA旅程与改动前完整非时间报告一致。只编一个Model及一个轻量测试单元，复用原223链接输入，未重跑MTP或性能窗口。下一步复核共同核心剩余责任，再安排具体改动。
-
-[已计划载体准备](../evidence/correctness/inference-warmup-shapes-2026-10-27.json)新增`--warmup-shapes lazy|planned`，默认lazy。一次Model增量编译、复用223输入；四条tiny CUDA旅程和一个参数拒绝通过。B2多轮lazy／planned完整非时间报告一致，planned的六种载体全部在ready前创建；MTP K2与fixed分支也通过有限检查。它不执行虚假推理，不表示capture已录制或吞吐提高。
-
-[Vulkan精确同步I/O](../evidence/correctness/inference-vulkan-halfword-io-2026-10-27.json)三组GPU检查通过，只编两个单元并链接一次：精确2／6字节读写／fill、跨1MiB的双边缘与中段、原aligned／owned3B及odd partial拒绝。短ReadLease在pool／wrapper释放后仍可读，最终quota归零；边缘用独立8B逻辑scratch和原16位搬运，未读写调用者padding。未做设备故障注入或模型性能结论。
-
-[Vulkan原码16位Gather](../evidence/correctness/inference-vulkan-raw16-gather-2026-10-27.json)本批4项通过分属两个实际镜像：BF16 E1／F16 E3的部分源到Store、越界ID阻断发布、原F32回归。仅新增1个shader、5个不同C++单元，测试因首次额外短租约读回失败补编一次；保留2通过／2失败的原进程和后续两项通过。当时短租约同步D2H缺支持，case只用已初始化完整诊断buffer核原source字节；上方独立I/O批次已补此缺口，Graph投影与通用ready导入权限没有放宽。
-
-[普通prefill分块CLI](../evidence/correctness/inference-prefill-chunk-cli-2026-10-27.json)三条tiny CUDA旅程通过：中间块不采样、异长B2多轮合批／pending保真、prefix复用及N1淘汰重建；三个非法组合明确拒绝。只编一个Model单元、复用223输入，无SDK重建。默认保持无限块长；MTP有限块长明确拒绝，不称已实现varlen、完整预热或吞吐提升。
-
-[新32进程四臂窗口](../evidence/performance/inference-indexed-current-window-2026-10-27.json)已完成，普通decode单轮／两轮慢5.42%／4.64%，MTP慢7.46%／6.98%；最新完整表在下方。仅更新本窗，不把跨日速度变化归因某次优化。
-[MTP异成员检查](../evidence/correctness/inference-mtp-batch-slots-2026-10-27.json)两轮B2/K3分别取1／3、3／1前缀，CPU／CUDA均通过；原Store候选字节、KV／draft续算、旧快照和未接受槽回收符合原合同，第二轮两池目的ID实际不同。受控接受不是自然质量证明。
-[Vulkan半字Store](../evidence/correctness/inference-vulkan-halfword-store-2026-10-27.json)五项有限检查通过：精确2／6字节、原码／gap、换序／reset及外壳先释放；Completion沿原Run保活pipeline。当时未包含上述非4字节Gather；两批合起来仍不代表任意半字同步I/O完成。
-
-[引擎原池状态接线](../evidence/correctness/inference-engine-slot-state-2026-10-27.json)已完成本批CPU／CUDA有限检查：tiny正式CLI普通／MTP各生成8 token；两后端的镜像、lag1、状态复用共6进程通过。原N2／R1三槽容量内两块交替，旧冻结快照字节不变；真实Qwen3.5-2B另通过17个接受前缀、7组后缀扰动，五种冷子图各选中18个索引GDN及18个索引卷积融合。实际6次C++编译、4个不同TU配置、4次链接；复用SDK及原生内核，无下载。保留一次源码并发变化的不确定编译、一次参数拒绝和一次真实append取回顺序失败；后者修正后另冻源码重新编译。没有模型质量或全平台完成结论。
-
-本批[普通B2同窗A/B](../evidence/performance/inference-engine-slot-state-2026-10-27.json)完整非时间报告及198个ID一致，1728输入行／99次执行相同。decode＋2.20%、综合＋1.51%；prefill−0.80%且范围重叠，显存采样峰低48MiB。ready中位增加44.32ms，冷形状准备增加52.90ms；收益与代价分别保留。该A/B未包含llama.cpp或MTP；本批新四臂窗口另列，不能拿普通B2收益代签MTP提速。
-
-索引状态的三个前提已落地：[原池槽资源](../evidence/correctness/inference-lease-slots-2026-10-26.json)25项、[融合写资格](../evidence/correctness/inference-fused-writer-2026-10-26.json)4项、[CUDA浮点Gather](../evidence/correctness/inference-cuda-slot-gather-2026-10-26.json)3组有限检查通过。后者保持F32／F16／BF16原码并支持行padding；当次尚未包含下述GDN融合，conv及完整模型性能仍未完成。
-模型无关的Store描述及[槽绑定事务](../evidence/correctness/inference-slot-bindings-2026-10-27.json)另有6组检查通过，覆盖元数据失败不消费writer、寿命、真实地址与预算；这些资源类型不代表实际Store执行已接通。
-[读权限撤回](../evidence/correctness/inference-projected-read-release-2026-10-27.json)11项检查通过：真实退休后只撤回指定源及其alias与guard，旧源可重获写权，其它绑定仍保留；包含三项原unbind回归。该次检查尚未包含下述实际Store执行，原生索引GDN／conv仍是剩余实现的大头。
-
-[Store实际执行](../evidence/correctness/inference-slot-store-2026-10-27.json)已接默认CPU／CUDA装配：5个新实际写入检查及8个相邻权限合同通过，覆盖固定索引载体复用、非连续目标槽、未选择槽、原结果寿命、非法重绑和reset后失权拒绝。本批只成功编译6个不同单元、链接1个镜像，保留首次测试命令缺Toolkit头路径的失败；未重建SDK、未接引擎或测性能。该fallback不支持capture、冷索引上传可能等待，下一步仍是原生索引融合。
-
-[私有索引GDN](../evidence/correctness/inference-indexed-gdn-native-2026-10-27.json)三组原生检查通过：K1、T4>K2最后K个状态及BF16 V／beta，与原稠密F32路径逐位一致，另核源槽、未选槽及padding不变。首次BF16失败来自旧融合预检漏排除新模式，已窄修并复用成功内核／测试对象；实际只编两个不同NVCC单元和一个测试单元，dispatcher因该修正补编一次。保持原F32运算体及旧fused-cache布局；未证明公开Provider／Graph／引擎接通或完整提速。
-
-[CUDA GDN的Graph融合](../evidence/correctness/inference-indexed-gdn-graph-2026-10-27.json)15项有限检查通过：原13项Store／权限合同，加上Y发布、仅写状态两种实际融合；后者覆盖reset后拒绝旧权限及取回原事务。共用唯一StoreBinding及一次小索引上传，原Recipe的effect roots保留无Y输出的状态写入；不复制状态载荷。另修权限预留误用旧extra计数的问题，扩容失败仍保留原投影。7个不同C++单元增量编译，5个产品对象全程复用，追加编译只修测试；各通过结果的实际镜像、DLL装配及测试预算／alignment失败均在记录中。尚未接引擎或conv，未测完整性能，也未验证全部平台与图形。
-
-[可移植源绑定](../evidence/correctness/inference-slot-source-fallback-2026-10-27.json)本批11项有限检查通过：共同冷准备按原Graph关联Store／Gather，CPU稠密及padding源槽可取回重用，替换源ID前先确认合法准备成功、替换后拒绝；CUDA原两融合及公开Gather结果后的默认fallback均与原稠密状态逐位一致。默认CCCL叶子缺失的读取资格已补，未强制换Provider。首次CPU缺输出绑定、CUDA测试误以为无用节点会裁掉，以及缺资格的原失败均保留；通过结果分属实际镜像，不声称同一最终镜像重跑全组。ggml叶子资格已补但本批未单独命中，尚未接引擎／conv或证明提速。
-
-[原生槽写入](../evidence/correctness/inference-native-slot-store-2026-10-27.json)窗口中，新增Apple 3项（4种载荷）与Vulkan 3项有限检查通过，共同层另有原CPU／CUDA 11项回归通过。三种实际镜像分别记录；共同层回归后的默认初始化拼写修正另经两原生镜像编译，不冒称全组在同一源码镜像重跑。原生路径复用唯一槽事务、原ExecutionSource、FIFO／Completion及真实退休，不伪造Compute Queue；普通Gather保留实际stride、原精度及选行权限。该窗口覆盖生成结果、结果保活、未选槽／padding和reset回收，只检查4字节对齐item／offset；其后CPU与Apple补充见下，conv与完整引擎仍未完成。
-
-[CPU默认选行](../evidence/correctness/inference-cpu-storage-gather-2026-10-27.json)已补上述CPU缺口，11项有限检查通过：普通Compute／Graph按存储格式复用Native原码选行，保留padding行stride，避免整池CONT及F16／BF16经F32往返；新规则不依赖模型、硬件或Store注解，稠密F32和已有实测规则保留。检查包含默认槽投影、两种普通入口、原7项槽合同和一项既有路由回归，未测模型或速度。仅增量编译5个单元；保留测试编译失败与离线XML汇总修正，不重跑已通过进程。
-
-[Apple精确字节范围](../evidence/correctness/inference-apple-slot-byte-ranges-2026-10-27.json)5项有限检查通过：原3项Graph回归，加生成的BF16 2／6字节行及原FIFO拷贝合同。实际对齐范围仍有2次native blit，2字节范围为精确host copy；全部实际范围和别名先验后才写，源失败不重算。保留原事务、结果保活、真实退休及reset回收，不读写额外padding。只增量编译3个单元，保留两次验证配方缺头文件／搜索路径失败；未跑模型、性能或原生故障注入。Vulkan尾部仍需真正的原码索引／copy承载，不能仅放宽4字节transfer门。
-
-[CUDA索引卷积及共用融合](../evidence/correctness/inference-indexed-conv-graph-2026-10-27.json)7项有限GPU检查通过：4项新conv检查及3项原GDN回归。普通图的Gather／Concat／Cast／Conv与最后K个原精度history窗口共用原槽事务；实际覆盖F32多成员、BF16长chunk、F16短chunk及逃逸读者fallback。更换目标槽ID后的第二轮实际复用原CUDA录制，历史原码、未选槽及padding保持；不复制状态载荷。只编译6个不同单元，共7次编译、2次链接；首镜像未运行，最终镜像只运行一次。没有完整引擎、模型性能或原生故障注入结论；当时尚未包含下述共同批量控制。
-
-[共同批量控制与事务复用](../evidence/correctness/inference-batched-slot-controls-2026-10-27.json)取得29项有限CPU／CUDA通过结果：按真实执行源／Queue／资源共用固定控制载体，独立池各保真实槽号；覆盖两轮换ID、未全部take拒绝重绑、reset及真实晚期权限失败回滚。clear／refill保留原元数据并重新核租约；两处权限预留已去掉重复计数。6个不同C++单元、9次编译、2次链接，原生CUDA与SDK全部复用。首镜像26项通过、3项因测试漏Store控制边而拒绝构图；只改两测试单元，第二镜像仅重跑这3项并通过，未重复原通过项。首次重载解析编译失败与两镜像结果均保留。Apple／Vulkan本批未新运行，其原生copy内部仍可临时分配；没有模型或速度结论。下一步接入真实引擎，不能用组件通过代签MTP接受／回滚及完整提速。
-
-KV工作帧已接通Compute、Graph及引擎：41项页存储检查、23组前缀／工作态检查、7个CPU／Vulkan／CUDA功能进程和4个递归MTP对照进程通过。Apple复用缓存增量编译11个单元，tiny普通／MTP及lag1两次运行通过，状态字节、续算、旧快照及最终资源归零一致。旧快照、失败边界、封存失败与较短接受前缀均有有限覆盖；[Windows功能记录](../evidence/correctness/inference-paged-frame-2026-10-26.json)和[Apple功能记录](../evidence/correctness/inference-paged-frame-macos-2026-10-26.json)保留原失败和未验证项。本批没有新Linux运行，4个诊断probe虽已适配但未单独编译；有限检查不代表全平台与模型质量穷尽。
-
-[同窗Hyle控制／候选B2](../evidence/performance/inference-paged-frame-2026-10-26.json)的六计时＋两独立内存进程全部成功：prefill7509.27→7401.39、decode156.72→158.30、综合138.47→139.75 tok/s；分别−1.44%（范围重叠）、＋1.01%／＋0.92%（范围不重叠），三样本不代表统计显著性。显存采样峰相同，未证明节省。198个输出ID、1728输入行、99次执行及完整非时间报告一致；本批没有新llama.cpp进程，不刷新旧跨引擎对照表。
-
-### 此前交付依据
-
-- 文档：补齐16份缺页并校正范围与合同；入口见[架构索引](../architecture/README.md)。
-- 共同请求循环、工作态和取消交付：[共同循环](../evidence/correctness/inference-request-loop-2026-10-26.json)、[工作态迁移](../evidence/correctness/inference-working-state-2026-10-26.json)、[请求控制](../evidence/correctness/inference-request-controls-2026-10-26.json)。
-- 状态块复用与批量权限撤回：[状态复用](../evidence/correctness/inference-reusable-state-2026-10-26.json)、[批量append](../evidence/performance/inference-bulk-append-2026-10-26.json)。后者未证明提速。
-- 完整主机镜像、普通／MTP／lag1：[镜像](../evidence/correctness/inference-host-image-2026-10-26.json)、[lag1](../evidence/correctness/inference-host-image-lag1-2026-10-26.json)、[原生平台](../evidence/correctness/inference-native-host-image-2026-10-26.json)。固定bank归还槽不等于释放显存；模型搬运仍同步。
-- 副本保活、非阻塞观察及关闭后回收：[退休](../evidence/correctness/inference-transfer-retirement-2026-10-26.json)、[公开副本接口](../evidence/correctness/inference-copy-public-retention-2026-10-26.json)。观察错误不等于退休。
-- Vulkan片段对齐与CUDA小通道卷积：[片段接入](../evidence/correctness/inference-stream-padding-2026-10-26.json)、[卷积承载](../evidence/correctness/inference-cuda-causal-conv-2026-10-26.json)。
-- SDK权重冻结：[所有权边界](../evidence/correctness/inference-storage-freeze-2026-10-26.json)。
-
-单carrier不是已证实的落后主因。[同设置CPU诊断](../evidence/performance/inference-b2-peer-cpu-critical-2026-10-26.json)支持减少主机协议工作，未证明整个区间都可消除。剩余职责见[整体设计](../architecture/inference-design.md)，原始性能与候选取舍见[性能资料](performance/decode.md)。
+1. 补连续流水的 EOS／失败边界，并继续抽离共同执行编排。
+2. 完成同窗性能对照，更新下表。
+3. 继续定位 MTP 重录的具体端口变化，再处理设备后继和已确认热点。
 
 ## 最新完整性能对照
 
-最新两版Hyle同窗普通B2对照（各3次计时，另各1次内存采样）：
+2026-10-27 **18:01** 窗口；各格为 **Hyle／llama.cpp**。速度单位 tok/s，显存为采样峰 GiB。**此表尚不包含新连续流水。**
 
-| 指标 | 改动前 | 当前 | 变化 |
-|---|---:|---:|---:|
-| prefill tok/s | 7668.03 | 7606.82 | −0.80%，范围重叠 |
-| decode tok/s | 158.48 | 161.96 | ＋2.20% |
-| 多轮综合 tok/s | 140.55 | 142.67 | ＋1.51% |
-| dedicated显存峰 GiB | 3.999 | 3.952 | −48MiB，采样下界 |
-
-这是Hyle版本对照，不与下列旧双引擎窗口拼接。三样本不代表统计显著性；ready显存基线未知。
-
-以下各格为 **Hyle／llama.cpp**。速度单位 tok/s，显存为独立采样 dedicated 峰 GiB。B2保留此前跨引擎窗口，单用户普通／MTP使用新32进程窗口；上方普通B2的两版Hyle A/B不混入跨引擎表。
-
-| CUDA 工况 | prefill | decode | 综合速度 | 显存峰 GiB |
+| CUDA 工况 | prefill | decode | 综合速度 | 显存峰 |
 |---|---:|---:|---:|---:|
-| 单用户单轮普通 | 2179.355／1542.851 | 94.712／99.718 | 87.095／87.460 | 3.876／3.728 |
-| 单用户单轮 MTP | 2137.443／1449.165 | 118.433／133.903 | 105.961／110.610 | 4.030／3.896 |
-| 单用户两轮普通 | 2560.085／2416.944 | 94.075／99.731 | 87.702／92.003 | 4.009／3.728 |
-| 单用户两轮 MTP | 2473.995／2322.151 | 123.361／137.177 | 111.733／121.721 | 4.169／3.896 |
-| 普通 B2 三轮固定输入 | 7469.731／6086.119 | 154.941／170.683 | 136.981／143.737 | 3.999／4.743 |
+| 单用户单轮普通 | 2179／1543 | 94.71／99.72 | 87.10／87.46 | 3.876／3.728 |
+| 单用户单轮 MTP | 2137／1449 | 118.43／133.90 | 105.96／110.61 | 4.030／3.896 |
+| 单用户两轮普通 | 2560／2417 | 94.08／99.73 | 87.70／92.00 | 4.009／3.728 |
+| 单用户两轮 MTP | 2474／2322 | 123.36／137.18 | 111.73／121.72 | 4.169／3.896 |
 
-前四行来自2026-10-27北京时间 **18:01:05～18:03:47**的[当前32进程窗口](../evidence/performance/inference-batch-continuation-current-window-2026-10-27.json)：当前未插桩镜像15dc、R1、overlap off、MTP K1，24计时＋8独立内存进程全部成功。普通decode慢5.02%／5.67%，MTP慢11.55%／10.07%；不能据此证明R2接力提速。与04:52旧窗逐臂比较，32份完整producer报告的IDs／工作量相同，新增主机预备／overlap遥测差异另存；旧时间不混算。MTP差距比旧窗更大，对手速度也变了，没有同窗旧Hyle控制，不能归因本批回退；当前落后如实保留，仍需调查。自然续文跨引擎不同，单次显存峰为采样下界，加载／内存细项见证据。
+新的完整窗口完成后整体替换此表，不拿功能运行或带仪器诊断的速度刷新它。
 
-最后一行来自此前状态复用后的[8进程B2窗口](../evidence/performance/inference-b2-reusable-state-2026-10-26.json)：C1024、N2／R2、prefix off、无MTP，每请求三轮P256＋32固定输入；1728输入行、99物理执行和198输出ID一致。prefill＋22.73%、decode−9.22%、综合−4.70%；工作集峰Hyle／参考1.080／4.106GiB，private commit5.624／5.926GiB，ready内存基线未知。参考为实际保留版本，不声称最新上游。各窗口不混算，ID一致也不代表中间数学逐位相同；不能用跨窗绝对速度变化归因工作帧收益或退步。
-
-CPU最新[同窗对照](../evidence/performance/inference-cpu-constant-view-regions-2026-10-26.json)：i9-13900K、原生4／ATen4线程、调用线程、P154＋16、C256、N1／R1、无MTP；参考为同版本AVX2／FMA／F16C。
-
-| CPU 配置 | prefill | decode | 综合速度 | 工作集峰 GiB |
-|---|---:|---:|---:|---:|
-| Hyle／llama.cpp | 43.953／42.937 | 11.437／12.027 | 3.323／3.314 | 5.002／3.828 |
-
-CPU decode仍慢约4.9%，private commit为5.740／0.606GiB；映射和私有分配不能当权重大小。内存峰均为有限采样下界，缺样不记零；加载口径和OS缓存不同，不排名冷盘。Apple及其它多轮工况、同后端参考仍需补齐。
-
-以下是[冻结Vulkan入口的放置基线](../evidence/performance/inference-vulkan-hybrid-baseline-2026-10-27.json)，为Hyle自身两种配置，未运行参考引擎。北京时间2026-10-27 **19:17:03～19:18:03**完成6个交错计时＋2个独立内存进程；两臂均P154＋15固定decode、C256、R1、无MTP，169计算行／16图／16预测ID相同，各自完整非时间报告固定。
-
-| Vulkan放置 | prefill tok/s | decode tok/s | 单轮综合 tok/s | dedicated采样峰 GiB |
-|---|---:|---:|---:|---:|
-| FFN全GPU | 308.368 | 7.934 | 6.694 | 6.380 |
-| 一层FFN在CPU | 181.041 | 7.539 | 5.633 | 6.314 |
-
-CPU一层实际转移75,501,568B原权重，仍为该入口默认native1，未调CPU最佳配置。prefill／综合分别慢41.29%／15.86%，三样本范围不重叠；decode慢4.98%且范围重叠。dedicated采样峰少67.21MiB，工作集／private commit峰各多152.81／144.87MiB，单次采样不签普遍节省。ready基线未知，GPU缺样20／21条且保null，实际中位采样间隔约15ms；不是精确物理峰。该镜像早于新Source接力，只作其实际功能范围内的Vulkan放置基线，不外推CUDA、MTP、自然请求或多轮性能。
+详情：[架构](../architecture/inference-design.md) · [性能与实验](performance/decode.md) · [实现范围](../implementation/inference-roadmap.md) · [本批结果](../evidence/correctness/inference-continuous-wave-2026-10-27.json) · [上次完整窗口](../evidence/performance/inference-batch-continuation-current-window-2026-10-27.json)

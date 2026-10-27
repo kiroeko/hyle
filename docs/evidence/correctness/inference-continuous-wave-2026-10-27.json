@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "date": "2026-10-27",
+  "subject": "Continuous ordinary decode across RequestLoop pumps using original Step/Source owners",
+  "repository_head_at_packaging": "1edc16f3e31416e91d8040ca1d097729be24e4e2",
+  "counts": {"CXX": 5,"links": 5,"actual_processes": 11,"host_processes": 2,"tiny_CLI": 4,"real_Qwen_CLI": 4,"controls_processes": 1,"controls_arms": 10,"SDK": 0,"NVCC": 0,"downloads": 0},
+  "implementation": [
+    "Deferred PreparedGenerationCall metadata crosses pumps; original Model active/successor Step and single SubmissionSource retain all native work and complete outcome.",
+    "Resumed work observes its original submitted episode, renews only actual held/additional output grants, and may submit the next exact successor before observing that episode.",
+    "Three physical carriers retain at most D2 candidates; expected Session base/epoch, complete ordered cohort, existing capture tuple and original Source permissions remain mandatory.",
+    "After whole success, original deltas, tails and input withdrawal are complete before consumed returned append transactions are dropped; stale COW source tails no longer pin the next candidate page.",
+    "Normal publication, bounded-credit drain, one-member cancellation with surviving peer, explicit yield/requeue and reverse actual retirement use the same original owners."
+  ],
+  "source_snapshots": [
+    {"logical_source": "engine/models/qwen35/generation_ledger.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/ledger/engine/models/qwen35/generation_ledger.h","bytes": 13062,"sha256": "05117f490a035484d2cdd7eb26fd1fa1b101d18ec9b01ca1df0a97fea2e2d09f"},
+    {"logical_source": "tests/tools/qwen_generation_ledger_test.cc","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/ledger/tests/tools/qwen_generation_ledger_test.cc","bytes": 17181,"sha256": "9d995b39c709b4b5c2ceb11e3e6d8be45511f7161224a2ff905a5fb5761894c3"},
+    {"logical_source": "tests/graph_batch/paged_append_graph_test.cc","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/paged/tests/graph_batch/paged_append_graph_test.cc","bytes": 66478,"sha256": "b2513626e06b6d76afbc031c7bc4b45db5af5ecc8e79687c43f47f9484029697"},
+    {"logical_source": "engine/inference/request_loop.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/model/engine/inference/request_loop.h","bytes": 25380,"sha256": "6547eef6b4081cd9b7990822ca384f466347244e4468373b509b543bf456ecf9"},
+    {"logical_source": "engine/models/qwen35/main.cc","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/model/engine/models/qwen35/main.cc","bytes": 553328,"sha256": "8a7867123cee61c8ae46a599031a66b8e1b17c18cd533591fd1a45d056e3c647"},
+    {"logical_source": "engine/models/qwen35/session_state.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/model/engine/models/qwen35/session_state.h","bytes": 21564,"sha256": "1b6a3a5e20fc40d14518e363740ad9e5d0492f242cb94d92bb8e2ff1c46282b3"},
+    {"logical_source": "engine/models/qwen35/main.cc","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/model2/engine/models/qwen35/main.cc","bytes": 553469,"sha256": "09f47468917ddc2c342a18df8490e7b2acfc993f049674e0a8ffb92ebed64260"},
+    {"logical_source": "tests/tools/qwen_continuous_generation_case.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/probe/tests/tools/qwen_continuous_generation_case.h","bytes": 23582,"sha256": "f8b94b0961e9560f7a95312007e5c081a86c784c9f4dd95e26b7223ee024a158"},
+    {"logical_source": "tests/tools/qwen_generation_batch_relay_probe.cc","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/probe/tests/tools/qwen_generation_batch_relay_probe.cc","bytes": 29699,"sha256": "b301f6e6636017dc7bc71b64643248ae7657e3e424cd66d73f1722890b050555"},
+    {"logical_source": "tests/tools/qwen_generation_state_case.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/probe/tests/tools/qwen_generation_state_case.h","bytes": 9967,"sha256": "9baaacac400112fa2af8b6a9be3158f39ed5f6ff4dcb63611cb5579e222787c0"},
+    {"logical_source": "tests/tools/qwen_geometry_fixture.h","actual_snapshot": ".scratch/inference-continuous-wave-20261027/source/probe/tests/tools/qwen_geometry_fixture.h","bytes": 1527,"sha256": "0f55ff3c30fd147cf658b490825d7cc5d371c025729987028bdf35ad2ab5c2af"}
+  ],
+  "builds": [
+    {"unit": "ledger","source_sha256": "9d995b39c709b4b5c2ceb11e3e6d8be45511f7161224a2ff905a5fb5761894c3","object": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\compile\\ledger\\unit.obj","bytes": 875517,"sha256": "fac6347c03d0dedd7f865b1cbb8d3efaa80f81475a92f5bd1b1222d36089dd67"},"CXX": {"exit": 0,"pid": 56524,"seconds": 1.3366971999639645},"link": {"exit": 0,"pid": 55896,"seconds": 0.05080139997880906},"image": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\generation-ledger-test.exe","bytes": 200192,"sha256": "e48a0f0ce4d368940afe7785717b5a21a6243ac5a54274f51ab9ccc4a1a947b0"},"inputs": 2},
+    {"unit": "paged","source_sha256": "b2513626e06b6d76afbc031c7bc4b45db5af5ecc8e79687c43f47f9484029697","object": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\compile\\paged\\unit.obj","bytes": 2508169,"sha256": "001272633009ffd7dd9fa9fda26433babed362b65efaddb37cd7e7545dae590c"},"CXX": {"exit": 0,"pid": 35176,"seconds": 5.024319100019056},"link": {"exit": 0,"pid": 52516,"seconds": 1.8982702000066638},"image": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\paged-append-test.exe","bytes": 148627456,"sha256": "e184a8ed8a82e016d60dc1a9c2bf396c5e085d889fd178e6b0bcc0c9557b6a85"},"inputs": 242},
+    {"unit": "model","source_sha256": "8a7867123cee61c8ae46a599031a66b8e1b17c18cd533591fd1a45d056e3c647","object": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\compile\\model\\unit.obj","bytes": 18397595,"sha256": "3ff03636d13e91f84c374ec7b9192ca5e839e907ed830c91941905805f9bceae"},"CXX": {"exit": 0,"pid": 61540,"seconds": 26.95014590001665},"link": {"exit": 0,"pid": 38100,"seconds": 1.7837446000194177},"image": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\hyle.exe","bytes": 142432256,"sha256": "cc56b3355905dac9c0509e53a2a4f2c39615fcd6950a68d641a93c426233b72e"},"inputs": 224},
+    {"unit": "model2","source_sha256": "09f47468917ddc2c342a18df8490e7b2acfc993f049674e0a8ffb92ebed64260","object": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\compile\\model2\\unit.obj","bytes": 18404090,"sha256": "b8d21a887750d01e3632b52ae3dd576fcc6354e8d84ea91968a54c051bd3c21d"},"CXX": {"exit": 0,"pid": 47624,"seconds": 41.195127200044226},"link": {"exit": 0,"pid": 52516,"seconds": 1.7518536999705248},"image": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\hyle-model2.exe","bytes": 142431744,"sha256": "bbd55e8c683f4d985b4e07b3a55ebb6f7875aed703bd921320da20ad1872ce70"},"inputs": 224},
+    {"unit": "probe","source_sha256": "b301f6e6636017dc7bc71b64643248ae7657e3e424cd66d73f1722890b050555","object": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\compile\\probe\\unit.obj","bytes": 21583180,"sha256": "bfc0805d81dc442609f98d7c9f418d7747e85ba54fe512e34eccc7788607937f"},"CXX": {"exit": 0,"pid": 45308,"seconds": 30.02210110001033},"link": {"exit": 0,"pid": 38804,"seconds": 2.3396695000119507},"image": {"path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\qwen-continuous-generation-probe.exe","bytes": 142385664,"sha256": "69e77a3b8015c85032ad8edafb22383b2647e275389e05fe0d22a3443bb33445"},"inputs": 223}
+  ],
+  "actual_processes": [
+    {"name": "ledger","image": "ledger","exit": 0,"pid": 61032,"seconds": 0.04925340000772849},
+    {"name": "paged","image": "paged","exit": 0,"pid": 56528,"seconds": 0.5433995999628678},
+    {"name": "cli-cpu-ordinary-b2","image": "model1","exit": 0,"pid": 43708,"seconds": 1.5556626999750733},
+    {"name": "cli-cpu-mtp-k3-b2","image": "model1","exit": 0,"pid": 54672,"seconds": 0.4802588000311516},
+    {"name": "cli-cuda-ordinary-b2","image": "model1","exit": 0,"pid": 61804,"seconds": 0.7316504999762401},
+    {"name": "cli-cuda-mtp-k3-b2","image": "model1","exit": 0,"pid": 37948,"seconds": 0.7954341000295244},
+    {"name": "real-r1-off","image": "model2","exit": 0,"pid": 52688,"seconds": 3.175394099962432},
+    {"name": "real-r1-auto","image": "model2","exit": 0,"pid": 36364,"seconds": 2.845168099971488},
+    {"name": "real-b2-off","image": "model2","exit": 0,"pid": 51036,"seconds": 3.4909047999535687},
+    {"name": "real-b2-auto","image": "model2","exit": 0,"pid": 48000,"seconds": 3.2925454000360332},
+    {"name": "continuous-controls","image": "probe/main-model2","arms": 10,"exit": 0,"pid": 44232,"seconds": 1.2797694999608211}
+  ],
+  "host_checks": [
+    "Ledger five groups include renewed ordinary quota rejection/strong guarantees.",
+    "One CPU GTest checks returned COW transaction old-tail pin, true reacquire after dropping it, exact committed new bytes, and both drop-before/after-commit orders."
+  ],
+  "tiny_model1": {"sha256": "8a7867123cee61c8ae46a599031a66b8e1b17c18cd533591fd1a45d056e3c647","scope": "CPU/CUDA ordinary B2 and MTP K3 B2; each once, complete normalized reports equal W14 and final live versions zero; these do not validate the later Model2 edit"},
+  "real_model2": {"sha256": "09f47468917ddc2c342a18df8490e7b2acfc993f049674e0a8ffb92ebed64260","scope": "Cached Qwen3.5-2B R1/R2 ordinary off/auto; 97/194 IDs, 97 original Graph calls each, complete normalized report comparison against W13","auto_only_differences": ["/overlap_successor_submissions:44->88","/overlap_successor_publications:44->88"],"refusals": 0,"discards": 0,"final_live_versions": 0},
+  "comparisons": {"normalizer_excludes_key_substrings": ["seconds","per_second","capture","replay","trace_name"],"exact_additional_exceptions": "Only the two auto top-level successor counters listed above; off has none","continuous_oracle": "Every published initialized logical KV/GDN/conv byte, IDs, ledger result/actual member geometry, epochs and RNG match serial controls. Quota is validated against each real wave grant before its intentional control/candidate normalization."},
+  "continuous_candidates": [
+    {"requests": 1,"mode": "normal","pumps": 15,"actual_batches": 14,"pending_returns": 5,"max_consecutive_pending": 5,"submit_before_observe": 5,"renewals": 4,"credit_drains": 0,"cancelled_requests": 0,"yield_drains": 0,"pending_length27": true},
+    {"requests": 2,"mode": "normal","pumps": 15,"actual_batches": 14,"pending_returns": 5,"max_consecutive_pending": 5,"submit_before_observe": 5,"renewals": 4,"credit_drains": 0,"cancelled_requests": 0,"yield_drains": 0,"pending_length27": true},
+    {"requests": 2,"mode": "credit_exhaustion","pumps": 15,"actual_batches": 14,"pending_returns": 3,"max_consecutive_pending": 3,"submit_before_observe": 3,"renewals": 2,"credit_drains": 1,"cancelled_requests": 0,"yield_drains": 0,"pending_length27": true},
+    {"requests": 2,"mode": "member_cancel","pumps": 15,"actual_batches": 14,"pending_returns": 3,"max_consecutive_pending": 3,"submit_before_observe": 3,"renewals": 2,"credit_drains": 0,"cancelled_requests": 1,"yield_drains": 0,"pending_length27": true},
+    {"requests": 2,"mode": "yield_resume","pumps": 15,"actual_batches": 14,"pending_returns": 3,"max_consecutive_pending": 3,"submit_before_observe": 3,"renewals": 2,"credit_drains": 0,"cancelled_requests": 0,"yield_drains": 1,"pending_length27": true}
+  ],
+  "controls_fixture": {"type": "Untrained cached GA/H64","prompt_rows": 18,"outputs_per_live_member": 14,"context": 32,"delivery_credit": 2,"D": 2,"N": "actual width 1 or 2","R": "actual width 1 or 2","state_snapshot_slots": "N+2R, exactly 3*width","old_tail_boundary": "length27 within context32; no budget enlargement","copied_weight_bytes": 0,"context_manifest_only": "Existing tiny context16 changed explicitly to32; original absolute binary ranges reused"},
+  "recorded_correction": {"old_model": "8a7867 had four tiny passes; independent static review found live version count includes deferred B.next","new_model": "09f474 subtracts only actual nonempty active/successor candidate versions for committed-N observation, while keeping the physical snapshot_slots gate; extra model2 CXX/link and current probe used distinct artifacts","boundary": "No actual failed Model1 real-model process was run for this known issue; it was corrected before those four real journeys."},
+  "recorded_script_failures": [
+    {"error": "KeyError:'model2'","stage": "After successful model2 CXX, before any link process","action": "Preserved failed plan/log; separate corrected immutable link plan reused the one successful OBJ; no CXX retry"},
+    {"error": "KeyError:'fixture_manifest'","stage": "Before any tiny model process","action": "Preserved original run_cli-attempt1.py/log; pinned actual --inputs/weights.tsv; each of four real tiny processes then ran once"}
+  ],
+  "boundaries": [
+    "Functional evidence only: recorded process seconds are not a TPS/latency comparison or speedup.",
+    "No new natural model EOS, new fault-injection or new MTP device-continuation proof; MTP appears only in the four existing tiny regressions.",
+    "Continuous controls are ordinary greedy CUDA and an untrained tiny fixture; no sampling continuation or other-platform claim.",
+    "No SDK, shader, NVCC or model-weight rebuild/download; no second executor, Completion owner or fake ready state introduced."
+  ],
+  "evidence": {"archive": {"path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-continuous-wave-2026-10-27.zip","bytes": 925760,"sha256": "397aa1b12c7a3caf6c3f20fae361a8831406f3dab645cb77ee59cfd8e266ba51"},"members": 218,"all_member_bytes_sha_read_back": true,"includes": "Necessary exact old/new source snapshots, source alias map, plans, compiler dependencies, object/image hash references, complete commands/logs/XML/reports and comparison controls","omits": "EXE/OBJ/PDB/DLL/LIB/EXP, SDK copies, shader binaries and model payloads"}
+}

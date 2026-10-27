@@ -440,6 +440,10 @@ if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
   add_test(NAME hyle_qwen_generation_batch_relay_probe COMMAND hyle_qwen_generation_batch_relay_probe)
   set_tests_properties(hyle_qwen_generation_batch_relay_probe PROPERTIES
     LABELS "tooling;generation;cache;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+  add_test(NAME hyle_qwen_continuous_generation_probe
+    COMMAND hyle_qwen_generation_batch_relay_probe --cuda-continuous)
+  set_tests_properties(hyle_qwen_continuous_generation_probe PROPERTIES
+    LABELS "tooling;generation;cache;cuda;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 
   add_executable(hyle_qwen_generation_relay_probe tools/qwen_generation_relay_probe.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")

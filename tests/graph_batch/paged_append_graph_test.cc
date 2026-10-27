@@ -633,6 +633,82 @@ Status exclusive_tail(){
  HYLE_RETURN_IF_ERROR(check(original_v.prefix.size()==128 && !values.read(too_wide,std::span(&original_v.prefix,1)),"old bounded prefix granted a larger layout"));
  std::puts("paged append exclusive same-page suffix/retired rollback retry/bounded old snapshot/no-tail COW BF16 PASS");return Status::Ok();
 }
+[[maybe_unused]] Status consumed_cow_transaction(bool drop_before_commit){
+ const auto memory=hyle::mem::system_resource();
+ const std::array providers{c::ProviderBinding{c::ggml_cpu::provider(),0}};
+ HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(c::cpu::device(),{.providers=providers}));
+ HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
+ struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
+ HYLE_ASSIGN_OR_RETURN(auto plain,c::CacheStorage::plain(c::DataType::kBFloat16));
+ const c::BatchCapacity cap{.query_type=c::DataType::kBFloat16,.output_type=c::DataType::kBFloat16,
+  .key_storage=plain,.value_storage=plain,.max_requests=1,.max_query_rows=1,.max_kv_rows=4,
+  .max_pages=2,.max_page_refs=2,.query_heads=1,.kv_heads=1,.qk_head_dim=64,.value_head_dim=64,.page_size=2};
+ HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
+ const std::array<std::int32_t,2>q{0,1},ptr{0,1};
+ const std::array<std::int32_t,1>old_id{0},new_id{1},old_tail{1},new_tail{2};
+ HYLE_ASSIGN_OR_RETURN(auto before,schema.version({q,ptr,old_id,old_tail}));
+ HYLE_ASSIGN_OR_RETURN(auto after,schema.version({q,ptr,new_id,new_tail}));
+ HYLE_ASSIGN_OR_RETURN(auto arena,c::PagedArena::create(schema,c::BatchCacheRole::kValue,memory,{.max_backing_bytes=4096}));
+ HYLE_ASSIGN_OR_RETURN(auto initial,arena.acquire(0));
+ std::array<std::uint16_t,128>old_words;old_words.fill(0x7fc1);
+ std::fill_n(old_words.begin(),64,word(.25f,true));
+ HYLE_RETURN_IF_ERROR(initial.lease().view()->write(std::as_bytes(std::span(old_words))));
+ HYLE_ASSIGN_OR_RETURN(auto old_guard,initial.publish(1));
+ HYLE_ASSIGN_OR_RETURN(auto old_read,arena.read(before,std::span(&old_guard,1)));
+ HYLE_ASSIGN_OR_RETURN(auto original,c::PagedArenaFootprint::from_read(old_read));
+ HYLE_ASSIGN_OR_RETURN(auto frame,c::PagedArenaFrame::fork(original));
+ HYLE_ASSIGN_OR_RETURN(auto expected,frame.view());
+ std::array<c::PagedPageWriter,1>dirty;
+ HYLE_ASSIGN_OR_RETURN(dirty[0],arena.acquire(1));
+ HYLE_ASSIGN_OR_RETURN(auto transaction,gb::PagedAppendPages::create(arena,after,before,std::span(&expected,1),dirty));
+ // The working frame and original transaction are now the only old-page owners.
+ old_guard={};old_read={};original={};
+ HYLE_ASSIGN_OR_RETURN(auto rows,c::TensorDesc::dense(c::DataType::kBFloat16,std::array<std::int64_t,3>{1,1,64}));
+ HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
+ HYLE_ASSIGN_OR_RETURN(auto input,builder.input(rows));
+ HYLE_ASSIGN_OR_RETURN(auto append,gb::paged_append(schema,c::BatchCacheRole::kValue));
+ HYLE_ASSIGN_OR_RETURN(auto node,builder.add_node(c::Operation::custom(append),std::array{input}));
+ HYLE_ASSIGN_OR_RETURN(auto graph,std::move(builder).finish());
+ const std::array domains{g::StorageDomain{memory}};
+ HYLE_ASSIGN_OR_RETURN(auto source,g::ExecutionSource::acquire(context));
+ const std::array targets{g::ExecutionTarget{source,g::StorageDomainId{0}}};
+ HYLE_ASSIGN_OR_RETURN(auto compiled,gb::compile(graph,{.storage_domains=domains,.targets=targets}));
+ HYLE_ASSIGN_OR_RETURN(auto invocation,compiled.executable.create_invocation({.resources=g::ResourceOptions{}}));
+ const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+ HYLE_RETURN_IF_ERROR(gb::prepare(invocation,queues,std::span<const gb::NodeLayout>{}));
+ HYLE_RETURN_IF_ERROR(gb::bind_append(invocation,graph,node,std::move(transaction)));
+ HYLE_ASSIGN_OR_RETURN(auto input_pool,c::LeasePool::create(memory,128,{.max_blocks=1}));
+ std::array<std::uint16_t,64>incoming;incoming.fill(word(.75f,true));
+ HYLE_ASSIGN_OR_RETURN(auto input_guard,load(input_pool,incoming));
+ HYLE_RETURN_IF_ERROR(invocation.bind(input,rows,input_guard));
+ HYLE_RETURN_IF_ERROR(invocation.prepare_replay(queues));
+ HYLE_ASSIGN_OR_RETURN(auto completion,invocation.submit(queues));
+ HYLE_RETURN_IF_ERROR(completion.wait());completion={};
+ HYLE_ASSIGN_OR_RETURN(auto returned,gb::take_append(invocation,node));
+ HYLE_ASSIGN_OR_RETURN(auto delta,returned.ready_delta(expected,after));
+ HYLE_ASSIGN_OR_RETURN(auto commit,frame.prepare_commit(std::move(delta)));
+ expected={};
+ if(drop_before_commit)returned={};
+ HYLE_RETURN_IF_ERROR(frame.commit(std::move(commit)));
+ if(!drop_before_commit){
+  // Whole success and head publication alone do not consume returned inputs.
+  auto pinned=arena.acquire(0);
+  HYLE_RETURN_IF_ERROR(check(!pinned && pinned.error().IsUnavailable(),"returned COW transaction stopped retaining its original old tail"));
+  returned={};
+ }
+ HYLE_ASSIGN_OR_RETURN(auto reused_old,arena.acquire(0));
+ HYLE_RETURN_IF_ERROR(check(reused_old.lease().valid(),"consumed retired transaction left its replaced old tail pinned"));
+ auto pinned_new=arena.acquire(1);
+ HYLE_RETURN_IF_ERROR(check(!pinned_new && pinned_new.error().IsUnavailable(),"dropping consumed append lost its committed changed page"));
+ HYLE_ASSIGN_OR_RETURN(auto current,frame.view());
+ HYLE_RETURN_IF_ERROR(check(current.layout()==after,"commit after append consumption lost the exact next layout"));
+ HYLE_ASSIGN_OR_RETURN(auto prefix,current.page_prefix(1));
+ std::array<std::uint16_t,128>actual{};
+ HYLE_RETURN_IF_ERROR(prefix.view()->read(std::as_writable_bytes(std::span(actual))));
+ for(std::size_t i=0;i<actual.size();++i)
+  HYLE_RETURN_IF_ERROR(check(actual[i]==word(i<64?.25f:.75f,true),"consumed append damaged the original COW prefix or newly written row"));
+ return Status::Ok();
+}
 Status all(){HYLE_RETURN_IF_ERROR(run(false,false,false));HYLE_RETURN_IF_ERROR(run(true,false,false));HYLE_RETURN_IF_ERROR(run(true,true,false));HYLE_RETURN_IF_ERROR(run(true,false,true));HYLE_RETURN_IF_ERROR(run(true,false,false,true));return symbolic_rows();}
 }
 #if defined(HYLE_APPEND_STANDALONE)
@@ -641,4 +717,5 @@ int main(){std::setvbuf(stdout,nullptr,_IONBF,0);auto result=all();if(result.ok(
 TEST(GraphPagedAppend,OriginalPagesAndSameGraphProof){const auto result=all();EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,ExclusiveTailRollbackAndBoundedSnapshots){const auto result=exclusive_tail();EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,WriterOnlyEffectsKeepOriginalPermissionsAndWholeOutcome){auto result=run(true,false,false,false,true);if(result.ok())result=run(true,false,true,false,true);EXPECT_TRUE(result.ok())<<result.message();}
+TEST(GraphPagedAppend,ConsumedCowTransactionReleasesOnlyItsRetiredInputs){auto result=consumed_cow_transaction(false);if(result.ok())result=consumed_cow_transaction(true);EXPECT_TRUE(result.ok())<<result.message();}
 #endif
