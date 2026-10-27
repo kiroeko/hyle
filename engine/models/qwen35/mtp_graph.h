@@ -28,8 +28,8 @@ constexpr Dimension fixed(std::int64_t value) noexcept {
   return Dimension::fixed(value);
 }
 
-// Main constructs these shared dimensions once. Rows are request-major;
-// packed_rows == requests * sequence_rows in every selected finite child.
+// Main constructs these physical carrier dimensions once; packed_rows is
+// requests * sequence_rows. Compact selectors/positions describe actual members.
 struct Geometry final {
   std::size_t requests;
   Dimension sequence_rows, packed_rows;
@@ -45,6 +45,11 @@ struct KeyValue final {
 };
 struct AppendNodes final {
   graph::NodeId key, value;
+};
+// Explicit cold Graph ports for compact member-local previous-row selection.
+// Empty ports retain the original rectangular exact-shape construction.
+struct PrefillSelection final {
+  Value hidden_indices{}, token_indices{};
 };
 struct PagedInputs final {
   compute::BatchSchema schema;
@@ -161,21 +166,21 @@ KeyValue project_kv(R &r, const Projection &projection, Value positions, Value f
 }
 
 // Multirow prompt maintenance in the original target Graph. Recipe defines
-// token_rows=last_row+1; its finite family must contain only T>=2 here. T1
+// physical token_rows=last_row+1; its finite family contains capacities>=2. T1
 // uses the existing Single/CatchupSingle graph without an empty hidden slice.
 // A lag1 draft first consumes the already committed catch-up token at L-1,
 // paired with h[L-2]. Target input0 at L then pairs with the old carry h[L-1].
 // The caller shares both request-major row geometries with positions. Derived
 // dimensions are not interned, so do not recreate sums/products here.
 // The caller supplies the actual draft positions; this helper never shifts them.
-// An R1 packed carrier may contain an inactive suffix: the first Li target
-// rows yield exactly Li (+ one catch-up) valid pairs. Its original append
-// layout consumes only that prefix; physical R never advances a cache frontier.
+// Packed carriers use checked selectors to form each member's true previous
+// rows. Inactive selector entries name a valid old carry/catch-up row. Original
+// append layouts consume only Li (+ catch-up); physical R never advances them.
 template<class R>
 KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
                     Value carry, Value prior, Value catchup_token,
                     const Geometry &target_shape, const Geometry &draft_shape,
-                    Value positions, Value frequencies, bool catchup) {
+                    Value positions, Value frequencies, bool catchup, PrefillSelection selection = {}) {
   detail::geometry(target_shape);
   detail::coordinates(r, draft_shape, positions, frequencies);
   const auto batch = fixed(static_cast<std::int64_t>(target_shape.requests));
@@ -199,8 +204,43 @@ KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
         token.data_type() != Type::kInt32 || token.rank() != 1 || token.dimensions()[0] != batch)
       throw std::runtime_error("MTP catch-up prefill requires one prior hidden row and token");
   }
+  if (selection.token_indices && !selection.hidden_indices)
+    throw std::runtime_error("MTP token selection requires its matching hidden selection");
   Value tokens = target_ids, shifted;
-  if (target_shape.requests == 1) {
+  if (selection.hidden_indices) {
+    const auto validate_indices = [&](Value value) {
+      const auto description = r.spec(value);
+      if (description.data_type() != Type::kInt32 || description.rank() != 1 ||
+          description.dimensions()[0] != draft_shape.packed_rows)
+        throw std::runtime_error("MTP prefill selection differs from its physical draft carrier");
+    };
+    validate_indices(selection.hidden_indices);
+    if (catchup) {
+      if (!selection.token_indices)
+        throw std::runtime_error("MTP catch-up requires its compact token selection");
+      validate_indices(selection.token_indices);
+    } else if (selection.token_indices)
+      throw std::runtime_error("MTP lag-zero tokens already have the compact target order");
+    if (catchup && target_shape.requests > static_cast<std::size_t>((std::numeric_limits<std::int64_t>::max)() / 2))
+      throw std::runtime_error("MTP hidden prefix row count overflows");
+    const auto prefix = fixed(static_cast<std::int64_t>(target_shape.requests) * (catchup ? 2 : 1));
+    const auto source_rows = Dimension(detail::require(r.builder.dimension_sum(prefix, target_shape.packed_rows)));
+    const auto source_hidden = catchup
+        ? r.one(compute::Concat{.axis = 0}, {carry, prior, normalized_target_rows},
+            r.dense_spec(r.activation_type(), {source_rows, fixed(r.geometry.hidden)}))
+        : r.one(compute::Concat{.axis = 0}, {carry, normalized_target_rows},
+            r.dense_spec(r.activation_type(), {source_rows, fixed(r.geometry.hidden)}));
+    shifted = r.one(compute::Gather{.axis = 0, .bounds = compute::IndexBoundsPolicy::kChecked},
+        {source_hidden, selection.hidden_indices},
+        r.dense_spec(r.activation_type(), {draft_shape.packed_rows, fixed(r.geometry.hidden)}));
+    if (catchup) {
+      const auto source_token_rows = Dimension(detail::require(r.builder.dimension_sum(batch, target_shape.packed_rows)));
+      const auto source_tokens = r.one(compute::Concat{.axis = 0}, {catchup_token, target_ids},
+          r.dense_spec(Type::kInt32, {source_token_rows}));
+      tokens = r.one(compute::Gather{.axis = 0, .bounds = compute::IndexBoundsPolicy::kChecked},
+          {source_tokens, selection.token_indices}, r.dense_spec(Type::kInt32, {draft_shape.packed_rows}));
+    }
+  } else if (target_shape.requests == 1) {
     const auto previous = r.slice(normalized_target_rows, 0, fixed(0), Dimension(r.last_row));
     shifted = catchup
         ? r.one(compute::Concat{.axis = 0}, {prior, carry, previous},

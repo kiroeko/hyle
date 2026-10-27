@@ -1,16 +1,16 @@
 # 推理底座进度
 
-更新：2026-10-28 04:08（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 04:23（北京时间）。百分比为工作量估计，不是测试通过率。
 
 **整体进度：约70%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：普通异长与R1 MTP有效长度prefill已接通。** 目标与草稿共用有界输入行准备；CPU／CUDA真实部分接受／lag1／catch-up状态旅程已通过，下一步接B2 MTP的逐成员hidden／token移位。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
+**当前位置：普通及B2 MTP异长prefill已接通，正在补MTP有限分块／StateOnly。** 目标与草稿共用有界输入行准备；CPU／CUDA的逐成员hidden／token移位、部分接受和lag1追赶检查已通过。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
 
 ## 任务树
 
 - 功能与工程边界：约89%（进行中）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
-  - 有效长度／varlen prefill：约84%（普通异长及R1 MTP有限检查完成，其它组合未齐）
+  - 有效长度／varlen prefill：约88%（普通及B2 MTP异长有限检查完成，其它组合未齐）
   - 特性组合与分类错误：约75%（待穷尽复查）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
@@ -45,13 +45,13 @@
 
 ## 正在做
 
-- **B2 MTP异长prefill**｜所属：功能与工程边界／有效长度prefill｜约10%。用真实target／draft offsets生成checked Gather选择表，处理carry／prior／hidden及lag1 token移位；保留同role／lag分组和原repair。
+- **MTP有限分块／StateOnly**｜所属：功能与工程边界／有效长度prefill及特性组合｜约10%。中间块只提交真实target／draft状态，不采样或推进RNG；覆盖单行块、lag1首次追赶、部分恢复及原请求账簿。
 
-刚完成：共同输入行函数已用于原target与draft准备，9组主机检查通过。R1 MTP在同R4／lag1 R5下完成七步CPU／CUDA状态旅程，包含两次真实Verify K3接受前2行后的原修复；最终length＝frontier＝16、RNG draw5，旧快照与target／draft KV等严格核对，F32 GDN最大差9.31×10⁻¹⁰。真实2B MTP正常入口生成8 token、0新增exact接纳，共同helper下原B2 CUDA回归通过。本批无新性能窗，B2 MTP、MTP有限分块／StateOnly及跨平台仍未完成。[本批数据](../evidence/correctness/inference-mtp-packed-prefill-2026-10-28.json)
+刚完成：B2 MTP在CPU／CUDA各完成七批、14次成员发布，包含异长、换序及两次真实Verify K3接受前2行后的原修复；最终两个会话length＝frontier＝16、各draw5，原KV等载荷和旧快照严格核对，仅F32 GDN最大差9.31×10⁻¹⁰。真实2B正常入口首批[154,37]对应A191／R308，生成各4 token、0新增exact接纳，原R1 MTP CUDA回归通过。本批只编译两个消费者、复用原SDK，无下载，无新性能窗；MTP有限分块／StateOnly及其它平台／组合仍未完成。[本批数据](../evidence/correctness/inference-mtp-ragged-prefill-2026-10-28.json)
 
 ## 接下来
 
-1. 补B2 MTP逐成员shift／lag，再处理有限分块／StateOnly与其它适用组合；继续收敛共同边界。
+1. 补MTP有限分块／StateOnly与其它适用组合；继续收敛共同边界。
 2. 保留M1原路径，评估a/b在整模型中的收益；处理普通真实载体、跨轮预热，并补当前跟踪及A/A。
 3. 推进MTP设备后继、词表候选与更深GPU融合／带宽优化。
 

@@ -1,0 +1,249 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "4ff1204f3",
+  "status": "Finite checks passed",
+  "scope": "B2 unequal-length MTP prefill/catchup; not bounded MTP StateOnly, full varlen closure or performance comparison.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 576155,
+      "sha256": "6b41a036a60eddd106b2230fdb12fd13f9e93d68b3e1329e78ba27230f3b4bf7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 20708,
+      "sha256": "8579c1ff90874c22c57ead5c20a167f517c24fcd408824aa6616e075588506b4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 3555,
+      "sha256": "50027de604a87e29a4a78e10cc520698418010316981d51ce291f1a0e84afff6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_ragged_prefill_case.h",
+      "bytes": 21818,
+      "sha256": "fc8d80f477a1a54ad830061925eefb248dc85b357ccd62d1424a1ee133804b91"
+    }
+  ],
+  "implementation": [
+    "Packed R1/B2 MTP use checked Gather from original carry/prior/target hidden and lag1 token sources with per-member real lengths.",
+    "Original PhaseIo owns cold-reserved fixed I32 selectors, completely initialized before binding; no new owner, queue, permission or retirement system.",
+    "Target and draft keep independent original Batch offsets/positions. Natural cold families and grouping allow unequal Li with the same role/lag/completion/sampler.",
+    "Exact Single/Verify/decode and original recursive repair remain unchanged."
+  ],
+  "tiny": {
+    "cpu": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\tiny-cpu-run\\report.json",
+        "bytes": 17600,
+        "sha256": "fe9d66e18898f364aa49b90bce5e8d161d0060cb63f0574dea03fcf61edbffb4"
+      },
+      "status": "PASS",
+      "batches": 7,
+      "member_publications": 14,
+      "target_rows": {
+        "actual": 36,
+        "physical": 46,
+        "committed": 32
+      },
+      "draft_rows": {
+        "actual": 32,
+        "physical": 42
+      },
+      "maximum_absolute_gdn_error": 4.65661e-10,
+      "actual_selectors_checked": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "final_lengths": [
+        16,
+        16
+      ],
+      "final_frontiers": [
+        16,
+        16
+      ],
+      "final_rng_draws": [
+        5,
+        5
+      ],
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    },
+    "cuda": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\tiny-cuda-run\\report.json",
+        "bytes": 17592,
+        "sha256": "b1453296473670a34a81fc8fb9d605c6d974c20c4556cebc591831ed69cf4b77"
+      },
+      "status": "PASS",
+      "batches": 7,
+      "member_publications": 14,
+      "target_rows": {
+        "actual": 36,
+        "physical": 46,
+        "committed": 32
+      },
+      "draft_rows": {
+        "actual": 32,
+        "physical": 42
+      },
+      "maximum_absolute_gdn_error": 9.31323e-10,
+      "actual_selectors_checked": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "final_lengths": [
+        16,
+        16
+      ],
+      "final_frontiers": [
+        16,
+        16
+      ],
+      "final_rng_draws": [
+        5,
+        5
+      ],
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    }
+  },
+  "real_cli": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\bin\\model.exe",
+      "bytes": 142671360,
+      "sha256": "148147cac07aae10700268172366dc6d51abd0e2642667ceb63e9cafdd7ee45f"
+    },
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\cli-mtp-run\\report.json",
+      "bytes": 26981,
+      "sha256": "ef6277b43a3bf07c1f5185b92f3c9c605f315fb86fd02fa93ae5fbdb0321889b"
+    },
+    "first_input_rows": [
+      154,
+      37
+    ],
+    "active_rows": 191,
+    "physical_rows": 308,
+    "cold_exact_admissions": 0,
+    "generated_ids": [
+      [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      [
+        279,
+        1879,
+        1103,
+        13
+      ]
+    ],
+    "performance_claim": false
+  },
+  "r1_mtp_regression": {
+    "backend": "cuda",
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\r1-cuda-regression-run\\report.json",
+      "bytes": 7390,
+      "sha256": "d85ca7a1a9e1fe53856f717da3abf824246651b44f45465042aa6f7586ab150f"
+    },
+    "status": "PASS"
+  },
+  "numerical_contract": "Only recomputed finite F32 GDN payloads use the existing 3e-6 component absolute budget. All other payloads, previous checkpoints, metadata and RNG stay strict.",
+  "processes": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\cli-mtp-run\\process.json",
+      "pid": 4360,
+      "exit": 0,
+      "started": 1793132445.3648179,
+      "seconds": 3.7734920978546143,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\link\\model\\process.json",
+      "pid": 52692,
+      "exit": 0,
+      "started": 1793132419.1556768,
+      "seconds": 1.7809631824493408,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\link\\tiny\\process.json",
+      "pid": 43552,
+      "exit": 0,
+      "started": 1793132425.811299,
+      "seconds": 1.7522804737091064,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\logs\\model\\process.json",
+      "pid": 57508,
+      "exit": 0,
+      "started": 1793132361.0083387,
+      "seconds": 30.38188648223877,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\logs\\tiny\\process.json",
+      "pid": 33144,
+      "exit": 0,
+      "started": 1793132361.0083387,
+      "seconds": 31.99237871170044,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\r1-cuda-regression-run\\process.json",
+      "pid": 46488,
+      "exit": 0,
+      "started": 1793132454.3286653,
+      "seconds": 0.8202402591705322,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\tiny-cpu-run\\process.json",
+      "pid": 49992,
+      "exit": 0,
+      "started": 1793132433.7942047,
+      "seconds": 0.9205090999603271,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ragged-prefill-20261028\\tiny-cuda-run\\process.json",
+      "pid": 48000,
+      "exit": 0,
+      "started": 1793132439.3714762,
+      "seconds": 0.896526575088501,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "cost": {
+    "CXX": 2,
+    "links": 2,
+    "consumer_processes": 4,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "remaining": [
+    "MTP bounded prefill and StateOnly including Li1 and partial restore",
+    "Other platform/provider/dtype combinations",
+    "Shared execution architecture and current full performance comparison"
+  ],
+  "limits": [
+    "Controlled verifier accepts two of three true rows and executes original NextN repair; no natural acceptance-rate claim.",
+    "Tiny inputs are synthetic and untrained. Real CLI uses cached complete 2B original weights.",
+    "Carrier R=B*C can contain substantial padding; support is not a claim of optimal memory or speed.",
+    "No refreshed full performance or cross-engine window."
+  ]
+}
