@@ -84,6 +84,10 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 请求key与已提交输出仍保留在单独等待表；它不会成为虚假的设备等待或阻止其它请求执行。
 最终ACK在下一次pump归还身份，旧generation的控制不能影响复用后的slot。
 
+同步与连续消费者共用静态的`advance_request_wave`控制：核对原pending cohort／额度，区分开始、续进、排空和仅观察，
+并组合原异常与真实退休事实。它不保存Queue、Completion、调用容器或第二份额度账本；模型适配器仍持有原Step／Source，
+只有真实退休才清理待观察的调用。该抽取只是共同wave驱动；Graph接线、载体与整个Model执行编排仍有待继续收敛。
+
 `cancel`沿原模型`stop`返回真实Status：排队／暂停请求撤回，活动请求先记意图，原波结束后才移除，
 不破坏借用的active span。普通R2以上已提交batch沿原成员撤回合同完成幸存者；其它角色仍遵守原
 整体取消范围，不把MTP假装成普通单成员取消。可选的静态提交后观察点让同一owner在原submit之后处理控制，
@@ -115,10 +119,11 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 同一模块也承载原生packed路径，不能把移除模块等同于只去掉ATen调用。
 显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
 
-默认`--decode-overlap off`保留逐episode推进，普通B2参考也逐episode同步；单槽不是已证实的差距原因。
-自然请求显式选择`auto`时，只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，
+默认`--decode-overlap auto`自动选择可用的连续推进；`off`保留作诊断对照。普通B2参考也逐episode同步；单槽不是已证实的差距原因。
+只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，
 且存在输出上限至少10的turn，才准备D2；其它情况保持D1。D2使用三个物理IO载体、最多两个未发布候选，
 共用原FamilyChild、Queue、状态池与Graph提交；普通Phase仍只准备一个槽。
+显式缓存预算若连最低活动数的D2也容不下，先改用D1再执行原N选择；D1仍不足才报告容量错误，不为可选加速拒绝合法单步配置。
 自然请求的单一完整兼容cohort可在wave返回时保留一个已提交后继，下一pump复用该原active Step推进，
 不重做`prepare_generation_call`或再次提交它。非连续的组件消费者显式使用同步wave，仍由同一普通continuation实现完成有界量子。
 prefill继续使用原Completion；真实decode建立来源并完成六次实际imported-ready轮换后，才尝试pending B，
@@ -135,11 +140,15 @@ A的真实finish及主机观察完成后才绑定B的实际输入。量子内每
 
 [本批有限检查](../evidence/correctness/inference-continuous-wave-2026-10-27.json)覆盖真实2B普通R1／R2的88个后继发布，
 以及tiny的背压、跨pump单成员取消、yield／恢复和C32尾页容量。输出及完整初始化状态、epoch、RNG与各自控制一致；
-未新增跨pump模型EOS、真实驱动故障、MTP设备后继、其它后端或完整性能结论，默认overlap仍关闭。
+该批未新增跨pump模型EOS、真实驱动故障、MTP设备后继、其它后端或完整性能结论。
+随后[恢复与默认选择检查](../evidence/correctness/inference-wave-recovery-2026-10-27.json)补到16个实际CUDA控制臂，
+以小V64合成制品检查额外stop与EOS共用的停止合同、已接纳B的丢弃及幸存者续进；另检查取消后控制异常的原前缀与资源退休。
+这是共享停止合同与控制异常的有限证据，不冒充真实Qwen模型EOS或注入设备故障。主机共同wave的16组合同也通过。
 A中一个成员停止时，原批次仍可发布其它成功成员；已接纳的B则整批沿原abort路径实际退休，
 不发布其token、状态或RNG。幸存者保留成功A，再由共同请求循环按实际子组继续。未发布ledger只在真实退休后撤回。
 任一成员credit耗尽或turn／key改变，均释放整组ready Source。
-首次无native错误的`Unavailable`后继准备拒绝，只能在A完成且原清理实际退尽后退回单步，并停用该Model的continuation；
+无native错误的`Unavailable`后继准备拒绝，只能在A完成且原清理实际退尽后退回原ready输入路径，
+重新准备当前物理tuple并完成真实轮换后再尝试pending后继，不永久停用整个Model的continuation；
 native或清理错误仍传播。单次`SubmissionSource::create`遇到无native错误的`Unimplemented`／`Unavailable`，
 则保留未移交的原Completion正常完成A。
 [自然请求有限检查](../evidence/correctness/inference-generation-continuation-2026-10-27.json)读取各目录的真实prompt，

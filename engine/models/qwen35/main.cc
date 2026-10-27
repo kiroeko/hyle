@@ -53,6 +53,7 @@
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/request_window.h"
 #include "../../inference/request_loop.h"
+#include "../../inference/request_wave_execution.h"
 #include "../../inference/prefill_plan.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
@@ -6411,6 +6412,12 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
             (failure.retirement_observed() && !failure.retirement().status.ok()) ||
             (model.successor_step && model.successor_step->submitted)) throw;
         refused_failure = failure; refused_second = true; ++continuation.successor_refusals;
+        std::cerr << "decode_overlap_refused code=" << hyle::status_code_name(failure.status().code())
+            << " native=" << failure.status().has_native_error() << " predecessor_slot=" << slot
+            << " successor_slot=" << next_slot << " members=" << calls.size()
+            << " committed_length=" << calls.front().request->session->length()
+            << " candidate_length=" << a.members.front().next->length
+            << " reason=" << failure.status().message() << '\n';
       }
       if (b) {
         second_start = b->step_start; b_source = model.prepare_submission_sources(*b);
@@ -6437,7 +6444,11 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
       }
       refused_failure->observe_retirement(retired);
       if (!retired.retired || !refused_failure->retirement().status.ok()) throw *refused_failure;
-      discard_records(); a_source.reset(); continuation.reset(); continuation.unavailable = true;
+      // Optional device-ordered reuse was unavailable for this physical tuple.
+      // A is now actually retired and B was never submitted. Re-prime through
+      // the original ready-input route so it can capture the new layout; a
+      // temporary coverage miss does not disable every later continuation.
+      discard_records(); a_source.reset(); continuation.reset();
       return true;
     }
     if (submitted_second) {
@@ -6742,72 +6753,74 @@ inference::RetirementObservation retire_generation_request(GenerationRequest &re
 template<class Execute>
 struct SynchronousGenerationWave final {
   Model &model; Execute &execute;
+  std::size_t pending_count() const noexcept { return 0; }
+  inference::RequestWavePendingMember pending_member(std::size_t) const noexcept { return {}; }
+  inference::RequestWaveAdvance advance(inference::RequestWaveAction action, inference::RequestWave wave) const {
+    if (action == inference::RequestWaveAction::kDrain)
+      return {.remaining = model.try_retire_episode()};
+    execute(wave.keys);
+    if (model.active_step || model.successor_step)
+      throw std::logic_error("synchronous request wave retained an unfinished episode");
+    return {.advanced = true, .remaining = {true, {}}};
+  }
+  inference::RetirementObservation retire(inference::RequestWaveRetirement action) const noexcept {
+    return action == inference::RequestWaveRetirement::kObserve
+        ? model.try_retire_episode() : model.abort_episode();
+  }
   inference::RequestWaveResult operator()(inference::RequestWave wave,
       std::span<std::size_t> remaining_reserved) const {
-    std::ranges::fill(remaining_reserved, std::size_t{0});
-    if (wave.observe_only || wave.drain_requested)
-      return {.remaining = model.try_retire_episode()};
-    try {
-      execute(wave.keys);
-      if (model.active_step || model.successor_step)
-        throw std::logic_error("synchronous request wave retained an unfinished episode");
-      return {.advanced = true, .remaining = {true, {}}};
-    } catch (...) {
-      const auto failure = std::current_exception();
-      return {.advanced = true, .remaining = model.abort_episode(), .failure = failure};
-    }
+    return inference::advance_request_wave(wave, remaining_reserved, *this);
   }
 };
 
-// The request owner supplies one exact cohort and its current credit grant.
-// Native work stays in the Model's original Step/Source; this driver retains
-// only the deferred call metadata required to observe it on the next pump.
+// Native work and deferred calls stay in the original Model/continuation.
+// Common wave control owns only the cohort/credit and retirement transitions.
 template<class Ready, class AfterSubmit = std::nullptr_t, class BatchObserver = std::nullptr_t>
 inference::RequestWaveResult advance_generation_wave(Model &model, inference::RequestWave wave,
     std::span<std::size_t> remaining_reserved, bool trace_states, GenerationContinuation &continuation,
     Ready &&execute_ready, AfterSubmit &&after_submit = nullptr, BatchObserver &&batch_observer = nullptr) {
-  if (wave.keys.size() != wave.credits.size() || wave.keys.size() != remaining_reserved.size())
-    throw std::logic_error("generation wave lost its original credit extent");
-  std::ranges::fill(remaining_reserved, std::size_t{0});
-  const auto clear_retired = [&](inference::RetirementObservation retired) {
-    if (retired.retired) { continuation.pending_calls.clear(); continuation.reset(); }
-    return retired;
-  };
-  if (wave.observe_only) return {.remaining = clear_retired(model.try_retire_episode())};
-  try {
-    if (!continuation.pending_calls.empty()) {
-      auto calls = std::span(continuation.pending_calls.data(), continuation.pending_calls.size());
-      if (calls.size() != wave.keys.size()) throw std::logic_error("pending generation wave changed its cohort width");
-      for (std::size_t j = 0; j < calls.size(); ++j)
-        if (calls[j].request->request_key != wave.keys[j] || wave.credits[j].reserved != 1)
-          throw std::logic_error("pending generation wave changed its identity or reserved output");
-      try {
-        if (!execute_ordinary_continuation(model, calls, trace_states, continuation,
-            after_submit, batch_observer, true, wave.credits, wave.drain_requested))
-          throw std::logic_error("pending generation wave lost its original continuation");
-      } catch (const inference::EvaluationFailure &failure) {
-        throw inference::RequestExecutionFailure::from_evaluation(failure, wave.keys.size(),
-            [&](std::size_t j) { return wave.keys[j]; });
-      }
-    } else if (!wave.drain_requested) {
-      for (const auto &credit : wave.credits)
-        if (credit.reserved) throw std::logic_error("generation wave retained credit without its original call");
-      execute_ready(wave);
-    } else continuation.reset();
-    const bool pending = !continuation.pending_calls.empty();
-    if (pending) {
-      if (!model.active_step || model.successor_step || !model.active_step->submitted ||
-          continuation.pending_calls.size() != wave.keys.size())
-        throw std::logic_error("generation wave retained metadata without its original submission");
-      std::ranges::fill(remaining_reserved, std::size_t{1});
-    } else if (model.active_step || model.successor_step)
-      throw std::logic_error("generation wave lost the host metadata for its original submission");
-    return {.advanced = true, .remaining = {!pending, {}}};
-  } catch (...) {
-    const auto failure = std::current_exception();
-    std::ranges::fill(remaining_reserved, std::size_t{0});
-    return {.advanced = true, .remaining = clear_retired(model.abort_episode()), .failure = failure};
-  }
+  struct Stage final {
+    Model &model;
+    GenerationContinuation &continuation;
+    bool trace_states;
+    Ready &execute_ready;
+    AfterSubmit &after_submit;
+    BatchObserver &batch_observer;
+
+    std::size_t pending_count() const noexcept { return continuation.pending_calls.size(); }
+    inference::RequestWavePendingMember pending_member(std::size_t j) const noexcept {
+      return {continuation.pending_calls[j].request->request_key, 1};
+    }
+    inference::RequestWaveAdvance advance(inference::RequestWaveAction action, inference::RequestWave current) {
+      if (action == inference::RequestWaveAction::kResume) {
+        auto calls = std::span(continuation.pending_calls.data(), continuation.pending_calls.size());
+        try {
+          if (!execute_ordinary_continuation(model, calls, trace_states, continuation,
+              after_submit, batch_observer, true, current.credits, current.drain_requested))
+            throw std::logic_error("pending generation wave lost its original continuation");
+        } catch (const inference::EvaluationFailure &failure) {
+          throw inference::RequestExecutionFailure::from_evaluation(failure, current.keys.size(),
+              [&](std::size_t j) { return current.keys[j]; });
+        }
+      } else if (action == inference::RequestWaveAction::kStart) execute_ready(current);
+      else continuation.reset();
+      const bool pending = !continuation.pending_calls.empty();
+      if (pending) {
+        if (!model.active_step || model.successor_step || !model.active_step->submitted ||
+            continuation.pending_calls.size() != current.keys.size())
+          throw std::logic_error("generation wave retained metadata without its original submission");
+      } else if (model.active_step || model.successor_step)
+        throw std::logic_error("generation wave lost the host metadata for its original submission");
+      return {.advanced = true, .remaining = {!pending, {}}};
+    }
+    inference::RetirementObservation retire(inference::RequestWaveRetirement action) noexcept {
+      const auto retired = action == inference::RequestWaveRetirement::kObserve
+          ? model.try_retire_episode() : model.abort_episode();
+      if (retired.retired) { continuation.pending_calls.clear(); continuation.reset(); }
+      return retired;
+    }
+  } stage{model, continuation, trace_states, execute_ready, after_submit, batch_observer};
+  return inference::advance_request_wave(wave, remaining_reserved, stage);
 }
 
 // Model-specific state and execution only. RequestLoop owns FIFO, idle
@@ -7518,7 +7531,7 @@ int qwen35::run(int argc, char **argv) {
         "  --capacity N                Total context capacity (default: 128)\n"
         "  --prefill-chunk-tokens N    Maximum real rows per ordinary prefill episode\n"
         "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
-        "  --decode-overlap off|auto   Bounded CUDA greedy batch continuation (default: off)\n"
+        "  --decode-overlap auto|off   Automatic CUDA greedy continuation (default: auto)\n"
         "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
         "  --session-schedules FILE    Multiple named session schedules\n"
@@ -7535,7 +7548,7 @@ int qwen35::run(int argc, char **argv) {
     std::filesystem::path input, continuation, trace, layer0_probe, decode_ids, schedule_file, session_file;
     std::size_t steps = 4, capacity = 128, max_sessions = 0, active_sequences = 0, cache_bytes = 0, max_drafts = 1, cpu_ffn_layers = 0;
     std::size_t max_prefill_rows = SIZE_MAX;
-    bool warmup_planned_shapes = false, decode_overlap = false;
+    bool warmup_planned_shapes = false, decode_overlap = true;
     bool progress = false, trace_states = true, explicit_steps = false;
     bool mtp_enabled = false;
     bool explicit_mtp_drafts = false;
@@ -7788,7 +7801,7 @@ int qwen35::run(int argc, char **argv) {
     const auto requested_active = (std::min)(active_sequences, input_sessions);
     // Reserve D2 only for the original device-ordered caller-owned route.
     // The original capacity formula already accounts for the actual batch R.
-    const bool overlap_selected = decode_overlap && natural_generation && !mtp_enabled && !progress &&
+    bool overlap_selected = decode_overlap && natural_generation && !mtp_enabled && !progress &&
         !sampler.enabled && backend_selection.primary == qwen35::BackendKind::kCuda && !cpu_ffn_layers &&
         replay != qwen35::ReplayPolicy::kCommands && (trace.empty() || !trace_states) &&
         std::ranges::any_of(generation_schedules, [](const auto &request) {
@@ -7802,6 +7815,12 @@ int qwen35::run(int argc, char **argv) {
     };
     const auto minimum_residents = active_sequences == 0 ? std::size_t{1} : requested_active;
     auto selected_cache = plan_for(cached_slots);
+    if (overlap_selected && cache_bytes && plan_for(minimum_residents).backing_bytes > cache_bytes) {
+      // Extra in-flight state is optional. A valid single-step configuration
+      // must not be rejected merely because automatic overlap needs more room.
+      overlap_selected = false;
+      selected_cache = plan_for(cached_slots);
+    }
     // Caller-written pools have an exact cold formula. Native generated
     // results instead enter the same byte scope after real completion, before
     // any append is taken or head published. Do not estimate native N from the

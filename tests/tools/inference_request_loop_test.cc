@@ -1,6 +1,7 @@
 // Host owner contracts only. Retirement observations below are explicit test
 // inputs, not evidence that any device completed or freed physical memory.
 #include "../../engine/inference/request_loop.h"
+#include "../../engine/inference/request_wave_execution.h"
 
 #include <array>
 #include <cstdio>
@@ -641,6 +642,146 @@ void prepared_hot_owner_allocates_nothing() {
   require(acknowledged && cancelled.ok() && !allocation_count && controlled.executions[0] == 1 &&
       controlled.executions[1] == 1, "prepared delivery/cancel control allocated or replayed host work");
 }
+
+// These are scripted facts of the original owner, not another executor. The
+// common driver must neither execute during observation nor discard metadata
+// merely because an error was returned without actual retirement.
+struct ExecutionStage final {
+  std::array<i::RequestWavePendingMember, 2> members{};
+  std::size_t count = 0, next_count = 0;
+  std::size_t advances = 0, starts = 0, resumes = 0, drains = 0, observations = 0, aborts = 0;
+  i::RequestWaveAdvance next{true, {true, {}}};
+  i::RetirementObservation retirement{true, {}};
+  std::exception_ptr failure{};
+  bool saw_drain = false;
+
+  std::size_t pending_count() const noexcept { return count; }
+  i::RequestWavePendingMember pending_member(std::size_t at) const noexcept { return members[at]; }
+  i::RequestWaveAdvance advance(i::RequestWaveAction action, i::RequestWave wave) {
+    ++advances; saw_drain = wave.drain_requested;
+    if (action == i::RequestWaveAction::kStart) ++starts;
+    else if (action == i::RequestWaveAction::kResume) ++resumes;
+    else ++drains;
+    if (failure) std::rethrow_exception(failure);
+    count = next_count;
+    for (std::size_t at = 0; at < count; ++at) members[at] = {wave.keys[at], 1};
+    return next;
+  }
+  i::RetirementObservation retire(i::RequestWaveRetirement action) noexcept {
+    if (action == i::RequestWaveRetirement::kObserve) ++observations;
+    else ++aborts;
+    if (retirement.retired) count = 0;
+    return retirement;
+  }
+};
+
+void common_wave_synchronous_uses_no_extra_owner_or_allocation() {
+  i::RequestWindow window; window.prepare(1, 1);
+  const std::array keys{window.enqueue(0)};
+  const std::array<i::RequestCreditGrant, 1> credits{{{0, 1, false}}};
+  std::array<std::size_t, 1> remaining{99}; ExecutionStage stage;
+  allocation_count = 0; track_allocations = true;
+  const auto result = i::advance_request_wave({keys, credits}, remaining, stage);
+  track_allocations = false;
+  require(result.advanced && result.remaining.retired && result.remaining.status.ok() && !result.failure &&
+      !remaining[0] && stage.starts == 1 && !stage.resumes && !stage.observations && !stage.aborts &&
+      !allocation_count, "common synchronous wave allocated or added a retirement observer");
+}
+
+void common_wave_resumes_same_cohort_and_original_reservations() {
+  i::RequestWindow window; window.prepare(2, 2);
+  const std::array keys{window.enqueue(0), window.enqueue(1)};
+  const std::array<i::RequestCreditGrant, 2> initial{{{0, 2, false}, {0, 2, false}}};
+  std::array<std::size_t, 2> remaining{}; ExecutionStage stage;
+  stage.next_count = 2; stage.next = {true, {false, {}}};
+  const auto submitted = i::advance_request_wave({keys, initial}, remaining, stage);
+  require(submitted.advanced && !submitted.remaining.retired && !submitted.failure &&
+      remaining == std::array<std::size_t, 2>{1, 1} && stage.count == 2,
+      "common wave did not report the original pending member reservations");
+  const std::array<i::RequestCreditGrant, 2> held{{{1, 0, false}, {1, 0, false}}};
+  stage.next_count = 0; stage.next = {true, {true, {}}};
+  const auto completed = i::advance_request_wave({keys, held}, remaining, stage);
+  require(completed.advanced && completed.remaining.retired && !completed.failure &&
+      remaining == std::array<std::size_t, 2>{0, 0} && stage.starts == 1 && stage.resumes == 1 &&
+      !stage.aborts && !stage.observations, "common wave restarted pending work or lost its held credit");
+}
+
+void common_wave_drain_and_observation_never_start_new_work() {
+  i::RequestWindow window; window.prepare(1, 1);
+  const std::array keys{window.enqueue(0)};
+  const std::array<i::RequestCreditGrant, 1> held{{{1, 0, true}}}, empty{{{0, 0, true}}};
+  std::array<std::size_t, 1> remaining{}; ExecutionStage stage;
+  stage.count = 1; stage.members[0] = {keys[0], 1};
+  const auto drained = i::advance_request_wave({keys, held, false, true}, remaining, stage);
+  require(drained.advanced && drained.remaining.retired && !drained.failure && stage.saw_drain &&
+      !stage.starts && stage.resumes == 1 && !remaining[0], "drain restarted work instead of resuming its original call");
+  stage.next = {false, {true, {}}};
+  const auto idle = i::advance_request_wave({keys, empty, false, true}, remaining, stage);
+  require(!idle.advanced && idle.remaining.retired && !idle.failure && stage.drains == 1 &&
+      !stage.starts, "an idle drain became a new submission");
+  stage.retirement = {false, {}};
+  const auto observing = i::advance_request_wave({keys, empty, true, true}, remaining, stage);
+  require(!observing.advanced && !observing.remaining.retired && !observing.failure &&
+      stage.advances == 2 && stage.observations == 1 && !stage.aborts,
+      "observation-only execution advanced work or pretended pending work retired");
+}
+
+void common_wave_failure_keeps_exception_and_actual_retirement_independent() {
+  i::RequestWindow window; window.prepare(1, 1);
+  const std::array keys{window.enqueue(0)};
+  const std::array<i::RequestCreditGrant, 1> held{{{1, 0, false}}};
+  std::array<std::size_t, 1> remaining{1}; ExecutionStage stage;
+  stage.count = 1; stage.members[0] = {keys[0], 1};
+  stage.failure = std::make_exception_ptr(WaveFailure{});
+  const auto native = hyle::Status::FromNative(hyle::StatusCode::Internal,
+      {hyle::NativeErrorDomain::CudaDriver, 999}, "original retirement failure");
+  stage.retirement = {false, native};
+  const auto failed = i::advance_request_wave({keys, held}, remaining, stage);
+  // MSVC copies the exception while rethrowing and capturing it again. Check
+  // its semantic identity rather than requiring the same exception_ptr owner.
+  bool original_failure = false;
+  if (failed.failure) try { std::rethrow_exception(failed.failure); }
+  catch (const WaveFailure &error) {
+    original_failure = error.payload == WaveFailure::expected_payload &&
+        std::string_view(error.what()) == "scripted failure after committed A";
+  } catch (...) {}
+  require(failed.advanced && original_failure && !failed.remaining.retired &&
+      failed.remaining.status == native && stage.count == 1 && stage.aborts == 1 && !remaining[0],
+      "common wave replaced the original exception/status or cleared unretired metadata");
+  const auto unretired = i::advance_request_wave({keys, held, true}, remaining, stage);
+  require(!unretired.advanced && !unretired.failure && !unretired.remaining.retired &&
+      unretired.remaining.status == native && stage.count == 1 && stage.advances == 1,
+      "failure observation reexecuted a call or converted error into release permission");
+  stage.retirement.retired = true;
+  const auto retired = i::advance_request_wave({keys, held, true}, remaining, stage);
+  require(!retired.advanced && retired.remaining.retired && retired.remaining.status == native &&
+      !retired.failure && !stage.count && stage.advances == 1 && stage.observations == 2,
+      "actual retired failure lost its status or failed to release the original metadata");
+}
+
+void common_wave_rejects_foreign_reordered_or_unbacked_pending_credit() {
+  i::RequestWindow window, foreign; window.prepare(2, 2); foreign.prepare(2, 2);
+  const std::array keys{window.enqueue(0), window.enqueue(1)};
+  const std::array foreign_keys{foreign.enqueue(0), foreign.enqueue(1)};
+  const std::array<i::RequestCreditGrant, 2> held{{{1, 0, false}, {1, 0, false}}};
+  std::array<std::size_t, 2> remaining{}; ExecutionStage stage;
+  stage.count = 2; stage.members = {{{keys[0], 1}, {keys[1], 1}}}; stage.retirement = {false, {}};
+  const auto rejected = [&](std::span<const i::RequestKey> incoming,
+      std::span<const i::RequestCreditGrant> grants) {
+    const auto result = i::advance_request_wave({incoming, grants}, remaining, stage);
+    require(result.failure && !result.remaining.retired && !stage.advances && stage.count == 2 &&
+        remaining == std::array<std::size_t, 2>{0, 0}, "invalid cohort advanced work or discarded original metadata");
+    bool exact = false;
+    try { std::rethrow_exception(result.failure); } catch (const std::logic_error &) { exact = true; }
+    require(exact, "invalid cohort lost its control error identity");
+  };
+  rejected(foreign_keys, held);
+  const std::array reordered{keys[1], keys[0]}; rejected(reordered, held);
+  auto wrong = held; wrong[1].reserved = 0; rejected(keys, wrong);
+  require(stage.aborts == 3, "invalid cohort did not use the original abort owner");
+  rejects<std::logic_error>([&] { (void)i::advance_request_wave({keys, held}, std::span(remaining).first(1), stage); });
+  require(stage.aborts == 3 && !stage.advances, "malformed extent mutated an original execution owner");
+}
 }
 
 int main() {
@@ -656,7 +797,12 @@ int main() {
     failure_observation_is_once_and_cleanup_cannot_resubmit();
     invalid_wave_reservation_retains_real_retirement_gate();
     explicit_yield_drains_then_preserves_original_fifo_and_turn();
-    std::puts("request loop: 11 host contract groups passed; no model/device loaded");
+    common_wave_synchronous_uses_no_extra_owner_or_allocation();
+    common_wave_resumes_same_cohort_and_original_reservations();
+    common_wave_drain_and_observation_never_start_new_work();
+    common_wave_failure_keeps_exception_and_actual_retirement_independent();
+    common_wave_rejects_foreign_reordered_or_unbacked_pending_credit();
+    std::puts("request loop: 16 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;

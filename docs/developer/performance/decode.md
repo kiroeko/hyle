@@ -12,11 +12,16 @@
 
 最新[普通off／auto与MTP完整窗口](../../evidence/performance/inference-continuous-wave-current-window-2026-10-27.json)于北京时间2026-10-27 **21:27:15～21:38:23**完成40进程，四项对照更新于[当前基线](#目标与当前基线)。同窗ordinary auto相对off的decode中位单轮＋3.10%、两轮＋1.74%；单轮范围重叠，不能宣称稳定提速或反超。两轮auto仍慢参考约3.99%，MTP慢约10.7%～10.9%。中间解析器暂停后只续跑未运行项，未重跑成功模型；不与旧窗拼算收益。
 
+随后[流水恢复与默认选择](../../evidence/correctness/inference-wave-recovery-2026-10-27.json)用一次实际诊断确认，committed383／candidate384时的拒绝来自pending物理tuple没有完整已有捕获，而非设备错误或KV历史重算。
+现先完成原A、确认真实退休，再沿ready路径重准备；同一自然两轮的实际后继发布59→102、128个输出及实际计算工作不变，仍有一次被正确处理的拒绝。
+CLI改为默认auto，缓存预算不足D2则自动D1；额外stop、控制异常及CPU／CUDA普通与MTP有限回归已检查。新共同wave只有静态控制、不另造执行器。
+本批是功能检查，没有新完整TPS／显存窗口；下表仍对应旧冻结`fefa445f`，不能把发布次数增长换算成提速。下一完整对照将补单轮长输入。
+
 随后[普通连续wave接线](../../evidence/correctness/inference-continuous-wave-2026-10-27.json)在同一RequestLoop下跨pump保留原后继。
 真实Qwen3.5-2B的R1／自然R2各完成97／194个输出，auto的后继提交和发布由44增至88；逐模式完整非时间报告仅这两个顶层计数改变。
 十个tiny控制臂另比较每个已提交前缀的完整状态、epoch和RNG，并覆盖信用耗尽、跨pump单成员取消及yield／恢复。
 本批还消费已返回的append交易以释放被替换旧尾页，区分驻留版本N与在途candidate。5次C++编译、5链接通过，复用SDK／原生内核；
-该功能批次本身没有统计吞吐／内存结论；Model2计时观察错读prefill完成点，其吞吐全部不采用。随后Model3改读真实prefill_endpoint，增加正区间门，严格编译／链接各一次；本页最新40进程窗口使用Model3，默认overlap仍关闭。
+该功能批次本身没有统计吞吐／内存结论；Model2计时观察错读prefill完成点，其吞吐全部不采用。随后Model3改读真实prefill_endpoint，增加正区间门，严格编译／链接各一次；本页最新40进程窗口使用Model3，当时默认overlap关闭，后续默认策略另见上文。
 
 随后[自然R1两步接力筛查](../../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)用同一镜像交错运行六进程，P154＋96decode的完整非时间单请求结果一致。
 每个auto进程实际发布44个后继；off／auto的prefill中位2122.69／2164.08、decode90.37／90.27、综合85.48／85.49 tok/s，范围重叠，未证明净提速。
