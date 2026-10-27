@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "status": "PASS_FINITE_SCOPE",
+  "date": "2026-10-27",
+  "base_head": "3b31490b6",
+  "scope": "Ordinary CUDA R1 greedy RequestLoop D2 quantum, original token/Store/KV Sources and ordered ledger publication; not complete inference functionality or sustained multi-member pipeline.",
+  "implemented": [
+    "Cold three physical carriers with D2 candidate budget; actual credit before B; A commit and observation before deferred B ledger bind.",
+    "Ready Source release on credit pause, real cancellation and extra-stop handling; accepted B can retire unpublished without stopping the continuing Session.",
+    "Written projection registers every original page guard with its exact writer scope; removed redundant engine A capture-reuse query, B actual qualification unchanged."
+  ],
+  "final_sources": [
+    {"name":"model4","source":{"path":"C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc","bytes":531494,"sha256":"b1927487897aa5d01fd5c00fcac90eb6651e02bc314886259c5e1f308e3c5e29"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\source\\model4\\main.cc","bytes":531494,"sha256":"b1927487897aa5d01fd5c00fcac90eb6651e02bc314886259c5e1f308e3c5e29"},"object":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\model4\\unit.obj","bytes":16396412,"sha256":"8168de484bfccc17ce286c66728162f4436de9b48af279d132131978cef206e5"},"dependencies":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\model4\\actual-dependencies.json","bytes":80253,"sha256":"a51c919eb64031b00a96b094e0b17bfeea1ef6efc819fe147148c7447d23f1a3"}},
+    {"name":"probe7","source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_generation_relay_probe.cc","bytes":22889,"sha256":"584245551ea2d7795c11c22e1ef38b4f4fea123467739117219e5ca5ed89a7e6"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\source\\probe7\\qwen_generation_relay_probe.cc","bytes":22889,"sha256":"584245551ea2d7795c11c22e1ef38b4f4fea123467739117219e5ca5ed89a7e6"},"object":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\probe7\\unit.obj","bytes":17344210,"sha256":"2967667144b9d25a67d5f8b7528702edbcb753f493c9a348423b129884d45c8f"},"dependencies":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\probe7\\actual-dependencies.json","bytes":80460,"sha256":"fd7030bcdee7d506c767fb2ad5baf41f4c3d134edb4ac3633fbbabbf3fb3ca04"}},
+    {"name":"resources2","source":{"path":"C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc","bytes":255356,"sha256":"703608119f4d863a3f5e5a122daf98fde862a0261731285206541faf3670da26"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\source\\resources2\\resources.cc","bytes":255356,"sha256":"703608119f4d863a3f5e5a122daf98fde862a0261731285206541faf3670da26"},"object":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\resources2\\unit.obj","bytes":3095610,"sha256":"fdc6516749cebb44e617e2acb05b08e372aca7de451720c13dfcf4d98e95e914"},"dependencies":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\compile\\resources2\\actual-dependencies.json","bytes":49840,"sha256":"328e4065de999fadf4ce4d6562659c985e1486b14c8dfa2de686096376e4ab5c"}}
+  ],
+  "actual_images": {
+    "final_cli": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin\\hyle.exe","bytes":142405120,"sha256":"418412657e61cd6a1ee1dc370bde8e68bacfd4f9229f9f22308739bcc8f2c04d"},
+    "final_probe": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin\\qwen-generation-relay-probe.exe","bytes":142155264,"sha256":"a875c9ce240e0d74dc06e4710a1857ddb80f976915bdd6b033cde66d07c589f3"},
+    "screen_and_four_cli_regressions": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin\\hyle.exe","bytes":142405120,"sha256":"a90a1b7a5deaf52a16980e712655f80d49150e6a5f42e8310756048e53faf80b"},
+    "no_input_skip": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin\\qwen-generation-relay-probe.exe","bytes":142155264,"sha256":"b65b085cb73120933f2ce69b6778a26998e3e631b931c2107b2b80a73ec02256"},
+    "component": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\component-written-prefix\\bin\\written-prefix-component-test.exe","bytes":146671616,"sha256":"cdf553455310c199a06be3642096c0e24834da17a993b9293f60286bdb74d8ff"},
+    "diagnostic": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\diag\\bin\\hyle-relay-diag.exe","bytes":142415872,"sha256":"9ed9f369ed2086ef3e832115aceb44edfc471c568d56d6e1a3e4220979910146"}
+  },
+  "final_model_checks": [
+    {"name":"probe7","process":{"exit":0,"pid":57520,"seconds":1.1966520000132732},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\probe7\\report.json","bytes":1402,"sha256":"f888e02daf5012ac9af88fb308ba3ef46d9b5ae6ac1c8720707b8875e72cde0f"},"arms":8,"prompt":3},
+    {"name":"probe-real7","process":{"exit":0,"pid":38100,"seconds":4.833155500004068},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\probe-real7\\report.json","bytes":1584,"sha256":"a044b2b2e53d84dc8862fb4ed4349b90c80ae7dc3154ae54c1838ef5284991a5"},"arms":10,"prompt":154,"late_stop":{"completed_steps":9,"successor_submissions":1,"successor_publications":0,"successor_discards":1,"successor_refusals":0}},
+    {"name":"final-long","process":{"exit":0,"pid":20476,"seconds":3.5474031000048853},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\final-long\\report.json","bytes":165448,"sha256":"d4e4127d6ad0d5ca4257d3e30e99f6edf0f1dd37f06ecedf05d23f5e4a393b79"},"outputs":97,"pairs":44,"non_time_facts_equal":true}
+  ],
+  "adjacent_checks": {
+    "four_cli_regressions_image4": [{"name":"regression-cpu-ordinary-b2","process":{"exit":0,"pid":43996,"seconds":0.4187287000240758},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\regression-cpu-ordinary-b2\\report.json","bytes":35862,"sha256":"f93f07b619f9cf053f1c81d16353c7dee735bfb33e995fd1dcbb4db2c13f0a1e"}},{"name":"regression-cpu-mtp-k3-b2","process":{"exit":0,"pid":46048,"seconds":0.4609855999588035},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\regression-cpu-mtp-k3-b2\\report.json","bytes":40900,"sha256":"0776ac8c59717e2a0a401e1021574263793e304704e02b9e90c2fd8edc3ef5a8"}},{"name":"regression-cuda-ordinary-b2","process":{"exit":0,"pid":51300,"seconds":0.7272896000067703},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\regression-cuda-ordinary-b2\\report.json","bytes":34963,"sha256":"bd7ffe288f4e2e27bb176ffc71225622966fbe8fee6a05a70f1147327b41f95a"}},{"name":"regression-cuda-mtp-k3-b2","process":{"exit":0,"pid":2316,"seconds":0.8136184000177309},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\runs\\regression-cuda-mtp-k3-b2\\report.json","bytes":40026,"sha256":"5d035c05648f45485e8afa5428c3d46ed1c19f4b4bdb3031faaa657aaad2e2fb"}}],
+    "component_7": {"status":"PASS","process":{"exit":0,"pid":34680,"seconds":0.5970286999945529},"tests":["GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording","GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission","GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges","GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages","GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads","GraphPagedAppendSourceCuda.PendingPreviousAppendAndAttentionAdmitEveryInheritedPrefix","GgmlCudaMixedReadySource.RealTokenStoreAndKvWarmHybridThenReusePending"],"test_count":7,"xml":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\component-written-prefix\\run\\results.xml","bytes":2696,"sha256":"8a5cf96ef870d009d8a93249472ae929cd5dc72191caab84cf83f0d84619b4a7"},"ready":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\component-written-prefix\\ready.json","bytes":1495,"sha256":"0b5563aac2d1f923d25f121b3b240315c7aae5386b5398297f23ad3658f02129"}},
+    "no_input_skip_image6": {"command":["C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin\\qwen-generation-relay-probe.exe"],"pid":25708,"exit":77,"expected_exit":77,"seconds":1.8491513999761082}
+  },
+  "preserved_failures": [
+    "probe1 C4459: initial C++ fixture warning; retained command/source/log; corrected without lowering /WX.",
+    "first probe runtime: disabled greedy sampler cursor fixture mismatch; original state/ledger oracle retained after correcting fixture.",
+    "resources1 C4456: local extra name shadow; renamed page_binding, no permission gate relaxation.",
+    "real-auto P154 first decode: registered extra old-page guards had Projected scope instead of WrittenProjection; exact original tail owner rejected; registration fixed.",
+    "component prepare attempt1: reusable scratch module W assertion before linker; script snapshot/error retained; first actual link succeeded.",
+    "no-input attempt1: missing runtime PATH caused timeout; root killed PID 57708; incomplete raw attempt retained. Final image6 runtime-correct invocation returned 77."
+  ],
+  "verification_boundaries": [
+    "Tiny is an untrained fixture; real model checks use cached Qwen3.5-2B weights; no model or SDK downloads/rebuilds.",
+    "Late extra stop is a real request-policy stop, not actual model EOS. No new natural cold-tuple miss, native-fault, Apple/Vulkan, sampling, pending MTP or multi-member continuous-pipeline proof.",
+    "Functional final7 removes A query; six throughput screen processes used earlier image4. Diagnostic image is separately instrumented and is not a throughput update.",
+    "Historical image pins remain valid as-run records although shared bin paths now contain later images. Full closure/dependency hashes are in ZIP, not expanded here."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-generation-continuation-2026-10-27.zip",
+    "bytes": 1689538,
+    "sha256": "86d3ba104eddf03e72780a4fb95d30df1a299484f47eb4b4808216335014278c"
+  }
+}

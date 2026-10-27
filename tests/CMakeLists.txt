@@ -409,6 +409,15 @@ if(TARGET hyle_engine)
 endif()
 
 if(TARGET hyle_engine AND _HYLE_COMPUTE_HAVE_CUDA)
+  add_executable(hyle_qwen_generation_relay_probe tools/qwen_generation_relay_probe.cc
+    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+  hyle_configure_engine_target(hyle_qwen_generation_relay_probe)
+  set_target_properties(hyle_qwen_generation_relay_probe PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_generation_relay_probe)
+  add_test(NAME hyle_qwen_generation_relay_probe COMMAND hyle_qwen_generation_relay_probe)
+  set_tests_properties(hyle_qwen_generation_relay_probe PROPERTIES
+    LABELS "tooling;generation;cache;cuda;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
   add_executable(hyle_qwen_submission_source_probe tools/qwen_submission_source_probe.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
   hyle_configure_engine_target(hyle_qwen_submission_source_probe)

@@ -1109,6 +1109,17 @@ Status RegionAccess::bind_written_projection(Invocation&invocation,const Graph&g
   // actual ready ranges before committing. Pending here means no ready lease
   // is invented for pages written earlier in this very Graph.
   HYLE_RETURN_IF_ERROR(bind_projected_impl(invocation,value,tensor,pages,readers,true));
+  // The common read binder appends the remaining page guards last. They
+  // belong to this same written projection, including its committed tail
+  // prefix; preserve that ownership for Source capture and retirement.
+  const auto extra_pages=pages.empty()?std::size_t{0}:pages.size()-1;
+  HYLE_FATAL_ASSERT(extra_pages<=episode->bindings.size());
+  for(std::size_t i=episode->bindings.size()-extra_pages;i<episode->bindings.size();++i){
+    auto&page_binding=episode->bindings[i];
+    HYLE_FATAL_ASSERT(!page_binding.value.valid() && page_binding.projection==value &&
+        page_binding.scope==BindingScope::kProjected && page_binding.read.valid());
+    page_binding.scope=BindingScope::kWrittenProjection;page_binding.writer_step=writer.step;
+  }
   auto*binding=find_binding(state,value);binding->scope=BindingScope::kWrittenProjection;
   binding->projection=value;binding->permissionless=pages.empty();binding->writer_step=writer.step;
   // bind_projected_impl has checked every exact artifact/physical port and

@@ -12,6 +12,15 @@
 
 最新[普通／MTP完整四臂窗口](../../evidence/performance/inference-indexed-current-window-2026-10-27.json)已完成32进程，四项完整对照更新于[当前基线](#目标与当前基线)。普通decode慢约5%，MTP慢约7%；不与旧窗口或下列局部A/B拼算收益。
 
+随后[自然R1两步接力筛查](../../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)用同一镜像交错运行六进程，P154＋96decode的完整非时间单请求结果一致。
+每个auto进程实际发布44个后继；off／auto的prefill中位2122.69／2164.08、decode90.37／90.27、综合85.48／85.49 tok/s，范围重叠，未证明净提速。
+ready中位增加39.83ms，共享cache backing增加18.82MiB；未采样全显存峰值，未新跑参考或MTP，不刷新上述完整表。
+子步计时会重复包含A／B重叠区间，不能从step_sum减墙时推断主机开销。新增`--decode-overlap`默认off，下一项是分开量取Source导出／受检发布与被隐藏的准备成本。
+
+同批另一个仅Model计时的诊断镜像，off／auto各跑一次且97 IDs与完整非时间结果一致：原wait调用墙时少53.59ms，其它互不重叠的调用桶多57.35ms，decode净多3.49ms。
+prepare多47.40ms，其中前8步多17.73ms、其后88步多29.67ms；Source元数据与typed导出合计14.91ms，post-wait则少13.11ms。父子桶不再相加，这些是主机调用墙时，包含原生API影响，不能称CPU忙时或GPU活动时间。
+稳态没有新增捕获。引擎额外查询A未来重放资格花3.16ms，已删除：B仍由原Graph在准备和提交处核自己的完整tuple与来源，不扩大权限。这项删除未另跑吞吐窗口；下一步拆清relay prepare增加的约0.3ms/步。
+
 随后[在途索引状态接线](../../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)完成有限GDN／conv捕获复用与真实Source旅程，并去掉同值IDs的重复上传／同Queue等待。尚未接入完整模型的有界流水，也未运行新tokens/s窗口；以上完整性能表保持不变，不据组件结果估算提速。
 
 此前[引擎原池索引状态A/B](../../evidence/performance/inference-engine-slot-state-2026-10-27.json)为两版Hyle的普通B2同窗对照：6计时＋2独立内存进程全部通过，1728行、99次执行、198个ID及完整非时间报告不变。prefill7668.03→7606.82（−0.80%，范围重叠）、decode158.48→161.96（＋2.20%）、综合140.55→142.67 tok/s（＋1.51%）。dedicated采样峰4294000640→4243668992B，低48MiB；ready内存基线未知，采样峰为下界。代价是ready中位1.33150→1.37582s、冷shape准备0.411183→0.464081s；三样本不签统计显著性。原池Store接线及CPU／CUDA有限功能已检查，真实CUDA消费者的GDN／conv融合已观察；其它平台字节尾部、MTP异成员与当前完整性能仍待检查。本批未新运行llama.cpp或MTP性能，不更新旧跨引擎差距。
