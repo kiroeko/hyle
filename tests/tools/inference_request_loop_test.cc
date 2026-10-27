@@ -37,7 +37,7 @@ template<class Error, class Operation> void rejects(Operation operation) {
 }
 static_assert(!std::is_copy_constructible_v<i::RequestLoop> && !std::is_move_constructible_v<i::RequestLoop>);
 
-struct Adapter final {
+struct Adapter {
   std::array<std::optional<i::RequestProgress>, 4> progress_values;
   std::array<bool, 4> residents{};
   std::array<bool, 4> stopped{};
@@ -81,8 +81,13 @@ struct Adapter final {
     // Deliberately no head yet: the owner must charge this active reservation
     // when admitting another member before execute_wave creates real payloads.
   }
-  void execute_wave(std::span<const i::RequestKey> active) {
+  i::RequestWaveResult execute_wave(i::RequestWave wave, std::span<std::size_t> remaining_reserved) {
+    require(!wave.observe_only && !wave.drain_requested && wave.keys.size() == remaining_reserved.size() &&
+        wave.keys.size() == wave.credits.size(), "invalid synchronous wave contract");
+    const auto active = wave.keys;
+    std::fill(remaining_reserved.begin(), remaining_reserved.end(), 0);
     ++waves;
+    try {
     if (cancel_during_wave) {
       const auto found = std::find_if(active.begin(), active.end(), [&](auto key) { return key.slot == *cancel_during_wave; });
       require(found != active.end() && cancel_owner, "missing original active cancellation target");
@@ -98,6 +103,8 @@ struct Adapter final {
       require(p.observe_commit(p.observed_commits(), output, true, true, false), "host output was replayed");
       if (throw_after_commit == key.slot) throw std::runtime_error("test observer failed after commit");
     }
+    } catch (...) { return {true, {true, {}}, std::current_exception()}; }
+    return {true, {true, {}}, {}};
   }
   hyle::Status stop(i::RequestKey key) {
     ++stops[key.slot]; stopped[key.slot] = true; return stop_result;
@@ -119,6 +126,253 @@ struct Adapter final {
     return {true, {}}; // Pool backing/externally retained versions remain owned elsewhere.
   }
 };
+
+// Explicit host-scripted submission/observation facts. No completion object or
+// device executor is duplicated here: each result is an input to the owner.
+struct WaveStage final {
+  std::array<std::size_t, 4> reserved{}, additional{}, remaining{}, outputs{};
+  std::array<bool, 4> cancelled{}, eos{};
+  bool advanced = false, retired = false, observe_only = false, drain_requested = false, request_yield = false;
+  std::exception_ptr failure{};
+};
+struct AsyncAdapter final : Adapter {
+  using Adapter::Adapter;
+  std::array<WaveStage, 8> stages{};
+  std::array<i::RequestKey, 4> original_keys{};
+  std::array<int, 16> events{};
+  const i::RequestKey *original_data = nullptr;
+  std::size_t stage_count = 0, stage_at = 0, original_width = 0, event_count = 0;
+  bool previous_retired = true;
+  i::RequestWaveResult execute_wave(i::RequestWave wave, std::span<std::size_t> remaining_reserved) {
+    require(stage_at < stage_count && wave.keys.size() == wave.credits.size() &&
+        wave.keys.size() == remaining_reserved.size(), "missing or malformed scripted wave");
+    const auto &stage = stages[stage_at++]; ++waves;
+    if (previous_retired) {
+      original_data = wave.keys.data(); original_width = wave.keys.size();
+      std::copy(wave.keys.begin(), wave.keys.end(), original_keys.begin());
+    }
+    require(wave.observe_only == stage.observe_only && wave.drain_requested == stage.drain_requested &&
+        wave.keys.data() == original_data &&
+        wave.keys.size() == original_width && std::equal(wave.keys.begin(), wave.keys.end(), original_keys.begin()),
+        "in-flight wave changed its original identities, order or borrow");
+    if (stage.advanced) events[event_count++] = static_cast<int>(100 + stage_at);
+    if (stage.request_yield) {
+      require(cancel_owner, "missing scripted yield owner"); const auto width = wave.keys.size();
+      cancel_owner->request_yield();
+      require(cancel_owner->active().size() == width, "yield intent invalidated its executing wave");
+    }
+    for (std::size_t at = 0; at < wave.keys.size(); ++at) {
+      const auto key = wave.keys[at]; const auto slot = key.slot; const auto &grant = wave.credits[at];
+      require(grant.reserved == stage.reserved[slot] && grant.additional == stage.additional[slot] &&
+          grant.cancelled == stage.cancelled[slot], "scripted wave received incorrect reserved/additional/cancel facts");
+      residents[slot] = true;
+      if (stage.outputs[slot]) {
+        events[event_count++] = static_cast<int>(200 + stage_at);
+        auto &p = progress(key); std::array<std::int32_t, 4> output{};
+        for (std::size_t n = 0; n < stage.outputs[slot]; ++n)
+          output[n] = static_cast<std::int32_t>(slot * 10 + p.generated.size() + n + 1);
+        require(p.observe_commit(p.observed_commits(), std::span(output).first(stage.outputs[slot]),
+            true, true, stage.eos[slot]), "scripted original output was observed twice");
+        ++executions[slot];
+      }
+      remaining_reserved[at] = stage.remaining[slot];
+    }
+    previous_retired = stage.retired;
+    return {stage.advanced, {stage.retired, {}}, stage.failure};
+  }
+};
+
+struct WaveFailure final : std::runtime_error {
+  static constexpr unsigned expected_payload = 0x41b2;
+  unsigned payload = expected_payload;
+  WaveFailure() : std::runtime_error("scripted failure after committed A") {}
+};
+
+void in_flight_waves_keep_exact_credit_and_allow_continuation() {
+  i::RequestLoop owner; owner.prepare(1, 1); AsyncAdapter adapter{3}; i::OutputDelivery delivery(2);
+  const auto key = owner.enqueue(0, &delivery); adapter.stage_count = 4;
+  auto &first = adapter.stages[0]; first.additional[0] = 2; first.remaining[0] = 1; first.advanced = true;
+  for (std::size_t at = 1; at < 3; ++at) {
+    auto &stage = adapter.stages[at]; stage.reserved[0] = stage.additional[0] = stage.remaining[0] = stage.outputs[0] = 1;
+    stage.advanced = true;
+  }
+  auto &last = adapter.stages[3]; last.reserved[0] = last.outputs[0] = 1; last.advanced = last.retired = true;
+  allocation_count = 0; track_allocations = true;
+  const auto submitted = owner.pump_once(adapter);
+  const bool first_held = submitted.executed && submitted.waiting_retirement && owner.credit(key, 0) == 1;
+  const auto advanced = owner.pump_once(adapter);
+  const bool both_charged = advanced.executed && advanced.waiting_retirement && owner.credit(key, 1) == 0;
+  const bool ack_one = owner.acknowledge(key, 1, adapter) && owner.credit(key, 1) == 1;
+  (void)owner.pump_once(adapter);
+  const bool next_charged = owner.credit(key, 2) == 0 && owner.acknowledge(key, 2, adapter) && owner.credit(key, 2) == 1;
+  const auto finished = owner.pump_once(adapter);
+  track_allocations = false;
+  require(first_held && both_charged && ack_one && next_charged && !allocation_count &&
+      finished.executed && !finished.waiting_retirement && finished.waiting_output && owner.matches(key) &&
+      adapter.progress(key).generated.size() == 3 && adapter.publications[0] == 1 &&
+      adapter.events[1] == 102 && adapter.events[2] == 202 &&
+      adapter.events[3] == 103 && adapter.events[4] == 203,
+      "continuous successor-before-observation lost credit, serialized pumps, allocated or republished output");
+  require(owner.acknowledge(key, 3, adapter) && owner.pump_once(adapter).completed == 1 && !owner.matches(key),
+      "last output did not release its original delivery owner");
+}
+
+void pending_cohort_defers_cancel_eos_and_admission() {
+  i::RequestLoop owner; owner.prepare(3, 2); AsyncAdapter adapter{5, 5, 1};
+  i::OutputDelivery a_delivery(2), b_delivery(2);
+  const auto a = owner.enqueue(0, &a_delivery), b = owner.enqueue(1, &b_delivery), queued = owner.enqueue(2);
+  adapter.stage_count = 4;
+  auto &first = adapter.stages[0]; first.advanced = true;
+  first.additional[0] = first.additional[1] = 2; first.remaining[0] = first.remaining[1] = 1;
+  auto &second = adapter.stages[1]; second.advanced = true;
+  for (std::size_t slot = 0; slot < 2; ++slot)
+    second.reserved[slot] = second.additional[slot] = second.remaining[slot] = second.outputs[slot] = 1;
+  second.eos[0] = true;
+  for (std::size_t at = 2; at < 4; ++at) {
+    auto &stage = adapter.stages[at]; stage.reserved[0] = stage.reserved[1] = 1;
+    stage.additional[1] = 1; stage.cancelled[0] = true;
+    if (at == 2) stage.remaining[0] = stage.remaining[1] = 1;
+    else stage.retired = true;
+  }
+  (void)owner.pump_once(adapter);
+  rejects<std::logic_error>([&] { (void)owner.pause(a); });
+  rejects<std::logic_error>([&] { owner.prepare(3, 2); });
+  rejects<std::logic_error>([&] { (void)owner.enqueue(0); });
+  (void)owner.pump_once(adapter);
+  require(adapter.progress(a).turn_done && adapter.progress(a).generated.size() == 1 && !adapter.publications[0] &&
+      owner.active().size() == 2 && owner.matches(a) && adapter.admissions == 2,
+      "early EOS published/reordered a cohort before its already submitted successor retired");
+  require(owner.acknowledge(a, 1, adapter) && owner.acknowledge(b, 1, adapter) && owner.cancel(a, adapter).ok(),
+      "in-flight ingress did not preserve original ACK/cancel authority");
+  allocation_count = 0; track_allocations = true;
+  const auto waiting = owner.pump_once(adapter);
+  const bool held = waiting.waiting_retirement && owner.active().size() == 2 && owner.matches(a) &&
+      !adapter.retirement_polls[0] && !adapter.eviction_polls[0] && adapter.admissions == 2;
+  const auto retired = owner.pump_once(adapter);
+  track_allocations = false;
+  require(held && !allocation_count && retired.cancelled == 1 && retired.completed == 1 && !retired.waiting_retirement &&
+      !owner.matches(a) && owner.matches(b) && owner.waiting_front() == queued && adapter.admissions == 2 &&
+      owner.active().size() == 1 && owner.active()[0] == b && !adapter.publications[0] &&
+      adapter.progress_values[0]->generated.size() == 1 && adapter.progress(b).generated.size() == 1,
+      "actual discard lost committed A, published a cancelled turn or automatically executed a new cohort");
+}
+
+void failure_observation_is_once_and_cleanup_cannot_resubmit() {
+  i::RequestLoop owner; owner.prepare(1, 1); AsyncAdapter adapter{3}; i::OutputDelivery delivery(2);
+  const auto key = owner.enqueue(0, &delivery); adapter.stage_count = 4;
+  const auto error = std::make_exception_ptr(WaveFailure{});
+  auto &first = adapter.stages[0]; first.additional[0] = 2; first.remaining[0] = 1; first.advanced = true;
+  auto &second = adapter.stages[1]; second.reserved[0] = second.additional[0] = second.remaining[0] = second.outputs[0] = 1;
+  second.advanced = true; second.failure = error;
+  for (std::size_t at = 2; at < 4; ++at) {
+    auto &stage = adapter.stages[at]; stage.observe_only = true; stage.failure = error; stage.reserved[0] = 1;
+    if (at == 2) stage.remaining[0] = 1;
+    else stage.retired = true;
+  }
+  (void)owner.pump_once(adapter);
+  try { (void)owner.pump_once(adapter); throw std::logic_error("missing wave failure"); }
+  catch (const WaveFailure &failure) {
+    // A runtime may copy an exception during rethrow/current_exception. Check
+    // the original dynamic type and payload, not cross-catch pointer equality.
+    require(failure.payload == WaveFailure::expected_payload &&
+        std::string_view(failure.what()) == "scripted failure after committed A",
+        "wave replaced its original exception type or payload");
+  }
+  require(owner.matches(key) && adapter.progress(key).generated.size() == 1 && !adapter.publications[0] &&
+      !adapter.retirement_polls[0] && owner.credit(key, 1) == 0 && owner.acknowledge(key, 1, adapter),
+      "late failure rolled back committed A, released pending B or lost its charged output");
+  const auto pending = owner.pump_once(adapter);
+  require(!pending.executed && pending.waiting_retirement && owner.credit(key, 1) == 1,
+      "cleanup repeated the old exception or used fresh ACK credit for another submission");
+  const auto retired = owner.pump_once(adapter);
+  require(!retired.executed && !retired.waiting_retirement && !retired.completed && owner.matches(key) &&
+      adapter.stage_at == 4 && adapter.progress(key).generated.size() == 1 && adapter.executions[0] == 1 &&
+      !adapter.publications[0] && !adapter.retirement_polls[0] && owner.credit(key, 1) == 2,
+      "failure retirement automatically retried old work, erased A or repeated an observation");
+
+  i::RequestLoop state_only; state_only.prepare(1, 1); AsyncAdapter state{2};
+  const std::array turns{i::GenerationTurn{{1}, 1}, i::GenerationTurn{{}, 1}};
+  state.progress_values[0]->bind_open_turns(std::span(turns).first(1), 2, 1);
+  const auto state_key = state_only.enqueue(0); state.stage_count = 3;
+  state.stages[0].advanced = true; state.stages[0].additional[0] = 1;
+  state.stages[1].advanced = state.stages[1].retired = true;
+  state.stages[1].additional[0] = state.stages[1].outputs[0] = 1;
+  require(state_only.pump_once(state).waiting_retirement && state_only.matches(state_key),
+      "zero-output in-flight state lost its actual episode ownership");
+  rejects<std::logic_error>([&] { (void)state_only.pause(state_key); });
+  state.progress(state_key).extend_turns(turns); state.progress(state_key).close_input();
+  require(state.progress(state_key).turn_index == 0 && state.admissions == 1,
+      "in-flight input intent advanced/replaced the original turn");
+  const auto first_turn = state_only.pump_once(state);
+  require(!first_turn.completed && state.progress(state_key).turn_index == 1 &&
+      !state.progress(state_key).turn_started() && state_only.waiting_front() == state_key && state.publications[0] == 1,
+      "retired state-only cohort did not hand off its later input at the real turn boundary");
+  state.stages[2].advanced = state.stages[2].retired = true;
+  state.stages[2].additional[0] = state.stages[2].outputs[0] = 1;
+  require(state_only.pump_once(state).completed == 1 && state.publications[0] == 2,
+      "later input did not finish through the same wave callback");
+}
+
+void invalid_wave_reservation_retains_real_retirement_gate() {
+  i::RequestLoop owner; owner.prepare(1, 1); AsyncAdapter adapter{2};
+  i::OutputDelivery delivery((std::numeric_limits<std::size_t>::max)());
+  const auto key = owner.enqueue(0, &delivery); adapter.stage_count = 2;
+  auto &invalid = adapter.stages[0]; invalid.advanced = true; invalid.additional[0] = 2;
+  invalid.remaining[0] = (std::numeric_limits<std::size_t>::max)();
+  auto &cleanup = adapter.stages[1]; cleanup.observe_only = cleanup.retired = true; cleanup.reserved[0] = 2;
+  rejects<std::logic_error>([&] { (void)owner.pump_once(adapter); });
+  require(owner.matches(key) && owner.credit(key, 0) == (std::numeric_limits<std::size_t>::max)() - 2 &&
+      !adapter.retirement_polls[0], "overflowing candidate reservation escaped the original bounded retirement gate");
+  rejects<std::logic_error>([&] { (void)owner.pause(key); });
+  const auto retired = owner.pump_once(adapter);
+  require(!retired.executed && !retired.waiting_retirement && !retired.completed && owner.matches(key) &&
+      !adapter.progress(key).observed_commits(), "invalid candidate bookkeeping granted release or replayed work");
+}
+
+void explicit_yield_drains_then_preserves_original_fifo_and_turn() {
+  i::RequestLoop owner; owner.prepare(3, 2); AsyncAdapter adapter{3, 3, 1};
+  const auto a = owner.enqueue(0), b = owner.enqueue(1), c = owner.enqueue(2);
+  adapter.cancel_owner = &owner; adapter.stage_count = 5;
+  auto &first = adapter.stages[0]; first.advanced = first.request_yield = true;
+  first.additional[0] = first.additional[1] = 3; first.remaining[0] = first.remaining[1] = 1;
+  auto &draining = adapter.stages[1]; draining.advanced = draining.drain_requested = true;
+  draining.reserved[0] = draining.reserved[1] = 1; draining.cancelled[0] = true; draining.outputs[1] = 1;
+  auto &retire = adapter.stages[2]; retire.drain_requested = retire.retired = true; retire.cancelled[0] = true;
+  auto &next = adapter.stages[3]; next.advanced = next.retired = true;
+  next.additional[1] = 2; next.additional[2] = next.outputs[1] = next.outputs[2] = 1;
+  auto &last = adapter.stages[4]; last.advanced = last.retired = true; last.additional[1] = last.outputs[1] = 1;
+  require(owner.pump_once(adapter).waiting_retirement && owner.active().size() == 2,
+      "yield intent ended its original submitted wave");
+  owner.request_yield(); // Duplicate ingress does not create another scheduling authority.
+  require(owner.cancel(a, adapter).ok(), "yielding original member could not be cancelled");
+  allocation_count = 0; track_allocations = true;
+  const auto pending = owner.pump_once(adapter);
+  const bool retained = pending.waiting_retirement && owner.active().size() == 2 && owner.matches(a) &&
+      adapter.progress(b).generated.size() == 1 && adapter.admissions == 2;
+  const auto retired = owner.pump_once(adapter);
+  const bool yielded = retired.completed == 1 && retired.cancelled == 1 && !retired.waiting_retirement &&
+      !owner.matches(a) && owner.matches(b) && owner.active().empty() && owner.waiting_front() == c &&
+      !adapter.progress(b).turn_done && adapter.progress(b).turn_index == 0 && adapter.progress(b).turn_started();
+  const auto resumed = owner.pump_once(adapter);
+  const auto complete = owner.pump_once(adapter);
+  track_allocations = false;
+  require(retained && yielded && resumed.admitted == 2 && resumed.completed == 1 && complete.completed == 1 &&
+      !allocation_count && adapter.admission_order[2] == c && adapter.admission_order[3] == b &&
+      !adapter.publications[0] && adapter.publications[1] == 1 && adapter.publications[2] == 1 &&
+      adapter.progress_values[1]->generated.size() == 3 && adapter.progress_values[1]->observed_commits() == 3 &&
+      adapter.executions[1] == 3 && adapter.executions[2] == 1 && !owner.matches(b) && !owner.matches(c),
+      "bounded yield skipped FIFO, advanced a turn, revived cancellation, allocated or repeated an original commit");
+
+  // The same explicit intent also applies between already retired sync waves;
+  // with no intent, all earlier FIFO tests keep their original policy.
+  i::RequestLoop synchronous; synchronous.prepare(3, 2); Adapter sync{3, 3, 1};
+  const auto sa = synchronous.enqueue(0), sb = synchronous.enqueue(1), sc = synchronous.enqueue(2);
+  (void)synchronous.pump_once(sync); synchronous.request_yield();
+  const auto switched = synchronous.pump_once(sync);
+  require(switched.admitted == 2 && sync.admission_order[2] == sc && sync.admission_order[3] == sa &&
+      sync.progress(sb).generated.size() == 1 && sync.progress(sa).turn_index == 0 &&
+      sync.progress(sa).generated.size() == 2, "between-wave yield changed the default turn or skipped its FIFO peer");
+}
 
 void fifo_and_headless_reservations() {
   i::RequestLoop owner; owner.prepare(3, 2); Adapter adapter{2, 2, 1};
@@ -397,7 +651,12 @@ int main() {
     errors_preserve_proof_and_committed_boundaries();
     open_input_and_midturn_pause_keep_progress();
     prepared_hot_owner_allocates_nothing();
-    std::puts("request loop: 6 host contract groups passed; no model/device loaded");
+    in_flight_waves_keep_exact_credit_and_allow_continuation();
+    pending_cohort_defers_cancel_eos_and_admission();
+    failure_observation_is_once_and_cleanup_cannot_resubmit();
+    invalid_wave_reservation_retains_real_retirement_gate();
+    explicit_yield_drains_then_preserves_original_fifo_and_turn();
+    std::puts("request loop: 11 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     track_allocations = false;

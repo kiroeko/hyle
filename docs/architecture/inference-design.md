@@ -45,12 +45,19 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 候选顺序等待，不插队。载荷、接纳、模型执行、提交观察及退休仍归调用者。执行或晚观察抛错时
 直接退出，不自动重试或回滚已提交事实；该提取不是完整模型无关调度器。
 
-连续跨pump流水目前尚未实现。`RequestLoop`只要求返回前观察已commit的输出，但现实现会在回调返回后处理turn，
-下一pump还会接纳、取消和淘汰。安全的异步化需要由现有owner冷预留有序RequestKey／代际、成员组及输出额度，
-原StepState／Source继续唯一持有Completion和会话；在途时可接收控制意图，不能移动或复用这组身份。
-只有原工作真实退休并完成一次状态／ledger／RNG观察，才能转turn、缩组和归还额度。
+连续跨pump设备流水目前尚未接入Qwen消费者。共同`RequestLoop`已改用同一个`execute_wave`合同，
+由现有owner冷预留有序RequestKey／代际、成员组、进度基线及输出额度；适配器返回实际观察与剩余退休事实，
+在途组保留到后续pump。原StepState／Source继续唯一持有Completion和会话；在途时可接收ACK、取消和输入意图，
+不能转turn、淘汰、缩组、重排或复用这组身份。后续pump可先提交N+1，再观察N，但Qwen当前适配器仍同步完成整波。
+额度区分已经扣留的候选与本次可新增输出，实际观察与剩余候选之和不能超过两者；EOS后的候选也须等真正丢弃才归还额度。
+适配器同时返回原异常及真实退休事实；失败后只观察原工作，不启动新一波，已观察的状态／ledger／RNG不回滚。
+可显式请求yield：停止接纳后继、完成已接纳工作，真实退休并处理正常turn／取消后，未结束成员保留原key／turn回到现有FIFO。
+这是调用者的有界调度意图，不改变默认FIFO政策，也不另造一个原生工作owner。
 这不是增加第二scheduler；同Queue也不能代替实际lease代际、append前缀、候选base、失败／取消及一次发布的核验。
 载体端口、固定拓扑和冷能力可以预备，静态结构与每代真实权限须分开，而非每步只检查Session epoch。
+例如[工作状态的checkpoint](../../engine/models/qwen35/session_state.h)可以封存同一个State而不改变head epoch，
+下一步却须从已封存帧fork；guard、writer和capture也有独立失效边界。减少热准备时应缓存真正不变的图与端口事实，
+合并同一原绑定内的重复证明，并保留这些真实变化的检查，不能用一个版本号替代全部权限。
 
 版本腾位共用`make_version_room`：模型提供真实版本容量、剩余目录项和完整接纳查询，目录只负责
 移除可淘汰项。每次移除后重查；别名被删而版本数不变是合法结果，容量增长或目录不减则拒绝。
@@ -65,7 +72,7 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 不把请求slot解释为某个模型batch的成员索引。
 
 开放输入没有后续turn时保留请求并pause；新输入到达后用同一个key唤醒，关闭空闲输入不重新执行旧turn。
-中途pause／wake不重置已消费输入、已观察输出或额度。适配器必须在返回前观察真实提交；晚观察抛错
+中途pause／wake不重置已消费输入、已观察输出或额度。适配器只报告实际已观察的提交，并保留尚在途的事实；晚观察抛错
 不能撤回已提交结果。固定输入teacher的cohort与phase规则不同，继续只复用共同批次遍历，不冒充自然FIFO消费者。
 [有限主机、真实CPU续接及CUDA普通／MTP对照](../evidence/correctness/inference-request-loop-2026-10-26.json)
 支持这次迁移，不以有限CLI日程代签完整请求控制。

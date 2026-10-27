@@ -8,6 +8,7 @@
 #include <compare>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -6727,7 +6728,25 @@ struct GenerationRequestAdapter final {
       request.turn_observations[request.progress.turn_index].output_begin = request.progress.turn_output_begin;
     }
   }
-  void execute_wave(std::span<const inference::RequestKey> active) const { execute(active); }
+  inference::RequestWaveResult execute_wave(inference::RequestWave wave,
+      std::span<std::size_t> remaining_reserved) const {
+    if (remaining_reserved.size() != wave.keys.size())
+      throw std::logic_error("request wave reservation extent differs from its original cohort");
+    // This synchronous consumer leaves no publishable candidate across pumps.
+    // Failed native work can remain owned by the original Model for retirement.
+    std::ranges::fill(remaining_reserved, std::size_t{0});
+    if (wave.observe_only || wave.drain_requested)
+      return {.remaining = model.try_retire_episode()};
+    try {
+      execute(wave.keys);
+      if (model.active_step || model.successor_step)
+        throw std::logic_error("synchronous request wave retained an unfinished episode");
+      return {.advanced = true, .remaining = {true, {}}};
+    } catch (...) {
+      const auto failure = std::current_exception();
+      return {.advanced = true, .remaining = model.abort_episode(), .failure = failure};
+    }
+  }
   hyle::Status stop(inference::RequestKey key) const noexcept {
     if (continuation) continuation->release(key);
     const auto &request = requests[key.slot];

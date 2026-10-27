@@ -1,7 +1,5 @@
 #pragma once
 
-#include "hyle/compute/detail/paged_arena_access.h"
-
 // Included after the actual Model implementation. The prepared AA fixture has
 // nonzero CT weights and two different original K/V calibration pairs; it is
 // deliberately a wiring/state check, not a trained-model quality certificate.
@@ -15,8 +13,10 @@ inline BankBytes read_pages(q::Model &model, const q::cache::State &head) {
   BankBytes result;
   for (const auto *banks : {&head.keys, &head.values})
     for (const auto &bank : *banks) {
-      const auto pages = q::c::detail::PagedArenaAccess::pages(bank);
-      require(pages.size() == 1, "finite E4 case requires one ready physical page per bank");
+      const auto footprint = q::take(bank.view());
+      require(footprint.page_count() == 1, "finite E4 case requires one ready physical page per bank");
+      std::array<q::c::ReadLease, 1> pages;
+      q::check(footprint.page_prefixes(pages));
       const auto view = q::take(pages.front().view());
       // Only the committed rows are compared: an appendable old reader never
       // gains authority to inspect a subsequently written suffix.

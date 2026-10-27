@@ -1,0 +1,915 @@
+{
+  "schema": "hyle.inference.request-wave.v1",
+  "status": "PASS_AFTER_DOCUMENTED_TEST_FIXES",
+  "generated_utc": "2026-10-27T12:23:42.747580+00:00",
+  "git_base": "34d151cfa4ac08b863916cb1dde6f8d78500f1ab",
+  "product_sources": {
+    "engine/inference/request_loop.h": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\request_loop.h",
+        "bytes": 25380,
+        "sha256": "6547eef6b4081cd9b7990822ca384f466347244e4468373b509b543bf456ecf9"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\source\\engine\\inference\\request_loop.h",
+        "bytes": 25380,
+        "sha256": "6547eef6b4081cd9b7990822ca384f466347244e4468373b509b543bf456ecf9"
+      }
+    },
+    "engine/models/qwen35/main.cc": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 545418,
+        "sha256": "96474cc3d92616002e33a28cdad2e5d72adb3424d717ad6b869bdc2b6fa091c5"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 545418,
+        "sha256": "96474cc3d92616002e33a28cdad2e5d72adb3424d717ad6b869bdc2b6fa091c5"
+      }
+    },
+    "tests/tools/inference_request_loop_test.cc": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_request_loop_test.cc",
+        "bytes": 43133,
+        "sha256": "71b7346ba8294b3cec47e895f1d871c0f8e031466ed03f00a2fe9affa79d8808"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\source2\\tests\\tools\\inference_request_loop_test.cc",
+        "bytes": 43133,
+        "sha256": "71b7346ba8294b3cec47e895f1d871c0f8e031466ed03f00a2fe9affa79d8808"
+      }
+    },
+    "tests/tools/qwen_e4_cache_case.h": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_e4_cache_case.h",
+        "bytes": 14159,
+        "sha256": "34672a28cf52dff69fdf1257f87ba91dddb8b0f7e944c07096107761d3026f07"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\source3\\tests\\tools\\qwen_e4_cache_case.h",
+        "bytes": 14159,
+        "sha256": "34672a28cf52dff69fdf1257f87ba91dddb8b0f7e944c07096107761d3026f07"
+      }
+    }
+  },
+  "implementation": {
+    "single_contract": "RequestWave/RequestCreditGrant/RequestWaveResult plus parallel remaining_reserved span",
+    "completion_owner": "Original model Step/Source only; RequestLoop owns no Completion or device executor",
+    "logical_progress": "advanced/executed does not count native submissions",
+    "in_flight": "Frozen ordered keys and exact output reservation; next pump may advance successor before observing predecessor",
+    "failure": "Preserve actual retirement and committed progress before propagating original exception; subsequent cleanup-only calls grant no fresh credit",
+    "yield_policy": "Explicit policy intent only; no new successors while draining; after original retirement handle EOS/cancel then requeue unfinished survivors without changing turn",
+    "default_policy": "Original synchronous FIFO retained; no automatic fairness policy or extra scheduler"
+  },
+  "counts": {
+    "CXX_attempts": 5,
+    "CXX_pass": 4,
+    "CXX_fail": 1,
+    "distinct_TUs": 3,
+    "links": 4,
+    "links_pass": 4,
+    "process_attempts": 8,
+    "process_pass": 7,
+    "process_fail": 1,
+    "final_host_groups": 11,
+    "CLI_CPU_CUDA_ordinary_MTP": 4,
+    "actual_CPU_request_cases": 2,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "compiler_processes": [
+    {
+      "exit": 0,
+      "pid": 24912,
+      "seconds": 1.1090040000271983,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\host\\process.json",
+        "bytes": 70,
+        "sha256": "84f4d5cc0ac715d7f9ba43ccf02911aa1eed97fefee38411ac8ef3f49e7db89f"
+      },
+      "receipt_written_utc": "2026-10-27T12:12:32.910202+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 32284,
+      "seconds": 0.9683171000215225,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\host2\\process.json",
+        "bytes": 70,
+        "sha256": "ae5666e9259f5e537cd0d24b009a696a588d7c2758bf448500084f407df5e44a"
+      },
+      "receipt_written_utc": "2026-10-27T12:16:19.647660+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 59020,
+      "seconds": 25.4193708000239,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\model\\process.json",
+        "bytes": 68,
+        "sha256": "1d64a4f8609fe381781a5d17d463f543aafc22690bbd555a95d935621006217a"
+      },
+      "receipt_written_utc": "2026-10-27T12:17:03.729304+00:00"
+    },
+    {
+      "exit": 2,
+      "pid": 41076,
+      "seconds": 6.143036200024653,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\probe\\process.json",
+        "bytes": 69,
+        "sha256": "7dcbea6246004cb42d91d04befedc60d4405bd21a05ec268c892d3d7d4e1fdc3"
+      },
+      "receipt_written_utc": "2026-10-27T12:17:29.344033+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 45324,
+      "seconds": 40.324921099992935,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\probe2\\process.json",
+        "bytes": 70,
+        "sha256": "8674c0e37c5bc13ddce849dfc5349d18ffa631d712a9606cb61b2bbd42934ab2"
+      },
+      "receipt_written_utc": "2026-10-27T12:20:41.179291+00:00"
+    }
+  ],
+  "linker_processes": [
+    {
+      "exit": 0,
+      "pid": 55256,
+      "seconds": 0.049521999957505614,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\link-host\\process.json",
+        "bytes": 72,
+        "sha256": "7fab8bfe9ccbc3ea27c8300119bc3ec3b98396e02ae148ebc287d516416ed290"
+      },
+      "receipt_written_utc": "2026-10-27T12:12:38.819309+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 52984,
+      "seconds": 0.04354560002684593,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\link-host2\\process.json",
+        "bytes": 71,
+        "sha256": "49a9eaeb8f4c35083ad7aaaaa16ab3ccbaeb4f71ee86a8b92618eb9ec3d4d978"
+      },
+      "receipt_written_utc": "2026-10-27T12:16:20.221945+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 41664,
+      "seconds": 1.721093300031498,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\link-model\\process.json",
+        "bytes": 69,
+        "sha256": "47517a36b6c5e2d7d13f98ab050cd503ac417b988938f7d8c6902c64da53aa33"
+      },
+      "receipt_written_utc": "2026-10-27T12:17:17.372514+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 15284,
+      "seconds": 1.801121000025887,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\link-probe2\\process.json",
+        "bytes": 69,
+        "sha256": "693a621d83acfbdbc15c06804852b0b1ec2ebc6f50ca95fb48d7eb9fa2ec1007"
+      },
+      "receipt_written_utc": "2026-10-27T12:21:04.963301+00:00"
+    }
+  ],
+  "check_processes": [
+    {
+      "exit": 1,
+      "pid": 16044,
+      "seconds": 0.036983099998906255,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\host\\process.json",
+        "bytes": 72,
+        "sha256": "ca7346f3ff2cd817a869aee04e0df359ca8b323c11654621e23c741245e88e55"
+      },
+      "receipt_written_utc": "2026-10-27T12:13:04.525551+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 56396,
+      "seconds": 0.031636200030334294,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\host2\\process.json",
+        "bytes": 72,
+        "sha256": "34109a5076f02499cff86e5f717e6249b1e4f1ee7fdf8d70eabffa9a6eeda3f2"
+      },
+      "receipt_written_utc": "2026-10-27T12:16:20.716233+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 17664,
+      "seconds": 0.8283646000199951,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cpu-ordinary-b2\\process.json",
+        "bytes": 70,
+        "sha256": "bebec82ddb8bef25a744fc2d9375689660fbeb73228c6af65a3124c1178ecd2e"
+      },
+      "receipt_written_utc": "2026-10-27T12:18:53.632492+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 44736,
+      "seconds": 0.4676669000182301,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cpu-mtp-k3-b2\\process.json",
+        "bytes": 70,
+        "sha256": "43132169c081e2ce6a74aff128e8d20e6aeb9d9f2056bf27a3888da1a3b1ebfa"
+      },
+      "receipt_written_utc": "2026-10-27T12:19:03.206024+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 59828,
+      "seconds": 0.7371333000482991,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cuda-ordinary-b2\\process.json",
+        "bytes": 70,
+        "sha256": "4b834b31fecf87c4c0ffb20ccc215a3ee932eb84a37e535ac9891de1add0689c"
+      },
+      "receipt_written_utc": "2026-10-27T12:19:12.533354+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 42816,
+      "seconds": 0.8333405000157654,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cuda-mtp-k3-b2\\process.json",
+        "bytes": 70,
+        "sha256": "3d55ecd6e495d9532624a9f85aef7460760f93ce6c716d4cc365f5706dc4a4c9"
+      },
+      "receipt_written_utc": "2026-10-27T12:19:21.480007+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 44944,
+      "seconds": 0.9142052999814041,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\request-loop\\process.json",
+        "bytes": 70,
+        "sha256": "81a0e0b888d520f91c4fd22c554af6e6f563f2596a416857363e8dbeae7e1b60"
+      },
+      "receipt_written_utc": "2026-10-27T12:21:10.543317+00:00"
+    },
+    {
+      "exit": 0,
+      "pid": 45256,
+      "seconds": 0.4184430999448523,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\request-control\\process.json",
+        "bytes": 70,
+        "sha256": "0562238512f67ff8667378f5d0f96ba0bf3be3b831188916150b22751b865015"
+      },
+      "receipt_written_utc": "2026-10-27T12:21:15.922247+00:00"
+    }
+  ],
+  "failures": [
+    {
+      "kind": "archive_script_parse_before_execution",
+      "evidence": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\package-attempt1.json",
+        "bytes": 192,
+        "sha256": "275f2599480fc7f3e18065036ddb2a28bfcd06879f7e3610cc26e4b8613c31a7"
+      },
+      "cause": "Reserved Python keyword used as a dictionary keyword; corrected before any archive was written, no compiler or model process."
+    },
+    {
+      "kind": "setup_before_compiler",
+      "evidence": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\setup-attempt1-before-compiler.log",
+        "bytes": 833,
+        "sha256": "4c6a7817c28fd979987d96d4afbd702e58e3c0922eaf87b6e8d6be3cd267d924"
+      },
+      "cause": "Windows c:/C: pin dictionary path case differed; size/SHA were equal. Corrected normalized-path/content comparison before any compiler was started."
+    },
+    {
+      "kind": "first_host_assertion",
+      "process": {
+        "exit": 1,
+        "pid": 16044,
+        "seconds": 0.036983099998906255,
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\host\\process.json",
+          "bytes": 72,
+          "sha256": "ca7346f3ff2cd817a869aee04e0df359ca8b323c11654621e23c741245e88e55"
+        },
+        "receipt_written_utc": "2026-10-27T12:13:04.525551+00:00"
+      },
+      "cause": "Nonportable cross-rethrow current_exception()==prebuilt exception_ptr assertion failed on MSVC.",
+      "correction": "Test only checks propagated dedicated derived exception type, fixed payload and what. Adapter still repeatedly returns the same original failure ptr; product contract unchanged.",
+      "preserved": "Original source/OBJ/image receipts and failed process raw logs retained; separate host2 snapshot/image used."
+    },
+    {
+      "kind": "existing_E4_helper_compile",
+      "process": {
+        "exit": 2,
+        "pid": 41076,
+        "seconds": 6.143036200024653,
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\logs\\probe\\process.json",
+          "bytes": 69,
+          "sha256": "7dcbea6246004cb42d91d04befedc60d4405bd21a05ec268c892d3d7d4e1fdc3"
+        },
+        "receipt_written_utc": "2026-10-27T12:17:29.344033+00:00"
+      },
+      "cause": "Old helper passed PagedArenaFrame to removed detail PagedArenaAccess::pages overload.",
+      "correction": "Public Frame::view() and Footprint::page_prefixes return exact initialized-prefix ReadLease; deleted obsolete detail include.",
+      "runtime_boundary": "E4 case compiled as part of the existing combined TU but E4 run itself was not executed."
+    }
+  ],
+  "CLI_regressions": [
+    {
+      "name": "cpu-ordinary-b2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cpu-ordinary-b2\\report.json",
+        "bytes": 35916,
+        "sha256": "35c145d6881b152e4cbf035fbb68914c927786c5231c3bd347deac86b4ec0a6e"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\runs\\cli-cpu-ordinary-b2\\report.json",
+        "bytes": 35859,
+        "sha256": "4ff8c2723d917a8b7faa6df309f2f2444a55f7f02ebe61c27dd9864b7f33fafd"
+      },
+      "complete_non_time_report_equal": true,
+      "generated_tokens": 16,
+      "actual_graph_calls": 8
+    },
+    {
+      "name": "cpu-mtp-k3-b2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cpu-mtp-k3-b2\\report.json",
+        "bytes": 40941,
+        "sha256": "bc7dfb09932a8640693632f35cf1759942ddc78f9af82868a546c08587da6d30"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\runs\\cli-cpu-mtp-k3-b2\\report.json",
+        "bytes": 40914,
+        "sha256": "c8632dad50973cca92e555365cc2a4d86fa5aaa46f6212925f931e929349709c"
+      },
+      "complete_non_time_report_equal": true,
+      "generated_tokens": 16,
+      "actual_graph_calls": 50
+    },
+    {
+      "name": "cuda-ordinary-b2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cuda-ordinary-b2\\report.json",
+        "bytes": 34966,
+        "sha256": "8fbade9d80a6e5137d2ddfb4f548d90baaae9e186bbac2eeade48c2dab2b963f"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\runs\\cli-cuda-ordinary-b2\\report.json",
+        "bytes": 35011,
+        "sha256": "f47ee1d521e4f980984a556a13ae3c0a12a62c21bba85c9562b57bb37418ee7b"
+      },
+      "complete_non_time_report_equal": true,
+      "generated_tokens": 16,
+      "actual_graph_calls": 8
+    },
+    {
+      "name": "cuda-mtp-k3-b2",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\runs\\cli-cuda-mtp-k3-b2\\report.json",
+        "bytes": 40090,
+        "sha256": "ad5536b365925e8df621a1f17d44cca96132d0046da6bb5234cba415703800c8"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\runs\\cli-cuda-mtp-k3-b2\\report.json",
+        "bytes": 40037,
+        "sha256": "a1cdde8677de44babbb4f44b39213fd1edeef1c55bdc4ed858860b4a4b0fbe05"
+      },
+      "complete_non_time_report_equal": true,
+      "generated_tokens": 16,
+      "actual_graph_calls": 50
+    }
+  ],
+  "CPU_request_cases": {
+    "request-loop": {
+      "status": "PASS",
+      "fixture": "untrained_A_H64",
+      "shared_cli_adapter": true,
+      "open_input_pause": true,
+      "idle_evictions": 2,
+      "restores": 2,
+      "midturn_boundary_equal": true,
+      "sampling_draw": 3,
+      "final_versions": 0
+    },
+    "request-control": {
+      "status": "PASS",
+      "fixture": "untrained_A_H64",
+      "queued_cancel": true,
+      "submitted_partial_cancel": true,
+      "original_survivor": true,
+      "cancelled_unpublished": true,
+      "credit_pause_and_ack_wake": true,
+      "final_output_retained": true,
+      "unacked_peer_does_not_block": true,
+      "physical_waves": 3,
+      "released_requests": 4,
+      "cancelled_requests": 3,
+      "final_versions": 0
+    }
+  },
+  "fixtures": [
+    {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\tiny-recursive-input\\weights.tsv",
+        "bytes": 7861,
+        "sha256": "32901e43a5a0644169b433f4d57b38a37f0d9cd6475230427191b5d6d3a18515"
+      },
+      "roles": [
+        {
+          "name": "model.language_model.embed_tokens.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 0,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8192,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.A_log",
+          "dtype": "BF16",
+          "shape": [
+            1
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8320,
+          "bytes": 2
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.conv1d.weight",
+          "dtype": "BF16",
+          "shape": [
+            192,
+            1,
+            4
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 8322,
+          "bytes": 1536
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.dt_bias",
+          "dtype": "BF16",
+          "shape": [
+            1
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9858,
+          "bytes": 2
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_a.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9860,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_b.weight",
+          "dtype": "BF16",
+          "shape": [
+            1,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 9988,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_qkv.weight",
+          "dtype": "BF16",
+          "shape": [
+            192,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 10116,
+          "bytes": 24576
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.in_proj_z.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 34692,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 42884,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.linear_attn.out_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 43012,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 51204,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 67588,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 83972,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100356,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.1.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100484,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 100612,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 116996,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.1.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 133380,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.1.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 149764,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 149892,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 150020,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 158212,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 166404,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 166532,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.1.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 182916,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "offset": 191108,
+          "bytes": 128
+        }
+      ],
+      "bodies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-state-ports-20261024\\gdn-regression\\shared-fixture\\untrained-bf16.bin",
+          "bytes": 298628,
+          "sha256": "2fbd8f01edd4fc71c2dd5b7fe57b8173a3aace490819b320719fd82add57bf14"
+        }
+      ],
+      "geometry_line": "geometry 64 128 64 1 1 64 64 64 1 1 64 64 4 16 10000 1e-6 1 1 grouped \"GA\"",
+      "body_payload_archived": false,
+      "untrained": true
+    },
+    {
+      "directory": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture",
+      "manifest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\weights.tsv",
+        "bytes": 5308,
+        "sha256": "11ebd54357e5f87839792ee772d228536256b8fb59ef65f37fe432fcdd5413d2"
+      },
+      "roles": [
+        {
+          "name": "model.language_model.embed_tokens.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 0,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.input_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 8192,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.down_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            128
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 8320,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.gate_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 24704,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.mlp.up_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 41088,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.post_attention_layernorm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 57472,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.k_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 57600,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.k_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 57728,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.o_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 65920,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.q_norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 74112,
+          "bytes": 128
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.q_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            128,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 74240,
+          "bytes": 16384
+        },
+        {
+          "name": "model.language_model.layers.0.self_attn.v_proj.weight",
+          "dtype": "BF16",
+          "shape": [
+            64,
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 90624,
+          "bytes": 8192
+        },
+        {
+          "name": "model.language_model.norm.weight",
+          "dtype": "BF16",
+          "shape": [
+            64
+          ],
+          "source": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "offset": 98816,
+          "bytes": 128
+        }
+      ],
+      "bodies": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\mtp-runtime-backend-20261024\\verification1\\tiny-run\\fixture\\untrained-bf16.bin",
+          "bytes": 206336,
+          "sha256": "a22e65e0c344eee9f38d39fe406db1e0d690367e389698b570c3f68859e44c84"
+        }
+      ],
+      "geometry_line": "geometry 64 128 64 1 1 64 64 64 1 1 64 64 4 16 10000 1e-6 1 1 grouped \"A\"",
+      "body_payload_archived": false,
+      "untrained": true
+    }
+  ],
+  "build": {
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\build-plan.json",
+      "bytes": 28137,
+      "sha256": "fbb69ba1d4d44dbec1a1af28b2ea8a65b55cf7fded5860e9379e763e7a23686c"
+    },
+    "original_overlay_files": 208,
+    "CLI_closure_inputs": 224,
+    "combined_probe_closure_inputs": 223,
+    "preserved_graph": "W12 corrected resources2 and retained Graph executable, no hidden SDK/Graph rebuild",
+    "replacement": "CLI replaces only old e006 Model object; combined probe replaces Model and removes separate entry, retaining all other current inputs"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-request-wave-2026-10-27.zip",
+    "bytes": 1760825,
+    "sha256": "a675457a69aa0c332f9f0113ffb9e8867b9a115624a1db5fe760a9e8b2e95083"
+  },
+  "archive_members": 572,
+  "limitations": [
+    "Host scripts provide explicit retirement inputs, not evidence of actual GPU overlap.",
+    "Actual CLI/CPU request consumers remain synchronous wrappers; true continuous cross-pump engine plumbing is not complete.",
+    "All model checks use cached untrained tiny fixtures, not trained-model task quality or throughput evidence.",
+    "No new performance, peak memory, Apple/Vulkan, native fault injection or E4 runtime conclusion."
+  ]
+}
