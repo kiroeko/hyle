@@ -29,6 +29,10 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_API Result<compute::CompletionPoll> poll() noexcept;
   HYLE_GRAPH_API Status wait() noexcept;
+  // Forwards to the one original Completion under the observation mutex.
+  // A request/capability error neither closes exports nor proves retirement
+  // or changes the mathematical verdict returned by poll/wait.
+  HYLE_GRAPH_API Status request_cancel() noexcept;
   // Explicitly closes this generation's view export after all views stopped
   // borrowing and the producer actually retired. This returns the control
   // operation's status: success is not mathematical success. poll/wait retain

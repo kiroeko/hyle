@@ -461,26 +461,21 @@ template <class T> cudaError_t configure_typed(Program &program) {
   using Acc = Accumulation<T>;
   const Layout layout{program};
   if (program.kind == Kind::kTopK && program.k == 1) {
+    // Every nonempty TopK1 shape uses the same cold-prepared two-stage
+    // selection, including one row and axes shorter than one tile. This
+    // avoids entering CUB's managed dispatch while recording/replaying the
+    // original Queue; both kernels and all partial storage are fixed here.
+    if (program.width == 0 || program.count % program.width != 0)
+      return cudaErrorInvalidValue;
     const auto rows = program.count / program.width;
-    if (rows > 1 && program.width > kArgTileItems) {
-      program.arg_tiles = 1 + (program.width - 1) / kArgTileItems;
-      if (rows > static_cast<std::size_t>(INT32_MAX) / program.arg_tiles ||
-          rows * program.arg_tiles > SIZE_MAX / sizeof(ArgPair<Acc>))
-        return cudaErrorInvalidValue;
-      const auto status = configure_arg_tiles<T>();
-      if (status != cudaSuccess) return status;
-      if (!reserve(program, rows * program.arg_tiles * sizeof(ArgPair<Acc>),
-                   program.arg_partials_offset))
-        return cudaErrorInvalidValue;
-      return cudaSuccess;
-    } else {
-      auto status = arg_reduce<T>(program, nullptr, nullptr, nullptr,
-                                   program.temporary_bytes, nullptr);
-      if (status != cudaSuccess) return status;
-    }
-    if (rows > SIZE_MAX / sizeof(ArgPair<Acc>) ||
-        !reserve(program, rows * sizeof(ArgPair<Acc>), program.prefix_offset) ||
-        !reserve(program, program.temporary_bytes, program.temporary_offset))
+    program.arg_tiles = 1 + (program.width - 1) / kArgTileItems;
+    if (rows > static_cast<std::size_t>(INT32_MAX) / program.arg_tiles ||
+        rows * program.arg_tiles > SIZE_MAX / sizeof(ArgPair<Acc>))
+      return cudaErrorInvalidValue;
+    const auto status = configure_arg_tiles<T>();
+    if (status != cudaSuccess) return status;
+    if (!reserve(program, rows * program.arg_tiles * sizeof(ArgPair<Acc>),
+                 program.arg_partials_offset))
       return cudaErrorInvalidValue;
     return cudaSuccess;
   }

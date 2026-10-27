@@ -84,9 +84,10 @@ HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>)
 HYLE_GRAPH_API Status release_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Prepared nonblocking Commands or complete existing capture reuse. The full
 // final tuple is checked together; a miss never records pending values or
-// falls back to managed Commands. A bundle containing only genuinely ready
-// Store destinations can use the original RequireCapture path
-// for its first recording. Original metadata-only binding hooks apply.
+// falls back to managed Commands. A successfully retired bundle with detached
+// I32 results, original published Store destinations and actual ready resource
+// guards can use the original PreferCapture path for its first recording,
+// including qualified Hybrid gaps. Original metadata-only binding hooks apply.
 HYLE_GRAPH_API Status prepare_outputs(Invocation &, std::span<const OutputBinding>,
     std::span<const QueueBinding>) noexcept;
 HYLE_GRAPH_API Result<compute::Completion> submit_outputs(Invocation &,

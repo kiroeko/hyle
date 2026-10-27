@@ -9567,6 +9567,54 @@ ReplayRoute shared_replay_coverage(const detail::PlanState &plan,
       : gap_commands ? ReplayRoute::kHybrid : ReplayRoute::kCaptured;
 }
 
+Result<bool> unchanged_prepared_full_views(
+    const detail::InvocationState &state, std::size_t root,
+    compute::ConstTensorView replacement) noexcept {
+  const auto &plan = *state.plan;
+  const auto storage = replacement.storage();
+  bool found = false;
+  for (std::size_t instance = 0; instance < plan.alias_sources.size(); ++instance) {
+    if (instance == root) continue;
+    auto source = instance;
+    std::size_t depth = 0;
+    while (source != root) {
+      if (source >= plan.alias_sources.size() || ++depth > plan.alias_sources.size())
+        return false;
+      const auto parent = plan.alias_sources[source];
+      if (parent == detail::kNoInPlaceSource) break;
+      source = parent;
+    }
+    if (source != root) continue;
+
+    // Only already prepared, nonmaterializing Views prove an unchanged
+    // external root. No replacement pointer or new alias is inferred here.
+    bool view = false;
+    for (const auto &step : plan.steps) {
+      if (step.kind != detail::PlanStepKind::kView || step.materializes) continue;
+      for (std::size_t port = 0; port < step.output_count; ++port)
+        if (plan.node_outputs[step.output_begin + port] == instance) view = true;
+    }
+    if (!view) return false;
+    HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(state, instance));
+    // Every descendant is checked, so zero nonnegative edge offsets also
+    // prove a zero accumulated offset all the way to this exact root.
+    if (offset != 0) return false;
+    const auto &description = physical_description(state, instance);
+    HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
+    const auto &prepared = state.readable[instance];
+    if (bytes != storage.size() || !prepared.valid() ||
+        prepared.description() != description)
+      return false;
+    const auto previous = prepared.storage();
+    if (previous.resource() != storage.resource() ||
+        previous.native_handle() != storage.native_handle() ||
+        previous.offset() != storage.offset() || previous.size() != storage.size())
+      return false;
+    found = true;
+  }
+  return found;
+}
+
 Result<ReplayRoute> reusable_capture_tuple(const detail::InvocationState &state,
     std::span<const detail::ReplayInputBinding> replacements) noexcept {
   const auto &plan = *state.plan;
@@ -10129,10 +10177,11 @@ Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocatio
     for (std::size_t j = 0; j < i; ++j)
       if (replacements[j].input == input)
         return std::unexpected(Status::InvalidArgument("capture replacement repeats an input"));
-    // A changed alias needs actual View preparation. This pure query does not
-    // infer replacement pointers for aliases or opaque native ports.
-    if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal()))
-      return false;
+    if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal())) {
+      HYLE_ASSIGN_OR_RETURN(const auto unchanged,
+          unchanged_prepared_full_views(*state, plan.external_instances[input.ordinal()], replacement.tensor));
+      if (!unchanged) return false;
+    }
   }
   HYLE_ASSIGN_OR_RETURN(const auto route, reusable_capture_tuple(*state, replacements));
   return route == ReplayRoute::kCaptured || route == ReplayRoute::kHybrid;

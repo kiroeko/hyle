@@ -207,6 +207,17 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   EXPECT_FALSE(submitted->valid());
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
+  if (bad_producer_index) {
+    gd::SubmissionSource empty;
+    EXPECT_TRUE(empty.request_cancel().IsFailedPrecondition());
+    // The original CUDA work cannot be preempted. Its capability result is
+    // independent of the still-pending whole verdict and the later bad ID.
+    const auto cancellation = submission_source.request_cancel();
+    EXPECT_TRUE(cancellation.IsUnimplemented()) << cancellation.message();
+    ASSERT_TRUE(source.poll());
+    EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
+    EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  }
   EXPECT_TRUE(source.detach().IsUnavailable());
   EXPECT_FALSE(producer.reset().ok());
   EXPECT_FALSE(gd::bind_outputs(producer, std::array{gd::OutputBinding{first_index, &source}}).ok());
@@ -326,6 +337,10 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
     const auto original_failure = submission_source.wait();
     EXPECT_EQ(original_failure.code(), producer_status.code());
     EXPECT_EQ(original_failure.message(), producer_status.message());
+    EXPECT_TRUE(submission_source.request_cancel().ok()); // Original settled proxy.
+    const auto after_cancellation = submission_source.wait();
+    EXPECT_EQ(after_cancellation.code(), producer_status.code());
+    EXPECT_EQ(after_cancellation.message(), producer_status.message());
   }
   submission_source = {}; producer = {};
   EXPECT_EQ(source_pool.stats().live_blocks, 0u);

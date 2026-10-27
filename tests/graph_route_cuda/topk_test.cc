@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <numeric>
 #include <span>
 #include <vector>
@@ -385,7 +386,7 @@ TEST(CudaDefaultGraph, OtherTopKProgramsKeepManagedReplayContract) {
     std::size_t count;
   };
   for (const auto item :
-       {Case{1, 8193, 1}, Case{3, 17, 1}, Case{3, 8193, 2}}) {
+       {Case{1, 8193, 2}, Case{3, 17, 2}, Case{3, 8193, 2}}) {
     SCOPED_TRACE(::testing::Message()
                  << item.rows << '/' << item.width << '/' << item.count);
     const auto desc = compute::TensorDesc::dense(
@@ -410,6 +411,88 @@ TEST(CudaDefaultGraph, OtherTopKProgramsKeepManagedReplayContract) {
         logical, owner, resource.ref(),
         {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
     EXPECT_FALSE(compiled);
+  }
+}
+
+TEST(CudaDefaultGraph, SingleRowTopOneCapturePreservesNaNsSignedZeroAndTies) {
+  auto owner = graph::cuda::create_context().value();
+  auto resource =
+      cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  constexpr std::size_t width = 17;
+  const auto desc = compute::TensorDesc::dense(
+                        compute::DataType::kFloat32,
+                        std::array<std::int64_t, 2>{1, width}).value();
+  const compute::TopK operation{.count = 1};
+  auto direct = compute::prepare(owner, operation, desc, resource.ref());
+  ASSERT_TRUE(direct) << direct.error().message();
+  EXPECT_EQ(direct->provider().id, compute::cuda_native::kCcclProviderId);
+  EXPECT_EQ(direct->runtime_properties().replay_class,
+            compute::ProviderReplayClass::kPrepared);
+  EXPECT_TRUE(direct->capture_compatible());
+  EXPECT_FALSE(direct->runtime_properties().blocks_host);
+
+  auto builder = graph::GraphBuilder::create().value();
+  const auto input = builder.input(desc).value();
+  const auto top = builder.add_node(compute::Operation(operation),
+                                    std::array{input}).value();
+  const auto value = builder.result(top, 0).value();
+  const auto index = builder.result(top, 1).value();
+  ASSERT_TRUE(builder.publish(value).ok());
+  ASSERT_TRUE(builder.publish(index).ok());
+  auto logical = std::move(builder).finish().value();
+  auto compiled = graph::cuda::compile(
+      logical, owner, resource.ref(),
+      {.provider_replay = graph::ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  ASSERT_EQ(compiled->report.step_count(), 1U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id,
+            compute::cuda_native::kCcclProviderId);
+  Tensor source(desc, resource.ref()),
+      values(direct->output_description(0).value(), resource.ref()),
+      indices(direct->output_description(1).value(), resource.ref());
+  auto queue = owner.create_queue().value();
+  auto invocation = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(invocation.bind(input, source.view.as_const()).ok());
+  ASSERT_TRUE(invocation.bind(value, values.view).ok());
+  ASSERT_TRUE(invocation.bind(index, indices.view).ok());
+  for (std::size_t pass = 0; pass < 3; ++pass) {
+    SCOPED_TRACE(pass);
+    std::array<std::uint32_t, width> bits{};
+    std::int32_t expected_index = 0;
+    if (pass == 0) {
+      bits.fill(0xff800000U); // -infinity
+      bits[0] = 0x7fc12345U; // NaN follows every number.
+      bits[1] = 0x80000000U; bits[2] = 0; // Signed zeros tie by index.
+      expected_index = 1;
+    } else if (pass == 1) {
+      for (std::size_t i = 0; i < width; ++i)
+        bits[i] = 0x7fc03000U + static_cast<std::uint32_t>(i);
+    } else {
+      bits.fill(0xbf800000U); // -1
+      bits[5] = bits[width - 1] = 0x40a00000U; // 5, lowest index wins.
+      expected_index = 5;
+    }
+    ASSERT_TRUE(source.write<std::uint32_t>(bits).ok());
+    const auto prepared = graph::cuda::prepare_replay(
+        invocation, queue,
+        {.mode = graph::ReplayMode::kRequireCapture,
+         .host_wait = graph::HostWaitPolicy::kReject});
+    ASSERT_TRUE(prepared.ok()) << prepared.message();
+    ASSERT_EQ(invocation.replay_route(), graph::ReplayRoute::kCaptured);
+    const auto report = invocation.replay_report();
+    ASSERT_TRUE(report) << report.error().message();
+    if (!pass) EXPECT_GT(report->recorded_capture_range_count, 0U);
+    else {
+      EXPECT_EQ(report->recorded_capture_range_count, 0U);
+      EXPECT_GT(report->reused_capture_range_count, 0U);
+    }
+    auto done = invocation.submit(queue);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    EXPECT_EQ(indices.read<std::int32_t>(),
+              (std::vector<std::int32_t>{expected_index}));
+    EXPECT_EQ(values.read<std::uint32_t>(),
+              (std::vector<std::uint32_t>{bits[static_cast<std::size_t>(expected_index)]}));
   }
 }
 } // namespace

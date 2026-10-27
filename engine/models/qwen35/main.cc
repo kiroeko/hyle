@@ -78,6 +78,9 @@
 #include "hyle/graph/batch.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/progress.h"
+#include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/detail/store_source.h"
+#include "hyle/graph/detail/paged_append_source.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/io/file.h"
 #include "hyle/io/io_context.h"
@@ -1204,6 +1207,15 @@ struct StepMember final {
     }
   }
 };
+// Typed views of one original Graph submission. They contain no executor,
+// model-state snapshot or observer independent of the original proxy. A
+// successor may keep these views after its producer's host episode retires.
+struct StepSources final {
+  g::detail::SubmissionSource submission;
+  g::detail::OutputSource token;
+  std::vector<g::detail::StoreSource> states;
+  std::vector<g::batch::detail::PagedAppendSource> pages;
+};
 struct StepState final {
   // Model owns the episode; these strong pins outlive all accepted native work.
   // Session's pending link borrows this owner and never creates a cycle.
@@ -1222,6 +1234,19 @@ struct StepState final {
   g::Invocation *run = nullptr;
   Phase *phase = nullptr;
   c::Completion completion;
+  std::shared_ptr<StepSources> sources;
+  bool has_completion() const noexcept {
+    return completion.valid() || (sources && sources->submission.valid());
+  }
+  hyle::Result<c::CompletionPoll> poll() noexcept {
+    return sources && sources->submission.valid() ? sources->submission.poll() : completion.poll();
+  }
+  hyle::Status wait() noexcept {
+    return sources && sources->submission.valid() ? sources->submission.wait() : completion.wait();
+  }
+  hyle::Status request_cancel() noexcept {
+    return sources && sources->submission.valid() ? sources->submission.request_cancel() : completion.request_cancel();
+  }
   hyle::Status terminal;
   Clock::time_point step_start{}, start{};
   double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
@@ -1241,11 +1266,24 @@ struct StepState final {
   }
 
   hyle::Result<bool> try_abort() noexcept {
-    if (completion.valid()) {
-      auto observed = completion.poll();
+    if (has_completion()) {
+      auto observed = poll();
       if (observed && *observed == c::CompletionPoll::kPending) return false;
       if (!observed) inference::record_retirement_status(terminal, observed.error());
       completion = {}; // Error/abandonment keeps actual native guards retained.
+    }
+    if (sources) {
+      if (sources->submission.valid() && sources.use_count() != 1) return false;
+      // Failed token views cannot publish/detach. Drop this host reference;
+      // an actual successor still owns its own view and prevents premature
+      // producer withdrawal until the successor's original reads retire.
+      sources->token = {};
+      if (sources->submission.valid()) {
+        const auto detached = sources->submission.detach();
+        if (detached.IsUnavailable() || detached.IsFailedPrecondition()) return false;
+        HYLE_RETURN_IF_ERROR(detached);
+      }
+      sources.reset(); // Unescaped tickets must end before writer discard.
     }
     if (hidden_output) {
       HYLE_ASSIGN_OR_RETURN(auto retired, hidden_output->recover(terminal));
@@ -4280,6 +4318,33 @@ public:
     prepare_evaluations(requests, preparation, role, completion);
   }
 
+  // Reserve typed metadata before accepting native work. The caller can retain
+  // the same original views for a successor; no candidate head is exported and
+  // the ordinary API remains on its existing direct Completion path.
+  std::shared_ptr<StepSources> prepare_submission_sources() {
+    if (!active_step || !active_step->prepared || active_step->submitted ||
+        active_step->cancelled || active_step->sources || !active_step->phase ||
+        active_step->phase->family->role != GraphRole::kText || cache_plan.draft_cache ||
+        active_step->phase->family->completion != TextCompletion::kEmitNext || scheduler)
+      throw std::runtime_error("submission views require one prepared direct ordinary episode");
+    auto &step = *active_step; auto &phase = *step.phase;
+    const auto storage = execution.storage_owner();
+    if (!storage || inference::queue_span(phase.queues).size() != 1 ||
+        !phase.io[step.state_slot].next_id.pool().valid())
+      throw std::runtime_error("submission views require the original owned shared Queue and full token writer");
+    auto sources = std::make_shared<StepSources>();
+    sources->states.reserve(phase.state_sources.size());
+    sources->pages.reserve(draft_bank);
+    for (const auto &state : phase.state_sources)
+      sources->states.push_back(take(g::detail::StoreSource::prepare(*step.run,
+          state.store, storage, {.resource_budget = execution_budget})));
+    for (std::size_t bank = 0; bank < draft_bank; ++bank)
+      sources->pages.push_back(take(g::batch::detail::PagedAppendSource::prepare(
+          *step.run, step.nodes[bank], storage, {.resource_budget = execution_budget})));
+    step.sources = sources;
+    return sources;
+  }
+
   void submit_evaluations() {
     if (!active_step || !active_step->prepared || active_step->submitted || active_step->cancelled || !active_step->run)
       throw std::runtime_error("batch is not prepared or was already submitted/cancelled");
@@ -4289,7 +4354,16 @@ public:
     const auto queues = inference::queue_span(active_step->phase->queues);
     auto &step = *active_step;
     step.start = Clock::now(); step.submitted = true;
-    step.completion = submit_retained(*step.run, queues, step.phase->retirement[slot_index]);
+    step.completion = submit_retained(*step.run, queues, step.phase->retirement[step.state_slot]);
+    if (step.sources) {
+      auto &sources = *step.sources;
+      sources.submission = take(g::detail::SubmissionSource::create(
+          *step.run, std::move(step.completion), execution.storage_owner()));
+      sources.token = take(g::detail::OutputSource::create(sources.submission,
+          step.phase->id_port, execution.storage_owner(), step.phase->io[step.state_slot].next_id.pool()));
+      for (auto &state : sources.states) check(state.capture(sources.submission));
+      for (auto &pages : sources.pages) check(pages.capture(sources.submission));
+    }
     step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();
   }
 
@@ -4303,7 +4377,7 @@ public:
   void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,
                                   std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe) {
     if (!active_step || outputs.size() != active_step->members.size() || next_ids.size() != outputs.size() ||
-        active_step->cancelled || !active_step->submitted || !active_step->completion.valid())
+        active_step->cancelled || !active_step->submitted || !active_step->has_completion())
       throw std::runtime_error("finish requires its original complete noncancelled batch");
     for (std::size_t j = 0; j < outputs.size(); ++j) {
       if (outputs[j].session != active_step->members[j].session || outputs[j].session->failed ||
@@ -4356,7 +4430,8 @@ public:
         } else if (outputs[j].expected_episode)
           throw std::runtime_error("expected episode record requires a fresh commit witness");
       }
-      check(step.completion.wait()); step.completion = {};
+      check(step.wait()); step.completion = {};
+      if (step.sources) check(step.sources->token.detach());
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
@@ -4462,6 +4537,7 @@ public:
         }
       // Attest the original append success before any slot withdrawal revokes
       // Graph output-ready. Every ordinary output has already been retained.
+      if (step.sources) check(step.sources->submission.detach());
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
       check(g::batch::take_appends(run, std::span(step.nodes.data(), append_banks),
           std::span(step.appends.data(), append_banks)));
@@ -4474,7 +4550,9 @@ public:
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
           const auto selected = j * phase.prefix_rows + prefix;
-          auto ready = take(bank.transaction.destinations()[selected].publish());
+          auto ready = step.sources ? take(step.sources->states[bank_index].publish(
+              selected, bank.transaction.destinations()[selected]))
+              : take(bank.transaction.destinations()[selected].publish());
           auto &state = step.members[j].next->state[bank.layer];
           (bank.recurrent ? state.recurrent : state.history) = std::move(ready);
         }
@@ -4488,8 +4566,12 @@ public:
           auto &member = step.members[j];
           if (!member.key_updates.try_resize(page_inventory.keys.size()) ||
               !member.value_updates.try_resize(page_inventory.keys.size())) throw std::bad_alloc{};
-          auto key = take(step.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
-          auto value = take(step.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
+          auto key = step.sources ? take(step.sources->pages[layer * 2].ready_delta(
+              step.appends[layer * 2], take(member.frame(layer, true).view()), member.layout))
+              : take(step.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
+          auto value = step.sources ? take(step.sources->pages[layer * 2 + 1].ready_delta(
+              step.appends[layer * 2 + 1], take(member.frame(layer, false).view()), member.layout))
+              : take(step.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
           member.key_updates[layer] = take(member.frame(layer, true).prepare_commit(std::move(key)));
           member.value_updates[layer] = take(member.frame(layer, false).prepare_commit(std::move(value)));
         }
@@ -5025,7 +5107,7 @@ hyle::Status Session::stop() noexcept {
   if (stopping) return retirement_status;
   stopping = true;
   if (pending) {
-    if (!pending->cancelled && pending->submitted && pending->completion.valid() &&
+    if (!pending->cancelled && pending->submitted && pending->has_completion() &&
         pending->phase && pending->phase->family->role == GraphRole::kText &&
         model_ && !model_->cache_plan.draft_cache && pending->members.size() > 1 &&
         std::ranges::any_of(pending->members, [](const auto &member) { return !member.session->stopping; })) {
@@ -5035,8 +5117,8 @@ hyle::Status Session::stop() noexcept {
       return retirement_status;
     }
     pending->cancelled = true;
-    if (pending->completion.valid()) {
-      const auto cancelled = pending->completion.request_cancel();
+    if (pending->has_completion()) {
+      const auto cancelled = pending->request_cancel();
       if (!cancelled.IsUnimplemented()) inference::record_retirement_status(retirement_status, cancelled);
     }
     if (pending->run) pending->run->close().IgnoreError();

@@ -15,8 +15,10 @@ struct ReplayAccess final {
   // Pure inspection of existing records, their actual Queue/backend/private
   // arguments, and the final tuple with these external inputs replaced together.
   // Captured ranges must cover every managed/blocking command. Remaining gaps
-  // may only contain prepared, nonblocking shared-Queue commands. Unsupported
-  // aliases or opaque captured carriers return false. No binding, provider
+  // may only contain prepared, nonblocking shared-Queue commands. A prepared
+  // full-span, zero-offset View may keep its exact original physical storage;
+  // changed/partial/unknown aliases or opaque captured carriers return false.
+  // No binding, provider
   // preparation, resource allocation or recording is performed.
   HYLE_GRAPH_API static Result<bool> can_reuse_capture(const Invocation &,
       std::span<const ReplayInputBinding>) noexcept;

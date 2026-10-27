@@ -251,6 +251,9 @@ Store视图自身元数据已预冷；共同Source、混合bundle及原prepare�
 前驱原pool、ready IDs及读权限由同一Source束拥有；冷桥从实际Store／Gather及已选region生成投影，不让引擎识别Provider。
 `store_ready`只接受该真实StoreSource全部目的的原root／generation／坐标及成功退休证明，用于首次真实捕获；
 不带ready guards的在途来源仍只能复用已有捕获。查询重核实际束附件、完整投影及IDs guard，裸TensorView不能冒充来源。
+同一真实成功提交的token detach、完整Store ready及KV已发布范围可共同准备首个捕获；
+KV权限按当前贡献的精确bound裁剪，不能继承origin的更宽前缀。已装入原资源绑定的ready读
+只接纳一次；pending读、隐式effect及私有控制仍走原权限接纳。完成状态本身不证明载荷已初始化。
 `take`只回收后继目的权，保留无权限物理配置；`release_outputs`须等本消费者真实退休、先take受影响writer，
 再沿原native全部预检撤本束来源及guard，失败也可清理，不能提前撤在途读权限或牵连其它输入。
 私有ID值不变时复用原成功发布的真实carrier，免去重复上传及同Queue等待；改值仍须原try_write、传输及真实退休。
@@ -258,13 +261,20 @@ Store视图自身元数据已预冷；共同Source、混合bundle及原prepare�
 前驱退休而后继仍读、真实数学错误及退休清理；当前是完整目的集／K1承载，MTP非连续接受子集、有界持续轮换、
 完整模型和吞吐仍未完成，不能把组件检查当作完整模型重叠执行已交付。
 
-当前Qwen入口仍用一个串行载体；下一步接入有以下具体约束：
+当前Qwen入口仍用一个串行载体；完整生产者已增加显式`StepSources`桥，
+将唯一原Completion移交共同Source，导出原token、所有Store及KV来源。
+成功路径仍是wait、token detach、读回／pin普通结果、共同detach、take append、take Store、
+受检发布及原head提交；取消转发到同一原Completion，不能把请求取消当成实际退休。
+此桥不是后继调度器，实际提交资格仍由原Graph核本次range／gap决定。
+下一步接入有以下具体约束：
 
 - 普通Text外部token已统一为`[B*T,1]`并立即由原Graph View展平，读回已交出完整writer；实际设备token接线仍需原Source及checked Gather，不能因形状吻合就绕过权限。
-- I/O已按槽独立持有，[状态预算](../../engine/models/qwen35/session_state.h)也已接真实在途深度D，默认仍为1。启用深度二调度时须实际选择D=2；首次真实边界／新shape可串行，稳态两个载体须均已冷备imported来源及真实tuple捕获。
+- I/O已按槽独立持有，[状态预算](../../engine/models/qwen35/session_state.h)也已接真实在途深度D，默认仍为1。连续深度二使用三个物理I/O／控制载体：B仍读取A的token和IDs时，C不能重用A；A须等B实际退休并释放incoming束后才能再用。候选状态预算仍按D=2，不把第三载体误算成第三层候选。仅实际接力shape冷备三份；每个有向物理tuple先由真实ready步骤捕获，不能执行虚假推理预热或消耗额外RNG。
 - batch、append和变值IDs上传现共用原Graph按实际Context／lane持有的独立metadata Queue；计算、Source及proof仍认原执行Queue。上传继续真实等待、退休并发布ready，不引入第二执行器或pending-control类型。原Queue wrapper地址稳定，F2借用沿原buffer domain保活，reset保留冷cache。
   [43项定向检查与四条tiny双会话路径](../evidence/correctness/inference-metadata-queue-2026-10-27.json)验证阻挡计算stream时仍能更新页号／槽号并复用原捕获。此处仍有小上传的host等待；普通Tensor.write也仍host同步，不能称全部准备非阻塞或已取得完整模型速度收益。
 - finish须沿原Store／Paged Source受检发布及整束退休清理，不能再对在途读页用普通publish／unbind。设备token读须checked；采样valid、EOS、取消、expected-base、ledger及RNG仍在原host提交门判断，后继只写独立候选，不能提前发布head。
+
+[完整生产者与混束检查](../evidence/correctness/inference-model-submission-source-2026-10-27.json)已分别覆盖真实2B的全部初始化状态和组件ready→pending复用。接入中修复了shared append漏记实际written-projection端口，以及单行TopK1仍走managed dispatch的缺口；后者复用原冷prepared tile／finish内核、workspace和原比较规则。捕获重用只为已准备、完整范围、零偏移且原物理位置不变的View增加证明，仍核全部range、私有参数及Queue；换址、部分范围或未知alias拒绝，不推导新指针。这些结果不代表完整模型后继已提交或吞吐提高。
 
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。
@@ -285,9 +295,11 @@ Commands不拿休眠的记录作覆盖证明。消费者仍核每段既有物理
 撤回ready投影时仅实际Operation的稳定后端绑定、无native输入与原私有参数保持证明允许保记录；Region仍保原显式合同。
 未覆盖managed间隙、多segment、完整模型或持续轮换，不能改写Provider静态能力或推证吞吐。
 
-真实Qwen接力另有已核实的接线缺口：`PreparedReadback`目前以裸TensorView绑定token输出，
-不是Graph持有的完整writer；普通最终ID为dense I32 `[B,1]`，下一Text T1输入为`[B]`。
-优先用既有typed reshape统一普通最终token端口与原writer所有权，不为该消费者另造Source reshape机制。
+真实Qwen接力已先统一普通Text token输入为dense I32 `[B*T,1]`，
+在原Graph内用View展平给embedding。`PreparedReadback`已将完整原writer交给Graph，
+读回／reclaim沿原pool及发布权限，不再用裸TensorView代替输出所有权。
+后继仍需checked embedding Gather、候选base／ledger、有序发布和incoming束保活，
+不能仅因端口形状一致就接纳下一步。
 已有正式CUDA窗口的ordinary与MTP decode均为Hybrid；记录未保留逐gap覆盖，不能声称完整capture。
 当前已按原`captured_ranges`／`capture_spans`与提交游标区分已捕获command和Prepared／nonblocking gap，
 保留同一Queue、原完整Status与reuse-only物理tuple／私有参数检查；实际模型仍需逐gap核查其资格。

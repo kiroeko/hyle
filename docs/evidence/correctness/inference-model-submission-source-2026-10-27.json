@@ -1,0 +1,807 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS_FINITE_SCOPE",
+  "baseline_commit": "f7d47dab4071b72df45795edb9e4b1ff3e6f8eb7",
+  "scope": "One original complete ordinary CUDA producer exports token, every Store and every target KV bank, then finishes through exact original Source publication. Real ready mixed token/View/Store/KV can record Hybrid and reuse while pending. This is not a continuous model successor pipeline or a throughput result.",
+  "changes": [
+    "Source cancellation forwards to the sole original Completion without altering its verdict or proving retirement.",
+    "Ready mixed bundles install actual published guards, clip inherited resource ranges and avoid duplicate resource read admission.",
+    "All nonempty TopK1 shapes use the existing cold materialized tile/finish kernels and caller workspace; NaN/tie/original bits unchanged.",
+    "Shared PagedAppend records its actual written-projection cache key, and writer-only binding clears that key.",
+    "Exact full-span prepared View proof admits only unchanged physical tuples; other aliases still require real preparation."
+  ],
+  "checks": {
+    "unique_gtest_cases": 47,
+    "cases": [
+      "CudaDefaultGraph.OtherTopKProgramsKeepManagedReplayContract",
+      "CudaDefaultGraph.SingleRowTopOneCapturePreservesNaNsSignedZeroAndTies",
+      "CudaDefaultGraph.WideTopOnePreparedCaptureKeepsInvocationWorkspaceIsolated",
+      "GgmlCudaIndexedConvGraph.Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+      "GgmlCudaIndexedConvGraph.EscapingGatherKeepsLegalProjectedFallback",
+      "GgmlCudaIndexedConvGraph.Float16HistoryPreservesOriginalBitsForEveryPrefix",
+      "GgmlCudaIndexedConvGraph.Float32BatchedFinalWindowUsesOriginalStateAndReset",
+      "GgmlCudaIndexedStateGraph.EffectRootWritesCandidatesWithoutPublishedActivation",
+      "GgmlCudaIndexedStateGraph.EscapingGatherUsesCheckedProjectedFallback",
+      "GgmlCudaIndexedStateGraph.PublishedActivationAndCandidateSlotsMatchDenseGdn",
+      "GgmlCudaMixedReadySource.RealTokenStoreAndKvWarmHybridThenReusePending",
+      "GgmlCudaPendingIndexedState.ChangedDestinationIdsUploadWhileOriginalProducerIsPending",
+      "GgmlCudaPendingIndexedState.CheckedProducerFailureNeverPublishesConvResult",
+      "GgmlCudaPendingIndexedState.ConvUsesPublishedWarmAndPendingOriginalHistory",
+      "GgmlCudaPendingIndexedState.GdnUsesPublishedWarmAndPendingOriginalSlots",
+      "GraphBatchCapture.FreshMetadataPermissionsRetainOnlyUnchangedNativeCommands",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphPagedAppendSourceCuda.ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+      "GraphPagedAppendSourceCuda.ChainedCowSourceReleasesUnrelatedPublishedPage",
+      "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+      "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads",
+      "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+      "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+      "GraphRouteBoundary.ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+      "GraphRouteBoundary.ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+      "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+      "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+      "GraphSlotsExecution.DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+      "GraphSlotsExecution.InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+      "GraphSlotsExecution.RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+      "GraphSlotsExecution.ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+      "GraphSlotsExecution.ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+      "GraphSlotsExecution.SourceDestinationOverlapIsRejectedBeforeAnyStore",
+      "GraphSlotsExecution.SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+      "GraphSlotsExecution.SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+      "QwenBackendCpuCuda.ReadbackI32WriterSupportsTheOriginalSubmissionSource",
+      "QwenBackendCpuCuda.ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndReclaim",
+      "QwenSessionState.BatchCapacityPreservesSingleAndBoundsAllCandidates"
+    ],
+    "original_43_record": "run-test/results.xml",
+    "final_targeted_runs": [
+      {
+        "record": "run-topk-final/results.xml",
+        "passed": [
+          "CudaDefaultGraph.WideTopOnePreparedCaptureKeepsInvocationWorkspaceIsolated",
+          "CudaDefaultGraph.OtherTopKProgramsKeepManagedReplayContract",
+          "CudaDefaultGraph.SingleRowTopOneCapturePreservesNaNsSignedZeroAndTies"
+        ]
+      },
+      {
+        "record": "run-alias-final/results.xml",
+        "passed": [
+          "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+          "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+          "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+          "GgmlCudaMixedReadySource.RealTokenStoreAndKvWarmHybridThenReusePending"
+        ]
+      }
+    ],
+    "full_model_producers": {
+      "tiny": {
+        "status": "PASS",
+        "backend": "cuda",
+        "sampling": "greedy",
+        "prefill_tokens": 3,
+        "decode_steps_per_arm": 3,
+        "source_token_views": 3,
+        "source_store_views": 6,
+        "source_kv_views": 6,
+        "complete_state_bytes_compared": 74752,
+        "old_checkpoint_unchanged": true,
+        "rng_cursor_unchanged": true,
+        "sources_released_before_slot_reuse": true,
+        "final_live_versions": 0,
+        "performance_claim": false,
+        "routes": [
+          "hybrid",
+          "hybrid",
+          "hybrid"
+        ],
+        "capture_recorded": 0,
+        "capture_reused": 6,
+        "ids": [
+          37,
+          0,
+          34,
+          34
+        ]
+      },
+      "real": {
+        "status": "PASS",
+        "backend": "cuda",
+        "sampling": "greedy",
+        "prefill_tokens": 3,
+        "decode_steps_per_arm": 3,
+        "source_token_views": 3,
+        "source_store_views": 108,
+        "source_kv_views": 36,
+        "complete_state_bytes_compared": 78372864,
+        "old_checkpoint_unchanged": true,
+        "rng_cursor_unchanged": true,
+        "sources_released_before_slot_reuse": true,
+        "final_live_versions": 0,
+        "performance_claim": false,
+        "routes": [
+          "captured",
+          "captured",
+          "captured"
+        ],
+        "capture_recorded": 0,
+        "capture_reused": 3,
+        "ids": [
+          16,
+          15,
+          15,
+          15
+        ]
+      }
+    },
+    "initial_cpu_cuda_regressions": {
+      "status": "PASS",
+      "runs": [
+        {
+          "name": "cpu-ordinary-b2",
+          "process": {
+            "exit": 0,
+            "pid": 19852,
+            "seconds": 0.8878685000236146
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs\\cpu-ordinary-b2\\report.json",
+            "bytes": 35622,
+            "sha256": "f9a8c865ef83887c9d6313870b1837cfc22c4748cbcd601ef28e00f047627e27"
+          }
+        },
+        {
+          "name": "cpu-mtp-k3-b2",
+          "process": {
+            "exit": 0,
+            "pid": 56536,
+            "seconds": 0.4846525999600999
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs\\cpu-mtp-k3-b2\\report.json",
+            "bytes": 40671,
+            "sha256": "acddcc0c8d2827d5a3f75e103f97e39667901061916e587d4d82bf9efbb28818"
+          }
+        },
+        {
+          "name": "cuda-ordinary-b2",
+          "process": {
+            "exit": 0,
+            "pid": 57820,
+            "seconds": 0.7277882000198588
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs\\cuda-ordinary-b2\\report.json",
+            "bytes": 34821,
+            "sha256": "ed0e2cd308ca6515046d290f27e8efddaf525465c3199ae7644aa57c2760611d"
+          }
+        },
+        {
+          "name": "cuda-mtp-k3-b2",
+          "process": {
+            "exit": 0,
+            "pid": 37856,
+            "seconds": 0.8189261000370607
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs\\cuda-mtp-k3-b2\\report.json",
+            "bytes": 39848,
+            "sha256": "aaec41e06be6339ae2006dea3d5a1de4c03be55612973c36ad81f0ddfe6699e9"
+          }
+        }
+      ],
+      "scope": "Tiny CPU/CUDA ordinary/MTP B2 regression, no performance claim."
+    },
+    "affected_cuda_regressions": {
+      "status": "PASS",
+      "runs": [
+        {
+          "name": "cuda-ordinary-b2",
+          "process": {
+            "exit": 0,
+            "pid": 60600,
+            "seconds": 1.1647550000343472
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs-final\\cuda-ordinary-b2\\report.json",
+            "bytes": 34743,
+            "sha256": "4924857a3686f18fb9d1f4c080292f2decbe2cad8d8a35f9c54faebccd48b112"
+          }
+        },
+        {
+          "name": "cuda-mtp-k3-b2",
+          "process": {
+            "exit": 0,
+            "pid": 39580,
+            "seconds": 0.8034904000232928
+          },
+          "ids": [
+            [
+              "A",
+              [
+                37,
+                0,
+                34,
+                34,
+                34,
+                34,
+                34,
+                34
+              ]
+            ],
+            [
+              "B",
+              [
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6,
+                6
+              ]
+            ]
+          ],
+          "report": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\runs-final\\cuda-mtp-k3-b2\\report.json",
+            "bytes": 39833,
+            "sha256": "56e3392dea6f12180fbd4e9a84786b015edd50f4679cc1b8ca0b39143588a851"
+          }
+        }
+      ],
+      "scope": "Only affected CUDA ordinary/MTP B2 repeated after TopK1 kernel and append fact fixes; CPU prior PASS reused, no throughput claim."
+    }
+  },
+  "build_attempts": [
+    {
+      "stage": "link-cli",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 25820,
+      "seconds": 1.7797317000222392
+    },
+    {
+      "stage": "link-cli-append",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 53504,
+      "seconds": 1.7413591000367887
+    },
+    {
+      "stage": "link-cli-delivery",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 51892,
+      "seconds": 1.7361464999848977
+    },
+    {
+      "stage": "link-cli-final",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 51164,
+      "seconds": 1.7727987000253052
+    },
+    {
+      "stage": "link-cli-v2",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 41520,
+      "seconds": 1.753154399979394
+    },
+    {
+      "stage": "link-probe",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 43564,
+      "seconds": 1.7737045000540093
+    },
+    {
+      "stage": "link-probe-append",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 5124,
+      "seconds": 1.7766135999700055
+    },
+    {
+      "stage": "link-probe-delivery",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 53116,
+      "seconds": 1.7366867000237107
+    },
+    {
+      "stage": "link-probe-final",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 53112,
+      "seconds": 1.79678050003713
+    },
+    {
+      "stage": "link-probe-v2",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 33192,
+      "seconds": 1.7410748999682255
+    },
+    {
+      "stage": "link-probe-v4",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 59236,
+      "seconds": 1.757019999960903
+    },
+    {
+      "stage": "link-test",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 54728,
+      "seconds": 1.9069060999900103
+    },
+    {
+      "stage": "link-test-delivery",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 52244,
+      "seconds": 1.8869767999858595
+    },
+    {
+      "stage": "link-test-diag",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 40064,
+      "seconds": 1.8538590000243858
+    },
+    {
+      "stage": "link-test-final",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 59168,
+      "seconds": 1.8691131999948993
+    },
+    {
+      "stage": "link-test-v2",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 52972,
+      "seconds": 1.9254232000093907
+    },
+    {
+      "stage": "link-test-v3",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 43420,
+      "seconds": 1.8746351999579929
+    },
+    {
+      "stage": "link-test-v5",
+      "tool": "link.exe",
+      "exit": 0,
+      "pid": 43368,
+      "seconds": 1.858193400024902
+    },
+    {
+      "stage": "logs/append-fix",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 25304,
+      "seconds": 2.7297210000106134
+    },
+    {
+      "stage": "logs/executable",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 52260,
+      "seconds": 6.05902679997962
+    },
+    {
+      "stage": "logs/mixed-diag",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 58792,
+      "seconds": 3.5270221999962814
+    },
+    {
+      "stage": "logs/mixed-v2",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 55240,
+      "seconds": 3.523913800017908
+    },
+    {
+      "stage": "logs/mixed-v3",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 53116,
+      "seconds": 3.3798719000187702
+    },
+    {
+      "stage": "logs/mixed_alias",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 17032,
+      "seconds": 3.554125800030306
+    },
+    {
+      "stage": "logs/mixed_final",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 62132,
+      "seconds": 3.373755499953404
+    },
+    {
+      "stage": "logs/mixed_ready",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 47956,
+      "seconds": 3.415946399967652
+    },
+    {
+      "stage": "logs/model",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 10104,
+      "seconds": 21.05246229999466
+    },
+    {
+      "stage": "logs/output_source",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 62440,
+      "seconds": 7.2109137999941595
+    },
+    {
+      "stage": "logs/probe",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 18352,
+      "seconds": 20.974472699977923
+    },
+    {
+      "stage": "logs/probe-v2",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 47328,
+      "seconds": 21.53714949998539
+    },
+    {
+      "stage": "logs/resources",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 55872,
+      "seconds": 4.048688500013668
+    },
+    {
+      "stage": "logs/resources-v2",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 39924,
+      "seconds": 4.030562500003725
+    },
+    {
+      "stage": "logs/topk_kernel",
+      "tool": "nvcc.exe",
+      "exit": 1,
+      "pid": 48304,
+      "seconds": 0.12678540003253147
+    },
+    {
+      "stage": "logs/topk_kernel-retry",
+      "tool": "nvcc.exe",
+      "exit": 1,
+      "pid": 38976,
+      "seconds": 0.12083719996735454
+    },
+    {
+      "stage": "logs/topk_kernel-retry2",
+      "tool": "nvcc.exe",
+      "exit": 0,
+      "pid": 54420,
+      "seconds": 38.48534830001881
+    },
+    {
+      "stage": "logs/topk_test",
+      "tool": "cl.exe",
+      "exit": 0,
+      "pid": 38100,
+      "seconds": 3.205762199999299
+    }
+  ],
+  "failures_retained": [
+    "Initial 44-case process: 43 pass; mixed fixture empty old query was invalid.",
+    "Mixed fixture next lacked prepare_resources, then incorrectly expected genuine ready submission to reject; originals retained.",
+    "Mixed pending case exposed the unsupported View alias reuse; original native cleanup fatal and later original exception diagnosis are retained.",
+    "Tiny and real complete producer initially rejected actual managed TopK1 gap. Read-only diagnostics identified the original step.",
+    "After real TopK fix, complete producer rejected shared append with unregistered mutable authority; missing actual projection key was repaired.",
+    "Two NVCC attempts stopped before host compilation because the inference runtime PATH exceeded cmd.exe length; compact compiler PATH then succeeded.",
+    "Initial build helper directory reuse and one irrelevant-image hash check stopped before tool/model execution; scripts were corrected."
+  ],
+  "limitations": [
+    "Actual execution_slot_count remains one. Three physical carriers with two candidate depths, expected-base/ledger publication and incoming bundle lifetime are not yet connected.",
+    "Complete producer probe is ordinary greedy CUDA K1. It does not cover sampling, model successor submission, MTP pending accepted subsets, cancellation device faults or multimodal.",
+    "Only finite affected GTests were rerun after each repair; 47 unique passes are across identified images, not one final full-suite process.",
+    "New diagnostic target/source are registered in CMake; manual matching compile/link recipes were executed, no CMake reconfigure or SDK build claimed.",
+    "No new prefill/decode TPS or memory comparison. Existing full performance table remains authoritative."
+  ],
+  "downloaded_bytes": 0,
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 509984,
+      "sha256": "eccf8ea9b2ce32960223328d69631cdf97b694243ee304257c30d1e803ee1f06"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 254256,
+      "sha256": "3118b36e13469306bba120b495a70bf8e664171dcc45612b3cfbaae033e39c7a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 498007,
+      "sha256": "72de32c2dbe566e92af8ba0b6e2e99689751e98623c66841e88e352c981bcb43"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 89389,
+      "sha256": "b233209617f3131855a3bd346e0a35c573a5ea505bad223540d4903c2d8c06cc"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\collectives.cu",
+      "bytes": 29177,
+      "sha256": "f8427169ace72307c11dc22a534e26e5ea0eed64187ae655208b8d6aa51ca309"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\submission_source.h",
+      "bytes": 2901,
+      "sha256": "1ade8f2131547fbc63fa35d3796c176c1ba192a0240b501166a16b45f85018d0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 5376,
+      "sha256": "79fb67dc0e2c478209c88caf35ea2ac56752b6aab7c1f1a50ff0862bcb44efe9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\replay_access.h",
+      "bytes": 1581,
+      "sha256": "aacde3f73b2f38738251c0d4608db3be2dcbba696020e2a5ec65fb977f6e9f5c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\CMakeLists.txt",
+      "bytes": 28785,
+      "sha256": "14e6163a4f1efc9ef3fcc72cee73ce7614178db4deb85b14964c8a7cef23115f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_submission_source_probe.cc",
+      "bytes": 17681,
+      "sha256": "06a3ac659e45149cb9abb0dce2fb135e4ee55ca9482dc3e7cce5e5b266a5295b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 84327,
+      "sha256": "0df81f1af2ade386380b8e631c7a8c19e66cecb14c3d0b43fdf8240f003da287"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\CMakeLists.txt",
+      "bytes": 849,
+      "sha256": "39d3dd573c430d7ac36b2b97f0b9adbe1437534d1f7e1dfc03e72e3095827242"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\mixed_ready_source_test.cc",
+      "bytes": 22674,
+      "sha256": "c27c1f04fe9819530c97c1dba75f029aad34f626527aa8f4808dbcda1382ff01"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\topk_test.cc",
+      "bytes": 24688,
+      "sha256": "c7e7022edebdde8d46025042d7a91158d759c3cc4c5bc6b7f0589b4c87201c09"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "test",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\bin\\submission-source-test.exe",
+        "bytes": 146634240,
+        "sha256": "017306e4dec963d26517159419c6456a2ee09a7587f4e44c833731b261d7631b"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 52244,
+        "seconds": 1.8869767999858595
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\test-link-inputs-delivery.json",
+        "bytes": 61706,
+        "sha256": "b9fc1a3f0c295d627f377cfe8d0e861055c7caedc0664f9180e36782c86a5da7"
+      }
+    },
+    {
+      "name": "cli",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\bin\\hyle.exe",
+        "bytes": 142210048,
+        "sha256": "e75ee218fa3705035c0fd674b65c8f13229e2d7275fb387e80b4d943998ab7b3"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 51892,
+        "seconds": 1.7361464999848977
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\cli-link-inputs-delivery.json",
+        "bytes": 57981,
+        "sha256": "0721beae63a0ebc1c079244a57041f877d75b0efec5783d3f151b76724c96f75"
+      }
+    },
+    {
+      "name": "probe",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\bin\\qwen-submission-source-probe.exe",
+        "bytes": 141712384,
+        "sha256": "0f4b38797e7a91c67efdfd56fdb0f7c26de4587cb2a56b62949e03ffcd367216"
+      },
+      "process": {
+        "exit": 0,
+        "pid": 53116,
+        "seconds": 1.7366867000237107
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\probe-link-inputs-delivery.json",
+        "bytes": 57754,
+        "sha256": "5fc49cc713444c7121b75ca68a3457866664cd4876cd88a721dfb9e05f098546"
+      }
+    }
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-model-submission-source-2026-10-27.zip",
+    "bytes": 1653641,
+    "sha256": "77fe7d4ba76e170eb40029d1a8a04d35d9e41e655988746ae95c53efce25def2"
+  }
+}

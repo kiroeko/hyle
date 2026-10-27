@@ -870,6 +870,9 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection(invocation,graph,cache,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),
       p.writer_ptrs,p.appender_ptrs,f.proof,readers,controls,options,p.pending_reads,bool(p.previous_source)));
+  // Source capture authenticates this registered projection, as on the native
+  // path; the slot's reader cache alone is not a transaction ownership fact.
+  p.binding_cache=cache;
   f.slot->cache=cache;f.slot->writer_only=false;f.slot->writer_queue={};f.slot->pages=std::move(pages);return Status::Ok();
 }
 Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId node,PagedAppendPages&&pages,
@@ -897,6 +900,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),
       p.writer_ptrs,p.appender_ptrs,f.proof,controls,options,p.pending_reads,bool(p.previous_source)));
+  p.binding_cache={};
   f.slot->cache={};f.slot->writer_only=true;f.slot->writer_queue=queued->queue;f.slot->pages=std::move(pages);return Status::Ok();
 }
 Result<PagedAppendPages>PagedAppendAccess::take(Invocation&invocation,NodeId node)noexcept{
