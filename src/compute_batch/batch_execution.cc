@@ -9,6 +9,7 @@
 #include "hyle/compute/detail/queue_ref.h"
 #include "hyle/core/assert.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/util/scope_guard.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -23,6 +24,7 @@ struct BatchProgramData final:util::RefCounted<BatchProgramData>{
   BatchProgramData(BatchSchema s,BatchProgramOptions o,mem::AllocatorRef a):schema(std::move(s)),options(std::move(o)),allocator(a){}
   void destroy()noexcept{const auto a=allocator;this->~BatchProgramData();a.deallocate(this,sizeof(*this),alignof(BatchProgramData));}
   BatchSchema schema;BatchProgramOptions options;mem::AllocatorRef allocator;
+  ContextRef context;
   ProviderExtensionRef extension;const BatchProviderVTable*table=nullptr;
   ProviderRuntimeProperties runtime{};
   CopyBatchProgram upload;std::atomic<std::uint32_t> invocations{0};
@@ -30,7 +32,12 @@ struct BatchProgramData final:util::RefCounted<BatchProgramData>{
 struct BatchBuffers final:util::RefCounted<BatchBuffers>{
   explicit BatchBuffers(BatchProgramData*p):program(p),allocator(p->allocator){p->incref();}
   void destroy()noexcept{auto*p=program;const auto a=allocator;this->~BatchBuffers();p->invocations.fetch_sub(1,std::memory_order_relaxed);p->decref();a.deallocate(this,sizeof(*this),alignof(BatchBuffers));}
-  BatchProgramData*program;mem::AllocatorRef allocator;ProviderExtensionRef provider_owner;LeasePool device,host;
+  BatchProgramData*program;mem::AllocatorRef allocator;
+  // F2 borrows its Queue wrapper at a fixed address. Original copy bindings
+  // retain these buffer domains through actual retirement, including failed
+  // observation, so the optional upload Queue outlives those borrowed uses.
+  std::shared_ptr<Queue> metadata_queue;
+  ProviderExtensionRef provider_owner;LeasePool device,host;
 };
 struct BatchReplay final {
   CapturedCommands commands;
@@ -365,6 +372,7 @@ Result<BatchProgram> BatchProgram::prepare(const d::ContextRef&context,const d::
   auto a=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(a,options.resource_budget.metadata_allocator());}
   auto*p=a.construct<d::BatchProgramData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("batch program metadata"));
   BatchProgram result(p);
+  p->context=context;
   p->extension=extension;
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
     auto&p=*static_cast<d::BatchProgramData*>(opaque);p.table=static_cast<const d::BatchProviderVTable*>(table);
@@ -390,16 +398,22 @@ BatchInvocation::~BatchInvocation(){if(data_)data_->release_user();}
 Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue&queue)noexcept{
   return create(program,queue,false);
 }
-Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue&queue,bool external_output)noexcept{
-  auto*p=program.data_;if(!p || !queue.valid())return std::unexpected(Status::InvalidArgument("batch invocation program/queue is invalid"));
+namespace {
+Result<d::BatchInvocationData*> create_batch_invocation(d::BatchProgramData*p,Queue&queue,
+    bool external_output,std::shared_ptr<Queue>metadata_queue={})noexcept{
+  if(!p || !queue.valid())return std::unexpected(Status::InvalidArgument("batch invocation program/queue is invalid"));
+  if(metadata_queue && (!queue.is_open() || !metadata_queue->is_open() ||
+      !p->context.owns(queue) || !p->context.owns(*metadata_queue)))
+    return std::unexpected(Status::InvalidArgument("batch metadata and execution Queues must belong to the original open Context"));
   auto count=p->invocations.load(std::memory_order_relaxed);
   do{if(count==p->options.max_invocations)return std::unexpected(Status::Unavailable("batch invocation capacity retained"));}
   while(!p->invocations.compare_exchange_weak(count,count+1,std::memory_order_relaxed));
   auto*s=p->allocator.construct<d::BatchInvocationData>(p);if(!s){p->invocations.fetch_sub(1,std::memory_order_relaxed);return std::unexpected(Status::ResourceExhausted("batch invocation metadata"));}
-  BatchInvocation result(s);
+  util::ScopeGuard rollback{[&]()noexcept{s->release_user();}};
   HYLE_ASSIGN_OR_RETURN(s->queue_owner,d::QueueRef::acquire(queue));
   s->queue=&queue;s->external_output=external_output;
   s->buffers=p->allocator.construct<d::BatchBuffers>(p);if(!s->buffers)return std::unexpected(Status::ResourceExhausted("batch buffer owner"));
+  s->buffers->metadata_queue=std::move(metadata_queue);
   s->buffers->provider_owner=p->extension;
   HYLE_ASSIGN_OR_RETURN(auto output_capacity,output_bytes(p->schema.capacity()));const auto output=external_output?0u:output_capacity;const auto mirror=p->schema.metadata_offsets().bytes;
   std::size_t capacity=2u*256u;
@@ -411,7 +425,8 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   HYLE_RETURN_IF_ERROR(s->mirror.view()->fill(std::byte{0}));
   HYLE_RETURN_IF_ERROR(s->staging.view()->fill(std::byte{0}));
   retain_domain(*s->buffers,s->buffers->device);retain_domain(*s->buffers,s->buffers->host);
-  HYLE_ASSIGN_OR_RETURN(s->upload,CopyBatchInvocation::create(p->upload,queue));
+  auto&upload_queue=s->buffers->metadata_queue?*s->buffers->metadata_queue:queue;
+  HYLE_ASSIGN_OR_RETURN(s->upload,CopyBatchInvocation::create(p->upload,upload_queue));
   const auto refs=p->schema.capacity().max_page_refs;
   if(refs>(UINT32_MAX-8u)/2u)return std::unexpected(Status::OutOfRange("batch page-use capacity overflow"));
   HYLE_RETURN_IF_ERROR(s->read_set.reserve(8u+2u*refs));
@@ -419,7 +434,12 @@ Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue
   HYLE_ASSIGN_OR_RETURN(s->completion,d::RetainedCompletion::create(p->allocator));
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p->extension,[](void*context,const void*table,void*opaque)noexcept{
     auto&s=*static_cast<d::BatchInvocationData*>(opaque);return static_cast<const d::BatchProviderVTable*>(table)->create(context,s.program->schema.capacity(),s.program->options,s.program->allocator,&s.native);
-  },s));return result;
+  },s));rollback.dismiss();return s;
+}
+} // namespace
+Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue&queue,bool external_output)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto*data,create_batch_invocation(program.data_,queue,external_output));
+  return BatchInvocation(data);
 }
 Result<PreparedBatch> BatchInvocation::prepare_batch(const BatchLayoutVersion&layout)noexcept{
   return prepare(layout,false);
@@ -786,6 +806,11 @@ BatchPlanReport PagedBatchReceiver::report()const noexcept{return data_?data_->o
 Status PagedBatchReceiver::close()noexcept{return data_?data_->original.close():Status::Ok();}
 Status PagedBatchReceiver::drain()noexcept{return data_?data_->original.drain():Status::Ok();}
 Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&queue)noexcept{return BatchInvocation::create(program,queue,true);}
+Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&execution,
+    std::shared_ptr<Queue>metadata_queue)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto*data,create_batch_invocation(program.data_,execution,true,std::move(metadata_queue)));
+  return BatchInvocation(data);
+}
 Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation)noexcept{
   if(!invocation.data_ || !invocation.data_->prepared)return std::unexpected(Status::FailedPrecondition("Graph batch slot is not prepared"));
   return invocation.data_->graph_shared_metadata.valid()?invocation.data_->graph_shared_metadata:invocation.data_->mirror_ready;

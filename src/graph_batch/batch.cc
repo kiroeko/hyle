@@ -18,6 +18,7 @@
 #include "hyle/graph/slots.h"
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <vector>
 
 namespace hyle::graph::batch {
@@ -38,7 +39,7 @@ struct Region final {
 struct Slot final {
   struct WrittenBank final {c::BatchLayoutVersion layout;c::ConstTensorView capacity;NodeId producer;};
   Region*region=nullptr;c::BatchInvocation native;c::PreparedBatch token;
-  std::uint32_t selected_step=UINT32_MAX;
+  std::uint32_t selected_step=UINT32_MAX;ExecutionLaneId lane{};
   c::BatchLayoutVersion layout;c::PagedArenaRead keys,values;
   WrittenBank written_keys,written_values;
   c::BatchProgram program;PrepareOptions prepared_options{};cd::QueueRef queue;
@@ -573,7 +574,9 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
           native_options.max_invocations=1;native_options.allocator=options.allocator;
           native_options.resource_budget=options.resource_budget;
           HYLE_ASSIGN_OR_RETURN(s.program,cd::BatchGraphAccess::prepare(r.context,r.source,std::move(schema),native_options));
-          HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue));
+          HYLE_ASSIGN_OR_RETURN(auto upload,gd::RegionAccess::metadata_queue(invocation,entry.lane,
+              {.allocator=options.allocator,.resource_budget=options.resource_budget}));
+          HYLE_ASSIGN_OR_RETURN(s.native,cd::BatchGraphAccess::create(s.program,*entry.queue,std::move(upload)));
           s.prepared_options=options;s.queue=entry.queue_owner;
         }
         if(entry.metadata_source){
@@ -583,7 +586,7 @@ Status prepare_native(graph::Invocation&invocation,std::span<const QueueBinding>
             s.native,layout,options.update,before_change));}
         const auto*source=entry.metadata_source?entry.metadata_source->slot:nullptr;
         s.metadata_owner=source?(source->metadata_owner?source->metadata_owner:entry.metadata_source->slot):&s;
-        s.layout=layout;
+        s.layout=layout;s.lane=entry.lane;
       }
       return Status::Ok();
     };
@@ -707,7 +710,7 @@ const gd::ResourcePayloadVTable resource_table{
     auto&p=*static_cast<BatchResources*>(opaque);HYLE_RETURN_IF_ERROR(p.reusable());
     HYLE_RETURN_IF_ERROR(detail::PagedAppendAccess::reset(invocation));
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
-    p.append_ready=false;for(auto&q:p.append_queues)q.queue={};p.append_host={};
+    p.append_ready=false;for(auto&q:p.append_queues){q.queue={};q.metadata_queue.reset();}p.append_host={};
     // Readiness and page permissions expire on every reset. Unknown/native
     // reset callbacks still discard their recordings before releasing any
     // command resources. Qualified shared slots retain their native owners;
@@ -757,7 +760,7 @@ Status register_slots(graph::Invocation&invocation,BatchResources&p)noexcept{
       p.has_appends=true;
       if(detail::PagedAppendAccess::needs_queue(view) &&
           std::none_of(p.append_queues.begin(),p.append_queues.end(),[&](const auto&q){return q.lane==view.lane;})){
-        try{p.append_queues.push_back({view.lane,{}});}
+        try{p.append_queues.push_back({view.lane,{},{}});}
         catch(...){return Status::ResourceExhausted("writer-only Graph Queue lane metadata");}
       }
     }
@@ -1016,6 +1019,8 @@ Status prepare_all(graph::Invocation&invocation,const Graph*graph,std::span<cons
             return Status::InvalidArgument("duplicate writer-only Graph Queue lane");
           HYLE_RETURN_IF_ERROR(gd::RegionAccess::validate_queue(invocation.executable(),q->lane,*q->queue));
           HYLE_ASSIGN_OR_RETURN(prepared.queue,cd::QueueRef::acquire(*q->queue));
+          HYLE_ASSIGN_OR_RETURN(prepared.metadata_queue,gd::RegionAccess::metadata_queue(invocation,q->lane,
+              {.allocator=p->allocator,.resource_budget=p->budget}));
         }
         p->append_host=options.host_workspace;
       }
@@ -1187,7 +1192,7 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
   auto native_writer=detail::PagedAppendAccess::native(invocation,append);
   if(!native_writer && !native_writer.error().IsUnimplemented())
     return native_writer.error();
-  cd::QueueRef append_owner;mem::MemoryResourceRef append_host;
+  cd::QueueRef append_owner;std::shared_ptr<c::Queue>append_metadata;mem::MemoryResourceRef append_host;
   for(const auto*slot:p->frame_slots){
     const auto&r=*slot->region;const auto&s=*slot;
     const bool key=r.values[1]==value,is_value=has_value_port(r) && r.values[2]==value;
@@ -1199,6 +1204,8 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
       return Status::InvalidArgument("append pages differ from the prepared original cache reader/role/layout");
     if(!s.queue.valid() || (append_owner.valid() && (!append_owner.same_owner(s.queue) || append_host!=s.prepared_options.host_workspace)))
       return Status::InvalidArgument("append readers need one actual prepared Queue and host workspace");
+    if(!append_metadata){HYLE_ASSIGN_OR_RETURN(append_metadata,gd::RegionAccess::metadata_queue(invocation,s.lane,
+        {.allocator=p->allocator,.resource_budget=p->budget}));}
     append_owner=s.queue;append_host=s.prepared_options.host_workspace;
     // This exact shared reader records ordinary bank/metadata addresses. Its
     // page guards live in the current Graph episode; native topology/carrier
@@ -1240,7 +1247,7 @@ Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId
   }
   if(proofs.empty())return Status::Unimplemented("paged append requires an actual selected cache reader");
   HYLE_RETURN_IF_ERROR(detail::PagedAppendAccess::bind(invocation,graph,append,value,std::move(pages),proofs,
-      append_owner,append_host,{.allocator=p->allocator,.resource_budget=p->budget}));
+      append_owner,std::move(append_metadata),append_host,{.allocator=p->allocator,.resource_budget=p->budget}));
   // The selected shared native slot acknowledges this exact ordered producer;
   // it never stores a fictitious ready frame for pages this Graph will write.
   for(auto*slot:p->frame_slots){if(slot->region->values[1]==value)slot->written_keys={facts.layout,facts.capacity,append};

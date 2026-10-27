@@ -201,7 +201,7 @@ ConsumerGraph make_consumer(const Math &math, const s::Schema &schema) {
   return result;
 }
 
-void relay(bool convolution, bool failed_producer = false) {
+void relay(bool convolution, bool failed_producer = false, bool rotate_destinations = false) {
   SCOPED_TRACE(convolution ? "indexed F32 conv" : "indexed F32 GDN");
   SCOPED_TRACE(failed_producer ? "checked producer failure" : "successful producer");
   auto context = take(g::cuda::create_context(), "Context");
@@ -314,6 +314,7 @@ void relay(bool convolution, bool failed_producer = false) {
   ASSERT_EQ(returned_b.source_count(), 0u);
   for (std::size_t row = 0; row < kB; ++row) b_writers[row] = std::move(returned_b.destinations()[row]);
   check(gd::release_outputs(consumer, warm_bindings), "release only retired warm bundle");
+  if (rotate_destinations) std::swap(b_writers.front(), b_writers.back());
   source = {}; common = {}; returned_a = {}; returned_b = {};
   // Only this last owning ready handle remains. Reclaim the exact source
   // generations; both original physical ID carriers remain in their owners.
@@ -342,7 +343,9 @@ void relay(bool convolution, bool failed_producer = false) {
   const std::array bindings{binding};
   check(gd::bind_outputs(consumer, bindings), "bind original pending B source");
   auto actual_b = take(s::SlotBindings::create(layout, {}, b_writers), "actual B destination-only transaction");
-  check(s::bind(consumer, graph.graph, graph.store, std::move(actual_b)), "bind actual B same destination controls");
+  check(s::bind(consumer, graph.graph, graph.store, std::move(actual_b)), "bind actual B destination controls");
+  EXPECT_EQ(take(common.poll(), "A remains pending after B control upload"), c::CompletionPoll::kPending);
+  EXPECT_FALSE(gate.released.load());
   check(gd::prepare_outputs(consumer, bindings, queues), "reuse exact native B capture");
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCaptured);
   EXPECT_EQ(consumer.replay_report()->recorded_capture_range_count, 0u);
@@ -402,7 +405,8 @@ void relay(bool convolution, bool failed_producer = false) {
       check(take(state[row].view(), "B state view").read(std::as_writable_bytes(std::span(actual))), "read B state");
       const auto wanted = std::span(math.expected_state).subspan(row * actual.size(), actual.size());
       expect_bits(actual, wanted);
-      std::copy(wanted.begin(), wanted.end(), expected.begin() + kDestinations[row] * stride / sizeof(float));
+      const auto destination = kDestinations[rotate_destinations ? kB - 1 - row : row];
+      std::copy(wanted.begin(), wanted.end(), expected.begin() + destination * stride / sizeof(float));
       const auto initial = std::span(math.initial).subspan(row * actual.size(), actual.size());
       std::copy(initial.begin(), initial.end(), expected.begin() + kSources[row] * stride / sizeof(float));
     }
@@ -428,4 +432,5 @@ void relay(bool convolution, bool failed_producer = false) {
 TEST(GgmlCudaPendingIndexedState, GdnUsesPublishedWarmAndPendingOriginalSlots) { relay(false); }
 TEST(GgmlCudaPendingIndexedState, ConvUsesPublishedWarmAndPendingOriginalHistory) { relay(true); }
 TEST(GgmlCudaPendingIndexedState, CheckedProducerFailureNeverPublishesConvResult) { relay(true, true); }
+TEST(GgmlCudaPendingIndexedState, ChangedDestinationIdsUploadWhileOriginalProducerIsPending) { relay(false, false, true); }
 } // namespace

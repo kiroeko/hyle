@@ -6,6 +6,7 @@
 #include <array>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -99,6 +100,7 @@ struct Indices final {
     return gd::ConstantCopy{destination, source};
   }
   Status upload(const ExecutionSource &execution, const cd::QueueRef &queue,
+      const std::shared_ptr<c::Queue> &metadata_queue,
       ResourceOptions options, std::span<const IndexFragment> fragments,
       std::span<std::int32_t> uploaded_ids) noexcept {
     if (failed || pending.valid() || (!direct && uses.active_batches()))
@@ -126,6 +128,8 @@ struct Indices final {
     // write permission, upload or Queue wait, even while another exact reader
     // retains the same carrier. All actual slot leases were checked by bind.
     if (unchanged) return Status::Ok();
+    if (!direct && queue.valid() && (!metadata_queue || !metadata_queue->is_open()))
+      return Status::FailedPrecondition("slot metadata Queue is closed or was not cold prepared");
     if (ready.valid()) { HYLE_ASSIGN_OR_RETURN(writer, ready.try_write()); }
     if (source.valid()) { HYLE_ASSIGN_OR_RETURN(staging, source.try_write()); }
     auto &host_writer = direct ? writer : staging;
@@ -188,7 +192,7 @@ struct Indices final {
     HYLE_ASSIGN_OR_RETURN(auto use, uses.begin());
     HYLE_RETURN_IF_ERROR(use.read(source));
     HYLE_RETURN_IF_ERROR(use.write(writer));
-    HYLE_ASSIGN_OR_RETURN(auto sequence, cd::QueueSequence::begin(queue));
+    HYLE_ASSIGN_OR_RETURN(auto sequence, cd::QueueSequence::begin(*metadata_queue));
     sequence.record(cd::TransferAccess::enqueue_copy(sequence, output, input));
     HYLE_ASSIGN_OR_RETURN(pending, sequence.finish());
     HYLE_FATAL_ASSERT(use.attach(pending).ok());
@@ -210,6 +214,8 @@ struct ControlGroup final {
         uploaded_ids(mem::StdAllocator<std::int32_t>{allocator}) {}
   ExecutionSource execution;
   cd::QueueRef queue;
+  ExecutionLaneId lane{};
+  std::shared_ptr<c::Queue> metadata_queue;
   mem::MemoryResourceRef resource;
   Indices indices;
   std::vector<IndexFragment, mem::StdAllocator<IndexFragment>> fragments;
@@ -818,6 +824,7 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     detail::StoreBinding next;
     ExecutionSource execution;
     cd::QueueRef queue;
+    ExecutionLaneId lane{};
   };
   std::vector<Pending, mem::StdAllocator<Pending>> pending{mem::StdAllocator<Pending>{allocator}};
   struct Call final {
@@ -863,6 +870,7 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     auto *data = call.allocator.construct<detail::StoreBindingData>(call.allocator);
     if (!data) return Status::ResourceExhausted("slot store original binding metadata");
     Pending item;
+    item.lane = view.lane;
     detail::StoreBindingAccess::replace(item.next, data);
     try { data->writer_pointers.resize(facts.destination_count); }
     catch (...) { return Status::ResourceExhausted("slot store selected writer pointers"); }
@@ -915,13 +923,14 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     std::size_t selected = 0;
     for (; selected < controls->groups.size(); ++selected) {
       const auto &group = controls->groups[selected];
-      if (group.resource == facts.resource && group.execution.same_owner(item.execution) &&
+      if (group.lane == item.lane && group.resource == facts.resource && group.execution.same_owner(item.execution) &&
           ((!group.queue.valid() && !item.queue.valid()) || group.queue.same_owner(item.queue))) break;
     }
     if (selected == controls->groups.size()) {
       controls->groups.emplace_back(allocator); // reserve above: no growth here.
       auto &group = controls->groups.back();
       group.execution = std::move(item.execution); group.queue = std::move(item.queue);
+      group.lane = item.lane;
       group.resource = facts.resource;
     }
     auto &group = controls->groups[selected];
@@ -944,12 +953,11 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     HYLE_ASSIGN_OR_RETURN(auto destination, group.indices.writer.view());
     HYLE_ASSIGN_OR_RETURN(auto source, group.indices.staging.view());
     if (group.queue.valid()) {
-      const auto original = std::ranges::find_if(queues,
-          [&](const auto &entry) { return entry.queue && group.queue.same_owner(*entry.queue); });
-      if (original == queues.end()) return Status::Internal("slot group lost its original Queue");
-      const auto transfer = c::transfer_properties(*original->queue, destination, source);
+      HYLE_ASSIGN_OR_RETURN(group.metadata_queue,
+          gd::RegionAccess::metadata_queue(invocation, group.lane, resources));
+      const auto transfer = c::transfer_properties(*group.metadata_queue, destination, source);
       if (!transfer) return transfer.error().WithContext(
-          "slot host_workspace must support metadata transfer on the original Queue");
+          "slot host_workspace must support the original Context's metadata Queue");
     } else {
       HYLE_ASSIGN_OR_RETURN(auto copy, Indices::native_copy(destination, source));
       HYLE_ASSIGN_OR_RETURN(auto supported, gd::ExecutionSourceAccess::can_copy_constant(group.execution, copy));
@@ -1112,7 +1120,7 @@ Status bind(Invocation &invocation, const Graph &graph,
   }
   for (auto &group : controls->groups) {
     if (!group.participants) continue;
-    HYLE_RETURN_IF_ERROR(group.indices.upload(group.execution, group.queue, controls->options,
+    HYLE_RETURN_IF_ERROR(group.indices.upload(group.execution, group.queue, group.metadata_queue, controls->options,
         group.fragments, group.uploaded_ids));
   }
   const auto install = [&]() noexcept -> Status {

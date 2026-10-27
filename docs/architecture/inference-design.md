@@ -260,9 +260,10 @@ Store视图自身元数据已预冷；共同Source、混合bundle及原prepare�
 
 当前Qwen入口仍用一个串行载体；下一步接入有以下具体约束：
 
-- 普通token输入`[B*T]`与采样输出`[B,1]`不一致，可将外部输入改为`[B*T,1]`后立即用原Graph View展平，T1直接沿同一资源接力。`PreparedReadback`当前仍绑定裸TensorView，设备接力需按实际输出事实移交full writer，并从Graph发布的原租约读回。
-- I/O须按执行槽独立持有，不能只改槽数。普通K1保留old head与两代候选时，[状态预算](../../engine/models/qwen35/session_state.h)下界为N＋2R，额外KV COW尾页至少2R；首次真实边界／新shape可串行，稳态两个载体须均已冷备imported来源及真实tuple捕获。
-- [batch准备](../../src/compute_batch/batch_execution.cc)和[append布局上传](../../src/compute_batch/paged_append_program.cc)仍同步等待原Queue。完整流水须安排真实提前准备或有所有权及退休证明的异步承载，不能删wait后把未初始化metadata当ready。
+- 普通Text外部token已统一为`[B*T,1]`并立即由原Graph View展平，读回已交出完整writer；实际设备token接线仍需原Source及checked Gather，不能因形状吻合就绕过权限。
+- I/O已按槽独立持有，[状态预算](../../engine/models/qwen35/session_state.h)也已接真实在途深度D，默认仍为1。启用深度二调度时须实际选择D=2；首次真实边界／新shape可串行，稳态两个载体须均已冷备imported来源及真实tuple捕获。
+- batch、append和变值IDs上传现共用原Graph按实际Context／lane持有的独立metadata Queue；计算、Source及proof仍认原执行Queue。上传继续真实等待、退休并发布ready，不引入第二执行器或pending-control类型。原Queue wrapper地址稳定，F2借用沿原buffer domain保活，reset保留冷cache。
+  [43项定向检查与四条tiny双会话路径](../evidence/correctness/inference-metadata-queue-2026-10-27.json)验证阻挡计算stream时仍能更新页号／槽号并复用原捕获。此处仍有小上传的host等待；普通Tensor.write也仍host同步，不能称全部准备非阻塞或已取得完整模型速度收益。
 - finish须沿原Store／Paged Source受检发布及整束退休清理，不能再对在途读页用普通publish／unbind。设备token读须checked；采样valid、EOS、取消、expected-base、ledger及RNG仍在原host提交门判断，后继只写独立候选，不能提前发布head。
 
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；

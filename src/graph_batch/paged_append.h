@@ -4,6 +4,7 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/compute/detail/paged_append_backend.h"
 #include "native_append_regions.h"
+#include <memory>
 #include "hyle/graph/detail/paged_append_source.h"
 
 namespace hyle::graph::batch::detail {
@@ -25,6 +26,8 @@ struct AppendFacts final {
 struct AppendQueueBinding final {
   ExecutionLaneId lane;
   compute::detail::QueueRef queue;
+  // Stable original Graph metadata owner; execution/projection still use queue.
+  std::shared_ptr<compute::Queue> metadata_queue;
 };
 struct PagedAppendAccess final {
   static PagedAppendData* data(PagedAppendPages&p)noexcept{return p.data_;}
@@ -35,7 +38,7 @@ struct PagedAppendAccess final {
   static Result<AppendFacts> facts(const PagedAppendPages&)noexcept;
   static Status bind(Invocation&,const Graph&,NodeId,ValueId,PagedAppendPages&&,
       std::span<const graph::detail::ProjectedReader>,const compute::detail::QueueRef&,
-      mem::MemoryResourceRef host_workspace,ResourceOptions)noexcept;
+      std::shared_ptr<compute::Queue> metadata_queue,mem::MemoryResourceRef host_workspace,ResourceOptions)noexcept;
   static Status bind(Invocation&,const Graph&,NodeId,PagedAppendPages&&,
       std::span<const AppendQueueBinding>,mem::MemoryResourceRef host_workspace,
       ResourceOptions)noexcept;

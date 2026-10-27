@@ -462,7 +462,8 @@ struct Prepared final {
 };
 struct MirrorGroup final {
   explicit MirrorGroup(mem::AllocatorRef a):words(mem::StdAllocator<cd::PagedAppendInstruction>(a)){}
-  c::BatchLayoutVersion layout;cd::QueueRef queue;mem::MemoryResourceRef resource,host;
+  c::BatchLayoutVersion layout;cd::QueueRef queue;std::shared_ptr<c::Queue>metadata_queue;
+  mem::MemoryResourceRef resource,host;
   cd::PagedAppendMirror mirror;std::uint32_t capacity=0;
   std::vector<cd::PagedAppendInstruction,mem::StdAllocator<cd::PagedAppendInstruction>>words;
 };
@@ -686,8 +687,12 @@ Status initialize_selected_slots(Invocation&invocation,Slot&slot)noexcept{
   return Status::Ok();
 }
 Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTensorView capacity,
-    const cd::QueueRef&queue,mem::MemoryResourceRef host,ResourceOptions options,c::ReadLease&control)noexcept{
+    const cd::QueueRef&queue,const std::shared_ptr<c::Queue>&metadata_queue,
+    mem::MemoryResourceRef host,ResourceOptions options,c::ReadLease&control)noexcept{
   if(!f.prepared->native.valid())return Status::Ok();
+  if(!queue.is_open() || !metadata_queue || !metadata_queue->is_open())
+    return Status::FailedPrecondition("paged append execution/metadata Queue is missing or closed");
+  HYLE_ASSIGN_OR_RETURN(auto upload,cd::QueueRef::acquire(*metadata_queue));
   auto&s=*f.slot;const auto spec=f.prepared->spec;
   auto allocator=options.allocator;
   if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
@@ -726,6 +731,7 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
     for(auto*selected=s.selected_first;selected;selected=selected->selected_next){
       const auto&g=selected->group;
       if(selected->pages.valid() && g && g->layout==match.layout && g->queue.same_owner(*match.queue) &&
+          g->metadata_queue==metadata_queue &&
           g->resource==match.resource && g->host==match.host && g->capacity==match.capacity &&
           std::equal(g->words.begin(),g->words.end(),match.words.begin(),match.words.end()))match.group=g;
     }
@@ -738,15 +744,17 @@ Status prepare_native(Invocation&invocation,Find&f,PagedAppendData&p,c::ConstTen
       // A shared group can naturally split when a later episode has different
       // old-tail coordinates. Never overwrite a bound sibling's descriptor;
       // give only this divergent slot a new carrier under the same contract.
-      if(!group || occupied || !group->queue.same_owner(queue) || group->resource!=match.resource || group->host!=host || group->capacity!=spec.instruction_capacity){
+      if(!group || occupied || !group->queue.same_owner(queue) || group->metadata_queue!=metadata_queue ||
+          group->resource!=match.resource || group->host!=host || group->capacity!=spec.instruction_capacity){
         group=std::allocate_shared<MirrorGroup>(mem::StdAllocator<MirrorGroup>(allocator),allocator);
-        group->queue=queue;group->resource=match.resource;group->host=host;group->capacity=spec.instruction_capacity;
+        group->queue=queue;group->metadata_queue=metadata_queue;
+        group->resource=match.resource;group->host=host;group->capacity=spec.instruction_capacity;
         HYLE_ASSIGN_OR_RETURN(group->mirror,cd::PagedAppendMirror::create(group->resource,host,group->capacity,allocator,options.resource_budget));
       }
       // Device data may change without changing recorded addresses, but no
       // old prepared route may remain callable after a partial upload failure.
       HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));s.sealed=false;
-      HYLE_RETURN_IF_ERROR(group->mirror.upload(queue,words));
+      HYLE_RETURN_IF_ERROR(group->mirror.upload(upload,words));
       group->layout=p.layout;group->words=std::move(words);
     }
     control=group->mirror.ready();HYLE_ASSIGN_OR_RETURN(auto metadata,control.view());
@@ -840,7 +848,8 @@ Result<AppendFacts>PagedAppendAccess::facts(const PagedAppendPages&pages)noexcep
   return AppendFacts{pages.data_->layout,pages.data_->descriptor.role,capacity,row_storage(pages.data_->descriptor)};
 }
 Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId node,ValueId cache,PagedAppendPages&&pages,
-    std::span<const gd::ProjectedReader>readers,const cd::QueueRef&queue,mem::MemoryResourceRef host,ResourceOptions options)noexcept{
+    std::span<const gd::ProjectedReader>readers,const cd::QueueRef&queue,
+    std::shared_ptr<c::Queue>metadata_queue,mem::MemoryResourceRef host,ResourceOptions options)noexcept{
   auto region=native(invocation,node);
   if(region)return bind_native(invocation,graph,*region,cache,std::move(pages),readers,false,options);
   if(!region.error().IsUnimplemented())return region.error();
@@ -856,7 +865,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   for(const auto&writer:p.writers){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::writer(p.arena,writer));(void)fact;}
   for(std::size_t i=0;i<p.input_appenders;++i){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p.arena,p.appenders[i]));(void)fact;}
   HYLE_RETURN_IF_ERROR(initialize_selected_slots(invocation,*f.slot));
-  c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queue,host,options,control));
+  c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queue,metadata_queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection(invocation,graph,cache,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),
@@ -883,7 +892,7 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   for(const auto&writer:p.writers){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::writer(p.arena,writer));(void)fact;}
   for(std::size_t i=0;i<p.input_appenders;++i){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p.arena,p.appenders[i]));(void)fact;}
   HYLE_RETURN_IF_ERROR(initialize_selected_slots(invocation,*f.slot));
-  c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queued->queue,host,options,control));
+  c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queued->queue,queued->metadata_queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),

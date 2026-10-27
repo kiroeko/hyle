@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "hyle/graph/executable.h"
 #include "hyle/compute/detail/provider_extension.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -269,6 +270,12 @@ struct RegionAccess final {
   // still account for guards installed since the earlier reservation.
   HYLE_GRAPH_API static Status reserve_reads(Invocation&,std::uint32_t,
       ResourceOptions) noexcept;
+  // One cold metadata-transfer Queue per actual retained Context/lane. This
+  // never replaces the execution Queue or grants tensor permission. Shared
+  // owners keep its public wrapper stable through borrowed transfer slots;
+  // reset retains this cache. Native-only lanes have no Compute Queue.
+  HYLE_GRAPH_API static Result<std::shared_ptr<compute::Queue>> metadata_queue(
+      Invocation &, ExecutionLaneId, ResourceOptions) noexcept;
   // Owns immutable input metadata of the selected cold configuration. Only
   // this idle/result-gated path may replace it until the original reset.
   // Rejection preserves the previous binding and prepared replay.

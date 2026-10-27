@@ -5,13 +5,19 @@
 #include "hyle/compute/detail/paged_arena_access.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/cuda.h"
+#include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/result.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/simd/dtype.h"
 
 #include <algorithm>
 #include <array>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -19,6 +25,39 @@ namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace gb = g::batch;
 namespace m = hyle::mem;
+
+// Hold only the original compute stream, so changed metadata must finish on
+// its own real Queue. Release on every assertion exit; never call CUDA here.
+struct MetadataUploadGate final {
+  cudaStream_t stream = nullptr;
+  std::atomic<bool> released{false}, timed_out{false};
+  std::mutex mutex;
+  std::condition_variable changed;
+  std::thread watchdog;
+  static void CUDART_CB wait(void *opaque) {
+    static_cast<MetadataUploadGate *>(opaque)->released.wait(false, std::memory_order_acquire);
+  }
+  void arm(cudaStream_t value) {
+    stream = value;
+    watchdog = std::thread([this] {
+      std::unique_lock lock(mutex);
+      if (!changed.wait_for(lock, std::chrono::seconds(10),
+              [this] { return released.load(std::memory_order_acquire); })) {
+        timed_out.store(true, std::memory_order_release);
+        release();
+      }
+    });
+  }
+  void release() noexcept {
+    released.store(true, std::memory_order_release);
+    released.notify_all(); changed.notify_all();
+  }
+  ~MetadataUploadGate() {
+    release();
+    if (watchdog.joinable()) watchdog.join();
+    if (stream) EXPECT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
+  }
+};
 
 TEST(GraphBatchCapture, FreshMetadataPermissionsRetainOnlyUnchangedNativeCommands) {
   constexpr std::uint32_t depth = 64, page_size = 16;
@@ -85,6 +124,11 @@ TEST(GraphBatchCapture, FreshMetadataPermissionsRetainOnlyUnchangedNativeCommand
     ready_values[page] = vw.publish(page_size).value();
   }
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  const auto upload = g::detail::RegionAccess::metadata_queue(slot, g::ExecutionLaneId{0}, {});
+  ASSERT_TRUE(upload) << upload.error().message();
+  EXPECT_NE(c::cuda::stream(**upload).value(), c::cuda::stream(queue).value());
+  EXPECT_EQ(*upload, g::detail::RegionAccess::metadata_queue(slot, g::ExecutionLaneId{0}, {}).value());
+  EXPECT_FALSE(g::detail::RegionAccess::metadata_queue(slot, g::ExecutionLaneId{99}, {}));
   gb::PrepareOptions options{.host_workspace = host.ref(),
       .max_float_workspace_bytes = 8u << 20, .max_int_workspace_bytes = 64u << 10};
   const auto bind_ordinary = [&]() {
@@ -102,8 +146,21 @@ TEST(GraphBatchCapture, FreshMetadataPermissionsRetainOnlyUnchangedNativeCommand
     // if the device allocator later returns the same numerical addresses.
     options.update = episode != 2;
     if (episode == 3) options.max_float_workspace_bytes = 16u << 20;
+    MetadataUploadGate gate;
+    if (episode == 1) {
+      gate.arm(c::cuda::stream(queue).value());
+      ASSERT_EQ(cudaLaunchHostFunc(gate.stream,
+          &MetadataUploadGate::wait, &gate), cudaSuccess);
+    }
     const auto prepared = gb::prepare(slot, queues, versions, options);
     ASSERT_TRUE(prepared.ok()) << prepared.message();
+    if (episode == 1) {
+      EXPECT_FALSE(gate.released.load());
+      EXPECT_FALSE(gate.timed_out.load());
+      gate.release();
+      // The callback no longer references the local gate after this event.
+      ASSERT_EQ(cudaStreamSynchronize(c::cuda::stream(queue).value()), cudaSuccess);
+    }
     EXPECT_EQ(slot.replay_route(), g::ReplayRoute::kUnprepared);
     EXPECT_FALSE(slot.submit(queues));
     if (episode == 0) ASSERT_TRUE(bind_ordinary().ok());

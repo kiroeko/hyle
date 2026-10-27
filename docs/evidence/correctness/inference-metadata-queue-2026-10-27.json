@@ -1,0 +1,800 @@
+{
+  "status": "PASS",
+  "date": "2026-10-27",
+  "scope": "One original Graph metadata transfer Queue per actual Context/lane. Real upload wait/ready publication; no new executor or pending-control protocol.",
+  "changes": [
+    "Original ResourceEpisode caches stable shared Queue wrappers across configuration reset, derived from exact plan lane ExecutionSource.",
+    "Batch metadata F2 uses only the metadata Queue; BatchBuffers retains its borrowed wrapper along original buffer domains.",
+    "PagedAppend MirrorGroup and slots IDs reference the same owner. All native execution, Source, proof and capture Queue identities are unchanged.",
+    "Host uploads still wait for their actual copy retirement before publishing initialized controls. Same-ID optimization remains unchanged."
+  ],
+  "counts": {
+    "CXX_TUs": 7,
+    "product_TUs": 5,
+    "test_TUs": 2,
+    "links": 2,
+    "test_processes": 1,
+    "exact_GTests": 43,
+    "CLI_processes": 4,
+    "CLI_link_inputs": 224,
+    "test_link_inputs": 237,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "results": [
+    {
+      "name": "test",
+      "process": {
+        "exit": 0,
+        "pid": 53648,
+        "seconds": 0.7894011000171304
+      },
+      "tests": [
+        {
+          "name": "RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "106",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.767",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "192",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "SourceDestinationOverlapIsRejectedBeforeAnyStore",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "228",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "254",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "441",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "444",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "447",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.768",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "451",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "733",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+          "line": "803",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GraphSlotsExecution"
+        },
+        {
+          "name": "ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "3185",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GraphRouteBoundary"
+        },
+        {
+          "name": "ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+          "line": "3256",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GraphRouteBoundary"
+        },
+        {
+          "name": "PublishedActivationAndCandidateSlotsMatchDenseGdn",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+          "line": "372",
+          "status": "run",
+          "result": "completed",
+          "time": "0.099",
+          "timestamp": "2026-10-27T12:19:11.769",
+          "classname": "GgmlCudaIndexedStateGraph"
+        },
+        {
+          "name": "EffectRootWritesCandidatesWithoutPublishedActivation",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+          "line": "375",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-27T12:19:11.868",
+          "classname": "GgmlCudaIndexedStateGraph"
+        },
+        {
+          "name": "EscapingGatherUsesCheckedProjectedFallback",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+          "line": "378",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-27T12:19:11.874",
+          "classname": "GgmlCudaIndexedStateGraph"
+        },
+        {
+          "name": "Float32BatchedFinalWindowUsesOriginalStateAndReset",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "line": "290",
+          "status": "run",
+          "result": "completed",
+          "time": "0.008",
+          "timestamp": "2026-10-27T12:19:11.880",
+          "classname": "GgmlCudaIndexedConvGraph"
+        },
+        {
+          "name": "Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "line": "293",
+          "status": "run",
+          "result": "completed",
+          "time": "0.006",
+          "timestamp": "2026-10-27T12:19:11.888",
+          "classname": "GgmlCudaIndexedConvGraph"
+        },
+        {
+          "name": "Float16HistoryPreservesOriginalBitsForEveryPrefix",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "line": "296",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-27T12:19:11.895",
+          "classname": "GgmlCudaIndexedConvGraph"
+        },
+        {
+          "name": "EscapingGatherKeepsLegalProjectedFallback",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+          "line": "299",
+          "status": "run",
+          "result": "completed",
+          "time": "0.006",
+          "timestamp": "2026-10-27T12:19:11.901",
+          "classname": "GgmlCudaIndexedConvGraph"
+        },
+        {
+          "name": "PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "335",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.907",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "PendingI32PreparesRealStoreRegionBindingHooks",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "336",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.911",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "337",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.914",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "338",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.917",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "339",
+          "status": "run",
+          "result": "completed",
+          "time": "0.006",
+          "timestamp": "2026-10-27T12:19:11.920",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "517",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.927",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "651",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.931",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "1076",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.934",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "StorePendingReaderPreservesWholeProducerFailure",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "1079",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.937",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "line": "1082",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.940",
+          "classname": "GraphOutputSourceCuda"
+        },
+        {
+          "name": "PendingOriginalPagesPublishWhileAttentionReads",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "375",
+          "status": "run",
+          "result": "completed",
+          "time": "0.009",
+          "timestamp": "2026-10-27T12:19:11.943",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "OwnedLayoutMirrorPreservesPendingPageSource",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "379",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.953",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "772",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.957",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "PageBoundaryAppendRetainsSourceWithoutCowReads",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "776",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.961",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "780",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.965",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "ChainedCowSourceReleasesUnrelatedPublishedPage",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+          "line": "784",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.970",
+          "classname": "GraphPagedAppendSourceCuda"
+        },
+        {
+          "name": "GdnUsesPublishedWarmAndPendingOriginalSlots",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+          "line": "432",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.974",
+          "classname": "GgmlCudaPendingIndexedState"
+        },
+        {
+          "name": "ConvUsesPublishedWarmAndPendingOriginalHistory",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+          "line": "433",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.978",
+          "classname": "GgmlCudaPendingIndexedState"
+        },
+        {
+          "name": "CheckedProducerFailureNeverPublishesConvResult",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+          "line": "434",
+          "status": "run",
+          "result": "completed",
+          "time": "0.005",
+          "timestamp": "2026-10-27T12:19:11.983",
+          "classname": "GgmlCudaPendingIndexedState"
+        },
+        {
+          "name": "ChangedDestinationIdsUploadWhileOriginalProducerIsPending",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+          "line": "435",
+          "status": "run",
+          "result": "completed",
+          "time": "0.004",
+          "timestamp": "2026-10-27T12:19:11.988",
+          "classname": "GgmlCudaPendingIndexedState"
+        },
+        {
+          "name": "BatchCapacityPreservesSingleAndBoundsAllCandidates",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+          "line": "1063",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:19:11.993",
+          "classname": "QwenSessionState"
+        },
+        {
+          "name": "ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndReclaim",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+          "line": "129",
+          "status": "run",
+          "result": "completed",
+          "time": "0.002",
+          "timestamp": "2026-10-27T12:19:11.993",
+          "classname": "QwenBackendCpuCuda"
+        },
+        {
+          "name": "ReadbackI32WriterSupportsTheOriginalSubmissionSource",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+          "line": "197",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:19:11.996",
+          "classname": "QwenBackendCpuCuda"
+        },
+        {
+          "name": "FreshMetadataPermissionsRetainOnlyUnchangedNativeCommands",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\batch_capture_test.cc",
+          "line": "62",
+          "status": "run",
+          "result": "completed",
+          "time": "0.093",
+          "timestamp": "2026-10-27T12:19:12.000",
+          "classname": "GraphBatchCapture"
+        }
+      ]
+    },
+    {
+      "name": "cpu-ordinary-b2",
+      "process": {
+        "exit": 0,
+        "pid": 47332,
+        "seconds": 0.810334799985867
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\runs\\cpu-ordinary-b2\\report.json",
+        "bytes": 35623,
+        "sha256": "220aa42b8f49bcd62da4d2830efdef220d7d3dba06a2f54a015c31584819cb1c"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cpu-mtp-k3-b2",
+      "process": {
+        "exit": 0,
+        "pid": 57296,
+        "seconds": 0.450552600028459
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\runs\\cpu-mtp-k3-b2\\report.json",
+        "bytes": 40713,
+        "sha256": "8da532462041ea5ea2f80593f04c0f652842ff85d9dc3ba52df2f9714b367780"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cuda-ordinary-b2",
+      "process": {
+        "exit": 0,
+        "pid": 41340,
+        "seconds": 0.7191099000046961
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\runs\\cuda-ordinary-b2\\report.json",
+        "bytes": 34787,
+        "sha256": "0bcab6f2855d8919147d34649acef38452c79aad0e9e95d5bef5e4ca8431155d"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cuda-mtp-k3-b2",
+      "process": {
+        "exit": 0,
+        "pid": 54028,
+        "seconds": 0.7885277000023052
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\runs\\cuda-mtp-k3-b2\\report.json",
+        "bytes": 39830,
+        "sha256": "87dade3d0c6e854e00f6877bac185003e989759ea65def996e6d44a5ac7cc9b7"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    }
+  ],
+  "images": [
+    {
+      "name": "test",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\bin\\metadata-queue-test.exe",
+        "bytes": 146485248,
+        "sha256": "5b1c11b6a2c422e2e817239966c88c06be3faf95bed5a424b6401f25e7b6d397"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 33268,
+        "seconds": 1.8277957999962382
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\test-link-inputs.json",
+        "bytes": 61182,
+        "sha256": "0220578be7d70a498177749ca33fa1f2a252968b319df15291ae6eda0ccfa28a"
+      }
+    },
+    {
+      "name": "cli",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\bin\\hyle.exe",
+        "bytes": 142142464,
+        "sha256": "742378908809facbecb083375ebd28743e5f5afe72c42fcb742012b8cc3e4377"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 58900,
+        "seconds": 1.7020566999563016
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\cli-link-inputs.json",
+        "bytes": 57942,
+        "sha256": "77aec4e96cd5bd90aff6dc6b1fbb28ec424b156ca5730e37f6f0a083b2fafbc4"
+      }
+    }
+  ],
+  "proofs": [
+    "FreshMetadata test sees one cached owner, a different actual CUDA stream, and rejects a foreign lane.",
+    "An actual compute-stream callback gate remains unreleased while changed page-ID metadata preparation returns; original capture is reused and results remain exact.",
+    "New GDN relay swaps the two actual destination writers, forcing a real changed-ID upload while the original producer is still pending; Source remains device-wait once, capture is reused, state/output/padding match original dense results.",
+    "All original 38 pending/source/slots checks, two new Queue checks, and three capacity/readback checks pass in one final process.",
+    "Four CPU/CUDA ordinary/MTP-K3 B2 journeys retain identical generated IDs to the previous successful carrier batch and end with two retired requests and no committed versions."
+  ],
+  "prior_tiny_ids_match": true,
+  "prior_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\summary.json",
+    "bytes": 5382,
+    "sha256": "b50dfd810d76d038635fd442b29f6097f02fb7d76d8616f8f128bcfcc154eebd"
+  },
+  "source_snapshots": [
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\batch_execution.cc",
+        "bytes": 65994,
+        "sha256": "930c55c37711583a59c1ee221aa7dfd1add222bc30e4906586bab8a72f9eb7db"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\compute_batch\\batch_execution.cc",
+        "bytes": 65994,
+        "sha256": "930c55c37711583a59c1ee221aa7dfd1add222bc30e4906586bab8a72f9eb7db"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+        "bytes": 248702,
+        "sha256": "1cb986767e62ab04ca6b50d145e5f1aa4954d257ea2a1f8558e4fa20f5ce3ef8"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\graph\\resources.cc",
+        "bytes": 248702,
+        "sha256": "1cb986767e62ab04ca6b50d145e5f1aa4954d257ea2a1f8558e4fa20f5ce3ef8"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+        "bytes": 72430,
+        "sha256": "1fcacc321afc29ea89c4753191cf4d2ef7d95ed61e7f375046c2a6a40e7475ff"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\graph\\slots_region.cc",
+        "bytes": 72430,
+        "sha256": "1fcacc321afc29ea89c4753191cf4d2ef7d95ed61e7f375046c2a6a40e7475ff"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+        "bytes": 101554,
+        "sha256": "dcb06d5262535cc2c7aa553610e50a6ef9a443601b81172b665705c2405a1ef1"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\graph_batch\\batch.cc",
+        "bytes": 101554,
+        "sha256": "dcb06d5262535cc2c7aa553610e50a6ef9a443601b81172b665705c2405a1ef1"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+        "bytes": 89185,
+        "sha256": "019e17a933baa9e1e9127374bc158c1920c3075e8134b72a95532f880d0fc184"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\graph_batch\\paged_append.cc",
+        "bytes": 89185,
+        "sha256": "019e17a933baa9e1e9127374bc158c1920c3075e8134b72a95532f880d0fc184"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+        "bytes": 26024,
+        "sha256": "187fb8e61a2b87cfd2be4eedf048c3df5d2beeb247d93f0d7d69f1e6db3677d1"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+        "bytes": 26024,
+        "sha256": "187fb8e61a2b87cfd2be4eedf048c3df5d2beeb247d93f0d7d69f1e6db3677d1"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\batch_capture_test.cc",
+        "bytes": 28848,
+        "sha256": "7061731329b1397dd23cceb0582dad01e1f73bb09936a55ee62ba684028735aa"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\tests\\graph_batch\\batch_capture_test.cc",
+        "bytes": 28848,
+        "sha256": "7061731329b1397dd23cceb0582dad01e1f73bb09936a55ee62ba684028735aa"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\batch_graph_access.h",
+        "bytes": 3779,
+        "sha256": "e430e972ad1e75ddb5f2a8f8d2aa06c1fa77f8fd7c444fef93e5f3230409825d"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\include\\hyle\\compute\\detail\\batch_graph_access.h",
+        "bytes": 3779,
+        "sha256": "e430e972ad1e75ddb5f2a8f8d2aa06c1fa77f8fd7c444fef93e5f3230409825d"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+        "bytes": 25992,
+        "sha256": "f18e267fc4cf6e2ec31166a92223a040b6366d6fdd4fc95505f9b044a2ff21d1"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\include\\hyle\\graph\\detail\\region_access.h",
+        "bytes": 25992,
+        "sha256": "f18e267fc4cf6e2ec31166a92223a040b6366d6fdd4fc95505f9b044a2ff21d1"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+        "bytes": 3039,
+        "sha256": "fe12b452b1ffba2429b92c889707694ff652d91f8fe533cccf5a51500b7b47a3"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\source\\src\\graph_batch\\paged_append.h",
+        "bytes": 3039,
+        "sha256": "fe12b452b1ffba2429b92c889707694ff652d91f8fe533cccf5a51500b7b47a3"
+      }
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Only CUDA Queue isolation is newly gated. CPU tiny/direct paths run, but no new Apple/Vulkan/Linux run.",
+    "No full model overlap/scheduling or new throughput measurement. Current engine remains single-slot.",
+    "Metadata preparation still waits for the small upload. Ordinary Tensor.write is host-synchronous and has not been replaced.",
+    "Backend Queue internal allocations obey the existing Context allocator contract, distinct from the explicitly budgeted shared owner control block.",
+    "MTP noncontiguous accepted subsets and complete model ordered successor publication remain open."
+  ],
+  "evidence": {
+    "bundle": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-metadata-queue-2026-10-27.zip",
+      "bytes": 421937,
+      "sha256": "de7c4fd9d1c2fe67ab939262335eca4846197a31a6fb1e49a05e1e125fbc8af2"
+    },
+    "members": 127
+  }
+}

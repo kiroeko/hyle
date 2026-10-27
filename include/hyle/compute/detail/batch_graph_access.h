@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "hyle/compute/detail/batch_provider.h"
 #include "hyle/compute/detail/context_ref.h"
 namespace hyle::compute::detail {
@@ -24,6 +25,12 @@ struct BatchGraphAccess final {
   HYLE_COMPUTE_BATCH_API static Result<BatchProgram> prepare(const ContextRef&,
       const ProviderExtensionRef&,BatchSchema,BatchProgramOptions) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram&,Queue&) noexcept;
+  // Only metadata copies use this same-Context Queue. Native plan/run/capture
+  // stay on the original execution Queue. The shared wrapper remains at its
+  // stable address through the original buffer/native-use lifetime; uploads
+  // still really wait and publish ready metadata before Graph preparation.
+  HYLE_COMPUTE_BATCH_API static Result<BatchInvocation> create(const BatchProgram&,
+      Queue& execution,std::shared_ptr<Queue> metadata_queue) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<ReadLease> metadata(const BatchInvocation&) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<PreparedBatch> prepare(BatchInvocation&,
       const BatchLayoutVersion&,bool update,BeforeCommandChange) noexcept;

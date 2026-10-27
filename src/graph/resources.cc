@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <new>
 #include <utility>
@@ -54,6 +55,11 @@ struct LeaseBinding final {
 };
 
 struct ResourceEpisode final {
+  struct MetadataQueue final {
+    const void *context = nullptr;
+    ExecutionLaneId lane{};
+    std::shared_ptr<compute::Queue> queue;
+  };
   explicit ResourceEpisode(mem::AllocatorRef selected) noexcept
       : allocator(selected), bindings(mem::StdAllocator<LeaseBinding>(selected)),
         binding_slots(mem::StdAllocator<std::uint32_t>(selected)),
@@ -61,6 +67,7 @@ struct ResourceEpisode final {
         unbind_steps(mem::StdAllocator<std::uint8_t>(selected)),
         unbind_instances(mem::StdAllocator<std::uint8_t>(selected)),
         nominated_writers(mem::StdAllocator<std::uint32_t>(selected)),
+        metadata_queues(mem::StdAllocator<MetadataQueue>(selected)),
         permissions(selected) {}
   ~ResourceEpisode() {
     if (payload) payload_table->destroy(payload);
@@ -83,6 +90,9 @@ struct ResourceEpisode final {
   // reject a pure sibling without retaining the whole source Graph or scanning
   // every permission once per nominated node.
   std::vector<std::uint32_t, mem::StdAllocator<std::uint32_t>> nominated_writers;
+  // Sparse original Context/lane owners, independent of ready permissions.
+  // Configuration reset drops guards but retains these cold stable wrappers.
+  std::vector<MetadataQueue, mem::StdAllocator<MetadataQueue>> metadata_queues;
   std::size_t fixed_binding_count = 0;
   // Publication stays lazy at the first successful result(). Later ports in
   // the same episode need not rescan writers already converted to reads.
@@ -187,6 +197,44 @@ Result<ResourceEpisode *> require_resources(InvocationState *state) noexcept {
     return std::unexpected(Status::FailedPrecondition(
         "owned bindings require prepare_resources or factory.resources"));
   return state->resources.get();
+}
+Result<std::shared_ptr<compute::Queue>> RegionAccess::metadata_queue(
+    Invocation &invocation, ExecutionLaneId lane, ResourceOptions options) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (!options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("metadata Queue needs a valid cold allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto source, execution_source(invocation.executable(), lane));
+  HYLE_ASSIGN_OR_RETURN(const auto *context, ExecutionSourceAccess::compute(source));
+  if (!context || !context->is_open())
+    return std::unexpected(Status::FailedPrecondition("metadata Queue's original Context is closed"));
+  HYLE_RETURN_IF_ERROR(invocation.prepare_resources(options));
+  auto &episode = *state->resources.get();
+  for (const auto &entry : episode.metadata_queues) {
+    if (entry.context != context->identity_key() || entry.lane != lane) continue;
+    if (!entry.queue || !entry.queue->is_open())
+      return std::unexpected(Status::FailedPrecondition("original metadata Queue is closed"));
+    return entry.queue;
+  }
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  try {
+    episode.metadata_queues.reserve(episode.metadata_queues.size() + 1);
+    HYLE_ASSIGN_OR_RETURN(auto queue, context->create_queue());
+    // The budget allocator self-retains each allocation, including the shared
+    // control block after this Invocation dies. Arbitrary allocator owners
+    // retain their ordinary external lifetime contract.
+    auto shared = std::allocate_shared<compute::Queue>(
+        mem::StdAllocator<compute::Queue>(allocator), std::move(queue));
+    episode.metadata_queues.push_back({context->identity_key(), lane, shared});
+    return shared;
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(Status::ResourceExhausted("Graph metadata Queue owner"));
+  } catch (...) {
+    return std::unexpected(Status::Internal("Graph metadata Queue preparation failed"));
+  }
 }
 Status RegionAccess::attach_resource_payload(Invocation &invocation,
     const ResourcePayloadVTable *table, void *payload) noexcept {
