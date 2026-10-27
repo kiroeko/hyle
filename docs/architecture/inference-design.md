@@ -603,17 +603,17 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 冷形状、ledger容量、query上界、modifier输出预检、prefix后缀及实际切片共用它。
 模型适配仍负责pending入turn、prefix查找、阶段／completion映射和成功后推进原游标；共同策略只保存量子，
 不拥有会话或第二份进度。普通和MTP保留各自实际可支持的分块边界。
-有限量子的尾块按不超过真实剩余行数的二次幂分解；默认无界行为不变，MTP继续拒绝有限量子。
-`parts`是精确片数但不单调（量子8的8行一片、7行三片），未知prefix的容量使用`parts_bound`。
-前缀启用时，`for_each_shape`将已知输入范围内可能的真实尾块行数／completion与成员支持并入原Family计划，
-仍按批宽与采样配置生成exact child，不扩展递归算子的padding语义，也不另建形状或预热注册表。
-额外小块可能增加episode和提交次数，合法数学形状的舍入仍可不同；这一政策本身不构成吞吐或质量结论。
-[有限尾块检查](../evidence/correctness/inference-bounded-prefill-2026-10-27.json)覆盖六组主机合同和一次真实生成后前缀命中，
+有限量子的实际尾块一次消费`min(remaining, quantum)`，例如P154／Q64为64+64+26。
+`parts`按除法与余数计算单调片数，避免SIZE_MAX加法溢出，未知prefix也复用它，不再维护另一份计数。
+`for_each_capacity`只声明一个有界R容量及实际需要的completion键，不为每个短尾预编exact图；
+支持有效长度的原子图使用A≤R，exact-only实现仍按真实长度接纳，不能把R提交为消费量。
+共同分块主机检查已通过，普通R1真实容量图已接通；改变形状的舍入可能不同，本身不是吞吐或质量结论。
+此前二次幂政策的[有限尾块检查](../evidence/correctness/inference-bounded-prefill-2026-10-27.json)覆盖六组主机合同和一次真实生成后前缀命中，
 剩余T2以B2执行、ready后新增exact family为零；首次N4旅程未命中目标覆盖，保留记录后仅将驻留数改为N2。
 [有限检查](../evidence/correctness/inference-prefill-facts-2026-10-27.json)覆盖四组纯主机边界与原Q2／B2多轮CUDA非时间报告一致，
 不把这一算法抽离记作吞吐提升或其它平台运行结果。
 
-有效长度prefill的底层数学与Append已实现，真实引擎接线仍未完成。共同合同采用packed行与同一个I32 `cu_seqlens[B+1]`：
+有效长度prefill的底层数学、Append及普通R1引擎接线已实现。共同合同采用packed行与同一个I32 `cu_seqlens[B+1]`：
 从0单调至实际行数A，满足A≤物理行数R≤冷容量C。GDN只递推各成员自己的区间，
 不读取[A,R)；空序列原样保留初始状态，K个接受前缀要求每个实际长度≥K，
 返回其末K个真实状态，不能取填充后的尾部。Conv的下一history取旧history与真实输入拼接的末尾，
@@ -621,7 +621,7 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 模型无关数学叶位于`compute/sequence_ops.h`，CPU／CUDA沿原provider、Queue与Completion执行，
 无新执行器或状态池；原PagedAppend接纳相同编码／行字节的A≤R：
 每个源区间终点≤A、实际新增行数之和等于A，保留原页写权、COW、AppendTicket和真实退休。
-下一步由Recipe／PhaseIo共享真实offset权限，按成员有效末行采样。
+Recipe／PhaseIo共享真实offset权限，按成员有效末行采样。
 [15项有限检查](../evidence/correctness/inference-packed-sequence-2026-10-28.json)覆盖CPU／CUDA三类浮点存储、
 独立数学参考、完整状态／history、NaN填充、空序列、K2及非法offset；同地址改长度复用原capture，
 错误后遵守原终端Invocation／writer合同并重新创建，不复活失败权限。原Store受同一Queue错误字保护。
@@ -629,11 +629,16 @@ Append另核两端真实COW、实际A行和旧字节。结果分属四个检查�
 本批未运行整模、TPS或Apple／Vulkan设备检查，固定拓扑仍由原native plan和完整tuple证明。
 真实prefill接线须分开物理R、总有效A及成员长度Li：tokens／positions载体完整初始化R，
 Layout、KV预留、ledger、状态提交与工作量只计Li，末行采样取各真实offset终点−1。
-cuSeq优先由原Batch metadata提供有界、带类型的公开投影，不让引擎理解opaque格式或新增detail接缝；
-下一次metadata更新前必须按原退休合同撤回旧输入guard。
+cuSeq由`graph::batch::query_offsets`从原Batch metadata提供精确I32[B+1]范围的ReadLease，
+不复制metadata，不让引擎理解opaque格式或新增detail接缝；下一次metadata更新前撤回旧输入guard。
+它沿原在途／观察门及prepared-layout合同；已settle的Completion值本身不继续持有观察权限。
+原explicit容量载体在提交后消耗prepared token，需要重新prepare；owned布局仍须检查原当前代际。
 现Conv计算先Cast F32、最后回activation的舍入点保持不变；持久history仍选择原activation字节，
 不能因新packed入口支持BF16而降低原F32权重，或用往返Cast代替原history。
-普通R1接通后再处理原MTP-prefill真实shift／lag与B2不同Li；纯数学叶先复用原Store，
+本批普通R1以同一R8运行L1／3／8及非零前缀，并以真实2B检查Q64分块、取消与重建。
+跨实现F32 GDN归约不承诺逐字节一致；原快照、KV／history原码转移和RNG等边界仍严格核对。
+[本批有限记录](../evidence/correctness/inference-prefill-integration-2026-10-28.json)保留原数值差异、失败、真实行与物理行，未据图调用数变化宣称提速。
+原MTP-prefill真实shift／lag与B2不同Li仍未接通；纯数学叶复用原Store，
 不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与

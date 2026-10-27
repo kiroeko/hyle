@@ -11,6 +11,7 @@
 #include <span>
 #include <utility>
 #include "paged_append_active_rows_case.h"
+#include "query_offsets_case.h"
 
 #if !defined(HYLE_APPEND_STANDALONE)
 #include <gtest/gtest.h>
@@ -790,6 +791,11 @@ Status all(int profile = 0) {
     return exclusive_journey(context, memory, staging.ref(), queue);
   if (profile == 5)
     return hyle_test::paged_append_active::matrix(context,memory.ref(),staging.ref(),queue,true);
+  if (profile == 6) {
+    for (const auto owned : {false, true})
+      HYLE_RETURN_IF_ERROR(hyle_test::query_offsets::exercise(context,memory.ref(),staging.ref(),queue,owned));
+    return Status::Ok();
+  }
   return journey(context, memory, staging.ref(), queue, false, true);
 }
 } // namespace
@@ -797,7 +803,7 @@ Status all(int profile = 0) {
 #if defined(HYLE_APPEND_STANDALONE)
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
-  for (int profile = 0; profile < 6; ++profile) {
+  for (int profile = 0; profile < 7; ++profile) {
     const auto result = all(profile);
     if (!result.ok()) {
       char text[1024]{};
@@ -831,6 +837,10 @@ TEST(CudaPagedAppend, TwoRequestFramesComposeAppendAndProject) {
 }
 TEST(CudaPagedAppend, ActiveRowsUseOnlyTheInitializedCarrierPrefix) {
   const auto result = all(5);
+  EXPECT_TRUE(result.ok()) << result.message();
+}
+TEST(GraphBatchQueryOffsets, CurrentMirrorPrefixAndIdleOwnershipOnCuda) {
+  const auto result = all(6);
   EXPECT_TRUE(result.ok()) << result.message();
 }
 #endif

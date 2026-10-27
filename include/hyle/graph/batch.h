@@ -35,6 +35,17 @@ HYLE_GRAPH_BATCH_API Result<compute::BatchPlanReport> report(
     graph::Invocation &, NodeId) noexcept;
 HYLE_GRAPH_BATCH_API Result<compute::NativePagedBatchReport> native_report(
     graph::Invocation &, NodeId) noexcept;
+// Exact plain I32[B+1] query offsets of this node's current prepared layout.
+// Borrows the original ready metadata allocation through a bounded ReadLease;
+// no transfer, new mirror or Queue is created. Requires the original idle,
+// result/unobserved-Completion gate and a live prepared layout. A settled
+// Completion value does not retain that observation gate. Explicit-metadata
+// execution consumes its prepared token and must be prepared again. A selected
+// native implementation without this real ready carrier returns Unimplemented.
+// Release all returned aliases, including ordinary input bindings, before the
+// next metadata update. Rejection changes no binding or replay preparation.
+HYLE_GRAPH_BATCH_API Result<compute::ReadLease> query_offsets(
+    graph::Invocation &, NodeId) noexcept;
 // Optional cold capture inside the already selected native slots. Bind every
 // ordinary tensor first; the enclosing Invocation still owns replay/submit.
 HYLE_GRAPH_BATCH_API Status prepare_replay(graph::Invocation &,

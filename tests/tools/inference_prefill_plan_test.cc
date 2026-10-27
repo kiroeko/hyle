@@ -2,7 +2,6 @@
 #include "../../engine/inference/prefill_plan.h"
 
 #include <array>
-#include <bit>
 #include <cstdio>
 #include <limits>
 #include <stdexcept>
@@ -16,6 +15,7 @@ static_assert(std::is_trivially_copyable_v<PrefillPart>);
 static_assert(std::is_trivially_copyable_v<PrefillPolicy>);
 static_assert(PrefillPolicy(3).next(8).rows == 3);
 static_assert(PrefillPolicy(3).parts(8) == 3);
+static_assert(PrefillPolicy(64).parts(154) == 3);
 static_assert(PrefillPolicy().next(max_size).complete);
 
 void require(bool value, const char *message) {
@@ -85,14 +85,14 @@ void maximum_extents_do_not_overflow() {
   require(pair.parts(max_size) == max_size / 2 + max_size % 2,
       "rounded maximum episode count overflowed");
   require_part(pair.next(max_size, max_size - 2), {max_size - 2, 2, true});
-  require(PrefillPolicy(max_size - 1).parts_bound(max_size) >=
+  require(PrefillPolicy(max_size - 1).parts(max_size) >=
       PrefillPolicy(max_size - 1).parts(max_size - 2), "finite maximum suffix bound overflowed");
 }
 
 void finite_tail_blocks_keep_every_real_row() {
   const PrefillPolicy policy(8);
   const std::array expected{PrefillPart{0, 8, false}, PrefillPart{8, 8, false},
-      PrefillPart{16, 4, false}, PrefillPart{20, 2, false}, PrefillPart{22, 1, true}};
+      PrefillPart{16, 7, true}};
   std::size_t consumed = 0;
   for (const auto part : expected) {
     require_part(policy.next(23, consumed), part);
@@ -100,31 +100,38 @@ void finite_tail_blocks_keep_every_real_row() {
   }
   require(consumed == 23 && policy.parts(23) == expected.size(),
       "bounded tail planning lost input or disagreed with actual episodes");
-  require_part(policy.next(8, 1), {1, 4, false});
-  require(policy.parts(8) == 1 && policy.parts(8, 1) == 3 && policy.parts_bound(8) >= 3,
-      "unknown prefix reservation assumed a monotonic exact episode count");
+  require_part(policy.next(8, 1), {1, 7, true});
+  require(policy.parts(8) == 1 && policy.parts(8, 1) == 1,
+      "short reused suffix gained artificial episodes");
+  const PrefillPolicy realistic(64);
+  require_part(realistic.next(154,128), {128,26,true});
+  require(realistic.parts(154) == 3 && realistic.parts(154,1) == 3,
+      "P154/Q64 did not retain a single real tail");
   require_part(PrefillPolicy().next(23), {0, 23, true});
 }
 
-void possible_keys_match_real_suffixes() {
+void cold_capacities_cover_real_suffixes() {
   for (const auto quantum : std::array<std::size_t, 6>{1, 2, 3, 5, 8, 16}) {
     const PrefillPolicy policy(quantum);
     for (std::size_t maximum = 0; maximum <= 40; ++maximum) {
-      std::array<std::array<bool, 2>, 41> declared{}, witnessed{};
+      std::array<std::array<bool, 2>, 41> declared{}, used{};
       std::size_t keys = 0;
-      policy.for_each_shape(maximum, [&](std::size_t rows, bool complete) {
+      policy.for_each_capacity(maximum, [&](std::size_t rows, bool complete) {
         require(rows && rows <= quantum && rows <= maximum && !declared[rows][complete],
-            "cold suffix keys contained empty/padded/duplicate extents");
+            "cold capacities contained empty/oversized/duplicate extents");
         declared[rows][complete] = true; ++keys;
       });
       for (std::size_t remaining = 1; remaining <= maximum; ++remaining) {
         const auto part = policy.next(remaining);
-        witnessed[part.rows][part.complete] = true;
-        require(policy.parts(remaining) <= policy.parts_bound(maximum),
+        bool covered = false;
+        for (std::size_t capacity = part.rows; capacity <= maximum; ++capacity)
+          if (declared[capacity][part.complete]) { covered = true; used[capacity][part.complete] = true; break; }
+        require(covered,"real suffix did not fit its declared cold capacity/completion");
+        require(policy.parts(remaining) <= policy.parts(maximum),
             "cold maximum did not cover a shorter unknown suffix");
       }
-      require(declared == witnessed && keys <= 2 * (std::size_t{1} + static_cast<std::size_t>(std::bit_width(quantum - 1))),
-          "cold keys differed from possible real next blocks or grew with context length");
+      require(declared == used && keys <= 2,
+          "cold capacities included unused keys or grew with every exact tail length");
     }
   }
 }
@@ -137,7 +144,7 @@ int main() {
     consumed_offsets_are_borrowed_facts();
     maximum_extents_do_not_overflow();
     finite_tail_blocks_keep_every_real_row();
-    possible_keys_match_real_suffixes();
+    cold_capacities_cover_real_suffixes();
     std::puts("prefill plan: 6 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {

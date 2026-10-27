@@ -78,6 +78,7 @@
 #include "../../inference/readback.h"
 #include "driver.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/compute/resource_budget.h"
 #include "hyle/graph/batch.h"
 #include "hyle/graph/slots.h"
@@ -132,7 +133,7 @@ std::vector<StateSchema> state_schema_for(const ModelGeometry &geometry, std::si
     auto &layer = result[i];
     if (geometry.is_gdn(i)) {
       layer.history = dense(precision.activation_type(), {1, geometry.conv_kernel - 1, geometry.gdn_qkv_width()});
-      layer.recurrent = dense(Type::kFloat32, {1, geometry.gdn_value_heads, geometry.gdn_key_depth, geometry.gdn_value_depth});
+      layer.recurrent = dense(Type::kFloat32, {1, geometry.gdn_value_heads, geometry.gdn_value_depth, geometry.gdn_key_depth});
     }
   }
   return result;
@@ -829,9 +830,10 @@ struct FamilyKey final {
   GraphRole role;
   TextCompletion completion;
   std::size_t sampling_index;
+  bool packed_prefill = false;
   FamilyKey(std::size_t count, GraphRole selected = GraphRole::kText,
-            std::size_t rows = 0, TextCompletion mode = TextCompletion::kEmitNext, std::size_t sampling = 0) noexcept
-      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected), completion(mode), sampling_index(sampling) {}
+            std::size_t rows = 0, TextCompletion mode = TextCompletion::kEmitNext, std::size_t sampling = 0, bool packed = false) noexcept
+      : requests(count), verification_rows(selected == GraphRole::kVerify ? rows : 0), role(selected), completion(mode), sampling_index(sampling), packed_prefill(packed) {}
   static FamilyKey exact(std::size_t count, GraphRole selected, std::size_t rows,
                          TextCompletion mode = TextCompletion::kEmitNext, std::size_t sampling = 0) noexcept {
     FamilyKey key(count, selected, 0, mode, sampling); key.verification_rows = rows; return key;
@@ -844,6 +846,7 @@ struct ExecutionShape final {
   TextCompletion completion = TextCompletion::kEmitNext;
   std::size_t sampling_index = 0;
   bool imported_sources = false;
+  bool packed_prefill = false;
   auto operator<=>(const ExecutionShape &) const = default;
 };
 struct StatePorts final {
@@ -858,6 +861,7 @@ struct FamilyPorts {
   std::size_t prefix_rows = 1;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
+  V sequence_offsets_port, history_select_port;
   bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
   std::vector<V> logits_bias_ports, logits_allowed_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
@@ -892,6 +896,7 @@ struct Family final : FamilyPorts {
   GraphRole role = GraphRole::kText;
   TextCompletion completion = TextCompletion::kEmitNext;
   bool admitted_exact = false;
+  bool packed_prefill = false;
   std::vector<Tensor> literals; // Backing survives every child and its slots.
   std::vector<g::TensorSpec> specs;
   c::BatchSchema attention_schema;
@@ -915,7 +920,8 @@ struct StateBank final {
 // Sharing a finite child/Queue never grants another slot access to these bytes.
 struct PhaseIo final {
   c::BatchLayoutVersion attention_layout;
-  Tensor tokens, positions, last_ids, logits, final_hidden;
+  Tensor tokens, positions, last_ids, logits, final_hidden, history_select;
+  std::vector<std::int32_t> history_select_values;
   Tensor sampling_identities, draft_positions, catchup_token;
   PreparedReadback next_id, draft_id, sampling_valid, sampling_accept;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
@@ -967,7 +973,7 @@ struct InputPreparationScratch final {
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
     };
     target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
-    if (phase.family->requests > 1) reserve(packed_ids, io.tokens);
+    if (phase.family->requests > 1 || phase.family->packed_prefill) reserve(packed_ids, io.tokens);
     reserve(positions, io.positions);
     if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities);
     if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions);
@@ -1620,6 +1626,7 @@ public:
   std::shared_ptr<StepState> successor_step;
   std::optional<DecodeAheadMetadata> decode_ahead;
   std::size_t cpu_ahead_prepared = 0, cpu_ahead_hits = 0, cpu_ahead_discarded = 0;
+  std::size_t packed_prefill_calls = 0, packed_prefill_active_rows = 0, packed_prefill_physical_rows = 0;
   double cpu_ahead_prepare_seconds = 0;
   const std::size_t capacity;
   const ReplayPolicy replay_policy;
@@ -1887,6 +1894,9 @@ public:
         << ",\"mtp_min_draft_probability\":" << (cache_plan.draft_cache ? min_draft_probability() : 0)
         << ",\"draft_program_graph_calls\":" << draft_program_graph_calls
         << ",\"prefix_decision_graph_calls\":" << prefix_decision_graph_calls
+        << ",\"packed_prefill_calls\":" << packed_prefill_calls
+        << ",\"packed_prefill_active_rows\":" << packed_prefill_active_rows
+        << ",\"packed_prefill_physical_rows\":" << packed_prefill_physical_rows
         << ",\"cold_exact_admissions\":" << exact_admissions
         << ",\"cold_exact_evictions\":" << exact_evictions
         << ",\"cpu_ahead_prepared\":" << cpu_ahead_prepared
@@ -2094,9 +2104,10 @@ public:
     }
   }
 
-  void prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
+  bool prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
                       std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                      bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+                      bool admitted_exact = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+                      bool packed_prefill = false) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
     if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
@@ -2104,6 +2115,8 @@ public:
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
         (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
       throw std::runtime_error("state-only completion requires an ordinary Text family");
+    if (packed_prefill && (requests != 1 || role != GraphRole::kText || diagnostic || admitted_exact))
+      throw std::runtime_error("packed prefill requires its original cold ordinary R1 family");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
       throw std::runtime_error("compile finite families before preparing their selected state storage");
@@ -2117,7 +2130,7 @@ public:
       for (const auto width : widths) {
         const std::array chunk{width}; prepare_family(chunk, diagnostic, requests, role);
       }
-      return;
+      return true;
     }
     const std::size_t prefix_rows = role == GraphRole::kVerify ? planned_chunks.front()
         : drafts_token(role) ? 2 : 1;
@@ -2137,7 +2150,7 @@ public:
       throw std::runtime_error("MTP single-token families require T1");
     if (is_mtp_prefill(role) && std::ranges::any_of(planned_chunks, [](auto t) { return t < 2; }))
       throw std::runtime_error("MTP multi-token prefill requires at least two rows; use its single-token family for T1");
-    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion, sampling_index) : FamilyKey(requests, role, prefix_rows, completion, sampling_index);
+    const auto family_key = admitted_exact ? FamilyKey::exact(requests, role, planned_chunks.front(), completion, sampling_index) : FamilyKey(requests, role, prefix_rows, completion, sampling_index, packed_prefill);
     auto &selected = diagnostic ? probe_families[family_key] : families[family_key];
     if (selected) throw std::runtime_error("text finite family was already prepared");
     auto result = std::make_unique<Family>();
@@ -2146,7 +2159,7 @@ public:
     definition.append_nodes.resize(draft_bank + 2);
     definition.sampling = &prepared_sampling;
     definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
-    definition.admitted_exact = admitted_exact;
+    definition.admitted_exact = admitted_exact; definition.packed_prefill = packed_prefill;
     definition.state_resource_ports.reserve(ports_per_request * requests);
     for (const auto tokens : planned_chunks) {
       if (tokens == 0 || tokens > capacity)
@@ -2181,7 +2194,11 @@ public:
             {has_mtp(role) && !is_mtp_prefill(role) ? batch : packed}));
     definition.position_port = requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) :
         r.input(r.dense_spec(Type::kInt32, {batch, t}));
-    if (requests != 1 && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
+    if ((requests != 1 || packed_prefill) && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
+    if (packed_prefill) {
+      definition.sequence_offsets_port = r.input(dense(Type::kInt32, {2}));
+      definition.history_select_port = r.input(dense(Type::kInt32, {geometry.conv_kernel - 1}));
+    }
     definition.metadata_port = r.input(take(definition.attention_schema.metadata_description()));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
     for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
@@ -2310,75 +2327,142 @@ public:
         const auto history = r.reshape(history_rows,
             {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())});
         const auto state = r.reshape(recurrent_rows,
-            {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)});
+            {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)});
         const auto store_state = [&](StatePorts &port, const g::slots::Schema &schema, V rows) {
           r.op(c::Operation::custom(g::slots::Store{schema}), {rows, port.destination_ids}, {}, &port.store);
           if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
           prior_append = port.store; has_prior_append = true;
           definition.state_sources.push_back({port.store, port.gather});
         };
-        auto qkv = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight"), {batch, t, f(geometry.gdn_qkv_width())});
-        auto samples = r.one(c::Concat{.axis = 1}, {history, qkv},
-            r.dense_spec(precision.activation_type(), {batch, r.sample_rows, f(geometry.gdn_qkv_width())}));
-        // K1 records the final boundary; current K>1 families have T==K.
-        // The ordinary graph stores raw history before Cast F32. A single
-        // window may have a batch gap and therefore needs real materialization.
-        std::vector<V> windows;
-        windows.reserve(prefix_rows);
-        for (std::size_t row = 0; row < prefix_rows; ++row) {
-          const auto boundary = prefix_rows == 1 ? t : f(static_cast<std::int64_t>(row + 1));
-          auto window = r.slice(samples, 1, boundary, f(geometry.conv_kernel - 1));
-          if (prefix_rows == 1) window = r.one(c::Copy{}, {window},
-              r.dense_spec(precision.activation_type(),
-                  {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
-          else window = r.reshape(window,
-              {batch, f(1), f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())});
-          windows.push_back(window);
+        if (packed_prefill) {
+          const auto channels = f(geometry.gdn_qkv_width());
+          const auto qkv = r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight");
+          const auto raw_samples = r.one(c::Concat{.axis = 0},
+              {r.reshape(history, {f(geometry.conv_kernel - 1), channels}), qkv},
+              r.dense_spec(precision.activation_type(), {r.sample_rows, channels}));
+          // Preserve the original activation bytes in persistent history. In
+          // particular, F32 convolution must not round-trip NaN payloads through
+          // a different storage type just to recover the true history tail.
+          const auto next_history = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+              {raw_samples, definition.history_select_port},
+              r.dense_spec(precision.activation_type(), {f(geometry.conv_kernel - 1), channels}));
+          store_state(ports.history, history_schema,
+              r.reshape(next_history, {batch, f(history_schema.item_elements())}));
+          const auto convolution = r.op(c::sequence_ops::packed_causal_conv1d(),
+              {r.cast(qkv, Type::kFloat32),
+               r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"),
+                   {channels, f(geometry.conv_kernel)}), Type::kFloat32),
+               r.cast(history, Type::kFloat32), definition.sequence_offsets_port},
+              {r.dense_spec(Type::kFloat32, {packed, channels}),
+               r.dense_spec(Type::kFloat32, {batch, f(geometry.conv_kernel - 1), channels})});
+          const auto activated = r.reshape(r.unary(c::UnaryKind::kSilu,
+              r.cast(convolution[0], precision.activation_type())), {batch, t, channels});
+          auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())),
+              {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
+          auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())),
+              {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
+          auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())),
+              {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
+          v = precision.activation_type() == Type::kFloat32 ? r.copy(v) : r.cast(v, Type::kFloat32);
+          q = r.gdn_key_rows(r.l2(q)); k = r.gdn_key_rows(r.l2(k));
+          const auto a = r.reshape(r.cast(r.linear(normalized, prefix + "linear_attn.in_proj_a.weight"), Type::kFloat32),
+              {packed, f(geometry.gdn_value_heads), f(1)});
+          const auto b = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_b.weight"),
+              {packed, f(geometry.gdn_value_heads), f(1)});
+          const auto dt = r.reshape(r.cast(r.weight(prefix + "linear_attn.dt_bias"), Type::kFloat32),
+              {f(1), f(geometry.gdn_value_heads), f(1)});
+          const auto decay = r.reshape(r.decay("model.language_model." + prefix + "linear_attn.A_log"),
+              {f(1), f(geometry.gdn_value_heads), f(1)});
+          const auto g = r.binary(c::BinaryKind::kMultiply, decay,
+              r.unary(c::UnaryKind::kSoftplus, r.binary(c::BinaryKind::kAdd, a, dt)));
+          const auto beta = r.cast(r.unary(c::UnaryKind::kSigmoid, b), Type::kFloat32);
+          const auto recurrent = r.op(c::sequence_ops::packed_gated_delta_net(),
+              {r.cast(r.reshape(q, {packed, r.spec(q).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
+               r.cast(r.reshape(k, {packed, r.spec(k).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
+               r.cast(v, Type::kFloat32), g, beta,
+               r.reshape(recurrent_rows, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)}),
+               definition.sequence_offsets_port},
+              {r.dense_spec(Type::kFloat32, {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
+               r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
+          store_state(ports.recurrent, recurrent_schema,
+              r.reshape(recurrent[1], {batch, f(recurrent_schema.item_elements())}));
+          auto y = r.cast(recurrent[0], precision.activation_type());
+          if (i == 0) definition.probe_ports[0] = y;
+          const auto y_f32 = r.cast(y, Type::kFloat32);
+          y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
+          const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
+          y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
+          const auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"),
+              {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
+          y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
+              r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
+          if (i == 0) definition.probe_ports[1] = y;
+          mixed = r.linear(r.reshape(y, {packed, f(geometry.gdn_value_width())}), prefix + "linear_attn.out_proj.weight");
+          if (i == 0) definition.probe_ports[2] = mixed;
+        } else {
+          auto qkv = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight"), {batch, t, f(geometry.gdn_qkv_width())});
+          auto samples = r.one(c::Concat{.axis = 1}, {history, qkv},
+              r.dense_spec(precision.activation_type(), {batch, r.sample_rows, f(geometry.gdn_qkv_width())}));
+          // K1 records the final boundary; current K>1 families have T==K.
+          // The ordinary graph stores raw history before Cast F32. A single
+          // window may have a batch gap and therefore needs real materialization.
+          std::vector<V> windows;
+          windows.reserve(prefix_rows);
+          for (std::size_t row = 0; row < prefix_rows; ++row) {
+            const auto boundary = prefix_rows == 1 ? t : f(static_cast<std::int64_t>(row + 1));
+            auto window = r.slice(samples, 1, boundary, f(geometry.conv_kernel - 1));
+            if (prefix_rows == 1) window = r.one(c::Copy{}, {window},
+                r.dense_spec(precision.activation_type(),
+                    {batch, f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
+            else window = r.reshape(window,
+                {batch, f(1), f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())});
+            windows.push_back(window);
+          }
+          const auto histories = prefix_rows == 1 ? windows[0] : r.concat(windows, 1,
+              r.dense_spec(precision.activation_type(), {batch, f(static_cast<std::int64_t>(prefix_rows)),
+                  f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
+          store_state(ports.history, history_schema, r.reshape(histories,
+              {f(static_cast<std::int64_t>(requests * prefix_rows)), f(history_schema.item_elements())}));
+          auto convolution = r.one(c::model_ops::causal_conv1d(), {r.cast(samples, Type::kFloat32),
+              r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"), {f(geometry.gdn_qkv_width()), f(geometry.conv_kernel)}), Type::kFloat32)},
+              r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_qkv_width())}));
+          auto activated = r.unary(c::UnaryKind::kSilu, r.cast(convolution, precision.activation_type()));
+          auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
+          auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
+          auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
+          auto a = r.reshape(r.cast(r.linear(normalized, prefix + "linear_attn.in_proj_a.weight"), Type::kFloat32), {batch, t, f(geometry.gdn_value_heads), f(1)});
+          auto b = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_b.weight"), {batch, t, f(geometry.gdn_value_heads), f(1)});
+          auto dt = r.reshape(r.cast(r.weight(prefix + "linear_attn.dt_bias"), Type::kFloat32), {f(1), f(1), f(geometry.gdn_value_heads), f(1)});
+          auto decay = r.reshape(r.decay("model.language_model." + prefix + "linear_attn.A_log"), {f(1), f(1), f(geometry.gdn_value_heads), f(1)});
+          auto g = r.binary(c::BinaryKind::kMultiply, decay,
+              r.unary(c::UnaryKind::kSoftplus, r.binary(c::BinaryKind::kAdd, a, dt)));
+          auto beta = r.cast(r.unary(c::UnaryKind::kSigmoid, b), Type::kFloat32);
+          auto recurrent = r.op(c::Operation(c::GatedDeltaNet{
+              .snapshot_count = static_cast<std::uint32_t>(prefix_rows)}),
+              {r.cast(r.gdn_key_rows(r.l2(q)), Type::kFloat32), r.cast(r.gdn_key_rows(r.l2(k)), Type::kFloat32),
+               r.cast(v, Type::kFloat32), g, beta, state},
+              {r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
+               prefix_rows > 1
+                   ? r.dense_spec(Type::kFloat32, {batch, f(static_cast<std::int64_t>(prefix_rows)), f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})
+                   : r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
+          store_state(ports.recurrent, recurrent_schema, r.reshape(recurrent[1],
+              {f(static_cast<std::int64_t>(requests * prefix_rows)), f(recurrent_schema.item_elements())}));
+          auto y = r.cast(recurrent[0], precision.activation_type());
+          if (i == 0) definition.probe_ports[0] = y;
+          const auto y_f32 = r.cast(y, Type::kFloat32);
+          y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
+          // Original storage is F32 in the official checkpoint and BF16 in
+          // these quantized artifacts. Preserve its actual product rounding.
+          const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
+          y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
+          auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
+          y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
+              r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
+          auto projection_input = r.reshape(y, {packed, f(geometry.gdn_value_width())});
+          if (i == 0) definition.probe_ports[1] = y; // Same BF16 payload before its metadata-only out_proj reshape.
+          mixed = r.linear(projection_input, prefix + "linear_attn.out_proj.weight");
+          if (i == 0) definition.probe_ports[2] = mixed;
         }
-        const auto histories = prefix_rows == 1 ? windows[0] : r.concat(windows, 1,
-            r.dense_spec(precision.activation_type(), {batch, f(static_cast<std::int64_t>(prefix_rows)),
-                f(geometry.conv_kernel - 1), f(geometry.gdn_qkv_width())}));
-        store_state(ports.history, history_schema, r.reshape(histories,
-            {f(static_cast<std::int64_t>(requests * prefix_rows)), f(history_schema.item_elements())}));
-        auto convolution = r.one(c::model_ops::causal_conv1d(), {r.cast(samples, Type::kFloat32),
-            r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"), {f(geometry.gdn_qkv_width()), f(geometry.conv_kernel)}), Type::kFloat32)},
-            r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_qkv_width())}));
-        auto activated = r.unary(c::UnaryKind::kSilu, r.cast(convolution, precision.activation_type()));
-        auto q = r.reshape(r.slice(activated, 2, f(0), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
-        auto k = r.reshape(r.slice(activated, 2, f(geometry.gdn_key_width()), f(geometry.gdn_key_width())), {batch, t, f(geometry.gdn_key_heads), f(geometry.gdn_key_depth)});
-        auto v = r.reshape(r.slice(activated, 2, f(2 * geometry.gdn_key_width()), f(geometry.gdn_value_width())), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
-        auto a = r.reshape(r.cast(r.linear(normalized, prefix + "linear_attn.in_proj_a.weight"), Type::kFloat32), {batch, t, f(geometry.gdn_value_heads), f(1)});
-        auto b = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_b.weight"), {batch, t, f(geometry.gdn_value_heads), f(1)});
-        auto dt = r.reshape(r.cast(r.weight(prefix + "linear_attn.dt_bias"), Type::kFloat32), {f(1), f(1), f(geometry.gdn_value_heads), f(1)});
-        auto decay = r.reshape(r.decay("model.language_model." + prefix + "linear_attn.A_log"), {f(1), f(1), f(geometry.gdn_value_heads), f(1)});
-        auto g = r.binary(c::BinaryKind::kMultiply, decay,
-            r.unary(c::UnaryKind::kSoftplus, r.binary(c::BinaryKind::kAdd, a, dt)));
-        auto beta = r.cast(r.unary(c::UnaryKind::kSigmoid, b), Type::kFloat32);
-        auto recurrent = r.op(c::Operation(c::GatedDeltaNet{
-            .snapshot_count = static_cast<std::uint32_t>(prefix_rows)}),
-            {r.cast(r.gdn_key_rows(r.l2(q)), Type::kFloat32), r.cast(r.gdn_key_rows(r.l2(k)), Type::kFloat32),
-             r.cast(v, Type::kFloat32), g, beta, state},
-            {r.dense_spec(Type::kFloat32, {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
-             prefix_rows > 1
-                 ? r.dense_spec(Type::kFloat32, {batch, f(static_cast<std::int64_t>(prefix_rows)), f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)})
-                 : r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_key_depth), f(geometry.gdn_value_depth)})});
-        store_state(ports.recurrent, recurrent_schema, r.reshape(recurrent[1],
-            {f(static_cast<std::int64_t>(requests * prefix_rows)), f(recurrent_schema.item_elements())}));
-        auto y = r.cast(recurrent[0], precision.activation_type());
-        if (i == 0) definition.probe_ports[0] = y;
-        const auto y_f32 = r.cast(y, Type::kFloat32);
-        y = r.cast(r.same(c::RmsNorm{.epsilon = geometry.epsilon}, {y_f32}, y_f32), precision.activation_type());
-        // Original storage is F32 in the official checkpoint and BF16 in
-        // these quantized artifacts. Preserve its actual product rounding.
-        const auto norm_scale = r.weight(prefix + "linear_attn.norm.weight");
-        y = r.binary(c::BinaryKind::kMultiply, r.cast(y, r.spec(norm_scale).data_type()), norm_scale);
-        auto z = r.reshape(r.linear(normalized, prefix + "linear_attn.in_proj_z.weight"), {batch, t, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)});
-        y = r.cast(r.binary(c::BinaryKind::kMultiply, r.cast(y, Type::kFloat32),
-            r.unary(c::UnaryKind::kSilu, r.cast(z, Type::kFloat32))), precision.activation_type());
-        auto projection_input = r.reshape(y, {packed, f(geometry.gdn_value_width())});
-        if (i == 0) definition.probe_ports[1] = y; // Same BF16 payload before its metadata-only out_proj reshape.
-        mixed = r.linear(projection_input, prefix + "linear_attn.out_proj.weight");
-        if (i == 0) definition.probe_ports[2] = mixed;
       } else {
         const auto layer = geometry.attention_slot(i);
         const auto &schema = target_attention_schema(layer);
@@ -2443,7 +2527,9 @@ public:
       definition.append_nodes[draft_bank] = append.key; definition.append_nodes[draft_bank + 1] = append.value;
       prior_append = append.value; has_prior_append = true;
     }
-    auto last = verifies_prefix(role) ? r.copy(normalized_last) :
+    auto last = verifies_prefix(role) ? r.copy(normalized_last) : packed_prefill
+        ? r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+            {normalized_last, definition.last_ids_port}, r.dense_spec(precision.activation_type(), {batch, f(hidden)})) :
         (requests == 1 ? r.copy(r.slice(normalized_last, 0, D(r.last_row), f(1))) :
         r.one(c::Gather{}, {normalized_last, definition.last_ids_port},
             r.dense_spec(precision.activation_type(), {batch, f(hidden)})));
@@ -2542,7 +2628,10 @@ public:
               << " max_operation_proposals=" << compile_options.max_operation_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n';
     compile_options.resource_budget = execution_budget;
-    definition.compiled = take(execution.compile(definition.graph, assembly.constants, assembly.options(compile_options)));
+    auto compiled = execution.compile(definition.graph, assembly.constants, assembly.options(compile_options));
+    if (!compiled && packed_prefill && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
+      return false; // Cold capability only; no execution/device error is a fallback.
+    definition.compiled = take(std::move(compiled));
     const auto storage = definition.compiled.report.total_compiled_storage();
     std::cerr << "compiled text finite family variants=" << definition.compiled.report.exact_variant_count()
               << " compiled_known_bytes=" << storage.known_bytes()
@@ -2592,16 +2681,43 @@ public:
       definition.children.push_back(std::move(child));
     }
     selected = std::move(result);
+    return true;
+  }
+
+  // These capacities are physical carriers. Actual prefill consumption remains
+  // the caller's true input slice and never becomes a padded Session boundary.
+  bool prepare_prefill_family(std::span<const std::size_t> capacities,
+      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+    // This adapter reuses the original attention mirror's true query control.
+    // A graph without that carrier, or a diagnostic graph with different
+    // published boundaries, has no implementation of this packed signature.
+    if (!target_kv_layers || !layer0_probe.empty()) return false;
+    const FamilyKey key(1, GraphRole::kText, 0, completion, sampling_index, true);
+    if (prepare_family(capacities, false, 1, GraphRole::kText, false, completion, sampling_index, true)) return true;
+    families.erase(key);
+    return false;
   }
 
   Family *find_family(std::size_t requests, std::size_t tokens, GraphRole role,
-                      bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+                      bool diagnostic = false, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+                      bool packed_prefill = false) {
     auto &table = diagnostic ? probe_families : families;
-    const auto primary = table.find({requests, role, tokens, completion, sampling_index});
+    const auto primary = table.find({requests, role, tokens, completion, sampling_index, packed_prefill});
     if (primary != table.end() && primary->second &&
         std::ranges::find(primary->second->chunks, tokens) != primary->second->chunks.end()) return primary->second.get();
+    if (packed_prefill) return nullptr;
     const auto exact = table.find(FamilyKey::exact(requests, role, tokens, completion, sampling_index));
     return exact == table.end() ? nullptr : exact->second.get();
+  }
+
+  std::size_t prefill_capacity(std::size_t rows, TextCompletion completion, std::size_t sampling_index) const {
+    if (!rows || !layer0_probe.empty()) return 0;
+    const auto found = families.find({1, GraphRole::kText, 0, completion, sampling_index, true});
+    if (found == families.end() || !found->second) return 0;
+    std::size_t selected = 0;
+    for (const auto physical : found->second->chunks)
+      if (physical >= rows && (!selected || physical < selected)) selected = physical;
+    return selected;
   }
 
   // A generated-token checkpoint can expose a suffix whose length was unknown
@@ -3240,13 +3356,13 @@ public:
   // Finite wave/suffix plans can count many possible restores without
   // materializing repeated host call tapes or execution carriers.
   void plan_replay_uses(std::size_t tokens, std::size_t requests, std::size_t count,
-                        GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+                        GraphRole role = GraphRole::kText, TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+                        bool packed_prefill = false) {
     if (!phases.empty() || !probe_phases.empty() || carrier_borrowed)
       throw std::runtime_error("execution use plans must precede carrier preparation");
-    if (!families.contains({requests, role, tokens, completion, sampling_index}) ||
-        std::find(families.at({requests, role, tokens, completion, sampling_index})->chunks.begin(), families.at({requests, role, tokens, completion, sampling_index})->chunks.end(), tokens) == families.at({requests, role, tokens, completion, sampling_index})->chunks.end())
+    if (!find_family(requests, tokens, role, false, completion, sampling_index, packed_prefill))
       throw std::runtime_error("execution use shape is outside the shared finite family");
-    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion, sampling_index}]) uses = cache::add(uses, count);
+    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion, sampling_index, false, packed_prefill}]) uses = cache::add(uses, count);
   }
 
   std::shared_ptr<Session> create_session(std::span<const std::size_t> planned_chunks,
@@ -3263,12 +3379,17 @@ public:
     if (resample_frontier) validate_logits_inputs(selected_sampler, logits, vocabulary);
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
+    const auto prepared_rows = [&](std::size_t rows) {
+      return find_family(1, rows, role, false, completion, sampling_index) ||
+          (role == GraphRole::kText && prefill_capacity(rows, completion, sampling_index));
+    };
     for (const auto rows : planned_chunks)
-      if (!find_family(1, rows, role, false, completion, sampling_index)) admit_exact_shape(rows, 1, role, completion, sampling_index);
+      if (!prepared_rows(rows)) admit_exact_shape(rows, 1, role, completion, sampling_index);
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("session must use its complete target/draft cache family");
-    if ((planned_chunks.empty() ? !families.contains({1, role, 0, completion, sampling_index}) : !find_family(1, initial_rows, role, false, completion, sampling_index)) ||
+    if ((planned_chunks.empty() ? (!families.contains({1, role, 0, completion, sampling_index}) &&
+            !families.contains({1, role, 0, completion, sampling_index, true})) : !prepared_rows(initial_rows)) ||
         (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion, sampling_index})))
       throw std::runtime_error("session requires the shared text families first");
     if (planned_chunks.empty() && !prefix) throw std::runtime_error("session requires an ordered call plan or a complete prefix");
@@ -3289,7 +3410,9 @@ public:
           throw std::runtime_error("session chunk is outside the shared finite family");
       }
       total += tokens;
-      if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}))
+      const auto physical = role == GraphRole::kText ? prefill_capacity(tokens, completion, sampling_index) : 0;
+      if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}) &&
+          (!physical || !planned_slot_uses.contains({1, physical, role, completion, sampling_index, false, true})))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
@@ -3401,7 +3524,8 @@ public:
       check(io.sampling_valid.bind(run));
       if (drafts_token(definition.role)) check(io.sampling_accept.bind(run));
     }
-    if (definition.requests != 1 && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, io.last_ids.read()));
+    if ((definition.requests != 1 || definition.packed_prefill) && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, io.last_ids.read()));
+    if (definition.packed_prefill) check(run.bind(phase.history_select_port, io.history_select.read()));
     if (io.logits.caller_owned()) check(run.bind(phase.logits_port, io.logits.view()));
     if (definition.completion == TextCompletion::kEmitNext) check(io.next_id.bind(run));
     if (io.final_hidden.caller_owned()) check(run.bind(phase.hidden_port, io.final_hidden.view()));
@@ -3425,11 +3549,11 @@ public:
 
   Phase &prepare_child(std::size_t tokens, bool diagnostic, std::size_t requests = 1, GraphRole role = GraphRole::kText,
                        TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
-                       bool imported_sources = false) {
+                       bool imported_sources = false, bool packed_prefill = false) {
     auto &cache = diagnostic ? probe_phases : phases;
-    const auto found = cache.find({requests, tokens, role, completion, sampling_index, imported_sources});
+    const auto found = cache.find({requests, tokens, role, completion, sampling_index, imported_sources, packed_prefill});
     if (found != cache.end()) return *found->second;
-    auto *selected = find_family(requests, tokens, role, diagnostic, completion, sampling_index);
+    auto *selected = find_family(requests, tokens, role, diagnostic, completion, sampling_index, packed_prefill);
     if (!selected) throw std::runtime_error("text finite family has not been prepared");
     auto &definition = *selected;
     const auto &selected_sampler = definition.sampling->configuration;
@@ -3449,7 +3573,7 @@ public:
     phase.query_rows = tokens;
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
     if (imported_sources) for (auto &source : phase.state_sources) source.mode = g::slots::SourceMode::kImported;
-    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion, sampling_index});
+    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion, sampling_index, false, packed_prefill});
     for (std::size_t slot = 0; slot < phase.slot_count; ++slot) {
       phase.replay_modes[slot] = imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
           replay_policy, phase.planned_slot_uses[slot], selected_sampler.enabled);
@@ -3523,11 +3647,15 @@ public:
           io.draft_ids.resize(requests);
         }
       }
-      if (requests != 1 && !verifies_prefix(role)) {
+      if ((requests != 1 || definition.packed_prefill) && !verifies_prefix(role)) {
         io.last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
         std::vector<std::int32_t> last_ids(requests);
         for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
         io.last_ids.write<std::int32_t>(last_ids);
+      }
+      if (definition.packed_prefill) {
+        io.history_select = caller_tensor(execution.device(), dense(Type::kInt32, {geometry.conv_kernel - 1}));
+        io.history_select_values.resize(static_cast<std::size_t>(geometry.conv_kernel - 1));
       }
       if (completion == TextCompletion::kEmitNext) {
         io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
@@ -3596,7 +3724,7 @@ public:
               << " compiled_unknown_providers=" << storage.unknown_provider_count
               << " child_prepare_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
     input_scratch.prepare(phase);
-    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role, completion, sampling_index, imported_sources}, std::move(result)); return *address;
+    auto *address = result.get(); cache.emplace(ExecutionShape{requests, tokens, role, completion, sampling_index, imported_sources, packed_prefill}, std::move(result)); return *address;
   }
 
   // An engine with a known ordered request can explicitly prepare its actual
@@ -3604,20 +3732,25 @@ public:
   // Candidate prefix suffixes remain unmaterialized until a hit selects one.
   void prepare_execution(std::span<const std::size_t> calls,
                          std::size_t requests = 1, GraphRole role = GraphRole::kText,
-                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+                          TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0, bool packed_prefill = false) {
     if (carrier_borrowed || active_step)
       throw std::runtime_error("cannot cold-prepare carriers during an active execution loan");
     for (const auto tokens : calls) {
       // Explicit idle warmup can cover a suffix not present in the initial
       // schedule. Use the same bounded admission and original family owners
       // as execution, before borrowing a Session or accepting native work.
-      if (state_storage_prepared && (role == GraphRole::kText || is_mtp_prefill(role)) &&
+      if (!packed_prefill && state_storage_prepared && (role == GraphRole::kText || is_mtp_prefill(role)) &&
           !find_family(requests, tokens, role, false, completion, sampling_index))
         admit_exact_shape(tokens, requests, role, completion, sampling_index);
       if (!layer0_probe.empty()) prepare_child(tokens, false, requests, role, completion, sampling_index);
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion, sampling_index);
+      auto &phase = prepare_child(tokens, !layer0_probe.empty(), requests, role, completion, sampling_index, false, packed_prefill);
       initialize_slot(phase, slot_index);
     }
+  }
+
+  void prepare_prefill_execution(std::span<const std::size_t> capacities,
+      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+    prepare_execution(capacities, 1, GraphRole::kText, completion, sampling_index, true);
   }
 
   void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0) {
@@ -3636,7 +3769,7 @@ public:
     for (const auto &[shape, uses] : planned_slot_uses) {
       if (std::ranges::none_of(uses, [](auto planned_uses) { return planned_uses != 0; })) continue;
       const std::array rows{shape.tokens};
-      prepare_execution(rows, shape.requests, shape.role, shape.completion, shape.sampling_index);
+      prepare_execution(rows, shape.requests, shape.role, shape.completion, shape.sampling_index, shape.packed_prefill);
       ++count;
     }
     return count;
@@ -3976,11 +4109,20 @@ public:
     return true;
   }
 
+  void prepare_prefill_evaluations(std::span<const EvaluationRequest> requests,
+      inference::PreparationObservation *preparation = nullptr, GraphRole role = GraphRole::kText,
+      TextCompletion completion = TextCompletion::kEmitNext) {
+    const auto physical = requests.size() == 1 && role == GraphRole::kText && requests[0].session
+        ? prefill_capacity(requests[0].ids.size(), completion, requests[0].session->sampling_configuration().index) : 0;
+    prepare_evaluations(requests, preparation, role, completion, {}, 0, physical);
+  }
+
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
                            inference::PreparationObservation *preparation = nullptr,
                            GraphRole role = GraphRole::kText,
                            TextCompletion completion = TextCompletion::kEmitNext,
-                           std::shared_ptr<StepSources> incoming = {}, std::size_t physical_slot = 0) {
+                           std::shared_ptr<StepSources> incoming = {}, std::size_t physical_slot = 0,
+                           std::size_t physical_prefill_rows = 0) {
     const auto predecessor = incoming && active_step ? active_step : std::shared_ptr<StepState>{};
     const bool relay = bool(incoming);
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
@@ -4006,6 +4148,11 @@ public:
       throw std::runtime_error("nondefault sampling is ordinary Text only");
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
     const auto tokens = drafts_token(role) ? 2u : supplied_tokens;
+    const bool packed_prefill = physical_prefill_rows != 0;
+    const auto physical_tokens = packed_prefill ? physical_prefill_rows : tokens;
+    if (packed_prefill && (relay || requests.size() != 1 || role != GraphRole::kText ||
+        physical_tokens < tokens || !find_family(1, physical_tokens, role, false, completion, sampling_index, true)))
+      throw std::runtime_error("prefill extent is outside its original cold packed family");
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("evaluation must use the configured complete target/draft state");
@@ -4056,7 +4203,7 @@ public:
     // Charge that real synchronous work to this step, before the carrier loan.
     const auto step_start = Clock::now();
     double shape_admission_seconds = 0;
-    if ((role == GraphRole::kText || is_mtp_prefill(role)) &&
+    if (!packed_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) &&
         !find_family(requests.size(), tokens, role, false, completion, sampling_index)) {
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
@@ -4093,7 +4240,7 @@ public:
         if (found == phases.end() || !found->second->slots[slot].valid())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
-      auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay);
+      auto &phase = prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packed_prefill);
       auto &run = phase.slots[slot];
       auto &io = phase.io[slot];
       // A rejected successor never owns or clears its predecessor's run.
@@ -4103,6 +4250,12 @@ public:
       step.state_transactions = &phase.state_transactions[slot];
       step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
+      if (packed_prefill) {
+        // The prior step has really retired. Release this exact mirror alias
+        // before batch::prepare tries to refresh its original metadata writer.
+        const std::array offset_input{phase.sequence_offsets_port};
+        check(run.unbind(offset_input));
+      }
       auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;
       packed_ids.clear(); positions.clear();
       for (std::size_t j = 0; j < width; ++j) {
@@ -4115,7 +4268,18 @@ public:
         if (!phase.logits_bias_ports.empty()) check(run.bind(phase.logits_bias_ports[j], requests[j].logits.bias.description, requests[j].logits.bias.lease));
         if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
       }
-      if (!relay) io.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
+      if (packed_prefill) {
+        packed_ids.assign(requests[0].ids.begin(), requests[0].ids.end());
+        packed_ids.resize(physical_tokens, 0); // Fully initialized legal scratch rows only.
+        positions.resize(physical_tokens, 0);
+        const std::array<std::int32_t, 1> last{static_cast<std::int32_t>(tokens - 1)};
+        io.last_ids.write<std::int32_t>(last);
+        for (std::size_t i = 0; i < io.history_select_values.size(); ++i)
+          io.history_select_values[i] = static_cast<std::int32_t>(tokens + i);
+        io.history_select.write<std::int32_t>(io.history_select_values);
+      }
+      if (!relay) io.tokens.write<std::int32_t>(packed_prefill || width != 1
+          ? std::span<const std::int32_t>(packed_ids) : requests[0].ids);
       if (ahead) {
         io.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
         decode_ahead->positions.clear();
@@ -4312,6 +4476,10 @@ public:
         check(g::detail::bind_outputs(run, input.bindings)); input.bound = true;
       }
       check(transactions.bind(run, phase.state_graph()));
+      if (packed_prefill) {
+        auto offsets = take(g::batch::query_offsets(run, phase.attention_nodes.front()));
+        check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {2}), offsets));
+      }
       const auto batch_end = Clock::now();
       if (relay) check(g::detail::prepare_outputs(run, step.incoming->bindings, queues));
       else check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
@@ -4762,6 +4930,11 @@ public:
       for (auto &member : step.members) if (member.commit_record) {
         member.commit_record->committed = true;
         ++member.commit_ledger->committed_count;
+      }
+      if (phase.family->packed_prefill) {
+        ++packed_prefill_calls;
+        packed_prefill_active_rows = cache::add(packed_prefill_active_rows, tokens);
+        packed_prefill_physical_rows = cache::add(packed_prefill_physical_rows, phase.query_rows);
       }
       return_readback.admission = std::exchange(step.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
@@ -5284,7 +5457,7 @@ std::size_t generation_record_capacity(std::span<const inference::GenerationTurn
   for (std::size_t turn = 0; turn < turns.size(); ++turn) {
     const auto rows = cache::add(turns[turn].prompt.size(), turn ? 1u : 0u);
     if (!rows || !turns[turn].max_outputs) throw std::runtime_error("generation requires nonempty turn input and positive quota");
-    const auto chunks = turn == 0 && imported_records ? prefill.parts_bound(rows) : prefill.parts(rows);
+    const auto chunks = prefill.parts(rows);
     count = cache::add(count, cache::add(chunks, turns[turn].max_outputs - 1));
   }
   return count;
@@ -5602,7 +5775,11 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
       prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner, 0,
           completion, source.input_begin, state_rebuild ? false : source.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
-      model.prepare_evaluation(*session, ids, nullptr, role, completion, &actual.stop_policy()); model.submit_evaluation(*session);
+      if (!source.generation && role == GraphRole::kText) {
+        const std::array input{EvaluationRequest{session, ids, &actual.stop_policy()}};
+        model.prepare_prefill_evaluations(input, nullptr, role, completion);
+      } else model.prepare_evaluation(*session, ids, nullptr, role, completion, &actual.stop_policy());
+      model.submit_evaluation(*session);
       (void)qwen35::finish_evaluation(model, *session, "episode" + std::to_string(i), trace, trace_states,
           nullptr, nullptr, nullptr, nullptr, {}, &actual);
       observe();
@@ -6524,7 +6701,9 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     const auto &call = calls[j];
     observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
   };
-  model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion); model.submit_evaluations();
+  if (!generation) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+  else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+  model.submit_evaluations();
   const auto input_rows = model.active_step->input_tokens;
   const auto episode_start = model.active_step->step_start;
   bool prepared_ahead = false;
@@ -7005,6 +7184,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   using PromptKey = std::pair<GraphRole, TextCompletion>;
   std::map<PromptKey, std::map<std::size_t, std::size_t>> prompt_uses;
   std::map<PromptKey, std::map<std::size_t, std::vector<std::size_t>>> support;
+  std::map<PromptKey, std::map<std::size_t, std::size_t>> carrier_uses;
+  std::map<PromptKey, std::map<std::size_t, std::vector<std::size_t>>> carrier_support;
   const auto note_prompt = [&](GraphRole role, std::size_t tokens, std::size_t member,
                                TextCompletion completion = TextCompletion::kEmitNext, bool possible = false) {
     const PromptKey key{role, completion};
@@ -7013,11 +7194,19 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     auto &members = support[key][tokens];
     if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
   };
+  const auto note_carrier = [&](std::size_t rows, std::size_t member, TextCompletion completion, bool possible = false) {
+    const PromptKey key{GraphRole::kText, completion};
+    auto &count = carrier_uses[key][rows];
+    count = possible ? (std::max)(count, std::size_t{1}) : cache::add(count, 1);
+    auto &members = carrier_support[key][rows];
+    if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
+  };
   const auto note_prefill = [&](std::size_t tokens, std::size_t member, bool lag = false) {
     for (std::size_t consumed = 0; consumed < tokens;) {
       const auto part = prefill.next(tokens, consumed);
       const auto completion = part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
       note_prompt(prompt_role(part.rows, lag), part.rows, member, completion);
+      if constexpr (!mtp) note_carrier((std::min)(tokens, max_prefill_rows), member, completion);
       consumed = part.begin + part.rows;
     }
   };
@@ -7034,9 +7223,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       // A generated checkpoint may match inside this prompt at any token, not
       // only at another request's original prompt boundary. Register its real
       // finite tail shapes and potential batch members before any carrier exists.
-      prefill.for_each_shape(requests[i].prompt.size(), [&](std::size_t rows, bool complete) {
-        note_prompt(GraphRole::kText, rows, i,
-            complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
+      prefill.for_each_capacity(requests[i].prompt.size(), [&](std::size_t rows, bool complete) {
+        note_carrier(rows, i, complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
       });
     }
     for (std::size_t turn = 1; turn < requests[i].progress.turns().size(); ++turn) {
@@ -7085,9 +7273,30 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       const auto [role, completion] = key;
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
-      model.prepare_family(chunks, false, width, role, false, completion, sampling_index);
-      for (const auto &[tokens, uses] : entries) model.plan_replay_uses(tokens, width,
-          cache::add(uses, width == 1 ? restore_bound : 0), role, completion, sampling_index);
+      bool packed = false;
+      if constexpr (!mtp) if (width == 1 && role == GraphRole::kText && model.layer0_probe.empty()) {
+        std::vector<std::size_t> capacities;
+        const auto controls = carrier_support.find(key);
+        if (controls != carrier_support.end()) for (const auto &[rows, members] : controls->second)
+          if (std::ranges::any_of(members, [&](auto member) { return requests[member].sampling_index == sampling_index; }))
+            capacities.push_back(rows);
+        if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index);
+        if (packed) {
+          for (const auto rows : capacities) model.plan_replay_uses(rows, 1,
+              cache::add(carrier_uses.at(key).at(rows), restore_bound), role, completion, sampling_index, true);
+          // Decode still has its original T1 mathematics and source ports.
+          if (completion == TextCompletion::kEmitNext && decode_bound && policy_decoding_requests) {
+            const std::array decode{std::size_t{1}};
+            model.prepare_family(decode, false, 1, role, false, completion, sampling_index);
+            model.plan_replay_uses(1, 1, cache::add(decode_bound, restore_bound), role, completion, sampling_index);
+          }
+        }
+      }
+      if (!packed) {
+        model.prepare_family(chunks, false, width, role, false, completion, sampling_index);
+        for (const auto &[tokens, uses] : entries) model.plan_replay_uses(tokens, width,
+            cache::add(uses, width == 1 ? restore_bound : 0), role, completion, sampling_index);
+      }
     }
   }
   }
@@ -7102,7 +7311,11 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto first_part = prefill.next(requests.front().prompt.size());
   const std::array first_prefill{first_part.rows};
   const auto first_completion = first_part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-  model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]), first_completion, requests.front().sampling_index);
+  const auto first_capacity = !mtp ? model.prefill_capacity(first_prefill[0], first_completion, requests.front().sampling_index) : 0;
+  if (first_capacity) {
+    const std::array carrier{first_capacity};
+    model.prepare_prefill_execution(carrier, first_completion, requests.front().sampling_index);
+  } else model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]), first_completion, requests.front().sampling_index);
   if constexpr (!mtp) if (decode_bound) {
     const std::array decode{std::size_t{1}};
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i)

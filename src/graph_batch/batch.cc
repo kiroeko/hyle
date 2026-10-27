@@ -108,6 +108,19 @@ const gd::RegionCaptureBindingsVTable capture_bindings{
         s.program.schema().mla_layout()==r.mla && s.queue.is_open() &&
         s.token.generation()==s.layout.generation() && !s.native.in_flight();
   }};
+Result<gd::RegionReadyControl> prepared_metadata(const Region&r,const Slot&s)noexcept{
+  if(s.region!=&r || !s.native.valid() || !s.program.valid() || !s.token.valid() ||
+      !s.layout.valid() || !s.program.schema().owns(s.layout) ||
+      s.program.schema().capacity()!=r.capacity || s.program.schema().mla_layout()!=r.mla ||
+      s.token.generation()!=s.layout.generation() || !s.queue.is_open() || s.native.in_flight())
+    return std::unexpected(Status::FailedPrecondition("owned batch metadata has no current prepared slot"));
+  HYLE_ASSIGN_OR_RETURN(auto ready,cd::BatchGraphAccess::metadata(s.native));
+  HYLE_ASSIGN_OR_RETURN(auto description,s.layout.origin_schema().metadata_description());
+  HYLE_ASSIGN_OR_RETURN(auto tensor,ready.tensor(description));
+  if(tensor.storage().resource()!=r.resource)
+    return std::unexpected(Status::InvalidArgument("owned batch metadata differs from its selected native resource"));
+  return gd::RegionReadyControl{tensor,std::move(ready)};
+}
 const gd::RegionReadyControlVTable ready_controls{
   [](const ProviderRegionPrepared&prepared,void*invocation,
       std::uint32_t ordinal)noexcept->Result<gd::RegionReadyControl>{
@@ -116,17 +129,7 @@ const gd::RegionReadyControlVTable ready_controls{
     const auto&r=*static_cast<const Region*>(prepared.state);const auto&s=*static_cast<const Slot*>(invocation);
     if(r.metadata.valid() || !r.initial_layout.valid())
       return std::unexpected(Status::Unimplemented("explicit batch metadata remains an owned Graph input"));
-    if(s.region!=&r || !s.native.valid() || !s.program.valid() || !s.token.valid() ||
-        !s.layout.valid() || !s.program.schema().owns(s.layout) ||
-        s.program.schema().capacity()!=r.capacity || s.program.schema().mla_layout()!=r.mla ||
-        s.token.generation()!=s.layout.generation() || !s.queue.is_open() || s.native.in_flight())
-      return std::unexpected(Status::FailedPrecondition("owned batch metadata has no current prepared slot"));
-    HYLE_ASSIGN_OR_RETURN(auto ready,cd::BatchGraphAccess::metadata(s.native));
-    HYLE_ASSIGN_OR_RETURN(auto description,s.layout.origin_schema().metadata_description());
-    HYLE_ASSIGN_OR_RETURN(auto tensor,ready.tensor(description));
-    if(tensor.storage().resource()!=r.resource)
-      return std::unexpected(Status::InvalidArgument("owned batch metadata differs from its selected native resource"));
-    return gd::RegionReadyControl{tensor,std::move(ready)};
+    return prepared_metadata(r,s);
   }};
 const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_region,.alias_support=&alias,.create_invocation=&create_slot,.destroy_invocation=&destroy_slot,.shared_submit=&submit_region,
   .seal_bindings=[](void*prepared,void*invocation)noexcept->Status{
@@ -1145,6 +1148,52 @@ Status prepare(graph::Invocation&invocation,const Graph&graph,std::span<const Qu
 }
 Result<c::BatchPlanReport> report(graph::Invocation&invocation,NodeId node)noexcept{return shared_native_report(invocation,node);}
 Result<c::NativePagedBatchReport> native_report(graph::Invocation&invocation,NodeId node)noexcept{return detail::native_paged_report(invocation,node);}
+Result<c::ReadLease> query_offsets(graph::Invocation&invocation,NodeId node)noexcept{
+  struct Call{Invocation&invocation;NodeId node;c::ReadLease metadata;c::BatchLayoutVersion layout;};
+  Call call{invocation,node,{},{}};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,node,
+      [](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    auto&call=*static_cast<Call*>(opaque);
+    if(view.prepared_vtable==&region_table){
+      const auto&r=*static_cast<const Region*>(view.prepared);
+      const auto&s=*static_cast<const Slot*>(view.invocation);
+      if(r.node!=call.node)return Status::InvalidArgument("query offsets name another selected batch node");
+      HYLE_ASSIGN_OR_RETURN(auto metadata,prepared_metadata(r,s));
+      call.metadata=std::move(metadata.read);
+      call.layout=s.layout;return Status::Ok();
+    }
+    // Delegated capacity nodes have an ordinary owned configuration mirror.
+    // Owned native page-table-only programs have no query-offset lease: do
+    // not manufacture one from host layout bytes or their unrelated page IDs.
+    HYLE_ASSIGN_OR_RETURN(auto*p,resources(call.invocation));
+    if(!p)return Status::FailedPrecondition("query offsets require prepared batch resources");
+    const auto found=std::find_if(p->native_regions.begin(),p->native_regions.end(),
+        [&](const auto&region){return region.node==call.node;});
+    if(found==p->native_regions.end() || found->implementation!=view.prepared_vtable ||
+        found->prepared!=view.prepared || found->invocation!=view.invocation)
+      return Status::Unimplemented("selected region has no prepared batch query-offset carrier");
+    HYLE_ASSIGN_OR_RETURN(auto facts,detail::inspect_native_batch_region(*found));
+    if(!facts.layout.valid())return Status::FailedPrecondition("native batch query offsets are not prepared");
+    if(!facts.metadata_input.valid())
+      return Status::Unimplemented("owned native batch has no ready query-offset carrier");
+    const auto metadata=std::find_if(p->metadata.begin(),p->metadata.end(),
+        [&](const auto&entry){return entry.input==facts.metadata_input;});
+    HYLE_ASSIGN_OR_RETURN(auto description,facts.layout.origin_schema().metadata_description());
+    if(metadata==p->metadata.end() || !metadata->bound || metadata->layout!=facts.layout ||
+        metadata->description!=description || !metadata->ready.valid())
+      return Status::FailedPrecondition("native query offsets have no current owned metadata guard");
+    HYLE_ASSIGN_OR_RETURN(auto tensor,metadata->ready.tensor(description));
+    HYLE_ASSIGN_OR_RETURN(auto resource,gd::RegionAccess::input_resource(call.invocation.executable(),facts.metadata_input));
+    if(tensor.storage().resource()!=resource)
+      return Status::InvalidArgument("native query-offset mirror differs from its actual input resource");
+    call.metadata=metadata->ready;call.layout=facts.layout;return Status::Ok();
+  },&call));
+  const auto count=std::uint64_t(call.layout.facts().requests)+1;
+  if(count>SIZE_MAX/sizeof(std::int32_t))
+    return std::unexpected(Status::OutOfRange("query-offset extent overflows"));
+  return call.metadata.subview(call.layout.origin_schema().metadata_offsets().query_indptr,
+      std::size_t(count)*sizeof(std::int32_t));
+}
 Status prepare_replay(graph::Invocation&invocation,std::span<const QueueBinding>queues)noexcept{return capture_native(invocation,queues);}
 Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId bank,
     PagedAppendSource&source,c::BatchLayoutVersion layout)noexcept{
