@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <vector>
+#include "paged_append_active_rows_case.h"
 #if !defined(HYLE_APPEND_STANDALONE)
 #include <gtest/gtest.h>
 #endif
@@ -709,6 +710,13 @@ Status exclusive_tail(){
   HYLE_RETURN_IF_ERROR(check(actual[i]==word(i<64?.25f:.75f,true),"consumed append damaged the original COW prefix or newly written row"));
  return Status::Ok();
 }
+[[maybe_unused]] Status active_row_carrier(){
+ const std::array providers{c::ProviderBinding{c::ggml_cpu::provider(),0}};
+ HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(c::cpu::device(),{.providers=providers}));
+ HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
+ struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};
+ return hyle_test::paged_append_active::matrix(context,hyle::mem::system_resource(),hyle::mem::system_resource(),queue,false);
+}
 Status all(){HYLE_RETURN_IF_ERROR(run(false,false,false));HYLE_RETURN_IF_ERROR(run(true,false,false));HYLE_RETURN_IF_ERROR(run(true,true,false));HYLE_RETURN_IF_ERROR(run(true,false,true));HYLE_RETURN_IF_ERROR(run(true,false,false,true));return symbolic_rows();}
 }
 #if defined(HYLE_APPEND_STANDALONE)
@@ -718,4 +726,5 @@ TEST(GraphPagedAppend,OriginalPagesAndSameGraphProof){const auto result=all();EX
 TEST(GraphPagedAppend,ExclusiveTailRollbackAndBoundedSnapshots){const auto result=exclusive_tail();EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,WriterOnlyEffectsKeepOriginalPermissionsAndWholeOutcome){auto result=run(true,false,false,false,true);if(result.ok())result=run(true,false,true,false,true);EXPECT_TRUE(result.ok())<<result.message();}
 TEST(GraphPagedAppend,ConsumedCowTransactionReleasesOnlyItsRetiredInputs){auto result=consumed_cow_transaction(false);if(result.ok())result=consumed_cow_transaction(true);EXPECT_TRUE(result.ok())<<result.message();}
+TEST(GraphPagedAppend,ActiveRowsUseOnlyTheInitializedCarrierPrefix){const auto result=active_row_carrier();EXPECT_TRUE(result.ok())<<result.message();}
 #endif

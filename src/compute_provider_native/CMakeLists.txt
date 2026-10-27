@@ -20,6 +20,7 @@ hyle_add_module(compute_provider_native SOURCES
   reduction.cc
   row_cache.cc
   sampling.cc
+  sequence.cc
   transform.cc
   transformer.cc)
 # Current complete-candidate performance evidence is recipe/software-specific.

@@ -21,6 +21,7 @@
 #include "../compute_batch/row_cache_map.h"
 #include "../compute_batch/row_cache_planning.h"
 #include "hyle/compute/sampling_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
 #include "hyle/simd/math.h"
@@ -453,6 +454,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kCustom: {
+    const bool sequence = operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+                          operation.custom_as<sequence_ops::PackedCausalConv1d>();
     const bool sampling = operation.custom_as<sampling_ops::RandomBits>() ||
                           operation.custom_as<sampling_ops::Categorical>();
     const bool row_cache = operation.custom_as<model_ops::RowCacheEncode>() ||
@@ -470,7 +473,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     const bool blockwise_w4a8 = operation.custom_as<model_ops::BlockwiseW4A8Linear>() ||
         operation.custom_as<model_ops::GroupedBlockwiseW4A8Linear>();
     const bool ct_packed = operation.custom_as<packed::internal::ArtifactPackedLinear>().has_value();
-    Status status = sampling
+    Status status = sequence
+        ? internal::prepare_sequence(operation, inputs, outputs, plan)
+        : sampling
         ? internal::prepare_sampling(operation, inputs, outputs, plan)
         : row_cache
         ? internal::prepare_row_cache(operation, inputs, outputs, plan)
@@ -579,7 +584,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     work_per_unit = plan.parameters[1];
     break;
   case OperationKind::kCustom:
-    if (operation.custom_as<sampling_ops::RandomBits>() ||
+    if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+        operation.custom_as<sequence_ops::PackedCausalConv1d>() ||
+        operation.custom_as<sampling_ops::RandomBits>() ||
         operation.custom_as<sampling_ops::Categorical>())
       work_per_unit = plan.parameters[1];
     else if (operation.custom_as<model_ops::Nvfp4Linear>() ||

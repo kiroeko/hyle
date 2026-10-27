@@ -1,0 +1,149 @@
+{
+  "schema": "hyle.correctness.v1",
+  "date": "2026-10-28",
+  "status": "PASS_ACROSS_RECORDED_IMAGES_WITH_FAILURES_PRESERVED",
+  "scope": "Finite public packed GDN/causal-conv and active-prefix PagedAppend on Windows CPU/CUDA",
+  "outcome": {
+    "successful_unique_cases": 15,
+    "across_distinct_actual_images": true,
+    "single_image_all_fifteen": false,
+    "exact_attribution_member": ".scratch/inference-packed-sequence-20261028/package-coverage.json"
+  },
+  "builds": {
+    "actual": {
+      "CXX": 14,
+      "NVCC": 1,
+      "links": 4,
+      "component_processes": 4,
+      "model_processes": 0,
+      "SDK_builds": 0,
+      "downloads": 0
+    },
+    "initial": {
+      "CXX": 10,
+      "NVCC": 1,
+      "link": 1
+    },
+    "product_TUs": 7,
+    "test_only_followup_TUs": 4,
+    "product_changes_during_test_corrections": 0,
+    "inputs": {
+      "baseline": 229,
+      "actual_each_image": 236
+    }
+  },
+  "final_combined_summary": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-sequence-append-fix-20261028\\summary-1793127019829826100.json",
+    "bytes": 8163,
+    "sha256": "30e1b4997263bfaebaa481b9e2fbbc075ffbc2237c19aa66534fe49309b82206"
+  },
+  "attempts": [
+    {
+      "name": "inference-packed-sequence-20261028",
+      "image_sha256": "194e9e732a32760b89a38897ec557035243f130d695e9b04610c06cf2d18223a",
+      "pid": 53860,
+      "exit": 1,
+      "counts": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 12,
+        "not_completed": 0
+      }
+    },
+    {
+      "name": "inference-packed-sequence-refinement-20261028",
+      "image_sha256": "18917a0de8c816f462d6fec34398a647c02f40b394329a99ed847c27765ab460",
+      "pid": 41004,
+      "exit": 1,
+      "counts": {
+        "passed": 10,
+        "failed": 1,
+        "skipped": 2,
+        "not_completed": 0
+      }
+    },
+    {
+      "name": "inference-packed-sequence-final-20261028",
+      "image_sha256": "30e8041eb57c2a38054efa0d9b451fa4f0f1956b8f35d8445dcd3045e1430b15",
+      "pid": 61620,
+      "exit": 1,
+      "counts": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 1,
+        "not_completed": 0
+      }
+    },
+    {
+      "name": "inference-packed-sequence-append-fix-20261028",
+      "image_sha256": "8fd2d5b4fab479856082e4594b4e1650d322c190f4f0d8ec898a549d893073b8",
+      "pid": 48852,
+      "exit": 0,
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "not_completed": 0
+      }
+    }
+  ],
+  "corrections": [
+    "Initial CPU snapshot fixture incorrectly reused a terminal failed OperationInvocation; recreate from the same prepared operation after actual retirement.",
+    "Refinement Graph fixtures retain terminal failure and recreate Invocation; Conv Graph test then unsafely dereferenced failed writer.view() Result (SEH 0xc0000005).",
+    "Conv test borrows exactly 8B before submission, reads only after true retirement with original writer retained, checks failed view/publish keep original Status, then allocates fresh writers/refills and uses a new Invocation.",
+    "A subsequent CPU append fixture passed invalid empty host_workspace; the one-line wrapper correction uses system_resource. Original failure and skipped CUDA case are retained."
+  ],
+  "helper_failures": "Pure preparation metadata KeyError/failure logs are retained separately; they are not compiler, product or model failures.",
+  "verified": [
+    "Public fixed physical carriers with real I32 packed offsets; finite F32/F16/BF16 GDN and convolution CPU/CUDA reference checks, empty sequences, zero physical rows, exact histories/snapshots and initialized padding.",
+    "CUDA captured offset updates reuse the original native route; invalid whole offsets prevent either math output and guarded external Store writes; post-failure recovery uses fresh execution/writer authority.",
+    "PagedAppend C16/R8 with A1/A3/A8 and B2 actual A4: full row encoding, active source bounds/sum, genuine COW/new-row bytes, padding and original snapshot preservation; CUDA uses real capture."
+  ],
+  "source_identity": {
+    "final_product_snapshots": [
+      {
+        "path": "src\\compute_provider_native\\native_provider.cc",
+        "sha256": "5b2f4eafaf165e0e3e8e1a6a7d05f9041d28959309b7309e1fd1a5cbd1858fe0"
+      },
+      {
+        "path": "src\\compute_provider_native\\sequence.cc",
+        "sha256": "944b7135322617d08a2af0270786ad74a2f948d1ea02126e6720e1df821d34c0"
+      },
+      {
+        "path": "src\\compute_provider_cuda\\cuda_provider.cc",
+        "sha256": "171423a179372f5a672cf35166612b87d588976558c3d5c27ea99ce95f69e465"
+      },
+      {
+        "path": "src\\compute_provider_cuda\\sequence_provider.cc",
+        "sha256": "2385e0c596efc6a7f1b1ec6a2195b2fd70601ed63908f9a75186924efcc78850"
+      },
+      {
+        "path": "src\\compute_backend_cuda\\cuda_device_status.cc",
+        "sha256": "23ba4047629772756d901720b4c82cbb75e73301f011f1829e1b278cf6319b5d"
+      },
+      {
+        "path": "src\\compute_provider_cuda\\sequence_kernel.cu",
+        "sha256": "a821610536436b63f5058cda822c0f06028b62fbccccc931a680c08b4444a7f7"
+      },
+      {
+        "path": "src\\graph_batch\\paged_append.cc",
+        "sha256": "04445b9d89632c33ae03993f0af386c5688f6bb45e499b9ce44a2fe426328811"
+      }
+    ],
+    "all_snapshots_and_actual_dependencies": "ZIP source-freeze.json and compile/*/{compiled,actual-dependencies,dependencies}.json/.d; no SDK payload copy"
+  },
+  "limits": [
+    "Apple/Vulkan configure changes are included as source only: not compiled or device-run.",
+    "No engine varlen wiring, full-model inference, MTP consumer, throughput claim, cross-platform proof, native fault or unknown-retirement injection.",
+    "Finite operator/dtype/geometry coverage only; no claim that every Graph route supports every floating type or arbitrary packed encoding."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-packed-sequence-2026-10-28.zip",
+    "bytes": 591760,
+    "sha256": "3600804c2bc939aec9c42119a86551b9e241ae92b33d6f0dea45adb30f05f6b8",
+    "payload_files": 243,
+    "zip_members": 244,
+    "readback": "Every archived member CRC, byte count and SHA256 verified",
+    "exclusions": "EXE/OBJ/PDB/DLL/LIB/EXP, models, SDK trees and large source indexes"
+  }
+}

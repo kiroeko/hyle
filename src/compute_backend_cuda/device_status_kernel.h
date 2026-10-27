@@ -9,6 +9,7 @@ enum class DeviceStatusCode : unsigned {
   kIndexOutOfRange = 1,
   kIntegerOverflow = 2,
   kInvalidNumericInput = 3,
+  kInvalidSequenceOffsets = 4,
 };
 
 const void *device_status_merge_kernel() noexcept;

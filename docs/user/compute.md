@@ -115,6 +115,7 @@ cuBLAS 接受相同输入类型；混合类型由其它实际支持的 Provider 
 | 索引、top-k | `Gather`、`model_ops::GatherElements`、`Scatter`、`TopK` | 笛卡尔或逐元素索引、checked 边界、重复写语义与临时存储 |
 | 位置与注意力 | `RoPE`、`Softmax`、`ScaledDotProductAttention` | 位置类型、mask、GQA、causal 对齐与数值域 |
 | ragged/paged KV | [批次 attention](batch-attention.md) | 容量与有效区、页身份、更新和发布 |
+| 不同长度序列的递归与卷积 | [sequence_ops.h](../../include/hyle/compute/sequence_ops.h) | packed offsets、逐序列状态与真实输入尾部 |
 | 模型专用片段与状态 | [model_ops.h](../../include/hyle/compute/model_ops.h) | 显式输入状态、原始 gate 与反馈边界 |
 | 一次 CPU callback / 可准备 kernel | `cpu::submit_host` / [自定义执行](#自定义执行接入-direct-与-graph) | callback 不抛异常，kernel 有自己的执行实现 |
 
@@ -134,6 +135,17 @@ Q/K/V、状态与 snapshot count 复用普通 GDN 的数学合同，不限定某
 真实类型、布局、维度和设备限制由所选实现检查，不支持时在准备阶段拒绝。
 调用者显式决定何时以 next state 替换旧状态；后续节点失败不会替应用回滚已写数据。
 MTP 接受前缀时的选择、卷积历史与 KV 联合提交见[状态版本](state-versions.md#mtp-接受前缀并继续计算)。
+
+`sequence_ops::packed_gated_delta_net(K, scale)`接受Q/K `[R,Hk,Dk]`、V `[R,Hv,Dv]`、
+F32 log-decay `[R,Hv,1或Dv]`、beta `[R,Hv,1]`、初态 `[B,Hv,Dv,Dk]`及I32 offsets `[B+1]`。
+offsets从0单调至实际行数A≤R；每个成员仅计算自己的区间，输出V形状不变，[A,R)为正零。
+K=1的空成员逐位保留初态；K>1要求每个实际长度≥K，返回各成员末K个真实状态。
+`sequence_ops::packed_causal_conv1d()`的输入依次为x `[R,C]`、权重 `[C,K]`、
+history `[B,K-1,C]`及相同offsets，输出y及各成员真实输入更新后的history，不读取填充行。
+两者先检查全部offsets再写任何结果，输入不被覆盖；CPU／CUDA原默认路由支持F32／F16／BF16，
+当前CUDA GDN实现的key depth上限为256，其余准备资格仍由实际实现检查。
+失败Invocation退休后须从原prepared对象或executable创建新Invocation，失败writer不能重新发布。
+这是底层数学与Graph能力，尚未接入Qwen引擎的有效长度prefill；[有限检查范围](../evidence/correctness/inference-packed-sequence-2026-10-28.json)不代表其它设备或完整模型结果。
 
 模型专用 MoE、压缩 attention、FP8/FP4 和 MTP 片段仍按真实端口、编码和形状准备，
 不会因模型名相同而继承其它接口的数值或设备支持。常用低精度接入见下文；

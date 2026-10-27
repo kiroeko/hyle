@@ -30,6 +30,10 @@ hyle_add_test(compute_route_cpu NAME sampling_consumer
   SOURCES sampling_consumer.cc DEPS hyle_compute_provider_native hyle_compute_provider_ggml hyle_compute_provider_onednn)
 hyle_stage_runtime(hyle_compute_route_cpu_sampling_consumer_test)
 
+hyle_add_test(compute_route_cpu NAME sequence
+  SOURCES sequence_test.cc DEPS hyle_compute_provider_native)
+hyle_stage_runtime(hyle_compute_route_cpu_sequence_test)
+
 hyle_add_test(compute_route_cpu NAME gguf_nvfp4
   SOURCES gguf_nvfp4_test.cc DEPS hyle_compute_provider_native
   hyle_compute_provider_onednn hyle_compute_provider_ggml)

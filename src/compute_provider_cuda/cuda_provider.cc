@@ -1,6 +1,7 @@
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sampling_ops.h"
+#include "hyle/compute/sequence_ops.h"
 #include "hyle/compute/detail/capture_bindings.h"
 
 #include <algorithm>
@@ -31,6 +32,7 @@
 #include "../compute/operation_cold.h"
 #include "scatter_provider.h"
 #include "sampling_provider.h"
+#include "sequence_provider.h"
 #include "tensor_provider.h"
 
 namespace hyle::compute::cuda_native {
@@ -167,6 +169,9 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
+    if (request.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+        request.operation.custom_as<sequence_ops::PackedCausalConv1d>())
+      return sequence::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::CausalConv1d>())
       return causal_conv::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::Float8BlockQuantize>())
@@ -341,6 +346,8 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
+    if (request.route == sequence::kRoute)
+      return sequence::prepare(state, request, allocator, output);
     if (request.route == causal_conv::kRoute)
       return causal_conv::prepare(state, request, allocator, output);
     if (request.route == float8_quantize::kRoute)
@@ -477,7 +484,8 @@ Status inspect_capture_bindings(const detail::ProviderPrepared &value, bool *pre
   *preserves = native_capture_bindings<Sglang>(value) ||
       normalization::preserves_capture_bindings(value);
   if constexpr (!Sglang)
-    *preserves = *preserves || causal_conv::preserves_capture_bindings(value) ||
+    *preserves = *preserves || sequence::preserves_capture_bindings(value) ||
+        causal_conv::preserves_capture_bindings(value) ||
         tensor::preserves_capture_bindings(value) ||
         concatenation::preserves_capture_bindings(value) ||
         reduction::preserves_capture_bindings(value);

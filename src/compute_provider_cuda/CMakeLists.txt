@@ -15,6 +15,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     reduction_provider.cc reduction_kernel.cu
     concat_provider.cc concat_kernel.cu
     causal_conv_provider.cc causal_conv_kernel.cu
+    sequence_provider.cc sequence_kernel.cu
     scatter_provider.cc scatter_kernel.cu
     row_cache_provider.cc row_cache_kernel.cu
     float8_quantize_provider.cc float8_quantize_kernel.cu

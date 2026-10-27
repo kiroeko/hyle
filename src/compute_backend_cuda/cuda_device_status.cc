@@ -70,6 +70,8 @@ Status completed_device_status(const EventSlot *slot) noexcept {
     return Status::OutOfRange("CUDA integer prefix sum overflows I32");
   case DeviceStatusCode::kInvalidNumericInput:
     return Status::InvalidArgument("CUDA encoder requires finite numeric inputs");
+  case DeviceStatusCode::kInvalidSequenceOffsets:
+    return Status::InvalidArgument("packed sequence offsets or per-sequence snapshot lengths are invalid");
   }
   return Status::Internal("CUDA program returned an unknown device status");
 }

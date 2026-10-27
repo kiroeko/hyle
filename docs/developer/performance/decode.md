@@ -12,6 +12,11 @@
 单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+[有效长度底层检查](../../evidence/correctness/inference-packed-sequence-2026-10-28.json)补齐packed GDN／conv的
+CPU／CUDA三类浮点存储、逐序列状态和原Append A≤R能力。15个有限用例通过，包含原capture下改offset、
+非法offset禁止Store写入及失败后按原合同重建。尚未接入真实prefill，没有新模型进程或速度测量，
+下方完整性能表继续对应各自冻结镜像；不把组件能力换算为提速。
+
 [共同Store事务与公开arena查询](../../evidence/correctness/inference-slot-cohort-2026-10-28.json)已完成本批有限检查：
 普通／MTP与NextN共享原SlotBindings交接，冷期固定计数和布局；NextN复用原Step，失败保留原run／Completion至真实回收。
 4项共同事务和3项页权限组件检查、5个小模型及4个真实模型进程通过；包含CPU／CUDA非法token失败后

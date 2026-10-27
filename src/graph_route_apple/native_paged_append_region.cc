@@ -122,9 +122,10 @@ Status configure(void *prepared, void *invocation, const bd::NativeAppendConfigu
   slot.configured = false; slot.bound = false; slot.sealed = false; slot.submitted = false;
   if (!artifact.descriptor.schema.owns(configuration.layout) || !configuration.capacity.valid() ||
       configuration.capacity.storage().resource() != artifact.resource ||
-      configuration.layout.facts().query_rows != artifact.query_rows ||
+      !configuration.layout.facts().query_rows || configuration.layout.facts().query_rows > artifact.query_rows ||
       configuration.ranges.size() > artifact.range_capacity)
     return Status::InvalidArgument("Apple append layout/capacity/range geometry differs");
+  const auto active_bytes = std::size_t(configuration.layout.facts().query_rows) * artifact.row_bytes;
   std::size_t copied = 0, new_bytes = 0;
   const auto capacity = configuration.capacity.storage();
   for (std::size_t index = 0; index < configuration.ranges.size(); ++index) {
@@ -144,8 +145,8 @@ Status configure(void *prepared, void *invocation, const bd::NativeAppendConfigu
       if (overlaps(physical.physical, other.physical)) return Status::InvalidArgument("Apple append dirty ranges overlap");
     }
     if (range.from_rows) {
-      if (range.source_offset > artifact.input_bytes || range.bytes > artifact.input_bytes - range.source_offset ||
-          range.bytes > artifact.input_bytes - new_bytes)
+      if (range.source_offset % artifact.row_bytes || range.source_offset != new_bytes ||
+          range.source_offset > active_bytes || range.bytes > active_bytes - range.source_offset)
         return Status::OutOfRange("Apple append new range exceeds packed rows");
       for (std::size_t prior = 0; prior < index; ++prior) if (configuration.ranges[prior].from_rows) {
         const auto &other = configuration.ranges[prior];
@@ -158,7 +159,7 @@ Status configure(void *prepared, void *invocation, const bd::NativeAppendConfigu
       return Status::InvalidArgument("Apple append inherited prefix differs from its exact bytes");
     }
   }
-  if (new_bytes != artifact.input_bytes) return Status::InvalidArgument("Apple append does not consume exactly its new rows");
+  if (new_bytes != active_bytes) return Status::InvalidArgument("Apple append does not consume exactly its active rows");
   try {
     slot.ranges.assign(configuration.ranges.begin(), configuration.ranges.end());
     slot.copies.resize(slot.ranges.size());

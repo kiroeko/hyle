@@ -224,6 +224,9 @@ Status prepare_indexing(Operation operation, std::span<const TensorDesc> inputs,
                         NativePlan &plan) noexcept;
 bool inspect_indexing_access(const NativePlan &,
                              detail::OperationPreparedAccess &) noexcept;
+Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
+                         std::span<const TensorDesc> outputs,
+                         NativePlan &plan) noexcept;
 Status prepare_transformer(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,

@@ -374,7 +374,8 @@ _hyle_declare_component(compute_ops
     hyle/compute/low_precision.h
     hyle/compute/operation.h
     hyle/compute/model_ops.h
-    hyle/compute/sampling_ops.h)
+    hyle/compute/sampling_ops.h
+    hyle/compute/sequence_ops.h)
 
 # Explicit CPU execution axis and HYLE reference/optimized operation provider.
 # Their public include paths remain under Compute; factor names are maintenance

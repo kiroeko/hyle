@@ -613,21 +613,33 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 [有限检查](../evidence/correctness/inference-prefill-facts-2026-10-27.json)覆盖四组纯主机边界与原Q2／B2多轮CUDA非时间报告一致，
 不把这一算法抽离记作吞吐提升或其它平台运行结果。
 
-有效长度prefill的下一步设计（尚未实现）采用packed行与同一个I32 `cu_seqlens[B+1]`：
+有效长度prefill的底层数学与Append已实现，真实引擎接线仍未完成。共同合同采用packed行与同一个I32 `cu_seqlens[B+1]`：
 从0单调至实际行数A，满足A≤物理行数R≤冷容量C。GDN只递推各成员自己的区间，
 不读取[A,R)；空序列原样保留初始状态，K个接受前缀要求每个实际长度≥K，
 返回其末K个真实状态，不能取填充后的尾部。Conv的下一history取旧history与真实输入拼接的末尾，
 短输入仍保留必要的旧history。零gate不是通用无操作，不能靠它屏蔽NaN或代替这些语义。
-先补模型无关数学叶，复用原Gather／Store，再让原PagedAppend接纳相同编码／行字节的A≤R：
+模型无关数学叶位于`compute/sequence_ops.h`，CPU／CUDA沿原provider、Queue与Completion执行，
+无新执行器或状态池；原PagedAppend接纳相同编码／行字节的A≤R：
 每个源区间终点≤A、实际新增行数之和等于A，保留原页写权、COW、AppendTicket和真实退休。
-最后由Recipe／PhaseIo共享真实offset权限，按成员有效末行采样；不另造执行器或状态池。
-有限检查将对照逐成员exact执行，核完整递归状态、history和KV，填充放NaN／哨兵，
-并覆盖短序列K2及非法offset拒绝；固定拓扑是否可重放仍由实际native plan和完整tuple决定。
+下一步由Recipe／PhaseIo共享真实offset权限，按成员有效末行采样。
+[15项有限检查](../evidence/correctness/inference-packed-sequence-2026-10-28.json)覆盖CPU／CUDA三类浮点存储、
+独立数学参考、完整状态／history、NaN填充、空序列、K2及非法offset；同地址改长度复用原capture，
+错误后遵守原终端Invocation／writer合同并重新创建，不复活失败权限。原Store受同一Queue错误字保护。
+Append另核两端真实COW、实际A行和旧字节。结果分属四个检查镜像，原测试合同／fixture失败均保留；
+本批未运行整模、TPS或Apple／Vulkan设备检查，固定拓扑仍由原native plan和完整tuple证明。
+真实prefill接线须分开物理R、总有效A及成员长度Li：tokens／positions载体完整初始化R，
+Layout、KV预留、ledger、状态提交与工作量只计Li，末行采样取各真实offset终点−1。
+cuSeq优先由原Batch metadata提供有界、带类型的公开投影，不让引擎理解opaque格式或新增detail接缝；
+下一次metadata更新前必须按原退休合同撤回旧输入guard。
+现Conv计算先Cast F32、最后回activation的舍入点保持不变；持久history仍选择原activation字节，
+不能因新packed入口支持BF16而降低原F32权重，或用往返Cast代替原history。
+普通R1接通后再处理原MTP-prefill真实shift／lag与B2不同Li；纯数学叶先复用原Store，
+不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与
 `layers/attention/linear/gdn_backend.py`，TensorRT-LLM `46d9966b`的
 `_torch/modules/mamba/causal_conv1d.py`与`gdn_mixer.py`；它们将真实offset传给conv／GDN，
-只支持此设计方向，不证明Hyle已有功能或性能收益。
+这些参照说明设计方向，不代替本项目的实际检查或性能依据。
 
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。额外exact容量在初始冷计划结束时按完整键数冻结（至少1），

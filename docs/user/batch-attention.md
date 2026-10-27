@@ -307,6 +307,12 @@ F32使用实际producer行，追加不编码或降精度，也不需要identity 
 [F32有限检查](../evidence/correctness/ordinary-f32-append-2026-10-25.json)覆盖CPU的COW及独占页尾、原值字节和非零attention数值；
 Vulkan本批仅严格host编译，未新增F32原生GPU运行或reader能力。RowCache仍使用独立接口。
 
+追加载体可以有R个物理行，layout只追加实际A行（0<A≤R≤schema容量）。
+完整编码、头维与行字节必须相同，所有新行范围恰好覆盖[0,A)，不读取[A,R)；
+原页写权、COW与退休规则不变。CPU／CUDA的BF16有限检查覆盖R8/A1、A3、A8及双成员A4，
+并核旧快照、目标尾部与拒绝后writer不变；本批Apple／Vulkan configure已调整，但未编译或运行。
+详见[实际行数检查](../evidence/correctness/inference-packed-sequence-2026-10-28.json)。
+
 真实工作退休后先释放公开结果，再用`take_append`取回原事务；只有整图成功才能`ready()`发布新页帧。
 失败不发布，脏页按原writer的退休／`discard()`合同恢复。CPU／CUDA已有普通F16/BF16路径；
 Apple／Vulkan已接原生追加，F16/page16/D64及四输入容量reader的BF16/page16/D256均有本批实际检查。具体reader的dtype／形状仍由所选实现检查。

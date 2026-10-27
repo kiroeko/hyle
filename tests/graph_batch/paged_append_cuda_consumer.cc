@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <span>
 #include <utility>
+#include "paged_append_active_rows_case.h"
 
 #if !defined(HYLE_APPEND_STANDALONE)
 #include <gtest/gtest.h>
@@ -787,6 +788,8 @@ Status all(int profile = 0) {
     return metadata_slot_journey(context, memory, staging.ref(), queue);
   if (profile == 3)
     return exclusive_journey(context, memory, staging.ref(), queue);
+  if (profile == 5)
+    return hyle_test::paged_append_active::matrix(context,memory.ref(),staging.ref(),queue,true);
   return journey(context, memory, staging.ref(), queue, false, true);
 }
 } // namespace
@@ -794,7 +797,7 @@ Status all(int profile = 0) {
 #if defined(HYLE_APPEND_STANDALONE)
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
-  for (int profile = 0; profile < 5; ++profile) {
+  for (int profile = 0; profile < 6; ++profile) {
     const auto result = all(profile);
     if (!result.ok()) {
       char text[1024]{};
@@ -824,6 +827,10 @@ TEST(CudaPagedAppend, ExclusiveTailKeepsBoundedSnapshotsAndCapture) {
 }
 TEST(CudaPagedAppend, TwoRequestFramesComposeAppendAndProject) {
   const auto result = all(4);
+  EXPECT_TRUE(result.ok()) << result.message();
+}
+TEST(CudaPagedAppend, ActiveRowsUseOnlyTheInitializedCarrierPrefix) {
+  const auto result = all(5);
   EXPECT_TRUE(result.ok()) << result.message();
 }
 #endif

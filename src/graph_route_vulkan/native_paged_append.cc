@@ -11,6 +11,7 @@
 
 #include "../compute_route_vulkan/vulkan_copy_internal.h"
 #include "../graph_batch/native_append_regions.h"
+#include "../graph_batch/paged_append.h"
 #include "hyle/core/assert.h"
 
 namespace hyle::graph::vulkan::detail {
@@ -90,10 +91,18 @@ Status configure(void *prepared, void *invocation,
   if (config.capacity.description() != capacity_description)
     return Status::InvalidArgument("Vulkan append bank capacity description differs");
   HYLE_ASSIGN_OR_RETURN(auto bank, vn::MemoryAccess::copy_span(a.runtime, config.capacity.storage()));
-  HYLE_ASSIGN_OR_RETURN(auto row_bytes, a.facts.rows.required_bytes());
-  std::size_t bytes = 0;
+  HYLE_ASSIGN_OR_RETURN(auto carrier_rows, bd::append_query_rows(a.facts.descriptor, a.facts.rows));
+  const auto active_rows = config.layout.facts().query_rows;
+  if (!active_rows || active_rows > carrier_rows)
+    return Status::InvalidArgument("Vulkan append active rows exceed its whole-row carrier");
+  HYLE_ASSIGN_OR_RETURN(auto carrier_bytes, a.facts.rows.required_bytes());
+  if (!carrier_bytes || carrier_bytes % carrier_rows)
+    return Status::InvalidArgument("Vulkan append carrier has incomplete cache rows");
+  const auto row_bytes = carrier_bytes / carrier_rows;
+  const auto active_bytes = std::size_t(active_rows) * row_bytes;
+  std::size_t bytes = 0, new_bytes = 0;
   for (const auto &range : config.ranges) {
-    if (!range.bytes || range.destination.size() != range.bytes || bytes > SIZE_MAX - range.bytes)
+    if (!range.bytes || range.bytes % row_bytes || range.destination.size() != range.bytes || bytes > SIZE_MAX - range.bytes)
       return Status::InvalidArgument("Vulkan append exact copy extent differs");
     HYLE_RETURN_IF_ERROR(aligned(a.runtime, range.destination));
     HYLE_ASSIGN_OR_RETURN(auto destination, vn::MemoryAccess::copy_span(a.runtime, range.destination));
@@ -103,14 +112,18 @@ Status configure(void *prepared, void *invocation,
         range.bytes > config.capacity.storage().size() - static_cast<std::size_t>(destination.offset - bank.offset))
       return Status::InvalidArgument("Vulkan append destination is outside its exact bank backing");
     if (range.from_rows) {
-      if (range.source_offset > row_bytes || range.bytes > row_bytes - range.source_offset)
+      if (range.source_offset % row_bytes || range.source_offset != new_bytes ||
+          range.source_offset > active_bytes || range.bytes > active_bytes - range.source_offset)
         return Status::OutOfRange("Vulkan append row copy exceeds packed input");
+      new_bytes += range.bytes;
     } else {
       HYLE_ASSIGN_OR_RETURN(auto source, range.prefix.subview(0, range.bytes));
       HYLE_RETURN_IF_ERROR(aligned(a.runtime, source));
     }
     bytes += range.bytes;
   }
+  if (new_bytes != active_bytes)
+    return Status::InvalidArgument("Vulkan append does not consume exactly its active rows");
   s.configured = false; s.recorded = false; s.sealed = false; s.submitted = false; s.rows = {};
   s.ranges.assign(config.ranges.begin(), config.ranges.end());
   s.copies.resize(config.ranges.size());
