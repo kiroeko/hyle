@@ -1336,19 +1336,32 @@ struct DecodeAheadMetadata final {
   struct Member final {
     std::weak_ptr<Session> session;
     std::uint64_t epoch = 0;
-    std::size_t length = 0;
+    std::size_t base_length = 0, maximum_length = 0, sampling_index = 0;
+    bool ready = false, selected = false;
   };
   c::ResourceBudget budget; // Outlives its borrowed metadata allocators.
   Values<Member, 2> members;
+  // One fixed stripe of original target-page IDs per member. Selecting a
+  // prefix must not overwrite a still-unconsumed sibling's integers.
+  Values<std::int32_t, 2> candidate_ids;
+  Values<std::size_t, 2> selected;
   Values<std::int32_t, 2> positions, old_ids, old_indptr, old_last, old_query;
-  std::size_t sampling_index = 0;
+  std::size_t page_stride = 0, maximum_rows = 1;
   bool ready = false;
   DecodeAheadMetadata(c::ResourceBudget owner, mem::AllocatorRef allocator)
-      : budget(std::move(owner)), members(allocator), positions(allocator), old_ids(allocator),
-        old_indptr(allocator), old_last(allocator), old_query(allocator) {}
+      : budget(std::move(owner)), members(allocator), candidate_ids(allocator), selected(allocator),
+        positions(allocator), old_ids(allocator), old_indptr(allocator), old_last(allocator), old_query(allocator) {}
+  void clear_output() noexcept {
+    for (const auto index : selected) members[index].selected = false;
+    selected.clear(); positions.clear(); old_ids.clear(); old_indptr.clear(); old_last.clear(); old_query.clear();
+  }
+  void refresh() noexcept {
+    ready = std::ranges::any_of(members, [](const auto &member) { return member.ready; });
+  }
   void clear() noexcept {
     ready = false;
-    members.clear(); positions.clear(); old_ids.clear(); old_indptr.clear(); old_last.clear(); old_query.clear();
+    for (auto &member : members) member = {};
+    clear_output();
   }
 };
 enum class EvaluationDisposition : std::uint8_t { kNotPublished, kPublished, kCancelled };
@@ -3903,35 +3916,66 @@ public:
     if (draft_lag(role)) io.catchup_token.write<std::int32_t>(catchups);
   }
 
-  void discard_decode_ahead() noexcept {
+  void discard_decode_ahead(const Session *session = nullptr) noexcept {
     if (!decode_ahead) return;
-    if (decode_ahead->ready) ++cpu_ahead_discarded;
-    decode_ahead->clear();
+    auto &prepared = *decode_ahead;
+    if (!session) {
+      if (prepared.ready) ++cpu_ahead_discarded;
+      prepared.clear(); return;
+    }
+    bool discarded = false;
+    for (auto &member : prepared.members)
+      if (member.ready && member.session.lock().get() == session) {
+        member = {}; discarded = true;
+      }
+    if (discarded) ++cpu_ahead_discarded;
+    prepared.refresh();
   }
 
-  // Admit the complete optional host workspace while cold. In-flight work
-  // must not acquire budget that the original episode still needs to finish.
+  void prune_decode_ahead() noexcept {
+    if (!decode_ahead || !decode_ahead->ready) return;
+    bool discarded = false;
+    for (auto &member : decode_ahead->members) if (member.ready) {
+      const auto owner = member.session.lock();
+      if (!owner || owner->failed || owner->stopping || !owner->head ||
+          owner->head.epoch() != member.epoch || owner->length() <= member.base_length ||
+          owner->length() > member.maximum_length) {
+        member = {}; discarded = true;
+      }
+    }
+    if (discarded) ++cpu_ahead_discarded;
+    decode_ahead->refresh();
+  }
+
+  // Only integer metadata, cold-bounded O(R*pages + R*K). No head, state slot,
+  // draft frontier or native permission is retained by this optional cache.
   void prepare_decode_ahead_storage() noexcept {
-    if (cache_plan.active_sequences < 2 || cache_plan.draft_cache || decode_ahead) return;
+    if ((!cache_plan.draft_cache && cache_plan.active_sequences < 2) || decode_ahead) return;
     try {
       decode_ahead.emplace(execution_budget, take(execution_budget.metadata_allocator()));
       auto &prepared = *decode_ahead;
       const auto width = cache_plan.active_sequences;
-      if (!prepared.members.try_reserve(width) || !prepared.positions.try_reserve(width) ||
+      prepared.maximum_rows = cache_plan.draft_cache ? cache_plan.candidate_boundaries : 1;
+      prepared.page_stride = cache::add(capacity, cache::Plan::page_rows - 1) / cache::Plan::page_rows;
+      if (!prepared.members.try_resize(width) || !prepared.selected.try_reserve(width) ||
+          !prepared.candidate_ids.try_resize(cache::multiply(width, prepared.page_stride)) ||
+          !prepared.positions.try_reserve(cache::multiply(width, prepared.maximum_rows)) ||
           !prepared.old_ids.try_reserve(attention_schema.capacity().max_page_refs) ||
           !prepared.old_indptr.try_reserve(width + 1) || !prepared.old_last.try_reserve(width) ||
           !prepared.old_query.try_reserve(width + 1)) decode_ahead.reset();
     } catch (...) { decode_ahead.reset(); } // Optional, before any accepted work.
   }
 
-  // Only the complete submitted batch is eligible, never a guessed future wave.
-  // Failure is optional preparation failure only: never abort the predecessor.
+  // Save each candidate's page stripe and finite accepted-length range, not
+  // K^R outcomes. Actual next role/rows, draft repair and permissions remain
+  // in the original prepare/finish path.
   hyle::Status prepare_decode_ahead() noexcept {
     if (!decode_ahead) return hyle::Status::Ok();
     if (!active_step || !active_step->submitted || active_step->cancelled || !active_step->phase ||
-        active_step->phase->family->role != GraphRole::kText ||
-        active_step->phase->family->completion != TextCompletion::kEmitNext || active_step->members.size() < 2)
-      return hyle::Status::FailedPrecondition("decode metadata requires an original ordinary submitted episode");
+        active_step->phase->family->completion != TextCompletion::kEmitNext ||
+        is_mtp_prefill(active_step->phase->family->role) ||
+        (active_step->phase->family->role != GraphRole::kText && !verifies_prefix(active_step->phase->family->role) && !has_mtp(active_step->phase->family->role)))
+      return hyle::Status::FailedPrecondition("decode metadata requires an original submitted generation episode");
     const auto begin = Clock::now();
     const auto fail = [&](hyle::Status status) noexcept {
       discard_decode_ahead();
@@ -3939,32 +3983,46 @@ public:
       return status;
     };
     try {
-      discard_decode_ahead();
       auto &prepared = *decode_ahead;
-      std::size_t refs = 0;
-      for (const auto &member : active_step->members) {
-        if (!member.next || member.session->failed || member.session->stopping ||
-            member.next->length >= capacity || member.base_epoch == UINT64_MAX)
-          return fail(hyle::Status::Unavailable("decode metadata member cannot continue"));
-        refs = cache::add(refs, member.next->pages.size());
-      }
       const auto width = active_step->members.size();
-      if (width > prepared.members.capacity() || width > prepared.positions.capacity() ||
-          refs > prepared.old_ids.capacity() || width + 1 > prepared.old_indptr.capacity() ||
-          width > prepared.old_last.capacity() || width + 1 > prepared.old_query.capacity())
+      if (!width || width > prepared.members.size() || !active_step->input_tokens ||
+          active_step->input_tokens > prepared.maximum_rows)
         return fail(hyle::Status::Unavailable("decode topology exceeds its cold workspace"));
-      prepared.old_query.resize(width + 1, 0);
-      prepared.old_indptr.push_back(0);
+      for (const auto &member : active_step->members)
+        if (!member.next || member.session->failed || member.session->stopping ||
+            member.base->length >= capacity - 1 || member.base_epoch == UINT64_MAX ||
+            member.next->pages.size() > prepared.page_stride)
+          return fail(hyle::Status::Unavailable("decode metadata member cannot continue"));
+      prune_decode_ahead(); prepared.clear_output();
+      bool replaced = false;
       for (const auto &member : active_step->members) {
-        const auto length = member.next->length;
-        prepared.members.push_back({member.session, member.base_epoch + 1, length});
-        prepared.positions.push_back(static_cast<std::int32_t>(length));
-        for (const auto &page : member.next->pages) prepared.old_ids.push_back(static_cast<std::int32_t>(page.page()));
-        prepared.old_indptr.push_back(static_cast<std::int32_t>(prepared.old_ids.size()));
-        prepared.old_last.push_back(static_cast<std::int32_t>((length - 1) % cache::Plan::page_rows + 1));
+        auto index = prepared.members.size();
+        // Preserve sibling subgroups: prefer this Session, then a vacant slot,
+        // otherwise a bounded unused entry. Never replace a slot selected by
+        // an earlier member of this same submitted episode.
+        for (std::size_t i = 0; i < prepared.members.size(); ++i)
+          if (!prepared.members[i].selected && prepared.members[i].ready && prepared.members[i].session.lock() == member.session) {
+            index = i; break;
+          }
+        if (index == prepared.members.size())
+          for (std::size_t i = 0; i < prepared.members.size(); ++i)
+            if (!prepared.members[i].selected && !prepared.members[i].ready) { index = i; break; }
+        if (index == prepared.members.size())
+          for (std::size_t i = 0; i < prepared.members.size(); ++i)
+            if (!prepared.members[i].selected) { index = i; break; }
+        if (index == prepared.members.size())
+          return fail(hyle::Status::Unavailable("decode metadata has no cold member slot"));
+        auto &saved = prepared.members[index]; replaced = replaced || saved.ready;
+        saved = {member.session, member.base_epoch + 1, member.base->length,
+            member.next->length, active_step->phase->family->sampling->index, true, true};
+        for (std::size_t page = 0; page < member.next->pages.size(); ++page)
+          prepared.candidate_ids[index * prepared.page_stride + page] =
+              static_cast<std::int32_t>(member.next->pages[page].page());
+        prepared.selected.push_back(index);
       }
-      prepared.sampling_index = active_step->phase->family->sampling->index;
-      prepared.ready = true; ++cpu_ahead_prepared;
+      if (replaced) ++cpu_ahead_discarded;
+      for (const auto index : prepared.selected) prepared.members[index].selected = false;
+      prepared.selected.clear(); prepared.refresh(); ++cpu_ahead_prepared;
       cpu_ahead_prepare_seconds += std::chrono::duration<double>(Clock::now() - begin).count();
       return hyle::Status::Ok();
     } catch (const std::bad_alloc &) {
@@ -3975,23 +4033,48 @@ public:
   }
 
   bool take_decode_ahead(std::span<const EvaluationRequest> requests, GraphRole role,
-      TextCompletion completion, std::size_t sampling_index) noexcept {
+      TextCompletion completion, std::size_t sampling_index, std::size_t tokens) noexcept {
     if (!decode_ahead || !decode_ahead->ready) return false;
     auto &prepared = *decode_ahead;
-    bool matches = requests.size() > 1 && requests.size() == prepared.members.size() &&
-        role == GraphRole::kText && completion == TextCompletion::kEmitNext &&
-        sampling_index == prepared.sampling_index;
-    for (std::size_t i = 0; matches && i < requests.size(); ++i) {
-      const auto &request = requests[i];
-      auto owner = prepared.members[i].session.lock();
-      matches = request.ids.size() == 1 && owner && owner.get() == request.session.get() &&
-          !owner.owner_before(request.session) && !request.session.owner_before(owner) &&
-          !owner->failed && !owner->stopping && owner->head.epoch() == prepared.members[i].epoch &&
-          owner->length() == prepared.members[i].length;
+    prune_decode_ahead(); prepared.clear_output();
+    if (requests.empty() || requests.size() > prepared.members.size() || !tokens ||
+        tokens > prepared.maximum_rows || completion != TextCompletion::kEmitNext || is_mtp_prefill(role) ||
+        (role != GraphRole::kText && !verifies_prefix(role) && !has_mtp(role))) return false;
+    const auto miss = [&]() noexcept { prepared.clear_output(); return false; };
+    // Standard prepare has already validated actual MTP repair/lag, inputs,
+    // role and capacity. Only this exact published target-page prefix may
+    // reuse the integers; no predicted draft state or permission is trusted.
+    for (const auto &request : requests) {
+      auto index = prepared.members.size();
+      for (std::size_t i = 0; i < prepared.members.size(); ++i) {
+        const auto &saved = prepared.members[i];
+        if (!saved.ready || saved.sampling_index != sampling_index) continue;
+        auto owner = saved.session.lock();
+        if (owner != request.session || owner.owner_before(request.session) || request.session.owner_before(owner)) continue;
+        if (owner->head.epoch() != saved.epoch || owner->length() <= saved.base_length ||
+            owner->length() > saved.maximum_length || owner->head->pages.size() > prepared.page_stride) break;
+        bool same_pages = true;
+        for (std::size_t page = 0; page < owner->head->pages.size(); ++page)
+          if (owner->head->pages[page].page() != static_cast<std::uint32_t>(
+              prepared.candidate_ids[i * prepared.page_stride + page])) { same_pages = false; break; }
+        if (same_pages) index = i;
+        break;
+      }
+      if (index == prepared.members.size() || prepared.members[index].selected) return miss();
+      prepared.members[index].selected = true; prepared.selected.push_back(index);
     }
-    if (!matches) { discard_decode_ahead(); return false; }
-    prepared.ready = false;
-    prepared.members.clear(); ++cpu_ahead_hits;
+    prepared.old_indptr.push_back(0); prepared.old_query.resize(requests.size() + 1, 0);
+    for (std::size_t j = 0; j < requests.size(); ++j) {
+      const auto index = prepared.selected[j]; const auto &owner = *requests[j].session;
+      for (std::size_t row = 0; row < tokens; ++row)
+        prepared.positions.push_back(static_cast<std::int32_t>(owner.length() + row));
+      for (std::size_t page = 0; page < owner.head->pages.size(); ++page)
+        prepared.old_ids.push_back(prepared.candidate_ids[index * prepared.page_stride + page]);
+      prepared.old_indptr.push_back(static_cast<std::int32_t>(prepared.old_ids.size()));
+      prepared.old_last.push_back(static_cast<std::int32_t>((owner.length() - 1) % cache::Plan::page_rows + 1));
+    }
+    for (const auto index : prepared.selected) prepared.members[index] = {};
+    prepared.selected.clear(); prepared.refresh(); ++cpu_ahead_hits;
     return true;
   }
 
@@ -4080,7 +4163,7 @@ public:
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
-    const bool ahead = !relay && take_decode_ahead(requests, role, completion, sampling_index);
+    const bool ahead = !relay && take_decode_ahead(requests, role, completion, sampling_index, tokens);
     auto candidate = std::make_shared<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (std::size_t j = 0; j < requests.size(); ++j) {
@@ -4236,7 +4319,7 @@ public:
               {decode_ahead->old_ids.data(), decode_ahead->old_ids.size()},
               {decode_ahead->old_last.data(), decode_ahead->old_last.size()}}))
           : take(attention_schema.version({old_query, old_indptr, old_ids, old_last}));
-      if (ahead) decode_ahead->clear(); // version() copied the borrowed integers.
+      if (ahead) decode_ahead->clear_output(); // version() copied this group's borrowed integers.
       std::vector<c::PagedArenaFootprint> sources(width);
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
         // A ready immutable head needs its own mutable frame metadata, just as
@@ -6445,7 +6528,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     // Controls retain their original post-submit ordering. Optional CPU-only
     // work follows them, and never turns its own allocation failure into a
     // failure or publication of this already submitted episode.
-    if (calls.size() > 1 && generation && role == GraphRole::kText &&
+    if (generation && ((calls.size() > 1 && role == GraphRole::kText) || verifies_prefix(role) || has_mtp(role)) &&
         calls[0].completion == TextCompletion::kEmitNext) {
       const bool continues = std::ranges::all_of(calls, [](const auto &call) {
         const auto &request = *call.request;
@@ -6482,7 +6565,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
       for (const auto &call : calls)
         if (call.disposition != EvaluationDisposition::kPublished || call.request->progress.turn_done ||
             !call.request->session || call.request->session->stopping) {
-          model.discard_decode_ahead(); break;
+          model.discard_decode_ahead(call.request->session.get());
         }
   } catch (...) {
     for (auto &call : calls) observe_generation_commits(*call.request);

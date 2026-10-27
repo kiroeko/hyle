@@ -342,11 +342,15 @@ Commands不拿休眠的记录作覆盖证明。消费者仍核每段既有物理
 保留同一Queue、原完整Status与reuse-only物理tuple／私有参数检查；实际模型仍需逐gap核查其资格。
 token接力不能替代validity、KV／状态、RNG及停止的联合发布。
 
-普通多成员请求已先接[CPU整数准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)：
-冷阶段按执行元数据预算预留scratch，GPU执行期间仅填下一步位置与旧页拓扑，不提前取得状态／tail或布局版本。
-下一次真实prepare完整匹配Session控制块、epoch、长度、成员顺序及采样形状后才使用；
-停止、换序、取消、失败或不匹配均丢弃。R1及MTP跳过，布局创建和所有原权限检查仍在正常prepare。
-这只是CPU工作提前，不是后继GPU提交、有序候选发布或完整重叠的完成证明。
+普通与MTP共用[有界CPU整数准备](../evidence/correctness/inference-mtp-ahead-2026-10-27.json)：
+冷阶段按R预留弱Session条目、每成员一份候选target页号及实际行scratch，空间为O(R×页上限＋R×K)。
+GPU执行期间只记录原候选的target页前缀及有限接受长度范围，不枚举K^R接受组合，不预先选择draft角色或状态。
+下一次真实prepare先完成原输入／容量／MTP状态预检，再匹配已发布head的控制块、epoch、实际长度及全部页号。
+实际行数由这次真实角色／proposal确定，positions按R×T填写；不能将前一轮K3误套到下一轮T2。
+成员可以换序或拆组，仅消费本组命中条目；其它条带保留，停止／失败／过期条目按弱身份清理。
+MTP只复用接受并repair后的target整数拓扑；draft frontier／lag／hidden、部分接受后的尾页COW、布局版本及所有设备权限仍走原路径。
+CPU／CUDA有限检查覆盖K3异前缀、换序、停止及存活子组T2 catch-up的完整初始化状态／RNG／旧快照；
+真实2B双请求另核多页及完整非时间报告。它不是GPU后继提交或MTP深度二，也没有新吞吐结论。
 
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；

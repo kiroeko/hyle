@@ -1,0 +1,95 @@
+{
+  "schema": "hyle.inference-mtp-host-ahead.v1",
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Per-member ordinary/MTP CPU metadata-ahead; original Graph execution, resource permissions and retirement unchanged.",
+  "counts": {
+    "CXX_attempts": 2,
+    "distinct_TU": 2,
+    "links": 2,
+    "successful_processes": 10,
+    "command_rejections": 1,
+    "probe_processes": 2,
+    "tiny_CLI_processes": 4,
+    "real2B_CLI_processes": 4,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "source": {
+    "Model": {"path":"C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc","bytes":540698,"sha256":"5033f0c59c3b6b882065ded2899f8ba503b08d52b702b5abe452887e20cfe8f5"},
+    "Model_snapshot": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\model1\\main.cc","bytes":540698,"sha256":"5033f0c59c3b6b882065ded2899f8ba503b08d52b702b5abe452887e20cfe8f5"},
+    "probe": {"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_ahead_test.cc","bytes":16565,"sha256":"6b643468215739e2eedab447f42b627903508ea215fc014fe4c0df2fb6f8b0b3"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_mtp_ahead_test.cc","bytes":16565,"sha256":"6b643468215739e2eedab447f42b627903508ea215fc014fe4c0df2fb6f8b0b3"}},
+    "ordinary_helper": {"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_cpu_ahead_case.h","bytes":7510,"sha256":"a6c9cd67213b376e5f131b24ff8c286cbb3b386b755caa3391176ad35a7aad8e"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_cpu_ahead_case.h","bytes":7510,"sha256":"a6c9cd67213b376e5f131b24ff8c286cbb3b386b755caa3391176ad35a7aad8e"}},
+    "all_frozen_helpers": [{"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_ahead_test.cc","bytes":16565,"sha256":"6b643468215739e2eedab447f42b627903508ea215fc014fe4c0df2fb6f8b0b3"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_mtp_ahead_test.cc","bytes":16565,"sha256":"6b643468215739e2eedab447f42b627903508ea215fc014fe4c0df2fb6f8b0b3"}},{"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_cpu_ahead_case.h","bytes":7510,"sha256":"a6c9cd67213b376e5f131b24ff8c286cbb3b386b755caa3391176ad35a7aad8e"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_cpu_ahead_case.h","bytes":7510,"sha256":"a6c9cd67213b376e5f131b24ff8c286cbb3b386b755caa3391176ad35a7aad8e"}},{"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_case.h","bytes":27646,"sha256":"be217e3ad21d3123c32964d0e9fa48d67cedd9b8600bdca88eb21f993ea90540"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_host_image_case.h","bytes":27646,"sha256":"be217e3ad21d3123c32964d0e9fa48d67cedd9b8600bdca88eb21f993ea90540"}},{"source":{"path":"C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_batch_state_case.h","bytes":18601,"sha256":"a4444f717d6e14bb16f98e273e6dc1b61df28fdeb577756a4449fbf738b525b4"},"snapshot":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source\\probe1\\tests\\tools\\qwen_mtp_batch_state_case.h","bytes":18601,"sha256":"a4444f717d6e14bb16f98e273e6dc1b61df28fdeb577756a4449fbf738b525b4"}}],
+    "source_freezes": [{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source-freeze-model1.json","bytes":9065,"sha256":"9ee546bb9fb8563f95725f7bcff30404a6ed0b664df350f836f1d417c6fcd392"},{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\source-freeze-probe1.json","bytes":5829,"sha256":"27dd4be6a9f648c637c87267046f422f9985ce73594fd79d4d9221a140306028"}]
+  },
+  "build": {
+    "Model_object": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\compile\\model1\\unit.obj","bytes":17778475,"sha256":"11ffa6bd9cabff419ea2b252fafbbda121632e5703f09577468c64958171c571"},
+    "probe_object": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\compile\\probe1\\unit.obj","bytes":18796081,"sha256":"b0fed6d71142bb4f5e97863a919387d2f2c756cf13e239a96d3f0bcbc30b22cb"},
+    "compiler_processes": [{"exit":0,"pid":61748,"seconds":25.505027999985032},{"exit":0,"pid":61612,"seconds":35.698369799996726}],
+    "linker_processes": [{"exit":0,"pid":54500,"seconds":1.7632316999952309},{"exit":0,"pid":55164,"seconds":1.759174200007692}],
+    "actual_dependencies": [{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\compile\\model1\\actual-dependencies.json","bytes":80253,"sha256":"02899fc0015cf270f251e773b5d7a53768f4150a322c4a835322ebd7f3bdd419"},{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\compile\\probe1\\actual-dependencies.json","bytes":81860,"sha256":"bec31d08c441364e6b9f4ce5f0a2e7b7c048bc4deeaad65fdcecf6cddbd137ae"}],
+    "CLI": {"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\bin\\hyle.exe","bytes":142411264,"sha256":"95d7a24af5cd7a5f098ec3ae014d99280eb7f8533536141ac4a48e9bb8637316"},"inputs":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\cli-link-inputs.json","bytes":57856,"sha256":"6f9add31bfd7cbe1676cdc8052325e266250d63f73190dc83e4e6981c7e0e730"},"count":224,"sole_replacement":"Model"},
+    "probe": {"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\bin\\qwen-mtp-ahead-probe.exe","bytes":142138880,"sha256":"672670c5156b9d58efdf217baeaafb8fb358eb4fe18aecad0cd1e983038788c8"},"inputs":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\probe-link-inputs.json","bytes":57626,"sha256":"266577e117fbf2864098a9f5fcc889a2da64eb0bf0e9837977d90d0ad60b0ba7"},"count":223,"main":"Baseline CLI minus separate Model and engine entry plus combined probe"},
+    "reused_weights": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\compile\\weights\\unit.obj","bytes":3468780,"sha256":"bd51ce8e7456f33d4061c6d847d57c72257719cf292b9f043f880e8ff9fa6b9c"},
+    "output_paths_isolated": true,
+    "baseline": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\cli-link-inputs.json","bytes":57869,"sha256":"9b2cf31b84115a4fb53917925cadaf3b31940419f7ceff87b475b5cce0f374e0"},
+    "baseline_evidence": "docs/evidence/performance/inference-alias-role-filter-2026-10-27.json"
+  },
+  "tiny_controlled": {
+    "summary": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\probe-run-summary.json","bytes":2187,"sha256":"926da62e5f0cd86403be61534974a4ac827f31fb6f0bdf33de4b3e31f12e005e"},
+    "backends": {"cpu":{"status":"PASS","backend":"cpu","ordinary":{"status":"PASS","backend":"cpu","physical_calls":10,"outputs":18,"records_compared":9,"candidate_prepared":3,"candidate_hits":3,"candidate_discarded":1,"control_hits":0,"owner_epoch_length_order_checked":true,"reorder_consumed":true,"paused_cancel_subset_consumed":true,"final_versions":0,"cpu_prepare_seconds":1.8e-06,"ids":[[36,42,11,48],[5,2,5,5,8]]},"mtp":{"target_graph_calls":8,"prefixes_by_original_member":[[1,3],[3,1]],"reorder_consumed":true,"survivor_subset_consumed":true,"stopped_peer_rejected":true,"actual_t3_to_t2_lag1":true,"candidate_prepared":2,"candidate_hits":2,"candidate_discarded":1,"control_hits":0,"selected_bytes":70144,"complete_initialized_state_equal":true,"old_checkpoints_unchanged":true,"final_versions":0,"controlled_k3_prefix_selection":true,"k3_rng_unchanged":true,"tail_t2_rng_advanced":3,"natural_recursive_acceptance_claim":false,"gpu_successor_submissions":0,"performance_claim":false}},"cuda":{"status":"PASS","backend":"cuda","ordinary":{"status":"PASS","backend":"cuda","physical_calls":10,"outputs":18,"records_compared":9,"candidate_prepared":3,"candidate_hits":3,"candidate_discarded":1,"control_hits":0,"owner_epoch_length_order_checked":true,"reorder_consumed":true,"paused_cancel_subset_consumed":true,"final_versions":0,"cpu_prepare_seconds":2e-06,"ids":[[8,11,48,11],[33,2,5,45,5]]},"mtp":{"target_graph_calls":8,"prefixes_by_original_member":[[1,3],[3,1]],"reorder_consumed":true,"survivor_subset_consumed":true,"stopped_peer_rejected":true,"actual_t3_to_t2_lag1":true,"candidate_prepared":2,"candidate_hits":2,"candidate_discarded":1,"control_hits":0,"selected_bytes":70144,"complete_initialized_state_equal":true,"old_checkpoints_unchanged":true,"final_versions":0,"controlled_k3_prefix_selection":true,"k3_rng_unchanged":true,"tail_t2_rng_advanced":3,"natural_recursive_acceptance_claim":false,"gpu_successor_submissions":0,"performance_claim":false}}},
+    "boundary": "Full initialized state-byte and old-checkpoint comparison against same-width no-ahead control per backend; not CPU-vs-CUDA bit equality. Controlled K3 prefixes are not natural acceptance quality."
+  },
+  "tiny_complete_CLI": {
+    "summary": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\cli-summary.json","bytes":4378,"sha256":"8d6348fd84e7ae0ea6067451c503e6626240b494e867fd96f9cf6be64b92731c"},
+    "scope": "Four CPU/CUDA ordinary/MTP B2 regressions; only named ahead counters excluded in addition to original time/replay keys; no throughput claim"
+  },
+  "real2B_complete_CLI": {
+    "summary": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real-summary.json","bytes":3964,"sha256":"e0eaafdfeb2d423081261d421c4897501873902b9bc1babf8d2c155f1d674b45"},
+    "scope": "CUDA R2, two P154 prompts, 12 outputs/member, C256, ordinary and recursive MTP baseline/candidate.",
+    "candidate_MTP": {"outputs":24,"prepared":4,"hits":3,"discarded":2},
+    "boundary": "Complete report/IDs/decisions/state-accounting facts compared per mode; no independent full-state payload-byte oracle for real2B."
+  },
+  "report_comparison": {
+    "ignored_exact_keys": ["cpu_ahead_prepared","cpu_ahead_hits","cpu_ahead_discarded"],
+    "original_ignored_key_substrings": ["seconds","per_second","capture","replay","trace_name"],
+    "applies_recursively": true,
+    "additional_exclusions": false,
+    "tiny": "Against four retained original reports",
+    "real": "Baseline/candidate complete facts equal separately for MTP off/on"
+  },
+  "successful_processes": [
+    {"group":"tiny_controlled","name":"cpu","process":{"exit":0,"pid":20400,"seconds":0.9020123000373133},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\run-cpu\\report.json","bytes":1454,"sha256":"949f8cb384bd773b51be78b7d797c8aecbcfb954b62e552c18f85a2cac5e9f40"}},
+    {"group":"tiny_controlled","name":"cuda","process":{"exit":0,"pid":26916,"seconds":0.878119400003925},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\run-cuda\\report.json","bytes":1455,"sha256":"b55268db01fd00dfd093ef34ad1a950811a62e510d68ea2b893cdb9169bea8e8"}},
+    {"group":"tiny_CLI_B2","name":"cpu-ordinary-b2","process":{"exit":0,"pid":62264,"seconds":0.840890199993737},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\runs\\cli-cpu-ordinary-b2\\report.json","bytes":35864,"sha256":"c17d07cc0b8b4e764c5cc203e87f46d99654138e45477b55003fd4bde4612a5f"},"original":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\runs\\regression-cpu-ordinary-b2\\report.json","bytes":35915,"sha256":"72bc4f407c1fa1aaa59d9d8b230bc43737a495e66c02d708f6c3c1ba65304733"},"facts_sha256":"b0a959f6ba249f24fedbfa3c081a40eba4ab49ee3e206e73ddb46847b369ba56","ahead":{"cpu_ahead_prepared":6,"cpu_ahead_hits":6,"cpu_ahead_discarded":0}},
+    {"group":"tiny_CLI_B2","name":"cpu-mtp-k3-b2","process":{"exit":0,"pid":45460,"seconds":0.4712727000005543},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\runs\\cli-cpu-mtp-k3-b2\\report.json","bytes":40937,"sha256":"4e7e3cd4b753a430b534d62ce8797b3229248f2165eb5d66adfdaf68721b9299"},"original":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\runs\\regression-cpu-mtp-k3-b2\\report.json","bytes":40884,"sha256":"01d07c5d189cde957492a6546dcbdb0f3654a1409bc175c047c351019885abdf"},"facts_sha256":"ef8f5aca674d3ef7d1f14962e614471965f6fc6462d7311aa925867545f56edd","ahead":{"cpu_ahead_prepared":6,"cpu_ahead_hits":6,"cpu_ahead_discarded":0}},
+    {"group":"tiny_CLI_B2","name":"cuda-ordinary-b2","process":{"exit":0,"pid":46684,"seconds":0.7182391000096686},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\runs\\cli-cuda-ordinary-b2\\report.json","bytes":35035,"sha256":"e633e97bb7aafdbe9b9be62a42eca726e14feffde7b858a7c0ac0296ff636995"},"original":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\runs\\regression-cuda-ordinary-b2\\report.json","bytes":34968,"sha256":"deafc9f1aa665fdbe6ea023a8f315f725de2dee9fd3d5952ca1add3e79ec7f2b"},"facts_sha256":"c1a5a4ceb5abdcf1a4bbb2a5386d4e071c959aace5016a4333a30f58fb7e1aa0","ahead":{"cpu_ahead_prepared":6,"cpu_ahead_hits":6,"cpu_ahead_discarded":0}},
+    {"group":"tiny_CLI_B2","name":"cuda-mtp-k3-b2","process":{"exit":0,"pid":33668,"seconds":0.8260357000399381},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\runs\\cli-cuda-mtp-k3-b2\\report.json","bytes":40050,"sha256":"72c2362467ee22934599cca55e6424ba2bd2fad335c4eabc47015fbbe075bdff"},"original":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\runs\\regression-cuda-mtp-k3-b2\\report.json","bytes":40090,"sha256":"2cd34c61095a6b539bfa2553c03cdc9a1bf07339d28b916f70bd1597e1745b7c"},"facts_sha256":"3235561bc3e3a72aa90e07eeff6d52176185a9133d96290164745fb9e1e003af","ahead":{"cpu_ahead_prepared":6,"cpu_ahead_hits":6,"cpu_ahead_discarded":0}},
+    {"group":"real2B_CUDA_B2","name":"baseline-mtp-off","process":{"exit":0,"pid":35676,"seconds":2.172536400030367},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin\\hyle.exe","bytes":142406656,"sha256":"d31045416935e34c857bbb19ea79cd96f86f3a997b1b782a7919ae601b5a5367"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real2\\baseline-mtp-off\\report.json","bytes":53840,"sha256":"d028d9c382f30196cea5b9f84e9b3423f2010bb343de9f75f01c53ef49b0c5f0"},"facts_sha256":"871808ffff33b5f3ef10656fb5bea7f0c0ee3d80007d6412af7580fa64fe2a7b","ahead":{"cpu_ahead_prepared":10,"cpu_ahead_hits":10,"cpu_ahead_discarded":0}},
+    {"group":"real2B_CUDA_B2","name":"candidate-mtp-off","process":{"exit":0,"pid":35176,"seconds":2.137536700000055},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\bin\\hyle.exe","bytes":142411264,"sha256":"95d7a24af5cd7a5f098ec3ae014d99280eb7f8533536141ac4a48e9bb8637316"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real2\\candidate-mtp-off\\report.json","bytes":53881,"sha256":"7d461c4a1ae77e00cebd3acd4edd38afb774d9590557157a0f59b30c6ed0c2a7"},"facts_sha256":"871808ffff33b5f3ef10656fb5bea7f0c0ee3d80007d6412af7580fa64fe2a7b","ahead":{"cpu_ahead_prepared":10,"cpu_ahead_hits":10,"cpu_ahead_discarded":0}},
+    {"group":"real2B_CUDA_B2","name":"candidate-mtp-on","process":{"exit":0,"pid":23692,"seconds":3.8220159000484273},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\bin\\hyle.exe","bytes":142411264,"sha256":"95d7a24af5cd7a5f098ec3ae014d99280eb7f8533536141ac4a48e9bb8637316"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real2\\candidate-mtp-on\\report.json","bytes":36839,"sha256":"bdd88c8b7fdee9f5f45f1aa45170833b275d75fd76918d2b5795dad954e8f079"},"facts_sha256":"fbb73539575d2a465235552d2aca56e554b719a95aa977e5eaa59ff6e0df49dd","ahead":{"cpu_ahead_prepared":4,"cpu_ahead_hits":3,"cpu_ahead_discarded":2}},
+    {"group":"real2B_CUDA_B2","name":"baseline-mtp-on","process":{"exit":0,"pid":46840,"seconds":3.774814200005494},"image":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin\\hyle.exe","bytes":142406656,"sha256":"d31045416935e34c857bbb19ea79cd96f86f3a997b1b782a7919ae601b5a5367"},"report":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real2\\baseline-mtp-on\\report.json","bytes":36774,"sha256":"105503bc37178c02e0d3c708164df151c8d5acf9824d2d77aba5150512491619"},"facts_sha256":"fbb73539575d2a465235552d2aca56e554b719a95aa977e5eaa59ff6e0df49dd","ahead":{"cpu_ahead_prepared":0,"cpu_ahead_hits":0,"cpu_ahead_discarded":0}}
+  ],
+  "retained_failures": {
+    "command": {"process":{"exit":1,"pid":38928,"seconds":0.4211515999631956},"command":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real\\baseline-mtp-off\\command.json","bytes":751,"sha256":"2fa613aff52aa49b134196ecf8c35b6fc75f746a27960711d8519ccba6241785"},"stderr":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\real\\baseline-mtp-off\\stderr.log","bytes":59,"sha256":"45409da88964ff7fa6a9f68261f390e9e5251eb0cded104bbbd7a996ab593d3a"},"note":"First baseline off command wrongly passed --mtp-max-drafts; CLI rejected before loading. Corrected run_real.py uses real2; attempt1 script retained."},
+    "preparation": {"record":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\probe1-dependency-supplement.json","bytes":2397,"sha256":"18b82f127d86b533953c372eb24556a0dadfa169184b99c0770d6e61b3a2896f"},"note":"Probe CL exit0; post-CXX script omitted slots_region.h pre-pin. Exact header matched three fixed Graph compiler manifests, metadata finalized without recompilation."}
+  },
+  "runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\runtime.json",
+    "bytes": 11059,
+    "sha256": "6e9b06b7c13cb7c6c2dacce651f2d4d1670a25aa0183eba4f9861abe30922c06"
+  },
+  "limits": [
+    "CPU host metadata ahead only; no GPU successor submissions or MTP depth-two device relay.",
+    "No new TPS/performance/peer/model-quality claim; process wall times are reproduction metadata.",
+    "Raw ready status describes build time; the ten process records establish later execution."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mtp-ahead-2026-10-27.zip",
+    "files": 128,
+    "manifest": {"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\archive-manifest.json","bytes":36927,"sha256":"f46849e44b82f559b2918362afe260e09c599e65a2ff0e911b5d9b32ae196900"},
+    "excluded": "EXE/OBJ/PDB/LIB/EXP/DLL/SDK/models and uncompiled ahead_methods.cc draft"
+  }
+}

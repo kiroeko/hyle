@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 17:04（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **97%**；百分比按实现工作量估计，不表示测试通过率。普通CUDA R1 greedy自然请求已接两步有界接力，tiny八条及真实2B十条旅程通过有限检查，包括晚stop后已提交B只退休不发布；另修复多页写投影的读凭据归属。六次交错候选测速decode中位90.37→90.27 tok/s，尚无净提速，选项默认关闭；诊断已定位为准备／导出额外调用成本抵消等待缩短；本批实际子批统计与错误身份修复通过，alias过滤的12进程A/B仍无净提速。MTP后继、多成员持续流水、模型原生EOS／自然冷拒绝覆盖、迁移复查及完整性能对照仍未完成。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 17:33（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **97%**；百分比按实现工作量估计，不表示测试通过率。普通CUDA R1 greedy自然请求已接两步有界接力，tiny八条及真实2B十条旅程通过有限检查，包括晚stop后已提交B只退休不发布；另修复多页写投影的读凭据归属。六次交错候选测速decode中位90.37→90.27 tok/s，尚无净提速，选项默认关闭；诊断已定位为准备／导出额外调用成本抵消等待缩短；本批实际子批统计与错误身份修复通过，alias过滤的12进程A/B仍无净提速。MTP设备后继、多成员持续流水、模型原生EOS／自然冷拒绝覆盖、迁移复查及完整性能对照仍未完成。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -34,17 +34,18 @@
     - 共同提交事实与独立块读凭据：100%（本批有限检查通过）
     - Store到受检Gather的在途读接线：100%（单共享Queue有限CUDA检查通过）
     - KV／索引融合读取及有界槽轮换：约94%（普通R1自然两步接力及真实长提示词已有限检查；多成员持续流水及MTP接受子集未完成）
-  - CPU提前准备与引擎有序发布：约70%（自然R1真实信用／暂停／取消与晚stop后继丢弃通过有限检查；模型EOS、自然冷拒绝及MTP修复仍待检查或接通）
+  - CPU提前准备与引擎有序发布：约80%（普通自然R1及MTP有限主机预备通过有限检查；模型EOS、自然冷拒绝、MTP设备后继及持续多成员流水仍未完成）
+    - MTP有限主机元数据预备：100%（本批实现及CPU／CUDA有限检查完成，未声称GPU后继或提速）
   - CPU／GPU／混合参考与完整四项对照：约25%（CUDA普通／MTP最新四臂完成，其它工况仍待完成）
 - 遗漏复查与资料收敛：约25%（进行中）
   - 文档恢复、事实校正与阅读入口：100%（本轮修正完成）
-  - 剩余功能与迁移遗漏复查：约10%（进行中）
+  - 剩余功能与迁移遗漏复查：约25%（本批共同请求／传输原语源码复查未新增确证缺项，其它范围仍在复查）
   - 递归MTP异宽分组的实际执行统计：100%（实现完成；CPU／CUDA同宽、异宽与子批错误身份三场景有限检查通过）
 
 ## 正在做
 
 - 接力绑定／replay的主机成本：约60%（所属：CPU提前准备与引擎有序发布；三桶诊断已完成，稳态新增主要落在绑定26.24ms与replay12.56ms，非CPU忙时。alias过滤已通过5项合同及12进程A/B，未证提速，继续定位剩余绑定／replay工作；模型EOS、自然冷拒绝、MTP和多成员持续接力仍保留）。
-- MTP有限主机元数据预备：约10%（所属：CPU提前准备与引擎有序发布；已核实接受前缀、draft repair和真实head依赖，正在设计有界预备及命中检查，不直接套普通双提交）。
+- 普通多成员有界接力：约15%（所属：有界槽轮换与完整状态pending权限；原Model／Source已支持批宽，正在设计自然owner的完整有序成员组、逐成员ledger预留及晚停止收缩；不把R2来源直接投给R1子集）。
 
 剩余大项包括完整状态接力、重叠执行、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
@@ -56,6 +57,8 @@
 [三段prepare诊断](../evidence/performance/inference-generation-prepare-2026-10-27.json)是另一个冻结Model3窗口，off／auto各一次且97输出及完整非时间结果一致。前8步prepare多18.36ms，随后88步多36.02ms，其中绑定多26.24ms、replay多12.56ms，layout与residual略省；稳态零新增捕获。该窗口不与前一诊断的47.40ms差额混加；下一步只改已确认的无效查找路径，仍保留本代权限与别名检查。
 
 [alias角色过滤A/B](../evidence/performance/inference-alias-role-filter-2026-10-27.json)只提前原有self／无workspace／纯input-input的Ok分支，不改输出重叠、不可变Source或事务提交。3个C++单元及5项定向检查通过；12个交错进程中，off的decode中位91.37→91.22、auto为91.45→91.58 tok/s，范围重叠，无净提速证据。prefill中位分别−2.56%／−2.65%，范围也重叠；完整非时间报告逐模式一致。共享cache backing逐模式相同，未采样全显存峰，未新跑参考或MTP，原完整表不变。本批保留为局部查找简化，不继续补样或把源码复杂度当成实测收益。
+
+[MTP有界主机预备](../evidence/correctness/inference-mtp-ahead-2026-10-27.json)已与普通预备共用每成员弱身份缓存，只存候选target整数页号和接受长度范围。真实发布后核epoch／长度／全部页前缀，再按实际下一图行数准备positions，支持换序及子组消费，不猜draft状态或取得设备权限。2个C++单元、2次链接；CPU／CUDA各一个combined消费者通过ordinary三次命中、MTP两次命中、K3异前缀、停止及T3→T2 lag1，完整初始化状态／RNG／旧快照一致。四条tiny双请求及四条真实2B CUDA双请求检查通过，除三个明确新增预备计数及原时间／重放字段外，完整报告逐工况一致；真实MTP实际命中3次，最终版本归零。首条real命令误把MTP参数传给off，在加载前被拒绝，修正命令后通过；另一次编译后漏header预登记已机械核同字节，未重编。它不接GPU后继，不更新TPS或内存峰表。
 
 [完整生产者与混束接力](../evidence/correctness/inference-model-submission-source-2026-10-27.json)已分别验证：真实Qwen3.5-2B普通greedy的三次K1导出／发布与原串行路径逐位一致，核对78,372,864字节初始化KV／GDN／conv、旧快照、epoch和RNG，最终无遗留版本；组件真实ready token／Store／KV可首次录制Hybrid，再以原token View和同物理tuple读取pending来源，0次新录制。47个不同GTest通过结果分属记录中的实际镜像，未重跑最终全量套件；首夹具错误、原managed TopK与共享append记账拒绝、alias重用拒绝和被析构掩盖的原失败均保留。未接完整模型后继流水、sampling或MTP接受子集，也未测新速度。
 
@@ -87,7 +90,7 @@
 
 [既有capture接力](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)已接原Graph准备／重放逻辑，不改Provider静态属性。一个真实ggml Gather→Add消费者检查通过：ready预录后原unbind释放旧读权，同块try_write交给生产者；生产者仍pending时复用原捕获，报告0次新录制／1次复用并取得精确结果。两个真实物理tuple miss均拒绝，普通submit仍不能绕过原权限。三个单元一次编译、一次链接、一个GPU进程，无SDK重建。reuse-only仍有原metadata hook／预算／权限检查，不表示零分配；未接静态阻塞的生产者、多segment、状态／KV或引擎连续流水，也未测吞吐。
 
-[CPU提前准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)只针对普通B>1整批可继续的旅程，在冷预算内预留整数scratch。原AfterSubmit控制先执行，再准备位置／旧页拓扑；下一次完整匹配owner、epoch、长度、顺序及采样形状才使用。布局创建、状态／tail接纳和设备绑定仍在下一真实prepare，R1／MTP跳过。一个tiny CUDA进程共10次Graph调用、18输出，9条完整非时间提交记录、IDs和RNG一致，实际命中1次，换序／暂停取消后丢弃2次。首次fixture漏begin_turn在Graph前拒绝，修正后通过；一个不同单元编译两次。未测完整速度，也不声称隐藏整段cold_batch。
+早期[CPU提前准备](../evidence/correctness/inference-cpu-ahead-2026-10-27.json)当时只针对普通B>1整批可继续的旅程，在冷预算内预留整数scratch。原AfterSubmit控制先执行，再准备位置／旧页拓扑；下一次完整匹配owner、epoch、长度、顺序及采样形状才使用。布局创建、状态／tail接纳和设备绑定仍在下一真实prepare，R1／MTP跳过。一个tiny CUDA进程共10次Graph调用、18输出，9条完整非时间提交记录、IDs和RNG一致，实际命中1次，换序／暂停取消后丢弃2次。首次fixture漏begin_turn在Graph前拒绝，修正后通过；一个不同单元编译两次。未测完整速度，也不声称隐藏整段cold_batch。
 
 [Region准备合同](../evidence/correctness/inference-graph-output-region-2026-10-27.json)明确prepare／seal只处理metadata／资源／未提交recording，不读写载荷或接纳设备工作，移除按hook存在与否拒绝的过度gate。真实CUDA Store region在生产者仍pending时完成准备，最终写入精确值并归还原权限，一项定向检查通过。首次Gather→Add实际选中managed／host-blocking ggml region，被原runtime门正确拒绝；完整保留失败，不放宽该门。两不同单元共三次编译、两次链接与两进程，无SDK重建。尚未支持该ggml路径、pending Store源／KV或完整引擎流水。
 

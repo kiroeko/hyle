@@ -409,6 +409,16 @@ if(TARGET hyle_engine)
 endif()
 
 if(TARGET hyle_engine)
+  add_executable(hyle_qwen_mtp_ahead_test tools/qwen_mtp_ahead_test.cc
+    "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
+  hyle_configure_engine_target(hyle_qwen_mtp_ahead_test)
+  set_target_properties(hyle_qwen_mtp_ahead_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_mtp_ahead_test)
+  add_test(NAME hyle_qwen_mtp_ahead_test COMMAND hyle_qwen_mtp_ahead_test)
+  set_tests_properties(hyle_qwen_mtp_ahead_test PROPERTIES
+    LABELS "tooling;generation;cache;local-model" TIMEOUT 180 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+
   add_executable(hyle_qwen_generation_batch_facts_probe tools/qwen_generation_batch_facts_probe.cc
     "${HYLE_SOURCE_DIR}/engine/models/qwen35/weights.cc")
   hyle_configure_engine_target(hyle_qwen_generation_batch_facts_probe)
