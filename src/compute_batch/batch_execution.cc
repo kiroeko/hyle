@@ -117,13 +117,16 @@ void retain_domain(d::BatchBuffers&owner,LeasePool&pool)noexcept{
   owner.incref();d::LeaseAccess::retain_resource_owner(pool,&owner,[](void*p)noexcept{static_cast<d::BatchBuffers*>(p)->decref();});
   d::LeaseAccess::detach_pool_root(pool);
 }
+Queue& planning_queue(d::BatchInvocationData&s)noexcept{
+  return s.buffers && s.buffers->metadata_queue?*s.buffers->metadata_queue:*s.queue;
+}
 Result<BatchPlanReport> query_workspace(d::BatchInvocationData&s,const BatchLayoutVersion&layout,bool allow_update)noexcept{
   auto&p=*s.program;BatchPlanReport report;
   if(!p.table->uses_caller_workspace)return report;
   struct Call{d::BatchInvocationData*state;const BatchLayoutVersion*layout;bool allow_update;BatchPlanReport*report;}call{&s,&layout,allow_update,&report};
   HYLE_RETURN_IF_ERROR(d::ProviderExtensionAccess::call(p.extension,[](void*,const void*table,void*opaque)noexcept{
     auto&call=*static_cast<Call*>(opaque);
-    return static_cast<const d::BatchProviderVTable*>(table)->workspace(call.state->native,*call.state->queue,*call.layout,call.allow_update,call.report);
+    return static_cast<const d::BatchProviderVTable*>(table)->workspace(call.state->native,planning_queue(*call.state),*call.layout,call.allow_update,call.report);
   },&call));
   const auto floating=report.float_workspace_bytes,integer=report.int_workspace_bytes;
   if(floating>p.options.max_float_workspace_bytes || integer>p.options.max_int_workspace_bytes)
@@ -238,7 +241,7 @@ Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
   if(s.int_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.int_workspace));
   if(planning){if(s.host_workspace.valid())HYLE_RETURN_IF_ERROR(use.write(s.host_workspace));}
   else HYLE_RETURN_IF_ERROR(use.write(s.output));
-  HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(*s.queue));
+  HYLE_ASSIGN_OR_RETURN(auto sequence,d::QueueSequence::begin(planning?planning_queue(s):*s.queue));
   HYLE_ASSIGN_OR_RETURN(auto completion,finish_native(s,planning,inputs,views,std::move(use),sequence));
   return s.completion.publish(std::move(completion));
 }
@@ -538,21 +541,31 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
     if(!s.mirror_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.mirror_ready,s.mirror.publish());}
     s.mirror_layout=layout;
   }
-  bool reused=false;
+  bool reused=false,planned_native=false;
   if(may_update && !workspace_changed){struct Call{d::BatchInvocationData*state;bool reused=false;}call{&s};
     const auto status=d::ProviderExtensionAccess::call(s.program->extension,[](void*,const void*table,void*opaque)noexcept->Status{
       auto&call=*static_cast<Call*>(opaque);HYLE_ASSIGN_OR_RETURN(call.reused,static_cast<const d::BatchProviderVTable*>(table)->update(call.state->native,call.state->layout,&call.state->report));return Status::Ok();
     },&call);if(!status.ok()){s.failed=true;return std::unexpected(status);}reused=call.reused;
   }
   if(!reused){
-    HYLE_RETURN_IF_ERROR(invalidate_recorded_commands(s,gate));
+    // A read-only, exact-layout workspace query may prove that refreshing the
+    // scheduler's contents preserves every recorded launch argument/offset.
+    // Retain only unchanged carriers on the original qualified runtime. The
+    // native plan still performs its real upload and checked retirement below.
+    const bool preserves_commands=may_update && !workspace_changed && !gate.notified &&
+        workspace_report.reused_native_plan && qualify_graph_recording(s).ok();
+    if(!preserves_commands)HYLE_RETURN_IF_ERROR(invalidate_recorded_commands(s,gate));
+    s.report.reused_native_plan=preserves_commands;
     HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));
     auto planned=submit_native(s,true,{}, {},views);
     if(!planned){s.failed=true;return std::unexpected(planned.error());}
+    planned_native=true;
     const auto terminal=planned->wait();*planned={};
     if(!terminal.ok() || s.pending.load(std::memory_order_acquire) || s.uses.active_batches()){s.failed=true;return std::unexpected(!terminal.ok()?terminal:Status::Unavailable("batch planning retirement unproven"));}
+    if(preserves_commands && !s.report.reused_native_plan){s.failed=true;return std::unexpected(Status::Internal("batch planning did not preserve its recorded-command proof"));}
+    reused=preserves_commands;
   }
-  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=staging_bytes;s.report.host_waits=upload_waits+(reused?0u:1u);s.report.reused_native_plan=reused;s.report.capture_compatible=s.replay && s.replay->commands.valid();s.prepared=true;
+  s.report.metadata_upload=upload_report;s.report.metadata_staging_bytes=staging_bytes;s.report.host_waits=upload_waits+(planned_native?1u:0u);s.report.reused_native_plan=reused;s.report.capture_compatible=s.replay && s.replay->commands.valid();s.prepared=true;
   ++s.tickets;++s.users;s.incref();return PreparedBatch(&s,s.epoch);
 }
 bool BatchInvocation::in_flight()const noexcept{return data_ && (data_->pending.load(std::memory_order_acquire) || data_->uses.active_batches() || data_->upload.in_flight());}

@@ -34,6 +34,10 @@ struct BatchPlanReport final {
   // F32 probability tiles. FlashInfer's F16/BF16 probability tile follows Q,
   // independently of this flag, while dot/row-sum accumulation remains F32.
   bool bf16_partials = false;
+  // The original recorded native topology/arguments were retained. Scheduler
+  // metadata may still have been refreshed by actual planning/upload/wait;
+  // host_waits reports those waits independently. A provider workspace query
+  // uses this flag only as a staged proof, not a prepared execution token.
   bool reused_native_plan = false;
   std::uint32_t host_waits = 0;
   CopyBatchReport metadata_upload{};

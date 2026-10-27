@@ -126,6 +126,9 @@ struct BatchWorkspaceQuery final {
   CUcontext primary=nullptr;
   native::BatchSpec spec{};
   native::BatchFacts facts{};
+  std::uint64_t retained_generation=0;
+  bool preserves_commands=false;
+  bool allow_graph_plan=true;
 };
 bool same_batch_spec(const native::BatchSpec&a,const native::BatchSpec&b)noexcept{
   return a.query_heads==b.query_heads && a.kv_heads==b.kv_heads && a.qk_head_dim==b.qk_head_dim &&
@@ -142,11 +145,13 @@ struct BatchSlot final {
   native::BatchSpec spec{};
   void*plan=nullptr;
   std::size_t plan_bytes=0;
+  std::size_t max_float_workspace_bytes=0,max_int_workspace_bytes=0;
   std::uint64_t generation=0;
   std::uint32_t kv_chunk_rows=0;
   BatchLayoutVersion layout;
   BatchPlanReport report;
-  // One successful fresh sizing result, consumed by the next plan attempt.
+  // One successful sizing result, consumed by the next plan attempt. A
+  // preservation proof belongs to this exact retained generation and Queue.
   // It is not a prepared plan or permission to submit, and never changes the
   // active generation/layout when sizing or common quota admission fails.
   BatchWorkspaceQuery workspace_query;
@@ -222,6 +227,7 @@ Status create_batch_slot(void*opaque,BatchCapacity capacity,const BatchProgramOp
   p->primary=context.primary;p->plan_bytes=native::batch_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
   if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
   native::initialize_batch_state(p->plan);
+  p->max_float_workspace_bytes=options.max_float_workspace_bytes;p->max_int_workspace_bytes=options.max_int_workspace_bytes;
   p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.qk_head_dim=capacity.qk_head_dim,
     .value_head_dim=capacity.value_head_dim,.page_size=capacity.page_size,
     .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
@@ -239,6 +245,7 @@ Status create_mla_slot(void*opaque,BatchCapacity capacity,const BatchProgramOpti
   p->primary=context.primary;p->plan_bytes=native::mla_state_bytes();p->plan=allocator.allocate(p->plan_bytes,16);
   if(!p->plan){allocator.destroy(p);return Status::ResourceExhausted("FlashInfer batch plan metadata");}
   native::initialize_mla_state(p->plan);p->mla=true;
+  p->max_float_workspace_bytes=options.max_float_workspace_bytes;p->max_int_workspace_bytes=options.max_int_workspace_bytes;
   p->spec={.query_heads=capacity.query_heads,.kv_heads=capacity.kv_heads,.qk_head_dim=capacity.qk_head_dim,
     .value_head_dim=capacity.value_head_dim,.page_size=capacity.page_size,
     .query_indptr_offset=offsets.query_indptr,.kv_indptr_offset=offsets.kv_indptr,.page_indices_offset=offsets.page_indices,.tail_offset=offsets.last_page_lengths,
@@ -284,6 +291,22 @@ bool can_reuse_batch_plan(const BatchSlot&slot,const BatchLayoutVersion&layout)n
   }
   return true;
 }
+Status query_bounded_batch_workspace(native::BatchSpec spec,HostBatchLayout metadata,cudaStream_t stream,
+    std::size_t float_cap,std::size_t int_cap,const void*retained_plan,native::BatchFacts&facts,
+    bool&allow_graph_plan,bool&preserves_commands){
+  allow_graph_plan=true;preserves_commands=false;
+  HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
+      metadata.kv_indptr.data(),stream,facts,retained_plan,&preserves_commands,allow_graph_plan)));
+  if(facts.float_bytes>float_cap || facts.int_bytes>int_cap){
+    // Fixed graph grids may need more scratch than the original schedule.
+    // Preserve the old executable domain under an explicit smaller cap.
+    allow_graph_plan=false;
+    HYLE_RETURN_IF_ERROR(cuda::status(native::query_batch_workspace(spec,metadata.query_indptr.data(),
+        metadata.kv_indptr.data(),stream,facts,nullptr,&preserves_commands,allow_graph_plan)));
+    preserves_commands=false;
+  }
+  return Status::Ok();
+}
 Status query_batch_layout(BatchSlot&slot,Queue&queue,const BatchLayoutVersion&layout,
                          bool allow_update,native::BatchFacts&facts) {
   slot.workspace_query={};
@@ -303,16 +326,25 @@ Status query_batch_layout(BatchSlot&slot,Queue&queue,const BatchLayoutVersion&la
     const auto refs=metadata.kv_indptr[r+1]-metadata.kv_indptr[r];
     lengths.push_back(spec.paged?(refs?(refs-1)*std::int32_t(spec.page_size)+metadata.last_page_lengths[r]:0):refs);
   }}
-  HYLE_RETURN_IF_ERROR(cuda::status(slot.mla?
-      native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts):
-      native::query_batch_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*stream,facts)));
-  slot.workspace_query={layout,std::move(queue_owner),slot.primary,spec,facts};
+  const bool compare_retained=allow_update && !slot.mla && slot.generation &&
+      slot.layout.origin_schema().owns(layout) && same_batch_spec(slot.spec,spec);
+  bool preserves_commands=false,allow_graph_plan=true;
+  if(slot.mla){HYLE_RETURN_IF_ERROR(cuda::status(native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts)));}
+  else HYLE_RETURN_IF_ERROR(query_bounded_batch_workspace(spec,metadata,*stream,
+      slot.max_float_workspace_bytes,slot.max_int_workspace_bytes,compare_retained?slot.plan:nullptr,
+      facts,allow_graph_plan,preserves_commands));
+  preserves_commands=compare_retained && preserves_commands &&
+      facts.float_bytes==slot.report.float_workspace_bytes && facts.int_bytes==slot.report.int_workspace_bytes;
+  slot.workspace_query={layout,std::move(queue_owner),slot.primary,spec,facts,
+      compare_retained?slot.generation:0,preserves_commands,allow_graph_plan};
   return Status::Ok();
 }
 Status batch_workspace(void*opaque,Queue&queue,const BatchLayoutVersion&layout,bool allow_update,BatchPlanReport*report)noexcept {
   try{
-    native::BatchFacts facts;HYLE_RETURN_IF_ERROR(query_batch_layout(*static_cast<BatchSlot*>(opaque),queue,layout,allow_update,facts));
-    *report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes};
+    auto&slot=*static_cast<BatchSlot*>(opaque);
+    native::BatchFacts facts;HYLE_RETURN_IF_ERROR(query_batch_layout(slot,queue,layout,allow_update,facts));
+    *report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,
+        .reused_native_plan=slot.workspace_query.preserves_commands};
     return Status::Ok();
   }catch(const std::bad_alloc&){return Status::ResourceExhausted("FlashInfer batch workspace query host allocation");}
    catch(const std::exception&e){return Status::Internal(e.what());}
@@ -322,11 +354,19 @@ detail::EnqueueResult plan_batch_slot(void*opaque,detail::QueueSequence &sequenc
   auto&slot=*static_cast<BatchSlot*>(opaque);
   // Clear before any rejection or accepted H2D prefix. A direct capability
   // caller may omit sizing; an absent or mismatched result uses the original
-  // query below instead of acquiring preparation from an old generation.
+  // query below only when command preservation was not requested. Otherwise
+  // the exact preflight is mandatory and cannot be enlarged by a fresh query.
   auto query=std::move(slot.workspace_query);slot.workspace_query={};
+  const bool preserves_commands=report->reused_native_plan;
+  const auto retained_generation=slot.generation;
   slot.generation=0;
   auto stream=cuda::stream(sequence);if(!stream)return detail::EnqueueResult::rejected(stream.error());
   auto spec=slot.spec;spec.query_rows=layout.facts().query_rows;spec.requests=layout.facts().requests;
+  const bool exact_query=query.layout==layout && query.queue.same_owner(sequence) &&
+      query.primary==slot.primary && same_batch_spec(query.spec,spec);
+  if((preserves_commands || query.preserves_commands) && (!exact_query || !query.preserves_commands ||
+      !retained_generation || query.retained_generation!=retained_generation || !same_batch_spec(slot.spec,spec)))
+    return detail::EnqueueResult::rejected(Status::FailedPrecondition("FlashInfer preserved planning needs its exact retained query"));
   if(!spec.query_rows){
     slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;
     *report={.layout_generation=layout.generation()};slot.report=*report;return detail::EnqueueResult::no_op();
@@ -352,24 +392,32 @@ detail::EnqueueResult plan_batch_slot(void*opaque,detail::QueueSequence &sequenc
        const auto refs=metadata.kv_indptr[r+1]-metadata.kv_indptr[r];
        lengths.push_back(spec.paged?(refs?(refs-1)*std::int32_t(spec.page_size)+metadata.last_page_lengths[r]:0):refs);
     }}
-    Status status;
-    if(query.layout==layout && query.queue.same_owner(sequence) &&
-        query.primary==slot.primary && same_batch_spec(query.spec,spec)){
-      facts=query.facts;
+    const auto float_cap=std::min(slot.max_float_workspace_bytes,workspace.float_workspace.size());
+    const auto int_cap=std::min(slot.max_int_workspace_bytes,std::min(workspace.int_workspace.size(),workspace.host_workspace.size()));
+    Status status;bool allow_graph_plan=true;
+    if(exact_query){
+      facts=query.facts;allow_graph_plan=query.allow_graph_plan;
     }else{
-      status=cuda::status(slot.mla?
-          native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts):
-          native::query_batch_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*stream,facts));
+      if(slot.mla)status=cuda::status(native::query_mla_workspace(spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*stream,facts));
+      else{bool unused_preservation=false;
+        status=query_bounded_batch_workspace(spec,metadata,*stream,float_cap,int_cap,
+            nullptr,facts,allow_graph_plan,unused_preservation);
+      }
     }
     if(!status.ok())return detail::EnqueueResult::rejected(status);
-    if(facts.float_bytes>workspace.float_workspace.size() || facts.int_bytes>workspace.int_workspace.size() || facts.int_bytes>workspace.host_workspace.size())
+    if(facts.float_bytes>float_cap || facts.int_bytes>int_cap)
       return detail::EnqueueResult::rejected(Status::ResourceExhausted("FlashInfer batch workspace capacity exhausted"));
     // After this boundary preserve a possibly accepted original H2D prefix.
     try {
       status=cuda::status(slot.mla?
           native::plan_mla(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),lengths.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts):
-          native::plan_batch(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts));
-      if(status.ok()){slot.kv_chunk_rows=facts.kv_chunk_rows;slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv,.bf16_partials=facts.bf16_partials};slot.report=*report;}
+          native::plan_batch(slot.plan,spec,metadata.query_indptr.data(),metadata.kv_indptr.data(),*floating,workspace.float_workspace.size(),*integer,host_pointer,workspace.int_workspace.size(),*stream,facts,query.preserves_commands,allow_graph_plan));
+      if(status.ok() && query.preserves_commands &&
+          (facts.float_bytes!=query.facts.float_bytes || facts.int_bytes!=query.facts.int_bytes ||
+           facts.cta_tile_q!=query.facts.cta_tile_q || facts.padded_batch_size!=query.facts.padded_batch_size ||
+           facts.split_kv!=query.facts.split_kv || facts.bf16_partials!=query.facts.bf16_partials))
+        status=Status::Internal("FlashInfer refreshed plan disagrees with its recorded-command query");
+      if(status.ok()){slot.kv_chunk_rows=facts.kv_chunk_rows;slot.spec=spec;slot.generation=layout.generation();slot.layout=layout;*report={.layout_generation=layout.generation(),.float_workspace_bytes=facts.float_bytes,.int_workspace_bytes=facts.int_bytes,.cta_tile_q=facts.cta_tile_q,.padded_batch_size=facts.padded_batch_size,.split_kv=facts.split_kv,.bf16_partials=facts.bf16_partials,.reused_native_plan=preserves_commands};slot.report=*report;}
       return spec.query_rows==0 && status.ok()?detail::EnqueueResult::no_op():detail::EnqueueResult::accepted_command(status);
     }catch(const std::bad_alloc&){return detail::EnqueueResult::accepted_command(Status::ResourceExhausted("FlashInfer batch planning host allocation"));}
      catch(const std::exception&e){return detail::EnqueueResult::accepted_command(Status::Internal(e.what()));}

@@ -1,0 +1,138 @@
+{
+  "schema": "hyle.inference.capture-review.v1",
+  "status": "OFFLINE_REVIEW_AND_ONE_INSTRUMENTED_MTP_PROCESS",
+  "scope": "Archived Model3 40-process review plus one later W17 Model diagnostic. Different historical scopes; no new controlled performance comparison.",
+  "costs": {
+    "Graph_CXX": 1,
+    "links": 1,
+    "model_processes": 1,
+    "Model_CXX": 0,
+    "NVCC": 0,
+    "SDK_builds": 0,
+    "downloads": 0,
+    "model_retries": 0
+  },
+  "historical_40_process_archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-continuous-wave-current-window-2026-10-27.zip",
+    "bytes": 1724429,
+    "sha256": "df27b868b8244df250c6c89033734fe47665c719e728dee7b697fb947796abd5"
+  },
+  "recording_review": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-window-20261027\\recording-facts-review.json",
+    "bytes": 34532,
+    "sha256": "a85fe47e71d9d586834d9ec323410572cd01e52ee02d71d1effe1bc933f939c0"
+  },
+  "frozen_diagnostic": {
+    "link_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\plan-at-link.json",
+      "bytes": 92992,
+      "sha256": "57ab3283fea0ded50ee96c02e5f4c92a37ab2755866ef807640e6d2100c84069"
+    },
+    "post_link_analysis_plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\plan.json",
+      "bytes": 92992,
+      "sha256": "7cbf016a50b23347f0f35670cd97bfdd8b1383a260b73623a73dbbb4486baace"
+    },
+    "metadata_amendment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\metadata-amendment.json",
+      "bytes": 3276,
+      "sha256": "71d2901eed1139b7299b5d37b2083716d1e3fab2924bd9c0f9dc1f85e79b7e04"
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\ready.json",
+      "bytes": 3183,
+      "sha256": "f0cbae4a6a1f0c99e8bcd1b15443a61ad1fd4ae156078b38a9b6c1fcb8acec0e"
+    },
+    "reused_Model_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-recovery-final-20261027\\source\\model\\engine\\models\\qwen35\\main.cc",
+      "bytes": 554992,
+      "sha256": "441ff48649cef90205d97f4fbbf71cdd73a4f06b1fdd9d85cbd4fd3ff64fffd3"
+    },
+    "reused_Model_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-recovery-final-20261027\\compile\\model\\unit.obj",
+      "bytes": 18478560,
+      "sha256": "81813c6cc812a1b4853eaaa546e716e1782d7d02cf0212a0d1bcf594eb83ae71"
+    },
+    "Graph_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\source\\src\\graph\\executable.cc",
+      "bytes": 499571,
+      "sha256": "7f0b314bab3d641af9a2c28dd0dbd0d84d82c11b911d596b9288a3ff00672c06"
+    },
+    "Graph_header": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\source\\src\\graph\\capture_mismatch_diag.h",
+      "bytes": 14059,
+      "sha256": "8a32598b4240fa91497ac53bf2764f32c3afe6d29d73b96596d34e766ca4352d"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\bin\\hyle.exe",
+      "bytes": 142518784,
+      "sha256": "ddd3990757fc3187386ca9c6619167fa2fed064adddae8d037e73ac017398ce4"
+    },
+    "retained_link_inputs": 224,
+    "replacements": "Only original Graph executable OBJ"
+  },
+  "actual_process": {
+    "exit": 0,
+    "pid": 53184,
+    "seconds": 3.393591200001538,
+    "prompt_rows": 154,
+    "output_ids": 64,
+    "decode_output_ids": 63,
+    "target_rounds": 34,
+    "capacity": 1024,
+    "R": 1,
+    "sampling": "greedy",
+    "MTP_K": 1,
+    "decode_overlap": "off"
+  },
+  "observed_capture_counts": {
+    "record_decisions": 11,
+    "dropped_records": 0,
+    "dropped_ranges": 0,
+    "unconfirmed_events": 0,
+    "explicit_key_loss_events": 0,
+    "missing_key_variants": 6,
+    "cold_record_decisions": 2,
+    "prior_hidden_first_mismatches": 12,
+    "mismatch_record_decisions": 9,
+    "carry_hidden_first_mismatches": 4
+  },
+  "attribution": [
+    "Two cold decisions and nine later record decisions. Every retained valid variant in those later decisions has a proven hidden-input physical-offset mismatch.",
+    "Sixteen first mismatches: twelve prior_hidden, four carry_hidden; same resource/native backing, BF16 [1,2048] and 4096-byte extent, offsets differ.",
+    "No explicit capture-key loss observed; zero dropped records/ranges and no unconfirmed role/prepare associations.",
+    "Only the first mismatch per valid variant was recorded; other ports, including GDN/KV, may also differ and are not excluded."
+  ],
+  "offline_comparator": {
+    "first_result": "FAILED: 14 missing top-level schema aliases; original raw and traceback retained",
+    "normalized_result": "PASS: complete original non-time predicate; zero remaining differences",
+    "normalization": "Existing sole-session result adapter copies missing aliases; no extra field deletion or model retry",
+    "oracle_scope": "Historical Model3 complete producer report; NOT current W17 timing or a W17 rerun.",
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\run\\complete-non-time-normalized-offline.json",
+      "bytes": 2889,
+      "sha256": "c2685d663a4e4acce1644e242d02664adeb8cd0f95213e90102ad43c08968a3f"
+    }
+  },
+  "preparation_failure": "First preparation assertion failed with 0 compiler/model processes; original script and receipt retained.",
+  "metadata_drift": "After model launch, offline prepared-association comparison was tightened and its two plan pin fields updated. Exact original link-plan bytes are reconstructed and match the original ready SHA. Both versions, chronology and first packaging rejection are retained; compiled source/header pins are unchanged.",
+  "boundaries": [
+    "Review count/role signatures are verified in all 40 archived reports. Warm-eight is not eight recordings; ordinary A/B step lifetimes overlap and their sum is not elapsed decode wall time.",
+    "Removing recordings, multiplying count by average preparation time, or predicting peer parity remain unmeasured estimates.",
+    "One instrumented MTP process has no uninstrumented control, speed, quality, or peer performance claim. Historical report equality is semantic reproduction only.",
+    "This package supplies no numerical validation of the concurrent native graph-scheduler prototype; source review and compilation are not a numerical pass.",
+    "No model, SDK, OBJ, EXE, DLL, PDB, LIB, EXP, trace database or historical 40-process ZIP is copied. Existing manifest pins identify retained dependencies."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-capture-review-2026-10-27.zip",
+    "bytes": 587294,
+    "sha256": "87141fe51b8a226cd484a448623d81e3f0ac6d0e456122947ac193100f026064",
+    "files": 78,
+    "uncompressed_bytes": 3185818
+  },
+  "manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-capture-causes-20261027\\current-w17\\package-manifest.json",
+    "bytes": 26644,
+    "sha256": "2d775a95c351477a717a2b1594140fb3c568d639d4180cd781c8748ddacb6055"
+  }
+}

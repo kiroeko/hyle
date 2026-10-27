@@ -14,9 +14,13 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
+#include <cstdio>
 #include <cstdint>
+#include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -500,5 +504,255 @@ TEST(GraphBatchCapture, InactiveOutputRowsAreClearedByCapturedCommands) {
       slot = {};
     }
   }
+}
+TEST(GraphBatchCapture, UniformDecodePlansKeepCaptureAcrossGrowingPagedPrefixes) {
+  // Fixed physical ports exercise the real R/T layout transition independently
+  // of Graph tensor variants. Every inactive output word must still be zeroed
+  // by the captured provider, with the adjacent caller bytes untouched.
+  constexpr std::uint32_t depth = 256, page_size = 16, heads = 4, kv_heads = 2;
+  constexpr std::uint32_t physical_rows = 4, pages_per_request = 64;
+  constexpr std::size_t row_words = heads * depth, guard_words = 32;
+  constexpr float scale = .0625F;
+  auto context = g::cuda::create_context().value();
+  auto queue = context.create_queue().value();
+  auto device = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto host = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto resource = device.ref(), workspace = host.ref();
+  const auto plain = c::CacheStorage::plain(c::DataType::kBFloat16).value();
+  const c::BatchCapacity capacity{
+      .storage = c::BatchStorage::kPaged,
+      .query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+      .key_storage = plain, .value_storage = plain,
+      .max_requests = 2, .max_query_rows = physical_rows, .max_kv_rows = 2048,
+      .max_pages = 128, .max_page_refs = 128, .query_heads = heads, .kv_heads = kv_heads,
+      .qk_head_dim = depth, .value_head_dim = depth, .page_size = page_size};
+  auto schema = c::BatchSchema::create(capacity).value();
+  const std::array descriptions{
+      c::batch_query_description(capacity, physical_rows).value(),
+      c::batch_cache_description(capacity, c::BatchCacheRole::kKey).value(),
+      c::batch_cache_description(capacity, c::BatchCacheRole::kValue).value(),
+      schema.metadata_description().value()};
+  const auto output_desc = c::batch_output_description(capacity, physical_rows).value();
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId, 4> inputs;
+  for (std::size_t port = 0; port < inputs.size(); ++port)
+    inputs[port] = builder.input(descriptions[port]).value();
+  const auto node = builder.add_node(c::Operation::custom(c::PagedAttention{
+      .capacity = capacity, .scale = scale, .causal = true, .window_left = -1}), inputs).value();
+  const auto output = builder.result(node).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  const std::array domains{g::StorageDomain{resource}};
+  const std::array targets{g::ExecutionTarget{
+      g::ExecutionSource::acquire(context).value(), g::StorageDomainId{0}}};
+  auto compiled = gb::compile(graph, {.storage_domains = domains, .targets = targets},
+      {.operation_fallback = g::OperationFallbackPolicy::kReject});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  std::array<g::Invocation, 2> slots;
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  std::array<std::shared_ptr<c::Queue>, 2> metadata_queues;
+  std::array<m::Buffer, 2> queries, destinations;
+  std::array<std::vector<std::uint16_t>, 2> query_words;
+  const auto word = [](float x) { return hyle::simd::f32_to_bf16(x).bits; };
+  const auto number = [](std::uint16_t x) { return hyle::simd::bf16_to_f32({x}); };
+  for (std::size_t index = 0; index < slots.size(); ++index) {
+    slots[index] = compiled->executable.create_invocation({.resources = g::ResourceOptions{}}).value();
+    auto metadata = g::detail::RegionAccess::metadata_queue(slots[index], g::ExecutionLaneId{0}, {});
+    ASSERT_TRUE(metadata) << metadata.error().message();
+    metadata_queues[index] = *metadata;
+    ASSERT_NE(metadata_queues[index].get(), &queue);
+    const auto execution_stream = c::cuda::stream(queue), upload_stream = c::cuda::stream(**metadata);
+    ASSERT_TRUE(execution_stream); ASSERT_TRUE(upload_stream);
+    EXPECT_NE(*execution_stream, *upload_stream);
+    query_words[index].resize(physical_rows * row_words);
+    for (std::size_t at = 0; at < query_words[index].size(); ++at) {
+      const auto row = at / row_words, head = at / depth % heads, d = at % depth;
+      query_words[index][at] = word(float(int((index * 17 + row * 11 + head * 7 + d * 5) % 23) - 11) / 32.F);
+    }
+    queries[index] = m::Buffer::create(resource, descriptions[0].required_bytes().value(), 64).value();
+    ASSERT_TRUE(queries[index].view().write(std::as_bytes(std::span(query_words[index]))).ok());
+    destinations[index] = m::Buffer::create(resource,
+        (physical_rows * row_words + 2 * guard_words) * sizeof(std::uint16_t), 64).value();
+  }
+  std::array<m::Buffer, 2> banks;
+  std::array<std::vector<std::uint16_t>, 2> bank_words;
+  for (std::size_t bank = 0; bank < banks.size(); ++bank) {
+    bank_words[bank].resize(descriptions[bank + 1].required_bytes().value() / sizeof(std::uint16_t));
+    for (std::size_t at = 0; at < bank_words[bank].size(); ++at) {
+      const auto row = at / (kv_heads * depth), head = at / depth % kv_heads, d = at % depth;
+      const auto numerator = bank == 0 ? int((row * 13 + head * 7 + d * 3) % 31) - 15
+                                      : int((row * 11 + head * 5 + d) % 29) - 14;
+      bank_words[bank][at] = word(float(numerator) / (bank == 0 ? 32.F : 16.F));
+    }
+    banks[bank] = m::Buffer::create(resource, descriptions[bank + 1].required_bytes().value(), 64).value();
+    ASSERT_TRUE(banks[bank].view().write(std::as_bytes(std::span(bank_words[bank]))).ok());
+  }
+  struct Geometry { std::uint32_t requests, query_rows; };
+  const std::array geometries{Geometry{1, 1}, Geometry{2, 1}, Geometry{1, 2}, Geometry{2, 2}};
+  constexpr std::array<std::uint32_t, 7> prefixes{127, 128, 129, 383, 384, 385, 1023};
+  const auto physical_row = [](std::uint32_t request, std::uint32_t row) {
+    return (request * pages_per_request + ((row / page_size * 17 + 3) % pages_per_request)) * page_size + row % page_size;
+  };
+  const auto make_layout = [&](Geometry geometry, std::uint32_t prefix) {
+    std::vector<std::int32_t> qp{0}, kp{0}, ids, tails;
+    for (std::uint32_t request = 0; request < geometry.requests; ++request) {
+      qp.push_back(static_cast<std::int32_t>((request + 1) * geometry.query_rows));
+      const auto count = (prefix + page_size - 1) / page_size;
+      for (std::uint32_t page = 0; page < count; ++page)
+        ids.push_back(static_cast<std::int32_t>(physical_row(request, page * page_size) / page_size));
+      kp.push_back(static_cast<std::int32_t>(ids.size()));
+      tails.push_back(static_cast<std::int32_t>((prefix - 1) % page_size + 1));
+    }
+    return schema.version({qp, kp, ids, tails});
+  };
+  std::uint64_t recorded_total = 0, reused_total = 0, waits_total = 0;
+  std::size_t graph_float_bytes_at_127 = 0;
+  double maximum_error = 0;
+  // A null update means replay the other Invocation unchanged after its peer
+  // was replanned. This catches shared plan/mirror/output state between slots.
+  const auto episode = [&](std::size_t index, Geometry geometry, std::uint32_t prefix,
+                           const bool *update, bool must_reuse, bool must_record,
+                           std::size_t float_cap = 64u << 20) {
+    SCOPED_TRACE(index);
+    SCOPED_TRACE(geometry.requests);
+    SCOPED_TRACE(geometry.query_rows);
+    SCOPED_TRACE(prefix);
+    if (update) {
+      auto layout = make_layout(geometry, prefix);
+      ASSERT_TRUE(layout) << layout.error().message();
+      const std::array layouts{gb::NodeLayout{node, *layout}};
+      const auto status = gb::prepare(slots[index], queues, layouts, {.host_workspace = workspace,
+          .max_float_workspace_bytes = float_cap, .max_int_workspace_bytes = 8u << 20, .update = *update});
+      ASSERT_TRUE(status.ok()) << status.message();
+    }
+    auto &slot = slots[index];
+    for (std::size_t port = 0; port < 3; ++port) {
+      const auto storage = port == 0 ? queries[index].view() : banks[port - 1].view();
+      const auto status = slot.bind(inputs[port], c::ConstTensorView::create(descriptions[port], storage).value());
+      ASSERT_TRUE(status.ok()) << status.message();
+    }
+    const auto output_view = c::TensorView::create(output_desc,
+        destinations[index].view().subview(guard_words * sizeof(std::uint16_t)).value()).value();
+    ASSERT_TRUE(slot.bind(output, output_view).ok());
+    const auto planned = gb::report(slot, node);
+    ASSERT_TRUE(planned) << planned.error().message();
+    EXPECT_LE(planned->float_workspace_bytes, float_cap);
+    if (index == 0 && geometry.requests == 1 && geometry.query_rows == 1 && prefix == 127 && float_cap == (64u << 20))
+      graph_float_bytes_at_127 = planned->float_workspace_bytes;
+    const auto capture = slot.prepare_replay(queues,
+        {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(capture.ok()) << capture.message();
+    ASSERT_EQ(slot.replay_route(), g::ReplayRoute::kCaptured);
+    const auto replay = slot.replay_report();
+    ASSERT_TRUE(replay) << replay.error().message();
+    const auto recorded = replay->recorded_capture_range_count, reused = replay->reused_capture_range_count;
+    ASSERT_GT(recorded + reused, 0u);
+    if (must_reuse) { EXPECT_TRUE(planned->reused_native_plan); EXPECT_EQ(recorded, 0u); EXPECT_GT(reused, 0u); }
+    if (must_record) { EXPECT_FALSE(planned->reused_native_plan); EXPECT_GT(recorded, 0u); EXPECT_EQ(reused, 0u); }
+    if (!update) { EXPECT_EQ(recorded, 0u); EXPECT_GT(reused, 0u); }
+    if (update && planned->reused_native_plan) { EXPECT_EQ(recorded, 0u); EXPECT_GT(reused, 0u); }
+    if (update && !planned->reused_native_plan) EXPECT_GT(recorded, 0u);
+    // Reuse is a topology fact. Changed metadata can still perform a real
+    // scheduler upload and wait; preserve those independent observed costs.
+    std::printf("stable_attention slot=%zu R=%u T=%u KV=%u update=%d native_reused=%u recorded=%u reused=%u plan_waits=%u upload_waits=%llu split=%u padded=%u tile=%u float_bytes=%zu float_cap=%zu int_bytes=%zu\n",
+        index, geometry.requests, geometry.query_rows, prefix, update ? int(*update) : -1,
+        unsigned(planned->reused_native_plan), unsigned(recorded), unsigned(reused), planned->host_waits,
+        static_cast<unsigned long long>(planned->metadata_upload.host_waits), unsigned(planned->split_kv),
+        planned->padded_batch_size, planned->cta_tile_q, planned->float_workspace_bytes,
+        float_cap, planned->int_workspace_bytes);
+    recorded_total += recorded; reused_total += reused;
+    if (update) waits_total += planned->host_waits;
+    ASSERT_TRUE(destinations[index].view().fill(std::byte{0x35}).ok());
+    {
+      auto done = slot.submit(queues);
+      ASSERT_TRUE(done) << done.error().message();
+      const auto terminal = done->wait();
+      ASSERT_TRUE(terminal.ok()) << terminal.message();
+    }
+    std::vector<std::uint16_t> actual(destinations[index].size() / sizeof(std::uint16_t));
+    ASSERT_TRUE(destinations[index].view().read(std::as_writable_bytes(std::span(actual))).ok());
+    const auto begin = actual.begin() + guard_words;
+    const auto active_end = begin + geometry.requests * geometry.query_rows * row_words;
+    const auto end = begin + physical_rows * row_words;
+    EXPECT_EQ(std::count(actual.begin(), begin, std::uint16_t{0x3535}), guard_words);
+    EXPECT_EQ(std::count(active_end, end, std::uint16_t{0}), std::size_t(end - active_end));
+    EXPECT_EQ(std::count(end, actual.end(), std::uint16_t{0x3535}), guard_words);
+    for (std::uint32_t request = 0; request < geometry.requests; ++request) {
+      for (std::uint32_t query_row = 0; query_row < geometry.query_rows; ++query_row) {
+        const auto row = request * geometry.query_rows + query_row;
+        // Bottom-right causal masking: the T queries end at this real prefix.
+        const auto visible = prefix - geometry.query_rows + query_row + 1;
+        for (std::uint32_t head = 0; head < heads; ++head) {
+          const auto kv_head = head / (heads / kv_heads);
+          std::vector<double> scores(visible);
+          for (std::uint32_t key_row = 0; key_row < visible; ++key_row) {
+            const auto physical = physical_row(request, key_row);
+            double dot = 0;
+            for (std::uint32_t d = 0; d < depth; ++d)
+              dot += double(number(query_words[index][(row * heads + head) * depth + d])) *
+                     double(number(bank_words[0][(physical * kv_heads + kv_head) * depth + d]));
+            scores[key_row] = dot * scale;
+          }
+          const auto largest = *std::max_element(scores.begin(), scores.end());
+          double denominator = 0;
+          for (auto &score : scores) { score = std::exp(score - largest); denominator += score; }
+          for (std::uint32_t d = 0; d < depth; ++d) {
+            double expected = 0;
+            for (std::uint32_t key_row = 0; key_row < visible; ++key_row)
+              expected += scores[key_row] * double(number(bank_words[1][
+                  (physical_row(request, key_row) * kv_heads + kv_head) * depth + d]));
+            expected /= denominator;
+            const auto observed = double(number(*(begin + (row * heads + head) * depth + d)));
+            ASSERT_TRUE(std::isfinite(observed));
+            const auto error = std::abs(observed - expected);
+            maximum_error = std::max(maximum_error, error);
+            ASSERT_LE(error, .007) << "request=" << request << " row=" << query_row
+                << " head=" << head << " d=" << d << " expected=" << expected << " actual=" << observed;
+          }
+        }
+      }
+    }
+    auto metadata = g::detail::RegionAccess::metadata_queue(slot, g::ExecutionLaneId{0}, {});
+    ASSERT_TRUE(metadata) << metadata.error().message();
+    EXPECT_EQ(metadata->get(), metadata_queues[index].get());
+  };
+  const bool fresh = false, update = true;
+  for (std::size_t geometry = 0; geometry < geometries.size(); ++geometry) {
+    for (std::size_t at = 0; at < prefixes.size(); ++at) {
+      const bool same_page = at == 1 || at == 4;
+      for (std::size_t index = 0; index < slots.size(); ++index)
+        ASSERT_NO_FATAL_FAILURE(episode(index, geometries[geometry], prefixes[at], at ? &update : &fresh,
+            same_page, at == 0));
+      ASSERT_NO_FATAL_FAILURE(episode(0, geometries[geometry], prefixes[at], nullptr, false, false));
+    }
+    // Explicit fresh must withdraw the old commands even at identical geometry;
+    // it must not mutate the peer's still-reusable recording or native state.
+    ASSERT_NO_FATAL_FAILURE(episode(0, geometries[geometry], prefixes.back(), &fresh, false, true));
+    ASSERT_NO_FATAL_FAILURE(episode(1, geometries[geometry], prefixes.back(), nullptr, false, false));
+    // Includes R2/T1 -> R1/T2: total Q rows alone cannot qualify reuse.
+    ASSERT_NO_FATAL_FAILURE(episode(0, geometries[(geometry + 1) % geometries.size()],
+        prefixes.back(), &update, false, true));
+  }
+  // Padded graph scratch must not turn an executable ordinary native plan into
+  // a cap rejection. Prove this cap excludes the actual large-cap graph plan;
+  // then keep the same exact numerical/tail/guard oracle on the original
+  // non-padded scheduler. A genuine fresh plan at these lengths is permitted.
+  constexpr std::size_t small_float_cap = 1u << 20;
+  ASSERT_GT(graph_float_bytes_at_127, small_float_cap);
+  for (std::size_t at = 0; at < 3; ++at)
+    ASSERT_NO_FATAL_FAILURE(episode(0, geometries[0], prefixes[at], &update,
+        false, at == 0, small_float_cap));
+  ASSERT_NO_FATAL_FAILURE(episode(0, geometries[0], prefixes[2], &fresh,
+      false, true, small_float_cap));
+  RecordProperty("stable_attention_large_cap_graph_float_bytes", std::to_string(graph_float_bytes_at_127));
+  RecordProperty("stable_attention_small_float_cap", std::to_string(small_float_cap));
+  std::printf("stable_attention totals recorded=%llu reused=%llu plan_waits=%llu max_abs_error=%.9g\n",
+      static_cast<unsigned long long>(recorded_total), static_cast<unsigned long long>(reused_total),
+      static_cast<unsigned long long>(waits_total), maximum_error);
+  RecordProperty("stable_attention_recorded_ranges", std::to_string(recorded_total));
+  RecordProperty("stable_attention_reused_ranges", std::to_string(reused_total));
+  RecordProperty("stable_attention_plan_waits", std::to_string(waits_total));
+  RecordProperty("stable_attention_max_abs_error", std::to_string(maximum_error));
+  for (auto &slot : slots) { ASSERT_TRUE(slot.close().ok()); slot = {}; }
 }
 } // namespace

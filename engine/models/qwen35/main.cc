@@ -7531,7 +7531,6 @@ int qwen35::run(int argc, char **argv) {
         "  --capacity N                Total context capacity (default: 128)\n"
         "  --prefill-chunk-tokens N    Maximum real rows per ordinary prefill episode\n"
         "  --warmup-shapes lazy|planned  Prepare known carriers before ready (default: lazy)\n"
-        "  --decode-overlap auto|off   Automatic CUDA greedy continuation (default: auto)\n"
         "  --cpu-ffn-layers N          First N target FFNs on CPU; needs CPU+GPU build (default: 0)\n"
         "  --schedule FILE             One session's prompt/generate turns\n"
         "  --session-schedules FILE    Multiple named session schedules\n"
@@ -7575,6 +7574,8 @@ int qwen35::run(int argc, char **argv) {
       if (option == "--inputs") input = value;
       else if (option == "--prefill-chunk-tokens") max_prefill_rows = positive_size(option, value);
       else if (option == "--decode-overlap") {
+        // Internal benchmark/diagnostic override. Normal use selects the
+        // automatic policy and falls back using actual execution facts.
         if (value != "off" && value != "auto") throw std::runtime_error("--decode-overlap requires off or auto");
         decode_overlap = value == "auto";
       }
@@ -7750,7 +7751,7 @@ int qwen35::run(int argc, char **argv) {
       steps = forced_steps;
     }
     if (input.empty())
-      throw std::runtime_error("usage: hyle --inputs DIR [--schedule FILE | --session-schedules FILE | [--continuation IDS] [--steps 4 | --decode-ids IDS]] [--mtp off|on] [--capacity 128] [--max-sessions auto|N] [--active-sequences auto|N] [--cache-bytes auto|N] [--prefix-cache off|auto] [--progress direct|scheduler] [--replay auto|commands|prefer-capture] [--decode-overlap auto|off] [--trace DIR] [--trace-level full|decisions] [--preparation-diagnostics 0|1] [--layer0-probe DIR]");
+      throw std::runtime_error("usage: hyle --inputs DIR [--schedule FILE | --session-schedules FILE | [--continuation IDS] [--steps 4 | --decode-ids IDS]] [--mtp off|on] [--capacity 128] [--max-sessions auto|N] [--active-sequences auto|N] [--cache-bytes auto|N] [--prefix-cache off|auto] [--progress direct|scheduler] [--replay auto|commands|prefer-capture] [--trace DIR] [--trace-level full|decisions] [--preparation-diagnostics 0|1] [--layer0-probe DIR]");
     const auto prompt = scheduled ? std::vector<std::int32_t>{} : qwen35::read_ids(input / "prompt.ids", geometry.vocabulary, capacity);
     const auto extra = continuation.empty() ? std::vector<std::int32_t>{} : qwen35::read_ids(continuation, geometry.vocabulary, capacity);
     if (!scheduled) {

@@ -1,0 +1,133 @@
+{
+  "schema": "hyle.correctness.stable-attention.v1",
+  "date": "2026-10-27",
+  "status": "PASS_FINITE_PROTOTYPE",
+  "scope": "Real Graph capture/numerical matrix plus three existing natural CUDA model checks; performance is a separate window.",
+  "implementation": {
+    "native_domain": "Paged plain F16/BF16; uniform T1/T2; causal, window=-1; equal QK/V depth 64/128/256.",
+    "mechanism": "Original FlashInfer scheduler query compares all recorded plan fields; original planning/upload/true retirement and BeforeCommandChange remain.",
+    "ABI": "BatchSpec and BatchFacts exact declaration tokens equal the original compiled headers. Other native TUs are retained; no public runtime flags changed.",
+    "products": [{"path":"src/compute_provider_flashinfer/native_batch.cu","bytes":10017,"sha256":"78ca7da114e266273caa35f2bb4f930981f5241d9b2794ada6a240272021449a"},{"path":"src/compute_provider_flashinfer/native_batch.h","bytes":2927,"sha256":"b35136a9ec03a7802218dfff412f9cbb22185697154583c3c9d1eaaab32d787b"},{"path":"src/compute_provider_flashinfer/flashinfer_provider.cc","bytes":48590,"sha256":"a32c1c7d2da7f05a8316b9d7515e1f0e87b3bbe108263255de4ea4d7ea962da0"},{"path":"src/compute_batch/batch_execution.cc","bytes":66993,"sha256":"53a44c25e3e381eb1389fe6a1c9a62b196279088e2c0bb7c04c4d02a6a35345e"},{"path":"include/hyle/compute/batch_execution.h","bytes":10788,"sha256":"30c47cb6d6c2d166fd3dbe894c7b9dc72bea7d0a09acbd3eabc0d163e61eb760"},{"path":"include/hyle/compute/detail/batch_provider.h","bytes":7372,"sha256":"f4778e795bca2fdd3e4cfaa0a29433c8eb2a752bdf5747379d1ef532aceba0c4"}],
+    "test": {
+      "path": "tests/graph_batch/batch_capture_test.cc",
+      "bytes": 43995,
+      "sha256": "f84e43ace07046ffc6adee5b9d0025ab1b9a96d3cb912279d2f99f1782f80b02"
+    }
+  },
+  "toolchain": {
+    "OS": "Windows x64",
+    "CUDA": "13.3",
+    "SM": "89",
+    "NVCC_optimization": "-O2",
+    "host_runtime": "/MD",
+    "dependency": {
+      "revision": "69ff11fc4954396d98326656dc85debd2223f637",
+      "archive_sha256": "4fc85abaa6210d6a1773e6011ff572aa0c04b7030644b74f75a2db2dbda472a9",
+      "manifest_sha256": "61bd0706962c175f7a98475a1432b8a641ddab018286f8306ae006a5dbb3ad44",
+      "version": "hyle-flashinfer-msvc-portability-v16",
+      "tree_sha256": "074deb1bf532d5d613cfa7db01d8fdd0a5c2fc45cbc605dc4cf980eee115ca68",
+      "notice_sha256": "dab398080097294f4fc6a881ca02878038ed0b7b24ca38eb02c198d2ce86cd78",
+      "upgrade": false,
+      "custom_kernel": false
+    },
+    "verified_header_count": 7,
+    "note": "Original actual v16 verified-header overlay/recipe reused; not v21. No vendor tree copied or rebuilt."
+  },
+  "builds": {
+    "attempts": {
+      "NVCC": 1,
+      "host_CXX": 4,
+      "successful_host_CXX": 3,
+      "failed_test_CXX": 1,
+      "links": 2
+    },
+    "process": {
+      "native": {
+        "exit": 0,
+        "pid": 54432,
+        "seconds": 59.1563019999885
+      },
+      "provider": {
+        "exit": 0,
+        "pid": 44068,
+        "seconds": 1.4989380999468267
+      },
+      "batch": {
+        "exit": 0,
+        "pid": 51632,
+        "seconds": 1.8986173999728635
+      },
+      "component2": {
+        "exit": 2,
+        "pid": 61684,
+        "seconds": 1.617853500007186
+      },
+      "component3": {
+        "exit": 0,
+        "pid": 41828,
+        "seconds": 3.761473999998998
+      }
+    },
+    "cli_inputs": 224,
+    "component_inputs": 225,
+    "failures": [{"stage":"component2 CXX","exit":2,"reason":"Four same-line SCOPED_TRACE macros generated gtest_trace_614 redefinitions; no link or GPU followed that failed TU."},{"stage":"metadata-only source review","reason":"replay_report Result access corrected before any CXX; initial frozen snapshot retained."}],
+    "reuse": "Both images use the three new product objects. Component removes actual Model/CLI entry TUs and adds one test TU plus existing /MD GTest support."
+  },
+  "component": {
+    "name": "GraphBatchCapture.UniformDecodePlansKeepCaptureAcrossGrowingPagedPrefixes",
+    "process": {
+      "exit": 0,
+      "pid": 50920,
+      "seconds": 0.8344210999784991
+    },
+    "R": [1,2],
+    "T": [1,2],
+    "KV": [127,128,129,383,384,385,1023],
+    "dtype": "BF16",
+    "page_size": 16,
+    "D": 256,
+    "query_heads": 4,
+    "kv_heads": 2,
+    "independent_invocations": 2,
+    "executions": 96,
+    "recorded_capture_ranges": 16,
+    "reused_capture_ranges": 80,
+    "plan_host_waits": 112,
+    "maximum_absolute_error": 0.00015699467,
+    "allowed_absolute_error": 0.007,
+    "checked": ["FP64 dot/softmax/value reference from original BF16 words for every active output; bottom-right causal mask and permuted physical pages.","Inactive output words zero; both adjacent caller guard regions unchanged after poison-before-each-submit.","127→128 and 383→384 retain capture; all growing-prefix plan outcomes reported, not assumed.","Explicit fresh and R/T changes invalidate/re-record; peer Invocation recordings can be replayed after peer preparation.","Each original metadata Queue owner remains stable and distinct from its execution stream."],
+    "wait_caveat": "112 is the sum over actual 64 preparations; replay-only rows repeat prior reports and are excluded. Reused capture does not imply zero host waits."
+  },
+  "model_checks": [{"arm":"two-turn-off","process":{"exit":0,"pid":59880,"seconds":3.289340200019069},"recorded_ranges_before":3,"recorded_ranges_after":1,"new_recorded_visible":[155],"publications_before":0,"publications_after":0,"refusals_before":0,"refusals_after":0,"complete_non_time_differences":[]},{"arm":"two-turn-auto","process":{"exit":0,"pid":43048,"seconds":3.7715385999763384},"recorded_ranges_before":15,"recorded_ranges_after":7,"new_recorded_visible":[155,156,157,158,159,374,377],"publications_before":102,"publications_after":110,"refusals_before":1,"refusals_after":0,"complete_non_time_differences":[{"path":"/overlap_successor_publications","old":102,"new":110},{"path":"/overlap_successor_refusals","old":1,"new":0},{"path":"/overlap_successor_submissions","old":102,"new":110}]},{"arm":"single-mtp","process":{"exit":0,"pid":13888,"seconds":2.9496271000243723},"recorded_ranges_before":11,"recorded_ranges_after":11,"new_recorded_visible":[156,158,160,162,169,171,172,174,176,178,180],"publications_before":0,"publications_after":0,"refusals_before":0,"refusals_after":0,"complete_non_time_differences":[]}],
+  "artifacts": {
+    "cli_image": {
+      "path": ".scratch/inference-stable-attention-20261027/bin/hyle-stable-attention.exe",
+      "bytes": 142439936,
+      "sha256": "d9a2fe2cda2736cbb5ddb7a01366b36d1f7409045ff2cde2fd78d4e7f3337391"
+    },
+    "component_image": {
+      "path": ".scratch/inference-stable-attention-20261027/bin/stable-attention-component.exe",
+      "bytes": 140754944,
+      "sha256": "e2e6d3bc2b9f3ff9727e4401f1c84fbbfecf3bdb14f8648bdf821134c59a6469"
+    },
+    "original_cli_ready": {
+      "path": ".scratch/inference-stable-attention-20261027/ready-cli.json",
+      "bytes": 6722,
+      "sha256": "a5a69e14ae9c51ba17992ebe2da2bd18d93ba976bd965798b3584554bc64ff9f"
+    },
+    "component_ready": {
+      "path": ".scratch/inference-stable-attention-20261027/ready-component.json",
+      "bytes": 3174,
+      "sha256": "1a8794190b045f5af4c365d897982edc52cc3996265832831a016c30c16bef0e"
+    }
+  },
+  "reuse_references": [{"path":"docs/evidence/correctness/inference-wave-recovery-2026-10-27.json","receipt":{"path":"docs/evidence/correctness/inference-wave-recovery-2026-10-27.json","bytes":17613,"sha256":"2316303dc74055a24d9606fb5d89cd9fc8343d63887ddf7b779802dbd6a111ae"},"archive":{"path":"C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-wave-recovery-2026-10-27.zip","bytes":765423,"sha256":"321c9f24bc716493fae4725d058575646b9dcbb94ef691d76d0a1f0f75cd8e67","members":216,"all_member_bytes_and_sha256_read_back":true},"purpose":"Original Model/SDK closure and complete two-turn default/off controls; actual retained object/dependency identities remain in this package."},{"path":".scratch/inference-feature-completion-2026-10-18/windows-batch/current-replay-identities.json","purpose":"Seven verified v16 header hashes and original native source provenance."}],
+  "exclusions": ["No SDK, dependency, model download or full rebuild; no binary/object/PDB/DLL/library/model payload in archive.","Only finite BF16 D256 Graph R1/R2 T1/T2 cases were exercised here; no universal dtype/head/ragged/mask/concurrency proof.","Natural-model complete non-time CLI reports match except exact continuation counter changes. This does not assert all hidden intermediates are bitwise identical.","MTP still records 11 ranges; no claim that all remaining model captures were eliminated.","No fault injection, new platform proof, throughput conclusion, or no-wait claim. Functional process seconds are receipts, not benchmark samples."],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-stable-attention-2026-10-27.zip",
+    "bytes": 390401,
+    "sha256": "f48df021bed0c0be2f949d9c82391f769a149e86c15eaa00bfd0b5d22317928a",
+    "members": 133,
+    "verified_every_member": true
+  }
+}

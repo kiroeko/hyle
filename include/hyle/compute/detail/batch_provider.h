@@ -66,9 +66,16 @@ struct BatchProviderVTable final {
   // native command resource and launch argument: only runtime metadata content
   // and host layout/generation bookkeeping may change. False or error must not
   // change/release the old command resources or launch arguments. Common
-  // preparation calls its before-change gate before fresh planning. Providers
-  // unable to promise this keep runtime.capture_compatible false.
+  // preparation calls its before-change gate before fresh planning unless an
+  // exact workspace preflight below proves the same command preservation.
+  // Providers unable to promise this keep runtime.capture_compatible false.
   Result<bool> (*update)(void *,const BatchLayoutVersion &,BatchPlanReport *) noexcept=nullptr;
+  // An incoming report.reused_native_plan requests only the preservation
+  // proven by the immediately preceding workspace query. It requires that
+  // exact layout/spec/original generation/planning Queue; a miss must reject
+  // before acceptance, never acquire a wider proof by querying again. Actual
+  // plan/upload and completion retention still apply. Success confirms the
+  // report flag; failure preserves the original accepted prefix contract.
   EnqueueResult (*plan)(void *,QueueSequence &,const BatchLayoutVersion &,BatchWorkspaceViews,BatchPlanReport *) noexcept=nullptr;
   EnqueueResult (*run)(void *,QueueSequence &,std::span<const ConstTensorView>,BatchWorkspaceViews) noexcept=nullptr;
   // The prepared run callback can record into an existing capture sequence;
@@ -84,6 +91,11 @@ struct BatchProviderVTable final {
   // allow_update carries the caller's existing preparation intent. Only
   // when true may a read-only reuse proof size the retained original plan.
   // False must size a fresh native plan, even when the old plan could run.
+  // reused_native_plan may additionally stage a proof that real fresh planning
+  // retains every recorded topology/offset/launch fact and requested byte size
+  // of the original plan. This is not a prepared token or permission to omit
+  // planning. Common accepts it only with unchanged carriers and the original
+  // capture-compatible runtime; absent proof keeps the before-change gate.
   Status (*workspace)(void *,Queue &,const BatchLayoutVersion &,bool allow_update,BatchPlanReport *) noexcept=nullptr;
   // Actual prepared-slot proof, queried only at a cold binding boundary.
   // True means this plan will not dereference any cache payload. The caller

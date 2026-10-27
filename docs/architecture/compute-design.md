@@ -616,6 +616,14 @@ Source 上的批次能力装配进原编译器；`batch::prepare/bind` 仍操作
 用同一原计划拓扑判据服务 sizing 和 update，合法复用直接报告原实际需求，强制重规划仍查询原 scheduler。
 完整准备或已退休运行之后才允许这项复用；部分准备失败后的重试同时走 fresh sizing 和 fresh plan，
 避免扩容先释放旧 scratch、再分配失败时保留的 native metadata 导致低估。原预算、Queue、结果与退休检查继续生效。
+调度数据变化不必然改变已录制命令。Provider 可在只读 workspace 查询中，对本次精确 layout、原计划代际与
+实际 planning Queue 证明完整 launch 拓扑、所有 workspace 偏移及所需字节均保持不变；共同层还须核对原
+carrier 与 capture runtime 资格，才可保留捕获并执行真实 metadata replan。预检失配在 H2D 前拒绝，实际
+计划违背承诺则按原 accepted-error 合同退休，不能继续 replay。显式 fresh 和 carrier 变化仍先撤销旧命令。
+规划上传可复用本槽已有 metadata Queue，执行与 capture 仍用原执行 Queue；所有 LeaseUse、pinned source、
+Completion 与真实等待照常保留。`reused_native_plan` 表示命令拓扑保留，实际等待由 `host_waits` 单独报告。
+固定拓扑不是额外内存的强制要求：若其workspace超过显式cap，Provider须查询原调度并精确缓存所选模式，
+实际plan消费相同模式。原调度也不足时仍报容量错误；回退不获取保capture资格，不能缩小原可执行域。
 这些结果不推导其余 dtype、后端或整模型已验证，剩余迁移继续由真实消费者校正。
 
 普通编译不按同一 Device 或 CPU/GPU 后端名字准入；每个实际 source 的默认存储、所选计算、

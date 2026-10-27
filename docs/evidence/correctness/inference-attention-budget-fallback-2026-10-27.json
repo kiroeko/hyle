@@ -1,0 +1,149 @@
+{
+  "schema": "hyle.correctness.attention-budget-fallback.v1",
+  "date": "2026-10-27",
+  "status": "PASS_FINITE_FOLLOWUP",
+  "scope": "Preserve executable requests under explicit small workspace caps; original stable-attention40 window is pre-cap evidence.",
+  "implementation": {
+    "sources": [{"path":"src/compute_provider_flashinfer/native_batch.cu","bytes":10099,"sha256":"b58929a3d458548e2cbb0c00f341288f7bcf1d78f1cfcea7ec061c5f6af8585b"},{"path":"src/compute_provider_flashinfer/native_batch.h","bytes":2981,"sha256":"c5addee8c6b2fc0f280e801a196d20030ed21c9626066929fe73616c94c9eb54"},{"path":"src/compute_provider_flashinfer/flashinfer_provider.cc","bytes":50335,"sha256":"7d84d40e426109242fb858bb407bac012834eaee10ba2bbe7762361d66b5253f"},{"path":"tests/graph_batch/batch_capture_test.cc","bytes":45355,"sha256":"f979739d768ed6c86182e4077c8ffea3bf92444a3e5c48f66ad420c4275d76c1"}],
+    "change": "Stage graph scheduler only when its real workspace fits original caps; otherwise query and materialize the original non-graph scheduler using the same cached allow_graph_plan choice.",
+    "invariants": "BatchSpec/Facts declarations unchanged. Original admission, exact workspace limits, native Queue/error/retirement and BeforeCommandChange remain.",
+    "ABI_proof": "frozen.json contains both original and current BatchSpec/Facts declarations and matching token hashes."
+  },
+  "build": {
+    "scope": "Budget product/test followup only; final user-CLI Model build is separate below.",
+    "NVCC": 1,
+    "host_CXX": 2,
+    "links": 2,
+    "processes": {
+      "native": {
+        "exit": 0,
+        "pid": 27924,
+        "seconds": 58.16320110001834
+      },
+      "provider": {
+        "exit": 0,
+        "pid": 57964,
+        "seconds": 1.4612775000277907
+      },
+      "test": {
+        "exit": 0,
+        "pid": 41012,
+        "seconds": 3.85509769996861
+      }
+    },
+    "first_attempts_passed": true,
+    "CLI_inputs": 224,
+    "component_inputs": 225,
+    "reuse": "Retain original successful batch_execution object and all other exact inputs; replace only native/provider/test."
+  },
+  "component": {
+    "process": {
+      "exit": 0,
+      "pid": 55464,
+      "seconds": 0.848308700020425
+    },
+    "executions": 100,
+    "original_matrix": "96 real Graph executions: R1/R2 × T1/T2 × KV127/128/129/383/384/385/1023, BF16 page16 D256, two Invocations, fresh/shape/replay checks.",
+    "numerical_oracle": "Original FP64 dot/softmax/value reference for every active output, exact inactive zeros and both caller guards after each poison/submit.",
+    "allowed_abs_error": 0.007,
+    "maximum_abs_error": 0.00015699467,
+    "recorded_ranges": 19,
+    "reused_ranges": 81,
+    "actual_preparation_host_waits": 119,
+    "uncapped_graph_float_bytes_at_R1_T1_KV127": 3026432,
+    "small_float_cap": 1048576,
+    "capped_observations": [{"slot":0,"R":1,"T":1,"KV":127,"update":1,"native_reused":0,"recorded":1,"reused":0,"plan_waits":2,"upload_waits":1,"split":0,"padded":1,"tile":16,"float_bytes":0,"float_cap":1048576,"int_bytes":60},{"slot":0,"R":1,"T":1,"KV":128,"update":1,"native_reused":1,"recorded":0,"reused":1,"plan_waits":1,"upload_waits":1,"split":0,"padded":1,"tile":16,"float_bytes":0,"float_cap":1048576,"int_bytes":60},{"slot":0,"R":1,"T":1,"KV":129,"update":1,"native_reused":0,"recorded":1,"reused":0,"plan_waits":2,"upload_waits":1,"split":1,"padded":2,"tile":16,"float_bytes":131584,"float_cap":1048576,"int_bytes":82},{"slot":0,"R":1,"T":1,"KV":129,"update":0,"native_reused":0,"recorded":1,"reused":0,"plan_waits":2,"upload_waits":1,"split":1,"padded":2,"tile":16,"float_bytes":131584,"float_cap":1048576,"int_bytes":82}],
+    "interpretation": "The cap really excludes the padded graph workspace, yet the original native schedule executes inside actual Graph RequireCapture. The native scheduler flag is not a fallback to Graph Commands. Fresh capture at KV129 is legitimate and numerically checked. Capture reuse is not a zero-wait promise."
+  },
+  "final_model_sanity": {
+    "process": {
+      "exit": 0,
+      "pid": 48916,
+      "seconds": 3.249769699992612
+    },
+    "image": {
+      "path": ".scratch/inference-stable-attention-20261027/followup-user-cli/bin/hyle-user-cli.exe",
+      "bytes": 142440448,
+      "sha256": "91ebdde89237e652cb4db7cb8733e9b1f74c277112dcbfb303142a04689570dd"
+    },
+    "actual_UI_Model_source": {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 555018,
+      "sha256": "4b6c914b08775667bb91ba01a1caf5c365a23eb9140d1ed378b537add8e4e854"
+    },
+    "UI_build": {
+      "host_CXX": 1,
+      "links": 1,
+      "compile_process": {
+        "exit": 0,
+        "pid": 61288,
+        "seconds": 24.564587600005325
+      },
+      "link_process": {
+        "exit": 0,
+        "pid": 7240,
+        "seconds": 1.7615431000012904
+      }
+    },
+    "summary": {
+      "path": ".scratch/inference-stable-attention-20261027/followup-user-cli/model-two-turn/summary.json",
+      "bytes": 829,
+      "sha256": "9eaab892b92090b69e27034c554fde6289a13cf354156421fcb6d5e175e63122"
+    },
+    "complete_non_time_differences": [],
+    "replaced_unrun_budget_sanity": true,
+    "attribution": "Final user-CLI224 closure mechanically contains these exact native/provider objects and retained batch object; only its Model/help TU differs from budget CLI.",
+    "UI_only_checks": [{"name":"help","process":{"exit":0,"pid":39748,"seconds":0.75},"command":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\help\\command.json","bytes":211,"sha256":"1ff6090a3aa27a30ab86d9945c935ebed66cfb29d86948fa34fde9fe62613a60"},"stdout":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\help\\stdout.log","bytes":1759,"sha256":"ad7fa2783f42aef79a936549bbac83aade6abb57a54b4ef39807698bf27679a4"},"stderr":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\help\\stderr.log","bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},"model_started":false},{"name":"usage","process":{"exit":1,"pid":46844,"seconds":0.375},"command":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\usage\\command.json","bytes":196,"sha256":"2c6dbe183a21a562775e603e4d0803e4751a054ed723799465cac2221849a495"},"stdout":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\usage\\stdout.log","bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},"stderr":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\usage\\stderr.log","bytes":49,"sha256":"f23fd21ed4417176a7933d93ca1558a32a4e13e998046615c7e9e1b182c7b6e7"},"model_started":false},{"name":"internal-off-parse","process":{"exit":1,"pid":4380,"seconds":0.39100000000325963},"command":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\internal-off-parse\\command.json","bytes":323,"sha256":"ed06238a7f33f965771972c653ddc47bca67dcbe050afe6eb501f52d8273054b"},"stdout":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\internal-off-parse\\stdout.log","bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},"stderr":{"path":"C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\cli-checks\\internal-off-parse\\stderr.log","bytes":49,"sha256":"f23fd21ed4417176a7933d93ca1558a32a4e13e998046615c7e9e1b182c7b6e7"},"model_started":false}],
+    "preserved_helper_errors": [{"stage":"Before actual CXX","reason":"TypeError from read(pin) missing ['path']; only helper amended, source/recipe unchanged; one actual Model CXX followed."},{"stage":"After help/usage processes","reason":"Checker assumed usage: hyle; actual valid missing-input diagnostic is --inputs DIR is required. Existing help/usage were rechecked offline, only unrun internal-off was resumed."}]
+  },
+  "runtime_processes": {
+    "Graph_component": 1,
+    "natural_model_sanity": 1,
+    "UI_only_no_model": 3
+  },
+  "images": {
+    "component": {
+      "path": ".scratch/inference-stable-attention-20261027/followup-budget/bin/attention-budget-test.exe",
+      "bytes": 140761088,
+      "sha256": "cc5d7d279223336696662b059cb72d90a324551aa10d2e13234782e1a5990058"
+    },
+    "budget_CLI_linked_not_run": {
+      "path": ".scratch/inference-stable-attention-20261027/followup-budget/bin/hyle-attention-budget.exe",
+      "bytes": 142440448,
+      "sha256": "7f099613f96c4d1e1ee36a45ca795afda41f02495fe9c82ab078662312f3137c"
+    },
+    "final_UI_CLI": {
+      "path": ".scratch/inference-stable-attention-20261027/followup-user-cli/bin/hyle-user-cli.exe",
+      "bytes": 142440448,
+      "sha256": "91ebdde89237e652cb4db7cb8733e9b1f74c277112dcbfb303142a04689570dd"
+    },
+    "measured40_pre_budget": {
+      "path": ".scratch/inference-stable-attention-20261027/bin/hyle-stable-attention.exe",
+      "bytes": 142439936,
+      "sha256": "d9a2fe2cda2736cbb5ddb7a01366b36d1f7409045ff2cde2fd78d4e7f3337391"
+    }
+  },
+  "prior": {
+    "receipt": {
+      "path": "docs/evidence/correctness/inference-stable-attention-2026-10-27.json",
+      "bytes": 9247,
+      "sha256": "d2e0ee3599df5adc70a58332224a6a57e04b35b2a99901338c317abbd97401e4"
+    },
+    "archive": {
+      "path": "docs/evidence/correctness/inference-stable-attention-2026-10-27.zip",
+      "bytes": 390401,
+      "sha256": "f48df021bed0c0be2f949d9c82391f769a149e86c15eaa00bfd0b5d22317928a",
+      "members": 133,
+      "verified_every_member": true
+    },
+    "reuse": "Original v16 native header/recipe and common three-TU provenance are referenced, not recopied as SDK payload."
+  },
+  "limits": ["No new TPS/VRAM measurement; original40-process results remain tied to d9a2fe2c pre-budget-fallback image.","One final natural two-turn model sanity replaces an extra budget model run; no fresh40 window or extra off/MTP reruns.","Finite BF16 D256 Graph geometry and cap case do not prove every supported dtype/shape/device or injected-failure behavior.","Complete existing CLI non-time report equality is not a bitwise proof of every hidden intermediate.","No SDK/model download or whole rebuild. Archive excludes binaries, objects, libraries, model data and SDK trees."],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-attention-budget-fallback-2026-10-27.zip",
+    "bytes": 394738,
+    "sha256": "41c1f9c7b8f16d645d25946a2ac9f8c975bea3a554c90d8c576de2ee0bd17e19",
+    "members": 111,
+    "every_member_verified": true
+  }
+}

@@ -30,8 +30,12 @@ std::size_t batch_state_bytes() noexcept;
 void initialize_batch_state(void *) noexcept;
 void destroy_batch_state(void *) noexcept;
 // Only the native scheduler's H2D stage accepts GPU work. Query is host-only.
-cudaError_t query_batch_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &);
-cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &);
+// Optional read-only comparison against an original plan. True proves the
+// complete recorded launch topology, not permission to skip metadata upload.
+cudaError_t query_batch_workspace(BatchSpec,const std::int32_t *,const std::int32_t *,cudaStream_t,BatchFacts &,
+                                 const void *retained_plan=nullptr,bool *preserves_commands=nullptr,bool allow_graph_plan=true);
+cudaError_t plan_batch(void *,BatchSpec,const std::int32_t *,const std::int32_t *,void *,std::size_t,void *,void *,std::size_t,cudaStream_t,BatchFacts &,
+                       bool preserve_commands=false,bool allow_graph_plan=true);
 cudaError_t run_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 cudaError_t run_highdim_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
 cudaError_t run_cache_batch(const void *,BatchSpec,const void *,const void *,const void *,const void *,void *,void *,void *,cudaStream_t);
