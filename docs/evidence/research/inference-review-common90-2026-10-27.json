@@ -1,0 +1,262 @@
+{
+  "status": "OFFLINE_HISTORICAL_COMMON_90_CORRECTION",
+  "date": "2026-10-27",
+  "original_evidence": "inference-b2-current-attribution-2026-10-26.json",
+  "original_source_scope": "Historical Model dfaa530b/sampling085be10d and peer632, 99 teacher-forced R2 episodes, 1728 input rows, 198 equal decisions; each original process passed its complete non-time gate.",
+  "current_HEAD_at_review": "2fe2916cf; historical trace is not the current kernel/copy/capture inventory",
+  "origins": {
+    "hyle": {
+      "sqlite": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/hyle/trace1/trace.sqlite",
+        "bytes": 11554816,
+        "sha256": "28adaca1cdf1d442d695164b1efe009e55bfa9f213dc75e1af274f1fbe507814"
+      },
+      "quality": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/hyle/trace1/quality.json",
+        "bytes": 2151,
+        "sha256": "d81fcc8dbf0ff0edece2ed8fdd6bbaf071beb899bcc45bc116b7084151694950"
+      },
+      "physical_roots": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/hyle/trace1/physical-roots.json",
+        "bytes": 39575,
+        "sha256": "125bfbb34497ce9c1cb286528c3503b4ec97622e4664bed0155820bdea09cfca"
+      }
+    },
+    "peer": {
+      "sqlite": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/peer2/trace1/trace.sqlite",
+        "bytes": 8695808,
+        "sha256": "643113ca6ebb15e00c061a1d6153f2319387478cb54ab150cc2c0a7bfda8df19"
+      },
+      "quality": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/peer2/trace1/quality.json",
+        "bytes": 2106,
+        "sha256": "14889c48cedb4508321ee9a8758ba8d3c48bec68664cdf8bf3dcc17c297022d1"
+      },
+      "physical_roots": {
+        "path": ".scratch/inference-b2-current-attribution-20261026/peer2/trace1/physical-roots.json",
+        "bytes": 39575,
+        "sha256": "9a0ce3e5ecd63c534df74b8f47bd93d2b013a2269aa5a93494f8fd71037df46f"
+      }
+    }
+  },
+  "original_not_record": {
+    "hyle": {
+      "roots": 90,
+      "kernel_count": 758.0,
+      "native_graph_launch_count_distribution": {
+        "1": 90
+      },
+      "mean_ms": {
+        "wall": 12.875771222,
+        "kernel_union": 10.640717578,
+        "gpu_union": 10.784252922,
+        "before_first_gpu": 0.041781156,
+        "after_last_gpu": 0.3134465,
+        "before_first_kernel": 1.604101578,
+        "after_last_kernel": 0.394379356,
+        "first_to_last_gpu": 12.520543567,
+        "observed_idle_inside_kernel_span": 0.098997478
+      },
+      "memcpy_per_root": {
+        "DTOD": {
+          "count": 132.0,
+          "bytes": 39714816.0,
+          "sum_ms": 0.136588567
+        },
+        "DTOH": {
+          "count": 2.0,
+          "bytes": 12.0,
+          "sum_ms": 0.002574889
+        },
+        "HTOD": {
+          "count": 4.0,
+          "bytes": 193.33333333333334,
+          "sum_ms": 0.003113222
+        }
+      }
+    },
+    "peer": {
+      "roots": 93,
+      "kernel_count": 709.0,
+      "native_graph_launch_count_distribution": {
+        "0": 3,
+        "1": 90
+      },
+      "mean_ms": {
+        "wall": 11.827087753,
+        "kernel_union": 10.578433,
+        "gpu_union": 10.668759548,
+        "before_first_gpu": 0.13211757,
+        "after_last_gpu": 0.046311387,
+        "before_first_kernel": 0.866596452,
+        "after_last_kernel": 0.164849591,
+        "first_to_last_gpu": 11.648658796,
+        "observed_idle_inside_kernel_span": 0.21720871
+      },
+      "memcpy_per_root": {
+        "DTOH": {
+          "count": 4.0,
+          "bytes": 1986568.0,
+          "sum_ms": 0.080980226
+        },
+        "HTOD": {
+          "count": 7.0,
+          "bytes": 5208.0,
+          "sum_ms": 0.009346323
+        }
+      }
+    }
+  },
+  "corrected_common_native": {
+    "hyle": {
+      "roots": 90,
+      "kernel_count": 758.0,
+      "native_graph_launch_count_distribution": {
+        "1": 90
+      },
+      "mean_ms": {
+        "wall": 12.875771222,
+        "kernel_union": 10.640717578,
+        "gpu_union": 10.784252922,
+        "before_first_gpu": 0.041781156,
+        "after_last_gpu": 0.3134465,
+        "before_first_kernel": 1.604101578,
+        "after_last_kernel": 0.394379356,
+        "first_to_last_gpu": 12.520543567,
+        "observed_idle_inside_kernel_span": 0.098997478
+      },
+      "memcpy_per_root": {
+        "DTOD": {
+          "count": 132.0,
+          "bytes": 39714816.0,
+          "sum_ms": 0.136588567
+        },
+        "DTOH": {
+          "count": 2.0,
+          "bytes": 12.0,
+          "sum_ms": 0.002574889
+        },
+        "HTOD": {
+          "count": 4.0,
+          "bytes": 193.33333333333334,
+          "sum_ms": 0.003113222
+        }
+      }
+    },
+    "peer": {
+      "roots": 90,
+      "kernel_count": 709.0,
+      "native_graph_launch_count_distribution": {
+        "1": 90
+      },
+      "mean_ms": {
+        "wall": 11.670122,
+        "kernel_union": 10.598088944,
+        "gpu_union": 10.6884088,
+        "before_first_gpu": 0.117913567,
+        "after_last_gpu": 0.0467097,
+        "before_first_kernel": 0.869087067,
+        "after_last_kernel": 0.165809344,
+        "first_to_last_gpu": 11.505498733,
+        "observed_idle_inside_kernel_span": 0.037136644
+      },
+      "memcpy_per_root": {
+        "DTOH": {
+          "count": 4.0,
+          "bytes": 1986568.0,
+          "sum_ms": 0.080990167
+        },
+        "HTOD": {
+          "count": 7.0,
+          "bytes": 5208.0,
+          "sum_ms": 0.009329689
+        }
+      }
+    }
+  },
+  "selection": {
+    "common_roots": 90,
+    "both_no_record": true,
+    "exact_same_seq_and_full_physical_meta": true,
+    "both_exactly_one_native_graph_launch": true,
+    "excluded_peer_eager_sequences": [
+      {
+        "seq": 2,
+        "native_graph_launches": 0
+      },
+      {
+        "seq": 35,
+        "native_graph_launches": 0
+      },
+      {
+        "seq": 68,
+        "native_graph_launches": 0
+      }
+    ]
+  },
+  "corrected_differences_ms": {
+    "wall": 1.205649222222222,
+    "kernel_union": 0.04262863333333284,
+    "gpu_union": 0.09584412222222238
+  },
+  "interpretation": [
+    "The original not-record predicates independently select Hyle90 and peer93. The peer93 includes three eager/no GraphLaunch roots; the reported 12.88/11.83ms follows these different denominators.",
+    "Common90 still has758/709 kernels and132/0 D2D events. Hyle D2D actual mean sum0.136589ms/root is about1.06% of its wall; event count alone is not a cost attribution.",
+    "D2D is a positive component of the old GPU difference, but other kernel/copy work offsets it. Peer state/cache updates may be kernels. This does not prove the D2D work is removable or absent after indexed-state changes.",
+    "Time before the first kernel includes earlier GPU copies and gaps, so it is not CPU self-time. Time after the last GPU activity is reported separately and correctly corresponds to the review table endpoint.",
+    "The displayed kernel-span idle uses an explicit union-of-all-observed-activity definition. A different graph-gap definition is not automatically contradicted.",
+    "Intervals are filtered to the actual process and revalidated inside each root; all GPU unions exactly match retained facts. Original SQLite hashes match original quality manifests.",
+    "One historical profiled process per engine; no new TPS, causal speedup, DRAM-bandwidth, current capture count, model quality or statistical conclusion."
+  ],
+  "operations": {
+    "new_model_processes": 0,
+    "new_GPU_processes": 0,
+    "builds": 0,
+    "downloads": 0,
+    "original_SQLite_open": "mode=ro&immutable=1",
+    "original_analysis_files_changed": false
+  },
+  "files": [
+    {
+      "path": ".scratch/review-followup-20261027/common_roots.py",
+      "bytes": 9660,
+      "sha256": "b114ad8d44a296154424149a82969857e1a16e4d8b9920a7361f0b9955b164f5"
+    },
+    {
+      "path": ".scratch/review-followup-20261027/common-90-summary.json",
+      "bytes": 10813,
+      "sha256": "c69ece9a2496598681a0ceb8a8ef3a0848297bf1a794e97032abbf2e22699c0a"
+    },
+    {
+      "path": ".scratch/review-followup-20261027/package.py",
+      "bytes": 5758,
+      "sha256": "96369a05c54db8dfdc9a7c907aa5adfbcdd82ba5321622420d523ed2d31d0209"
+    },
+    {
+      "path": ".scratch/review-20261027/b2attr/facts.json",
+      "bytes": 544180,
+      "sha256": "8cc64f600c399fb8eb77b778139bc884a453bbff3a6cd9b82d9744f835fd7743"
+    },
+    {
+      "path": ".scratch/review-20261027/kernels.py",
+      "bytes": 2937,
+      "sha256": "421d851aa8a46f2d80b06cb974907c27c7702a890600744293b151ae1bc34e09"
+    },
+    {
+      "path": ".scratch/review-20261027/gemm.py",
+      "bytes": 1473,
+      "sha256": "4e2d4204db9f84f5da3fce1c3ab55369df0d4302f11e99afbeb89722a989e468"
+    },
+    {
+      "path": ".scratch/review-20261027/gaps.py",
+      "bytes": 2870,
+      "sha256": "933300d4a85d66371e85576eca141b68d7f2c8e6955f9d33cfd9e7b357744bb4"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/research/inference-review-common90-2026-10-27.zip",
+    "bytes": 59042,
+    "sha256": "c88ea389e1ec5054de5ded353462b9eae4d4b1f9f0c7345ae970eb6bb49405d9"
+  }
+}

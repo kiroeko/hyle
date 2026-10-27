@@ -33,6 +33,11 @@ prepare多47.40ms，其中前8步多17.73ms、其后88步多29.67ms；Source元�
 
 12个交错普通R1进程完整非时间报告逐模式一致；off的prefill／decode／综合中位2169.41→2145.13／96.70→96.67／91.19→91.09，auto为2181.75→2046.83／96.68→96.78／91.36→90.78 tok/s。范围均重叠，未证明净提速，auto的prefill中位下降6.18%也如实保留。逐模式cache backing相同，未采样全显存峰，未跑新参考或MTP，完整表仍是18:01窗口。采用为恒等替换的局部简化，不追加样本或启用默认接力。测速脚本首次helper属性错误发生在模型启动前，修正后12个模型进程各仅运行一次。
 
+[Source绑定分段](../../evidence/performance/inference-source-bind-attribution-2026-10-27.json)在泛化浮点Source后的冻结镜像上仅跑off／auto各一次，逐模式97个ID及完整非时间报告与原控制一致；auto实际发布44个后继。用嵌套扣除后的互斥桶定位：95次完整bundle绑定合计10.216ms，原子输入绑定含子桶5.461ms，其中6935次native-input扫描遍历7,087,570项但仅1.957ms，零native命中。不能因扫描次数大就把它当主因。
+slot绑定的完整观察为off12.037／auto15.338ms；写effect为3.634／6.306ms，auto另有1.928ms来源投影，IDs处理含等待1.781／1.622ms，未增加。auto的prepare_outputs合计38.317ms，其中replay其余31.039ms、consumer检查4.690ms、来源投影2.451ms；它包含原完整准备，off的普通prepare_replay未按同样入口插桩，不能以零相减称额外31ms，也不能混减前一Model3窗口的26.24ms。下一步定位共同replay准备，保留每次真实权限／tuple检查。本批只有诊断墙时，包含原生调用与等待，不是CPU忙时、统计提速或最新四项对照。
+
+[新Review的共序校正](../../evidence/research/inference-review-common90-2026-10-27.json)发现，10-26旧跟踪的原review脚本使用Hyle90／参考93个nonrecord根，参考多3个eager根。按双方同seq、各一次native launch的90／90重算，墙时12.876／11.670ms，kernel并集10.641／10.598ms，全部GPU活动并集10.784／10.688ms；GPU活动之外的差额约1.110ms／根，仍需查图外工作。Hyle132次D2D合计0.137ms／根、39.715MB，不能以次数解释1.206ms墙差。首kernel前还含GPU上传／间隙，不是CPU自耗；逻辑权重字节除kernel时间也不是实测DRAM带宽。仅离线重读旧库，未更新当前索引状态／KV工作帧版的kernel、拷贝或MTP录制次数，也不刷新TPS。后续当前镜像的R1／B2 off／auto与参考、R1 MTP双方共8个诊断进程尚未运行。
+
 随后[在途索引状态接线](../../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)完成有限GDN／conv捕获复用与真实Source旅程，并去掉同值IDs的重复上传／同Queue等待。该批尚未接入完整模型的有界流水，也未运行tokens/s窗口，不据组件结果估算提速；自然请求的后续接线及最新完整窗口分别列于上文。
 
 此前[引擎原池索引状态A/B](../../evidence/performance/inference-engine-slot-state-2026-10-27.json)为两版Hyle的普通B2同窗对照：6计时＋2独立内存进程全部通过，1728行、99次执行、198个ID及完整非时间报告不变。prefill7668.03→7606.82（−0.80%，范围重叠）、decode158.48→161.96（＋2.20%）、综合140.55→142.67 tok/s（＋1.51%）。dedicated采样峰4294000640→4243668992B，低48MiB；ready内存基线未知，采样峰为下界。代价是ready中位1.33150→1.37582s、冷shape准备0.411183→0.464081s；三样本不签统计显著性。原池Store接线及CPU／CUDA有限功能已检查，真实CUDA消费者的GDN／conv融合已观察；其它平台字节尾部、MTP异成员与当前完整性能仍待检查。本批未新运行llama.cpp或MTP性能，不更新旧跨引擎差距。

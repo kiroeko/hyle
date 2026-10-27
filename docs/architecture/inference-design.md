@@ -12,6 +12,8 @@ CLI formatter 已独立编译。Qwen 与真实 GLM StateHead 组件已消费共�
 `RequestLoop`现承载自然请求的FIFO、驻留腾位、turn切换和待退休身份；Qwen的静态适配器提供实际状态与执行。
 兼容分组与请求循环已共用，Qwen适配器提供真实工作形状、兼容条件、完整恢复算法和数学阶段；GLM／DeepSeek／Kimi仍为组件消费者，
 尚无第二个完整引擎模型验证整套编排复用。
+请求原语的提取不代表共同执行核心已经完成：Qwen的`Model`仍持有形状族、载体环、候选状态、
+Source接线及准备／提交／退休编排。本次复审将共同episode寿命与模型数学分开核算，先明确跨pump所有权，再移动实现。
 实施状态只在 [进度看板](../developer/inference-progress.md)更新，功能和硬件边界见[实现范围](../implementation/inference-roadmap.md)。
 
 ## 职责与依赖
@@ -42,6 +44,13 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 `BatchIndices`，通过静态调用取得资格、数量上限、兼容性及实际完成前缀；缩批后的尾部仍按原
 候选顺序等待，不插队。载荷、接纳、模型执行、提交观察及退休仍归调用者。执行或晚观察抛错时
 直接退出，不自动重试或回滚已提交事实；该提取不是完整模型无关调度器。
+
+连续跨pump流水目前尚未实现。`RequestLoop`只要求返回前观察已commit的输出，但现实现会在回调返回后处理turn，
+下一pump还会接纳、取消和淘汰。安全的异步化需要由现有owner冷预留有序RequestKey／代际、成员组及输出额度，
+原StepState／Source继续唯一持有Completion和会话；在途时可接收控制意图，不能移动或复用这组身份。
+只有原工作真实退休并完成一次状态／ledger／RNG观察，才能转turn、缩组和归还额度。
+这不是增加第二scheduler；同Queue也不能代替实际lease代际、append前缀、候选base、失败／取消及一次发布的核验。
+载体端口、固定拓扑和冷能力可以预备，静态结构与每代真实权限须分开，而非每步只检查Session epoch。
 
 版本腾位共用`make_version_room`：模型提供真实版本容量、剩余目录项和完整接纳查询，目录只负责
 移除可淘汰项。每次移除后重查；别名被删而版本数不变是合法结果，容量增长或目录不减则拒绝。
