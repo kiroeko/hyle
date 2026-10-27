@@ -7290,7 +7290,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     actual_fresh_participations = participations; actual_fresh_target_rows = rows;
     actual_step_sum += facts.step_seconds;
     auto finished = endpoint;
-    for (const auto &member : facts.members) finished = (std::max)(finished, member.request->endpoint);
+    for (const auto &member : facts.members)
+      finished = (std::max)(finished, facts.generation ? member.request->endpoint : member.request->prefill_endpoint);
     const auto seconds = std::chrono::duration<double>(finished - endpoint).count();
     (facts.generation ? decode_seconds : prefill_seconds) += seconds; endpoint = finished;
     observe_capacity();
@@ -7374,6 +7375,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   const auto post_endpoint_seconds = std::chrono::duration<double>(Clock::now() - endpoint).count();
   const auto session_seconds = std::chrono::duration<double>(endpoint - start).count();
+  if ((actual_prefill_calls && !(prefill_seconds > 0)) || (actual_decode_calls && !(decode_seconds > 0)))
+    throw std::logic_error("an actual generation phase has no observed completion interval");
   std::size_t logical_prompt = 0, user_prompt = 0, prefill_tokens = 0, prefill_draft = 0;
   std::size_t generated = 0, verified = 0, drafted = 0, committed = 0;
   std::size_t draft_rounds = 0, agreements = 0, accepts = 0, hits = 0, misses = 0, full_hits = 0, reused = 0;

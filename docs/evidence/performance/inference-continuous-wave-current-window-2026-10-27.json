@@ -1,0 +1,123 @@
+{
+  "schema": "hyle.performance.continuous-wave-window.v1",
+  "date": "2026-10-27",
+  "status": "COMPLETE40_FIVE_ARMS_STABLE",
+  "scope": "Finite current uninstrumented CUDA Qwen3.5-2B natural generation; Model3 fixes phase reporting. No performance claim from Model1/Model2 timings.",
+  "counts": {"build_cxx": 1,"links": 1,"timing_processes": 30,"separate_memory_processes": 10,"actual_model_processes": 40,"repetitions_per_timing_arm": 3,"old_samples_pooled": 0},
+  "images": [
+    {"role": "all current Hyle arms","path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin\\hyle-model3.exe","bytes": 142431744,"sha256": "fefa445f9cd5348114ee0981a6886c6027d7735298349080fcb2a1a7b148090e"},
+    {"role": "retained local llama native consumer, not latest upstream","path": "C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-final-window-20261024\\peer-link1\\peer.exe","bytes": 35830272,"sha256": "433e7051f4c36d0d9b2297dc378631546b7e3c44630cda0653cba2d1ec6bbe8e"}
+  ],
+  "source": {"main_sha256": "b4e72daa77c9ad2f8690c3304f2fbd2ccae4af3b1b458b0dbcafc663afbbd351","main_snapshot": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\source\\model3\\engine\\models\\qwen35\\main.cc","reused_project_header_receipts": 188,"link_inputs": 224,"compiler": "MSVC 14.50.35717 x64 /O2 /MD /DNDEBUG /W4 /WX; original static closure and runtime aliases","previous_correctness_archive": {"path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-continuous-wave-2026-10-27.zip","bytes": 925760,"sha256": "397aa1b12c7a3caf6c3f20fae361a8831406f3dab645cb77ee59cfd8e266ba51"}},
+  "model3_fix": [
+    "Batch facts precede finish_generation_call: prefill writes prefill_endpoint. Observer now chooses request.endpoint only for generation and prefill_endpoint otherwise (main:7294).",
+    "Actual prefill/decode calls require positive phase elapsed; every process also passes original P+D=session check. These are host producer intervals, not GPU busy or CPU busy.",
+    "One main CXX PID47276 exit0; one link PID42492 exit0. Full frozen header/dependency/224-input receipts retained; SDK, NVCC, weights and other objects reused unchanged."
+  ],
+  "workloads": [
+    {"scenario": "single","user_prompt_tokens": 154,"target_prefill_rows": 154,"output_tokens": 64,"full_decode_outputs": 63},
+    {"scenario": "two-turn","turns": 2,"user_prompt_tokens": 308,"pending_flush_tokens": 1,"target_prefill_rows": 309,"output_tokens": 128,"full_decode_outputs": 126}
+  ],
+  "configuration": "N1/R1/C1024, CUDA, greedy, prefix cache off, replay auto. Hyle off/auto are ordinary; MTP K1 explicitly overlap off. Original BF16 role/GGUF fixtures, no payload copied or downloaded.",
+  "metric_order": "Each timing array is [median,min,max] from three unmonitored processes; TPS means tokens/second. Full precision and samples are in ZIP.",
+  "metric_definitions": [
+    "Prefill TPS = actual target prefill rows / complete original prefill interval (two-turn includes one pending flush). New-user-only two-turn TPS is also in raw summary.",
+    "Full decode TPS = (all emitted tokens - one prefill output per turn) / complete original decode interval, including draft/catchup and host costs.",
+    "Session output TPS = all emitted tokens / (prefill+decode); processed TPS = committed context rows / that same interval.",
+    "Cold output TPS = all emitted tokens / original startup-to-final endpoint. Ready and first-token are original producer startup endpoints; no warmup, page-cache flush or instrumented timing."
+  ],
+  "timing_table": [
+    {"scenario": "single","arm": "hyle_plain","prefill_tps": [2206.73369,2142.021595,2233.962614],"decode_tps": [94.613034,93.66059,94.914854],"session_output_tps": [86.997113,86.302534,86.998189],"processed_tps": [294.974585,292.619529,294.978233]},
+    {"scenario": "single","arm": "hyle_auto","prefill_tps": [2152.157538,2097.863993,2215.903859],"decode_tps": [97.546927,92.708669,98.127524],"session_output_tps": [88.981454,85.207885,89.948368],"processed_tps": [301.702744,288.907984,304.981186]},
+    {"scenario": "single","arm": "hyle_mtp","prefill_tps": [2088.288498,1999.927275,2124.492502],"decode_tps": [117.61587,117.186868,118.467371],"session_output_tps": [105.023642,104.902418,105.125734],"processed_tps": [356.095785,355.68476,356.441941]},
+    {"scenario": "single","arm": "peer_plain","prefill_tps": [1558.635041,1527.392899,1618.42397],"decode_tps": [96.829674,95.173682,96.955624],"session_output_tps": [85.168402,84.127274,85.913409],"processed_tps": [288.774113,285.244037,291.300153]},
+    {"scenario": "single","arm": "peer_mtp","prefill_tps": [1474.76241,1378.198158,1516.489858],"decode_tps": [131.923027,129.447737,132.231766],"session_output_tps": [108.810913,108.271521,110.516032],"processed_tps": [368.937001,367.108127,374.718422]},
+    {"scenario": "two-turn","arm": "hyle_plain","prefill_tps": [2587.049182,2485.301333,2629.695474],"decode_tps": [91.129024,90.566832,91.444496],"session_output_tps": [85.214255,84.45674,85.596451],"processed_tps": [289.59532,287.020952,290.894189]},
+    {"scenario": "two-turn","arm": "hyle_auto","prefill_tps": [2622.504483,2562.127445,2638.337694],"decode_tps": [92.714072,92.408068,92.766974],"session_output_tps": [86.55404,86.408042,86.712866],"processed_tps": [294.148494,293.65233,294.688254]},
+    {"scenario": "two-turn","arm": "hyle_mtp","prefill_tps": [2458.208467,2445.428947,2466.851188],"decode_tps": [118.570514,118.508932,119.398674],"session_output_tps": [107.751391,107.661431,108.323447],"processed_tps": [366.186368,365.880646,368.130463]},
+    {"scenario": "two-turn","arm": "peer_plain","prefill_tps": [2457.668841,2347.432107,2501.878433],"decode_tps": [96.564303,96.303085,96.801405],"session_output_tps": [89.393184,89.107747,89.675863],"processed_tps": [303.79715,302.82711,304.757816]},
+    {"scenario": "two-turn","arm": "peer_mtp","prefill_tps": [2291.910816,2287.45203,2336.906254],"decode_tps": [132.739419,132.139769,133.859934],"session_output_tps": [118.047095,117.889567,118.947567],"processed_tps": [401.175675,400.640325,404.235872]}
+  ],
+  "cold_ready_table": [
+    {"scenario": "single","arm": "hyle_plain","ready_s": [1.246236,1.233942,1.250598],"weights_load_s": [0.857379,0.848843,0.86306],"first_token_s": [1.318193,1.302932,1.320439],"startup_endpoint_s": [1.981945,1.975574,1.986309],"cold_output_tps": [32.291505,32.220563,32.395653]},
+    {"scenario": "single","arm": "hyle_auto","ready_s": [1.29685,1.286249,1.32917],"weights_load_s": [0.854874,0.853709,0.878555],"first_token_s": [1.370316,1.355796,1.400793],"startup_endpoint_s": [2.016159,1.997818,2.080341],"cold_output_tps": [31.743522,30.76418,32.034949]},
+    {"scenario": "single","arm": "hyle_mtp","ready_s": [1.829634,1.829215,1.835317],"weights_load_s": [0.876552,0.875815,0.880312],"first_token_s": [1.903018,1.902175,1.912379],"startup_endpoint_s": [2.439777,2.43866,2.444171],"cold_output_tps": [26.231901,26.184742,26.243925]},
+    {"scenario": "single","arm": "peer_plain","ready_s": [1.719894,1.715623,1.743926],"weights_load_s": [1.690242,1.686229,1.714477],"first_token_s": [1.820826,1.814526,1.839181],"startup_endpoint_s": [2.476474,2.471453,2.488962],"cold_output_tps": [25.843195,25.713527,25.8957]},
+    {"scenario": "single","arm": "peer_mtp","ready_s": [1.77089,1.758238,1.796283],"weights_load_s": [1.737346,1.722854,1.761152],"first_token_s": [1.882729,1.859885,1.900811],"startup_endpoint_s": [2.359165,2.337436,2.387494],"cold_output_tps": [27.128246,26.806355,27.380423]},
+    {"scenario": "two-turn","arm": "hyle_plain","ready_s": [1.26995,1.269332,1.286973],"weights_load_s": [0.841105,0.835861,0.845841],"first_token_s": [1.344506,1.340755,1.359995],"startup_endpoint_s": [2.784958,2.765394,2.789123],"cold_output_tps": [45.961202,45.892555,46.286354]},
+    {"scenario": "two-turn","arm": "hyle_auto","ready_s": [1.313949,1.311497,1.317307],"weights_load_s": [0.84018,0.831923,0.841522],"first_token_s": [1.384082,1.382225,1.389438],"startup_endpoint_s": [2.792899,2.790146,2.796213],"cold_output_tps": [45.830523,45.776205,45.875734]},
+    {"scenario": "two-turn","arm": "hyle_mtp","ready_s": [1.959345,1.958859,1.967057],"weights_load_s": [0.865668,0.859729,0.866607],"first_token_s": [2.034036,2.033881,2.042521],"startup_endpoint_s": [3.147318,3.140559,3.156022],"cold_output_tps": [40.669552,40.557383,40.757077]},
+    {"scenario": "two-turn","arm": "peer_plain","ready_s": [1.668457,1.651302,1.689551],"weights_load_s": [1.637674,1.621774,1.660554],"first_token_s": [1.772126,1.752433,1.787081],"startup_endpoint_s": [3.105019,3.078762,3.121527],"cold_output_tps": [41.223576,41.005576,41.575147]},
+    {"scenario": "two-turn","arm": "peer_mtp","ready_s": [1.732723,1.710358,1.754493],"weights_load_s": [1.69793,1.675654,1.720187],"first_token_s": [1.837376,1.817412,1.859357],"startup_endpoint_s": [2.80893,2.794776,2.840362],"cold_output_tps": [45.56895,45.064674,45.799732]}
+  ],
+  "memory_units": "MiB (2^20 bytes); maxima from one independent monitored process per arm/scenario, never timing samples.",
+  "memory_table": [
+    {"scenario": "single","arm": "hyle_plain","independent_processes": 1,"dedicated_MiB": 3969.074,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4047.074,"working_set_MiB": 1081.133,"private_commit_MiB": 5639.664,"ready_unknown": true,"actual_gap_ms": [15.201,0.118,23.292],"running_samples": 219,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 34,"gpu_shared_bytes": 34,"gpu_total_bytes": 34}},
+    {"scenario": "single","arm": "hyle_auto","independent_processes": 1,"dedicated_MiB": 3993.074,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4071.074,"working_set_MiB": 1169.375,"private_commit_MiB": 5814.57,"ready_unknown": true,"actual_gap_ms": [15.231,0.117,16.594],"running_samples": 222,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 33,"gpu_shared_bytes": 33,"gpu_total_bytes": 33}},
+    {"scenario": "single","arm": "hyle_mtp","independent_processes": 1,"dedicated_MiB": 4127.078,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4205.078,"working_set_MiB": 1169.383,"private_commit_MiB": 5897.348,"ready_unknown": true,"actual_gap_ms": [15.172,0.127,19.15],"running_samples": 262,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 33,"gpu_shared_bytes": 33,"gpu_total_bytes": 33}},
+    {"scenario": "single","arm": "peer_plain","independent_processes": 1,"dedicated_MiB": 3817.086,"shared_MiB": 82.0,"same_sample_gpu_total_MiB": 3899.086,"working_set_MiB": 4169.129,"private_commit_MiB": 4785.273,"ready_unknown": true,"actual_gap_ms": [15.089,0.111,25.522],"running_samples": 277,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 13,"gpu_shared_bytes": 13,"gpu_total_bytes": 13}},
+    {"scenario": "single","arm": "peer_mtp","independent_processes": 1,"dedicated_MiB": 3989.113,"shared_MiB": 94.0,"same_sample_gpu_total_MiB": 4083.113,"working_set_MiB": 4321.867,"private_commit_MiB": 5203.969,"ready_unknown": true,"actual_gap_ms": [15.229,0.11,16.649],"running_samples": 272,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 10,"gpu_shared_bytes": 10,"gpu_total_bytes": 10}},
+    {"scenario": "two-turn","arm": "hyle_plain","independent_processes": 1,"dedicated_MiB": 4105.078,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4183.078,"working_set_MiB": 1111.465,"private_commit_MiB": 5808.109,"ready_unknown": true,"actual_gap_ms": [15.167,0.118,16.456],"running_samples": 294,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 32,"gpu_shared_bytes": 32,"gpu_total_bytes": 32}},
+    {"scenario": "two-turn","arm": "hyle_auto","independent_processes": 1,"dedicated_MiB": 4131.078,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4209.078,"working_set_MiB": 1202.332,"private_commit_MiB": 6004.84,"ready_unknown": true,"actual_gap_ms": [15.256,0.113,16.81],"running_samples": 298,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 34,"gpu_shared_bytes": 34,"gpu_total_bytes": 34}},
+    {"scenario": "two-turn","arm": "hyle_mtp","independent_processes": 1,"dedicated_MiB": 4269.078,"shared_MiB": 92.0,"same_sample_gpu_total_MiB": 4347.078,"working_set_MiB": 1223.168,"private_commit_MiB": 6122.164,"ready_unknown": true,"actual_gap_ms": [15.186,0.12,19.721],"running_samples": 333,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 35,"gpu_shared_bytes": 35,"gpu_total_bytes": 35}},
+    {"scenario": "two-turn","arm": "peer_plain","independent_processes": 1,"dedicated_MiB": 3817.086,"shared_MiB": 82.0,"same_sample_gpu_total_MiB": 3899.086,"working_set_MiB": 4172.684,"private_commit_MiB": 4787.609,"ready_unknown": true,"actual_gap_ms": [15.134,0.107,20.055],"running_samples": 337,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 13,"gpu_shared_bytes": 13,"gpu_total_bytes": 13}},
+    {"scenario": "two-turn","arm": "peer_mtp","independent_processes": 1,"dedicated_MiB": 3989.113,"shared_MiB": 94.0,"same_sample_gpu_total_MiB": 4083.113,"working_set_MiB": 4325.637,"private_commit_MiB": 5208.574,"ready_unknown": true,"actual_gap_ms": [15.25,0.118,16.55],"running_samples": 316,"nulls": {"working_set_bytes": 0,"private_commit_bytes": 0,"gpu_dedicated_bytes": 10,"gpu_shared_bytes": 10,"gpu_total_bytes": 10}}
+  ],
+  "memory_limits": [
+    "Original Windows PSAPI working set/private commit and PDH WDDM process GPU dedicated/shared counters; requested 10ms, actual gaps/nulls/sample costs and phase samples preserved in ZIP.",
+    "Sampled maxima are lower bounds. Dedicated/shared peaks occur separately; same_sample_gpu_total alone sums simultaneous values. CPU/shared GPU observations overlap and must not be added as physical RAM.",
+    "Ready baseline is the last sample in actual ready-to-prefill interval; missing stays unknown/null, never zero. No direct DXGI allocator or physical VRAM-limit proof."
+  ],
+  "relay_facts": [
+    {"scenario": "single","all_auto_processes": 4,"submissions": 55,"publications": 55,"discards": 0,"refusals": 0,"final_available": true},
+    {"scenario": "two-turn","all_auto_processes": 4,"submissions": 59,"publications": 59,"discards": 0,"refusals": 1,"final_available": false}
+  ],
+  "relay_boundary": "Two-turn auto includes later synchronous fallback. Existing logs place transition near visible length384/385; exact rejection status/tuple was not logged, so page/capture cause remains unproven (refusal-review archived).",
+  "backing_and_work": [
+    {"scenario": "single","arm": "hyle_plain","cache_shared_backing_bytes": 51855408,"cache_peak_requested_bytes": 51855408,"actual_graph_calls": 64,"actual_target_rows": 217,"generated_decode_tokens": 63},
+    {"scenario": "single","arm": "hyle_auto","cache_shared_backing_bytes": 71589936,"cache_peak_requested_bytes": 71589936,"actual_graph_calls": 64,"actual_target_rows": 217,"generated_decode_tokens": 63},
+    {"scenario": "single","arm": "hyle_mtp","cache_shared_backing_bytes": 73539635,"cache_peak_requested_bytes": 73539635,"actual_graph_calls": 35,"actual_target_rows": 222,"generated_decode_tokens": 63},
+    {"scenario": "two-turn","arm": "hyle_plain","cache_shared_backing_bytes": 51855408,"cache_peak_requested_bytes": 51855408,"actual_graph_calls": 128,"actual_target_rows": 435,"generated_decode_tokens": 126},
+    {"scenario": "two-turn","arm": "hyle_auto","cache_shared_backing_bytes": 71589936,"cache_peak_requested_bytes": 71589936,"actual_graph_calls": 128,"actual_target_rows": 435,"generated_decode_tokens": 126},
+    {"scenario": "two-turn","arm": "hyle_mtp","cache_shared_backing_bytes": 73539635,"cache_peak_requested_bytes": 73539635,"actual_graph_calls": 68,"actual_target_rows": 441,"generated_decode_tokens": 126}
+  ],
+  "stable_work": "All timing repetitions have identical within-arm IDs, exported work and full non-time reports; ordinary off/auto IDs and required mathematical work agree. All 40 consume their quota without natural EOS; live committed versions end at zero.",
+  "natural_ID_comparisons": [
+    {"scenario": "single","pair": "hyle_plain__hyle_auto","equal": true,"first_divergence_zero_based": null,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_plain__hyle_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_plain__peer_plain","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_plain__peer_mtp","equal": true,"first_divergence_zero_based": null,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_auto__hyle_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_auto__peer_plain","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_auto__peer_mtp","equal": true,"first_divergence_zero_based": null,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_mtp__peer_plain","equal": true,"first_divergence_zero_based": null,"lengths": [64,64]},
+    {"scenario": "single","pair": "hyle_mtp__peer_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "single","pair": "peer_plain__peer_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [64,64]},
+    {"scenario": "two-turn","pair": "hyle_plain__hyle_auto","equal": true,"first_divergence_zero_based": null,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_plain__hyle_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_plain__peer_plain","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_plain__peer_mtp","equal": true,"first_divergence_zero_based": null,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_auto__hyle_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_auto__peer_plain","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_auto__peer_mtp","equal": true,"first_divergence_zero_based": null,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_mtp__peer_plain","equal": true,"first_divergence_zero_based": null,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "hyle_mtp__peer_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]},
+    {"scenario": "two-turn","pair": "peer_plain__peer_mtp","equal": false,"first_divergence_zero_based": 18,"lengths": [128,128]}
+  ],
+  "interpretation": [
+    {"scenario": "single","auto_vs_off_decode_median_percent": 3.101,"auto_vs_off_session_median_percent": 2.281,"significance": "Not established; three observations per arm, no confidence interval or causal attribution."},
+    {"scenario": "two-turn","auto_vs_off_decode_median_percent": 1.739,"auto_vs_off_session_median_percent": 1.572,"significance": "Not established; three observations per arm, no confidence interval or causal attribution."}
+  ],
+  "interpretation_limits": [
+    "Matching quotas do not imply identical natural token trajectories: matching-mode Hyle/peer paths diverge at output index18. Cross-engine and ordinary/MTP numbers are finite natural-workload observations, not equal-operator-work or model-quality proof.",
+    "No statistical significance, generalized speedup, architecture-causal gain or new EOS/cancel/fault/multi-platform proof. GPU clocks, desktop/driver, thermal and OS page-cache variation remain uncontrolled; original outside-window snapshots retained.",
+    "Existing local peer image/revision only; no assertion about latest llama.cpp, all hardware, or other prompt/output lengths."
+  ],
+  "parser_and_resume": [
+    "Old parser incorrectly required final auto available=true. First two two-turn timing model processes exited0 before parse refusal; their commands/raw outputs/results and old parser are retained unchanged.",
+    "Amendment preserves actual59 publications/refusal1/finalfalse rather than relabeling the process. Original first2 were verified offline, then resume ran only remaining13 in the same planned order. Measurement sequence therefore has an explicit pause.",
+    "Single timing and memory groups were reanalyzed offline with amended parser, not rerun. Fixed plans, image, inputs, timing endpoints and memory sampler unchanged. No failed sample replacement or hidden rerun.",
+    "Historical plan/ready labels describe their creation stage; final completion authority is attempt2/summary.json plus 40 original result records."
+  ],
+  "archive": {"path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-continuous-wave-current-window-2026-10-27.zip","bytes": 1724429,"sha256": "df27b868b8244df250c6c89033734fe47665c719e728dee7b697fb947796abd5","filename": "inference-continuous-wave-current-window-2026-10-27.zip","members": 429,"uncompressed_bytes": 17957371,"all_member_bytes_and_sha256_read_back": true,"manifest_sha256": "6942e14e9324bed03d43f5b3fa32491531a54c2b2b51430520485974dff0ca42"}
+}

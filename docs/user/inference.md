@@ -85,10 +85,11 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 默认无界输入、MTP 或其它未计划形状仍需有界冷接纳。额外形状容量由初始冷键数冻结，独立于会话缓存数量。
 这不是设备执行／CUDA capture 预热，首次真实绑定仍可能准备 replay。
 
-`--decode-overlap auto` 可显式启用普通 CUDA greedy 单活动请求的有界接力，默认 `off`。
+`--decode-overlap auto` 可显式启用普通 CUDA greedy 自然生成的连续接力，默认 `off`；已有限检查单活动请求及双活动请求。
 当前仅为最多输出至少 10 个 token 的自然生成准备两层候选；prefill 保留原路径，后继只使用已有实际捕获。
-输出额度不足、其它后端、MTP、混合执行、随机采样、scheduler 或显式 commands 继续原单步行为。
-该选项会增加载体和状态内存；首轮对照尚未证明净提速，因此不默认启用。
+完整同形、同序的活动请求组可持续接力；异形分组保留原同步执行。输出额度不足时先完成已接纳工作，再暂停等待额度。
+其它后端、MTP、混合执行、随机采样、scheduler 或显式 commands 继续原单步行为。
+该选项会增加载体和状态内存。当前有限同窗对照的单轮／两轮decode中位提高约3.1%／1.7%，但单轮样本范围重叠、ready变慢，两轮发生过拒绝后回退；仍默认关闭。
 
 
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
