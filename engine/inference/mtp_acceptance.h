@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "request_stop_policy.h"
+
 // Host policy for one retired, finite verifier. This owns no model state,
 // sampler or cache. The final emitted token remains pending; only consumed
 // target rows may select a committed conv/GDN/KV prefix.
@@ -28,7 +30,7 @@ struct SamplingLimits final {
 };
 struct AcceptedPrefix final {
   // Nonterminal accepted proposals that entered model state, not acceptance
-  // probability/count of emitted proposals. An accepted EOS is still pending.
+  // probability/count of emitted proposals. An accepted stop token is still pending.
   std::size_t consumed = 0, consumed_drafts = 0;
   std::int32_t next_id = -1;
   bool first_agrees = false, stopped = false;
@@ -55,9 +57,10 @@ inline void emit(std::span<std::int32_t> emitted, std::size_t row, std::int32_t 
 template<class Output, class Accept, class Final>
 AcceptedPrefix choose_prefix(std::span<const std::int32_t> inputs,
     std::size_t quota, std::span<const std::int32_t> eos,
-    Output &emitted, Accept accept, Final final_id) {
+    Output &emitted, Accept accept, Final final_id,
+    const RequestStopPolicy *stop_policy) {
   if (inputs.empty() || !quota) throw std::runtime_error("MTP selection needs a pending input and positive output quota");
-  const auto ended = [&](auto id) { return std::ranges::find(eos, id) != eos.end(); };
+  const auto ended = [&](auto id) { return request_token_stopped(id, eos, stop_policy); };
   if (ended(inputs.front())) throw std::runtime_error("MTP cannot consume a terminal pending token");
   prepare_emitted(emitted, (std::min)(quota, inputs.size()));
   AcceptedPrefix result;
@@ -67,7 +70,7 @@ AcceptedPrefix choose_prefix(std::span<const std::int32_t> inputs,
     if (!row) result.first_agrees = agrees;
     const auto token = agrees ? inputs[row + 1] : final_id(row);
     emit(emitted, row, token);
-    // Even a matching/accepted EOS is an emitted pending token. Quota has the
+    // Even a matching/accepted stop token is an emitted pending token. Quota has the
     // same boundary: never consume the last output merely because it agrees.
     if (!agrees || ended(token) || row + 1 == quota) {
       result.consumed = row + 1; result.next_id = token; result.stopped = ended(token);
@@ -82,12 +85,13 @@ AcceptedPrefix choose_prefix(std::span<const std::int32_t> inputs,
 inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
     std::span<const std::int32_t> target_ids, std::size_t quota,
     std::span<const std::int32_t> eos, std::int32_t vocabulary,
-    std::vector<std::int32_t> &emitted) {
+    std::vector<std::int32_t> &emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() != target_ids.size()) throw std::runtime_error("MTP greedy target rows differ from verifier inputs");
   detail::token_ids(inputs, vocabulary); detail::token_ids(target_ids, vocabulary);
+  request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return inputs[row + 1] == target_ids[row]; },
-      [&](auto row) { return target_ids[row]; });
+      [&](auto row) { return target_ids[row]; }, stop_policy);
 }
 
 // Allocation-free output for finite callers. Provide at least
@@ -97,12 +101,13 @@ inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
 inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
     std::span<const std::int32_t> target_ids, std::size_t quota,
     std::span<const std::int32_t> eos, std::int32_t vocabulary,
-    std::span<std::int32_t> emitted) {
+    std::span<std::int32_t> emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() != target_ids.size()) throw std::runtime_error("MTP greedy target rows differ from verifier inputs");
   detail::token_ids(inputs, vocabulary); detail::token_ids(target_ids, vocabulary);
+  request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return inputs[row + 1] == target_ids[row]; },
-      [&](auto row) { return target_ids[row]; });
+      [&](auto row) { return target_ids[row]; }, stop_policy);
 }
 
 // Each final_ids[i] is the public sampling::decision result for p_i/q_i:
@@ -111,18 +116,20 @@ inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
 inline AcceptedPrefix select_sampled_prefix(std::span<const std::int32_t> inputs,
     std::span<const std::uint8_t> accepts, std::span<const std::int32_t> final_ids,
     std::size_t quota, std::span<const std::int32_t> eos, std::int32_t vocabulary,
-    std::vector<std::int32_t> &emitted) {
+    std::vector<std::int32_t> &emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() == 1 && accepts.empty() && final_ids.size() == 1) {
     detail::token_ids(inputs, vocabulary); detail::token_ids(final_ids, vocabulary);
+    request_stop_policy(stop_policy).validate(vocabulary);
     return detail::choose_prefix(inputs, quota, eos, emitted,
-        [](auto) { return false; }, [&](auto) { return final_ids[0]; });
+        [](auto) { return false; }, [&](auto) { return final_ids[0]; }, stop_policy);
   }
   if (inputs.size() < 2 || accepts.size() != inputs.size() - 1 || final_ids.size() != accepts.size() ||
       std::ranges::any_of(accepts, [](auto value) { return value > 1; }))
     throw std::runtime_error("MTP sampled prefix needs one valid decision per proposal");
   detail::token_ids(inputs, vocabulary); detail::token_ids(final_ids, vocabulary);
+  request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return accepts[row] != 0; },
-      [&](auto row) { return final_ids[(std::min)(row, final_ids.size() - 1)]; });
+      [&](auto row) { return final_ids[(std::min)(row, final_ids.size() - 1)]; }, stop_policy);
 }
 } // namespace hyle::inference::mtp

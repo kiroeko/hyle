@@ -1,17 +1,20 @@
 # 推理底座进度
 
-更新：2026-10-28 05:38（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 06:06（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约73%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约74%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：原生路线冷回落已修，正在接MTP逐请求停止政策。** 坏logits错误归属已通过CPU／CUDA检查；Vulkan与Apple的Q1／Q2和Q2随机采样有限检查通过。Apple packed缺能力曾导致搜索耗尽，已在原后端冷发现中提前剪枝，保留原exact回落及真实错误。MTP逐请求采样／logits政策及完整共同执行编排仍未完成。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%。
+**当前位置：MTP逐请求停止政策已接通，下一项是逐请求采样配置。** host四组与CPU／CUDA完整状态旅程通过，覆盖K1、实际B2、bonus、缓存命中及原key恢复；真实模型EOS未在该旅程运行，忽略EOS只作host规则检查。原生路线冷回落及坏logits归属已补。MTP逐请求采样／logits政策及完整共同执行编排仍未完成。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%。
 
 ## 任务树
 
-- 功能与工程边界：约90%（进行中，组合复查确认剩余政策缺项）
+- 功能与工程边界：约91%（进行中，组合复查确认剩余政策缺项）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
   - 有效长度／varlen prefill：约96%（CPU／CUDA及原生exact回落有限检查完成）
-  - 特性组合与分类错误：约78%（坏logits输入归属已补，MTP逐请求政策待补）
+  - 特性组合与分类错误：约84%（停止政策与坏输入归属已补，MTP采样及logits待补）
+    - 逐请求停止政策与坏输入归属：100%（本批完成）
+    - MTP逐请求采样配置：约25%（进行中）
+    - MTP逐请求bias／mask：约10%（已调查，未接通）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
   - 完整路由可选ATen：约35%（未完成）
@@ -45,13 +48,13 @@
 
 ## 正在做
 
-- **MTP逐请求停止政策**｜所属：功能与工程边界／特性组合与分类错误｜约10%。接齐逐成员提案、接受前缀、输出观察、prefix hit及恢复；沿原请求／账簿持有政策，不加入缓存状态，不因政策不同拆数学batch。
+- **MTP逐请求采样配置**｜所属：功能与工程边界／特性组合与分类错误｜约25%。已定位NextN head与前缀采样器缺失的冷配置键，准备沿原Session／PreparedSampling接线；先处理greedy、temperature、top-k／top-p，bias／mask下一片单独接齐p、q与残差。
 
-刚完成：Apple原冷发现复用实际lowering能力，缺packed实现自然回落原exact；Q2 greedy／random通过。Q1及Vulkan三项结果保留，未重复成功进程；本批不作完整hidden状态或原生内存归零声明。[原生路线数据](../evidence/correctness/inference-native-state-only-2026-10-28.json)。坏logits元数据的零提交、原key、双方完整状态／账簿不变及同key幸存者续算已通过CPU／CUDA检查，原CPU数值失败与退休回归通过。[错误归属数据](../evidence/correctness/inference-logits-preflight-2026-10-28.json)。
+刚完成：MTP停止政策由原请求／账簿持有，逐成员控制接受前缀，保留原pending及RNG规则；两backend各五项状态比较与bonus严格比较通过，此次payload全部逐字节相同。初次失败已确认仅为恢复所需的采样外壳表示，测试明确检查该字段变化，其余标准不变，原失败和诊断保留。[本批数据](../evidence/correctness/inference-mtp-request-stop-2026-10-28.json)。此前[原生路线冷回落](../evidence/correctness/inference-native-state-only-2026-10-28.json)及[坏输入归属](../evidence/correctness/inference-logits-preflight-2026-10-28.json)已补。
 
 ## 接下来
 
-1. 完成当前原生平台有限检查，补逐请求MTP停止／采样／logits政策和明确输入错误归属。
+1. 补MTP逐请求采样与logits政策，继续查其它真实组合缺口。
 2. 继续抽离共同执行步骤；处理真实载体、跨轮预热，补当前跟踪及A/A。
 3. 评估整模型小投影与更深GPU融合／带宽，推进MTP设备后继及词表候选。
 

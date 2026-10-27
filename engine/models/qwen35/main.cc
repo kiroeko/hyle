@@ -4268,8 +4268,6 @@ public:
       const auto &session = *request.session;
       const auto &stop_policy = inference::request_stop_policy(request.stop_policy);
       stop_policy.validate(vocabulary);
-      if (role != GraphRole::kText && !stop_policy.is_default())
-        throw std::runtime_error("nondefault request stop policy is ordinary Text only");
       if (&session.sampling_configuration() != &prepared_sampling) throw std::runtime_error("batch requires one cold sampling configuration");
       if (completion == TextCompletion::kEmitNext) validate_logits_inputs(selected_sampler, request.logits, vocabulary);
       if (session.stopping || session.failed || (session.pending && (!predecessor || session.pending != predecessor.get())))
@@ -4972,9 +4970,8 @@ public:
         if (!record->generation || phase.family->role == GraphRole::kText) {
           record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
           record->agreed = false; record->accepted_draft = false;
-          record->stopped = !state_only && (phase.family->role == GraphRole::kText
-              ? inference::request_stop_policy(member.stop_policy).stopped(next_ids[j], is_end_of_generation(next_ids[j]))
-              : is_end_of_generation(next_ids[j]));
+          record->stopped = !state_only && inference::request_token_stopped(
+              next_ids[j], model_eos_tokens, member.stop_policy);
           if (state_only) { record->emitted.clear(); record->emitted_count = 0; }
           else { record->emitted = {next_ids[j], -1}; record->emitted_count = 1; }
         }
@@ -5119,13 +5116,15 @@ public:
   // hidden is local to this recursion and is deliberately discarded with its
   // private pages; it is never installed in a committed draft cache.
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
-      std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr) {
+      std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
+      const inference::RequestStopPolicy *stop_policy = nullptr) {
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
         !session.head || !session.head->draft || (default_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
       throw std::runtime_error("recursive proposals require an idle prepared head, bounded width and every stochastic q row");
     validate_mtp_snapshot(*session.head);
-    const auto ended = [&](auto token) { return std::find(eos.begin(), eos.end(), token) != eos.end(); };
+    inference::request_stop_policy(stop_policy).validate(vocabulary);
+    const auto ended = [&](auto token) { return inference::request_token_stopped(token, eos, stop_policy); };
     std::vector<std::int32_t> inputs; inputs.reserve(maximum + 1); inputs.push_back(session.head->next_id);
     if (q) { q->clear(); q->reserve(maximum); }
     if (!maximum) return inputs;
@@ -5187,12 +5186,12 @@ public:
         !cache_plan.draft_cache || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size())
       throw std::runtime_error("recursive finish requires the complete original verification batch");
-    const auto ended = [&](auto token) { return std::find(eos.begin(), eos.end(), token) != eos.end(); };
     std::vector<std::int32_t> next(selections.size(), -1);
     for (std::size_t j = 0; j < selections.size(); ++j) {
       const auto &selection = selections[j];
       if (!selection.output_quota || selection.session != active_step->members[j].session ||
-          selection.session != outputs[j].session || ended(selection.expected_pending))
+          selection.session != outputs[j].session || inference::request_token_stopped(
+              selection.expected_pending, eos, active_step->members[j].stop_policy))
         throw std::runtime_error("recursive generation requires its nonterminal pending token and positive quota");
       results[j].emitted.clear(); results[j].emitted.reserve(active_step->input_tokens);
     }
@@ -5229,18 +5228,18 @@ public:
               std::span<const std::int32_t>(member.verification_inputs).subspan(1),
               selection.draft_log_probabilities, member.base->sampling);
           accepted = hyle::inference::mtp::select_sampled_prefix(member.verification_inputs, decision.accepted, decision.final_ids,
-              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted);
+              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
           member.next->sampling = member.base->sampling.advanced(cache::add(cache::multiply(2, width - 1), 1));
           result.target_first = result.emitted.front();
           result.target_second = result.emitted.size() > 1 ? result.emitted[1] : -1;
         } else {
           accepted = hyle::inference::mtp::select_greedy_prefix(member.verification_inputs, rows,
-              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted);
+              selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
         }
         member.accepted_tokens = accepted.consumed; selected[j] = result.next_id = accepted.next_id;
         result.agreed = accepted.first_agrees; result.consumed_drafts = accepted.consumed_drafts;
         const bool clipped = min_draft_probability() > 0 && selection.proposal_limit > width - 1 &&
-            !ended(member.verification_inputs.back());
+            !inference::request_token_stopped(member.verification_inputs.back(), eos, member.stop_policy);
         member.discarded_draft_rows = clipped ? (width == 1 ? member.base->draft->lag + 1 : 1) : 0;
         result.auxiliary_graph_calls += clipped ? 1u : 0u;
         result.accepted_draft = result.consumed_drafts != 0;
@@ -5287,11 +5286,11 @@ public:
         !has_mtp(active_step->phase->family->role) || is_mtp_prefill(active_step->phase->family->role))
       throw std::runtime_error("MTP finish requires its original complete generation batch");
     const auto role = active_step->phase->family->role;
-    const auto ended = [&](std::int32_t id) { return std::find(eos.begin(), eos.end(), id) != eos.end(); };
     for (std::size_t j = 0; j < selections.size(); ++j) {
       if (!selections[j].output_quota || selections[j].session != active_step->members[j].session ||
           selections[j].session != outputs[j].session || selections[j].expected_pending < 0 ||
-          selections[j].expected_pending >= vocabulary || ended(selections[j].expected_pending))
+          selections[j].expected_pending >= vocabulary || inference::request_token_stopped(
+              selections[j].expected_pending, eos, active_step->members[j].stop_policy))
         throw std::runtime_error("MTP generation requires its emitted pending token and positive quota");
       results[j].emitted.clear(); results[j].emitted.reserve(2);
       results[j].pending = selections[j].expected_pending;
@@ -5321,12 +5320,12 @@ public:
               const std::array finals{drafts_token(role) ? result.target_second : result.target_first};
               accepted = hyle::inference::mtp::select_sampled_prefix(verified_inputs,
                   std::span<const std::uint8_t>(flags).first(rows - 1), finals,
-                  selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted);
+                  selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
             } else {
               const std::array targets{result.target_first, result.target_second};
               accepted = hyle::inference::mtp::select_greedy_prefix(verified_inputs,
                   std::span<const std::int32_t>(targets).first(rows), selection.output_quota, eos,
-                  static_cast<std::int32_t>(vocabulary), result.emitted);
+                  static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
             }
             member.accepted_tokens = accepted.consumed;
             selected[j] = result.next_id = accepted.next_id;
@@ -5646,9 +5645,8 @@ void import_generation_prompt_ledger(GenerationLedger &ledger, const cache::Repl
     record.prefill_complete = !part.state_only;
     record.input_begin = part.first;
     record.target_first = part.next_id; record.emitted = {part.next_id, -1}; record.emitted_count = part.state_only ? 0 : 1;
-    record.stopped = !part.state_only && (!draft_cache
-        ? ledger.stop_policy().stopped(part.next_id, is_end_of_generation(part.next_id))
-        : is_end_of_generation(part.next_id));
+    record.stopped = !part.state_only && inference::request_token_stopped(
+        part.next_id, model_eos_tokens, &ledger.stop_policy());
     record.user_output = full_hit && i + 1 == prefix.chunks;
     record.imported = true;
     record.requests = 0; // Role-only source history does not claim original batch geometry.
@@ -5677,8 +5675,7 @@ void observe_generation_commits(GenerationRequest &request) {
          record.ids().data() != request.prompt.data() + request.turn_input_consumed ||
          record.prefill_complete != (record.ids().size() == request.prompt.size() - request.turn_input_consumed)))
       throw std::runtime_error("committed prefill input is not the next actual turn slice");
-    const bool stopped = record.completion == TextCompletion::kEmitNext &&
-        (record.role == GraphRole::kText ? record.stopped : is_end_of_generation(record.after.next_id));
+    const bool stopped = record.completion == TextCompletion::kEmitNext && record.stopped;
     if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped))
       continue;
     if (record.user_output && record.generation &&
@@ -5764,8 +5761,9 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     std::span<const GenerationRequest> requests = {}) {
   const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
-  if (sampling_index || !model.cache_plan.draft_cache || !ledger.stop_policy().is_default())
-    throw std::runtime_error("strict MTP replay requires the original complete target/draft model and default stop policy");
+  ledger.stop_policy().validate(model.vocabulary);
+  if (sampling_index || !model.cache_plan.draft_cache)
+    throw std::runtime_error("strict MTP replay requires the original complete target/draft model and sampling configuration");
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
     throw std::runtime_error("MTP restore requires a complete zero-origin ledger and an idle carrier");
@@ -5793,12 +5791,12 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       make_generation_room(model, prefix, session.get(), requests);
       std::vector<c::ReadLease> q;
       const auto verification = expected.role == GraphRole::kVerify
-          ? model.propose_recursive(*session, expected.draft_limit, eos, &q) : std::vector<std::int32_t>{};
+          ? model.propose_recursive(*session, expected.draft_limit, eos, &q, &actual.stop_policy()) : std::vector<std::int32_t>{};
       if (!expected.generation && is_mtp_prefill(expected.role)) {
-        const std::array input{EvaluationRequest{session, ids}};
+        const std::array input{EvaluationRequest{session, ids, &actual.stop_policy()}};
         model.prepare_prefill_evaluations(input, nullptr, expected.role, expected.completion);
       } else model.prepare_evaluation(*session, expected.role == GraphRole::kVerify ? std::span<const std::int32_t>(verification) : ids,
-          nullptr, expected.role, expected.completion);
+          nullptr, expected.role, expected.completion, &actual.stop_policy());
       model.submit_evaluation(*session);
       if (stats) {
         ++stats->graph_calls;
@@ -5841,8 +5839,6 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
     std::span<const GenerationRequest> requests = {}) {
   const auto sampling_index = model.sampling_index(ledger);
   ledger.stop_policy().validate(model.vocabulary);
-  if (model.cache_plan.draft_cache && !ledger.stop_policy().is_default())
-    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   const auto started = Clock::now();
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
@@ -6012,8 +6008,6 @@ void restore_generation_session(Model &model, GenerationRequest &request,
     std::span<const GenerationRequest> requests = {}) {
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   request.stop_policy.validate(model.vocabulary);
-  if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
-    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (request.session) {
@@ -6199,8 +6193,6 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
     std::size_t output_credit = SIZE_MAX, std::size_t max_prefill_rows = SIZE_MAX) {
   if (!request.ledger) throw std::runtime_error("generation request requires its cold-prepared commit ledger");
   request.stop_policy.validate(model.vocabulary);
-  if (model.cache_plan.draft_cache && !request.stop_policy.is_default())
-    throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
   if (model.cache_plan.draft_cache && (request.sampling_index || !prepared_sampling.configuration.modifiers.empty()))
@@ -6305,9 +6297,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
           last.after.sampling = adopted->head->sampling;
           last.after.next_id = adopted->head->next_id;
           last.target_first = last.after.next_id; last.emitted = {last.after.next_id, -1};
-          last.emitted_count = 1; last.stopped = !model.cache_plan.draft_cache
-              ? request.stop_policy.stopped(last.after.next_id, is_end_of_generation(last.after.next_id))
-              : is_end_of_generation(last.after.next_id);
+          last.emitted_count = 1; last.stopped = inference::request_token_stopped(
+              last.after.next_id, model_eos_tokens, &request.stop_policy);
         }
         request.ledger->bind_sampling(prepared_sampling, model.resources_);
         request.progress.adopt_committed_history(request.ledger->committed_count);
@@ -6397,8 +6388,7 @@ void finish_generation_call(Model &model, PreparedGenerationCall &call) {
   if (call.full_hit) {
     const auto next_id = request.session->head->next_id;
     const auto emitted = std::span<const std::int32_t>(&next_id, 1);
-    const bool stopped = call.role == GraphRole::kText
-        ? request.stop_policy.stopped(next_id, is_end_of_generation(next_id)) : is_end_of_generation(next_id);
+    const bool stopped = inference::request_token_stopped(next_id, model_eos_tokens, &request.stop_policy);
     request.progress.preflight_outputs(emitted, true, true, stopped);
     // The imported request ledger already adopted source history. The new
     // frontier output is observed directly, without inventing a model ordinal.
@@ -6789,11 +6779,12 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         throw std::runtime_error("recursive MTP batch requires generation verifiers only");
       if (call.verification_ids.empty()) {
         const auto begin = Clock::now();
-        call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos, &call.draft_log_probabilities);
+        call.verification_ids = model.propose_recursive(*call.request->session, call.maximum, eos,
+            &call.draft_log_probabilities, &call.request->ledger->stop_policy());
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
       }
     }
-    // EOS can shorten different requests to different exact widths. Preserve
+    // Request stop tokens can shorten different requests to different exact widths. Preserve
     // real query geometry rather than padding or consuming a terminal token.
     std::map<std::size_t, std::vector<std::size_t>> groups;
     for (std::size_t i = 0; i < calls.size(); ++i) groups[calls[i].ids().size()].push_back(i);
@@ -7268,7 +7259,6 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     throw std::runtime_error("one immutable stop policy is required per request");
   for (const auto &policy : stop_policies) {
     policy.validate(model.vocabulary);
-    if (mtp && !policy.is_default()) throw std::runtime_error("nondefault request stop policy is ordinary Text only");
   }
   if (!sampling_indices.empty() && sampling_indices.size() != schedules.size())
     throw std::runtime_error("one cold sampling choice is required per request");

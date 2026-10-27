@@ -47,4 +47,11 @@ inline const RequestStopPolicy &request_stop_policy(const RequestStopPolicy *val
   return value ? *value : default_request_stop_policy;
 }
 
+inline bool request_token_stopped(std::int32_t token,
+    std::span<const std::int32_t> model_eos,
+    const RequestStopPolicy *policy = nullptr) noexcept {
+  return request_stop_policy(policy).stopped(token,
+      std::ranges::find(model_eos, token) != model_eos.end());
+}
+
 } // namespace hyle::inference

@@ -1,0 +1,235 @@
+{
+  "status": "PASS_BOUNDED_MTP_REQUEST_STOP",
+  "created_utc": "2026-10-27T22:08:38.655243+00:00",
+  "base_commit": "4974345de569dcd492a03f595af70098d792fcda",
+  "product_sources": [
+    {
+      "path": "engine/inference/request_stop_policy.h",
+      "bytes": 2392,
+      "sha256": "d66b1a190dd1a1b5068e90712f78684bf19b340c6e674f6868559481233e726f"
+    },
+    {
+      "path": "engine/inference/mtp_acceptance.h",
+      "bytes": 7426,
+      "sha256": "466edf284322a27507a49d692abffc42d9d6bd70aaec4825b9d1897c967a8277"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "bytes": 576860,
+      "sha256": "51874fe2fc76cb707f75c45288d73a64acee72bb5e459fe3cd710a74871b9e32"
+    }
+  ],
+  "final_test_sources": {
+    "driver": {
+      "path": ".scratch/inference-mtp-stop-refinement-20261028/final/source/tests/tools/qwen_host_image_test.cc",
+      "bytes": 4312,
+      "sha256": "f646dd99fff3207f94af5d4a5c5a0b0f8eb8dcb7f572377902a36b6203658b5d"
+    },
+    "case": {
+      "path": ".scratch/inference-mtp-stop-refinement-20261028/final/source/tests/tools/qwen_mtp_stop_case.h",
+      "bytes": 23427,
+      "sha256": "aa8bea3bc5dde060536268d82abd11cd2baffc998596dc53af4220a49e64cc9c"
+    },
+    "host": {
+      "path": ".scratch/inference-mtp-stop-policy-20261028/consumer-source/host/tests/tools/qwen_prefix_cache_test.cc",
+      "bytes": 75582,
+      "sha256": "e1ab08ecc9b9f88ca29568ce9adff0b88e9abbf90bfd6b3efccb74659ae17bc3"
+    }
+  },
+  "counts": {
+    "actual_CXX": 4,
+    "successful_CXX": 4,
+    "actual_links": 4,
+    "successful_links": 4,
+    "actual_processes": 5,
+    "passed_processes": 3,
+    "preserved_oracle_failures": 2,
+    "host_groups": 4,
+    "final_model_backends": 2,
+    "standalone_Model_CXX": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "builds": [
+    {
+      "arm": "host",
+      "CXX_pid": 50392,
+      "CXX_exit": 0,
+      "link_pid": 55752,
+      "link_exit": 0,
+      "inputs": 237,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-policy-20261028\\bin\\host.exe",
+        "bytes": 142827008,
+        "sha256": "7de2b590f816c9f16a66aad979f0de6cce434a3fb923459e3958aedad47dbbd5"
+      }
+    },
+    {
+      "arm": "initial",
+      "CXX_pid": 16868,
+      "CXX_exit": 0,
+      "link_pid": 40044,
+      "link_exit": 0,
+      "inputs": 228,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-policy-20261028\\bin\\tiny.exe",
+        "bytes": 143075328,
+        "sha256": "f3009e1970ebd0acfdea6e0bc57a886a595a7988228d80301cb5542f37dc2074"
+      }
+    },
+    {
+      "arm": "diagnostic",
+      "CXX_pid": 61868,
+      "CXX_exit": 0,
+      "link_pid": 14524,
+      "link_exit": 0,
+      "inputs": 228,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-refinement-20261028\\diagnostic\\bin\\tiny.exe",
+        "bytes": 143077888,
+        "sha256": "075bc9f79c75a11df019b02c27d2e01fb816ee467b1d319f49c4693fb0361a3b"
+      }
+    },
+    {
+      "arm": "final",
+      "CXX_pid": 58996,
+      "CXX_exit": 0,
+      "link_pid": 14224,
+      "link_exit": 0,
+      "inputs": 228,
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-refinement-20261028\\final\\bin\\tiny.exe",
+        "bytes": 143077888,
+        "sha256": "e1f26cb6a8ccec52810b996e49484d68cc74bee8bb06ece96a68d4e9f064ea90"
+      }
+    }
+  ],
+  "host": {
+    "pid": 52300,
+    "exit": 0,
+    "filter": "QwenMtpPrefix.*",
+    "groups": 4,
+    "scope": "Host greedy/sampled acceptance, extra-stop/ignoreEOS, default EOS/quota and actual-width RNG policy."
+  },
+  "preserved_failures": [
+    {
+      "arm": "initial",
+      "pid": 19396,
+      "exit": 1,
+      "kind": "Test oracle representation mismatch; product unchanged."
+    },
+    {
+      "arm": "diagnostic",
+      "pid": 48484,
+      "exit": 1,
+      "kind": "Test oracle representation mismatch; product unchanged."
+    }
+  ],
+  "diagnostic": {
+    "only_difference": "Committed-token rebuild creates the documented explicit historical-pending sampling wrapper: false to true.",
+    "initialized_payloads_byte_equal": true,
+    "product_changes_after_first_build": 0,
+    "final_fix": "Only the rebuild-stage expected wrapper bit is changed after asserting original false / restored true; all other boundary and payload checks remain."
+  },
+  "final_runs": [
+    {
+      "backend": "cpu",
+      "pid": 48740,
+      "exit": 0,
+      "calibration_attempts": 1,
+      "actual_ids": {
+        "pending": 37,
+        "target": 0,
+        "bonus": 34,
+        "native_draft": 8
+      },
+      "reported_state_comparisons": 5,
+      "additional_bonus_comparison": "Strict same_image before PASS.",
+      "all_initialized_payloads_byte_equal": true,
+      "max_GDN_absolute_difference": 0.0,
+      "other_payloads_exact": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rebuild_sampling_wrapper": true,
+      "original_key_peer_continued": true,
+      "new_request_full_hit_uses_own_policy": true,
+      "greedy_rng_draws": 0,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    },
+    {
+      "backend": "cuda",
+      "pid": 55748,
+      "exit": 0,
+      "calibration_attempts": 1,
+      "actual_ids": {
+        "pending": 37,
+        "target": 0,
+        "bonus": 34,
+        "native_draft": 8
+      },
+      "reported_state_comparisons": 5,
+      "additional_bonus_comparison": "Strict same_image before PASS.",
+      "all_initialized_payloads_byte_equal": true,
+      "max_GDN_absolute_difference": 0.0,
+      "other_payloads_exact": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rebuild_sampling_wrapper": true,
+      "original_key_peer_continued": true,
+      "new_request_full_hit_uses_own_policy": true,
+      "greedy_rng_draws": 0,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    }
+  ],
+  "functional_coverage": [
+    "K1 rejected native draft stop, accepted verifier extra-stop pending, accepted-prefix bonus stop.",
+    "Real B2 verifier shares one math cohort across different policies; stopped A and same-key B remain independent.",
+    "New-request full-hit uses its own policy; committed-token rebuild and one same-key peer continuation preserve policy, old checkpoint bytes and RNG.",
+    "Final owner explicitly retires B after the finite check; it does not claim B exhausted its remaining quota."
+  ],
+  "numeric_policy": "Inherited GDN absolute tolerance 3e-6 only; other initialized state roles exact. Both final runs actually reported all payload bytes exact (GDN max difference 0). Bonus is separately strict.",
+  "metadata_amendment": {
+    "path": {
+      "path": ".scratch/inference-mtp-stop-refinement-20261028/final/run-plan.json",
+      "bytes": 594,
+      "sha256": "f4fcd0be4a2fe2ee96d3a6a78155930358f10df3a87699f11fc772315dcfb974"
+    },
+    "note": "Final plan inherited CUDA_processes=0 from diagnostic metadata; independent run-plan corrects to CPU1+CUDA1, frozen plan preserved. All totals above use actual process receipts."
+  },
+  "limits": [
+    "Cached untrained V64 GA/H64/C16 fixture; no quality or acceptance-rate claim.",
+    "A matching verifier candidate is an actual target-control result, not a naturally accepted NextN proposal; no forced accepted/state-selection callback.",
+    "Real Model EOS is not present in this fixture. ignoreEOS is tested by shared host policy only.",
+    "Only greedy real-model RNG was exercised; sampled shared selectors are host-tested, not a new random-model journey.",
+    "Engine versions, page inventories and host images are checked; native allocator live-zero/hardware fault/unknown-pending are not claimed.",
+    "No performance window, TPS claim, new platform matrix, SDK/NVCC compilation or download."
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/correctness/inference-logits-preflight-2026-10-28.json",
+      "bytes": 13760,
+      "sha256": "0e1e65a5b97a367450b05016fb5dbf0062e0410435285dbfb1b7530a9a390b09"
+    },
+    {
+      "path": "docs/evidence/correctness/inference-native-state-only-2026-10-28.json",
+      "bytes": 10223,
+      "sha256": "50534a1357403125dcfc666bff710e1a7c5e77d4348af9f45906f5719dc2b443"
+    },
+    {
+      "path": "docs/evidence/correctness/inference-append-transactions-2026-10-28.json",
+      "bytes": 13176,
+      "sha256": "ec2b6de70ecc71c9268ac30eaa6e3ea6a962f5fc614f663910a6943c9e75d22d"
+    }
+  ],
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-mtp-request-stop-2026-10-28.zip",
+    "bytes": 546682,
+    "sha256": "b8ddd1067e46938876cb3693d4295d35367ee5a6795e0c05b4670266e40eb24e",
+    "files": 161,
+    "verified_readback": true
+  }
+}

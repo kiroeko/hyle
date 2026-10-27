@@ -137,6 +137,65 @@ void mtp_prefix_invalid_inputs_and_rng() {
   }
 }
 
+void mtp_request_stop_policy() {
+  namespace inference = hyle::inference;
+  const std::array<std::int32_t, 1> eos{19}, first_stop{2}, middle_stop{3}, bonus_stop{4}, extra_eos{19};
+  const inference::RequestStopPolicy first(first_stop), middle(middle_stop), bonus(bonus_stop),
+      rejected(extra_eos), ignore({}, true), ignored_but_extra(extra_eos, true);
+  const std::array<std::int32_t, 3> inputs{7,2,3}, targets{2,3,4};
+  const std::array<std::uint8_t, 2> accepts{1,1};
+  const std::array<std::int32_t, 2> finals{3,4};
+  std::vector<std::int32_t> emitted;
+  for (const bool sampled : {false, true}) {
+    const auto choose = [&](const inference::RequestStopPolicy &policy) {
+      return sampled ? mtp::select_sampled_prefix(inputs,accepts,finals,3,eos,20,emitted,&policy)
+                     : mtp::select_greedy_prefix(inputs,targets,3,eos,20,emitted,&policy);
+    };
+    auto selected = choose(first);
+    require(selected.consumed == 1 && selected.consumed_drafts == 0 && selected.next_id == 2 &&
+        selected.stopped && emitted == std::vector<std::int32_t>{2},
+        "accepted first extra-stop was consumed instead of remaining pending");
+    selected = choose(middle);
+    require(selected.consumed == 2 && selected.consumed_drafts == 1 && selected.next_id == 3 &&
+        selected.stopped && emitted == std::vector<std::int32_t>({2,3}),
+        "accepted middle extra-stop selected a later consumed prefix");
+    selected = choose(bonus);
+    require(selected.consumed == 3 && selected.consumed_drafts == 2 && selected.next_id == 4 &&
+        selected.stopped && emitted == std::vector<std::int32_t>({2,3,4}),
+        "extra-stop bonus did not stay pending after the complete consumed verifier prefix");
+    const std::array<std::int32_t, 3> bad_draft{7,19,3};
+    const std::array<std::uint8_t, 2> rejected_flags{0,1};
+    const std::array<std::int32_t, 2> rejected_finals{2,4};
+    selected = sampled ? mtp::select_sampled_prefix(bad_draft,rejected_flags,rejected_finals,3,eos,20,emitted,&rejected)
+                       : mtp::select_greedy_prefix(bad_draft,targets,3,eos,20,emitted,&rejected);
+    require(selected.consumed == 1 && !selected.consumed_drafts && selected.next_id == 2 &&
+        !selected.stopped && emitted == std::vector<std::int32_t>{2},
+        "a rejected stop proposal terminated the request");
+    const std::array<std::int32_t, 2> eos_pending{19,2}, eos_target{2,19};
+    const std::array<std::uint8_t, 1> agree{1};
+    const std::array<std::int32_t, 1> eos_final{19};
+    selected = sampled ? mtp::select_sampled_prefix(eos_pending,agree,eos_final,2,eos,20,emitted,&ignore)
+                       : mtp::select_greedy_prefix(eos_pending,eos_target,2,eos,20,emitted,&ignore);
+    require(selected.consumed == 2 && selected.consumed_drafts == 1 && selected.next_id == 19 &&
+        !selected.stopped && emitted == std::vector<std::int32_t>({2,19}),
+        "ignoreEOS failed to admit a pending model EOS or incorrectly stopped its bonus");
+    const std::array<std::int32_t, 2> ordinary_pending{7,2};
+    selected = sampled ? mtp::select_sampled_prefix(ordinary_pending,agree,eos_final,2,eos,20,emitted,&ignored_but_extra)
+                       : mtp::select_greedy_prefix(ordinary_pending,eos_target,2,eos,20,emitted,&ignored_but_extra);
+    require(selected.consumed == 2 && selected.stopped && selected.next_id == 19,
+        "ignoreEOS incorrectly disabled the same ID's explicit extra-stop policy");
+  }
+  std::array<std::int32_t, 4> bounded{-77,-77,-77,-77};
+  const auto selected = mtp::select_greedy_prefix(inputs,targets,3,eos,20,std::span(bounded),&first);
+  require(selected.consumed == 1 && bounded == std::array<std::int32_t,4>{2,-77,-77,-77},
+      "bounded stop selection wrote outside its actual emitted prefix");
+  bool refused = false;
+  const std::array<std::int32_t, 1> terminal{19};
+  try { (void)mtp::select_greedy_prefix(terminal,terminal,1,eos,20,emitted); }
+  catch (const std::runtime_error &) { refused = true; }
+  require(refused,"default MTP policy consumed a terminal pending model EOS");
+}
+
 void schedule_waves_keep_dependencies() {
   const std::array sessions{
     b::SessionSchedule{"a", {{b::PhaseKind::kPrompt, {1,2,3}, 1},
@@ -1030,6 +1089,7 @@ int main() {
     mtp_prefix_rejection_and_bonus(); std::puts("PASS MTP first/middle rejection and all-prefix bonus");
     mtp_prefix_eos_and_quota(); std::puts("PASS MTP accepted/bonus EOS and quota pending boundaries");
     mtp_prefix_invalid_inputs_and_rng(); std::puts("PASS MTP malformed selections and actual-width RNG blocks");
+    mtp_request_stop_policy(); std::puts("PASS MTP per-request accepted/rejected/bonus stops and ignoreEOS");
     schedule_waves_keep_dependencies(); std::puts("PASS turn/cohort waves and independent Session call order");
     schedule_runtime_buckets_use_actual_rows(); std::puts("PASS actual suffix rows, full hits and kind-separated buckets");
     schedule_shape_domain_is_wave_local(); std::puts("PASS finite wave-local batch shapes and conservative replay counts");
@@ -1057,6 +1117,7 @@ int main() {
 TEST(QwenMtpPrefix, RejectionAndBonus) { mtp_prefix_rejection_and_bonus(); }
 TEST(QwenMtpPrefix, EosAndQuotaLeaveFinalOutputPending) { mtp_prefix_eos_and_quota(); }
 TEST(QwenMtpPrefix, InvalidSelectionsAndActualWidthRng) { mtp_prefix_invalid_inputs_and_rng(); }
+TEST(QwenMtpPrefix, RequestStopPolicies) { mtp_request_stop_policy(); }
 TEST(QwenBatchSchedule, TurnCohortsPreserveSessionDependencies) { schedule_waves_keep_dependencies(); }
 TEST(QwenBatchSchedule, RuntimeBucketsUseActualSuffixLengths) { schedule_runtime_buckets_use_actual_rows(); }
 TEST(QwenBatchSchedule, ColdShapesUseOnlyReachableWaveMembers) { schedule_shape_domain_is_wave_local(); }
