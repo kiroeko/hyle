@@ -2,7 +2,7 @@
 
 #include "qwen_mtp_ragged_prefill_case.h"
 
-// Two bounded journeys share the cached GA fixture and the original execution,
+// Bounded journeys share the cached GA fixture and the original execution,
 // request ledger, reconstruction and host-image paths. No acceptance/quality or
 // performance claim follows from this untrained controlled-prefix check.
 namespace qwen_mtp_chunked_prefill_case {
@@ -31,6 +31,15 @@ inline std::int32_t raw(q::Model &model, const std::shared_ptr<q::Session> &sess
         "state-only MTP prefill did not retain its real packed R4 carrier");
   } else model.prepare_evaluation(*session, ids, nullptr, role, completion);
   if (completion == q::TextCompletion::kStateOnly) state_only_ports(*model.active_step->phase);
+  if (role == q::GraphRole::kMtpCatchupSingle && completion == q::TextCompletion::kStateOnly) {
+    const auto &step = *model.active_step;
+    require(ids.size() == 1 && step.input_tokens == 1 && step.phase->query_rows == 1 &&
+        !step.phase->family->packed_prefill && step.members.size() == 1 &&
+        step.members[0].layout.facts().query_rows == 1 && step.members[0].draft_layout.facts().query_rows == 2 &&
+        step.members[0].next->length == session->length() + 1 &&
+        step.members[0].next->draft->frontier == session->head->draft->frontier + 2,
+        "StateOnly CatchupSingle did not prepare its true one target and two draft rows");
+  }
   try {
     model.submit_evaluation(*session);
     const std::array outputs{q::EvaluationOutput{.session = session}};
@@ -79,17 +88,20 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       SIZE_MAX, sampler, 0, {.primary = kind});
   const std::array exact_prompts{std::size_t{3}, std::size_t{4}};
   const std::array seed{std::size_t{3}}, single{std::size_t{1}};
-  const std::array catchup{std::size_t{5}}, carrier{std::size_t{4}};
+  const std::array catchup{std::size_t{2}, std::size_t{5}};
+  const std::array carrier{std::size_t{4}};
   exact.prepare_family(exact_prompts, false, 1, q::GraphRole::kMtpPrefill);
   for (const auto rows : exact_prompts) exact.plan_replay_uses(rows, 1, 2, q::GraphRole::kMtpPrefill);
   exact.prepare_family(catchup, false, 1, q::GraphRole::kMtpCatchupPrefill);
-  exact.plan_replay_uses(5, 1, 1, q::GraphRole::kMtpCatchupPrefill);
+  for (const auto rows : catchup) exact.plan_replay_uses(rows, 1, 1, q::GraphRole::kMtpCatchupPrefill);
   chunk.prepare_family(seed, false, 1, q::GraphRole::kMtpPrefill);
   chunk.plan_replay_uses(3, 1, 1, q::GraphRole::kMtpPrefill);
   for (const auto completion : {q::TextCompletion::kStateOnly, q::TextCompletion::kEmitNext}) {
     chunk.prepare_family(single, false, 1, q::GraphRole::kMtpSingle, false, completion);
     chunk.plan_replay_uses(1, 1, 10, q::GraphRole::kMtpSingle, completion);
   }
+  chunk.prepare_family(single, false, 1, q::GraphRole::kMtpCatchupSingle, false, q::TextCompletion::kStateOnly);
+  chunk.plan_replay_uses(1, 1, 1, q::GraphRole::kMtpCatchupSingle, q::TextCompletion::kStateOnly);
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kMtpCatchupPrefill}) {
     require(chunk.prepare_prefill_family(carrier, q::TextCompletion::kStateOnly, 0, 1, role),
         "selected route did not prepare its real state-only MTP prefill carrier");
@@ -104,12 +116,13 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   chunk.prepare_execution(seed, 1, q::GraphRole::kMtpPrefill);
   for (const auto completion : {q::TextCompletion::kStateOnly, q::TextCompletion::kEmitNext})
     chunk.prepare_execution(single, 1, q::GraphRole::kMtpSingle, completion);
+  chunk.prepare_execution(single, 1, q::GraphRole::kMtpCatchupSingle, q::TextCompletion::kStateOnly);
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kMtpCatchupPrefill})
     chunk.prepare_prefill_execution(carrier, q::TextCompletion::kStateOnly, 0, 1, role);
   for (auto *model : {&exact, &chunk}) model->prepare_execution(seed, 1, q::GraphRole::kVerify);
   auto exact_storage = q::take(i::HostStateStorage::create(exact.execution, 1, 4u << 20));
   auto chunk_storage = q::take(i::HostStateStorage::create(chunk.execution, 2, 4u << 20));
-  p::StepReport report_a, report_b;
+  p::StepReport report_a, report_b, report_c;
   std::size_t rebuild_rows = 0, rebuild_calls = 0;
   bool cancelled_inflight = false;
 
@@ -242,6 +255,37 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     report_b.epoch = static_cast<std::size_t>(candidate->head.epoch());
     p::compare(exact, p::capture(exact, *control, exact_storage), p::capture(chunk, *candidate, chunk_storage), report_b);
     h::retire(control); h::retire(candidate);
+
+    // C reuses this same actual lag1 checkpoint; it does not reseed, change a
+    // frontier or force a padded Prefill path for the missing one-row case.
+    const std::array short_exact{std::size_t{2}}, short_single{std::size_t{1}};
+    auto short_control = exact.create_session(short_exact, old_a, q::GraphRole::kMtpCatchupPrefill);
+    auto short_candidate = chunk.create_session(short_single, old_b, q::GraphRole::kMtpCatchupSingle,
+        {}, false, q::TextCompletion::kStateOnly);
+    report_c = p::StepReport{2, 5, 2, 2}; report_c.prefill = true;
+    report_c.exact_next = raw(exact, short_control, std::span(suffix).first(2),
+        q::GraphRole::kMtpCatchupPrefill, q::TextCompletion::kEmitNext);
+    const auto first_single = raw(chunk, short_candidate, std::span(suffix).first(1),
+        q::GraphRole::kMtpCatchupSingle, q::TextCompletion::kStateOnly);
+    require(first_single == -1 && short_candidate->head->next_id == -1 && short_candidate->length() == 6 &&
+        short_candidate->head->draft->frontier == 6 && !short_candidate->head->draft->lag &&
+        short_candidate->head->sampling == before_b.sampling,
+        "StateOnly CatchupSingle sampled, kept lag1 or advanced an incorrect cache frontier");
+    const auto short_partial = short_candidate->checkpoint(); const auto short_bytes = s::image(chunk, *short_partial);
+    report_c.bucket_next = raw(chunk, short_candidate, std::span(suffix).subspan(1, 1),
+        q::GraphRole::kMtpSingle, q::TextCompletion::kEmitNext);
+    require(short_candidate->length() == 7 && short_candidate->head->draft->frontier == 7 &&
+        !short_candidate->head->draft->lag && short_candidate->head->sampling == before_b.sampling.advanced(1) &&
+        s::image(exact, *old_a) == before_a && s::image(chunk, *old_b) == before_b &&
+        s::image(chunk, *short_partial) == short_bytes,
+        "StateOnly CatchupSingle continuation changed a checkpoint, final frontier or original RNG");
+    r::preserved_prefix(before_a, s::image(exact, *short_control->head));
+    r::preserved_prefix(before_b, s::image(chunk, *short_candidate->head));
+    r::preserved_prefix(short_bytes, s::image(chunk, *short_candidate->head));
+    report_c.epoch = static_cast<std::size_t>(short_candidate->head.epoch());
+    p::compare(exact, p::capture(exact, *short_control, exact_storage),
+        p::capture(chunk, *short_candidate, chunk_storage), report_c);
+    h::retire(short_control); h::retire(short_candidate);
   }
   for (auto *model : {&exact, &chunk}) {
     require(!model->snapshot_versions.live && !model->active_step && !model->successor_step && !model->carrier_borrowed &&
@@ -254,7 +298,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     }
   }
   require(!exact_storage->live_images() && !chunk_storage->live_images(), "MTP chunked journeys retained a host image");
-  const bool equal = report_a.numerically_equivalent && report_b.numerically_equivalent;
+  const bool equal = report_a.numerically_equivalent && report_b.numerically_equivalent && report_c.numerically_equivalent;
   std::cout << "{\"backend\":\"" << h::backend_name(kind) << "\",\"mode\":\"mtp_chunked_prefill\",\"synthetic_untrained\":true"
       << ",\"A\":{\"Q\":1,\"P\":4,\"commits\":4,\"state_only_commits\":3,\"emitted\":1,\"final_draw\":1,\"final_length\":4"
       << ",\"cancelled_rows\":1,\"cancelled_submitted\":true,\"hardware_inflight_at_abort\":" << (cancelled_inflight ? "true" : "false")
@@ -263,10 +307,13 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   std::cout << "},\"B\":{\"parts\":[2,2,1],\"seed_length\":5,\"seed_frontier\":4,\"seed_lag\":1"
       << ",\"state_only_commits\":2,\"host_restored_length\":7,\"host_restored_pending\":-1,\"final_length\":10,\"final_frontier\":10"
       << ",\"final_draw\":2,\"comparison\":"; p::write_step(report_b);
+  std::cout << "},\"C\":{\"parts\":[1,1],\"seed_lag\":1,\"state_only_target_rows\":1,\"state_only_draft_rows\":2"
+      << ",\"state_only_pending\":-1,\"state_only_draw\":1,\"final_length\":7,\"final_frontier\":7,\"final_draw\":2,\"comparison\":";
+  p::write_step(report_c);
   std::cout << "},\"old_checkpoints_byte_unchanged\":true,\"partial_restore_byte_equal\":true,\"same_owner_commit_epoch_increment\":1"
       << ",\"restored_epoch_scope\":\"new_session_owner\",\"state_only_score_sampler_id_ports_absent\":true"
       << ",\"final_versions\":0,\"final_images\":0,\"final_native_episodes\":0,\"payloads_byte_equal\":"
-      << (report_a.payloads_equal && report_b.payloads_equal ? "true" : "false")
+      << (report_a.payloads_equal && report_b.payloads_equal && report_c.payloads_equal ? "true" : "false")
       << ",\"numerically_equivalent\":" << (equal ? "true" : "false") << ",\"gdn_state_absolute_budget\":" << p::gdn_state_absolute_budget
       << ",\"natural_acceptance_claim\":false,\"performance_claim\":false,\"status\":\"" << (equal ? "PASS" : "VALUE_OR_CONTRACT_DIFFERENCE") << "\"}\n";
   require(equal, "MTP chunked versus exact complete state exceeded the inherited numeric or exact payload/boundary contract");

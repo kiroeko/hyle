@@ -9,6 +9,9 @@ if(_HYLE_COMPUTE_HAVE_CPU AND HYLE_GGML_CPU_ENABLED AND
   hyle_add_test(graph_batch NAME cpu_append SOURCES paged_append_graph_test.cc
     DEPS hyle_compute_backend_cpu hyle_compute_provider_ggml hyle_simd)
   hyle_stage_runtime(hyle_graph_batch_cpu_append_test)
+  hyle_add_test(graph_batch NAME inference_append SOURCES ../tools/inference_append_transactions_test.cc
+    DEPS hyle_compute_backend_cpu hyle_compute_provider_ggml)
+  hyle_stage_runtime(hyle_graph_batch_inference_append_test)
   if(TARGET hyle_graph_route_cpu)
     hyle_add_test(graph_batch NAME cpu_encoded_pages
       SOURCES ../compute_batch/encoded_page_common_consumer.cc

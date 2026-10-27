@@ -552,6 +552,16 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 [有限检查](../evidence/correctness/inference-slot-cohort-2026-10-28.json)包含CPU／CUDA受检非法token失败后，
 旧完整状态不变及同program合法重试；不代签设备故障或未知退休分支。
 
+页追加的共同交接由`engine/inference/AppendTransactions`借用原nodes／transactions／bound三组等长span：
+普通、后继与NextN共用原顺序bind、原atomic take及部分失败恢复；同序cache-input端口在冷期固定，
+无端口的bank沿原write-only绑定，NextN只借自己的两项draft银行。
+晚bind拒绝保留已成功转交的bound前缀，只有真实take返回后才清标记；部分take不重复取已返回项。
+未返回时不discard，尾页rollback与新页discard只操作调用方实际持有的原对象。
+该借用不增加分配、Queue、Completion、权限、状态owner或发布策略；whole状态及数学／Source／Frame提交留在模型层。
+[有限检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)覆盖晚bank拒绝及真实CPU Graph追加后确定性拒绝，
+核原页、回收和失败不产生ready；原读取fixture失败及修正保留。真实2B普通有7次后继发布，K2有9次NextN调用，
+另有CPU／CUDA的单行lag1 StateOnly及B2 MTP状态回归；不据共同代码抽离宣称性能提升。
+
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。
 冻结本身不改地址和epoch；分配失败保留原边界。已冻结的对象永不变更或回收为候选。
@@ -665,7 +675,9 @@ next为−1且不推进draw；末块才生成首token。catch-up只在首块按�
 部分检查点仍沿原HostImage或账簿重建，不放宽完整prefix发布／恢复门。
 [有限检查](../evidence/correctness/inference-mtp-chunked-prefill-2026-10-28.json)覆盖CPU／CUDA的Q1、提交后取消、
 部分账簿重建、真实lag1后的2＋2＋1及next=−1的HostImage独立恢复，另核真实2B双会话Q64入口。
-CatchupSingle StateOnly已接线但本批未直接实跑，其它平台、格式及组合按实际运行范围分别记录。
+此前记录未直接执行CatchupSingle StateOnly，现已在[共同事务检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)
+中以真实lag1旧快照补齐：target1／draft2不采样，再Single Emit，完整状态与exact两行catch-up一致。
+其它平台、格式及组合按实际运行范围分别记录，旧平台结果不代签当前exact回落。
 纯数学叶复用原Store，不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与

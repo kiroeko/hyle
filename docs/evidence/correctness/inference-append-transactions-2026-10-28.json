@@ -1,0 +1,334 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "90e232e17",
+  "status": "Finite checks passed after one test readback correction",
+  "scope": "Shared original Append bind/retired take/recovery and fourth teacher-forced StateOnly role; not complete execution-core extraction or performance closure.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\append_transactions.h",
+      "bytes": 5628,
+      "sha256": "dc54f6fa8b181cca4d04f64fd93c20c93509d18853495d0d2c827ca03aea9f89"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 575858,
+      "sha256": "953f3610c2a0bd12a3b0a88ee9b9cc1bec321e72e993a707c2790adf52d65f50"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_chunked_prefill_case.h",
+      "bytes": 25178,
+      "sha256": "f954a211a93133be57ce5fa232e964850836839aefb0ba5de58454b8b9209e96"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_append_transactions_test.cc",
+      "bytes": 10431,
+      "sha256": "e658cdf27ae066f4beac5cc66b324fa841a22eed298a0546a973ec3ca10468a0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\CMakeLists.txt",
+      "bytes": 11574,
+      "sha256": "2a4cd41ab5dd3c37a462d93d55d6f1b458a8c2e9fbc9a936d2f198bba2059efe"
+    }
+  ],
+  "implementation": [
+    "AppendTransactions borrows existing node/transaction/bound spans, with no allocation, queue, permission, completion, publication policy or owner.",
+    "Ordinary and relay Step, and NextN, share ordered original bind, successful atomic take, remembered partial recovery and original rollback/discard.",
+    "Cold same-cohort cache input ports select reader or original write-only binding. NextN borrows exactly its two draft banks.",
+    "Model keeps source construction, frame commit, accepted prefix, whole terminal status and real resource retirement; main net removes 35 lines."
+  ],
+  "protocol_tests": {
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-refinement-20261028\\test-run\\results.xml",
+      "bytes": 937,
+      "sha256": "049fbd480e620a61a566613fdd2b47d2de0a3d85964c171fb8caa2cce5055a98"
+    },
+    "passed": 2,
+    "coverage": [
+      "Late second-bind refusal leaves the actual earlier transfer bound, refuses premature discard and recovers original reservations without ready authority.",
+      "Real CPU Graph append effects followed by a deterministic rejected effect; completion gates recovery, a returned bank is not retaken, old bytes and page reacquisition remain correct."
+    ],
+    "first_failure": {
+      "process": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\test-run\\process.json",
+        "bytes": 152,
+        "sha256": "01ab2edcdc4c523774224ed6444ea69b00c5d210a6953c358821a3da08a540b6"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\failed-test-source.cc",
+        "bytes": 10320,
+        "sha256": "dc761b74de256bf59eb631d239a78353a480e7c653ca6f7a53f905ffbc128cc1"
+      },
+      "reason": "Test read a full-page BufferView into a short initialized-prefix array; corrected readback size, no product code change. First process failed one test and skipped the second due fail-fast."
+    },
+    "failure_kind": "Deterministic CPU Graph effect refusal, not a simulated native/device fault."
+  },
+  "tiny": {
+    "cpu": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\tiny-cpu-run\\report.json",
+        "bytes": 2892,
+        "sha256": "00c8276d8a9e052afab63a453eea29454e8b2cfdcc6144834510b21a7701acfc"
+      },
+      "status": "PASS",
+      "maximum_absolute_gdn_error": 3.49246e-10,
+      "catches_single_state_only": {
+        "target_rows": 1,
+        "draft_rows": 2,
+        "pending": -1,
+        "draw": 1,
+        "final_length": 7,
+        "final_frontier": 7,
+        "final_draw": 2
+      },
+      "original_A_Q1_cancel_and_ledger_rebuild": true,
+      "original_B_lag1_and_partial_HostImage": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    },
+    "cuda": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\tiny-cuda-run\\report.json",
+        "bytes": 2887,
+        "sha256": "f825d331ff4135e920ff384f1ea8dd230f8e41a8087df7d8c5a36b807c621a7d"
+      },
+      "status": "PASS",
+      "maximum_absolute_gdn_error": 3.49246e-10,
+      "catches_single_state_only": {
+        "target_rows": 1,
+        "draft_rows": 2,
+        "pending": -1,
+        "draw": 1,
+        "final_length": 7,
+        "final_frontier": 7,
+        "final_draw": 2
+      },
+      "original_A_Q1_cancel_and_ledger_rebuild": true,
+      "original_B_lag1_and_partial_HostImage": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    }
+  },
+  "real_consumers": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\bin\\model.exe",
+      "bytes": 142674944,
+      "sha256": "4a46a85ca537ca706ff0258f535659e4ad4a8c52f9de93846250f01ee9cac0f5"
+    },
+    "ordinary": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\ordinary-relay-run\\report.json",
+        "bytes": 37917,
+        "sha256": "a96d221236c112d0b7ccd2de62216d179255b29b186dd1c1f5ba03901a3731b8"
+      },
+      "outputs": 16,
+      "successor_submissions": 7,
+      "successor_publications": 7,
+      "successor_refusals": 0
+    },
+    "recursive_MTP": {
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\mtp-k2-run\\report.json",
+        "bytes": 19262,
+        "sha256": "cea5d23a5a0131cfcb220b1abda778de0e6ee55aeddfb43f48fdb915e829618f"
+      },
+      "max_drafts": 2,
+      "outputs": 8,
+      "NextN_graph_calls": 9
+    },
+    "common_first_eight_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198,
+      1445,
+      18904
+    ],
+    "performance_claim": false
+  },
+  "b2_mtp_regression": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\ragged-cuda-run\\report.json",
+      "bytes": 17592,
+      "sha256": "b1453296473670a34a81fc8fb9d605c6d974c20c4556cebc591831ed69cf4b77"
+    },
+    "status": "PASS",
+    "backend": "cuda",
+    "batches": 7
+  },
+  "numerical_contract": "Only finite recomputed F32 GDN values use the inherited 3e-6 absolute component budget; other payloads, original checkpoints and state boundaries are strict.",
+  "processes": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\link\\model\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 35708,
+      "exit": 0,
+      "started": 1793133753.1276586,
+      "seconds": 1.784041166305542,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\link\\test\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 50576,
+      "exit": 0,
+      "started": 1793133793.2158332,
+      "seconds": 1.7808430194854736,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\link\\tiny\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 53596,
+      "exit": 0,
+      "started": 1793133755.7969818,
+      "seconds": 1.7581231594085693,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\logs\\model\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 59508,
+      "exit": 0,
+      "started": 1793133654.3659666,
+      "seconds": 30.272258758544922,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\logs\\test\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 55140,
+      "exit": 0,
+      "started": 1793133750.1643572,
+      "seconds": 2.3697104454040527,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\logs\\tiny\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 48388,
+      "exit": 0,
+      "started": 1793133654.3659666,
+      "seconds": 33.91307258605957,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\mtp-k2-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 46168,
+      "exit": 0,
+      "started": 1793133859.6814947,
+      "seconds": 2.6146631240844727,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\ordinary-relay-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 34364,
+      "exit": 0,
+      "started": 1793133856.8297608,
+      "seconds": 2.496992588043213,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\ragged-cuda-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 47228,
+      "exit": 0,
+      "started": 1793133862.653517,
+      "seconds": 0.8770463466644287,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\test-run\\process.json",
+      "expected_test_fixture_failure": true,
+      "pid": 18508,
+      "exit": 1,
+      "started": 1793133795.4770696,
+      "seconds": 0.44743967056274414,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\tiny-cpu-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 53596,
+      "exit": 0,
+      "started": 1793133826.0472782,
+      "seconds": 0.8729557991027832,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-20261028\\tiny-cuda-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 4524,
+      "exit": 0,
+      "started": 1793133827.2708068,
+      "seconds": 0.8548488616943359,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-refinement-20261028\\link\\test\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 62092,
+      "exit": 0,
+      "started": 1793133873.4454684,
+      "seconds": 1.7675859928131104,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-refinement-20261028\\logs\\test\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 41604,
+      "exit": 0,
+      "started": 1793133853.931323,
+      "seconds": 2.3791327476501465,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-append-transactions-refinement-20261028\\test-run\\process.json",
+      "expected_test_fixture_failure": false,
+      "pid": 48220,
+      "exit": 0,
+      "started": 1793133887.8189292,
+      "seconds": 0.4352102279663086,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "cost": {
+    "CXX": 4,
+    "links": 4,
+    "consumer_processes": 5,
+    "protocol_test_processes": 2,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "remaining": [
+    "Current Apple/Vulkan exact StateOnly and cold packed fallback execution",
+    "Larger shared execution orchestration and steady-state preparation",
+    "GPU hotspots, MTP device successor and current performance comparison"
+  ],
+  "limits": [
+    "Current Apple/Vulkan source audit found no definite fallback blocker; existing platform results do not cover these changes.",
+    "New direct CatchupSingle StateOnly branch uses controlled real lag1 snapshots, not a natural acceptance-rate claim.",
+    "No proof of speed improvement from fewer duplicated source lines or preserved output IDs."
+  ]
+}

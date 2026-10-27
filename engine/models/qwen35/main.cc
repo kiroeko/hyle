@@ -46,6 +46,7 @@
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/slot_transactions.h"
+#include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/request_execution_failure.h"
@@ -866,6 +867,7 @@ struct FamilyPorts {
   bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
   std::vector<V> logits_bias_ports, logits_allowed_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
+  std::vector<V> append_cache_inputs; // Cold same-cohort reader ports; invalid means write-only.
   std::vector<g::slots::SourceBinding> state_sources;
   V draft_key_port, draft_value_port, draft_metadata_port, draft_position_port;
   V carry_input_port, prior_input_port, catchup_token_port, draft_id_port;
@@ -1102,6 +1104,9 @@ struct StepState final {
     if (!dirty.try_resize(banks) || !tails.try_resize(banks) || !appends.try_resize(banks) ||
         !nodes.try_resize(banks) || !bound.try_resize(banks)) throw std::bad_alloc{};
   }
+  inference::AppendTransactions append_transactions() noexcept {
+    return {{nodes.data(), nodes.size()}, {appends.data(), appends.size()}, {bound.data(), bound.size()}};
+  }
   c::BatchLayoutVersion draft_layout;
   g::Invocation *run = nullptr;
   Phase *phase = nullptr;
@@ -1171,14 +1176,8 @@ struct StepState final {
     }
     if (run) {
       if (run->in_flight()) return false;
-      for (std::size_t i = 0; i < appends.size(); ++i) if (bound[i]) {
-        auto recovered = g::batch::take_append(*run, nodes[i]);
-        if (!recovered) {
-          if (recovered.error().IsUnavailable()) return false;
-          return std::unexpected(recovered.error());
-        }
-        appends[i] = std::move(*recovered); bound[i] = false;
-      }
+      HYLE_ASSIGN_OR_RETURN(const bool appends_returned, append_transactions().recover(*run));
+      if (!appends_returned) return false;
       // Only the original Graph's retired take can return a bank. The same
       // cohort handles target ordinary/MTP, imported successors and NextN.
       if (state_transactions) {
@@ -1191,36 +1190,15 @@ struct StepState final {
       incoming.reset(); predecessor_episode.reset();
       *run = {}; // Release failed ordinary outputs and their original bindings.
     }
-    const auto recover = [](c::PagedPageWriter &page) noexcept -> hyle::Status {
-      if (!page.valid()) return hyle::Status::Ok(); // Already successfully published.
-      page.lease().reset();
-      HYLE_RETURN_IF_ERROR(page.discard()); // Unavailable retains reservation.
-      page = {}; // Return the recovered pristine writer; retries skip this page.
-      return hyle::Status::Ok();
-    };
-    for (auto &append : appends) if (append.valid()) {
-      for (std::size_t i = 0; i < append.appender_count(); ++i) {
-        HYLE_ASSIGN_OR_RETURN(auto &tail, append.appender(i));
-        if (!tail.valid() || !tail.reserved_rows()) continue;
-        auto rolled_back = tail.rollback();
-        if (rolled_back.IsUnavailable()) return false;
-        HYLE_RETURN_IF_ERROR(rolled_back);
-      }
-      for (std::size_t page = 0; page < append.page_count(); ++page) {
-        HYLE_ASSIGN_OR_RETURN(auto &writer, append.page(page));
-        auto recovered = recover(writer);
-        if (recovered.IsUnavailable()) return false;
-        HYLE_RETURN_IF_ERROR(recovered);
-      }
-    }
+    HYLE_ASSIGN_OR_RETURN(const bool appends_discarded, append_transactions().discard());
+    if (!appends_discarded) return false;
     for (auto &bank : tails) for (auto &tail : bank) {
-      if (!tail.valid() || !tail.reserved_rows()) continue;
-      auto rolled_back = tail.rollback();
+      const auto rolled_back = inference::AppendTransactions::rollback_tail(tail);
       if (rolled_back.IsUnavailable()) return false;
       HYLE_RETURN_IF_ERROR(rolled_back);
     }
     for (auto &bank : dirty) for (auto &writer : bank) {
-      auto recovered = recover(writer);
+      const auto recovered = inference::AppendTransactions::discard_page(writer);
       if (recovered.IsUnavailable()) return false;
       HYLE_RETURN_IF_ERROR(recovered);
     }
@@ -2167,6 +2145,7 @@ public:
     auto &definition = *result;
     definition.layers.resize(geometry.layers.size()); definition.attention_nodes.resize(target_kv_layers);
     definition.append_nodes.resize(draft_bank + 2);
+    definition.append_cache_inputs.resize(draft_bank + 2);
     definition.sampling = &prepared_sampling;
     definition.requests = requests; definition.role = role; definition.prefix_rows = prefix_rows; definition.completion = completion;
     definition.admitted_exact = admitted_exact; definition.packed_prefill = packed_prefill;
@@ -2289,6 +2268,8 @@ public:
           definition.draft_key_port = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kKey)));
           definition.draft_value_port = r.input(take(c::batch_cache_description(attention_schema, c::BatchCacheRole::kValue)));
           definition.draft_metadata_port = r.input(take(attention_schema.metadata_description()));
+          definition.append_cache_inputs[draft_bank] = definition.draft_key_port;
+          definition.append_cache_inputs[draft_bank + 1] = definition.draft_value_port;
           const auto head = mtp::full_head(r, projection, kv, definition.draft_position_port, frequencies,
               {attention_schema, definition.draft_key_port, definition.draft_value_port, definition.draft_metadata_port},
               f(static_cast<std::int64_t>(draft_lag(role))), row_geometry);
@@ -2487,6 +2468,8 @@ public:
         const auto &schema = target_attention_schema(layer);
         ports.key = r.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kKey)));
         ports.value = r.input(take(c::batch_cache_description(schema, c::BatchCacheRole::kValue)));
+        definition.append_cache_inputs[layer * 2] = ports.key;
+        definition.append_cache_inputs[layer * 2 + 1] = ports.value;
         auto projected = r.reshape(r.linear(normalized, prefix + "self_attn.q_proj.weight"), {batch, t, f(geometry.query_heads), f(geometry.key_depth + geometry.value_depth)});
         auto q = r.norm(r.slice(projected, 3, f(0), f(geometry.key_depth)), prefix + "self_attn.q_norm.weight");
         auto gate = r.reshape(r.copy(r.slice(projected, 3, f(geometry.key_depth), f(geometry.value_depth))), {packed, f(geometry.attention_width())});
@@ -3047,12 +3030,8 @@ public:
       const auto queues = inference::queue_span(program.queues);
       check(g::batch::prepare(run, queues, head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
           {.host_workspace = execution.staging()}));
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-        if (head) check(g::batch::bind_append(run, program.graph, guard.nodes[bank],
-            bank == draft_bank ? program.key : program.value, std::move(guard.appends[bank])));
-        else check(g::batch::bind_append(run, program.graph, guard.nodes[bank], std::move(guard.appends[bank])));
-        guard.bound[bank] = true;
-      }
+      const std::array cache_inputs{head ? program.key : V{}, head ? program.value : V{}};
+      check(guard.append_transactions().subspan(draft_bank, 2).bind(run, program.graph, cache_inputs));
       if (head) check(program.hidden_transactions.bind(run, program.graph));
       check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
@@ -3072,9 +3051,7 @@ public:
         check(program.id_value.read(execution, run, std::as_writable_bytes(std::span(&output.id, 1))));
         if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
       }
-      check(g::batch::take_appends(run, std::span(guard.nodes.data() + draft_bank, 2),
-          std::span(guard.appends.data() + draft_bank, 2)));
-      std::fill_n(guard.bound.begin() + draft_bank, 2, std::uint8_t{});
+      check(guard.append_transactions().subspan(draft_bank, 2).take(run));
       if (head) {
         auto writers = take(program.hidden_transactions.take(run, 0));
         output.hidden = take(writers[0].publish());
@@ -4571,19 +4548,9 @@ public:
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.preparation_uses[slot]; }
       const auto batch_start = Clock::now();
       check(g::batch::prepare(run, queues, layouts, {.host_workspace = execution.staging()}));
-      for (std::size_t layer = 0; layer < phase.attention_nodes.size(); ++layer) {
-        const auto &ports = phase.layers[attention_layer_ids[layer]];
-        check(g::batch::bind_append(run, phase.family->graph, phase.append_nodes[layer * 2], ports.key,
-            std::move(step.appends[layer * 2]))); step.bound[layer * 2] = true;
-        check(g::batch::bind_append(run, phase.family->graph, phase.append_nodes[layer * 2 + 1], ports.value,
-            std::move(step.appends[layer * 2 + 1]))); step.bound[layer * 2 + 1] = true;
-      }
-      if (has_mtp(role)) for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
-        if (drafts_token(role)) check(g::batch::bind_append(run, phase.family->graph, phase.append_nodes[bank],
-            bank == draft_bank ? phase.draft_key_port : phase.draft_value_port, std::move(step.appends[bank])));
-        else check(g::batch::bind_append(run, phase.family->graph, phase.append_nodes[bank], std::move(step.appends[bank])));
-        step.bound[bank] = true;
-      }
+      const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
+      check(step.append_transactions().subspan(0, append_banks).bind(run, phase.family->graph,
+          std::span<const V>(phase.append_cache_inputs).first(append_banks)));
       if (relay) {
         auto &input = *step.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size());
@@ -4876,9 +4843,7 @@ public:
       // Graph output-ready. Every ordinary output has already been retained.
       if (step.sources) check(step.sources->submission.detach());
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
-      check(g::batch::take_appends(run, std::span(step.nodes.data(), append_banks),
-          std::span(step.appends.data(), append_banks)));
-      std::fill_n(step.bound.begin(), append_banks, std::uint8_t{});
+      check(step.append_transactions().subspan(0, append_banks).take(run));
       // Slot take proves actual retirement, not success; the original whole
       // Graph completion above remains the success witness for every bank.
       auto &transactions = phase.state_transactions[step.state_slot];
