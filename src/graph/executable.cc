@@ -9527,8 +9527,7 @@ Status detail::RegionAccess::reset_configuration(Invocation &invocation) noexcep
 
 namespace {
 Result<bool> reusable_capture_tuple(const detail::InvocationState &state,
-    std::optional<std::uint32_t> replacement_instance,
-    compute::ConstTensorView replacement) noexcept {
+    std::span<const detail::ReplayInputBinding> replacements) noexcept {
   const auto &plan = *state.plan;
   if (state.progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
       plan.capture_command_count != plan.command_count || !plan.command_count)
@@ -9572,8 +9571,12 @@ Result<bool> reusable_capture_tuple(const detail::InvocationState &state,
         if (!step.emits_command()) continue;
         for (std::size_t input = 0; input < step.input_count; ++input) {
           const auto instance = plan.node_inputs[step.input_begin + input];
-          const auto &tensor = replacement_instance && instance == *replacement_instance
-              ? replacement : state.readable[instance];
+          auto tensor = state.readable[instance];
+          for (const auto &replacement : replacements)
+            if (instance == plan.external_instances[replacement.input.ordinal()]) {
+              tensor = replacement.tensor;
+              break;
+            }
           if (port == variant.bindings.size() || !tensor.valid() ||
               !same_physical_tensor(variant.bindings[port++], tensor))
             return false;
@@ -9803,7 +9806,7 @@ Status prepare_replay_impl(detail::InvocationState *state_,
 
   if (reuse_only) {
     HYLE_ASSIGN_OR_RETURN(const auto reusable,
-        reusable_capture_tuple(*state_, std::nullopt, {}));
+        reusable_capture_tuple(*state_, {}));
     if (!reusable)
       return Status::Unavailable("existing captures do not cover the complete prepared tuple");
   }
@@ -10036,18 +10039,26 @@ Status Invocation::prepare_replay(std::span<const QueueBinding> queues,
 }
 
 Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocation,
-    ValueId input, compute::ConstTensorView replacement) noexcept {
+    std::span<const ReplayInputBinding> replacements) noexcept {
   const auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   const auto &plan = *state->plan;
-  if (!::hyle::graph::owns(plan, input) || input.kind() != ValueKind::kInput ||
-      !replacement.valid() || replacement.description() != logical_description(*state, input.ordinal()))
-    return std::unexpected(Status::InvalidArgument("capture replacement needs its original input description"));
-  // A changed alias needs actual View preparation. This pure query deliberately
-  // does not infer a replacement pointer for an alias or an opaque native port.
-  if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal()))
-    return false;
-  return reusable_capture_tuple(*state, plan.external_instances[input.ordinal()], replacement);
+  for (std::size_t i = 0; i < replacements.size(); ++i) {
+    const auto &replacement = replacements[i];
+    const auto input = replacement.input;
+    if (!::hyle::graph::owns(plan, input) || input.kind() != ValueKind::kInput ||
+        !replacement.tensor.valid() ||
+        replacement.tensor.description() != logical_description(*state, input.ordinal()))
+      return std::unexpected(Status::InvalidArgument("capture replacement needs its original input description"));
+    for (std::size_t j = 0; j < i; ++j)
+      if (replacements[j].input == input)
+        return std::unexpected(Status::InvalidArgument("capture replacement repeats an input"));
+    // A changed alias needs actual View preparation. This pure query does not
+    // infer replacement pointers for aliases or opaque native ports.
+    if (std::binary_search(plan.external_input_aliases.begin(), plan.external_input_aliases.end(), input.ordinal()))
+      return false;
+  }
+  return reusable_capture_tuple(*state, replacements);
 }
 
 Status detail::ReplayAccess::prepare_reuse(Invocation &invocation,
@@ -10055,7 +10066,7 @@ Status detail::ReplayAccess::prepare_reuse(Invocation &invocation,
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   HYLE_ASSIGN_OR_RETURN(const auto reusable,
-      reusable_capture_tuple(*state, std::nullopt, {}));
+      reusable_capture_tuple(*state, {}));
   if (!reusable)
     return Status::Unavailable("no existing capture covers the current physical tuple");
   const auto lane = state->plan->segments.front().lane;

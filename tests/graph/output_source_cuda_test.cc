@@ -12,6 +12,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/detail/submission_source.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/region_provider.h"
@@ -192,25 +193,27 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
   auto foreign = c::Completion::completed();
-  EXPECT_FALSE(gd::OutputSource::create(producer, token,
-      std::move(foreign), storage, source_pool));
+  EXPECT_FALSE(gd::SubmissionSource::create(producer, std::move(foreign), storage));
   EXPECT_TRUE(foreign.valid());
-  auto source_result = gd::OutputSource::create(producer, token,
-      std::move(*submitted), storage, source_pool);
+  auto submission_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(submission_result) << submission_result.error().message();
+  auto submission_source = std::move(*submission_result);
+  auto source_result = gd::OutputSource::create(submission_source, token, storage, source_pool);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
+  const std::array bindings{gd::OutputBinding{second_index, &source}};
   EXPECT_FALSE(submitted->valid());
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
   EXPECT_TRUE(source.detach().IsUnavailable());
   EXPECT_FALSE(producer.reset().ok());
-  EXPECT_FALSE(gd::bind_output(producer, first_index, source).ok());
-  const auto bound = gd::bind_output(consumer, second_index, source);
+  EXPECT_FALSE(gd::bind_outputs(producer, std::array{gd::OutputBinding{first_index, &source}}).ok());
+  const auto bound = gd::bind_outputs(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  EXPECT_FALSE(gd::bind_output(consumer, second_index, source).ok());
+  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
   EXPECT_FALSE(consumer.prepare_replay(queues,
       {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject}).ok());
-  const auto prepared = gd::prepare_output(consumer, second_index, source, queues);
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
   if (region_consumer) {
@@ -231,7 +234,7 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
     reader_gate.arm(gate.stream);
     ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
   }
-  auto consumed = gd::submit_output(consumer, second_index, source, queues);
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   auto pending = consumed->poll();
   ASSERT_TRUE(pending) << pending.error().message();
@@ -249,6 +252,8 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
     const auto detached = source.detach();
     ASSERT_TRUE(detached.ok()) << detached.message();
     EXPECT_TRUE(source.detach().ok());
+    const auto closed_submission = submission_source.detach();
+    ASSERT_TRUE(closed_submission.ok()) << closed_submission.message();
     ASSERT_TRUE(producer.bind(first_index, i32, next_index).ok());
     ASSERT_TRUE(producer.bind(token, i32, std::move(next_token_writer)).ok());
     const auto prepared_next = producer.prepare_replay(queues,
@@ -310,7 +315,17 @@ void relay(bool bad_producer_index, bool reuse_producer = false, bool region_con
   }
   *consumed = {};
   source = {};
-  consumer = {}; producer = {};
+  consumer = {};
+  if (bad_producer_index) {
+    EXPECT_FALSE(gd::RegionAccess::outcome_available(producer));
+    const auto closed = submission_source.detach();
+    ASSERT_TRUE(closed.ok()) << closed.message();
+    EXPECT_TRUE(gd::RegionAccess::outcome_available(producer));
+    const auto original_failure = submission_source.wait();
+    EXPECT_EQ(original_failure.code(), producer_status.code());
+    EXPECT_EQ(original_failure.message(), producer_status.message());
+  }
+  submission_source = {}; producer = {};
   EXPECT_EQ(source_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
@@ -417,7 +432,8 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   // A different real embedding block invalidates the complete physical tuple.
   // Reuse-only preparation must reject rather than record it or choose Commands.
   ASSERT_TRUE(consumer.bind(second_table, table_f32, other_embedding_ready).ok());
-  auto miss = gd::ReplayAccess::can_reuse_capture(consumer, second_index, token_view);
+  auto miss = gd::ReplayAccess::can_reuse_capture(consumer,
+      std::array{gd::ReplayInputBinding{second_index, token_view}});
   ASSERT_TRUE(miss) << miss.error().message();
   EXPECT_FALSE(*miss);
   EXPECT_FALSE(gd::ReplayAccess::prepare_reuse(consumer, queues).ok());
@@ -443,14 +459,17 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
   auto submitted = producer.submit(queues);
   ASSERT_TRUE(submitted) << submitted.error().message();
-  auto source_result = gd::OutputSource::create(producer, token,
-      std::move(*submitted), storage, token_pool);
+  auto submission_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(submission_result) << submission_result.error().message();
+  auto submission_source = std::move(*submission_result);
+  auto source_result = gd::OutputSource::create(submission_source, token, storage, token_pool);
   ASSERT_TRUE(source_result) << source_result.error().message();
   auto source = std::move(*source_result);
+  const std::array bindings{gd::OutputBinding{second_index, &source}};
   ASSERT_TRUE(source.poll());
   ASSERT_EQ(*source.poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(consumer.bind(second_table, table_f32, other_embedding_ready).ok());
-  EXPECT_FALSE(gd::bind_output(consumer, second_index, source).ok());
+  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
   EXPECT_TRUE(source.valid());
   EXPECT_FALSE(consumer.in_flight());
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
@@ -458,9 +477,9 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(consumer.bind(second_table, table_f32, embedding_ready).ok());
-  const auto bound = gd::bind_output(consumer, second_index, source);
+  const auto bound = gd::bind_outputs(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
-  const auto prepared = gd::prepare_output(consumer, second_index, source, queues);
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(source.poll());
@@ -473,7 +492,7 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   EXPECT_EQ(dependencies.device_wait_count, 1u);
   EXPECT_EQ(dependencies.host_wait_count, 0u);
   EXPECT_FALSE(consumer.submit(queues)); // The pending input still needs ordered admission.
-  auto consumed = gd::submit_output(consumer, second_index, source, queues);
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
   ASSERT_TRUE(consumed->poll());
   EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
@@ -489,8 +508,165 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   EXPECT_FALSE(producer.in_flight()); EXPECT_FALSE(consumer.in_flight());
   EXPECT_EQ(token_pool.stats().active_uses, 0u);
   EXPECT_EQ(output_pool.stats().active_uses, 0u);
-  *consumed = {}; source = {}; consumer = {}; producer = {};
+  *consumed = {}; source = {}; consumer = {}; submission_source = {}; producer = {};
   EXPECT_EQ(token_pool.stats().live_blocks, 0u);
+  EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+}
+TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(8).ok());
+  auto memory = c::cuda::MemoryResource::create(context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(memory)).value();
+  const auto i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  const auto table_i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{4}).value();
+  const auto table_f32 = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{4, 2}).value();
+  const auto row_f32 = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{1, 2}).value();
+  auto inputs = c::LeasePool::create(storage.ref(), 6 * 256, {.max_blocks = 6}).value();
+  auto tokens_pool = c::LeasePool::create(storage.ref(), 2 * 256, {.max_blocks = 2}).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), 2 * 256, {.max_blocks = 2}).value();
+  auto table = inputs.allocate(4 * sizeof(std::int32_t), 256).value();
+  auto embedding = inputs.allocate(8 * sizeof(float), 256).value();
+  constexpr std::array<std::int32_t, 4> token_values{2, 1, 3, 0};
+  constexpr std::array<float, 8> rows{10, 11, 20, 21, 30, 31, 40, 41};
+  ASSERT_TRUE(table.view()->write(std::as_bytes(std::span(token_values))).ok());
+  ASSERT_TRUE(embedding.view()->write(std::as_bytes(std::span(rows))).ok());
+  auto table_ready = table.publish().value(), embedding_ready = embedding.publish().value();
+  std::array<c::ReadLease, 2> selection, previous_indices;
+  for (std::size_t i = 0; i < 2; ++i) {
+    auto index = inputs.allocate(sizeof(std::int32_t), 256).value();
+    const std::array<std::int32_t, 1> wanted{static_cast<std::int32_t>(i)};
+    ASSERT_TRUE(index.view()->write(std::as_bytes(std::span(wanted))).ok());
+    selection[i] = index.publish().value();
+    auto previous = inputs.allocate(sizeof(std::int32_t), 256).value();
+    const std::array<std::int32_t, 1> old{static_cast<std::int32_t>(i == 0 ? 3 : 0)};
+    ASSERT_TRUE(previous.view()->write(std::as_bytes(std::span(old))).ok());
+    previous_indices[i] = previous.publish().value();
+  }
+
+  auto first = g::GraphBuilder::create().value();
+  const auto first_table = first.input(table_i32).value();
+  std::array<g::ValueId, 2> first_indices, tokens;
+  for (std::size_t i = 0; i < 2; ++i) {
+    first_indices[i] = first.input(i32).value();
+    tokens[i] = first.add(c::Gather{.axis = 0}, first_table, first_indices[i]).value();
+    ASSERT_TRUE(first.publish(tokens[i]).ok());
+  }
+  const auto first_graph = std::move(first).finish().value();
+  auto producer_plan = g::cuda::compile(first_graph, context, storage);
+  ASSERT_TRUE(producer_plan) << producer_plan.error().message();
+  ASSERT_EQ(producer_plan->report.step_count(), 2u);
+  auto producer = producer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(producer.prepare_resources().ok());
+  ASSERT_TRUE(producer.bind(first_table, table_i32, table_ready).ok());
+  std::array<c::ConstTensorView, 2> original_tokens;
+  for (std::size_t i = 0; i < 2; ++i) {
+    ASSERT_TRUE(producer.bind(first_indices[i], i32, selection[i]).ok());
+    auto writer = tokens_pool.allocate(sizeof(std::int32_t), 256).value();
+    original_tokens[i] = writer.tensor(i32)->as_const();
+    ASSERT_TRUE(producer.bind(tokens[i], i32, std::move(writer)).ok());
+    const auto step = producer_plan->report.step(i).value();
+    EXPECT_EQ(step.runtime.mode, c::ProviderRuntimeMode::kSharedQueue);
+    EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
+    EXPECT_FALSE(step.runtime.blocks_host);
+  }
+  EXPECT_EQ(original_tokens[0].storage().resource(), original_tokens[1].storage().resource());
+  EXPECT_EQ(original_tokens[0].storage().native_handle(), original_tokens[1].storage().native_handle());
+  EXPECT_NE(original_tokens[0].storage().offset(), original_tokens[1].storage().offset());
+
+  auto second = g::GraphBuilder::create().value();
+  const auto second_table = second.input(table_f32).value();
+  std::array<g::ValueId, 2> second_indices, selected;
+  for (std::size_t i = 0; i < 2; ++i) {
+    second_indices[i] = second.input(i32).value();
+    selected[i] = second.add(c::Gather{.axis = 0}, second_table, second_indices[i]).value();
+    ASSERT_TRUE(second.publish(selected[i]).ok());
+  }
+  const auto second_graph = std::move(second).finish().value();
+  auto consumer_plan = g::cuda::compile(second_graph, context, storage);
+  ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
+  ASSERT_EQ(consumer_plan->report.step_count(), 2u);
+  auto consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(consumer.prepare_resources().ok());
+  ASSERT_TRUE(consumer.bind(second_table, table_f32, embedding_ready).ok());
+  for (std::size_t i = 0; i < 2; ++i) {
+    ASSERT_TRUE(consumer.bind(second_indices[i], i32, previous_indices[i]).ok());
+    auto writer = output_pool.allocate(2 * sizeof(float), 256).value();
+    ASSERT_TRUE(consumer.bind(selected[i], row_f32, std::move(writer)).ok());
+    const auto step = consumer_plan->report.step(i).value();
+    EXPECT_EQ(step.runtime.mode, c::ProviderRuntimeMode::kSharedQueue);
+    EXPECT_EQ(step.runtime.replay_class, c::ProviderReplayClass::kPrepared);
+    EXPECT_FALSE(step.runtime.blocks_host);
+  }
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(producer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+  Gate gate;
+  gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
+  auto submitted = producer.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(common_result) << common_result.error().message();
+  auto common = std::move(*common_result);
+  EXPECT_FALSE(submitted->valid());
+  auto left_result = gd::OutputSource::create(common, tokens[0], storage, tokens_pool);
+  auto right_result = gd::OutputSource::create(common, tokens[1], storage, tokens_pool);
+  ASSERT_TRUE(left_result) << left_result.error().message();
+  ASSERT_TRUE(right_result) << right_result.error().message();
+  std::array<gd::OutputSource, 2> views{std::move(*left_result), std::move(*right_result)};
+  ASSERT_TRUE(common.poll());
+  ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
+  // The second input is foreign. A late rejection must neither replace the
+  // first original reader nor claim either typed view's one-shot input name.
+  const std::array rejected{gd::OutputBinding{second_indices[0], &views[0]},
+                            gd::OutputBinding{first_indices[1], &views[1]}};
+  EXPECT_FALSE(gd::bind_outputs(consumer, rejected).ok());
+  auto preserved = previous_indices[0].try_write();
+  ASSERT_FALSE(preserved) << "rejected bundle partially replaced its first input";
+  EXPECT_TRUE(previous_indices[0].valid());
+  EXPECT_TRUE(views[0].valid()); EXPECT_TRUE(views[1].valid());
+  EXPECT_FALSE(consumer.in_flight());
+  const std::array bindings{gd::OutputBinding{second_indices[0], &views[0]},
+                            gd::OutputBinding{second_indices[1], &views[1]}};
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kCommands);
+  const auto report = consumer.input_source_report().value();
+  EXPECT_EQ(report.source_count, 1u);
+  EXPECT_EQ(report.device_wait_count, 1u);
+  EXPECT_EQ(report.host_wait_count, 0u);
+  EXPECT_FALSE(consumer.submit(queues));
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  ASSERT_TRUE(consumed->poll());
+  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  gate.release();
+  const auto terminal = consumed->wait();
+  ASSERT_TRUE(terminal.ok()) << terminal.message();
+  ASSERT_TRUE(common.wait().ok());
+  EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
+  constexpr std::array<std::array<float, 2>, 2> expected{{{30, 31}, {20, 21}}};
+  for (std::size_t i = 0; i < 2; ++i) {
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(consumer.output(selected[i])->storage().read(
+        std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, expected[i]);
+  }
+  EXPECT_EQ(tokens_pool.stats().active_uses, 0u);
+  EXPECT_EQ(output_pool.stats().active_uses, 0u);
+  *consumed = {}; views = {}; consumer = {}; common = {}; producer = {};
+  EXPECT_EQ(tokens_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
 }
 } // namespace

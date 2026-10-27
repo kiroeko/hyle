@@ -105,16 +105,17 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
 - Graph的`InputSource`可保留尚未完成的不可变生产者，按原Queue选择device／host wait，
   在消费者真实退休后补核生产者完整Status。`OrderedGraphSubmission`及typed pending frame
   已用于原批次搬运组合，Compute已有有序读取writer的内部权限原语。
-- `Invocation::result/output`继续只导出成功终结的输出。同build的窄`detail::OutputSource`
-  已接一个真实共享Queue、固定caller-owned I32输出和原两个Invocation；不公开pending tensor或伪造ready租约。
-  创建时核对原提交proxy身份、原writer／pool、完整范围及Plan保留的真实`StorageOwner`，成功才消费proxy。
-  原生退休另保独立资源owner，source与consumer句柄提前释放不缩短真实工作寿命。
-  自身依赖、未提交生产者及未经证明的拓扑拒绝，不增加执行器。
-- 一次A→B依赖链与持续有限槽轮换分别实现。pending `OutputSource`保留原Invocation并阻止重绑；
-  原提交完整成功且实际退休后，`detach()`保留原只读输出与该提交的终结事实，归还producer的结果引用。
-  B仍读旧输出时，A可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
-  pending／失败不解除保留；不等待pending生产者，最后owner释放仍有正常析构／分配器清理成本。
-  输出存储与执行载体由此可分开，完整状态及KV的pending权限仍须另接，不能由token链代签。
+- `Invocation::result/output`继续只导出成功终结的输出。同build的`detail::SubmissionSource`
+  接管一次原提交proxy、Queue和完整终结事实，只有一个producer保留；`OutputSource`是固定caller-owned I32视图，
+  各自核原writer／pool、精确范围及Plan强持的真实`StorageOwner`，不公开pending字节或制造ready租约。
+  一组视图用原子`OutputBinding` bundle绑定，依赖按共同Source身份去重，实际资源权限仍逐值接纳。
+  bundle保全部视图寿命，Source不反持bundle；原生退休另保真实owner，不增加观察者或执行器。
+- 一次A→B依赖链与持续有限槽轮换分别实现。完整成功且实际退休后，view的`detach()`取得原只读权限；
+  所有借用解除后，调用方显式`SubmissionSource::detach()`结束该代导出并归还producer保留。
+  B仍读旧输出时，A才可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
+  `poll/wait`不隐式关闭导出。数学失败不发布ready；失败已实际退休且没有借用时仍可归还载体，原错误继续传播。
+  detach不等待pending工作，最后owner释放仍有正常析构／分配器清理成本。
+  完整状态及KV的pending权限仍须另接，不能由token链代签。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
 
@@ -138,7 +139,10 @@ host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正
 后续[有限CUDA检查](../evidence/correctness/inference-graph-output-detach-2026-10-27.json)另验证：
 A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一代，B仍读取旧值，旧source的终结事实不受新提交影响。
 实际使用两块输出缓冲，未减少其容量；没有复制载荷或增加执行器。该适配尚未接引擎，
-接下来按同一次原Graph提交共用依赖与完整终结owner，再接状态／KV的精确pending视图及有界轮换。
+同一次原提交的[共同owner检查](../evidence/correctness/inference-submission-source-2026-10-27.json)另已完成：
+两个不同I32输出送入同B两个输入，source／device-wait均为1；后项无效时整批绑定保持，原错误及真实退休分离。
+旧单输出入口已删除，不保兼容重载；Source本身不限制consumer，每个实际bundle保自己的绑定／一次提交身份。
+接下来仍需状态／KV的精确pending视图及有界轮换。
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
@@ -147,9 +151,12 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 - 一次原Graph提交只持一份proxy、观察锁、实际依赖及完整终结事实。token、Store和KV视图共用此提交身份，
   沿原`InputSource`按owner及实际Queue去重等待／终结核对；每个值的实际读权限仍单独接纳。
   不用Plan代际表示提交代，不为每层状态搬动Completion或增设观察者／执行器。
+  `poll/wait`只观察，不隐式关闭导出；各typed view先独立，调用方再显式关闭该代导出并归还producer保留。
+  此控制须核实际退休，与数学成功分开：失败不产生ready权限，但不应因后继仍保留终结记录而永久挡住原事务回收。
 - typed pending读凭据须独立保活原block、generation及精确范围；append还核原epoch与已写前缀。
   它不是ready租约，不公开pending字节；仅原typed owner可导出，不能借任意TensorView取得权限。
   前驱成功实际退休、所有借用指针已分离后，才解除原结果保留并沿原take／publication发布。
+  初次发行应在原producer成功submit之后：提前增加block引用会触发现有writer唯一性门，不能全局放宽该门来迁就凭据。
 - Store发布须证明原writer已退休，允许已接纳的只读者存续；KV另须支持受检的pending前缀读取及原epoch发布。
   新append仍须等旧读者，或使用真实独立／COW页，不能把原保护门整体移除。
   `WorkingFrame`继续只表示已提交ready范围，不承载未发布候选权限。
@@ -164,7 +171,7 @@ ggml CUDA普通Commands仍可能维护内部graph cache、惰性分配或走同�
 Graph已增加窄`detail::ReplayAccess`沿原准备实现复用已完成的捕获：核同一实际Queue、物理key、
 稳定地址／私有参数及完整覆盖，pending输入只允许复用，所有range预检命中后才选择原记录。
 miss在begin capture及variant eviction之前拒绝，不新录制、不降回managed Commands，普通`ReplayOptions`不扩维。
-`prepare_output`固定本consumer选择的Commands或既有capture模式，submit仍核实际完整路由与原有序读权限。
+`prepare_outputs`固定该bundle选择的Commands或既有capture模式，submit仍核实际完整路由与原有序读权限。
 [有限CUDA检查](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)证明原ggml Gather→Add区域
 在生产者pending时取得0次新录制／1次复用，物理tuple不匹配时拒绝，原块读写权限交接及结果正确。
 仍执行原metadata hook／预算及权限准备，不表示零分配；静态host-blocking生产者及多segment未准入，

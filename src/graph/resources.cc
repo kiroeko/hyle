@@ -1789,43 +1789,94 @@ struct OutputStorageRetention final {
   compute::StorageOwner storage;
   compute::CompletionRetention retirement;
 };
-struct OutputSourceState final : util::RefCounted<OutputSourceState> {
-  OutputSourceState(InvocationState *original, compute::WriteLease *lease,
-      compute::ReadLease *published,
-      compute::ConstTensorView view, compute::detail::QueueRef queue_value,
+
+struct SubmissionSourceState final : util::RefCounted<SubmissionSourceState> {
+  SubmissionSourceState(InvocationState *original, compute::detail::QueueRef queue_value,
       compute::StorageOwner storage, compute::Completion submission) noexcept
-      : producer(original), writer(lease), ready(published), tensor(view), queue(std::move(queue_value)),
-        storage_owner(std::move(storage)), completion(std::move(submission)) {
+      : producer(original), queue(std::move(queue_value)), metadata_owner(std::move(storage)),
+        completion(std::move(submission)) {
     retain(producer);
     producer->results.fetch_add(1, std::memory_order_relaxed);
   }
   void destroy() noexcept {
-    auto storage = storage_owner;
+    const auto storage = metadata_owner;
     const auto allocator = storage.allocator();
     auto *original = producer;
-    this->~OutputSourceState();
-    allocator.deallocate(this, sizeof(OutputSourceState), alignof(OutputSourceState));
+    HYLE_FATAL_ASSERT(borrows == 0);
+    this->~SubmissionSourceState();
+    allocator.deallocate(this, sizeof(SubmissionSourceState), alignof(SubmissionSourceState));
     if (original) {
       original->results.fetch_sub(1, std::memory_order_release);
       release(original);
     }
   }
   InvocationState *producer = nullptr;
+  compute::detail::QueueRef queue;
+  // Independently retained through native retirement; the local owner above
+  // also covers allocator teardown after the last public/native source ref.
+  compute::StorageOwner metadata_owner;
+  compute::Completion completion;
+  std::mutex observation;
+  std::size_t borrows = 0;
+};
+struct OutputBindingBundle;
+struct OutputSourceState final : util::RefCounted<OutputSourceState> {
+  OutputSourceState(SubmissionSourceState *source, ValueId value,
+      compute::WriteLease *lease, compute::ReadLease *published,
+      compute::ConstTensorView view, compute::StorageOwner storage) noexcept
+      : submission(util::retain_ref(source)), output(value), writer(lease), ready(published),
+        tensor(view), storage_owner(std::move(storage)) {
+    ++source->borrows;
+  }
+  void destroy() noexcept {
+    const auto storage = storage_owner;
+    const auto allocator = storage.allocator();
+    {
+      std::lock_guard guard(submission->observation);
+      if (writer) --submission->borrows;
+    }
+    this->~OutputSourceState();
+    allocator.deallocate(this, sizeof(OutputSourceState), alignof(OutputSourceState));
+  }
+  util::Ref<SubmissionSourceState> submission;
+  ValueId output{};
   compute::WriteLease *writer = nullptr;
   compute::ReadLease *ready = nullptr;
   compute::ConstTensorView tensor;
-  compute::detail::QueueRef queue;
-  // This real resource/allocator owner outlives both the original Completion
-  // and its leased backing, including the final metadata deallocation above.
   compute::StorageOwner storage_owner;
-  // A real original read permission, declared after its actual resource owner
-  // so it is destroyed first. Once detached no producer binding is borrowed.
+  // Destroy the actual read permission before its resource/allocator owners.
   compute::ReadLease retained_output;
-  compute::Completion completion;
-  std::mutex observation;
-  // One-shot borrowed identity only; never a back-reference owning consumer.
+  // Borrowed only while the actual InputSources attachment keeps this bundle
+  // alive. Destruction clears it; bound_once prevents consumer-address ABA.
+  OutputBindingBundle *bundle = nullptr;
+  bool bound_once = false;
+};
+struct OutputSourceAccess final {
+  static OutputSourceState *state(const OutputSource *source) noexcept {
+    return source ? source->state_ : nullptr;
+  }
+};
+struct OutputBindingEntry final { ValueId input{}; util::Ref<OutputSourceState> view{}; };
+struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
+  explicit OutputBindingBundle(SubmissionSourceState *source) noexcept
+      : submission(util::retain_ref(source)),
+        entries(mem::StdAllocator<OutputBindingEntry>(source->metadata_owner.allocator())),
+        replacements(mem::StdAllocator<ReplayInputBinding>(source->metadata_owner.allocator())) {}
+  void destroy() noexcept {
+    const auto storage = submission->metadata_owner;
+    const auto allocator = storage.allocator();
+    {
+      std::lock_guard guard(submission->observation);
+      for (const auto &entry : entries)
+        if (entry.view->bundle == this) entry.view->bundle = nullptr;
+    }
+    this->~OutputBindingBundle();
+    allocator.deallocate(this, sizeof(OutputBindingBundle), alignof(OutputBindingBundle));
+  }
+  util::Ref<SubmissionSourceState> submission;
+  std::vector<OutputBindingEntry, mem::StdAllocator<OutputBindingEntry>> entries;
+  std::vector<ReplayInputBinding, mem::StdAllocator<ReplayInputBinding>> replacements;
   InvocationState *consumer = nullptr;
-  ValueId input{};
   bool preparing = false, submitted = false, capture_consumer = false;
 };
 namespace {
@@ -1843,31 +1894,34 @@ Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noe
     return std::unexpected(Status::Unimplemented("output relay requires an actual asynchronous endpoint"));
   return state.queues[lane.ordinal()];
 }
-Result<compute::CompletionPoll> poll_output(void *opaque) noexcept {
-  auto &source = *static_cast<OutputSourceState *>(opaque);
+Result<compute::CompletionPoll> poll_submission(SubmissionSourceState &source) noexcept {
   std::lock_guard guard(source.observation);
   return source.completion.poll();
 }
-Status wait_output(void *opaque) noexcept {
-  auto &source = *static_cast<OutputSourceState *>(opaque);
+Status wait_submission(SubmissionSourceState &source) noexcept {
   std::lock_guard guard(source.observation);
   return source.completion.wait();
 }
 const InputSourceVTable output_source_table{
-    [](void *opaque) noexcept { static_cast<OutputSourceState *>(opaque)->incref(); },
-    [](void *opaque) noexcept { static_cast<OutputSourceState *>(opaque)->decref(); },
+    [](void *opaque) noexcept { static_cast<OutputBindingBundle *>(opaque)->incref(); },
+    [](void *opaque) noexcept { static_cast<OutputBindingBundle *>(opaque)->decref(); },
     [](void *opaque, const compute::detail::QueueRef *queue) noexcept
         -> Result<InputDependencyRoute> {
-      const auto &source = *static_cast<OutputSourceState *>(opaque);
-      if (!source.preparing)
-        return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only source preparation"));
-      if (!queue || !source.queue.same_owner(*queue))
+      const auto &bundle = *static_cast<OutputBindingBundle *>(opaque);
+      if (!bundle.preparing)
+        return std::unexpected(Status::FailedPrecondition("pending output requires its metadata-only bundle preparation"));
+      if (!queue || !bundle.submission->queue.same_owner(*queue))
         return std::unexpected(Status::Unimplemented("output relay requires its original actual Queue"));
       return InputDependencyRoute::kDeviceWait;
     },
-    &poll_output, &wait_output,
+    [](void *opaque) noexcept {
+      return poll_submission(*static_cast<OutputBindingBundle *>(opaque)->submission);
+    },
+    [](void *opaque) noexcept {
+      return wait_submission(*static_cast<OutputBindingBundle *>(opaque)->submission);
+    },
     [](void *opaque, compute::detail::QueueSequence &sequence) noexcept {
-      auto &source = *static_cast<OutputSourceState *>(opaque);
+      auto &source = *static_cast<OutputBindingBundle *>(opaque)->submission;
       if (!source.queue.same_owner(sequence))
         return compute::detail::EnqueueResult::rejected(
             Status::InvalidArgument("output relay sequence differs from its producer Queue"));
@@ -1878,23 +1932,23 @@ const InputSourceVTable output_source_table{
         return compute::detail::EnqueueResult::no_op();
       auto dependency = compute::detail::RetainedCompletion::native_dependency(source.completion);
       if (!dependency) return compute::detail::EnqueueResult::rejected(dependency.error());
-      // Even on the same Queue this records an actual accepted dependency.
-      // InputSource then reconciles the full original producer verdict before
-      // publishing consumer success; the event is never that verdict itself.
+      // The native dependency is not the full verdict. InputSources reconciles
+      // this same original Completion after the imported consumer really retires.
       return sequence.enqueue_resolved_wait(*dependency);
     },
-    &wait_output};
-Result<InputSource> output_input_source(OutputSourceState *state) noexcept {
-  if (!state) return std::unexpected(Status::FailedPrecondition("output source is empty"));
-  return InputSource::acquire(state, &output_source_table, state);
+    [](void *opaque) noexcept {
+      return wait_submission(*static_cast<OutputBindingBundle *>(opaque)->submission);
+    }};
+Result<InputSource> output_input_source(OutputBindingBundle *bundle) noexcept {
+  return InputSource::acquire(bundle, &output_source_table, bundle->submission.get());
 }
-Status check_output_consumer(Invocation &invocation, ValueId input,
-    OutputSourceState *source, std::span<const QueueBinding> queues,
-    bool require_binding, bool *capture_consumer = nullptr) noexcept {
+Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle,
+    std::span<const QueueBinding> queues, bool require_binding) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
-  if (!source || state == source->producer)
-    return Status::InvalidArgument("output relay source is empty or refers to its own consumer");
+  auto &source = *bundle.submission;
+  if (state == source.producer)
+    return Status::InvalidArgument("output relay cannot consume its own original submission");
   const auto &plan = *state->plan;
   if (state->progress || plan.segments.size() != 1 || plan.required_queue_count != 1 ||
       !shared_lane(plan, plan.segments.front().lane))
@@ -1906,39 +1960,126 @@ Status check_output_consumer(Invocation &invocation, ValueId input,
         runtime.replay_class != compute::ProviderReplayClass::kPrepared || runtime.blocks_host))
       commands = false;
   }
-  const bool captured = source->consumer ? source->capture_consumer : !commands;
+  const bool captured = bundle.consumer ? bundle.capture_consumer : !commands;
   if (captured) {
     HYLE_ASSIGN_OR_RETURN(const auto reusable,
-        ReplayAccess::can_reuse_capture(invocation, input, source->tensor));
+        ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
     if (!reusable)
-      return Status::Unavailable("pending output has no complete existing capture for its physical tuple");
+      return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
     const auto lane = plan.segments.front().lane;
-    if (!source->queue.same_owner(state->queues[lane.ordinal()]))
-      return Status::InvalidArgument("pending captured output requires the producer's actual Queue");
+    if (!source.queue.same_owner(state->queues[lane.ordinal()]))
+      return Status::InvalidArgument("pending captured outputs require the producer's actual Queue");
   } else if (!commands) {
     return Status::Unimplemented("output relay requires prepared nonblocking shared commands");
   }
   if (!queues.empty() && (queues.size() != 1 || !queues.front().queue ||
       queues.front().lane != plan.segments.front().lane ||
-      !source->queue.same_owner(*queues.front().queue)))
+      !source.queue.same_owner(*queues.front().queue)))
     return Status::InvalidArgument("output relay requires the producer's actual Queue and consumer lane");
-  if (source->consumer && (source->consumer != state || source->input != input))
-    return Status::FailedPrecondition("output source already names a different original consumer input");
   if (require_binding) {
-    HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(source));
-    if (!input_source_matches(*state, input, owner))
-      return Status::FailedPrecondition("output relay input owner was reset or replaced");
-    HYLE_ASSIGN_OR_RETURN(auto bound, RegionAccess::has_input_binding(state, input, source->tensor));
-    if (!bound) return Status::FailedPrecondition("output relay input storage was reset or replaced");
-    const auto *binding = find_binding(state, input);
-    if (!binding || binding->borrowed || binding->exclusive || binding->read.valid() ||
-        binding->permissionless || binding->description != source->tensor.description())
-      return Status::FailedPrecondition("output relay lost its original pending read requirement");
+    if (bundle.consumer != state)
+      return Status::FailedPrecondition("output bundle names another original consumer");
+    HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(&bundle));
+    for (const auto &entry : bundle.entries) {
+      if (!input_source_matches(*state, entry.input, owner))
+        return Status::FailedPrecondition("output bundle input owner was reset or replaced");
+      HYLE_ASSIGN_OR_RETURN(auto bound, RegionAccess::has_input_binding(state, entry.input, entry.view->tensor));
+      if (!bound) return Status::FailedPrecondition("output bundle input storage was reset or replaced");
+      const auto *binding = find_binding(state, entry.input);
+      if (!binding || binding->borrowed || binding->exclusive || binding->read.valid() ||
+          binding->permissionless || binding->description != entry.view->tensor.description())
+        return Status::FailedPrecondition("output bundle lost its original pending read requirement");
+    }
+  } else {
+    bundle.capture_consumer = captured;
   }
-  if (capture_consumer) *capture_consumer = captured;
   return Status::Ok();
 }
+Result<OutputBindingBundle *> bound_output_bundle(Invocation &invocation,
+    std::span<const OutputBinding> bindings) noexcept {
+  if (bindings.empty()) return std::unexpected(Status::InvalidArgument("output bundle is empty"));
+  const auto *first = OutputSourceAccess::state(bindings.front().output);
+  auto *bundle = first ? first->bundle : nullptr;
+  if (!bundle || bundle->entries.size() != bindings.size() ||
+      bundle->consumer != InvocationAccess::state(invocation))
+    return std::unexpected(Status::FailedPrecondition("output bundle was not bound to this original consumer"));
+  for (std::size_t i = 0; i < bindings.size(); ++i)
+    if (bindings[i].input != bundle->entries[i].input ||
+        OutputSourceAccess::state(bindings[i].output) != bundle->entries[i].view.get())
+      return std::unexpected(Status::InvalidArgument("output bundle differs from its original complete binding"));
+  return bundle;
+}
 } // namespace
+
+SubmissionSource::SubmissionSource(SubmissionSource &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+SubmissionSource &SubmissionSource::operator=(SubmissionSource &&other) noexcept {
+  if (this != &other) {
+    if (state_) state_->decref();
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+SubmissionSource::~SubmissionSource() { if (state_) state_->decref(); }
+Result<SubmissionSource> SubmissionSource::create(Invocation &invocation,
+    compute::Completion &&submission, const compute::StorageOwner &storage) noexcept {
+  auto *state = InvocationAccess::state(invocation);
+  if (!state || !storage || !state->observation.owns(submission))
+    return std::unexpected(Status::InvalidArgument("submission source requires its exact submitted Invocation proxy and metadata owner"));
+  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state));
+  const auto &plan = *state->plan;
+  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(
+      plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source));
+  if (context->identity_key() != storage.context_identity())
+    return std::unexpected(Status::InvalidArgument("submission metadata owner belongs to another Context"));
+  HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
+  (void)dependency;
+  const auto allocator = storage.allocator();
+  auto *memory = allocator.allocate(sizeof(SubmissionSourceState), alignof(SubmissionSourceState));
+  if (!memory) return std::unexpected(Status::ResourceExhausted("submission source cold owner metadata"));
+  auto *retention_memory = allocator.allocate(sizeof(OutputStorageRetention), alignof(OutputStorageRetention));
+  if (!retention_memory) {
+    allocator.deallocate(memory, sizeof(SubmissionSourceState), alignof(SubmissionSourceState));
+    return std::unexpected(Status::ResourceExhausted("submission source storage retirement metadata"));
+  }
+  auto *retained_storage = ::new (retention_memory) OutputStorageRetention(storage);
+  const auto attached = retained_storage->retirement.attach(submission, retained_storage,
+      &OutputStorageRetention::release);
+  if (!attached.ok()) {
+    OutputStorageRetention::release(retained_storage);
+    allocator.deallocate(memory, sizeof(SubmissionSourceState), alignof(SubmissionSourceState));
+    return std::unexpected(attached);
+  }
+  auto *owner = ::new (memory) SubmissionSourceState(state, std::move(queue), storage, std::move(submission));
+  return SubmissionSource(owner);
+}
+Result<compute::CompletionPoll> SubmissionSource::poll() noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("submission source is empty"));
+  return poll_submission(*state_);
+}
+Status SubmissionSource::wait() noexcept {
+  if (!state_) return Status::FailedPrecondition("submission source is empty");
+  return wait_submission(*state_);
+}
+Status SubmissionSource::detach() noexcept {
+  if (!state_) return Status::FailedPrecondition("submission source is empty");
+  auto &source = *state_;
+  std::lock_guard guard(source.observation);
+  auto observed = source.completion.poll();
+  if (!source.producer) return Status::Ok();
+  if (source.borrows)
+    return Status::FailedPrecondition("submission still has borrowed output views");
+  auto *original = source.producer;
+  if ((observed && *observed == compute::CompletionPoll::kPending) ||
+      original->phase.load(std::memory_order_acquire) == InvocationPhase::kRunning ||
+      original->preparation_uses.load(std::memory_order_acquire) != 0)
+    return Status::Unavailable("submission producer has not actually retired");
+  // Actual retirement closes export independently of the mathematical verdict.
+  source.producer = nullptr;
+  original->results.fetch_sub(1, std::memory_order_release);
+  release(original);
+  return Status::Ok();
+}
 OutputSource::OutputSource(OutputSource &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 OutputSource &OutputSource::operator=(OutputSource &&other) noexcept {
@@ -1949,19 +2090,20 @@ OutputSource &OutputSource::operator=(OutputSource &&other) noexcept {
   return *this;
 }
 OutputSource::~OutputSource() { if (state_) state_->decref(); }
-Result<OutputSource> OutputSource::create(Invocation &invocation, ValueId output,
-    compute::Completion &&submission, const compute::StorageOwner &storage,
-    const compute::LeasePool &pool) noexcept {
-  auto *state = InvocationAccess::state(invocation);
-  if (!state || !storage || !state->observation.owns(submission))
-    return std::unexpected(Status::InvalidArgument("output source requires its exact submitted Invocation proxy and storage owner"));
+Result<OutputSource> OutputSource::create(const SubmissionSource &submission, ValueId output,
+    const compute::StorageOwner &storage, const compute::LeasePool &pool) noexcept {
+  if (!submission.state_ || !storage)
+    return std::unexpected(Status::InvalidArgument("output view requires a submission source and actual storage owner"));
+  auto &source = *submission.state_;
+  std::lock_guard guard(source.observation);
+  auto *state = source.producer;
+  if (!state) return std::unexpected(Status::FailedPrecondition("submission source export is closed"));
   const auto phase = state->phase.load(std::memory_order_acquire);
   if (phase != InvocationPhase::kRunning &&
       !(phase == InvocationPhase::kIdle && state->outputs_ready.load(std::memory_order_acquire)))
-    return std::unexpected(Status::FailedPrecondition("output source requires an accepted successful-or-pending producer"));
+    return std::unexpected(Status::FailedPrecondition("output view requires an accepted successful-or-pending producer"));
   const auto &plan = *state->plan;
-  const auto published = std::find(plan.output_ids.begin(), plan.output_ids.end(), output);
-  if (published == plan.output_ids.end())
+  if (std::find(plan.output_ids.begin(), plan.output_ids.end(), output) == plan.output_ids.end())
     return std::unexpected(Status::InvalidArgument("output source value is not an original published output"));
   auto *binding = find_binding(state, output);
   if (!binding || binding->input || !binding->exclusive || !binding->write.valid() ||
@@ -1994,140 +2136,157 @@ Result<OutputSource> OutputSource::create(Invocation &invocation, ValueId output
       allocator.free_fn() == system.free_fn() && allocator.realloc_fn() == system.realloc_fn() &&
       allocator.state() == system.state()))
     return std::unexpected(Status::InvalidArgument("output storage owner cannot retain the original pool allocator"));
-  HYLE_ASSIGN_OR_RETURN(auto queue, output_queue(*state));
-  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(plan.targets[plan.lanes[plan.segments.front().lane.ordinal()].target.ordinal()].source));
-  if (context->identity_key() != storage.context_identity())
+  if (storage.context_identity() != source.metadata_owner.context_identity())
     return std::unexpected(Status::InvalidArgument("output storage owner belongs to another Context"));
-  // Check the exact known retained/native bridge before consuming the proxy.
-  HYLE_ASSIGN_OR_RETURN(auto dependency, compute::detail::RetainedCompletion::native_dependency(submission));
-  (void)dependency;
+  if (source.borrows == SIZE_MAX)
+    return std::unexpected(Status::ResourceExhausted("submission output borrow count"));
   auto *memory = storage.allocator().allocate(sizeof(OutputSourceState), alignof(OutputSourceState));
-  if (!memory) return std::unexpected(Status::ResourceExhausted("output source cold owner metadata"));
-  auto *retention_memory = storage.allocator().allocate(sizeof(OutputStorageRetention), alignof(OutputStorageRetention));
-  if (!retention_memory) {
-    storage.allocator().deallocate(memory, sizeof(OutputSourceState), alignof(OutputSourceState));
-    return std::unexpected(Status::ResourceExhausted("output source storage retirement metadata"));
-  }
-  auto *retained_storage = ::new (retention_memory) OutputStorageRetention(storage);
-  const auto attached = retained_storage->retirement.attach(submission, retained_storage,
-      &OutputStorageRetention::release);
-  if (!attached.ok()) {
-    OutputStorageRetention::release(retained_storage);
-    storage.allocator().deallocate(memory, sizeof(OutputSourceState), alignof(OutputSourceState));
-    return std::unexpected(attached);
-  }
-  auto *owner = ::new (memory) OutputSourceState(state, &binding->write, &binding->read, tensor,
-      std::move(queue), storage, std::move(submission));
-  return OutputSource(owner);
+  if (!memory) return std::unexpected(Status::ResourceExhausted("output view cold owner metadata"));
+  return OutputSource(::new (memory) OutputSourceState(&source, output,
+      &binding->write, &binding->read, tensor, storage));
 }
 Result<compute::CompletionPoll> OutputSource::poll() noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("output source is empty"));
-  return poll_output(state_);
+  return poll_submission(*state_->submission);
 }
 Status OutputSource::wait() noexcept {
   if (!state_) return Status::FailedPrecondition("output source is empty");
-  return wait_output(state_);
+  return wait_submission(*state_->submission);
 }
 Status OutputSource::detach() noexcept {
   if (!state_) return Status::FailedPrecondition("output source is empty");
-  auto &source = *state_;
+  auto &view = *state_;
+  auto &source = *view.submission;
   std::lock_guard guard(source.observation);
-  if (!source.producer) return Status::Ok();
+  if (!view.writer) return Status::Ok();
   HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
   if (observed == compute::CompletionPoll::kPending)
     return Status::Unavailable("output producer is still pending");
   auto *original = source.producer;
-  if (original->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+  if (!original || original->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
       !original->outputs_ready.load(std::memory_order_acquire) ||
       original->preparation_uses.load(std::memory_order_acquire) != 0)
     return Status::Unavailable("successful output producer has not actually retired");
-  // results kept both original binding objects stable through this point.
-  // No native producer write remains, but ordered read uses may still own the
-  // block. Keep the original binding's ready alias for ordinary output().
-  if (!source.writer->valid() && !source.ready->valid())
+  if (!view.writer->valid() && !view.ready->valid())
     return Status::FailedPrecondition("successful output has no original read permission");
-  if (source.writer->valid()) {
+  if (view.writer->valid()) {
     HYLE_ASSIGN_OR_RETURN(auto published,
-        compute::detail::LeaseAccess::publish_after_writes(*source.writer));
-    *source.ready = std::move(published);
+        compute::detail::LeaseAccess::publish_after_writes(*view.writer));
+    *view.ready = std::move(published);
   }
-  source.retained_output = *source.ready;
-  // The successful Completion is already settled and caches this generation's
-  // complete verdict. Never consult the producer's next observation slot.
-  source.writer = nullptr; source.ready = nullptr; source.producer = nullptr;
-  original->results.fetch_sub(1, std::memory_order_release);
-  release(original);
+  view.retained_output = *view.ready;
+  view.writer = nullptr; view.ready = nullptr;
+  --source.borrows;
   return Status::Ok();
 }
-Status bind_output(Invocation &invocation, ValueId input, const OutputSource &source) noexcept {
-  bool captured = false;
-  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, {}, false, &captured));
-  if (source.state_->consumer)
-    return Status::FailedPrecondition("output source has already bound its one original consumer");
+Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindings) noexcept {
   auto *state = InvocationAccess::state(invocation);
-  auto *binding = find_binding(state, input);
-  if (!binding || !binding->input)
-    return Status::InvalidArgument("output relay requires a prepared original external input resource");
-  if (source.state_->submitted)
-    return Status::FailedPrecondition("output source has already submitted its one original consumer");
-  HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(source.state_));
-  HYLE_RETURN_IF_ERROR(InputAccess::bind(invocation, input, source.state_->tensor, std::move(owner)));
-  // Unlike an immutable ready weight, these bytes require the exact ordered
-  // read admission below. Ordinary Invocation::submit sees a missing read and
-  // rejects before native acceptance instead of treating this as a raw view.
-  binding = find_binding(state, input);
-  binding->borrowed = false; binding->permissionless = false;
-  binding->exclusive = false; binding->description = source.state_->tensor.description();
-  source.state_->consumer = state;
-  source.state_->input = input;
-  source.state_->capture_consumer = captured;
+  HYLE_RETURN_IF_ERROR(resource_control_ready(state));
+  if (bindings.empty() || bindings.size() > state->plan->input_ids.size())
+    return Status::InvalidArgument("output bundle has an invalid size");
+  auto *first = OutputSourceAccess::state(bindings.front().output);
+  if (!first) return Status::InvalidArgument("output bundle contains an empty view");
+  auto &source = *first->submission;
+  for (std::size_t i = 0; i < bindings.size(); ++i) {
+    auto *view = OutputSourceAccess::state(bindings[i].output);
+    if (!view || view->submission.get() != &source)
+      return Status::InvalidArgument("output bundle must share one original submission");
+    if (view->bound_once)
+      return Status::FailedPrecondition("output view has already bound its original consumer");
+    auto *binding = find_binding(state, bindings[i].input);
+    if (!binding || !binding->input)
+      return Status::InvalidArgument("output relay requires a prepared original external input resource");
+    for (std::size_t j = 0; j < i; ++j)
+      if (bindings[j].input == bindings[i].input)
+        return Status::InvalidArgument("output bundle repeats an input");
+  }
+  const auto allocator = source.metadata_owner.allocator();
+  auto *memory = allocator.allocate(sizeof(OutputBindingBundle), alignof(OutputBindingBundle));
+  if (!memory) return Status::ResourceExhausted("output bundle cold owner metadata");
+  auto bundle = util::adopt_ref(::new (memory) OutputBindingBundle(&source));
+  try {
+    bundle->entries.reserve(bindings.size());
+    bundle->replacements.reserve(bindings.size());
+    for (const auto &binding : bindings) {
+      auto *view = OutputSourceAccess::state(binding.output);
+      bundle->entries.push_back({binding.input, util::retain_ref(view)});
+      bundle->replacements.push_back({binding.input, view->tensor});
+    }
+    HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, {}, false));
+    HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(bundle.get()));
+    std::vector<InputSourceBinding, mem::StdAllocator<InputSourceBinding>> incoming{
+        mem::StdAllocator<InputSourceBinding>(allocator)};
+    incoming.reserve(bindings.size());
+    for (const auto &entry : bundle->entries)
+      incoming.push_back({entry.input, entry.view->tensor, owner});
+    HYLE_RETURN_IF_ERROR(InputAccess::bind(invocation, incoming));
+    // Original atomic validation/commit is complete. These pending markers
+    // force ordinary submit to reject missing read permission before acceptance.
+    bundle->consumer = state;
+    for (const auto &entry : bundle->entries) {
+      auto *binding = find_binding(state, entry.input);
+      binding->borrowed = false; binding->permissionless = false;
+      binding->exclusive = false; binding->description = entry.view->tensor.description();
+      entry.view->bundle = bundle.get(); entry.view->bound_once = true;
+    }
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("output bundle cold binding metadata");
+  }
   return Status::Ok();
 }
-Status prepare_output(Invocation &invocation, ValueId input, const OutputSource &source,
+Status prepare_outputs(Invocation &invocation, std::span<const OutputBinding> bindings,
     std::span<const QueueBinding> queues) noexcept {
-  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, queues, true));
+  HYLE_ASSIGN_OR_RETURN(auto bundle, bound_output_bundle(invocation, bindings));
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
   if (queues.size() != 1) return Status::InvalidArgument("output relay requires one actual Queue");
-  if (source.state_->submitted) return Status::FailedPrecondition("output source consumer was already submitted");
-  source.state_->preparing = true;
+  if (bundle->submitted) return Status::FailedPrecondition("output bundle consumer was already submitted");
+  bundle->preparing = true;
   struct EndPreparation final {
-    OutputSourceState *source;
-    ~EndPreparation() { source->preparing = false; }
-  } end{source.state_};
-  if (source.state_->capture_consumer)
-    return ReplayAccess::prepare_reuse(invocation, queues);
+    OutputBindingBundle *bundle;
+    ~EndPreparation() { bundle->preparing = false; }
+  } end{bundle};
+  if (bundle->capture_consumer) return ReplayAccess::prepare_reuse(invocation, queues);
   return invocation.prepare_replay(queues,
       {.mode = ReplayMode::kCommands, .host_wait = HostWaitPolicy::kReject});
 }
-Result<compute::Completion> submit_output(Invocation &invocation, ValueId input,
-    const OutputSource &source, std::span<const QueueBinding> queues) noexcept {
-  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, input, source.state_, queues, true));
-  const auto expected = source.state_->capture_consumer ? ReplayRoute::kCaptured : ReplayRoute::kCommands;
+Result<compute::Completion> submit_outputs(Invocation &invocation,
+    std::span<const OutputBinding> bindings, std::span<const QueueBinding> queues) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto bundle, bound_output_bundle(invocation, bindings));
+  HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, queues, true));
+  const auto expected = bundle->capture_consumer ? ReplayRoute::kCaptured : ReplayRoute::kCommands;
   if (queues.size() != 1 || invocation.replay_route() != expected)
     return std::unexpected(Status::FailedPrecondition("output relay lost its selected prepared replay route"));
-  if (source.state_->submitted)
-    return std::unexpected(Status::FailedPrecondition("output source consumer was already submitted"));
+  if (bundle->submitted)
+    return std::unexpected(Status::FailedPrecondition("output bundle consumer was already submitted"));
   const OrderedGraphSubmission ordered{
       [](void *opaque, ExecutionLaneId, compute::detail::QueueSequence &sequence,
           compute::LeaseUseBatch &uses) noexcept -> Status {
-        auto &owner = *static_cast<OutputSourceState *>(opaque);
-        if (!owner.queue.same_owner(sequence))
+        auto &owner = *static_cast<OutputBindingBundle *>(opaque);
+        auto &source = *owner.submission;
+        if (!source.queue.same_owner(sequence))
           return Status::InvalidArgument("ordered output reader has another actual Queue");
-        std::lock_guard guard(owner.observation);
-        if (owner.retained_output.valid())
-          return compute::detail::LeaseAccess::read_unique(uses, owner.retained_output);
-        // result() may have published this very writer after producer success.
-        // That is an original ready permission, not a synthesized conversion.
-        if (owner.writer->valid())
-          return compute::detail::LeaseAccess::ordered_read_unique(uses, *owner.writer);
-        return compute::detail::LeaseAccess::read_unique(uses, *owner.ready);
+        std::lock_guard guard(source.observation);
+        for (const auto &entry : owner.entries) {
+          const auto &view = *entry.view;
+          if (view.retained_output.valid()) {
+            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, view.retained_output));
+          } else if (view.writer->valid()) {
+            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, *view.writer));
+          } else {
+            // result() may already have published this original writer.
+            HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, *view.ready));
+          }
+        }
+        return Status::Ok();
       },
       [](void *, compute::Completion &&completion) noexcept { return std::move(completion); },
-      source.state_,
+      bundle,
       [](void *opaque, ValueId value) noexcept {
-        return static_cast<OutputSourceState *>(opaque)->input == value;
+        const auto &owner = *static_cast<OutputBindingBundle *>(opaque);
+        return std::ranges::any_of(owner.entries, [&](const auto &entry) { return entry.input == value; });
       }};
   auto result = RegionAccess::submit(invocation, queues, ordered);
-  if (result) source.state_->submitted = true;
+  if (result) bundle->submitted = true;
   return result;
 }
 } // namespace detail

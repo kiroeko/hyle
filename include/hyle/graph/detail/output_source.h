@@ -1,17 +1,14 @@
 #pragma once
 
-#include "hyle/compute/storage_owner.h"
-#include "hyle/graph/executable.h"
+#include "hyle/graph/detail/submission_source.h"
 
 namespace hyle::graph::detail {
 struct OutputSourceState;
+struct OutputBinding;
 
-// One immutable output of one already-submitted original Invocation. This
-// pending adapter pins that Invocation. Successful detach preserves its
-// original ready output independently, allowing a different producer writer;
-// this is not a complete rotating inference pipeline. Control calls, including producer
-// drain, are externally serialized. Native callbacks and source observations
-// share the source's ordinary mutex.
+// One fixed caller-owned dense I32 output of a SubmissionSource. Its real
+// storage owner and original permission are retained independently of other
+// values; it never exposes pending bytes or creates a second observer.
 class OutputSource final {
 public:
   OutputSource() noexcept = default;
@@ -21,49 +18,43 @@ public:
   HYLE_GRAPH_API OutputSource &operator=(OutputSource &&) noexcept;
   HYLE_GRAPH_API ~OutputSource();
 
-  // Cold, success-only transfer of the exact unobserved submit proxy. Only a fixed,
-  // caller-owned dense I32 output with its original full writer qualifies.
-  // Retains the actual resource/allocator owner; never mints a ready lease.
-  // The original pool proves its domain, not access to its other bytes.
-  // The original compiled StorageDomain must also retain this resource owner,
-  // through the producer's eventual output/allocation destruction. External
-  // pool roots and arbitrary Graph metadata keep their original contracts.
-  HYLE_GRAPH_API static Result<OutputSource> create(Invocation &producer,
-      ValueId output, compute::Completion &&submission,
-      const compute::StorageOwner &, const compute::LeasePool &) noexcept;
+  // The original compiled StorageDomain must retain this same actual resource
+  // owner. The pool proves this full writer's domain, not its other bytes.
+  HYLE_GRAPH_API static Result<OutputSource> create(const SubmissionSource &,
+      ValueId output, const compute::StorageOwner &, const compute::LeasePool &) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_API Result<compute::CompletionPoll> poll() noexcept;
   HYLE_GRAPH_API Status wait() noexcept;
-  // Does not wait for a pending producer; idempotent after success. Requires
-  // whole-producer success AND actual retirement. Pending/error keeps its pin.
-  // Final owner release retains ordinary destructor/allocator cleanup cost.
-  // Publishes only the original writer after its last write; already admitted
-  // ordered readers may still be running. No payload copy or new execution.
-  // The original Invocation retains a ready alias until reset/rebind. Reusing
-  // it requires another genuine writer while this source remains immutable.
+  // Success AND actual producer retirement publish the original read lease.
+  // Already admitted ordered readers may remain in flight. No payload copy.
+  // Pending/error retains this view's borrow. Closing the common source and
+  // returning its producer requires explicit SubmissionSource::detach().
   HYLE_GRAPH_API Status detach() noexcept;
 
 private:
-  friend HYLE_GRAPH_API Status bind_output(Invocation &, ValueId,
-      const OutputSource &) noexcept;
-  friend HYLE_GRAPH_API Status prepare_output(Invocation &, ValueId,
-      const OutputSource &, std::span<const QueueBinding>) noexcept;
-  friend HYLE_GRAPH_API Result<compute::Completion> submit_output(Invocation &,
-      ValueId, const OutputSource &, std::span<const QueueBinding>) noexcept;
+  friend struct OutputSourceAccess;
+  friend HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
+  friend HYLE_GRAPH_API Status prepare_outputs(Invocation &, std::span<const OutputBinding>,
+      std::span<const QueueBinding>) noexcept;
+  friend HYLE_GRAPH_API Result<compute::Completion> submit_outputs(Invocation &,
+      std::span<const OutputBinding>, std::span<const QueueBinding>) noexcept;
   explicit OutputSource(OutputSourceState *state) noexcept : state_(state) {}
   OutputSourceState *state_ = nullptr;
 };
 
-// One original consumer/input identity per source. Rejection preserves the
-// ordinary bindings. Pending bytes are never exposed to the caller.
-HYLE_GRAPH_API Status bind_output(Invocation &, ValueId,
-    const OutputSource &) noexcept;
-// Prepared nonblocking Commands or complete reuse of an already recorded
-// physical tuple. A capture miss never records pending data or falls back to
-// managed Commands. Leaf and region binding hooks keep their metadata/resource-
-// only contract; they must not observe tensor contents or accept device work.
-HYLE_GRAPH_API Status prepare_output(Invocation &, ValueId,
-    const OutputSource &, std::span<const QueueBinding>) noexcept;
-HYLE_GRAPH_API Result<compute::Completion> submit_output(Invocation &, ValueId,
-    const OutputSource &, std::span<const QueueBinding>) noexcept;
+struct OutputBinding final { ValueId input{}; const OutputSource *output = nullptr; };
+
+// Cold atomic bundle of distinct inputs from the same submission.
+// Success retains all views, even when InputSources deduplicates their common
+// dependency. A view binds one original consumer bundle once; the submission itself
+// has no consumer restriction. Failure preserves bindings and view identities.
+// Subsequent calls supply this same ordered bundle; the span is never retained.
+HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
+// Prepared nonblocking Commands or complete existing capture reuse. The full
+// final tuple is checked together; a miss never records pending values or
+// falls back to managed Commands. Original metadata-only binding hooks apply.
+HYLE_GRAPH_API Status prepare_outputs(Invocation &, std::span<const OutputBinding>,
+    std::span<const QueueBinding>) noexcept;
+HYLE_GRAPH_API Result<compute::Completion> submit_outputs(Invocation &,
+    std::span<const OutputBinding>, std::span<const QueueBinding>) noexcept;
 } // namespace hyle::graph::detail

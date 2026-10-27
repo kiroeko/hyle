@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 07:37（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **91%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批补上输出与载体分离、普通多成员decode的CPU整数准备、真实Store region接力及既有capture复用，均取得有限CUDA结果；剩余重点是完整状态接力、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 08:00（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **92%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批完成一次原Graph提交的共同owner、原子多值bundle及显式结束导出，六项CUDA检查通过；剩余重点是完整状态接力、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -28,9 +28,9 @@
   - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
   - Vulkan精确半字同步I/O：100%（本批功能完成，三组有限GPU检查通过）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
-- 重叠执行与完整性能对照：约40%（实现中）
+- 重叠执行与完整性能对照：约45%（实现中）
   - 原Graph在途设备token与既有capture接力：100%（本轮单Queue固定I32一次链、checked错误与captured消费者通过有限CUDA检查）
-  - 有界槽轮换与完整状态pending权限：约15%（token源已可脱离原载体；状态／KV接力设计中）
+  - 有界槽轮换与完整状态pending权限：约25%（共同提交owner及多值依赖去重通过有限检查；状态／KV接力设计中）
   - CPU提前准备与引擎有序发布：约30%（普通多成员整数准备通过有限CUDA检查；有序后继及MTP修复未接）
   - CPU／GPU／混合参考与完整四项对照：约25%（CUDA普通／MTP最新四臂完成，其它工况仍待完成）
 - 遗漏复查与资料收敛：约25%（进行中）
@@ -39,11 +39,13 @@
 
 ## 正在做
 
-- 完整状态接力的共同提交owner：约15%（所属：重叠执行；按已核设计统一token／状态／KV的依赖与终结事实，下一步接独立pending权限，保持原take／publication与退休机制）。
+- Store在途读权限设计：约5%（所属：重叠执行；独立凭据保原block／generation／范围，沿共同提交事实接纳；先Store，后核append epoch／前缀及fresh page转换，不能整体放宽旧保护门）。
 
 剩余大项包括完整状态接力、重叠执行、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
 ## 本批结果与下一步
+
+[共同提交owner](../evidence/correctness/inference-submission-source-2026-10-27.json)将一次proxy、Queue、观察锁与完整Status集中在SubmissionSource，I32视图各保实际资源权限，原单输出入口已删除。原子bundle保所有视图，两个不同输出送入同B两个输入，source／device-wait均为1；无效后项不部分替换旧绑定。poll／wait不关闭导出，view独立后显式关闭共同Source；失败已实际退休时可归还pin，原数学错误仍保留且不发布ready。一个CUDA进程六项检查全部通过，含原错误、region、capture复用和载体重用；四不同单元共五次编译、两次链接，首镜像未运行，补编仅增加失败退休断言。尚未接Store／KV pending或引擎连续流水，无新速度结论。
 
 [既有capture接力](../evidence/correctness/inference-graph-output-capture-2026-10-27.json)已接原Graph准备／重放逻辑，不改Provider静态属性。一个真实ggml Gather→Add消费者检查通过：ready预录后原unbind释放旧读权，同块try_write交给生产者；生产者仍pending时复用原捕获，报告0次新录制／1次复用并取得精确结果。两个真实物理tuple miss均拒绝，普通submit仍不能绕过原权限。三个单元一次编译、一次链接、一个GPU进程，无SDK重建。reuse-only仍有原metadata hook／预算／权限检查，不表示零分配；未接静态阻塞的生产者、多segment、状态／KV或引擎连续流水，也未测吞吐。
 

@@ -238,7 +238,8 @@ bool input_source_matches(const InvocationState &state, ValueId value,
     const InputSource &source) noexcept {
   if (!state.input_sources) return false;
   const auto *binding = find_binding(*state.input_sources.get(), value);
-  return binding && binding->source.valid() && binding->source.same_owner(source);
+  return binding && binding->source.valid() && binding->source.same_owner(source) &&
+      binding->source.state() == source.state();
 }
 
 Status prepare_input_sources(InvocationState &state,
