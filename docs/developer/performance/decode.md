@@ -10,18 +10,23 @@
 单会话普通／MTP的最近完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
-最新[普通off／auto与MTP完整窗口](../../evidence/performance/inference-continuous-wave-current-window-2026-10-27.json)于北京时间2026-10-27 **21:27:15～21:38:23**完成40进程，四项对照更新于[当前基线](#目标与当前基线)。同窗ordinary auto相对off的decode中位单轮＋3.10%、两轮＋1.74%；单轮范围重叠，不能宣称稳定提速或反超。两轮auto仍慢参考约3.99%，MTP慢约10.7%～10.9%。中间解析器暂停后只续跑未运行项，未重跑成功模型；不与旧窗拼算收益。
+最新[长输入完整窗口](../../evidence/performance/inference-long-input-current-window-2026-10-27.json)于北京时间2026-10-27 **22:23:44～22:27:18**完成16进程，使用默认auto的`aa864724`与保留参考`433e7051`。
+P1024／C2048与P4032／C4096均整段prefill、最多64个自然输出；实际分别46（EOS）／64个输出，两边全部ID相同。
+prefill中位领先42.81%／23.36%，decode仍慢5.35%／7.81%，含prefill的综合输出速度领先4.23%／3.43%；三样本不签显著性。
+两个不同输入是固定重复原prompt IDs的合成性能负载，不是质量任务；不将跨窗口绝对速度变化归因代码收益。四项与内存边界见[当前基线](#目标与当前基线)。
+
+此前[普通off／auto与MTP完整窗口](../../evidence/performance/inference-continuous-wave-current-window-2026-10-27.json)于北京时间2026-10-27 **21:27:15～21:38:23**完成40进程。其ordinary auto相对off的decode中位单轮＋3.10%、两轮＋1.74%；单轮范围重叠，不能宣称稳定提速或反超。两轮auto仍慢参考约3.99%，MTP慢约10.7%～10.9%。中间解析器暂停后只续跑未运行项，未重跑成功模型；不与新长输入或旧窗拼算收益。
 
 随后[流水恢复与默认选择](../../evidence/correctness/inference-wave-recovery-2026-10-27.json)用一次实际诊断确认，committed383／candidate384时的拒绝来自pending物理tuple没有完整已有捕获，而非设备错误或KV历史重算。
 现先完成原A、确认真实退休，再沿ready路径重准备；同一自然两轮的实际后继发布59→102、128个输出及实际计算工作不变，仍有一次被正确处理的拒绝。
 CLI改为默认auto，缓存预算不足D2则自动D1；额外stop、控制异常及CPU／CUDA普通与MTP有限回归已检查。新共同wave只有静态控制、不另造执行器。
-本批是功能检查，没有新完整TPS／显存窗口；下表仍对应旧冻结`fefa445f`，不能把发布次数增长换算成提速。下一完整对照将补单轮长输入。
+该批本身是功能检查，不能把发布次数增长换算成提速；之后的长输入窗口已列于上文，短输入／MTP表仍对应旧冻结`fefa445f`。
 
 随后[普通连续wave接线](../../evidence/correctness/inference-continuous-wave-2026-10-27.json)在同一RequestLoop下跨pump保留原后继。
 真实Qwen3.5-2B的R1／自然R2各完成97／194个输出，auto的后继提交和发布由44增至88；逐模式完整非时间报告仅这两个顶层计数改变。
 十个tiny控制臂另比较每个已提交前缀的完整状态、epoch和RNG，并覆盖信用耗尽、跨pump单成员取消及yield／恢复。
 本批还消费已返回的append交易以释放被替换旧尾页，区分驻留版本N与在途candidate。5次C++编译、5链接通过，复用SDK／原生内核；
-该功能批次本身没有统计吞吐／内存结论；Model2计时观察错读prefill完成点，其吞吐全部不采用。随后Model3改读真实prefill_endpoint，增加正区间门，严格编译／链接各一次；本页最新40进程窗口使用Model3，当时默认overlap关闭，后续默认策略另见上文。
+该功能批次本身没有统计吞吐／内存结论；Model2计时观察错读prefill完成点，其吞吐全部不采用。随后Model3改读真实prefill_endpoint，增加正区间门，严格编译／链接各一次；该40进程窗口使用Model3，当时默认overlap关闭，后续默认策略另见上文。
 
 随后[自然R1两步接力筛查](../../evidence/performance/inference-generation-continuation-screen-2026-10-27.json)用同一镜像交错运行六进程，P154＋96decode的完整非时间单请求结果一致。
 每个auto进程实际发布44个后继；off／auto的prefill中位2122.69／2164.08、decode90.37／90.27、综合85.48／85.49 tok/s，范围重叠，未证明净提速。
@@ -142,6 +147,21 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 新六计时＋两独立内存进程全成功：加载中位0.895052→1.003500秒（慢12.12%）、startup到ready1.003448→1.116549秒（慢11.27%），三样本范围均不重叠。prefill43.331→43.359、decode11.416→11.419、综合3.283→3.290 tok/s均范围重叠；工作集各约5.320GiB、private commit约6.064GiB、线程峰17、GPU缺测。staging仍16MiB、逻辑backing预算仍约3.78GB；不猜加载变慢的原因，不将整进程CPU时间微降当能耗或decode收益。正常产品仍走原staging复制；合法只读映射导入仍为设计，须有真实mapping owner及原权限／预算接点，不能将借用视图伪装成所有者。
 
 ## 目标与当前基线
+
+**最新长输入：2026-10-27 22:23:44～22:27:18，Hyle默认auto `aa864724`，参考 `433e7051`。** N1／R1、纯CUDA、普通greedy，固定相同输入、容量及整段prefill；12个计时与4个独立内存进程全成功，无新编译、下载、重跑或带仪器测速。每臂3次的完整非时间报告与输出ID均稳定，原端点与PSAPI／PDH采样器沿用，首对暂停检查后只续未运行项。以下均为各臂中位数：
+
+| 输入／实际输出 | prefill Hyle／参考 | decode Hyle／参考 | 综合输出 Hyle／参考 | dedicated峰GiB Hyle／参考 |
+|---|---:|---:|---:|---:|
+| P1024／46（EOS） | 8025.670／5620.009 | 90.176／95.270 | 73.619／70.632 | 4.052／3.823 |
+| P4032／64 | 9586.713／7771.359 | 87.331／94.731 | 55.914／54.060 | 4.698／4.161 |
+
+速度单位tok/s。综合输出速度按实际输出数除以prefill＋decode连续区间，加载另列，不求各阶段TPS平均。P1024双方输出46且最后为EOS248046；Hyle实际提交38个后继、发布37、丢弃1，target输入1070行／47调用，参考1069行／46调用，额外已接纳工作全部计时。P4032双方4095行／64调用、64个输出，Hyle55个后继全发布、无拒绝；相同输出不代签完整隐藏态逐位等价或模型质量。
+
+Hyle／参考进程WS峰为P1024 1.128／4.091GiB、P4032 1.136／4.242GiB；private commit为5.797／5.387及6.460／8.263GiB。dedicated、shared、WS和commit不能相加成物理RAM，独立采样峰为下界，ready基线均未知。Hyle长prefill独立workspace／slot的日志值为184.219／725.361MiB；Graph已有单Invocation内寿命复用，但各Phase仍各持工作区。这不能直接解释全部GPU峰差，原生／driver私有分配未逐项归因。
+
+ready中位Hyle／参考为P1024 1.278／1.661s、P4032 1.279／1.695s；含启动输出速度24.081／19.891及26.342／22.177tok/s。OS缓存未清，不排名冷盘。输入是原154-ID prompt的固定重复，P4032不冒充4096；容量4096为最多64输出保留63个真实decode输入位置。当前长输入decode余差继续定位，不能只凭长度趋势认定是KV或主机成本。范围、采样缺值、实际命令与输入身份见[完整证据](../../evidence/performance/inference-long-input-current-window-2026-10-27.json)。
+
+**以下短输入／多轮／MTP是21:27窗口，早于恢复修复，与上面长输入分开解读，不合样。**
 
 后续[设施与参考实现审阅](../../evidence/research/inference-performance-review-2026-10-25.json)未找到每token重载权重、重建CPU池或复制完整历史的问题；本次CPU问题是大量持久池同时存活。旧轨迹晚段target GPU并集均值多约0.317ms，最大正差是66个N6144／K2048投影，draft略快；它不能解释完整墙时差距，也不构成重开已关闭叶候选的依据。CPU配置可达性此前已[补齐并做有限检查](../../evidence/research/inference-cpu-cold-options-2026-10-26.json)，本次CPU吞吐与资源结果另列于上文。
 
