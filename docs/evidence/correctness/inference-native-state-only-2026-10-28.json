@@ -1,0 +1,343 @@
+{
+  "status": "PASS_SIX_NATIVE_CLI_CHECKS",
+  "created_utc": "2026-10-27T21:37:48.620333+00:00",
+  "scope": "Cached synthetic GA/H64/V64/C16; native exact fallback and StateOnly/EmitNext ledger facts. No model quality or performance claim.",
+  "source": {
+    "vulkan_commit": "314707293",
+    "vulkan_main_sha256": "953f3610c2a0bd12a3b0a88ee9b9cc1bec321e72e993a707c2790adf52d65f50",
+    "apple_commit": "adb2ee9a9",
+    "apple_main_sha256": "d58a2d408265871a11966691c116e49d2384dadb8199006e2963833488a52c7c",
+    "apple_amendment": "314707293 plus only default initialization of EvaluationRequest::logits; no layout change."
+  },
+  "builds": {
+    "apple_initial_selected_TUs": 14,
+    "apple_initial_actual_CXX_attempts": 17,
+    "apple_initial_successful_CXX": 14,
+    "apple_initial_refreshed_Hyle_SDK_TUs": 12,
+    "apple_cold_fix_selected_TUs": 2,
+    "apple_total_actual_CXX_attempts": 19,
+    "apple_total_successful_CXX": 16,
+    "apple_failed_CXX": 3,
+    "vulkan_actual_CXX_attempts": 4,
+    "vulkan_successful_CXX": 4,
+    "total_actual_CXX_attempts": 23,
+    "total_successful_CXX": 20,
+    "actual_link_attempts": 4,
+    "successful_links": 3,
+    "failed_recipe_links": 1,
+    "third_party_SDK_MLX_library_full_rebuilds": 0,
+    "downloads": 0,
+    "Metal_shader_rebuilds": 0
+  },
+  "images": {
+    "vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-state-only-20261028\\vulkan\\bin\\hyle.exe",
+      "bytes": 70540288,
+      "sha256": "5e8de12c653832e5ec5430f7e7390e24934fabafafc3cf4342a75d829195a383"
+    },
+    "apple_q1_original": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/inference-native-state-only-20261028/apple/bin/hyle",
+      "bytes": 18566776,
+      "sha256": "7026a2b36cf1a7e1ed0a83e94edf2c3b70b0589021780fa29a957dc66d42fd7e"
+    },
+    "apple_q2_fixed": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/inference-native-state-only-20261028/apple/cold-pruning/bin/hyle-v2",
+      "bytes": 18583864,
+      "sha256": "ccd0407363a0bb3d9320cf85066a4835e53fdc9a1720c15d1fcd3d3631982515"
+    }
+  },
+  "native_cold_fix": {
+    "files": {
+      "src/compute_route_apple/apple_tensor.cc": "7bc85787dbc90ef89b8292ff147045dc4d7caffc06762fe206dde32a32789bfd",
+      "src/graph_route_apple/native_region.cc": "db34e1b85b899b13b5dd75b613908ba21460f9c828c7c481ab44f0ac73ac6e41",
+      "src/compute_route_apple/apple_carrier.h": "f286ebe991efffb4de87b90e479b75e6c8a17b0300dc95bb5791e2f6e87cc106"
+    },
+    "author_patch_base": "e3f32dc3d4dec3352119c93ef4a162648f76c1da",
+    "image_composition": "adb2ee9a9 Model d58a2 plus the three exact native patch files; not an entire current HEAD build.",
+    "contract": "Compute-owned actual lowering predicate prunes unsupported native Graph candidates; CustomLowering retained; native/other errors propagate. No Model, public layout or generic search changes."
+  },
+  "actual_inference_processes": {
+    "total": 7,
+    "successful": 6,
+    "original_Q2_failed": 1,
+    "Q1_success_not_repeated": true,
+    "original_random_not_started": true,
+    "extra_missing_ready_invocation": {
+      "local_ssh_pid": 11036,
+      "exit": 1,
+      "kind": "Runner preflight only after failed link; no inference/GPU process started."
+    }
+  },
+  "preserved_failures": [
+    {
+      "unit": "retained",
+      "pid": 28340,
+      "exit": 1,
+      "reason": "Thin same-module template omitted completion_internal.h; no product change."
+    },
+    {
+      "unit": "arena",
+      "pid": 28392,
+      "exit": 1,
+      "reason": "Old cached public resource_leases.h lacked LeaseSlotLayout declarations; bounded reachable-header overlay repaired selection, no layout change."
+    },
+    {
+      "unit": "model",
+      "pid": 28496,
+      "exit": 1,
+      "reason": "Strict Clang -Werror missing-field-initializers; adb2ee9a9 adds only EvaluationRequest::LogitsInputs logits{}."
+    },
+    {
+      "kind": "actual_model_cold_compile",
+      "platform": "apple",
+      "name": "mtp-q2-original",
+      "pid": 28574,
+      "exit": 1,
+      "reason": "Unsupported Apple typed operation proposal reached Graph search and exhausted its resource-search budget. Not swallowed as a budget fallback."
+    },
+    {
+      "kind": "link_recipe",
+      "pid": 28634,
+      "exit": 1,
+      "reason": "Old direct native.o was retained alongside new region/unit.o; recipe-only replacement in independent link-v2, no extra CXX."
+    }
+  ],
+  "runs": [
+    {
+      "platform": "vulkan",
+      "name": "q1",
+      "image_sha256": "5e8de12c653832e5ec5430f7e7390e24934fabafafc3cf4342a75d829195a383",
+      "native_cold_fix": false,
+      "pid": 50620,
+      "exit": 0,
+      "prompt_rows": [
+        1,
+        1,
+        1
+      ],
+      "state_only_next": [
+        -1,
+        -1
+      ],
+      "state_only_draws": [
+        0,
+        0
+      ],
+      "ids": [
+        37,
+        0,
+        34,
+        34
+      ],
+      "final_length": 6,
+      "next_id": 34,
+      "rng_draw": 0,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    },
+    {
+      "platform": "vulkan",
+      "name": "q2",
+      "image_sha256": "5e8de12c653832e5ec5430f7e7390e24934fabafafc3cf4342a75d829195a383",
+      "native_cold_fix": false,
+      "pid": 57868,
+      "exit": 0,
+      "prompt_rows": [
+        2,
+        1
+      ],
+      "state_only_next": [
+        -1
+      ],
+      "state_only_draws": [
+        0
+      ],
+      "ids": [
+        37,
+        0,
+        34,
+        34
+      ],
+      "final_length": 6,
+      "next_id": 34,
+      "rng_draw": 0,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    },
+    {
+      "platform": "vulkan",
+      "name": "q2-random",
+      "image_sha256": "5e8de12c653832e5ec5430f7e7390e24934fabafafc3cf4342a75d829195a383",
+      "native_cold_fix": false,
+      "pid": 3820,
+      "exit": 0,
+      "prompt_rows": [
+        2,
+        1
+      ],
+      "state_only_next": [
+        -1
+      ],
+      "state_only_draws": [
+        0
+      ],
+      "ids": [
+        31,
+        0,
+        3,
+        31
+      ],
+      "final_length": 6,
+      "next_id": 31,
+      "rng_draw": 10,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    },
+    {
+      "platform": "apple",
+      "name": "mtp-q1",
+      "image_sha256": "7026a2b36cf1a7e1ed0a83e94edf2c3b70b0589021780fa29a957dc66d42fd7e",
+      "native_cold_fix": false,
+      "pid": 28560,
+      "exit": 0,
+      "prompt_rows": [
+        1,
+        1,
+        1
+      ],
+      "state_only_next": [
+        -1,
+        -1
+      ],
+      "state_only_draws": [
+        0,
+        0
+      ],
+      "ids": [
+        37,
+        0,
+        34,
+        34
+      ],
+      "final_length": 6,
+      "next_id": 34,
+      "rng_draw": 0,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    },
+    {
+      "platform": "apple",
+      "name": "mtp-q2",
+      "image_sha256": "ccd0407363a0bb3d9320cf85066a4835e53fdc9a1720c15d1fcd3d3631982515",
+      "native_cold_fix": true,
+      "pid": 28675,
+      "exit": 0,
+      "prompt_rows": [
+        2,
+        1
+      ],
+      "state_only_next": [
+        -1
+      ],
+      "state_only_draws": [
+        0
+      ],
+      "ids": [
+        37,
+        0,
+        34,
+        34
+      ],
+      "final_length": 6,
+      "next_id": 34,
+      "rng_draw": 0,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    },
+    {
+      "platform": "apple",
+      "name": "mtp-q2-random",
+      "image_sha256": "ccd0407363a0bb3d9320cf85066a4835e53fdc9a1720c15d1fcd3d3631982515",
+      "native_cold_fix": true,
+      "pid": 28685,
+      "exit": 0,
+      "prompt_rows": [
+        2,
+        1
+      ],
+      "state_only_next": [
+        -1
+      ],
+      "state_only_draws": [
+        0
+      ],
+      "ids": [
+        31,
+        0,
+        3,
+        31
+      ],
+      "final_length": 6,
+      "next_id": 31,
+      "rng_draw": 10,
+      "draft_frontier": 6,
+      "draft_lag": 0,
+      "packed_calls": 0,
+      "cold_exact_admissions": 0,
+      "engine_live_versions": 0
+    }
+  ],
+  "checks": [
+    "Q1 actual chunks 1+1+1; Q2 actual chunks 2+1; packed_calls=0 exact native route.",
+    "Intermediate StateOnly next_id=-1 and unchanged RNG; final EmitNext has a real ID.",
+    "Original ledger length/frontier/lag/RNG chain and engine live_committed_versions=0.",
+    "Q2 random uses the original temperature=1/top-k=8/seed=123 path."
+  ],
+  "limits": [
+    "CLI facts do not prove full KV/GDN/conv/hidden state byte identity or native allocation live-zero.",
+    "No cross-platform bit identity, capture/device relay, R2 effective-length native support or full route matrix claim.",
+    "Only the cached untrained fixture and three bounded MTP journeys per platform were run.",
+    "Build/run durations are raw provenance, not performance samples.",
+    "System/MLX/BF16/Torch libraries and weights are reused by identity; no binary/SDK/model payload is archived."
+  ],
+  "references": [
+    {
+      "path": "docs\\evidence\\correctness\\inference-append-transactions-2026-10-28.json",
+      "bytes": 13176,
+      "sha256": "ec2b6de70ecc71c9268ac30eaa6e3ea6a962f5fc614f663910a6943c9e75d22d"
+    },
+    {
+      "path": "docs\\evidence\\correctness\\inference-paged-frame-macos-2026-10-26.json",
+      "bytes": 84344,
+      "sha256": "fdad254ea9455ec77bfa4bc3e1638792229225460395e1fbd6abd149d8cb4ec1"
+    },
+    {
+      "path": "docs\\evidence\\correctness\\inference-native-slot-store-2026-10-27.json",
+      "bytes": 418615,
+      "sha256": "89a21d7619792a0bdccf052d943e16a135af881680396b3963d268e94f393226"
+    }
+  ],
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs\\evidence\\correctness\\inference-native-state-only-2026-10-28.zip",
+    "bytes": 1527670,
+    "sha256": "6e0574946c480746ea6498282a4bd6078adb05765b3a74b3732713e3ab1ab0e4",
+    "files": 507,
+    "verified_readback": true
+  }
+}

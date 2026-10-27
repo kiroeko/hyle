@@ -1,16 +1,16 @@
 # 推理底座进度
 
-更新：2026-10-28 05:23（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 05:38（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约72%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约73%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：坏logits元数据的逐请求分类与原key归属已通过CPU／CUDA检查；正在修Apple冷规划回落。** Vulkan Q1／Q2及随机采样通过；Apple Q1通过，Q2在packed冷规划中报搜索预算耗尽，尚未提交推理。MTP逐请求停止／采样／logits政策及完整共同执行编排仍未完成。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%。
+**当前位置：原生路线冷回落已修，正在接MTP逐请求停止政策。** 坏logits错误归属已通过CPU／CUDA检查；Vulkan与Apple的Q1／Q2和Q2随机采样有限检查通过。Apple packed缺能力曾导致搜索耗尽，已在原后端冷发现中提前剪枝，保留原exact回落及真实错误。MTP逐请求采样／logits政策及完整共同执行编排仍未完成。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%。
 
 ## 任务树
 
-- 功能与工程边界：约88%（进行中，组合复查确认剩余政策缺项）
+- 功能与工程边界：约90%（进行中，组合复查确认剩余政策缺项）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
-  - 有效长度／varlen prefill：约94%（CPU／CUDA有限检查完成，原生路线待当前实跑）
+  - 有效长度／varlen prefill：约96%（CPU／CUDA及原生exact回落有限检查完成）
   - 特性组合与分类错误：约78%（坏logits输入归属已补，MTP逐请求政策待补）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
@@ -45,9 +45,9 @@
 
 ## 正在做
 
-- **Apple／Vulkan当前StateOnly及冷回落检查**｜所属：功能与工程边界／有效长度及特性组合｜约80%。Vulkan三项及Apple Q1通过；Apple Q2冷规划失败正在定位，未继续重复随机用例。严格Clang默认初始化已修复，成功对象继续复用，原失败均保留。
+- **MTP逐请求停止政策**｜所属：功能与工程边界／特性组合与分类错误｜约10%。接齐逐成员提案、接受前缀、输出观察、prefix hit及恢复；沿原请求／账簿持有政策，不加入缓存状态，不因政策不同拆数学batch。
 
-刚完成：坏logits元数据在提交前保留InvalidArgument与原完整请求key。CPU／CUDA双请求检查确认零新增提交、双方完整状态／账簿及旧检查点不变，取消坏请求后同key的另一请求继续；原CPU全屏蔽logits的提交后数值失败与真实退休回归通过。本批只编两个消费者入口，复用SDK，无下载或新性能窗。[本批数据](../evidence/correctness/inference-logits-preflight-2026-10-28.json)。此前Append交接及四种MTP StateOnly检查见[既有数据](../evidence/correctness/inference-append-transactions-2026-10-28.json)。
+刚完成：Apple原冷发现复用实际lowering能力，缺packed实现自然回落原exact；Q2 greedy／random通过。Q1及Vulkan三项结果保留，未重复成功进程；本批不作完整hidden状态或原生内存归零声明。[原生路线数据](../evidence/correctness/inference-native-state-only-2026-10-28.json)。坏logits元数据的零提交、原key、双方完整状态／账簿不变及同key幸存者续算已通过CPU／CUDA检查，原CPU数值失败与退休回归通过。[错误归属数据](../evidence/correctness/inference-logits-preflight-2026-10-28.json)。
 
 ## 接下来
 

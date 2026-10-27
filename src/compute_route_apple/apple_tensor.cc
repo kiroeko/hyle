@@ -1,4 +1,5 @@
 #include "apple_tensor.h"
+#include "apple_carrier.h"
 #include "hyle/compute/detail/apple_plan.h"
 
 #include <algorithm>
@@ -25,6 +26,7 @@
 #include "apple_mature_indexing.h"
 #include "apple_mature_artifact.h"
 #include "apple_mature_reduction.h"
+#include "../compute_provider_ggml_metal/native_program.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sampling_ops.h"
 
@@ -203,8 +205,9 @@ mx::array binary(BinaryKind kind, const mx::array &left, const mx::array &right,
   }
   throw std::invalid_argument("Apple binary mode is invalid");
 }
-bool admitted(OperationKind kind) {
-  switch (kind) {
+bool admitted(const Operation &operation) noexcept {
+  if (is_mlx_tensor_custom(operation)) return true;
+  switch (operation.kind()) {
   case OperationKind::kView:
   case OperationKind::kCopy:
   case OperationKind::kFill:
@@ -495,6 +498,21 @@ bool is_mlx_tensor_custom(const Operation &operation) noexcept {
          operation.custom_as<sampling_ops::Categorical>().has_value();
 }
 
+Result<bool> may_lower_operation(const Operation &operation,
+                                 std::span<const TensorDesc> inputs) noexcept {
+  // Test the original MLX branches before another carrier's restrictions.
+  // In particular, typed MLX and mature float operations need not satisfy
+  // ggml Metal's narrower shape/encoding limits.
+  if (is_mlx_exact_gguf_gather(operation, inputs) ||
+      is_mlx_float_operation(operation, inputs) || admitted(operation) ||
+      operation.get_if<QuantizedMatMul>())
+    return true;
+  auto native = ggml_metal::NativeProgram::validate(operation, inputs);
+  if (native.ok()) return true;
+  if (native.IsUnimplemented() && !native.has_native_error()) return false;
+  return std::unexpected(std::move(native));
+}
+
 // Cold-validated ordinary blocks, including a one-row tail, stay on math SDPA.
 Result<std::vector<mx::array>> lower_attention_math_block(
     const Operation &operation, std::span<const mx::array> inputs,
@@ -538,7 +556,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto mlx_quantized = operation.custom_as<model_ops::MlxQuantized>();
     const auto artifact_decode = operation.custom_as<model_ops::ArtifactWeightDecode>();
     const auto sink_attention = operation.custom_as<model_ops::SinkAttention>();
-    if (!is_mlx_tensor_custom(operation) && !admitted(operation.kind()))
+    if (!admitted(operation))
       return std::unexpected(Status::Unimplemented(
           "Apple typed operation has no admitted MLX lowering"));
     if (!operation_traits(operation).inputs.accepts(inputs.size()))

@@ -98,7 +98,27 @@ struct Slot final {
   std::mutex output_mutex;
 };
 
-Status qualify(const RegionCompileRequest &request) noexcept {
+Result<bool> may_lower_node(void *context, const Graph &graph, NodeId node,
+                           mem::AllocatorRef allocator) noexcept {
+  HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
+  // The structural effect/alias gate belongs to the caller. An opaque custom
+  // callback may lower an otherwise unknown pure Custom; never invoke it here.
+  if (context && static_cast<const SourceContext *>(context)->custom &&
+      operation.kind() == compute::OperationKind::kCustom)
+    return true;
+  HYLE_ASSIGN_OR_RETURN(auto input_count, graph.node_input_count(node));
+  container::SmallVector<compute::TensorDesc, 8, mem::AllocatorRef> inputs(allocator);
+  if (!inputs.try_resize(input_count))
+    return std::unexpected(Status::ResourceExhausted("Apple cold admission metadata"));
+  for (std::size_t port = 0; port < input_count; ++port) {
+    HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, port));
+    HYLE_ASSIGN_OR_RETURN(inputs[port], graph.value_description(value));
+  }
+  return an::may_lower_operation(operation, inputs);
+}
+
+Status qualify(void *context, const RegionCompileRequest &request,
+               mem::AllocatorRef allocator) noexcept {
   if (!request.graph || request.graph->dimension_count() ||
       (request.route != 1 && request.route != kNativeCtPackedRoute &&
        request.route != kNativeStaticFloat8Route) ||
@@ -111,6 +131,10 @@ Status qualify(const RegionCompileRequest &request) noexcept {
     if (traits.effect != compute::EffectKind::kPure || traits.resource_count ||
         (traits.alias == compute::AliasPolicy::kMustAliasInput0 && !operation.get_if<compute::View>()))
       return Status::Unimplemented("Apple native region has unsupported effects/aliasing");
+    HYLE_ASSIGN_OR_RETURN(auto admitted,
+                          may_lower_node(context, *request.graph, node, allocator));
+    if (!admitted)
+      return Status::Unimplemented("Apple native region has no built-in lowering");
   }
   return Status::Ok();
 }
@@ -145,9 +169,10 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
         if (native_paged_operation(operation) || native_paged_append_operation(operation) ||
             native_slot_store_operation(operation) ||
             native_ragged_operation(context, operation)) return false;
-        // Discovery is structural, without per-node prepare/JIT. Actual typed
-        // mathematics and device limits remain the final lowerer's admission.
-        return graph::detail::validate_native_node(operation).ok();
+        if (!graph::detail::validate_native_node(operation).ok()) return false;
+        // Exclude definitely unsupported families before physical-resource
+        // search. Shape/device preparation remains the actual lowerer's gate.
+        return may_lower_node(context, graph, node, allocator);
       },
       [&](std::span<const NodeId> nodes) -> Result<bool> {
         if (nodes.empty()) return true;
@@ -207,7 +232,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
   return Status::Ok();
 }
 
-Status resources(void *context, const RegionCompileRequest &request, mem::AllocatorRef,
+Status resources(void *context, const RegionCompileRequest &request, mem::AllocatorRef allocator,
     std::span<RegionInputRequirement> inputs,
     std::span<RegionOutputRequirement> outputs, RegionResourceProposal *proposal) noexcept {
   if (request.route == kNativePagedRoute)
@@ -218,7 +243,7 @@ Status resources(void *context, const RegionCompileRequest &request, mem::Alloca
     return native_slot_store_resources(context, request, inputs, outputs, proposal);
   if (request.route == kNativeRaggedRoute)
     return native_ragged_resources(context, request, inputs, outputs, proposal);
-  HYLE_RETURN_IF_ERROR(qualify(request));
+  HYLE_RETURN_IF_ERROR(qualify(context, request, allocator));
   const cd::ResourceBindingRequirement binding{
       .required_properties = mem::MemoryProperty::kHostAccessible |
           mem::MemoryProperty::kDeviceAccessible | mem::MemoryProperty::kHostDeviceCoherent,
@@ -755,8 +780,10 @@ compute::ProviderPrepareOutcome compile(void *context, const RegionCompileReques
     return compile_native_slot_store(context, request, allocator, result);
   if (request.route == kNativeRaggedRoute)
     return compile_native_ragged(context, request, allocator, result);
-  auto status = qualify(request);
-  if (!status.ok()) return Outcome::unsupported(std::move(status));
+  auto status = qualify(context, request, allocator);
+  if (!status.ok())
+    return status.IsUnimplemented() && !status.has_native_error()
+        ? Outcome::unsupported(std::move(status)) : Outcome::error(std::move(status));
   auto *artifact = allocator.construct<Artifact>(allocator);
   if (!artifact) return Outcome::error(Status::ResourceExhausted("Apple native artifact metadata"));
   result->vtable = &prepared_table; result->state = artifact;

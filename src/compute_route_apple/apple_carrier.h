@@ -15,6 +15,13 @@ namespace hyle::compute::apple::detail {
 HYLE_COMPUTE_ROUTE_APPLE_API Result<RegionKind>
 analyze_native_carrier(const Operation &, std::span<const TensorDesc>) noexcept;
 
+// Conservative cold admission from the actual built-in lowerers. False means
+// no built-in mathematics can lower this operation family; true still needs
+// the original shape, carrier and native preparation checks. No arrays or
+// device work are created. Source-owned custom callbacks are handled by Graph.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<bool>
+may_lower_operation(const Operation &, std::span<const TensorDesc>) noexcept;
+
 // Retains the actual producer Job, never its Completion or result storage.
 // Cold binding checks the source DAG before taking these references into a
 // consumer, so native slots cannot retain one another in a cycle.
