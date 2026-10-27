@@ -68,7 +68,7 @@ struct Bank final {
 };
 inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent,
     bool hidden = false) {
-  require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.states_bound &&
+  require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.phase->state_transactions[step.state_slot].bound() &&
       gd::RegionAccess::successful_outcome(*step.run), "B2 inspection requires its successful original K3 Graph");
   const auto &ports = hidden ? step.phase->hidden_state
       : recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;
@@ -217,6 +217,55 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   model.finish_evaluations(outputs, next, observe);
   std::array<q::cache::SnapshotRef, 2> original{sessions[0]->checkpoint(), sessions[1]->checkpoint()};
   const std::array original_images{image(model, *original[0]), image(model, *original[1])};
+  // A real checked embedding failure exercises the same cold NextN episode,
+  // not a synthetic Completion or a host-preflight failure. The original
+  // committed Sessions and this private draft prefix must remain unchanged.
+  {
+    const std::array epochs{sessions[0]->head.epoch(), sessions[1]->head.epoch()};
+    q::DraftWork work; work.state = q::Model::fork_draft(*original[0]->draft);
+    const auto frontier = work.state.frontier;
+    const auto old_key = frame(model, work.state.key, frontier);
+    const auto old_value = frame(model, work.state.value, frontier);
+    const std::array shifted{original[0]->carry_hidden};
+    const std::array<std::int32_t, 1> invalid{-1};
+    const auto identity = original[0]->sampling.identity(0);
+    bool rejected = false;
+    try { (void)model.execute_draft(work, invalid, shifted, true, identity); }
+    catch (const hyle::inference::EvaluationFailure &failure) {
+      require(failure.status().IsOutOfRange() || failure.status().IsInvalidArgument(),
+          "NextN checked ID failed with an unrelated execution status");
+      rejected = true;
+    }
+    require(rejected, "NextN checked embedding accepted a negative token ID");
+    auto &program = *model.draft_programs.at({1, true});
+    require(!program.guard.has_completion() && !program.guard.cleanup_pending &&
+        !program.hidden_transactions.bound() && !program.retirement.pending(),
+        "NextN checked failure did not really retire its original episode");
+    require(work.state.frontier == frontier && frame(model, work.state.key, frontier) == old_key &&
+        frame(model, work.state.value, frontier) == old_value,
+        "NextN failure published a private KV prefix or frontier");
+    for (std::size_t j = 0; j < sessions.size(); ++j)
+      require(sessions[j]->head.epoch() == epochs[j] && image(model, *sessions[j]->head) == original_images[j] &&
+          image(model, *original[j]) == original_images[j],
+          "NextN failure changed a committed Session/checkpoint/epoch/RNG");
+    const std::array valid{original[0]->next_id};
+    const auto proposal = model.execute_draft(work, valid, shifted, true, identity);
+    require(proposal.id >= 0 && proposal.id < model.vocabulary && proposal.hidden.valid() &&
+        work.state.frontier == frontier + 1 && !program.guard.has_completion() &&
+        !program.guard.cleanup_pending && !program.hidden_transactions.bound() && !program.retirement.pending(),
+        "NextN original program did not recover for a valid one-row proposal");
+    const auto new_key = frame(model, work.state.key, frontier + 1);
+    const auto new_value = frame(model, work.state.value, frontier + 1);
+    require(new_key.size() * frontier == old_key.size() * (frontier + 1) &&
+        new_value.size() * frontier == old_value.size() * (frontier + 1) &&
+        std::equal(old_key.begin(), old_key.end(), new_key.begin()) &&
+        std::equal(old_value.begin(), old_value.end(), new_value.begin()),
+        "NextN valid retry changed its old private KV prefix or logical row count");
+    for (std::size_t j = 0; j < sessions.size(); ++j)
+      require(sessions[j]->head.epoch() == epochs[j] && image(model, *sessions[j]->head) == original_images[j] &&
+          image(model, *original[j]) == original_images[j],
+          "NextN private valid retry changed a committed Session/checkpoint/epoch/RNG");
+  }
   std::array<q::cache::SnapshotRef, 2> first;
   std::array<StateImage, 2> first_images;
   std::size_t bytes_checked = 0, reclaimed = 0;
@@ -297,6 +346,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   }
   std::cout << "],\"same_width_original_candidates\":true,\"old_snapshots_unchanged\":true,"
       << "\"final_versions\":0,\"controlled_prefix_pending\":true,\"controlled_rng_unchanged\":true,"
+      << "\"nextn_checked_id_failure_recovered\":true,\"same_program_valid_retry\":true,"
       << "\"natural_acceptance_quality_claim\":false,\"performance_claim\":false}\n";
   return 0;
 }

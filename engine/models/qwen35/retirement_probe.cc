@@ -2,7 +2,7 @@
 #include "main.cc"
 #include "probe_geometry.h"
 
-#include "hyle/compute/detail/paged_arena_access.h"
+#include "probe_page_prefixes.h"
 #include "native_gate.h"
 #include <thread>
 
@@ -59,8 +59,8 @@ std::vector<std::byte> sample(const c::ReadLease &lease) {
 std::vector<std::vector<std::byte>> committed_pages(const q::cache::State &head) {
   std::vector<std::vector<std::byte>> result;
   const auto append = [&](const c::PagedArenaFrame &frame) {
-    const auto view = q::take(frame.view()); std::vector<c::ReadLease> guards(view.page_count());
-    q::check(c::detail::PagedArenaAccess::collect_pages(view, guards));
+    const auto view = q::take(frame.view());
+    const auto guards = q::take(q::probe::unique_page_prefixes(view));
     for (const auto &lease : guards) {
       auto &bytes = result.emplace_back(lease.size());
       q::check(q::take(lease.view()).read(bytes));

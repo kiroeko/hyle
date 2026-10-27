@@ -544,6 +544,14 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 原生导入沿原反向释放链清理，只有精确reader和实际backend同时证明时才保留录制。
 [11项有限检查](../evidence/correctness/inference-projected-read-release-2026-10-27.json)覆盖两类投影、失败／关闭、alias、录制资格及原unbind合同。
 
+状态bank的交接由`engine/inference/SlotTransactions`复用原`SlotBindings`：冷期固定Store、源／目的数量，
+实际池发布后只设置一次布局；热期填原租约并stage，沿同一Graph整批bind、逐bank take和部分恢复。
+它不拥有Invocation、Queue、Completion、池或发布策略；模型保留bank类型、层号和接受前缀选择。
+未退休时不能清Graph拥有的事务，已取回部分不重复take。NextN复用冷期准备的原Step，失败后保留
+原run和Completion至真实回收；作用域移交同时释放应用Completion根，避免资源环。
+[有限检查](../evidence/correctness/inference-slot-cohort-2026-10-28.json)包含CPU／CUDA受检非法token失败后，
+旧完整状态不变及同program合法重试；不代签设备故障或未知退休分支。
+
 Qwen活动会话现持有不可拷贝的`WorkingState`。`head`只借读当前完整边界；保留旧边界必须在空闲时
 显式调用`Session::checkpoint()`，把原独占`State`转为`SnapshotRef`，不复制载荷或`VersionRef`。
 冻结本身不改地址和epoch；分配失败保留原边界。已冻结的对象永不变更或回收为候选。
@@ -605,6 +613,22 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 [有限检查](../evidence/correctness/inference-prefill-facts-2026-10-27.json)覆盖四组纯主机边界与原Q2／B2多轮CUDA非时间报告一致，
 不把这一算法抽离记作吞吐提升或其它平台运行结果。
 
+有效长度prefill的下一步设计（尚未实现）采用packed行与同一个I32 `cu_seqlens[B+1]`：
+从0单调至实际行数A，满足A≤物理行数R≤冷容量C。GDN只递推各成员自己的区间，
+不读取[A,R)；空序列原样保留初始状态，K个接受前缀要求每个实际长度≥K，
+返回其末K个真实状态，不能取填充后的尾部。Conv的下一history取旧history与真实输入拼接的末尾，
+短输入仍保留必要的旧history。零gate不是通用无操作，不能靠它屏蔽NaN或代替这些语义。
+先补模型无关数学叶，复用原Gather／Store，再让原PagedAppend接纳相同编码／行字节的A≤R：
+每个源区间终点≤A、实际新增行数之和等于A，保留原页写权、COW、AppendTicket和真实退休。
+最后由Recipe／PhaseIo共享真实offset权限，按成员有效末行采样；不另造执行器或状态池。
+有限检查将对照逐成员exact执行，核完整递归状态、history和KV，填充放NaN／哨兵，
+并覆盖短序列K2及非法offset拒绝；固定拓扑是否可重放仍由实际native plan和完整tuple决定。
+已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
+`mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与
+`layers/attention/linear/gdn_backend.py`，TensorRT-LLM `46d9966b`的
+`_torch/modules/mamba/causal_conv1d.py`与`gdn_mixer.py`；它们将真实offset传给conv／GDN，
+只支持此设计方向，不证明Hyle已有功能或性能收益。
+
 `Model::prepare_execution`可在空闲且缓存已配置时，通过原有有界接纳准备新增普通／MTP-prefill后缀；
 不会预先接纳Session或另造编译缓存。额外exact容量在初始冷计划结束时按完整键数冻结（至少1），
 与会话数量N解耦；仍用原FIFO、真实drain和资源预算，动态未见形状可能在请求边界准备并淘汰旧额外family。
@@ -631,6 +655,8 @@ MTP接受较短前缀时不得倒退已发布tail，仍丢弃后缀写权并COW�
 `PagedArenaRead`与`PagedRowCacheRead`现提供`page_prefix(physical_page)`，供原CopyBatch读取不可变frame
 实际覆盖的整行前缀。返回原ReadLease的裁剪子权限，保活原backing，不暴露容量尾部，也不会随后续append扩大。
 它是搬运源，不自动成为可重新交给arena.read的整页guard；换入仍经原writer与publish路径取得新权限。
+`PagedArena::owns(footprint)`只查询原arena身份，包含有效空footprint；它不授予任何页权限。
+诊断消费者也用公开`page_prefix`读取真实逻辑前缀，物理页去重不扩大到整页或未选行。
 单页查询是冷路径线性扫描，不在每token路径增加页表。完整镜像用新增`page_prefixes(output)`，
 按不可变layout的逻辑引用顺序导出每个前缀，重复物理页分别受各请求自己的末页长度限制。
 它先检查全部输出再替换句柄，无分配，按原已排序guard二分查找，复杂度O(P log U)，避免逐页扫描的平方成本。

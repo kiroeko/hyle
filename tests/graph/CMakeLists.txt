@@ -7,6 +7,9 @@ if(TARGET hyle_graph_route_cpu AND TARGET hyle_compute_backend_cpu
   hyle_add_test(graph NAME slots SOURCES slots_execution_test.cc
     DEPS hyle_graph_route_cpu hyle_compute_backend_cpu hyle_compute_provider_native)
   hyle_stage_runtime(hyle_graph_slots_test)
+  hyle_add_test(graph NAME inference_slots SOURCES ../tools/inference_slot_transactions_test.cc
+    DEPS hyle_graph_route_cpu hyle_compute_backend_cpu hyle_compute_provider_native)
+  hyle_stage_runtime(hyle_graph_inference_slots_test)
 endif()
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_graph_route_cuda
    AND TARGET hyle_compute_backend_cuda)

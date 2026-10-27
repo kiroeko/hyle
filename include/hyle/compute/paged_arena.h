@@ -15,6 +15,7 @@ class PagedPageWriter;
 class PagedPageAppender;
 struct PagedAppendablePage;
 class PagedArenaRead;
+class PagedArenaFootprint;
 class PagedRowCacheRead;
 class PagedArenaPendingRead;
 class PagedRowCachePendingRead;
@@ -51,6 +52,11 @@ public:
       mem::MemoryResourceRef,PagedArenaOptions,const ResourceBudget &additional) noexcept;
   bool valid()const noexcept{return data_!=nullptr;}
   HYLE_COMPUTE_BATCH_API std::size_t page_bytes()const noexcept;
+  // Identity only: this exact arena owns the current footprint, including an
+  // empty one. Copied or moved-to arena handles retain that identity; empty,
+  // moved-from or foreign handles and stale footprints return false. This
+  // neither retains page permissions nor grants any payload read/write access.
+  HYLE_COMPUTE_BATCH_API bool owns(const PagedArenaFootprint &) const noexcept;
   // First acquisition is an uninitialized exclusive page. Reuse requires all
   // external readers and actual native uses to retire. Does not allocate/grow.
   HYLE_COMPUTE_BATCH_API Result<PagedPageWriter> acquire(std::uint32_t page) noexcept;

@@ -6,7 +6,6 @@
 #include <condition_variable>
 #include <cstring>
 #include <mutex>
-#include "hyle/compute/detail/paged_arena_access.h"
 
 namespace {
 namespace q = qwen35;
@@ -62,7 +61,7 @@ Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaFrame &frame, 
           host.last_page_lengths.size() == 1, "MTP frame has the wrong committed page footprint");
   require(!count || (count - 1) * q::cache::Plan::page_rows +
           static_cast<std::size_t>(host.last_page_lengths[0]) == rows, "MTP frame frontier differs from its snapshot");
-  require(c::detail::PagedArenaAccess::owns(arena, view), "MTP frame belongs to another arena");
+  require(arena.owns(view), "MTP frame belongs to another arena");
   Bytes result(q::cache::multiply(rows, std::size_t{1024}));
   std::size_t offset = 0;
   for (std::size_t logical = 0; logical < count; ++logical) {

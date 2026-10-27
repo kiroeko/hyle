@@ -1,0 +1,245 @@
+{
+  "status": "MEASURED_FINITE_LEAF_CANDIDATE_NO_DEFAULT_PRODUCT_CHANGE",
+  "date": "2026-10-28",
+  "scope": "Original/cold-packed a+b projections with original Cast/Sigmoid suffix; deterministic BF16 X and cached layer0 weights, retained L2-sized data. No Model/TPS/bandwidth claim.",
+  "source": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\source\\small_projection_test.cc",
+    "bytes": 17984,
+    "sha256": "3721ed959c7457cd0a6dd1c4b66c940aabe4d16dfe5a92219751f8fd5cf60dd8"
+  },
+  "helper": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\source\\timing_support.h",
+    "bytes": 8107,
+    "sha256": "4f1fe6d4ff5da5499ef35ffe085743ca9820dba3f05d11e0270554ee69f873f3"
+  },
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\bin\\small-projection-timing.exe",
+    "bytes": 141204480,
+    "sha256": "d1326570c5abf5c60d8dcef07081d3f90c1f2744c0e055440a3ce021d931b296"
+  },
+  "ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\ready.json",
+    "bytes": 3546,
+    "sha256": "1d5f22bfa57e64d47d3f515e121717802308cda4a189d4b83decc202c5063ade"
+  },
+  "original_candidate": {
+    "json": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-small-projection-candidate-2026-10-28.json",
+      "bytes": 8064,
+      "sha256": "187e7b59bb1b4566dae577a3f7790eb2d22e90eb9821f459ab1e07e4d5568da4"
+    },
+    "archive": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-small-projection-candidate-2026-10-28.zip",
+      "bytes": 625151,
+      "sha256": "938afc13d7e9119ccc117a8b97a2bbd5c24dca8b73178b46b9fa9d2987b24dde",
+      "members": 238,
+      "readback": "Every member byte count/SHA256 and ZIP CRC verified; full routes/analysis/failures/refinements inside."
+    },
+    "reference_only_not_pooled": true
+  },
+  "retained_closure": {
+    "original": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\link-inputs3.json",
+      "bytes": 58920,
+      "sha256": "42e77bb2321f9ece4f25a1bad36a1858fa7fdce83524032787714d69ae16eae4"
+    },
+    "actual": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\link-inputs.json",
+      "bytes": 57789,
+      "sha256": "91fd9e2e15e102ff5d48d0fdc64179923db00a01e68d51ad41d52df27557ae53"
+    },
+    "objects": 229,
+    "delta": "Replace exactly candidate3 test OBJ; retain228 frozen product inputs/headers. Unrelated current885ed changes not used."
+  },
+  "actual_counts": {
+    "host_CXX": 1,
+    "compiler_exit": 0,
+    "links": 1,
+    "GPU_processes": 2,
+    "GTests_per_process": 3,
+    "successful_Graph_submissions_from_completed_loops": 246,
+    "profile_actual_native_GraphLaunches": 24,
+    "measured_profile_roots": 6,
+    "compiler_reruns": 0,
+    "GPU_reruns": 0,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "metadata_failure": {
+    "kind": "Original CXX exit0; helper then rejected missing WindowsSDK prepin. No CXX rerun.",
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\postcompile-metadata-amendment.json",
+      "bytes": 2808,
+      "sha256": "f4d445b787bff085b90b3c741f553547fb4fa454590e5d77488d0fe7c2ee9a86"
+    },
+    "actual_dependencies": 456,
+    "prior_pins_matched": 316,
+    "postcompile_only_SDK_pins": 140,
+    "original_NVTX_pins_matched": 8,
+    "precompile_claim_for_new_SDK": false
+  },
+  "numerical": {
+    "timing_GTests": 3,
+    "profile_GTests": 3,
+    "all_whole_status_and_actual_retirement_checks": true,
+    "raw_BF16_differences_all_shapes_both_processes": 0,
+    "post_loop_same_capture_payload_checks": true,
+    "FP64_F32_reduction_bound": true,
+    "a_cast_exact": true,
+    "finite_b_sigmoid_abs_tolerance": 0.004
+  },
+  "timing_rows": [
+    {
+      "rows": 1,
+      "original_us": {
+        "median": 5.12,
+        "mean": 5.376,
+        "range": [
+          5.12,
+          6.144
+        ]
+      },
+      "candidate_us": {
+        "median": 6.144,
+        "mean": 6.263741935483871,
+        "range": [
+          5.92,
+          7.168
+        ]
+      },
+      "candidate_median_change_percent": 19.999999999999996,
+      "discarded_samples": 0,
+      "native_kernels_original_candidate": [
+        3,
+        3
+      ],
+      "profile_GPU_union_us_original_candidate": [
+        3.424,
+        3.84
+      ],
+      "native_memcpy_original_candidate": [
+        {},
+        {}
+      ]
+    },
+    {
+      "rows": 2,
+      "original_us": {
+        "median": 23.552,
+        "mean": 23.886451612903226,
+        "range": [
+          23.232,
+          28.672
+        ]
+      },
+      "candidate_us": {
+        "median": 15.36,
+        "mean": 15.30632258064516,
+        "range": [
+          15.008,
+          16.384
+        ]
+      },
+      "candidate_median_change_percent": -34.78260869565217,
+      "discarded_samples": 0,
+      "native_kernels_original_candidate": [
+        4,
+        3
+      ],
+      "profile_GPU_union_us_original_candidate": [
+        21.44,
+        12.832
+      ],
+      "native_memcpy_original_candidate": [
+        {},
+        {
+          "8": {
+            "count": 1,
+            "bytes": 64,
+            "sum_ns": 896
+          }
+        }
+      ]
+    },
+    {
+      "rows": 154,
+      "original_us": {
+        "median": 12.16,
+        "mean": 11.98658064516129,
+        "range": [
+          11.264,
+          12.288
+        ]
+      },
+      "candidate_us": {
+        "median": 10.08,
+        "mean": 27.76361290322581,
+        "range": [
+          9.216,
+          562.176
+        ]
+      },
+      "candidate_median_change_percent": -17.105263157894733,
+      "discarded_samples": 0,
+      "native_kernels_original_candidate": [
+        6,
+        4
+      ],
+      "profile_GPU_union_us_original_candidate": [
+        9.76,
+        7.328
+      ],
+      "native_memcpy_original_candidate": [
+        {},
+        {
+          "8": {
+            "count": 1,
+            "bytes": 4928,
+            "sum_ns": 960
+          }
+        }
+      ]
+    }
+  ],
+  "measured_routes": [
+    "M1 original uses ggml paired mul_mat_vec_f; candidate uses cublasLt GEMV, both3 kernels.",
+    "M2 original has2 WMMA GEMMs; candidate1 WMMA GEMM plus64B captured D2D,4\u21923 kernels.",
+    "T154 original has2 GEMMs+2 splitK reductions; candidate1+1 plus4928B captured D2D,6\u21924 kernels.",
+    "Cast ggml BF16\u2192F32 remains; candidate Sigmoid changes from ggml unary to Hyle strided tensor kernel."
+  ],
+  "private_copy_proof": "Both captured copy graphNodeIds map through originalGraphNodeId to original cudaMemcpy2DAsync calls. Exact64/4928B equals rows*16*BF16; consistent with selected Cast matrix_form/ggml_cont for strided a. Trace has no source/destination addresses.",
+  "helper_semantics": [
+    "Each event interval starts only after the original host gate is released with both markers and the real Invocation submission already queued; no raw cudaGraphLaunch or permission bypass.",
+    "The interval is Queue device elapsed time, including gaps/preemption and any status work; it is not host CPU time or summed kernel busy time. Root NVTX walls include host gating/thread/retirement overhead and are not a benchmark.",
+    "Both profile and timing use the same numerical graph/full writer/leases; profile uses2warm+1measured while timing uses5warm+31measured. These samples are not pooled.",
+    "Every gate watchdog flag is false; public Graph Completions are waited before another episode. The final payloads are reread after all repeats.",
+    "Captured D2D64/4928B are real payload copies, not4B Queue status; no other measured memcpy is reported in these six roots.",
+    "Unprofiled T154 candidate has one562.176us sample. It is retained and its cause is unresolved without that same native trace; do not discard it or claim a mean improvement.",
+    "31 consecutive retained-cache samples per arm in original-then-candidate order within one process; no independent randomized/statistical speed claim."
+  ],
+  "decision": {
+    "default_product_change": false,
+    "M1": "Reject unconditional grouping: observed paired baseline is faster than N32 in this finite control.",
+    "M2": "Positive finite component signal, even after actual private materialization; warrants only a separately approved actual Model candidate if pursued.",
+    "T154": "Lower median but retained severe tail makes mean worse in this one process; no general prefill claim.",
+    "next_action": "Close this leaf investigation as measured/conditional. Do not add an M>=2 whitelist or a new runtime knob. Any next Model experiment must preserve current M1 paired choice/rounding and assess complete finite-family route, suffix/materialization and retained storage before a performance window."
+  },
+  "limits": [
+    "Original a/b each64KiB, packed bank128KiB, deterministic X; weights fit L2. No full-model streaming, latency/TPS/quality/VRAM-peak claim.",
+    "Frozen candidate3 component closure and headers, one test OBJ replaced; unrelated current885ed product changes are not component inputs.",
+    "Original weights remain; extra packed logical payload128KiB per family/layer, family-local sharing only. Reported workspace0\u2192128B atM2 and78848\u2192157696B atT154 remains a cost."
+  ],
+  "detailed_analysis": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\timing-followup\\offline-analysis.json",
+    "bytes": 12233,
+    "sha256": "a4d42c5f4e8017626026e17eaed8c2df1911201885f25d4762977671b4033ef4"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-small-projection-timing-2026-10-28.zip",
+    "bytes": 318055,
+    "sha256": "2fd9d6e5756f3200de7cbbdafc2c02e34ed4f9d4ac1b94f89e5d9c3976404c2e",
+    "members": 70,
+    "readback": "All member bytes/SHA256 and ZIP CRC verified."
+  }
+}

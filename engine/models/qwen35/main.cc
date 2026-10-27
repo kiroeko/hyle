@@ -45,6 +45,7 @@
 #include "../../inference/sampling_graph.h"
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
+#include "../../inference/slot_transactions.h"
 #include "../../inference/retirement_observation.h"
 #include "../../inference/evaluation_failure.h"
 #include "../../inference/request_execution_failure.h"
@@ -905,14 +906,10 @@ struct Family final : FamilyPorts {
 constexpr std::size_t execution_slot_count = 3;
 using ResourceRetention = inference::RetainedResources<ColdResources>;
 enum class StateBankKind { kHistory, kRecurrent, kHidden };
-struct StateBinding final {
+struct StateBank final {
   std::size_t layer = 0;
   StateBankKind kind = StateBankKind::kHistory;
-  g::NodeId store;
   std::size_t source_index = SIZE_MAX; // Only a real paired Gather has a Source.
-  g::slots::SlotBindings transaction;
-  std::vector<c::ReadLease> sources;
-  std::vector<c::WriteLease> destinations;
 };
 // Mutable input, result and layout carriers belong to one actual Invocation.
 // Sharing a finite child/Queue never grants another slot access to these bytes.
@@ -937,8 +934,8 @@ struct Phase final : FamilyPorts {
   std::size_t slot_count = 1;
   bool imported_sources = false;
   std::array<g::Invocation, execution_slot_count> slots;
-  std::array<std::vector<StateBinding>, execution_slot_count> state_bindings;
-  std::array<std::vector<g::slots::BindRequest>, execution_slot_count> state_requests;
+  std::vector<StateBank> state_banks;
+  std::array<inference::SlotTransactions, execution_slot_count> state_transactions;
   const g::Graph &state_graph() const noexcept {
     return child->state_graph.valid() ? child->state_graph : family->graph;
   }
@@ -1116,7 +1113,7 @@ struct StepState final {
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
   std::size_t state_slot = 0;
-  bool states_bound = false;
+  inference::SlotTransactions *state_transactions = nullptr; // Original carrier's cold cohort.
   bool cleanup_pending = false;
   bool discard_stopped_members = false;
   // Model admission is serial even when a cancelled native episode has not
@@ -1166,23 +1163,12 @@ struct StepState final {
         }
         appends[i] = std::move(*recovered); bound[i] = false;
       }
-      // One batch bind transfers every state transaction together. A partial
-      // take on recovery is remembered by the valid caller-owned metadata.
-      if (phase) for (std::size_t i = 0; i < phase->state_bindings[state_slot].size(); ++i) {
-        auto &bank = phase->state_bindings[state_slot][i];
-        if (states_bound && !bank.transaction.valid()) {
-          auto recovered = g::slots::take(*run, bank.store);
-          if (!recovered) {
-            if (recovered.error().IsUnavailable()) return false;
-            return std::unexpected(recovered.error());
-          }
-          bank.transaction = std::move(*recovered);
-        }
-        bank.transaction.clear();
-        for (auto &source : bank.sources) source = {};
-        for (auto &writer : bank.destinations) writer = {};
+      // Only the original Graph's retired take can return a bank. The same
+      // cohort handles target ordinary/MTP, imported successors and NextN.
+      if (state_transactions) {
+        HYLE_ASSIGN_OR_RETURN(const bool recovered, state_transactions->recover(*run));
+        if (!recovered) return false;
       }
-      states_bound = false;
       if (incoming && incoming->bound) {
         HYLE_RETURN_IF_ERROR(g::detail::release_outputs(*run, incoming->bindings));
       }
@@ -1222,13 +1208,13 @@ struct StepState final {
       if (recovered.IsUnavailable()) return false;
       HYLE_RETURN_IF_ERROR(recovered);
     }
-    appends = {};
+    for (auto &append : appends) append = {};
     for (auto &bank : dirty) bank.clear();
-    tails = {};
+    for (auto &bank : tails) bank.clear();
     for (auto &member : members) {
       member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
     }
-    run = nullptr; phase = nullptr;
+    run = nullptr; phase = nullptr; state_transactions = nullptr;
     release_admission();
     return true;
   }
@@ -1375,9 +1361,8 @@ struct DraftProgram final {
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
   std::vector<V> hidden_inputs, resource_ports;
   StatePorts hidden_state;
-  g::slots::SlotBindings hidden_transaction;
-  std::vector<c::ReadLease> hidden_sources;
-  std::array<c::WriteLease, 1> hidden_destination;
+  inference::SlotTransactions hidden_transactions;
+  StepState guard; // The same original episode, cold-prepared for recursive reuse.
   mtp::AppendNodes append;
   g::NodeId attention;
   Tensor token_values, position_values, identity_values;
@@ -1512,7 +1497,11 @@ struct ColdResources final {
       for (auto &[shape, phase] : *cache) {
         (void)shape; for (auto &run : phase->slots) run = {};
       }
-    for (auto &[shape, program] : draft_programs) { (void)shape; program->run = {}; }
+    for (auto &[shape, program] : draft_programs) {
+      (void)shape;
+      program->guard.completion = {}; program->guard.run = nullptr;
+      program->run = {};
+    }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->run = {}; }
   }
   inference::RetirementObservation retire(bool wait) noexcept {
@@ -2086,6 +2075,23 @@ public:
     hidden_layout = std::move(prepared_hidden_layout);
     known_cache_backing_bytes = prepared_bytes;
     state_storage_prepared = true;
+    for (auto *children : {&phases, &probe_phases})
+      for (auto &[key, phase] : *children) prepare_transaction_layouts(*phase);
+    for (auto &[key, program] : draft_programs) if (program->head)
+      check(program->hidden_transactions.set_layout(0, hidden_layout));
+  }
+
+  // Graph/counts may be prepared before admission allocates canonical storage.
+  // The pool's immutable layout is attached only at that original cold boundary.
+  void prepare_transaction_layouts(Phase &phase) {
+    for (std::size_t bank = 0; bank < phase.state_banks.size(); ++bank) {
+      const auto &facts = phase.state_banks[bank];
+      const auto &layout = facts.kind == StateBankKind::kHidden ? hidden_layout
+          : facts.kind == StateBankKind::kRecurrent ? state_pools[facts.layer].recurrent_layout
+              : state_pools[facts.layer].history_layout;
+      for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
+        check(phase.state_transactions[slot].set_layout(bank, layout));
+    }
   }
 
   void prepare_family(std::span<const std::size_t> planned_chunks, bool diagnostic = false,
@@ -2682,7 +2688,6 @@ public:
       port.destination_ids = r.input(dense(Type::kInt32, {1}));
       shifted = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
           {port.pool, port.source_ids}, r.dense_spec(precision.activation_type(), {count, f(hidden)}), &port.gather);
-      program.hidden_sources.resize(rows);
     } else {
       // This maintenance graph only reads hidden and writes draft KV. Keep
       // its original ready-leaf Commands path; no dummy Store or pool reader.
@@ -2766,6 +2771,17 @@ public:
       if (min_draft_probability() > 0)
         program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution, allocation_budget));
     }
+    if (head) {
+      const std::array specs{inference::SlotTransactionSpec{program.hidden_state.store,
+          rows, 1, {.resource_budget = cache_budget}}};
+      check(program.hidden_transactions.prepare(specs));
+    }
+    program.guard.configure(draft_bank + 2);
+    const auto dirty_bound = cache::add(rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
+    for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+      program.guard.dirty[bank].reserve(dirty_bound);
+    program.guard.nodes[draft_bank] = program.append.key;
+    program.guard.nodes[draft_bank + 1] = program.append.value;
     initialize_draft_program(program);
     draft_programs.emplace(key, std::move(prepared));
   }
@@ -2801,10 +2817,18 @@ public:
     auto found = draft_programs.find({ids.size(), head});
     if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
     auto &program = *found->second;
+    auto &guard = program.guard;
+    if (guard.cleanup_pending) {
+      // Keep the same original failed episode and all its append/state facts
+      // until real retirement; no new carrier can reuse these permissions.
+      if (!take(guard.try_abort()))
+        throw std::runtime_error("NextN original episode is still retiring");
+      guard.cleanup_pending = false; guard.terminal = {};
+    }
     if (!program.run) initialize_draft_program(program);
     auto &run = program.run;
-    StepState guard; guard.configure(draft_bank + 2); guard.run = &run;
-    guard.nodes[draft_bank] = program.append.key; guard.nodes[draft_bank + 1] = program.append.value;
+    guard.run = &run;
+    if (head) guard.state_transactions = &program.hidden_transactions;
     cache::DraftState next;
     DraftProposal output;
     try {
@@ -2857,13 +2881,10 @@ public:
       }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
       if (head) {
-        std::copy(shifted.begin(), shifted.end(), program.hidden_sources.begin());
-        program.hidden_destination[0] = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
-        if (program.hidden_transaction.valid())
-          check(program.hidden_transaction.refill(program.hidden_sources, program.hidden_destination));
-        else program.hidden_transaction = take(g::slots::SlotBindings::create(hidden_layout,
-            program.hidden_sources, program.hidden_destination, {.resource_budget = cache_budget}));
-        for (auto &source : program.hidden_sources) source = {};
+        auto &transactions = program.hidden_transactions;
+        std::copy(shifted.begin(), shifted.end(), transactions.sources(0).begin());
+        transactions.writers(0)[0] = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
+        check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
         check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
       if (head && default_sampler.enabled) {
@@ -2881,8 +2902,7 @@ public:
         else check(g::batch::bind_append(run, program.graph, guard.nodes[bank], std::move(guard.appends[bank])));
         guard.bound[bank] = true;
       }
-      if (head) check(g::slots::bind(run, program.graph, program.hidden_state.store,
-          std::move(program.hidden_transaction)));
+      if (head) check(program.hidden_transactions.bind(run, program.graph));
       check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
@@ -2905,9 +2925,9 @@ public:
           std::span(guard.appends.data() + draft_bank, 2)));
       std::fill_n(guard.bound.begin() + draft_bank, 2, std::uint8_t{});
       if (head) {
-        program.hidden_transaction = take(g::slots::take(run, program.hidden_state.store));
-        output.hidden = take(program.hidden_transaction.destinations()[0].publish());
-        program.hidden_transaction.clear();
+        auto writers = take(program.hidden_transactions.take(run, 0));
+        output.hidden = take(writers[0].publish());
+        check(program.hidden_transactions.clear(0));
       }
       auto key_delta = take(guard.appends[draft_bank].ready_delta(sources[0], layout));
       auto value_delta = take(guard.appends[draft_bank + 1].ready_delta(sources[1], layout));
@@ -2929,15 +2949,19 @@ public:
       const auto value_status = next.value.commit(std::move(value_commit));
       HYLE_FATAL_ASSERT(key_status.ok() && value_status.ok());
       work.tails = std::move(tails); work.state = std::move(next);
+      for (auto &append : guard.appends) append = {};
+      for (auto &bank : guard.dirty) bank.clear();
+      for (auto &bank : guard.tails) bank.clear();
+      guard.run = nullptr; guard.state_transactions = nullptr;
       return output;
     } catch (...) {
       // An unsuccessful private append is never a partially published head.
       run.close().IgnoreError(); execution.drain_retired(run).IgnoreError();
-      auto recovered = guard.try_abort();
-      if (!recovered || !*recovered) run = {};
-      program.hidden_transaction.clear();
-      for (auto &source : program.hidden_sources) source = {};
-      for (auto &writer : program.hidden_destination) writer = {};
+      guard.cleanup_pending = true;
+      const auto recovered = guard.try_abort();
+      if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
+      // Otherwise the original cold guard/run retain the partial cleanup facts;
+      // the next use must finish this same retirement before it can initialize.
       throw;
     }
   }
@@ -3389,7 +3413,7 @@ public:
     if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
         check(run.bind(output->value, io.probe_outputs[i].view()));
-    if (!phase.state_bindings[slot].empty())
+    if (phase.state_transactions[slot].size())
       check(g::slots::prepare(run, phase.state_graph(), inference::queue_span(phase.queues), phase.state_sources,
           {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
     // Cold preparation can also run without a pending StepState. Publish only
@@ -3434,30 +3458,29 @@ public:
     phase.child = definition.children.at(index).get();
     phase.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), phase.child->compiled.report));
     phase.family = &definition; phase.variant_index = index;
-    for (std::size_t slot = 0; slot < phase.slot_count; ++slot) {
-      auto &banks = phase.state_bindings[slot];
-      banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
-      const auto add_bank = [&](StateBinding bank, std::size_t sources) {
-        const auto paired = std::ranges::find(phase.state_sources, bank.store, &g::slots::SourceBinding::store);
-        if (paired != phase.state_sources.end())
-          bank.source_index = static_cast<std::size_t>(paired - phase.state_sources.begin());
-        if (!imported_sources) bank.sources.resize(sources);
-        bank.destinations.resize(cache::multiply(requests, phase.prefix_rows));
-        banks.push_back(std::move(bank));
-      };
-      for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
-        for (const bool recurrent : {false, true}) {
-          const auto &port = recurrent ? phase.layers[layer].recurrent : phase.layers[layer].history;
-          add_bank({.layer = layer, .kind = recurrent ? StateBankKind::kRecurrent : StateBankKind::kHistory,
-              .store = port.store}, requests);
-        }
-      if (phase.hidden_state.store.valid())
-        add_bank({.kind = StateBankKind::kHidden, .store = phase.hidden_state.store},
-            has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
-      phase.state_requests[slot].resize(banks.size());
-      for (std::size_t bank = 0; bank < banks.size(); ++bank)
-        phase.state_requests[slot][bank] = {banks[bank].store, &banks[bank].transaction};
-    }
+    std::vector<inference::SlotTransactionSpec> transactions;
+    phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
+    transactions.reserve(phase.state_banks.capacity());
+    const auto add_bank = [&](StateBank bank, const StatePorts &port, std::size_t sources) {
+      const auto paired = std::ranges::find(phase.state_sources, port.store, &g::slots::SourceBinding::store);
+      if (paired != phase.state_sources.end())
+        bank.source_index = static_cast<std::size_t>(paired - phase.state_sources.begin());
+      phase.state_banks.push_back(bank);
+      transactions.push_back({port.store, imported_sources ? 0 : sources,
+          cache::multiply(requests, phase.prefix_rows), {.resource_budget = cache_budget}});
+    };
+    for (std::size_t layer = 0; layer < state_schema.size(); ++layer) if (geometry.is_gdn(layer))
+      for (const bool recurrent : {false, true}) {
+        const auto &port = recurrent ? phase.layers[layer].recurrent : phase.layers[layer].history;
+        add_bank({.layer = layer, .kind = recurrent ? StateBankKind::kRecurrent : StateBankKind::kHistory},
+            port, requests);
+      }
+    if (phase.hidden_state.store.valid())
+      add_bank({.kind = StateBankKind::kHidden}, phase.hidden_state,
+          has_mtp(role) ? cache::multiply(requests, draft_lag(role) + 1) : 0);
+    for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
+      check(phase.state_transactions[slot].prepare(transactions));
+    if (state_storage_prepared) prepare_transaction_layouts(phase);
     std::erase_if(phase.state_resource_ports, [&](V value) {
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
@@ -4076,7 +4099,9 @@ public:
       // A rejected successor never owns or clears its predecessor's run.
       if (predecessor && predecessor->run == &run)
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
-      step.phase = &phase; step.run = &run; step.state_slot = slot; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
+      step.phase = &phase; step.run = &run; step.state_slot = slot;
+      step.state_transactions = &phase.state_transactions[slot];
+      step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
       auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;
       packed_ids.clear(); positions.clear();
@@ -4219,7 +4244,10 @@ public:
             compose(false), sources, step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
-      for (auto &bank : phase.state_bindings[slot]) {
+      auto &transactions = phase.state_transactions[slot];
+      for (std::size_t index = 0; index < phase.state_banks.size(); ++index) {
+        const auto &bank = phase.state_banks[index];
+        auto state_sources = transactions.sources(index);
         const bool is_hidden = bank.kind == StateBankKind::kHidden;
         const bool recurrent = bank.kind == StateBankKind::kRecurrent;
         const auto description = is_hidden ? dense(precision.activation_type(), {1, hidden})
@@ -4228,26 +4256,19 @@ public:
         if (!relay) for (std::size_t j = 0; j < width; ++j) {
           if (is_hidden) {
             if (has_mtp(role)) {
-              bank.sources[j] = step.members[j].base->carry_hidden;
-              if (draft_lag(role)) bank.sources[width + j] = step.members[j].base->prior_hidden;
+              state_sources[j] = step.members[j].base->carry_hidden;
+              if (draft_lag(role)) state_sources[width + j] = step.members[j].base->prior_hidden;
             }
           } else {
             const auto &state = step.members[j].base->state[bank.layer];
-            bank.sources[j] = recurrent ? state.recurrent : state.history;
+            state_sources[j] = recurrent ? state.recurrent : state.history;
           }
         }
-        for (auto &writer : bank.destinations)
+        for (auto &writer : transactions.writers(index))
           writer = is_hidden ? take(hidden_pool.allocate(bytes, cache::state_pool_alignment))
               : take(recurrent ? state_pools[bank.layer].acquire_recurrent(bytes)
                   : state_pools[bank.layer].acquire_history(bytes));
-        if (bank.transaction.valid()) check(bank.transaction.refill(bank.sources, bank.destinations));
-        else bank.transaction = take(g::slots::SlotBindings::create(
-            is_hidden ? hidden_layout : recurrent ? state_pools[bank.layer].recurrent_layout
-                : state_pools[bank.layer].history_layout,
-            bank.sources, bank.destinations, {.resource_budget = cache_budget}));
-        // The transaction now owns these source guards. Do not keep a second
-        // Phase reader that would block old-head recovery after take/clear.
-        for (auto &source : bank.sources) source = {};
+        check(transactions.stage(index));
       }
       std::vector<g::batch::NodeLayout> layouts;
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
@@ -4290,8 +4311,7 @@ public:
         }
         check(g::detail::bind_outputs(run, input.bindings)); input.bound = true;
       }
-      check(g::slots::bind(run, phase.state_graph(), phase.state_requests[slot]));
-      step.states_bound = !phase.state_requests[slot].empty();
+      check(transactions.bind(run, phase.state_graph()));
       const auto batch_end = Clock::now();
       if (relay) check(g::detail::prepare_outputs(run, step.incoming->bindings, queues));
       else check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
@@ -4561,9 +4581,10 @@ public:
       std::fill_n(step.bound.begin(), append_banks, std::uint8_t{});
       // Slot take proves actual retirement, not success; the original whole
       // Graph completion above remains the success witness for every bank.
-      for (std::size_t bank_index = 0; bank_index < phase.state_bindings[step.state_slot].size(); ++bank_index) {
-        auto &bank = phase.state_bindings[step.state_slot][bank_index];
-        bank.transaction = take(g::slots::take(run, bank.store));
+      auto &transactions = phase.state_transactions[step.state_slot];
+      for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
+        const auto &bank = phase.state_banks[bank_index];
+        auto writers = take(transactions.take(run, bank_index));
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
           if (bank.kind == StateBankKind::kHidden) {
@@ -4573,7 +4594,7 @@ public:
             for (std::size_t row = 0; row < count; ++row) {
               // Exactly one publication of each accepted canonical row. The
               // final head and draft repair share aliases of that same lease.
-              auto ready = take(bank.transaction.destinations()[j * phase.prefix_rows + row].publish());
+              auto ready = take(writers[j * phase.prefix_rows + row].publish());
               if (row + 1 == count) member.next->carry_hidden = ready;
               if (row + 2 == count) member.next->prior_hidden = ready;
               if (repair) member.carry_prefix.push_back(std::move(ready));
@@ -4583,17 +4604,16 @@ public:
           const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
           const auto selected = j * phase.prefix_rows + prefix;
           auto ready = step.sources ? take(step.sources->states[bank.source_index].publish(
-              selected, bank.transaction.destinations()[selected]))
-              : take(bank.transaction.destinations()[selected].publish());
+              selected, writers[selected]))
+              : take(writers[selected].publish());
           if (step.sources) step.sources->published_states[bank.source_index * outputs.size() + j] = ready;
           auto &state = step.members[j].next->state[bank.layer];
           (bank.kind == StateBankKind::kRecurrent ? state.recurrent : state.history) = std::move(ready);
         }
         // Release old source guards before the joint head-commit recycle hook.
         // Unaccepted MTP candidates are discarded, never made visible.
-        bank.transaction.clear();
+        check(transactions.clear(bank_index));
       }
-      step.states_bound = false;
       for (std::size_t layer = 0; layer < page_inventory.keys.size(); ++layer) {
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];

@@ -6,7 +6,7 @@
 #include <condition_variable>
 #include <cstring>
 #include <mutex>
-#include "hyle/compute/detail/paged_arena_access.h"
+#include "probe_page_prefixes.h"
 
 namespace {
 namespace q = qwen35;
@@ -169,8 +169,8 @@ SavedSnapshot save(q::cache::SnapshotRef head) {
   require(static_cast<bool>(head), "missing committed snapshot"); SavedSnapshot result; result.head = std::move(head);
   for (std::size_t i = 0; i < result.head->keys.size(); ++i)
     for (const auto *frame : {&result.head->keys[i], &result.head->values[i]}) {
-      const auto view = q::take(frame->view()); std::vector<c::ReadLease> guards(view.page_count());
-      q::check(c::detail::PagedArenaAccess::collect_pages(view, guards));
+      const auto view = q::take(frame->view());
+      const auto guards = q::take(q::probe::unique_page_prefixes(view));
       for (const auto &guard : guards) result.kv.push_back(read_lease(guard));
     }
   for (const auto &state : result.head->state)

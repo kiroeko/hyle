@@ -3,7 +3,6 @@
 #include "main.cc"
 #include "probe_geometry.h"
 
-#include "hyle/compute/detail/paged_arena_access.h"
 
 namespace {
 namespace q = qwen35;
@@ -53,7 +52,7 @@ Bytes logical_rows(const c::PagedArena &arena, const c::PagedArenaFrame &frame,
   require(!count || (count - 1) * q::cache::Plan::page_rows +
           static_cast<std::size_t>(layout.last_page_lengths[0]) == rows,
           "committed KV frame frontier differs from its complete Snapshot");
-  require(c::detail::PagedArenaAccess::owns(arena, view), "committed KV frame belongs to another arena");
+  require(arena.owns(view), "committed KV frame belongs to another arena");
   Bytes bytes(q::cache::multiply(rows, std::size_t{1024}));
   std::size_t offset = 0;
   for (std::size_t logical = 0; logical < count; ++logical) {

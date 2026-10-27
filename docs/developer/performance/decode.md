@@ -9,14 +9,33 @@
 
 当前任务看[推理进度](../inference-progress.md)。本页先列最近批次，再保留先前调查依据；
 旧记录中的“下一步”“本轮不开发”和候选结论只描述当时的实验，不能代替当前计划。
-单会话普通／MTP的最近完整表见[目标与当前基线](#目标与当前基线)；
+单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
+
+[共同Store事务与公开arena查询](../../evidence/correctness/inference-slot-cohort-2026-10-28.json)已完成本批有限检查：
+普通／MTP与NextN共享原SlotBindings交接，冷期固定计数和布局；NextN复用原Step，失败保留原run／Completion至真实回收。
+4项共同事务和3项页权限组件检查、5个小模型及4个真实模型进程通过；包含CPU／CUDA非法token失败后
+旧完整状态、epoch、RNG与私有KV前缀不变，同program合法重试。没有模拟设备故障或证明所有未知退休分支。
+
+[本批同窗A/B](../../evidence/performance/inference-slot-cohort-current-window-2026-10-28.json)于北京时间2026-10-28
+**02:05:35～02:08:10**完成12计时＋4独立内存进程，只比较旧b59与新d442；P154、R1单轮，普通auto与MTP K1。
+普通prefill／decode／综合由2241.87／94.53／87.06变为2177.13／94.57／86.85 tok/s；
+MTP由2146.34／121.11／107.68变为2100.99／119.99／106.96 tok/s。
+decode中位＋0.04%／−0.92%，prefill−2.89%／−2.11%，三样本范围均重叠，不能认定稳定提速或回退。
+完整非计时结果一致，两种模式dedicated显存采样峰各自仍为4.034／4.091GiB；ready基线未知，峰为下界。
+本窗未新跑参考，不与下文旧peer样本混算差距。离线汇总曾误取普通模式不存在的MTP字段，保留失败并修正为不适用，成功模型未重跑。
 
 [hidden索引接线与状态检查](../../evidence/correctness/inference-hidden-indexed-2026-10-28.json)已完成：carry／prior、接受前缀和递归NextN改用原固定池Gather／Store，删除独立hidden输出复制链。普通两轮、MTP单轮／两轮及当前K2完整非计时对照差异0；CPU／CUDA不同接受前缀、lag/catch-up和CPU主机恢复通过。单轮重录11→2，旧d9两轮15→2；两者历史基线不同，不能把计数换算为提速。保留首次冷图effect依赖失败及CPU DLL缺失，分别修正依赖链和原DLL同目录硬链接后检查通过。
 
 最新[hidden接线完整窗口](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)于北京时间2026-10-28 **01:10:56～01:14:13**完成40进程，固定`b59fe852`／`433e7051`、原五臂与端点。普通auto比本窗off的decode快2.64%／5.95%，比参考慢1.81%／0.59%；MTP比参考慢7.38%／5.48%，综合慢2.12%／3.72%。各臂完整非计时报告稳定；跨引擎续文第18位置的既存差异、实际接受与计算行数均保留，不称逐位相同算量或跨窗单项收益。
 
-[a/b冷分组候选](../../evidence/performance/inference-small-projection-candidate-2026-10-28.json)用原权重128KiB通过M1／M2／T154及真实Cast／Sigmoid后缀的有限检查。M1已配对，声明执行段3→3；M2／T154为4→3，但后缀选路与workspace改变，私有物化和GPU耗时未测。尚未修改产品策略，不用执行段计数推算kernel数或整模收益。
+[a/b冷分组候选](../../evidence/performance/inference-small-projection-candidate-2026-10-28.json)用原权重128KiB通过M1／M2／T154及真实Cast／Sigmoid后缀的有限检查。
+随后[原Queue计时与Nsight跟踪](../../evidence/performance/inference-small-projection-timing-2026-10-28.json)各执行一次：
+每臂31样本的设备区间中位M1为5.120→6.144µs、M2为23.552→15.360µs、T154为12.160→10.080µs。
+T154候选一次562.176µs长尾完整保留，均值反为11.987→27.764µs，不能只据中位宣称prefill收益。
+实际kernel数为3→3／4→3／6→4；M2／T154候选各多一次64／4928B图内D2D，原Graph copy计数未涵盖该私有物化。
+这是真实Graph提交与退休的热L2小权重叶测试，设备区间含原Queue状态操作，不是整模DRAM带宽或tokens/s。
+不统一切换产品策略：保留M1原路径，再评估相容分组在完整模型中的成本，不用执行段或kernel计数推算整模收益。
 
 [跨轮warm提示候选](../../evidence/performance/inference-cross-turn-warm-screen-2026-10-28.json)已撤回。
 只编一个Model并运行一次真实两轮：进程exit0、生成内容和其它完整非计时事实一致，但后继提交／发布110→108、拒绝0→1；

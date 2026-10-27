@@ -17,7 +17,7 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
     std::size_t source_count = 1, const c::LeaseSlotLayout *expected_layout = nullptr) {
   namespace gd = hyle::graph::detail;
   namespace sd = hyle::graph::slots::detail;
-  require(step.run && step.phase && step.states_bound && step.members.size() == 1 &&
+  require(step.run && step.phase && step.phase->state_transactions[step.state_slot].bound() && step.members.size() == 1 &&
       prefix < step.phase->prefix_rows, "prefix state needs its original bound single-request episode");
   // finish_selected_evaluations observes successful completion before select.
   // The independent retired visitor also rejects native work/results/observers;

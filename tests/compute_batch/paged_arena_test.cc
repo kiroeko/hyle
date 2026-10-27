@@ -793,6 +793,41 @@ TEST(CacheSourceBudget, PagedArenaForwardsBothGatesWithoutPerPageCharge) {
 } } // namespace cache_source_budget
 
 namespace { namespace frame_contract {
+TEST(PagedFrame, PublicArenaIdentityDistinguishesEmptyForeignMovedAndStaleFootprints) {
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto foreign=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  const std::array<std::int32_t,2> zero{0,0};
+  const std::array<std::int32_t,1> tail{0};
+  auto empty_layout=schema.version({zero,zero,{},tail}).value();
+  auto empty_read=arena.read(empty_layout,{}).value();
+  auto empty=c::PagedArenaFootprint::from_read(empty_read).value();
+  EXPECT_TRUE(arena.owns(empty));EXPECT_FALSE(foreign.owns(empty));
+  EXPECT_FALSE(c::PagedArena{}.owns(empty));EXPECT_FALSE(arena.owns(c::PagedArenaFootprint{}));
+  EXPECT_FALSE(empty.page_prefix(0));
+  c::PagedArena alias=arena,moved=std::move(arena);
+  EXPECT_FALSE(arena.owns(empty));EXPECT_TRUE(alias.owns(empty));EXPECT_TRUE(moved.owns(empty));
+  // Identity does not retain a page permission or prevent its first writer.
+  auto writer=moved.acquire(0);ASSERT_TRUE(writer);
+  ASSERT_TRUE(writer->lease().view()->fill(std::byte{17}).ok());
+  auto page=writer->publish(2).value();
+  const auto initial=layout(schema,std::array<std::int32_t,1>{0});
+  const auto shorter=layout(schema,std::array<std::int32_t,1>{0},1);
+  auto ready=moved.read(initial,std::array{page}).value();
+  auto original=c::PagedArenaFootprint::from_read(ready).value();
+  auto frame=c::PagedArenaFrame::fork(original).value();
+  auto before=frame.view().value();
+  auto delta=c::PagedArenaDelta::create(before,shorter,{}).value();
+  auto commit=frame.prepare_commit(std::move(delta)).value();
+  auto proposed=commit.view().value();
+  EXPECT_TRUE(moved.owns(before));EXPECT_TRUE(moved.owns(proposed));EXPECT_FALSE(foreign.owns(before));
+  ASSERT_TRUE(frame.commit(std::move(commit)).ok());
+  EXPECT_FALSE(moved.owns(before));EXPECT_FALSE(moved.owns(proposed));
+  EXPECT_TRUE(moved.owns(original));EXPECT_TRUE(moved.owns(frame.view().value()));
+  EXPECT_EQ(original.page_prefix(0)->size(),moved.page_bytes());
+  EXPECT_EQ(frame.view()->page_prefix(0)->size(),moved.page_bytes()/2);
+}
+
 TEST(PagedFrame, LayoutRequiredRowsUseMaximumDuplicatePrefixAndOomKeepsExportedIdsStable) {
   hyle_f5_fault_fixture::Allocator metadata;
   auto cap=capacity();cap.max_requests=cap.max_query_rows=4;cap.max_page_refs=5;

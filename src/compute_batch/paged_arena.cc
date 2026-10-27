@@ -1046,6 +1046,9 @@ Status PagedArenaFrame::commit(PagedArenaCommit&&ticket)noexcept{
 bool detail::PagedArenaAccess::owns(const PagedArena&arena,const PagedArenaFootprint&view)noexcept{
   return arena.data_ && view.valid() && view.data_->arena==arena.data_;
 }
+bool PagedArena::owns(const PagedArenaFootprint&view)const noexcept{
+  return detail::PagedArenaAccess::owns(*this,view);
+}
 Result<ConstTensorView>detail::PagedArenaAccess::tensor(const PagedArenaFootprint&view)noexcept{
   if(!view.valid())return std::unexpected(Status::FailedPrecondition("frame footprint is empty or stale"));
   return ConstTensorView::create(view.data_->arena->description,view.data_->arena->span);
