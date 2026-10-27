@@ -168,6 +168,9 @@ KeyValue project_kv(R &r, const Projection &projection, Value positions, Value f
 // The caller shares both request-major row geometries with positions. Derived
 // dimensions are not interned, so do not recreate sums/products here.
 // The caller supplies the actual draft positions; this helper never shifts them.
+// An R1 packed carrier may contain an inactive suffix: the first Li target
+// rows yield exactly Li (+ one catch-up) valid pairs. Its original append
+// layout consumes only that prefix; physical R never advances a cache frontier.
 template<class R>
 KeyValue prefill_kv(R &r, Value target_ids, Value normalized_target_rows,
                     Value carry, Value prior, Value catchup_token,

@@ -56,6 +56,7 @@
 #include "../../inference/request_loop.h"
 #include "../../inference/request_wave_execution.h"
 #include "../../inference/prefill_plan.h"
+#include "../../inference/packed_rows.h"
 #include "../../inference/version_admission.h"
 #include "../../inference/batch_dispatch.h"
 #include "../../inference/execution_observation.h"
@@ -962,6 +963,8 @@ struct Phase final : FamilyPorts {
 // state, page permissions and submitted resources keep their existing owners.
 struct InputPreparationScratch final {
   std::vector<std::int32_t> packed_ids, positions, draft_positions, catchups;
+  std::vector<inference::PackedRowInput> row_inputs;
+  std::vector<std::int32_t> query_indptr, last_rows;
   std::vector<std::uint32_t> sampling_identities;
   // BatchSchema::version synchronously copies this integer source range.
   // Keep page readers, immutable layout versions and NodeLayouts outside scratch.
@@ -973,6 +976,9 @@ struct InputPreparationScratch final {
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
     };
     target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
+    row_inputs.reserve(phase.family->requests);
+    query_indptr.reserve(phase.family->requests + 1);
+    last_rows.reserve(phase.family->requests);
     if (phase.family->requests > 1 || phase.family->packed_prefill) reserve(packed_ids, io.tokens);
     reserve(positions, io.positions);
     if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities);
@@ -2116,8 +2122,9 @@ public:
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
         (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
       throw std::runtime_error("state-only completion requires an ordinary Text family");
-    if (packed_prefill && (role != GraphRole::kText || diagnostic || admitted_exact))
-      throw std::runtime_error("packed prefill requires its original cold ordinary family");
+    if (packed_prefill && (diagnostic || admitted_exact ||
+        (role != GraphRole::kText && (!is_mtp_prefill(role) || requests != 1 || completion != TextCompletion::kEmitNext))))
+      throw std::runtime_error("packed prefill requires an original cold Text or R1 MTP prefill family");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
       throw std::runtime_error("compile finite families before preparing their selected state storage");
@@ -2694,13 +2701,13 @@ public:
   // the caller's true input slice and never becomes a padded Session boundary.
   bool prepare_prefill_family(std::span<const std::size_t> capacities,
       TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
-      std::size_t requests = 1) {
+      std::size_t requests = 1, GraphRole role = GraphRole::kText) {
     // This adapter reuses the original attention mirror's true query control.
     // A graph without that carrier, or a diagnostic graph with different
     // published boundaries, has no implementation of this packed signature.
     if (!target_kv_layers || !layer0_probe.empty()) return false;
-    const FamilyKey key(requests, GraphRole::kText, 0, completion, sampling_index, true);
-    if (prepare_family(capacities, false, requests, GraphRole::kText, false, completion, sampling_index, true)) return true;
+    const FamilyKey key(requests, role, 0, completion, sampling_index, true);
+    if (prepare_family(capacities, false, requests, role, false, completion, sampling_index, true)) return true;
     families.erase(key);
     return false;
   }
@@ -2718,9 +2725,9 @@ public:
   }
 
   std::size_t prefill_capacity(std::size_t rows, TextCompletion completion, std::size_t sampling_index,
-      std::size_t requests = 1) const {
+      std::size_t requests = 1, GraphRole role = GraphRole::kText) const {
     if (!rows || !layer0_probe.empty()) return 0;
-    const auto found = families.find({requests, GraphRole::kText, 0, completion, sampling_index, true});
+    const auto found = families.find({requests, role, 0, completion, sampling_index, true});
     if (found == families.end() || !found->second) return 0;
     std::size_t selected = 0;
     for (const auto physical : found->second->chunks)
@@ -2730,12 +2737,13 @@ public:
 
   // Session admission proves a prepared cohort can execute this member. The
   // actual batch still selects its exact width/capacity before taking a loan.
-  bool planned_prefill_member(std::size_t rows, TextCompletion completion, std::size_t sampling_index) const {
+  bool planned_prefill_member(std::size_t rows, TextCompletion completion, std::size_t sampling_index,
+      GraphRole role = GraphRole::kText) const {
     for (const auto &[shape, uses] : planned_slot_uses) {
-      if (!shape.packed_prefill || shape.role != GraphRole::kText || shape.completion != completion ||
+      if (!shape.packed_prefill || shape.role != role || shape.completion != completion ||
           shape.sampling_index != sampling_index || shape.tokens < rows ||
           std::ranges::none_of(uses, [](auto count) { return count != 0; })) continue;
-      if (prefill_capacity(rows, completion, sampling_index, shape.requests)) return true;
+      if (prefill_capacity(rows, completion, sampling_index, shape.requests, role)) return true;
     }
     return false;
   }
@@ -3401,7 +3409,7 @@ public:
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     const auto prepared_rows = [&](std::size_t rows) {
       return find_family(1, rows, role, false, completion, sampling_index) ||
-          (role == GraphRole::kText && planned_prefill_member(rows, completion, sampling_index));
+          ((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(rows, completion, sampling_index, role));
     };
     for (const auto rows : planned_chunks)
       if (!prepared_rows(rows)) admit_exact_shape(rows, 1, role, completion, sampling_index);
@@ -3409,7 +3417,7 @@ public:
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("session must use its complete target/draft cache family");
     const bool prepared_adoption = families.contains({1, role, 0, completion, sampling_index}) ||
-        (role == GraphRole::kText && planned_prefill_member(1, completion, sampling_index));
+        ((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(1, completion, sampling_index, role));
     if ((planned_chunks.empty() ? !prepared_adoption : !prepared_rows(initial_rows)) ||
         (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion, sampling_index})))
       throw std::runtime_error("session requires the shared text families first");
@@ -3432,7 +3440,7 @@ public:
       }
       total += tokens;
       if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}) &&
-          !(role == GraphRole::kText && planned_prefill_member(tokens, completion, sampling_index)))
+          !((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(tokens, completion, sampling_index, role)))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
@@ -3772,8 +3780,8 @@ public:
 
   void prepare_prefill_execution(std::span<const std::size_t> capacities,
       TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
-      std::size_t requests = 1) {
-    prepare_execution(capacities, requests, GraphRole::kText, completion, sampling_index, true);
+      std::size_t requests = 1, GraphRole role = GraphRole::kText) {
+    prepare_execution(capacities, requests, role, completion, sampling_index, true);
   }
 
   void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0) {
@@ -3888,24 +3896,34 @@ public:
     auto &phase = *step.phase;
     auto &io = phase.io[step.state_slot];
     const auto width = step.members.size();
-    const auto rows = is_mtp_prefill(role) ? cache::add(step.input_tokens, draft_lag(role)) : draft_lag(role) + 1;
+    const auto physical_rows = cache::multiply(width, is_mtp_prefill(role)
+        ? cache::add(phase.query_rows, draft_lag(role)) : draft_lag(role) + 1);
     hyle::container::SmallVector<std::int32_t, 2> query{0}, old_ptr{0}, next_ptr{0}, old_last, next_last;
     std::vector<std::int32_t> old_ids, next_ids;
     auto &positions = input_scratch.draft_positions, &catchups = input_scratch.catchups;
-    positions.clear(); catchups.clear();
+    positions.resize(physical_rows); catchups.clear();
+    auto &row_inputs = input_scratch.row_inputs;
+    auto &offsets = input_scratch.query_indptr;
+    auto &last_rows = input_scratch.last_rows;
+    row_inputs.clear(); offsets.resize(width + 1); last_rows.resize(width);
+    for (const auto &member : step.members) row_inputs.push_back({member.base->draft->frontier,
+        is_mtp_prefill(role) ? cache::add(member.input_tokens, draft_lag(role)) : draft_lag(role) + 1});
+    (void)inference::pack_sequence_rows(row_inputs, physical_rows, offsets, last_rows, positions);
     for (auto *table : {&query, &old_ptr, &next_ptr})
       if (!table->try_reserve(width + 1)) throw std::bad_alloc{};
     for (auto *table : {&old_last, &next_last})
       if (!table->try_reserve(width)) throw std::bad_alloc{};
     std::size_t old_count = 0, next_count = 0;
-    for (const auto &member : step.members) {
+    for (std::size_t j = 0; j < width; ++j) {
+      const auto &member = step.members[j];
       old_count = cache::add(old_count, member.base->draft->pages.size());
-      next_count = cache::add(next_count, (cache::add(member.base->draft->frontier, rows) + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
+      next_count = cache::add(next_count, (cache::add(member.base->draft->frontier, row_inputs[j].rows) + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
     }
     old_ids.reserve(old_count); next_ids.reserve(next_count);
     for (std::size_t j = 0; j < width; ++j) {
       auto &member = step.members[j]; auto &session = *member.session;
       const auto &old = *member.base->draft;
+      const auto rows = row_inputs[j].rows;
       member.next->draft.emplace(); auto &next = *member.next->draft;
       next.frontier = cache::add(old.frontier, rows);
       if (next.frontier > capacity) throw std::runtime_error("draft cache exceeds context capacity");
@@ -3943,13 +3961,12 @@ public:
       for (const auto &page : old.pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
       const auto begin = next_ids.size();
       for (const auto &page : next.pages) next_ids.push_back(static_cast<std::int32_t>(page.page()));
-      query.push_back(static_cast<std::int32_t>((j + 1) * rows));
+      query.push_back(offsets[j + 1]);
       old_ptr.push_back(static_cast<std::int32_t>(old_ids.size())); next_ptr.push_back(static_cast<std::int32_t>(next_ids.size()));
       old_last.push_back(old.frontier ? static_cast<std::int32_t>((old.frontier - 1) % cache::Plan::page_rows + 1) : 0);
       next_last.push_back(static_cast<std::int32_t>((next.frontier - 1) % cache::Plan::page_rows + 1));
       const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(rows)}, one_kv{0, static_cast<std::int32_t>(count)};
       member.draft_layout = take(attention_schema.version({one_query, one_kv, std::span(next_ids).subspan(begin, count), std::span(&next_last.back(), 1)}));
-      for (std::size_t i = 0; i < rows; ++i) positions.push_back(static_cast<std::int32_t>(old.frontier + i));
       if (draft_lag(role)) {
         catchups.push_back(old.catchup_token);
       }
@@ -4137,8 +4154,9 @@ public:
       TextCompletion completion = TextCompletion::kEmitNext) {
     std::size_t maximum = 0;
     for (const auto &request : requests) maximum = (std::max)(maximum, request.ids.size());
-    const auto physical = !requests.empty() && role == GraphRole::kText && requests[0].session
-        ? prefill_capacity(maximum, completion, requests[0].session->sampling_configuration().index, requests.size()) : 0;
+    const auto physical = !requests.empty() && requests[0].session &&
+        (role == GraphRole::kText || (is_mtp_prefill(role) && requests.size() == 1))
+        ? prefill_capacity(maximum, completion, requests[0].session->sampling_configuration().index, requests.size(), role) : 0;
     prepare_evaluations(requests, preparation, role, completion, {}, 0, physical);
   }
 
@@ -4176,7 +4194,7 @@ public:
     auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
     if (packed_prefill) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
     const auto physical_tokens = packed_prefill ? physical_prefill_rows : tokens;
-    if (packed_prefill && (relay || role != GraphRole::kText ||
+    if (packed_prefill && (relay || (role != GraphRole::kText && (!is_mtp_prefill(role) || requests.size() != 1)) ||
         physical_tokens < tokens || !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, true)))
       throw std::runtime_error("prefill extent is outside its original cold packed family");
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
@@ -4293,7 +4311,7 @@ public:
       for (std::size_t j = 0; j < width; ++j) {
         const auto &request = requests[j];
         if (!relay && width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
-        if (!ahead) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
+        if (!ahead && !packed_prefill) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
           positions.push_back(static_cast<std::int32_t>(step.members[j].base->length + row));
       }
       for (std::size_t j = 0; j < width; ++j) {
@@ -4304,13 +4322,19 @@ public:
         if (width == 1) packed_ids.assign(requests[0].ids.begin(), requests[0].ids.end());
         const auto physical_rows = cache::multiply(width, physical_tokens);
         packed_ids.resize(physical_rows, 0); // Only the inactive carrier suffix is scratch.
-        positions.resize(physical_rows, 0);
+        positions.resize(physical_rows);
+        auto &row_inputs = input_scratch.row_inputs;
+        auto &offsets = input_scratch.query_indptr;
+        row_inputs.clear(); offsets.resize(width + 1);
+        for (const auto &member : step.members) row_inputs.push_back({member.base->length, member.input_tokens});
+        const auto row_facts = inference::pack_sequence_rows(row_inputs, physical_rows, offsets, io.last_id_values, positions);
+        if (row_facts.active_rows != step.active_input_rows || row_facts.max_member_rows != step.input_tokens)
+          throw std::logic_error("packed target rows differ from the admitted episode");
         const auto history_rows = static_cast<std::size_t>(geometry.conv_kernel - 1);
         const auto history_count = cache::multiply(width, history_rows);
         for (std::size_t j = 0; j < width; ++j) {
           const auto begin = step.members[j].input_row_begin;
           const auto length = step.members[j].input_tokens;
-          io.last_id_values[j] = static_cast<std::int32_t>(begin + length - 1);
           for (std::size_t row = 0; row < history_rows; ++row) {
             const auto tail = length + row;
             const auto source = tail < history_rows ? j * history_rows + tail
@@ -4407,8 +4431,8 @@ public:
         if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
         const auto begin = new_ids.size();
         for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
-        query_indptr.push_back(static_cast<std::int32_t>(cache::add(
-            static_cast<std::size_t>(query_indptr.back()), member_tokens)));
+        query_indptr.push_back(packed_prefill ? input_scratch.query_indptr[j + 1]
+            : static_cast<std::int32_t>(cache::add(static_cast<std::size_t>(query_indptr.back()), member_tokens)));
         old_indptr.push_back(static_cast<std::int32_t>(old_ids.size()));
         new_indptr.push_back(static_cast<std::int32_t>(new_ids.size()));
         old_last.push_back(length ? static_cast<std::int32_t>((length - 1) % cache::Plan::page_rows + 1) : 0);
@@ -5719,8 +5743,12 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
       std::vector<c::ReadLease> q;
       const auto verification = expected.role == GraphRole::kVerify
           ? model.propose_recursive(*session, expected.draft_limit, eos, &q) : std::vector<std::int32_t>{};
-      model.prepare_evaluation(*session, expected.role == GraphRole::kVerify ? std::span<const std::int32_t>(verification) : ids,
-          nullptr, expected.role); model.submit_evaluation(*session);
+      if (!expected.generation && is_mtp_prefill(expected.role)) {
+        const std::array input{EvaluationRequest{session, ids}};
+        model.prepare_prefill_evaluations(input, nullptr, expected.role);
+      } else model.prepare_evaluation(*session, expected.role == GraphRole::kVerify ? std::span<const std::int32_t>(verification) : ids,
+          nullptr, expected.role);
+      model.submit_evaluation(*session);
       if (stats) {
         ++stats->graph_calls;
         stats->target_rows = cache::add(stats->target_rows, expected.verified_rows);
@@ -5824,7 +5852,7 @@ std::shared_ptr<Session> rebuild_generation_session(Model &model, const Generati
       prepare_generation_record(actual, *session, role, ids, false, 0, source.turn, source.input_owner, 0,
           completion, source.input_begin, state_rebuild ? false : source.prefill_complete);
       make_generation_room(model, prefix, session.get(), requests);
-      if (!source.generation && role == GraphRole::kText) {
+      if ((!source.generation && role == GraphRole::kText) || is_mtp_prefill(role)) {
         const std::array input{EvaluationRequest{session, ids, &actual.stop_policy()}};
         model.prepare_prefill_evaluations(input, nullptr, role, completion);
       } else model.prepare_evaluation(*session, ids, nullptr, role, completion, &actual.stop_policy());
@@ -7263,8 +7291,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     auto &members = support[key][tokens];
     if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
   };
-  const auto note_carrier = [&](std::size_t rows, std::size_t member, TextCompletion completion, bool possible = false) {
-    const PromptKey key{GraphRole::kText, completion};
+  const auto note_carrier = [&](GraphRole role, std::size_t rows, std::size_t member, TextCompletion completion, bool possible = false) {
+    const PromptKey key{role, completion};
     auto &count = carrier_uses[key][rows];
     count = possible ? (std::max)(count, std::size_t{1}) : cache::add(count, 1);
     auto &members = carrier_support[key][rows];
@@ -7274,8 +7302,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     for (std::size_t consumed = 0; consumed < tokens;) {
       const auto part = prefill.next(tokens, consumed);
       const auto completion = part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-      note_prompt(prompt_role(part.rows, lag), part.rows, member, completion);
-      if constexpr (!mtp) note_carrier((std::min)(tokens, max_prefill_rows), member, completion);
+      const auto role = prompt_role(part.rows, lag);
+      note_prompt(role, part.rows, member, completion);
+      if (role == GraphRole::kText || is_mtp_prefill(role))
+        note_carrier(role, (std::min)(tokens, max_prefill_rows), member, completion);
       consumed = part.begin + part.rows;
     }
   };
@@ -7293,7 +7323,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       // only at another request's original prompt boundary. Register its real
       // finite tail shapes and potential batch members before any carrier exists.
       prefill.for_each_capacity(requests[i].prompt.size(), [&](std::size_t rows, bool complete) {
-        note_carrier(rows, i, complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
+        note_carrier(GraphRole::kText, rows, i, complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly, true);
       });
     }
     for (std::size_t turn = 1; turn < requests[i].progress.turns().size(); ++turn) {
@@ -7338,7 +7368,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (mtp && width == 1) for (const auto &[tokens, uses] : prompt_uses[{GraphRole::kMtpCatchupPrefill, TextCompletion::kEmitNext}]) {
       (void)uses; shapes[{GraphRole::kMtpPrefill, TextCompletion::kEmitNext}].try_emplace(tokens, restore_bound);
     }
-    if constexpr (!mtp) for (const auto &[key, controls] : carrier_support) {
+    for (const auto &[key, controls] : carrier_support) {
+      if constexpr (mtp) if (width != 1) continue;
       std::set<std::size_t> eligible;
       for (const auto &[rows, members] : controls) {
         (void)rows;
@@ -7352,7 +7383,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
       bool packed = false;
-      if constexpr (!mtp) if (role == GraphRole::kText && model.layer0_probe.empty()) {
+      if ((role == GraphRole::kText || (is_mtp_prefill(role) && width == 1)) && model.layer0_probe.empty()) {
         std::vector<std::size_t> capacities;
         const auto controls = carrier_support.find(key);
         if (controls != carrier_support.end()) {
@@ -7364,12 +7395,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
               capacities.push_back(rows);
           }
         }
-        if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width);
+        if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width, role);
         if (packed) {
           for (const auto rows : capacities) model.plan_replay_uses(rows, width,
               cache::add(carrier_uses.at(key).at(rows), width == 1 ? restore_bound : 0), role, completion, sampling_index, true);
           // Decode still has its original T1 mathematics and source ports.
-          if (completion == TextCompletion::kEmitNext && decode_bound && width <= policy_decoding_requests) {
+          if (role == GraphRole::kText && completion == TextCompletion::kEmitNext && decode_bound && width <= policy_decoding_requests) {
             const std::array decode{std::size_t{1}};
             model.prepare_family(decode, false, width, role, false, completion, sampling_index);
             model.plan_replay_uses(1, width, cache::add(decode_bound, width == 1 ? restore_bound : 0), role, completion, sampling_index);
@@ -7395,11 +7426,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   const auto first_part = prefill.next(requests.front().prompt.size());
   const std::array first_prefill{first_part.rows};
   const auto first_completion = first_part.complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-  const auto first_capacity = !mtp ? model.prefill_capacity(first_prefill[0], first_completion, requests.front().sampling_index) : 0;
+  const auto first_role = prompt_role(first_prefill[0]);
+  const auto first_capacity = model.prefill_capacity(first_prefill[0], first_completion, requests.front().sampling_index, 1, first_role);
   if (first_capacity) {
     const std::array carrier{first_capacity};
-    model.prepare_prefill_execution(carrier, first_completion, requests.front().sampling_index);
-  } else model.prepare_execution(first_prefill, 1, prompt_role(first_prefill[0]), first_completion, requests.front().sampling_index);
+    model.prepare_prefill_execution(carrier, first_completion, requests.front().sampling_index, 1, first_role);
+  } else model.prepare_execution(first_prefill, 1, first_role, first_completion, requests.front().sampling_index);
   if constexpr (!mtp) if (decode_bound) {
     const std::array decode{std::size_t{1}};
     for (std::size_t i = 0; i < model.sampling_configuration_count(); ++i)

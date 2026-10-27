@@ -644,8 +644,16 @@ cuSeq由`graph::batch::query_offsets`从原Batch metadata提供精确I32[B+1]范
 原decode／MTP／relay仍保各自已支持的输入门，不能把非完整cohort塞入连续后继。
 [有限检查](../evidence/correctness/inference-ragged-prefill-2026-10-28.json)覆盖CPU／CUDA的StateOnly、换序、单成员取消与完整状态，
 真实2B自然首批[154,37]对应A191／R308；报告逐成员行数，不能用maxLi×B代签实际量。
-原MTP-prefill真实shift／lag仍未接通；纯数学叶复用原Store，
-不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
+原R1 MTP-prefill与catchup-prefill现复用相同有效长度路径：target实际Li、draft实际Li＋lag，
+物理载体分别R与R＋lag。保原KV hidden移位的前缀数学，末hidden选择实际Li−1；
+draft单独按旧frontier构建offset／positions，成功后frontier与target对齐，原Single和递归repair不变。
+普通与MTP的目标／draft准备共用`inference::pack_sequence_rows`：只写调用方冷预留的整数缓冲，
+先完整验证再写offsets、末行索引、真实positions及0尾，无分配或权限owner；
+共用层不要求物理R整除B，R=B×C是当前Recipe的载体限制，后续总行分桶仍可减少异长padding。
+该整数结果不是ready权限，原Batch版本、镜像、绑定、提交及退休检查继续执行。
+[有限检查](../evidence/correctness/inference-mtp-packed-prefill-2026-10-28.json)核R4／lag1 R5复用、
+真实部分接受与原修复、完整target／draft状态、旧快照及RNG；MTP异长B2移位和有限分块／StateOnly仍未接通。
+纯数学叶复用原Store，不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与
 `layers/attention/linear/gdn_backend.py`，TensorRT-LLM `46d9966b`的

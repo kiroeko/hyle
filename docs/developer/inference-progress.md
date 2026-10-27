@@ -1,26 +1,26 @@
 # 推理底座进度
 
-更新：2026-10-28 03:50（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 04:08（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约69%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约70%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：普通异长prefill已接入原批次路径。** CPU／CUDA状态旅程与真实2B的A154／B37自然合批已通过，下一步接MTP真实shift／lag并共用输入行准备。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
+**当前位置：普通异长与R1 MTP有效长度prefill已接通。** 目标与草稿共用有界输入行准备；CPU／CUDA真实部分接受／lag1／catch-up状态旅程已通过，下一步接B2 MTP的逐成员hidden／token移位。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
 
 ## 任务树
 
-- 功能与工程边界：约88%（进行中）
+- 功能与工程边界：约89%（进行中）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
-  - 有效长度／varlen prefill：约78%（普通R1／异长合批完成有限检查，MTP及其它组合未齐）
+  - 有效长度／varlen prefill：约84%（普通异长及R1 MTP有限检查完成，其它组合未齐）
   - 特性组合与分类错误：约75%（待穷尽复查）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
   - 完整路由可选ATen：约35%（未完成）
   - 文档与简明执行合同：约70%（继续收敛）
-- 共同执行架构：约68%（进行中）
+- 共同执行架构：约69%（进行中）
   - 请求、缓存、额度与退休合同：100%（本批完成）
   - 模型无关执行编排与静态适配：约40%（未抽完）
   - 基础提交／取消／额度与输出接口：约35%（待收敛）
-  - 稳态准备、在途权限及普通／后继路径统一：约50%（共用原Store事务，整体未完成）
+  - 稳态准备、在途权限及普通／后继路径统一：约55%（共用原Store事务及输入行准备，整体未完成）
   - MTP K1／多草稿共用流程：约40%（NextN原Step复用，整体未完成）
 - 普通连续流水：约80%（进行中）
   - CUDA R1／R2跨pump与控制边界：约90%（有限检查完成）
@@ -45,14 +45,13 @@
 
 ## 正在做
 
-- **MTP有效长度prefill**｜所属：功能与工程边界／有效长度prefill｜约10%。沿原target Li／draft Li＋lag和原shift／repair合同接线，先处理R1；MTP异长hidden移位仍需单独补齐。
-- **共用输入行准备**｜所属：共同执行架构／准备路径统一｜约10%。抽离目标与draft共有的有界整数几何，保留原Batch镜像、权限与提交所有权。
+- **B2 MTP异长prefill**｜所属：功能与工程边界／有效长度prefill｜约10%。用真实target／draft offsets生成checked Gather选择表，处理carry／prior／hidden及lag1 token移位；保留同role／lag分组和原repair。
 
-刚完成：普通异长prefill直接使用原prepare／Store／Append。CPU／CUDA四批覆盖StateOnly、成员换序和已提交批次的单成员取消：22行接纳／64物理行／21行提交，幸存者继续T1，旧快照和资源退休核对通过。真实2B首次自然合批为[154,37]／A191／R308，随后三次双成员decode，ready后exact接纳为0；原R1 CUDA旅程也通过。F32 GDN差异仍≤4.66×10⁻¹⁰，其它payload严格核对。本批无新性能窗，Apple／Vulkan未编测，不代表所有量化组合已验证。[本批数据](../evidence/correctness/inference-ragged-prefill-2026-10-28.json)
+刚完成：共同输入行函数已用于原target与draft准备，9组主机检查通过。R1 MTP在同R4／lag1 R5下完成七步CPU／CUDA状态旅程，包含两次真实Verify K3接受前2行后的原修复；最终length＝frontier＝16、RNG draw5，旧快照与target／draft KV等严格核对，F32 GDN最大差9.31×10⁻¹⁰。真实2B MTP正常入口生成8 token、0新增exact接纳，共同helper下原B2 CUDA回归通过。本批无新性能窗，B2 MTP、MTP有限分块／StateOnly及跨平台仍未完成。[本批数据](../evidence/correctness/inference-mtp-packed-prefill-2026-10-28.json)
 
 ## 接下来
 
-1. 将有效长度prefill扩展到MTP的shift／lag，共用有界输入行准备；补实际适用组合，继续收敛共同边界。
+1. 补B2 MTP逐成员shift／lag，再处理有限分块／StateOnly与其它适用组合；继续收敛共同边界。
 2. 保留M1原路径，评估a/b在整模型中的收益；处理普通真实载体、跨轮预热，并补当前跟踪及A/A。
 3. 推进MTP设备后继、词表候选与更深GPU融合／带宽优化。
 

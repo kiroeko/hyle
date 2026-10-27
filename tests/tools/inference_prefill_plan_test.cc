@@ -1,5 +1,6 @@
 // Shared host input partition facts only. No model, device or test framework.
 #include "../../engine/inference/prefill_plan.h"
+#include "../../engine/inference/packed_rows.h"
 
 #include <array>
 #include <cstdio>
@@ -10,6 +11,8 @@
 namespace {
 using hyle::inference::PrefillPart;
 using hyle::inference::PrefillPolicy;
+using hyle::inference::PackedRowInput;
+using hyle::inference::pack_sequence_rows;
 constexpr auto max_size = (std::numeric_limits<std::size_t>::max)();
 static_assert(std::is_trivially_copyable_v<PrefillPart>);
 static_assert(std::is_trivially_copyable_v<PrefillPolicy>);
@@ -135,6 +138,101 @@ void cold_capacities_cover_real_suffixes() {
     }
   }
 }
+
+void packed_rows_use_actual_member_boundaries() {
+  // Capacity need not be rectangular or divisible by B. Both producers use
+  // the same caller buffers; reordering changes geometry, not a Session cursor.
+  std::array<std::int32_t, 3> offsets{};
+  std::array<std::int32_t, 2> last{};
+  std::array<std::int32_t, 7> positions{};
+  const std::array target{PackedRowInput{10, 1}, PackedRowInput{20, 3}};
+  const auto facts = pack_sequence_rows(target, positions.size(), offsets, last, positions);
+  require(facts.active_rows == 4 && facts.max_member_rows == 3 &&
+      offsets == std::array<std::int32_t, 3>{0, 1, 4} &&
+      last == std::array<std::int32_t, 2>{0, 3} &&
+      positions == std::array<std::int32_t, 7>{10, 20, 21, 22, 0, 0, 0},
+      "packed target geometry consumed padding or crossed a member boundary");
+  const std::array reordered{target[1], target[0]};
+  (void)pack_sequence_rows(reordered, positions.size(), offsets, last, positions);
+  require(offsets == std::array<std::int32_t, 3>{0, 3, 4} &&
+      last == std::array<std::int32_t, 2>{2, 3} &&
+      positions == std::array<std::int32_t, 7>{20, 21, 22, 10, 0, 0, 0},
+      "packed metadata reused an old member ordering");
+
+  // The model supplies its actual lag-adjusted rows/frontiers. The shared
+  // function has no MTP role, hidden-state or permission policy of its own.
+  const std::array draft{PackedRowInput{9, 2}, PackedRowInput{19, 4}};
+  const auto draft_facts = pack_sequence_rows(draft, positions.size(), offsets, last, positions);
+  require(draft_facts.active_rows == 6 && draft_facts.max_member_rows == 4 &&
+      offsets == std::array<std::int32_t, 3>{0, 2, 6} &&
+      last == std::array<std::int32_t, 2>{1, 5} &&
+      positions == std::array<std::int32_t, 7>{9, 10, 19, 20, 21, 22, 0},
+      "packed draft geometry borrowed target offsets or advanced padded rows");
+}
+
+void packed_rows_reject_before_writing_any_buffer() {
+  constexpr std::int32_t sentinel = -77;
+  std::array<std::int32_t, 3> offsets; offsets.fill(sentinel);
+  std::array<std::int32_t, 2> last; last.fill(sentinel);
+  std::array<std::int32_t, 5> positions; positions.fill(sentinel);
+  const auto unchanged = [&] {
+    for (auto value : offsets) require(value == sentinel, "failed pack changed offsets");
+    for (auto value : last) require(value == sentinel, "failed pack changed last rows");
+    for (auto value : positions) require(value == sentinel, "failed pack changed positions");
+  };
+  const auto late_error = [&](PackedRowInput bad) {
+    const std::array inputs{PackedRowInput{10, 2}, bad};
+    rejects<std::out_of_range>([&] {
+      (void)pack_sequence_rows(inputs, positions.size(), offsets, last, positions);
+    });
+    unchanged();
+  };
+  late_error({0, 4}); // The sum exceeds capacity although each member fits.
+  late_error({max_size, 1});
+  late_error({0, max_size});
+  const auto i32_max = static_cast<std::size_t>((std::numeric_limits<std::int32_t>::max)());
+  late_error({i32_max, 2});
+  const std::array empty_member{PackedRowInput{0, 2}, PackedRowInput{0, 0}};
+  rejects<std::invalid_argument>([&] {
+    (void)pack_sequence_rows(empty_member, positions.size(), offsets, last, positions);
+  });
+  unchanged();
+  const std::array good{PackedRowInput{0, 2}, PackedRowInput{10, 2}};
+  rejects<std::invalid_argument>([&] {
+    (void)pack_sequence_rows(good, positions.size(), std::span(offsets).first(2), last, positions);
+  });
+  unchanged();
+  rejects<std::invalid_argument>([&] {
+    (void)pack_sequence_rows(good, positions.size(), offsets,
+        std::span(offsets).first(2), positions);
+  });
+  unchanged();
+  rejects<std::invalid_argument>([&] {
+    (void)pack_sequence_rows({}, positions.size(), offsets, last, positions);
+  });
+  unchanged();
+}
+
+void packed_rows_preserve_exact_i32_position_limit() {
+  const auto limit = (std::numeric_limits<std::int32_t>::max)();
+  const std::array input{PackedRowInput{static_cast<std::size_t>(limit), 1}};
+  std::array<std::int32_t, 2> offsets{};
+  std::array<std::int32_t, 1> last{}, positions{};
+  const auto facts = pack_sequence_rows(input, 1, offsets, last, positions);
+  require(facts.active_rows == 1 && facts.max_member_rows == 1 &&
+      offsets == std::array<std::int32_t, 2>{0, 1} && last[0] == 0 && positions[0] == limit,
+      "packed rows rejected or narrowed the final valid I32 position");
+  const auto previous_offsets = offsets; const auto previous_last = last;
+  const auto previous_positions = positions;
+  rejects<std::out_of_range>([&] {
+    (void)pack_sequence_rows(input, static_cast<std::size_t>(limit) + 1, offsets, last, positions);
+  });
+  rejects<std::invalid_argument>([&] {
+    (void)pack_sequence_rows(input, 0, offsets, last, positions);
+  });
+  require(offsets == previous_offsets && last == previous_last && positions == previous_positions,
+      "invalid physical extent changed the previous metadata");
+}
 } // namespace
 
 int main() {
@@ -145,7 +243,10 @@ int main() {
     maximum_extents_do_not_overflow();
     finite_tail_blocks_keep_every_real_row();
     cold_capacities_cover_real_suffixes();
-    std::puts("prefill plan: 6 host contract groups passed; no model/device loaded");
+    packed_rows_use_actual_member_boundaries();
+    packed_rows_reject_before_writing_any_buffer();
+    packed_rows_preserve_exact_i32_position_limit();
+    std::puts("prefill plan: 9 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "prefill plan: %s\n", error.what());

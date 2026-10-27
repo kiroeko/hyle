@@ -1,0 +1,400 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "955817d5b",
+  "status": "Finite checks passed",
+  "scope": "R1 MTP effective-length prefill/catchup and shared integer input geometry; not full varlen completion or performance closure.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\packed_rows.h",
+      "bytes": 3755,
+      "sha256": "7bf5caf9a84aef4204fad196953914c1b6333ddf7c868431c55d66f6578c9a3b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 572220,
+      "sha256": "90c852b07687827b89c20bf5d7014a19d785bb855adf7ec2f0a2561a172bf295"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 17935,
+      "sha256": "e488fe88a43199ffaafbad465a664fd415defd42b7c1a896fdbeedbe3c77bbc1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+      "bytes": 11833,
+      "sha256": "302029c1c460f1458b7a677e8dda653b526f9caff24da08bb5a2cfb862f34135"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 3277,
+      "sha256": "81a67859b4ff0e153f990abbd80d4c1f49fa13ef8f4097b0154d4ed54a612bfa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_packed_prefill_case.h",
+      "bytes": 15690,
+      "sha256": "8f961dafb101a51077aa9a70a261bee59593683b43dd7d1ba9f3aa4cdcdb3830"
+    }
+  ],
+  "implementation": [
+    "pack_sequence_rows fills original caller cold-reserved offsets/last IDs/positions with no allocation, payload, queue, lease or permission owner; all validation precedes writes.",
+    "Target and draft both use this same geometry function, with distinct base positions, actual Li versus Li+lag, and physical R versus R+lag.",
+    "R1 MTP packed prefill/catchup reuses original KV shift, checked actual-last-hidden selection, Append/Store transactions and retirement; recursive verifier repair is unchanged.",
+    "Natural Li1 retains original Single/CatchupSingle; only cold unsupported selects exact fallback."
+  ],
+  "host_geometry": {
+    "status": "PASS",
+    "groups": 9,
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-row-geometry-20261028\\summary.json",
+      "bytes": 581,
+      "sha256": "6d3275582dd7b8ef5797d8f65f27e0fdaa242fa116326c589c1e7fc851270237"
+    },
+    "coverage": "Unequal lengths/order, target/draft lag geometry, complete padding positions, bad final member preserves every output, alias/extents, I32 position limit and overflow rejection."
+  },
+  "tiny": {
+    "cpu": {
+      "status": "PASS",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\tiny-cpu-run\\report.json",
+        "bytes": 7398,
+        "sha256": "81b1246a207f0525041e19552a367792c4383f1b01826fd06301eda623e273db"
+      },
+      "target_capacity": 4,
+      "lag1_draft_capacity": 5,
+      "steps": [
+        {
+          "role": 2,
+          "target_active": 2,
+          "target_physical": 4,
+          "draft_active": 2,
+          "draft_physical": 4,
+          "lag_before": 0,
+          "lag_after": 0
+        },
+        {
+          "role": 2,
+          "target_active": 4,
+          "target_physical": 4,
+          "draft_active": 4,
+          "draft_physical": 4,
+          "lag_before": 0,
+          "lag_after": 0
+        },
+        {
+          "role": 1,
+          "target_active": 3,
+          "target_physical": 3,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 1
+        },
+        {
+          "role": 7,
+          "target_active": 2,
+          "target_physical": 4,
+          "draft_active": 3,
+          "draft_physical": 5,
+          "lag_before": 1,
+          "lag_after": 0
+        },
+        {
+          "role": 1,
+          "target_active": 3,
+          "target_physical": 3,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 1
+        },
+        {
+          "role": 7,
+          "target_active": 3,
+          "target_physical": 4,
+          "draft_active": 4,
+          "draft_physical": 5,
+          "lag_before": 1,
+          "lag_after": 0
+        },
+        {
+          "role": 5,
+          "target_active": 1,
+          "target_physical": 1,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 0
+        }
+      ],
+      "maximum_absolute_gdn_error": 9.31323e-10,
+      "payloads_byte_equal": false,
+      "numerically_equivalent": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "final_length": 16,
+      "final_frontier": 16,
+      "final_rng_draws": 5,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0,
+      "controlled_verify_width": 3,
+      "controlled_accepted_rows": 2,
+      "discarded_target_rows": 2,
+      "natural_acceptance_claim": false
+    },
+    "cuda": {
+      "status": "PASS",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\tiny-cuda-run\\report.json",
+        "bytes": 7390,
+        "sha256": "d85ca7a1a9e1fe53856f717da3abf824246651b44f45465042aa6f7586ab150f"
+      },
+      "target_capacity": 4,
+      "lag1_draft_capacity": 5,
+      "steps": [
+        {
+          "role": 2,
+          "target_active": 2,
+          "target_physical": 4,
+          "draft_active": 2,
+          "draft_physical": 4,
+          "lag_before": 0,
+          "lag_after": 0
+        },
+        {
+          "role": 2,
+          "target_active": 4,
+          "target_physical": 4,
+          "draft_active": 4,
+          "draft_physical": 4,
+          "lag_before": 0,
+          "lag_after": 0
+        },
+        {
+          "role": 1,
+          "target_active": 3,
+          "target_physical": 3,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 1
+        },
+        {
+          "role": 7,
+          "target_active": 2,
+          "target_physical": 4,
+          "draft_active": 3,
+          "draft_physical": 5,
+          "lag_before": 1,
+          "lag_after": 0
+        },
+        {
+          "role": 1,
+          "target_active": 3,
+          "target_physical": 3,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 1
+        },
+        {
+          "role": 7,
+          "target_active": 3,
+          "target_physical": 4,
+          "draft_active": 4,
+          "draft_physical": 5,
+          "lag_before": 1,
+          "lag_after": 0
+        },
+        {
+          "role": 5,
+          "target_active": 1,
+          "target_physical": 1,
+          "draft_active": 1,
+          "draft_physical": 1,
+          "lag_before": 0,
+          "lag_after": 0
+        }
+      ],
+      "maximum_absolute_gdn_error": 9.31323e-10,
+      "payloads_byte_equal": false,
+      "numerically_equivalent": true,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "final_length": 16,
+      "final_frontier": 16,
+      "final_rng_draws": 5,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0,
+      "controlled_verify_width": 3,
+      "controlled_accepted_rows": 2,
+      "discarded_target_rows": 2,
+      "natural_acceptance_claim": false
+    }
+  },
+  "real_cli": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\bin\\model.exe",
+      "bytes": 142663680,
+      "sha256": "2bd19c719c2f52ebd2bc6c3290a7c6a87d62cd8f248d54ad579f20136adaad82"
+    },
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\cli-mtp-run\\report.json",
+      "bytes": 21151,
+      "sha256": "e2ed0b0b814e6c0e9df61855f617cb0d954095ec5175343421d4f66ba6d63751"
+    },
+    "packed_prefill_calls": 1,
+    "active_rows": 154,
+    "physical_rows": 154,
+    "cold_exact_admissions": 0,
+    "generated_ids": [
+      71093,
+      12305,
+      198,
+      464,
+      19298,
+      198,
+      1445,
+      18904
+    ],
+    "performance_claim": false
+  },
+  "ordinary_b2_regression": {
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\ragged-cuda-regression\\report.json",
+      "bytes": 8270,
+      "sha256": "8c3ef59893175141c37ca001a6e2b3336f2b6978b53ad2ea162555cd832dedb2"
+    },
+    "backend": "cuda",
+    "status": "PASS",
+    "actual_rows": 22,
+    "physical_rows": 64,
+    "committed_rows": 21,
+    "old_checkpoints_byte_unchanged": true
+  },
+  "numerical_contract": "Only recomputed finite F32 GDN payloads use existing 3e-6 FP64 component absolute budget; other target/draft KV, history, carry/prior, old checkpoints, metadata and RNG stay strict. No full-model FP64/quality claim.",
+  "processes": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\cli-mtp-run\\process.json",
+      "pid": 52328,
+      "exit": 0,
+      "started": 1793131336.5182514,
+      "seconds": 2.915574789047241,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\link\\model\\process.json",
+      "pid": 58620,
+      "exit": 0,
+      "started": 1793131318.5973494,
+      "seconds": 1.7615973949432373,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\link\\tiny\\process.json",
+      "pid": 44668,
+      "exit": 0,
+      "started": 1793131346.1582932,
+      "seconds": 1.739537000656128,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\logs\\model\\process.json",
+      "pid": 42584,
+      "exit": 0,
+      "started": 1793131264.858773,
+      "seconds": 27.52252960205078,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\logs\\tiny\\process.json",
+      "pid": 38044,
+      "exit": 0,
+      "started": 1793131287.3044577,
+      "seconds": 28.90708565711975,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\ragged-cuda-regression\\process.json",
+      "pid": 57020,
+      "exit": 0,
+      "started": 1793131384.4402945,
+      "seconds": 0.8134715557098389,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\tiny-cpu-run\\process.json",
+      "pid": 48384,
+      "exit": 0,
+      "started": 1793131358.4112728,
+      "seconds": 0.8982822895050049,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-packed-prefill-20261028\\tiny-cuda-run\\process.json",
+      "pid": 38388,
+      "exit": 0,
+      "started": 1793131359.3265743,
+      "seconds": 0.8446445465087891,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-row-geometry-20261028\\compile\\log\\process.json",
+      "pid": 32588,
+      "exit": 0,
+      "started": 1793130977.8719015,
+      "seconds": 0.4201078414916992,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-row-geometry-20261028\\link\\process.json",
+      "pid": 50968,
+      "exit": 0,
+      "started": 1793130978.3162417,
+      "seconds": 0.040574073791503906,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-row-geometry-20261028\\run\\process.json",
+      "pid": 43696,
+      "exit": 0,
+      "started": 1793130996.7692678,
+      "seconds": 0.03995394706726074,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "cost": {
+    "model_CXX": 2,
+    "model_links": 2,
+    "host_CXX": 1,
+    "host_link": 1,
+    "consumer_processes": 4,
+    "host_processes": 1,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "remaining": [
+    "B2 variable-length MTP hidden/token shifts and independent draft offsets",
+    "MTP bounded prefill/StateOnly feature combination",
+    "Other platform/provider/dtype combinations",
+    "Shared execution architecture and current full performance comparison"
+  ],
+  "limits": [
+    "Controlled verifier accepts two of three real rows and executes original repair; it does not measure natural acceptance probability.",
+    "The normal real-model CLI has no padding in its P154 carrier; tiny cases establish short-active-R4/R5 behavior.",
+    "No refreshed speed/memory A/B or cross-engine window."
+  ]
+}
