@@ -638,7 +638,13 @@ cuSeq由`graph::batch::query_offsets`从原Batch metadata提供精确I32[B+1]范
 本批普通R1以同一R8运行L1／3／8及非零前缀，并以真实2B检查Q64分块、取消与重建。
 跨实现F32 GDN归约不承诺逐字节一致；原快照、KV／history原码转移和RNG等边界仍严格核对。
 [本批有限记录](../evidence/correctness/inference-prefill-integration-2026-10-28.json)保留原数值差异、失败、真实行与物理行，未据图调用数变化宣称提速。
-原MTP-prefill真实shift／lag与B2不同Li仍未接通；纯数学叶复用原Store，
+普通异长prefill现已沿原路径接通：每成员保Li和紧凑行起点，Step保A，冷载体为R=B×C。
+原Batch镜像的offset同时用于数学与追加；history从各成员旧history及真实输入中checked Gather原字节，
+布局、KV预留、提交、ledger、观察和RNG均逐成员处理。自然分组按共同容量、completion与sampler接纳，
+原decode／MTP／relay仍保各自已支持的输入门，不能把非完整cohort塞入连续后继。
+[有限检查](../evidence/correctness/inference-ragged-prefill-2026-10-28.json)覆盖CPU／CUDA的StateOnly、换序、单成员取消与完整状态，
+真实2B自然首批[154,37]对应A191／R308；报告逐成员行数，不能用maxLi×B代签实际量。
+原MTP-prefill真实shift／lag仍未接通；纯数学叶复用原Store，
 不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与

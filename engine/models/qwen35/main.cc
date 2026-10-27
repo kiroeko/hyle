@@ -921,7 +921,7 @@ struct StateBank final {
 struct PhaseIo final {
   c::BatchLayoutVersion attention_layout;
   Tensor tokens, positions, last_ids, logits, final_hidden, history_select;
-  std::vector<std::int32_t> history_select_values;
+  std::vector<std::int32_t> history_select_values, last_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
   PreparedReadback next_id, draft_id, sampling_valid, sampling_accept;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
@@ -996,7 +996,7 @@ struct StepMember final {
   std::array<c::PagedPageAppender, 2> next_draft_tails{};
   c::BatchLayoutVersion layout{};
   c::BatchLayoutVersion draft_layout{};
-  std::size_t accepted_tokens = 0;
+  std::size_t input_tokens = 0, input_row_begin = 0, accepted_tokens = 0;
   std::uint32_t verified_last_page = 0;
   std::int32_t first_input = -1, draft_token = -1;
   std::vector<std::int32_t> verification_inputs{};
@@ -1115,7 +1115,8 @@ struct StepState final {
   hyle::Status terminal;
   Clock::time_point step_start{}, start{};
   double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
-  std::size_t input_tokens = 0, capture_recorded = 0, capture_reused = 0;
+  // Maximum member width and true total rows are independent of carrier capacity.
+  std::size_t input_tokens = 0, active_input_rows = 0, capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
   std::size_t state_slot = 0;
@@ -2115,8 +2116,8 @@ public:
     if ((completion != TextCompletion::kEmitNext && completion != TextCompletion::kStateOnly) ||
         (completion == TextCompletion::kStateOnly && role != GraphRole::kText))
       throw std::runtime_error("state-only completion requires an ordinary Text family");
-    if (packed_prefill && (requests != 1 || role != GraphRole::kText || diagnostic || admitted_exact))
-      throw std::runtime_error("packed prefill requires its original cold ordinary R1 family");
+    if (packed_prefill && (role != GraphRole::kText || diagnostic || admitted_exact))
+      throw std::runtime_error("packed prefill requires its original cold ordinary family");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
       throw std::runtime_error("compile finite families before preparing their selected state storage");
@@ -2172,6 +2173,8 @@ public:
     GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, max_query_rows, requests, &weight_meanings);
     const auto t = r.token_rows, packed = r.packed_rows;
+    // In a packed family [batch,t] partitions the physical carrier only.
+    // Original cu_seqlens and explicit positions describe logical members.
     const auto batch = f(static_cast<std::int64_t>(requests));
     g::slots::Schema hidden_schema;
     if (verifies_prefix(role) || has_mtp(role) || retains_sampling_frontier()) {
@@ -2196,8 +2199,9 @@ public:
         r.input(r.dense_spec(Type::kInt32, {batch, t}));
     if ((requests != 1 || packed_prefill) && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
     if (packed_prefill) {
-      definition.sequence_offsets_port = r.input(dense(Type::kInt32, {2}));
-      definition.history_select_port = r.input(dense(Type::kInt32, {geometry.conv_kernel - 1}));
+      definition.sequence_offsets_port = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(requests + 1)}));
+      definition.history_select_port = r.input(dense(Type::kInt32,
+          {static_cast<std::int64_t>(cache::multiply(requests, geometry.conv_kernel - 1))}));
     }
     definition.metadata_port = r.input(take(definition.attention_schema.metadata_description()));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
@@ -2337,15 +2341,17 @@ public:
         if (packed_prefill) {
           const auto channels = f(geometry.gdn_qkv_width());
           const auto qkv = r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight");
+          const auto history_count = f(static_cast<std::int64_t>(cache::multiply(requests, geometry.conv_kernel - 1)));
+          const auto sample_count = D(take(r.builder.dimension_sum(history_count, packed)));
           const auto raw_samples = r.one(c::Concat{.axis = 0},
-              {r.reshape(history, {f(geometry.conv_kernel - 1), channels}), qkv},
-              r.dense_spec(precision.activation_type(), {r.sample_rows, channels}));
+              {r.reshape(history, {history_count, channels}), qkv},
+              r.dense_spec(precision.activation_type(), {sample_count, channels}));
           // Preserve the original activation bytes in persistent history. In
           // particular, F32 convolution must not round-trip NaN payloads through
           // a different storage type just to recover the true history tail.
           const auto next_history = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
               {raw_samples, definition.history_select_port},
-              r.dense_spec(precision.activation_type(), {f(geometry.conv_kernel - 1), channels}));
+              r.dense_spec(precision.activation_type(), {history_count, channels}));
           store_state(ports.history, history_schema,
               r.reshape(next_history, {batch, f(history_schema.item_elements())}));
           const auto convolution = r.op(c::sequence_ops::packed_causal_conv1d(),
@@ -2687,13 +2693,14 @@ public:
   // These capacities are physical carriers. Actual prefill consumption remains
   // the caller's true input slice and never becomes a padded Session boundary.
   bool prepare_prefill_family(std::span<const std::size_t> capacities,
-      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
+      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+      std::size_t requests = 1) {
     // This adapter reuses the original attention mirror's true query control.
     // A graph without that carrier, or a diagnostic graph with different
     // published boundaries, has no implementation of this packed signature.
     if (!target_kv_layers || !layer0_probe.empty()) return false;
-    const FamilyKey key(1, GraphRole::kText, 0, completion, sampling_index, true);
-    if (prepare_family(capacities, false, 1, GraphRole::kText, false, completion, sampling_index, true)) return true;
+    const FamilyKey key(requests, GraphRole::kText, 0, completion, sampling_index, true);
+    if (prepare_family(capacities, false, requests, GraphRole::kText, false, completion, sampling_index, true)) return true;
     families.erase(key);
     return false;
   }
@@ -2710,14 +2717,27 @@ public:
     return exact == table.end() ? nullptr : exact->second.get();
   }
 
-  std::size_t prefill_capacity(std::size_t rows, TextCompletion completion, std::size_t sampling_index) const {
+  std::size_t prefill_capacity(std::size_t rows, TextCompletion completion, std::size_t sampling_index,
+      std::size_t requests = 1) const {
     if (!rows || !layer0_probe.empty()) return 0;
-    const auto found = families.find({1, GraphRole::kText, 0, completion, sampling_index, true});
+    const auto found = families.find({requests, GraphRole::kText, 0, completion, sampling_index, true});
     if (found == families.end() || !found->second) return 0;
     std::size_t selected = 0;
     for (const auto physical : found->second->chunks)
       if (physical >= rows && (!selected || physical < selected)) selected = physical;
     return selected;
+  }
+
+  // Session admission proves a prepared cohort can execute this member. The
+  // actual batch still selects its exact width/capacity before taking a loan.
+  bool planned_prefill_member(std::size_t rows, TextCompletion completion, std::size_t sampling_index) const {
+    for (const auto &[shape, uses] : planned_slot_uses) {
+      if (!shape.packed_prefill || shape.role != GraphRole::kText || shape.completion != completion ||
+          shape.sampling_index != sampling_index || shape.tokens < rows ||
+          std::ranges::none_of(uses, [](auto count) { return count != 0; })) continue;
+      if (prefill_capacity(rows, completion, sampling_index, shape.requests)) return true;
+    }
+    return false;
   }
 
   // A generated-token checkpoint can expose a suffix whose length was unknown
@@ -3381,15 +3401,16 @@ public:
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
     const auto prepared_rows = [&](std::size_t rows) {
       return find_family(1, rows, role, false, completion, sampling_index) ||
-          (role == GraphRole::kText && prefill_capacity(rows, completion, sampling_index));
+          (role == GraphRole::kText && planned_prefill_member(rows, completion, sampling_index));
     };
     for (const auto rows : planned_chunks)
       if (!prepared_rows(rows)) admit_exact_shape(rows, 1, role, completion, sampling_index);
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("session must use its complete target/draft cache family");
-    if ((planned_chunks.empty() ? (!families.contains({1, role, 0, completion, sampling_index}) &&
-            !families.contains({1, role, 0, completion, sampling_index, true})) : !prepared_rows(initial_rows)) ||
+    const bool prepared_adoption = families.contains({1, role, 0, completion, sampling_index}) ||
+        (role == GraphRole::kText && planned_prefill_member(1, completion, sampling_index));
+    if ((planned_chunks.empty() ? !prepared_adoption : !prepared_rows(initial_rows)) ||
         (!layer0_probe.empty() && !probe_families.contains({1, role, initial_rows, completion, sampling_index})))
       throw std::runtime_error("session requires the shared text families first");
     if (planned_chunks.empty() && !prefix) throw std::runtime_error("session requires an ordered call plan or a complete prefix");
@@ -3410,9 +3431,8 @@ public:
           throw std::runtime_error("session chunk is outside the shared finite family");
       }
       total += tokens;
-      const auto physical = role == GraphRole::kText ? prefill_capacity(tokens, completion, sampling_index) : 0;
       if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}) &&
-          (!physical || !planned_slot_uses.contains({1, physical, role, completion, sampling_index, false, true})))
+          !(role == GraphRole::kText && planned_prefill_member(tokens, completion, sampling_index)))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
     if (prefix) {
@@ -3652,10 +3672,12 @@ public:
         std::vector<std::int32_t> last_ids(requests);
         for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
         io.last_ids.write<std::int32_t>(last_ids);
+        if (definition.packed_prefill) io.last_id_values.resize(requests);
       }
       if (definition.packed_prefill) {
-        io.history_select = caller_tensor(execution.device(), dense(Type::kInt32, {geometry.conv_kernel - 1}));
-        io.history_select_values.resize(static_cast<std::size_t>(geometry.conv_kernel - 1));
+        const auto count = cache::multiply(requests, geometry.conv_kernel - 1);
+        io.history_select = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
+        io.history_select_values.resize(count);
       }
       if (completion == TextCompletion::kEmitNext) {
         io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
@@ -3749,8 +3771,9 @@ public:
   }
 
   void prepare_prefill_execution(std::span<const std::size_t> capacities,
-      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0) {
-    prepare_execution(capacities, 1, GraphRole::kText, completion, sampling_index, true);
+      TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
+      std::size_t requests = 1) {
+    prepare_execution(capacities, requests, GraphRole::kText, completion, sampling_index, true);
   }
 
   void prepare_relay_execution(std::size_t requests = 1, std::size_t sampling_index = 0) {
@@ -4112,8 +4135,10 @@ public:
   void prepare_prefill_evaluations(std::span<const EvaluationRequest> requests,
       inference::PreparationObservation *preparation = nullptr, GraphRole role = GraphRole::kText,
       TextCompletion completion = TextCompletion::kEmitNext) {
-    const auto physical = requests.size() == 1 && role == GraphRole::kText && requests[0].session
-        ? prefill_capacity(requests[0].ids.size(), completion, requests[0].session->sampling_configuration().index) : 0;
+    std::size_t maximum = 0;
+    for (const auto &request : requests) maximum = (std::max)(maximum, request.ids.size());
+    const auto physical = !requests.empty() && role == GraphRole::kText && requests[0].session
+        ? prefill_capacity(maximum, completion, requests[0].session->sampling_configuration().index, requests.size()) : 0;
     prepare_evaluations(requests, preparation, role, completion, {}, 0, physical);
   }
 
@@ -4147,11 +4172,12 @@ public:
     if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
       throw std::runtime_error("nondefault sampling is ordinary Text only");
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
-    const auto tokens = drafts_token(role) ? 2u : supplied_tokens;
     const bool packed_prefill = physical_prefill_rows != 0;
+    auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
+    if (packed_prefill) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
     const auto physical_tokens = packed_prefill ? physical_prefill_rows : tokens;
-    if (packed_prefill && (relay || requests.size() != 1 || role != GraphRole::kText ||
-        physical_tokens < tokens || !find_family(1, physical_tokens, role, false, completion, sampling_index, true)))
+    if (packed_prefill && (relay || role != GraphRole::kText ||
+        physical_tokens < tokens || !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, true)))
       throw std::runtime_error("prefill extent is outside its original cold packed family");
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
@@ -4181,8 +4207,10 @@ public:
             (!request.ids.empty() && (predecessor || request.ids.size() != 1 || request.ids[0] != base->next_id)))
           throw std::runtime_error("successor Source differs from its exact Session candidate and epoch");
       }
-      if (!supplied_tokens || (!relay && request.ids.size() != supplied_tokens) || tokens > capacity - base->length)
-        throw std::runtime_error("batch requires equal nonempty chunks within each remaining context");
+      const auto member_tokens = packed_prefill ? request.ids.size() : tokens;
+      if (!member_tokens || (!packed_prefill && !relay && request.ids.size() != supplied_tokens) ||
+          member_tokens > capacity - base->length)
+        throw std::runtime_error("batch requires valid nonempty chunks within each remaining context");
       validate_mtp_snapshot(*session.head);
       if (has_mtp(role)) {
         if (session.head->draft->lag != draft_lag(role) ||
@@ -4208,7 +4236,7 @@ public:
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
-    const bool ahead = !relay && take_decode_ahead(requests, role, completion, sampling_index, tokens);
+    const bool ahead = !relay && !packed_prefill && take_decode_ahead(requests, role, completion, sampling_index, tokens);
     auto candidate = std::make_shared<StepState>(); candidate->configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (std::size_t j = 0; j < requests.size(); ++j) {
@@ -4216,7 +4244,7 @@ public:
       candidate->members.push_back({.session = request.session, .owner_state = &request.session->head,
           .base = predecessor ? predecessor->members[j].next.get() : request.session->head.get(),
           .base_epoch = request.session->head.epoch() + (predecessor ? 1u : 0u),
-          .stop_policy = request.stop_policy});
+          .stop_policy = request.stop_policy, .input_tokens = packed_prefill ? request.ids.size() : tokens});
       candidate->members.back().first_input = relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
       if (role == GraphRole::kVerify)
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
@@ -4230,6 +4258,10 @@ public:
     ++carrier_borrowed; step.candidate_admission = &carrier_borrowed;
     step.predecessor_episode = predecessor;
     step.step_start = step_start; step.input_tokens = tokens;
+    for (auto &member : step.members) {
+      member.input_row_begin = step.active_input_rows;
+      step.active_input_rows = cache::add(step.active_input_rows, member.input_tokens);
+    }
     step.shape_admission_seconds = shape_admission_seconds;
     if (!predecessor) for (auto &member : step.members) member.session->pending = &step;
     try {
@@ -4261,7 +4293,7 @@ public:
       for (std::size_t j = 0; j < width; ++j) {
         const auto &request = requests[j];
         if (!relay && width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
-        if (!ahead) for (std::size_t row = 0; row < tokens; ++row)
+        if (!ahead) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
           positions.push_back(static_cast<std::int32_t>(step.members[j].base->length + row));
       }
       for (std::size_t j = 0; j < width; ++j) {
@@ -4269,13 +4301,24 @@ public:
         if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
       }
       if (packed_prefill) {
-        packed_ids.assign(requests[0].ids.begin(), requests[0].ids.end());
-        packed_ids.resize(physical_tokens, 0); // Fully initialized legal scratch rows only.
-        positions.resize(physical_tokens, 0);
-        const std::array<std::int32_t, 1> last{static_cast<std::int32_t>(tokens - 1)};
-        io.last_ids.write<std::int32_t>(last);
-        for (std::size_t i = 0; i < io.history_select_values.size(); ++i)
-          io.history_select_values[i] = static_cast<std::int32_t>(tokens + i);
+        if (width == 1) packed_ids.assign(requests[0].ids.begin(), requests[0].ids.end());
+        const auto physical_rows = cache::multiply(width, physical_tokens);
+        packed_ids.resize(physical_rows, 0); // Only the inactive carrier suffix is scratch.
+        positions.resize(physical_rows, 0);
+        const auto history_rows = static_cast<std::size_t>(geometry.conv_kernel - 1);
+        const auto history_count = cache::multiply(width, history_rows);
+        for (std::size_t j = 0; j < width; ++j) {
+          const auto begin = step.members[j].input_row_begin;
+          const auto length = step.members[j].input_tokens;
+          io.last_id_values[j] = static_cast<std::int32_t>(begin + length - 1);
+          for (std::size_t row = 0; row < history_rows; ++row) {
+            const auto tail = length + row;
+            const auto source = tail < history_rows ? j * history_rows + tail
+                : history_count + begin + tail - history_rows;
+            io.history_select_values[j * history_rows + row] = static_cast<std::int32_t>(source);
+          }
+        }
+        io.last_ids.write<std::int32_t>(io.last_id_values);
         io.history_select.write<std::int32_t>(io.history_select_values);
       }
       if (!relay) io.tokens.write<std::int32_t>(packed_prefill || width != 1
@@ -4308,7 +4351,7 @@ public:
       std::size_t old_refs = 0, new_refs = 0;
       for (const auto &member : step.members) {
         old_refs = cache::add(old_refs, member.base->pages.size());
-        new_refs = cache::add(new_refs, (member.base->length + tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
+        new_refs = cache::add(new_refs, (member.base->length + member.input_tokens + cache::Plan::page_rows - 1) / cache::Plan::page_rows);
       }
       if (width != 1 && !ahead) old_ids.reserve(old_refs);
       if (new_refs > new_ids.capacity())
@@ -4317,9 +4360,10 @@ public:
       for (std::size_t j = 0; j < width; ++j) {
         auto &member = step.members[j]; auto &session = *member.session;
         const auto length = member.base->length;
+        const auto member_tokens = member.input_tokens;
         member.next = reserve_state(session.head);
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
-        member.next->length = length + tokens;
+        member.next->length = length + member_tokens;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
         const auto full_prefix_pages = length / cache::Plan::page_rows;
@@ -4333,7 +4377,7 @@ public:
         member.next->pages.reserve(page_count);
         for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count - (reuse_tail ? 1 : 0)));
         if (reuse_tail) {
-          const auto rows = static_cast<std::uint32_t>((std::min)(tokens, cache::Plan::page_rows - tail_rows));
+          const auto rows = static_cast<std::uint32_t>((std::min)(member_tokens, cache::Plan::page_rows - tail_rows));
           std::size_t reserved = 0; hyle::Status status;
           for (; reserved < session.tails.size(); ++reserved) {
             status = session.tails[reserved].reserve_rows(rows); if (!status.ok()) break;
@@ -4363,12 +4407,13 @@ public:
         if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
         const auto begin = new_ids.size();
         for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
-        query_indptr.push_back(static_cast<std::int32_t>((j + 1) * tokens));
+        query_indptr.push_back(static_cast<std::int32_t>(cache::add(
+            static_cast<std::size_t>(query_indptr.back()), member_tokens)));
         old_indptr.push_back(static_cast<std::int32_t>(old_ids.size()));
         new_indptr.push_back(static_cast<std::int32_t>(new_ids.size()));
         old_last.push_back(length ? static_cast<std::int32_t>((length - 1) % cache::Plan::page_rows + 1) : 0);
         new_last.push_back(static_cast<std::int32_t>((member.next->length - 1) % cache::Plan::page_rows + 1));
-        const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(tokens)}, one_kv{0, static_cast<std::int32_t>(page_count)};
+        const std::array<std::int32_t, 2> one_query{0, static_cast<std::int32_t>(member_tokens)}, one_kv{0, static_cast<std::int32_t>(page_count)};
         member.layout = take(attention_schema.version({one_query, one_kv,
             std::span(new_ids).subspan(begin, page_count), std::span(&new_last.back(), 1)}));
       }
@@ -4478,7 +4523,7 @@ public:
       check(transactions.bind(run, phase.state_graph()));
       if (packed_prefill) {
         auto offsets = take(g::batch::query_offsets(run, phase.attention_nodes.front()));
-        check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {2}), offsets));
+        check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
       const auto batch_end = Clock::now();
       if (relay) check(g::detail::prepare_outputs(run, step.incoming->bindings, queues));
@@ -4609,6 +4654,7 @@ public:
     auto &io = phase.io[step.state_slot];
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
+    hyle::container::SmallVector<std::size_t, 2> member_input_rows;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
     const auto shape_admission_seconds = step.shape_admission_seconds;
@@ -4626,6 +4672,8 @@ public:
       ~ReturnReadback() { if (admission) { HYLE_FATAL_ASSERT(*admission); --*admission; } }
     } return_readback;
     try {
+      if (!member_input_rows.try_reserve(outputs.size())) throw std::bad_alloc{};
+      for (const auto &member : step.members) member_input_rows.push_back(member.input_tokens);
       if (step.discard_stopped_members &&
           !published_members.try_resize(outputs.size(), std::uint8_t{1})) throw std::bad_alloc{};
       for (std::size_t j = 0; j < outputs.size(); ++j) {
@@ -4641,7 +4689,7 @@ public:
           auto &record = outputs[j].generation_ledger->next();
           step.members[j].commit_ledger = outputs[j].generation_ledger; step.members[j].commit_record = &record;
           if (record.role != phase.family->role || record.completion != phase.family->completion || record.before != generation_boundary(*step.members[j].base) ||
-              record.ids().size() != (record.generation ? 1u : tokens) ||
+              record.ids().size() != (record.generation ? 1u : step.members[j].input_tokens) ||
               record.ids().empty() || record.ids().front() != step.members[j].first_input)
             throw std::runtime_error("generation ledger entry differs from its actual episode");
           if (outputs[j].expected_episode && !outputs[j].expected_episode->committed)
@@ -4707,13 +4755,13 @@ public:
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {
         auto &member = step.members[j];
-        if (!member.accepted_tokens || member.accepted_tokens > tokens ||
-            (member.accepted_tokens != tokens && !verifies_prefix(phase.family->role)) ||
+        if (!member.accepted_tokens || member.accepted_tokens > member.input_tokens ||
+            (member.accepted_tokens != member.input_tokens && !verifies_prefix(phase.family->role)) ||
             (!state_only && !(step.discard_stopped_members && member.session->stopping) &&
                 (next_ids[j] < 0 || next_ids[j] >= vocabulary)))
           throw std::runtime_error("invalid accepted target boundary");
         member.verified_last_page = member.next->pages.back().page();
-        if (member.accepted_tokens != tokens) {
+        if (member.accepted_tokens != member.input_tokens) {
           member.next->length = member.base->length + member.accepted_tokens;
           const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
           member.next->pages.resize(page_count);
@@ -4847,7 +4895,7 @@ public:
           else if (drafts_token(phase.family->role)) record->verification_inputs = {member.first_input, member.draft_token};
           else record->verification_inputs = {member.first_input};
         }
-        record->verified_rows = tokens;
+        record->verified_rows = member.input_tokens;
         if (!record->generation || phase.family->role == GraphRole::kText) {
           record->draft = -1; record->target_first = next_ids[j]; record->target_second = -1;
           record->agreed = false; record->accepted_draft = false;
@@ -4875,7 +4923,7 @@ public:
           // A ready T2 tail already owns the verified physical frontier.
           // Partial acceptance only narrows read authority; discard its mutable
           // capability and use the original COW path next, never rewind it.
-          if (member.accepted_tokens != tokens) { tail = {}; continue; }
+          if (member.accepted_tokens != member.input_tokens) { tail = {}; continue; }
           if (tail.reserved_rows() || member.next_tails[bank].valid() || tail.initialized_rows() != member.next->length % cache::Plan::page_rows)
             throw std::runtime_error("batch append returned an invalid committed tail");
           member.next_tails[bank] = std::move(tail);
@@ -4933,8 +4981,9 @@ public:
       }
       if (phase.family->packed_prefill) {
         ++packed_prefill_calls;
-        packed_prefill_active_rows = cache::add(packed_prefill_active_rows, tokens);
-        packed_prefill_physical_rows = cache::add(packed_prefill_physical_rows, phase.query_rows);
+        packed_prefill_active_rows = cache::add(packed_prefill_active_rows, step.active_input_rows);
+        packed_prefill_physical_rows = cache::add(packed_prefill_physical_rows,
+            cache::multiply(phase.query_rows, phase.family->requests));
       }
       return_readback.admission = std::exchange(step.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
@@ -4966,8 +5015,8 @@ public:
       }
       inference::StepObservation observed;
       auto &observation = output.observation ? *output.observation : observed;
-      observation.input_tokens = tokens; observation.visible = session.length(); observation.next = next;
-      observation.graph_executed = true; observation.graph_input_tokens = tokens;
+      observation.input_tokens = member_input_rows[j]; observation.visible = session.length(); observation.next = next;
+      observation.graph_executed = true; observation.graph_input_tokens = member_input_rows[j];
       observation.seconds = std::chrono::duration<double>(finished - start).count();
       observation.submit_seconds = submit_seconds; observation.step_seconds = std::chrono::duration<double>(finished - step_start).count();
       observation.cold_batch_seconds = cold_batch_seconds; observation.replay_route = replay_route;
@@ -5149,7 +5198,7 @@ public:
     finish_selected_evaluations(outputs, next_ids,
         [](std::span<const std::int32_t> ids, StepState &step, std::span<std::int32_t> next) {
           for (std::size_t j = 0; j < step.members.size(); ++j) {
-            step.members[j].accepted_tokens = step.input_tokens; next[j] = ids[j];
+            step.members[j].accepted_tokens = step.members[j].input_tokens; next[j] = ids[j];
           }
         }, std::move(observe));
   }
@@ -5960,6 +6009,19 @@ struct PreparedGenerationCall final {
   std::size_t planned_rows() const noexcept { return role == GraphRole::kVerify ? maximum + 1 : drafts_token(role) ? 2 : ids().size(); }
 };
 
+std::size_t generation_prefill_capacity(const Model &model, std::span<const PreparedGenerationCall> calls) {
+  if (calls.empty() || !calls[0].request || calls[0].generation || calls[0].full_hit ||
+      calls[0].role != GraphRole::kText) return 0;
+  std::size_t rows = 0;
+  for (const auto &call : calls) {
+    if (!call.request || call.generation || call.full_hit || call.role != GraphRole::kText ||
+        call.completion != calls[0].completion || call.request->sampling_index != calls[0].request->sampling_index)
+      return 0;
+    rows = (std::max)(rows, call.ids().size());
+  }
+  return model.prefill_capacity(rows, calls[0].completion, calls[0].request->sampling_index, calls.size());
+}
+
 // One actually retired target batch, never a planned request bucket. Members
 // are borrowed synchronously; a report owner copies identities before return.
 // Episode durations can overlap and must not be added as a wall-time union.
@@ -5967,17 +6029,21 @@ struct GenerationBatchFacts final {
   GraphRole role;
   TextCompletion completion;
   bool generation;
-  std::size_t input_rows;
+  std::size_t input_rows; // Maximum actual member width, never total work.
+  std::size_t active_rows, physical_rows;
   std::span<const PreparedGenerationCall> members;
   double step_seconds;
 };
 
 template<class Observer>
 void observe_generation_batch(Observer &observer, std::span<const PreparedGenerationCall> members,
-    std::size_t rows, double seconds) {
-  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<Observer>>)
+    std::size_t rows, double seconds, std::size_t active_rows = 0, std::size_t physical_rows = 0) {
+  if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<Observer>>) {
+    if (!active_rows) active_rows = cache::multiply(rows, members.size());
+    if (!physical_rows) physical_rows = cache::multiply(rows, members.size());
     observer(GenerationBatchFacts{members[0].role, members[0].completion, members[0].generation,
-        rows, members, seconds});
+        rows, active_rows, physical_rows, members, seconds});
+  }
 }
 
 // Serialized host metadata only. Original Step/Source owns all native work;
@@ -6592,6 +6658,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     BatchObserver &&batch_observer = nullptr, bool defer_successor = false,
     std::span<const inference::RequestCreditGrant> credits = {}) {
   if (calls.empty()) return;
+  const bool packed_prefill = generation_prefill_capacity(model, calls) != 0;
   // Validate every request's cold metadata before prefix eviction, proposal
   // work or preparing even the first uncommitted ledger slot.
   for (std::size_t member = 0; member < calls.size(); ++member) {
@@ -6615,7 +6682,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     if ((call.full_hit && calls.size() != 1) ||
         call.request->sampling_index != calls[0].request->sampling_index || call.role != calls[0].role ||
         call.completion != calls[0].completion || call.generation != calls[0].generation ||
-        (call.role != GraphRole::kVerify && call.ids().size() != calls[0].ids().size()))
+        (!packed_prefill && call.role != GraphRole::kVerify && call.ids().size() != calls[0].ids().size()))
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
     if (!call.full_hit) {
       if (call.completion == TextCompletion::kStateOnly &&
@@ -6705,6 +6772,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
   model.submit_evaluations();
   const auto input_rows = model.active_step->input_tokens;
+  const auto active_rows = model.active_step->active_input_rows;
+  const auto physical_rows = cache::multiply(model.active_step->phase->query_rows, calls.size());
   const auto episode_start = model.active_step->step_start;
   bool prepared_ahead = false;
   try {
@@ -6749,7 +6818,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     // per member and are all retained. Cancelled members may have no output
     // endpoint, so a fully withdrawn batch uses its actual retired call end.
     if (target_seconds == 0) target_seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
-    observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds);
+    observe_generation_batch(batch_observer, calls, input_rows, target_seconds + proposal_seconds, active_rows, physical_rows);
     for (auto &call : calls) finish_generation_call(model, call);
     if (prepared_ahead)
       for (const auto &call : calls)
@@ -7269,30 +7338,45 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     if (mtp && width == 1) for (const auto &[tokens, uses] : prompt_uses[{GraphRole::kMtpCatchupPrefill, TextCompletion::kEmitNext}]) {
       (void)uses; shapes[{GraphRole::kMtpPrefill, TextCompletion::kEmitNext}].try_emplace(tokens, restore_bound);
     }
+    if constexpr (!mtp) for (const auto &[key, controls] : carrier_support) {
+      std::set<std::size_t> eligible;
+      for (const auto &[rows, members] : controls) {
+        (void)rows;
+        for (auto member : members)
+          if (requests[member].sampling_index == sampling_index) eligible.insert(member);
+      }
+      if (width <= eligible.size()) shapes.try_emplace(key);
+    }
     for (const auto &[key, entries] : shapes) {
       const auto [role, completion] = key;
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
       bool packed = false;
-      if constexpr (!mtp) if (width == 1 && role == GraphRole::kText && model.layer0_probe.empty()) {
+      if constexpr (!mtp) if (role == GraphRole::kText && model.layer0_probe.empty()) {
         std::vector<std::size_t> capacities;
         const auto controls = carrier_support.find(key);
-        if (controls != carrier_support.end()) for (const auto &[rows, members] : controls->second)
-          if (std::ranges::any_of(members, [&](auto member) { return requests[member].sampling_index == sampling_index; }))
-            capacities.push_back(rows);
-        if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index);
+        if (controls != carrier_support.end()) {
+          std::set<std::size_t> eligible;
+          for (const auto &[rows, members] : controls->second) {
+            for (auto member : members)
+              if (requests[member].sampling_index == sampling_index) eligible.insert(member);
+            if (width <= eligible.size() && rows <= model.cache_plan.max_query_rows / width)
+              capacities.push_back(rows);
+          }
+        }
+        if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width);
         if (packed) {
-          for (const auto rows : capacities) model.plan_replay_uses(rows, 1,
-              cache::add(carrier_uses.at(key).at(rows), restore_bound), role, completion, sampling_index, true);
+          for (const auto rows : capacities) model.plan_replay_uses(rows, width,
+              cache::add(carrier_uses.at(key).at(rows), width == 1 ? restore_bound : 0), role, completion, sampling_index, true);
           // Decode still has its original T1 mathematics and source ports.
-          if (completion == TextCompletion::kEmitNext && decode_bound && policy_decoding_requests) {
+          if (completion == TextCompletion::kEmitNext && decode_bound && width <= policy_decoding_requests) {
             const std::array decode{std::size_t{1}};
-            model.prepare_family(decode, false, 1, role, false, completion, sampling_index);
-            model.plan_replay_uses(1, 1, cache::add(decode_bound, restore_bound), role, completion, sampling_index);
+            model.prepare_family(decode, false, width, role, false, completion, sampling_index);
+            model.plan_replay_uses(1, width, cache::add(decode_bound, width == 1 ? restore_bound : 0), role, completion, sampling_index);
           }
         }
       }
-      if (!packed) {
+      if (!packed && !chunks.empty()) {
         model.prepare_family(chunks, false, width, role, false, completion, sampling_index);
         for (const auto &[tokens, uses] : entries) model.plan_replay_uses(tokens, width,
             cache::add(uses, width == 1 ? restore_bound : 0), role, completion, sampling_index);
@@ -7346,7 +7430,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   dispatch.reserve(dispatch_bound); dispatch_turns.reserve(dispatch_bound);
   std::vector<std::size_t> evictions; evictions.reserve(total_turns);
   std::size_t completed = 0, admitted = 0;
-  struct BatchObservation { std::size_t tokens; GraphRole role; bool generation; hyle::container::SmallVector<std::size_t, 2> members; };
+  struct BatchObservation {
+    std::size_t tokens, active_rows, physical_rows; GraphRole role; bool generation;
+    hyle::container::SmallVector<std::size_t, 2> members, input_rows;
+  };
   std::vector<BatchObservation> batches; batches.reserve(dispatch_bound);
   std::size_t actual_prefill_calls = 0, actual_decode_calls = 0;
   std::size_t actual_fresh_participations = 0, actual_fresh_target_rows = 0;
@@ -7379,15 +7466,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   };
   const auto observe_batch = [&](const GenerationBatchFacts &facts) {
     const auto participations = cache::add(actual_fresh_participations, facts.members.size());
-    const auto rows = cache::add(actual_fresh_target_rows, cache::multiply(facts.input_rows, facts.members.size()));
-    BatchObservation batch{facts.input_rows, facts.role, facts.generation, {}};
-    if (!batch.members.try_reserve(facts.members.size())) throw std::bad_alloc{};
+    auto rows = actual_fresh_target_rows;
+    BatchObservation batch{facts.input_rows, facts.active_rows, facts.physical_rows, facts.role, facts.generation, {}, {}};
+    if (!batch.members.try_reserve(facts.members.size()) || !batch.input_rows.try_reserve(facts.members.size()))
+      throw std::bad_alloc{};
     for (const auto &member : facts.members) {
       const auto key = member.request->request_key;
       if (!request_loop.matches(key) || key.slot >= requests.size() || &requests[key.slot] != member.request)
         throw std::runtime_error("actual batch fact lost its original request identity");
       batch.members.push_back(key.slot);
+      const auto member_rows = facts.generation ? facts.input_rows : member.ids().size();
+      batch.input_rows.push_back(member_rows); rows = cache::add(rows, member_rows);
     }
+    if (rows - actual_fresh_target_rows != facts.active_rows || facts.active_rows > facts.physical_rows)
+      throw std::logic_error("actual batch row facts differ from its submitted physical carrier");
     // All vectors have a cold bound from the maximum actual episode count.
     // Prepare the variable-width member storage before committing any report.
     if (batches.size() == batches.capacity() || facts.members.size() > dispatch.capacity() - dispatch.size() ||
@@ -7428,12 +7520,20 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
             calls[j].request->sampling_index == calls[first].request->sampling_index &&
             calls[j].generation == calls[first].generation && calls[j].role == calls[first].role &&
             calls[j].completion == calls[first].completion &&
-            calls[j].planned_rows() == calls[first].planned_rows();
+            (calls[j].planned_rows() == calls[first].planned_rows() ||
+             (!calls[first].full_hit && !calls[first].generation && calls[first].role == GraphRole::kText &&
+              model.prefill_capacity((std::max)(calls[j].planned_rows(), calls[first].planned_rows()),
+                  calls[first].completion, calls[first].request->sampling_index, 2)));
         }, [&](std::span<const std::size_t> selected) -> std::size_t {
           hyle::container::SmallVector<PreparedGenerationCall, 2> bucket;
           if (!bucket.try_reserve(selected.size())) throw std::bad_alloc{};
           for (auto j : selected) bucket.push_back(calls[j]);
-          while (bucket.size() > 1 && !bucket[0].full_hit && !make_generation_batch_room(model, prefix.get(), std::span(bucket.data(), bucket.size()), requests)) {
+          while (bucket.size() > 1 && !bucket[0].full_hit) {
+            const auto members = std::span(bucket.data(), bucket.size());
+            const bool unequal = std::ranges::any_of(members,
+                [&](const auto &call) { return call.ids().size() != bucket[0].ids().size(); });
+            if ((!unequal || generation_prefill_capacity(model, members)) &&
+                make_generation_batch_room(model, prefix.get(), members, requests)) break;
             bucket.pop_back();
           }
           std::cerr << "generation_batch requests=" << bucket.size() << " T=" << bucket[0].planned_rows()
@@ -7566,7 +7666,10 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         << ",\"generation\":" << (batch.generation ? "true" : "false") << ",\"session_ids\":[";
     for (std::size_t j = 0; j < batch.members.size(); ++j)
       std::cout << (j ? "," : "") << '"' << requests[batch.members[j]].id << '"';
-    std::cout << "]}";
+    std::cout << ']';
+    std::cout << ",\"input_rows\":[";
+    for (std::size_t j = 0; j < batch.input_rows.size(); ++j) std::cout << (j ? "," : "") << batch.input_rows[j];
+    std::cout << "],\"active_rows\":" << batch.active_rows << ",\"physical_rows\":" << batch.physical_rows << '}';
   }
   std::cout << "],\"sessions\":[";
   for (std::size_t i = 0; i < requests.size(); ++i) {

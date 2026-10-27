@@ -1,0 +1,357 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "11fa9c102",
+  "status": "Finite CPU/CUDA checks passed",
+  "scope": "Ordinary nonempty ragged prefill with common completion/sampler; original exact MTP/decode/relay contracts retained.",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 569890,
+      "sha256": "e8007b057cffdab83143213a8eddf2b77da816e0147cac74c75f438af25d82b6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_packed_prefill_case.h",
+      "bytes": 14924,
+      "sha256": "e3a1ef50fafded75f2ebad6653aedd7c20d5266032005360c925d262b4c5e5da"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_ragged_prefill_case.h",
+      "bytes": 14995,
+      "sha256": "7fc573611819b7f6147a5535c0edb5aa2efd856847754b9c3a88cb5696d7b826"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 2999,
+      "sha256": "90914219ce80168ef3b08abbfd6e23dcec825e4100abb4379718fb227777b870"
+    }
+  ],
+  "implementation": [
+    "Per-member Li and compact row start, actual A=sum(Li), physical R=B*C remain separate throughout original prepare/layout/append/state/commit/ledger/observer.",
+    "Same public prepared query-offset lease and original Store/Append transactions; no new executor, queue or permission ledger.",
+    "Natural grouping selects an admitted shared capacity for unequal Li; exact decode/MTP/relay retain their original gates.",
+    "B2 raw histories use checked Gather from original activation bytes; last IDs use each true query endpoint."
+  ],
+  "tiny": {
+    "cpu": {
+      "status": "PASS",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ragged-prefill-20261028\\tiny-cpu-run\\report.json",
+        "bytes": 8274,
+        "sha256": "8496530f312cce0558b54ca286e543f468e8edde2e2c0f7f2152a05bc70e9c94"
+      },
+      "orders": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "lengths": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "actual_rows": 22,
+      "physical_rows": 64,
+      "committed_rows": 21,
+      "cancelled_rows": 1,
+      "peer_decode_rows": 1,
+      "payloads_byte_equal": false,
+      "maximum_absolute_gdn_error": 4.65661e-10,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "retirement_deferred": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    },
+    "cuda": {
+      "status": "PASS",
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ragged-prefill-20261028\\tiny-cuda-run\\report.json",
+        "bytes": 8270,
+        "sha256": "8c3ef59893175141c37ca001a6e2b3336f2b6978b53ad2ea162555cd832dedb2"
+      },
+      "orders": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "lengths": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "actual_rows": 22,
+      "physical_rows": 64,
+      "committed_rows": 21,
+      "cancelled_rows": 1,
+      "peer_decode_rows": 1,
+      "payloads_byte_equal": false,
+      "maximum_absolute_gdn_error": 4.65661e-10,
+      "old_checkpoints_byte_unchanged": true,
+      "rng_and_epochs_equal": true,
+      "retirement_deferred": true,
+      "final_versions": 0,
+      "final_images": 0,
+      "final_native_episodes": 0
+    }
+  },
+  "r1_regression": {
+    "backend": "cuda",
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ragged-prefill-20261028\\tiny-r1-cuda-run\\report.json",
+      "bytes": 5610,
+      "sha256": "297712480b0c41688a56a76f5c78fdb31cf8afd0db3d4125ee265f45db1c2618"
+    },
+    "status": "PASS"
+  },
+  "real_cli": {
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ragged-prefill-20261028\\bin\\model.exe",
+      "bytes": 142660608,
+      "sha256": "26e98e472bbd5c7a64eae429df3606ce83cb0df558fe5417de70e4b71abcd5e1"
+    },
+    "report": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-ragged-prefill-20261028\\cli-natural-run\\report.json",
+      "bytes": 28092,
+      "sha256": "21f41b0c15e9d73a19db7d1f371e0d079f8fdc444e6b38d079c736bb0df6b808"
+    },
+    "initial_batch": {
+      "index": 0,
+      "requests": 2,
+      "tokens": 154,
+      "role": 0,
+      "generation": false,
+      "session_ids": [
+        "A",
+        "B"
+      ],
+      "input_rows": [
+        154,
+        37
+      ],
+      "active_rows": 191,
+      "physical_rows": 308
+    },
+    "subsequent_batches": [
+      {
+        "index": 1,
+        "requests": 2,
+        "tokens": 1,
+        "role": 0,
+        "generation": true,
+        "session_ids": [
+          "A",
+          "B"
+        ],
+        "input_rows": [
+          1,
+          1
+        ],
+        "active_rows": 2,
+        "physical_rows": 2
+      },
+      {
+        "index": 2,
+        "requests": 2,
+        "tokens": 1,
+        "role": 0,
+        "generation": true,
+        "session_ids": [
+          "A",
+          "B"
+        ],
+        "input_rows": [
+          1,
+          1
+        ],
+        "active_rows": 2,
+        "physical_rows": 2
+      },
+      {
+        "index": 3,
+        "requests": 2,
+        "tokens": 1,
+        "role": 0,
+        "generation": true,
+        "session_ids": [
+          "A",
+          "B"
+        ],
+        "input_rows": [
+          1,
+          1
+        ],
+        "active_rows": 2,
+        "physical_rows": 2
+      }
+    ],
+    "cold_exact_admissions": 0,
+    "generated_ids": {
+      "A": [
+        71093,
+        12305,
+        198,
+        464
+      ],
+      "B": [
+        279,
+        1879,
+        1103,
+        13
+      ]
+    },
+    "logical_prefill_rows": 191,
+    "physical_prefill_rows": 308,
+    "performance_claim": false
+  },
+  "numerical_contract": "Only newly recomputed finite F32 GDN payloads use existing FP64 component absolute budget3e-6; other state/history/KV/hidden, old snapshots, boundaries and RNG remain strict. No full-model FP64 or quality claim.",
+  "static_quantization_review": {
+    "actual_runtime_checks": false,
+    "findings": [
+      "FlashInfer and ggml attention clear authorized inactive output suffix after native success.",
+      "Reviewed norm, CT channel/token/block128, static FP8, NVFP4 and GroupedFloat4 scaling is row-local or uses stored scales.",
+      "ggml Q4 adapter adds no cross-row scaling; cached upstream kernels were read, not exhaustively retraced against every binary branch."
+    ],
+    "limits": "Bad padding can still set a shared numeric failure in quantization; row-local math alone does not establish harmless padding. This review does not prove every dtype/provider combination."
+  },
+  "processes": [
+    {
+      "relative": "cli-natural-run\\process.json",
+      "pid": 5528,
+      "exit": 0,
+      "started": 1793130296.9236972,
+      "seconds": 2.7410435676574707,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "link\\model\\process.json",
+      "pid": 53812,
+      "exit": 0,
+      "started": 1793130266.4183583,
+      "seconds": 1.7543394565582275,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "link\\tiny\\process.json",
+      "pid": 58812,
+      "exit": 0,
+      "started": 1793130263.7185829,
+      "seconds": 1.7719216346740723,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "logs\\model\\process.json",
+      "pid": 61804,
+      "exit": 0,
+      "started": 1793130196.0927126,
+      "seconds": 27.91205668449402,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "logs\\tiny\\process.json",
+      "pid": 15532,
+      "exit": 0,
+      "started": 1793130214.6942935,
+      "seconds": 28.987875938415527,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "tiny-cpu-run\\process.json",
+      "pid": 43064,
+      "exit": 0,
+      "started": 1793130283.0364177,
+      "seconds": 0.7909910678863525,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "tiny-cuda-run\\process.json",
+      "pid": 51632,
+      "exit": 0,
+      "started": 1793130283.8415675,
+      "seconds": 0.8177034854888916,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    {
+      "relative": "tiny-r1-cuda-run\\process.json",
+      "pid": 27320,
+      "exit": 0,
+      "started": 1793130481.2363124,
+      "seconds": 0.7711391448974609,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  ],
+  "cost": {
+    "CXX": 2,
+    "links": 2,
+    "consumer_processes": 4,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "remaining": [
+    "MTP effective-length prefill including true shift/lag and independent draft offsets",
+    "Apple/Vulkan compilation and native checks",
+    "Full quantized/provider feature combinations and current speed/memory A/B"
+  ],
+  "performance": "No refreshed performance comparison. R/A work and original process times remain in raw reports; fewer graph calls are not a speed claim."
+}

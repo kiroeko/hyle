@@ -3,6 +3,7 @@
 #include "qwen_state_reuse_case.h"
 #include "qwen_mtp_batch_state_case.h"
 #include "qwen_packed_prefill_case.h"
+#include "qwen_ragged_prefill_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
@@ -11,9 +12,10 @@ int main(int argc, char **argv) {
     const bool state_reuse = argc >= 3 && std::string_view(argv[argc - 1]) == "--state-reuse";
     const bool mtp_batch_state = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-batch-state";
     const bool packed_prefill = argc >= 3 && std::string_view(argv[argc - 1]) == "--packed-prefill";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill);
+    const bool ragged_prefill = argc >= 3 && std::string_view(argv[argc - 1]) == "--ragged-prefill";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -41,7 +43,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return packed_prefill ? qwen_packed_prefill_case::run(input, backend)
+    return ragged_prefill ? qwen_ragged_prefill_case::run(input, backend)
+           : packed_prefill ? qwen_packed_prefill_case::run(input, backend)
            : mtp_batch_state ? qwen_mtp_batch_state_case::run(input, backend)
            : state_reuse ? qwen_state_reuse_case::run(input, backend)
            : lagged ? qwen_host_image_case::run_lagged(input, backend)

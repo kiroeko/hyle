@@ -105,10 +105,33 @@ inline void compare(q::Model &model, const h::ImageBytes &a, const h::ImageBytes
 
 inline void check_old(q::Model &model, q::cache::SnapshotRef prefix, const h::ImageBytes &before,
     const std::shared_ptr<hyle::inference::HostStateStorage> &storage) {
-  const std::array cold{std::size_t{8}};
-  auto reader = model.create_session(prefix->length ? std::span<const std::size_t>{} : std::span(cold), prefix);
+  // An empty or state-only prefix has no next token yet. Admit a normal
+  // one-row future plan without executing it; do not ask the complete-prefix
+  // shortcut (which deliberately requires a valid pending output) to adopt it.
+  const std::array cold{std::size_t{1}};
+  const bool planned = !prefix->length || prefix->next_id < 0;
+  auto reader = model.create_session(planned ? std::span(cold) : std::span<const std::size_t>{}, prefix);
   h::same_image(before, capture(model, *reader, storage));
   h::retire(reader);
+}
+
+inline void write_step(const StepReport &report) {
+  std::cout << "{\"sequence\":" << report.sequence << ",\"prefix\":" << report.prefix
+      << ",\"active_rows\":" << report.active << ",\"physical_rows\":" << report.physical
+      << ",\"prefill\":" << (report.prefill ? "true" : "false") << ",\"epoch\":" << report.epoch
+      << ",\"exact_next\":" << report.exact_next << ",\"bucket_next\":" << report.bucket_next
+      << ",\"boundary_equal\":" << (report.boundary_equal ? "true" : "false")
+      << ",\"payloads_byte_equal\":" << (report.payloads_equal ? "true" : "false")
+      << ",\"numerically_equivalent\":" << (report.numerically_equivalent ? "true" : "false") << ",\"differences\":[";
+  for (std::size_t i = 0; i < report.differences.size(); ++i) {
+    const auto &part = report.differences[i];
+    std::cout << (i ? "," : "") << "{\"role\":" << static_cast<int>(part.layout.role)
+        << ",\"layer\":" << part.layout.layer << ",\"page\":" << part.layout.page
+        << ",\"bytes\":" << part.layout.bytes << ",\"first_byte\":" << part.first_byte
+        << ",\"different_bytes\":" << part.different_bytes << ",\"maximum_absolute\":" << part.maximum_absolute
+        << ",\"maximum_relative\":" << part.maximum_relative << ",\"nonfinite_differences\":" << part.nonfinite_differences << '}';
+  }
+  std::cout << "]}";
 }
 
 inline int run(const std::filesystem::path &input, q::BackendKind kind) {
@@ -198,22 +221,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   for (std::size_t at = 0; at < reports.size(); ++at) {
     const auto &report = reports[at]; equal = equal && report.numerically_equivalent;
     byte_equal = byte_equal && report.payloads_equal;
-    std::cout << (at ? "," : "") << "{\"sequence\":" << report.sequence << ",\"prefix\":" << report.prefix
-        << ",\"active_rows\":" << report.active << ",\"physical_rows\":" << report.physical
-        << ",\"prefill\":" << (report.prefill ? "true" : "false") << ",\"epoch\":" << report.epoch
-        << ",\"exact_next\":" << report.exact_next << ",\"bucket_next\":" << report.bucket_next
-        << ",\"boundary_equal\":" << (report.boundary_equal ? "true" : "false")
-        << ",\"payloads_byte_equal\":" << (report.payloads_equal ? "true" : "false")
-        << ",\"numerically_equivalent\":" << (report.numerically_equivalent ? "true" : "false") << ",\"differences\":[";
-    for (std::size_t i = 0; i < report.differences.size(); ++i) {
-      const auto &part = report.differences[i];
-      std::cout << (i ? "," : "") << "{\"role\":" << static_cast<int>(part.layout.role)
-          << ",\"layer\":" << part.layout.layer << ",\"page\":" << part.layout.page
-          << ",\"bytes\":" << part.layout.bytes << ",\"first_byte\":" << part.first_byte
-          << ",\"different_bytes\":" << part.different_bytes << ",\"maximum_absolute\":" << part.maximum_absolute
-          << ",\"maximum_relative\":" << part.maximum_relative << ",\"nonfinite_differences\":" << part.nonfinite_differences << '}';
-    }
-    std::cout << "]}";
+    std::cout << (at ? "," : ""); write_step(report);
   }
   std::cout << "],\"old_checkpoints_byte_unchanged\":true,\"rng_and_epochs_equal\":true,\"final_versions\":0"
       << ",\"payloads_byte_equal\":" << (byte_equal ? "true" : "false")

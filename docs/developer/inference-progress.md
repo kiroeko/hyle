@@ -1,16 +1,16 @@
 # 推理底座进度
 
-更新：2026-10-28 03:30（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 03:50（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约68%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约69%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：普通R1有效长度prefill已接通并完成有限检查。** CPU／CUDA小模型、真实2B分块／取消／重建及正常CLI冷计划均已运行。下一步是不同长度合批和MTP prefill；本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%。共同执行编排、GPU热点与MTP设备后继仍未完成。
+**当前位置：普通异长prefill已接入原批次路径。** CPU／CUDA状态旅程与真实2B的A154／B37自然合批已通过，下一步接MTP真实shift／lag并共用输入行准备。本批未刷新性能对照，最近跨引擎窗口中MTP decode仍慢约7.4%／5.5%；共同执行编排、GPU热点与MTP设备后继仍未完成。
 
 ## 任务树
 
-- 功能与工程边界：约87%（进行中）
+- 功能与工程边界：约88%（进行中）
   - 冷形状、取消、背压及完整会话换出换入：100%（本批完成）
-  - 有效长度／varlen prefill：约70%（普通R1完成有限检查，MTP／异长合批未接）
+  - 有效长度／varlen prefill：约78%（普通R1／异长合批完成有限检查，MTP及其它组合未齐）
   - 特性组合与分类错误：约75%（待穷尽复查）
   - CPU路由覆盖与成本事实：约30%（待继续）
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
@@ -45,13 +45,14 @@
 
 ## 正在做
 
-- **不同长度合批接线**｜所属：功能与工程边界／有效长度prefill｜约10%。已明确复用原prepare／Store／Append流程；继续把单一tokens假设改为每成员Li，并保持紧凑offset、历史尾部与真实提交量。
+- **MTP有效长度prefill**｜所属：功能与工程边界／有效长度prefill｜约10%。沿原target Li／draft Li＋lag和原shift／repair合同接线，先处理R1；MTP异长hidden移位仍需单独补齐。
+- **共用输入行准备**｜所属：共同执行架构／准备路径统一｜约10%。抽离目标与draft共有的有界整数几何，保留原Batch镜像、权限与提交所有权。
 
-刚完成：公开原Batch I32 offset子权限；普通R1同一R8处理L1／3／8。真实2B的P154按64＋64＋26消费，完整取消／重建状态和旧快照核对通过；正常CLI只准备3个形状，ready后exact接纳为0。两算法的F32 GDN最大绝对差4.66×10⁻¹⁰，沿既有3×10⁻⁶预算检查，其它payload及RNG等边界仍严格核对。原失败均保留。真实旅程304行提交对应514物理行，取消64与重建64另记，不能据提交数减少宣称提速；Apple／Vulkan未编测。[本批数据](../evidence/correctness/inference-prefill-integration-2026-10-28.json)
+刚完成：普通异长prefill直接使用原prepare／Store／Append。CPU／CUDA四批覆盖StateOnly、成员换序和已提交批次的单成员取消：22行接纳／64物理行／21行提交，幸存者继续T1，旧快照和资源退休核对通过。真实2B首次自然合批为[154,37]／A191／R308，随后三次双成员decode，ready后exact接纳为0；原R1 CUDA旅程也通过。F32 GDN差异仍≤4.66×10⁻¹⁰，其它payload严格核对。本批无新性能窗，Apple／Vulkan未编测，不代表所有量化组合已验证。[本批数据](../evidence/correctness/inference-ragged-prefill-2026-10-28.json)
 
 ## 接下来
 
-1. 将有效长度prefill扩展到不同Li合批及MTP的shift／lag；复用原执行路径，继续收敛共同边界。
+1. 将有效长度prefill扩展到MTP的shift／lag，共用有界输入行准备；补实际适用组合，继续收敛共同边界。
 2. 保留M1原路径，评估a/b在整模型中的收益；处理普通真实载体、跨轮预热，并补当前跟踪及A/A。
 3. 推进MTP设备后继、词表候选与更深GPU融合／带宽优化。
 
