@@ -60,5 +60,10 @@ struct ResourceReadyInput final {
   ValueId input{};
   compute::ConstTensorView tensor{};
   compute::ReadLease read{};
+  // Exactly one of input or region identifies the original ready control.
+  // Private controls belong to the selected region itself, not a synthetic
+  // Graph input. Their actual guard is re-queried at bind/prepare/submit.
+  NodeId region{};
+  std::uint32_t ordinal = 0;
 };
 } // namespace hyle::graph::detail

@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 09:41（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **95%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批显式metadata的真实CUDA KV读取接力及Paged发布桥通过26项定向检查；剩余重点是KV／索引融合读取接力、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 09:52（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **95%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批补通owned-layout的真实私有metadata控制，12项CUDA定向检查通过；KV分支约35%→40%。剩余重点是后继KV追加／索引融合读取、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -30,10 +30,10 @@
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
 - 重叠执行与完整性能对照：约60%（实现中）
   - 原Graph在途设备token与既有capture接力：100%（单Queue固定I32／Store及真实Hybrid生产者与消费者通过有限CUDA检查）
-  - 有界槽轮换与完整状态pending权限：约55%（实现中）
+  - 有界槽轮换与完整状态pending权限：约57%（实现中）
     - 共同提交事实与独立块读凭据：100%（本批有限检查通过）
     - Store到受检Gather的在途读接线：100%（单共享Queue有限CUDA检查通过）
-    - KV／索引融合读取及有界槽轮换：约35%（显式metadata的KV读取／fresh发布已有限检查；owned入口／后继append／融合读取／轮换未完成）
+    - KV／索引融合读取及有界槽轮换：约40%（显式及owned metadata的KV读取／fresh发布已有限检查；后继append／融合读取／轮换未完成）
   - CPU提前准备与引擎有序发布：约30%（普通多成员整数准备通过有限CUDA检查；有序后继及MTP修复未接）
   - CPU／GPU／混合参考与完整四项对照：约25%（CUDA普通／MTP最新四臂完成，其它工况仍待完成）
 - 遗漏复查与资料收敛：约25%（进行中）
@@ -42,13 +42,13 @@
 
 ## 正在做
 
-- KV接力余项：约35%（所属：完整状态pending权限；补owned-layout私有controls及pending previous→后继append／COW，当前真实B仅只读attention）。
-- 索引融合读取接力设计：约5%（所属：完整状态pending权限；原目的交易与前驱精确源票据／IDs的组合仍未接实际GDN／conv后继）。
-- 完整模型接力设计：约25%（所属：重叠执行；token完整writer／形状、有界候选、有序发布与冷元数据预算仍待接通）。
+- KV后继追加接线：约10%（所属：完整状态pending权限；已明确原effect读取依赖、不同fresh页COW及A真发布后的ready继承合同，开始准备实现；当前真实B仍仅只读attention）。
 
 剩余大项包括完整状态接力、重叠执行、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
 ## 本批结果与下一步
+
+[内部布局元数据接力](../evidence/correctness/inference-paged-owned-source-2026-10-27.json)通过同一CUDA进程12项检查，含原10项Source回归及显式／owned布局两条完整KV读取旅程。owned节点仅Q／K／V三端口，真实mirror guard沿原selected region导出，bind／prepare／submit逐项复核，原native read按root冷去重接纳；未造输入或执行器。前驱pending时后继0新增／1复用捕获，A退休而B仍读时原交易可take和受检发布，BF16结果及旧prefix保持。末项非法ordinal整束拒绝后正常束仍可绑定；同layout可准备，换页ID被guard阻止且原metadata字节不变。共4个不同C++单元、2次链接、1个实际测试进程；首次增量配方漏算容器元素布局变化的append单元，首镜像未运行，补编时复用其余3对象。无SDK／NVCC重建或下载。后继append／COW、索引融合、连续完整模型流水和新速度仍未完成。
 
 [首批KV真实接力](../evidence/correctness/inference-paged-submission-source-2026-10-27.json)在同一进程通过26项检查。新增CUDA旅程中，A的K／V两资源各含ready2／full3／append1，含真实COW；B用不同query_indptr和原显式ready metadata，只在A前预录，A仍pending时复用原捕获（0新增／1复用），source／device-wait各1。A真实退休而B仍读时，原bulk take返回交易，K沿delta提交WorkingFrame，V沿ready及重试发布；BF16 attention精确得到两请求的0.5／1.0，原快照和新页前缀正确。三项Paged合同另核fresh发布、旧full票据晚接纳拒绝、非法ticket／行数／旧页和append失败回滚。9个C++单元、1次链接、1进程均首次成功，复用224链接输入并新增2测试对象；无SDK／NVCC重建或下载。CMake头归属目录检查通过；辅助检查配方先有三次模式／选项错误，未重复C++或GPU测试。本片未接owned-layout／delegated入口，B也未从pending前驱继续append／COW；索引融合、完整模型流水及新速度仍未完成。
 

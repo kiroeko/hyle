@@ -38,6 +38,20 @@ struct RegionCaptureBindingsVTable final {
   bool (*preserves_private_arguments)(void *prepared,
                                       void *invocation) noexcept = nullptr;
 };
+// The actual ready control of an exact selected slot (for example a private
+// layout mirror). Pure cold query only: no replacement, work or admission.
+// Retaining the returned guard prevents that original control from being
+// rewritten until every admitted reader has really retired.
+inline constexpr compute::ProviderExtensionId kRegionReadyControlExtensionId{
+    0x48594c4552435452ULL, 0x4f4c524541445901ULL, 1};
+struct RegionReadyControl final {
+  compute::ConstTensorView tensor;
+  compute::ReadLease read;
+};
+struct RegionReadyControlVTable final {
+  Result<RegionReadyControl> (*inspect)(const ProviderRegionPrepared &,
+      void *invocation, std::uint32_t ordinal) noexcept = nullptr;
+};
 // Optional cold interface of the exact selected prepared artifact. It inspects the real
 // compiled region, including private imports/lowering, rather than Graph math.
 inline constexpr compute::ProviderExtensionId kRegionProjectedReadExtensionId{
@@ -216,6 +230,11 @@ struct RegionAccess final {
   // or creating transfer state. Published inputs are not configuration ports.
   HYLE_GRAPH_API static Result<mem::MemoryResourceRef> input_resource(
       const Executable &, ValueId) noexcept;
+  // Pure query through the immutable Plan's exact selected region and actual
+  // slot, under the caller's ordinary Invocation synchronization. It returns
+  // real ready authority; no Graph input, copy or execution is manufactured.
+  HYLE_GRAPH_API static Result<RegionReadyControl> ready_control(
+      const InvocationState *, NodeId, std::uint32_t ordinal) noexcept;
   // Borrowed inspection does not invalidate recordings. An adapter changing
   // native configuration must first invalidate_commands for the selected step.
   HYLE_GRAPH_API static Status visit(const Executable&,RegionAccessFn,void*) noexcept;

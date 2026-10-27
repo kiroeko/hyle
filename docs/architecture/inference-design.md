@@ -191,7 +191,10 @@ token、Store和资源视图沿原唯一bundle／terminal table／proxy／Queue�
 `graph::batch::detail::PagedAppendSource`负责原arena／layout／物理page前缀的数学解释，
 Graph只管理具体读凭据和原selected-reader资格，不反向依赖GraphBatch。其installed detail头归GraphBatch产品。
 后继query_indptr可不同，但每个KV页的最大所需前缀必须由前驱实际来源覆盖。
-显式metadata仍归原configuration，bundle另持真实ready guard并在prepare／submit复核block、generation及完整范围。
+显式metadata仍归原configuration；owned-layout则由原selected region的冷query导出实际mirror的tensor与ready guard，
+不增加虚构Graph输入。bundle在bind／prepare／submit逐项复核同一实际region、原block、generation及完整范围；
+私有controls按真实root冷去重并计入原权限容量，在原LeaseUseBatch接纳read。保留guard会阻止mirror.try_write，
+实际carrier改变仍须先走原before-command-change及capture参数校验；Prepared路径同样核guard。
 fresh转换和已有尾页推进都先核整图成功、原交易及真实写退休，再沿Compute/Paged原池发布；
 前驱源关闭后仍保原whole verdict。fresh转换后旧full ticket不再接纳新读，已有读者可正常退休；
 后来的读者须用真正发布的bounded ReadLease。原public publish、reserve及rollback门保持。
@@ -199,8 +202,13 @@ fresh转换和已有尾页推进都先核整图成功、原交易及真实写退
 [首批真实CUDA检查](../evidence/correctness/inference-paged-submission-source-2026-10-27.json)覆盖两份KV资源共用一次来源、
 ready／fresh／已有尾页／真实COW、不同query布局、0新增录制的后继读取，以及后继仍读时take／delta提交／ready重试。
 三项Paged资源检查另覆盖非法ticket／行数／旧页、失败frontier和真实读退休。
-当前只接显式metadata的shared Queue reader；owned-layout私有controls及delegated路径仍待补，不能造ready frame绕过。
+[owned-layout补充检查](../evidence/correctness/inference-paged-owned-source-2026-10-27.json)中两种实际shared Queue reader同镜像通过，
+非法末控制项整束拒绝后原束仍可绑定；owned节点仅Q／K／V三端口。相同layout仍可准备，改page IDs被真实mirror guard拒绝，
+原metadata全部字节不变；未推证失败后原capture仍可复用。delegated路径仍待补，不能造ready frame绕过。
 此处B只读attention；完整下一步decode还要从pending前驱构造append／COW previous，当前构造仍要求ready足迹。
+下一片按原资源effect登记B真正的旧prefix读依赖，与token／state／KV共用一个Source和原子bundle，不能寄生无用input。
+pending前驱的尾权仍封存，B先用原arena的不同fresh页COW；继承的未改页须等A真实发布后取得真ready guards，
+不能将票据冒充ready。连续B→C的票据继承及同尾有序写仍需分别接线。
 完整模型、连续轮换及吞吐尚未验证，不能把本片当作KV流水完成。
 
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。

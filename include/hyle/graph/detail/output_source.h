@@ -65,8 +65,9 @@ struct OutputBinding final {
 // Store graph is borrowed for this cold call to prove the actual checked
 // Gather input/ID association, then discarded; no provider-name inference.
 // Resource entries supply their exact selected projected readers. Required
-// ready inputs remain owned by the original configuration and are rechecked
-// before prepare/submit; they are never replaced with pending attachments.
+// ready controls remain owned by the original configuration or selected
+// region and are rechecked before prepare/submit; they are never replaced
+// with pending attachments or represented by synthetic inputs.
 // Subsequent calls supply this same ordered bundle; the span is never retained.
 HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Prepared nonblocking Commands or complete existing capture reuse. The full

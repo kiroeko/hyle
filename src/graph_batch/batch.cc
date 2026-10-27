@@ -106,6 +106,26 @@ const gd::RegionCaptureBindingsVTable capture_bindings{
         s.program.schema().mla_layout()==r.mla && s.queue.is_open() &&
         s.token.generation()==s.layout.generation() && !s.native.in_flight();
   }};
+const gd::RegionReadyControlVTable ready_controls{
+  [](const ProviderRegionPrepared&prepared,void*invocation,
+      std::uint32_t ordinal)noexcept->Result<gd::RegionReadyControl>{
+    if(!prepared.state || !invocation || ordinal!=0)
+      return std::unexpected(Status::InvalidArgument("shared batch ready control needs its original metadata ordinal"));
+    const auto&r=*static_cast<const Region*>(prepared.state);const auto&s=*static_cast<const Slot*>(invocation);
+    if(r.metadata.valid() || !r.initial_layout.valid())
+      return std::unexpected(Status::Unimplemented("explicit batch metadata remains an owned Graph input"));
+    if(s.region!=&r || !s.native.valid() || !s.program.valid() || !s.token.valid() ||
+        !s.layout.valid() || !s.program.schema().owns(s.layout) ||
+        s.program.schema().capacity()!=r.capacity || s.program.schema().mla_layout()!=r.mla ||
+        s.token.generation()!=s.layout.generation() || !s.queue.is_open() || s.native.in_flight())
+      return std::unexpected(Status::FailedPrecondition("owned batch metadata has no current prepared slot"));
+    HYLE_ASSIGN_OR_RETURN(auto ready,cd::BatchGraphAccess::metadata(s.native));
+    HYLE_ASSIGN_OR_RETURN(auto description,s.layout.origin_schema().metadata_description());
+    HYLE_ASSIGN_OR_RETURN(auto tensor,ready.tensor(description));
+    if(tensor.storage().resource()!=r.resource)
+      return std::unexpected(Status::InvalidArgument("owned batch metadata differs from its selected native resource"));
+    return gd::RegionReadyControl{tensor,std::move(ready)};
+  }};
 const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_region,.alias_support=&alias,.create_invocation=&create_slot,.destroy_invocation=&destroy_slot,.shared_submit=&submit_region,
   .seal_bindings=[](void*prepared,void*invocation)noexcept->Status{
     const auto&r=*static_cast<const Region*>(prepared);
@@ -118,6 +138,7 @@ const ProviderRegionPreparedVTable region_table{.destroy_prepared=&destroy_regio
   },
   .query_extension=[](void*,c::ProviderExtensionId id)noexcept->const void*{
     if(id==gd::kRegionCaptureBindingsExtensionId)return &capture_bindings;
+    if(id==gd::kRegionReadyControlExtensionId)return &ready_controls;
     return id==gd::kRegionProjectedReadExtensionId?&projected_table:nullptr;
   }};
 struct BatchGeometry final {
@@ -1122,13 +1143,12 @@ Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId ba
   for(const auto&native:p->native_regions)
     if(std::find(native.inputs.begin()+1,native.inputs.end(),bank)!=native.inputs.end())
       return std::unexpected(Status::Unimplemented("Graph submission page sources require an actual shared Queue reader"));
-  try{for(const auto*slot:p->frame_slots){const auto&r=*slot->region;const auto&s=*slot;
+  try{for(auto*slot:p->frame_slots){const auto&r=*slot->region;const auto&s=*slot;
     const bool key=r.values[1]==bank,value=has_value_port(r) && r.values[2]==bank;
     if(!key && !value)continue;
-    // This first submission-source bridge proves the actual readonly layout
-    // through its original configuration lease on every prepare/submit. An
-    // owned-layout node has private mutable metadata, not such a ready input.
-    if(!r.metadata.valid())return std::unexpected(Status::Unimplemented("pending append reader needs its explicit owned metadata input"));
+    // Both contracts retain the actual ready layout mirror. Explicit ports
+    // keep their original Graph configuration; owned-layout nodes qualify
+    // their selected private control without manufacturing another input.
     const auto role=key?(r.mla==c::MlaCacheLayout::kNone?c::BatchCacheRole::kKey:c::BatchCacheRole::kMla):c::BatchCacheRole::kValue;
     if(facts.role!=role || facts.storage!=(key?r.capacity.key_storage:r.capacity.value_storage) ||
         r.capacity.storage!=c::BatchStorage::kPaged || s.layout!=layout || !s.token.valid() || !s.queue.is_open() ||
@@ -1144,6 +1164,12 @@ Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId ba
         return std::unexpected(Status::FailedPrecondition("pending page reader has no exact owned ready metadata"));
       HYLE_ASSIGN_OR_RETURN(auto tensor,ready->ready.tensor(ready->description));
       metadata.push_back({r.metadata,tensor,ready->ready});
+    }else{
+      const auto existing=std::ranges::find(metadata,r.node,&gd::ResourceReadyInput::region);
+      if(existing!=metadata.end())continue;
+      HYLE_ASSIGN_OR_RETURN(auto control,ready_controls.inspect(
+          ProviderRegionPrepared{&region_table,slot->region},slot,0));
+      metadata.push_back({.tensor=control.tensor,.read=std::move(control.read),.region=r.node,.ordinal=0});
     }
   }}catch(...){return std::unexpected(Status::ResourceExhausted("pending append reader cold proof metadata"));}
   if(proofs.empty())return std::unexpected(Status::Unimplemented("pending append bank has no selected shared page reader"));

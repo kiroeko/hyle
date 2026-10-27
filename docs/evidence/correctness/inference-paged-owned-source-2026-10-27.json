@@ -1,0 +1,486 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Original CUDA PagedAppend Source to attention using explicit or private owned-layout metadata; finite submission, permission and publication checks.",
+  "environment": {
+    "platform": "Windows",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "evidence": "Actual run/stderr.log; no new hardware query or exclusive-clock claim."
+  },
+  "build": {
+    "CXX_TUs": 4,
+    "compile_attempts": 4,
+    "links": 2,
+    "images_built": 2,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "baseline_input_count": 233,
+    "final_input_count": 233,
+    "retained_inputs": 229,
+    "replaced_inputs": 4,
+    "compiled": [
+      {
+        "name": "resources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2495859,
+          "sha256": "27b17b9c4d652198678fb7c7755680ec01e703047dbf20d6abe7c8dff67c13c9"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 51940,
+          "seconds": 3.279779000033159
+        }
+      },
+      {
+        "name": "batch",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\compile\\batch\\unit.obj",
+          "bytes": 2367412,
+          "sha256": "208fe490bd913e203e89657cfd57efe8bdce41853739272e1ab1b6d3fc69e4d7"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 54084,
+          "seconds": 2.9414945999742486
+        }
+      },
+      {
+        "name": "paged-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1200897,
+          "sha256": "d9735ad0cdf9f914e00f4122dd56e7756b1791c16867c97e519e71aa505fa439"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 53504,
+          "seconds": 5.151152000005823
+        }
+      },
+      {
+        "name": "append",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\compile\\append\\unit.obj",
+          "bytes": 2153920,
+          "sha256": "68c4fdd012e7a5001fbc87d2b006d305c542f38b304ef78ea475049854498d60"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 41176,
+          "seconds": 2.5714578999904916
+        }
+      }
+    ],
+    "final_link": {
+      "exit": 0,
+      "pid": 52076,
+      "seconds": 1.8725083999452181
+    },
+    "first_link": {
+      "exit": 0,
+      "pid": 42740,
+      "seconds": 1.8603514000424184
+    },
+    "closure_correction": "ResourceReadyInput gained private region/ordinal fields. The first link omitted the TU owning its typed Source vector. That image was never run; paged_append.cc was compiled once and linked with the same first three successful objects.",
+    "first_image_not_run": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\bin\\paged-source-test.exe",
+      "bytes": 145585664,
+      "sha256": "d117cb4a9089b6b2fcac0d05f1c4c98e02663bf0d4b157f8e55acb54d90457d6"
+    },
+    "final_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-owned-source-20261027\\bin\\owned-source-test.exe",
+      "bytes": 145585664,
+      "sha256": "ca7b37160836793dc1b5718a8b2a0ac6e9e3195d891c5cded6d057cec35eaf16"
+    }
+  },
+  "run": {
+    "exit": 0,
+    "pid": 17508,
+    "seconds": 0.6093394000199623,
+    "gtest_timestamp": "2026-10-27T09:51:50.218",
+    "tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+      "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+      "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource"
+    ]
+  },
+  "checked": [
+    "Explicit-metadata and three-port owned-layout attention both reuse the original pre-recorded CUDA range while producer A remains pending: zero new recordings, one reused range, one Source/device wait and zero host waits.",
+    "Owned ready controls name the original selected region, with no synthetic Graph input. A complete two-entry bundle with its final private ordinal set to UINT32_MAX is rejected; the unchanged original bundle then binds successfully.",
+    "A retires and detaches; original append transactions are taken and exact fresh/tail prefixes are published while B remains pending. Successor reserve remains blocked by the admitted reader.",
+    "Attention BF16 values, exact changed pages and old COW/prefix bytes are checked. Retry publication retains original ready results.",
+    "After B and its result retire, the same owned layout remains preparable; a same-geometry changed-page-ID layout is refused by the original mirror guard, whose complete bytes remain unchanged.",
+    "Ten retained token/Store/Hybrid Source cases also pass in the same final process."
+  ],
+  "failures": {
+    "failed_compile_link_or_test_processes": 0,
+    "expected_negative_checks_are_not_process_failures": true,
+    "unexecuted_first_image_and_closure_correction_preserved": true
+  },
+  "not_checked": [
+    "Successor B append or indexed-state path",
+    "Complete Qwen/model execution or task quality",
+    "New performance or speedup",
+    "Other operating systems/backends",
+    "Injected driver faults"
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 206465,
+      "sha256": "f895e7af164f1b21c32d0723f6461f8c4beda52a4d65a67daec25f121767cfd9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 100831,
+      "sha256": "c40939aa576e13c74fca72563580e62ea0411b650180981e3bfb082607395d8d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 20799,
+      "sha256": "dcef63dfe55796a506d9833eeb3b268847165a38409b35fe0d693c04402ff4f1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 23795,
+      "sha256": "4a106f754707462237005f0b2a169a320cef2511388951d92b2710a380726731"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\resource_source.h",
+      "bytes": 3168,
+      "sha256": "6f489b5f6e54bf4d4bcef2d256932f93b11f3d26af22569e3ce0d3ddcce396ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 4282,
+      "sha256": "5fecd4180fc5308757acb95ba21f9c4ad91ba90d696a3ff1bfddfa54c09d51f4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\paged_append_source.h",
+      "bytes": 2839,
+      "sha256": "5ad1b0241d4309da4c8adae81b82e29752d546752e9d959e540ddb161f89e603"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 78002,
+      "sha256": "4596ceff725dab31ea3837aba96e1a1613c2e19168bee3aa526a43d0773fadb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 2547,
+      "sha256": "6b0f0da613d429452db5ab608c2dd4ff1070506265117118bcb55d01a90fe82f"
+    }
+  ],
+  "reuse": {
+    "prior_receipt": {
+      "path": "docs/evidence/correctness/inference-paged-submission-source-2026-10-27.json",
+      "bytes": 26165,
+      "sha256": "bbf06462a96b97e5a74c144c804a61ec8d1b860ceb7dc47b710f68242ecdb150"
+    },
+    "baseline_link_inputs": {
+      "path": ".scratch/inference-paged-source-20261027/link-inputs.json",
+      "bytes": 60059,
+      "sha256": "26997f06d4e7c0e32a925a9d886b1a5124d063dee9d60cba40848e4cab2050f2"
+    },
+    "boundary": "The previous locked native/SDK/Compute and unchanged token/Store test objects are reused. Four distinct CXX TUs replaced four inputs; no native-kernel, vendor or model rebuild. Actual dependencies and both full link manifests are archived."
+  },
+  "archive": {
+    "path": "docs/evidence/correctness/inference-paged-owned-source-2026-10-27.zip",
+    "bytes": 166683,
+    "sha256": "043092f4f90fc8b63f7c06a69b6afc04312d949fd31b828531e2b0dd7bfcb75c",
+    "members": [
+      {
+        "member": "source/src/graph/resources.cc",
+        "bytes": 206465,
+        "sha256": "f895e7af164f1b21c32d0723f6461f8c4beda52a4d65a67daec25f121767cfd9"
+      },
+      {
+        "member": "source/src/graph_batch/batch.cc",
+        "bytes": 100831,
+        "sha256": "c40939aa576e13c74fca72563580e62ea0411b650180981e3bfb082607395d8d"
+      },
+      {
+        "member": "source/tests/graph_batch/paged_append_source_test.cc",
+        "bytes": 20799,
+        "sha256": "dcef63dfe55796a506d9833eeb3b268847165a38409b35fe0d693c04402ff4f1"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/region_access.h",
+        "bytes": 23795,
+        "sha256": "4a106f754707462237005f0b2a169a320cef2511388951d92b2710a380726731"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/resource_source.h",
+        "bytes": 3168,
+        "sha256": "6f489b5f6e54bf4d4bcef2d256932f93b11f3d26af22569e3ce0d3ddcce396ca"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/output_source.h",
+        "bytes": 4282,
+        "sha256": "5fecd4180fc5308757acb95ba21f9c4ad91ba90d696a3ff1bfddfa54c09d51f4"
+      },
+      {
+        "member": "source/include/hyle/graph/detail/paged_append_source.h",
+        "bytes": 2839,
+        "sha256": "5ad1b0241d4309da4c8adae81b82e29752d546752e9d959e540ddb161f89e603"
+      },
+      {
+        "member": "source/src/graph_batch/paged_append.cc",
+        "bytes": 78002,
+        "sha256": "4596ceff725dab31ea3837aba96e1a1613c2e19168bee3aa526a43d0773fadb5"
+      },
+      {
+        "member": "source/src/graph_batch/paged_append.h",
+        "bytes": 2547,
+        "sha256": "6b0f0da613d429452db5ab608c2dd4ff1070506265117118bcb55d01a90fe82f"
+      },
+      {
+        "member": "records/evidence.py",
+        "bytes": 7688,
+        "sha256": "c0a23b0cb857e6d201a8409dc9aff70919cc2a21d930ee838e3bdd59f6290297"
+      },
+      {
+        "member": "records/check.py",
+        "bytes": 1836,
+        "sha256": "e7ca7add0fcedf60723101dbdbd496c357133c9d69957f4db2b1b3109022dbb7"
+      },
+      {
+        "member": "records/complete.py",
+        "bytes": 4464,
+        "sha256": "dcfad45c30c08ff791e2e4eb8d36305ef27f6cd300d7f289ece6fc08f542d76e"
+      },
+      {
+        "member": "records/plan.json",
+        "bytes": 11168,
+        "sha256": "18e5a00b72f015bf676f5857b638f61cb88c1df121398ee45dadfdc6c6a69d99"
+      },
+      {
+        "member": "records/selection.json",
+        "bytes": 1038,
+        "sha256": "95893c2730bf6e8d8113385e8419813479750526ec73feee8ef3f9d1575f5aed"
+      },
+      {
+        "member": "records/supplement.json",
+        "bytes": 610,
+        "sha256": "9fc43e3ad6c6f622aae3f5f186656bd772698048fc91b5cc284cf7f73fb2a92f"
+      },
+      {
+        "member": "records/compiled.json",
+        "bytes": 1197,
+        "sha256": "e1b95d070229b0f76512d0befb2e3c7677f85936f29bc58f0e716b3ef83b4788"
+      },
+      {
+        "member": "records/ready.json",
+        "bytes": 2341,
+        "sha256": "edd8afdd0584daaef8b05770ad1c8e8274db0b5d22bb50732020114c2c92135d"
+      },
+      {
+        "member": "records/ready-final.json",
+        "bytes": 5507,
+        "sha256": "97b04ee678141738153769d1faeb90ca4a3c9894d8df1c045711409640927594"
+      },
+      {
+        "member": "records/link-inputs.json",
+        "bytes": 60077,
+        "sha256": "174db82b43b1d5ef99cfcd30eb9cc619398431da5d7c3dfaa32c55b7df3bcba2"
+      },
+      {
+        "member": "records/link-inputs-final.json",
+        "bytes": 60083,
+        "sha256": "5711b9c78aa7fe0646308041a4189a812061709936052075b69235307773a92c"
+      },
+      {
+        "member": "records/summary.json",
+        "bytes": 6765,
+        "sha256": "abd6909716a9b1e956def5339786e3b0c20f4579d1f8ece1bb5a76669fbc56dd"
+      },
+      {
+        "member": "records/results.xml",
+        "bytes": 3895,
+        "sha256": "e44c6377f7fe787c976173f35b94fae9d25b7044b8f03cc9d33d9c4f79946eb0"
+      },
+      {
+        "member": "records/compile/resources/command.json",
+        "bytes": 1625,
+        "sha256": "b178c721536bcfbc255d120f11ef4118bdc02c7debfa9241438f05d3dd4d9d70"
+      },
+      {
+        "member": "records/compile/resources/dependencies.json",
+        "bytes": 24494,
+        "sha256": "6b88e52938a59b29872c4e399f27a17bdf2d5585699c564608756aa7b5da3ad4"
+      },
+      {
+        "member": "records/compile/resources/process.json",
+        "bytes": 69,
+        "sha256": "af1fe850cdb92bf95f03379e9870f70695e6c2aedcdf6bfdb50a002ca38ad5f3"
+      },
+      {
+        "member": "records/compile/resources/stdout.log",
+        "bytes": 14,
+        "sha256": "672f8debd5dcc4a361c440145e99c21bf022590cbfb43129aa89acf894aac842"
+      },
+      {
+        "member": "records/compile/resources/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/batch/command.json",
+        "bytes": 2494,
+        "sha256": "c4afd29d9eae6b1cd93d599a0015e9506bf75cf9deec637905800f464b0d90c2"
+      },
+      {
+        "member": "records/compile/batch/dependencies.json",
+        "bytes": 22739,
+        "sha256": "51abfe7ca714ddff4229a94316b0d66a4fb7234c4ebe55b65219c46946f33087"
+      },
+      {
+        "member": "records/compile/batch/process.json",
+        "bytes": 70,
+        "sha256": "ba7a4ceab03a6cb0b5b6a6a76da7ca860e20e28470fcb753092658ec115ec2ca"
+      },
+      {
+        "member": "records/compile/batch/stdout.log",
+        "bytes": 10,
+        "sha256": "f78e890749312f5ce2777295c394d4b71f47fac9e89486bdcb48d5fa361974fd"
+      },
+      {
+        "member": "records/compile/batch/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/paged-test/command.json",
+        "bytes": 2098,
+        "sha256": "b5c7eb0c2d4469c2c3fd8835eff1120b90fff238209c803034e9770e5374c05f"
+      },
+      {
+        "member": "records/compile/paged-test/dependencies.json",
+        "bytes": 34123,
+        "sha256": "03c7ea639629bf1f4d79505f0e9a4841f430fb858de3661326161a6c67b9d07d"
+      },
+      {
+        "member": "records/compile/paged-test/process.json",
+        "bytes": 69,
+        "sha256": "0b3faf24a0da9b2dcc25184669ae1d94bf8ec7949a521657cd7283da063a47ae"
+      },
+      {
+        "member": "records/compile/paged-test/stdout.log",
+        "bytes": 29,
+        "sha256": "68cff0459ade6f741681d440584b8ac95c42ccfa232cec79ef05adde03d50c9a"
+      },
+      {
+        "member": "records/compile/paged-test/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/compile/append/command.json",
+        "bytes": 3058,
+        "sha256": "20e130c23810546667579f00f5ff47c7c455000e6284995ab6ab8800bf726f37"
+      },
+      {
+        "member": "records/compile/append/dependencies.json",
+        "bytes": 21391,
+        "sha256": "88216cb244c9dcd69822930155f3c4b8002487ee5e12354b0da3f8c8c25c0189"
+      },
+      {
+        "member": "records/compile/append/process.json",
+        "bytes": 70,
+        "sha256": "640c0cd418f0008db11ec91625ed602e1cda19fa602931e13dc1e41efe8ae43b"
+      },
+      {
+        "member": "records/compile/append/stdout.log",
+        "bytes": 17,
+        "sha256": "d603c718335c17dd70dce3272dc46b28f8fe49da285d5ebb4daaa091a14f0987"
+      },
+      {
+        "member": "records/compile/append/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/link/command.json",
+        "bytes": 32403,
+        "sha256": "1a76a1a3d1f7439dc662fd4e5ee771a92818cf0e2059f2548eb53060d0087c87"
+      },
+      {
+        "member": "records/link/process.json",
+        "bytes": 70,
+        "sha256": "29cc7c7469ccacae87f99c3784b2c7ea3cd47f40ecfb41b65a67deb683580923"
+      },
+      {
+        "member": "records/link/stdout.log",
+        "bytes": 223,
+        "sha256": "a34173d4aa4027ba90735f26ea44417b5c8fe48bc9e18c6367024c1059b4d3ed"
+      },
+      {
+        "member": "records/link/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/link-final/command.json",
+        "bytes": 32409,
+        "sha256": "fef24ca61596178f33a699873b1ea5abab88b55629ccfa28de4d7d897a33c45f"
+      },
+      {
+        "member": "records/link-final/process.json",
+        "bytes": 70,
+        "sha256": "27686680b754b0af9bcb21e5061b8f1c504e621d97208422bdb06a235be8c1a0"
+      },
+      {
+        "member": "records/link-final/stdout.log",
+        "bytes": 223,
+        "sha256": "c45c7789db7520d1e8e080c5623ee15f3d10c32e3d8afcdfcf9c90a34d6c98e4"
+      },
+      {
+        "member": "records/link-final/stderr.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "records/run/command.json",
+        "bytes": 1298,
+        "sha256": "d0dcb659235cdfd2f36d49d3f5a6dcef0d237adde39f24b501ae8029eee51196"
+      },
+      {
+        "member": "records/run/process.json",
+        "bytes": 70,
+        "sha256": "319537f911e0a029f36dd68756f82dfd0027ce5ca2867ff3fd85f5ec23e29891"
+      },
+      {
+        "member": "records/run/stdout.log",
+        "bytes": 3819,
+        "sha256": "2bc23e3f69aed6f55c8621e4c32fef1655de5b4e670cd833453cc5f93d5c7977"
+      },
+      {
+        "member": "records/run/stderr.log",
+        "bytes": 151,
+        "sha256": "88dd5e35d67fb5c0c371390a98a66a5e061e4c0bef2d890a7b74781363216092"
+      },
+      {
+        "member": "records/runtime.json",
+        "bytes": 21665,
+        "sha256": "aeb836f46d7c5be685e02acfe49bcf4560672892564522256878e362785f3359"
+      }
+    ]
+  }
+}

@@ -38,7 +38,8 @@ private:
   PagedAppendSourceData *data_ = nullptr;
 };
 // Cold once per typed view, after B's ordinary batch::prepare. Requires the
-// shared reader's explicit, owned ready metadata input. B's query
+// shared reader's actual ready metadata, either its explicit configuration
+// input or the original selected slot's private owned-layout mirror. B's query
 // metadata may differ from A; every referenced physical prefix must be covered.
 // Returns a call descriptor whose spans remain owned by source. The caller
 // combines it with token/Store views in the original single bind_outputs call.

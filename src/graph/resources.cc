@@ -1983,7 +1983,8 @@ struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
         replacements(mem::StdAllocator<ReplayInputBinding>(source->metadata_owner.allocator())),
         access_nodes(mem::StdAllocator<NodeId>(source->metadata_owner.allocator())),
         readers(mem::StdAllocator<ProjectedReader>(source->metadata_owner.allocator())),
-        ready_inputs(mem::StdAllocator<ResourceReadyInput>(source->metadata_owner.allocator())) {}
+        ready_inputs(mem::StdAllocator<ResourceReadyInput>(source->metadata_owner.allocator())),
+        private_controls(mem::StdAllocator<compute::ReadLease>(source->metadata_owner.allocator())) {}
   void destroy() noexcept {
     const auto storage = submission->metadata_owner;
     const auto allocator = storage.allocator();
@@ -2004,10 +2005,48 @@ struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   std::vector<NodeId, mem::StdAllocator<NodeId>> access_nodes;
   std::vector<ProjectedReader, mem::StdAllocator<ProjectedReader>> readers;
   std::vector<ResourceReadyInput, mem::StdAllocator<ResourceReadyInput>> ready_inputs;
+  // Real private-control roots, deduplicated in cold preparation only. Each
+  // individual fact is still re-queried; admission uses the original batch.
+  std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> private_controls;
   InvocationState *consumer = nullptr;
   ReplayRoute consumer_route = ReplayRoute::kUnprepared;
   bool preparing = false, submitted = false;
 };
+Result<RegionReadyControl> RegionAccess::ready_control(const InvocationState *state,
+    NodeId node, std::uint32_t ordinal) noexcept {
+  if (!state || !state->plan)
+    return std::unexpected(Status::FailedPrecondition("ready control has no original invocation"));
+  const auto &plan = *state->plan;
+  if (GraphIdentity::generation(node) != plan.generation || node.ordinal() >= plan.node_steps.size())
+    return std::unexpected(Status::InvalidArgument("ready control names a foreign original node"));
+  const auto index = plan.node_steps[node.ordinal()];
+  if (index >= plan.steps.size() || index >= state->invocations.size())
+    return std::unexpected(Status::InvalidArgument("ready control has no original selected step"));
+  const auto &step = plan.steps[index];
+  if (step.kind != PlanStepKind::kRegion || !step.region.valid() ||
+      !state->invocations[index].region.valid())
+    return std::unexpected(Status::Unimplemented("ready control needs its selected original region"));
+  const auto &prepared = step.region.prepared_;
+  const auto *table = prepared.vtable->query_extension
+      ? static_cast<const RegionReadyControlVTable *>(prepared.vtable->query_extension(
+          prepared.state, kRegionReadyControlExtensionId)) : nullptr;
+  if (!table || !table->inspect)
+    return std::unexpected(Status::Unimplemented("selected region cannot expose its actual ready control"));
+  struct Call final {
+    const RegionReadyControlVTable *table;
+    const ProviderRegionPrepared *prepared;
+    void *invocation;
+    std::uint32_t ordinal;
+    Result<RegionReadyControl> result;
+  } call{table, &prepared, state->invocations[index].region.state_, ordinal,
+      std::unexpected(Status::Internal("ready control query was not called"))};
+  HYLE_RETURN_IF_ERROR(step.region.source_.call([](void *, const void *, void *opaque) noexcept -> Status {
+    auto &c = *static_cast<Call *>(opaque);
+    c.result = c.table->inspect(*c.prepared, c.invocation, c.ordinal);
+    return Status::Ok();
+  }, &call));
+  return std::move(call.result);
+}
 namespace {
 Result<compute::detail::QueueRef> output_queue(const InvocationState &state) noexcept {
   const auto &plan = *state.plan;
@@ -2088,17 +2127,39 @@ Status admit_source_permissions(compute::LeaseUseBatch &uses,
     HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, ticket));
   return Status::Ok();
 }
-Status validate_resource_ready_input(const InvocationState &state, const ResourceReadyInput &required) noexcept {
-  HYLE_ASSIGN_OR_RETURN(const auto same,
-      RegionAccess::has_input_binding(&state, required.input, required.tensor));
-  if (!same) return Status::FailedPrecondition("resource source required ready input was reset or replaced");
-  const auto *binding = find_binding(&state, required.input);
-  if (!binding || binding->borrowed || binding->exclusive || binding->permissionless ||
-      !binding->read.valid() || !required.read.valid() ||
-      compute::detail::LeaseAccess::identity(binding->read) != compute::detail::LeaseAccess::identity(required.read) ||
-      binding->read.generation() != required.read.generation())
+Status validate_resource_ready_input(const InvocationState &state, const ResourceReadyInput &required,
+    std::span<const ProjectedReader> readers) noexcept {
+  if (required.input.valid() == required.region.valid() || !required.tensor.valid() || !required.read.valid())
+    return Status::InvalidArgument("resource ready control needs one exact input or selected region");
+  compute::ReadLease actual_read;
+  if (required.region.valid()) {
+    HYLE_ASSIGN_OR_RETURN(auto control,
+        RegionAccess::ready_control(&state, required.region, required.ordinal));
+    const auto step = state.plan->node_steps[required.region.ordinal()];
+    if (std::ranges::none_of(readers, [&](const auto &reader) { return reader.step == step; }))
+      return Status::InvalidArgument("resource private control is outside its selected readers");
+    const auto actual = control.tensor.storage(), expected = required.tensor.storage();
+    if (!control.tensor.valid() || control.tensor.description() != required.tensor.description() ||
+        actual.resource() != expected.resource() || actual.native_handle() != expected.native_handle() ||
+        actual.offset() != expected.offset() || actual.size() != expected.size())
+      return Status::FailedPrecondition("resource source private control tensor was replaced");
+    actual_read = std::move(control.read);
+  } else {
+    if (required.ordinal)
+      return Status::InvalidArgument("external ready input cannot have a private control ordinal");
+    HYLE_ASSIGN_OR_RETURN(const auto same,
+        RegionAccess::has_input_binding(&state, required.input, required.tensor));
+    if (!same) return Status::FailedPrecondition("resource source required ready input was reset or replaced");
+    const auto *binding = find_binding(&state, required.input);
+    if (!binding || binding->borrowed || binding->exclusive || binding->permissionless)
+      return Status::FailedPrecondition("resource source lost its original required ready binding");
+    actual_read = binding->read;
+  }
+  if (!actual_read.valid() ||
+      compute::detail::LeaseAccess::identity(actual_read) != compute::detail::LeaseAccess::identity(required.read) ||
+      actual_read.generation() != required.read.generation())
     return Status::FailedPrecondition("resource source lost its original required ready guard");
-  HYLE_ASSIGN_OR_RETURN(auto actual, binding->read.view());
+  HYLE_ASSIGN_OR_RETURN(auto actual, actual_read.view());
   HYLE_ASSIGN_OR_RETURN(auto expected, required.read.view());
   const auto tensor = required.tensor.storage();
   if (actual.resource() != expected.resource() || actual.native_handle() != expected.native_handle() ||
@@ -2183,7 +2244,7 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
           return Status::FailedPrecondition("Store source ready IDs range was replaced");
       }
       for (const auto &required : entry.ready_inputs)
-        HYLE_RETURN_IF_ERROR(validate_resource_ready_input(*state, required));
+        HYLE_RETURN_IF_ERROR(validate_resource_ready_input(*state, required, entry.readers));
     }
   } else {
     bundle.consumer_route = route;
@@ -2201,7 +2262,8 @@ bool same_reader(ProjectedReader a, ProjectedReader b) noexcept {
 bool same_required_input(const ResourceReadyInput &a, const ResourceReadyInput &b) noexcept {
   const auto left = a.tensor.storage(), right = b.tensor.storage();
   const auto a_guard = a.read.view(), b_guard = b.read.view();
-  return a_guard && b_guard && a.input == b.input && a.tensor.description() == b.tensor.description() &&
+  return a_guard && b_guard && a.input == b.input && a.region == b.region && a.ordinal == b.ordinal &&
+      a.tensor.description() == b.tensor.description() &&
       left.resource() == right.resource() && left.native_handle() == right.native_handle() &&
       left.offset() == right.offset() && left.size() == right.size() &&
       compute::detail::LeaseAccess::identity(a.read) == compute::detail::LeaseAccess::identity(b.read) &&
@@ -2928,6 +2990,7 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
     bundle->entries.reserve(bindings.size()); bundle->replacements.reserve(incoming_count);
     bundle->access_nodes.reserve(node_count);
     bundle->readers.reserve(reader_count); bundle->ready_inputs.reserve(ready_input_count);
+    bundle->private_controls.reserve(ready_input_count);
     for (const auto &binding : bindings) {
       if (auto *token = OutputSourceAccess::state(binding.output)) {
         bundle->entries.push_back({.input = binding.input, .view = util::retain_ref(token)});
@@ -2971,9 +3034,14 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
             entry.input, entry.resource->capacity, entry.readers));
         for (const auto &ready : entry.ready_inputs) {
           for (const auto &replacement : bundle->replacements)
-            if (replacement.input == ready.input)
+            if (ready.input.valid() && replacement.input == ready.input)
               return Status::InvalidArgument("resource required ready input overlaps a pending bundle replacement");
-          HYLE_RETURN_IF_ERROR(validate_resource_ready_input(*state, ready));
+          HYLE_RETURN_IF_ERROR(validate_resource_ready_input(*state, ready, entry.readers));
+          if (ready.region.valid() && std::ranges::none_of(bundle->private_controls, [&](const auto &old) {
+                return compute::detail::LeaseAccess::identity(old) ==
+                    compute::detail::LeaseAccess::identity(ready.read);
+              }))
+            bundle->private_controls.push_back(ready.read);
         }
       }
       if (!entry.store) continue;
@@ -2996,6 +3064,9 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
     // Original cold reservation for exact ticket admissions, never a second
     // payload pool. Failure changes no binding; full-model callers still need
     // to reserve bundle/preparation metadata before accepting their predecessor.
+    if (bundle->private_controls.size() > UINT32_MAX - ticket_count)
+      return Status::ResourceExhausted("resource private control permission count overflows");
+    ticket_count += bundle->private_controls.size();
     if (ticket_count)
       HYLE_RETURN_IF_ERROR(RegionAccess::reserve_reads(invocation,
           static_cast<std::uint32_t>(ticket_count), reserve_options));
@@ -3064,6 +3135,8 @@ Result<compute::Completion> submit_outputs(Invocation &invocation,
         if (!source.queue.same_owner(sequence))
           return Status::InvalidArgument("ordered output reader has another actual Queue");
         std::lock_guard guard(source.observation);
+        for (const auto &read : owner.private_controls)
+          HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, read));
         for (const auto &entry : owner.entries) {
           if (entry.resource) {
             HYLE_RETURN_IF_ERROR(admit_source_permissions(uses,

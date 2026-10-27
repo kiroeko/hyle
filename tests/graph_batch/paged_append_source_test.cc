@@ -18,6 +18,7 @@
 #include <mutex>
 #include <span>
 #include <thread>
+#include <vector>
 
 namespace {
 namespace c = hyle::compute;
@@ -66,7 +67,8 @@ std::uint16_t bf16(float value) {
   return static_cast<std::uint16_t>(std::bit_cast<std::uint32_t>(value) >> 16);
 }
 
-TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads) {
+void pending_original_pages_publish_while_attention_reads(bool owned_layout) {
+  SCOPED_TRACE(owned_layout ? "owned layout" : "explicit metadata input");
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -190,10 +192,18 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
   auto second = g::GraphBuilder::create().value();
   const auto second_query = second.input(query_desc).value();
   const auto second_key = second.input(key_desc).value(), second_value = second.input(value_desc).value();
-  const auto metadata = second.input(schema.metadata_description().value()).value();
-  const auto attention = second.add_node(c::Operation::custom(c::PagedAttention{
-      .capacity = capacity, .scale = .125F, .causal = true}),
-      std::array{second_query, second_key, second_value, metadata}).value();
+  g::NodeId attention;
+  if (owned_layout) {
+    const auto operation = gb::paged_attention(reader_layout,
+        {.scale = .125F, .causal = true}).value();
+    attention = second.add_node(c::Operation::custom(operation),
+        std::array{second_query, second_key, second_value}).value();
+  } else {
+    const auto metadata = second.input(schema.metadata_description().value()).value();
+    attention = second.add_node(c::Operation::custom(c::PagedAttention{
+        .capacity = capacity, .scale = .125F, .causal = true}),
+        std::array{second_query, second_key, second_value, metadata}).value();
+  }
   const auto output = second.result(attention).value();
   ASSERT_TRUE(second.publish(output).ok());
   const auto second_graph = std::move(second).finish().value();
@@ -223,6 +233,17 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
   ASSERT_TRUE(key_binding) << key_binding.error().message();
   auto value_binding = gbd::reader_binding(consumer, second_value, value_source, reader_layout);
   ASSERT_TRUE(value_binding) << value_binding.error().message();
+  if (owned_layout) {
+    // This node really has only Q/K/V ports. The ready proof belongs to its
+    // original private control, not an invented external metadata input.
+    ASSERT_EQ(key_binding->ready_inputs.size(), 1u);
+    ASSERT_EQ(value_binding->ready_inputs.size(), 1u);
+    const auto &control = key_binding->ready_inputs.front();
+    EXPECT_FALSE(control.input.valid());
+    EXPECT_EQ(control.region, attention);
+    EXPECT_TRUE(control.read.valid());
+    EXPECT_EQ(control.tensor.description(), schema.metadata_description().value());
+  }
   const std::array bindings{*key_binding, *value_binding};
   ASSERT_TRUE(producer.prepare_replay(queues,
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
@@ -240,6 +261,16 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
   ASSERT_TRUE(captured_keys.ok()) << captured_keys.message();
   const auto captured_values = value_source.capture(common);
   ASSERT_TRUE(captured_values.ok()) << captured_values.message();
+  if (owned_layout) {
+    auto invalid_control = value_binding->ready_inputs.front();
+    invalid_control.ordinal = UINT32_MAX;
+    const std::array invalid_ready{invalid_control};
+    auto invalid_bindings = bindings;
+    invalid_bindings.back().ready_inputs = invalid_ready;
+    // Reject the final private control before committing any of this bundle.
+    // The original complete bundle below must still bind both source views.
+    EXPECT_FALSE(gd::bind_outputs(consumer, invalid_bindings).ok());
+  }
   const auto bound = gd::bind_outputs(consumer, bindings);
   ASSERT_TRUE(bound.ok()) << bound.message();
   const auto replay = gd::prepare_outputs(consumer, bindings, queues);
@@ -315,7 +346,37 @@ TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads)
     ASSERT_TRUE(old_values[page].view()->read(std::as_writable_bytes(std::span(actual).first(count))).ok());
     EXPECT_TRUE(std::equal(actual.begin(), actual.begin() + count, old_value_bytes[page].begin()));
   }
+  if (owned_layout) {
+    // No native work or GraphOutput is left to make this failure vacuous.
+    // The same layout remains preparable. A different exact version with
+    // changed page IDs must not overwrite the private mirror still retained
+    // by these typed source views, even though its address/geometry is stable.
+    const auto mirror_result = key_binding->ready_inputs.front().read.view();
+    ASSERT_TRUE(mirror_result) << mirror_result.error().message();
+    const auto mirror = *mirror_result;
+    std::vector<std::byte> before(mirror.size()), after(mirror.size());
+    ASSERT_TRUE(mirror.read(before).ok());
+    const auto same = gb::prepare(consumer, queues,
+        std::array{gb::NodeLayout{attention, reader_layout}}, options);
+    ASSERT_TRUE(same.ok()) << same.message();
+    const std::array<std::int32_t, 6> changed_ids{2, 5, 6, 0, 1, 4};
+    const auto changed_layout_result = schema.version({old_q, next_ptr, changed_ids, tails});
+    ASSERT_TRUE(changed_layout_result) << changed_layout_result.error().message();
+    const auto rewrite = gb::prepare(consumer, queues,
+        std::array{gb::NodeLayout{attention, *changed_layout_result}}, options);
+    EXPECT_TRUE(rewrite.IsUnavailable()) << rewrite.message();
+    ASSERT_TRUE(mirror.read(after).ok());
+    EXPECT_EQ(after, before);
+  }
   EXPECT_FALSE(gate.timed_out.load());
   EXPECT_FALSE(reader_gate.timed_out.load());
+}
+
+TEST(GraphPagedAppendSourceCuda, PendingOriginalPagesPublishWhileAttentionReads) {
+  pending_original_pages_publish_while_attention_reads(false);
+}
+
+TEST(GraphPagedAppendSourceCuda, OwnedLayoutMirrorPreservesPendingPageSource) {
+  pending_original_pages_publish_while_attention_reads(true);
 }
 } // namespace
