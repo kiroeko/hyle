@@ -38,6 +38,7 @@ public:
 
 private:
   friend class OutputSource;
+  friend class StoreSource;
   explicit SubmissionSource(SubmissionSourceState *state) noexcept : state_(state) {}
   SubmissionSourceState *state_ = nullptr;
 };

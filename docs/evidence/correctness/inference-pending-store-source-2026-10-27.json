@@ -1,0 +1,262 @@
+{
+  "schema": "hyle.finite-correctness-receipt.v1",
+  "date": "2026-10-27",
+  "status": "PASS",
+  "title": "Pending external Store destinations and I32 token share one original submission",
+  "source_base": "34ade778f43c94d4651f118d81499dfdfee395b9",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 175101,
+      "sha256": "371d8ebc2549e61eaf06a4d210d151e930c8324040198594eb9b019411cea5ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+      "bytes": 65898,
+      "sha256": "d12e0617b5d4887a596397f958b678deb23455a68f433b133ded2fccc28c0799"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.h",
+      "bytes": 4630,
+      "sha256": "9629499194aec4ed28820b844f21f768d75d8a8174777f6a4abb1a35798b4ebf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\resource_leases.cc",
+      "bytes": 63204,
+      "sha256": "007cba774fd3a92cd4bdf1043bfaf61d4d6caf0c618d51afc1b1325a48ae1933"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+      "bytes": 11523,
+      "sha256": "521844eea7d4b0f824f1a3d104867ea4132b7cf77e8d148aa85c50fb0af241ca"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\store_source.h",
+      "bytes": 2077,
+      "sha256": "9d6d5c3d185d3a354950027eeff30bf159aafc0a574069d70d197e8381c5513a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 3779,
+      "sha256": "3aa24ba50a77543fdafc35d273b4a81784ac23e8658a37a42d36e924389f89ad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 22345,
+      "sha256": "4c7512341bc8d3f0d23d8f8d71b400eef8feccd5aa8f417ef0e1965201f70e65"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\submission_source.h",
+      "bytes": 2218,
+      "sha256": "a2b1bb8a8ad7ccf3c15a9173b9d0dc1fcc010163f74d6aa0273a562a27404eac"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 60474,
+      "sha256": "2fa3544d8e99757eb4eba990254547163784ad27e270c47fd6daf62f0b22eeb3"
+    }
+  ],
+  "results": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "process": {
+      "exit": 0,
+      "pid": 52120,
+      "seconds": 0.5685383999953046
+    },
+    "new_actual_CUDA_cases": [
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure"
+    ],
+    "neighboring_actual_CUDA_cases": 7,
+    "controlled_Completion_cases": {
+      "new_pending_read_protocol_regressions": 3,
+      "adjacent_lease_contracts": 2
+    },
+    "assertions": [
+      "One original producer Graph writes noncontiguous slots 0 and 2 and produces an I32 token; one common Source retains the exact original proxy/Queue/whole verdict.",
+      "A consumer checked Gather reads only those rows using the exact original bounded ready IDs; token and Store capacity/IDs bind as one atomic final bundle. InputSources reports one source, one device dependency and zero host waits.",
+      "A same-shape metadata decoy controlling a different Gather is rejected before binding. Successful ordinary execution verifies the unrelated third Gather still reads its original [0,1] IDs.",
+      "A second preallocated Store view captures the same sealed writer generation and is destroyed without obstructing the original view; no mutable view is exported by the range proof.",
+      "The first producer gate is released while a separate successor gate still holds its native readers pending. Successful Store destinations can be taken and genuinely published through their exact tickets, and the original producer can reset while that successor remains pending.",
+      "Whole-producer checked-index failure is preserved by the consumer after real retirement, blocks all outputs and prevents Store publication. A foreign returned writer is rejected without consumption.",
+      "After success, exact state rows and token row match the fixed input oracle; unused slots and every alignment-padding byte retain their sentinel values. Ticket/source release eventually permits ordinary unique writer promotion."
+    ],
+    "cases": [
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "PendingReadTickets.ExactRangeSurvivesWriterObjectAndGenuinePublication",
+      "PendingReadTickets.ExportSealsNewWritesUntilUniqueReadyPromotionWithoutAllocation",
+      "PendingReadTickets.ReaderFailureDoesNotPoisonProducerAndClosedDomainsRejectNewUse",
+      "CopyLeaseHandoff.AllOrderedWritersMustActuallyRetireBeforeReady",
+      "CopyLeaseHandoff.OrdinaryWriterCapacityAndClosedSourceChecksRemain"
+    ]
+  },
+  "build": {
+    "CXX_TUs": 4,
+    "links": 1,
+    "images": 1,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_builds": 0,
+    "baseline_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-submission-20261027\\ready.json",
+      "bytes": 5108,
+      "sha256": "3094e1103ed29a827a05f5a65d78bacd3098b755dda7f6278c16364802ed445e"
+    },
+    "baseline_inputs": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-captured-submission-20261027\\link-inputs.json",
+      "bytes": 59637,
+      "sha256": "fd8af2d85baecc6c16aba5802bba23d4d1e16cf5bf93140881a29383f97ecd15"
+    },
+    "before_inputs": 231,
+    "after_inputs": 231,
+    "retained_unchanged": 227,
+    "replaced": 4,
+    "added": 0,
+    "compiled": [
+      {
+        "name": "resources",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+          "bytes": 175101,
+          "sha256": "371d8ebc2549e61eaf06a4d210d151e930c8324040198594eb9b019411cea5ff"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2182865,
+          "sha256": "02229a921036894590076a6494b0b8055fa1c7a8072e549046faf5465e625f70"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 35748,
+          "seconds": 2.827784100023564
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\resources\\actual-dependencies.json",
+          "bytes": 49630,
+          "sha256": "82738f328fb034a75c0df7e57199a9159e199cb6a401f2d8f7f271fec961236c"
+        }
+      },
+      {
+        "name": "common",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+          "bytes": 65898,
+          "sha256": "d12e0617b5d4887a596397f958b678deb23455a68f433b133ded2fccc28c0799"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\common\\unit.obj",
+          "bytes": 1420324,
+          "sha256": "bcfc40167cc8c04e08ef2e7df7598c6ede8afea90f399fb951bd892560b503e6"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 26572,
+          "seconds": 2.609426799986977
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\common\\actual-dependencies.json",
+          "bytes": 46106,
+          "sha256": "1262c3c2c38d25a648930aa04299a1a5fbbc54b640ce6c0eed8f6b7d3d0fc1e0"
+        }
+      },
+      {
+        "name": "leases",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\resource_leases.cc",
+          "bytes": 63204,
+          "sha256": "007cba774fd3a92cd4bdf1043bfaf61d4d6caf0c618d51afc1b1325a48ae1933"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\leases\\unit.obj",
+          "bytes": 544820,
+          "sha256": "6fcfe9f1c0d1ec56deb507c5c381b9f4e26894c4f278ad047713d2c6d2774134"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 52804,
+          "seconds": 0.9228081000037491
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\leases\\actual-dependencies.json",
+          "bytes": 38230,
+          "sha256": "8f8c54a0228f78967d319fb06b9315d88d2825357761a6055b5eddd0c93f2f12"
+        }
+      },
+      {
+        "name": "graph-test",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+          "bytes": 60474,
+          "sha256": "2fa3544d8e99757eb4eba990254547163784ad27e270c47fd6daf62f0b22eeb3"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\graph-test\\unit.obj",
+          "bytes": 2460469,
+          "sha256": "a3d86d66b0795b8e8708090793c5ee772aa504315cf399a789209d96ab04bc68"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 59468,
+          "seconds": 5.4178015000070445
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\compile\\graph-test\\actual-dependencies.json",
+          "bytes": 63152,
+          "sha256": "a298c7f0ca04c35b43d07aaced75ddaf9097df812dd24dab8dbadd299d8d812f"
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 55972,
+      "seconds": 1.8176833000034094
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\bin\\pending-store-source-test.exe",
+      "bytes": 144428032,
+      "sha256": "6524c467880d43223aeeb680151a47a5a630621dd732558c73a550051c3e1bbf"
+    },
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\ready.json",
+      "bytes": 5232,
+      "sha256": "fd6c3642bfc2ec740710b738c33d947230eae2f76aae1b64f77f841239f205e1"
+    },
+    "source_scope": "resources.cc, slots_region.cc, resource_leases.cc and the Graph CUDA source test are rebuilt. The prior Compute lease test object is retained.",
+    "reuse": "Existing compiler/toolchain, native shader/CUDA objects and runtime aliases are reused; no SDK, model, payload or dependency download/copy/rebuild.",
+    "input_sources": "The unused attach_existing draft was removed. Original input_source.h/input_sources.cc/input_sources.h are unchanged; their original compiled objects and InputSourceBinding ABI are reused.",
+    "output_arguments": [
+      "/OUT:C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\bin\\pending-store-source-test.exe",
+      "/PDB:C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\bin\\pending-store-source-test.pdb",
+      "/IMPLIB:C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\bin\\pending-store-source-test.lib"
+    ],
+    "correction": "All four first CXX processes and the first link succeeded. Post-link ready metadata initially read nonexistent baseline runtime2.json instead of runtime.json. The initial as-run script and traceback are retained; metadata-only finalize produced ready.json with the existing objects/image. No CXX/link/test repetition occurred."
+  },
+  "boundaries": [
+    "The new pending Store bridge is an actual CUDA shared-Queue functional slice, not yet a complete engine state/KV pending bridge or rotating ordinary/MTP overlap pipeline.",
+    "The typed Store reader is an original checked axis-zero Gather with whole rows and exact original ready IDs; it is not arbitrary raw bank input permission or a whole-pool ReadLease.",
+    "The second-view check exports a second view; it is not a multi-consumer scheduling/performance matrix.",
+    "Three pending-ticket and two adjacent lease cases use controlled Completion/in-memory protocol fixtures; they are distinct from the new actual CUDA Store-to-Gather cases.",
+    "No model inference, server, performance benchmark, speed/memory-benefit claim, native fault injection or Apple/Vulkan execution was performed.",
+    "Per-view binding remains one-shot. Common status and true retirement remain separate; no mathematical failure is converted to a ready lease."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-pending-store-source-2026-10-27.zip",
+    "bytes": 225141,
+    "sha256": "65b518920ca574f80421a79d2c107570e1b0720ab2639bbf05e82e2b9d750547",
+    "member_count": 57,
+    "member_manifest_sha256": "04aa4f1979d5f98b4f91b8c60a8de150f421256275daed8ba89ba45f5ea8bb70",
+    "verification": "All member bytes/SHA-256 and ZIP CRC readback passed.",
+    "contents": "Ten exact validated source/header/test snapshots, patch, as-run and corrected recipes, original metadata failure, commands/logs/XML, actual dependencies and before/after object identities. No EXE/OBJ/PDB/DLL/SDK/model payload."
+  }
+}

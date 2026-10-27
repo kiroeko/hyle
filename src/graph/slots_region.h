@@ -28,6 +28,16 @@ struct StoreRegionFacts final {
 struct StoreConfiguration final {
   compute::ConstTensorView capacity{}, source_indices{}, destination_indices{};
 };
+// Borrowed only during externally serialized cold preparation or an exact
+// submitted Source callback. Copy layout/coordinates or export independent
+// tickets there; never retain transaction or a writer address. The capacity is an
+// address carrier only. indices_guard covers just this Store's initialized
+// destination-ID slice and retains no payload/whole-bank read permission.
+struct StorePendingExport final {
+  const SlotBindings *transaction = nullptr;
+  compute::ConstTensorView capacity{}, indices{};
+  compute::ReadLease indices_guard;
+};
 struct StoreBindingData;
 struct StoreBindingAccess;
 // One original region's metadata and original lease transaction. Construction
@@ -49,6 +59,10 @@ public:
   // capacity. Both IDs slices belong to the single private initialized carrier.
   HYLE_GRAPH_API StoreConfiguration configuration() const noexcept;
   HYLE_GRAPH_API const SlotBindings *transaction() const noexcept;
+  // Pure current-transaction proof, not submission/readiness qualification.
+  // The caller externally serializes cold binding preparation or holds its
+  // exact submitted Source. No tickets are sealed, IDs uploaded or writers moved.
+  HYLE_GRAPH_API Result<StorePendingExport> export_pending() const noexcept;
   // Checks the original parent, exact selected artifact and actual retained
   // readers/writers; reset/release cannot revive a stale transaction.
   HYLE_GRAPH_API Status validate_authority() const noexcept;

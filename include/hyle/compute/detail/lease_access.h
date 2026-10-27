@@ -96,6 +96,8 @@ struct LeaseAccess final {
   // allocator. This ref borrows the allocator object; it does not retain it.
   static HYLE_COMPUTE_API mem::AllocatorRef
   metadata_backing_allocator(const ReadLease &lease) noexcept;
+  static HYLE_COMPUTE_API mem::AllocatorRef
+  metadata_backing_allocator(const WriteLease &lease) noexcept;
   // Cold StorageOwner freeze preflight: the original pool/writer pair must
   // not already retain another resource/allocator owner. No permission is
   // consumed; the returned allocator is the actual heap behind budget wrappers.
@@ -141,11 +143,19 @@ struct LeaseAccess final {
   // new ordered use. A different block or a wider capacity never matches.
   static HYLE_COMPUTE_API Status matches_pending_read(const PendingReadTicket &,
       mem::ConstBufferView) noexcept;
+  // Match a returned original writer without exporting another mutable view
+  // from its sealed write epoch. This does not publish or admit any use.
+  static HYLE_COMPUTE_API Status matches_pending_read(const PendingReadTicket &,
+      const WriteLease &) noexcept;
   // The same original ordered admission/retirement, independent of any writer
   // object. Supports both its pending writer and its genuine published read;
   // the owning F2 adapter must still prove the complete producer dependency.
   static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &,
       const PendingReadTicket &) noexcept;
+  // Pure exact-range proof against an existing ordinary writer, including a
+  // sealed epoch. No view, read permission or new native use is returned.
+  static HYLE_COMPUTE_API Status matches_writer_storage(const WriteLease &,
+      mem::ConstBufferView) noexcept;
   // Borrow only into an F2 controller that records the declared producer
   // before use; this never exposes a mutable alias through the public lease.
   static HYLE_COMPUTE_API Result<mem::BufferView> ordered_view(const WriteLease &lease) noexcept;

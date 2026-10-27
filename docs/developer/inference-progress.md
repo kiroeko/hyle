@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 08:15（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **92%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批独立状态读凭据和真实capture生产者准入通过12项定向检查；剩余重点是Store／KV完整状态接力、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 08:44（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **93%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。本批Store精确在途读接线通过14项定向检查；剩余重点是KV／索引融合读取接力、持续重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -28,12 +28,12 @@
   - Vulkan非4字节权重片段接入：100%（F3／Tensor／Graph／Vulkan已接通，原tiny普通／MTP／lag1通过有限检查）
   - Vulkan精确半字同步I/O：100%（本批功能完成，三组有限GPU检查通过）
   - CUDA 小通道因果卷积承载：100%（已补，定向数值与原失败消费者通过）
-- 重叠执行与完整性能对照：约45%（实现中）
+- 重叠执行与完整性能对照：约50%（实现中）
   - 原Graph在途设备token与既有capture接力：100%（单Queue固定I32一次链、checked错误、完整captured生产者与消费者通过有限CUDA检查）
-  - 有界槽轮换与完整状态pending权限：约30%（实现中）
+  - 有界槽轮换与完整状态pending权限：约40%（实现中）
     - 共同提交事实与独立块读凭据：100%（本批有限检查通过）
-    - Store／KV在途读接线：约10%（设计中）
-    - 有界槽轮换与候选预算：约5%（设计中）
+    - Store到受检Gather的在途读接线：100%（单共享Queue有限CUDA检查通过）
+    - KV／索引融合读取及有界槽轮换：约5%（设计中）
   - CPU提前准备与引擎有序发布：约30%（普通多成员整数准备通过有限CUDA检查；有序后继及MTP修复未接）
   - CPU／GPU／混合参考与完整四项对照：约25%（CUDA普通／MTP最新四臂完成，其它工况仍待完成）
 - 遗漏复查与资料收敛：约25%（进行中）
@@ -42,12 +42,14 @@
 
 ## 正在做
 
-- Store在途读接线：约10%（所属：重叠执行；将独立块票据接原Store目的槽、受检投影与共同终结凭据，保持take／publication与真实退休；KV另核append epoch／前缀与fresh page）。
-- 完整模型接力设计：约20%（所属：重叠执行；已确认token裸视图绑定、I32形状和Hybrid覆盖三处缺口，按原capture区间与Prepared gap收敛，不扩大Provider静态承诺）。
+- KV及索引融合读取接力设计：约5%（所属：重叠执行；沿共同提交事实核append epoch／前缀、fresh page和实际GDN／conv读资格，保留原写保护及真实退休）。
+- 完整模型接力设计：约20%（所属：重叠执行；接token完整writer／形状、Hybrid覆盖、有界候选与冷元数据预算，不扩大Provider静态承诺）。
 
 剩余大项包括完整状态接力、重叠执行、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
 ## 本批结果与下一步
+
+[Store精确在途读](../evidence/correctness/inference-pending-store-source-2026-10-27.json)通过同一镜像14项检查：原7项Source、2项真实CUDA Store混束及5项相邻租约检查。Store元数据在前驱提交前准备，capture后不留writer指针；原精确IDs只读guard与独立票据保活。同一B的token／bank／IDs整束只登记一次source与device-wait；同形状诱饵IDs在绑定前拒绝，旧第三Gather结果保持。第二个预冷视图可导出同一sealed代。A实际退休、B仍被reader gate阻住时完成detach／take／受检发布／reset；原错误则禁止B全部输出及Store发布，未选槽／padding不变。只编4个单元、链接1次、运行1进程；一次ready记录路径错误经离线修正，没有重编／重链／重跑。未接KV／索引融合后继／真实Hybrid或连续模型流水，没有新速度结论。原IDs guard会阻挡旧控制载体过早改写，完整流水仍需有界轮换与冷预算。
 
 [独立读凭据及captured生产者](../evidence/correctness/inference-captured-submission-2026-10-27.json)通过同一镜像12项检查：原6项Source、1项真实CUDA双Concat生产者、3项Compute受控协议及2项相邻回归。实际完整capture可保留原managed属性接原Source；未捕获command仍拒绝。票据只持原block／generation／精确范围，不含writer指针或第二Completion；导出封住本写代的新写及可写地址，真实发布后全部读者归还才能try_write。3项票据检查不是GPU Store接力证明。只编4个单元、链接1次、运行1进程，无SDK／NVCC／模型或性能重跑；Store／KV及真实Hybrid流水仍待接线。
 

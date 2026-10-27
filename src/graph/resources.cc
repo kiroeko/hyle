@@ -3,6 +3,7 @@
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/result.h"
 #include "hyle/graph/detail/output_source.h"
+#include "hyle/graph/detail/store_source.h"
 #include "hyle/graph/detail/input_source.h"
 
 #include <algorithm>
@@ -16,6 +17,7 @@
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/completion_retention.h"
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/resource_budget_access.h"
 #include "hyle/compute/detail/append_lease.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
@@ -25,6 +27,7 @@
 #include "resource_episode.h"
 #include "submission_internal.h"
 #include "submission_lifetime.h"
+#include "slots_region.h"
 #include "../compute/provider_internal.h"
 
 namespace hyle::graph {
@@ -1384,7 +1387,7 @@ Result<mem::MemoryResourceRef> RegionAccess::projection_resource(const Executabl
   if(reader_lane)*reader_lane=plan->steps[plan->node_steps[decoder.ordinal()]].lane;
   return plan->storage_domains[a].resource;
 }
-Status RegionAccess::bind_projection(Invocation&invocation,ResourceProjection projection,
+Status RegionAccess::validate_projection_binding(Invocation&invocation,ResourceProjection projection,
     compute::ConstTensorView tensor,std::span<const compute::ReadLease>pages,bool pending)noexcept{
   auto*state=InvocationAccess::state(invocation);HYLE_ASSIGN_OR_RETURN(auto*episode, require_resources(state));
   HYLE_ASSIGN_OR_RETURN(auto resource,projection_resource(invocation.executable(),projection));
@@ -1403,6 +1406,20 @@ Status RegionAccess::bind_projection(Invocation&invocation,ResourceProjection pr
     if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() || view.offset()<storage.offset() ||
         view.offset()-storage.offset()>storage.size() || view.size()>storage.size()-(view.offset()-storage.offset()))
       return Status::InvalidArgument("row page guard outside original capacity");}
+  return Status::Ok();
+}
+Status RegionAccess::validate_pending_projection(Invocation &invocation,
+    ResourceProjection projection, compute::ConstTensorView tensor) noexcept {
+  return validate_projection_binding(invocation, projection, tensor, {}, true);
+}
+Status RegionAccess::bind_projection(Invocation&invocation,ResourceProjection projection,
+    compute::ConstTensorView tensor,std::span<const compute::ReadLease>pages,bool pending)noexcept{
+  HYLE_RETURN_IF_ERROR(validate_projection_binding(invocation,projection,tensor,pages,pending));
+  auto*state=InvocationAccess::state(invocation);
+  auto*episode=state->resources.get();
+  const auto capacity=projection.capacity;
+  auto*binding=find_binding(state,capacity);
+  const auto description=tensor.description();
   HYLE_RETURN_IF_ERROR(invocation.bind(capacity,tensor));
   binding=find_binding(state,capacity);
   if(!pages.empty())binding->read=pages.front();
@@ -1851,24 +1868,74 @@ struct OutputSourceState final : util::RefCounted<OutputSourceState> {
   OutputBindingBundle *bundle = nullptr;
   bool bound_once = false;
 };
+struct StoreSourceState final : util::RefCounted<StoreSourceState> {
+  StoreSourceState(compute::StorageOwner storage, compute::ResourceBudget budget,
+      mem::AllocatorRef selected) noexcept
+      : storage_owner(std::move(storage)), metadata_budget(std::move(budget)), allocator(selected),
+        tickets(mem::StdAllocator<compute::detail::PendingReadTicket>(selected)),
+        addresses(mem::StdAllocator<compute::LeaseSlotAddress>(selected)) {}
+  void destroy() noexcept {
+    const auto storage = storage_owner;
+    const auto budget = metadata_budget;
+    (void)budget;
+    const auto selected = allocator;
+    auto *original = prepared_parent;
+    this->~StoreSourceState();
+    selected.deallocate(this, sizeof(StoreSourceState), alignof(StoreSourceState));
+    if (original) release(original);
+  }
+  compute::StorageOwner storage_owner;
+  compute::ResourceBudget metadata_budget;
+  mem::AllocatorRef allocator;
+  ResourceOptions options{};
+  // Native region slots are created once with this InvocationState; reset
+  // only clears their bindings/configuration. Retaining that parent keeps the
+  // embedded StoreBinding object stable, not its replaceable transaction.
+  // capture re-exports/revalidates that current transaction before any seal,
+  // then clears both borrows; no writer pointer ever escapes this factory.
+  InvocationState *prepared_parent = nullptr;
+  slots::detail::StoreBinding *prepared_binding = nullptr;
+  NodeId node{};
+  slots::Schema schema{};
+  util::Ref<SubmissionSourceState> submission;
+  compute::LeaseSlotLayout layout;
+  compute::ConstTensorView capacity{}, indices{};
+  compute::ReadLease indices_guard;
+  std::vector<compute::detail::PendingReadTicket,
+      mem::StdAllocator<compute::detail::PendingReadTicket>> tickets;
+  std::vector<compute::LeaseSlotAddress, mem::StdAllocator<compute::LeaseSlotAddress>> addresses;
+  OutputBindingBundle *bundle = nullptr;
+  bool bound_once = false;
+};
 struct OutputSourceAccess final {
   static OutputSourceState *state(const OutputSource *source) noexcept {
     return source ? source->state_ : nullptr;
   }
+  static StoreSourceState *state(const StoreSource *source) noexcept {
+    return source ? source->state_ : nullptr;
+  }
 };
-struct OutputBindingEntry final { ValueId input{}; util::Ref<OutputSourceState> view{}; };
+struct OutputBindingEntry final {
+  ValueId input{};
+  util::Ref<OutputSourceState> view{};
+  util::Ref<StoreSourceState> store{};
+  ResourceProjection projection{};
+};
 struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   explicit OutputBindingBundle(SubmissionSourceState *source) noexcept
       : submission(util::retain_ref(source)),
         entries(mem::StdAllocator<OutputBindingEntry>(source->metadata_owner.allocator())),
-        replacements(mem::StdAllocator<ReplayInputBinding>(source->metadata_owner.allocator())) {}
+        replacements(mem::StdAllocator<ReplayInputBinding>(source->metadata_owner.allocator())),
+        access_nodes(mem::StdAllocator<NodeId>(source->metadata_owner.allocator())) {}
   void destroy() noexcept {
     const auto storage = submission->metadata_owner;
     const auto allocator = storage.allocator();
     {
       std::lock_guard guard(submission->observation);
-      for (const auto &entry : entries)
-        if (entry.view->bundle == this) entry.view->bundle = nullptr;
+      for (const auto &entry : entries) {
+        if (entry.view && entry.view->bundle == this) entry.view->bundle = nullptr;
+        if (entry.store && entry.store->bundle == this) entry.store->bundle = nullptr;
+      }
     }
     this->~OutputBindingBundle();
     allocator.deallocate(this, sizeof(OutputBindingBundle), alignof(OutputBindingBundle));
@@ -1876,6 +1943,7 @@ struct OutputBindingBundle final : util::RefCounted<OutputBindingBundle> {
   util::Ref<SubmissionSourceState> submission;
   std::vector<OutputBindingEntry, mem::StdAllocator<OutputBindingEntry>> entries;
   std::vector<ReplayInputBinding, mem::StdAllocator<ReplayInputBinding>> replacements;
+  std::vector<NodeId, mem::StdAllocator<NodeId>> access_nodes;
   InvocationState *consumer = nullptr;
   bool preparing = false, submitted = false, capture_consumer = false;
 };
@@ -2016,33 +2084,61 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
     if (bundle.consumer != state)
       return Status::FailedPrecondition("output bundle names another original consumer");
     HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(&bundle));
-    for (const auto &entry : bundle.entries) {
-      if (!input_source_matches(*state, entry.input, owner))
+    for (const auto &replacement : bundle.replacements) {
+      if (!input_source_matches(*state, replacement.input, owner))
         return Status::FailedPrecondition("output bundle input owner was reset or replaced");
-      HYLE_ASSIGN_OR_RETURN(auto bound, RegionAccess::has_input_binding(state, entry.input, entry.view->tensor));
+      HYLE_ASSIGN_OR_RETURN(auto bound,
+          RegionAccess::has_input_binding(state, replacement.input, replacement.tensor));
       if (!bound) return Status::FailedPrecondition("output bundle input storage was reset or replaced");
+    }
+    for (const auto &entry : bundle.entries) {
       const auto *binding = find_binding(state, entry.input);
+      const auto tensor = entry.view ? entry.view->tensor : entry.store->capacity;
       if (!binding || binding->borrowed || binding->exclusive || binding->read.valid() ||
-          binding->permissionless || binding->description != entry.view->tensor.description())
+          binding->permissionless || binding->description != tensor.description() ||
+          (entry.store && binding->scope != BindingScope::kProjected))
         return Status::FailedPrecondition("output bundle lost its original pending read requirement");
+      if (entry.store) {
+        const auto *ids = find_binding(state, entry.projection.metadata);
+        if (!ids || ids->borrowed || ids->exclusive || ids->permissionless || !ids->read.valid() ||
+            compute::detail::LeaseAccess::identity(ids->read) !=
+                compute::detail::LeaseAccess::identity(entry.store->indices_guard) ||
+            ids->read.size() != entry.store->indices_guard.size() ||
+            ids->read.generation() != entry.store->indices_guard.generation())
+          return Status::FailedPrecondition("Store source lost its original bounded ready IDs");
+        HYLE_ASSIGN_OR_RETURN(auto actual, ids->read.view());
+        const auto expected = entry.store->indices.storage();
+        if (actual.resource() != expected.resource() || actual.native_handle() != expected.native_handle() ||
+            actual.offset() != expected.offset() || actual.size() != expected.size())
+          return Status::FailedPrecondition("Store source ready IDs range was replaced");
+      }
     }
   } else {
     bundle.capture_consumer = captured;
   }
   return Status::Ok();
 }
+bool same_projection(ResourceProjection a, ResourceProjection b) noexcept {
+  return a.capacity == b.capacity && a.metadata == b.metadata && a.reader == b.reader &&
+      a.capability == b.capability && std::ranges::equal(a.access_nodes, b.access_nodes);
+}
 Result<OutputBindingBundle *> bound_output_bundle(Invocation &invocation,
     std::span<const OutputBinding> bindings) noexcept {
   if (bindings.empty()) return std::unexpected(Status::InvalidArgument("output bundle is empty"));
-  const auto *first = OutputSourceAccess::state(bindings.front().output);
-  auto *bundle = first ? first->bundle : nullptr;
+  const auto *token = OutputSourceAccess::state(bindings.front().output);
+  const auto *store = OutputSourceAccess::state(bindings.front().store);
+  auto *bundle = token ? token->bundle : store ? store->bundle : nullptr;
   if (!bundle || bundle->entries.size() != bindings.size() ||
       bundle->consumer != InvocationAccess::state(invocation))
     return std::unexpected(Status::FailedPrecondition("output bundle was not bound to this original consumer"));
-  for (std::size_t i = 0; i < bindings.size(); ++i)
-    if (bindings[i].input != bundle->entries[i].input ||
-        OutputSourceAccess::state(bindings[i].output) != bundle->entries[i].view.get())
+  for (std::size_t i = 0; i < bindings.size(); ++i) {
+    const auto &entry = bundle->entries[i];
+    if (OutputSourceAccess::state(bindings[i].output) != entry.view.get() ||
+        OutputSourceAccess::state(bindings[i].store) != entry.store.get() ||
+        (entry.view && bindings[i].input != entry.input) ||
+        (entry.store && (bindings[i].input.valid() || !same_projection(bindings[i].projection, entry.projection))))
       return std::unexpected(Status::InvalidArgument("output bundle differs from its original complete binding"));
+  }
   return bundle;
 }
 } // namespace
@@ -2215,55 +2311,311 @@ Status OutputSource::detach() noexcept {
   --source.borrows;
   return Status::Ok();
 }
+namespace {
+bool source_retains_allocator(const compute::StorageOwner &storage, mem::AllocatorRef selected) noexcept {
+  const auto actual = compute::detail::ResourceBudgetAccess::original_allocator(selected);
+  const auto system = mem::system_allocator();
+  return actual.valid() && (storage.owns_allocator(actual) ||
+      (actual.alloc_fn() == system.alloc_fn() && actual.free_fn() == system.free_fn() &&
+       actual.realloc_fn() == system.realloc_fn() && actual.state() == system.state()));
+}
+Status validate_store_reader(const Graph *graph, ResourceProjection projection,
+    const StoreSourceState &store, const InvocationState &invocation) noexcept {
+  if (!graph || !graph->valid())
+    return Status::InvalidArgument("Store source binding needs its original logical Graph");
+  const auto &plan = *invocation.plan;
+  if (GraphIdentity::generation(projection.reader) != plan.generation ||
+      projection.reader.ordinal() >= plan.node_steps.size())
+    return Status::InvalidArgument("Store source reader differs from its concrete Plan");
+  HYLE_ASSIGN_OR_RETURN(auto operation, graph->operation(projection.reader));
+  const auto *gather = operation.get_if<compute::Gather>();
+  if (!gather || (gather->axis != 0 && gather->axis != -2) ||
+      gather->bounds != compute::IndexBoundsPolicy::kChecked)
+    return Status::InvalidArgument("Store source reader must be its checked axis-zero Gather");
+  HYLE_ASSIGN_OR_RETURN(auto capacity, graph->node_input(projection.reader, 0));
+  HYLE_ASSIGN_OR_RETURN(auto metadata, graph->node_input(projection.reader, 1));
+  if (capacity != projection.capacity || metadata != projection.metadata)
+    return Status::InvalidArgument("Store source projection does not name its actual Gather pool and IDs");
+  HYLE_ASSIGN_OR_RETURN(auto output, graph->result(projection.reader, 0));
+  const auto descriptions = plan.domain_graph.valid()
+      ? std::span<const compute::TensorDesc>(invocation.concrete_descriptions)
+      : std::span<const compute::TensorDesc>(plan.descriptions);
+  for (const auto value : {capacity, metadata, output})
+    if (GraphIdentity::generation(value) != plan.generation || value.ordinal() >= descriptions.size())
+      return Status::InvalidArgument("Store source logical reader differs from its concrete Plan");
+  const auto &capacity_description = descriptions[capacity.ordinal()];
+  const auto &ids_description = descriptions[metadata.ordinal()];
+  const auto &output_description = descriptions[output.ordinal()];
+  HYLE_ASSIGN_OR_RETURN(auto expected_output, compute::TensorDesc::dense(store.schema.type(),
+      std::array<std::int64_t, 2>{static_cast<std::int64_t>(store.tickets.size()), store.schema.item_elements()}));
+  if (capacity_description != store.capacity.description() || ids_description != store.indices.description() ||
+      output_description != expected_output)
+    return Status::InvalidArgument("Store source Gather must read its exact whole rows and ready IDs");
+  return Status::Ok();
+}
+struct PrepareStoreSource final {
+  NodeId node{};
+  slots::detail::StoreBinding *binding = nullptr;
+  slots::Schema schema{};
+  std::size_t count = 0;
+  ExecutionLaneId lane{};
+  mem::MemoryResourceRef resource{};
+};
+} // namespace
+StoreSource::StoreSource(StoreSource &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)) {}
+StoreSource &StoreSource::operator=(StoreSource &&other) noexcept {
+  if (this != &other) {
+    if (state_) state_->decref();
+    state_ = std::exchange(other.state_, nullptr);
+  }
+  return *this;
+}
+StoreSource::~StoreSource() { if (state_) state_->decref(); }
+bool StoreSource::valid() const noexcept { return state_ && state_->submission; }
+std::size_t StoreSource::destination_count() const noexcept { return state_ ? state_->tickets.size() : 0; }
+Result<StoreSource> StoreSource::prepare(Invocation &invocation, NodeId node,
+    const compute::StorageOwner &storage, ResourceOptions options) noexcept {
+  auto *parent = InvocationAccess::state(invocation);
+  HYLE_RETURN_IF_ERROR(resource_control_ready(parent));
+  if (!storage || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("Store source needs its actual owner and cold allocator"));
+  PrepareStoreSource call{.node = node};
+  HYLE_RETURN_IF_ERROR(RegionAccess::visit(invocation, node,
+      [](void *opaque, const RegionAccessView &view) noexcept -> Status {
+        auto &call = *static_cast<PrepareStoreSource *>(opaque);
+        const auto *table = view.prepared_vtable && view.prepared_vtable->query_extension
+            ? static_cast<const slots::detail::StoreRegionVTable *>(
+                view.prepared_vtable->query_extension(view.prepared, slots::detail::kStoreBindingExtensionId))
+            : nullptr;
+        if (!table || !table->inspect || !table->binding)
+          return Status::Unimplemented("Store source needs its original selected Store owner");
+        const ProviderRegionPrepared prepared{view.prepared_vtable, view.prepared};
+        HYLE_ASSIGN_OR_RETURN(auto facts, table->inspect(prepared, view.invocation));
+        auto *binding = table->binding(view.invocation);
+        if (facts.store != call.node || !binding || !facts.destination_count || !facts.schema.valid())
+          return Status::InvalidArgument("Store source has no exact original destination geometry");
+        HYLE_ASSIGN_OR_RETURN(auto exported, binding->export_pending());
+        if (!exported.transaction || exported.transaction->destination_count() != facts.destination_count)
+          return Status::FailedPrecondition("Store source transaction changed during preparation");
+        call.binding = binding; call.schema = facts.schema;
+        call.count = facts.destination_count; call.lane = view.lane; call.resource = facts.resource;
+        return Status::Ok();
+      }, &call));
+  const auto &plan = *parent->plan;
+  if (!call.binding || call.resource != storage.ref() ||
+      std::ranges::none_of(plan.storage_domains, [&](const auto &domain) {
+        return domain.owner && domain.owner.ref() == storage.ref() &&
+            domain.owner.context_identity() == storage.context_identity();
+      }))
+    return std::unexpected(Status::FailedPrecondition("Store source Plan must retain its actual storage owner"));
+  HYLE_ASSIGN_OR_RETURN(auto execution, RegionAccess::execution_source(invocation.executable(), call.lane));
+  HYLE_ASSIGN_OR_RETURN(auto context, ExecutionSourceAccess::compute(execution));
+  if (context->identity_key() != storage.context_identity())
+    return std::unexpected(Status::InvalidArgument("Store source owner belongs to another Context"));
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  if (!source_retains_allocator(storage, allocator))
+    return std::unexpected(Status::InvalidArgument("Store source owner cannot retain its cold metadata allocator"));
+  auto *memory = allocator.allocate(sizeof(StoreSourceState), alignof(StoreSourceState));
+  if (!memory) return std::unexpected(Status::ResourceExhausted("Store source cold metadata owner"));
+  auto owner = util::adopt_ref(::new (memory) StoreSourceState(storage, options.resource_budget, allocator));
+  owner->options = options; owner->options.allocator = allocator;
+  owner->prepared_parent = parent; retain(parent);
+  owner->prepared_binding = call.binding; owner->node = node; owner->schema = call.schema;
+  try { owner->tickets.resize(call.count); owner->addresses.resize(call.count); }
+  catch (const std::bad_alloc &) {
+    return std::unexpected(Status::ResourceExhausted("Store source fixed ticket/coordinate metadata"));
+  }
+  return StoreSource(owner.release());
+}
+Status StoreSource::capture(const SubmissionSource &submission) noexcept {
+  if (!state_ || !submission.state_)
+    return Status::FailedPrecondition("Store source requires cold preparation and a submitted source");
+  auto &view = *state_;
+  auto &source = *submission.state_;
+  std::lock_guard guard(source.observation);
+  if (view.submission || !source.producer || source.producer != view.prepared_parent ||
+      !view.prepared_binding)
+    return Status::FailedPrecondition("Store source does not name its original prepared submission");
+  const auto phase = source.producer->phase.load(std::memory_order_acquire);
+  if (phase != InvocationPhase::kRunning &&
+      !(phase == InvocationPhase::kIdle && source.producer->outputs_ready.load(std::memory_order_acquire)))
+    return Status::FailedPrecondition("Store source requires a successful-or-pending original producer");
+  HYLE_ASSIGN_OR_RETURN(auto exported, view.prepared_binding->export_pending());
+  if (!exported.transaction || exported.transaction->destination_count() != view.tickets.size() ||
+      exported.transaction->destination_addresses().size() != view.addresses.size() ||
+      exported.capacity.storage().resource() != view.storage_owner.ref() ||
+      exported.indices.storage().resource() != view.storage_owner.ref() ||
+      source.metadata_owner.context_identity() != view.storage_owner.context_identity())
+    return Status::InvalidArgument("Store source transaction/resource differs from its prepared geometry");
+  auto layout = exported.transaction->layout();
+  HYLE_ASSIGN_OR_RETURN(auto schema,
+      slots::Schema::create(layout.description(), layout.slot_count(), layout.stride_bytes()));
+  if (schema != view.schema || !source_retains_allocator(view.storage_owner,
+          compute::detail::LeaseAccess::metadata_backing_allocator(exported.indices_guard)))
+    return Status::InvalidArgument("Store source layout or ready-ID allocator is not retained");
+  const auto writers = exported.transaction->destinations();
+  for (const auto &writer : writers)
+    if (!source_retains_allocator(view.storage_owner,
+            compute::detail::LeaseAccess::metadata_backing_allocator(writer)))
+      return Status::InvalidArgument("Store source owner cannot retain its destination allocator");
+  // All allocations, selected authority, coordinates, carrier and allocator
+  // checks precede the first seal. Rejection never escapes a partial ticket set.
+  struct DiscardTickets final {
+    StoreSourceState &view;
+    bool committed = false;
+    ~DiscardTickets() { if (!committed) for (auto &ticket : view.tickets) ticket.reset(); }
+  } rollback{view};
+  for (std::size_t i = 0; i < writers.size(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto ticket, compute::detail::LeaseAccess::pending_read(writers[i]));
+    view.tickets[i] = std::move(ticket);
+    view.addresses[i] = exported.transaction->destination_addresses()[i];
+  }
+  view.layout = std::move(layout);
+  view.capacity = exported.capacity; view.indices = exported.indices;
+  view.indices_guard = std::move(exported.indices_guard);
+  view.submission = util::retain_ref(&source);
+  auto *original = std::exchange(view.prepared_parent, nullptr);
+  view.prepared_binding = nullptr;
+  rollback.committed = true;
+  // Common Source still owns the original pin/ref. This release cannot leave
+  // a dangling selected-slot borrow or retain the producer after Source.detach.
+  release(original);
+  return Status::Ok();
+}
+Result<compute::ReadLease> StoreSource::publish(std::size_t destination,
+    compute::WriteLease &writer) const noexcept {
+  if (!valid() || destination >= state_->tickets.size())
+    return std::unexpected(Status::InvalidArgument("Store source destination is not captured"));
+  auto &source = *state_->submission;
+  std::lock_guard guard(source.observation);
+  HYLE_ASSIGN_OR_RETURN(auto observed, source.completion.poll());
+  if (observed == compute::CompletionPoll::kPending)
+    return std::unexpected(Status::Unavailable("Store source producer is still pending"));
+  if (source.producer && (source.producer->phase.load(std::memory_order_acquire) != InvocationPhase::kIdle ||
+      !source.producer->outputs_ready.load(std::memory_order_acquire) ||
+      source.producer->preparation_uses.load(std::memory_order_acquire)))
+    return std::unexpected(Status::Unavailable("Store source producer has not actually retired"));
+  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::matches_pending_read(state_->tickets[destination], writer));
+  return compute::detail::LeaseAccess::publish_after_writes(writer);
+}
 Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindings) noexcept {
   auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   if (bindings.empty() || bindings.size() > state->plan->input_ids.size())
     return Status::InvalidArgument("output bundle has an invalid size");
-  auto *first = OutputSourceAccess::state(bindings.front().output);
-  if (!first) return Status::InvalidArgument("output bundle contains an empty view");
-  auto &source = *first->submission;
-  for (std::size_t i = 0; i < bindings.size(); ++i) {
-    auto *view = OutputSourceAccess::state(bindings[i].output);
-    if (!view || view->submission.get() != &source)
+  auto *first_token = OutputSourceAccess::state(bindings.front().output);
+  auto *first_store = OutputSourceAccess::state(bindings.front().store);
+  auto *source = first_token ? first_token->submission.get()
+      : first_store ? first_store->submission.get() : nullptr;
+  if (!source) return Status::InvalidArgument("output bundle contains an uncaptured view");
+  std::size_t incoming_count = 0, node_count = 0, ticket_count = 0;
+  ResourceOptions reserve_options{source->metadata_owner.allocator(), {}};
+  for (const auto &binding : bindings) {
+    auto *token = OutputSourceAccess::state(binding.output);
+    auto *store = OutputSourceAccess::state(binding.store);
+    if (static_cast<bool>(token) == static_cast<bool>(store))
+      return Status::InvalidArgument("output binding requires exactly one concrete view");
+    if ((token && token->submission.get() != source) ||
+        (store && store->submission.get() != source))
       return Status::InvalidArgument("output bundle must share one original submission");
-    if (view->bound_once)
+    if ((token && token->bound_once) || (store && store->bound_once))
       return Status::FailedPrecondition("output view has already bound its original consumer");
-    auto *binding = find_binding(state, bindings[i].input);
-    if (!binding || !binding->input)
-      return Status::InvalidArgument("output relay requires a prepared original external input resource");
-    for (std::size_t j = 0; j < i; ++j)
-      if (bindings[j].input == bindings[i].input)
-        return Status::InvalidArgument("output bundle repeats an input");
+    const auto count = store ? 2u : 1u;
+    if (incoming_count > state->plan->input_ids.size() ||
+        count > state->plan->input_ids.size() - incoming_count)
+      return Status::InvalidArgument("output bundle has too many original input bindings");
+    incoming_count += count;
+    if (store) {
+      HYLE_RETURN_IF_ERROR(validate_store_reader(binding.graph, binding.projection, *store, *state));
+      if (binding.input.valid() || binding.projection.access_nodes.size() > SIZE_MAX - node_count ||
+          store->tickets.size() > UINT32_MAX - ticket_count)
+        return Status::InvalidArgument("Store source projection or permission count is invalid");
+      node_count += binding.projection.access_nodes.size(); ticket_count += store->tickets.size();
+      reserve_options = store->options;
+    }
   }
-  const auto allocator = source.metadata_owner.allocator();
+  const auto allocator = source->metadata_owner.allocator();
   auto *memory = allocator.allocate(sizeof(OutputBindingBundle), alignof(OutputBindingBundle));
   if (!memory) return Status::ResourceExhausted("output bundle cold owner metadata");
-  auto bundle = util::adopt_ref(::new (memory) OutputBindingBundle(&source));
+  auto bundle = util::adopt_ref(::new (memory) OutputBindingBundle(source));
   try {
-    bundle->entries.reserve(bindings.size());
-    bundle->replacements.reserve(bindings.size());
+    bundle->entries.reserve(bindings.size()); bundle->replacements.reserve(incoming_count);
+    bundle->access_nodes.reserve(node_count);
     for (const auto &binding : bindings) {
-      auto *view = OutputSourceAccess::state(binding.output);
-      bundle->entries.push_back({binding.input, util::retain_ref(view)});
-      bundle->replacements.push_back({binding.input, view->tensor});
+      if (auto *token = OutputSourceAccess::state(binding.output)) {
+        bundle->entries.push_back({binding.input, util::retain_ref(token), {}, {}});
+        bundle->replacements.push_back({binding.input, token->tensor});
+      } else {
+        auto *store = OutputSourceAccess::state(binding.store);
+        const auto begin = bundle->access_nodes.size();
+        for (const auto node : binding.projection.access_nodes) bundle->access_nodes.push_back(node);
+        auto projection = binding.projection;
+        projection.access_nodes = std::span<const NodeId>(bundle->access_nodes).subspan(begin,
+            binding.projection.access_nodes.size());
+        bundle->entries.push_back({projection.capacity, {}, util::retain_ref(store), projection});
+        bundle->replacements.push_back({projection.capacity, store->capacity});
+        bundle->replacements.push_back({projection.metadata, store->indices});
+      }
+    }
+    // Exact final input identities and selected projection qualification are
+    // all checked before changing the first old binding or view identity.
+    for (std::size_t i = 0; i < bundle->replacements.size(); ++i) {
+      const auto input = bundle->replacements[i].input;
+      const auto *old = find_binding(state, input);
+      if (!old || !old->input)
+        return Status::InvalidArgument("output relay requires an original external input resource");
+      for (std::size_t j = 0; j < i; ++j)
+        if (bundle->replacements[j].input == input)
+          return Status::InvalidArgument("output bundle repeats an input or Store metadata identity");
+    }
+    for (const auto &entry : bundle->entries) {
+      if (!entry.store) continue;
+      HYLE_RETURN_IF_ERROR(RegionAccess::validate_pending_projection(invocation,
+          entry.projection, entry.store->capacity));
+      HYLE_ASSIGN_OR_RETURN(auto ids, entry.store->indices_guard.view());
+      const auto expected = entry.store->indices.storage();
+      if (!entry.store->indices_guard.valid() || ids.resource() != expected.resource() ||
+          ids.native_handle() != expected.native_handle() || ids.offset() != expected.offset() ||
+          ids.size() != expected.size())
+        return Status::FailedPrecondition("Store source lost its exact ready-ID guard");
     }
     HYLE_RETURN_IF_ERROR(check_output_consumer(invocation, *bundle, {}, false));
     HYLE_ASSIGN_OR_RETURN(auto owner, output_input_source(bundle.get()));
     std::vector<InputSourceBinding, mem::StdAllocator<InputSourceBinding>> incoming{
         mem::StdAllocator<InputSourceBinding>(allocator)};
-    incoming.reserve(bindings.size());
-    for (const auto &entry : bundle->entries)
-      incoming.push_back({entry.input, entry.view->tensor, owner});
+    incoming.reserve(incoming_count);
+    for (const auto &replacement : bundle->replacements)
+      incoming.push_back({replacement.input, replacement.tensor, owner});
+    // Original cold reservation for exact ticket admissions, never a second
+    // payload pool. Failure changes no binding; full-model callers still need
+    // to reserve bundle/preparation metadata before accepting their predecessor.
+    if (ticket_count)
+      HYLE_RETURN_IF_ERROR(RegionAccess::reserve_reads(invocation,
+          static_cast<std::uint32_t>(ticket_count), reserve_options));
     HYLE_RETURN_IF_ERROR(InputAccess::bind(invocation, incoming));
-    // Original atomic validation/commit is complete. These pending markers
-    // force ordinary submit to reject missing read permission before acceptance.
+    // No fallible work or native acceptance remains. External control is
+    // serialized, so no observer can submit between this atomic commit and
+    // installing its exact pending/ready resource facts.
     bundle->consumer = state;
     for (const auto &entry : bundle->entries) {
-      auto *binding = find_binding(state, entry.input);
-      binding->borrowed = false; binding->permissionless = false;
-      binding->exclusive = false; binding->description = entry.view->tensor.description();
-      entry.view->bundle = bundle.get(); entry.view->bound_once = true;
+      auto *bound = find_binding(state, entry.input);
+      bound->borrowed = false; bound->permissionless = false; bound->exclusive = false;
+      if (entry.view) {
+        bound->description = entry.view->tensor.description();
+        entry.view->bundle = bundle.get(); entry.view->bound_once = true;
+      } else {
+        bound->description = entry.store->capacity.description();
+        bound->scope = BindingScope::kProjected;
+        auto *ids = find_binding(state, entry.projection.metadata);
+        ids->read = entry.store->indices_guard;
+        ids->description = entry.store->indices.description();
+        ids->borrowed = false; ids->exclusive = false; ids->permissionless = false;
+        entry.store->bundle = bundle.get(); entry.store->bound_once = true;
+      }
     }
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("output bundle cold binding metadata");
@@ -2303,13 +2655,17 @@ Result<compute::Completion> submit_outputs(Invocation &invocation,
           return Status::InvalidArgument("ordered output reader has another actual Queue");
         std::lock_guard guard(source.observation);
         for (const auto &entry : owner.entries) {
+          if (entry.store) {
+            for (const auto &ticket : entry.store->tickets)
+              HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, ticket));
+            continue;
+          }
           const auto &view = *entry.view;
           if (view.retained_output.valid()) {
             HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, view.retained_output));
           } else if (view.writer->valid()) {
             HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses, *view.writer));
           } else {
-            // result() may already have published this original writer.
             HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, *view.ready));
           }
         }

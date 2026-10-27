@@ -142,7 +142,7 @@ A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一�
 同一次原提交的[共同owner检查](../evidence/correctness/inference-submission-source-2026-10-27.json)另已完成：
 两个不同I32输出送入同B两个输入，source／device-wait均为1；后项无效时整批绑定保持，原错误及真实退休分离。
 旧单输出入口已删除，不保兼容重载；Source本身不限制consumer，每个实际bundle保自己的绑定／一次提交身份。
-接下来仍需状态／KV的精确pending视图及有界轮换。
+接下来仍需KV、索引融合后继读取及有界轮换；下方Store精确视图已另有有限检查。
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
@@ -170,7 +170,21 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 它保原block／domain／generation／精确范围，并允许同一原有序读接纳跨越writer移动与真实publication；
 新的写接纳和可写地址出口由本写代的封写标记机械拒绝。
 [有限检查](../evidence/correctness/inference-captured-submission-2026-10-27.json)覆盖受控Completion下的寿命、
-失败分离、关闭与唯一ready重开写；尚未接Store目的槽、KV append或真实GPU状态ticket。
+失败分离、关闭与唯一ready重开写；该批次未接Store目的槽、KV append或真实GPU状态ticket。
+
+Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。
+成功原提交后`capture`重核原交易、代际、范围与资源，再封写导出票据；之后不留writer指针。
+原destination IDs以精确bounded ready guard保活，不另上传、不取得整池ready权限；同代第二视图的几何检查
+只比较原writer范围，不因封写而请求新的可写地址。此guard也会阻挡旧控制载体过早重写，不能当作无背压的连续轮换。
+
+混合bundle先用原逻辑Graph核实际checked Gather的pool／IDs边和当前Invocation具体形状，再核原selected reader的投影资格。
+token、capacity及真实ready IDs沿原`InputAccess::bind`整束提交，失败不部分改绑；成功后只无失败地恢复精确pending投影及只读权限。
+共同terminal adapter保一份原Status／Queue依赖，实际每块读权限仍单独接纳。
+原A实际退休后可显式detach共同Source并take交易；`publish`须同时证明整图成功、真实退休及返回writer与ticket精确相同，
+再沿原`publish_after_writes`发布，不能以detach成功代替数学成功或放宽public publish。
+[有限CUDA检查](../evidence/correctness/inference-pending-store-source-2026-10-27.json)覆盖非连续槽0／2、真实后继在途时取回／发布／reset、
+同形状诱饵IDs拒绝与旧绑定、第二视图、失败传播及未选槽／padding；不是KV append、索引GDN／conv后继读取或完整模型流水证明。
+Store视图自身元数据已预冷；共同Source、混合bundle及原prepare仍可能分配冷元数据，完整模型接入前须在N之前按真实预算有界预留。
 
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。

@@ -255,6 +255,54 @@ StoreConfiguration StoreBinding::configuration() const noexcept {
 const SlotBindings *StoreBinding::transaction() const noexcept {
   return valid() ? &data_->bindings : nullptr;
 }
+Result<StorePendingExport> StoreBinding::export_pending() const noexcept {
+  if (!valid() || !data_->controls || data_->group >= data_->controls->groups.size())
+    return std::unexpected(Status::FailedPrecondition("slot export has no original transaction/control group"));
+  HYLE_RETURN_IF_ERROR(validate_authority());
+  const auto &s = *data_;
+  const auto &bindings = s.bindings;
+  const auto writers = bindings.destinations();
+  const auto addresses = bindings.destination_addresses();
+  const auto layout = bindings.layout();
+  const auto count = s.facts.destination_count;
+  if (!count || writers.size() != count || addresses.size() != count || !layout.valid())
+    return std::unexpected(Status::FailedPrecondition("slot export lost its populated destination geometry"));
+  HYLE_ASSIGN_OR_RETURN(auto schema,
+      Schema::create(layout.description(), layout.slot_count(), layout.stride_bytes()));
+  if (schema != s.facts.schema)
+    return std::unexpected(Status::InvalidArgument("slot export layout differs from its original Store"));
+  HYLE_ASSIGN_OR_RETURN(auto description, schema.capacity_description());
+  HYLE_ASSIGN_OR_RETURN(auto carrier, cd::LeaseAccess::slot_capacity(layout));
+  HYLE_ASSIGN_OR_RETURN(auto capacity, c::ConstTensorView::create(description, carrier));
+  if (!s.configuration.capacity.valid() || capacity.description() != s.configuration.capacity.description() ||
+      !same_storage(capacity.storage(), s.configuration.capacity.storage()) || carrier.resource() != s.facts.resource)
+    return std::unexpected(Status::InvalidArgument("slot export capacity differs from its original pool"));
+  HYLE_ASSIGN_OR_RETURN(auto item_bytes, layout.description().required_bytes());
+  for (std::size_t i = 0; i < count; ++i) {
+    if (addresses[i].index >= layout.slot_count() || writers[i].generation() != addresses[i].generation ||
+        writers[i].size() != item_bytes)
+      return std::unexpected(Status::FailedPrecondition("slot export destination generation/extent changed"));
+    const auto offset = std::size_t{addresses[i].index} * layout.stride_bytes();
+    HYLE_ASSIGN_OR_RETURN(auto expected, carrier.subview(offset, item_bytes));
+    HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_writer_storage(writers[i], expected));
+  }
+  if (s.facts.source.count > SIZE_MAX - s.offset ||
+      s.offset + s.facts.source.count > SIZE_MAX / sizeof(std::int32_t) ||
+      count > SIZE_MAX / sizeof(std::int32_t))
+    return std::unexpected(Status::OutOfRange("slot export destination-ID extent overflows"));
+  const auto offset = (s.offset + s.facts.source.count) * sizeof(std::int32_t);
+  const auto bytes = count * sizeof(std::int32_t);
+  const auto &ready = s.controls->groups[s.group].indices.ready;
+  HYLE_ASSIGN_OR_RETURN(auto guard, ready.subview(offset, bytes));
+  HYLE_ASSIGN_OR_RETURN(auto indices_description, c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{static_cast<std::int64_t>(count)}));
+  HYLE_ASSIGN_OR_RETURN(auto indices, guard.tensor(indices_description));
+  if (!s.configuration.destination_indices.valid() ||
+      indices.description() != s.configuration.destination_indices.description() ||
+      !same_storage(indices.storage(), s.configuration.destination_indices.storage()))
+    return std::unexpected(Status::InvalidArgument("slot export IDs differ from their original private slice"));
+  return StorePendingExport{&bindings, capacity, indices, std::move(guard)};
+}
 Status StoreBinding::validate_authority() const noexcept {
   if (!valid() || !data_->controls->groups[data_->group].indices.ready.valid())
     return Status::FailedPrecondition("slot store has no current original transaction and controls");

@@ -13,6 +13,7 @@
 #include "hyle/graph/cuda.h"
 #include "hyle/graph/detail/output_source.h"
 #include "hyle/graph/detail/submission_source.h"
+#include "hyle/graph/detail/store_source.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/region_provider.h"
@@ -802,5 +803,279 @@ TEST(GraphOutputSourceCuda, TwoOutputsShareOneOriginalSubmissionAndAtomicBundle)
   *consumed = {}; views = {}; consumer = {}; common = {}; producer = {};
   EXPECT_EQ(tokens_pool.stats().live_blocks, 0u);
   EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+}
+void store_relay(bool failed_producer) {
+  auto context_result = g::cuda::create_context();
+  ASSERT_TRUE(context_result) << context_result.error().message();
+  auto context = std::move(*context_result);
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(12).ok());
+  auto device_memory = c::cuda::MemoryResource::create(
+      context, c::cuda::MemoryKind::kDevice).value();
+  auto storage = c::StorageOwner::adopt(context, std::move(device_memory)).value();
+  auto staging = c::cuda::MemoryResource::create(
+      context, c::cuda::MemoryKind::kPinnedHost).value();
+  const auto i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  const auto table_i32 = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{4}).value();
+  const auto item = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto rows_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 2}).value();
+  const auto ids_desc = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{2}).value();
+  const auto embedding_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{4, 2}).value();
+  const auto row_desc = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{1, 2}).value();
+  constexpr std::size_t stride = 256, item_bytes = 2 * sizeof(float);
+  auto backing = hyle::mem::Buffer::create(storage.ref(), 4 * stride, stride).value();
+  ASSERT_TRUE(backing.view().fill(std::byte{0x5a}).ok());
+  auto state_pool = c::LeasePool::adopt(std::move(backing), {.max_blocks = 8}).value();
+  const auto layout = c::LeaseSlotLayout::create(state_pool, item, 4, stride).value();
+  std::array<c::WriteLease, 4> initial;
+  std::array<c::ReadLease, 4> padding;
+  for (std::size_t i = 0; i < initial.size(); ++i) {
+    initial[i] = state_pool.allocate(item_bytes, stride).value();
+    EXPECT_EQ(layout.locate(initial[i])->index, i);
+    const std::array<float, 2> old{100.0f + static_cast<float>(i), 200.0f + static_cast<float>(i)};
+    ASSERT_TRUE(initial[i].view()->write(std::as_bytes(std::span(old))).ok());
+    auto gap = state_pool.allocate(stride - item_bytes, 1).value();
+    padding[i] = gap.publish().value();
+  }
+  std::array<c::ReadLease, 2> sentinels{
+      initial[1].publish().value(), initial[3].publish().value()};
+  std::array<c::WriteLease, 2> destinations{std::move(initial[0]), std::move(initial[2])};
+
+  auto input_pool = c::LeasePool::create(storage.ref(), 6 * stride, {.max_blocks = 6}).value();
+  auto table = input_pool.allocate(4 * sizeof(std::int32_t), stride).value();
+  auto index = input_pool.allocate(sizeof(std::int32_t), stride).value();
+  auto rows = input_pool.allocate(4 * sizeof(float), stride).value();
+  auto embedding = input_pool.allocate(8 * sizeof(float), stride).value();
+  auto old_ids = input_pool.allocate(2 * sizeof(std::int32_t), stride).value();
+  auto decoy_ids = input_pool.allocate(2 * sizeof(std::int32_t), stride).value();
+  constexpr std::array<std::int32_t, 4> tokens{2, 1, 3, 0};
+  const std::array<std::int32_t, 1> selected_index{failed_producer ? 4 : 0};
+  constexpr std::array<float, 4> incoming{3, 5, 7, 11};
+  constexpr std::array<float, 8> embedding_values{10, 11, 20, 21, 30, 31, 40, 41};
+  constexpr std::array<std::int32_t, 2> old_source_ids{1, 3}, decoy_values{0, 1};
+  ASSERT_TRUE(table.view()->write(std::as_bytes(std::span(tokens))).ok());
+  ASSERT_TRUE(index.view()->write(std::as_bytes(std::span(selected_index))).ok());
+  ASSERT_TRUE(rows.view()->write(std::as_bytes(std::span(incoming))).ok());
+  ASSERT_TRUE(embedding.view()->write(std::as_bytes(std::span(embedding_values))).ok());
+  ASSERT_TRUE(old_ids.view()->write(std::as_bytes(std::span(old_source_ids))).ok());
+  ASSERT_TRUE(decoy_ids.view()->write(std::as_bytes(std::span(decoy_values))).ok());
+  auto table_ready = table.publish().value(), index_ready = index.publish().value();
+  auto rows_ready = rows.publish().value(), embedding_ready = embedding.publish().value();
+  auto old_ids_ready = old_ids.publish().value(), decoy_ids_ready = decoy_ids.publish().value();
+  auto token_pool = c::LeasePool::create(storage.ref(), stride, {.max_blocks = 1}).value();
+  auto output_pool = c::LeasePool::create(storage.ref(), 3 * stride, {.max_blocks = 3}).value();
+  auto foreign_pool = c::LeasePool::create(storage.ref(), stride, {.max_blocks = 1}).value();
+  auto foreign_writer = foreign_pool.allocate(item_bytes, stride).value();
+
+  auto first = g::GraphBuilder::create().value();
+  const auto table_input = first.input(table_i32).value();
+  const auto index_input = first.input(i32).value();
+  const auto row_input = first.input(rows_desc).value();
+  const auto destination_ids = first.input(ids_desc).value();
+  const auto token = first.add(c::Gather{.axis = 0}, table_input, index_input).value();
+  ASSERT_TRUE(first.publish(token).ok());
+  const auto store = first.add_node(c::Operation::custom(g::slots::Store{
+      g::slots::Schema::create(item, 4, stride).value()}),
+      std::array{row_input, destination_ids}).value();
+  const auto first_graph = std::move(first).finish().value();
+  auto producer_plan = g::cuda::compile(first_graph, context, storage);
+  ASSERT_TRUE(producer_plan) << producer_plan.error().message();
+  ASSERT_EQ(producer_plan->report.segment_count(), 1u);
+  auto producer = producer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(producer.prepare_resources().ok());
+  ASSERT_TRUE(producer.bind(table_input, table_i32, table_ready).ok());
+  ASSERT_TRUE(producer.bind(index_input, i32, index_ready).ok());
+  ASSERT_TRUE(producer.bind(row_input, rows_desc, rows_ready).ok());
+  auto token_writer = token_pool.allocate(sizeof(std::int32_t), stride).value();
+  ASSERT_TRUE(producer.bind(token, i32, std::move(token_writer)).ok());
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
+  ASSERT_TRUE(g::slots::prepare(producer, queues, {.host_workspace = staging.ref()}).ok());
+  auto transaction = g::slots::SlotBindings::create(layout, {}, destinations).value();
+  ASSERT_TRUE(g::slots::bind(producer, first_graph, store, std::move(transaction)).ok());
+  // Reserve the typed state metadata before accepting the predecessor. No
+  // writer is copied or sealed until capture names its exact real submission.
+  auto state_result = gd::StoreSource::prepare(producer, store, storage);
+  ASSERT_TRUE(state_result) << state_result.error().message();
+  auto state = std::move(*state_result);
+  auto another_result = gd::StoreSource::prepare(producer, store, storage);
+  ASSERT_TRUE(another_result) << another_result.error().message();
+  auto another_view = std::move(*another_result);
+
+  auto second = g::GraphBuilder::create().value();
+  const auto embedding_input = second.input(embedding_desc).value();
+  const auto token_input = second.input(i32).value();
+  const auto bank_input = second.input(
+      g::slots::Schema::create(item, 4, stride)->capacity_description().value()).value();
+  const auto source_ids = second.input(ids_desc).value();
+  const auto unrelated_ids = second.input(ids_desc).value();
+  const auto token_row = second.add(c::Gather{.axis = 0}, embedding_input, token_input).value();
+  const auto gather = second.add_node(c::Operation(c::Gather{.axis = 0}),
+      std::array{bank_input, source_ids}).value();
+  const auto state_rows = second.result(gather).value();
+  const auto decoy_rows = second.add(c::Gather{.axis = 0}, embedding_input, unrelated_ids).value();
+  ASSERT_TRUE(second.publish(token_row).ok()); ASSERT_TRUE(second.publish(state_rows).ok());
+  ASSERT_TRUE(second.publish(decoy_rows).ok());
+  const auto second_graph = std::move(second).finish().value();
+  auto consumer_plan = g::cuda::compile(second_graph, context, storage);
+  ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
+  auto consumer = consumer_plan->executable.create_invocation().value();
+  ASSERT_TRUE(consumer.prepare_resources().ok());
+  ASSERT_TRUE(consumer.bind(embedding_input, embedding_desc, embedding_ready).ok());
+  ASSERT_TRUE(consumer.bind(source_ids, ids_desc, old_ids_ready).ok());
+  ASSERT_TRUE(consumer.bind(unrelated_ids, ids_desc, decoy_ids_ready).ok());
+  auto token_row_writer = output_pool.allocate(item_bytes, stride).value();
+  auto state_rows_writer = output_pool.allocate(2 * item_bytes, stride).value();
+  auto decoy_rows_writer = output_pool.allocate(2 * item_bytes, stride).value();
+  ASSERT_TRUE(consumer.bind(token_row, row_desc, std::move(token_row_writer)).ok());
+  ASSERT_TRUE(consumer.bind(state_rows, rows_desc, std::move(state_rows_writer)).ok());
+  ASSERT_TRUE(consumer.bind(decoy_rows, rows_desc, std::move(decoy_rows_writer)).ok());
+  ASSERT_TRUE(producer.prepare_replay(queues,
+      {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
+
+  Gate gate, reader_gate;
+  gate.arm(c::cuda::stream(queue).value());
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &Gate::wait, &gate), cudaSuccess);
+  auto submitted = producer.submit(queues);
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common_result = gd::SubmissionSource::create(producer, std::move(*submitted), storage);
+  ASSERT_TRUE(common_result) << common_result.error().message();
+  auto common = std::move(*common_result);
+  const auto captured = state.capture(common);
+  ASSERT_TRUE(captured.ok()) << captured.message();
+  // A second independently prepared view must be able to export the same
+  // immutable generation after its first ticket sealed further mutation.
+  const auto captured_again = another_view.capture(common);
+  ASSERT_TRUE(captured_again.ok()) << captured_again.message();
+  EXPECT_EQ(another_view.destination_count(), 2u);
+  another_view = {};
+  auto token_result = gd::OutputSource::create(common, token, storage, token_pool);
+  ASSERT_TRUE(token_result) << token_result.error().message();
+  auto token_source = std::move(*token_result);
+  const std::array access{gather};
+  const std::array bindings{
+      gd::OutputBinding{token_input, &token_source},
+      gd::OutputBinding{.store = &state,
+          .projection = {bank_input, source_ids, gather, access,
+              c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
+  auto bad_bindings = bindings;
+  // Same shape/resource as the real IDs, but it controls another Gather.
+  // Accepting it would let the state reader use the old {1,3} IDs while only
+  // admitting tickets for {0,2}. Rejection must preserve this unrelated input.
+  bad_bindings[1].projection.metadata = unrelated_ids;
+  EXPECT_FALSE(gd::bind_outputs(consumer, bad_bindings).ok());
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(prepared.ok()) << prepared.message();
+  EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
+  const auto report = consumer.input_source_report().value();
+  EXPECT_EQ(report.source_count, 1u); EXPECT_EQ(report.device_wait_count, 1u);
+  EXPECT_EQ(report.host_wait_count, 0u);
+  EXPECT_FALSE(consumer.submit(queues));
+  reader_gate.arm(gate.stream);
+  ASSERT_EQ(cudaLaunchHostFunc(reader_gate.stream, &Gate::wait, &reader_gate), cudaSuccess);
+  auto consumed = gd::submit_outputs(consumer, bindings, queues);
+  ASSERT_TRUE(consumed) << consumed.error().message();
+  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  gate.release();
+  const auto original_status = common.wait();
+  EXPECT_FALSE(producer.in_flight()); EXPECT_TRUE(consumer.in_flight());
+  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  std::array<c::ReadLease, 2> published;
+  if (!failed_producer) {
+    ASSERT_TRUE(original_status.ok()) << original_status.message();
+    ASSERT_TRUE(token_source.detach().ok());
+    ASSERT_TRUE(common.detach().ok());
+    auto returned = g::slots::take(producer, store);
+    ASSERT_TRUE(returned) << returned.error().message();
+    ASSERT_EQ(returned->destination_count(), 2u);
+    auto rejected = state.publish(0, foreign_writer);
+    ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument());
+    EXPECT_TRUE(foreign_writer.valid());
+    for (std::size_t i = 0; i < published.size(); ++i) {
+      EXPECT_FALSE(returned->destinations()[i].publish());
+      auto value = state.publish(i, returned->destinations()[i]);
+      ASSERT_TRUE(value) << value.error().message();
+      published[i] = std::move(*value);
+      EXPECT_FALSE(published[i].try_write());
+    }
+    // Independent tickets and bounded control guards survive the original
+    // transaction's take and reset while the successor still has a native use.
+    EXPECT_TRUE(producer.reset().ok());
+  } else {
+    ASSERT_FALSE(original_status.ok());
+    auto rejected = state.publish(0, foreign_writer);
+    ASSERT_FALSE(rejected);
+    EXPECT_EQ(rejected.error().code(), original_status.code());
+    EXPECT_EQ(rejected.error().message(), original_status.message());
+  }
+  reader_gate.release();
+  const auto consumer_status = consumed->wait();
+  if (failed_producer) {
+    EXPECT_EQ(consumer_status.code(), original_status.code());
+    EXPECT_EQ(consumer_status.message(), original_status.message());
+    EXPECT_FALSE(consumer.output(token_row)); EXPECT_FALSE(consumer.output(state_rows));
+    EXPECT_FALSE(consumer.output(decoy_rows));
+  } else {
+    ASSERT_TRUE(consumer_status.ok()) << consumer_status.message();
+    std::array<float, 2> actual_token_row{};
+    std::array<float, 4> actual_state_rows{};
+    std::array<float, 4> actual_decoy_rows{};
+    ASSERT_TRUE(consumer.output(token_row)->storage().read(
+        std::as_writable_bytes(std::span(actual_token_row))).ok());
+    ASSERT_TRUE(consumer.output(state_rows)->storage().read(
+        std::as_writable_bytes(std::span(actual_state_rows))).ok());
+    ASSERT_TRUE(consumer.output(decoy_rows)->storage().read(
+        std::as_writable_bytes(std::span(actual_decoy_rows))).ok());
+    EXPECT_EQ(actual_token_row, (std::array<float, 2>{30, 31}));
+    EXPECT_EQ(actual_state_rows, incoming);
+    EXPECT_EQ(actual_decoy_rows, (std::array<float, 4>{10, 11, 20, 21}));
+  }
+  EXPECT_FALSE(gate.timed_out.load(std::memory_order_acquire));
+  EXPECT_FALSE(reader_gate.timed_out.load(std::memory_order_acquire));
+  for (std::size_t i = 0; i < sentinels.size(); ++i) {
+    std::array<float, 2> actual{};
+    ASSERT_TRUE(sentinels[i].view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    const float slot = i == 0 ? 1.0f : 3.0f;
+    EXPECT_EQ(actual, (std::array<float, 2>{100.0f + slot, 200.0f + slot}));
+  }
+  for (const auto &guard : padding) {
+    std::array<std::byte, stride - item_bytes> bytes{};
+    ASSERT_TRUE(guard.view()->read(bytes).ok());
+    for (const auto byte : bytes) EXPECT_EQ(byte, std::byte{0x5a});
+  }
+  EXPECT_EQ(state_pool.stats().active_uses, 0u);
+  *consumed = {}; token_source = {}; consumer = {};
+  if (failed_producer) {
+    ASSERT_TRUE(common.detach().ok());
+    auto returned = g::slots::take(producer, store);
+    ASSERT_TRUE(returned) << returned.error().message();
+    auto rejected = state.publish(0, returned->destinations()[0]);
+    ASSERT_FALSE(rejected); EXPECT_EQ(rejected.error().code(), original_status.code());
+    EXPECT_FALSE(returned->destinations()[0].publish());
+  }
+  state = {}; common = {}; producer = {};
+  if (!failed_producer) {
+    for (auto &ready : published) {
+      auto writer = ready.try_write();
+      ASSERT_TRUE(writer) << writer.error().message();
+    }
+  }
+  EXPECT_EQ(token_pool.stats().live_blocks, 0u);
+  EXPECT_EQ(output_pool.stats().live_blocks, 0u);
+}
+
+TEST(GraphOutputSourceCuda, StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication) {
+  store_relay(false);
+}
+TEST(GraphOutputSourceCuda, StorePendingReaderPreservesWholeProducerFailure) {
+  store_relay(true);
 }
 } // namespace

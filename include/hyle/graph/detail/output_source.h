@@ -1,10 +1,12 @@
 #pragma once
 
 #include "hyle/graph/detail/submission_source.h"
+#include "hyle/graph/detail/region_access.h"
 
 namespace hyle::graph::detail {
 struct OutputSourceState;
 struct OutputBinding;
+class StoreSource;
 
 // One fixed caller-owned dense I32 output of a SubmissionSource. Its real
 // storage owner and original permission are retained independently of other
@@ -42,12 +44,22 @@ private:
   OutputSourceState *state_ = nullptr;
 };
 
-struct OutputBinding final { ValueId input{}; const OutputSource *output = nullptr; };
+struct OutputBinding final {
+  ValueId input{};
+  const OutputSource *output = nullptr;
+  const StoreSource *store = nullptr;
+  ResourceProjection projection{};
+  const Graph *graph = nullptr;
+};
 
 // Cold atomic bundle of distinct inputs from the same submission.
 // Success retains all views, even when InputSources deduplicates their common
 // dependency. A view binds one original consumer bundle once; the submission itself
 // has no consumer restriction. Failure preserves bindings and view identities.
+// Exactly one concrete view is supplied. Store entries derive their capacity
+// input and bounded ready-ID input from projection; input must remain empty.
+// Store graph is borrowed for this cold call to prove the actual checked
+// Gather input/ID association, then discarded; no provider-name inference.
 // Subsequent calls supply this same ordered bundle; the span is never retained.
 HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Prepared nonblocking Commands or complete existing capture reuse. The full

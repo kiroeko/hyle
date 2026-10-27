@@ -189,6 +189,11 @@ mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
   // the primary payload charge, which can already have been adopted.
   return ResourceBudgetAccess::original_allocator(domain->allocator);
 }
+mem::AllocatorRef LeaseAccess::metadata_backing_allocator(
+    const WriteLease &lease) noexcept {
+  if (!lease.block_) return {};
+  return ResourceBudgetAccess::original_allocator(lease.block_->domain->allocator);
+}
 Result<mem::AllocatorRef> LeaseAccess::freeze_owner_allocator(
     const LeasePool &pool, const WriteLease &writer) noexcept {
   if (!pool.state_ || !writer.block_ || writer.block_->domain != pool.state_)
@@ -574,6 +579,23 @@ Status AppendLease::rollback() noexcept {
   return Status::Ok();
 }
 
+Status LeaseAccess::matches_writer_storage(const WriteLease &lease,
+    mem::ConstBufferView view) noexcept {
+  if (!lease.block_) return Status::FailedPrecondition("storage proof writer is empty");
+  const auto *block = lease.block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->domain->closed || !block->writer || !block->writable || block->append_mode)
+    return Status::FailedPrecondition("storage proof requires an open ordinary writer");
+  if (!block->failure.ok()) return block->failure;
+  if (!view.valid()) return Status::InvalidArgument("storage proof address carrier is empty");
+  const auto &backing = block->domain->backing;
+  HYLE_ASSIGN_OR_RETURN(auto original, backing.view().subview(
+      static_cast<std::size_t>(block->range.offset()) + lease.offset_, lease.size_));
+  if (view.resource() != original.resource() || view.native_handle() != original.native_handle() ||
+      view.offset() != original.offset() || view.size() != original.size())
+    return Status::InvalidArgument("storage proof differs from the writer's exact original range");
+  return Status::Ok();
+}
 Result<mem::BufferView> LeaseAccess::ordered_view(const WriteLease &lease) noexcept {
   if (!lease.block_) return std::unexpected(Status::FailedPrecondition("copy mutable lease is empty"));
   std::lock_guard guard(lease.block_->domain->lock);
@@ -752,6 +774,18 @@ Status LeaseAccess::matches_pending_read(const PendingReadTicket &ticket,
   if (view.resource() != original.resource() || view.native_handle() != original.native_handle() ||
       view.offset() != original.offset() || view.size() != original.size())
     return Status::InvalidArgument("pending read address carrier differs from its exact original range");
+  return Status::Ok();
+}
+Status LeaseAccess::matches_pending_read(const PendingReadTicket &ticket,
+    const WriteLease &writer) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_read_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.offset_, ticket.size_));
+  std::lock_guard guard(ticket.domain_->lock);
+  if (writer.block_ != ticket.block_ || writer.offset_ != ticket.offset_ ||
+      writer.size_ != ticket.size_)
+    return Status::InvalidArgument("pending read writer differs from its exact original block");
+  if (!ticket.block_->writer || !ticket.block_->pending_read_sealed)
+    return Status::FailedPrecondition("pending read writer is no longer in its sealed write epoch");
   return Status::Ok();
 }
 Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,

@@ -324,6 +324,15 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status bind_projection(Invocation&,
       ResourceProjection,
       compute::ConstTensorView,std::span<const compute::ReadLease>,bool pending=false)noexcept;
+  // The same exact selected-reader and pending-capacity checks as
+  // bind_projection, without binding or granting permission. Cold composite
+  // adapters then use the original atomic InputAccess bundle commit.
+  HYLE_GRAPH_API static Status validate_pending_projection(Invocation&,
+      ResourceProjection,compute::ConstTensorView) noexcept;
+private:
+  static Status validate_projection_binding(Invocation&,ResourceProjection,
+      compute::ConstTensorView,std::span<const compute::ReadLease>,bool) noexcept;
+public:
   // Cold successful idle caller output only; empty after readonly publication.
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
       Invocation&,ValueId caller_output) noexcept;
