@@ -125,8 +125,9 @@ EOS、停止或背压使无效后继只退休、不发布token或推进RNG，提
 后继事件成功不能替代前驱的采样有效性、原生错误或完整状态事实。
 
 容量按实际未发布候选计量。R1／K1若在前驱发布前提交后继，必须同时保留旧head、前驱目的及后继目的；
-仅两块状态会使后继覆盖失败回退需要的旧状态。当前`N+K×R`是单episode容量，
-不是深度二承诺；提前提交需显式增加候选预算或缩小提前深度。KV保留原追加／COW权限与各候选
+仅两块状态会使后继覆盖失败回退需要的旧状态。容量计划现显式接收在途批深D：
+状态槽为`N+K×D×R`、版本槽为`N+D×R`，KV额外COW尾页为`D×R`；
+每批的请求、query及page-ref数学上限不随D扩大。默认D=1保留原占用，实际调度启用更深在途前必须传入真实D。KV保留原追加／COW权限与各候选
 真实长度，不提前扩大已发布帧的可读范围；MTP接受未知时等待真实接受事实，或由实际实现修正
 候选长度，不能按全接受页界执行。普通`SlotBindings`及`PagedAppendPages`仍保ready／真实写权限合同；
 在途只读视图独立表达，不把未发布候选包装成ready状态。当前首批Graph KV接线见下，持续追加仍需另接。
@@ -145,6 +146,15 @@ A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一�
 接下来仍需KV其余入口、索引融合后继读取及有界轮换；下方Store及首批KV精确视图已另有有限检查。
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
+
+引擎的Phase现把输入、读回和attention布局按执行槽持有，普通Text外部token采用`[B*T,1]`，
+再以原View还原embedding所需`[B*T]`，T1可与采样的`[B,1]`原输出直接对接。
+非空caller读回把完整WriteLease交给原Graph，重复提交沿原发布／取写权门复用，
+不能以裸TensorView代替Source权限。跨Invocation重绑需先撤回原绑定并满足实际结果、Source与读者寿命；
+reset释放原绑定后的同池重新allocate也是原有合法路径。
+[三项合同及四条CPU／CUDA双会话检查](../evidence/correctness/inference-relay-carriers-2026-10-27.json)
+验证本批普通／MTP单槽路径；独立诊断入口只适配源码，未单独编译。实际引擎仍单槽，
+未声称完整设备token接力、重叠执行、capture或新tokens/s通过。
 
 剩余接线按以下共同职责收敛，尚未实现的部分不能由现有token检查代签：
 

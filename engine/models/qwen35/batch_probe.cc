@@ -356,7 +356,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
     require(model.active_step && model.active_step->members.size() == requests && batch_a->pending == model.active_step.get() && batch_b->pending == model.active_step.get(),
         "B2 prepare did not retain one original shared episode");
     require(model.active_step->phase && model.active_step->phase->family->requests == requests &&
-        model.active_step->phase->attention_layout.facts().requests == requests && model.active_step->phase->attention_layout.facts().query_rows == requests,
+        model.active_step->phase->io[model.active_step->state_slot].attention_layout.facts().requests == requests && model.active_step->phase->io[model.active_step->state_slot].attention_layout.facts().query_rows == requests,
         "prepared native Graph is not actual B2/T1");
     require(batch_a->head.get() == origin_a->head.get() && batch_b->head.get() == origin_b->head.get(), "prepare prematurely published a candidate head");
     observation.one_batch_episode = true;

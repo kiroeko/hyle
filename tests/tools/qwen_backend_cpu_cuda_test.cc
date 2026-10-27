@@ -5,10 +5,12 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <string>
 #include <gtest/gtest.h>
 #include "hyle/graph/progress.h"
 #include "hyle/graph/cpu_cuda.h"
+#include "hyle/graph/detail/output_source.h"
 #include "hyle/platform/fs.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/join.h"
@@ -122,6 +124,131 @@ TEST(QwenBackendCpuCuda, ExplicitCpuExecutesOriginalQueueAfterMove) {
   ASSERT_TRUE(readback->read(backend,*run,std::as_writable_bytes(std::span(actual))).ok());
   for(std::size_t i=0;i<input.size();++i)EXPECT_EQ(actual[i],-input[i]);
   ASSERT_TRUE(run->drain().ok());ASSERT_TRUE(backend.collect_retired().ok());
+}
+
+TEST(QwenBackendCpuCuda, ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndReclaim) {
+  auto created = Backend::create({.primary = BackendKind::kCpu});
+  ASSERT_TRUE(created) << created.error().message();
+  auto backend = std::move(*created);
+  const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 1>{4}).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto input = builder.input(description).value();
+  const auto output = builder.add(c::Unary{c::UnaryKind::kNeg}, input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto compiled = backend.compile(graph, {});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto readback = std::move(*prepared);
+  ASSERT_TRUE(readback.facts.caller_owned());
+  ASSERT_TRUE(readback.pool().valid()); // A real lease also without a budget.
+  auto storage = m::Buffer::create(backend.device(), 4 * sizeof(float), 256).value();
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(input, c::ConstTensorView::create(description, storage.view()).value()).ok());
+  ASSERT_TRUE(readback.bind(run).ok());
+  m::ConstBufferView original;
+  std::uint64_t generation = 0;
+  for (unsigned replay = 0; replay < 3; ++replay) {
+    const std::array<float, 4> values{float(replay + 1), -2, 3, -4};
+    ASSERT_TRUE(backend.write(storage.view(), std::as_bytes(std::span(values))).ok());
+    ASSERT_TRUE(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}).ok());
+    auto submitted = run.submit(backend.queue_bindings());
+    ASSERT_TRUE(submitted) << submitted.error().message();
+    ASSERT_TRUE(submitted->wait().ok());
+    *submitted = {};
+    std::array<float, 4> actual{};
+    ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(actual))).ok());
+    for (std::size_t i = 0; i < values.size(); ++i) EXPECT_EQ(actual[i], -values[i]);
+    auto result = run.result(output).value();
+    auto lease = result.storage_lease();
+    ASSERT_TRUE(lease) << lease.error().message();
+    const auto view = lease->view().value();
+    if (!replay) { original = view; generation = lease->generation(); }
+    EXPECT_EQ(view.resource(), original.resource());
+    EXPECT_EQ(view.native_handle(), original.native_handle());
+    EXPECT_EQ(view.offset(), original.offset());
+    EXPECT_EQ(view.size(), original.size());
+    EXPECT_EQ(lease->generation(), generation);
+  }
+  auto result = run.result(output).value();
+  auto escaped = result.storage_lease().value();
+  EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Original result pin.
+  result.reset();
+  EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Escaped readonly owner.
+  EXPECT_TRUE(readback.bind(run).IsUnavailable());
+  EXPECT_EQ(readback.pool().stats().live_blocks, 1U);
+  escaped.reset();
+  ASSERT_TRUE(readback.reclaim(run).ok());
+  ASSERT_TRUE(readback.bind(run).ok());
+  ASSERT_TRUE(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}).ok());
+  auto submitted = run.submit(backend.queue_bindings());
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  ASSERT_TRUE(submitted->wait().ok());
+  *submitted = {};
+  auto restored = run.result(output).value();
+  auto restored_lease = restored.storage_lease().value();
+  EXPECT_EQ(restored_lease.view().value().native_handle(), original.native_handle());
+  EXPECT_EQ(restored_lease.view().value().offset(), original.offset());
+  EXPECT_EQ(restored_lease.generation(), generation);
+}
+
+TEST(QwenBackendCpuCuda, ReadbackI32WriterSupportsTheOriginalSubmissionSource) {
+  auto created = Backend::create({.primary = BackendKind::kCuda});
+  ASSERT_TRUE(created) << created.error().message();
+  auto backend = std::move(*created);
+  const auto table_description = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{4}).value();
+  const auto index_description = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 1>{1}).value();
+  auto builder = g::GraphBuilder::create().value();
+  const auto table_port = builder.input(table_description).value();
+  const auto index_port = builder.input(index_description).value();
+  const auto output = builder.add(c::Gather{.axis = 0}, table_port, index_port).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph = std::move(builder).finish().value();
+  auto compiled = backend.compile(graph, {});
+  ASSERT_TRUE(compiled) << compiled.error().message();
+  auto prepared = hyle::inference::PreparedReadback::prepare(*compiled, output, backend);
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  auto readback = std::move(*prepared);
+  ASSERT_TRUE(readback.facts.caller_owned());
+  auto table = m::Buffer::create(backend.device(), 4 * sizeof(std::int32_t), 256).value();
+  auto index = m::Buffer::create(backend.device(), sizeof(std::int32_t), 256).value();
+  const std::array<std::int32_t, 4> values{10, 20, 30, 40};
+  const std::array<std::int32_t, 1> select{2};
+  ASSERT_TRUE(backend.write(table.view(), std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(backend.write(index.view(), std::as_bytes(std::span(select))).ok());
+  auto run = compiled->executable.create_invocation().value();
+  ASSERT_TRUE(run.bind(table_port, c::ConstTensorView::create(table_description, table.view()).value()).ok());
+  ASSERT_TRUE(run.bind(index_port, c::ConstTensorView::create(index_description, index.view()).value()).ok());
+  ASSERT_TRUE(readback.bind(run).ok());
+  ASSERT_TRUE(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}).ok());
+  auto submitted = run.submit(backend.queue_bindings());
+  ASSERT_TRUE(submitted) << submitted.error().message();
+  auto common = g::detail::SubmissionSource::create(run, std::move(*submitted), backend.storage_owner());
+  ASSERT_TRUE(common) << common.error().message();
+  auto source = g::detail::OutputSource::create(*common, output, backend.storage_owner(), readback.pool());
+  ASSERT_TRUE(source) << source.error().message();
+  ASSERT_TRUE(common->wait().ok());
+  EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Source still pins the producer.
+  ASSERT_TRUE(source->detach().ok());
+  ASSERT_TRUE(common->detach().ok());
+  std::int32_t actual = -1;
+  ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(&actual, 1))).ok());
+  EXPECT_EQ(actual, 30);
+  EXPECT_TRUE(readback.reclaim(run).IsUnavailable()); // Detached view still owns its read.
+  *source = {};
+  ASSERT_TRUE(readback.reclaim(run).ok());
+  ASSERT_TRUE(readback.bind(run).ok());
+  ASSERT_TRUE(run.prepare_replay(backend.queue_bindings(), {.mode = g::ReplayMode::kCommands}).ok());
+  auto replay = run.submit(backend.queue_bindings());
+  ASSERT_TRUE(replay) << replay.error().message();
+  ASSERT_TRUE(replay->wait().ok());
+  *replay = {};
+  ASSERT_TRUE(readback.read(backend, run, std::as_writable_bytes(std::span(&actual, 1))).ok());
+  EXPECT_EQ(actual, 30);
 }
 
 TEST(QwenBackendCpuCuda, ExplicitCpuOptionsKeepOriginalExecutorAndMoveContract) {

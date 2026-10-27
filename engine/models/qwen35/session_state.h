@@ -60,6 +60,7 @@ struct Plan final {
   std::uint32_t max_requests = 0, max_query_rows = 0, max_kv_rows = 0;
   std::uint32_t max_pages = 0, max_page_refs = 0, state_slots = 0;
   std::uint32_t snapshot_slots = 0, candidate_boundaries = 1, hidden_slots = 0;
+  std::uint32_t in_flight_batches = 1;
   std::size_t key_bank_bytes = 0, value_bank_bytes = 0, hidden_row_bytes = 0, hidden_bytes = 0, backing_bytes = 0;
   std::size_t attention_layers = 0, recurrent_layers = 0;
   bool draft_cache = false;
@@ -69,29 +70,33 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
                  std::size_t query_rows_per_request, std::size_t recurrent_payload,
                   std::size_t active_sequences = 1,
                    std::size_t candidate_boundaries = 1,
-                   bool draft_cache = false, bool frontier_hidden = false) {
+                   bool draft_cache = false, bool frontier_hidden = false,
+                   std::size_t in_flight_batches = 1) {
   geometry.validate();
   if (!row_bytes.key || !row_bytes.value)
     throw std::runtime_error("cache plan requires positive actual K/V row byte extents");
   if (context > static_cast<std::size_t>(geometry.context_limit) || (draft_cache && geometry.mtp_layers != 1))
     throw std::runtime_error("cache context or NextN selection exceeds source geometry");
   if (!context || !residents || !query_rows_per_request || query_rows_per_request > context ||
-      !active_sequences || active_sequences > residents ||
+      !active_sequences || active_sequences > residents || !in_flight_batches ||
       !candidate_boundaries || candidate_boundaries > context)
-    throw std::runtime_error("cache plan requires valid context/query rows, one to N active sequences and positive candidate boundaries within context");
+    throw std::runtime_error("cache plan requires valid context/query rows, one to N active sequences, positive in-flight batch depth and candidate boundaries within context");
   const auto refs = add(context, Plan::page_rows - 1) / Plan::page_rows;
-  // One batch retains at most R candidates beside N committed versions.
-  // Untouched pages are shared; each candidate can retain one old partial
-  // COW tail beyond the N complete-context capacities. Publication/admission
-  // must still preserve the N committed-version limit after the batch.
-  const auto pages = add(multiply(refs, residents), active_sequences);
-  const auto snapshots = add(residents, active_sequences);
-  // Each verifier prefix has independent material state, while the episode
-  // still creates one unpublished candidate. Committed heads may retain carry
-  // and prior together; a candidate retains one actual target row per prefix.
-  const auto states = add(residents, multiply(candidate_boundaries, active_sequences));
+  // Depth counts simultaneously retained batches, independently of each
+  // batch's R sequences and K verifier boundaries. Every in-flight sequence
+  // retains one candidate version and can require one extra partial COW tail
+  // beside the N committed complete-context capacities. This is a capacity
+  // bound, not permission to reuse an in-flight page or publish a candidate.
+  const auto pending_sequences = multiply(in_flight_batches, active_sequences);
+  const auto pages = add(multiply(refs, residents), pending_sequences);
+  const auto snapshots = add(residents, pending_sequences);
+  // Each verifier prefix has independent material state, while its episode
+  // still creates one unpublished version. Committed heads may retain carry
+  // and prior together; each candidate retains one target row per prefix.
+  const auto candidate_states = multiply(candidate_boundaries, pending_sequences);
+  const auto states = add(residents, candidate_states);
   const auto hidden_slots = draft_cache || candidate_boundaries > 1
-      ? add(multiply(2, residents), multiply(candidate_boundaries, active_sequences))
+      ? add(multiply(2, residents), candidate_states)
       : frontier_hidden ? snapshots : 0;
   const auto hidden_bytes = hidden_slots ? state_pool_backing_bytes(geometry.hidden_bytes(), hidden_slots) : 0;
   const auto page_refs = multiply(refs, active_sequences);
@@ -116,6 +121,7 @@ inline Plan plan(const ModelGeometry &geometry, KvRowBytes row_bytes,
   result.state_slots = static_cast<std::uint32_t>(states);
   result.snapshot_slots = static_cast<std::uint32_t>(snapshots);
   result.candidate_boundaries = static_cast<std::uint32_t>(candidate_boundaries);
+  result.in_flight_batches = static_cast<std::uint32_t>(in_flight_batches);
   result.hidden_slots = static_cast<std::uint32_t>(hidden_slots);
   result.hidden_bytes = hidden_bytes;
   result.draft_cache = draft_cache;

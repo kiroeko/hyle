@@ -747,8 +747,9 @@ p::KvRowBytes bf16_cache_rows(const qwen35::ModelGeometry &g) {
 void batch_state_capacity() {
   constexpr std::size_t payload = 19537920; // Current 36 Qwen conv/GDN resources.
   const auto single = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload);
-  const auto explicit_single = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 1);
-  require(single.active_sequences == 1 && single.max_requests == 1 &&
+  const auto explicit_single = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 1, 1, false, false, 1);
+  require(single.in_flight_batches == 1 && explicit_single.in_flight_batches == 1 &&
+      single.active_sequences == 1 && single.max_requests == 1 &&
       single.max_query_rows == 16 && single.max_kv_rows == 256 &&
       single.max_pages == 65 && single.max_page_refs == 16 && single.state_slots == 5 &&
       single.key_bank_bytes == 1064961 && single.backing_bytes == 110469168 &&
@@ -761,6 +762,15 @@ void batch_state_capacity() {
       batch.backing_bytes == 130203696 &&
       batch.backing_bytes - single.backing_bytes == payload + 12 * 16 * 1024,
       "R2 must reserve two candidates, packed request extents and both possible COW tails");
+  const auto serial_frontier = p::plan(geometry, bf16_cache_rows(geometry), 17, 1, 1, payload, 1, 1, false, true, 1);
+  const auto overlapped = p::plan(geometry, bf16_cache_rows(geometry), 17, 1, 1, payload, 1, 1, false, true, 2);
+  require(serial_frontier.state_slots == 2 && serial_frontier.snapshot_slots == 2 && serial_frontier.max_pages == 3 &&
+      overlapped.in_flight_batches == 2 && overlapped.state_slots == 3 && overlapped.snapshot_slots == 3 &&
+      overlapped.max_pages == 4 && overlapped.hidden_slots == 3 && overlapped.candidate_boundaries == 1 &&
+      overlapped.max_requests == 1 && overlapped.max_query_rows == 1 && overlapped.max_kv_rows == 17 &&
+      overlapped.max_page_refs == 2 && overlapped.active_sequences == 1 && overlapped.resident_sessions == 1 &&
+      overlapped.backing_bytes - serial_frontier.backing_bytes == payload + 12 * 16 * 1024 + 4096,
+      "lag1 needs committed/A/B state versions, two COW tails and one extra hidden row without widening the batch");
   const auto bf16_rows = bf16_cache_rows(geometry);
   const p::KvRowBytes e4_rows{bf16_rows.key / 2, bf16_rows.value / 2};
   const auto e4 = p::plan(geometry, e4_rows, 256, 4, 16, payload, 2);
@@ -781,6 +791,13 @@ void batch_state_capacity() {
       three.snapshot_slots==6 && five.snapshot_slots==6 &&
       three.max_pages==batch.max_pages && five.max_pages==batch.max_pages,
       "K2/K4 candidate material rows must grow without adding committed versions or whole-context KV copies");
+  const auto deep = p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, payload, 2, 3, true, false, 3);
+  require(deep.in_flight_batches == 3 && deep.candidate_boundaries == 3 && deep.state_slots == 22 &&
+      deep.snapshot_slots == 10 && deep.max_pages == 70 && deep.hidden_slots == 26 &&
+      deep.max_requests == three.max_requests && deep.max_query_rows == three.max_query_rows &&
+      deep.max_kv_rows == three.max_kv_rows && deep.max_page_refs == three.max_page_refs &&
+      deep.resident_sessions == three.resident_sessions && deep.active_sequences == three.active_sequences,
+      "three retained batches must scale candidate rows/versions/tails, independently of per-batch R and K");
   const auto two=p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,2,true);
   require(two.state_slots==8 && two.hidden_slots==12 &&
       two.hidden_bytes==49153 && two.backing_bytes==171491379,
@@ -811,6 +828,7 @@ void batch_state_capacity() {
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 257, payload, 1); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,0,true); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,257,true); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,1,false,false,0); });
   rejects([&] { return p::plan(geometry, {0, 1024}, 256, 4, 16, payload, 1); });
   rejects([&] { return p::plan(geometry, {1024, 0}, 256, 4, 16, payload, 1); });
   const auto maximum = (std::numeric_limits<std::size_t>::max)();
@@ -818,8 +836,10 @@ void batch_state_capacity() {
   rejects([&] { return p::plan(geometry, {1024, maximum}, 1, 1, 1, 0); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), maximum, 1, 1, payload, 1); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,maximum,true); });
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256,4,16,payload,2,1,false,false,maximum); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 256, 4, 16, maximum, 2); });
   const auto max_index = std::size_t((std::numeric_limits<std::int32_t>::max)());
+  rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 1,1,1,0,1,1,false,false,max_index); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), max_index, 2, 1, 0, 2); });
   rejects([&] { return p::plan(geometry, bf16_cache_rows(geometry), 1, max_index, 1, 0, 1); });
 }

@@ -1,0 +1,382 @@
+{
+  "status": "PASS",
+  "date": "2026-10-27",
+  "scope": "Per-slot IO, depth-aware capacity, original leased readback. Engine remains single-slot; no complete model overlap or throughput claim.",
+  "changes": [
+    "Plan N+K*D*R states, N+D*R versions and D*R COW tails; per-batch mathematical extents unchanged; default D=1.",
+    "Phase owns IO/readback/layout per real execution slot. Ordinary Text [B*T,1] is viewed as [B*T] for embedding.",
+    "Nonempty caller readback transfers full original WriteLease to Graph; repeated replay, source pin and reclaim/reset use original ownership gates."
+  ],
+  "counts": {
+    "distinct_CXX_TUs": 4,
+    "CXX_attempts": 5,
+    "links": 2,
+    "GTest_processes": 1,
+    "GTests": 3,
+    "CLI_processes": 4,
+    "SDK_rebuilds": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "results": [
+    {
+      "name": "test",
+      "process": {
+        "exit": 0,
+        "pid": 60588,
+        "seconds": 0.5244812000310048
+      },
+      "tests": [
+        {
+          "name": "BatchCapacityPreservesSingleAndBoundsAllCandidates",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+          "line": "1063",
+          "status": "run",
+          "result": "completed",
+          "time": "0.",
+          "timestamp": "2026-10-27T12:00:02.489",
+          "classname": "QwenSessionState"
+        },
+        {
+          "name": "ReadbackKeepsTheOriginalLeasedOutputAcrossReplayAndReclaim",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+          "line": "129",
+          "status": "run",
+          "result": "completed",
+          "time": "0.003",
+          "timestamp": "2026-10-27T12:00:02.489",
+          "classname": "QwenBackendCpuCuda"
+        },
+        {
+          "name": "ReadbackI32WriterSupportsTheOriginalSubmissionSource",
+          "file": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+          "line": "197",
+          "status": "run",
+          "result": "completed",
+          "time": "0.086",
+          "timestamp": "2026-10-27T12:00:02.493",
+          "classname": "QwenBackendCpuCuda"
+        }
+      ]
+    },
+    {
+      "name": "cpu-ordinary-b2",
+      "process": {
+        "exit": 0,
+        "pid": 51940,
+        "seconds": 0.8384481999673881
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\runs\\cpu-ordinary-b2\\report.json",
+        "bytes": 35638,
+        "sha256": "74b18aef67901d4edbdd3a5bc3654f2a5a6cfa17df2a978fe9a5b7be81e5e77d"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cpu-mtp-k3-b2",
+      "process": {
+        "exit": 0,
+        "pid": 45228,
+        "seconds": 0.44672609999543056
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\runs\\cpu-mtp-k3-b2\\report.json",
+        "bytes": 40677,
+        "sha256": "7e09c5bfcadbeee79a28d0a618b0135ba0dfb01e107475aa2d837ca6fefbaf0d"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cuda-ordinary-b2",
+      "process": {
+        "exit": 0,
+        "pid": 58972,
+        "seconds": 0.71112130000256
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\runs\\cuda-ordinary-b2\\report.json",
+        "bytes": 34800,
+        "sha256": "6adf27ae9e7a609e43f82dcaae3bd18be4c8b4f4016606a6f8b7cd5bc74cc429"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    },
+    {
+      "name": "cuda-mtp-k3-b2",
+      "process": {
+        "exit": 0,
+        "pid": 55764,
+        "seconds": 0.7953702000086196
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\runs\\cuda-mtp-k3-b2\\report.json",
+        "bytes": 39852,
+        "sha256": "759d59672c16f3dc63fe67b3357be0283a55059f1e85ee3c3ea5ba206cd5c679"
+      },
+      "generated_ids": {
+        "A": [
+          37,
+          0,
+          34,
+          34,
+          34,
+          34,
+          34,
+          34
+        ],
+        "B": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      "max_actual_batch_requests": 2
+    }
+  ],
+  "images": [
+    {
+      "name": "test",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\bin\\relay-carrier-test.exe",
+        "bytes": 146381312,
+        "sha256": "d000f330dd1bf191371206574dde682751dea6e35c4a6a20e37f536fd5f41150"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 51188,
+        "seconds": 1.886862299987115
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\test-link-inputs.json",
+        "bytes": 60990,
+        "sha256": "39d05d918ee36c01f2e2276826fbd9aa12d63b9908182bf01b8f1ea95c9dd165"
+      }
+    },
+    {
+      "name": "cli",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\bin\\hyle.exe",
+        "bytes": 142133248,
+        "sha256": "42d14165f4765478a75644e905d5ac9a40b4d52af6ec70e4606269da51d5ecb6"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 44180,
+        "seconds": 1.7031016999972053
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\cli-link-inputs.json",
+        "bytes": 57992,
+        "sha256": "64ecff1ed468403ec4ef40b758b58dd005e2cc45404b28c350c9fef63f358449"
+      }
+    }
+  ],
+  "retained_failure": "First model compile rejected !LeasePool, fixed to .valid(); no successful stale model object reused. Nested attempt script initially resolved repository root one level short, corrected before freeze/build.",
+  "cache_reuse": {
+    "cli_inputs": 224,
+    "test_inputs": 236,
+    "product_objects_updated_from_current_closure": 12,
+    "note": "Original compiler Data.Source and matching flags identify reused objects. main and weights both rebuilt with CPU+CUDA Backend configuration."
+  },
+  "source_freeze": [
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\readback.h",
+        "bytes": 9266,
+        "sha256": "dae92deee427862e6ae043fd5d926d54a08aaa97f2ed4d319e21adc688615ca3"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\inference\\readback.h",
+        "bytes": 9266,
+        "sha256": "dae92deee427862e6ae043fd5d926d54a08aaa97f2ed4d319e21adc688615ca3"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 505240,
+        "sha256": "d845522806735aa6e747c7495cac5b6b701290521c1279c5cce21ae24f74740c"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 505240,
+        "sha256": "d845522806735aa6e747c7495cac5b6b701290521c1279c5cce21ae24f74740c"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\session_state.h",
+        "bytes": 21564,
+        "sha256": "1b6a3a5e20fc40d14518e363740ad9e5d0492f242cb94d92bb8e2ff1c46282b3"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\models\\qwen35\\session_state.h",
+        "bytes": 21564,
+        "sha256": "1b6a3a5e20fc40d14518e363740ad9e5d0492f242cb94d92bb8e2ff1c46282b3"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\batch_probe.cc",
+        "bytes": 28978,
+        "sha256": "08d8e8be7891208c2670109d6207e459a3183029a368292d3bbcadbcf2d22842"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\models\\qwen35\\batch_probe.cc",
+        "bytes": 28978,
+        "sha256": "08d8e8be7891208c2670109d6207e459a3183029a368292d3bbcadbcf2d22842"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_session_probe.cc",
+        "bytes": 116311,
+        "sha256": "408f7a0993c5ad227eea5b737e8de60f752b653a9469532566dda3185ebd8cf2"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\models\\qwen35\\mtp_session_probe.cc",
+        "bytes": 116311,
+        "sha256": "408f7a0993c5ad227eea5b737e8de60f752b653a9469532566dda3185ebd8cf2"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\weights.cc",
+        "bytes": 48142,
+        "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\engine\\models\\qwen35\\weights.cc",
+        "bytes": 48142,
+        "sha256": "0eb25dbcd62439fb1a1e849278c3950e99ec32d7bdba3c9d4566b8bfee086d96"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+        "bytes": 27377,
+        "sha256": "269d04a03f7bca4ae2f1a602384e202fcdcbd4b367be599b2e041dd363734a2b"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\tests\\tools\\qwen_backend_cpu_cuda_test.cc",
+        "bytes": 27377,
+        "sha256": "269d04a03f7bca4ae2f1a602384e202fcdcbd4b367be599b2e041dd363734a2b"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_prefix_cache_test.cc",
+        "bytes": 71271,
+        "sha256": "beec009774a8cdfc82f0fc255775a30c112c347d3ecb88d567a066734c9b6bb8"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\tests\\tools\\qwen_prefix_cache_test.cc",
+        "bytes": 71271,
+        "sha256": "beec009774a8cdfc82f0fc255775a30c112c347d3ecb88d567a066734c9b6bb8"
+      }
+    },
+    {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_sampling_policy_case.h",
+        "bytes": 10611,
+        "sha256": "4b2d016264705f04fbc405e06644ba76a8c2b2d60693a120bd2d9da6ab30e309"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\source\\tests\\tools\\qwen_sampling_policy_case.h",
+        "bytes": 10611,
+        "sha256": "4b2d016264705f04fbc405e06644ba76a8c2b2d60693a120bd2d9da6ab30e309"
+      }
+    }
+  ],
+  "uncompiled_diagnostics": [
+    "engine/models/qwen35/batch_probe.cc",
+    "engine/models/qwen35/mtp_session_probe.cc",
+    "tests/tools/qwen_sampling_policy_case.h"
+  ],
+  "limitations": [
+    "Untrained tiny fixture verifies execution/retirement, not model quality.",
+    "Commands replay only; no new capture, Apple, Vulkan, Linux or full performance run.",
+    "Actual scheduler depth remains one; pending device token, full state Source rotation and ordered successor publication are not integrated.",
+    "An additive copy queue query declaration was independently sampled during compilation; it was unused by these linked TUs, then removed. No layout change or new query use is claimed."
+  ],
+  "next": "Isolate metadata upload Queue using original Compute Queue/lease/retirement mechanisms, then integrate original Source and ordered model successor.",
+  "evidence": {
+    "bundle": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-relay-carriers-2026-10-27.zip",
+      "bytes": 474071,
+      "sha256": "fab4a534e7442b4f9d63b54062f42a16456a96baa6f4e1fa7f4dd094d776efe5"
+    },
+    "members": 121
+  }
+}

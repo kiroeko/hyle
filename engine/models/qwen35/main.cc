@@ -1065,11 +1065,22 @@ struct StateBinding final {
   std::vector<c::ReadLease> sources;
   std::vector<c::WriteLease> destinations;
 };
+// Mutable input, result and layout carriers belong to one actual Invocation.
+// Sharing a finite child/Queue never grants another slot access to these bytes.
+struct PhaseIo final {
+  c::BatchLayoutVersion attention_layout;
+  Tensor tokens, positions, last_ids, logits, final_hidden;
+  Tensor sampling_identities, draft_positions, catchup_token;
+  PreparedReadback next_id, draft_id, sampling_valid, sampling_accept;
+  std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
+  std::vector<float> sampling_scratch;
+  std::vector<std::int32_t> draft_ids, prefix_candidates;
+  std::array<Tensor, 9> probe_outputs;
+};
 struct Phase final : FamilyPorts {
   inference::QueueBindings queues;
   std::size_t query_rows = 0;
   c::BatchSchema attention_schema;
-  c::BatchLayoutVersion attention_layout;
   // The selected child is shared immutable model data, not copied per session.
   const FamilyChild *child = nullptr;
   const Family *family = nullptr;
@@ -1085,14 +1096,8 @@ struct Phase final : FamilyPorts {
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
   std::array<g::ReplayMode, execution_slot_count> replay_modes{};
-  Tensor tokens, positions, last_ids, logits, final_hidden;
+  std::array<PhaseIo, execution_slot_count> io;
   const PreparedOutputFacts *logits_facts = nullptr, *hidden_facts = nullptr;
-  Tensor sampling_identities, draft_positions, catchup_token;
-  PreparedReadback next_id, draft_id, sampling_valid, sampling_accept;
-  std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
-  std::vector<float> sampling_scratch;
-  std::vector<std::int32_t> draft_ids, prefix_candidates;
-  std::array<Tensor, 9> probe_outputs;
   std::array<const PreparedOutputFacts *, 9> probe_facts{};
 };
 
@@ -1109,16 +1114,17 @@ struct InputPreparationScratch final {
   // Keep page readers, immutable layout versions and NodeLayouts outside scratch.
   std::vector<std::int32_t> target_page_ids;
   void prepare(const Phase &phase) {
+    const auto &io = phase.io.front(); // All slots share the same cold descriptions.
     const auto reserve = [](auto &values, const Tensor &tensor) {
       using Element = typename std::decay_t<decltype(values)>::value_type;
       values.reserve(take(tensor.description.required_bytes()) / sizeof(Element));
     };
     target_page_ids.reserve(phase.attention_schema.capacity().max_page_refs);
-    if (phase.family->requests > 1) reserve(packed_ids, phase.tokens);
-    reserve(positions, phase.positions);
-    if (phase.sampling_identities.caller_owned()) reserve(sampling_identities, phase.sampling_identities);
-    if (phase.draft_positions.caller_owned()) reserve(draft_positions, phase.draft_positions);
-    if (phase.catchup_token.caller_owned()) reserve(catchups, phase.catchup_token);
+    if (phase.family->requests > 1) reserve(packed_ids, io.tokens);
+    reserve(positions, io.positions);
+    if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities);
+    if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions);
+    if (io.catchup_token.caller_owned()) reserve(catchups, io.catchup_token);
   }
 };
 class Session;
@@ -2251,8 +2257,12 @@ public:
       throw std::runtime_error("finite family exceeds the configured batch capacity");
     prepare_cache();
     definition.attention_schema = attention_schema;
-    definition.token_port = r.input(r.dense_spec(Type::kInt32,
-        {has_mtp(role) && !is_mtp_prefill(role) ? batch : packed}));
+    // A sampler produces [B,1]. Preserve that exact external token carrier
+    // for ordinary T1 and flatten only the mathematical embedding indices.
+    definition.token_port = role == GraphRole::kText
+        ? r.input(r.dense_spec(Type::kInt32, {packed, f(1)}))
+        : r.input(r.dense_spec(Type::kInt32,
+            {has_mtp(role) && !is_mtp_prefill(role) ? batch : packed}));
     definition.position_port = requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) :
         r.input(r.dense_spec(Type::kInt32, {batch, t}));
     if (requests != 1 && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
@@ -2262,7 +2272,8 @@ public:
     auto &frequency_literal = assembly.literal_at(assembly.primary(), dense(Type::kFloat32, {geometry.rotary / 2}));
     frequency_literal.write<float>(frequency);
     const auto frequencies = r.constant(frequency_literal);
-    V target_tokens = definition.token_port;
+    V target_tokens = role == GraphRole::kText
+        ? r.reshape(definition.token_port, {packed}) : definition.token_port;
     std::vector<sampling::Distribution> draft_distributions;
     std::vector<V> proposal_ids;
     definition.batched_text_sampling = requests > 1 && role == GraphRole::kText &&
@@ -3504,6 +3515,7 @@ public:
   }
 
   void initialize_slot(Phase &phase, std::size_t slot) {
+    auto &io = phase.io[slot];
     initialize_hidden_output(phase, slot);
     if (phase.slots[slot].valid()) return;
     const auto &definition = *phase.family;
@@ -3514,27 +3526,27 @@ public:
     if (run.exact_variant_index() != phase.variant_index)
       throw std::runtime_error("finite family selected an unexpected exact child");
     if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
-    check(run.bind(phase.token_port, phase.tokens.read()));
-    check(run.bind(phase.position_port, phase.positions.read()));
+    check(run.bind(phase.token_port, io.tokens.read()));
+    check(run.bind(phase.position_port, io.positions.read()));
     if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
-      check(run.bind(phase.sampling_identity_port, phase.sampling_identities.read()));
+      check(run.bind(phase.sampling_identity_port, io.sampling_identities.read()));
     }
     if (phase.sampling_valid_port) {
-      check(phase.sampling_valid.bind(run));
-      if (drafts_token(definition.role)) check(phase.sampling_accept.bind(run));
+      check(io.sampling_valid.bind(run));
+      if (drafts_token(definition.role)) check(io.sampling_accept.bind(run));
     }
-    if (definition.requests != 1 && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, phase.last_ids.read()));
-    if (phase.logits.caller_owned()) check(run.bind(phase.logits_port, phase.logits.view()));
-    if (definition.completion == TextCompletion::kEmitNext) check(phase.next_id.bind(run));
-    if (phase.final_hidden.caller_owned()) check(run.bind(phase.hidden_port, phase.final_hidden.view()));
+    if (definition.requests != 1 && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, io.last_ids.read()));
+    if (io.logits.caller_owned()) check(run.bind(phase.logits_port, io.logits.view()));
+    if (definition.completion == TextCompletion::kEmitNext) check(io.next_id.bind(run));
+    if (io.final_hidden.caller_owned()) check(run.bind(phase.hidden_port, io.final_hidden.view()));
     if (has_mtp(definition.role)) {
-      check(run.bind(phase.draft_position_port, phase.draft_positions.read()));
-      if (draft_lag(definition.role)) check(run.bind(phase.catchup_token_port, phase.catchup_token.read()));
-      if (drafts_token(definition.role)) check(phase.draft_id.bind(run));
+      check(run.bind(phase.draft_position_port, io.draft_positions.read()));
+      if (draft_lag(definition.role)) check(run.bind(phase.catchup_token_port, io.catchup_token.read()));
+      if (drafts_token(definition.role)) check(io.draft_id.bind(run));
     }
     if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
-        check(run.bind(output->value, phase.probe_outputs[i].view()));
+        check(run.bind(output->value, io.probe_outputs[i].view()));
     if (!phase.state_sources.empty())
       check(g::slots::prepare(run, phase.state_graph(), inference::queue_span(phase.queues), phase.state_sources,
           {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
@@ -3589,56 +3601,62 @@ public:
       return value.kind() != g::ValueKind::kInput && !phase.child->output(value).caller_owned();
     });
     const auto t = static_cast<std::int64_t>(tokens);
-    phase.tokens = caller_tensor(execution.device(), dense(Type::kInt32,
-        {has_mtp(role) && !is_mtp_prefill(role) ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests)}));
-    phase.positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
-        : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
-    if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
-      phase.sampling_identities = caller_tensor(execution.device(), phase.batched_text_sampling
-          ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
-          : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
-    }
-    if (phase.sampling_valid_port) {
-      phase.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
-      phase.sampling_valid_values.resize(requests);
-      bool float_predicates = phase.sampling_valid.facts.description.data_type() == Type::kFloat32;
-      if (drafts_token(role)) {
-        phase.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution, allocation_budget));
-        phase.sampling_accept_values.resize(requests);
-        float_predicates = float_predicates || phase.sampling_accept.facts.description.data_type() == Type::kFloat32;
-      }
-      if (float_predicates) phase.sampling_scratch.resize(requests);
-    }
-    if (has_mtp(role)) {
-      const auto draft_rows = is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
-      phase.draft_positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
-          : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
-      if (draft_lag(role)) phase.catchup_token = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-      if (drafts_token(role)) {
-        phase.draft_id = take(PreparedReadback::prepare(phase.child->compiled, phase.draft_id_port, execution, allocation_budget));
-        phase.draft_ids.resize(requests);
-      }
-    }
-    if (requests != 1 && !verifies_prefix(role)) {
-      phase.last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
-      std::vector<std::int32_t> last_ids(requests);
-      for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
-      phase.last_ids.write<std::int32_t>(last_ids);
-    }
-    if (completion == TextCompletion::kEmitNext) {
+    if (completion == TextCompletion::kEmitNext)
       phase.logits_facts = &phase.child->output(phase.logits_port);
-      phase.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
-          phase.logits_facts->description, phase.logits_facts->caller_owned());
-      phase.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution, allocation_budget));
-    }
-    if (verifies_prefix(role)) phase.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
     phase.hidden_facts = &phase.child->output(phase.hidden_port);
-    phase.final_hidden = caller_tensor(take(execution.resource_for(phase.hidden_facts->storage)),
-        phase.hidden_facts->description, phase.hidden_facts->caller_owned());
-    if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i) {
+    if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
       phase.probe_facts[i] = &phase.child->output(phase.probe_ports[i]);
-      const auto &output = *phase.probe_facts[i];
-      phase.probe_outputs[i] = caller_tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
+    for (auto &io : phase.io) {
+      const auto token_count = has_mtp(role) && !is_mtp_prefill(role)
+          ? static_cast<std::int64_t>(requests) : t * static_cast<std::int64_t>(requests);
+      io.tokens = caller_tensor(execution.device(), role == GraphRole::kText
+          ? dense(Type::kInt32, {token_count, 1}) : dense(Type::kInt32, {token_count}));
+      io.positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {t})
+          : dense(Type::kInt32, {static_cast<std::int64_t>(requests), t}));
+      if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
+        io.sampling_identities = caller_tensor(execution.device(), phase.batched_text_sampling
+            ? dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 4})
+            : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
+      }
+      if (phase.sampling_valid_port) {
+        io.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
+        io.sampling_valid_values.resize(requests);
+        bool float_predicates = io.sampling_valid.facts.description.data_type() == Type::kFloat32;
+        if (drafts_token(role)) {
+          io.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution, allocation_budget));
+          io.sampling_accept_values.resize(requests);
+          float_predicates = float_predicates || io.sampling_accept.facts.description.data_type() == Type::kFloat32;
+        }
+        if (float_predicates) io.sampling_scratch.resize(requests);
+      }
+      if (has_mtp(role)) {
+        const auto draft_rows = is_mtp_prefill(role) ? t + static_cast<std::int64_t>(draft_lag(role)) : static_cast<std::int64_t>(draft_lag(role) + 1);
+        io.draft_positions = caller_tensor(execution.device(), requests == 1 ? dense(Type::kInt32, {draft_rows})
+            : dense(Type::kInt32, {static_cast<std::int64_t>(requests), draft_rows}));
+        if (draft_lag(role)) io.catchup_token = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+        if (drafts_token(role)) {
+          io.draft_id = take(PreparedReadback::prepare(phase.child->compiled, phase.draft_id_port, execution, allocation_budget));
+          io.draft_ids.resize(requests);
+        }
+      }
+      if (requests != 1 && !verifies_prefix(role)) {
+        io.last_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(requests)}));
+        std::vector<std::int32_t> last_ids(requests);
+        for (std::size_t j = 0; j < requests; ++j) last_ids[j] = static_cast<std::int32_t>((j + 1) * tokens - 1);
+        io.last_ids.write<std::int32_t>(last_ids);
+      }
+      if (completion == TextCompletion::kEmitNext) {
+        io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
+            phase.logits_facts->description, phase.logits_facts->caller_owned());
+        io.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution, allocation_budget));
+      }
+      if (verifies_prefix(role)) io.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
+      io.final_hidden = caller_tensor(take(execution.resource_for(phase.hidden_facts->storage)),
+          phase.hidden_facts->description, phase.hidden_facts->caller_owned());
+      if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i) {
+        const auto &output = *phase.probe_facts[i];
+        io.probe_outputs[i] = caller_tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
+      }
     }
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
@@ -3783,6 +3801,7 @@ public:
   // original Invocation, IO loan, Completion and publication transaction.
   void prepare_draft_append(StepState &step, GraphRole role) {
     auto &phase = *step.phase; auto &run = *step.run;
+    auto &io = phase.io[step.state_slot];
     const auto width = step.members.size();
     const auto rows = is_mtp_prefill(role) ? cache::add(step.input_tokens, draft_lag(role)) : draft_lag(role) + 1;
     hyle::container::SmallVector<std::int32_t, 2> query{0}, old_ptr{0}, next_ptr{0}, old_last, next_last;
@@ -3865,8 +3884,8 @@ public:
       step.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
           step.dirty[bank], step.tails[bank], {.resource_budget = cache_budget}));
     }
-    phase.draft_positions.write<std::int32_t>(positions);
-    if (draft_lag(role)) phase.catchup_token.write<std::int32_t>(catchups);
+    io.draft_positions.write<std::int32_t>(positions);
+    if (draft_lag(role)) io.catchup_token.write<std::int32_t>(catchups);
   }
 
   void discard_decode_ahead() noexcept {
@@ -4047,6 +4066,7 @@ public:
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       auto &phase = prepare_child(tokens, !layer0_probe.empty(), width, role, completion, sampling_index);
       auto &run = phase.slots[slot];
+      auto &io = phase.io[slot];
       step.phase = &phase; step.run = &run; step.state_slot = slot; step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       initialize_slot(phase, slot);
       auto &packed_ids = input_scratch.packed_ids, &positions = input_scratch.positions;
@@ -4060,11 +4080,11 @@ public:
         if (!phase.logits_bias_ports.empty()) check(run.bind(phase.logits_bias_ports[j], requests[j].logits.bias.description, requests[j].logits.bias.lease));
         if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
       }
-      phase.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
+      io.tokens.write<std::int32_t>(width == 1 ? requests[0].ids : std::span<const std::int32_t>(packed_ids));
       if (ahead) {
-        phase.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
+        io.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
         decode_ahead->positions.clear();
-      } else phase.positions.write<std::int32_t>(positions);
+      } else io.positions.write<std::int32_t>(positions);
       if (selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify) {
         auto &identities = input_scratch.sampling_identities;
         identities.clear();
@@ -4077,7 +4097,7 @@ public:
             identities.insert(identities.end(), identity.begin(), identity.end());
           }
         }
-        phase.sampling_identities.write<std::uint32_t>(identities);
+        io.sampling_identities.write<std::uint32_t>(identities);
       }
       const auto cold_start = Clock::now();
       hyle::container::SmallVector<std::int32_t, 2> query_indptr{0}, old_indptr{0}, new_indptr{0}, old_last, new_last;
@@ -4153,7 +4173,7 @@ public:
         member.layout = take(attention_schema.version({one_query, one_kv,
             std::span(new_ids).subspan(begin, page_count), std::span(&new_last.back(), 1)}));
       }
-      phase.attention_layout = width == 1 ? step.members[0].layout
+      io.attention_layout = width == 1 ? step.members[0].layout
           : take(attention_schema.version({query_indptr, new_indptr, new_ids, new_last}));
       // Old layouts describe no new queries, but retain each independent history.
       const std::vector<std::int32_t> old_query(width == 1 || ahead ? 0 : width + 1, 0);
@@ -4173,9 +4193,9 @@ public:
           return width == 1 ? sources[0].layout() : old_layout;
         };
         auto &key_arena = page_inventory.keys[layer]; auto &value_arena = page_inventory.values[layer];
-        step.appends[layer * 2] = take(g::batch::PagedAppendPages::create(key_arena, phase.attention_layout,
+        step.appends[layer * 2] = take(g::batch::PagedAppendPages::create(key_arena, io.attention_layout,
             compose(true), sources, step.dirty[layer * 2], step.tails[layer * 2], {.resource_budget = cache_budget}));
-        step.appends[layer * 2 + 1] = take(g::batch::PagedAppendPages::create(value_arena, phase.attention_layout,
+        step.appends[layer * 2 + 1] = take(g::batch::PagedAppendPages::create(value_arena, io.attention_layout,
             compose(false), sources, step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
@@ -4211,7 +4231,7 @@ public:
           }
       std::vector<g::batch::NodeLayout> layouts;
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
-      for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], phase.attention_layout});
+      for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
       if (drafts_token(role)) layouts.push_back({phase.draft_attention_node, step.draft_layout});
       const auto queues = inference::queue_span(phase.queues);
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.preparation_uses[slot]; }
@@ -4292,6 +4312,7 @@ public:
       if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kNotPublished;
     }
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
+    auto &io = phase.io[step.state_slot];
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
@@ -4339,51 +4360,51 @@ public:
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
-        if (!state_only && !phase.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));
-        if (!phase.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
+        if (!state_only && !io.logits.caller_owned()) generated_logits = take(inference::retain_output(run, *phase.logits_facts, allocation_budget));
+        if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
       }
       if (drafts_token(phase.family->role)) {
-        check(phase.draft_id.read(execution, run, std::as_writable_bytes(std::span(phase.draft_ids))));
-        for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = phase.draft_ids[j];
+        check(io.draft_id.read(execution, run, std::as_writable_bytes(std::span(io.draft_ids))));
+        for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
       }
       if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-        check(phase.sampling_valid.predicates(execution, run, phase.sampling_valid_values, phase.sampling_scratch));
-        auto bad = std::ranges::find_if(phase.sampling_valid_values, [](auto value) { return value != 1; });
+        check(io.sampling_valid.predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
+        auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
         if (step.discard_stopped_members)
-          while (bad != phase.sampling_valid_values.end() &&
-              step.members[static_cast<std::size_t>(bad - phase.sampling_valid_values.begin())].session->stopping)
-            bad = std::find_if(bad + 1, phase.sampling_valid_values.end(), [](auto value) { return value != 1; });
-        if (bad != phase.sampling_valid_values.end()) {
+          while (bad != io.sampling_valid_values.end() &&
+              step.members[static_cast<std::size_t>(bad - io.sampling_valid_values.begin())].session->stopping)
+            bad = std::find_if(bad + 1, io.sampling_valid_values.end(), [](auto value) { return value != 1; });
+        if (bad != io.sampling_valid_values.end()) {
           if (phase.family->role == GraphRole::kText) {
             std::optional<std::size_t> participant;
             // Everything before the first bad value is already proven 1.
             // Only the failure path inspects the remainder for a unique 0.
             bool unique = true;
-            for (auto it = bad + 1; it != phase.sampling_valid_values.end(); ++it)
+            for (auto it = bad + 1; it != io.sampling_valid_values.end(); ++it)
               if (*it != 1 && !(step.discard_stopped_members &&
-                  step.members[static_cast<std::size_t>(it - phase.sampling_valid_values.begin())].session->stopping)) unique = false;
+                  step.members[static_cast<std::size_t>(it - io.sampling_valid_values.begin())].session->stopping)) unique = false;
             if (*bad == 0 && unique)
-              participant = static_cast<std::size_t>(bad - phase.sampling_valid_values.begin());
+              participant = static_cast<std::size_t>(bad - io.sampling_valid_values.begin());
             throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
                 "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
           }
           throw std::runtime_error("sampling distribution or proposal is invalid; no session or RNG cursor was published");
         }
         if (drafts_token(phase.family->role)) {
-          check(phase.sampling_accept.predicates(execution, run, phase.sampling_accept_values, phase.sampling_scratch));
-          for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = phase.sampling_accept_values[j] != 0;
+          check(io.sampling_accept.predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
+          for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
         }
       }
       // Selection observes only retired original Graph results. No head has
       // been published and all state/append guards still belong to this episode.
       if (verifies_prefix(phase.family->role)) {
-        check(phase.next_id.read(execution, run, std::as_writable_bytes(std::span(phase.prefix_candidates))));
-        select(std::span<const std::int32_t>(phase.prefix_candidates), step, next_ids);
+        check(io.next_id.read(execution, run, std::as_writable_bytes(std::span(io.prefix_candidates))));
+        select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
       } else if (state_only) {
         std::ranges::fill(next_ids, -1);
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       } else {
-        check(phase.next_id.read(execution, run, std::as_writable_bytes(next_ids)));
+        check(io.next_id.read(execution, run, std::as_writable_bytes(next_ids)));
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {
@@ -4644,10 +4665,10 @@ public:
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
           .member_index = j, .requests = outputs.size()};
       if (output.capture_tensors) {
-        if (!state_only) completed.logits = phase.logits.caller_owned() ? phase.logits.view().as_const()
-            : take(generated_logits.tensor(phase.logits.description));
-        completed.hidden = phase.final_hidden.caller_owned() ? phase.final_hidden.view().as_const()
-            : take(generated_hidden.tensor(phase.final_hidden.description));
+        if (!state_only) completed.logits = io.logits.caller_owned() ? io.logits.view().as_const()
+            : take(generated_logits.tensor(io.logits.description));
+        completed.hidden = io.final_hidden.caller_owned() ? io.final_hidden.view().as_const()
+            : take(generated_hidden.tensor(io.final_hidden.description));
       }
       if (output.capture_probes) completed.probes = probe_views;
       observe(j, completed);
@@ -4746,7 +4767,8 @@ public:
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
       if (default_sampler.enabled) {
-        if (step.phase->logits.caller_owned()) logits_storage = step.phase->logits.storage();
+        auto &logits = step.phase->io[step.state_slot].logits;
+        if (logits.caller_owned()) logits_storage = logits.storage();
         else {
           logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts, allocation_budget));
           logits_storage = take(logits_owner.view());

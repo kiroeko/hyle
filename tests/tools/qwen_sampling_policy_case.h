@@ -125,14 +125,15 @@ inline int run(const std::filesystem::path &input) {
     }
   for (auto &[key, phase] : model.phases)
     if (key.requests == 2 && key.sampling_index == 3) {
-      require(phase->batched_text_sampling && phase->sampling_identities.description.rank() == 2 &&
-          phase->sampling_identities.description.dimensions()[0] == 2 &&
-          phase->sampling_identities.description.dimensions()[1] == 4,
+      auto &io = phase->io[q::Model::slot_index];
+      require(phase->batched_text_sampling && io.sampling_identities.description.rank() == 2 &&
+          io.sampling_identities.description.dimensions()[0] == 2 &&
+          io.sampling_identities.description.dimensions()[1] == 4,
           "unfiltered R2 phase identity storage is not the real [R,4] port");
       ++flat_identity_phases;
       if (key.tokens == 1) {
         std::array<std::uint32_t, 8> actual;
-        q::check(model.execution.read(phase->sampling_identities.storage(), std::as_writable_bytes(std::span(actual))));
+        q::check(model.execution.read(io.sampling_identities.storage(), std::as_writable_bytes(std::span(actual))));
         const auto first = q::cache::SamplingCursor{123, 2, 4}.identity();
         const auto second = q::cache::SamplingCursor{123, 3, 4}.identity();
         const auto matches = [&](std::size_t row, const auto &expected) {

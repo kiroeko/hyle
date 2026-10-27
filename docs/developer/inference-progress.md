@@ -1,6 +1,6 @@
 # 推理架构 Review 进度
 
-更新：2026-10-27 11:32（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **95%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。连续KV来源继承已交付；本批索引GDN／conv在途读取、真实ready预录及整束退休清理通过38项定向检查，KV／索引分支约60%→75%。仍有有界连续轮换、完整模型重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
+更新：2026-10-27 12:04（北京时间）。本轮目标：**处理推理架构 Review，补齐功能、收敛架构，再改善性能**。整体约 **95%**；总数与各分支按实际交付和剩余实现工作量一起复估，不表示测试通过率。连续KV来源继承已交付；本批索引GDN／conv在途读取、真实ready预录及整束退休清理通过38项定向检查，KV／索引分支约60%→75%。仍有有界连续轮换、完整模型重叠执行、迁移遗漏复查及其它工况完整性能对照。当前仍以底层支持为主，HTTP／通用 loader／tokenizer 不是前置。
 
 ## 任务树
 
@@ -42,11 +42,13 @@
 
 ## 正在做
 
-- 有界连续轮换与引擎接线：约10%（所属：完整状态pending权限；已定位token形状／full writer接缝、按槽拆分I/O、普通K1至少N＋2R状态预算，以及batch／layout上传的同Queue同步等待；先接普通decode，MTP非连续接受子集仍需处理）。
+- 有界连续轮换与引擎接线：约25%（所属：完整状态pending权限；在途深度容量、每槽I/O和Graph原full writer读回已通过三项合同及四条CPU／CUDA双会话检查；正在隔离batch／append／IDs元数据上传Queue。实际仍单槽，真实有序后继及MTP非连续接受子集未接通）。
 
 剩余大项包括完整状态接力、重叠执行、迁移遗漏复查及其它工况完整性能对照，不能以本批CUDA通过代签这些工作。真实异长请求已有按兼容T分组执行；不以全部Provider提供varlen内核作为共同编排完成条件。
 
 ## 本批结果与下一步
+
+[模型载体前提](../evidence/correctness/inference-relay-carriers-2026-10-27.json)通过三项容量／读回合同及四条tiny双会话路径：CPU／CUDA普通和MTP-K3，每会话各生成8 token，真实B2执行及最终请求／版本退休已核。容量按实际在途深度D计算，各槽独立持I/O与布局，非空caller读回交出原完整writer；reset后的同池重绑与同Invocation连续提交不混为同一代。普通Text端口已统一为可接原采样输出的二维形状。四个不同C++单元，共五次编译、两次链接，首次readback误用LeasePool布尔转换的失败保留；无SDK／NVCC重建或下载。诊断源码已适配但未逐个编译。实际仍单槽、Commands，无完整模型重叠、capture或新tokens/s结论。下一片把真实元数据上传放到独立原Queue并保留实际等待／ready发布，避免为此增加第二套pending-control执行机制。
 
 [索引状态在途来源](../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)在一个CUDA进程通过38项检查：3项新增GDN／conv／checked失败旅程，及35项相关CPU／CUDA回归。先由真实退休A的完整published guards认证ready来源并实际执行B首录，再释放整束来源、复用原地址接A新一代pending状态；B只持独立目的writer和目的IDs，源pool／IDs来自原Source束，不复制状态。两种F32融合均0新增／1复用捕获，source／device-wait各1；A成功退休、take及原受检发布时B仍pending，原dense结果逐位一致，旧快照／padding不变。另核同数同长foreign ready guards拒绝、未take／pending释放拒绝，以及真实数学失败的原错误传播和退休清理。修正了同值IDs仍重复上传并等同Queue的问题：只复用已成功发布且值不变的真实carrier，实际权限仍每次检查，变值保原上传门。12个C++单元、一次链接、一个测试进程均首次成功，包含两项结构扩展所需的当前闭包ABI刷新；无SDK／NVCC重建或下载。仅完整目的集、F32／K1有限证明，未接MTP接受子集、完整模型有界流水或新速度；冷元数据也不是零分配。下一步接连续轮换与真实模型。
 
