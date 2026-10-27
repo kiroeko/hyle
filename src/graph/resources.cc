@@ -2668,10 +2668,16 @@ Status check_output_consumer(Invocation &invocation, OutputBindingBundle &bundle
   auto route = bundle.consumer ? bundle.consumer_route
       : commands ? ReplayRoute::kCommands : ReplayRoute::kUnprepared;
   if (!bundle.all_ready && route != ReplayRoute::kCommands) {
-    HYLE_ASSIGN_OR_RETURN(const auto reusable,
-        ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
-    if (!reusable)
-      return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+    // Binding establishes source authority, not an executable final tuple.
+    // Imported Store destinations need that authority before their own cold
+    // bindings can be installed. Check the complete actual tuple at prepare
+    // AND submit; neither path may record or execute an incomplete capture.
+    if (require_binding) {
+      HYLE_ASSIGN_OR_RETURN(const auto reusable,
+          ReplayAccess::can_reuse_capture(invocation, bundle.replacements));
+      if (!reusable)
+        return Status::Unavailable("pending outputs have no complete existing capture for their final physical tuple");
+    }
     const auto expected = plan.capture_command_count == plan.command_count
         ? ReplayRoute::kCaptured : ReplayRoute::kHybrid;
     if (bundle.consumer && route != expected)

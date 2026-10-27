@@ -159,6 +159,19 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 };
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // The Prepared allocation owns the fixed group array until teardown. Every
+  // group stores only launch/layout metadata; input/output addresses are ports.
+  if (!prepared.primary || (prepared.count && !prepared.groups)) return false;
+  for (std::size_t index = 0; index < prepared.count; ++index)
+    if (prepared.groups[index].program.layout.elements &&
+        !prepared.groups[index].program.kernel) return false;
+  return true;
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

@@ -143,6 +143,44 @@ Result<mem::ConstBufferView> append_prefix(const PagedAppendData&p,std::size_t i
   if(index>=p.old_pages.size())return std::unexpected(Status::Internal("append prefix ordinal changed"));
   return p.old_pages[index].view();
 }
+using PendingAppendReads=std::vector<mem::ConstBufferView,mem::StdAllocator<mem::ConstBufferView>>;
+Result<PendingAppendReads> pending_reads_for_bind(const PagedAppendData&p,bool projected)noexcept{
+  PendingAppendReads reads{mem::StdAllocator<mem::ConstBufferView>(p.allocator)};
+  if(!p.previous_source)return reads;
+  try{
+    const auto copies=std::size_t(std::count_if(p.ranges.begin(),p.ranges.end(),[](const auto&range){return range.prefix;}));
+    if(projected && p.old_ranges.size()>SIZE_MAX-copies)
+      return std::unexpected(Status::ResourceExhausted("paged append pending reader count overflows"));
+    reads.reserve(copies+(projected?p.old_ranges.size():0));
+    for(const auto&range:p.ranges)if(range.prefix){
+      HYLE_ASSIGN_OR_RETURN(auto prefix,append_prefix(p,range.source));
+      HYLE_ASSIGN_OR_RETURN(prefix,prefix.subview(0,range.bytes));reads.push_back(prefix);
+    }
+    if(projected){
+      // The selected in-Graph attention also reads untouched old pages. Its
+      // new dirty pages are covered by this Graph's writers; only the exact
+      // inherited physical prefixes need the predecessor's read authority.
+      HYLE_ASSIGN_OR_RETURN(auto before,cd::BatchLayoutAccess::page_requirements(p.previous_layout));
+      HYLE_ASSIGN_OR_RETURN(auto after,cd::BatchLayoutAccess::page_requirements(p.layout));
+      if(before.pages.size()!=p.old_ranges.size())
+        return std::unexpected(Status::Internal("paged append old reader ranges changed"));
+      for(std::size_t old=0,next=0;old<before.pages.size() && next<after.pages.size();){
+        if(before.pages[old]<after.pages[next])++old;
+        else if(after.pages[next]<before.pages[old])++next;
+        else{
+          HYLE_ASSIGN_OR_RETURN(auto prefix,p.old_ranges[old].subview(0,std::size_t(after.required_rows[next])*p.row_bytes));
+          reads.push_back(prefix);++old;++next;
+        }
+      }
+    }
+    // A shared old page can be both a COW source and an attention prefix.
+    // Keep its largest genuine required prefix, with one native admission.
+    std::sort(reads.begin(),reads.end(),[](auto left,auto right){
+      return left.offset()<right.offset() || (left.offset()==right.offset() && left.size()>right.size());});
+    reads.erase(std::unique(reads.begin(),reads.end(),[](auto left,auto right){return left.offset()==right.offset();}),reads.end());
+    return reads;
+  }catch(...){return std::unexpected(Status::ResourceExhausted("paged append pending reader metadata"));}
+}
 }
 PagedAppendPages::PagedAppendPages(PagedAppendPages&&other)noexcept:data_(std::exchange(other.data_,nullptr)){}
 PagedAppendPages&PagedAppendPages::operator=(PagedAppendPages&&other)noexcept{if(this!=&other){PagedAppendPages next(std::move(other));std::swap(data_,next.data_);}return *this;}
@@ -262,7 +300,6 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
     p->writers.reserve(dirty.size());p->writer_ptrs.reserve(dirty.size());p->required.resize(count);p->targets.reserve(count);
     p->appenders.reserve(count);p->appender_ptrs.reserve(tails.size());
     p->ranges.reserve(std::size_t(p->layout.facts().query_rows)+count);
-    if(p->previous_source)p->pending_reads.reserve(count);
     p->changed_pages.reserve(count);
     HYLE_RETURN_IF_ERROR(retain_previous_pages(*p,sources));
     struct Fact final {const void*root;std::uint32_t page,initialized_rows,reserved_rows;mem::BufferView storage;};
@@ -343,15 +380,6 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
       return std::unexpected(Status::InvalidArgument("paged append contains an unused tail authority"));
     // Last fallible validation/allocation precedes consuming caller writers.
     for(std::size_t i=0;i<facts.size();++i)p->targets.push_back({facts[i].storage,facts[i].page,i<dirty.size()?0u:facts[i].initialized_rows});
-    if(p->previous_source)for(const auto&range:p->ranges)if(range.prefix){
-      HYLE_ASSIGN_OR_RETURN(auto prefix,detail::append_prefix(*p,range.source));
-      HYLE_ASSIGN_OR_RETURN(prefix,prefix.subview(0,range.bytes));p->pending_reads.push_back(prefix);}
-    // All carriers name this one original arena. Canonicalize actual COW
-    // reads only; untouched inherited pages are not artificial GPU reads.
-    std::sort(p->pending_reads.begin(),p->pending_reads.end(),[](auto a,auto b){
-      return a.offset()<b.offset() || (a.offset()==b.offset() && a.size()<b.size());});
-    p->pending_reads.erase(std::unique(p->pending_reads.begin(),p->pending_reads.end(),[](auto a,auto b){
-      return a.offset()==b.offset() && a.size()==b.size();}),p->pending_reads.end());
     for(auto&writer:dirty)p->writers.push_back(std::move(writer));
     for(auto&writer:p->writers)p->writer_ptrs.push_back(&writer.lease());
     for(auto&tail:tails)p->appenders.push_back(std::move(tail));
@@ -806,6 +834,7 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
   }
   HYLE_ASSIGN_OR_RETURN(auto input_bytes,p->rows.required_bytes());
   const auto old=p->previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p->old_pages);
+  HYLE_ASSIGN_OR_RETURN(auto pending_reads,pending_reads_for_bind(*p,!writer_only));
   try{
     std::vector<NativeAppendRange,mem::StdAllocator<NativeAppendRange>>ranges{mem::StdAllocator<NativeAppendRange>(p->allocator)};
     ranges.reserve(p->ranges.size());
@@ -826,9 +855,10 @@ Status bind_native(Invocation&invocation,const Graph&graph,const NativeAppendReg
     HYLE_RETURN_IF_ERROR(region.table->configure(region.prepared,region.invocation,{p->layout,capacity,ranges}));
     const gd::ProjectedWriter proof{region.node,region.step,region.implementation,region.prepared};
     if(writer_only)HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
-        old,p->writer_ptrs,p->appender_ptrs,proof,{},options,p->pending_reads,bool(p->previous_source)));
+        old,p->writer_ptrs,p->appender_ptrs,proof,{},options,pending_reads,bool(p->previous_source)));
     else HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection(invocation,graph,cache,capacity,
-        old,p->writer_ptrs,p->appender_ptrs,proof,readers,{},options,p->pending_reads,bool(p->previous_source)));
+        old,p->writer_ptrs,p->appender_ptrs,proof,readers,{},options,pending_reads,bool(p->previous_source)));
+    p->pending_reads=std::move(pending_reads);
     p->binding_cache=writer_only?ValueId{}:cache;
     *retained=std::move(pages);return Status::Ok();
   }catch(...){return Status::ResourceExhausted("native paged append range metadata");}
@@ -864,12 +894,14 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   if(capacity.storage().resource()!=f.prepared->resource)return Status::InvalidArgument("paged append arena belongs to another selected Queue resource");
   for(const auto&writer:p.writers){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::writer(p.arena,writer));(void)fact;}
   for(std::size_t i=0;i<p.input_appenders;++i){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p.arena,p.appenders[i]));(void)fact;}
+  HYLE_ASSIGN_OR_RETURN(auto pending_reads,pending_reads_for_bind(p,true));
   HYLE_RETURN_IF_ERROR(initialize_selected_slots(invocation,*f.slot));
   c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queue,metadata_queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection(invocation,graph,cache,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),
-      p.writer_ptrs,p.appender_ptrs,f.proof,readers,controls,options,p.pending_reads,bool(p.previous_source)));
+      p.writer_ptrs,p.appender_ptrs,f.proof,readers,controls,options,pending_reads,bool(p.previous_source)));
+  p.pending_reads=std::move(pending_reads);
   // Source capture authenticates this registered projection, as on the native
   // path; the slot's reader cache alone is not a transaction ownership fact.
   p.binding_cache=cache;
@@ -894,12 +926,14 @@ Status PagedAppendAccess::bind(Invocation&invocation,const Graph&graph,NodeId no
   if(capacity.storage().resource()!=f.prepared->resource)return Status::InvalidArgument("writer-only append arena belongs to another selected Queue resource");
   for(const auto&writer:p.writers){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::writer(p.arena,writer));(void)fact;}
   for(std::size_t i=0;i<p.input_appenders;++i){HYLE_ASSIGN_OR_RETURN(auto fact,cd::PagedArenaAccess::appender(p.arena,p.appenders[i]));(void)fact;}
+  HYLE_ASSIGN_OR_RETURN(auto pending_reads,pending_reads_for_bind(p,false));
   HYLE_RETURN_IF_ERROR(initialize_selected_slots(invocation,*f.slot));
   c::ReadLease control;HYLE_RETURN_IF_ERROR(prepare_native(invocation,f,p,capacity,queued->queue,queued->metadata_queue,host,options,control));
   const auto controls=control.valid()?std::span<const c::ReadLease>(&control,1):std::span<const c::ReadLease>{};
   HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_write_effect(invocation,graph,capacity,
       p.previous_source?std::span<const c::ReadLease>{}:std::span<const c::ReadLease>(p.old_pages),
-      p.writer_ptrs,p.appender_ptrs,f.proof,controls,options,p.pending_reads,bool(p.previous_source)));
+      p.writer_ptrs,p.appender_ptrs,f.proof,controls,options,pending_reads,bool(p.previous_source)));
+  p.pending_reads=std::move(pending_reads);
   p.binding_cache={};
   f.slot->cache={};f.slot->writer_only=true;f.slot->writer_queue=queued->queue;f.slot->pages=std::move(pages);return Status::Ok();
 }

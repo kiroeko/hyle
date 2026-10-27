@@ -5,6 +5,8 @@
 namespace hyle::compute::cuda_native::tensor {
 inline constexpr std::uint64_t kRoute = 3;
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &) noexcept;
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

@@ -486,7 +486,10 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_TRUE(source.poll());
   ASSERT_EQ(*source.poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(consumer.bind(second_table, table_f32, other_embedding_ready).ok());
-  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
+  EXPECT_FALSE(gd::submit_outputs(consumer, bindings, queues));
   EXPECT_TRUE(source.valid());
   EXPECT_FALSE(consumer.in_flight());
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
@@ -494,8 +497,6 @@ TEST(GraphOutputSourceCuda, PendingI32ReusesRealNativeRegionCaptureWithoutRecord
   ASSERT_TRUE(source.poll());
   EXPECT_EQ(*source.poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(consumer.bind(second_table, table_f32, embedding_ready).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
-  ASSERT_TRUE(bound.ok()) << bound.message();
   const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
@@ -1381,16 +1382,21 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
       gd::OutputBinding{.store = &state,
           .projection = {bank_input, source_ids, gather, access,
               c::detail::kProjectedInputReadExtensionId}, .graph = &second_graph}};
+  // Source authority can be bound before an unrelated captured input exists.
+  // Only final preparation/submission qualifies the complete physical tuple.
+  ASSERT_TRUE(consumer.unbind(marker_input).ok());
+  const auto bound = gd::bind_outputs(consumer, bindings);
+  ASSERT_TRUE(bound.ok()) << bound.message();
+  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, other_marker_ready).ok());
-  EXPECT_FALSE(gd::bind_outputs(consumer, bindings).ok());
+  EXPECT_FALSE(gd::prepare_outputs(consumer, bindings, queues).ok());
+  EXPECT_FALSE(gd::submit_outputs(consumer, bindings, queues));
   EXPECT_EQ(consumer.replay_route(), g::ReplayRoute::kUnprepared);
   EXPECT_FALSE(consumer.replay_report());
   ASSERT_TRUE(common.poll());
   EXPECT_EQ(*common.poll(), c::CompletionPoll::kPending);
   EXPECT_FALSE(gate.released.load(std::memory_order_acquire));
   ASSERT_TRUE(consumer.bind(marker_input, token_desc, marker_ready).ok());
-  const auto bound = gd::bind_outputs(consumer, bindings);
-  ASSERT_TRUE(bound.ok()) << bound.message();
   const auto prepared = gd::prepare_outputs(consumer, bindings, queues);
   ASSERT_TRUE(prepared.ok()) << prepared.message();
   ASSERT_EQ(consumer.replay_route(), g::ReplayRoute::kHybrid);

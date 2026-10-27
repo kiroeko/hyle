@@ -145,6 +145,25 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 };
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (!value.state || value.workspace.size != 0 || value.invocation_private_bytes != 0)
+    return false;
+  // Both exact norm artifacts contain only immutable launch metadata. Their
+  // Invocation is empty and all data/scale/bias addresses are explicit ports.
+  if (value.vtable == &kPreparedVTable<false>) {
+    const auto &prepared = *static_cast<const Prepared<false> *>(value.state);
+    return prepared.primary && (!prepared.program.rows ||
+        (prepared.program.kernel && prepared.program.hidden));
+  }
+  if (value.vtable == &kPreparedVTable<true>) {
+    const auto &prepared = *static_cast<const Prepared<true> *>(value.state);
+    return prepared.primary && (!prepared.program.rows ||
+        (prepared.program.kernel && prepared.program.hidden &&
+         prepared.program.threads && prepared.program.blocks));
+  }
+  return false;
+}
+
 template <bool Sglang>
 Status propose_impl(const detail::ProviderOperationRequest &request,
                     std::span<detail::ResourceBindingRequirement> inputs,

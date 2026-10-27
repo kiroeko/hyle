@@ -218,6 +218,15 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 };
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // The cold program owns only a kernel and by-value layout/shared-byte count.
+  // Zero-width identity reductions still launch; zero output rows do not.
+  return prepared.primary && (!prepared.program.layout.rows || prepared.program.kernel);
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

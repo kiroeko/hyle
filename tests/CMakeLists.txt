@@ -163,6 +163,20 @@ add_test(NAME hyle_qwen_generation_schedule_test
 set_tests_properties(hyle_qwen_generation_schedule_test PROPERTIES
   LABELS "tooling;generation;parser" TIMEOUT 30)
 
+if(TARGET hyle_container)
+  add_executable(hyle_qwen_generation_ledger_test tools/qwen_generation_ledger_test.cc)
+  target_link_libraries(hyle_qwen_generation_ledger_test PRIVATE hyle_container)
+  target_compile_features(hyle_qwen_generation_ledger_test PRIVATE cxx_std_23)
+  hyle_apply_warnings(hyle_qwen_generation_ledger_test)
+  hyle_apply_sanitizer(hyle_qwen_generation_ledger_test)
+  set_target_properties(hyle_qwen_generation_ledger_test PROPERTIES
+    FOLDER "hyle/tests/tools" HYLE_TEST_MODULE "project")
+  add_dependencies(hyle_tests hyle_qwen_generation_ledger_test)
+  add_test(NAME hyle_qwen_generation_ledger_test COMMAND hyle_qwen_generation_ledger_test)
+  set_tests_properties(hyle_qwen_generation_ledger_test PROPERTIES
+    LABELS "tooling;generation;state" TIMEOUT 30)
+endif()
+
 add_executable(hyle_inference_version_admission_test tools/inference_version_admission_test.cc)
 target_link_libraries(hyle_inference_version_admission_test PRIVATE hyle_build_contract)
 target_compile_features(hyle_inference_version_admission_test PRIVATE cxx_std_23)

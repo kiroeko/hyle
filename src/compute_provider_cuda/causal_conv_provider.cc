@@ -118,6 +118,17 @@ const detail::ProviderPreparedVTable kPrepared{
 };
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPrepared || !value.state || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // This exact artifact owns immutable launch metadata only. Samples, weights
+  // and destination are explicit ports; there is no Invocation allocation.
+  return prepared.primary && prepared.program.kernel && prepared.program.blocks &&
+      prepared.program.layout.elements && prepared.program.layout.channels &&
+      prepared.program.layout.taps && prepared.program.layout.tokens;
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,

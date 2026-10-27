@@ -1,0 +1,207 @@
+#pragma once
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <new>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
+#include "execution_mode.h"
+#include "../../inference/request_stop_policy.h"
+#include "../../inference/sampling_cursor.h"
+#include "hyle/container/small_vector.h"
+
+namespace qwen35 {
+
+struct PreparedSampling;
+struct ColdResources;
+
+struct GenerationBoundary final {
+  std::size_t length = 0, frontier = 0;
+  std::uint32_t lag = 0;
+  std::int32_t next_id = -1, catchup_token = -1;
+  hyle::inference::SamplingCursor sampling{};
+  friend bool operator==(const GenerationBoundary &, const GenerationBoundary &) = default;
+};
+
+struct GenerationCommitRecord final {
+  GraphRole role = GraphRole::kMtpPrefill;
+  bool generation = false, committed = false, user_output = true;
+  bool imported = false, prefill_complete = true;
+  // A reserved ordinary successor has no host input fact until its exact
+  // predecessor commits and the request owner observes that committed output.
+  bool input_deferred = false;
+  TextCompletion completion = TextCompletion::kEmitNext;
+  std::size_t input_begin = 0;
+  std::shared_ptr<const void> input_owner; // Immutable host data, never a Snapshot/lease.
+  std::span<const std::int32_t> prompt_ids;
+  std::int32_t pending_input = -1;
+  std::size_t quota = 0, turn = 0, accepted = 0, draft_rows = 0;
+  std::size_t draft_limit = 0, verified_rows = 0, consumed_drafts = 0;
+  std::size_t auxiliary_graph_calls = 0;
+  std::int32_t draft = -1, target_first = -1, target_second = -1;
+  bool agreed = false, accepted_draft = false, stopped = false;
+  hyle::container::SmallVector<std::int32_t, 2> emitted{-1, -1};
+  hyle::container::SmallVector<std::int32_t, 2> accepted_inputs{-1, -1};
+  hyle::container::SmallVector<std::int32_t, 2> verification_inputs;
+  std::size_t requests = 1, member_index = 0;
+  std::size_t emitted_count = 0;
+  GenerationBoundary before, after;
+  double step_seconds = 0;
+  std::chrono::steady_clock::time_point endpoint{};
+  std::span<const std::int32_t> ids() const noexcept {
+    if (input_deferred) return {};
+    return generation ? std::span(&pending_input, 1) : prompt_ids;
+  }
+  std::span<const std::int32_t> committed_ids() const noexcept {
+    if (input_deferred || (generation && (accepted == 0 || accepted > accepted_inputs.size()))) return {};
+    return generation ? std::span<const std::int32_t>(accepted_inputs).first(accepted) : prompt_ids;
+  }
+  bool same_result(const GenerationCommitRecord &other) const noexcept {
+    return requests == other.requests && member_index == other.member_index &&
+        role == other.role && generation == other.generation && quota == other.quota &&
+        input_deferred == other.input_deferred &&
+        completion == other.completion && prefill_complete == other.prefill_complete && input_begin == other.input_begin &&
+        before == other.before && after == other.after && accepted == other.accepted &&
+        draft_limit == other.draft_limit && verified_rows == other.verified_rows && consumed_drafts == other.consumed_drafts &&
+        auxiliary_graph_calls == other.auxiliary_graph_calls &&
+        draft_rows == other.draft_rows && draft == other.draft && target_first == other.target_first &&
+        target_second == other.target_second && agreed == other.agreed && accepted_draft == other.accepted_draft &&
+        stopped == other.stopped && emitted == other.emitted && emitted_count == other.emitted_count &&
+        accepted_inputs == other.accepted_inputs && verification_inputs == other.verification_inputs;
+  }
+};
+
+struct GenerationLedger final {
+  std::vector<GenerationCommitRecord> records;
+  std::size_t committed_count = 0;
+private:
+  // Value-owned immutable configuration survives GenerationRequest relocation.
+  // This is copied only at initial cold binding, never per token/record.
+  std::optional<hyle::inference::RequestStopPolicy> stop_policy_;
+  std::optional<std::size_t> successor_ordinal_;
+
+  static void reset_record(GenerationCommitRecord &record) noexcept {
+    auto emitted = std::move(record.emitted), accepted = std::move(record.accepted_inputs);
+    auto verified = std::move(record.verification_inputs);
+    record = GenerationCommitRecord{};
+    record.emitted = std::move(emitted); record.accepted_inputs = std::move(accepted);
+    record.verification_inputs = std::move(verified);
+    record.emitted.clear(); record.accepted_inputs.clear(); record.verification_inputs.clear();
+  }
+  GenerationCommitRecord &uncommitted_record() {
+    if (committed_count >= records.size() || records[committed_count].committed)
+      throw std::runtime_error("MTP replay ledger has no uncommitted reserved record");
+    return records[committed_count];
+  }
+public:
+  const hyle::inference::RequestStopPolicy &stop_policy() const noexcept {
+    return stop_policy_ ? *stop_policy_ : hyle::inference::default_request_stop_policy;
+  }
+  void validate_stop_policy(const hyle::inference::RequestStopPolicy &value) const {
+    if ((stop_policy_ || committed_count) && stop_policy() != value)
+      throw std::runtime_error("request stop policy differs from its committed generation ledger");
+  }
+  void bind_stop_policy(const hyle::inference::RequestStopPolicy &value, std::int64_t vocabulary) {
+    value.validate(vocabulary); validate_stop_policy(value);
+    if (!stop_policy_) stop_policy_.emplace(value);
+  }
+  const PreparedSampling *sampling = nullptr; // Borrowed immutable cold policy, never a cursor.
+  std::weak_ptr<ColdResources> sampling_owner; // Identity only: cannot pin weights or admit an address-reused Model.
+  void validate_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) const {
+    if (sampling && (sampling_owner.expired() || sampling_owner.owner_before(owner) || owner.owner_before(sampling_owner) || sampling != &value))
+      throw std::runtime_error("generation ledger sampling belongs to another model or configuration");
+  }
+  void bind_sampling(const PreparedSampling &value, const std::weak_ptr<ColdResources> &owner) {
+    validate_sampling(value, owner); sampling = &value; sampling_owner = owner;
+  }
+  explicit GenerationLedger(std::size_t capacity, std::size_t maximum_width = 2) : records(capacity) {
+    for (auto &record : records)
+      if (!record.emitted.try_reserve(maximum_width) || !record.accepted_inputs.try_reserve(maximum_width) ||
+          !record.verification_inputs.try_reserve(maximum_width))
+        throw std::bad_alloc{};
+  }
+  GenerationCommitRecord &next() {
+    auto &record = uncommitted_record();
+    if (record.input_deferred)
+      throw std::runtime_error("generation successor input has not been bound to its observed predecessor");
+    return record;
+  }
+
+  // One unknown-input successor of the current ordinary T1 episode. These
+  // counters are facts supplied by the serialized request owner, not a second
+  // progress/RNG/credit authority. All actual Model capacity, base, epoch,
+  // device-Source and output-credit checks remain with their original owners.
+  GenerationCommitRecord &reserve_successor(std::size_t observed_commits,
+      std::size_t quota, std::size_t turn, std::size_t requests = 1,
+      std::size_t member_index = 0) {
+    const auto &previous = next();
+    if (successor_ordinal_ || observed_commits != committed_count ||
+        records.size() - committed_count < 2 || !quota || !requests || member_index >= requests ||
+        previous.role != GraphRole::kText || !previous.generation ||
+        previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
+        previous.ids().size() != 1 || previous.pending_input < 0 || previous.turn != turn ||
+        quota >= previous.quota || records[committed_count + 1].committed)
+      throw std::runtime_error("generation successor requires one bounded ordinary pending predecessor");
+    const auto ordinal = committed_count + 1;
+    auto &record = records[ordinal];
+    reset_record(record);
+    record.role = GraphRole::kText; record.generation = true; record.input_deferred = true;
+    record.completion = TextCompletion::kEmitNext; record.quota = quota; record.turn = turn;
+    record.requests = requests; record.member_index = member_index;
+    // Inline capacity is already present, including maximum_width=1. Retain
+    // any larger cold capacity rather than allocating a second record owner.
+    record.emitted.resize(2, -1); record.accepted_inputs.resize(2, -1);
+    successor_ordinal_ = ordinal;
+    return record;
+  }
+  std::optional<std::size_t> successor_ordinal() const noexcept { return successor_ordinal_; }
+
+  // Bind only after the exact predecessor's publication AND its host output
+  // observation. A complete boundary, rather than just a token, ties this
+  // deferred record to that predecessor's actual length and sampling facts.
+  // A rejection preserves the unknown input and every reserved record.
+  GenerationCommitRecord &bind_successor(const GenerationBoundary &actual,
+      std::size_t observed_commits, std::size_t turn, std::int32_t actual_last_token) {
+    if (!successor_ordinal_ || *successor_ordinal_ != committed_count ||
+        observed_commits != committed_count || !committed_count || committed_count >= records.size())
+      throw std::runtime_error("generation successor requires its committed and observed predecessor");
+    const auto &previous = records[committed_count - 1];
+    auto &record = records[committed_count];
+    if (!previous.committed || previous.role != GraphRole::kText || !previous.generation ||
+        previous.completion != TextCompletion::kEmitNext || !previous.user_output || previous.imported ||
+        previous.input_deferred || previous.ids().size() != 1 || previous.accepted != 1 ||
+        previous.verified_rows != 1 || previous.stopped || previous.emitted_count != 1 || previous.emitted.empty() ||
+        previous.after != actual || actual.next_id < 0 || previous.emitted[0] != actual.next_id ||
+        actual_last_token != actual.next_id || previous.turn != turn || record.turn != turn ||
+        previous.requests != record.requests || previous.member_index != record.member_index ||
+        record.committed || !record.input_deferred || record.role != GraphRole::kText || !record.generation ||
+        record.completion != TextCompletion::kEmitNext || !record.user_output || record.imported)
+      throw std::runtime_error("generation successor input differs from its actual ordinary predecessor");
+    record.before = actual; record.pending_input = actual.next_id; record.input_deferred = false;
+    // B is now the ordinary current record; it may reserve C while B is still
+    // pending. Only one unknown input exists beyond the committed prefix.
+    successor_ordinal_.reset();
+    return record;
+  }
+
+  void discard_successor() noexcept {
+    if (!successor_ordinal_) return;
+    const auto ordinal = *std::exchange(successor_ordinal_, std::nullopt);
+    // Never erase an authoritative commit, even if an owner is recovering
+    // after an error. A bound current episode is cleared by the normal path.
+    if (ordinal < records.size() && !records[ordinal].committed) reset_record(records[ordinal]);
+  }
+  void discard_uncommitted() {
+    auto &record = uncommitted_record();
+    discard_successor();
+    reset_record(record);
+  }
+};
+
+} // namespace qwen35

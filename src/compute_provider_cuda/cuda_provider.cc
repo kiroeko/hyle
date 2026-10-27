@@ -1,6 +1,7 @@
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/sampling_ops.h"
+#include "hyle/compute/detail/capture_bindings.h"
 
 #include <algorithm>
 #include <climits>
@@ -450,8 +451,44 @@ Status inspect_access(const detail::ProviderPrepared &prepared,
       row_cache_indexer::inspect_access(prepared, *access)) return Status::Ok();
   return Status::Unimplemented("selected CUDA implementation has no projected access");
 }
+template <bool Sglang>
+bool native_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  const bool owned = Sglang
+      ? value.vtable == &kPreparedVTable<true, false> || value.vtable == &kPreparedVTable<true, true>
+      : value.vtable == &kPreparedVTable<false, false>;
+  if (!owned || !value.state) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // These exact gated/unary programs own a cold kernel and scalar launch
+  // metadata. Invocation is empty; every data address comes from a real port.
+  return prepared.primary && (!prepared.program.elements ||
+      (prepared.program.kernel && prepared.program.blocks && prepared.program.hidden));
+}
+template <bool Sglang>
+Status inspect_capture_bindings(const detail::ProviderPrepared &value, bool *preserves) noexcept {
+  if (!preserves) return Status::InvalidArgument("CUDA capture bindings output is null");
+  *preserves = false;
+  const auto &runtime = value.runtime;
+  if (runtime.mode != ProviderRuntimeMode::kSharedQueue ||
+      runtime.workspace_owner != ProviderWorkspaceOwner::kCaller ||
+      runtime.replay_class != ProviderReplayClass::kPrepared || runtime.blocks_host ||
+      runtime.uses_private_threads || !runtime.supports_concurrent_invocations ||
+      !runtime.capture_compatible || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return Status::Ok();
+  *preserves = native_capture_bindings<Sglang>(value) ||
+      normalization::preserves_capture_bindings(value);
+  if constexpr (!Sglang)
+    *preserves = *preserves || causal_conv::preserves_capture_bindings(value) ||
+        tensor::preserves_capture_bindings(value) ||
+        concatenation::preserves_capture_bindings(value) ||
+        reduction::preserves_capture_bindings(value);
+  // Other provider routes (including quantized programs) retain their own
+  // contract. Matching runtime labels never establish private-address safety.
+  return Status::Ok();
+}
 template<bool Sglang>
 const void *query_extension(void *,ProviderExtensionId id)noexcept{
+  static constexpr detail::CaptureBindingsVTable capture{.inspect=&inspect_capture_bindings<Sglang>};
+  if(id==detail::kCaptureBindingsExtensionId)return &capture;
   static constexpr detail::OperationAccessVTable access{
       .inspect=&inspect_access,.configure=&row_cache_indexer::configure_access};
   if constexpr(!Sglang)if(id==detail::kRowCacheColdPlanningId)return &access;

@@ -76,6 +76,9 @@ struct OutputBinding final {
 // ready controls remain owned by the original configuration or selected
 // region and are rechecked before prepare/submit; they are never replaced
 // with pending attachments or represented by synthetic inputs.
+// Binding establishes source authority before dependent destination controls
+// are installed. It does not certify replay: prepare and submit both require
+// the complete final physical tuple and original capture coverage.
 // Subsequent calls supply this same ordered bundle; the span is never retained.
 HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Retired control cleanup only, including failed episodes. Withdraws this

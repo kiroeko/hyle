@@ -91,14 +91,28 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 同一模块也承载原生packed路径，不能把移除模块等同于只去掉ATen调用。
 显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
 
-当前Model仍每Phase单Invocation、同时一个episode。普通B2参考也逐episode同步，单槽不是已证实的差距原因。
-CPU提前准备下一步仍值得独立设计：元数据准备与设备提交分别推进；设备token接力需要真实生产者、
-依赖fence和未发布候选的权限；后继以候选为base时须按序发布，前驱失败撤销所有后继。
+常规请求循环仍逐episode推进，普通B2参考也逐episode同步；单槽不是已证实的差距原因。
+Model另有显式D2普通T1路径：三个物理IO载体、最多两个未发布候选，共用原FamilyChild、Queue、
+状态池与Graph提交。普通Phase只准备一个槽，导入来源的Phase才准备三个；不扩大默认路径的IO分配。
+真实greedy模型已有限检查ready轮换及一对同时在途的episode；自然请求循环的持续接力、信用／EOS／
+取消及MTP接受子集尚未接通，不把该诊断路径当作默认重叠执行或提速证明。
+元数据准备与设备提交分别推进；设备token接力需要真实生产者、依赖fence和未发布候选的权限；
+后继以候选为base时须按序发布，前驱失败撤销所有后继。
 停止／取消／背压还要约束提前预留的输出和无效后继。单纯加第二份buffer不能满足这些合同。
 
 提前准备不得改已提交head、ledger、RNG或交付游标；它失败时只撤回自己的预留。
 后继设备提交另须取得前驱候选的真实读取权限、原生顺序及完整终结事实。
 模型层给出实际依赖、工作形状与资源需求，共同层管理有界推进，不把Qwen阶段表搬入Graph。
+
+普通后继直接借原提交的I32、每层Store与KV来源，不上传未知token，不把前驱候选包装为ready快照。
+绑定来源先建立权限，导入的Store随后才能安装目的控制；完整物理tuple与私有参数资格在prepare及submit
+两处复核，只能使用已有捕获，pending输入不能新录或降级到managed Commands。固定原生kernel的能力由
+各自确切Prepared实现说明，不能仅凭Provider名称或runtime标签推断。ready首次录制仍使用真实发布的原租约。
+前驱成功后才将Session.pending交给合法后继，并核对原候选地址、提交epoch与实际token；incoming束在后继
+真正退休并取回本地writer后才释放。ready不可变head先按原路径fork可写帧元数据，pending前驱不读ready帧。
+后继准备失败时，若原前驱仍在途，保留整个取消候选、权限和载体，立即报告原错误；不能在此时销毁可能
+同步同context的CUDA capture／workspace。前驱退休后沿原清理路径收回，失败后继不得被提升或提前归还容量。
+后继ledger只预留未知输入的后一个记录，前驱实际提交并被观察后才绑定其完整边界；预留不推进已提交计数。
 
 已有机制和剩余缺口如下：
 
@@ -115,7 +129,7 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
   B仍读旧输出时，A才可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
   `poll/wait`不隐式关闭导出。数学失败不发布ready；失败已实际退休且没有借用时仍可归还载体，原错误继续传播。
   detach不等待pending工作，最后owner释放仍有正常析构／分配器清理成本。
-KV其余入口、索引融合读取及持续轮换仍须另接，不能由token链代签。
+KV、索引融合与轮换的逐批结果见后文；自然请求循环持续接力及MTP接受子集仍待完成，不能由token链代签。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
 
@@ -130,7 +144,8 @@ EOS、停止或背压使无效后继只退休、不发布token或推进RNG，提
 每批的请求、query及page-ref数学上限不随D扩大。默认D=1保留原占用，实际调度启用更深在途前必须传入真实D。KV保留原追加／COW权限与各候选
 真实长度，不提前扩大已发布帧的可读范围；MTP接受未知时等待真实接受事实，或由实际实现修正
 候选长度，不能按全接受页界执行。普通`SlotBindings`及`PagedAppendPages`仍保ready／真实写权限合同；
-在途只读视图独立表达，不把未发布候选包装成ready状态。当前首批Graph KV接线见下，持续追加仍需另接。
+在途只读视图独立表达，不把未发布候选包装成ready状态。Graph持续追加及普通Model接线的有限检查见下，
+不代表全部请求政策已使用D2。
 
 一次设备token依赖链及前驱checked错误传播已取得[有限CUDA检查](../evidence/correctness/inference-graph-output-source-2026-10-27.json)：
 host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正确结果；前驱完整错误阻断后继发布，真实权限随后退休。
@@ -139,11 +154,11 @@ host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正
 提交使用该真实只读权限，不制造第二份状态。ready分支未在本批单独运行。
 后续[有限CUDA检查](../evidence/correctness/inference-graph-output-detach-2026-10-27.json)另验证：
 A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一代，B仍读取旧值，旧source的终结事实不受新提交影响。
-实际使用两块输出缓冲，未减少其容量；没有复制载荷或增加执行器。该适配尚未接引擎，
+实际使用两块输出缓冲，未减少其容量；没有复制载荷或增加执行器。该批当时尚未接Model，
 同一次原提交的[共同owner检查](../evidence/correctness/inference-submission-source-2026-10-27.json)另已完成：
 两个不同I32输出送入同B两个输入，source／device-wait均为1；后项无效时整批绑定保持，原错误及真实退休分离。
 旧单输出入口已删除，不保兼容重载；Source本身不限制consumer，每个实际bundle保自己的绑定／一次提交身份。
-接下来仍需KV其余入口、索引融合后继读取及有界轮换；下方Store及首批KV精确视图已另有有限检查。
+该批之后的KV、索引融合及轮换交付分别保留有限检查，不能由单输出结果代签。
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
@@ -153,8 +168,9 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 不能以裸TensorView代替Source权限。跨Invocation重绑需先撤回原绑定并满足实际结果、Source与读者寿命；
 reset释放原绑定后的同池重新allocate也是原有合法路径。
 [三项合同及四条CPU／CUDA双会话检查](../evidence/correctness/inference-relay-carriers-2026-10-27.json)
-验证本批普通／MTP单槽路径；独立诊断入口只适配源码，未单独编译。实际引擎仍单槽，
-未声称完整设备token接力、重叠执行、capture或新tokens/s通过。
+验证当时普通／MTP单槽路径；当时独立诊断入口只适配源码，未单独编译。后续普通Model三载体及双在途
+有限检查见[Model后继接线](../evidence/correctness/inference-model-successor-2026-10-27.json)；常规请求循环仍单episode，
+没有持续流水或新tokens/s结论。
 
 剩余接线按以下共同职责收敛，尚未实现的部分不能由现有token检查代签：
 

@@ -256,6 +256,16 @@ const detail::ProviderPreparedVTable kPreparedVTable{
 };
 } // namespace
 
+bool preserves_capture_bindings(const detail::ProviderPrepared &value) noexcept {
+  if (value.vtable != &kPreparedVTable || !value.state || value.workspace.size != 0 ||
+      value.invocation_private_bytes != 0) return false;
+  const auto &prepared = *static_cast<const Prepared *>(value.state);
+  // Copy/Fill/Cast/elementwise kernels have only explicit ports and a by-value
+  // layout. A no-op View has fixed alias metadata, not a private allocation.
+  return prepared.primary && (!prepared.program.layout.elements ||
+      (prepared.program.kernel && prepared.program.blocks));
+}
+
 Status propose(const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
