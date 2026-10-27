@@ -234,6 +234,12 @@ bool has_input_source(const InvocationState &state, ValueId value) noexcept {
   const auto *binding = find_binding(*state.input_sources.get(), value);
   return binding && binding->source.valid();
 }
+bool has_input_source_table(const InvocationState &state, const InputSourceVTable *table) noexcept {
+  if (!state.input_sources || !table) return false;
+  return std::ranges::any_of(state.input_sources.get()->bindings, [&](const auto &binding) {
+    return binding.source.valid() && binding.source.vtable() == table;
+  });
+}
 bool input_source_matches(const InvocationState &state, ValueId value,
     const InputSource &source) noexcept {
   if (!state.input_sources) return false;

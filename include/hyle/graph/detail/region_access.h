@@ -253,6 +253,9 @@ struct RegionAccess final {
   // pending frame and supplies all exact guards in OrderedGraphSubmission.
   HYLE_GRAPH_API static Status bind_pending_projected(Invocation&,ValueId,
       compute::ConstTensorView,std::span<const ProjectedReader>) noexcept;
+  // Original pending projected binding checks, without changing any binding.
+  HYLE_GRAPH_API static Status validate_pending_projected(Invocation&,ValueId,
+      compute::ConstTensorView,std::span<const ProjectedReader>) noexcept;
   // Actual retired outcome only, including failed/closed cleanup. Withdraws
   // this ready projected input, its transparent aliases and page guards;
   // pending/source controls and all other caller/configuration bindings stay.
@@ -337,6 +340,8 @@ public:
   HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
       Invocation&,ValueId caller_output) noexcept;
 private:
+  friend class SubmissionSource;
+  static Status visit_pinned(InvocationState *,NodeId,RegionAccessFn,void *) noexcept;
   static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
       bool ready_projection) noexcept;
   static Status validate_projected_writer(InvocationState&,const Graph&,
@@ -353,6 +358,6 @@ private:
                     ResourceProjection) noexcept;
   static Status bind_projected_impl(Invocation&,ValueId,
       compute::ConstTensorView,std::span<const compute::ReadLease>,
-      std::span<const ProjectedReader>,bool pending) noexcept;
+      std::span<const ProjectedReader>,bool pending,bool validate_only=false) noexcept;
 };
 } // namespace hyle::graph::detail

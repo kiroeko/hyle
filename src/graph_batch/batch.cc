@@ -1108,6 +1108,47 @@ Status prepare(graph::Invocation&invocation,const Graph&graph,std::span<const Qu
 Result<c::BatchPlanReport> report(graph::Invocation&invocation,NodeId node)noexcept{return shared_native_report(invocation,node);}
 Result<c::NativePagedBatchReport> native_report(graph::Invocation&invocation,NodeId node)noexcept{return detail::native_paged_report(invocation,node);}
 Status prepare_replay(graph::Invocation&invocation,std::span<const QueueBinding>queues)noexcept{return capture_native(invocation,queues);}
+Result<gd::OutputBinding>detail::reader_binding(Invocation&invocation,ValueId bank,
+    PagedAppendSource&source,c::BatchLayoutVersion layout)noexcept{
+  HYLE_RETURN_IF_ERROR(PagedAppendSourceAccess::covers(source,layout));
+  HYLE_ASSIGN_OR_RETURN(auto facts,PagedAppendSourceAccess::facts(source));
+  HYLE_ASSIGN_OR_RETURN(auto p,frame_resources(invocation));HYLE_RETURN_IF_ERROR(p->reusable());
+  if(p->contains(bank))return std::unexpected(Status::FailedPrecondition("another pending source owns this cache input"));
+  detail::ProjectedReaders proofs{mem::StdAllocator<gd::ProjectedReader>(p->allocator)};
+  std::vector<gd::ResourceReadyInput,mem::StdAllocator<gd::ResourceReadyInput>>metadata{
+      mem::StdAllocator<gd::ResourceReadyInput>(p->allocator)};
+  // A delegated reader's ready-frame/writer-import hooks do not establish
+  // this shared-Queue submission contract. Never forge a ready frame for it.
+  for(const auto&native:p->native_regions)
+    if(std::find(native.inputs.begin()+1,native.inputs.end(),bank)!=native.inputs.end())
+      return std::unexpected(Status::Unimplemented("Graph submission page sources require an actual shared Queue reader"));
+  try{for(const auto*slot:p->frame_slots){const auto&r=*slot->region;const auto&s=*slot;
+    const bool key=r.values[1]==bank,value=has_value_port(r) && r.values[2]==bank;
+    if(!key && !value)continue;
+    // This first submission-source bridge proves the actual readonly layout
+    // through its original configuration lease on every prepare/submit. An
+    // owned-layout node has private mutable metadata, not such a ready input.
+    if(!r.metadata.valid())return std::unexpected(Status::Unimplemented("pending append reader needs its explicit owned metadata input"));
+    const auto role=key?(r.mla==c::MlaCacheLayout::kNone?c::BatchCacheRole::kKey:c::BatchCacheRole::kMla):c::BatchCacheRole::kValue;
+    if(facts.role!=role || facts.storage!=(key?r.capacity.key_storage:r.capacity.value_storage) ||
+        r.capacity.storage!=c::BatchStorage::kPaged || s.layout!=layout || !s.token.valid() || !s.queue.is_open() ||
+        (key && (s.keys.valid() || s.written_keys.producer.valid())) ||
+        (value && (s.values.valid() || s.written_values.producer.valid())))
+      return std::unexpected(Status::InvalidArgument("pending append pages differ from the prepared reader role/storage/layout"));
+    proofs.push_back({s.selected_step,&region_table,&r,std::uint32_t(r.inputs[key?1:2]),r.graph_capture});
+    if(r.metadata.valid()){
+      const auto existing=std::ranges::find(metadata,r.metadata,&gd::ResourceReadyInput::input);
+      if(existing!=metadata.end())continue;
+      const auto ready=std::ranges::find(p->metadata,r.metadata,&BatchResources::Metadata::input);
+      if(ready==p->metadata.end() || !ready->bound || ready->layout!=layout || !ready->ready.valid())
+        return std::unexpected(Status::FailedPrecondition("pending page reader has no exact owned ready metadata"));
+      HYLE_ASSIGN_OR_RETURN(auto tensor,ready->ready.tensor(ready->description));
+      metadata.push_back({r.metadata,tensor,ready->ready});
+    }
+  }}catch(...){return std::unexpected(Status::ResourceExhausted("pending append reader cold proof metadata"));}
+  if(proofs.empty())return std::unexpected(Status::Unimplemented("pending append bank has no selected shared page reader"));
+  return PagedAppendSourceAccess::binding(source,bank,std::move(layout),proofs,metadata);
+}
 Status bind_append(Invocation&invocation,const Graph&graph,NodeId append,ValueId value,PagedAppendPages&&pages)noexcept{
   HYLE_ASSIGN_OR_RETURN(auto p,frame_resources(invocation));HYLE_RETURN_IF_ERROR(p->reusable());
   if(p->contains(value))return Status::FailedPrecondition("external pending source already owns the cache input");

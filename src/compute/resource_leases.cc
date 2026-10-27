@@ -516,6 +516,18 @@ Status match_append_prefix_storage(const LeaseBlock &block, std::size_t bytes,
     return Status::InvalidArgument("pending append prefix differs from its exact original range");
   return Status::Ok();
 }
+// Pure preflight shared by queries and ticket export. The caller holds the
+// original domain lock; no failure may change the epoch or seal its writer.
+Status validate_append_prefix_export(LeaseBlock &block, mem::ConstBufferView exact_prefix) noexcept {
+  auto *domain = block.domain;
+  if (domain->closed || !block.append_mode || !block.append_owner || block.writer || block.writable)
+    return Status::FailedPrecondition("pending append read requires its open original tail");
+  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(&block, domain, block.generation,
+      block.append_epoch, block.append_committed, block.append_reserved));
+  if (!block.failure.ok()) return block.failure;
+  if (!block.append_failure.ok()) return block.append_failure;
+  return match_append_prefix_storage(block, block.append_committed + block.append_reserved, exact_prefix);
+}
 } // namespace
 
 PendingAppendReadTicket::PendingAppendReadTicket(const PendingAppendReadTicket &other) noexcept
@@ -556,20 +568,19 @@ Result<PendingAppendReadTicket> LeaseAccess::pending_append_read(const AppendLea
   if (!block) return std::unexpected(Status::FailedPrecondition("pending append writer is empty"));
   auto *domain = block->domain;
   std::lock_guard guard(domain->lock);
-  if (domain->closed || !block->append_mode || !block->append_owner || block->writer || block->writable)
-    return std::unexpected(Status::FailedPrecondition("pending append read requires its open original tail"));
-  HYLE_RETURN_IF_ERROR(validate_pending_append_identity(block, domain, block->generation,
-      block->append_epoch, block->append_committed, block->append_reserved));
-  if (!block->failure.ok()) return std::unexpected(block->failure);
-  if (!block->append_failure.ok()) return std::unexpected(block->append_failure);
-  HYLE_RETURN_IF_ERROR(match_append_prefix_storage(*block,
-      block->append_committed + block->append_reserved, exact_prefix));
+  HYLE_RETURN_IF_ERROR(validate_append_prefix_export(*block, exact_prefix));
   // No failure remains after sealing. Submission/order are the F2 owner's
   // proof, including when a fast producer already released its write use.
   block->incref();
   block->pending_read_sealed = true;
   return PendingAppendReadTicket(block, domain, block->generation, block->append_epoch,
       block->append_committed, block->append_reserved);
+}
+Status LeaseAccess::matches_append_prefix_storage(const AppendLease &lease,
+    mem::ConstBufferView exact_prefix) noexcept {
+  if (!lease.block_) return Status::FailedPrecondition("pending append writer is empty");
+  std::lock_guard guard(lease.block_->domain->lock);
+  return validate_append_prefix_export(*lease.block_, exact_prefix);
 }
 Status LeaseAccess::matches_pending_append_read(const PendingAppendReadTicket &ticket,
     mem::ConstBufferView view) noexcept {
@@ -950,6 +961,33 @@ Status LeaseAccess::matches_pending_read(const PendingReadTicket &ticket,
   if (!ticket.block_->writer || !ticket.block_->pending_read_sealed)
     return Status::FailedPrecondition("pending read writer is no longer in its sealed write epoch");
   return Status::Ok();
+}
+Result<AppendLeasePublication> LeaseAccess::publish_appendable_after_writes(WriteLease &lease,
+    const PendingReadTicket &ticket, std::size_t prefix_bytes) noexcept {
+  HYLE_RETURN_IF_ERROR(validate_pending_read_identity(ticket.block_, ticket.domain_,
+      ticket.generation_, ticket.offset_, ticket.size_));
+  auto *block = ticket.block_;
+  std::lock_guard guard(ticket.domain_->lock);
+  if (lease.block_ != block || lease.offset_ != ticket.offset_ || lease.size_ != ticket.size_)
+    return std::unexpected(Status::InvalidArgument("appendable handoff writer differs from its original full ticket"));
+  if (ticket.domain_->closed || !block->writer || !block->writable || !block->pending_read_sealed ||
+      block->append_mode || block->append_owner || block->append_epoch ||
+      block->append_committed || block->append_reserved)
+    return std::unexpected(Status::FailedPrecondition("appendable handoff requires its sealed fresh ordinary writer"));
+  if (prefix_bytes > ticket.size_)
+    return std::unexpected(Status::InvalidArgument("appendable handoff prefix exceeds its original full block"));
+  if (block->writes != 0)
+    return std::unexpected(Status::Unavailable("appendable handoff still has admitted writes"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  const bool has_tail = prefix_bytes != ticket.size_;
+  block->append_mode = true;
+  block->append_owner = has_tail;
+  block->append_committed = prefix_bytes;
+  block->writer = false;
+  block->writable = false;
+  if (has_tail) block->incref();
+  ReadLease prefix(std::exchange(lease.block_, nullptr), 0, prefix_bytes);
+  return AppendLeasePublication{std::move(prefix), has_tail ? AppendLease(block) : AppendLease{}};
 }
 Status LeaseAccess::ordered_read_unique(LeaseUseBatch &uses,
     const PendingReadTicket &ticket) noexcept {

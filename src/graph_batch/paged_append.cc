@@ -870,4 +870,185 @@ Status PagedAppendAccess::reset(Invocation&invocation)noexcept{
 } // namespace detail
 Status take_appends(Invocation&invocation,std::span<const NodeId>nodes,
     std::span<PagedAppendPages>outputs)noexcept{return detail::take_many(invocation,nodes,outputs);}
+namespace detail {
+struct PagedAppendSourceData final {
+  template<class T>using Vector=std::vector<T,mem::StdAllocator<T>>;
+  PagedAppendSourceData(c::StorageOwner owner,c::ResourceBudget retained,mem::AllocatorRef a)noexcept
+      :storage(std::move(owner)),budget(std::move(retained)),allocator(a),
+       pages(mem::StdAllocator<std::int32_t>(a)),rows(mem::StdAllocator<std::uint32_t>(a)),
+       targets(mem::StdAllocator<PagedAppendData::Target>(a)),required(mem::StdAllocator<std::uint32_t>(a)),
+       ready(mem::StdAllocator<c::ReadLease>(a)),full(mem::StdAllocator<gd::ResourceFullRange>(a)),
+       append(mem::StdAllocator<gd::ResourceAppendRange>(a)),proofs(mem::StdAllocator<gd::ProjectedReader>(a)),
+       metadata(mem::StdAllocator<gd::ResourceReadyInput>(a)){}
+  void destroy()noexcept{const auto owner=storage;const auto retained=budget;(void)owner;(void)retained;
+    const auto a=allocator;this->~PagedAppendSourceData();a.deallocate(this,sizeof(PagedAppendSourceData),alignof(PagedAppendSourceData));}
+  c::StorageOwner storage;c::ResourceBudget budget;mem::AllocatorRef allocator;
+  gd::ResourceSource resource;NodeId node{};c::BatchLayoutVersion layout;
+  c::BatchCacheRole role=c::BatchCacheRole::kKey;c::CacheStorage interpretation;
+  c::ConstTensorView capacity;std::size_t row_bytes=0,input_appenders=0;
+  bool appendable=false,reader_prepared=false;
+  ValueId bank{};c::BatchLayoutVersion read_layout;
+  Vector<std::int32_t>pages;Vector<std::uint32_t>rows;
+  Vector<PagedAppendData::Target>targets;Vector<std::uint32_t>required;
+  Vector<c::ReadLease>ready;Vector<gd::ResourceFullRange>full;Vector<gd::ResourceAppendRange>append;
+  Vector<gd::ProjectedReader>proofs;Vector<gd::ResourceReadyInput>metadata;
+};
+namespace {
+struct SourceTransaction final {NodeId node{};PagedAppendData*data=nullptr;gd::ProjectedWriter writer{};};
+Status source_transaction(void*opaque,const gd::RegionAccessView&view)noexcept{
+  auto&call=*static_cast<SourceTransaction*>(opaque);PagedAppendPages*pages=nullptr;
+  if(view.prepared_vtable==&table){
+    const auto&p=*static_cast<const Prepared*>(view.prepared);
+    if(p.node!=call.node)return Status::InvalidArgument("append source selected another original node");
+    pages=&static_cast<Slot*>(view.invocation)->pages;
+  }else if(const auto*api=native_table(view)){
+    if(!api->inspect || !api->pages)return Status::FailedPrecondition("append source native export is incomplete");
+    HYLE_ASSIGN_OR_RETURN(auto facts,api->inspect(view.prepared,view.invocation));
+    if(facts.node!=call.node)return Status::InvalidArgument("append source native node differs");
+    pages=api->pages(view.invocation);
+  }else return Status::Unimplemented("append source needs its selected original append slot");
+  if(!pages || !pages->valid())return Status::FailedPrecondition("append source transaction is absent or taken");
+  call.data=PagedAppendAccess::data(*pages);
+  call.writer={call.node,view.step,view.prepared_vtable,view.prepared};
+  return Status::Ok();
+}
+Status same_source_transaction(const PagedAppendSourceData&s,const PagedAppendData&p)noexcept{
+  HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));
+  if(p.layout!=s.layout || p.descriptor.role!=s.role || row_storage(p.descriptor)!=s.interpretation ||
+      p.row_bytes!=s.row_bytes || p.appendable!=s.appendable || p.input_appenders!=s.input_appenders ||
+      p.writers.size()!=s.full.size() || p.targets.size()!=s.targets.size() || p.required.size()!=s.required.size() ||
+      capacity.description()!=s.capacity.description() || !same_storage(capacity.storage(),s.capacity.storage()))
+    return Status::InvalidArgument("append source differs from its prepared transaction/layout");
+  for(std::size_t i=0;i<s.targets.size();++i)
+    if(p.targets[i].page!=s.targets[i].page || p.targets[i].first_row!=s.targets[i].first_row ||
+        p.required[i]!=s.required[i] || !same_storage(p.targets[i].storage,s.targets[i].storage))
+      return Status::InvalidArgument("append source original target/prefix changed");
+  return Status::Ok();
+}
+Status publish_source_pages(const PagedAppendSourceData&s,PagedAppendData&p)noexcept{
+  HYLE_RETURN_IF_ERROR(s.resource.successful_outcome());
+  HYLE_RETURN_IF_ERROR(same_source_transaction(s,p));
+  if(!p.successful)return Status::FailedPrecondition("take the successfully retired original append before source publication");
+  const auto full=s.resource.full_tickets();const auto append=s.resource.append_tickets();
+  if(full.size()!=p.writers.size() || append.size()!=p.input_appenders)
+    return Status::FailedPrecondition("append source ticket counts changed");
+  // All returned authorities are checked before publishing the first page.
+  // Already completed entries stay in the transaction's original retry cache.
+  for(std::size_t i=0;i<p.writers.size();++i)if(p.writers[i].lease().valid()){
+    if(p.writers[i].page()!=s.targets[i].page)return Status::InvalidArgument("returned append source page changed");
+    HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_pending_read(full[i],p.writers[i].lease()));}
+  for(std::size_t i=0;i<p.input_appenders;++i)if(p.appenders[i].reserved_rows()){
+    if(p.appenders[i].page()!=s.targets[p.writers.size()+i].page)
+      return Status::InvalidArgument("returned append source tail changed");
+    HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_pending_append_read(append[i],cd::PagedArenaAccess::permission(p.appenders[i])));}
+  for(std::size_t i=0;i<p.writers.size();++i){auto&writer=p.writers[i];if(!writer.lease().valid())continue;
+    if(p.appendable){
+      HYLE_ASSIGN_OR_RETURN(auto ready,cd::PagedArenaAccess::publish_appendable_after_writes(writer,full[i],p.required[i]));
+      p.changed_pages.push_back(std::move(ready.prefix));
+      if(ready.appender.valid())p.appenders.push_back(std::move(ready.appender));
+    }else{
+      HYLE_ASSIGN_OR_RETURN(auto ready,cd::LeaseAccess::publish_after_writes(writer.lease()));
+      HYLE_RETURN_IF_ERROR(writer.complete(ready,p.required[i]));p.changed_pages.push_back(std::move(ready));}}
+  for(std::size_t i=0;i<p.input_appenders;++i){auto&tail=p.appenders[i];if(!tail.valid() || !tail.reserved_rows())continue;
+    HYLE_ASSIGN_OR_RETURN(auto ready,cd::PagedArenaAccess::publish_append_after_writes(tail,append[i]));
+    p.changed_pages.push_back(std::move(ready));}
+  return Status::Ok();
+}
+} // namespace
+PagedAppendSource::PagedAppendSource(PagedAppendSource&&other)noexcept:data_(std::exchange(other.data_,nullptr)){}
+PagedAppendSource&PagedAppendSource::operator=(PagedAppendSource&&other)noexcept{
+  if(this!=&other){PagedAppendSource next(std::move(other));std::swap(data_,next.data_);}return *this;}
+PagedAppendSource::~PagedAppendSource(){if(data_)data_->destroy();}
+bool PagedAppendSource::valid()const noexcept{return data_ && data_->resource.valid();}
+Result<PagedAppendSource>PagedAppendSource::prepare(Invocation&invocation,NodeId node,
+    const c::StorageOwner&storage,PagedAppendOptions options)noexcept{
+  SourceTransaction selected{node};HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation,node,&source_transaction,&selected));
+  const auto&p=*selected.data;if(!storage || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("append source needs its actual owner and cold allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto capacity,cd::PagedArenaAccess::tensor(p.arena));
+  if(capacity.storage().resource()!=storage.ref())return std::unexpected(Status::InvalidArgument("append source owner differs from its arena"));
+  HYLE_ASSIGN_OR_RETURN(auto footprint,cd::BatchLayoutAccess::page_requirements(p.layout));
+  HYLE_ASSIGN_OR_RETURN(auto old,cd::BatchLayoutAccess::page_footprint(p.previous_layout));
+  auto allocator=options.allocator;if(options.resource_budget.valid()){HYLE_ASSIGN_OR_RETURN(allocator,options.resource_budget.metadata_allocator());}
+  std::vector<std::uint32_t,mem::StdAllocator<std::uint32_t>>changed{mem::StdAllocator<std::uint32_t>(allocator)};
+  try{changed.reserve(p.targets.size());for(const auto&target:p.targets)changed.push_back(target.page);}
+  catch(...){return std::unexpected(Status::ResourceExhausted("append source target lookup"));}
+  std::sort(changed.begin(),changed.end());
+  std::size_t ready_count=0;
+  for(const auto page:footprint.pages)
+    ready_count+=!std::binary_search(changed.begin(),changed.end(),std::uint32_t(page));
+  HYLE_ASSIGN_OR_RETURN(auto resource,gd::ResourceSource::prepare(invocation,
+      {ready_count,p.writers.size(),p.input_appenders},storage,{options.allocator,options.resource_budget}));
+  // ResourceSource has validated this actual resource/allocator lifetime.
+  auto*memory=allocator.allocate(sizeof(PagedAppendSourceData),alignof(PagedAppendSourceData));
+  if(!memory)return std::unexpected(Status::ResourceExhausted("typed append source metadata"));
+  PagedAppendSource result(::new(memory)PagedAppendSourceData(storage,options.resource_budget,allocator));auto&s=*result.data_;
+  s.resource=std::move(resource);s.node=node;s.layout=p.layout;s.role=p.descriptor.role;s.interpretation=row_storage(p.descriptor);
+  s.capacity=capacity;s.row_bytes=p.row_bytes;s.input_appenders=p.input_appenders;s.appendable=p.appendable;
+  try{
+    s.pages.assign(footprint.pages.begin(),footprint.pages.end());s.rows.assign(footprint.required_rows.begin(),footprint.required_rows.end());
+    s.targets.assign(p.targets.begin(),p.targets.end());s.required.assign(p.required.begin(),p.required.end());
+    s.full.resize(p.writers.size());s.append.resize(p.input_appenders);s.ready.reserve(ready_count);
+    for(std::size_t i=0;i<footprint.pages.size();++i){const auto page=footprint.pages[i];
+      if(std::binary_search(changed.begin(),changed.end(),std::uint32_t(page)))continue;
+      const auto found=std::lower_bound(old.begin(),old.end(),page);
+      if(found==old.end() || *found!=page)return std::unexpected(Status::InvalidArgument("append source untouched page has no original guard"));
+      const auto index=std::size_t(found-old.begin());
+      HYLE_ASSIGN_OR_RETURN(auto prefix,p.old_pages[index].subview(0,std::size_t(footprint.required_rows[i])*p.row_bytes));
+      s.ready.push_back(std::move(prefix));}
+  }catch(...){return std::unexpected(Status::ResourceExhausted("typed append source fixed footprint"));}
+  return result;
+}
+Status PagedAppendSource::capture(const gd::SubmissionSource&submission)noexcept{
+  if(!data_ || data_->resource.valid())return Status::FailedPrecondition("append source is absent or already captured");
+  struct Capture final{PagedAppendSourceData*source;const gd::SubmissionSource*submission;};Capture call{data_,&submission};
+  return submission.visit(data_->node,[](void*opaque,const gd::RegionAccessView&view)noexcept->Status{
+    auto&call=*static_cast<Capture*>(opaque);auto&s=*call.source;SourceTransaction selected{s.node};
+    HYLE_RETURN_IF_ERROR(source_transaction(&selected,view));auto&p=*selected.data;
+    HYLE_RETURN_IF_ERROR(same_source_transaction(s,p));
+    struct Clear final{PagedAppendSourceData&s;~Clear(){for(auto&x:s.full)x={};for(auto&x:s.append)x={};}}clear{s};
+    for(std::size_t i=0;i<s.full.size();++i)s.full[i]={&p.writers[i].lease(),s.targets[i].storage};
+    for(std::size_t i=0;i<s.append.size();++i){const auto index=s.full.size()+i;
+      HYLE_ASSIGN_OR_RETURN(auto prefix,s.capacity.storage().subview(std::size_t(s.targets[index].page)*p.arena.page_bytes(),
+          std::size_t(s.required[index])*s.row_bytes));
+      s.append[i]={&cd::PagedArenaAccess::permission(p.appenders[i]),prefix};}
+    return s.resource.capture(*call.submission,{selected.writer,p.binding_cache,s.capacity,s.ready,s.full,s.append});
+  },&call);
+}
+Result<c::PagedArenaRead>PagedAppendSource::ready(PagedAppendPages&returned)const noexcept{
+  if(!data_ || !returned.data_)return std::unexpected(Status::InvalidArgument("append source publication needs its returned transaction"));
+  HYLE_RETURN_IF_ERROR(publish_source_pages(*data_,*returned.data_));return returned.ready();
+}
+Result<c::PagedArenaDelta>PagedAppendSource::ready_delta(PagedAppendPages&returned,c::PagedArenaFootprint expected,
+    c::BatchLayoutVersion accepted)const noexcept{
+  if(!data_ || !returned.data_)return std::unexpected(Status::InvalidArgument("append source delta needs its returned transaction"));
+  HYLE_RETURN_IF_ERROR(PagedAppendSourceAccess::covers(*this,accepted));
+  if(!expected.valid() || !cd::PagedArenaAccess::owns(returned.data_->arena,expected))
+    return std::unexpected(Status::InvalidArgument("append source delta needs its original expected footprint"));
+  HYLE_RETURN_IF_ERROR(publish_source_pages(*data_,*returned.data_));return returned.ready_delta(std::move(expected),std::move(accepted));
+}
+Result<AppendFacts>PagedAppendSourceAccess::facts(const PagedAppendSource&source)noexcept{
+  if(!source.data_)return std::unexpected(Status::InvalidArgument("typed append source is empty"));
+  const auto&s=*source.data_;return AppendFacts{s.layout,s.role,s.capacity,s.interpretation};
+}
+Status PagedAppendSourceAccess::covers(const PagedAppendSource&source,c::BatchLayoutVersion requested)noexcept{
+  if(!source.data_ || !requested.valid() || !source.data_->layout.origin_schema().owns(requested))
+    return Status::InvalidArgument("append source reader layout is foreign");
+  const auto&s=*source.data_;HYLE_ASSIGN_OR_RETURN(auto footprint,cd::BatchLayoutAccess::page_requirements(requested));
+  std::size_t index=0;for(std::size_t i=0;i<footprint.pages.size();++i){
+    while(index<s.pages.size() && s.pages[index]<footprint.pages[i])++index;
+    if(index==s.pages.size() || s.pages[index]!=footprint.pages[i] || s.rows[index]<footprint.required_rows[i])
+      return Status::InvalidArgument("append source cannot cover the reader's exact logical prefix");}
+  return Status::Ok();
+}
+Result<gd::OutputBinding>PagedAppendSourceAccess::binding(PagedAppendSource&source,ValueId bank,
+    c::BatchLayoutVersion layout,std::span<const gd::ProjectedReader>proofs,std::span<const gd::ResourceReadyInput>metadata)noexcept{
+  HYLE_RETURN_IF_ERROR(covers(source,layout));auto&s=*source.data_;
+  if(s.reader_prepared)return std::unexpected(Status::FailedPrecondition("prepare a separate typed source view for another reader bundle"));
+  try{s.proofs.assign(proofs.begin(),proofs.end());s.metadata.assign(metadata.begin(),metadata.end());}
+  catch(...){return std::unexpected(Status::ResourceExhausted("append source cold reader proof metadata"));}
+  s.bank=bank;s.read_layout=std::move(layout);s.reader_prepared=true;
+  return gd::OutputBinding{.input=bank,.resource=&s.resource,.readers=s.proofs,.ready_inputs=s.metadata};
+}
+} // namespace detail
 } // namespace hyle::graph::batch

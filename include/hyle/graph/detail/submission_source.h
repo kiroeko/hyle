@@ -5,6 +5,7 @@
 
 namespace hyle::graph::detail {
 struct SubmissionSourceState;
+struct RegionAccessView;
 
 // One exact original Graph submission: one proxy, Queue and whole verdict.
 // Typed views share this identity, but keep their own actual resource proofs.
@@ -35,10 +36,16 @@ public:
   // Pending/error observations alone never establish actual retirement.
   // Does not wait for pending work; final owner release has ordinary cleanup cost.
   HYLE_GRAPH_API Status detach() noexcept;
+  // A short metadata-only borrow of this exact submitted producer's selected
+  // region. No execution or payload access is authorized. The source mutex is
+  // not held during the visitor; an adapter may capture concrete tickets there.
+  HYLE_GRAPH_API Status visit(NodeId,
+      Status (*)(void *, const RegionAccessView &) noexcept, void *) const noexcept;
 
 private:
   friend class OutputSource;
   friend class StoreSource;
+  friend class ResourceSource;
   explicit SubmissionSource(SubmissionSourceState *state) noexcept : state_(state) {}
   SubmissionSourceState *state_ = nullptr;
 };

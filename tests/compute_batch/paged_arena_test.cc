@@ -7,6 +7,7 @@
 #include <hyle/compute/detail/batch_provider.h>
 #include <hyle/mem/quota_allocator.h>
 #include "allocation_fault_fixture.h"
+#include "../../src/compute/completion_internal.h"
 #include <gtest/gtest.h>
 #include <array>
 #include <limits>
@@ -17,6 +18,156 @@ c::BatchCapacity capacity(){return {.max_requests=1,.max_query_rows=1,.max_kv_ro
 c::BatchLayoutVersion layout(const c::BatchSchema&schema,std::span<const std::int32_t> pages,int tail=2){const std::array<std::int32_t,2> q{0,1},kv{0,std::int32_t(pages.size())};const std::array<std::int32_t,1> tails{tail};return schema.version({q,kv,pages,tails}).value();}
 c::ReadLease fill(c::PagedArena&arena,unsigned id,std::byte value){auto writer=arena.acquire(id).value();EXPECT_TRUE(writer.lease().view()->fill(value).ok());return writer.publish(2).value();}
 std::byte first(const c::ReadLease&lease){std::array<std::byte,1> bytes{};EXPECT_TRUE(lease.view()->subview(0,1)->read(bytes).ok());return bytes[0];}
+
+// F1 retirement control only, not a native Queue-ordering oracle. Destruction
+// completes this fake endpoint as an explicit cleanup wait, so an early test
+// assertion cannot leave borrowed state or admitted uses behind.
+struct PendingPageUse final { bool done=false; };
+const c::detail::CompletionVTable pending_page_use{
+  .destroy=[](void*opaque,c::detail::CompletionLifetime lifetime,hyle::Status hint)noexcept{
+    static_cast<PendingPageUse*>(opaque)->done=true;
+    if(lifetime.valid()){lifetime.terminal(lifetime.state,hint);lifetime.release(lifetime.state);}
+  },
+  .poll=[](void*opaque)noexcept->hyle::Result<c::CompletionPoll>{
+    return static_cast<PendingPageUse*>(opaque)->done?c::CompletionPoll::kComplete:c::CompletionPoll::kPending;
+  },
+  .wait=[](void*opaque)noexcept{static_cast<PendingPageUse*>(opaque)->done=true;return hyle::Status::Ok();}
+};
+
+TEST(PagedArena, PendingFreshPublicationKeepsSuccessorAndExactPrefix){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value();const auto generation=writer.lease().generation();
+  ASSERT_TRUE(writer.lease().view()->fill(std::byte{19}).ok());
+  const auto original=m::ConstBufferView(*writer.lease().view());
+  auto uses=c::LeaseUsePool::create({.max_batches=2,.max_resources_per_batch=1}).value();
+  auto writing=uses.begin().value();ASSERT_TRUE(writing.write(writer.lease()).ok());
+  PendingPageUse producing,consuming;
+  auto producer=c::detail::CompletionAccess::make(&pending_page_use,&producing);
+  ASSERT_TRUE(writing.attach(producer).ok());
+  auto exported=c::detail::LeaseAccess::pending_read(writer.lease());ASSERT_TRUE(exported)<<exported.error().message();
+  auto ticket=std::move(*exported);auto reading=uses.begin().value();
+  ASSERT_TRUE(c::detail::LeaseAccess::ordered_read_unique(reading,ticket).ok());
+  auto consumer=c::detail::CompletionAccess::make(&pending_page_use,&consuming);
+  ASSERT_TRUE(reading.attach(consumer).ok());
+  auto early=c::detail::PagedArenaAccess::publish_appendable_after_writes(writer,ticket,1);
+  ASSERT_FALSE(early);EXPECT_TRUE(early.error().IsUnavailable());
+  EXPECT_TRUE(writer.valid());EXPECT_TRUE(writer.lease().valid());EXPECT_EQ(writer.initialized_rows(),0u);
+  EXPECT_FALSE(writer.publish_appendable(1));
+  ASSERT_TRUE(producer.wait().ok());
+  auto converted=c::detail::PagedArenaAccess::publish_appendable_after_writes(writer,ticket,1);
+  ASSERT_TRUE(converted)<<converted.error().message();auto page=std::move(*converted);
+  EXPECT_FALSE(writer.valid());EXPECT_FALSE(writer.lease().valid());
+  EXPECT_EQ(page.appender.page(),0u);EXPECT_EQ(page.appender.initialized_rows(),1u);
+  EXPECT_EQ(page.prefix.generation(),generation);EXPECT_EQ(page.prefix.size(),arena.page_bytes()/2);
+  EXPECT_EQ(page.prefix.view()->native_handle(),original.native_handle());
+  EXPECT_EQ(page.prefix.view()->offset(),original.offset());EXPECT_FALSE(page.prefix.subview(page.prefix.size(),1));
+  const auto one=layout(schema,std::array<std::int32_t,1>{0},1);
+  auto old=arena.read(one,std::array{page.prefix});ASSERT_TRUE(old)<<old.error().message();
+  EXPECT_FALSE(arena.read(layout(schema,std::array<std::int32_t,1>{0},2),std::array{page.prefix}));
+  auto later=uses.begin().value();
+  EXPECT_FALSE(c::detail::LeaseAccess::ordered_read_unique(later,ticket).ok());
+  ASSERT_TRUE(later.read(page.prefix).ok());later={}; // Genuine bounded ready permission still works.
+  EXPECT_TRUE(page.appender.reserve_rows(1).IsUnavailable());
+  auto pending=consumer.poll();ASSERT_TRUE(pending);EXPECT_EQ(*pending,c::CompletionPoll::kPending);
+  ASSERT_TRUE(consumer.wait().ok());
+  ASSERT_TRUE(page.appender.reserve_rows(1).ok());ASSERT_TRUE(page.appender.rollback().ok());
+  EXPECT_EQ(old->layout(),one);EXPECT_EQ(old->page_prefix(0)->size(),page.prefix.size());
+  std::array<std::byte,256> bytes{};ASSERT_EQ(bytes.size(),page.prefix.size());
+  ASSERT_TRUE(page.prefix.view()->read(bytes).ok());for(const auto value:bytes)EXPECT_EQ(value,std::byte{19});
+}
+
+TEST(PagedArena, PendingFreshRejectsForeignTicketRowsAndReacquiredPage){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto writer=arena.acquire(0).value(),foreign=arena.acquire(1).value();
+  const auto generation=writer.lease().generation();
+  ASSERT_TRUE(writer.lease().view()->fill(std::byte{23}).ok());
+  auto uses=c::LeaseUsePool::create({.max_batches=1,.max_resources_per_batch=2}).value();
+  auto writing=uses.begin().value();ASSERT_TRUE(writing.write(writer.lease()).ok());ASSERT_TRUE(writing.write(foreign.lease()).ok());
+  auto completed=c::Completion::completed();ASSERT_TRUE(writing.attach(completed).ok());ASSERT_TRUE(completed.wait().ok());
+  auto exported=c::detail::LeaseAccess::pending_read(writer.lease());ASSERT_TRUE(exported);
+  auto foreign_export=c::detail::LeaseAccess::pending_read(foreign.lease());ASSERT_TRUE(foreign_export);
+  auto ticket=std::move(*exported),foreign_ticket=std::move(*foreign_export);
+  auto wrong=c::detail::PagedArenaAccess::publish_appendable_after_writes(writer,foreign_ticket,1);
+  ASSERT_FALSE(wrong);EXPECT_TRUE(wrong.error().IsInvalidArgument());
+  auto excessive=c::detail::PagedArenaAccess::publish_appendable_after_writes(writer,ticket,3);
+  ASSERT_FALSE(excessive);EXPECT_TRUE(excessive.error().IsInvalidArgument());
+  EXPECT_TRUE(writer.valid());EXPECT_TRUE(writer.lease().valid());EXPECT_EQ(writer.lease().generation(),generation);
+  EXPECT_EQ(writer.initialized_rows(),0u);EXPECT_TRUE(foreign.lease().valid());
+  auto accepted=c::detail::PagedArenaAccess::publish_appendable_after_writes(writer,ticket,1);
+  ASSERT_TRUE(accepted)<<accepted.error().message();EXPECT_EQ(first(accepted->prefix),std::byte{23});
+  auto ready=fill(arena,2,std::byte{31});auto reclaimed=arena.acquire(ready);ASSERT_TRUE(reclaimed);
+  auto reused=std::move(*reclaimed);const auto reused_generation=reused.lease().generation();
+  auto rewriting=uses.begin().value();ASSERT_TRUE(rewriting.write(reused.lease()).ok());
+  auto retired=c::Completion::completed();ASSERT_TRUE(rewriting.attach(retired).ok());ASSERT_TRUE(retired.wait().ok());
+  auto reused_export=c::detail::LeaseAccess::pending_read(reused.lease());ASSERT_TRUE(reused_export);
+  auto denied=c::detail::PagedArenaAccess::publish_appendable_after_writes(reused,*reused_export,1);
+  ASSERT_FALSE(denied);EXPECT_TRUE(denied.error().IsFailedPrecondition());
+  EXPECT_TRUE(reused.valid());EXPECT_TRUE(reused.lease().valid());
+  EXPECT_EQ(reused.lease().generation(),reused_generation);EXPECT_EQ(reused.initialized_rows(),2u);
+}
+
+TEST(PagedArena, PendingAppendPublicationPreservesOldFrameAndRetiredRollback){
+  auto schema=c::BatchSchema::create(capacity()).value();
+  auto arena=c::PagedArena::create(schema,c::BatchCacheRole::kKey,m::system_resource(),{.max_backing_bytes=4096}).value();
+  auto uses=c::LeaseUsePool::create({.max_batches=2,.max_resources_per_batch=1}).value();
+  for(const bool fail_producer:{false,true}){
+    const auto id=fail_producer?1u:0u;
+    auto writer=arena.acquire(id).value();const auto generation=writer.lease().generation();
+    ASSERT_TRUE(writer.lease().view()->fill(std::byte{37}).ok());
+    const auto full=m::ConstBufferView(*writer.lease().view());
+    auto published=writer.publish_appendable(1);ASSERT_TRUE(published);auto page=std::move(*published);
+    const auto one=layout(schema,std::array<std::int32_t,1>{static_cast<std::int32_t>(id)},1);
+    const auto two=layout(schema,std::array<std::int32_t,1>{static_cast<std::int32_t>(id)},2);
+    auto old=arena.read(one,std::array{page.prefix});ASSERT_TRUE(old);
+    ASSERT_TRUE(page.appender.reserve_rows(1).ok());ASSERT_TRUE(page.appender.view()->fill(std::byte{47}).ok());
+    const auto&permission=c::detail::PagedArenaAccess::permission(page.appender);
+    auto bank=c::detail::PagedArenaAccess::tensor(arena);ASSERT_TRUE(bank);
+    auto shifted=bank->storage().subview(full.offset()-bank->storage().offset()+1,full.size());ASSERT_TRUE(shifted);
+    auto short_prefix=full.subview(0,full.size()-1);ASSERT_TRUE(short_prefix);
+    EXPECT_FALSE(c::detail::LeaseAccess::matches_append_prefix_storage(permission,*shifted).ok());
+    EXPECT_FALSE(c::detail::LeaseAccess::matches_append_prefix_storage(permission,*short_prefix).ok());
+    EXPECT_TRUE(page.appender.view());EXPECT_EQ(page.appender.initialized_rows(),1u);EXPECT_EQ(page.appender.reserved_rows(),1u);
+    auto writing=uses.begin().value();
+    ASSERT_TRUE(c::detail::LeaseAccess::append_unique(writing,c::detail::PagedArenaAccess::permission(page.appender)).ok());
+    PendingPageUse producing,consuming;
+    auto producer=c::detail::CompletionAccess::make(&pending_page_use,&producing);
+    ASSERT_TRUE(writing.attach(producer).ok());
+    EXPECT_TRUE(c::detail::LeaseAccess::matches_append_prefix_storage(permission,full).ok());
+    auto exported=c::detail::LeaseAccess::pending_append_read(c::detail::PagedArenaAccess::permission(page.appender),full);
+    ASSERT_TRUE(exported)<<exported.error().message();auto ticket=std::move(*exported);
+    EXPECT_TRUE(c::detail::LeaseAccess::matches_append_prefix_storage(permission,full).ok());
+    EXPECT_FALSE(page.appender.view()); // A pure query did not reopen the sealed epoch.
+    auto reading=uses.begin().value();ASSERT_TRUE(c::detail::LeaseAccess::ordered_read_unique(reading,ticket).ok());
+    auto consumer=c::detail::CompletionAccess::make(&pending_page_use,&consuming);ASSERT_TRUE(reading.attach(consumer).ok());
+    auto early=c::detail::PagedArenaAccess::publish_append_after_writes(page.appender,ticket);
+    ASSERT_FALSE(early);EXPECT_TRUE(early.error().IsUnavailable());
+    if(fail_producer)c::detail::CompletionAccess::append_terminal(producer,hyle::Status::Internal("paged append producer failed"));
+    const auto produced=producer.wait();ASSERT_EQ(produced.IsInternal(),fail_producer);
+    EXPECT_FALSE(page.appender.publish());EXPECT_FALSE(page.appender.reserve_rows(1).ok());
+    EXPECT_TRUE(page.appender.rollback().IsUnavailable());
+    auto ready=c::detail::PagedArenaAccess::publish_append_after_writes(page.appender,ticket);
+    if(fail_producer){
+      ASSERT_FALSE(ready);EXPECT_TRUE(ready.error().IsInternal());
+      EXPECT_TRUE(page.appender.valid());EXPECT_EQ(page.appender.initialized_rows(),1u);EXPECT_EQ(page.appender.reserved_rows(),1u);
+      EXPECT_FALSE(arena.read(two,std::array{page.prefix}));
+    }else{
+      ASSERT_TRUE(ready)<<ready.error().message();EXPECT_FALSE(page.appender.valid());
+      EXPECT_EQ(ready->generation(),generation);EXPECT_EQ(ready->size(),arena.page_bytes());
+      EXPECT_EQ(ready->view()->native_handle(),full.native_handle());EXPECT_EQ(ready->view()->offset(),full.offset());
+      auto current=arena.read(two,std::array{*ready});ASSERT_TRUE(current);EXPECT_EQ(current->page_prefix(id)->size(),arena.page_bytes());
+      std::array<std::byte,512> bytes{};ASSERT_EQ(bytes.size(),ready->size());ASSERT_TRUE(ready->view()->read(bytes).ok());
+      for(std::size_t i=0;i<bytes.size();++i)EXPECT_EQ(bytes[i],i<256?std::byte{37}:std::byte{47});
+    }
+    auto pending=consumer.poll();ASSERT_TRUE(pending);EXPECT_EQ(*pending,c::CompletionPoll::kPending);
+    EXPECT_EQ(old->layout(),one);EXPECT_EQ(old->page_prefix(id)->size(),arena.page_bytes()/2);
+    EXPECT_EQ(page.prefix.size(),arena.page_bytes()/2);EXPECT_EQ(first(page.prefix),std::byte{37});
+    ASSERT_TRUE(consumer.wait().ok());
+    if(fail_producer){ASSERT_TRUE(page.appender.rollback().ok());EXPECT_EQ(page.appender.initialized_rows(),1u);
+      ASSERT_TRUE(page.appender.reserve_rows(1).ok());ASSERT_TRUE(page.appender.rollback().ok());}
+  }
+}
 
 TEST(PagedArena, EncodedKeyAndValuePagesKeepSeparateBytePrefixesAndPermissions){
   auto cap=capacity();cap.value_head_dim=128;

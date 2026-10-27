@@ -2,6 +2,7 @@
 
 #include "hyle/graph/detail/submission_source.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/resource_source.h"
 
 namespace hyle::graph::detail {
 struct OutputSourceState;
@@ -50,16 +51,22 @@ struct OutputBinding final {
   const StoreSource *store = nullptr;
   ResourceProjection projection{};
   const Graph *graph = nullptr;
+  const ResourceSource *resource = nullptr;
+  std::span<const ProjectedReader> readers{};
+  std::span<const ResourceReadyInput> ready_inputs{};
 };
 
 // Cold atomic bundle of distinct inputs from the same submission.
 // Success retains all views, even when InputSources deduplicates their common
 // dependency. A view binds one original consumer bundle once; the submission itself
 // has no consumer restriction. Failure preserves bindings and view identities.
-// Exactly one concrete view is supplied. Store entries derive their capacity
+// Exactly one token, Store or resource view is supplied. Store entries derive their capacity
 // input and bounded ready-ID input from projection; input must remain empty.
 // Store graph is borrowed for this cold call to prove the actual checked
 // Gather input/ID association, then discarded; no provider-name inference.
+// Resource entries supply their exact selected projected readers. Required
+// ready inputs remain owned by the original configuration and are rechecked
+// before prepare/submit; they are never replaced with pending attachments.
 // Subsequent calls supply this same ordered bundle; the span is never retained.
 HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Prepared nonblocking Commands or complete existing capture reuse. The full

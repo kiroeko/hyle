@@ -1,0 +1,594 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Original PagedAppend transactions to a real shared-Queue CUDA attention consumer using explicit metadata; finite resource/publication checks.",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "driver": "617.14"
+  },
+  "build": {
+    "CXX_TUs": 9,
+    "links": 1,
+    "images": 1,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "baseline_inputs": 231,
+    "replaced_inputs": 7,
+    "added_test_objects": 2,
+    "final_inputs": 233,
+    "retained_inputs": 224,
+    "compile_and_link_first_attempt_exit_zero": true,
+    "processes": [
+      {
+        "name": "resources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2448710,
+          "sha256": "8b0122606f47719cb10d95d0867864f1042e0a24379f784316a8be4c76c64a6e"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 54968,
+          "seconds": 3.3151239999569952
+        }
+      },
+      {
+        "name": "inputs",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\inputs\\unit.obj",
+          "bytes": 777169,
+          "sha256": "654bb4852fd23bf49e40c2baa09ab31690cb35d22c8503a4b332911fb626926d"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 55816,
+          "seconds": 2.028033200011123
+        }
+      },
+      {
+        "name": "leases",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\leases\\unit.obj",
+          "bytes": 585345,
+          "sha256": "764e22ccc943e1067e4504baf9309a52da2f48acf3080e98d2c0c207984f0834"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 39580,
+          "seconds": 0.9603621999849565
+        }
+      },
+      {
+        "name": "arena",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\arena\\unit.obj",
+          "bytes": 1421042,
+          "sha256": "6e34da20a66009debc0698422f943a0090d9845e5178cac0e253fb79af12b6a7"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 59592,
+          "seconds": 1.7087529999553226
+        }
+      },
+      {
+        "name": "append",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\append\\unit.obj",
+          "bytes": 2151073,
+          "sha256": "c15ff2a8d806c1b220179b9797137821a8dfc88d49402dea59e7a166f81d2259"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 62396,
+          "seconds": 2.6065815000329167
+        }
+      },
+      {
+        "name": "batch",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\batch\\unit.obj",
+          "bytes": 2348887,
+          "sha256": "778c4bcce52a1122bb0dab196f79de2e6eb8277ec607945d95007c8fb75a1ad3"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 12672,
+          "seconds": 2.987877099949401
+        }
+      },
+      {
+        "name": "graph-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\graph-test\\unit.obj",
+          "bytes": 2854857,
+          "sha256": "476053fa21698ba033bf3b1dd5c761372bb59d57e223acb92838f93c1713449f"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 56128,
+          "seconds": 7.418199800013099
+        }
+      },
+      {
+        "name": "arena-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\arena-test\\unit.obj",
+          "bytes": 3051604,
+          "sha256": "d782860a80d11cb3660b030ce486b330f66d967b9e4b512986c1602ebe02ddad"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 57460,
+          "seconds": 4.28150879999157
+        }
+      },
+      {
+        "name": "paged-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1057248,
+          "sha256": "a7b6fad196dd7ab7a71232f198fba8e3c3af3485c00c55f6873b89db46584860"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 57912,
+          "seconds": 4.551927499996964
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 22040,
+      "seconds": 1.8961679000058211
+    }
+  },
+  "tests": {
+    "passed": 26,
+    "skipped": 0,
+    "failed": 0,
+    "process": {
+      "exit": 0,
+      "pid": 59176,
+      "seconds": 0.5909614999545738
+    },
+    "groups": {
+      "GraphOutputSourceCuda": 10,
+      "AppendLeases": 4,
+      "PendingReadTickets": 3,
+      "PendingAppendReadTickets": 3,
+      "CopyLeaseHandoff": 2,
+      "PagedArena": 3,
+      "GraphPagedAppendSourceCuda": 1
+    },
+    "cases": [
+      {
+        "name": "PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "335",
+        "status": "run",
+        "result": "completed",
+        "time": "0.088",
+        "timestamp": "2026-10-27T09:33:48.218",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "PendingI32PreparesRealStoreRegionBindingHooks",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "336",
+        "status": "run",
+        "result": "completed",
+        "time": "0.004",
+        "timestamp": "2026-10-27T09:33:48.307",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "337",
+        "status": "run",
+        "result": "completed",
+        "time": "0.003",
+        "timestamp": "2026-10-27T09:33:48.311",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "338",
+        "status": "run",
+        "result": "completed",
+        "time": "0.002",
+        "timestamp": "2026-10-27T09:33:48.315",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "339",
+        "status": "run",
+        "result": "completed",
+        "time": "0.007",
+        "timestamp": "2026-10-27T09:33:48.318",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "517",
+        "status": "run",
+        "result": "completed",
+        "time": "0.003",
+        "timestamp": "2026-10-27T09:33:48.326",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "651",
+        "status": "run",
+        "result": "completed",
+        "time": "0.003",
+        "timestamp": "2026-10-27T09:33:48.329",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "1076",
+        "status": "run",
+        "result": "completed",
+        "time": "0.002",
+        "timestamp": "2026-10-27T09:33:48.333",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "StorePendingReaderPreservesWholeProducerFailure",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "1079",
+        "status": "run",
+        "result": "completed",
+        "time": "0.002",
+        "timestamp": "2026-10-27T09:33:48.336",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "line": "1082",
+        "status": "run",
+        "result": "completed",
+        "time": "0.004",
+        "timestamp": "2026-10-27T09:33:48.338",
+        "classname": "GraphOutputSourceCuda"
+      },
+      {
+        "name": "BoundedPrefixCannotWidenOrPromoteAndFullPageHasNoTail",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "322",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "AppendLeases"
+      },
+      {
+        "name": "ReservedSuffixRequiresQualifiedUseAndKeepsOldReaderBounded",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "360",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "AppendLeases"
+      },
+      {
+        "name": "FailedEpochWaitsForActualReleaseThenRollbackCanRetryAndClose",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "406",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "AppendLeases"
+      },
+      {
+        "name": "AbandonedTailWaitsForOriginalNativeRetirement",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "473",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "AppendLeases"
+      },
+      {
+        "name": "ExactRangeSurvivesWriterObjectAndGenuinePublication",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "509",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingReadTickets"
+      },
+      {
+        "name": "ExportSealsNewWritesUntilUniqueReadyPromotionWithoutAllocation",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "577",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingReadTickets"
+      },
+      {
+        "name": "ReaderFailureDoesNotPoisonProducerAndClosedDomainsRejectNewUse",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "629",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingReadTickets"
+      },
+      {
+        "name": "ExactEpochSurvivesMovedOwnerAndPublishesWithReaderPending",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "679",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingAppendReadTickets"
+      },
+      {
+        "name": "RejectedExportDoesNotSealAndDroppingTicketsDoesNotReopenEpoch",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "748",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingAppendReadTickets"
+      },
+      {
+        "name": "FailedProducerCannotPublishAndReaderFailureDoesNotPoisonAppend",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "782",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PendingAppendReadTickets"
+      },
+      {
+        "name": "AllOrderedWritersMustActuallyRetireBeforeReady",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "872",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "CopyLeaseHandoff"
+      },
+      {
+        "name": "OrdinaryWriterCapacityAndClosedSourceChecksRemain",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute\\resource_leases_test.cc",
+        "line": "912",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "CopyLeaseHandoff"
+      },
+      {
+        "name": "PendingFreshPublicationKeepsSuccessorAndExactPrefix",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+        "line": "37",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PagedArena"
+      },
+      {
+        "name": "PendingFreshRejectsForeignTicketRowsAndReacquiredPage",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+        "line": "80",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PagedArena"
+      },
+      {
+        "name": "PendingAppendPublicationPreservesOldFrameAndRetiredRollback",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+        "line": "111",
+        "status": "run",
+        "result": "completed",
+        "time": "0.",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "PagedArena"
+      },
+      {
+        "name": "PendingOriginalPagesPublishWhileAttentionReads",
+        "file": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+        "line": "69",
+        "status": "run",
+        "result": "completed",
+        "time": "0.009",
+        "timestamp": "2026-10-27T09:33:48.343",
+        "classname": "GraphPagedAppendSourceCuda"
+      }
+    ]
+  },
+  "actual_cuda_observations": [
+    "One original A submission owns key and value PagedAppend transactions. Each source contributes two untouched ready pages, three full writers, and one existing append epoch. The second request has a real COW page.",
+    "B has a different query_indptr but the same required KV prefix footprint. Its explicit metadata retains the original real ready mirror lease; no fake ready frame is constructed.",
+    "B is recorded before A using only the original physical capacities for metadata/capture preparation, without submitting a reader. Its two typed reader descriptors are also prepared before A.",
+    "A is genuinely pending behind an original CUDA Queue host gate while B binds both KV resources through the same concrete output bundle and original SubmissionSource.",
+    "B reuses the existing capture with recorded=0/reused=1; dependency reports one source, one device wait, zero host waits. Ordinary submit cannot bypass the ordered permission map.",
+    "After A actually retires and detaches, B remains gated while the original bulk take returns both transactions. Key publication makes an original ready_delta and commits a WorkingFrame; value publication and its retry make the original ready frame.",
+    "Old key/value layouts and prefixes remain bounded. Fresh/COW partial pages acquire real appenders; reserve on an admitted reader remains unavailable. Final BF16 attention results are exactly 0.5 and 1.0 per request; all selected value rows and old snapshot bytes match."
+  ],
+  "resource_and_architecture_observations": [
+    "ResourceSource cold-reserves fixed ready/full/append metadata and charges the original budget. Capture authenticates the exact submitted parent, selected/nominated writer, registered page set, and real resource/allocator lifetimes.",
+    "Source metadata visits temporarily pin original results and release the observation mutex before invoking the existing typed metadata visitor. Capture leaves no writer/appender/transaction pointer retained.",
+    "Ready, full and append roots are mutually exclusive in the receiver footprint. An append ticket covers its old prefix without a second ordinary read admission; COW-copy-only source pages are not incorrectly treated as receiver pages.",
+    "Every exact append prefix is purely checked before the first writer is sealed. The new pure query shares the original validation formula and cannot export a view, allocate a ticket, or change the epoch/seal.",
+    "Token, Store and resource entries retain the same original terminal table, proxy, Queue and whole verdict. A private read-only InputSources query rejects splitting one Invocation into multiple pending bundles, avoiding representative-dependent prepare gates.",
+    "The original projected-reader pure checks are shared with atomic bundle binding. Required-ready metadata retains its real block/generation/range and is rechecked at preparation/submission; configuration ownership is preserved.",
+    "Fresh conversion only follows successful actual write retirement and exact full-ticket/page identity. Existing readonly uses retire normally; old full tickets cannot admit new readers after appendable conversion. New readers use real bounded ready leases.",
+    "Paged publication bridges update the original arena frontier and consume full appenders without relaxing public publish/reserve/rollback. Foreign tickets, bad row counts, reacquired ordinary pages, and failed producer publication reject while old snapshots remain unchanged."
+  ],
+  "header_catalog_check": {
+    "scope": "CMake registry ownership only; core selected to avoid inference toolchain/dependency setup.",
+    "command": "cmake -S .scratch/inference-paged-source-20261027/owner-project -B .scratch/inference-paged-source-20261027/owner-build -G Ninja",
+    "final_exit": 0,
+    "owner": "graph_batch",
+    "harness_failures_before_final_check": [
+      "Initial -P omitted HYLE_COMPONENTS and was rejected as an embedding parent.",
+      "-P with graph selected reached CONFIGURE_DEPENDS, which CMake forbids in script mode.",
+      "A LANGUAGES NONE graph project had no detected processor for the complete CPU route; no SDK build was attempted."
+    ],
+    "resolution": "Use a LANGUAGES NONE configure project and core selection to inspect the same declared header ownership catalog. No CXX/link/test process was repeated.",
+    "sources": [
+      {
+        "path": "cmake\\HyleComponents.cmake",
+        "bytes": 52911,
+        "sha256": "e104cc36e83e41c99aa32f1c236a403c017f89c1ccd4576db971c00941660767"
+      },
+      {
+        "path": "tests\\graph_batch\\CMakeLists.txt",
+        "bytes": 11346,
+        "sha256": "40a0074826eb279aa02299373908b9ef1fb3c2cb4435579f91ce0f39dc857c9c"
+      }
+    ]
+  },
+  "remaining_scope": [
+    "The actual B only reads KV for attention. A complete successor decode also needs to append/COW from the pending predecessor as its previous state; the current PagedAppendPages construction still requires ready footprints.",
+    "Owned-layout readers without an explicit metadata input are currently rejected; their private control identity/retention must still be integrated. This is an outstanding capability, not an out-of-scope model.",
+    "Delegated Apple/Vulkan, multi-segment relays, pending indexed GDN/conv readers, continuous bounded rotation and actual model overlap remain unimplemented/unverified by this batch.",
+    "No new ordinary/MTP model benchmark, tokens/s, peak memory, numerical quality or throughput result.",
+    "The actual CUDA case is positive. Append/fresh failure/publication checks use controlled Completion protocol; the inherited Source error cases do not constitute a GPU KV driver-fault injection.",
+    "The new Paged source and Source metadata/ticket arrays are cold, but common Source/bundle/preparation can still allocate after predecessor submission; full-model cold-budget admission remains required.",
+    "Only the header ownership catalog was checked in CMake; no installed SDK packaging, full project configure or separate header-test target was run."
+  ],
+  "source_freeze": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 201743,
+      "sha256": "776ad94b295e8579125929c5278f3ad57efc7350ae87940a599246728a46eba4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.cc",
+      "bytes": 23643,
+      "sha256": "c956a09220e482400a06cb9030a306ba0d24913e795795393da4119c5e8f76c5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute\\resource_leases.cc",
+      "bytes": 75152,
+      "sha256": "f379c39f7c066d32e914ddab1efcad0901cd2c2d610b89869373b8be813662d9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_batch\\paged_arena.cc",
+      "bytes": 80157,
+      "sha256": "93f6e0f1694050761091ebead023abfa3df5deafd529a12832368f54da4ef84a"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 78002,
+      "sha256": "4596ceff725dab31ea3837aba96e1a1613c2e19168bee3aa526a43d0773fadb5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 98954,
+      "sha256": "5fef1cd0cbf91ca382864369acf6adee2021f9bedc15dfcfee8a6e5d0bf8664c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 83464,
+      "sha256": "a307db2bc111143426704e52a7318ee51d80fc2479a8149cec4220edeec68a75"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_batch\\paged_arena_test.cc",
+      "bytes": 82902,
+      "sha256": "fb2f148c0fbe5f5c6354a1f01809f981ee0c1c326c9fccc83b8f3807c1c6a764"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 17736,
+      "sha256": "6de89b787bcb47ec11dcf415d05ccf533803f87772b9852a07187739ef0d5899"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+      "bytes": 15762,
+      "sha256": "c8f32990e310d267262321108139ecc9334cb9e08b9e1d3e54ba8316794a561d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\paged_arena_access.h",
+      "bytes": 7626,
+      "sha256": "85365d2a00e865095e73e3dede64961b2a74fe48d468092d97dac274c42a8da7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\submission_source.h",
+      "bytes": 2635,
+      "sha256": "acbe40e7b1c886a04a2ac4b0ee5f40d8e7345349ea9082809e856728a11acfc4"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\resource_source.h",
+      "bytes": 2894,
+      "sha256": "a6c281ae5be8016aabe4a8e0ac7606e700795103d790123d7ae6c2c92bdea400"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 4222,
+      "sha256": "c75b8070883b39779bf7d77aea3c5be75a385bedf1d57dc3ec7a0c3e2b4f95aa"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 22722,
+      "sha256": "1d7e43a23068b384609eb8ca9b9343fc332562ed87078ca0970a080e038652c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\paged_append_source.h",
+      "bytes": 2750,
+      "sha256": "346e09c5215cd84b17799b6ed528d3b981a9c4b5e05f13b78b51ead5c20c8f66"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\batch.h",
+      "bytes": 21026,
+      "sha256": "e0f96b11c3e5d88f129f39379f29f0b23f3ae97bb9692b5b92d397fb35b8813b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.h",
+      "bytes": 3096,
+      "sha256": "aed636de50410a5fdb1d585d043081ad0739babf19f991f617d1b50aac8f4e9d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 2547,
+      "sha256": "6b0f0da613d429452db5ab608c2dd4ff1070506265117118bcb55d01a90fe82f"
+    }
+  ],
+  "image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-source-20261027\\bin\\paged-source-test.exe",
+    "bytes": 145563136,
+    "sha256": "bb0292d54dd25258213309128471a153fd16a74887091694d722ba3102eb3f41"
+  },
+  "baseline": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-hybrid-append-20261027\\link-inputs.json",
+    "bytes": 59607,
+    "sha256": "57b951e5c02d4b52650479e4e146798c5428b68e2a44e635d46c34940d72e1cc"
+  },
+  "archive": {
+    "path": "docs\\evidence\\correctness\\inference-paged-submission-source-2026-10-27.zip",
+    "bytes": 257956,
+    "sha256": "ab6ea45da4002af71015496ef86ee25effb2350e89b4cc4d545d08d6f4c89260"
+  }
+}

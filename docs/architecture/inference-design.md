@@ -115,7 +115,7 @@ CPU提前准备下一步仍值得独立设计：元数据准备与设备提交�
   B仍读旧输出时，A才可绑定另一块真实writer继续执行，不能覆盖B尚在读取的块。
   `poll/wait`不隐式关闭导出。数学失败不发布ready；失败已实际退休且没有借用时仍可归还载体，原错误继续传播。
   detach不等待pending工作，最后owner释放仍有正常析构／分配器清理成本。
-  完整状态及KV的pending权限仍须另接，不能由token链代签。
+KV其余入口、索引融合读取及持续轮换仍须另接，不能由token链代签。
 - CPU可以先准备不依赖候选数值的形状、位置、容量和独立scratch，不能并发改当前`Phase`输入、
   layout、共享`input_scratch`、tail或工作态。两个capture槽也各自保持物理参数与权限寿命。
 
@@ -128,8 +128,8 @@ EOS、停止或背压使无效后继只退休、不发布token或推进RNG，提
 仅两块状态会使后继覆盖失败回退需要的旧状态。当前`N+K×R`是单episode容量，
 不是深度二承诺；提前提交需显式增加候选预算或缩小提前深度。KV保留原追加／COW权限与各候选
 真实长度，不提前扩大已发布帧的可读范围；MTP接受未知时等待真实接受事实，或由实际实现修正
-候选长度，不能按全接受页界执行。`slots::SlotBindings`及Graph append目前仍从成功退休的输出
-取得ready状态，其pending适配要另行实现。
+候选长度，不能按全接受页界执行。普通`SlotBindings`及`PagedAppendPages`仍保ready／真实写权限合同；
+在途只读视图独立表达，不把未发布候选包装成ready状态。当前首批Graph KV接线见下，持续追加仍需另接。
 
 一次设备token依赖链及前驱checked错误传播已取得[有限CUDA检查](../evidence/correctness/inference-graph-output-source-2026-10-27.json)：
 host gate实际阻止前驱完成时，后继仍可用原Queue提交并取得正确结果；前驱完整错误阻断后继发布，真实权限随后退休。
@@ -142,7 +142,7 @@ A成功退休、B仍在途时detach，A改绑第二块真实writer提交下一�
 同一次原提交的[共同owner检查](../evidence/correctness/inference-submission-source-2026-10-27.json)另已完成：
 两个不同I32输出送入同B两个输入，source／device-wait均为1；后项无效时整批绑定保持，原错误及真实退休分离。
 旧单输出入口已删除，不保兼容重载；Source本身不限制consumer，每个实际bundle保自己的绑定／一次提交身份。
-接下来仍需KV、索引融合后继读取及有界轮换；下方Store精确视图已另有有限检查。
+接下来仍需KV其余入口、索引融合后继读取及有界轮换；下方Store及首批KV精确视图已另有有限检查。
 Store／append取回与publication不能继续依赖已被take移动的内部writer指针；KV已有append_reserved及native-use保护，
 不能为接力直接撤掉。普通请求的有序发布、额度与停止及MTP接受／修复仍待接通，没有完整重叠或提速结论。
 
@@ -177,10 +177,31 @@ Store／append取回与publication不能继续依赖已被take移动的内部wri
 原追加实际提交，发行后封住本epoch的新写接纳和可写地址；实际追加登记为write，读者只登记read，
 其取消或失败不污染前驱append epoch。原追加成功且所有真实write退休后，受检发布桥可在只读后继
 仍在途时发布该精确前缀。旧ReadLease不扩界，公开publish及reserve／rollback仍保原全部native-use限制；
-新reserve才开启下一epoch并使旧票据失效。此处仅已有页的资源权限原语；fresh page转换、Graph KV视图、
-原队列接力及连续COW轮换尚待接通，不能据此声称完整KV流水可用。
+新reserve才开启下一epoch并使旧票据失效。已有页权限原语不单独证明Graph KV或完整流水；后续接线另列。
 [有限检查](../evidence/correctness/inference-hybrid-append-2026-10-27.json)中的三项新增append合同
 使用受控Completion，不是GPU KV接力证明；四项原append合同及原ticket相邻检查同镜像通过。
+
+共同`ResourceSource`现沿原资源表核selected／nominated writer、原代际及ready／full／append权限。
+固定票据元数据在前驱提交前准备，提交后的短metadata visit只借原slot，capture后不留writer、appender或交易指针。
+ready只覆盖后继仍用的旧页，不把COW复制源或controls混进读取足迹；同根旧prefix由append票据覆盖，避免重复接纳。
+全部地址及owner预检在首seal前完成，包括无副作用的原append精确prefix检查。
+token、Store和资源视图沿原唯一bundle／terminal table／proxy／Queue／whole verdict接纳；
+同Invocation拒绝另拆第二个pending bundle，防止依赖去重后由哪个代表决定prepare门。
+
+`graph::batch::detail::PagedAppendSource`负责原arena／layout／物理page前缀的数学解释，
+Graph只管理具体读凭据和原selected-reader资格，不反向依赖GraphBatch。其installed detail头归GraphBatch产品。
+后继query_indptr可不同，但每个KV页的最大所需前缀必须由前驱实际来源覆盖。
+显式metadata仍归原configuration，bundle另持真实ready guard并在prepare／submit复核block、generation及完整范围。
+fresh转换和已有尾页推进都先核整图成功、原交易及真实写退休，再沿Compute/Paged原池发布；
+前驱源关闭后仍保原whole verdict。fresh转换后旧full ticket不再接纳新读，已有读者可正常退休；
+后来的读者须用真正发布的bounded ReadLease。原public publish、reserve及rollback门保持。
+
+[首批真实CUDA检查](../evidence/correctness/inference-paged-submission-source-2026-10-27.json)覆盖两份KV资源共用一次来源、
+ready／fresh／已有尾页／真实COW、不同query布局、0新增录制的后继读取，以及后继仍读时take／delta提交／ready重试。
+三项Paged资源检查另覆盖非法ticket／行数／旧页、失败frontier和真实读退休。
+当前只接显式metadata的shared Queue reader；owned-layout私有controls及delegated路径仍待补，不能造ready frame绕过。
+此处B只读attention；完整下一步decode还要从pending前驱构造append／COW previous，当前构造仍要求ready足迹。
+完整模型、连续轮换及吞吐尚未验证，不能把本片当作KV流水完成。
 
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。
 成功原提交后`capture`重核原交易、代际、范围与资源，再封写导出票据；之后不留writer指针。

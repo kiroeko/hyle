@@ -1,4 +1,4 @@
-hyle_add_header_self_contained_test(graph_batch HEADER_DIR graph HEADERS batch.h)
+hyle_add_header_self_contained_test(graph_batch HEADER_DIR graph HEADERS batch.h detail/paged_append_source.h)
 hyle_add_test(graph_batch SOURCES materialized_graph_test.cc native_paged_node_test.cc)
 if(_HYLE_COMPUTE_HAVE_CPU AND HYLE_GGML_CPU_ENABLED AND
    TARGET hyle_compute_backend_cpu AND TARGET hyle_compute_provider_ggml)
@@ -151,6 +151,9 @@ unset(_page_case)
 unset(_page_source)
 unset(_page_test)
 if(_HYLE_COMPUTE_HAVE_CUDA AND TARGET hyle_graph_route_cuda)
+  hyle_add_test(graph_batch NAME cuda_append_source SOURCES paged_append_source_test.cc
+    DEPS hyle_graph_route_cuda hyle_compute_backend_cuda)
+  hyle_stage_runtime(hyle_graph_batch_cuda_append_source_test)
   hyle_add_test(graph_batch NAME cuda_row_cache_indexer SOURCES row_cache_indexer_graph_test.cc DEPS hyle_graph_route_cuda)
   target_compile_definitions(hyle_graph_batch_cuda_row_cache_indexer_test PRIVATE HYLE_ROW_CACHE_GRAPH_CUDA=1)
   hyle_stage_runtime(hyle_graph_batch_cuda_row_cache_indexer_test)

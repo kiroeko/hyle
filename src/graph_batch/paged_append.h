@@ -4,6 +4,7 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/compute/detail/paged_append_backend.h"
 #include "native_append_regions.h"
+#include "hyle/graph/detail/paged_append_source.h"
 
 namespace hyle::graph::batch::detail {
 // Exact original carrier -> logical token rows; no storage/content conversion.
@@ -40,5 +41,12 @@ struct PagedAppendAccess final {
       ResourceOptions)noexcept;
   static Result<PagedAppendPages> take(Invocation&,NodeId)noexcept;
   static Status reset(Invocation&)noexcept;
+};
+struct PagedAppendSourceAccess final {
+  static Result<AppendFacts> facts(const PagedAppendSource&) noexcept;
+  static Status covers(const PagedAppendSource&,compute::BatchLayoutVersion) noexcept;
+  static Result<graph::detail::OutputBinding> binding(PagedAppendSource&,ValueId,
+      compute::BatchLayoutVersion,std::span<const graph::detail::ProjectedReader>,
+      std::span<const graph::detail::ResourceReadyInput>) noexcept;
 };
 } // namespace hyle::graph::batch::detail

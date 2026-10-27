@@ -531,6 +531,32 @@ Result<PagedAppendablePage> PagedPageWriter::publish_appendable(std::uint32_t ro
   auto*p=std::exchange(arena_,nullptr);p->decref();
   return PagedAppendablePage{std::move(publication.prefix),std::move(appender)};
 }
+Result<PagedAppendablePage> detail::PagedArenaAccess::publish_appendable_after_writes(
+    PagedPageWriter&writer,const PendingReadTicket&ticket,std::uint32_t rows)noexcept{
+  auto*p=writer.arena_;
+  if(!p || p->closed || !writer.writer_.valid() || writer.page_>=p->slots.size())
+    return std::unexpected(Status::FailedPrecondition("pending appendable page is closed/empty/consumed"));
+  const auto page_rows=BatchLayoutAccess::geometry(p->schema).page_size;
+  if(rows>page_rows)return std::unexpected(Status::InvalidArgument("pending appendable page prefix exceeds page"));
+  if(p->role==BatchCacheRole::kRow || !page_rows || !p->page_bytes || p->page_bytes%page_rows)
+    return std::unexpected(Status::Unimplemented("pending appendable page needs whole attention rows"));
+  auto&slot=p->slots[writer.page_];
+  if(!slot.acquired || slot.ready || slot.published || writer.initialized_rows_ || slot.initialized_rows ||
+      LeaseAccess::identity(writer.writer_)!=slot.identity || writer.writer_.generation()!=slot.generation)
+    return std::unexpected(Status::FailedPrecondition("pending appendable page is not its fresh original slot generation"));
+  HYLE_ASSIGN_OR_RETURN(auto expected,p->span.subview(std::size_t(writer.page_)*p->page_bytes,p->page_bytes));
+  HYLE_RETURN_IF_ERROR(LeaseAccess::matches_writer_storage(writer.writer_,expected));
+  const auto row_bytes=p->page_bytes/page_rows;
+  HYLE_ASSIGN_OR_RETURN(auto publication,
+      LeaseAccess::publish_appendable_after_writes(writer.writer_,ticket,std::size_t(rows)*row_bytes));
+  // The original permission transfer succeeded. Only infallible arena state
+  // updates and original-owner moves remain; no ready capacity is fabricated.
+  slot.ready=true;slot.published=true;slot.acquired=false;slot.initialized_rows=rows;writer.initialized_rows_=rows;
+  PagedPageAppender appender;
+  if(publication.appender.valid())appender=PagedPageAppender(p,writer.page_,rows,std::move(publication.appender));
+  writer.arena_=nullptr;p->decref();
+  return PagedAppendablePage{std::move(publication.prefix),std::move(appender)};
+}
 Status PagedPageWriter::complete(const ReadLease&ready,std::uint32_t rows)noexcept{
   if(!arena_ || writer_.valid())return Status::FailedPrecondition("paged completion requires the consumed original writer");
   if(rows>detail::BatchLayoutAccess::geometry(arena_->schema).page_size)return Status::InvalidArgument("paged initialized row prefix exceeds page");
@@ -584,6 +610,32 @@ Result<ReadLease> PagedPageAppender::publish()noexcept{
   if(initialized_rows_==detail::BatchLayoutAccess::geometry(arena_->schema).page_size){
     appender_.reset();auto*p=std::exchange(arena_,nullptr);p->decref();
   }
+  return ready;
+}
+Result<ReadLease> detail::PagedArenaAccess::publish_append_after_writes(
+    PagedPageAppender&appender,const PendingAppendReadTicket&ticket)noexcept{
+  auto*p=appender.arena_;
+  if(!p || p->closed || !appender.appender_.valid() || !appender.reserved_rows_ || appender.page_>=p->slots.size())
+    return std::unexpected(Status::FailedPrecondition("pending paged append has no open original suffix"));
+  const auto page_rows=BatchLayoutAccess::geometry(p->schema).page_size;
+  if(p->role==BatchCacheRole::kRow || !page_rows || !p->page_bytes || p->page_bytes%page_rows)
+    return std::unexpected(Status::Unimplemented("pending paged append needs whole attention rows"));
+  if(appender.initialized_rows_>page_rows || appender.reserved_rows_>page_rows-appender.initialized_rows_)
+    return std::unexpected(Status::InvalidArgument("pending paged append prefix exceeds page"));
+  const auto row_bytes=p->page_bytes/page_rows;
+  auto&slot=p->slots[appender.page_];
+  if(slot.acquired || !slot.ready || !slot.published || slot.initialized_rows!=appender.initialized_rows_ ||
+      LeaseAccess::identity(appender.appender_)!=slot.identity || appender.appender_.generation()!=slot.generation ||
+      ticket.generation()!=slot.generation || ticket.epoch()!=appender.appender_.epoch() ||
+      ticket.committed_bytes()!=std::size_t(appender.initialized_rows_)*row_bytes ||
+      ticket.reserved_bytes()!=std::size_t(appender.reserved_rows_)*row_bytes)
+    return std::unexpected(Status::FailedPrecondition("pending paged append original generation/frontier changed"));
+  const auto rows=appender.initialized_rows_+appender.reserved_rows_;
+  HYLE_ASSIGN_OR_RETURN(auto expected,p->span.subview(std::size_t(appender.page_)*p->page_bytes,std::size_t(rows)*row_bytes));
+  HYLE_RETURN_IF_ERROR(LeaseAccess::matches_pending_append_read(ticket,expected));
+  HYLE_ASSIGN_OR_RETURN(auto ready,LeaseAccess::publish_append_after_writes(appender.appender_,ticket));
+  appender.initialized_rows_=rows;appender.reserved_rows_=0;slot.initialized_rows=rows;
+  if(rows==page_rows){appender.appender_.reset();appender.arena_=nullptr;p->decref();}
   return ready;
 }
 Status PagedPageAppender::rollback()noexcept{

@@ -85,6 +85,14 @@ struct LeaseAccess final {
   // writer untouched; appendable roots can never promote a prefix to WriteLease.
   static HYLE_COMPUTE_API Result<AppendLeasePublication>
   publish_appendable(WriteLease &lease, std::size_t prefix_bytes) noexcept;
+  // F2 fresh-page handoff after whole-producer success: the exact original
+  // full writer ticket must match, and all actual writes must have retired.
+  // Returns only the declared initialized prefix; admitted readonly uses may
+  // remain. Existing full-ticket readers retire normally across conversion,
+  // but no new full-ticket use may enter append mode. New reads use the real
+  // bounded prefix. The ordinary conversion keeps its all-use uniqueness gate.
+  static HYLE_COMPUTE_API Result<AppendLeasePublication> publish_appendable_after_writes(
+      WriteLease &, const PendingReadTicket &, std::size_t prefix_bytes) noexcept;
   static HYLE_COMPUTE_API bool is_appendable_prefix(const ReadLease &lease) noexcept;
   static HYLE_COMPUTE_API Status validate_prefix(const AppendLease &appender,
                                                  const ReadLease &prefix) noexcept;
@@ -97,6 +105,10 @@ struct LeaseAccess final {
   // and order every receiver behind its complete verdict. All fallible range
   // checks precede sealing the epoch against new writes and mutable views.
   static HYLE_COMPUTE_API Result<PendingAppendReadTicket> pending_append_read(
+      const AppendLease &, mem::ConstBufferView exact_prefix) noexcept;
+  // The same export preflight without a ticket or sealing. Actual writes may
+  // still be in flight and the current epoch may already be sealed.
+  static HYLE_COMPUTE_API Status matches_append_prefix_storage(
       const AppendLease &, mem::ConstBufferView exact_prefix) noexcept;
   // Pure original epoch/range queries; closed admission does not erase them.
   // Successful publication of this same prefix is still the same epoch.

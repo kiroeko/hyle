@@ -5,6 +5,8 @@
 #include "hyle/mem/std_allocator.h"
 #include <vector>
 namespace hyle::compute::detail {
+class PendingReadTicket;
+class PendingAppendReadTicket;
 // Cold-reserved exact permission group. Entries borrow the caller's retained
 // frames/update only through admit(); no pointer is used across episodes.
 // Other already-admitted readonly guards may overlap this group; every added
@@ -61,6 +63,13 @@ struct PagedArenaAccess final {
   // After exact cold validation and move into the transaction's stable owner.
   // Never retain the pointer from a pre-move facts record.
   static const AppendLease&permission(const PagedPageAppender&p)noexcept{return p.appender_;}
+  // Original F2 whole-producer success only. Validate the original page/epoch
+  // and initialized physical rows before conversion; no allocation follows
+  // permission transfer. Public page publication keeps its original gates.
+  HYLE_COMPUTE_BATCH_API static Result<PagedAppendablePage> publish_appendable_after_writes(
+      PagedPageWriter &, const PendingReadTicket &, std::uint32_t initialized_rows) noexcept;
+  HYLE_COMPUTE_BATCH_API static Result<ReadLease> publish_append_after_writes(
+      PagedPageAppender &, const PendingAppendReadTicket &) noexcept;
   HYLE_COMPUTE_BATCH_API static Result<std::uint32_t> page(
       const PagedArena&,const ReadLease&) noexcept;
   HYLE_COMPUTE_BATCH_API static bool owns(const PagedArena&,
