@@ -220,7 +220,7 @@ A沿原发布桥取得真ReadLease后填固定共享cache，B成功退休后才�
 原Source销毁及最后继承pin释放按slot清真实资源，保留一页不能拖住同元数据内已被COW替换的其它页。
 [连续CUDA检查](../evidence/correctness/inference-inherited-page-source-2026-10-27.json)覆盖满页及COW两条A→B→C旅程、
 A发布后C读原页与B在途新页、旧快照及逐页回收；未新增故障注入。普通ready贡献仍保原双层核对，
-新在途继承按物理范围排序及查找，不据此宣称所有主机准备已消除。索引状态接力及同尾有序写仍需分别接线。
+新在途继承按物理范围排序及查找，不据此宣称所有主机准备已消除。索引状态承载见下；同尾有序写仍需接线。
 完整模型、连续轮换及吞吐尚未验证，不能把本片当作KV流水完成。
 
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。
@@ -236,6 +236,17 @@ token、capacity及真实ready IDs沿原`InputAccess::bind`整束提交，失败
 [有限CUDA检查](../evidence/correctness/inference-pending-store-source-2026-10-27.json)覆盖非连续槽0／2、真实后继在途时取回／发布／reset、
 同形状诱饵IDs拒绝与旧绑定、第二视图、失败传播及未选槽／padding；不是KV append、索引GDN／conv后继读取或完整模型流水证明。
 Store视图自身元数据已预冷；共同Source、混合bundle及原prepare仍可能分配冷元数据，完整模型接入前须在N之前按真实预算有界预留。
+
+索引状态现在用`slots::SourceMode::kImported`在冷准备时区分源投影和目的槽。后继只持自己的目的writer／IDs，
+前驱原pool、ready IDs及读权限由同一Source束拥有；冷桥从实际Store／Gather及已选region生成投影，不让引擎识别Provider。
+`store_ready`只接受该真实StoreSource全部目的的原root／generation／坐标及成功退休证明，用于首次真实捕获；
+不带ready guards的在途来源仍只能复用已有捕获。查询重核实际束附件、完整投影及IDs guard，裸TensorView不能冒充来源。
+`take`只回收后继目的权，保留无权限物理配置；`release_outputs`须等本消费者真实退休、先take受影响writer，
+再沿原native全部预检撤本束来源及guard，失败也可清理，不能提前撤在途读权限或牵连其它输入。
+私有ID值不变时复用原成功发布的真实carrier，免去重复上传及同Queue等待；改值仍须原try_write、传输及真实退休。
+[有限CUDA旅程](../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)覆盖F32 GDN／conv、原捕获复用、
+前驱退休而后继仍读、真实数学错误及退休清理；当前是完整目的集／K1承载，MTP非连续接受子集、有界持续轮换、
+完整模型和吞吐仍未完成，不能把组件检查当作完整模型重叠执行已交付。
 
 Region的prepare／seal已统一为metadata、资源、owner及未提交recording准备，不读取载荷或接纳设备工作；
 [真实Store检查](../evidence/correctness/inference-graph-output-region-2026-10-27.json)已解除按hook存在与否拒绝的过度限制。

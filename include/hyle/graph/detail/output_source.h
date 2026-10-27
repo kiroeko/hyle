@@ -59,6 +59,9 @@ struct OutputBinding final {
   // An empty effect read set still imports the complete predecessor verdict.
   ProjectedWriter effect{};
   std::span<const mem::ConstBufferView> effect_reads{};
+  // Only Store views: original published destinations, in captured order.
+  // Empty keeps the pending-ticket path; nonempty is a complete real ready set.
+  std::span<const compute::ReadLease> store_ready{};
 };
 
 // Cold atomic bundle of distinct inputs from the same submission.
@@ -75,9 +78,15 @@ struct OutputBinding final {
 // with pending attachments or represented by synthetic inputs.
 // Subsequent calls supply this same ordered bundle; the span is never retained.
 HYLE_GRAPH_API Status bind_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
+// Retired control cleanup only, including failed episodes. Withdraws this
+// exact complete bundle; callers first take the affected original writers.
+// Proven dormant captures may survive, with no remaining read authority.
+HYLE_GRAPH_API Status release_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
 // Prepared nonblocking Commands or complete existing capture reuse. The full
 // final tuple is checked together; a miss never records pending values or
-// falls back to managed Commands. Original metadata-only binding hooks apply.
+// falls back to managed Commands. A bundle containing only genuinely ready
+// Store destinations can use the original RequireCapture path
+// for its first recording. Original metadata-only binding hooks apply.
 HYLE_GRAPH_API Status prepare_outputs(Invocation &, std::span<const OutputBinding>,
     std::span<const QueueBinding>) noexcept;
 HYLE_GRAPH_API Result<compute::Completion> submit_outputs(Invocation &,

@@ -8,6 +8,8 @@ namespace hyle::compute::detail { class AppendLease; }
 namespace hyle::graph::detail {
 struct PlanState;
 struct InvocationState;
+class InputSource;
+struct OutputBinding;
 class PreparedRegion;
 class RegionInvocation;
 // Cold cleanup of the actual selected slot, queried through its existing
@@ -164,6 +166,12 @@ struct ResourceProjection final {
   std::span<const NodeId> access_nodes;
   compute::ProviderExtensionId capability;
 };
+// Actual source views of an original bound Store bundle. The capacity is an
+// address carrier, never whole-bank read permission; indices have their real
+// bounded immutable ready guard retained by that same bundle.
+struct StoreProjectionInputs final {
+  compute::ConstTensorView capacity{}, indices{};
+};
 struct OrderedGraphSubmission final {
   // Optional shared-Queue admission, before any consumer command. A delegated
   // native implementation admits its own exact pending reads and real source
@@ -287,6 +295,8 @@ struct RegionAccess final {
   // original projection was reset/released; a different live scope or ready
   // footprint is an error. Rechecks the exact original guards, including
   // subview bounds. The stable state survives public Invocation moves.
+  HYLE_GRAPH_API static Result<StoreProjectionInputs> store_source_projection(
+      const InvocationState *, ResourceProjection) noexcept;
   HYLE_GRAPH_API static Result<bool> has_read_projection(const InvocationState*,
       ValueId,std::span<const compute::ReadLease>) noexcept;
   // Cold fact query of the original external input, under the caller's normal
@@ -363,6 +373,8 @@ struct RegionAccess final {
   // adapters then use the original atomic InputAccess bundle commit.
   HYLE_GRAPH_API static Status validate_pending_projection(Invocation&,
       ResourceProjection,compute::ConstTensorView) noexcept;
+  HYLE_GRAPH_API static Status validate_ready_projection(Invocation&,
+      ResourceProjection,compute::ConstTensorView,std::span<const compute::ReadLease>) noexcept;
 private:
   static Status validate_projection_binding(Invocation&,ResourceProjection,
       compute::ConstTensorView,std::span<const compute::ReadLease>,bool) noexcept;
@@ -372,9 +384,10 @@ public:
       Invocation&,ValueId caller_output) noexcept;
 private:
   friend class SubmissionSource;
+  friend HYLE_GRAPH_API Status release_outputs(Invocation &, std::span<const OutputBinding>) noexcept;
   static Status visit_pinned(InvocationState *,NodeId,RegionAccessFn,void *) noexcept;
   static Status withdraw_bindings_impl(Invocation&,std::span<const ValueId>,
-      bool ready_projection) noexcept;
+      bool ready_projection, const InputSource *source_owner = nullptr) noexcept;
   static Status validate_projected_writer(InvocationState&,const Graph&,
       ProjectedWriter) noexcept;
   static Status qualify_ordered_writer(InvocationState&,std::uint32_t,

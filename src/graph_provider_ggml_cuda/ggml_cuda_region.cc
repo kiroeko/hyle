@@ -1851,6 +1851,10 @@ const detail::RegionProjectedReadVTable projected_read{
         if (found == region.gathers.end())
           return Status::Unimplemented("node is not this exact lowered checked Gather");
         out->access.projected_input = found->input_port;
+        // The original native program borrows this exact capacity/ID tuple.
+        // Graph still proves its real Source, bounded permissions and same
+        // Queue; managed commands must reuse their existing capture.
+        out->allows_pending = true;
         return Status::Ok();
       }
       if (capability != slots::detail::kStoreBindingExtensionId)
@@ -1860,6 +1864,10 @@ const detail::RegionProjectedReadVTable projected_read{
         return Status::Unimplemented("node is not in this exact indexed state chain");
       if (region.indexed->gather.ordinal() == ordinal)
         out->access.projected_input = region.indexed_ports[0];
+      // prepare/seal independently validate the original StoreBinding. This
+      // capability qualifies its actual indexed source port, not an arbitrary
+      // native input or permission inferred from a raw capacity address.
+      out->allows_pending = true;
       return Status::Ok();
     }};
 const detail::RegionProjectedWriteVTable projected_write{

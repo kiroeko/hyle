@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hyle/graph/detail/submission_source.h"
+#include "hyle/graph/detail/output_source.h"
 
 namespace hyle::graph::detail {
 struct StoreSourceState;
@@ -28,6 +28,11 @@ public:
   // original writers for ordinary retired take/publication/discard.
   HYLE_GRAPH_API Status capture(const SubmissionSource &) noexcept;
   HYLE_GRAPH_API std::size_t destination_count() const noexcept;
+  // The prepared imported Store supplies its exact original Gather projection.
+  // Ready destinations must be the real complete publication of this captured
+  // source, in its original order. Accepted-prefix subsets are not this API.
+  HYLE_GRAPH_API Result<OutputBinding> reader_binding(Invocation &, const Graph &,
+      NodeId store, std::span<const compute::ReadLease> ready = {}) const noexcept;
   // Only whole-producer success and actual retirement authorize publication.
   // The returned original writer must match this exact destination ticket;
   // already admitted readonly successors may still be running.

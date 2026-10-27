@@ -304,6 +304,28 @@ bool has_input_source_table(const InvocationState &state, const InputSourceVTabl
   };
   return std::ranges::any_of(sources.bindings, matches) || std::ranges::any_of(sources.effects, matches);
 }
+void release_bound_input_sources(InvocationState &state, std::span<const ValueId> values,
+    std::span<const NodeId> effects) noexcept {
+  if (!state.input_sources) return;
+  auto &sources = *state.input_sources.get();
+  invalidate(sources);
+  for (const auto value : values)
+    if (auto *binding = find_binding(sources, value)) binding->source.reset();
+  // Effect identities are sorted once by the original bundle's cold bind.
+  sources.effects.erase(std::remove_if(sources.effects.begin(), sources.effects.end(),
+      [&](const auto &binding) {
+        const auto found = std::lower_bound(effects.begin(), effects.end(), binding.node,
+            [](NodeId left, NodeId right) { return left.ordinal() < right.ordinal(); });
+        return found != effects.end() && *found == binding.node;
+      }), sources.effects.end());
+  sources.roots.clear(); sources.consumers.clear();
+}
+InputSource bound_input_source(const InvocationState &state, ValueId value,
+    const InputSourceVTable *expected_table) noexcept {
+  if (!state.input_sources || !expected_table) return {};
+  const auto *binding = find_binding(*state.input_sources.get(), value);
+  return binding && binding->source.vtable() == expected_table ? binding->source : InputSource{};
+}
 bool input_source_matches(const InvocationState &state, ValueId value,
     const InputSource &source) noexcept {
   if (!state.input_sources) return false;

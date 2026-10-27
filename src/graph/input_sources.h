@@ -57,6 +57,14 @@ HYLE_GRAPH_API void reset_input_source_bindings(InvocationState &) noexcept;
 HYLE_GRAPH_API bool has_input_source(const InvocationState &, ValueId) noexcept;
 HYLE_GRAPH_API bool has_input_source_table(const InvocationState &,
     const InputSourceVTable *) noexcept;
+// Copy only an actual binding of this exact adapter table. No producer-name
+// inference, new dependency, admission or generic opaque-state cast is allowed.
+HYLE_GRAPH_API InputSource bound_input_source(const InvocationState &, ValueId,
+    const InputSourceVTable *expected_table) noexcept;
+// Commit after complete exact-owner/retirement preflight. Other original
+// source bindings survive; this never submits or changes a resource guard.
+HYLE_GRAPH_API void release_bound_input_sources(InvocationState &,
+    std::span<const ValueId>, std::span<const NodeId>) noexcept;
 // Exact retained adapter binding; producer deduplication instead uses same_owner.
 HYLE_GRAPH_API bool input_source_matches(const InvocationState &, ValueId,
     const InputSource &) noexcept;

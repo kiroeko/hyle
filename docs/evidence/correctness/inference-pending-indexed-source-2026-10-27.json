@@ -1,0 +1,459 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Real CUDA original Store-ready to pending indexed GDN/conv relay, with one common submission terminal and a previously recorded exact native capture.",
+  "environment": {
+    "platform": "Windows",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "VRAM_MiB_reported": 12281,
+    "basis": "Original run/stderr.log; no new hardware query, exclusive-device or fixed-frequency claim.",
+    "compiler": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\runtime.json",
+      "bytes": 21665,
+      "sha256": "aeb836f46d7c5be685e02acfe49bcf4560672892564522256878e362785f3359"
+    }
+  },
+  "build": {
+    "CXX_TUs": 12,
+    "product_TUs": 6,
+    "test_TUs": 6,
+    "compile_attempts": 12,
+    "compile_failures": 0,
+    "link_attempts": 1,
+    "successful_links": 1,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "baseline_inputs": 233,
+    "replaced_inputs": 11,
+    "retained_inputs": 222,
+    "additional_inputs": 1,
+    "final_inputs": 234,
+    "baseline_closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\link-inputs.json",
+      "bytes": 60020,
+      "sha256": "fd6fb073fb87e2efaf90dfd07b37a3b0c36d62b8141abe7860dfd06d4bc815fb"
+    },
+    "baseline_receipt": "inference-inherited-page-source-2026-10-27.json",
+    "compiled": [
+      {
+        "name": "00-resources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\00-resources\\unit.obj",
+          "bytes": 2965575,
+          "sha256": "ad88129ab1a5ae905cdb9b94dff55fb6e9d1762d02f84263ccf8ce7d15f14d25"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 45032,
+          "seconds": 4.050788099993952
+        }
+      },
+      {
+        "name": "01-input_sources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\01-input_sources\\unit.obj",
+          "bytes": 943945,
+          "sha256": "f772daa13444b4930b75320f4bb08ffca4bb5445d1b4a5e481a5c5dcf9e9b54f"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 57220,
+          "seconds": 2.1713713000062853
+        }
+      },
+      {
+        "name": "02-batch",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\02-batch\\unit.obj",
+          "bytes": 2367433,
+          "sha256": "6373636fc983c4ffe8cdde5b5cd5c37e69e9d39f0f42c558373275265cdd4ae8"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 41076,
+          "seconds": 3.078194900008384
+        }
+      },
+      {
+        "name": "03-paged_append",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\03-paged_append\\unit.obj",
+          "bytes": 2387859,
+          "sha256": "33a9522c1b232dcb565c088822d7816832f6ee9165d82f035dd58f77e2b4cc11"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 56624,
+          "seconds": 2.774143600021489
+        }
+      },
+      {
+        "name": "04-ggml_cuda_region",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\04-ggml_cuda_region\\unit.obj",
+          "bytes": 2918313,
+          "sha256": "82ee5b5f86b22b0d0085a2b78571771fce3c3b804fa061f9a668f39aca1e5dfe"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 59268,
+          "seconds": 4.775649600022007
+        }
+      },
+      {
+        "name": "05-slots_region",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\05-slots_region\\unit.obj",
+          "bytes": 1503952,
+          "sha256": "55682f2b994a549f03c8ca5466557482ed9308c626ff26684164efad79d2fc1f"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 12352,
+          "seconds": 2.7847287000040524
+        }
+      },
+      {
+        "name": "06-slots_execution_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\06-slots_execution_test\\unit.obj",
+          "bytes": 1712936,
+          "sha256": "7a19b0392355236a1e5a8fe83fd3a581ac42972854d122cfdbf53b0dcc24b277"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 58116,
+          "seconds": 2.850903799990192
+        }
+      },
+      {
+        "name": "07-indexed_state_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\07-indexed_state_test\\unit.obj",
+          "bytes": 1389744,
+          "sha256": "e5c5cd671d2a0c55f9cf6edd98c3dcfb58b7780a1be4bd8f4720e9b25f9f335c"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 53088,
+          "seconds": 4.2487026999588124
+        }
+      },
+      {
+        "name": "08-indexed_conv_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\08-indexed_conv_test\\unit.obj",
+          "bytes": 2053801,
+          "sha256": "c3364420e1f4a2b17aa3b05b571918914cc17db4dac91da7415f5cc786b41b98"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 56288,
+          "seconds": 3.427351100021042
+        }
+      },
+      {
+        "name": "09-output_source_cuda_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\09-output_source_cuda_test\\unit.obj",
+          "bytes": 2855728,
+          "sha256": "8ac2c7cc687489f030f8fab199e09285bc89246ba08663da01da435eb4490dd4"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 41256,
+          "seconds": 7.364785399986431
+        }
+      },
+      {
+        "name": "10-paged_append_source_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\10-paged_append_source_test\\unit.obj",
+          "bytes": 1719374,
+          "sha256": "f4775ce4565329d9301d4adbb75fa15f47e601d4021c644d9ba1722de39b8784"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 37588,
+          "seconds": 7.439821000036318
+        }
+      },
+      {
+        "name": "11-pending_indexed_state_test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\compile\\11-pending_indexed_state_test\\unit.obj",
+          "bytes": 2088550,
+          "sha256": "a158a3c498877ef7cf15230f227742e5d03fda744b9412f55005b0a10ba12ab2"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 38944,
+          "seconds": 3.6239699000143446
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 41180,
+      "seconds": 1.8670057999552228
+    },
+    "closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\link-inputs.json",
+      "bytes": 60484,
+      "sha256": "8308a6c32a269ba84be86b8e3085ee9c5f8733778b2ee1c538d3fe9e8f87671d"
+    },
+    "reuse_boundary": "Actual Data.Source mapping refreshed every selected original OutputBinding/SourceBinding ABI user (11 old objects), plus the new pending-indexed test TU. Other 222 exact input records retain the preceding successful closure, including native GDN/conv kernels; no SDK, native kernel, Model, weights or report compilation occurred.",
+    "native_receipts": [
+      "inference-indexed-gdn-native-2026-10-27.json",
+      "inference-indexed-conv-graph-2026-10-27.json"
+    ],
+    "registration": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\CMakeLists.txt",
+      "bytes": 822,
+      "sha256": "ec5683e867ace40322d72abac01a3f461255f982e58a03025d00369270f181ca",
+      "archive": "registration/tests/graph_provider_ggml_cuda/CMakeLists.txt",
+      "origin": "registration at publication; not an as-run compiler dependency"
+    }
+  },
+  "execution": {
+    "process": {
+      "exit": 0,
+      "pid": 59368,
+      "seconds": 0.6720043999957852
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-indexed-source-20261027\\bin\\pending-indexed-test.exe",
+      "bytes": 145821696,
+      "sha256": "8977f8d821ede37ab43b2e5db4adfab65f6bae7f0a09060eb50742f8c3fb18dc"
+    },
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "new_tests": [
+      "GgmlCudaPendingIndexedState.GdnUsesPublishedWarmAndPendingOriginalSlots",
+      "GgmlCudaPendingIndexedState.ConvUsesPublishedWarmAndPendingOriginalHistory",
+      "GgmlCudaPendingIndexedState.CheckedProducerFailureNeverPublishesConvResult"
+    ],
+    "adjacent_regressions": 35,
+    "suite_counts": {
+      "GraphSlotsExecution": 10,
+      "GraphRouteBoundary": 2,
+      "GgmlCudaIndexedStateGraph": 3,
+      "GgmlCudaIndexedConvGraph": 4,
+      "GraphOutputSourceCuda": 10,
+      "GraphPagedAppendSourceCuda": 6,
+      "GgmlCudaPendingIndexedState": 3
+    },
+    "local_test_timestamps": {
+      "first": "2026-10-27T11:22:49.101",
+      "last": "2026-10-27T11:22:49.318"
+    },
+    "all_tests": [
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+      "GraphRouteBoundary.ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+      "GraphRouteBoundary.ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+      "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+      "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+      "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+      "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads",
+      "GraphPagedAppendSourceCuda.ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+      "GraphPagedAppendSourceCuda.ChainedCowSourceReleasesUnrelatedPublishedPage",
+      "GraphSlotsExecution.RealRetirementAndResultsGuardTakeAndRebindingUpdatesOrder",
+      "GraphSlotsExecution.ReplacedPrivateIdsAreRejectedWithoutPublishingOrWriting",
+      "GraphSlotsExecution.SourceDestinationOverlapIsRejectedBeforeAnyStore",
+      "GraphSlotsExecution.ResetRevokesTheActualWriteEpisodeAndReturnsItsOwner",
+      "GraphSlotsExecution.SourceGatherDenseUsesOriginalGuardsAndRecyclesBothIdSlices",
+      "GraphSlotsExecution.SourceGatherPaddedUsesOriginalGuardsAndRecyclesBothIdSlices",
+      "GraphSlotsExecution.DefaultPaddedGatherUsesOriginalGuardsWithoutForcedProvider",
+      "GraphSlotsExecution.InvalidAssociationCountAndReplacedSourceIdsPreserveOriginalOwners",
+      "GraphSlotsExecution.BatchedStoresShareFixedControlSlicesAndRequireTheWholeGroup",
+      "GraphSlotsExecution.BatchedStoresLateReadPermissionFailureReturnsEveryOriginalTransaction",
+      "GgmlCudaIndexedStateGraph.PublishedActivationAndCandidateSlotsMatchDenseGdn",
+      "GgmlCudaIndexedStateGraph.EffectRootWritesCandidatesWithoutPublishedActivation",
+      "GgmlCudaIndexedStateGraph.EscapingGatherUsesCheckedProjectedFallback",
+      "GgmlCudaIndexedConvGraph.Float32BatchedFinalWindowUsesOriginalStateAndReset",
+      "GgmlCudaIndexedConvGraph.Bfloat16LongChunkWritesLastPrefixesAndKeepsPadding",
+      "GgmlCudaIndexedConvGraph.Float16HistoryPreservesOriginalBitsForEveryPrefix",
+      "GgmlCudaIndexedConvGraph.EscapingGatherKeepsLegalProjectedFallback",
+      "GgmlCudaPendingIndexedState.GdnUsesPublishedWarmAndPendingOriginalSlots",
+      "GgmlCudaPendingIndexedState.ConvUsesPublishedWarmAndPendingOriginalHistory",
+      "GgmlCudaPendingIndexedState.CheckedProducerFailureNeverPublishesConvResult"
+    ],
+    "command": "records/run/command.json",
+    "xml": "records/results.xml",
+    "failures_in_this_window": [],
+    "duration_is_not_a_benchmark": true
+  },
+  "checks": [
+    "Original A actually submits a checked Gather plus Store, retires, detaches, returns its original writers and publishes true bounded ready guards. A warm B imported transaction owns zero source leases and the real independent destinations.",
+    "Warm B binds complete Store-ready guards authenticated against original ticket root, generation, slot coordinates and precise range. The original F32 indexed GDN route6/implementation7 or conv route7/implementation8 is one selected region with native dispatch_count=1.",
+    "B genuinely records and executes the first ready capture. After real retirement, imported take returns only destination writers; release_outputs withdraws the exact source bundle while retaining only the dormant physical capture tuple. No whole-Invocation reset or arbitrary ready projection is used.",
+    "A next generation of submission rewrites the same physical source slots and original private ID carrier. B rebinds the empty-ready pending Source and independent original destinations, then reuses the existing capture with recorded_capture_range_count=0 and reused_capture_range_count=1.",
+    "The same-ID path retains the actual successful metadata carrier and skips mutation/upload/wait only when complete fixed geometry and values match. Both real host gates complete without timing out; changed IDs retain the original native upload/guard checks. This is a finite contract check, not a measured latency claim.",
+    "The actual B dependency reports source_count=1, device_wait_count=1 and host_wait_count=0; ordinary submit is rejected. A truly retires and publishes its original destination while B remains gate-pending, and publication does not reopen writes.",
+    "GDN B2/T4/K1/H2/S16 and conv B2/T1/K1/L3/C128 use noncontiguous source slots [1,5], destination slots [3,7], real capacity P8 and padded strides. Original dense public operations provide the mathematical reference; output/state match bitwise and whole-bank sentinel, old snapshots and padding remain exact.",
+    "A real checked-Gather out-of-range failure remains the complete predecessor verdict: Store publication returns the same error, B receives that error and exposes no activation. After actual B retirement and Completion release, imported destinations can be taken and the failed source bundle can be released without publishing failed state."
+  ],
+  "interface_negatives": [
+    "A complete same-count/same-length ready array with one genuine untouched but wrong-root/slot guard is InvalidArgument; the authentic complete array then binds and executes normally.",
+    "Retired warm B cannot release its source bundle before taking the nominated writers; the subsequent real take and release succeed, proving refusal did not partially withdraw it.",
+    "B pending behind its actual gate cannot release the source bundle; its later success or full failure verdict and cleanup remain intact.",
+    "The checked-failure case returns the real imported writers and successfully releases only after actual retirement; it never publishes failed B state."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 246125,
+      "sha256": "350d31e6a4472ac38d35c7162e3fd84951070af80272f2ccd90e19102aa269c8",
+      "archive": "source/src/graph/resources.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.cc",
+      "bytes": 29656,
+      "sha256": "67055b4dd2be654aca361ef46f10cf349417faef68e251c1447eec3bac2276d2",
+      "archive": "source/src/graph/input_sources.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\batch.cc",
+      "bytes": 100831,
+      "sha256": "c40939aa576e13c74fca72563580e62ea0411b650180981e3bfb082607395d8d",
+      "archive": "source/src/graph_batch/batch.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 88612,
+      "sha256": "0fc363fd16448d558a41b4f35c54f44f8d04de776e13269b2366ccb09afb4f2e",
+      "archive": "source/src/graph_batch/paged_append.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+      "bytes": 120482,
+      "sha256": "41e2111a91871f9014a802caab2c5f56ad9ad1cc8c4765acac4a30f7f78d0f7a",
+      "archive": "source/src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+      "bytes": 72081,
+      "sha256": "9f10ba489e134cd875ef093d7e60e922f936cc9c9f4c7b5fbc4eb02d574a5cee",
+      "archive": "source/src/graph/slots_region.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\slots_execution_test.cc",
+      "bytes": 46230,
+      "sha256": "ca744f82c2ac2a4457414e807d849cb32b72a8a6a31a2cc91b047da47871c780",
+      "archive": "source/tests/graph/slots_execution_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_state_test.cc",
+      "bytes": 19888,
+      "sha256": "bdf985eb57091f0e9fc0ef903bad6f4e3bb2cf9ab256ae66aa7f1ade4d013273",
+      "archive": "source/tests/graph_provider_ggml_cuda/indexed_state_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\indexed_conv_test.cc",
+      "bytes": 18385,
+      "sha256": "0dc275d842b87900f61e7c29c00aee5cf87ae161101d1a2d36fff08227ea14e0",
+      "archive": "source/tests/graph_provider_ggml_cuda/indexed_conv_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+      "bytes": 83464,
+      "sha256": "a307db2bc111143426704e52a7318ee51d80fc2479a8149cec4220edeec68a75",
+      "archive": "source/tests/graph/output_source_cuda_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 44741,
+      "sha256": "01aaaf7874f3832b8cf374174533706c2e8c619bf6edd1c94fe180e39832dc4a",
+      "archive": "source/tests/graph_batch/paged_append_source_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_provider_ggml_cuda\\pending_indexed_state_test.cc",
+      "bytes": 25570,
+      "sha256": "ae38cbc809e127910da40659a30b0f8e6e65879b1b7b3fd4387fed1bd684a70b",
+      "archive": "source/tests/graph_provider_ggml_cuda/pending_indexed_state_test.cc",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\output_source.h",
+      "bytes": 5272,
+      "sha256": "20f3ae5479e5f14d49bcee1c7d1ffc7245bb94fd98a9c5c81864c98a3b7ebe58",
+      "archive": "source/include/hyle/graph/detail/output_source.h",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\region_access.h",
+      "bytes": 25529,
+      "sha256": "bcfaa89a9b2a113ae6134333aa0eac34c352e041e8d05a30cc34be14274f386a",
+      "archive": "source/include/hyle/graph/detail/region_access.h",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\store_source.h",
+      "bytes": 2477,
+      "sha256": "0de7a2cfd6a50ad5fc9399d39001f7c883ef222871a2ae51c38adb2253acb541",
+      "archive": "source/include/hyle/graph/detail/store_source.h",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\slots.h",
+      "bytes": 10227,
+      "sha256": "c453c530d0fa22d596f541c5062ec9df91828ede840a73037690da95381d6bf6",
+      "archive": "source/include/hyle/graph/slots.h",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.h",
+      "bytes": 5018,
+      "sha256": "6a7c833379136dea6f1c92dfc32c28a02d446bf06b37463570f273393a80d4ef",
+      "archive": "source/src/graph/slots_region.h",
+      "origin": "as-run frozen snapshot"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.h",
+      "bytes": 3940,
+      "sha256": "c2a76267a8290b1587b724c7ece4999f3adbe5cff66f3a9b63f504a39bd65470",
+      "archive": "source/src/graph/input_sources.h",
+      "origin": "as-run frozen snapshot"
+    }
+  ],
+  "limits": [
+    "New pending indexed cases cover F32 and the complete destination count K1 only. Existing adjacent BF16/F16 or multi-prefix tests do not prove pending MTP noncontiguous accepted subsets.",
+    "No complete model continuous state rotation, engine pipeline integration, CPU-ahead interaction, TPS/speedup, memory benchmark, multi-platform or new driver/native fault-injection claim.",
+    "Cold Source/bundle/transaction metadata still allocates. No zero-allocation binding or metadata-preparation cost claim is made.",
+    "The source is the original shared Queue submission and complete mathematical verdict. Passing raw capacity/ID carriers alone never establishes source read authority.",
+    "This offline archive contains frozen source and exact commands/dependency paths plus records, not a standalone SDK. The runner refers to the preserved baseline cache helper; all direct commands are archived independently."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-pending-indexed-source-2026-10-27.zip",
+    "bytes": 310714,
+    "sha256": "96dfd3dd02c5fff969dd0ed4f1468d46a167aa864413ddfe8ce9f76674f857e0",
+    "member_count": 99,
+    "payload_bytes": 1608270,
+    "verification": "Every member was decompressed and its length/SHA-256 checked against manifest.json. No EXE/OBJ/PDB/LIB/DLL/SDK/model payload."
+  }
+}

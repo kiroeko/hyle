@@ -2,6 +2,7 @@
 
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/slots.h"
+#include "hyle/graph/detail/region_access.h"
 
 namespace hyle::graph::slots::detail {
 // Exact selected-artifact cold bridge. This is not a native provider ABI or a
@@ -93,4 +94,9 @@ struct StoreAdapter final {
 };
 // Same-build module assembly, not a public provider selection API.
 HYLE_GRAPH_API const RegionProviderVTable *store_provider() noexcept;
+// Cold logical bridge from the prepared imported Store to the original
+// selected reader(s). The returned node span belongs to that StoreBinding;
+// replacing preparation invalidates it. No Source or permission is created.
+HYLE_GRAPH_API Result<graph::detail::ResourceProjection> source_projection(
+    Invocation &, NodeId store) noexcept;
 } // namespace hyle::graph::slots::detail

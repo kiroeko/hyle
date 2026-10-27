@@ -60,7 +60,7 @@ struct Indices final {
   c::LeaseUsePool uses;
   c::Completion pending;
   c::ResourceBudget::Reservation native_scratch;
-  bool direct = false, failed = false;
+  bool direct = false, failed = false, uploaded = false;
 
   static Result<Indices> create(mem::MemoryResourceRef resource,
       mem::MemoryResourceRef host, std::size_t count, ResourceOptions options,
@@ -99,22 +99,48 @@ struct Indices final {
     return gd::ConstantCopy{destination, source};
   }
   Status upload(const ExecutionSource &execution, const cd::QueueRef &queue,
-      ResourceOptions options, std::span<const IndexFragment> fragments) noexcept {
+      ResourceOptions options, std::span<const IndexFragment> fragments,
+      std::span<std::int32_t> uploaded_ids) noexcept {
     if (failed || pending.valid() || (!direct && uses.active_batches()))
       return Status::FailedPrecondition("slot index upload is failed or not actually retired");
+    std::size_t count = 0;
+    bool unchanged = uploaded && ready.valid();
+    for (const auto &fragment : fragments) {
+      if (fragment.offset != count || fragment.sources.size() > SIZE_MAX - fragment.destinations.size() ||
+          count > SIZE_MAX - fragment.sources.size() - fragment.destinations.size() ||
+          count > uploaded_ids.size() ||
+          fragment.sources.size() + fragment.destinations.size() > uploaded_ids.size() - count)
+        return Status::InvalidArgument("slot index slices differ from their fixed carrier");
+      for (std::size_t i = 0; i < fragment.sources.size() + fragment.destinations.size(); ++i) {
+        const auto &address = i < fragment.sources.size() ? fragment.sources[i]
+            : fragment.destinations[i - fragment.sources.size()];
+        if (address.index > static_cast<std::uint32_t>(INT32_MAX))
+          return Status::InvalidArgument("slot index exceeds its I32 carrier");
+        unchanged = unchanged && uploaded_ids[count + i] == static_cast<std::int32_t>(address.index);
+      }
+      count += fragment.sources.size() + fragment.destinations.size();
+    }
+    if (count != uploaded_ids.size())
+      return Status::InvalidArgument("slot index count differs from its fixed carrier");
+    // The bytes are immutable and genuinely published. Reusing them needs no
+    // write permission, upload or Queue wait, even while another exact reader
+    // retains the same carrier. All actual slot leases were checked by bind.
+    if (unchanged) return Status::Ok();
     if (ready.valid()) { HYLE_ASSIGN_OR_RETURN(writer, ready.try_write()); }
     if (source.valid()) { HYLE_ASSIGN_OR_RETURN(staging, source.try_write()); }
     auto &host_writer = direct ? writer : staging;
     HYLE_ASSIGN_OR_RETURN(auto host, host_writer.view());
-    std::size_t count = 0;
-    for (const auto &fragment : fragments) {
-      if (fragment.offset != count || fragment.sources.size() > SIZE_MAX - fragment.destinations.size() ||
-          count > SIZE_MAX - fragment.sources.size() - fragment.destinations.size())
-        return Status::InvalidArgument("slot index slices differ from their fixed carrier");
-      count += fragment.sources.size() + fragment.destinations.size();
-    }
     if (count != host.size() / sizeof(std::int32_t))
-      return Status::InvalidArgument("slot index count differs from its fixed carrier");
+      return Status::InvalidArgument("slot index storage differs from its fixed carrier");
+    const auto remember = [&]() noexcept {
+      for (const auto &fragment : fragments)
+        for (std::size_t i = 0; i < fragment.sources.size() + fragment.destinations.size(); ++i) {
+          const auto &address = i < fragment.sources.size() ? fragment.sources[i]
+              : fragment.destinations[i - fragment.sources.size()];
+          uploaded_ids[fragment.offset + i] = static_cast<std::int32_t>(address.index);
+        }
+      uploaded = true;
+    };
     HYLE_ASSIGN_OR_RETURN(auto mapping, host.map_host());
     HYLE_ASSIGN_OR_RETURN(auto bytes, mapping.writable_bytes());
     for (const auto &fragment : fragments) {
@@ -129,6 +155,7 @@ struct Indices final {
     HYLE_RETURN_IF_ERROR(mapping.close());
     if (direct) {
       HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
+      remember();
       return Status::Ok();
     }
     HYLE_ASSIGN_OR_RETURN(source, staging.publish());
@@ -155,6 +182,7 @@ struct Indices final {
       }
       native_scratch = {};
       HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
+      remember();
       return Status::Ok();
     }
     HYLE_ASSIGN_OR_RETURN(auto use, uses.begin());
@@ -171,18 +199,21 @@ struct Indices final {
     }
     pending = {};
     HYLE_ASSIGN_OR_RETURN(ready, writer.publish());
+    remember();
     return Status::Ok();
   }
 };
 
 struct ControlGroup final {
   explicit ControlGroup(mem::AllocatorRef allocator) noexcept
-      : fragments(mem::StdAllocator<IndexFragment>{allocator}) {}
+      : fragments(mem::StdAllocator<IndexFragment>{allocator}),
+        uploaded_ids(mem::StdAllocator<std::int32_t>{allocator}) {}
   ExecutionSource execution;
   cd::QueueRef queue;
   mem::MemoryResourceRef resource;
   Indices indices;
   std::vector<IndexFragment, mem::StdAllocator<IndexFragment>> fragments;
+  std::vector<std::int32_t, mem::StdAllocator<std::int32_t>> uploaded_ids;
   std::size_t count = 0, participants = 0, outstanding = 0;
 };
 struct BindCandidate final {
@@ -211,7 +242,8 @@ namespace detail {
 struct StoreBindingData final {
   explicit StoreBindingData(mem::AllocatorRef selected) noexcept
       : allocator(selected),
-        writer_pointers(mem::StdAllocator<const c::WriteLease *>{selected}) {}
+        writer_pointers(mem::StdAllocator<const c::WriteLease *>{selected}),
+        source_nodes(mem::StdAllocator<NodeId>{selected}) {}
   void destroy() noexcept { const auto selected = allocator; selected.destroy(this); }
   mem::AllocatorRef allocator;
   SlotBindings bindings;
@@ -219,8 +251,11 @@ struct StoreBindingData final {
   std::size_t group = 0, fragment = 0, candidate = 0, offset = 0;
   ResourceOptions options;
   std::vector<const c::WriteLease *, mem::StdAllocator<const c::WriteLease *>> writer_pointers;
+  std::vector<NodeId, mem::StdAllocator<NodeId>> source_nodes;
   StoreRegionFacts facts;
   StoreSource artifact_source;
+  SourceMode mode = SourceMode::kTransaction;
+  c::ProviderExtensionId source_capability{};
   bool logical_source = false;
   StoreConfiguration configuration;
   StoreConfiguration last_configuration;
@@ -228,6 +263,13 @@ struct StoreBindingData final {
   const gd::InvocationState *owner = nullptr;
   gd::ProjectedWriter writer{};
 };
+static std::size_t generated_source_count(const StoreBindingData &data) noexcept {
+  return data.mode == SourceMode::kImported ? 0 : data.facts.source.count;
+}
+static gd::ResourceProjection imported_projection(const StoreBindingData &data) noexcept {
+  const auto &source = data.facts.source;
+  return {source.capacity, source.indices, source.gather, data.source_nodes, data.source_capability};
+}
 struct StoreBindingAccess final {
   static StoreBindingData *get(StoreBinding &binding) noexcept { return binding.data_; }
   static void replace(StoreBinding &binding, StoreBindingData *data) noexcept {
@@ -286,11 +328,12 @@ Result<StorePendingExport> StoreBinding::export_pending() const noexcept {
     HYLE_ASSIGN_OR_RETURN(auto expected, carrier.subview(offset, item_bytes));
     HYLE_RETURN_IF_ERROR(cd::LeaseAccess::matches_writer_storage(writers[i], expected));
   }
-  if (s.facts.source.count > SIZE_MAX - s.offset ||
-      s.offset + s.facts.source.count > SIZE_MAX / sizeof(std::int32_t) ||
+  const auto generated = generated_source_count(s);
+  if (generated > SIZE_MAX - s.offset ||
+      s.offset + generated > SIZE_MAX / sizeof(std::int32_t) ||
       count > SIZE_MAX / sizeof(std::int32_t))
     return std::unexpected(Status::OutOfRange("slot export destination-ID extent overflows"));
-  const auto offset = (s.offset + s.facts.source.count) * sizeof(std::int32_t);
+  const auto offset = (s.offset + generated) * sizeof(std::int32_t);
   const auto bytes = count * sizeof(std::int32_t);
   const auto &ready = s.controls->groups[s.group].indices.ready;
   HYLE_ASSIGN_OR_RETURN(auto guard, ready.subview(offset, bytes));
@@ -316,12 +359,20 @@ Status StoreBinding::validate_authority() const noexcept {
   };
   HYLE_RETURN_IF_ERROR(input(data_->facts.destination_indices, data_->configuration.destination_indices));
   if (data_->facts.source.count) {
-    HYLE_RETURN_IF_ERROR(input(data_->facts.source.capacity, data_->configuration.capacity));
-    HYLE_RETURN_IF_ERROR(input(data_->facts.source.indices, data_->configuration.source_indices));
-    HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::has_read_projection(
-        data_->owner, data_->facts.source.capacity, data_->bindings.sources()));
-    if (!source)
-      return Status::FailedPrecondition("slot store original source permissions were reset or withdrawn");
+    if (data_->mode == SourceMode::kImported) {
+      HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::store_source_projection(
+          data_->owner, imported_projection(*data_)));
+      if (!same_configuration({source.capacity, source.indices, data_->configuration.destination_indices},
+          data_->configuration))
+        return Status::FailedPrecondition("slot store imported source projection was reset or replaced");
+    } else {
+      HYLE_RETURN_IF_ERROR(input(data_->facts.source.capacity, data_->configuration.capacity));
+      HYLE_RETURN_IF_ERROR(input(data_->facts.source.indices, data_->configuration.source_indices));
+      HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::has_read_projection(
+          data_->owner, data_->facts.source.capacity, data_->bindings.sources()));
+      if (!source)
+        return Status::FailedPrecondition("slot store original source permissions were reset or withdrawn");
+    }
   }
   return Status::Ok();
 }
@@ -718,6 +769,17 @@ Status find(void *opaque, const gd::RegionAccessView &view) noexcept {
 
 namespace detail {
 const RegionProviderVTable *store_provider() noexcept { return &provider_table; }
+Result<gd::ResourceProjection> source_projection(Invocation &invocation, NodeId node) noexcept {
+  Find selected{node};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, node, &find, &selected));
+  if (!selected.binding)
+    return std::unexpected(Status::Unimplemented("Store has no selected original source binding"));
+  const auto *data = StoreBindingAccess::get(*selected.binding);
+  if (!data || data->mode != SourceMode::kImported || !data->facts.source.count ||
+      data->source_nodes.empty() || !data->source_capability.valid())
+    return std::unexpected(Status::FailedPrecondition("Store needs its cold imported source preparation"));
+  return imported_projection(*data);
+}
 } // namespace detail
 
 namespace {
@@ -730,6 +792,8 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
   // existing carriers. Selected arithmetic remains owned by its original plan.
   for (std::size_t i = 0; i < sources.size(); ++i) {
     if (!graph) return Status::InvalidArgument("slot source associations need their original Graph");
+    if (sources[i].mode != SourceMode::kTransaction && sources[i].mode != SourceMode::kImported)
+      return Status::InvalidArgument("slot source association mode is invalid");
     HYLE_ASSIGN_OR_RETURN(auto logical, describe_source(*graph, sources[i]));
     Find selected{sources[i].store};
     HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit(invocation, sources[i].store, &find, &selected));
@@ -803,6 +867,25 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     try { data->writer_pointers.resize(facts.destination_count); }
     catch (...) { return Status::ResourceExhausted("slot store selected writer pointers"); }
     data->facts = facts; data->artifact_source = artifact_source; data->logical_source = logical_source;
+    if (association != call.sources.end()) data->mode = association->mode;
+    if (data->mode == SourceMode::kImported) {
+      data->source_capability = logical_source ? cd::kProjectedInputReadExtensionId
+          : detail::kStoreBindingExtensionId;
+      try {
+        if (logical_source) data->source_nodes.push_back(facts.source.gather);
+        else {
+          data->source_nodes.reserve(view.node_ordinals.size());
+          for (const auto ordinal : view.node_ordinals) {
+            HYLE_ASSIGN_OR_RETURN(auto node, call.graph->node_id(ordinal));
+            data->source_nodes.push_back(node);
+          }
+        }
+      } catch (...) { return Status::ResourceExhausted("slot imported source access metadata"); }
+      HYLE_ASSIGN_OR_RETURN(auto source_resource, gd::RegionAccess::projection_resource(
+          call.invocation->executable(), detail::imported_projection(*data)));
+      if (source_resource != facts.resource)
+        return Status::InvalidArgument("slot imported reader belongs to another original resource");
+    }
     item.found = {.node = facts.store, .binding = binding, .interface = interface,
         .prepared = {.vtable = view.prepared_vtable, .state = view.prepared},
         .invocation = view.invocation, .facts = facts,
@@ -842,7 +925,7 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
       group.resource = facts.resource;
     }
     auto &group = controls->groups[selected];
-    const auto count = facts.source.count + facts.destination_count;
+    const auto count = detail::generated_source_count(*data) + facts.destination_count;
     if (count > SIZE_MAX / sizeof(std::int32_t) ||
         group.count > SIZE_MAX / sizeof(std::int32_t) - count)
       return Status::ResourceExhausted("slot grouped index carrier overflows");
@@ -853,6 +936,8 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     group.count += count;
   }
   for (auto &group : controls->groups) {
+    try { group.uploaded_ids.resize(group.count); }
+    catch (...) { return Status::ResourceExhausted("slot successful index metadata"); }
     HYLE_ASSIGN_OR_RETURN(group.indices, Indices::create(group.resource, options.host_workspace,
         group.count, resources, group.queue.valid()));
     if (group.indices.direct) continue;
@@ -959,7 +1044,8 @@ Status bind(Invocation &invocation, const Graph &graph,
     const auto layout = bindings.layout();
     HYLE_ASSIGN_OR_RETURN(auto schema, Schema::create(layout.description(), layout.slot_count(), layout.stride_bytes()));
     if (schema != p.schema || bindings.destination_count() != p.destination_count ||
-        (p.source.count && bindings.source_count() != p.source.count) ||
+        (s.mode == SourceMode::kImported ? bindings.source_count() != 0
+            : (p.source.count && bindings.source_count() != p.source.count)) ||
         s.writer_pointers.size() != p.destination_count ||
         bindings.source_addresses().size() != bindings.source_count() ||
         bindings.destination_addresses().size() != bindings.destination_count())
@@ -978,6 +1064,15 @@ Status bind(Invocation &invocation, const Graph &graph,
       return Status::InvalidArgument("slot pool differs from its selected execution resource");
     HYLE_ASSIGN_OR_RETURN(auto description, schema.capacity_description());
     HYLE_ASSIGN_OR_RETURN(auto capacity, c::ConstTensorView::create(description, carrier));
+    c::ConstTensorView imported_indices;
+    if (s.mode == SourceMode::kImported) {
+      HYLE_ASSIGN_OR_RETURN(auto source, gd::RegionAccess::store_source_projection(
+          gd::InvocationAccess::state(invocation), detail::imported_projection(s)));
+      if (source.capacity.description() != capacity.description() ||
+          !same_storage(source.capacity.storage(), capacity.storage()))
+        return Status::InvalidArgument("slot imported source differs from its destination pool");
+      imported_indices = source.indices;
+    }
     const auto sources = bindings.source_count();
     if (sources > UINT32_MAX - 1u || p.destination_count > UINT32_MAX - 1u - sources ||
         permission_count > UINT32_MAX - 1u - sources - p.destination_count)
@@ -985,6 +1080,7 @@ Status bind(Invocation &invocation, const Graph &graph,
     permission_count += sources + p.destination_count + 1;
     candidate.found = found; candidate.bindings = request.bindings;
     candidate.configuration.capacity = capacity;
+    candidate.configuration.source_indices = imported_indices;
     controls->transactions.push_back(request.bindings); // one unique selected Store per entry, reserved cold.
     ++group.participants;
   }
@@ -1010,13 +1106,14 @@ Status bind(Invocation &invocation, const Graph &graph,
     else HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, candidate.found.proof.step));
     candidate.found.interface->clear_configuration(candidate.found.prepared, candidate.found.invocation);
     auto &fragment = controls->groups[s.group].fragments[s.fragment];
-    fragment.sources = source.count ? candidate.bindings->source_addresses()
+    fragment.sources = detail::generated_source_count(s) ? candidate.bindings->source_addresses()
         : std::span<const c::LeaseSlotAddress>{};
     fragment.destinations = candidate.bindings->destination_addresses();
   }
   for (auto &group : controls->groups) {
     if (!group.participants) continue;
-    HYLE_RETURN_IF_ERROR(group.indices.upload(group.execution, group.queue, controls->options, group.fragments));
+    HYLE_RETURN_IF_ERROR(group.indices.upload(group.execution, group.queue, controls->options,
+        group.fragments, group.uploaded_ids));
   }
   const auto install = [&]() noexcept -> Status {
     // Configure every selected artifact before installing even the first
@@ -1029,11 +1126,12 @@ Status bind(Invocation &invocation, const Graph &graph,
       HYLE_ASSIGN_OR_RETURN(auto destination_description, c::TensorDesc::dense(c::DataType::kInt32,
           std::array<std::int64_t, 1>{static_cast<std::int64_t>(p.destination_count)}));
       HYLE_ASSIGN_OR_RETURN(auto destination_view, carrier.subview(
-          (s.offset + p.source.count) * sizeof(std::int32_t), p.destination_count * sizeof(std::int32_t)));
+          (s.offset + detail::generated_source_count(s)) * sizeof(std::int32_t),
+          p.destination_count * sizeof(std::int32_t)));
       auto &configuration = candidate.configuration;
       HYLE_ASSIGN_OR_RETURN(configuration.destination_indices,
           c::ConstTensorView::create(destination_description, destination_view));
-      if (p.source.count) {
+      if (detail::generated_source_count(s)) {
         HYLE_ASSIGN_OR_RETURN(auto source_description, c::TensorDesc::dense(c::DataType::kInt32,
             std::array<std::int64_t, 1>{static_cast<std::int64_t>(p.source.count)}));
         HYLE_ASSIGN_OR_RETURN(auto source_view, carrier.subview(
@@ -1056,7 +1154,7 @@ Status bind(Invocation &invocation, const Graph &graph,
       const auto &p = s.facts;
       const auto &configuration = candidate.configuration;
       HYLE_RETURN_IF_ERROR(invocation.bind(p.destination_indices, configuration.destination_indices));
-      if (p.source.count) {
+      if (p.source.count && s.mode != SourceMode::kImported) {
         HYLE_RETURN_IF_ERROR(invocation.bind(p.source.indices, configuration.source_indices));
         if (s.logical_source) {
           const std::array readers{p.source.gather};
@@ -1124,7 +1222,7 @@ Result<SlotBindings> take(Invocation &invocation, NodeId node) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto bound, gd::RegionAccess::has_write_effect(
       s.owner, s.writer, s.writer_pointers));
   bool source_bound = false;
-  if (s.facts.source.count) {
+  if (s.facts.source.count && s.mode != SourceMode::kImported) {
     HYLE_ASSIGN_OR_RETURN(source_bound, gd::RegionAccess::has_read_projection(
         s.owner, s.facts.source.capacity, s.bindings.sources()));
   }
@@ -1135,8 +1233,15 @@ Result<SlotBindings> take(Invocation &invocation, NodeId node) noexcept {
   // A reset/release may already have withdrawn this exact old effect. The
   // retired visitor above still excludes native work/results/observations;
   // returning the original owner neither reopens execution nor publishes it.
-  found.interface->clear_configuration(found.prepared, found.invocation);
-  s.configuration = {}; s.owner = nullptr; s.writer = {};
+  if (s.mode != SourceMode::kImported) {
+    found.interface->clear_configuration(found.prepared, found.invocation);
+    s.configuration = {};
+  }
+  // Imported input owners remain in their original Source bundle. Dormant
+  // physical arguments can survive taking this Store without authorizing a
+  // later submission: no local writer is retained and preparation must prove
+  // a freshly bound complete source plus destination transaction again.
+  s.owner = nullptr; s.writer = {};
   auto &group = s.controls->groups[s.group];
   HYLE_FATAL_ASSERT(group.outstanding != 0);
   --group.outstanding;

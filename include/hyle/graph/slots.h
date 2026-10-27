@@ -138,9 +138,20 @@ HYLE_GRAPH_API Status prepare(Invocation &, std::span<const QueueBinding>,
 // checked axis-zero Gather reads this Store's original pool through private
 // source IDs. The arithmetic between Gather and Store remains ordinary Graph
 // math and may execute as separate operations or as a fused region.
-struct SourceBinding final { NodeId store, gather; };
+enum class SourceMode : std::uint8_t {
+  kTransaction,
+  // The original input projection owns the source permissions and I32 IDs.
+  // This Store retains only independent destination writers and controls.
+  kImported,
+};
+struct SourceBinding final {
+  NodeId store, gather;
+  SourceMode mode = SourceMode::kTransaction;
+};
 // Stores on the same actual execution source, Queue and resource share one
-// private fixed carrier, with a [source IDs | destination IDs] slice per Store.
+// private fixed carrier, with a [generated source IDs | destination IDs] slice
+// per Store. Imported sources generate no private source-ID slice. This cold
+// mode remains fixed until preparation is replaced.
 // The original Graph establishes geometry and input identities; actual
 // selected readers still prove their bounded access during binding. Duplicate
 // Stores/readers/pools and shared or published control inputs are rejected.
@@ -152,6 +163,9 @@ HYLE_GRAPH_API Status prepare(Invocation &, const Graph &,
 // private source IDs and the capacity's exact original ready guards; an
 // independent fallback Store uses a prepared SourceBinding for its reader;
 // without that association ordinary source bindings remain caller-owned.
+// Imported mode requires zero transaction sources and an already bound, Source-proven
+// input projection (ready or pending). It borrows that projection's real pool
+// and ready ID carrier without replacing or taking either input owner.
 // Preparation/binding may wait for a metadata-only upload on the original
 // execution source. Failure never consumes the caller's transaction. No executor or
 // provider selection is created here.
@@ -170,6 +184,8 @@ HYLE_GRAPH_API Status bind(Invocation &, const Graph &,
 // after the whole Graph's work/results/observations have actually retired,
 // including failed or closed recovery. The caller observes execution success
 // before publishing writers; successful take alone is not a native outcome.
+// Imported source permissions remain owned by their original Graph bundle.
+// Taking only preserves dormant physical configuration, never read permission.
 HYLE_GRAPH_API Result<SlotBindings> take(Invocation &, NodeId store) noexcept;
 
 } // namespace hyle::graph::slots

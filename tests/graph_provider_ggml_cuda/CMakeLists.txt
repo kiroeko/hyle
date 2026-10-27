@@ -5,7 +5,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     dense_projection_test.cc constant_expression_test.cc rms_cast_fusion_test.cc
     gdn_l2_fusion_test.cc gdn_typed_load_test.cc conv_typed_load_test.cc cast_stable_silu_test.cc
     typed_gating_silu_test.cc paired_projection_test.cc checked_index_boundary_test.cc
-    indexed_state_test.cc indexed_conv_test.cc
+    indexed_state_test.cc indexed_conv_test.cc pending_indexed_state_test.cc
     DEPS hyle_graph hyle_graph_route_cuda hyle_compute_backend_cuda hyle_compute_provider_ggml_cuda)
   target_link_libraries(hyle_graph_provider_ggml_cuda_test PRIVATE ggml)
   hyle_stage_runtime(hyle_graph_provider_ggml_cuda_test)

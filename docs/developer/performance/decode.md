@@ -12,6 +12,8 @@
 
 最新[普通／MTP完整四臂窗口](../../evidence/performance/inference-indexed-current-window-2026-10-27.json)已完成32进程，四项完整对照更新于[当前基线](#目标与当前基线)。普通decode慢约5%，MTP慢约7%；不与旧窗口或下列局部A/B拼算收益。
 
+随后[在途索引状态接线](../../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)完成有限GDN／conv捕获复用与真实Source旅程，并去掉同值IDs的重复上传／同Queue等待。尚未接入完整模型的有界流水，也未运行新tokens/s窗口；以上完整性能表保持不变，不据组件结果估算提速。
+
 此前[引擎原池索引状态A/B](../../evidence/performance/inference-engine-slot-state-2026-10-27.json)为两版Hyle的普通B2同窗对照：6计时＋2独立内存进程全部通过，1728行、99次执行、198个ID及完整非时间报告不变。prefill7668.03→7606.82（−0.80%，范围重叠）、decode158.48→161.96（＋2.20%）、综合140.55→142.67 tok/s（＋1.51%）。dedicated采样峰4294000640→4243668992B，低48MiB；ready内存基线未知，采样峰为下界。代价是ready中位1.33150→1.37582s、冷shape准备0.411183→0.464081s；三样本不签统计显著性。原池Store接线及CPU／CUDA有限功能已检查，真实CUDA消费者的GDN／conv融合已观察；其它平台字节尾部、MTP异成员与当前完整性能仍待检查。本批未新运行llama.cpp或MTP性能，不更新旧跨引擎差距。
 
 此前[KV持续工作帧直接A/B](../../evidence/performance/inference-paged-frame-2026-10-26.json)只比较同窗Hyle控制／候选，六计时＋两独立内存进程全部成功。224个链接输入仅arena、layout、append与Model四项改变，其余220相同；1728输入行、99次执行、198个输出ID和完整非时间报告不变。prefill7509.27→7401.39（−1.44%，范围重叠）、decode156.72→158.30（＋1.01%，范围不重叠）、综合138.47→139.75 tok/s（＋0.92%，范围不重叠）。dedicated显存采样峰两臂均4294000640B，未证明节省；RAM单次微差不作收益，ready基线未知。三样本不签统计显著性。本批未新跑llama.cpp或MTP性能，不混旧窗口刷新跨引擎表。工作帧消除了每步不可变整帧导出／合拆；当时尚未包含上述原池GDN／conv与MTP接线，不能说主要状态协议成本已经消除。
