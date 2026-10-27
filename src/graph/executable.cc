@@ -975,15 +975,15 @@ Status validate_external_alias(detail::InvocationState &invocation,
   auto check = [&](ValueId other_value) noexcept -> Status {
     const std::size_t other = other_value.ordinal();
     const std::uint32_t other_instance = plan.external_instances[other];
-    const auto replacement = std::find_if(incoming.begin(), incoming.end(),
-        [&](const auto &item) { return item.value == other_value; });
-    if (other == ordinal || other_instance == detail::kNoWorkspaceRequest ||
-        (replacement == incoming.end() && invocation.bound[other_instance] == 0)) {
+    if (other == ordinal || other_instance == detail::kNoWorkspaceRequest)
       return Status::Ok();
-    }
     const bool other_is_output =
         (plan.binding_roles[other] & detail::kExternalOutput) != 0;
     if (!candidate_is_output && !other_is_output)
+      return Status::Ok();
+    const auto replacement = std::find_if(incoming.begin(), incoming.end(),
+        [&](const auto &item) { return item.value == other_value; });
+    if (replacement == incoming.end() && invocation.bound[other_instance] == 0)
       return Status::Ok();
     const ByteRange existing = replacement == incoming.end()
         ? bound_range(invocation, other) : byte_range(replacement->tensor.storage());

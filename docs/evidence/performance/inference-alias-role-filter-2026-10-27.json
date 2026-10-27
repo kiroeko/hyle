@@ -1,0 +1,632 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Finite alias-role lookup candidate A/B",
+  "change": "Only move original self/no-workspace and pure input/input Ok gates before replacement lookup; no authorization or payload change.",
+  "complexity": "Source-level incoming lookup bound decreases O(M^3) to O(M^2) only for ordinary pure-input bundles. Compiler elimination may already remove work; no measured complexity claim.",
+  "counts": {
+    "CXX": 3,
+    "distinct_TU": 3,
+    "links": 2,
+    "component_processes": 1,
+    "tests": 5,
+    "skipped": 0,
+    "screen_processes": 12,
+    "new_peer_processes": 0,
+    "new_MTP_processes": 0,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "baseline": {
+    "ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\ready-facts1.json",
+      "bytes": 4143,
+      "sha256": "5f4fcfee27ff6eeb896e1dbaceddc0360133d958968b43cdd605745577c720e2"
+    },
+    "closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\cli-link-inputs-facts1.json",
+      "bytes": 57875,
+      "sha256": "8301cc0a4dd839ea2de0a7062228ebafa1904f54ecb1e11a78897d63269a93af"
+    },
+    "inputs": 224,
+    "model_source": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 535656,
+      "sha256": "e3e71d796184fc496c4531022d825265769585edcac58f203c7e0221b8bc202d"
+    },
+    "model_snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\source\\model1\\main.cc",
+      "bytes": 535656,
+      "sha256": "e3e71d796184fc496c4531022d825265769585edcac58f203c7e0221b8bc202d"
+    },
+    "model_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\compile\\model1\\unit.obj",
+      "bytes": 17742192,
+      "sha256": "6d2e60d24dd81b0119eee765567d9a1f8d5c1374693c2357902238b44626a317"
+    },
+    "model_actual_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\compile\\model1\\actual-dependencies.json",
+      "bytes": 80253,
+      "sha256": "d0dcb51620dc795bec34590f730ea9c39b70665dbd77a740fd8abc4e64b30ff3"
+    },
+    "verified_dependency_count": 369,
+    "model_public_evidence": "docs/evidence/correctness/inference-generation-batch-facts-2026-10-27.json"
+  },
+  "candidate": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+      "bytes": 498022,
+      "sha256": "2b5be6eefda8abff5dea586538453be68741e6fc6b1cc09e40b90f99089067c2"
+    },
+    "snapshot": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\source\\src\\graph\\executable.cc",
+      "bytes": 498022,
+      "sha256": "2b5be6eefda8abff5dea586538453be68741e6fc6b1cc09e40b90f99089067c2"
+    },
+    "patch": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\candidate.diff",
+      "bytes": 1631,
+      "sha256": "e56abac982adeb68bd5995b79ad2841a192def8b503eececb275e15125a3c445"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin\\hyle.exe",
+      "bytes": 142406656,
+      "sha256": "d31045416935e34c857bbb19ea79cd96f86f3a997b1b782a7919ae601b5a5367"
+    },
+    "graph_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\unit.obj",
+      "bytes": 5200570,
+      "sha256": "cb3a047fa54ca9aecfca3a4593951794de34496167293a761d293b8d25ee7a43"
+    },
+    "sole_CLI_replacement": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\compile\\executable\\unit.obj",
+        "bytes": 5201341,
+        "sha256": "9b384af52df3836943ef3de48559e90e5da5aeefada3b0307f0cf3b6f307cbc7"
+      },
+      "replacement": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\unit.obj",
+        "bytes": 5200570,
+        "sha256": "cb3a047fa54ca9aecfca3a4593951794de34496167293a761d293b8d25ee7a43"
+      }
+    }
+  },
+  "build": {
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\build-plan.json",
+      "bytes": 99635,
+      "sha256": "ed1a05111d528fbc6d602295975548197b66a0a16332253c479072d5df465eee"
+    },
+    "units": [
+      {
+        "name": "executable",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+          "bytes": 498022,
+          "sha256": "2b5be6eefda8abff5dea586538453be68741e6fc6b1cc09e40b90f99089067c2"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\source\\src\\graph\\executable.cc",
+          "bytes": 498022,
+          "sha256": "2b5be6eefda8abff5dea586538453be68741e6fc6b1cc09e40b90f99089067c2"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\unit.obj",
+          "bytes": 5200570,
+          "sha256": "cb3a047fa54ca9aecfca3a4593951794de34496167293a761d293b8d25ee7a43"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\logs\\executable\\command.json",
+          "bytes": 2505,
+          "sha256": "748f6353c8573585ba99c8323c43b236b7299a967895d284d28428e23a2d501b"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\dependencies.json",
+          "bytes": 24160,
+          "sha256": "c3f32c1048b5d1137e10cf288de6ecf53fa53be0581d2adab9eed152d771c975"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable\\actual-dependencies.json",
+          "bytes": 49166,
+          "sha256": "b9f0384bb3cfa139ff3d028f0a4728e4290d3a2fb47cef8a3e9e197f0ba05bdf"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 61928,
+          "seconds": 6.07923039997695
+        },
+        "verified_dependency_count": 223
+      },
+      {
+        "name": "input-source-test",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\input_source_frontier_test.cc",
+          "bytes": 18714,
+          "sha256": "e18f35df32111c92cafaee57c8963f2bfb026e7f0f3fe4c5e93db77375376609"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\source\\tests\\graph\\input_source_frontier_test.cc",
+          "bytes": 18714,
+          "sha256": "e18f35df32111c92cafaee57c8963f2bfb026e7f0f3fe4c5e93db77375376609"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\input-source-test\\unit.obj",
+          "bytes": 2124793,
+          "sha256": "483ec08aebf463e62f459e15be62ad8d730b90f82407e308513d0e1cc04ab4c8"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\logs\\input-source-test\\command.json",
+          "bytes": 1918,
+          "sha256": "2055e5776a6dc373db3a46e5f3279231c9c8b2cbd0bc905f2e39d5d149483287"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\input-source-test\\dependencies.json",
+          "bytes": 30076,
+          "sha256": "b7c1f296872c484be062a1cbc4839b9b08e3bc257e6a4e7611a3343ddf3ce7ce"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\input-source-test\\actual-dependencies.json",
+          "bytes": 58618,
+          "sha256": "e2b49341da0b9b93a5efe4c87596de452a39fbb966acee64d72c84abcbde4820"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 26268,
+          "seconds": 2.6065907000447623
+        },
+        "verified_dependency_count": 254
+      },
+      {
+        "name": "executable-test",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\executable_test.cc",
+          "bytes": 257652,
+          "sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278"
+        },
+        "snapshot": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\source\\tests\\graph\\executable_test.cc",
+          "bytes": 257652,
+          "sha256": "69113c8c0502e511c09adb46daf97186a173582a6d7624b0d468f546b2bed278"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable-test\\unit.obj",
+          "bytes": 7088051,
+          "sha256": "9d6fc94073fd16d0579ccf60184dcb8ccf9dce402e48696987de52d22d107f74"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\logs\\executable-test\\command.json",
+          "bytes": 1901,
+          "sha256": "a0549dc3f73f857d0895ca0b3ec9657b3905bac591e9f9fed04a3ae09d661fd1"
+        },
+        "compiler_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable-test\\dependencies.json",
+          "bytes": 29692,
+          "sha256": "e03aface9f2b4ba15f602c5c1379253fa2910af83b289d71938c9dcc60ca26b8"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\compile\\executable-test\\actual-dependencies.json",
+          "bytes": 57664,
+          "sha256": "1aabdc71e942ffd55bbef1241fc9972b8f50cb2b6c30a541006bd5744570c5f2"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 60472,
+          "seconds": 6.130803500011098
+        },
+        "verified_dependency_count": 249
+      }
+    ],
+    "CLI": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin\\hyle.exe",
+        "bytes": 142406656,
+        "sha256": "d31045416935e34c857bbb19ea79cd96f86f3a997b1b782a7919ae601b5a5367"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 11356,
+        "seconds": 1.8080477999756113
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\cli-link-inputs.json",
+        "bytes": 57869,
+        "sha256": "9b2cf31b84115a4fb53917925cadaf3b31940419f7ceff87b475b5cce0f374e0"
+      },
+      "recipe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\link-cli\\command.json",
+        "bytes": 31270,
+        "sha256": "f718e79dadc4a3ba3a246e15a3a78ec8cc087eaf7bac557017a557f8a118c780"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\runtime.json",
+        "bytes": 10996,
+        "sha256": "bf2d17e1e853288cd8875050f0aa3d0b090a6f9937e7cb17a6e4bef09199e6c1"
+      }
+    },
+    "component": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin\\alias-component-test.exe",
+        "bytes": 147889664,
+        "sha256": "d86b3eb256616bd02c6940f2fe7cdc8153bb10e9e5cc22aab795033dab12cf7d"
+      },
+      "link": {
+        "exit": 0,
+        "pid": 46772,
+        "seconds": 1.8830794999958016
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\test-link-inputs.json",
+        "bytes": 62054,
+        "sha256": "1a3b248d4a732c2b23a67b209c3167a77fc0226711f42351d4a1f78eddf78146"
+      },
+      "recipe": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\link-test\\command.json",
+        "bytes": 33394,
+        "sha256": "a6a7e76c200bdc7c4ad7991a7f02d72c7df03e925c033760e3929ae42a0b33df"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\runtime.json",
+        "bytes": 10996,
+        "sha256": "bf2d17e1e853288cd8875050f0aa3d0b090a6f9937e7cb17a6e4bef09199e6c1"
+      }
+    },
+    "retained_component_test_TUs": 17,
+    "added_test_TUs": 2,
+    "original_test_objects_rejected_changed_dependencies": [
+      12,
+      13
+    ],
+    "outputs_isolated": true,
+    "original_freeze_recipe_failure": "0 compiler/link/test launches; slash-key detection and error-log Path expression; original recipe and failure note preserved."
+  },
+  "correctness": {
+    "process": {
+      "exit": 0,
+      "pid": 48060,
+      "seconds": 1.0268706000060774
+    },
+    "cases": [
+      "InputSourceBundle.InvalidLastTensorPreservesOriginalPreparedBindings",
+      "InputSourceBundle.SameProducerReplacesBothInputsAndDeduplicatesReadiness",
+      "InputSourceBundle.FuturePublishedInputAliasAndDuplicatesRejectAsOneTransaction",
+      "Invocation.AllowsOnlyLifetimeSafeExactExternalInPlaceAlias",
+      "Invocation.RepeatedOutputBindingKeepsAliasChecksForChangedInputsAndRanges"
+    ],
+    "XML": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\run\\results.xml",
+      "bytes": 1848,
+      "sha256": "e3c91d93a7035f3b62879d0eca72ee9da9d012fea877f56a142cb751ec1be8e2"
+    }
+  },
+  "performance": {
+    "plan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen-plan.json",
+      "bytes": 611,
+      "sha256": "a8ed151f1d0237a9f121afd54f3f87ea2e1de54090452d48dcaf54f10695eafc"
+    },
+    "summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen-summary.json",
+      "bytes": 14577,
+      "sha256": "4d3df111b377520a96c6d1adcd42dc940dd0345c7def8825fb8f5a9eb90258a9"
+    },
+    "runs": [
+      {
+        "name": "01-baseline-off",
+        "arm": "baseline",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 59732,
+          "seconds": 2.921727999986615
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\01-baseline-off\\report.json",
+          "bytes": 165425,
+          "sha256": "fb9335eafc2b36191df2ed9ba1fc71579c2d7027b8b765125d1f11020a1df31a"
+        }
+      },
+      {
+        "name": "02-candidate-off",
+        "arm": "candidate",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 11308,
+          "seconds": 3.3163519999943674
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\02-candidate-off\\report.json",
+          "bytes": 165443,
+          "sha256": "a27e41d92c4146bb6a1dbdeb50184ed387dce077f1374ebdb66c82d5e0c45e2b"
+        }
+      },
+      {
+        "name": "03-candidate-auto",
+        "arm": "candidate",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 58396,
+          "seconds": 2.9357314000371844
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\03-candidate-auto\\report.json",
+          "bytes": 165440,
+          "sha256": "691520ee80ffcd026014db5ae4b305f95949bfa457b84570176544fabb44cb79"
+        }
+      },
+      {
+        "name": "04-baseline-auto",
+        "arm": "baseline",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 52144,
+          "seconds": 2.93251270003384
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\04-baseline-auto\\report.json",
+          "bytes": 165440,
+          "sha256": "b17da0ce4df97265494ca0f7c3ce6a1fa3cd68cb5ed6efd899d2edea5718ef4b"
+        }
+      },
+      {
+        "name": "05-baseline-auto",
+        "arm": "baseline",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 45488,
+          "seconds": 2.912357199995313
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\05-baseline-auto\\report.json",
+          "bytes": 165452,
+          "sha256": "f34d0496933cd4a2b4be9e00f8974b044f052254b690a1601ce075634c6d0de6"
+        }
+      },
+      {
+        "name": "06-candidate-auto",
+        "arm": "candidate",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 45832,
+          "seconds": 2.902156699972693
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\06-candidate-auto\\report.json",
+          "bytes": 165446,
+          "sha256": "ddfc8c79c6130c3349fc1a83a643cf3c2b0d9a3fd9a1f6f7b63e6a94544fe210"
+        }
+      },
+      {
+        "name": "07-candidate-off",
+        "arm": "candidate",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 22520,
+          "seconds": 2.8909800000255927
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\07-candidate-off\\report.json",
+          "bytes": 165435,
+          "sha256": "442e10539a8febc21acae54482e9915a3fa71f69d7e2c552aa9a077c40392fe9"
+        }
+      },
+      {
+        "name": "08-baseline-off",
+        "arm": "baseline",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 51896,
+          "seconds": 2.842562799982261
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\08-baseline-off\\report.json",
+          "bytes": 165423,
+          "sha256": "d97e72add15a9e5abc2e8d4718be24ca29ea0c8af749aa7285bacfb719540eb6"
+        }
+      },
+      {
+        "name": "09-baseline-off",
+        "arm": "baseline",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 48024,
+          "seconds": 2.9421042000176385
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\09-baseline-off\\report.json",
+          "bytes": 165447,
+          "sha256": "df6c7cbcc79c27c787e87d2af7622cf7533c811b2bacb0627db5157bf5ec6f41"
+        }
+      },
+      {
+        "name": "10-candidate-off",
+        "arm": "candidate",
+        "mode": "off",
+        "process": {
+          "exit": 0,
+          "pid": 49764,
+          "seconds": 2.8433286999934353
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\10-candidate-off\\report.json",
+          "bytes": 165451,
+          "sha256": "3d7e91abf638a4c868f3265f13dc9fc4993d21e1cd03d27f402f8be1af5581b8"
+        }
+      },
+      {
+        "name": "11-candidate-auto",
+        "arm": "candidate",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 18152,
+          "seconds": 2.904306899989024
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\11-candidate-auto\\report.json",
+          "bytes": 165406,
+          "sha256": "62ac4ed9fba257566799d84c0b27cee5e46364b60b825471e45d8e760fccaadf"
+        }
+      },
+      {
+        "name": "12-baseline-auto",
+        "arm": "baseline",
+        "mode": "auto",
+        "process": {
+          "exit": 0,
+          "pid": 55200,
+          "seconds": 2.9437503999797627
+        },
+        "report": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\screen\\12-baseline-auto\\report.json",
+          "bytes": 165446,
+          "sha256": "f0a4d4ecc6164617b3bb332fbda61b4f42a8abcccf12e42e1e06e4c3bbfd0823"
+        }
+      }
+    ],
+    "medians": {
+      "baseline": {
+        "off": {
+          "prefill": 2117.644793962787,
+          "decode": 91.37005108632802,
+          "total": 86.4422696638786,
+          "ready_seconds": 1.2315432,
+          "shared_backing_bytes": 42418224
+        },
+        "auto": {
+          "prefill": 2185.209255070679,
+          "decode": 91.45186988113639,
+          "total": 86.43028488669347,
+          "ready_seconds": 1.2930923,
+          "shared_backing_bytes": 62152752
+        }
+      },
+      "candidate": {
+        "off": {
+          "prefill": 2063.3861506593457,
+          "decode": 91.22340564530344,
+          "total": 85.68932601634829,
+          "ready_seconds": 1.2407929,
+          "shared_backing_bytes": 42418224
+        },
+        "auto": {
+          "prefill": 2127.336271083422,
+          "decode": 91.57835873647046,
+          "total": 86.53382861609482,
+          "ready_seconds": 1.2740628,
+          "shared_backing_bytes": 62152752
+        }
+      }
+    },
+    "ranges": {
+      "baseline": {
+        "off": {
+          "prefill": [
+            2101.554194852284,
+            2154.9402004094386
+          ],
+          "decode": [
+            91.10592629815265,
+            91.84914428649047
+          ],
+          "total": [
+            86.06939358167223,
+            86.76871860671979
+          ]
+        },
+        "auto": {
+          "prefill": [
+            2115.9775541497893,
+            2220.5976291515444
+          ],
+          "decode": [
+            91.27054300268676,
+            92.59406616714098
+          ],
+          "total": [
+            86.41332240427519,
+            87.69279532266518
+          ]
+        }
+      },
+      "candidate": {
+        "off": {
+          "prefill": [
+            1933.8279244752293,
+            2121.1449224060398
+          ],
+          "decode": [
+            89.56044294356069,
+            92.09697619724868
+          ],
+          "total": [
+            84.75286370752188,
+            86.8386531557659
+          ]
+        },
+        "auto": {
+          "prefill": [
+            2069.033156928104,
+            2159.3699126857377
+          ],
+          "decode": [
+            91.08006440499055,
+            91.73277478266019
+          ],
+          "total": [
+            86.19657012295363,
+            86.55508615532659
+          ]
+        }
+      }
+    },
+    "candidate_gain_percent": {
+      "off": {
+        "prefill": -2.5622164518869117,
+        "decode": -0.16049617930717908,
+        "total": -0.8710364159317585
+      },
+      "auto": {
+        "prefill": -2.6483955187799557,
+        "decode": 0.1383119399291477,
+        "total": 0.1198002870603565
+      }
+    },
+    "complete_non_time_report_equality_per_mode": true,
+    "original_fact_predicate": "screen.py facts; no additional ignored keys",
+    "complete_fact_sha256_per_mode": {
+      "off": "18146b8989f03fe3d49a0333ac2f29e3fd7a6d9416a690933d347070723e3f8f",
+      "auto": "48187d4de741692947aa9fbfe23c69e2c5560b0d01173a58cdb5d32365e9fba3"
+    },
+    "conclusion": "No net speedup evidence: off decode about -0.1605%, auto about +0.1383%; prefill about -2.6%, observed ranges overlap. Retained as deterministic removal of unnecessary lookup, not a fix for binding/replay host cost."
+  },
+  "limits": [
+    "Ordinary CUDA R1 P154 +96 decode only; no new peer or MTP performance comparison.",
+    "Shared backing bytes are cache backing, not a sampled full VRAM peak.",
+    "Three observations per image/mode; no significance claim or universal hardware conclusion."
+  ],
+  "runtime": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\runtime.json",
+    "bytes": 10996,
+    "sha256": "bf2d17e1e853288cd8875050f0aa3d0b090a6f9937e7cb17a6e4bef09199e6c1"
+  },
+  "archive_manifest": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\archive-manifest.json",
+    "bytes": 40784,
+    "sha256": "af262f2fbf6293da4c3dd985f9306989f8642c74450bc7a22bce0621b9faa94a"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-alias-role-filter-2026-10-27.zip",
+    "files": 135,
+    "binaries_SDK_models": false
+  }
+}
