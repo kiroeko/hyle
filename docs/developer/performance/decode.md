@@ -36,7 +36,20 @@ prepare多47.40ms，其中前8步多17.73ms、其后88步多29.67ms；Source元�
 [Source绑定分段](../../evidence/performance/inference-source-bind-attribution-2026-10-27.json)在泛化浮点Source后的冻结镜像上仅跑off／auto各一次，逐模式97个ID及完整非时间报告与原控制一致；auto实际发布44个后继。用嵌套扣除后的互斥桶定位：95次完整bundle绑定合计10.216ms，原子输入绑定含子桶5.461ms，其中6935次native-input扫描遍历7,087,570项但仅1.957ms，零native命中。不能因扫描次数大就把它当主因。
 slot绑定的完整观察为off12.037／auto15.338ms；写effect为3.634／6.306ms，auto另有1.928ms来源投影，IDs处理含等待1.781／1.622ms，未增加。auto的prepare_outputs合计38.317ms，其中replay其余31.039ms、consumer检查4.690ms、来源投影2.451ms；它包含原完整准备，off的普通prepare_replay未按同样入口插桩，不能以零相减称额外31ms，也不能混减前一Model3窗口的26.24ms。下一步定位共同replay准备，保留每次真实权限／tuple检查。本批只有诊断墙时，包含原生调用与等待，不是CPU忙时、统计提速或最新四项对照。
 
-[新Review的共序校正](../../evidence/research/inference-review-common90-2026-10-27.json)发现，10-26旧跟踪的原review脚本使用Hyle90／参考93个nonrecord根，参考多3个eager根。按双方同seq、各一次native launch的90／90重算，墙时12.876／11.670ms，kernel并集10.641／10.598ms，全部GPU活动并集10.784／10.688ms；GPU活动之外的差额约1.110ms／根，仍需查图外工作。Hyle132次D2D合计0.137ms／根、39.715MB，不能以次数解释1.206ms墙差。首kernel前还含GPU上传／间隙，不是CPU自耗；逻辑权重字节除kernel时间也不是实测DRAM带宽。仅离线重读旧库，未更新当前索引状态／KV工作帧版的kernel、拷贝或MTP录制次数，也不刷新TPS。后续当前镜像的R1／B2 off／auto与参考、R1 MTP双方共8个诊断进程尚未运行。
+[新Review的共序校正](../../evidence/research/inference-review-common90-2026-10-27.json)发现，10-26旧跟踪的原review脚本使用Hyle90／参考93个nonrecord根，参考多3个eager根。按双方同seq、各一次native launch的90／90重算，墙时12.876／11.670ms，kernel并集10.641／10.598ms，全部GPU活动并集10.784／10.688ms；GPU活动之外的差额约1.110ms／根，仍需查图外工作。Hyle132次D2D合计0.137ms／根、39.715MB，不能以次数解释1.206ms墙差。首kernel前还含GPU上传／间隙，不是CPU自耗；逻辑权重字节除kernel时间也不是实测DRAM带宽。仅离线重读旧库，不刷新TPS；后续冻结已验证镜像的8个诊断进程结果如下。
+
+[本轮普通／MTP跟踪](../../evidence/research/inference-current-review-profile-2026-10-27.json)完成R1／自然R2的off、auto和参考，以及R1 MTP双方共8个成功Nsight进程。Hyle使用`2fe2916cf`阶段已验证Model的NVTX冻结副本，包含索引状态／KV工作帧，不含后来的Store区间修正和RequestWave；不把它称为当前HEAD性能。下表是各臂同seq、无录制且单次native launch的共同88根，排除前8步，单位ms／根：
+
+| 工况 | Hyle off根墙时 | 参考根墙时 | Hyle off GPU并集 | 参考GPU并集 | kernel数 Hyle／参考 |
+|---|---:|---:|---:|---:|---:|
+| R1 | 11.209 | 10.508 | 9.591 | 9.716 | 613／558 |
+| R2 | 12.522 | 11.781 | 10.547 | 10.812 | 741／709 |
+
+GPU量级接近而根墙时仍落后，继续定位GPU活动之外的工作；差值包含等待／间隙及仪器影响，不是CPU自耗。Hyle的D2D未归零：R1每根19次／77,824B／约0.015ms，R2为60次／491,520B／约0.050ms，旧132次／39.715MB不再适用。这些小拷贝的直接时长不足以解释当前墙差，具体来源仍待逐项核实。R2双方每根均有36个grid1／block32的同名小kernel，合计约0.415ms，支持review的小投影量级；原生短名不能独立证明每项逻辑节点身份。
+
+auto仍只发布44个后继。共同88根的root并集off→auto为R1 986.357→947.085ms、R2 1101.970→1069.553ms，GPU并集也由844.042→850.684／928.104→942.971ms增加；不能从重叠根时长之和比较或称CPU成本完全隐藏。这是各臂单次带仪器诊断，Model根结束于外层ledger／交付之前，不更新完整吞吐或显存基线，也不推翻此前普通六进程筛选的“未证明净提速”。
+
+MTP本次BeginCapture为16／6，Instantiate为5／2，ExecUpdate为11／6；旧27／7不作当前结论。Hyle／参考生成各97个输出，但target行257／255、接受草稿44／45，续文和实际阶段并不完全相同，且Hyle合并target／draft根，不能拿53／104根当相同工作比较。seq53首次终端T1角色、seq43拒绝后角色重入可由本次记录确认，其余重录的具体失效原因尚未全部定位；不能先把多出的捕获都判为可删除。原一次错误GGUF加载失败和离线报告oracle修正均保留，没有重跑成功模型。后续优先核实录制／准备的真实失效边界，并接通原episode跨pump推进，再筛选小投影优化。
 
 随后[在途索引状态接线](../../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)完成有限GDN／conv捕获复用与真实Source旅程，并去掉同值IDs的重复上传／同Queue等待。该批尚未接入完整模型的有界流水，也未运行tokens/s窗口，不据组件结果估算提速；自然请求的后续接线及最新完整窗口分别列于上文。
 

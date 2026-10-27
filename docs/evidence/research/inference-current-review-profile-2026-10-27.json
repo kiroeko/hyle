@@ -1,0 +1,285 @@
+{
+  "status": "EIGHT_COMPLETED_CURRENT_PROFILES_OFFLINE_REVIEW",
+  "scope": "Frozen 2fe/e006 diagnostic build; not current W12 range/new RequestLoop, not a new TPS/statistical benchmark.",
+  "hardware": {
+    "name": "NVIDIA GeForce RTX4070",
+    "uuid": "GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8",
+    "driver": "617.14",
+    "memory_MiB": 12282
+  },
+  "profiler": {
+    "version": "NVIDIA Nsight Systems2026.1.3.425-261338342291v0",
+    "identity": {
+      "path": "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+      "bytes": 65146496,
+      "sha256": "a54d5e465086380373adc7b4cfeab771ed6f7cca98caa45b6393ed676dbb56ec"
+    }
+  },
+  "build": {
+    "CXX": 2,
+    "links": 2,
+    "SDK": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "retained_CLI_input_count": 224,
+    "baseline_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\bin\\hyle.exe",
+      "bytes": 142414336,
+      "sha256": "f0296307dbc0fe967e79b8e67395face3bb18600acfb7068d6c15566bbc256f3"
+    },
+    "Model": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2",
+    "Graph": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f",
+    "frozen_project_headers": 174,
+    "comment_only_reuse_exception": "W9 output_source.h comment-only token-equivalent change is explicitly retained in precompile metadata.",
+    "diagnostic_hyle": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-review-profile-20261027\\hyle\\bin\\hyle.exe",
+      "bytes": 142450688,
+      "sha256": "53f34fcaaa36d1bffa83033cf274acd379d14d4c688ce36a648d950602b5d7a6"
+    },
+    "natural_B2_peer": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-review-profile-20261027\\peer-b2\\bin\\consumer.exe",
+      "bytes": 35821056,
+      "sha256": "6740cd738c2cc3e7d8d4d6e2ce2f8714eaccaa1104eb63a6d4e5140f29375bd5"
+    },
+    "retained_R1_MTP_peer_ready": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\ready.json",
+      "bytes": 2382,
+      "sha256": "0712e317eb548632109f90b1425f93589d319644616c9087ae7ce0bb8840a087"
+    }
+  },
+  "processes": {
+    "successful": 8,
+    "attempts": 9,
+    "loading_only_failures": 1,
+    "failure": "r1-peer initially passed complete target+MTP GGUF to ordinary guard; native rejected before any logical sequence. Corrected attempt2 uses historical target-only file; successful arms were never rerun.",
+    "parser_correction": "Initial B2 off/auto oracle failure is retained. Exactly 12 explicit mode facts differ: four backing/budget fields and two cpu-ahead counters per member. Every other non-time per-session result including all 194 IDs equals; profile work is not filtered into the oracle."
+  },
+  "work": {
+    "prompt_rows_per_member": 154,
+    "output_quota_per_member": 97,
+    "context_capacity": 256,
+    "ordinary_physical_roots": 97,
+    "B2_outputs": 194,
+    "natural": "Each engine feeds its own actual greedy result. B2 is natural R2, not the old teacher-forced window; cross-engine continuation IDs are not asserted equal.",
+    "MTP": "Hyle combines target/draft in 53 roots; peer exposes 104 target/draft roots. Actual target/draft/accepted work remains in complete reports."
+  },
+  "attribution": {
+    "common_ordinary_sequences": "10..97 inclusive, 88 roots, same actual context/R/T; all modes no recording and one native graph launch per selected root",
+    "native": "GPU owner is actual same-thread API correlation from unique seq-labelled phases; zero unmapped in all eight root envelopes.",
+    "endpoint": "Model finished-clock endpoint before outer ledger/delivery; root union is not root sum. Peer decode-root endpoint excludes different outer work.",
+    "wall_columns": [
+      "arm",
+      "roots",
+      "root_union_ms",
+      "root_sum_ms",
+      "root_envelope_ms",
+      "GPU_union_ms",
+      "uncovered_root_wall_ms"
+    ],
+    "wall_rows": [
+      [
+        "r1-off",
+        88,
+        986.356516,
+        986.356516,
+        990.45435,
+        844.041779,
+        142.314737
+      ],
+      [
+        "r1-auto",
+        88,
+        947.085207,
+        1366.294222,
+        949.885787,
+        850.684231,
+        96.400976
+      ],
+      [
+        "r1-peer",
+        88,
+        924.726909,
+        924.726909,
+        927.763561,
+        855.013602,
+        69.713307
+      ],
+      [
+        "b2-off",
+        88,
+        1101.969606,
+        1101.969606,
+        1107.460773,
+        928.104454,
+        173.865152
+      ],
+      [
+        "b2-auto",
+        88,
+        1069.552659,
+        1538.087657,
+        1073.166606,
+        942.970615,
+        126.582044
+      ],
+      [
+        "b2-peer",
+        88,
+        1036.697575,
+        1036.697575,
+        1038.316394,
+        951.428988,
+        85.268587
+      ]
+    ],
+    "warning": "GPU union, call wall and CPU self-time differ. Uncovered wall is not host CPU time. A/B root sums double-count overlap."
+  },
+  "ordinary_native": {
+    "columns": [
+      "arm",
+      "kernels_per_root",
+      "kernel_union_ms_per_root",
+      "D2D_per_root",
+      "D2D_bytes_per_root",
+      "D2D_sum_ms_per_root"
+    ],
+    "rows": [
+      [
+        "r1-off",
+        613,
+        9.569078,
+        19.0,
+        77824.0,
+        0.014903
+      ],
+      [
+        "r1-auto",
+        613.5,
+        9.646924,
+        19.0,
+        77824.0,
+        0.015059
+      ],
+      [
+        "r1-peer",
+        558,
+        9.666773,
+        0,
+        0,
+        0
+      ],
+      [
+        "b2-off",
+        741,
+        10.489475,
+        60.0,
+        491520.0,
+        0.049554
+      ],
+      [
+        "b2-auto",
+        741.5,
+        10.660826,
+        60.0,
+        491520.0,
+        0.049731
+      ],
+      [
+        "b2-peer",
+        709,
+        10.722069,
+        0,
+        0,
+        0
+      ]
+    ],
+    "interpretation": "Indexed-state work did not remove every D2D. Current 19/60 nodes carry 77824/491520 bytes, not the old 132/39.7MB. Copies take roughly 15/50 us/root; their count does not identify the main wall gap.",
+    "residual_mapping": "R1 native copies lie in six repeated full-attention qnorm/gate neighborhoods plus final normalized-head materialization; B2 has 54 in 18 GDN L2 neighborhoods plus six full-attention neighborhoods. This is source/order-supported attribution, not recorded logical node IDs. All representative D2D payloads are 4096/8192 bytes, not Top1/control scalars."
+  },
+  "host_call_walls": {
+    "boundary": "Inclusive phase wall; replay is nested in prepare and must not be added. Nsight node tracing perturbs submit wall.",
+    "R1_steady_prepare_ms": {
+      "off": 0.516209,
+      "auto_A": 0.785439,
+      "auto_B": 0.833571
+    },
+    "B2_steady_prepare_ms": {
+      "off": 0.613653,
+      "auto_A": 1.093453,
+      "auto_B": 1.079915
+    },
+    "conclusion": "Auto reduces uncovered wall but adds preparation wall and a small measured GPU-work increase. These single profiles are structural evidence, not a net throughput gain estimate."
+  },
+  "small_projection": {
+    "native": "Exact one-warp grid1 cutlass Kernel2 family; count 36/root, supported by frozen 18 GDN layers with separate [16,2048] a/b weights. No explicit graph node ID or kernel tensor argument is exported.",
+    "B2_us_per_root": {
+      "hyle_off": 415.333216,
+      "hyle_auto": 437.599239,
+      "peer": 414.122364
+    },
+    "MTP_us_per_matching_root_after_seq9": {
+      "hyle_role4_38roots": 404.794895,
+      "hyle_role3_5roots": 423.714,
+      "peer_target_47roots": 436.73366
+    },
+    "boundary": "Supports review small-projection magnitude for both engines. R1 uses a different native kernel family; do not transfer B2 cost. Fusion benefit and effective DRAM bandwidth remain unmeasured."
+  },
+  "MTP_capture": {
+    "hyle": {
+      "BeginCapture": 16,
+      "EndCapture": 16,
+      "Instantiate": 5,
+      "Update": 11
+    },
+    "peer": {
+      "BeginCapture": 6,
+      "EndCapture": 6,
+      "Instantiate": 2,
+      "Update": 6
+    },
+    "hyle_sequences": [
+      2,
+      3,
+      4,
+      5,
+      9,
+      10,
+      11,
+      13,
+      14,
+      15,
+      16,
+      43,
+      44,
+      45,
+      46,
+      53
+    ],
+    "proven": "seq2/3 first role3/4 graph families; seq43 lag0 reentry after rejection42; seq44 lag1 reentry; seq53 first terminal role5/T1 with quota1. All Hyle physical execution slots are 0.",
+    "unresolved": "For other same-role R/T/slot recordings, including45/46, exact changing capture operand is unlocated. Trace has no tensor/private tuple operands or memcpy source/destination pairs. Context length alone does not prove KV growth caused capture.",
+    "source_mechanism": "Graph compares full recorded port tuples plus private binding-preservation proof, with two retained variants. Draft carry/prior hidden ReadLease bindings and append control carriers can affect those facts; no claim which one changed without operand evidence.",
+    "boundary": "16 vs6 is current actual API count, not an improvement calculation from old27/7. Different accepted work and target/draft root decomposition remain explicit."
+  },
+  "limitations": [
+    "One process per successful arm, no significance/new memory/TPS claim.",
+    "Logical backing/budget bytes are not independent PSAPI or physical VRAM peaks.",
+    "Old758 kernels/132 D2D/27 captures do not describe this frozen build.",
+    "No new GPU run, source optimization, model-quality claim or MTP depth2 implementation was performed during offline analysis."
+  ],
+  "reproduce": {
+    "work_directory": ".scratch\\inference-current-review-profile-20261027",
+    "analysis_scripts": [
+      "analyze.py",
+      "summarize.py",
+      "followup.py"
+    ],
+    "full_results": [
+      "summary.json",
+      "analysis-summary.json",
+      "followup-summary.json",
+      "kernel-inventory.json",
+      "trace-identities.json"
+    ],
+    "raw_traces": "Retained at exact pinned scratch paths; excluded from this small ZIP along with all binaries, SDK and model payloads."
+  }
+}
