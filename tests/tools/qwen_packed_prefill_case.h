@@ -79,7 +79,8 @@ inline h::ImageBytes capture(q::Model &model, q::Session &session,
     const std::shared_ptr<hyle::inference::HostStateStorage> &storage) {
   auto image = model.export_session(session, storage);
   auto result = h::read_image(*image);
-  require(result.identity == model.host_image_identity(0), "prefill export changed its original Model identity");
+  require(result.identity == model.host_image_identity(session.sampling_configuration().index),
+      "prefill export changed its original Model or sampling identity");
   image.reset(); require(!storage->live_images(), "prefill image reservation did not retire");
   return result;
 }

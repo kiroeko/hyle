@@ -156,7 +156,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
             std::equal(before.payloads[bank].begin(), before.payloads[bank].end(), after.payloads[bank].begin()),
             "MTP draft append or repair changed its already initialized prefix bytes");
       if (candidate && verification) {
-        const auto &program = *model.draft_programs.at({1, false});
+        const auto &program = *model.draft_programs.at({1, false, 0});
         report.draft_active = after.frontier - before.frontier;
         report.draft_physical = program.rows;
         require(report.draft_active == 1 && report.draft_physical == 1,

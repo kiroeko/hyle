@@ -98,6 +98,8 @@ Windows PowerShell 将运行路径改为实际 `hyle.exe`；上面的 `<build-di
 
 默认 greedy；也可用 `--sampling random --temperature 0.8 --top-k 40 --top-p 0.95 --seed 42`。
 普通与 MTP 共用温度→top-k→top-p 分布，`--top-k 0` 关闭该过滤。
+底层请求可以从同一Model的有限冷配置中选择greedy或不同温度／过滤政策；不同政策的兼容组共享权重和缓存，
+完整前缀命中按新请求自己的政策选择pending，同请求恢复保留历史pending和随机游标。MTP逐请求bias／mask尚未接通。
 每个会话有独立随机流，提交失败或取消不推进已发布的随机数位置；前缀命中保留当前会话的随机流。
 固定随机地址的恢复、重试及真实取消已检查，见[功能记录](../evidence/correctness/qwen-mtp-random-integration-2026-10-24.json)。
 相同 seed 不保证不同后端或普通／MTP 路径逐 token 相同。

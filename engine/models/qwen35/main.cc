@@ -27,6 +27,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -1368,7 +1369,7 @@ struct MtpGenerationSelection final {
 // rows before the existing Snapshot transaction can publish it.
 struct DraftProgram final {
   inference::QueueBindings queues;
-  std::size_t rows = 0;
+  std::size_t rows = 0, sampling_index = 0;
   bool head = false;
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::vector<Tensor> literals;
@@ -1399,7 +1400,7 @@ struct DraftProposal final {
 };
 struct PrefixSamplingProgram final {
   inference::QueueBindings queues;
-  std::size_t proposals = 0;
+  std::size_t proposals = 0, sampling_index = 0;
   std::vector<Tensor> literals;
   g::Graph graph;
   g::CompiledGraph compiled;
@@ -1461,8 +1462,8 @@ struct ColdResources final {
   const bool retain_sampling_frontier;
   std::map<FamilyKey, std::unique_ptr<Family>> families, probe_families;
   std::map<ExecutionShape, std::unique_ptr<Phase>> phases, probe_phases;
-  std::map<std::pair<std::size_t, bool>, std::unique_ptr<DraftProgram>> draft_programs;
-  std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
+  std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> draft_programs;
+  std::map<std::pair<std::size_t, std::size_t>, std::unique_ptr<PrefixSamplingProgram>> prefix_sampling_programs;
 
   explicit ColdResources(const ModelGeometry &geometry, std::size_t capacity, PrecisionProfile precision,
       SamplingConfiguration first, std::span<const SamplingConfiguration> additional,
@@ -1578,7 +1579,7 @@ public:
   const std::vector<std::size_t> attention_layer_ids;
   Backend execution;
   std::shared_ptr<ColdResources> resources_;
-  const SamplingConfiguration &default_sampler; // The immutable default, shared by original MTP paths.
+  const SamplingConfiguration &default_sampler; // Aggregate diagnostics describe this immutable default.
   // These original runtimes outlive every phase/slot and its native retirement.
   std::unique_ptr<hyle::sched::Scheduler> scheduler;
   std::unique_ptr<hyle::sched::BlockingPool> workers;
@@ -1614,8 +1615,8 @@ public:
   // its one slot and shared IO through native retirement and all result reads.
   std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;
   std::map<ExecutionShape, std::array<std::size_t, execution_slot_count>> planned_slot_uses;
-  std::map<std::pair<std::size_t, bool>, std::unique_ptr<DraftProgram>> &draft_programs;
-  std::map<std::size_t, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
+  std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
+  std::map<std::pair<std::size_t, std::size_t>, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
   const PreparedSampling &sampling_configuration(std::size_t index = 0) const { return resources_->sampling_configuration(index); }
   std::size_t sampling_configuration_count() const noexcept { return resources_->sampling_configurations.size(); }
@@ -1727,8 +1728,9 @@ public:
     if (cache_plan.hidden_row_bytes != geometry.hidden_bytes() || cache_plan.attention_layers != target_kv_layers ||
         cache_plan.recurrent_layers != geometry.recurrent_layers())
       throw std::runtime_error("cache layout differs from source model geometry");
-    if (cache_plan.draft_cache && (!additional_sampling.empty() || !default_sampler.modifiers.empty()))
-      throw std::runtime_error("nondefault sampling configurations are currently ordinary Text only");
+    if (cache_plan.draft_cache && std::ranges::any_of(resources_->sampling_configurations,
+        [](const auto &entry) { return !entry->configuration.modifiers.empty(); }))
+      throw std::runtime_error("logits modifiers are currently ordinary Text only");
     if (retains_sampling_frontier() && (!cache_plan.hidden_bytes || cache_plan.hidden_slots < cache_plan.snapshot_slots))
       throw std::runtime_error("sampling requires a cache plan with retained frontier storage");
     const std::array limits{c::ResourceBudgetLimit{execution.device(), max_cache_bytes},
@@ -2122,8 +2124,8 @@ public:
                       bool packed_prefill = false) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
-      throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
+      throw std::runtime_error("logits modifiers are ordinary Text only");
     if (!supports_completion(role, completion))
       throw std::runtime_error("state-only completion requires a Text or teacher-forced MTP input family");
     if (packed_prefill && (diagnostic || admitted_exact ||
@@ -2140,7 +2142,8 @@ public:
     if (role == GraphRole::kVerify && planned_chunks.size() != 1) {
       std::set<std::size_t> widths(planned_chunks.begin(), planned_chunks.end());
       for (const auto width : widths) {
-        const std::array chunk{width}; prepare_family(chunk, diagnostic, requests, role);
+        const std::array chunk{width};
+        prepare_family(chunk, diagnostic, requests, role, admitted_exact, completion, sampling_index, packed_prefill);
       }
       return true;
     }
@@ -2818,17 +2821,21 @@ public:
     }
   }
 
-  void prepare_draft_program(std::size_t rows, bool head) {
+  void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0) {
     preparation_started_ = true;
     if (state_storage_prepared || !cache_plan.draft_cache || !rows || rows > capacity)
       throw std::runtime_error("prepare a positive NextN width before selected cache storage");
-    const auto key = std::pair{rows, head};
+    const auto selected_index = head ? sampling_index : 0;
+    const auto &selected_sampler = sampling_configuration(selected_index).configuration;
+    if (!selected_sampler.modifiers.empty())
+      throw std::runtime_error("NextN logits modifiers are not supported");
+    const auto key = std::tuple{rows, head, selected_index};
     if (draft_programs.contains(key)) return;
     prepare_cache();
     auto prepared = std::make_unique<DraftProgram>(); auto &program = *prepared;
-    program.rows = rows; program.head = head;
+    program.rows = rows; program.head = head; program.sampling_index = selected_index;
     // No reliable auxiliary-use hint: Auto retains the original Commands path.
-    program.replay_mode = select_replay_mode(replay_policy, 1, default_sampler.enabled);
+    program.replay_mode = select_replay_mode(replay_policy, 1, selected_sampler.enabled);
     GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, rows, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(rows));
@@ -2871,13 +2878,13 @@ public:
           {attention_schema, program.key, program.value, program.metadata}, f(static_cast<std::int64_t>(rows - 1)), row_geometry);
       program.append = result.append_nodes; program.attention = result.attention_node;
       program.hidden = result.selected_hidden;
-      if (!default_sampler.enabled) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
+      if (!selected_sampler.enabled) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
           {r.dense_spec(Type::kFloat32, {f(1), f(1)}), r.dense_spec(Type::kInt32, {f(1), f(1)})})[1];
-      if (default_sampler.enabled || min_draft_probability() > 0) {
+      if (selected_sampler.enabled || min_draft_probability() > 0) {
         const auto distribution = sampling::distribution(r, result.logits,
-            default_sampler.enabled ? default_sampler.policy : sampling::Policy{});
+            selected_sampler.enabled ? selected_sampler.policy : sampling::Policy{});
         program.log_probabilities = distribution.log_probabilities; program.valid = r.host_predicate(distribution.valid);
-        if (default_sampler.enabled) {
+        if (selected_sampler.enabled) {
           program.identity = r.input(dense(Type::kUInt32, {1, 4}));
           program.id = r.one(c::sampling_ops::categorical(), {program.log_probabilities, program.identity});
           r.publish(program.log_probabilities);
@@ -2908,7 +2915,7 @@ public:
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     if (head) {
-      if (default_sampler.enabled) program.probabilities_output =
+      if (selected_sampler.enabled) program.probabilities_output =
           take(inference::prepare_output(program.compiled, program.log_probabilities));
     }
     for (std::size_t output = 0; output < program.compiled.executable.output_count(); ++output) {
@@ -2916,15 +2923,19 @@ public:
       const auto port = take(program.compiled.executable.output_id(output));
       if (port == program.log_probabilities) {
         program.resource_ports.push_back(port);
-        const auto bytes = cache::multiply(vocabulary * sizeof(float), cache_plan.candidate_boundaries);
+        // One verifier cohort retains every member's q until target selection.
+        // Keep the original per-member allowance within the existing budget.
+        const auto blocks = cache::multiply(cache_plan.active_sequences, cache_plan.candidate_boundaries);
+        if (blocks >= UINT32_MAX) throw std::overflow_error("NextN probability block capacity exceeds lease indexing");
+        const auto bytes = cache::multiply(cache::multiply(static_cast<std::size_t>(vocabulary), sizeof(float)), blocks);
         program.probability_pool = take(c::LeasePool::create(
             take(execution.resource_for(program.probabilities_output.storage)), cache::add(bytes, 1),
-            {.max_blocks = cache_plan.candidate_boundaries, .resource_budget = execution_budget}));
+            {.max_blocks = static_cast<std::uint32_t>(blocks), .resource_budget = execution_budget}));
       }
     }
     if (head) {
       program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution, allocation_budget));
-      if (default_sampler.enabled || min_draft_probability() > 0)
+      if (selected_sampler.enabled || min_draft_probability() > 0)
         program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution, allocation_budget));
       if (min_draft_probability() > 0)
         program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution, allocation_budget));
@@ -2945,17 +2956,18 @@ public:
   }
 
   void initialize_draft_program(DraftProgram &program) {
+    const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
     program.run = take(program.compiled.executable.create_invocation(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
     if (scheduler) check(g::prepare_progress(program.run, *scheduler, *workers));
     check(program.run.bind(program.tokens, program.token_values.read()));
     check(program.run.bind(program.positions, program.position_values.read()));
     if (program.head) check(program.id_value.bind(program.run));
-    if (program.head && default_sampler.enabled) {
+    if (program.head && selected_sampler.enabled) {
       if (!program.identity_values.caller_owned()) program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
       check(program.run.bind(program.identity, program.identity_values.read()));
     }
-    if (program.head && (default_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
+    if (program.head && (selected_sampler.enabled || min_draft_probability() > 0)) check(program.valid_value.bind(program.run));
     if (program.head && min_draft_probability() > 0) check(program.probability_value.bind(program.run));
     if (program.head) {
       const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
@@ -2968,13 +2980,15 @@ public:
   // recursive rows may extend that private tail. Published Session tails are
   // never borrowed, so aborting proposal/verification leaves the old head valid.
   DraftProposal execute_draft(DraftWork &work, std::span<const std::int32_t> ids,
-      std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {}) {
+      std::span<const c::ReadLease> shifted, bool head, const std::array<std::uint32_t, 4> &identity = {},
+      std::size_t sampling_index = 0) {
     if (ids.empty() || ids.size() != shifted.size() || !state_storage_prepared ||
         work.state.frontier > capacity || ids.size() > capacity - work.state.frontier)
       throw std::runtime_error("NextN input rows exceed the prepared context or hidden geometry");
-    auto found = draft_programs.find({ids.size(), head});
+    auto found = draft_programs.find({ids.size(), head, head ? sampling_index : 0});
     if (found == draft_programs.end()) throw std::runtime_error("NextN finite program was not cold prepared");
     auto &program = *found->second;
+    const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
     auto &guard = program.guard;
     if (guard.cleanup_pending) {
       // Keep the same original failed episode and all its append/state facts
@@ -3045,7 +3059,7 @@ public:
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
         check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
-      if (head && default_sampler.enabled) {
+      if (head && selected_sampler.enabled) {
         program.identity_values.write<std::uint32_t>(identity);
         if (program.probabilities_output.caller_owned()) check(run.bind(program.probabilities_output.value,
             program.probabilities_output.description, take(program.probability_pool.allocate(vocabulary * sizeof(float)))));
@@ -3061,10 +3075,10 @@ public:
       guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
       if (head) {
-        if (default_sampler.enabled || min_draft_probability() > 0) {
+        if (selected_sampler.enabled || min_draft_probability() > 0) {
           const auto flag = take(program.valid_value.predicate(execution, run));
           if (flag != 1) throw std::runtime_error("recursive draft distribution is invalid; no head or RNG was published");
-          if (default_sampler.enabled) output.log_probabilities =
+          if (selected_sampler.enabled) output.log_probabilities =
               take(inference::retain_output(run, program.probabilities_output, execution_budget));
           if (min_draft_probability() > 0) {
             check(program.probability_value.read(execution, run, std::as_writable_bytes(std::span(&output.probability, 1))));
@@ -3118,13 +3132,17 @@ public:
     }
   }
 
-  void prepare_prefix_sampling(std::size_t proposals) {
+  void prepare_prefix_sampling(std::size_t proposals, std::size_t sampling_index = 0) {
     preparation_started_ = true;
-    if (!default_sampler.enabled || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
+    const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
+    if (!selected_sampler.modifiers.empty())
+      throw std::runtime_error("speculative logits modifiers are not supported");
+    if (!selected_sampler.enabled || state_storage_prepared || proposals >= cache_plan.candidate_boundaries)
       throw std::runtime_error("prepare bounded speculative-sampling widths before cache storage");
-    if (prefix_sampling_programs.contains(proposals)) return;
+    const auto key = std::pair{proposals, sampling_index};
+    if (prefix_sampling_programs.contains(key)) return;
     auto prepared = std::make_unique<PrefixSamplingProgram>(); auto &program = *prepared;
-    program.proposals = proposals;
+    program.proposals = proposals; program.sampling_index = sampling_index;
     GraphAssembly assembly(execution, precision, allocation_budget);
     Recipe r(weights, projections, assembly, geometry, 1, 1, &weight_meanings);
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
@@ -3132,7 +3150,7 @@ public:
     program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
     if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
     auto assembled = sampling::speculative_prefix(r, program.logits, program.identities,
-        program.ids, default_sampler.policy);
+        program.ids, selected_sampler.policy);
     program.q = std::move(assembled.q); program.accepted = std::move(assembled.accepted);
     program.final_ids = std::move(assembled.final_ids); program.valid = std::move(assembled.valid);
     for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
@@ -3165,7 +3183,7 @@ public:
     prepare(program.final_ids, program.final_values); prepare(program.valid, program.valid_values);
     program.resource_ports = program.q; program.resource_ports.push_back(program.logits);
     initialize_prefix_sampling(program);
-    prefix_sampling_programs.emplace(proposals, std::move(prepared));
+    prefix_sampling_programs.emplace(key, std::move(prepared));
   }
 
   void initialize_prefix_sampling(PrefixSamplingProgram &program) {
@@ -3181,21 +3199,25 @@ public:
 
   // Target family widths and replay counts stay with the finite request plan;
   // every recursive consumer shares this model's actual NextN/sampler programs.
-  void prepare_recursive_round_programs() {
+  void prepare_recursive_round_programs(std::size_t sampling_index = 0) {
+    const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
+    if (!selected_sampler.modifiers.empty())
+      throw std::runtime_error("recursive logits modifiers are not supported");
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
-      if (default_sampler.enabled && (rows > 1 || min_draft_probability() > 0)) prepare_prefix_sampling(rows - 1);
+      if (selected_sampler.enabled && (rows > 1 || min_draft_probability() > 0)) prepare_prefix_sampling(rows - 1, sampling_index);
     }
-    prepare_draft_program(1, true);
-    if (capacity > 1) prepare_draft_program(2, true);
+    prepare_draft_program(1, true, sampling_index);
+    if (capacity > 1) prepare_draft_program(2, true, sampling_index);
   }
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
       std::span<const std::int32_t> proposals, std::span<const c::ReadLease> q,
-      cache::SamplingCursor cursor) {
-    if (!default_sampler.enabled || proposals.size() != q.size())
+      cache::SamplingCursor cursor, std::size_t sampling_index = 0) {
+    const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
+    if (!selected_sampler.enabled || !selected_sampler.modifiers.empty() || proposals.size() != q.size())
       throw std::runtime_error("speculative sampling requires every actual proposal distribution");
-    auto found = prefix_sampling_programs.find(proposals.size());
+    auto found = prefix_sampling_programs.find({proposals.size(), sampling_index});
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
     auto &program = *found->second;
     if (!program.run) initialize_prefix_sampling(program);
@@ -3410,8 +3432,8 @@ public:
                                          const LogitsInputs &logits = {}) {
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
-      throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
+      throw std::runtime_error("logits modifiers are ordinary Text only");
     if (resample_frontier) validate_logits_inputs(selected_sampler, logits, vocabulary);
     prepare_state_storage();
     const auto initial_rows = planned_chunks.empty() ? 0 : planned_chunks.front();
@@ -4248,8 +4270,8 @@ public:
     const auto &prepared_sampling = requests.front().session->sampling_configuration();
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
-    if (role != GraphRole::kText && (sampling_index || !selected_sampler.modifiers.empty()))
-      throw std::runtime_error("nondefault sampling is ordinary Text only");
+    if (role != GraphRole::kText && !selected_sampler.modifiers.empty())
+      throw std::runtime_error("logits modifiers are ordinary Text only");
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
     const bool packed_prefill = physical_prefill_rows != 0;
     auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
@@ -5118,8 +5140,12 @@ public:
   std::vector<std::int32_t> propose_recursive(Session &session, std::size_t maximum,
       std::span<const std::int32_t> eos = {}, std::vector<c::ReadLease> *q = nullptr,
       const inference::RequestStopPolicy *stop_policy = nullptr) {
+    if (session.model_ != this)
+      throw std::runtime_error("recursive proposal Session belongs to another model");
+    const auto &selected_sampling = session.sampling_configuration();
+    const auto &selected_sampler = selected_sampling.configuration;
     if (active_step || carrier_borrowed || session.pending || session.stopping || session.failed ||
-        !session.head || !session.head->draft || (default_sampler.enabled && !q) ||
+        !session.head || !session.head->draft || (selected_sampler.enabled && !q) ||
         maximum >= capacity - session.length() || maximum >= cache_plan.candidate_boundaries)
       throw std::runtime_error("recursive proposals require an idle prepared head, bounded width and every stochastic q row");
     validate_mtp_snapshot(*session.head);
@@ -5138,13 +5164,13 @@ public:
       if (!i && work.state.lag) { ids.push_back(work.state.catchup_token); shifted.push_back(session.head->prior_hidden); }
       ids.push_back(inputs.back()); shifted.push_back(i ? approximate : session.head->carry_hidden);
       auto proposal = execute_draft(work, ids, shifted, true,
-          default_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{});
+          selected_sampler.enabled ? session.head->sampling.identity(2 * i) : std::array<std::uint32_t, 4>{}, selected_sampling.index);
       // Stop on a distribution property, not the sampled proposal's own
       // probability. The stopping condition is independent of this draw; its
       // unpublished address may then be the target's final draw at 2*m.
       if (min_draft_probability() > 0 && proposal.probability < min_draft_probability()) break;
       inputs.push_back(proposal.id); approximate = std::move(proposal.hidden);
-      if (q && default_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
+      if (q && selected_sampler.enabled) q->push_back(std::move(proposal.log_probabilities));
       if (ended(proposal.id)) break;
     }
     return inputs;
@@ -5186,6 +5212,8 @@ public:
         !cache_plan.draft_cache || selections.size() != active_step->members.size() ||
         outputs.size() != selections.size() || results.size() != selections.size())
       throw std::runtime_error("recursive finish requires the complete original verification batch");
+    const auto &selected_sampling = *active_step->phase->family->sampling;
+    const auto &selected_sampler = selected_sampling.configuration;
     std::vector<std::int32_t> next(selections.size(), -1);
     for (std::size_t j = 0; j < selections.size(); ++j) {
       const auto &selection = selections[j];
@@ -5199,7 +5227,7 @@ public:
         [&](std::span<const std::int32_t> candidates, StepState &step, std::span<std::int32_t> selected) {
       c::ReadLease logits_owner;
       mem::ConstBufferView logits_storage;
-      if (default_sampler.enabled) {
+      if (selected_sampler.enabled) {
         auto &logits = step.phase->io[step.state_slot].logits;
         if (logits.caller_owned()) logits_storage = logits.storage();
         else {
@@ -5214,11 +5242,11 @@ public:
         const auto width = step.input_tokens;
         const auto rows = candidates.subspan(j * width, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
-        result.auxiliary_graph_calls = width + (default_sampler.enabled ? 1u : 0u);
+        result.auxiliary_graph_calls = width + (selected_sampler.enabled ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
         result.target_first = rows[0]; result.target_second = width > 1 ? rows[1] : -1;
         hyle::inference::mtp::AcceptedPrefix accepted;
-        if (default_sampler.enabled) {
+        if (selected_sampler.enabled) {
           if (selection.draft_log_probabilities.size() != width - 1)
             throw std::runtime_error("stochastic verification requires every actual q row");
           const auto bytes = cache::multiply(cache::multiply(width, vocabulary), sizeof(float));
@@ -5226,7 +5254,7 @@ public:
               {static_cast<std::int64_t>(width), vocabulary}), take(logits_storage.subview(j * bytes, bytes))));
           const auto decision = sample_recursive_prefix(logits,
               std::span<const std::int32_t>(member.verification_inputs).subspan(1),
-              selection.draft_log_probabilities, member.base->sampling);
+              selection.draft_log_probabilities, member.base->sampling, selected_sampling.index);
           accepted = hyle::inference::mtp::select_sampled_prefix(member.verification_inputs, decision.accepted, decision.final_ids,
               selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
           member.next->sampling = member.base->sampling.advanced(cache::add(cache::multiply(2, width - 1), 1));
@@ -5286,6 +5314,7 @@ public:
         !has_mtp(active_step->phase->family->role) || is_mtp_prefill(active_step->phase->family->role))
       throw std::runtime_error("MTP finish requires its original complete generation batch");
     const auto role = active_step->phase->family->role;
+    const auto &selected_sampler = active_step->phase->family->sampling->configuration;
     for (std::size_t j = 0; j < selections.size(); ++j) {
       if (!selections[j].output_quota || selections[j].session != active_step->members[j].session ||
           selections[j].session != outputs[j].session || selections[j].expected_pending < 0 ||
@@ -5313,7 +5342,7 @@ public:
             const std::array inputs{selection.expected_pending, result.draft};
             const auto verified_inputs = std::span<const std::int32_t>(inputs).first(rows);
             hyle::inference::mtp::AcceptedPrefix accepted;
-            if (default_sampler.enabled) {
+            if (selected_sampler.enabled) {
               const std::array flags{std::uint8_t(member.sampled_accept)};
               // The original K1 graph's second ID is its residual/bonus final;
               // its first ID is already Select(accept, proposal, final).
@@ -5762,8 +5791,8 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
   const auto sampling_index = model.sampling_index(ledger);
   const auto started = Clock::now();
   ledger.stop_policy().validate(model.vocabulary);
-  if (sampling_index || !model.cache_plan.draft_cache)
-    throw std::runtime_error("strict MTP replay requires the original complete target/draft model and sampling configuration");
+  if (!model.cache_plan.draft_cache || !model.sampling_configuration(sampling_index).configuration.modifiers.empty())
+    throw std::runtime_error("strict MTP replay requires the original complete target/draft model without logits modifiers");
   if (!ledger.committed_count || ledger.committed_count > ledger.records.size() ||
       ledger.records[0].generation || ledger.records[0].before.length || model.active_step || model.carrier_borrowed)
     throw std::runtime_error("MTP restore requires a complete zero-origin ledger and an idle carrier");
@@ -5775,7 +5804,7 @@ std::shared_ptr<Session> restore_mtp_session(Model &model, const GenerationLedge
     throw std::runtime_error("retire the old MTP head before restoring within N committed versions");
   const auto &first = ledger.records[0];
   const std::array calls{first.ids().size()};
-  auto session = model.create_session(calls, {}, first.role, first.before.sampling, false, first.completion);
+  auto session = model.create_session(calls, {}, first.role, first.before.sampling, false, first.completion, sampling_index);
   GenerationLedger actual(ledger.committed_count, model.cache_plan.candidate_boundaries);
   actual.bind_stop_policy(ledger.stop_policy(), model.vocabulary);
   const auto &eos = model_eos_tokens;
@@ -6195,8 +6224,8 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   request.stop_policy.validate(model.vocabulary);
   request.ledger->validate_stop_policy(request.stop_policy);
   const auto &prepared_sampling = model.sampling_configuration(request.sampling_index);
-  if (model.cache_plan.draft_cache && (request.sampling_index || !prepared_sampling.configuration.modifiers.empty()))
-    throw std::runtime_error("nondefault request sampling is ordinary Text only");
+  if (model.cache_plan.draft_cache && !prepared_sampling.configuration.modifiers.empty())
+    throw std::runtime_error("request logits modifiers are ordinary Text only");
   if (request.session && &request.session->sampling_configuration() != &prepared_sampling)
     throw std::runtime_error("request sampling cannot change after Session admission");
   request.ledger->validate_sampling(prepared_sampling, model.resources_);
@@ -6868,8 +6897,14 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         prepared_ahead = model.decode_ahead && model.decode_ahead->ready;
       }
     }
-    if (generation && role == GraphRole::kVerify) model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
-        std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+    if (generation && role == GraphRole::kVerify) {
+      model.finish_recursive_mtp(std::span(selections.data(), selections.size()), eos,
+          std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
+      // The original verifier and prefix decision have retired and released
+      // their reads. Completed call records no longer need these private q
+      // leases; retaining them would charge the next episode's bounded pool.
+      for (auto &call : calls) call.draft_log_probabilities.clear();
+    }
     else if (generation && role != GraphRole::kText) model.finish_mtp_rounds(std::span(selections.data(), selections.size()), eos,
         std::span(outputs.data(), outputs.size()), std::span(results.data(), results.size()), observe);
     else model.finish_evaluations(std::span(outputs.data(), outputs.size()), std::span(next.data(), next.size()), observe);
@@ -7130,7 +7165,8 @@ void write_request_sampling(std::ostream &out, const Model &model, const Generat
   out << ",\"sampling_configuration_index\":" << request.sampling_index
       << ",\"request_sampling\":\"" << (configuration.enabled ? "random" : "greedy") << '\"'
       << ",\"request_temperature\":" << configuration.policy.temperature
-      << ",\"request_top_k\":" << configuration.policy.top_k << ",\"request_top_p\":" << configuration.policy.top_p;
+      << ",\"request_top_k\":" << configuration.policy.top_k << ",\"request_top_p\":" << configuration.policy.top_p
+      << ",\"request_mtp_acceptance_policy\":\"" << (!model.cache_plan.draft_cache ? "disabled" : configuration.enabled ? "min_one_p_over_q" : "equal_greedy_ids") << '\"';
 }
 
 void print_generation_request(const Model &model, const GenerationRequest &request, std::size_t steps,
@@ -7263,8 +7299,8 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   if (!sampling_indices.empty() && sampling_indices.size() != schedules.size())
     throw std::runtime_error("one cold sampling choice is required per request");
   for (const auto index : sampling_indices) {
-    (void)model.sampling_configuration(index);
-    if (mtp && index) throw std::runtime_error("nondefault request sampling is ordinary Text only");
+    const auto &configuration = model.sampling_configuration(index).configuration;
+    if (mtp && !configuration.modifiers.empty()) throw std::runtime_error("request logits modifiers are ordinary Text only");
   }
   if (schedules.empty() || model.cache_plan.draft_cache != mtp)
     throw std::runtime_error("natural generation mode differs from its complete model/cache plan");
@@ -7480,7 +7516,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
     }
   }
   }
-  if (mtp && decode_bound && model.recursive_mtp()) model.prepare_recursive_round_programs();
+  if (mtp && decode_bound && model.recursive_mtp())
+    for (std::size_t index = 0; index < model.sampling_configuration_count(); ++index)
+      if (std::ranges::any_of(requests, [index](const auto &request) {
+          return request.sampling_index == index && std::ranges::any_of(request.progress.turns(),
+              [](const auto &turn) { return turn.max_outputs > 1; });
+        })) model.prepare_recursive_round_programs(index);
   model.freeze_shape_plan();
   if (warmup_planned_shapes) {
     const auto begin = Clock::now();
@@ -8546,6 +8587,7 @@ int qwen35::run(int argc, char **argv) {
             auto history = qwen35::cache::copy_history(hit.payload.replay, capacity);
             const auto cursor = run.session ? run.session->head->sampling : run.saved_sampling;
             auto adopted = model.create_session(remaining, hit.payload.snapshot, qwen35::GraphRole::kText, cursor, suffix == 0);
+            // This fixed-input CLI tape has one default sampling configuration.
             if (model.default_sampler.enabled && !suffix) {
               history->chunks.back().next_id = adopted->head->next_id; ++run.prefix_sampling_calls;
             }
@@ -8600,6 +8642,7 @@ int qwen35::run(int argc, char **argv) {
             throw std::runtime_error("actual-chunk recompute differs from the retained logical boundary");
           if (run.saved_pending >= 0) {
             model.restore_pending_boundary(*run.session, run.saved_sampling, run.saved_pending);
+            // The fixed-input tape retains that same CLI-wide configuration.
             if (model.default_sampler.enabled && !rebuilt_history->chunks.empty())
               rebuilt_history->chunks.back().next_id = run.saved_pending;
           }

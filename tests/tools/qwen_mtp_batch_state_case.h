@@ -237,7 +237,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       rejected = true;
     }
     require(rejected, "NextN checked embedding accepted a negative token ID");
-    auto &program = *model.draft_programs.at({1, true});
+    auto &program = *model.draft_programs.at({1, true, 0});
     require(!program.guard.has_completion() && !program.guard.cleanup_pending &&
         !program.hidden_transactions.bound() && !program.retirement.pending(),
         "NextN checked failure did not really retire its original episode");

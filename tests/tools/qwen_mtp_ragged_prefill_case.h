@@ -221,7 +221,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       facts.state.bucket_next = next[j]; facts.state.epoch = static_cast<std::size_t>(b[member]->head.epoch());
       facts.frontier_after = expected_frontier; facts.lag_after = verification ? 1 : 0;
       facts.draft_active = expected_frontier - before_b[j].frontier;
-      facts.draft_physical = verification ? packed.draft_programs.at({1, false})->rows : prefill ? 4 + lag : 1;
+      facts.draft_physical = verification ? packed.draft_programs.at({1, false, 0})->rows : prefill ? 4 + lag : 1;
       require(!verification || (facts.draft_active == 1 && facts.draft_physical == 1),
           "ragged MTP prefix repair did not reuse the original one-row NextN program");
       report.draft_active += facts.draft_active; report.draft_physical += facts.draft_physical;

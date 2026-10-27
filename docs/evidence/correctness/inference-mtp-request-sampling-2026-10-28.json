@@ -1,0 +1,354 @@
+{
+  "status": "PASS_BOUNDED_MTP_REQUEST_SAMPLING",
+  "created_utc": "2026-10-27T22:52:54.124100+00:00",
+  "source_base": "bb302065d789bf7b11bc9126524f26af7c5e3818",
+  "product": {
+    "path": "engine/models/qwen35/main.cc",
+    "bytes": 580538,
+    "sha256": "43baa527529d7fd801740b06bf824c563406d4461584d5a333ac4aa74f11045e"
+  },
+  "final_test_sources": [
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_mtp_sampling_case.h",
+      "bytes": 26940,
+      "sha256": "aa3386b6409a1bc51b38f0f8b7c4d274cdd0caabc0900194761a7c892422c2bf"
+    },
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_host_image_test.cc",
+      "bytes": 4548,
+      "sha256": "f7e3c1827123770f4e69586638dbd7d9362ca88c0025d3635c7da9521fa2bee7"
+    },
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_mtp_batch_state_case.h",
+      "bytes": 22391,
+      "sha256": "26e43b1c84dd4ac9fbda2aa5cbb66d45094fb2d04be03bb9f59e4c26ff5865b8"
+    },
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_mtp_packed_prefill_case.h",
+      "bytes": 15693,
+      "sha256": "3b05add734a7acaf1bc9258e77a3b2f69bbd2d40b28f931e43c1fcea8fff47d4"
+    },
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_mtp_ragged_prefill_case.h",
+      "bytes": 21821,
+      "sha256": "9c934efc88666c1d2d7603879fa05093a7c98fe9d2d1b73bc963e65097f5bd4d"
+    },
+    {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v4/source/tests/tools/qwen_packed_prefill_case.h",
+      "bytes": 14979,
+      "sha256": "6db293d9d96476901cbfd0df35c0afabe9fa6916e8c434d1aaa45a55b33a1f00"
+    }
+  ],
+  "counts": {
+    "actual_CXX": 5,
+    "successful_CXX": 4,
+    "failed_CXX": 1,
+    "actual_links": 4,
+    "successful_links": 4,
+    "actual_model_processes": 6,
+    "successful_model_processes": 3,
+    "preserved_test_oracle_failures": 1,
+    "preserved_real_resource_failure": 1,
+    "preserved_natural_cold_index_failure": 1,
+    "successful_process_model_instances": 5,
+    "standalone_Model_CXX": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "build": {
+    "initial_CXX": {
+      "pid": 35872,
+      "exit": 2,
+      "seconds": 6.483366966247559
+    },
+    "initial_failure": "C3538 in a test-only declaration of unequal deduced std::array types.",
+    "first_refinement": {
+      "CXX": {
+        "pid": 26408,
+        "exit": 0,
+        "seconds": 35.06818079948425
+      },
+      "link": {
+        "pid": 57304,
+        "exit": 0,
+        "seconds": 1.7946605682373047
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement\\bin\\tiny.exe",
+        "bytes": 143271936,
+        "sha256": "454b602a9a4cc8259dff7b6165e04420a68f8ba835475fabf56a4a4457b04f93"
+      }
+    },
+    "second_refinement": {
+      "CXX": {
+        "pid": 40240,
+        "exit": 0,
+        "seconds": 35.05370736122131
+      },
+      "link": {
+        "pid": 36560,
+        "exit": 0,
+        "seconds": 1.7801501750946045
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v2\\bin\\tiny.exe",
+        "bytes": 143271936,
+        "sha256": "ac56c88e005b7171925e6f7fcae0eef01f3cd370ef6b50365aac3be9852931e6"
+      }
+    },
+    "third_refinement": {
+      "CXX": {
+        "pid": 49556,
+        "exit": 0,
+        "seconds": 35.10768151283264
+      },
+      "link": {
+        "pid": 56704,
+        "exit": 0,
+        "seconds": 1.7678425312042236
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v3\\bin\\tiny.exe",
+        "bytes": 143271424,
+        "sha256": "760a66575d6dd9ff3dc801e0af308b94eb98aecf443bf66a27f342859183a360"
+      }
+    },
+    "final_refinement": {
+      "CXX": {
+        "pid": 52280,
+        "exit": 0,
+        "seconds": 37.520362854003906
+      },
+      "link": {
+        "pid": 42968,
+        "exit": 0,
+        "seconds": 1.8004910945892334
+      }
+    },
+    "inputs": 228,
+    "original_inputs_reused": 227,
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\bin\\tiny.exe",
+      "bytes": 143324672,
+      "sha256": "9d402368e05a56148cee74bbd8ca7871885bfefe21fd1332b5eea0d96714f5c8"
+    },
+    "corrections": [
+      "Split that one declaration into four declarations.",
+      "The shared test capture oracle now compares the actual Session sampler identity instead of hardcoding index 0; strict identity equality is retained.",
+      "Real product correction: successful Verify finish releases consumed per-call q ReadLeases. Old call objects stay alive through strict replay; no manual test clear.",
+      "Real product correction: recursive Verify family preparation forwards its complete original tail parameters, preserving the nondefault sampling index.",
+      "Cold probability-pool capacity is checked configured active_sequences*candidate_boundaries; byte arithmetic and the uint32 lease-index limit are checked. R1 allowance and the original execution budget are unchanged."
+    ],
+    "product_code_revisions_after_first_CXX": 2
+  },
+  "preserved_failures": {
+    "compile": {
+      "pid": 35872,
+      "exit": 2,
+      "seconds": 6.483366966247559
+    },
+    "test_identity_oracle": {
+      "pid": 32004,
+      "exit": 1,
+      "seconds": 0.9065232276916504
+    },
+    "real_q_pool_capacity": {
+      "pid": 60876,
+      "exit": 1,
+      "seconds": 1.034592866897583
+    },
+    "natural_cold_index": {
+      "pid": 57624,
+      "exit": 1,
+      "seconds": 1.0844411849975586
+    },
+    "v3_partial_success": "The same failed process first passed manual17 all-byte state comparisons and completed-q retirement, then failed natural cold preparation; it is never counted as a passed process.",
+    "metadata_preparation": {
+      "path": ".scratch/inference-mtp-sampling-20261028/refinement-v2/prepare-failure.json",
+      "bytes": 529,
+      "sha256": "06a057129ed8c5eaefcae454172044e55837cf12bf2cfb8cf13e1ee798c7045a"
+    },
+    "note": "The metadata literal typo stopped before any compiler/linker/consumer. C3538 and identity-0 were test errors; q retention and dropped cold-recursion configuration were genuine product defects. The B2 cold allowance is additionally proved by the final real four-q consumer."
+  },
+  "sampling_runs": [
+    {
+      "backend": "cpu",
+      "pid": 55748,
+      "exit": 0,
+      "seconds": 1.1320178508758545,
+      "sequential_models": 2,
+      "manual_state_comparisons": 17,
+      "same_policy_initialized_payloads_byte_equal": true,
+      "old_checkpoints_checked": true,
+      "manual_actual_R": 2,
+      "actual_B2_simultaneous_q": 4,
+      "B2_after_submit_asserted_pool_live_blocks": 4,
+      "B2_after_submit_asserted_pool_max_blocks": 6,
+      "max_recorded_GDN_absolute_difference": 0.0,
+      "natural_requests": [
+        {
+          "name": "natural-random",
+          "sampling_index": 0,
+          "sampling": "random",
+          "acceptance": "min_one_p_over_q",
+          "outputs": [
+            0,
+            37,
+            31,
+            28
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 10
+        },
+        {
+          "name": "natural-greedy",
+          "sampling_index": 1,
+          "sampling": "greedy",
+          "acceptance": "equal_greedy_ids",
+          "outputs": [
+            37,
+            0,
+            34,
+            34
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 0
+        },
+        {
+          "name": "natural-random-extra",
+          "sampling_index": 2,
+          "sampling": "random",
+          "acceptance": "min_one_p_over_q",
+          "outputs": [
+            40,
+            31,
+            34,
+            43
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 10
+        }
+      ],
+      "natural_physical_R": 1,
+      "natural_configuration_groups": 3,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    },
+    {
+      "backend": "cuda",
+      "pid": 4596,
+      "exit": 0,
+      "seconds": 1.3274810314178467,
+      "sequential_models": 2,
+      "manual_state_comparisons": 17,
+      "same_policy_initialized_payloads_byte_equal": true,
+      "old_checkpoints_checked": true,
+      "manual_actual_R": 2,
+      "actual_B2_simultaneous_q": 4,
+      "B2_after_submit_asserted_pool_live_blocks": 4,
+      "B2_after_submit_asserted_pool_max_blocks": 6,
+      "max_recorded_GDN_absolute_difference": 0.0,
+      "natural_requests": [
+        {
+          "name": "natural-random",
+          "sampling_index": 0,
+          "sampling": "random",
+          "acceptance": "min_one_p_over_q",
+          "outputs": [
+            31,
+            0,
+            3,
+            31
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 10
+        },
+        {
+          "name": "natural-greedy",
+          "sampling_index": 1,
+          "sampling": "greedy",
+          "acceptance": "equal_greedy_ids",
+          "outputs": [
+            37,
+            0,
+            34,
+            34
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 0
+        },
+        {
+          "name": "natural-random-extra",
+          "sampling_index": 2,
+          "sampling": "random",
+          "acceptance": "min_one_p_over_q",
+          "outputs": [
+            40,
+            9,
+            46,
+            15
+          ],
+          "ledger_episodes": 4,
+          "final_draw": 10
+        }
+      ],
+      "natural_physical_R": 1,
+      "natural_configuration_groups": 3,
+      "engine_live_versions": 0,
+      "target_and_draft_page_inventories_fully_free": true,
+      "host_images_live": 0
+    }
+  ],
+  "stop_regression": {
+    "pid": 21148,
+    "exit": 0,
+    "seconds": 0.4446752071380615,
+    "backend": "cpu",
+    "existing_state_comparisons": 5,
+    "additional_bonus_comparison": "Original strict same_image before PASS.",
+    "rebuild_sampling_wrapper": true
+  },
+  "contracts": [
+    "Cold NextN head programs key by (rows,head,sampling index); head=false repair remains shared index 0.",
+    "Recursive acceptance programs key by (proposal count,sampling index); K1 and target families use their existing selected configuration.",
+    "Per-request immutable greedy/temperature/top-k/top-p without logits modifiers; actual Session, Phase and ledger identities remain original.",
+    "Greedy reserves no draws; random prefill/single reserve one, K1 reserves three and recursive reserves 2*proposals+1; StateOnly does not sample.",
+    "Same-policy, same-geometry repeatability, interleaving, checkpoint preservation, selected prefix resampling, strict replay, HostImage and same-key rebuild/ACK are finite tested consumers."
+  ],
+  "permission_retirement": "Successful original Verify/prefix finish has retired all q reads before clearing completed call q guards. Throwing/unretired paths retain the original reads and cleanup. Pool allowance now scales only with the configured active cohort (R1 unchanged), within its original execution budget.",
+  "static_review": "Initial bounded diff review found no blocker; subsequent runtime exposed the recorded q-lifetime and cold-index defects. That review is not a substitute for actual consumers or a whole-codebase/platform proof.",
+  "modifier_followup": {
+    "status": "DESIGN_ONLY_NOT_IMPLEMENTED_OR_TESTED",
+    "source": "modifier-design.json"
+  },
+  "limits": [
+    "Cached untrained GA/H64/V64/C16 fixture; no model quality, acceptance-rate or target-only random trajectory identity claim.",
+    "Different policies use homogeneous configuration cohorts; mixed sampling indices inside one physical graph batch are not claimed.",
+    "No modifier support: bias/allowed-mask and per-prefix-dependent policy remain rejected by the existing MTP guards.",
+    "CPU/CUDA only; no Apple/Vulkan/cross-native numerical identity, real-model EOS, hardware/native fault or unknown-pending proof.",
+    "Initialized state bytes are compared within each backend; inherited GDN-only numeric tolerance remains, with actual equality reported separately.",
+    "Engine versions/page inventories/host images are checked; native allocator live-zero is not inferred.",
+    "No performance window or TPS claim; process duration is recorded for provenance only."
+  ],
+  "reference": {
+    "path": "docs/evidence/correctness/inference-mtp-request-stop-2026-10-28.json",
+    "bytes": 8830,
+    "sha256": "fe1b7985e700b5abf68dfccc01c0f3c9b61a8fa249d642f924fd4f162f645a6f"
+  },
+  "reproduction": {
+    "directory": ".scratch/inference-mtp-sampling-20261028",
+    "build": "refinement-v4/build.py compile; refinement-v4/build.py link",
+    "run": "refinement-v4/run.py run sampler-cpu; sampler-cuda; stop-cpu",
+    "note": "Each action is single-use and preserves failure; parse is an independent offline action, never a reason to rerun success."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-mtp-request-sampling-2026-10-28.zip",
+    "bytes": 1035653,
+    "sha256": "13daddc20dd07bc4e7cd196c53a8be800b3d50b71cbdd10174c995f6a21f6b78",
+    "files": 242,
+    "verified_readback": true
+  }
+}
