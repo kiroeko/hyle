@@ -30,6 +30,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/result.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/graph/detail/replay_access.h"
 #include "hyle/graph/detail/region_adapter.h"
 #include "hyle/mem/buffer.h"
 #include "hyle/mem/stats.h"
@@ -6713,6 +6714,27 @@ TEST(GraphRegions, StablePrivateCaptureVariantsReuseBothBoundPortsAfterPreparati
     EXPECT_EQ(probe.binding_seal_count, episode + 1);
     EXPECT_EQ(run.replay_report()->recorded_capture_range_count, episode < 2 ? 1u : 0u);
     EXPECT_EQ(run.replay_report()->reused_capture_range_count, episode < 2 ? 0u : 1u);
+    const std::array identical{hyle::graph::detail::ReplayInputBinding{
+        logical.input, input_ports[index]->view.as_const()}};
+    const auto reusable = hyle::graph::detail::ReplayAccess::can_reuse_capture(run, identical);
+    ASSERT_TRUE(reusable);
+    EXPECT_TRUE(*reusable);
+    const auto changed = hyle::graph::detail::ReplayAccess::can_reuse_capture(run,
+        std::array{hyle::graph::detail::ReplayInputBinding{
+            logical.input, input_ports[1 - index]->view.as_const()}});
+    ASSERT_TRUE(changed);
+    EXPECT_FALSE(*changed); // The recorded output still belongs to this input.
+    if (episode == 0) {
+      const auto duplicate = hyle::graph::detail::ReplayAccess::can_reuse_capture(run,
+          std::array{identical[0], identical[0]});
+      ASSERT_FALSE(duplicate);
+      EXPECT_TRUE(duplicate.error().IsInvalidArgument());
+      probe.capture_private_arguments_stable = false;
+      const auto unqualified = hyle::graph::detail::ReplayAccess::can_reuse_capture(run, identical);
+      ASSERT_TRUE(unqualified);
+      EXPECT_FALSE(*unqualified);
+      probe.capture_private_arguments_stable = true;
+    }
     auto completed = run.submit(queues);
     ASSERT_TRUE(completed);
     ASSERT_TRUE(completed->wait().ok());
@@ -6726,6 +6748,73 @@ TEST(GraphRegions, StablePrivateCaptureVariantsReuseBothBoundPortsAfterPreparati
   EXPECT_EQ(probe.capture_destroy_count, 0u);
   EXPECT_EQ(probe.create_invocation_count, 1u);
   EXPECT_EQ(probe.capture_recycle_count, 0u);
+}
+
+TEST(GraphRegions, CaptureReuseKeepsFullViewAliasAndPrivateBindingRequirements) {
+  for (const bool partial : {false, true}) {
+    SCOPED_TRACE(partial);
+    RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
+    probe.capture_supported = true;
+    probe.capture_preserves_binding_identity = true;
+    probe.capture_private_arguments_stable = true;
+    probe.borrows_tensor_bindings = true;
+    probe.require_cold_bindings = true;
+    probe.artifact_properties.runtime.capture_compatible = true;
+    auto builder = GraphBuilder::create().value();
+    const auto description = row(partial ? 9 : 8);
+    const auto input = builder.input(description).value();
+    auto alias = input;
+    if (partial) {
+      alias = builder.add(hyle::compute::View::slice(0, 1, 8).value(), alias).value();
+    } else {
+      const auto matrix = hyle::compute::TensorShape::create(
+          std::array<std::int64_t, 2>{2, 4}).value();
+      alias = builder.add(hyle::compute::View::reshape(matrix).value(), alias).value();
+      alias = builder.add(hyle::compute::View::reshape(
+          hyle::compute::TensorShape::create(std::array<std::int64_t, 1>{8}).value()).value(), alias).value();
+    }
+    auto output = builder.add(Unary{UnaryKind::kNeg}, alias).value();
+    output = builder.add(Unary{UnaryKind::kNeg}, output).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    auto context = make_context(probe);
+    auto compiled = hyle::graph::compile(graph, context).value();
+    ASSERT_EQ(compiled.report.region_count(), 1u);
+    auto run = compiled.executable.create_invocation().value();
+    auto original = make_tensor(description), replacement = make_tensor(description);
+    auto result = make_tensor(row(8));
+    ASSERT_TRUE(run.bind(input, original.view).ok());
+    ASSERT_TRUE(run.bind(output, result.view).ok());
+    auto queue = context.create_queue().value();
+    const std::array queues{hyle::graph::QueueBinding{
+        hyle::graph::ExecutionLaneId{0}, &queue}};
+    ASSERT_TRUE(run.prepare_replay(
+        queues, {.mode = hyle::graph::ReplayMode::kRequireCapture}).ok());
+    const auto *state = hyle::graph::detail::InvocationAccess::state(run);
+    ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+        state->plan->external_input_aliases.end(), input.ordinal()));
+    const std::array identical{hyle::graph::detail::ReplayInputBinding{
+        input, original.view.as_const()}};
+    const auto reusable = hyle::graph::detail::ReplayAccess::can_reuse_capture(run, identical);
+    ASSERT_TRUE(reusable);
+    EXPECT_EQ(*reusable, !partial);
+    const auto changed = hyle::graph::detail::ReplayAccess::can_reuse_capture(run,
+        std::array{hyle::graph::detail::ReplayInputBinding{input, replacement.view.as_const()}});
+    ASSERT_TRUE(changed);
+    EXPECT_FALSE(*changed);
+    probe.capture_private_arguments_stable = false;
+    const auto unqualified = hyle::graph::detail::ReplayAccess::can_reuse_capture(run, identical);
+    ASSERT_TRUE(unqualified);
+    EXPECT_FALSE(*unqualified);
+    probe.capture_private_arguments_stable = true;
+    EXPECT_EQ(probe.capture_end_count, 1u);
+    auto done = run.submit(queues);
+    ASSERT_TRUE(done);
+    EXPECT_TRUE(done->wait().ok());
+    EXPECT_EQ(probe.launched_input.offset(),
+        original.view.storage().offset() + (partial ? sizeof(float) : 0));
+    EXPECT_EQ(probe.capture_end_count, 1u);
+  }
 }
 
 TEST(GraphRegions, CaptureVariantsUseBoundedLruAndClearBeforeForcedChanges) {
@@ -6770,8 +6859,24 @@ TEST(GraphRegions, CaptureVariantsUseBoundedLruAndClearBeforeForcedChanges) {
   EXPECT_EQ(probe.capture_end_count, 3u); // A survived; least-recent B did not.
 
   auto destroyed = probe.capture_destroy_count;
+  const auto recycled = probe.capture_recycle_count;
   ASSERT_TRUE(hyle::graph::detail::RegionAccess::invalidate_commands(run, 0).ok());
-  EXPECT_EQ(probe.capture_destroy_count, destroyed + 2);
+  // Native argument invalidation may retain one retired allocation as a
+  // nonlaunchable rebuild seed; all old tuple/private authority still dies.
+  EXPECT_EQ(probe.capture_destroy_count, destroyed + 1);
+  EXPECT_EQ(probe.capture_recycle_count, recycled + 1);
+  const auto *invalidated = hyle::graph::detail::InvocationAccess::state(run);
+  ASSERT_EQ(invalidated->capture_rebuilds.size(), 1u);
+  const auto &saved = invalidated->capture_rebuilds[0];
+  EXPECT_TRUE(saved.storage.valid());
+  EXPECT_FALSE(saved.qualification_valid);
+  EXPECT_FALSE(saved.preserves_private_arguments);
+  EXPECT_TRUE(invalidated->captured_ranges.empty());
+  for (const auto &variant : saved.variants) {
+    EXPECT_FALSE(variant.key_valid);
+    EXPECT_FALSE(variant.commands.valid());
+    EXPECT_TRUE(variant.bindings.empty());
+  }
   EXPECT_FALSE(run.submit(queues));
   ASSERT_TRUE(prepare(input_a, output_a).ok());
   EXPECT_EQ(run.replay_report()->recorded_capture_range_count, 1u);

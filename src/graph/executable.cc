@@ -10167,6 +10167,7 @@ Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocatio
   const auto *state = InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(resource_control_ready(state));
   const auto &plan = *state->plan;
+  bool identical_replacements = true;
   for (std::size_t i = 0; i < replacements.size(); ++i) {
     const auto &replacement = replacements[i];
     const auto input = replacement.input;
@@ -10182,8 +10183,17 @@ Result<bool> detail::ReplayAccess::can_reuse_capture(const Invocation &invocatio
           unchanged_prepared_full_views(*state, plan.external_instances[input.ordinal()], replacement.tensor));
       if (!unchanged) return false;
     }
+    const auto instance = plan.external_instances[input.ordinal()];
+    if (instance >= state->readable.size() || !state->readable[instance].valid() ||
+        !same_physical_tensor(state->readable[instance], replacement.tensor))
+      identical_replacements = false;
   }
-  HYLE_ASSIGN_OR_RETURN(const auto route, reusable_capture_tuple(*state, replacements));
+  // An already bound Source supplies this same complete tuple. Keep all live
+  // capture/private checks, but avoid looking up an identity substitution at
+  // every captured input port. Changed or unbound inputs retain the full path.
+  const auto effective = identical_replacements
+      ? std::span<const ReplayInputBinding>{} : replacements;
+  HYLE_ASSIGN_OR_RETURN(const auto route, reusable_capture_tuple(*state, effective));
   return route == ReplayRoute::kCaptured || route == ReplayRoute::kHybrid;
 }
 

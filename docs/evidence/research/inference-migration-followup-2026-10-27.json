@@ -1,0 +1,172 @@
+{
+  "status": "FINITE_READ_ONLY_REVIEW_NO_NEW_CONFIRMED_DEFECT",
+  "date": "2026-10-27",
+  "reviewed_revision": "cad3270902ae1f9089f3a383b00ab020ab4676e3",
+  "scope": "Follow-up of shared ordinary inference, sessions/requests, typed error identity and complete-state transfer boundaries. Read-only source review of the named revision; no build, model run, GPU operation or download.",
+  "method": "Read the design/progress completion claims and trace the named shared primitives into Qwen request/state adapters. Re-read focused consumer checks as source only. SHA256 below covers exact git-show blob bytes at the reviewed revision, not a later dirty working tree or a compiled image.",
+  "findings": [
+    {
+      "subject": "Request identity, cancellation, output credit and actual retirement",
+      "result": "No new confirmed defect in the inspected transitions. Active-span mutation is deferred; output drainage is separate from native retirement; late observation recovery does not by itself replay an old turn.",
+      "references": [
+        {
+          "path": "engine/inference/request_loop.h",
+          "line": 137,
+          "anchor": "RequestPumpResult pump_once(Adapter &adapter)"
+        },
+        {
+          "path": "engine/inference/request_loop.h",
+          "line": 275,
+          "anchor": "bool finish_retirement(Adapter &adapter, std::size_t at, RequestPumpResult &result)"
+        },
+        {
+          "path": "engine/inference/request_window.h",
+          "line": 116,
+          "anchor": "bool cancel_waiting(RequestKey key) noexcept"
+        }
+      ]
+    },
+    {
+      "subject": "Complete-state parking and restoration boundary",
+      "result": "No new confirmed missing connection. The model adapter exports its complete state before eviction and clears the host image only after successful restoration; native copy acceptance, visibility and retirement remain with StateTransfer.",
+      "references": [
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 6685,
+          "anchor": "struct GenerationRequestAdapter final"
+        },
+        {
+          "path": "engine/models/qwen35/session_transfer.h",
+          "line": 92,
+          "anchor": "inline std::shared_ptr<const cache::HostImage> Model::export_session"
+        },
+        {
+          "path": "engine/models/qwen35/session_transfer.h",
+          "line": 161,
+          "anchor": "inline std::shared_ptr<Session> Model::restore_session"
+        },
+        {
+          "path": "engine/inference/state_transfer.h",
+          "line": 213,
+          "anchor": "RetirementObservation poll() noexcept"
+        }
+      ]
+    },
+    {
+      "subject": "Typed error propagation",
+      "result": "check/take preserve the original Status through EvaluationFailure. RequestExecutionFailure only attributes qualified participants; unknown/native failures remain batch-wide. This is not a claim that every engine exception has been unified.",
+      "references": [
+        {
+          "path": "engine/models/qwen35/weights.h",
+          "line": 30,
+          "anchor": "inline void check(hyle::Status status)"
+        },
+        {
+          "path": "engine/inference/request_execution_failure.h",
+          "line": 26,
+          "anchor": "static RequestExecutionFailure from_evaluation"
+        }
+      ]
+    },
+    {
+      "subject": "Escaped snapshot/model address reuse",
+      "result": "No confirmed ABA defect. A canonical State retains ColdResources, and math_identity names its retained family inventory. A replacement Model cannot reuse that mathematical address while the old snapshot keeps the inventory alive; create_session checks both model and math identities.",
+      "references": [
+        {
+          "path": "engine/models/qwen35/session_state.h",
+          "line": 296,
+          "anchor": "std::shared_ptr<const void> resource_owner;"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 3226,
+          "anchor": "const void *math_identity() const noexcept"
+        },
+        {
+          "path": "engine/models/qwen35/main.cc",
+          "line": 3281,
+          "anchor": "if (prefix && (prefix->model != this || prefix->math != math_identity()"
+        }
+      ]
+    }
+  ],
+  "source_identity": [
+    {
+      "path": "engine/inference/request_loop.h",
+      "git_blob_bytes": 15797,
+      "git_blob_sha256": "5f81cbcd1f7ccbf51475f94b7e425885f17a8a6f8db99ac0dc7e94259c4eaa26"
+    },
+    {
+      "path": "engine/inference/request_window.h",
+      "git_blob_bytes": 9466,
+      "git_blob_sha256": "fbc3faa0cc69db3c3e7bb5661e10c2a3e0a95364cd69cda5e8733084e587061f"
+    },
+    {
+      "path": "engine/inference/request_progress.h",
+      "git_blob_bytes": 12536,
+      "git_blob_sha256": "10999f16df16658b1b128b50b852c12a608acf6fc5a0578dfe8400c739bc14f6"
+    },
+    {
+      "path": "engine/inference/output_delivery.h",
+      "git_blob_bytes": 2599,
+      "git_blob_sha256": "8365249fb6d34116c869c6b7485b24aa67a51bb95eaa93b97ab1b946331bd116"
+    },
+    {
+      "path": "engine/inference/request_execution_failure.h",
+      "git_blob_bytes": 1979,
+      "git_blob_sha256": "8c67c280a6e37da91aa365de8eb8794a1748ef00816535162f0ca8a10d0a1c96"
+    },
+    {
+      "path": "engine/inference/state_transfer.h",
+      "git_blob_bytes": 17405,
+      "git_blob_sha256": "69575bdc41253c9136329f0b4785d44caba5f7d3070362488725854c65af40d4"
+    },
+    {
+      "path": "engine/inference/host_state_storage.h",
+      "git_blob_bytes": 5412,
+      "git_blob_sha256": "8b69545ff466569e23395b1cfe40c6b32d93a24f1e40922e4ed38dd769e415ac"
+    },
+    {
+      "path": "engine/inference/prefix_directory.h",
+      "git_blob_bytes": 15448,
+      "git_blob_sha256": "29133f31072a5adc2a326529a0b7e4f39ebbd7354eeb265ca9c3cbe0444ca2a1"
+    },
+    {
+      "path": "engine/models/qwen35/main.cc",
+      "git_blob_bytes": 544472,
+      "git_blob_sha256": "e0067b13c7d60ba5bcdb5ca236898bbf12b61b4d96b4411d8b8cd23b40177cb2"
+    },
+    {
+      "path": "engine/models/qwen35/weights.h",
+      "git_blob_bytes": 6082,
+      "git_blob_sha256": "c6571a94ec84fb335e43919f9e2891af3f4dec24afc3e98e2bcd28808ae6d44a"
+    },
+    {
+      "path": "engine/models/qwen35/session_state.h",
+      "git_blob_bytes": 21564,
+      "git_blob_sha256": "1b6a3a5e20fc40d14518e363740ad9e5d0492f242cb94d92bb8e2ff1c46282b3"
+    },
+    {
+      "path": "engine/models/qwen35/session_transfer.h",
+      "git_blob_bytes": 15453,
+      "git_blob_sha256": "809daa6d83bf2ef80b81a784df7eb8abae93f1bc80a59a6e7f9c7442b06d5600"
+    },
+    {
+      "path": "docs/architecture/inference-design.md",
+      "git_blob_bytes": 121117,
+      "git_blob_sha256": "3627f41c059d1660ce16b0b96b639c64cd8fad15ce5f7243e3a0980613c4d446"
+    },
+    {
+      "path": "docs/developer/inference-progress.md",
+      "git_blob_bytes": 48289,
+      "git_blob_sha256": "b2f30b292b928189b7ddb5874518a129c413ee7dc0ec5eedd6b12eec5e60c41b"
+    }
+  ],
+  "limits": [
+    "No new confirmed defect in this finite scope is not proof of complete functionality or complete architecture migration.",
+    "GLM consumes shared Window/Progress/directory components; a second complete engine model has not validated all RequestLoop orchestration reuse.",
+    "This review does not prove unrun native-failure paths, model EOS/cold-tuple-refusal coverage, MTP device successor acceptance subsets, all backends or mixed-mode performance.",
+    "No speculative abstraction extraction or mechanical relocation was proposed solely because the Qwen implementation is large.",
+    "Concurrent/later performance or test changes are outside this immutable reviewed source identity."
+  ]
+}

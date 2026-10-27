@@ -29,6 +29,10 @@ prepare多47.40ms，其中前8步多17.73ms、其后88步多29.67ms；Source元�
 关闭接力时prefill／decode／综合中位为2117.64→2063.39／91.37→91.22／86.44→85.69 tok/s；开启时为2185.21→2127.34／91.45→91.58／86.43→86.53，范围均重叠，未证明提速或稳定回退。
 源码提前过滤纯input/input的无效replacement查找，未改变output／immutable Source及事务合同；编译器可能已消除部分无效工作，不将源码级复杂度变化当作实测收益。逐模式cache backing相同，未采样全显存峰、未新跑参考或MTP；保留局部简化，不补样，不刷新完整跨引擎表。
 
+[恒等replacement筛选](../../evidence/performance/inference-identical-capture-inputs-2026-10-27.json)只在逐项确认替换等于当前完整物理输入后，跳过每个captured port对替换表的重复查找；仍核全部当前capture key、alias、Queue和private资格。该查找项从O(P×M)变为O(P＋M)，不声称整个函数线性化。5个不同定向用例取得通过结果：首镜像4过、1个旧LRU销毁计数失败，修正为现行唯一不可执行rebuild seed合同并加强失权断言，第二镜像仅复验该项通过；合计3次C++编译、3次链接。
+
+12个交错普通R1进程完整非时间报告逐模式一致；off的prefill／decode／综合中位2169.41→2145.13／96.70→96.67／91.19→91.09，auto为2181.75→2046.83／96.68→96.78／91.36→90.78 tok/s。范围均重叠，未证明净提速，auto的prefill中位下降6.18%也如实保留。逐模式cache backing相同，未采样全显存峰，未跑新参考或MTP，完整表仍是18:01窗口。采用为恒等替换的局部简化，不追加样本或启用默认接力。测速脚本首次helper属性错误发生在模型启动前，修正后12个模型进程各仅运行一次。
+
 随后[在途索引状态接线](../../evidence/correctness/inference-pending-indexed-source-2026-10-27.json)完成有限GDN／conv捕获复用与真实Source旅程，并去掉同值IDs的重复上传／同Queue等待。该批尚未接入完整模型的有界流水，也未运行tokens/s窗口，不据组件结果估算提速；自然请求的后续接线及最新完整窗口分别列于上文。
 
 此前[引擎原池索引状态A/B](../../evidence/performance/inference-engine-slot-state-2026-10-27.json)为两版Hyle的普通B2同窗对照：6计时＋2独立内存进程全部通过，1728行、99次执行、198个ID及完整非时间报告不变。prefill7668.03→7606.82（−0.80%，范围重叠）、decode158.48→161.96（＋2.20%）、综合140.55→142.67 tok/s（＋1.51%）。dedicated采样峰4294000640→4243668992B，低48MiB；ready内存基线未知，采样峰为下界。代价是ready中位1.33150→1.37582s、冷shape准备0.411183→0.464081s；三样本不签统计显著性。原池Store接线及CPU／CUDA有限功能已检查，真实CUDA消费者的GDN／conv融合已观察；其它平台字节尾部、MTP异成员与当前完整性能仍待检查。本批未新运行llama.cpp或MTP性能，不更新旧跨引擎差距。
