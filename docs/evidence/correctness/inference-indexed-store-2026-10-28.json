@@ -1,0 +1,451 @@
+{
+  "status": "FINITE_COMPONENT_AND_MODEL_REGRESSIONS_PASS",
+  "date": "2026-10-28",
+  "base_commit": "707d10d4a",
+  "implementation": {
+    "capability": "Optional backend-neutral indexed raw row copy. CUDA original Context/QueueSequence; no executor/Queue/Completion/lease owner added.",
+    "geometry": "Finite slot_count,row_count,row_bytes,slot_stride; exact capacity ends at last logical row; all I32 IDs checked before any payload store; no target or padding read.",
+    "graph": "Original generic slots::Store/SlotBindings/control carrier/effect. Same-build preserve-command fact belongs to the selected Store, independent of source Gather. Only native capability captures; original copying fallback retained.",
+    "ownership": "Original per-writer leases/coordinates/generations and alias checks. Layout retains allocation after take without old read/write permission; every new episode must install and seal original authority.",
+    "status": "Checked captures inherit outer admitted-sequence device word before launch and merge back after. Original busy/status references and actual retirement retained. No GPU skip claim for arbitrary host cancellation or unchecked math."
+  },
+  "build": {
+    "host_CXX": 8,
+    "NVCC": 1,
+    "links": 2,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "component_inputs": 228,
+    "cli_inputs": 226,
+    "source_manifest": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source-freeze.json",
+      "bytes": 81409,
+      "sha256": "c1a5805ce4ac5d67126cdeafce5811ea82605d254934f8c5462acaed2f934549"
+    },
+    "compiled": {
+      "resources": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\graph\\resources.cc",
+          "bytes": 258292,
+          "sha256": "c832a89c704bc4b50ffea8ffa8b2068e0854f3d3925246b8942c761980599d4a"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\resources\\unit.obj",
+          "bytes": 3131112,
+          "sha256": "ad1a4e343026c19ba33fcec1b62cf827b1760b6e631a7f1d5a827a9f1121d080"
+        },
+        "process": {
+          "pid": 55688,
+          "exit": 0,
+          "started": 1793118553.628593,
+          "seconds": 5.6124396324157715,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\resources\\dependencies.json",
+          "bytes": 29122,
+          "sha256": "c29df1f392cb383d0279f7c025f334449daccdd668a25a8096b3c2c430b3dd92"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\resources\\actual-dependencies.json",
+          "bytes": 54468,
+          "sha256": "45c07d188ed6c407996d01ea825bc6679f983e5403c2e8745193831e9d6b8273"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\resources\\command.json",
+          "bytes": 2533,
+          "sha256": "279f6bf8f4a26b3c57566de47e23697f2cebc7902457cb5aed1866a2913ed961"
+        }
+      },
+      "slots-region": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\graph\\slots_region.cc",
+          "bytes": 77718,
+          "sha256": "0bb347ec81c33203ba0b729ceae22176a9d93846c50ff70e1e5091cd23a75bc7"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-region\\unit.obj",
+          "bytes": 1541708,
+          "sha256": "3b99933f91167571a4501826dfc14d2739e094a8eeb397d5982339debfd3ca85"
+        },
+        "process": {
+          "pid": 45072,
+          "exit": 0,
+          "started": 1793118543.4346678,
+          "seconds": 2.753715753555298,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-region\\dependencies.json",
+          "bytes": 26948,
+          "sha256": "e14eddb4d7cd14385edb8f343c41de495a1e8a5e4db2685bb42019f7f3ea4cf6"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-region\\actual-dependencies.json",
+          "bytes": 50483,
+          "sha256": "d948ae654dc4982c51bb6fb15cb4f6a1d16c6b5652ba541d5bec6ee26655aef3"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\slots-region\\command.json",
+          "bytes": 2212,
+          "sha256": "eefd58e131979fe88856555451dd797cdaf350dce584d7a699cba0602afe6a28"
+        }
+      },
+      "batch": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\graph_batch\\batch.cc",
+          "bytes": 102369,
+          "sha256": "71696f213c0ff45a4be73b5fcb5f23a6eb142540973f7f89b8d2ca73b994d134"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\batch\\unit.obj",
+          "bytes": 2411204,
+          "sha256": "fa5123d83f4d99a283180a84541513561c4dea5908ca23a33e54aca74e17b485"
+        },
+        "process": {
+          "pid": 55552,
+          "exit": 0,
+          "started": 1793118553.6310978,
+          "seconds": 4.570083141326904,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\batch\\dependencies.json",
+          "bytes": 27730,
+          "sha256": "efd195ed773e6a9e8d4ddd2a0547ac1027bf69bb4238b75b7599c95a8a2aac79"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\batch\\actual-dependencies.json",
+          "bytes": 51696,
+          "sha256": "639a46d2bf5e456213b7b13712fcc184a74f2a769c09ae836e023c49f3539ecc"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\batch\\command.json",
+          "bytes": 3513,
+          "sha256": "b11a21e03979d85e8c9cbe7c7915999206b00e65267551c8c1f04a4e8c8176f0"
+        }
+      },
+      "ggml-region": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\graph_provider_ggml_cuda\\ggml_cuda_region.cc",
+          "bytes": 120478,
+          "sha256": "6a3c18fb5b21469bf3fd1a9286c35fcb8a2d8c90c1d323b9d3ac4859a0af1811"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\ggml-region\\unit.obj",
+          "bytes": 2918447,
+          "sha256": "2a1598d73a5031fd6d622bd290a98de40da29efca7e1c8e274f3a49432f4e92f"
+        },
+        "process": {
+          "pid": 33240,
+          "exit": 0,
+          "started": 1793118553.6310978,
+          "seconds": 6.042036294937134,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\ggml-region\\dependencies.json",
+          "bytes": 23820,
+          "sha256": "64e66a84bfc57accb75d43f02050987fd4d61acf290e4ea9fc4b8afe52ae9b1e"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\ggml-region\\actual-dependencies.json",
+          "bytes": 44732,
+          "sha256": "28f0fb701d3447965d206528f249d280d4007fa08f61a739c2980440ce88fb08"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\ggml-region\\command.json",
+          "bytes": 4115,
+          "sha256": "1aa6fc09457f5e5527217da7384c9a459cdf09cbf3cbc2d5c22697a7ddf4461d"
+        }
+      },
+      "cuda-backend": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\compute_backend_cuda\\cuda_backend.cc",
+          "bytes": 70996,
+          "sha256": "4abdb0a1792c1a34aac1b71f9b548f9fca64b05483fe7f8e888bbbd31cedf21c"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-backend\\unit.obj",
+          "bytes": 316617,
+          "sha256": "d23e5a74ac6c78d45d9d0af46cdaa030dc568434fbd19e4e75d45ea162aa289e"
+        },
+        "process": {
+          "pid": 38252,
+          "exit": 0,
+          "started": 1793118553.6351025,
+          "seconds": 2.0298666954040527,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-backend\\dependencies.json",
+          "bytes": 30772,
+          "sha256": "933613a9ff892e951cf36685fe1c1c0ab2ac5eae856368b38dd202a61a764117"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-backend\\actual-dependencies.json",
+          "bytes": 56549,
+          "sha256": "b75416b4dcfab98094f8f0cb90665821f8141023f212efe4c55cbfb1aad2df9a"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\cuda-backend\\command.json",
+          "bytes": 1982,
+          "sha256": "7f7b27a00f0e1caac7c32f2b4be69fdcef1d21b277b083741e6e58b1740482b9"
+        }
+      },
+      "cuda-status": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\compute_backend_cuda\\cuda_device_status.cc",
+          "bytes": 4932,
+          "sha256": "bb079b472df2ad3dc70086b8c4dc02cebe9b229ee07be7f3c202b8e324f218ff"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-status\\unit.obj",
+          "bytes": 63129,
+          "sha256": "052a7a22a6583a1b07822371d3e984e46213ff8ec01afdac999c12e4b818217e"
+        },
+        "process": {
+          "pid": 51308,
+          "exit": 0,
+          "started": 1793118553.6575377,
+          "seconds": 1.7649273872375488,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-status\\dependencies.json",
+          "bytes": 29322,
+          "sha256": "65447c8c59dea65b56f246ce3e3e6bfaeadc88b51b77385fe7711d0dfac2107f"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\cuda-status\\actual-dependencies.json",
+          "bytes": 53968,
+          "sha256": "3641ea1644d0b4118aad799a7b0dec97c21c35ad6c244e1fb06905d74ae90791"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\cuda-status\\command.json",
+          "bytes": 1985,
+          "sha256": "aa4e7365040e7387453322d1e9935b499665ecd564b7d1601fc2b6a6de30ce28"
+        }
+      },
+      "indexed-host": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\compute_backend_cuda\\cuda_indexed_copy.cc",
+          "bytes": 5963,
+          "sha256": "671f3aef1d24d3a9f7f3b68d6ff3c9b9cb2ebeeb527d5494359456dea8d3fc84"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-host\\unit.obj",
+          "bytes": 58986,
+          "sha256": "781c02f91decac1ee72d7ad44314ec0e2bff8da03bf49fbe0981b717e1092d5d"
+        },
+        "process": {
+          "pid": 20256,
+          "exit": 0,
+          "started": 1793118543.4346678,
+          "seconds": 1.6897222995758057,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-host\\dependencies.json",
+          "bytes": 29760,
+          "sha256": "371f9a2e5354d58338903782f4f72c12dba0d999667923b94868843125390ec3"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-host\\actual-dependencies.json",
+          "bytes": 54524,
+          "sha256": "620dcccbbf06bf3fe9ea94acb3fc79a80655ff953d6da1e3ad0e87ec2c075ed5"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\indexed-host\\command.json",
+          "bytes": 1987,
+          "sha256": "86dd5f5da6dbd4552fdee36aeb6108b09043a91f608f294d08e81ba9e6c236fd"
+        }
+      },
+      "indexed-kernel": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\src\\compute_backend_cuda\\cuda_indexed_copy.cu",
+          "bytes": 2918,
+          "sha256": "d7a6944b6d08443ebe5b1c3f2654a09f32735e899105dd472fbb5489cad35386"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-kernel\\unit.obj",
+          "bytes": 39617,
+          "sha256": "dcc0218166063a4fe3952067376c8b1ebe8c16773be8084fd6e8dc92d5b2d94f"
+        },
+        "process": {
+          "pid": 12312,
+          "exit": 0,
+          "started": 1793118553.6608582,
+          "seconds": 2.2264678478240967,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-kernel\\dependencies.d",
+          "bytes": 11372,
+          "sha256": "f1b53b672ace168ad831c3e998ff9d09bee375cab833bac68ad2a4cde6306574"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\indexed-kernel\\actual-dependencies.json",
+          "bytes": 25100,
+          "sha256": "6f776ec8055d9e56d677f5719295a15d03c50d2094915c0b27127fbee2327d38"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\indexed-kernel\\command.json",
+          "bytes": 2072,
+          "sha256": "645b31128674331e97bf93522d67a2817050a1bb4ef498854e2c98b7bca152b6"
+        }
+      },
+      "slots-test": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\source\\tests\\graph\\slots_cuda_execution_test.cc",
+          "bytes": 28984,
+          "sha256": "c4264efa08a4c1a9eea5a99382c12ba3cd8cd9edfdea37848cf5308ef9b4f6a6"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-test\\unit.obj",
+          "bytes": 1668372,
+          "sha256": "421d434eabb68782f2eadfb37dd22cee085dbab1cd9c54698e0a495232bc6c8e"
+        },
+        "process": {
+          "pid": 58512,
+          "exit": 0,
+          "started": 1793118553.6616027,
+          "seconds": 4.823906898498535,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-test\\dependencies.json",
+          "bytes": 34963,
+          "sha256": "e2b6aba800a9673d8bad28857ad1efbbc3feca9602b8ae9fa68d15f70ce5e6b9"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\compile\\slots-test\\actual-dependencies.json",
+          "bytes": 64244,
+          "sha256": "e6d1e51ea60638d626a83d76f857504e31ca060f4822c291277d39f8ba5f0c0d"
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\logs\\slots-test\\command.json",
+          "bytes": 2640,
+          "sha256": "f5046bfa41c0ccfa1d53c44cd1b110bb6c7f071ec02e024b3dc348537cf5b95d"
+        }
+      }
+    },
+    "private_header_impact": {
+      "reviewed_by": "root source/declaration comparison; internal build metadata, no user approval requirement",
+      "approved_source_scope": [
+        "src/graph/resources.cc",
+        "src/graph/slots_region.cc",
+        "src/graph_batch/batch.cc",
+        "src/graph_provider_ggml_cuda/ggml_cuda_region.cc",
+        "src/compute_backend_cuda/cuda_backend.cc",
+        "src/compute_backend_cuda/cuda_device_status.cc",
+        "src/compute_backend_cuda/cuda_indexed_copy.cc",
+        "src/compute_backend_cuda/cuda_indexed_copy.cu",
+        "tests/graph/slots_cuda_execution_test.cc"
+      ],
+      "all_changed_header_consumers_accounted_for": true,
+      "store_region_facts": "same-build private field migration; every four actual CUDA closure consumers recompiled; Apple/Vulkan objects absent from these closures",
+      "cuda_internal": "Exactly two additive forward/function declarations, verified byte comparison after removing those lines; no existing layout or definition changed",
+      "native_context": "Comments only; lexical non-comment tokens verified identical",
+      "new_header": "New versioned optional backend capability, no reinterpretation of old table or public operation change",
+      "retained_native": "Original paged append/device status native objects do not include the changed private Store facts; no SDK rebuild"
+    }
+  },
+  "component": {
+    "status": "PASS",
+    "process": {
+      "pid": 58784,
+      "exit": 0,
+      "started": 1793118587.9114506,
+      "seconds": 0.767815113067627,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\bin\\indexed-store-test.exe",
+      "bytes": 141108224,
+      "sha256": "1d7ece3dfcb476871cc034900d8315daf3fccd229cc041295f2d555c623c76c9"
+    },
+    "tests": 9,
+    "failures": 0,
+    "batch_executions": 100,
+    "xml": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\run-component\\results.xml",
+      "bytes": 3994,
+      "sha256": "428617ef266da66ce12fec3c734fc57eec00d708c3b1b4dfd475416d30834c76"
+    },
+    "filter": "GraphSlotsCudaExecution.*:GraphBatchCapture.UniformDecodePlansKeepCaptureAcrossGrowingPagedPrefixes"
+  },
+  "model_functional_checks": [
+    {
+      "status": "FINITE_FUNCTIONAL_FACTS_PASS",
+      "process": {
+        "pid": 54636,
+        "exit": 0,
+        "started": 1793118619.452583,
+        "seconds": 3.64471697807312,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\bin\\hyle-indexed-store.exe",
+        "bytes": 142471680,
+        "sha256": "12b85c6ececeb6b968643d73d0ed18a0675b6b9ddd9b0eff5f04de455e1d4345"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\model-checks\\two-turn-auto\\stdout.log",
+        "bytes": 118370,
+        "sha256": "0112839a4ce104e4c6297ef4c8915eb10b8514d800192fd237d65706aaed8467"
+      },
+      "complete_non_time_differences": [],
+      "performance_claim": false,
+      "scope": "One original natural consumer journey; no new timing/window claim."
+    },
+    {
+      "status": "FINITE_FUNCTIONAL_FACTS_PASS",
+      "process": {
+        "pid": 7836,
+        "exit": 0,
+        "started": 1793118634.251459,
+        "seconds": 2.9175479412078857,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\bin\\hyle-indexed-store.exe",
+        "bytes": 142471680,
+        "sha256": "12b85c6ececeb6b968643d73d0ed18a0675b6b9ddd9b0eff5f04de455e1d4345"
+      },
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\model-checks\\single-mtp\\stdout.log",
+        "bytes": 42932,
+        "sha256": "06cda0c1def435647d36f161e020098d471e0d2af469732da83e5f8e9957e976"
+      },
+      "complete_non_time_differences": [],
+      "performance_claim": false,
+      "scope": "One original natural consumer journey; no new timing/window claim."
+    }
+  ],
+  "limits": [
+    "Current Model hidden inputs/outputs have not been rewired to this capability. No MTP re-record reduction or throughput improvement claimed.",
+    "Finite CUDA RTX4070 check only; no new CPU/Apple/Vulkan runtime check. Those backends keep original copying route.",
+    "Every checked CUDA replay now has one explicit4B D2D seed/hostcall outside captured graph; the old recorded status reset is removed. Cost not measured.",
+    "Two natural functional consumers only; no current full throughput/memory window and no quality-task expansion. Latest four-metric table remains the prior d9 image.",
+    "Additive CUDA private declarations only and comment-only native_context allow unaffected cached objects. Four actual Store facts consumers were recompiled; no old Apple/Vulkan ABI objects in these CUDA closures."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-indexed-store-2026-10-28.zip",
+    "bytes": 589696,
+    "sha256": "b562a99f00057c1e754efae0749cb19da89edd259201b7c52b155db1ce276716"
+  },
+  "archive_members": 144
+}

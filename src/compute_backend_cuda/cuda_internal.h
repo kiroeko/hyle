@@ -19,6 +19,7 @@
 
 namespace hyle::compute::detail {
 struct PagedAppendBackendVTable;
+struct IndexedCopyBackendVTable;
 }
 
 namespace hyle::compute::cuda::detail {
@@ -34,6 +35,7 @@ struct EventSlot;
 struct CapturedCommandsState;
 const compute::detail::CopyBackendVTable *copy_batch_interface() noexcept;
 const compute::detail::PagedAppendBackendVTable *paged_append_interface() noexcept;
+const compute::detail::IndexedCopyBackendVTable *indexed_copy_interface() noexcept;
 
 struct StatusReference final {
   StatusReference *next = nullptr;

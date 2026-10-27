@@ -3,6 +3,7 @@
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/detail/region_access.h"
+#include "hyle/compute/detail/backend_extension.h"
 
 namespace hyle::graph::slots::detail {
 // Exact selected-artifact cold bridge. This is not a native provider ABI or a
@@ -15,7 +16,6 @@ struct StoreSource final {
   ValueId capacity{}, indices{};
   std::uint32_t capacity_input_port = UINT32_MAX;
   std::size_t count = 0;
-  bool permission_changes_preserve_commands = false;
 };
 struct StoreRegionFacts final {
   NodeId store{};
@@ -25,6 +25,10 @@ struct StoreRegionFacts final {
   std::size_t destination_count = 0;
   mem::MemoryResourceRef resource{};
   StoreSource source{};
+  // Exact selected writer uses fixed capacity/control carriers. A new set of
+  // real leases alone changes no native argument; carrier changes still revoke
+  // commands before replacement. This fact is independent of a paired Gather.
+  bool permission_changes_preserve_commands = false;
 };
 struct StoreConfiguration final {
   compute::ConstTensorView capacity{}, source_indices{}, destination_indices{};
@@ -91,6 +95,7 @@ struct StoreRegionVTable final {
 struct StoreAdapter final {
   mem::MemoryResourceRef resource;
   compute::DeviceClass device_class = compute::DeviceClass::kCpu;
+  compute::detail::BackendExtensionRef indexed_copy;
 };
 // Same-build module assembly, not a public provider selection API.
 HYLE_GRAPH_API const RegionProviderVTable *store_provider() noexcept;

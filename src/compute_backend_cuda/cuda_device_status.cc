@@ -98,6 +98,10 @@ acquire_device_status(QueueState *queue, unsigned **device_word) noexcept {
   if (used)
     return EnqueueResult::no_op();
   used = true;
+  // Each actual replay seeds this stable word from its admitted outer sequence.
+  // A recorded reset would erase an imported predecessor failure.
+  if (queue->capture_owned)
+    return EnqueueResult::no_op();
   return EnqueueResult::accepted_command(runtime_status(
       cudaMemsetAsync(word, 0, sizeof(unsigned), queue->stream)));
 }

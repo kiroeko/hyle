@@ -17,6 +17,7 @@
 #include "driver_release.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/paged_append_backend.h"
+#include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/core/assert.h"
 
 namespace hyle::compute::cuda {
@@ -1450,6 +1451,11 @@ launch_capture(void *backend_context, void *backend_queue,
     auto initialized = cuda::detail::acquire_device_status(queue, &word);
     if (!initialized.status.ok())
       return initialized;
+    const auto seeded = cudaMemcpyAsync(captured->device_status, word,
+                                        sizeof(unsigned), cudaMemcpyDeviceToDevice,
+                                        queue->stream);
+    if (seeded != cudaSuccess)
+      return compute::detail::EnqueueResult::accepted_command(status(seeded));
     const auto launched = cudaGraphLaunch(captured->executable, queue->stream);
     if (launched != cudaSuccess)
       return compute::detail::EnqueueResult::accepted_command(status(launched));
@@ -1487,6 +1493,8 @@ const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
     return cuda::detail::copy_batch_interface();
   if (id == compute::detail::kPagedAppendExtensionId)
     return cuda::detail::paged_append_interface();
+  if (id == compute::detail::kIndexedCopyExtensionId)
+    return cuda::detail::indexed_copy_interface();
   return nullptr;
 }
 

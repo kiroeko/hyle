@@ -8,6 +8,7 @@
 #include "hyle/compute/detail/queue_ref.h"
 #include "hyle/graph/detail/region_adapter.h"
 #include "hyle/compute/detail/copy_outcome_source.h"
+#include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/mem/std_allocator.h"
 #include "../graph/compile_internal.h"
 #include "../graph/execution_source_internal.h"
@@ -354,7 +355,18 @@ Result<CompiledGraph> compile(const Graph&graph,CompileEnvironment environment,C
       if(has_store){
         const auto*provider=gs::detail::store_provider();
         HYLE_ASSIGN_OR_RETURN(auto source,gd::GraphRegionSource::shared_queue(endpoint,provider));
-        store_contexts.push_back({environment.storage_domains[storage.ordinal()].resource,context.device().device_class()});
+        gs::detail::StoreAdapter store_adapter{environment.storage_domains[storage.ordinal()].resource,context.device().device_class(),{}};
+        auto indexed=cd::BackendExtensionAccess::query(context,cd::kIndexedCopyExtensionId);
+        if(indexed){
+          bool capture=false;
+          HYLE_RETURN_IF_ERROR(cd::BackendExtensionAccess::call(*indexed,[](void*,const void*table,void*user)noexcept->Status{
+            const auto*t=static_cast<const cd::IndexedCopyBackendVTable*>(table);
+            *static_cast<bool*>(user)=t && t->prepare && t->destroy && t->enqueue && t->supports_command_capture;
+            return Status::Ok();
+          },&capture));
+          if(capture)store_adapter.indexed_copy=std::move(*indexed);
+        }else if(!indexed.error().IsUnimplemented())return std::unexpected(indexed.error());
+        store_contexts.push_back(std::move(store_adapter));
         adapters.push_back({std::move(source),UINT32_MAX,ExecutionTargetId{static_cast<std::uint32_t>(target)},provider,&store_contexts.back()});
       }
       if(has_append){

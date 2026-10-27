@@ -62,9 +62,11 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
   return facts;
 }
 
-// Inside one already-admitted QueueSequence only. The first use records a
-// reset; propagate its EnqueueResult even if a later command fails. A capture
-// gets its own stable address, never the recording sequence's completion slot.
+// Inside one already-admitted QueueSequence only. Ordinary first use enqueues
+// a reset; propagate its EnqueueResult even if a later command fails. A capture
+// gets its own stable address, never the recording sequence's completion slot,
+// and records no reset: each replay first copies its admitted outer status into
+// that word, then merges the captured status back before original retirement.
 // Kernels atomically retain the first nonzero DeviceStatusCode and must not
 // access invalid payload. Compute/Graph's real Completion reports the code.
 HYLE_COMPUTE_BACKEND_CUDA_API compute::detail::EnqueueResult

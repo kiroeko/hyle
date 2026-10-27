@@ -241,6 +241,15 @@ reset释放原绑定后的同池重新allocate也是原有合法路径。
 有限检查见[Model后继接线](../evidence/correctness/inference-model-successor-2026-10-27.json)；自然普通请求随后接入上述两步量子，
 仍没有净提速结论。
 
+通用`slots::Store`可在原Backend提供能力时，以固定capacity、原码rows及I32目的槽执行索引复制。
+CUDA实现先检查全部ID，再按真实行字节写入；不读取旧目的或padding。原`SlotBindings`仍保每个writer、
+实际范围和私有控制，capacity只表达地址，不能替代整池权限。撤回权限后可以保留原池的allocation owner
+和dormant捕获参数；下一提交仍须重新绑定完整事务。该能力不认识模型或hidden，缺少原生能力仍走原Store复制。
+同一共享Queue的checked capture在每次重放前继承原sequence的设备状态，之后再合并回原状态；
+不会通过图内清零丢失已导入的前驱错误。它只约束设备状态码，不能把任意host取消等同于GPU已停止。
+有限检查与适用边界见[索引写入检查](../evidence/correctness/inference-indexed-store-2026-10-28.json)；
+引擎carry／prior hidden接线仍未完成，不能由底层Store通过代签MTP重录减少。
+
 剩余接线按以下共同职责收敛，尚未实现的部分不能由现有token检查代签：
 
 - 一次原Graph提交只持一份proxy、观察锁、实际依赖及完整终结事实。token、Store和KV视图共用此提交身份，

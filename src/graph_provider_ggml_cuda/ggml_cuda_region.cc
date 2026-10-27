@@ -1981,8 +1981,8 @@ compute::ProviderPrepareOutcome compile_indexed_chain(void *context,
       .destination_indices = pattern.destination_ids, .destination_input_port = indexed_ports[2],
       .destination_count = pattern.destination_count, .resource = resource,
       .source = {.gather = pattern.gather, .capacity = pattern.pool, .indices = pattern.source_ids,
-          .capacity_input_port = indexed_ports[0], .count = pattern.source_count,
-          .permission_changes_preserve_commands = true}};
+          .capacity_input_port = indexed_ports[0], .count = pattern.source_count},
+      .permission_changes_preserve_commands = true};
   const auto outcome = native::compile(context, std::move(recipe), allocator, &artifact->native);
   if (!artifact->native.state) {
     artifact->~Artifact(); allocator.deallocate(artifact, sizeof(Artifact), alignof(Artifact)); return outcome;

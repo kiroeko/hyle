@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/indexed_copy_backend.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
 #include "hyle/graph/detail/region_access.h"
@@ -392,6 +393,52 @@ Status StoreBinding::validate_configuration(const StoreConfiguration &actual) co
 
 namespace {
 
+// A byte-copy program of the original backend, not a second executor or slot
+// owner. Its Context is retained through the same cold backend capability.
+struct NativeStore final {
+  NativeStore() noexcept = default;
+  NativeStore(const NativeStore &) = delete;
+  NativeStore &operator=(const NativeStore &) = delete;
+  cd::BackendExtensionRef extension;
+  const cd::IndexedCopyBackendVTable *table = nullptr;
+  void *program = nullptr;
+  mem::AllocatorRef allocator{};
+
+  ~NativeStore() { reset(); }
+  bool valid() const noexcept { return program != nullptr; }
+  void reset() noexcept {
+    if (program) table->destroy(std::exchange(program, nullptr), allocator);
+    table = nullptr; extension = {};
+  }
+  Status prepare(cd::BackendExtensionRef owner, cd::IndexedCopyNativeSpec spec,
+      mem::AllocatorRef selected) noexcept {
+    extension = std::move(owner); allocator = selected;
+    struct Call { NativeStore *self; cd::IndexedCopyNativeSpec spec; } call{this, spec};
+    const auto status = cd::BackendExtensionAccess::call(extension,
+        [](void *context, const void *opaque, void *user) noexcept -> Status {
+      auto &call = *static_cast<Call *>(user);
+      const auto *interface = static_cast<const cd::IndexedCopyBackendVTable *>(opaque);
+      if (!interface || !interface->prepare || !interface->destroy || !interface->enqueue ||
+          !interface->supports_command_capture)
+        return Status::Unimplemented("backend has no capturable indexed copy");
+      call.self->table = interface;
+      return interface->prepare(context, call.spec, call.self->allocator, &call.self->program);
+    }, &call);
+    if (!status.ok()) { reset(); return status; }
+    if (!valid()) { reset(); return Status::Internal("indexed copy returned no native program"); }
+    return Status::Ok();
+  }
+  cd::EnqueueResult enqueue(cd::QueueSequence &sequence,
+      cd::IndexedCopyNativeBindings bindings) const noexcept {
+    struct Call { const NativeStore *self; cd::IndexedCopyNativeBindings bindings; } call{this, bindings};
+    return cd::BackendExtensionAccess::enqueue_admitted(extension, sequence,
+        [](void *context, const void *, void *queue, void *user) noexcept {
+      const auto &call = *static_cast<Call *>(user);
+      return call.self->table->enqueue(context, queue, call.self->program, call.bindings);
+    }, &call);
+  }
+};
+
 struct Prepared final {
   Store store;
   NodeId node;
@@ -400,6 +447,7 @@ struct Prepared final {
   std::uint32_t rows_port = 0, ids_port = 1;
   mem::MemoryResourceRef resource;
   c::ProviderRuntimeProperties runtime;
+  NativeStore native;
 };
 struct Slot final {
   explicit Slot(mem::AllocatorRef allocator) noexcept
@@ -407,6 +455,10 @@ struct Slot final {
   detail::StoreBinding binding;
   std::vector<mem::BufferView, mem::StdAllocator<mem::BufferView>> destinations;
   c::ConstTensorView rows, ids;
+  detail::StoreConfiguration configuration;
+  // Keeps only the addressable allocation alive after take(), never an old
+  // read/write lease or authority to submit another episode.
+  c::LeaseSlotLayout carrier;
   bool sealed = false;
 };
 
@@ -417,6 +469,8 @@ Status validate_rows(const Prepared &p, Slot &s,
   auto configuration = s.binding.configuration();
   configuration.destination_indices = ids;
   HYLE_RETURN_IF_ERROR(s.binding.validate_configuration(configuration));
+  if (p.native.valid() && !same_configuration(configuration, s.configuration))
+    return Status::FailedPrecondition("indexed store private carriers changed without configuration");
   const auto &bindings = *s.binding.transaction();
   const auto input = rows.storage();
   if (input.resource() != p.resource || input.offset() > SIZE_MAX - input.size())
@@ -431,15 +485,30 @@ Status validate_rows(const Prepared &p, Slot &s,
       return Status::InvalidArgument("slot store rows overlap an original destination");
     s.destinations[i] = target;
   }
+  if (p.native.valid()) s.carrier = bindings.layout();
   return Status::Ok();
 }
 
 const gd::RegionBindingReleaseVTable binding_release{
     [](void *, void *) noexcept { return Status::Ok(); },
-    [](void *, void *opaque) noexcept {
+    [](void *prepared, void *opaque) noexcept {
       auto &slot = *static_cast<Slot *>(opaque);
-      slot.rows = {}; slot.ids = {}; slot.sealed = false;
+      if (!static_cast<Prepared *>(prepared)->native.valid()) { slot.rows = {}; slot.ids = {}; }
+      slot.sealed = false;
     }, true};
+const gd::RegionCaptureBindingsVTable capture_bindings{
+    [](void *prepared, void *opaque) noexcept {
+      if (!prepared || !opaque) return false;
+      const auto &p = *static_cast<Prepared *>(prepared);
+      const auto &s = *static_cast<Slot *>(opaque);
+      return p.native.valid() && s.carrier.valid() && s.rows.valid() && s.ids.valid() &&
+          s.configuration.capacity.valid() && s.configuration.destination_indices.valid();
+    }};
+const gd::RegionProjectedWriteVTable projected_write{
+    [](const ProviderRegionPrepared &prepared, void *opaque) noexcept {
+      return prepared.state && opaque && static_cast<Slot *>(opaque)->sealed &&
+          capture_bindings.preserves_private_arguments(prepared.state, opaque);
+    }};
 const detail::StoreRegionVTable store_binding{
     .inspect = [](const ProviderRegionPrepared &prepared, void *invocation) noexcept
         -> Result<detail::StoreRegionFacts> {
@@ -449,7 +518,8 @@ const detail::StoreRegionVTable store_binding{
       return detail::StoreRegionFacts{.store = p.node, .schema = p.store.schema,
           .destination_indices = p.ids_value, .destination_input_port = p.ids_port,
           .destination_count = static_cast<std::size_t>(p.rows.dimensions()[0]),
-          .resource = p.resource};
+          .resource = p.resource,
+          .permission_changes_preserve_commands = p.native.valid()};
     },
     .binding = [](void *invocation) noexcept {
       return &static_cast<Slot *>(invocation)->binding;
@@ -457,16 +527,23 @@ const detail::StoreRegionVTable store_binding{
     .configure = [](const ProviderRegionPrepared &prepared, void *invocation,
         const detail::StoreConfiguration &configuration) noexcept -> Status {
       const auto &p = *static_cast<Prepared *>(prepared.state);
-      if (!configuration.capacity.valid() ||
-          configuration.destination_indices.description() != p.ids)
+      HYLE_ASSIGN_OR_RETURN(auto capacity_description, p.store.schema.capacity_description());
+      if (!configuration.capacity.valid() || configuration.capacity.description() != capacity_description ||
+          configuration.capacity.storage().resource() != p.resource ||
+          !configuration.destination_indices.valid() || configuration.destination_indices.description() != p.ids)
         return Status::InvalidArgument("slot store private configuration differs");
       auto &s = *static_cast<Slot *>(invocation);
-      s.rows = {}; s.ids = {}; s.sealed = false;
+      s.configuration = configuration;
+      if (!p.native.valid()) { s.rows = {}; s.ids = {}; }
+      s.sealed = false;
       return Status::Ok();
     },
-    .clear_configuration = [](const ProviderRegionPrepared &, void *invocation) noexcept {
+    .clear_configuration = [](const ProviderRegionPrepared &prepared, void *invocation) noexcept {
       auto &s = *static_cast<Slot *>(invocation);
-      s.rows = {}; s.ids = {}; s.sealed = false;
+      if (!static_cast<Prepared *>(prepared.state)->native.valid()) {
+        s.rows = {}; s.ids = {}; s.configuration = {};
+      }
+      s.sealed = false;
     }};
 const ProviderRegionPreparedVTable prepared_table{
     .destroy_prepared = [](void *p, mem::AllocatorRef a) noexcept { a.destroy(static_cast<Prepared *>(p)); },
@@ -488,12 +565,16 @@ const ProviderRegionPreparedVTable prepared_table{
         std::span<const c::ConstTensorView> inputs, std::span<const c::TensorView> outputs) noexcept -> cd::EnqueueResult {
       const auto &p = *static_cast<Prepared *>(opaque);
       auto &s = *static_cast<Slot *>(invocation);
-      if (inputs.size() != 2 || !outputs.empty() || !s.sealed || !s.binding.same_queue(sequence))
+      if (inputs.size() != 2 || !outputs.empty() || !s.sealed || !s.binding.valid() ||
+          !s.binding.same_queue(sequence))
         return cd::EnqueueResult::rejected(Status::FailedPrecondition("slot store needs its original sealed Queue episode"));
       if (inputs[p.rows_port].description() != p.rows || inputs[p.ids_port].description() != p.ids ||
           !same_storage(inputs[p.rows_port].storage(), s.rows.storage()) ||
           !same_storage(inputs[p.ids_port].storage(), s.ids.storage()))
         return cd::EnqueueResult::rejected(Status::FailedPrecondition("slot store inputs differ from their admitted cold spans"));
+      if (p.native.valid())
+        return p.native.enqueue(sequence, {s.configuration.capacity.storage(),
+            s.rows.storage(), s.ids.storage()});
       const auto bytes = p.rows.required_bytes().value() /
           static_cast<std::size_t>(p.rows.dimensions()[0]);
       bool accepted = false;
@@ -523,6 +604,8 @@ const ProviderRegionPreparedVTable prepared_table{
     .query_extension = [](void *, c::ProviderExtensionId id) noexcept -> const void * {
       if (id == gd::kRegionBindingReleaseExtensionId) return &binding_release;
       if (id == detail::kStoreBindingExtensionId) return &store_binding;
+      if (id == gd::kRegionCaptureBindingsExtensionId) return &capture_bindings;
+      if (id == gd::kRegionProjectedWriteExtensionId) return &projected_write;
       return nullptr;
     }};
 
@@ -577,7 +660,7 @@ c::ProviderRuntimeProperties runtime(const detail::StoreAdapter &adapter) noexce
       .replay_class = c::ProviderReplayClass::kPrepared,
       .blocks_host = adapter.device_class == c::DeviceClass::kCpu,
       .uses_private_threads = false, .supports_concurrent_invocations = true,
-      .capture_compatible = false};
+      .capture_compatible = adapter.indexed_copy.valid()};
 }
 Status propose(void *, const RegionDiscoveryRequest &request, mem::AllocatorRef,
     RegionProposalWriter &writer) noexcept {
@@ -629,9 +712,21 @@ c::ProviderPrepareOutcome compile(void *opaque, const RegionCompileRequest &requ
   prepared->rows = description->rows_description; prepared->ids = description->ids_description;
   prepared->rows_port = description->rows_port; prepared->ids_port = description->ids_port;
   prepared->resource = adapter.resource; prepared->runtime = runtime(adapter);
+  if (adapter.indexed_copy.valid()) {
+    const auto bytes = prepared->rows.required_bytes();
+    if (!bytes) { allocator.destroy(prepared); return c::ProviderPrepareOutcome::error(bytes.error()); }
+    const auto count = static_cast<std::uint32_t>(prepared->rows.dimensions()[0]);
+    const cd::IndexedCopyNativeSpec spec{prepared->store.schema.slot_count(), count,
+        *bytes / count, prepared->store.schema.stride_bytes()};
+    const auto native = prepared->native.prepare(adapter.indexed_copy, spec, allocator);
+    if (!native.ok() && !native.IsUnimplemented()) {
+      allocator.destroy(prepared); return c::ProviderPrepareOutcome::error(native);
+    }
+    prepared->runtime.capture_compatible = prepared->native.valid();
+  }
   *out = {.vtable = &prepared_table, .state = prepared,
       .properties = {.workspace = {0, 1}, .persistent_bytes = sizeof(Prepared),
-          .dispatch_count = static_cast<std::uint32_t>(prepared->rows.dimensions()[0]),
+          .dispatch_count = prepared->native.valid() ? 2u : static_cast<std::uint32_t>(prepared->rows.dimensions()[0]),
           .runtime = prepared->runtime, .preserves_effects = true,
           .invocation_private_bytes = std::nullopt}};
   return c::ProviderPrepareOutcome::prepared();
@@ -646,8 +741,7 @@ struct LogicalSource final {
 };
 bool same_source(const detail::StoreSource &a, const detail::StoreSource &b) noexcept {
   return a.gather == b.gather && a.capacity == b.capacity && a.indices == b.indices &&
-      a.count == b.count && a.capacity_input_port == b.capacity_input_port &&
-      a.permission_changes_preserve_commands == b.permission_changes_preserve_commands;
+      a.count == b.count && a.capacity_input_port == b.capacity_input_port;
 }
 bool same_logical_source(const detail::StoreSource &a, const detail::StoreSource &b) noexcept {
   return a.gather == b.gather && a.capacity == b.capacity && a.indices == b.indices && a.count == b.count;
@@ -1040,6 +1134,7 @@ Status bind(Invocation &invocation, const Graph &graph,
     if (found.facts.store != p.store || found.facts.schema != p.schema ||
         found.facts.destination_indices != p.destination_indices ||
         found.facts.destination_count != p.destination_count || found.facts.resource != p.resource ||
+        found.facts.permission_changes_preserve_commands != p.permission_changes_preserve_commands ||
         !same_source(found.facts.source, s.artifact_source))
       return Status::InvalidArgument("slot preparation differs from its selected artifact");
     if (s.logical_source) {
@@ -1108,8 +1203,7 @@ Status bind(Invocation &invocation, const Graph &graph,
   for (auto &candidate : controls->candidates) {
     if (!candidate.bindings) continue;
     auto &s = *detail::StoreBindingAccess::get(*candidate.found.binding);
-    const auto &source = s.facts.source;
-    const bool preserve = source.count && source.permission_changes_preserve_commands;
+    const bool preserve = s.facts.permission_changes_preserve_commands;
     if (preserve) HYLE_RETURN_IF_ERROR(gd::RegionAccess::revoke_preparation(invocation));
     else HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, candidate.found.proof.step));
     candidate.found.interface->clear_configuration(candidate.found.prepared, candidate.found.invocation);
@@ -1147,7 +1241,7 @@ Status bind(Invocation &invocation, const Graph &graph,
         HYLE_ASSIGN_OR_RETURN(configuration.source_indices,
             c::ConstTensorView::create(source_description, source_view));
       }
-      if (p.source.count && p.source.permission_changes_preserve_commands &&
+      if (p.permission_changes_preserve_commands &&
           !same_configuration(configuration, s.last_configuration))
         HYLE_RETURN_IF_ERROR(gd::RegionAccess::invalidate_commands(invocation, candidate.found.proof.step));
       // Mark before calling: a rejecting cold hook may have partially changed
@@ -1171,7 +1265,7 @@ Status bind(Invocation &invocation, const Graph &graph,
         } else {
           const std::array readers{gd::ProjectedReader{candidate.found.proof.step,
               candidate.found.proof.implementation, candidate.found.proof.prepared,
-              p.source.capacity_input_port, p.source.permission_changes_preserve_commands}};
+              p.source.capacity_input_port, p.permission_changes_preserve_commands}};
           HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_projected(invocation, p.source.capacity,
               configuration.capacity, candidate.bindings->sources(), readers));
         }

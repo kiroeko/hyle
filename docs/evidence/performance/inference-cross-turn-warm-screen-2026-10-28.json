@@ -1,0 +1,76 @@
+{
+  "status": "CANDIDATE_REJECTED_PRODUCT_RESTORED",
+  "date": "2026-10-28",
+  "scope": "One Model CXX/link and one real natural two-turn functional process. Not a throughput benchmark.",
+  "base_commit": "707d10d4a",
+  "candidate_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cross-turn-warm-hints-20261027\\bin\\hyle-cross-turn-warm.exe",
+    "bytes": 142440448,
+    "sha256": "98ac500d10dd61d94d193877495c2a89482e69fa33bfae7ba345ba934faef678"
+  },
+  "candidate_source": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 556706,
+    "sha256": "7631147ecd19f185bab2c474c1be4f57a2c9ed7f929f58d693b14f3fe0874be1"
+  },
+  "process": {
+    "exit": 0,
+    "pid": 41012,
+    "seconds": 3.6766227000043727
+  },
+  "complete_non_time_differences": [
+    {
+      "path": "/overlap_successor_publications",
+      "old": 110,
+      "new": 108
+    },
+    {
+      "path": "/overlap_successor_refusals",
+      "old": 0,
+      "new": 1
+    },
+    {
+      "path": "/overlap_successor_submissions",
+      "old": 110,
+      "new": 108
+    }
+  ],
+  "first_refusal": {
+    "predecessor_slot": 2,
+    "successor_slot": 0,
+    "members": 1,
+    "committed_length": 375,
+    "candidate_length": 376,
+    "code": "Unavailable",
+    "native": false,
+    "reason": "pending outputs have no complete existing capture for their final physical tuple"
+  },
+  "decision": "Preserving Model/R/sampling warm hints did not cover the real tuple across turns. Generated output/state facts unchanged, but successor sub/publications 110 to108 and refusals0 to1. Reject this candidate; do not weaken capture qualification or semantic oracle.",
+  "limits": [
+    "No first differing physical port recorded in this ordinary Text run; do not attribute it to MTP carry/prior diagnostic.",
+    "No TPS significance or regression claim; no EOS rerun or full window for this rejected candidate.",
+    "Model process exited0; offline finite-counter oracle failed as retained, not a model crash.",
+    "Preserve pre-CXX source refinement and original failed assertion; do not rerun a successful process."
+  ],
+  "product_source_after_restore": {
+    "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+    "bytes": 555018,
+    "sha256": "4b6c914b08775667bb91ba01a1caf5c365a23eb9140d1ed378b537add8e4e854"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cross-turn-warm-screen-2026-10-28.zip",
+    "bytes": 385894,
+    "sha256": "4e774d541c25043dcf236729df1892b4235c154e49f91cb82161572a0c1c04a3"
+  },
+  "archive_members": 37,
+  "base_ready": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\ready-cli.json",
+    "bytes": 3735,
+    "sha256": "2d313af5536e928b10ecdf2ad9ca0279b0c069e403650d800b209b84d144b5af"
+  },
+  "base_image": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-user-cli\\bin\\hyle-user-cli.exe",
+    "bytes": 142440448,
+    "sha256": "91ebdde89237e652cb4db7cb8733e9b1f74c277112dcbfb303142a04689570dd"
+  }
+}

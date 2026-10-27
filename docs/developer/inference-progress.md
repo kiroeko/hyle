@@ -1,10 +1,10 @@
 # 推理底座进度
 
-更新：2026-10-27 23:52（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 00:36（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约60%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。展开此前合并的未完成项后重估；范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约61%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：attention与小预算回退通过有限检查，流水自动选择、off仅供内部诊断；正在准备跨轮预热接线。** MTP已定位hidden偏移轮换，共同执行编排、GPU热点与MTP设备后继仍有工作。
+**当前位置：hidden索引写入的底层原语已过有限检查，正在整理模型接线。** 跨轮warm提示候选已撤回；共同执行编排、GPU热点与MTP设备后继仍未完成。
 
 ## 任务树
 
@@ -20,20 +20,20 @@
   - 请求、缓存、额度与退休合同：100%（本批完成）
   - 模型无关执行编排与静态适配：约40%（未抽完）
   - 基础提交／取消／额度与输出接口：约35%（待收敛）
-  - 稳态准备、在途权限及普通／后继路径统一：约35%（未完成）
+  - 稳态准备、在途权限及普通／后继路径统一：约40%（通用索引Store已接，整体未完成）
   - MTP K1／多草稿共用流程：约35%（待继续收敛）
 - 普通连续流水：约80%（进行中）
   - CUDA R1／R2跨pump与控制边界：约90%（有限检查完成）
   - 固定拓扑attention与分块重录：100%（本批有限范围完成）
-  - 跨turn预热与冷准备捕获：约20%（待实现）
+  - 跨turn预热与冷准备捕获：约30%（首候选撤回，待固定真实载体）
   - 稳态准备成本、上传／读回合并及其它配置：约40%（待继续）
-- MTP性能：约30%（进行中）
+- MTP性能：约35%（进行中）
   - 重录首失配诊断：约90%（已定位hidden）
-  - hidden固定池索引接线：约20%（设计完成，待实现）
+  - hidden固定池索引接线：约45%（底层通过有限检查，模型未接）
   - 固定形状、设备接受与连续后继：约20%（未接通）
   - 草稿词表子集、接受率及K2重测：约10%（待调查）
 - GPU热点：约20%（进行中）
-  - GDN a/b小投影合并或专用GEMV：约10%（待实现）
+  - GDN a/b小投影合并或专用GEMV：约20%（N32冷分组方案已核，未实现）
   - 同输入投影的整模型融合：约25%（待继续）
   - 模型内GEMM实际DRAM带宽：约15%（待当前跟踪）
   - norm、残差及concat等小kernel融合：约25%（待继续）
@@ -45,13 +45,13 @@
 
 ## 正在做
 
-- **跨turn预热接线准备**｜所属：普通连续流水｜约20%。已有有限方案；拆分warm提示与真实来源寿命，保留完整tuple及退休检查。
+- **hidden模型接线整理**｜所属：MTP性能｜约45%。核对原池容量、carry／prior、验证前缀与NextN只读阶段，准备复用已检查的Gather／Store；未接模型。
 
-刚完成：普通两轮off捕获3→1、auto后继102→110且无拒绝；小预算回退100次组件及最终两轮检查通过。MTP的11次捕获分清2次初始与9次hidden首失配；GPU热点仍待做。
+刚完成：通用索引Store与checked capture错误继承，8个Store用例＋原100次attention执行通过；普通两轮、MTP单轮完整非计时报告差异0。跨轮warm候选后继110→108、拒绝0→1，已撤回；尚无新TPS结论。
 
 ## 接下来
 
-1. 处理跨轮预热、hidden索引及a/b小投影。
+1. 接通hidden模型索引，处理真实载体稳定后再看跨轮预热；试a/b小投影N32冷分组。
 2. 收敛共同稳态执行、有效长度与特性组合，补当前跟踪及A/A。
 3. 推进MTP设备后继、词表候选与更深GPU融合／带宽优化。
 
@@ -66,6 +66,6 @@
 | MTP单轮 | 2165.00／1554.02 | 116.62／134.14 | 104.60／112.83 | 4.108／3.896 |
 | MTP两轮 | 2569.82／2359.12 | 120.70／133.14 | 110.00／118.51 | 4.245／3.896 |
 
-综合含prefill、不含加载；三样本不签显著性，峰值为采样下界。表固定于d9镜像，后续预算／帮助补丁只做有限回归。auto比本窗off快1.81%／5.30%，尚未稳定反超；MTP仍落后。
+综合含prefill、不含加载；三样本不签显著性，峰值为采样下界。表固定于d9镜像，后续预算／帮助／索引Store补丁只做有限回归。auto比本窗off快1.81%／5.30%，尚未稳定反超；MTP仍落后。
 
-详情：[架构](../architecture/inference-design.md) · [全部goal范围](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对) · [性能与实验](performance/decode.md) · [预算与CLI回归](../evidence/correctness/inference-attention-budget-fallback-2026-10-27.json) · [最新完整对照](../evidence/performance/inference-stable-attention-current-window-2026-10-27.json)
+详情：[架构](../architecture/inference-design.md) · [全部goal范围](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对) · [性能与实验](performance/decode.md) · [索引Store检查](../evidence/correctness/inference-indexed-store-2026-10-28.json) · [最新完整对照](../evidence/performance/inference-stable-attention-current-window-2026-10-27.json)
