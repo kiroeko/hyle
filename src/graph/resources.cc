@@ -2036,21 +2036,110 @@ struct StoreSourceState final : util::RefCounted<StoreSourceState> {
   OutputBindingBundle *bundle = nullptr;
   bool bound_once = false;
 };
-struct ResourceSourceState final : util::RefCounted<ResourceSourceState> {
-  ResourceSourceState(compute::StorageOwner owner, compute::ResourceBudget budget,
+// A permission origin has no execution/terminal ancestry. Descendants retain
+// this fixed metadata and the actual resource/allocator owner only.
+struct ResourcePermissionBlock final : util::RefCounted<ResourcePermissionBlock> {
+  ResourcePermissionBlock(compute::StorageOwner owner, compute::ResourceBudget budget,
       mem::AllocatorRef selected) noexcept
       : storage_owner(std::move(owner)), metadata_budget(std::move(budget)), allocator(selected),
         ready(mem::StdAllocator<compute::ReadLease>(selected)),
         full(mem::StdAllocator<compute::detail::PendingReadTicket>(selected)),
         append(mem::StdAllocator<compute::detail::PendingAppendReadTicket>(selected)),
-        full_ranges(mem::StdAllocator<mem::ConstBufferView>(selected)),
-        append_ranges(mem::StdAllocator<mem::ConstBufferView>(selected)) {}
+        bounds(mem::StdAllocator<mem::ConstBufferView>(selected)),
+        published(mem::StdAllocator<compute::ReadLease>(selected)),
+        inherited_uses(mem::StdAllocator<std::uint32_t>(selected)) {}
+  // Called under publication. One surviving inherited slot must not retain
+  // payload belonging to another page in this metadata allocation.
+  void clear_slot(std::size_t index) noexcept {
+    if (index < published.size()) published[index] = {};
+    if (index < ready.size()) { ready[index] = {}; return; }
+    index -= ready.size();
+    if (index < full.size()) { full[index].reset(); return; }
+    append[index - full.size()].reset();
+  }
+  void release_source() noexcept {
+    std::lock_guard guard(publication);
+    source_alive = false;
+    const auto count = ready.size() + full.size() + append.size();
+    for (std::size_t i = 0; i < count; ++i)
+      if (i >= inherited_uses.size() || !inherited_uses[i]) clear_slot(i);
+  }
+  void destroy() noexcept {
+    const auto owner = storage_owner;
+    const auto budget = metadata_budget;
+    (void)budget;
+    const auto selected = allocator;
+    this->~ResourcePermissionBlock();
+    selected.deallocate(this, sizeof(ResourcePermissionBlock), alignof(ResourcePermissionBlock));
+  }
+  compute::StorageOwner storage_owner;
+  compute::ResourceBudget metadata_budget;
+  mem::AllocatorRef allocator;
+  std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> ready;
+  std::vector<compute::detail::PendingReadTicket,
+      mem::StdAllocator<compute::detail::PendingReadTicket>> full;
+  std::vector<compute::detail::PendingAppendReadTicket,
+      mem::StdAllocator<compute::detail::PendingAppendReadTicket>> append;
+  std::vector<mem::ConstBufferView, mem::StdAllocator<mem::ConstBufferView>> bounds;
+  std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> published;
+  std::vector<std::uint32_t, mem::StdAllocator<std::uint32_t>> inherited_uses;
+  std::mutex publication;
+  bool source_alive = true;
+};
+struct ResourceInheritedPermission final {
+  ResourceInheritedPermission() noexcept = default;
+  ResourceInheritedPermission(const ResourceInheritedPermission &) = delete;
+  ResourceInheritedPermission &operator=(const ResourceInheritedPermission &) = delete;
+  ResourceInheritedPermission(ResourceInheritedPermission &&other) noexcept
+      : origin(std::move(other.origin)), index(other.index) {}
+  ResourceInheritedPermission &operator=(ResourceInheritedPermission &&other) noexcept {
+    if (this != &other) {
+      reset(); origin = std::move(other.origin); index = other.index;
+    }
+    return *this;
+  }
+  ~ResourceInheritedPermission() { reset(); }
+  static Result<ResourceInheritedPermission> acquire(ResourcePermissionBlock *block,
+      std::size_t index) noexcept {
+    std::lock_guard guard(block->publication);
+    if (block->inherited_uses[index] == UINT32_MAX)
+      return std::unexpected(Status::ResourceExhausted("resource inherited slot reference count"));
+    ++block->inherited_uses[index];
+    ResourceInheritedPermission result;
+    result.origin = util::retain_ref(block); result.index = index;
+    return result;
+  }
+  void reset() noexcept {
+    auto held = std::move(origin);
+    if (!held) return;
+    {
+      std::lock_guard guard(held->publication);
+      HYLE_FATAL_ASSERT(held->inherited_uses[index] != 0);
+      if (--held->inherited_uses[index] == 0 && !held->source_alive) held->clear_slot(index);
+    }
+    // A last metadata ref is released only after unlocking its own mutex.
+  }
+  util::Ref<ResourcePermissionBlock> origin;
+  std::size_t index = 0;
+};
+struct ResourcePermissionLookup final {
+  ResourcePermissionBlock *origin = nullptr;
+  std::size_t index = 0;
+  mem::ConstBufferView bound{};
+};
+struct ResourceSourceState final : util::RefCounted<ResourceSourceState> {
+  ResourceSourceState(compute::StorageOwner owner, compute::ResourceBudget budget,
+      mem::AllocatorRef selected) noexcept
+      : storage_owner(std::move(owner)), metadata_budget(std::move(budget)), allocator(selected),
+        inherited(mem::StdAllocator<ResourceInheritedPermission>(selected)),
+        lookup(mem::StdAllocator<ResourcePermissionLookup>(selected)) {}
   void destroy() noexcept {
     const auto owner = storage_owner;
     const auto budget = metadata_budget;
     (void)budget;
     const auto selected = allocator;
     auto *original = prepared_parent;
+    if (permissions) permissions->release_source();
     this->~ResourceSourceState();
     selected.deallocate(this, sizeof(ResourceSourceState), alignof(ResourceSourceState));
     if (original) release(original);
@@ -2062,12 +2151,10 @@ struct ResourceSourceState final : util::RefCounted<ResourceSourceState> {
   InvocationState *prepared_parent = nullptr;
   util::Ref<SubmissionSourceState> submission;
   compute::ConstTensorView capacity{};
-  std::vector<compute::ReadLease, mem::StdAllocator<compute::ReadLease>> ready;
-  std::vector<compute::detail::PendingReadTicket,
-      mem::StdAllocator<compute::detail::PendingReadTicket>> full;
-  std::vector<compute::detail::PendingAppendReadTicket,
-      mem::StdAllocator<compute::detail::PendingAppendReadTicket>> append;
-  std::vector<mem::ConstBufferView,mem::StdAllocator<mem::ConstBufferView>> full_ranges,append_ranges;
+  util::Ref<ResourcePermissionBlock> permissions;
+  std::vector<ResourceInheritedPermission, mem::StdAllocator<ResourceInheritedPermission>> inherited;
+  // Sorted by physical offset once during capture, within this one capacity.
+  std::vector<ResourcePermissionLookup, mem::StdAllocator<ResourcePermissionLookup>> lookup;
   OutputBindingBundle *bundle = nullptr;
   bool bound_once = false;
 };
@@ -2289,14 +2376,78 @@ Status validate_resource_ready_input(const InvocationState &state, const Resourc
     return Status::FailedPrecondition("resource source required ready input range was replaced");
   return Status::Ok();
 }
-Status covers_resource_range(const ResourceSourceState &source,mem::ConstBufferView range) noexcept {
-  for(const auto &read:source.ready) {
-    HYLE_ASSIGN_OR_RETURN(auto ready,read.view());
-    if(contains_resource_range(ready,range))return Status::Ok();
+const ResourcePermissionLookup *find_resource_permission(const ResourceSourceState &source,
+    mem::ConstBufferView range) noexcept {
+  if (!range.valid() || !range.size()) return nullptr;
+  auto it = std::upper_bound(source.lookup.begin(), source.lookup.end(), range.offset(),
+      [](std::size_t offset, const auto &entry) { return offset < entry.bound.offset(); });
+  if (it == source.lookup.begin()) return nullptr;
+  --it;
+  return contains_resource_range(it->bound, range) ? &*it : nullptr;
+}
+Status covers_resource_range(const ResourceSourceState &source, mem::ConstBufferView range) noexcept {
+  return find_resource_permission(source, range) ? Status::Ok()
+      : Status::InvalidArgument("effect read exceeds the source's exact produced prefixes");
+}
+const void *permission_root(const ResourcePermissionLookup &entry) noexcept {
+  const auto &origin = *entry.origin;
+  auto index = entry.index;
+  if (index < origin.ready.size()) return compute::detail::LeaseAccess::identity(origin.ready[index]);
+  index -= origin.ready.size();
+  if (index < origin.full.size()) return compute::detail::LeaseAccess::identity(origin.full[index]);
+  return compute::detail::LeaseAccess::identity(origin.append[index - origin.full.size()]);
+}
+std::uint64_t permission_generation(const ResourcePermissionLookup &entry) noexcept {
+  const auto &origin = *entry.origin;
+  auto index = entry.index;
+  if (index < origin.ready.size()) return origin.ready[index].generation();
+  index -= origin.ready.size();
+  if (index < origin.full.size()) return origin.full[index].generation();
+  return origin.append[index - origin.full.size()].generation();
+}
+Status validate_published_permission(const ResourcePermissionLookup &entry,
+    const compute::ReadLease &read) noexcept {
+  if (!read.valid() || compute::detail::LeaseAccess::identity(read) != permission_root(entry) ||
+      read.generation() != permission_generation(entry))
+    return Status::InvalidArgument("published resource guard differs from its original root or generation");
+  HYLE_ASSIGN_OR_RETURN(auto range, read.view());
+  if (!contains_resource_range(range, entry.bound) ||
+      !contains_resource_range(entry.origin->bounds[entry.index], range))
+    return Status::InvalidArgument("published resource guard exceeds its original readable bound");
+  return Status::Ok();
+}
+Status admit_resource_permission(compute::LeaseUseBatch &uses,
+    const ResourcePermissionLookup &entry) noexcept {
+  auto &origin = *entry.origin;
+  std::lock_guard guard(origin.publication);
+  if (origin.published[entry.index].valid())
+    return compute::detail::LeaseAccess::read_unique(uses, origin.published[entry.index]);
+  auto index = entry.index;
+  if (index < origin.ready.size())
+    return compute::detail::LeaseAccess::read_unique(uses, origin.ready[index]);
+  index -= origin.ready.size();
+  if (index < origin.full.size()) {
+    // A full-to-append handoff may precede its ready-slot update. Preserve the
+    // original admission error; retry after publish_ready records the actual
+    // guard. The same code can also report a permanently closed domain.
+    return compute::detail::LeaseAccess::ordered_read_unique(uses, origin.full[index]);
   }
-  for(const auto full:source.full_ranges)if(contains_resource_range(full,range))return Status::Ok();
-  for(const auto append:source.append_ranges)if(contains_resource_range(append,range))return Status::Ok();
-  return Status::InvalidArgument("effect read exceeds the source's exact produced prefixes");
+  return compute::detail::LeaseAccess::ordered_read_unique(uses, origin.append[index - origin.full.size()]);
+}
+Status admit_resource_permissions(compute::LeaseUseBatch &uses,
+    const ResourceSourceState &source, std::span<const mem::ConstBufferView> ranges,
+    bool selective) noexcept {
+  if (selective) {
+    for (const auto range : ranges) {
+      const auto *entry = find_resource_permission(source, range);
+      if (!entry) return Status::FailedPrecondition("pending effect lost its exact admitted prefix");
+      HYLE_RETURN_IF_ERROR(admit_resource_permission(uses, *entry));
+    }
+  } else {
+    for (const auto &entry : source.lookup)
+      HYLE_RETURN_IF_ERROR(admit_resource_permission(uses, entry));
+  }
+  return Status::Ok();
 }
 Status validate_resource_effect(const InvocationState &state,const OutputBindingEntry &entry) noexcept {
   HYLE_ASSIGN_OR_RETURN(auto same,RegionAccess::has_pending_effect(&state,entry.effect,entry.effect_reads));
@@ -2569,14 +2720,14 @@ compute::ConstTensorView ResourceSource::capacity() const noexcept {
   return valid() ? state_->capacity : compute::ConstTensorView{};
 }
 std::span<const compute::ReadLease> ResourceSource::ready_pages() const noexcept {
-  return valid() ? std::span<const compute::ReadLease>(state_->ready) : std::span<const compute::ReadLease>{};
+  return valid() ? std::span<const compute::ReadLease>(state_->permissions->ready) : std::span<const compute::ReadLease>{};
 }
 std::span<const compute::detail::PendingReadTicket> ResourceSource::full_tickets() const noexcept {
-  return valid() ? std::span<const compute::detail::PendingReadTicket>(state_->full)
+  return valid() ? std::span<const compute::detail::PendingReadTicket>(state_->permissions->full)
       : std::span<const compute::detail::PendingReadTicket>{};
 }
 std::span<const compute::detail::PendingAppendReadTicket> ResourceSource::append_tickets() const noexcept {
-  return valid() ? std::span<const compute::detail::PendingAppendReadTicket>(state_->append)
+  return valid() ? std::span<const compute::detail::PendingAppendReadTicket>(state_->permissions->append)
       : std::span<const compute::detail::PendingAppendReadTicket>{};
 }
 namespace {
@@ -2590,7 +2741,8 @@ Result<ResourceSource> ResourceSource::prepare(Invocation &invocation, ResourceS
       (counts.full == 0 && counts.append == 0))
     return std::unexpected(Status::InvalidArgument("resource source needs original resources, mutable pages and its owner"));
   if (counts.ready > UINT32_MAX || counts.full > UINT32_MAX - counts.ready ||
-      counts.append > UINT32_MAX - counts.ready - counts.full)
+      counts.append > UINT32_MAX - counts.ready - counts.full ||
+      counts.inherited > UINT32_MAX - counts.ready - counts.full - counts.append)
     return std::unexpected(Status::ResourceExhausted("resource source permission count overflows"));
   if (std::ranges::none_of(parent->plan->storage_domains, [&](const auto &domain) {
         return domain.owner && domain.owner.ref() == storage.ref() &&
@@ -2608,9 +2760,20 @@ Result<ResourceSource> ResourceSource::prepare(Invocation &invocation, ResourceS
   auto owner = util::adopt_ref(::new (memory) ResourceSourceState(storage, options.resource_budget, allocator));
   owner->options = options; owner->options.allocator = allocator;
   owner->prepared_parent = parent; retain(parent);
+  auto *permission_memory = allocator.allocate(sizeof(ResourcePermissionBlock), alignof(ResourcePermissionBlock));
+  if (!permission_memory)
+    return std::unexpected(Status::ResourceExhausted("resource source fixed permission origin"));
+  owner->permissions = util::adopt_ref(::new (permission_memory)
+      ResourcePermissionBlock(storage, options.resource_budget, allocator));
   try {
-    owner->ready.resize(counts.ready); owner->full.resize(counts.full); owner->append.resize(counts.append);
-    owner->full_ranges.resize(counts.full); owner->append_ranges.resize(counts.append);
+    auto &permissions = *owner->permissions;
+    permissions.ready.resize(counts.ready); permissions.full.resize(counts.full);
+    permissions.append.resize(counts.append);
+    const auto own_count = counts.ready + counts.full + counts.append;
+    permissions.inherited_uses.resize(own_count);
+    permissions.bounds.resize(own_count); permissions.published.resize(own_count);
+    owner->inherited.resize(counts.inherited);
+    owner->lookup.resize(own_count + counts.inherited);
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("resource source fixed permission metadata"));
   }
@@ -2620,6 +2783,7 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
   if (!state_ || !submission.state_)
     return Status::FailedPrecondition("resource source needs cold preparation and its original submission");
   auto &view = *state_;
+  auto &permissions = *view.permissions;
   auto &source = *submission.state_;
   std::lock_guard guard(source.observation);
   auto *parent = source.producer;
@@ -2644,8 +2808,8 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
     return Status::FailedPrecondition("resource contribution is not the original registered external writer");
   if (!contribution.capacity.valid() || contribution.capacity.storage().resource() != view.storage_owner.ref() ||
       source.metadata_owner.context_identity() != view.storage_owner.context_identity() ||
-      contribution.ready.size() != view.ready.size() || contribution.full.size() != view.full.size() ||
-      contribution.append.size() != view.append.size())
+      contribution.ready.size() != permissions.ready.size() || contribution.full.size() != permissions.full.size() ||
+      contribution.append.size() != permissions.append.size() || contribution.inherited.size() != view.inherited.size())
     return Status::InvalidArgument("resource contribution differs from its fixed geometry or actual owner");
   const auto capacity = contribution.capacity.storage();
   const auto inside = [&](mem::ConstBufferView range) noexcept {
@@ -2749,23 +2913,76 @@ Status ResourceSource::capture(const SubmissionSource &submission, ResourceContr
     bool committed = false;
     ~DiscardTickets() {
       if (committed) return;
-      for (auto &ticket : view.full) ticket.reset();
-      for (auto &ticket : view.append) ticket.reset();
+      for (auto &ticket : view.permissions->full) ticket.reset();
+      for (auto &ticket : view.permissions->append) ticket.reset();
+      for (auto &item : view.inherited) item = {};
     }
   } rollback{view};
+  const auto own_count = permissions.bounds.size();
+  std::size_t cursor = 0;
+  for (const auto &ready : contribution.ready) {
+    HYLE_ASSIGN_OR_RETURN(permissions.bounds[cursor], ready.view());
+    ++cursor;
+  }
+  for (const auto &full : contribution.full) {
+    HYLE_ASSIGN_OR_RETURN(permissions.bounds[cursor], full.range.subview(0, full.readable_bytes));
+    ++cursor;
+  }
+  for (const auto &append : contribution.append) permissions.bounds[cursor++] = append.prefix;
+  for (std::size_t i = 0; i < own_count; ++i)
+    view.lookup[i] = {view.permissions.get(), i, permissions.bounds[i]};
+  // An ancestor's bounds alone are not authority. This producer must still
+  // hold that exact predecessor through the nominated writer's real effect
+  // attachment. Its submission pin keeps these original attachments stable.
+  for (std::size_t i = 0; i < contribution.inherited.size(); ++i) {
+    const auto &incoming = contribution.inherited[i];
+    const auto *previous = OutputSourceAccess::state(incoming.source);
+    if (!previous || previous == &view || !previous->submission ||
+        previous->submission.get() == &source || !inside(incoming.prefix) || !incoming.prefix.size())
+      return Status::InvalidArgument("inherited resource needs a bounded original predecessor permission");
+    std::lock_guard previous_guard(previous->submission->observation);
+    auto *bundle = previous->bundle;
+    if (!bundle || bundle->consumer != parent || bundle->submission.get() != previous->submission.get() ||
+        std::ranges::none_of(bundle->entries, [&](const auto &entry) {
+          return entry.resource.get() == previous && entry.effect.node == proof.node &&
+              entry.effect.step == proof.step && entry.effect.implementation == proof.implementation &&
+              entry.effect.prepared == proof.prepared;
+        }))
+      return Status::InvalidArgument("inherited resource lacks this producer's exact predecessor effect");
+    HYLE_ASSIGN_OR_RETURN(auto attachment, output_input_source(bundle));
+    if (!effect_source_matches(*parent, proof.node, attachment))
+      return Status::FailedPrecondition("inherited predecessor effect was reset or replaced");
+    const auto *permission = find_resource_permission(*previous, incoming.prefix);
+    if (!permission)
+      return Status::InvalidArgument("inherited resource exceeds its predecessor's actual readable prefix");
+    // Flatten to the root origin immediately, including inheritance of an
+    // already inherited page. Neither Source nor terminal ancestry is retained.
+    HYLE_ASSIGN_OR_RETURN(auto inherited, ResourceInheritedPermission::acquire(
+        permission->origin, permission->index));
+    view.inherited[i] = std::move(inherited);
+    view.lookup[own_count + i] = {permission->origin, permission->index, incoming.prefix};
+  }
+  std::sort(view.lookup.begin(), view.lookup.end(), [](const auto &left, const auto &right) {
+    return left.bound.offset() < right.bound.offset();
+  });
+  for (std::size_t i = 0; i < view.lookup.size(); ++i) {
+    if (!view.lookup[i].bound.size() || (i &&
+        overlaps_resource_range(view.lookup[i - 1].bound, view.lookup[i].bound)))
+      return Status::InvalidArgument("resource contribution repeats or overlaps a readable page");
+  }
+  // All inherited, address and authority checks finish before the first
+  // opt-in writer seal. The following exports allocate no metadata.
   for (std::size_t i = 0; i < contribution.full.size(); ++i) {
     HYLE_ASSIGN_OR_RETURN(auto ticket, compute::detail::LeaseAccess::pending_read(*contribution.full[i].writer));
-    view.full[i] = std::move(ticket);
-    view.full_ranges[i] = contribution.full[i].range.subview(0,contribution.full[i].readable_bytes).value();
+    permissions.full[i] = std::move(ticket);
   }
   for (std::size_t i = 0; i < contribution.append.size(); ++i) {
     const auto &append = contribution.append[i];
     HYLE_ASSIGN_OR_RETURN(auto ticket,
         compute::detail::LeaseAccess::pending_append_read(*append.appender, append.prefix));
-    view.append[i] = std::move(ticket);
-    view.append_ranges[i] = append.prefix;
+    permissions.append[i] = std::move(ticket);
   }
-  for (std::size_t i = 0; i < contribution.ready.size(); ++i) view.ready[i] = contribution.ready[i];
+  for (std::size_t i = 0; i < contribution.ready.size(); ++i) permissions.ready[i] = contribution.ready[i];
   view.capacity = contribution.capacity;
   view.submission = util::retain_ref(&source);
   auto *original = std::exchange(view.prepared_parent, nullptr);
@@ -2787,6 +3004,31 @@ Status ResourceSource::successful_outcome() const noexcept {
        !source.producer->outputs_ready.load(std::memory_order_acquire) ||
        source.producer->preparation_uses.load(std::memory_order_acquire))))
     return Status::Unavailable("resource source producer has not successfully retired");
+  return Status::Ok();
+}
+Status ResourceSource::publish_ready(std::span<const compute::ReadLease> ready) const noexcept {
+  HYLE_RETURN_IF_ERROR(successful_outcome());
+  auto &view = *state_;
+  if (ready.size() != view.lookup.size())
+    return Status::InvalidArgument("resource publication needs its complete canonical ready footprint");
+  // Canonical physical order and an exact count prove coverage without an
+  // extra bitmap, allocation or quadratic root search. Check every guard
+  // before changing any published permission.
+  for (std::size_t i = 0; i < ready.size(); ++i) {
+    HYLE_ASSIGN_OR_RETURN(auto range, ready[i].view());
+    if (i && range.offset() <= view.lookup[i - 1].bound.offset())
+      return Status::InvalidArgument("resource publication is not in canonical physical order");
+    HYLE_RETURN_IF_ERROR(validate_published_permission(view.lookup[i], ready[i]));
+  }
+  auto &origin = *view.permissions;
+  std::lock_guard guard(origin.publication);
+  for (std::size_t i = 0; i < ready.size(); ++i) {
+    const auto &entry = view.lookup[i];
+    if (entry.origin != &origin) continue;
+    // Exact own bounds were checked above, so this is a no-fail ref assignment.
+    // Inherited guards may be clipped; they never overwrite their origin slot.
+    origin.published[entry.index] = ready[i];
+  }
   return Status::Ok();
 }
 OutputSource::OutputSource(OutputSource &&other) noexcept
@@ -3131,7 +3373,7 @@ Status bind_outputs(Invocation &invocation, std::span<const OutputBinding> bindi
           binding.ready_inputs.size() > SIZE_MAX - ready_input_count ||
           binding.effect_reads.size() > SIZE_MAX-effect_read_count)
         return Status::InvalidArgument("resource source needs its complete selected reader proof");
-      const auto permissions = resource->ready.size() + resource->full.size() + resource->append.size();
+      const auto permissions = resource->lookup.size();
       if (permissions > UINT32_MAX - ticket_count)
         return Status::ResourceExhausted("resource source bundle permission count overflows");
       reader_count += binding.readers.size(); ready_input_count += binding.ready_inputs.size();
@@ -3316,28 +3558,15 @@ Result<compute::Completion> submit_outputs(Invocation &invocation,
           HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses, read));
         for (const auto &entry : owner.entries) {
           if (entry.resource) {
-            if(entry.effect.node.valid()) {
-              for(const auto range:entry.effect_reads) {
-                bool admitted=false;
-                for(const auto &read:entry.resource->ready) {
-                  HYLE_ASSIGN_OR_RETURN(auto actual,read.view());
-                  if(!contains_resource_range(actual,range))continue;
-                  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::read_unique(uses,read));admitted=true;break;
-                }
-                for(std::size_t i=0;!admitted && i<entry.resource->full_ranges.size();++i) {
-                  if(!contains_resource_range(entry.resource->full_ranges[i],range))continue;
-                  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses,entry.resource->full[i]));admitted=true;
-                }
-                for(std::size_t i=0;!admitted && i<entry.resource->append_ranges.size();++i) {
-                  if(!contains_resource_range(entry.resource->append_ranges[i],range))continue;
-                  HYLE_RETURN_IF_ERROR(compute::detail::LeaseAccess::ordered_read_unique(uses,entry.resource->append[i]));admitted=true;
-                }
-                if(!admitted)return Status::FailedPrecondition("pending effect lost its exact admitted prefix");
-              }
-              continue;
+            const auto status = admit_resource_permissions(uses, *entry.resource,
+                entry.effect_reads, entry.effect.node.valid());
+            if (!status.ok()) {
+              // Admission/control failure must not replace a real producer
+              // verdict (including a failure inherited through its sources).
+              auto observed = source.completion.poll();
+              if (!observed) return observed.error();
+              return status;
             }
-            HYLE_RETURN_IF_ERROR(admit_source_permissions(uses,
-                entry.resource->ready, entry.resource->full, entry.resource->append));
             continue;
           }
           if (entry.store) {

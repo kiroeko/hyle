@@ -49,8 +49,10 @@ HYLE_GRAPH_BATCH_API Result<graph::detail::OutputBinding> reader_binding(Invocat
 // owns only fresh dirty pages; it never borrows the predecessor's tail right.
 // Actual copies consume the predecessor's same-submission resource authority.
 // Final ready()/ready_delta() inherits only after previous.ready()/ready_delta()
-// published the predecessor's genuine guards. Exporting another pending
-// generation from this continuation requires inherited tickets and is rejected.
+// published the predecessor's genuine guards. A prepared continuation may
+// export another pending generation: capture flattens untouched prefixes to
+// their shared permission origins, and publication promotes those origins to
+// the actual ready guards without retaining a recursive submission chain.
 HYLE_GRAPH_BATCH_API Result<PagedAppendPages> make_append_from_source(compute::PagedArena,
     compute::BatchLayoutVersion next, PagedAppendSource &previous,
     std::span<compute::PagedPageWriter> dirty, PagedAppendOptions = {}) noexcept;

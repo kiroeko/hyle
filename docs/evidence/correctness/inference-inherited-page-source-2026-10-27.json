@@ -1,0 +1,254 @@
+{
+  "date": "2026-10-27",
+  "status": "PASS",
+  "scope": "Flat inherited page permissions and genuine ready-origin publication, with two real CUDA A-to-B-to-C page-boundary/COW journeys and finite adjacent regressions.",
+  "environment": {
+    "platform": "Windows",
+    "gpu": "NVIDIA GeForce RTX 4070",
+    "compute_capability": "8.9",
+    "vram_MiB_reported": 12281,
+    "basis": "Original run/stderr.log. No new hardware query, exclusivity or frequency claim.",
+    "compiler": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-store-source-20261027\\runtime.json",
+      "bytes": 21665,
+      "sha256": "aeb836f46d7c5be685e02acfe49bcf4560672892564522256878e362785f3359"
+    }
+  },
+  "build": {
+    "CXX_TUs": 3,
+    "compile_attempts": 3,
+    "compile_failures": 0,
+    "link_attempts": 1,
+    "successful_links": 1,
+    "test_processes": 1,
+    "NVCC_TUs": 0,
+    "SDK_rebuilds": 0,
+    "downloads": 0,
+    "baseline_inputs": 233,
+    "final_inputs": 233,
+    "replaced_inputs": 3,
+    "retained_inputs": 230,
+    "baseline_receipt": "inference-pending-append-source-2026-10-27.json",
+    "baseline_closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\link-inputs-final.json",
+      "bytes": 60017,
+      "sha256": "abf52ffe88886cbc36ff8f90cf6aaa670dff1bcc8bd0ba9f4b1764ff4de4c0f1"
+    },
+    "compiled": [
+      {
+        "name": "resources",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2816591,
+          "sha256": "7647437f1754dfda9e641566b0cf58914fc1841f746b136bdb078a70033762e4"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 24216,
+          "seconds": 3.7136821000021882
+        }
+      },
+      {
+        "name": "append",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\append\\unit.obj",
+          "bytes": 2387734,
+          "sha256": "7c29b04496e38c66d9ed4d86fef55e659e7a6343cf61dd6f186c9c82fa6e5591"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 648,
+          "seconds": 2.712580199993681
+        }
+      },
+      {
+        "name": "paged-test",
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1719006,
+          "sha256": "10ece6484963ebf8dda7b322743e171b73f5685141dfe33e4ec66eda39c68abd"
+        },
+        "process": {
+          "exit": 0,
+          "pid": 40164,
+          "seconds": 7.419060899992473
+        }
+      }
+    ],
+    "link": {
+      "exit": 0,
+      "pid": 17436,
+      "seconds": 1.8573235999792814
+    },
+    "closure": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\link-inputs.json",
+      "bytes": 60020,
+      "sha256": "fd6fb073fb87e2efaf90dfd07b37a3b0c36d62b8141abe7860dfd06d4bc815fb"
+    },
+    "closure_replacements": [
+      {
+        "old": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2644002,
+          "sha256": "41f1447fbf491a9a30eb476010920a7964ae3ca90e037626d0686ae79524cbd9"
+        },
+        "new": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\resources\\unit.obj",
+          "bytes": 2816591,
+          "sha256": "7647437f1754dfda9e641566b0cf58914fc1841f746b136bdb078a70033762e4"
+        }
+      },
+      {
+        "old": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\append\\unit.obj",
+          "bytes": 2346945,
+          "sha256": "ca6468db7e20bfc1ee604727d81f1adc9386868f610b13927e59d9777f7d0bfc"
+        },
+        "new": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\append\\unit.obj",
+          "bytes": 2387734,
+          "sha256": "7c29b04496e38c66d9ed4d86fef55e659e7a6343cf61dd6f186c9c82fa6e5591"
+        }
+      },
+      {
+        "old": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-pending-append-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1587945,
+          "sha256": "bcbef03f352cd9d115d66f50712d6d1de4787344f751f79c73a5904151e96b37"
+        },
+        "new": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\compile\\paged-test\\unit.obj",
+          "bytes": 1719006,
+          "sha256": "10ece6484963ebf8dda7b322743e171b73f5685141dfe33e4ec66eda39c68abd"
+        }
+      }
+    ],
+    "reused_test_sources": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\output_source_cuda_test.cc",
+        "bytes": 83464,
+        "sha256": "a307db2bc111143426704e52a7318ee51d80fc2479a8149cec4220edeec68a75"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\graph\\region_provider_test.cc",
+        "bytes": 650127,
+        "sha256": "c4bb40dffbc2795c1996d1a8dace717c9d06551f6a07cb1d79c6462fcb90a265"
+      }
+    ],
+    "reuse_boundary": "Only resources.cc, paged_append.cc and the paged Source test TU were recompiled. Other 230 pinned input records are unchanged from the preceding final closure; their prior runtime/source/ABI evidence is reused, not rerun as separate build attempts.",
+    "outputs": "As-run OUT/PDB/IMPLIB all target this window scratch. No binary payload is in this archive."
+  },
+  "execution": {
+    "process": {
+      "exit": 0,
+      "pid": 7736,
+      "seconds": 0.6253260000376031
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-inherited-pages-20261027\\bin\\inherited-pages-test.exe",
+      "bytes": 145733632,
+      "sha256": "19ef1704b8582ea1d29346665ded9bf4ecd00924f902c33ebd5de7278c93e2a3"
+    },
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "tests": [
+      "GraphOutputSourceCuda.PendingI32UsesOriginalQueueAndLeasesForCheckedGather",
+      "GraphOutputSourceCuda.PendingI32PreparesRealStoreRegionBindingHooks",
+      "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+      "GraphOutputSourceCuda.RetiredSourceDetachesWhileReaderPendingAndProducerReusesNewWriter",
+      "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+      "GraphOutputSourceCuda.CapturedManagedI32ProducerRetainsItsOriginalSubmission",
+      "GraphOutputSourceCuda.TwoOutputsShareOneOriginalSubmissionAndAtomicBundle",
+      "GraphOutputSourceCuda.StoreAndTokenShareOnePendingSubmissionAcrossTakeAndPublication",
+      "GraphOutputSourceCuda.StorePendingReaderPreservesWholeProducerFailure",
+      "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+      "GraphRouteBoundary.ProjectedWriteRegionKeepsOneOriginalNominatedEffect",
+      "GraphRouteBoundary.ProjectedWriteRejectsASecondRegionEffectBeforeBinding",
+      "GraphPagedAppendSourceCuda.PendingOriginalPagesPublishWhileAttentionReads",
+      "GraphPagedAppendSourceCuda.OwnedLayoutMirrorPreservesPendingPageSource",
+      "GraphPagedAppendSourceCuda.PendingAppendCopiesOriginalTailAndInheritsPublishedPages",
+      "GraphPagedAppendSourceCuda.PageBoundaryAppendRetainsSourceWithoutCowReads",
+      "GraphPagedAppendSourceCuda.ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages",
+      "GraphPagedAppendSourceCuda.ChainedCowSourceReleasesUnrelatedPublishedPage"
+    ],
+    "command": "records/run/command.json",
+    "xml": "records/results.xml",
+    "failures_in_this_window": []
+  },
+  "checks": [
+    "B Source prepares while A is not captured yet; after B submission, inherited untouched physical prefixes flatten to original permission slots, without a recursive submission/terminal owner chain.",
+    "Page-boundary A-to-B-to-C: B has no COW GPU reads but still imports the complete A verdict; C reads B own fresh page plus A inherited pages after A true publication changed its fresh writer into append mode.",
+    "COW A-to-B-to-C: B replaces A tail page with its own fresh page; C reads the B result. After unrelated A/returned-transaction aliases are dropped, the replaced original page can be reacquired while B Source, B frame and C bundle remain alive; live inherited pages remain protected.",
+    "Publication while B is pending is rejected. After real B retirement, a complete same-geometry foreign-root guard set is rejected; subsequent genuine publication succeeds without poisoning the Source.",
+    "Existing explicit and private-owned layout controls, A-to-B COW and empty-copy effects, I32/Store Source whole-failure, Hybrid reuse-only, and nominated-writer adjacent cases also pass in this same image/process."
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+      "bytes": 232178,
+      "sha256": "f79a778f6f5f58cfb039a366d34b602a553defcf78947c8e9422d25a2fd370c9",
+      "archive": "source/src/graph/resources.cc",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.cc",
+      "bytes": 88612,
+      "sha256": "0fc363fd16448d558a41b4f35c54f44f8d04de776e13269b2366ccb09afb4f2e",
+      "archive": "source/src/graph_batch/paged_append.cc",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_batch\\paged_append_source_test.cc",
+      "bytes": 44741,
+      "sha256": "01aaaf7874f3832b8cf374174533706c2e8c619bf6edd1c94fe180e39832dc4a",
+      "archive": "source/tests/graph_batch/paged_append_source_test.cc",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\detail\\lease_access.h",
+      "bytes": 15964,
+      "sha256": "dcaff5266482531aed560c24677c440b317b1e2c1e35b6d52126a87f178980fc",
+      "archive": "source/include/hyle/compute/detail/lease_access.h",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\resource_source.h",
+      "bytes": 4099,
+      "sha256": "dd430f460d2e42752bccd066c834b296feb13a56ecd65c67f2a4f88041988f56",
+      "archive": "source/include/hyle/graph/detail/resource_source.h",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\graph\\detail\\paged_append_source.h",
+      "bytes": 3993,
+      "sha256": "d6c76608ab77eda1fdb5749c76eda062927dc1dcb369c8903668661ff9d77656",
+      "archive": "source/include/hyle/graph/detail/paged_append_source.h",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\graph_batch\\paged_append.h",
+      "bytes": 2843,
+      "sha256": "470b65c7027839a320b6ae1ee9fc00fae58b357590218e92e96c78835628b09a",
+      "archive": "source/src/graph_batch/paged_append.h",
+      "origin": "as-run frozen snapshot; not reconstructed from current working tree"
+    }
+  ],
+  "limits": [
+    "No complete inference-engine continuous pipeline, throughput/TPS, overlap speedup, memory benchmark, HTTP service, other OS/backend or new native fault-injection proof.",
+    "This is the original single shared Compute Queue Source contract; it does not establish delegated Apple/Vulkan pending imports or native indexed GDN/conv predecessor wiring.",
+    "The existing own-ready contribution versus registered-ready matching scan remains. Pending-previous preparation contributes ownready=0 and inherited prefixes; this window does not claim a general ready-path complexity reduction.",
+    "True typed publication remains predecessor-first and requires whole mathematical success plus actual retirement. Raw capacity/prefix carriers are never ready permissions.",
+    "The archived orchestration script uses the preserved predecessor cache helpers; actual compile/link/run commands, inputs and dependencies are archived directly. This ZIP is not a standalone SDK or binary distribution.",
+    "Elapsed test-process time is a correctness-run duration, not a performance measurement."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-inherited-page-source-2026-10-27.zip",
+    "bytes": 150530,
+    "sha256": "e7095834a37cb3f6644351de51df3a14efb457d60b66f3d08d0b2245495733ec",
+    "member_count": 47,
+    "payload_bytes": 714651,
+    "verification": "Every ZIP member was decompressed and compared with its exact expected bytes and SHA-256; manifest.json was independently parsed. No EXE/OBJ/PDB/DLL/LIB/EXP, SDK or model payload included."
+  }
+}

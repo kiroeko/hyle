@@ -76,6 +76,8 @@ struct LeaseAccess final {
   static const void *identity(const ReadLease &lease) noexcept { return lease.block_; }
   static const void *identity(const WriteLease &lease) noexcept { return lease.block_; }
   static const void *identity(const AppendLease &lease) noexcept { return lease.block_; }
+  static const void *identity(const PendingReadTicket &ticket) noexcept { return ticket.block_; }
+  static const void *identity(const PendingAppendReadTicket &ticket) noexcept { return ticket.block_; }
   // Immutable host layout bytes are real backing, charged for the complete
   // lease lifetime, but belong to metadata rather than model/cache payload.
   // Ordinary public imports retain their existing kExternal classification.

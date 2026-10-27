@@ -212,8 +212,15 @@ B持共享typed事实，不留A writer指针。COW沿原Ranges及原生程序复
 提交只接纳实际copy覆盖的票据；满页边界没有copy时仍登记完整前驱依赖，不发明range或tensor输入。
 A沿原发布桥取得真ReadLease后填固定共享cache，B成功退休后才从该cache继承未改页；票据不能冒充ready。
 [两条真实CUDA追加检查](../evidence/correctness/inference-pending-append-source-2026-10-27.json)覆盖COW及满页新页、
-一次Source／device-wait、原take／发布／快照、真实数据与128／129字节边界。B→C继承票据仍明确拒绝，
-连续来源扁平继承、索引状态接力及同尾有序写仍需分别接线。
+一次Source／device-wait、原take／发布／快照、真实数据与128／129字节边界。
+连续来源现将未改页扁平继承到原权限块及具体slot；capture先核B原交易的真实前驱effect附件，再封本代writer。
+权限块不含Queue、Completion或前代Source，实际终结依赖仍归原提交；不递归保留终结观察链。
+原typed发布取得全部真实ReadLease后，先核原block／generation／完整有序范围，才更新本来源的ready权限；
+继承项只能核对、不能扩大原权限。接纳先用真ready，否则保原ticket及原错误；full转append尚未发布时不伪造可重试状态。
+原Source销毁及最后继承pin释放按slot清真实资源，保留一页不能拖住同元数据内已被COW替换的其它页。
+[连续CUDA检查](../evidence/correctness/inference-inherited-page-source-2026-10-27.json)覆盖满页及COW两条A→B→C旅程、
+A发布后C读原页与B在途新页、旧快照及逐页回收；未新增故障注入。普通ready贡献仍保原双层核对，
+新在途继承按物理范围排序及查找，不据此宣称所有主机准备已消除。索引状态接力及同尾有序写仍需分别接线。
 完整模型、连续轮换及吞吐尚未验证，不能把本片当作KV流水完成。
 
 Store精确视图现由`StoreSource::prepare`在A提交前预留固定票据／坐标元数据，保留原预算与实际allocator owner。

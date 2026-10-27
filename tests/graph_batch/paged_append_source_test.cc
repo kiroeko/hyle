@@ -380,8 +380,9 @@ TEST(GraphPagedAppendSourceCuda, OwnedLayoutMirrorPreservesPendingPageSource) {
   pending_original_pages_publish_while_attention_reads(true);
 }
 
-void pending_append_inherits_published_pages(bool full_page_boundary) {
+void pending_append_inherits_published_pages(bool full_page_boundary, bool relay_to_attention = false) {
   SCOPED_TRACE(full_page_boundary ? "full page boundary" : "partial page COW");
+  SCOPED_TRACE(relay_to_attention ? "A to B to C" : "A to B");
   auto context_result = g::cuda::create_context();
   ASSERT_TRUE(context_result) << context_result.error().message();
   auto context = std::move(*context_result);
@@ -485,10 +486,69 @@ void pending_append_inherits_published_pages(bool full_page_boundary) {
   const auto bound_pages = gb::bind_append(consumer, b_graph, b_append, std::move(*b_pages_result));
   ASSERT_TRUE(bound_pages.ok()) << bound_pages.message();
   ASSERT_TRUE(consumer.bind(b_input, b_rows, b_input_ready).ok());
+  gbd::PagedAppendSource b_source;
+  c::PagedArena third_keys;
+  c::LeasePool third_payload;
+  std::array<c::ReadLease, 4> third_foreign_guards;
+  g::Invocation third;
+  g::ValueId third_value{}, third_output{};
+  if (relay_to_attention) {
+    auto b_source_result = gbd::PagedAppendSource::prepare(consumer, b_append, storage);
+    ASSERT_TRUE(b_source_result) << b_source_result.error().message();
+    b_source = std::move(*b_source_result);
+    third_keys = c::PagedArena::create(schema, c::BatchCacheRole::kKey,
+        storage.ref(), {.max_backing_bytes = 4096}).value();
+    for (std::size_t page = 0; page < b_ids.size(); ++page) {
+      auto writer = third_keys.acquire(std::uint32_t(b_ids[page])).value();
+      ASSERT_TRUE(writer.lease().view()->fill(std::byte{0}).ok());
+      third_foreign_guards[page] = writer.publish(page + 1 == b_ids.size()
+          ? std::uint32_t(b_tail_rows.front()) : 2u).value();
+    }
+    auto key_frame = third_keys.read(b_layout,
+        std::span(third_foreign_guards).first(b_ids.size())).value();
+    for (std::size_t page = 0; page < b_ids.size(); ++page)
+      third_foreign_guards[page] = key_frame.page_prefix(std::uint32_t(b_ids[page])).value();
+    const auto query_description = c::batch_query_description(capacity, 1).value();
+    const auto output_description = c::batch_output_description(capacity, 1).value();
+    third_payload = c::LeasePool::create(storage.ref(), 1024, {.max_blocks = 2}).value();
+    auto query_writer = third_payload.allocate(query_description.required_bytes().value(), 256).value();
+    auto destination = third_payload.allocate(output_description.required_bytes().value(), 256).value();
+    ASSERT_TRUE(query_writer.view()->fill(std::byte{0}).ok());
+    const auto query_ready = query_writer.publish().value();
+    auto third_builder = g::GraphBuilder::create().value();
+    const auto query = third_builder.input(query_description).value();
+    const auto key = third_builder.input(c::batch_cache_description(schema, c::BatchCacheRole::kKey).value()).value();
+    third_value = third_builder.input(c::batch_cache_description(schema, c::BatchCacheRole::kValue).value()).value();
+    const auto metadata = third_builder.input(schema.metadata_description().value()).value();
+    const auto attention = third_builder.add_node(c::Operation::custom(c::PagedAttention{
+        .capacity = capacity, .scale = .125F, .causal = true}),
+        std::array{query, key, third_value, metadata}).value();
+    third_output = third_builder.result(attention).value();
+    ASSERT_TRUE(third_builder.publish(third_output).ok());
+    const auto third_graph = std::move(third_builder).finish().value();
+    auto third_plan_result = g::cuda::compile(third_graph, context, storage);
+    ASSERT_TRUE(third_plan_result) << third_plan_result.error().message();
+    auto third_plan = std::move(*third_plan_result);
+    ASSERT_EQ(third_plan.report.step_count(), 1u);
+    third = third_plan.executable.create_invocation().value();
+    const auto third_prepared = gb::prepare(third, queues,
+        std::array{gb::NodeLayout{attention, b_layout}}, options);
+    ASSERT_TRUE(third_prepared.ok()) << third_prepared.message();
+    ASSERT_TRUE(gb::bind(third, key, std::move(key_frame)).ok());
+    ASSERT_TRUE(third.bind(query, query_description, query_ready).ok());
+    ASSERT_TRUE(third.bind(third_output, output_description, std::move(destination)).ok());
+    // Record only against the real capacity address, without submitting it
+    // or manufacturing ready values for any of B's future pages.
+    ASSERT_TRUE(third.bind(third_value, cd::PagedArenaAccess::tensor(arena).value()).ok());
+    const auto warm = third.prepare_replay(queues,
+        {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(warm.ok()) << warm.message();
+    ASSERT_EQ(third.replay_report()->recorded_capture_range_count, 1u);
+  }
   ASSERT_TRUE(producer.prepare_replay(queues,
       {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kReject}).ok());
 
-  PageSourceGate producer_gate, consumer_gate;
+  PageSourceGate producer_gate, consumer_gate, third_gate;
   producer_gate.arm(c::cuda::stream(queue).value());
   ASSERT_EQ(cudaLaunchHostFunc(producer_gate.stream, &PageSourceGate::wait, &producer_gate), cudaSuccess);
   auto submitted = producer.submit(queues);
@@ -548,9 +608,29 @@ void pending_append_inherits_published_pages(bool full_page_boundary) {
   ASSERT_EQ(cudaLaunchHostFunc(consumer_gate.stream, &PageSourceGate::wait, &consumer_gate), cudaSuccess);
   auto consumed = gd::submit_outputs(consumer, bindings, queues);
   ASSERT_TRUE(consumed) << consumed.error().message();
+  gd::SubmissionSource b_common;
+  std::array<gd::OutputBinding, 1> third_bindings;
+  if (relay_to_attention) {
+    auto b_common_result = gd::SubmissionSource::create(consumer, std::move(*consumed), storage);
+    ASSERT_TRUE(b_common_result) << b_common_result.error().message();
+    b_common = std::move(*b_common_result);
+    ASSERT_EQ(*b_common.poll(), c::CompletionPoll::kPending);
+    ASSERT_EQ(*common.poll(), c::CompletionPoll::kPending);
+    const auto captured_b = b_source.capture(b_common);
+    ASSERT_TRUE(captured_b.ok()) << captured_b.message();
+    auto third_binding = gbd::reader_binding(third, third_value, b_source, b_layout);
+    ASSERT_TRUE(third_binding) << third_binding.error().message();
+    ASSERT_NE(third_binding->resource, nullptr);
+    const auto premature = third_binding->resource->publish_ready({});
+    EXPECT_TRUE(premature.IsUnavailable()) << premature.message();
+    third_bindings.front() = *third_binding;
+    const auto third_bound = gd::bind_outputs(third, third_bindings);
+    ASSERT_TRUE(third_bound.ok()) << third_bound.message();
+  }
   producer_gate.release();
   ASSERT_TRUE(common.wait().ok());
-  ASSERT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  if (relay_to_attention) ASSERT_EQ(*b_common.poll(), c::CompletionPoll::kPending);
+  else ASSERT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   ASSERT_TRUE(common.detach().ok());
   auto returned_a_result = gb::take_append(producer, a_append);
   ASSERT_TRUE(returned_a_result) << returned_a_result.error().message();
@@ -571,24 +651,74 @@ void pending_append_inherits_published_pages(bool full_page_boundary) {
     EXPECT_EQ(a_tail.initialized_rows(), 1u);
     EXPECT_TRUE(a_tail.reserve_rows(1).IsUnavailable());
   }
-  const auto a_written_prefix = a_frame.page_prefix(2).value();
+  auto a_written_prefix = a_frame.page_prefix(2).value();
   // B's later untouched-page inheritance must use Source's actual ready
   // cache, not a pointer into the returned transaction or this local frame.
   returned_a = {};
   a_frame = {};
-  EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
+  c::Completion third_completion;
+  if (relay_to_attention) {
+    // A's original full page 2 has now become append-mode ready storage.
+    // The boundary variant keeps that page in B, so C needs its origin's
+    // actual ready guard rather than the now-ineligible full ticket. The
+    // COW variant drops it and must retain only inherited pages 0 and 1.
+    source = {};
+    ASSERT_EQ(*b_common.poll(), c::CompletionPoll::kPending);
+    const auto prepared_third = gd::prepare_outputs(third, third_bindings, queues);
+    ASSERT_TRUE(prepared_third.ok()) << prepared_third.message();
+    const auto replay = third.replay_report().value();
+    EXPECT_EQ(replay.recorded_capture_range_count, 0u);
+    EXPECT_EQ(replay.reused_capture_range_count, 1u);
+    const auto third_dependency = third.input_source_report().value();
+    EXPECT_EQ(third_dependency.source_count, 1u);
+    EXPECT_EQ(third_dependency.device_wait_count, 1u);
+    EXPECT_EQ(third_dependency.host_wait_count, 0u);
+    EXPECT_FALSE(third.submit(queues));
+    third_gate.arm(producer_gate.stream);
+    ASSERT_EQ(cudaLaunchHostFunc(third_gate.stream, &PageSourceGate::wait, &third_gate), cudaSuccess);
+    auto submitted_third = gd::submit_outputs(third, third_bindings, queues);
+    ASSERT_TRUE(submitted_third) << submitted_third.error().message();
+    third_completion = std::move(*submitted_third);
+    ASSERT_EQ(*third_completion.poll(), c::CompletionPoll::kPending);
+  } else EXPECT_EQ(*consumed->poll(), c::CompletionPoll::kPending);
   consumer_gate.release();
-  ASSERT_TRUE(consumed->wait().ok());
-  *consumed = {};
+  if (relay_to_attention) {
+    ASSERT_TRUE(b_common.wait().ok());
+    ASSERT_TRUE(b_common.detach().ok());
+    ASSERT_EQ(*third_completion.poll(), c::CompletionPoll::kPending);
+    // Complete cardinality and each physical prefix length match B; only the
+    // actual K roots/ranges are foreign to its V publication authority.
+    const auto foreign = third_bindings.front().resource->publish_ready(
+        std::span(third_foreign_guards).first(b_ids.size()));
+    EXPECT_TRUE(foreign.IsInvalidArgument()) << foreign.message();
+  } else {
+    ASSERT_TRUE(consumed->wait().ok());
+    *consumed = {};
+  }
   auto returned_b = gb::take_append(consumer, b_append);
   ASSERT_TRUE(returned_b) << returned_b.error().message();
-  auto final_result = returned_b->ready();
+  auto final_result = relay_to_attention ? b_source.ready(*returned_b) : returned_b->ready();
   ASSERT_TRUE(final_result) << final_result.error().message();
   const auto final_frame = std::move(*final_result);
   EXPECT_EQ(final_frame.layout(), b_layout);
   ASSERT_EQ(final_frame.page_count(), b_ids.size());
   const std::size_t total_rows = full_page_boundary ? 7 : 6;
   constexpr std::array<float, 7> expected{.125F, .25F, .375F, .5F, .625F, .75F, .875F};
+  if (relay_to_attention) {
+    // Payload reads below may synchronize the resource's actual device.
+    // Release the last Queue gate before inspecting any CUDA bytes on host.
+    third_gate.release();
+    ASSERT_TRUE(third_completion.wait().ok());
+    third_completion = {};
+    auto result = third.result(third_output).value();
+    auto read = result.storage_lease().value();
+    std::array<std::uint16_t, 64> actual{};
+    ASSERT_TRUE(read.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    // Q/K are zero: C reads B's whole bank. The seven-row boundary variant
+    // includes A's former full-writer page 2; the six-row COW variant does not.
+    for (const auto word : actual)
+      EXPECT_EQ(word, bf16(full_page_boundary ? .5F : .4375F));
+  }
   for (std::size_t page = 0; page < b_ids.size(); ++page) {
     auto prefix = final_frame.page_prefix(std::uint32_t(b_ids[page])).value();
     std::array<std::uint16_t, 128> actual{};
@@ -614,9 +744,29 @@ void pending_append_inherits_published_pages(bool full_page_boundary) {
   if (!full_page_boundary) {
     ASSERT_TRUE(a_tail.reserve_rows(1).ok());
     ASSERT_TRUE(a_tail.rollback().ok());
+    if (relay_to_attention) {
+      // Both submissions and C's real read have retired. Drop every genuine
+      // page-2 owner, the returned B transaction's old-prefix cache and B's
+      // original InputSources. Keep B Source, C and final B snapshot alive:
+      // shared origin metadata for pages 0/1 must not pin discarded page 2.
+      a_tail = {};
+      a_written_prefix.reset();
+      *returned_b = {};
+      const auto reset = consumer.reset();
+      ASSERT_TRUE(reset.ok()) << reset.message();
+      ASSERT_TRUE(b_source.valid());
+      EXPECT_EQ(final_frame.layout(), b_layout);
+      auto reclaimed = arena.acquire(2);
+      ASSERT_TRUE(reclaimed) << reclaimed.error().message();
+      EXPECT_EQ(reclaimed->page(), 2u);
+      EXPECT_TRUE(reclaimed->lease().valid());
+      for (const auto retained_page : std::array<std::uint32_t, 3>{0, 1, 3})
+        EXPECT_FALSE(arena.acquire(retained_page)) << retained_page;
+    }
   }
   EXPECT_FALSE(producer_gate.timed_out.load());
   EXPECT_FALSE(consumer_gate.timed_out.load());
+  EXPECT_FALSE(third_gate.timed_out.load());
 }
 
 TEST(GraphPagedAppendSourceCuda, PendingAppendCopiesOriginalTailAndInheritsPublishedPages) {
@@ -625,5 +775,13 @@ TEST(GraphPagedAppendSourceCuda, PendingAppendCopiesOriginalTailAndInheritsPubli
 
 TEST(GraphPagedAppendSourceCuda, PageBoundaryAppendRetainsSourceWithoutCowReads) {
   pending_append_inherits_published_pages(true);
+}
+
+TEST(GraphPagedAppendSourceCuda, ChainedAppendSourceReadsPublishedOriginAndPendingFreshPages) {
+  pending_append_inherits_published_pages(true, true);
+}
+
+TEST(GraphPagedAppendSourceCuda, ChainedCowSourceReleasesUnrelatedPublishedPage) {
+  pending_append_inherits_published_pages(false, true);
 }
 } // namespace

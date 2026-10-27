@@ -6,8 +6,9 @@
 
 namespace hyle::graph::detail {
 struct ResourceSourceState;
+class ResourceSource;
 struct ResourceSourceCounts final {
-  std::size_t ready = 0, full = 0, append = 0;
+  std::size_t ready = 0, full = 0, append = 0, inherited = 0;
 };
 struct ResourceFullRange final {
   const compute::WriteLease *writer = nullptr;
@@ -16,6 +17,12 @@ struct ResourceFullRange final {
 };
 struct ResourceAppendRange final {
   const compute::detail::AppendLease *appender = nullptr;
+  mem::ConstBufferView prefix{};
+};
+// Only the bounded permission is inherited. Capture flattens it to its original
+// resource owner; it never retains the preceding Source or terminal observer.
+struct ResourceInheritance final {
+  const ResourceSource *source = nullptr;
   mem::ConstBufferView prefix{};
 };
 // Call-scoped original resource registrations. The typed module proves its
@@ -28,6 +35,7 @@ struct ResourceContribution final {
   std::span<const compute::ReadLease> ready{};
   std::span<const ResourceFullRange> full{};
   std::span<const ResourceAppendRange> append{};
+  std::span<const ResourceInheritance> inherited{};
 };
 class ResourceSource final {
 public:
@@ -52,6 +60,10 @@ public:
   // Typed publication must additionally preserve its own layout/frontier
   // contract. These tickets alone never establish whole-producer success.
   HYLE_GRAPH_API Status successful_outcome() const noexcept;
+  // After successful actual retirement, record the real canonical ready guards.
+  // Own origins are updated; inherited guards are checked without widening them.
+  // Idempotent, and never waits for a pending producer.
+  HYLE_GRAPH_API Status publish_ready(std::span<const compute::ReadLease>) const noexcept;
   // Bounded initialized/prospective prefix of this original contribution.
   // Pure identity/range query, never a ready view or new work admission.
   HYLE_GRAPH_API Status covers_range(mem::ConstBufferView) const noexcept;
