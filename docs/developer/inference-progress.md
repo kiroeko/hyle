@@ -1,6 +1,6 @@
 # 推理底座进度
 
-更新：2026-10-29 00:03（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-29 00:07（北京时间）。百分比为工作量估计，不是测试通过率。
 
 **整体进度：约78%（进行中，按全部范围重新估算）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
@@ -36,7 +36,7 @@
     - 固定IO、载体安装与原Store cohort取回：100%（已实现并有限检查）
     - exact child资源图准备：100%（已实现并有限检查）
     - 形状准备及完整模型编排：约82%（进行中）
-  - 基础提交／取消／额度与输出接口：约35%（待收敛）
+  - 基础提交／取消／额度与输出接口：约70%（既有能力复核，仍待收敛）
   - 稳态准备、在途权限及普通／后继路径统一：约74%（进行中）
     - 固定物理span与全幅只读View复用：100%（已实现并有限检查）
   - MTP K1／多草稿共用流程：约43%（进行中）
@@ -65,25 +65,24 @@
 
 ## 正在做
 
-- **共同编排与基础输出边界审查**｜所属：共同执行架构｜约35%。继续核实已有RequestLoop／RequestWindow能表达的提交、取消、额度及结果观察，定位仍绑定Qwen的共同推进行为；不以服务协议为前置。
+- **输入消费与提交结果的共同推进**｜所属：共同执行架构／基础输出边界｜约10%。已定位prepare_generation_call、observe_generation_commits及finish_generation_call的输入游标和连续提交协议；下一片并入已有RequestProgress，模型继续提供真实账簿事实和Session发布。
 
-本批：exact child的资源端口核对、按需specialize及签名对应关系统一到已有PreparedProgramFamily，输出事实与资源图全部成功才发布。Model不再维护state_graphs平行数组；普通／MTP target及NextN的安装和绑定借同一child资源图。2次增量CXX、2次链接及5个CPU／CUDA有限进程通过，包含冷资源／签名拒绝后合法重试、ragged、MTP packed、K1／递归采样和R2接力；packed沿用原3e-6数值门，并非全部字节相同。按test.ps1清理6个临时链接文件及2个被替代消费者对象，回收约339MiB；保留当前对象与SDK。没有新的跨平台、质量或吞吐结论。[本批实现与检查](../evidence/correctness/inference-resource-graphs-2026-10-28.json)
+本批完成：
 
-本批：共同SubmissionViews保留同一Step控制块、原Completion及Store／Append捕获次序，StepSources仅额外保留模型边界与发布事实。1次增量CXX、1次链接及3个CUDA进程通过；原R2六臂、连续流水十六臂保持原完整状态、账簿及RNG检查。新增后段Store捕获失败检查实际提交5次，验证已转移Completion不会被可选降级丢弃、外部持有者阻止回收、释放后恢复及同会话重试，36,864字节状态相同。已按test.ps1清理3个临时链接文件约136MiB，保留编译缓存。使用未训练有限GA夹具，未注入原生GPU故障，没有MTP、跨平台、质量或吞吐新结论。[本批实现与检查](../evidence/correctness/inference-submission-views-2026-10-28.json)
+- **Source准备与捕获**：同一Step控制块和原Completion不变，3个CUDA有限进程通过。后段捕获失败检查验证外部持有者阻止回收、释放后恢复及同会话重试，36,864字节状态相同。[实现与检查](../evidence/correctness/inference-submission-views-2026-10-28.json)
+- **exact child资源图准备**：模型删除平行state_graphs数组，路由、输出及资源图一起成功才发布。5个CPU／CUDA有限进程通过，覆盖冷拒绝后重试、ragged、MTP packed、NextN采样和R2接力；packed保持原3e-6数值门，并非全部字节相同。[实现与检查](../evidence/correctness/inference-resource-graphs-2026-10-28.json)
 
-本批：共享typed安装统一exact核对、进度、固定IO、可选Store和成功发布，四处模型回调已删除。CPU／CUDA均实际检查部分安装失败后的原writer归还和合法重试；普通多请求、MTP K1／K2、前缀／frontier及受控数值失败检查通过，保留原27项完整状态比较。只编1个当前Model消费者、链接1次，未重编SDK或下载模型；按test.ps1清理3个临时链接文件约138MB。没有新吞吐或训练模型质量结论。[本批实现与检查](../evidence/correctness/inference-program-installation-2026-10-28.json)
+两批共3次增量CXX、3次链接，未重编SDK或下载模型；按test.ps1清理约475MiB可重建文件，保留当前对象和SDK。这些是未训练有限夹具的正确性结果，没有新增跨平台、质量或吞吐结论。
 
-本轮配置复查：修复旧协议设置阻止缩小产品集合、完整CPU平台检查滞后、已有自定义配置不可用及无效内部开关接受过晚；显式CUDA选择失败不再静默换SDK，原cache继续优先。安装包同步拒绝旧ATen变量，修正架构与三平台TLS示例。75项轻量检查及2项本机工具预览通过；没有下载、CXX／NVCC编译、整SDK安装或性能测量，不代签全新系统安装。[配置复查记录](../evidence/correctness/inference-initialization-followup-2026-10-28.json)
+请求接口从35%重估为约70%：RequestWindow／RequestLoop／OutputDelivery已有有界提交、动态输入、取消、额度、前缀ACK及背压，这次复核不是新增实现。仍需收拢模型内输入消费与提交结果推进；自然消费者目前预绑定日程、同步消费输出，不能冒充完整动态自然入口或自动公平重组。
 
-本批：新增原Plan的稀疏alias后裔索引，共用原全幅只读View证明，完整alias权限表保持不变。刷新9个实际私头消费者，14项CPU／CUDA有限检查通过；普通／MTP模型完整事实保持相同。普通复用58/64，MTP32/35；8个新计时进程只做单／两轮普通筛查，每臂2样本、无内存取样，不更新下方完整跨引擎表。已按test.ps1清理6个可重建文件，回收约271MiB，保留SDK对象及正常计时镜像。[本批实现与测量](../evidence/correctness/inference-view-spans-2026-10-28.json)
-
-初始化与配置：删除ATen公开开关，完整CPU／CUDA路线自动装配依赖；保留后端、产品、构建、测试与离线等实际需求参数。修复TLS AUTO丢失和CTest不必要的编译工具前置，统一CMake最低版本来源并删除重复win别名。61项脚本／环境／路由检查通过；完整缓存配置的包装进程超时，但原CMake子进程随后完成生成，生成闭包确认包含ATen。未全量重编SDK、未检查全新安装环境。[本批配置检查](../evidence/correctness/inference-initialization-options-2026-10-28.json)
+此前载体安装、IO、固定span／View复用及初始化／配置收敛已完成各自有限检查，依据统一见[工程记录](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
 此前K2末端合图与N32小投影候选未证明净收益，均已撤回；原结果仍见工程计划与性能资料。
 
 ## 接下来
 
-1. 收敛仍绑在模型中的执行编排及结果输出，先核已有RequestLoop／RequestWindow职责，复用原提交、权限和退休。稳态准备的后续性能仍须按真实主机成本归因。
+1. 将实际输入消费、连续提交核对与输入游标推进归入已有RequestProgress，普通／MTP共用；保留模型数学、上下文资格、账簿事实及原Session发布。稳态准备仍按真实主机成本归因。
 2. 继续收敛完整执行编排、基础输出接口及MTP固定形状／设备后继；有效行与状态权限须真实表达，不能只合并role或删检查。
 3. 小投影后续考虑保持原两权重与dense输出的原生paired／GEMV，避免当前concat形状的额外银行和strided输出；不再重复同一叶子矩阵。实质改动后再刷新四项性能。
 
