@@ -1375,8 +1375,14 @@ Phase按原计划准备一个或三个固定地址载体，直接使用已选exa
 普通Family、NextN、prefix sampler和frontier的有限exact目录统一由`PreparedProgramFamily`准备：
 同索引选取Executable与Report，冷存储发布输出事实及O(1)索引，全部成功后才发布目录。
 child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷元数据，不增加原生资源owner或热查询。
-模型仍按同一variant保存自己的state graph，负责形状键、容量、接纳淘汰与完整编排；
+同一child也提供资源绑定所需的逻辑图：共同目录只检查模型列出的Gather／Store端口，
+端口已具体化时借原稳定Graph；仅未具体化的FailedPrecondition触发按原variant绑定specialize，
+所得完整签名必须与child一致。资源图、路由及输出事实全部成功才发布目录，失败后可用原编译结果重试。
+普通／MTP target和NextN的槽安装、Store／Source绑定均借这个child资源图，不再由模型维护平行state graph数组。
+模型仍负责实际资源集合、形状键、容量、接纳淘汰与完整编排；
 不能把这四处冷准备的共用视为执行引擎已经完全抽离。
+[资源图有限检查](../evidence/correctness/inference-resource-graphs-2026-10-28.json)覆盖冷资源节点／签名拒绝后的合法重试，
+以及CPU ragged、CUDA MTP packed、NextN采样和原R2接力；原数值及完整状态门保持，不提供新的性能结论。
 [CPU／CUDA有限检查](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)复用原logits、采样及MTP packed消费者，
 68项完整状态比较保留原数值预算；本片没有新的吞吐或训练模型质量结论。
 形状使用计数、冻结后的额外容量、FIFO及接纳／淘汰计数由`ColdShapePlan`共同持有，

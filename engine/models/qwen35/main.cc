@@ -919,9 +919,6 @@ struct Family final : FamilyPorts {
   inference::PreparedProgramFamily programs;
   g::DimensionId last_row;
   std::vector<std::size_t> chunks;
-  // Model-only cold state descriptions, indexed by the same exact variant.
-  // An empty entry uses graph directly; this is never another executable.
-  std::vector<g::Graph> state_graphs;
 };
 // Physical IO/control carriers are independent of candidate depth. A reader
 // may still retain the preceding carrier after its producer publishes.
@@ -961,8 +958,7 @@ struct Phase final : FamilyPorts {
   std::vector<StateBank> state_banks;
   std::array<inference::SlotTransactions, execution_slot_count> state_transactions;
   const g::Graph &state_graph() const noexcept {
-    const auto &specialized = family->state_graphs[variant_index];
-    return specialized.valid() ? specialized : family->graph;
+    return child->resource_graph();
   }
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
@@ -2614,40 +2610,15 @@ public:
               << " max_placement_attempts=" << compile_options.max_placement_attempts
               << " placement_attempts=" << family_report.total_search().placement_attempts
               << " cold_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
-    check(definition.programs.prepare(std::move(compiled_family), definition.graph.value_count(),
-        definition.chunks.size()));
-    definition.state_graphs.resize(definition.chunks.size());
+    const auto hidden_store = definition.hidden_state.store;
+    const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
+    check(definition.programs.prepare(std::move(compiled_family), definition.graph, variants,
+        {definition.state_sources, extra_stores}, take(execution_budget.metadata_allocator())));
     for (std::size_t index = 0; index < definition.chunks.size(); ++index) {
       const auto &child = definition.programs.child(index);
       record_execution_plan(child.compiled.report, assembly.constants);
       report_packed_projections(definition.graph, child.compiled.report, r.packed_projection_nodes,
           child.compiled.executable.workspace_bytes());
-      bool concrete_states = true;
-      for (const auto &association : definition.state_sources) {
-        for (const auto value : {take(definition.graph.node_input(association.gather, 0)),
-                 take(definition.graph.node_input(association.gather, 1)),
-                 take(definition.graph.result(association.gather, 0)),
-                 take(definition.graph.node_input(association.store, 0)),
-                 take(definition.graph.node_input(association.store, 1))})
-          if (auto description = definition.graph.value_description(value); !description) {
-            if (!description.error().IsFailedPrecondition()) check(description.error());
-            concrete_states = false;
-          }
-      }
-      if (definition.hidden_state.store.valid())
-        for (const auto value : {take(definition.graph.node_input(definition.hidden_state.store, 0)),
-                 take(definition.graph.node_input(definition.hidden_state.store, 1))})
-          if (auto description = definition.graph.value_description(value); !description) {
-            if (!description.error().IsFailedPrecondition()) check(description.error());
-            concrete_states = false;
-          }
-      if (!concrete_states) {
-        auto specialized = take(g::specialize_exact(definition.graph, bindings[index],
-            take(execution_budget.metadata_allocator())));
-        if (specialized.signature != child.compiled.executable.specialization())
-          throw std::runtime_error("state graph specialization differs from its selected child");
-        definition.state_graphs[index] = std::move(specialized.graph);
-      }
     }
     selected = std::move(result);
     return true;
@@ -2861,9 +2832,12 @@ public:
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, static_cast<std::int64_t>(rows - 1)}};
     const std::array variants{g::ExactShapeVariant{binding}};
+    const auto hidden_store = program.hidden_state.store;
+    const auto extra_stores = hidden_store.valid() ? std::span(&hidden_store, 1) : std::span<const g::NodeId>{};
     check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph.value_count(), variants.size()));
+         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph, variants,
+        {{}, extra_stores}, take(execution_budget.metadata_allocator())));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
     record_execution_plan(compiled_program.report, assembly.constants);
@@ -2938,7 +2912,7 @@ public:
         .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         .progress = {scheduler.get(), workers.get()}};
     if (program.head) initialization.slots.emplace(inference::ProgramInitialization::Slots{
-        program.graph, sources,
+        program.programs.child(0).resource_graph(), sources,
         {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
     check(program.carrier.initialize(initialization));
   }
@@ -3040,7 +3014,7 @@ public:
       check(guard.execution.prepare_appends(program.graph,
           head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
           draft_bank, 2, cache_inputs, {.host_workspace = execution.staging()}));
-      check(guard.execution.bind_consumers(program.graph));
+      check(guard.execution.bind_consumers(program.programs.child(0).resource_graph()));
       check(guard.execution.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       check(guard.execution.submit(resources_)); check(guard.execution.wait_success());
       ++draft_program_graph_calls;
@@ -3167,7 +3141,7 @@ public:
     const std::array variants{g::ExactShapeVariant{binding}};
     check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph.value_count(), variants.size()));
+         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph, variants));
     const auto &compiled_program = program.programs.child(0).compiled;
     check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
     record_execution_plan(compiled_program.report, assembly.constants);
@@ -3376,7 +3350,7 @@ public:
         const std::array variants{g::ExactShapeVariant{shape}};
         check(prepared->programs.prepare(take(execution.compile(prepared->graph, assembly.constants,
             assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-             .constants = assembly.constants, .resource_budget = execution_budget}))), prepared->graph.value_count(), variants.size()));
+             .constants = assembly.constants, .resource_budget = execution_budget}))), prepared->graph, variants));
         const auto &compiled_program = prepared->programs.child(0).compiled;
         check(prepared->carrier.prepare(compiled_program, execution.queue_bindings()));
         record_execution_plan(compiled_program.report, assembly.constants);

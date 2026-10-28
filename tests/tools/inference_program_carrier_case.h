@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../engine/inference/program_carrier.h"
+#include "../../engine/inference/prepared_program_family.h"
 
 // Two public Graph invocations from one concrete program. No Model, synthetic
 // Completion, replacement resource owner or test-only execution route.
@@ -33,6 +34,33 @@ inline int run(q::BackendKind kind) {
   q::check(builder.publish(output));
   const auto graph = q::take(std::move(builder).finish());
   const auto compiled = q::take(backend.compile(graph, {}));
+  // Cold metadata only: neither a model fixture nor another native submit.
+  {
+    auto exact_builder = q::take(g::GraphBuilder::create());
+    const auto rows = q::take(exact_builder.dimension({1, 4, 1}));
+    const auto spec = q::take(g::TensorSpec::dense(q::Type::kFloat32, std::array{g::Dimension(rows)}));
+    const auto input = q::take(exact_builder.input(spec));
+    const auto sum = q::take(exact_builder.add(c::Binary{.kind = c::BinaryKind::kAdd}, spec, input, input));
+    q::check(exact_builder.publish(sum));
+    const auto logical = q::take(std::move(exact_builder).finish());
+    const std::array point{g::ShapeBinding{rows, 4}}, wrong_point{g::ShapeBinding{rows, 3}};
+    const std::array variants{g::ExactShapeVariant{point}}, wrong_variants{g::ExactShapeVariant{wrong_point}};
+    const auto finite = q::take(backend.compile(logical, {},
+        {.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants}));
+    i::PreparedProgramFamily family;
+    const std::array<g::NodeId, 1> invalid_resources{};
+    const auto invalid = family.prepare(finite, logical, variants, {.extra_stores = invalid_resources});
+    require(invalid.IsInvalidArgument() && !family.size() && !family.parent().executable && !family.parent().report,
+        "invalid exact resource node published a partial cold family");
+    const auto mismatch = family.prepare(finite, logical, wrong_variants);
+    require(mismatch.IsFailedPrecondition() && !family.size() && !family.parent().executable && !family.parent().report &&
+        finite.executable && finite.report && finite.executable.exact_variant_count() == 1,
+        "wrong exact signature published a family or consumed its original compiled route");
+    q::check(family.prepare(finite, logical, variants));
+    require(family.size() == 1 && &family.child(0).resource_graph() == &logical &&
+        family.child(0).output(sum).description == description && finite.executable && finite.report,
+        "exact family retry lost its original output facts or invented a resource graph for empty bindings");
+  }
   // Same executable/report handles, but a distinct borrowed program object.
   // IO must belong to the exact stable CompiledGraph selected by its carrier.
   const auto foreign_compiled = compiled;
@@ -160,6 +188,7 @@ inline int run(q::BackendKind kind) {
          "\"standalone_exact_rejected\":true,\"partial_installation_failed\":true,\"partial_caller_writer_tested\":"
       << (caller_writer ? "true" : "false") << ",\"partial_caller_writer_recovered\":" << (caller_writer ? "true" : "null")
       << ",\"valid_io_retry_output_checked\":true,"
+         "\"exact_resource_rejection_atomic\":true,\"exact_resource_original_graph_borrowed\":true,"
          "\"pending_observed\":" << (pending_observed ? "true" : "false")
       << ",\"closed_handle_not_reused\":true,\"teardown_handoff_irreversible\":true}\n";
   return 0;
