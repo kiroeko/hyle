@@ -120,7 +120,11 @@ MTP生成入口在原提交后若看到Step已cancelled，且确有原成员stop
 [CPU／CUDA有限检查](../evidence/correctness/inference-generation-batch-facts-2026-10-27.json)区分真实拆批、同宽及受控错误，未伪造自然EOS或设备故障。
 
 Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../../include/hyle/compute/providers/cuda.h)按数学、类型、形状及设备接纳，
-不读取模型身份。CPU的`kWins`只在锁定的已测构建／硬件条件下调整合法候选的[冷偏好](../../src/compute_route_cpu/default_policy.cc)，
+不读取模型身份。[FP8／分组量化](../../src/compute_provider_cuda/deepseek_fp8_provider.cc)与
+[FP4 grouped linear](../../src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc)只核算子、格式及原生容量；
+[CUDA冷策略](../../src/compute_route_cuda/default_policy.cc)先由原Provider接纳，再按数学／dtype／layout排名。
+此处DeepSeek与ggml、SGLang、CCCL一样标识实现来源，名称本身不是模型白名单。
+CPU的`kWins`只在锁定的已测构建／硬件条件下调整合法候选的[冷偏好](../../src/compute_route_cpu/default_policy.cc)，
 未命中仍保留正常候选。完整CUDA组合仍自动携带ATen模块，覆盖稳定Softplus、BF16融合SDPA及部分制品解码；
 同一模块也承载原生packed路径，不能把移除模块等同于只去掉ATen调用。
 显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
@@ -1353,9 +1357,13 @@ Store事务借用及候选额度借用。模型先声明参与者pins，再嵌�
 接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
 [本片有限检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)覆盖CPU／CUDA NextN真实失败后重试、
 旧快照、R2取消后的幸存续算和在途前驱下后继拒绝；未注入未知退休故障，没有新的性能结论。
-下一片准备协议沿原顺序分步表达batch metadata／Append、消费者／Store绑定及replay。
-模型必须能在Append绑定后构造真实Source，并在Store绑定后取得packed offsets；不能用一个封闭回调抹去这些依赖。
+共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
+`bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；
+`prepare_replay`按实际incoming选择原Source完整tuple门或普通replay，保留原mode／host-wait行为。
+模型在Append绑定后构造真实Source，并在Store绑定后取得packed offsets；不能用一个封闭回调抹去这些依赖。
 部分成功事实由同一episode回收；数学、shape、候选帧及全成员原子发布仍由模型负责。
+[本片7项CPU／CUDA旅程](../evidence/correctness/inference-execution-preparation-2026-10-28.json)覆盖普通异长、MTP packed、
+NextN两种head路径及真实Source在途；32项比较沿用原预算，不表示全部字节相同，没有新的性能结论。
 
 独立采样参考现分别表达CPU的52bit inverse-CDF、CUDA／Apple的F32 Gumbel和Vulkan的F32分段尾部公式。
 固定有限语料在执行前排除近决策边界的地址：CPU归一化CDF余量至少0.001，GPU胜出分数差至少0.05；

@@ -13,7 +13,8 @@
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
 随后[共同资源episode迁移](../../evidence/correctness/inference-execution-episode-2026-10-28.json)只运行6个CPU／CUDA功能旅程，
-数学与采样政策未变，但没有新的吞吐测量；下方速度仍对应各自冻结镜像，不当作最新源码已重测。
+以及[共同准备协议](../../evidence/correctness/inference-execution-preparation-2026-10-28.json)的7个有限旅程均未改变数学与采样政策，
+但没有新的吞吐测量；下方速度仍对应各自冻结镜像，不当作最新源码已重测。
 
 最新[均匀prefill直接A/B](../../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json)于北京时间2026-10-28
 **12:03:50～12:25:57**完成32进程（24计时、8独立内存），同窗8489→bb0c，只替换Model，保留其余228项CLI输入。

@@ -34,8 +34,8 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 独立事项可并行；功能与架构变更先做相关有限检查，再用完整消费者验证性能。
 2026-10-28的[当前完整窗口](../evidence/performance/inference-program-io-current-window-2026-10-28.json)
 新发现两轮prefill落后；均匀R1也选择packed数学，原indexed-state融合未命中。
-下一片先以当前镜像作控制核实自然入口的冷选择，保留真实ragged、padding、有界块及未知suffix能力；
-不因历史Commands路径相同就排除实际图差异，也不在直接A/B前宣称已找到性能主因。
+均匀R1的冷选择直接A/B与数值核对已完成，保留真实ragged、padding、有界块及未知suffix能力，
+结果见下方prefill记录；此后的资源与准备协议迁移不改变数学，也不冒充已测吞吐收益。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。
@@ -109,6 +109,9 @@ history的独立有限图原先在MLX冷编译时报映射缺失；随后定位�
 正常发布与输出观察仍归原模型和请求层。此迁移不包含形状族、完整准备编排或接受策略的全部抽离。
 [本片检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)以3个现有消费者、6个实际CPU／CUDA旅程
 核对真实失败恢复、Source、取消与状态；22个测试／probe仅机械迁移访问，不放宽原门。未知退休故障与其它平台未重测，无新吞吐结论。
+共同准备进一步接入普通／NextN的batch→Append→消费者／Store→replay流程，保留Source构造及packed offsets的原间隔。
+[2个消费者、7项有限旅程](../evidence/correctness/inference-execution-preparation-2026-10-28.json)通过，
+32项状态比较中2项字节相同，其余只对新F32 GDN沿原3e-6预算；旧状态、其它载荷、元数据和RNG仍保持精确检查。
 
 自然prefill入口按真实需求冷选：已知整段单请求使用原exact图，多成员、有界块或未知prefix后缀保留packed能力。
 32进程直接A/B已完成，单轮prefill约提升32%～34%，两轮观测约43%；普通输出有既存数学路径差异，

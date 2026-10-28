@@ -3095,13 +3095,12 @@ public:
       }
       if (program.next_counts) check(program.io.bind_output(run, program.next_counts_output, program.next_counts_pool));
       const std::array layouts{g::batch::NodeLayout{program.attention, layout}};
-      const auto queues = program.carrier.queues();
-      check(g::batch::prepare(run, queues, head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
-          {.host_workspace = execution.staging()}));
       const std::array cache_inputs{head ? program.key : V{}, head ? program.value : V{}};
-      check(guard.execution.append_transactions().subspan(draft_bank, 2).bind(run, program.graph, cache_inputs));
-      if (head) check(program.hidden_transactions.bind(run, program.graph));
-      check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
+      check(guard.execution.prepare_appends(program.graph,
+          head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
+          draft_bank, 2, cache_inputs, {.host_workspace = execution.staging()}));
+      check(guard.execution.bind_consumers(program.graph));
+      check(guard.execution.prepare_replay({.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
       check(guard.execution.submit(resources_)); check(guard.execution.wait_success());
       ++draft_program_graph_calls;
       if (head) {
@@ -4714,13 +4713,11 @@ public:
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
       for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
       if (drafts_token(role)) layouts.push_back({phase.draft_attention_node, step.draft_layout});
-      const auto queues = carrier.queues();
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.preparation_uses[slot]; }
       const auto batch_start = Clock::now();
-      check(g::batch::prepare(run, queues, layouts, {.host_workspace = execution.staging()}));
       const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
-      check(step.execution.append_transactions().subspan(0, append_banks).bind(run, phase.family->graph,
-          std::span<const V>(phase.append_cache_inputs).first(append_banks)));
+      check(step.execution.prepare_appends(phase.family->graph, layouts, 0, append_banks,
+          std::span<const V>(phase.append_cache_inputs).first(append_banks), {.host_workspace = execution.staging()}));
       if (relay) {
         auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size());
@@ -4739,16 +4736,14 @@ public:
           });
           if (!attached) input.outside_inputs.push_back(value);
         }
-        check(g::detail::bind_outputs(run, input.bindings)); input.bound = true;
       }
-      check(transactions.bind(run, phase.state_graph()));
+      check(step.execution.bind_consumers(phase.state_graph()));
       if (packed_prefill) {
         auto offsets = take(g::batch::query_offsets(run, phase.attention_nodes.front()));
         check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
       const auto batch_end = Clock::now();
-      if (relay) check(g::detail::prepare_outputs(run, step.execution.incoming->bindings, queues));
-      else check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
+      check(step.execution.prepare_replay({.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
         preparation->layout_seconds = std::chrono::duration<double>(batch_start - cold_start).count();

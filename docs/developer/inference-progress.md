@@ -1,10 +1,10 @@
 # 推理底座进度
 
-更新：2026-10-28 13:03（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 13:17（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约84%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约85%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：共同资源episode迁移已完成有限检查，继续抽离完整执行编排。** 普通、后继与NextN共用原资源、提交、观察和失败回收，模型保留数学、候选和原子发布。3次编译、3次链接及6个真实旅程通过，包含20项完整状态字节比较；本片未另测吞吐。最近性能仍为下方32进程A/B，跨引擎完整表仍对应8489基线。
+**当前位置：共同准备协议的有限检查已完成，准备刷新主机／GPU跟踪。** 普通与NextN共用batch／Append、消费者／Store及replay三个步骤，保留必要间隔。2次编译、2次链接和7个真实旅程通过；32项状态比较保留原数值预算。最近速度仍为下方32进程A/B，本片尚无新的吞吐或跟踪结论。
 
 ## 任务树
 
@@ -21,13 +21,14 @@
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
   - 完整路由可选ATen：约35%（未完成）
   - 文档与简明执行合同：约70%（继续收敛）
-- 共同执行架构：约80%（进行中）
+- 共同执行架构：约82%（进行中）
   - 请求、缓存、额度与退休合同：100%（本批完成）
-  - 模型无关执行编排与静态适配：约70%（原资源episode已共用，整体编排未抽完）
+  - 模型无关执行编排与静态适配：约74%（原资源与准备协议已共用，整体编排未抽完）
     - 原资源、提交、观察与失败回收：100%（本片普通／后继／NextN有限检查完成）
+    - batch／Append／Store及replay准备：100%（普通／NextN真实入口有限检查完成）
     - 形状准备及完整模型编排：约50%（仍主要在模型，继续拆分边界）
   - 基础提交／取消／额度与输出接口：约35%（待收敛）
-  - 稳态准备、在途权限及普通／后继路径统一：约65%（共同资源回收已接，准备及权限表达整体未完成）
+  - 稳态准备、在途权限及普通／后继路径统一：约68%（准备与回收已共用，权限表达整体未完成）
   - MTP K1／多草稿共用流程：约40%（NextN原Step复用，整体未完成）
 - 普通连续流水：约80%（进行中）
   - CUDA R1／R2跨pump与控制边界：约90%（有限检查完成）
@@ -53,10 +54,10 @@
 
 ## 正在做
 
-- **共同准备协议设计**｜所属：共同执行架构／模型无关执行编排与静态适配｜约70%。下一片收拢batch metadata、Append、消费者／Store绑定及replay；保留Append之后构造Source、Store之后取得packed offsets的必要间隔。数学、模型形状和联合发布仍归适配器。
+- **当前R1普通／MTP主机与GPU跟踪准备**｜所属：测量与回归／当前R1／B2／MTP主机与GPU跟踪｜约30%。复用已有Nsight工具与仅NVTX标注的参考，准备当前Model消费者；先做四个R1结构样本，不混旧B2协议或把仪器样本当正式吞吐窗口。
 
-刚完成：共同`ExecutionEpisode`、移除Step上的资源转发入口及22个测试／probe的机械访问迁移。CPU／CUDA真实NextN失败后同program重试、旧快照保持、R2取消后的幸存R1，以及在途A下拒绝B的保护均通过；未注入未知退休故障，未重测Apple／Vulkan或性能。
-结果：[本片6旅程与20项字节检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)。此前[prefill与四项A/B](../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json)及[Apple修复17项检查](../evidence/correctness/inference-apple-history-compile-2026-10-28.json)仍保留各自范围。
+刚完成：共同准备协议、普通与NextN两条真实入口接线。CPU／CUDA普通异长、MTP packed、NextN head=true故障重试及head=false修复、CUDA在途Source均通过。32项状态比较中2项字节全等，其余只对新F32 GDN使用原3e-6预算，最大差9.31e-10；其它载荷与旧快照仍精确核对。Provider来源名称不等于模型名单的review判断已复核，没有盲目改API名。
+结果：[本片7旅程与32项比较](../evidence/correctness/inference-execution-preparation-2026-10-28.json)。此前[资源episode](../evidence/correctness/inference-execution-episode-2026-10-28.json)、[四项A/B](../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json)及[Apple修复](../evidence/correctness/inference-apple-history-compile-2026-10-28.json)保留各自范围。
 
 ## 接下来
 

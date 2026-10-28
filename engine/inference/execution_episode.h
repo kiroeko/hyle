@@ -10,6 +10,7 @@
 
 #include "hyle/container/small_vector.h"
 #include "hyle/core/assert.h"
+#include "hyle/graph/batch.h"
 #include "hyle/graph/detail/output_source.h"
 #include "append_transactions.h"
 #include "program_carrier.h"
@@ -69,6 +70,38 @@ class ExecutionEpisode final {
   }
   Status request_cancel() noexcept {
     return sources && sources->submission.valid() ? sources->submission.request_cancel() : completion.request_cancel();
+  }
+
+  // Keep these steps separate: imported Source bindings depend on the actual
+  // prepared Append cohort, and model IO may be bound before replay admission.
+  Status prepare_appends(const graph::Graph &logical,
+      std::span<const graph::batch::NodeLayout> layouts,
+      std::size_t first, std::size_t count,
+      std::span<const graph::ValueId> cache_inputs,
+      graph::batch::PrepareOptions options = {}) noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    if (first > nodes.size() || count > nodes.size() - first ||
+        first > appends.size() || count > appends.size() - first ||
+        first > bound.size() || count > bound.size() - first)
+      return Status::OutOfRange("append preparation exceeds the original episode cohort");
+    HYLE_RETURN_IF_ERROR(graph::batch::prepare(*run, carrier->queues(), layouts, options));
+    return append_transactions().subspan(first, count).bind(*run, logical, cache_inputs);
+  }
+  Status bind_consumers(const graph::Graph &state_graph) noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    if (incoming) {
+      HYLE_RETURN_IF_ERROR(graph::detail::bind_outputs(*run, incoming->bindings));
+      incoming->bound = true;
+    }
+    return state_transactions ? state_transactions->bind(*run, state_graph) : Status::Ok();
+  }
+  Status prepare_replay(graph::ReplayOptions options = {}) noexcept {
+    if (!run || !carrier)
+      return Status::FailedPrecondition("execution episode has no original carrier");
+    return incoming ? graph::detail::prepare_outputs(*run, incoming->bindings, carrier->queues())
+                    : run->prepare_replay(carrier->queues(), options);
   }
 
   // All routes submit through the same already selected original carrier.
