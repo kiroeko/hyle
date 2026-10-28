@@ -205,7 +205,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
       require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
-          !program->hidden_transactions.bound() && !program->retirement.pending(),
+          !program->hidden_transactions.bound() && !program->carrier.pending(),
           "MTP repair retained a NextN completion or state transaction");
     }
   }

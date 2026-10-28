@@ -46,6 +46,7 @@
 #include "../../inference/sampling_graph.h"
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
+#include "../../inference/program_carrier.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
@@ -1370,15 +1371,13 @@ struct MtpGenerationSelection final {
 // verification repairs the retained draft prefix with actual target hidden
 // rows before the existing Snapshot transaction can publish it.
 struct DraftProgram final {
-  inference::QueueBindings queues;
   std::size_t rows = 0, sampling_index = 0;
   bool head = false;
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::vector<Tensor> literals;
   g::Graph graph;
   g::CompiledGraph compiled;
-  g::Invocation run;
-  ResourceRetention retirement;
+  inference::ProgramCarrier<ColdResources> carrier;
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
   V bias, allowed;
   std::vector<V> hidden_inputs, resource_ports;
@@ -1402,13 +1401,11 @@ struct DraftProposal final {
   c::ReadLease hidden, log_probabilities;
 };
 struct PrefixSamplingProgram final {
-  inference::QueueBindings queues;
   std::size_t proposals = 0, sampling_index = 0;
   std::vector<Tensor> literals;
   g::Graph graph;
   g::CompiledGraph compiled;
-  g::Invocation run;
-  ResourceRetention retirement;
+  inference::ProgramCarrier<ColdResources> carrier;
   V logits, identities, ids, bias, allowed;
   std::vector<V> q, accepted, final_ids, valid;
   std::vector<V> resource_ports;
@@ -1421,15 +1418,14 @@ struct PrefixSamplingResult final {
 };
 
 struct SamplingFrontier final {
-  inference::QueueBindings queues;
   std::vector<Tensor> literals;
   g::Graph graph;
   g::CompiledGraph compiled;
+  inference::ProgramCarrier<ColdResources> carrier;
   g::DimensionId last_row;
   V hidden_port, identity_port, id_port, valid_port, bias_port, allowed_port;
   Tensor identity;
   PreparedReadback id, valid;
-  ResourceRetention retirement;
 };
 
 struct PreparedSampling final {
@@ -1502,13 +1498,13 @@ struct ColdResources final {
         for (const auto &pin : phase->retirement) if (pin.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
-      (void)shape; if (program->retirement.pending()) return true;
+      (void)shape; if (program->carrier.pending()) return true;
     }
     for (const auto &[width, program] : prefix_sampling_programs) {
-      (void)width; if (program->retirement.pending()) return true;
+      (void)width; if (program->carrier.pending()) return true;
     }
     return std::ranges::any_of(sampling_configurations, [](const auto &entry) {
-      return entry->frontier && entry->frontier->retirement.pending();
+      return entry->frontier && entry->frontier->carrier.pending();
     });
   }
   void release_invocation_roots() noexcept {
@@ -1522,9 +1518,11 @@ struct ColdResources final {
     for (auto &[shape, program] : draft_programs) {
       (void)shape;
       program->guard.completion = {}; program->guard.run = nullptr;
-      program->run = {};
+      program->carrier.release_invocation_root();
     }
-    for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->run = {}; }
+    for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->carrier.release_invocation_root(); }
+    for (auto &entry : sampling_configurations) if (entry->frontier)
+      entry->frontier->carrier.release_invocation_root();
   }
   inference::RetirementObservation retire(bool wait) noexcept {
     hyle::Status status;
@@ -1861,11 +1859,9 @@ public:
 
   c::Completion submit_retained(g::Invocation &run, std::span<const g::QueueBinding> queues,
                                 ResourceRetention &retention, IncomingStepSources *incoming = nullptr) {
-    check(retention.reserve(resources_));
-    auto accepted = incoming ? g::detail::submit_outputs(run, incoming->bindings, queues) : run.submit(queues);
-    if (!accepted) { retention.reject(); return take(std::move(accepted)); }
-    check(retention.attach(*accepted));
-    return std::move(*accepted);
+    return take(inference::submit_retained(retention, resources_, [&]() noexcept {
+      return incoming ? g::detail::submit_outputs(run, incoming->bindings, queues) : run.submit(queues);
+    }));
   }
 
   std::string_view score_precision_policy() const {
@@ -2971,7 +2967,7 @@ public:
          .constants = assembly.constants, .resource_budget = execution_budget})));
     program.compiled.executable = take(program.compiled.executable.exact_variant(0));
     program.compiled.report = take(program.compiled.report.exact_variant(0));
-    program.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), program.compiled.report));
+    check(program.carrier.prepare(program.compiled, execution.queue_bindings()));
     record_execution_plan(program.compiled.report, assembly.constants);
     program.literals = std::move(assembly.literals);
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
@@ -3019,23 +3015,40 @@ public:
 
   void initialize_draft_program(DraftProgram &program) {
     const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
-    program.run = take(program.compiled.executable.create_invocation(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
-    if (scheduler) check(g::prepare_progress(program.run, *scheduler, *workers));
-    check(program.run.bind(program.tokens, program.token_values.read()));
-    check(program.run.bind(program.positions, program.position_values.read()));
-    if (program.head) check(program.id_value.bind(program.run));
-    if (program.head && selected_sampler.enabled) {
-      if (!program.identity_values.caller_owned()) program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-      check(program.run.bind(program.identity, program.identity_values.read()));
-    }
-    if (program.head && program.valid) check(program.valid_value.bind(program.run));
-    if (program.head && min_draft_probability() > 0) check(program.probability_value.bind(program.run));
-    if (program.head) {
-      const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
-      check(g::slots::prepare(program.run, program.graph, inference::queue_span(program.queues), sources,
-          {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
-    }
+    if (program.head && selected_sampler.enabled && !program.identity_values.caller_owned())
+      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
+    check(program.carrier.initialize(
+        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        [&](g::Invocation &run) -> hyle::Status {
+          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
+          HYLE_RETURN_IF_ERROR(run.bind(program.tokens, program.token_values.read()));
+          HYLE_RETURN_IF_ERROR(run.bind(program.positions, program.position_values.read()));
+          if (program.head) HYLE_RETURN_IF_ERROR(program.id_value.bind(run));
+          if (program.head && selected_sampler.enabled)
+            HYLE_RETURN_IF_ERROR(run.bind(program.identity, program.identity_values.read()));
+          if (program.head && program.valid) HYLE_RETURN_IF_ERROR(program.valid_value.bind(run));
+          if (program.head && min_draft_probability() > 0)
+            HYLE_RETURN_IF_ERROR(program.probability_value.bind(run));
+          if (program.head) {
+            const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
+            HYLE_RETURN_IF_ERROR(g::slots::prepare(run, program.graph, program.carrier.queues(), sources,
+                {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
+          }
+          return hyle::Status::Ok();
+        }));
+  }
+
+  // The shared carrier observes its original native owner. The original Step
+  // alone can take back this NextN append/Store cohort before carrier reset.
+  hyle::Result<bool> recover_draft_program(DraftProgram &program) noexcept {
+    auto &guard = program.guard;
+    const auto observed = program.carrier.retire(execution);
+    inference::record_retirement_status(guard.terminal, observed.status);
+    if (!observed.retired) return false;
+    HYLE_ASSIGN_OR_RETURN(const bool recovered, guard.try_abort());
+    if (!recovered) return false;
+    HYLE_RETURN_IF_ERROR(program.carrier.reset_retired());
+    return true;
   }
 
   // Append to an unpublished draft only. The first append uses COW; later
@@ -3056,12 +3069,12 @@ public:
     if (guard.cleanup_pending) {
       // Keep the same original failed episode and all its append/state facts
       // until real retirement; no new carrier can reuse these permissions.
-      if (!take(guard.try_abort()))
+      if (!take(recover_draft_program(program)))
         throw std::runtime_error("NextN original episode is still retiring");
       guard.cleanup_pending = false; guard.terminal = {};
     }
-    if (!program.run) initialize_draft_program(program);
-    auto &run = program.run;
+    if (!program.carrier.initialized()) initialize_draft_program(program);
+    auto &run = *take(program.carrier.borrow());
     guard.run = &run;
     if (head) guard.state_transactions = &program.hidden_transactions;
     cache::DraftState next;
@@ -3130,14 +3143,14 @@ public:
             program.probabilities_output.description, take(program.probability_pool.allocate(vocabulary * sizeof(float)))));
       }
       const std::array layouts{g::batch::NodeLayout{program.attention, layout}};
-      const auto queues = inference::queue_span(program.queues);
+      const auto queues = program.carrier.queues();
       check(g::batch::prepare(run, queues, head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
           {.host_workspace = execution.staging()}));
       const std::array cache_inputs{head ? program.key : V{}, head ? program.value : V{}};
       check(guard.append_transactions().subspan(draft_bank, 2).bind(run, program.graph, cache_inputs));
       if (head) check(program.hidden_transactions.bind(run, program.graph));
       check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
-      guard.completion = submit_retained(run, queues, program.retirement); check(guard.completion.wait()); guard.completion = {};
+      guard.completion = take(program.carrier.submit(resources_)); check(guard.completion.wait()); guard.completion = {};
       ++draft_program_graph_calls;
       if (head) {
         if (program.valid) {
@@ -3174,7 +3187,7 @@ public:
           throw std::runtime_error("NextN append returned an invalid private tail");
         tails[bank - draft_bank] = std::move(tail);
       }
-      check(run.unbind(program.resource_ports));
+      check(program.carrier.release_inputs(program.resource_ports));
       check(work.state.key.validate_commit(key_commit));
       check(work.state.value.validate_commit(value_commit));
       next.key = std::move(work.state.key); next.value = std::move(work.state.value);
@@ -3190,19 +3203,16 @@ public:
     } catch (inference::EvaluationFailure &failure) {
       // This validator has no target Step participant. Keep its original
       // private guard's actual retirement observation for a known caller key.
-      inference::record_retirement_status(guard.terminal, run.close());
-      inference::record_retirement_status(guard.terminal, execution.drain_retired(run));
       guard.cleanup_pending = true;
-      const auto recovered = guard.try_abort();
+      const auto recovered = recover_draft_program(program);
       if (!recovered) inference::record_retirement_status(guard.terminal, recovered.error());
       failure.observe_retirement({recovered && *recovered, guard.terminal});
       if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
       throw;
     } catch (...) {
       // An unsuccessful private append is never a partially published head.
-      run.close().IgnoreError(); execution.drain_retired(run).IgnoreError();
       guard.cleanup_pending = true;
-      const auto recovered = guard.try_abort();
+      const auto recovered = recover_draft_program(program);
       if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
       // Otherwise the original cold guard/run retain the partial cleanup facts;
       // the next use must finish this same retirement before it can initialize.
@@ -3259,7 +3269,7 @@ public:
          .constants = assembly.constants, .resource_budget = execution_budget})));
     program.compiled.executable = take(program.compiled.executable.exact_variant(0));
     program.compiled.report = take(program.compiled.report.exact_variant(0));
-    program.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), program.compiled.report));
+    check(program.carrier.prepare(program.compiled, execution.queue_bindings()));
     record_execution_plan(program.compiled.report, assembly.constants);
     program.literals = std::move(assembly.literals);
     if (program.identities) {
@@ -3280,14 +3290,30 @@ public:
   }
 
   void initialize_prefix_sampling(PrefixSamplingProgram &program) {
-    program.run = take(program.compiled.executable.create_invocation(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
-    if (scheduler) check(g::prepare_progress(program.run, *scheduler, *workers));
-    if (program.identities) check(program.run.bind(program.identities, program.identity_values.read()));
-    if (program.ids) check(program.run.bind(program.ids, program.id_values.read()));
-    for (auto &output : program.accepted_values) check(output.bind(program.run));
-    for (auto &output : program.final_values) check(output.bind(program.run));
-    for (auto &output : program.valid_values) check(output.bind(program.run));
+    check(program.carrier.initialize(
+        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        [&](g::Invocation &run) -> hyle::Status {
+          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
+          if (program.identities) HYLE_RETURN_IF_ERROR(run.bind(program.identities, program.identity_values.read()));
+          if (program.ids) HYLE_RETURN_IF_ERROR(run.bind(program.ids, program.id_values.read()));
+          for (auto &output : program.accepted_values) HYLE_RETURN_IF_ERROR(output.bind(run));
+          for (auto &output : program.final_values) HYLE_RETURN_IF_ERROR(output.bind(run));
+          for (auto &output : program.valid_values) HYLE_RETURN_IF_ERROR(output.bind(run));
+          return hyle::Status::Ok();
+        }));
+  }
+
+  // Pure private consumers have no append/Store transaction to recover. A
+  // previously closed run can be replaced only after its real owner retires.
+  void recover_private_carrier(inference::ProgramCarrier<ColdResources> &carrier) {
+    if (!carrier.closing()) return;
+    const auto observed = carrier.retire(execution);
+    if (!observed.retired) {
+      check(observed.status);
+      throw std::runtime_error("original private program carrier is still retiring");
+    }
+    check(carrier.reset_retired());
+    check(observed.status);
   }
 
   // Target family widths and replay counts stay with the finite request plan;
@@ -3313,10 +3339,9 @@ public:
     auto found = prefix_sampling_programs.find({proposals.size(), sampling_index});
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
     auto &program = *found->second;
-    if (program.retirement.pending())
-      throw std::runtime_error("original prefix decision resource scope is still retained");
-    if (!program.run) initialize_prefix_sampling(program);
-    auto &run = program.run;
+    recover_private_carrier(program.carrier);
+    if (!program.carrier.initialized()) initialize_prefix_sampling(program);
+    auto &run = *take(program.carrier.borrow());
     const auto count = proposals.size();
     if (selected_sampler.enabled) {
       (void)cursor.advanced(cache::add(cache::multiply(2, count), 1));
@@ -3335,9 +3360,9 @@ public:
       if (program.allowed) check(run.bind(program.allowed, inputs.allowed.description, inputs.allowed.lease));
       for (std::size_t row = 0; row < q.size(); ++row)
         check(run.bind(program.q[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
-      const auto queues = inference::queue_span(program.queues);
+      const auto queues = program.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
-      auto done = submit_retained(run, queues, program.retirement); check(done.wait());
+      auto done = take(program.carrier.submit(resources_)); check(done.wait());
       ++prefix_decision_graph_calls;
       PrefixSamplingResult result; result.accepted.resize(program.accepted.size()); result.final_ids.resize(program.final_ids.size());
       for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
@@ -3348,18 +3373,18 @@ public:
         if (!result.accepted.empty()) result.accepted[row] = take(program.accepted_values[row].predicate(execution, run));
         check(program.final_values[row].read(execution, run, std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
       }
-      check(run.unbind(program.resource_ports));
+      check(program.carrier.release_inputs(program.resource_ports));
       return result;
     } catch (inference::EvaluationFailure &failure) {
-      hyle::Status retirement = run.close();
-      inference::record_retirement_status(retirement, execution.drain_retired(run));
-      failure.observe_retirement({!run.in_flight() && !program.retirement.pending(), retirement});
-      run = {};
+      const auto observed = program.carrier.retire(execution);
+      failure.observe_retirement(observed);
+      if (observed.retired) program.carrier.reset_retired().IgnoreError();
       throw;
     } catch (...) {
       // The outer target episode retains its original member proof and drives
       // actual retirement; this finite private consumer releases only its pins.
-      run.close().IgnoreError(); execution.drain_retired(run).IgnoreError(); run = {};
+      const auto observed = program.carrier.retire(execution);
+      if (observed.retired) program.carrier.reset_retired().IgnoreError();
       throw;
     }
   }
@@ -3449,7 +3474,7 @@ public:
              .constants = assembly.constants, .resource_budget = execution_budget})));
         prepared->compiled.executable = take(prepared->compiled.executable.exact_variant(0));
         prepared->compiled.report = take(prepared->compiled.report.exact_variant(0));
-        prepared->queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), prepared->compiled.report));
+        check(prepared->carrier.prepare(prepared->compiled, execution.queue_bindings()));
         record_execution_plan(prepared->compiled.report, assembly.constants);
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
@@ -3470,23 +3495,27 @@ public:
     const auto next_cursor = selected_sampler.enabled ? cursor.advanced(1) : cache::SamplingCursor{};
     const auto started = Clock::now();
     auto &frontier = *selected.frontier;
-    if (frontier.retirement.pending())
-      throw std::runtime_error("original sampling frontier resource scope is still retained");
-    // This is the same Graph execution API/runtime as target/draft. It reads
-    // the original immutable hidden lease and returns only two scalar results.
-    auto run = take(frontier.compiled.executable.create_invocation(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
+    recover_private_carrier(frontier.carrier);
+    // This is the same Graph execution API/runtime as target/draft. Keep the
+    // original fresh-run frontier policy, with atomic fixed-IO installation.
+    check(frontier.carrier.initialize(
+        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        [&](g::Invocation &candidate) -> hyle::Status {
+          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(candidate, *scheduler, *workers));
+          if (selected_sampler.enabled) HYLE_RETURN_IF_ERROR(candidate.bind(frontier.identity_port, frontier.identity.read()));
+          HYLE_RETURN_IF_ERROR(frontier.id.bind(candidate));
+          if (frontier.valid_port) HYLE_RETURN_IF_ERROR(frontier.valid.bind(candidate));
+          return hyle::Status::Ok();
+        }));
+    auto &run = *take(frontier.carrier.borrow());
     try {
-      if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
       if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
       check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
-      if (selected_sampler.enabled) check(run.bind(frontier.identity_port, frontier.identity.read()));
       if (frontier.bias_port) check(run.bind(frontier.bias_port, inputs.bias.description, inputs.bias.lease));
       if (frontier.allowed_port) check(run.bind(frontier.allowed_port, inputs.allowed.description, inputs.allowed.lease));
-      check(frontier.id.bind(run)); if (frontier.valid_port) check(frontier.valid.bind(run));
-      const auto queues = inference::queue_span(frontier.queues);
+      const auto queues = frontier.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
-      auto done = submit_retained(run, queues, frontier.retirement); check(done.wait());
+      auto done = take(frontier.carrier.submit(resources_)); check(done.wait());
       ++frontier_sampling_graph_calls;
       const auto valid = frontier.valid_port ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
       std::int32_t pending = -1;
@@ -3497,11 +3526,16 @@ public:
         throw std::runtime_error("cached frontier sampling is outside its declared result domain");
       auto next = sampling_fork(std::move(base), next_cursor, pending);
       frontier_sampling_seconds += std::chrono::duration<double>(Clock::now() - started).count();
+      check(frontier.carrier.reset_retired());
       return next;
     } catch (inference::EvaluationFailure &failure) {
-      hyle::Status retirement = run.close();
-      inference::record_retirement_status(retirement, execution.drain_retired(run));
-      failure.observe_retirement({!run.in_flight() && !frontier.retirement.pending(), retirement});
+      const auto observed = frontier.carrier.retire(execution);
+      failure.observe_retirement(observed);
+      if (observed.retired) frontier.carrier.reset_retired().IgnoreError();
+      throw;
+    } catch (...) {
+      const auto observed = frontier.carrier.retire(execution);
+      if (observed.retired) frontier.carrier.reset_retired().IgnoreError();
       throw;
     }
   }

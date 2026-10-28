@@ -1,0 +1,348 @@
+{
+  "status": "PASS_BOUNDED_ORIGINAL_PROGRAM_CARRIER",
+  "created_utc": "2026-10-28T00:14:27.590352+00:00",
+  "base": "d4c2af9069d21b5dd1f137f0ea9f65096af39d08",
+  "implementation": [
+    "One nonmoving embedded carrier shares original Invocation, selected queue bindings and original scope-retention plumbing across NextN, recursive prefix decision and sampling frontier.",
+    "Fixed bindings publish a local candidate only after complete success. Actual close/drain retirement remains separate from transaction recovery and reusable reset; teardown handoff is permanent.",
+    "NextN retains its original Step transaction recovery; Source publication, model mathematics, sampling policies and Session acceptance retain their existing owners. Phase shares the static submit-retention algorithm."
+  ],
+  "counts": {
+    "actual_CXX": 2,
+    "successful_CXX": 1,
+    "failed_CXX": 1,
+    "actual_links": 1,
+    "successful_links": 1,
+    "actual_consumer_processes": 6,
+    "successful_consumer_processes": 6,
+    "zero_Model_carrier_processes": 2,
+    "Model_processes": 4,
+    "Model_instances": 4,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "build": {
+    "failed_CXX": {
+      "pid": 20616,
+      "exit": 2,
+      "started": 1793146100.421345,
+      "seconds": 6.704037666320801,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "successful_CXX": {
+      "pid": 37572,
+      "exit": 0,
+      "started": 1793146194.6658597,
+      "seconds": 44.40002489089966,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "link": {
+      "pid": 59940,
+      "exit": 0,
+      "started": 1793146260.448363,
+      "seconds": 1.8300256729125977,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "current_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\bin\\tiny.exe",
+      "bytes": 143604224,
+      "sha256": "d2bd858b9e0107c69259d480dfd7c878f41b70eeead1b5e2e8d1bb1e2cfdfda3"
+    },
+    "link_inputs": 228,
+    "replaced_objects": 1,
+    "retained_object_or_library_inputs": 227,
+    "weights_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\weights\\unit.obj",
+      "bytes": 3468178,
+      "sha256": "4ea50f96ddfcf29097f3051b692ffdc6b74d1729d8ca64e321627b7d36cfd2be"
+    }
+  },
+  "failure": {
+    "kind": "Test API adaptation errors, no link or inference in the failed attempt",
+    "pid": 20616,
+    "details": [
+      "qwen_mtp_sampling_case.h still accessed removed PrefixSamplingProgram.run.",
+      "The new carrier case called an unavailable GraphBuilder::add(Operation,array) overload."
+    ],
+    "correction": "Use carrier.initialized() and original typed public add(Binary,first,second); product sources unchanged between attempts.",
+    "original_sources_and_logs_preserved": true
+  },
+  "runs": [
+    {
+      "arm": "carrier-cpu",
+      "pid": 36456,
+      "exit": 0,
+      "seconds": 0.7973537445068359,
+      "facts": {
+        "models": 0,
+        "native_submissions": 2,
+        "pending_observed": true,
+        "atomic_initialization": true,
+        "independent_original_invocations": true,
+        "original_scope_retirement": true,
+        "GraphOutput_pin_preserved": true,
+        "irreversible_teardown": true
+      }
+    },
+    {
+      "arm": "carrier-cuda",
+      "pid": 25848,
+      "exit": 0,
+      "seconds": 0.5040388107299805,
+      "facts": {
+        "models": 0,
+        "native_submissions": 2,
+        "pending_observed": true,
+        "atomic_initialization": true,
+        "independent_original_invocations": true,
+        "original_scope_retirement": true,
+        "GraphOutput_pin_preserved": true,
+        "irreversible_teardown": true
+      }
+    },
+    {
+      "arm": "logits-cpu",
+      "pid": 51504,
+      "exit": 0,
+      "seconds": 0.5692603588104248,
+      "facts": {
+        "models": 1,
+        "initialized_state_checks": 10,
+        "all_payloads_byte_equal": true,
+        "differences": 0,
+        "original_finite_Graph_math_branches": 2,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "logits-cuda",
+      "pid": 55232,
+      "exit": 0,
+      "seconds": 1.0175864696502686,
+      "facts": {
+        "models": 1,
+        "initialized_state_checks": 10,
+        "all_payloads_byte_equal": true,
+        "differences": 0,
+        "original_finite_Graph_math_branches": 2,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "e4-cpu",
+      "pid": 17216,
+      "exit": 0,
+      "seconds": 0.511040449142456,
+      "facts": {
+        "models": 1,
+        "initialized_state_byte_equal_checks": 11,
+        "target": "E4M3FN",
+        "draft": "BF16",
+        "exact_cache_backing_bytes": 314119,
+        "controlled_B2_accepted_prefixes": [
+          1,
+          2
+        ],
+        "RNG_unchanged": true,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "preflight-cpu",
+      "pid": 51800,
+      "exit": 0,
+      "seconds": 0.42777132987976074,
+      "facts": {
+        "models": 1,
+        "typed_original_key_rejection": true,
+        "rejected_native_submissions": 0,
+        "complete_state_and_ledger_unchanged": true,
+        "same_key_peer_continued": true,
+        "final_versions": 0
+      }
+    }
+  ],
+  "source_pins": {
+    "engine/inference/program_carrier.h": "537ff0b52e0bb5f81f610ee6c485fbaa8bbfb5ff5ff987286c2a75c2e6817737",
+    "engine/models/qwen35/main.cc": "b474e136a5da82e3eca621ec5d0f950846e155b272d65b1c95ffe5677f8d79f6",
+    "tests/tools/qwen_host_image_test.cc": "2da32258f88089fdc5b7e975349ee76db0753020e7110c9c4923742dc6ed7fc2",
+    "tests/tools/inference_program_carrier_case.h": "e5306258ff006802f94ba836fdf827f999e9c8cdfb5e8ce057cc787b7a275b13",
+    "tests/tools/qwen_mtp_batch_state_case.h": "e060c9034538464ec65d4902e3df9bf6a1aef26d3c2fd1d960df7c52777641bc",
+    "tests/tools/qwen_mtp_chunked_prefill_case.h": "a6ee100d8384e67eea972b8885ebda1797413436622e83ead4a56e218a724414",
+    "tests/tools/qwen_mtp_e4_case.h": "9685add0e8fbee9fb7b1913e1200ab0b4cec424af50bf592d054b5d4c23c3afa",
+    "tests/tools/qwen_mtp_packed_prefill_case.h": "531da9ccc980582f515d09945bd538d5449c18cfd9f178da08d9fef274f2aed2",
+    "tests/tools/qwen_mtp_ragged_prefill_case.h": "5ad54ed40e1252f04f5706e893b16f6fbf6eebe709653741bc30de9e55dcb103",
+    "tests/tools/qwen_mtp_sampling_case.h": "0eb92e22ffbed88b2ffc8d19ddb8305e49c8231bc6ef3169dcca62d51fa23bdd"
+  },
+  "ownership_review": "Static review caught the advisory close-busy Unavailable masking a subsequent native drain Status; the final shared helper ignores only that original nonnative busy hint. No injected native-fault runtime test was added.",
+  "dependency_boundary": "Canonical include-main TU only was rebuilt. Actual MSVC dependency receipts and before/after project pins are retained; weights source/types and public SDK/backend layouts were unchanged. The other 227 object/library identities are reused, without claiming a full retained-header ABI audit.",
+  "source_freeze": {
+    "path": ".scratch/inference-program-carrier-20261028/refinement/source-freeze.json",
+    "bytes": 6392,
+    "sha256": "0d047645311545ad78515a5c4da8bc8400506bbe22745db653f7dc404b705fe0"
+  },
+  "actual_dependencies": {
+    "path": ".scratch/inference-program-carrier-20261028/refinement/compile/tiny/dependencies.json",
+    "bytes": 41921,
+    "sha256": "d97a4e381ae3f57860ee4543f8956c6718d1e19128b7f2ed6984631b96e27017"
+  },
+  "reference": {
+    "path": "docs/evidence/correctness/inference-mtp-e4-2026-10-28.json",
+    "bytes": 15895,
+    "sha256": "7e334dff2be0f8e44e17de74f6816b5c88fffb9c6c84f91ef99876739910d1a1"
+  },
+  "limits": [
+    "Finite CPU/CUDA checks only; no other-platform, throughput, model-quality, native-fault or MTP cross-episode overlap claim.",
+    "The zero-Model carrier cases each execute two original native Add submissions. Pending was observed on both actual runs, but no gate forces every pending branch.",
+    "MTP logits repeats ten byte-exact initialized-state checks per backend; E4 CPU repeats eleven. The inherited finite GDN numerical oracle was retained; actual reported payload differences were zero.",
+    "Phase still owns cold carrier initialization and its fields; the shared algorithm is not a new executor, Completion owner or transaction protocol.",
+    "The E4 regression uses original Commands replay. Recorded process seconds are provenance, not performance measurements."
+  ],
+  "reproduction": {
+    "build": ".scratch/inference-program-carrier-20261028/refinement/build.py",
+    "run": ".scratch/inference-program-carrier-20261028/refinement/run.py",
+    "commands": [
+      "build.py prepare",
+      "build.py freeze",
+      "build.py compile",
+      "build.py link",
+      "run.py run carrier-cpu|carrier-cuda|logits-cpu|logits-cuda|e4-cpu|preflight-cpu"
+    ],
+    "policy": "Root executed explicit single-use actions; no successful process was rerun. Archived pins require the matching checkout and retained external dependencies."
+  },
+  "cleanup_candidates": {
+    "status": "CANDIDATES_ONLY_NO_DELETE",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.exe",
+        "bytes": 143582208,
+        "exists": true,
+        "referenced_by_current_228": false
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.exp",
+        "bytes": 24978,
+        "exists": true,
+        "referenced_by_current_228": false
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.lib",
+        "bytes": 41384,
+        "exists": true,
+        "referenced_by_current_228": false
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\tiny\\unit.obj",
+        "bytes": 34173896,
+        "exists": true,
+        "referenced_by_current_228": false
+      }
+    ],
+    "count": 4,
+    "bytes": 177822466,
+    "protected_ready": {
+      "path": ".scratch/inference-program-carrier-20261028/refinement/ready-tiny.json",
+      "bytes": 2670,
+      "sha256": "7e9eed555c572c44542685c2680ee266e48c38cc61bb8628a0083bab838c3a89"
+    },
+    "protected_inputs": {
+      "path": ".scratch/inference-program-carrier-20261028/refinement/inputs-tiny.json",
+      "bytes": 58746,
+      "sha256": "73537c22fd7ef23c06cc042b3c8ed251a1bb0f654b18345ba2cf184bd4256907"
+    },
+    "preserve": "Current weights/SDK/Tiny and all source, command, dependency, log, ready and evidence receipts."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-program-carrier-2026-10-28.zip",
+    "bytes": 443375,
+    "sha256": "b36152347b6f59385c8e546946c1f132f063d64a0f587a2d01bef0c6d3263c23",
+    "files": 133,
+    "CRC_and_member_SHA256_verified": true
+  },
+  "cleanup_executed": {
+    "receipt": {
+      "Protected": [
+        {
+          "Ready": ".scratch\\inference-program-carrier-20261028\\refinement\\ready-tiny.json",
+          "Inputs": 228
+        },
+        {
+          "Ready": ".scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\ready-host.json",
+          "Inputs": 237
+        },
+        {
+          "Ready": ".scratch\\inference-mtp-stop-policy-20261028\\ready-host.json",
+          "Inputs": 237
+        },
+        {
+          "Ready": ".scratch\\inference-hidden-indexed-refinement-20261028\\ready.json",
+          "Inputs": 226
+        }
+      ],
+      "Mode": "execute",
+      "Count": 12,
+      "Bytes": 525362481.0,
+      "Files": [
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.exe",
+          "Bytes": 143582208
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.exp",
+          "Bytes": 24978
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin\\tiny.lib",
+          "Bytes": 41384
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\tiny\\unit.obj",
+          "Bytes": 34173896
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\bin\\tiny.exe",
+          "Bytes": 143492608
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\bin\\tiny.exp",
+          "Bytes": 24982
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\bin\\tiny.lib",
+          "Bytes": 41384
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\compile\\tiny\\unit.obj",
+          "Bytes": 32693789
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\bin\\tiny.exe",
+          "Bytes": 143324672
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\bin\\tiny.exp",
+          "Bytes": 24987
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\bin\\tiny.lib",
+          "Bytes": 41384
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\compile\\tiny\\unit.obj",
+          "Bytes": 27896209
+        }
+      ]
+    },
+    "receipt_path": ".scratch/inference-program-carrier-20261028/cleanup-execute-20261028T0016565058254Z.json",
+    "script": "test.ps1",
+    "script_sha256": "945c0881d0fcb607c3d927e94e2efd79fbb6381530a19dbd213d6f19c8801384",
+    "method": "Root wrote exact file targets in test.ps1, checked preview, then executed. No recursive operation. All four current protected build closures retained.",
+    "superseded_ready_disposition": "Old E4/logits/sampler Tiny image/object identities are historical receipts; their private binaries have been removed. Matching source, commands, results and compact archives remain. Current executable closure is the carrier refinement ready record.",
+    "archive": "The unchanged archive predates cleanup; this inline actual receipt records the later cleanup."
+  }
+}

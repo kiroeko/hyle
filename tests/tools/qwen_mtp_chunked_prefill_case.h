@@ -294,7 +294,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
       require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
-          !program->hidden_transactions.bound() && !program->retirement.pending(), "MTP controlled repair did not retire");
+          !program->hidden_transactions.bound() && !program->carrier.pending(), "MTP controlled repair did not retire");
     }
   }
   require(!exact_storage->live_images() && !chunk_storage->live_images(), "MTP chunked journeys retained a host image");

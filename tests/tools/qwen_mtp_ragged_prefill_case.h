@@ -262,7 +262,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
       require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
-          !program->hidden_transactions.bound() && !program->retirement.pending(), "ragged MTP repair did not really retire");
+          !program->hidden_transactions.bound() && !program->carrier.pending(), "ragged MTP repair did not really retire");
     }
   }
   require(!exact_storage->live_images() && !packed_storage->live_images(), "ragged MTP retained a host image");

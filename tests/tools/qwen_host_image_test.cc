@@ -12,6 +12,7 @@
 #include "qwen_mtp_sampling_case.h"
 #include "qwen_mtp_logits_case.h"
 #include "qwen_mtp_e4_case.h"
+#include "inference_program_carrier_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
@@ -29,9 +30,10 @@ int main(int argc, char **argv) {
     const bool mtp_sampling = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-sampling";
     const bool mtp_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-logits";
     const bool mtp_e4 = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-e4";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4);
+    const bool program_carrier = argc >= 3 && std::string_view(argv[argc - 1]) == "--program-carrier";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -43,6 +45,7 @@ int main(int argc, char **argv) {
     if (std::find(compiled.begin(), compiled.end(), backend) == compiled.end()) {
       std::cerr << "SKIP: selected route is not built\n"; return 77;
     }
+    if (program_carrier) return inference_program_carrier_case::run(backend);
     std::string input;
     if (input_argc == 3) input = argv[2];
     else {

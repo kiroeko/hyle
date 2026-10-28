@@ -287,7 +287,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       model.draft_inventory.free_ids.size() == plan.max_pages, "E4 MTP retained a host image, version or target/draft page owner");
   for (const auto &[key, program] : model.draft_programs) {
     (void)key; require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
-        !program->hidden_transactions.bound() && !program->retirement.pending(), "E4 NextN retained original native work or state permission");
+        !program->hidden_transactions.bound() && !program->carrier.pending(), "E4 NextN retained original native work or state permission");
   }
   t::idle(model); (void)model.cache_usage();
   std::cout << "{\"status\":\"PASS\",\"case\":\"mtp-e4-cache\",\"backend\":\"" << h::backend_name(kind)

@@ -355,7 +355,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         model.draft_programs.at({1, true, index})->sampling_index == index,
         "natural cold planning omitted a used recursive configuration or its actual verifier carrier");
     if (index != 1) require(model.prefix_sampling_programs.at({2, index})->sampling_index == index &&
-        model.prefix_sampling_programs.at({2, index})->run,
+        model.prefix_sampling_programs.at({2, index})->carrier.initialized(),
         "natural recursive sampling did not execute its original configuration's prefix program");
   }
   require(!model.snapshot_versions.live && model.page_inventory.free_ids.size() == plan.max_pages &&

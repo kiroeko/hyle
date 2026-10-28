@@ -61,10 +61,14 @@ E4目标KV＋原BF16 draft的MTP组合已接通：准备器提供两组实际行
 提交、观察和退休机制，以不同在途深度表达；必要fallback保留，被替代的实验分支删除。
 内部强制off只供基准与诊断；“尚未接通”与“原理不适用”分开记录，不用模型名字维护排除名单。
 
-下一块共同执行迁移按完整程序载体职责推进：先抽prefix sampler的原Invocation创建、固定绑定、
-借用和实际退休后复用，再接NextN与Phase。共同层继续调用原Graph／资源保留／退休机制，
-模型保留图数学、family与采样键、实际layout、接受策略及Session提交。此项尚未实施，
-不能用请求层共用或整数打包函数提取代签完整执行核心。动态历史惩罚的输入合同随实际消费者继续补齐。
+共同程序载体已接入prefix sampler、NextN及frontier，复用原Invocation、Queue与retention，
+固定绑定全部成功才发布；未知退休保留原handle，退出交接永久禁止复用。普通Phase的Source提交
+也复用相同静态保活算法。CPU／CUDA无模型生命周期检查、MTP modifier回归、CPU E4及普通错误归属检查通过；
+首轮两处测试适配编译错误已修正并保留原记录，本片没有速度结论。
+[本片记录](../evidence/correctness/inference-program-carrier-2026-10-28.json)。
+下一步迁移Phase的固定多槽，保留原Source、Store／Append恢复和结果观察后才归还IO的时点；
+模型继续保留图数学、family与采样键、实际layout、接受策略及Session提交。
+不能用三个辅助程序的共用代签完整执行核心。动态历史惩罚的输入合同随实际消费者继续补齐。
 
 ## 当前实现概况
 
