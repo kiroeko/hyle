@@ -8,7 +8,7 @@
 | 工具 | 要求 |
 |---|---|
 | Python | 3.10+，安装入口见 [Python](https://www.python.org/downloads/windows/) |
-| CMake | 3.26+，见 [CMake 下载](https://cmake.org/download/) |
+| CMake | 最低版本见[初始化说明](README.md)，见 [CMake 下载](https://cmake.org/download/) |
 | Visual Studio / Build Tools | MSVC 19.43+，包含 C++ 桌面工作负载、Windows SDK 和 MASM |
 | clang-cl | 可选，18+；仍需 Windows SDK 与 MSVC 头、库 |
 | Ninja | 安装后可使用；初始化会发现已有的构建工具 |

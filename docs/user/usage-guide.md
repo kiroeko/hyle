@@ -21,7 +21,7 @@ python scripts/build.py --install
 在仓库旁创建 `my_app` 目录，将下面两个文件放进去。先写 `my_app/CMakeLists.txt`：
 
 ```cmake
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.25)
 project(my_app LANGUAGES CXX)
 
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem container)

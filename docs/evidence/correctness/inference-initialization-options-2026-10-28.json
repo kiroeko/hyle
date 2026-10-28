@@ -1,0 +1,271 @@
+{
+  "status": "SCRIPT_AND_ROUTE_CHECKS_PASSED_GENERATION_OBSERVED",
+  "date": "2026-10-28",
+  "scope": "Review public init/build/test and CMake configuration; providers/dependency selection stays internal. No optional incomplete-engine configuration.",
+  "changes": [
+    "Remove --aten, --no-aten, HYLE_WITH_ATEN user choice; actual CPU/CUDA complete product closures always select required ATen. Independent products/routes retain their real dependency isolation.",
+    "init clears the obsolete cache key automatically while preserving named configuration. Old direct -D values fail clearly; build/test of stale trees tell users to reinitialize with the normal script.",
+    "Keep cached TLS AUTO as AUTO, with explicit --tls/--no-tls overrides. Do not mistake AUTO for false on repeated initialization.",
+    "Run/list existing tests using CTest and staged runtime paths without probing compiler, nvcc, Metal toolchain or acquiring resources.",
+    "Read the root CMake minimum from CMakeLists.txt; align shader bootstrap and guides with 3.25. Remove duplicate minimum declaration and the three unused win compatibility preset aliases.",
+    "Disabled-test recovery messages preserve the selected build name/directory for init, build and test. This final message-only clarification follows the passing 28-case script run."
+  ],
+  "retained_user_choices": [
+    "backend and public product subset",
+    "build type, build location/name and parallelism",
+    "test preparation and selection",
+    "static/shared, TLS, HTTP2, tracing and sanitizer",
+    "offline/cache location",
+    "advanced compiler/generator/toolchain and deployment overrides"
+  ],
+  "remaining_boundary": "No additional Provider selector was found. Public module selection and actual product features are retained, rather than indiscriminately deleting useful switches.",
+  "sources": [
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 22865,
+      "sha256": "02e00466506a61b18bd559d88918273f64e9946959b19eeef4b9c96bae08c087"
+    },
+    {
+      "path": "CMakePresets.json",
+      "bytes": 15509,
+      "sha256": "ea32ba761094a5b87a2bef1c6f430c97de715f0413947c6697456d3d1ebe2258"
+    },
+    {
+      "path": "cmake/HyleComputeRoutes.cmake",
+      "bytes": 9475,
+      "sha256": "1851e6e5f611da2aecb48d82ba05bbb3b5147517cdc747bdbcbd6f7cfefcaeee"
+    },
+    {
+      "path": "scripts/hyle_support.py",
+      "bytes": 31073,
+      "sha256": "2ef8c84767ed29e721647cd831d3b7da350903a70653c69b399af0dba7b1d7e4"
+    },
+    {
+      "path": "scripts/hyle_environment.py",
+      "bytes": 28927,
+      "sha256": "05b9d97115c8612b01c4dbb7be4d16a1a9e153798dfbf2890138608251c97854"
+    },
+    {
+      "path": "scripts/bootstrap-glslang/CMakeLists.txt",
+      "bytes": 1479,
+      "sha256": "ec26f4f7d3d01611270b9ea42586a6ea873193d1231058e2349d21f447ffb422"
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_sdk.cmake",
+      "bytes": 1168,
+      "sha256": "c81467f2abf56dd29ba0cc79e5b5a498fdb71481031142fb8dd6a7cfcdf9cf6d"
+    },
+    {
+      "path": "src/compute_provider_torch_cuda/CMakeLists.txt",
+      "bytes": 4535,
+      "sha256": "caa9e74190d0f7f97fe04964b31c901d7766be8d8d356241a5d847a9d5f928c8"
+    },
+    {
+      "path": "tests/compute_provider_torch_cuda/CMakeLists.txt",
+      "bytes": 1766,
+      "sha256": "d7464aa1f0b4d8f38a76e86e6af0c01a9ed755610dc5593f0ffefd2ac0231d92"
+    },
+    {
+      "path": "tests/tooling/development_scripts_test.py",
+      "bytes": 29116,
+      "sha256": "57b7654b306d99ea7571a1483637d0399f4ba8e3102cbaee69752e8a2504399a"
+    },
+    {
+      "path": "tests/tooling/bootstrap_environment_test.py",
+      "bytes": 17284,
+      "sha256": "2984ed50609f8e9cd83f57abd630c4637f96fe749779b64ed64df2532e6d27eb"
+    },
+    {
+      "path": "tests/tooling/compute_routes_test.py",
+      "bytes": 22296,
+      "sha256": "350445d8f2be2335fe428eb4793d6a1b8346a6379e6d8c8866bfef5fb3c1004a"
+    },
+    {
+      "path": "include/hyle/compute/providers/cuda.h",
+      "bytes": 8053,
+      "sha256": "c10a58dce263bb82bddff9559b653b0c67c45fe7626457a4eb314dc865f5b52b"
+    },
+    {
+      "path": "include/hyle/compute/providers/torch_cuda.h",
+      "bytes": 1314,
+      "sha256": "0cdc3866ec42fa4f42d4b1da4e75b71c5d848fc64ca9a0c8d61a0a3f3e049329"
+    },
+    {
+      "path": "docs/developer/setup/README.md",
+      "bytes": 6266,
+      "sha256": "3c94db8ae99e4cb4122dfa37cbfce85ad759f4704c91ded5a07cb3b6696efceb"
+    },
+    {
+      "path": "docs/developer/setup/dependencies.md",
+      "bytes": 3941,
+      "sha256": "8403e54728966623afe9a23f00086be796f6d172dfa4d6b52f6b1ec7bdd10f09"
+    },
+    {
+      "path": "docs/developer/setup/offline.md",
+      "bytes": 4200,
+      "sha256": "23d0bc42a9ee40cfd63f23ab984ef53e55960643f40087e034054e02feaa8182"
+    },
+    {
+      "path": "docs/developer/setup/windows.md",
+      "bytes": 2679,
+      "sha256": "b476f8e0fd3757985a471fb017e159c2165b4d494e1b6037273cb61176220024"
+    },
+    {
+      "path": "docs/developer/setup/linux-wsl.md",
+      "bytes": 2441,
+      "sha256": "1c55ece3395ff018b105d886d04cc1c4f367f47782ebec84e2b95523b3556c58"
+    },
+    {
+      "path": "docs/developer/setup/macos.md",
+      "bytes": 2738,
+      "sha256": "6e0ec1a9a53bbc582eae7fc3b492bed4fbae39efbaad6693f1e5c8d2e0fb9ba0"
+    },
+    {
+      "path": "docs/user/compute.md",
+      "bytes": 127578,
+      "sha256": "dc4b141f61c829fd198485ca446ef0ff31bc6f5765df5500019afccf89bffa44"
+    },
+    {
+      "path": "docs/user/usage-guide.md",
+      "bytes": 6950,
+      "sha256": "2b6fe866c03eaee82ecad51231330f2e930622e0a486c95e4848f66654b8888a"
+    }
+  ],
+  "tooling_checks": [
+    {
+      "name": "routes-test",
+      "tests": 15,
+      "process": {
+        "pid": 2596,
+        "exit": 0,
+        "seconds": 14.899597406387329,
+        "started": 1793189762.183331,
+        "source_sha256": "350445d8f2be2335fe428eb4793d6a1b8346a6379e6d8c8866bfef5fb3c1004a"
+      },
+      "stdout": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/routes-test/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/routes-test/stderr.log",
+        "bytes": 120,
+        "sha256": "00550d175f2ceacfacb2cb290b24ea53e073f782d5571eb90b68e3df412d7aa2"
+      }
+    },
+    {
+      "name": "development-test",
+      "tests": 28,
+      "process": {
+        "pid": 60388,
+        "exit": 0,
+        "seconds": 0.9273483753204346,
+        "started": 1793190116.654448,
+        "source_sha256": "57b7654b306d99ea7571a1483637d0399f4ba8e3102cbaee69752e8a2504399a"
+      },
+      "stdout": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/development-test/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/development-test/stderr.log",
+        "bytes": 132,
+        "sha256": "e30194ed74f9046e58549826b6e3a0f9b82f60ebb168fe5d71f1d63bc774573d"
+      }
+    },
+    {
+      "name": "environment-test",
+      "tests": 18,
+      "process": {
+        "pid": 50048,
+        "exit": 0,
+        "seconds": 0.2651848793029785,
+        "started": 1793190117.5827959,
+        "source_sha256": "2984ed50609f8e9cd83f57abd630c4637f96fe749779b64ed64df2532e6d27eb"
+      },
+      "stdout": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/environment-test/stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": ".scratch/inference-automatic-aten-20261028/validation/environment-test/stderr.log",
+        "bytes": 122,
+        "sha256": "e70ee1b5f597a05172374938330ff5d593d47dde8348bc8914b8dd4895fe18c3"
+      }
+    }
+  ],
+  "distinct_tests_passed": 61,
+  "generated_cpu_cuda": {
+    "status": "GENERATION_COMPLETION_OBSERVED_AFTER_WRAPPER_TIMEOUT",
+    "configure_seconds_from_cmake_log": 239.4,
+    "generation_seconds_from_log": 1.0,
+    "process_exit": null,
+    "wrapper_timeout_record": {
+      "path": ".scratch/inference-automatic-aten-20261028/validation/cached-configure/process.json",
+      "bytes": 462,
+      "sha256": "54801f424a61b220348e954830ed9f5f579c67f0aee814633e1a3fb140ed0008"
+    },
+    "stdout": {
+      "path": ".scratch/inference-automatic-aten-20261028/validation/cached-configure/stdout.log",
+      "bytes": 4672,
+      "sha256": "ff64ba7e4668b2206b6245507c277d72ba4ff790bfe2888a3c7ff1c9979bfdb9"
+    },
+    "files": [
+      {
+        "path": ".scratch/inference-optional-aten-20261028/configure-cpu-cuda-off/CMakeCache.txt",
+        "bytes": 76088,
+        "sha256": "730488a3012707de9e9af72a72fbbaf64419951419f2823b2a76f2168f75337d"
+      },
+      {
+        "path": ".scratch/inference-optional-aten-20261028/configure-cpu-cuda-off/build.ninja",
+        "bytes": 1995440,
+        "sha256": "ebb8678d4bb4441d65e82bd32b9bb4ef805ac9e246e62e678bba7e8fdb2efd1a"
+      },
+      {
+        "path": ".scratch/inference-optional-aten-20261028/configure-cpu-cuda-off/compile_commands.json",
+        "bytes": 1766132,
+        "sha256": "96d74e8c317fe9b59daf6ab7bbf96b78a5053b3d393064b4474bc62957053e70"
+      }
+    ],
+    "no_ATen_user_option_in_cache": true,
+    "automatic_capabilities": {
+      "cpu": {
+        "compilation_units_with_capability": 18,
+        "aten_sources": [
+          "C:/public/project-hyle/hyle/src/compute_provider_native/aten_cpu_provider.cc"
+        ]
+      },
+      "cuda": {
+        "compilation_units_with_capability": 9,
+        "aten_sources": [
+          "C:/public/project-hyle/hyle/src/compute_provider_torch_cuda/artifact_provider.cc"
+        ]
+      }
+    },
+    "boundary": "No configure retry, SDK rebuild, install consumer or inference run. Completion is independently observed in original stdout and fresh generated metadata; CMake child exit was not collected by the timed-out wrapper."
+  },
+  "direct_entry_checks": {
+    "commands": [
+      "cmake --list-presets=all",
+      "python -B scripts/init.py --help",
+      "python -B scripts/build.py --help",
+      "python -B scripts/test.py --help"
+    ],
+    "exit_observed": 0,
+    "boundary": "Tool invocations were observed successful; not builds or inference."
+  },
+  "constraints": [
+    "No SDK rebuild or model download in this configuration batch. Existing dependency cache used offline.",
+    "Actual CMake child completed configure/generate after 239.4+1.0 seconds. The wrapper had timed out after 120 seconds and did not collect child exit; both facts retained, no fabricated exit0.",
+    "No real CMake 3.25 toolchain, clean installation or other-OS full build was run. Metadata/platform checks and mocked environment tests do not prove those.",
+    "Existing unrelated license/README/document changes are not overwritten or included as part of this change."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-initialization-options-2026-10-28.zip",
+    "bytes": 220545,
+    "sha256": "1fb901596c4c094fc3cbaf42d23f244fc00ea74c0bdb80e8ab57694ac3c557bf",
+    "members": 63
+  }
+}

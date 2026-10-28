@@ -221,11 +221,40 @@ class EnvironmentTests(unittest.TestCase):
 
     def test_missing_cmake_and_metal_have_installation_guidance(self):
         with patch.object(tools, "_which", return_value=None):
-            with self.assertRaisesRegex(tools.SetupError, r"CMake/CTest 3\.26.*docs/developer/setup"):
+            required = "\\.".join(map(str, tools._minimum_cmake_version()))
+            with self.assertRaisesRegex(tools.SetupError, rf"CMake/CTest {required}.*docs/developer/setup"):
                 tools._cmake_tools({"PATH": ""}, "Linux")
         with patch.object(tools, "_run", side_effect=tools.SetupError("not installed")):
             with self.assertRaisesRegex(tools.SetupError, r"Metal.*docs/developer/setup/macos.md"):
                 tools._apple({"TOOLCHAINS": "user-selection"}, "Darwin", "aarch64")
+
+    def test_cmake_minimum_comes_from_the_project_declaration(self):
+        source = self.root / "CMakeLists.txt"
+        source.write_text("cmake_minimum_required(VERSION 3.25)\n", encoding="utf-8")
+        with patch.object(tools, "_ROOT", self.root):
+            self.assertEqual(tools._minimum_cmake_version(), (3, 25))
+            source.write_text("cmake_minimum_required(VERSION 3.27.2)\n", encoding="utf-8")
+            self.assertEqual(tools._minimum_cmake_version(), (3, 27, 2))
+            source.write_text("project(no_version_declaration)\n", encoding="utf-8")
+            with self.assertRaisesRegex(tools.SetupError, "Cannot parse.*cmake_minimum_required"):
+                tools._minimum_cmake_version()
+        with patch.object(tools, "_ROOT", self.root / "missing checkout"):
+            with self.assertRaisesRegex(tools.SetupError, "Cannot read.*CMake minimum"):
+                tools._minimum_cmake_version()
+
+    def test_tool_version_gate_matches_the_declared_minimum(self):
+        (self.root / "CMakeLists.txt").write_text("cmake_minimum_required(VERSION 3.25)\n", encoding="utf-8")
+        cmake, ctest = self.root / "cmake", self.root / "ctest"
+        cmake.touch(); ctest.touch()
+        with patch.object(tools, "_ROOT", self.root), \
+                patch.object(tools, "_which", return_value=str(cmake)), \
+                patch.object(tools, "_run", return_value="cmake version 3.25.0"):
+            self.assertEqual(tools._cmake_tools({"PATH": ""}, "Linux"), (str(cmake), str(ctest)))
+        with patch.object(tools, "_ROOT", self.root), \
+                patch.object(tools, "_which", return_value=str(cmake)), \
+                patch.object(tools, "_run", return_value="cmake version 3.24.9"):
+            with self.assertRaisesRegex(tools.SetupError, r"CMake/CTest 3\.25"):
+                tools._cmake_tools({"PATH": ""}, "Linux")
 
     @staticmethod
     def openssl(root, suffix):

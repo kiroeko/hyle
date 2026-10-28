@@ -36,7 +36,18 @@ class Environment:
 
 
 _ROOT = Path(__file__).resolve().parents[1]
-_MIN_CMAKE = (3, 26)
+
+
+def _minimum_cmake_version() -> tuple[int, ...]:
+    source = _ROOT / "CMakeLists.txt"
+    try:
+        text = source.read_text(encoding="utf-8-sig")
+    except OSError as error:
+        raise SetupError(f"Cannot read the project's CMake minimum from {source}: {error}") from error
+    match = re.search(r"^\s*cmake_minimum_required\s*\(\s*VERSION\s+(\d+\.\d+(?:\.\d+)?)\s*\)", text, re.M)
+    if not match:
+        raise SetupError(f"Cannot parse cmake_minimum_required(VERSION ...) in {source}.")
+    return tuple(map(int, match[1].split(".")))
 
 
 def _run(args: list[str], env: dict[str, str]) -> str:
@@ -302,6 +313,7 @@ def windows_compiler_environment(cache: dict[str, str]) -> dict[str, str]:
 
 
 def _cmake_tools(env: dict[str, str], system: str) -> tuple[str, str]:
+    minimum = _minimum_cmake_version()
     candidates = [_which("cmake", env)]
     executable = "cmake.exe" if system == "Windows" else "cmake"
     candidates += [str(Path(directory) / executable) for directory in env.get("PATH", "").split(os.pathsep) if directory]
@@ -311,14 +323,15 @@ def _cmake_tools(env: dict[str, str], system: str) -> tuple[str, str]:
         if not candidate or not Path(candidate).is_file():
             continue
         try:
-            match = re.search(r"cmake version\s+(\d+)\.(\d+)", _run([candidate, "--version"], env))
+            match = re.search(r"cmake version\s+(\d+)\.(\d+)(?:\.(\d+))?", _run([candidate, "--version"], env))
         except SetupError:
             continue
-        if match and tuple(map(int, match.groups())) >= _MIN_CMAKE:
+        if match and tuple(int(part or 0) for part in match.groups()) >= minimum:
             ctest = Path(candidate).with_name("ctest.exe" if system == "Windows" else "ctest")
             if ctest.is_file():
                 return candidate, str(ctest)
-    raise SetupError("CMake/CTest 3.26+ are required. Install current CMake and retry. "
+    required = ".".join(map(str, minimum))
+    raise SetupError(f"CMake/CTest {required}+ are required. Install current CMake and retry. "
                      "See docs/developer/setup/README.md.")
 
 
@@ -493,3 +506,59 @@ def discover_environment(compiler: str = "auto", cache: dict[str, str] | None = 
     if "apple" in backends:
         _apple(env, system, arch)
     return Environment(env, system, arch, cmake, ctest, cc, cxx, selected_generator, definitions)
+
+
+def discover_test_environment(cache: dict[str, str], directory: Path, configuration: str) -> Environment:
+    """Find CTest and existing runtime paths without requiring a build toolchain.
+
+    CMake stages each test's actual native libraries/assets beside its binary
+    (or declares a build RPATH). Reuse those products; never rebuild or acquire
+    an SDK merely to run/list the already configured tests.
+    """
+    system = platform.system()
+    if system not in {"Windows", "Linux", "Darwin"}:
+        raise SetupError(f"Unsupported test host system: {system}.")
+    arch = {"amd64": "x86_64", "x64": "x86_64", "arm64": "aarch64"}.get(
+        platform.machine().lower(), platform.machine().lower())
+    env = dict(os.environ)
+    if system == "Windows":
+        env = {key.upper(): value for key, value in env.items()}
+    else:
+        _prepend(env, ["/opt/homebrew/bin", "/usr/local/bin"])
+    directory = directory.resolve()
+    runtime_paths = [directory / "bin" / configuration, directory / "bin"]
+    for key in (f"CMAKE_RUNTIME_OUTPUT_DIRECTORY_{configuration.upper()}", "CMAKE_RUNTIME_OUTPUT_DIRECTORY"):
+        value = cache.get(key)
+        if value and "$<" not in value:
+            path = Path(value)
+            runtime_paths.append(path if path.is_absolute() else directory / path)
+    if system == "Windows":
+        toolkit = cache.get("CUDAToolkit_ROOT")
+        if not toolkit and cache.get("CMAKE_CUDA_COMPILER"):
+            toolkit = str(Path(cache["CMAKE_CUDA_COMPILER"]).parent.parent)
+        if toolkit:
+            runtime_paths.extend([Path(toolkit) / "bin" / "x64", Path(toolkit) / "bin"])
+    _prepend(env, runtime_paths)
+
+    minimum = _minimum_cmake_version()
+    suffix = ".exe" if system == "Windows" else ""
+    candidates = [cache.get("CMAKE_CTEST_COMMAND")]
+    if cache.get("CMAKE_COMMAND"):
+        candidates.append(str(Path(cache["CMAKE_COMMAND"]).with_name("ctest" + suffix)))
+    candidates.append(_which("ctest", env))
+    if system == "Windows":
+        candidates.append(str(Path(env.get("PROGRAMFILES", "C:/Program Files")) / "CMake/bin/ctest.exe"))
+    for candidate in dict.fromkeys(candidates):
+        if not candidate or not Path(candidate).is_file():
+            continue
+        try:
+            match = re.search(r"ctest version\s+(\d+)\.(\d+)(?:\.(\d+))?", _run([candidate, "--version"], env), re.I)
+        except SetupError:
+            continue
+        if match and tuple(int(part or 0) for part in match.groups()) >= minimum:
+            return Environment(env, system, arch, cache.get("CMAKE_COMMAND", ""), str(Path(candidate).absolute()),
+                cache.get("CMAKE_C_COMPILER", ""), cache.get("CMAKE_CXX_COMPILER", ""),
+                cache.get("CMAKE_GENERATOR", ""), {})
+    required = ".".join(map(str, minimum))
+    raise SetupError(f"CTest {required}+ is required to run/list this build's tests. Install CMake/CTest or restore "
+                     "CMAKE_CTEST_COMMAND; no compiler or GPU toolkit is required.")

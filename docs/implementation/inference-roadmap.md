@@ -45,8 +45,10 @@ MTP捕获数为2／5，旧重录次数不再代表当前瓶颈。仍有准备／
 CPU默认路由已删除旧41点、两个特例和硬件／配方资格机制，由同一facade按原能力与算法选择；
 [有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖普通Compute／Graph、IEEE、线程及原码Gather，
 其它算子的成本覆盖和跨平台仍需继续，不从局部Exp结果推定完整推理加速。
-统一ATen可选拆分的[本机ON／OFF有限检查](../evidence/correctness/inference-optional-aten-2026-10-28.json)已完成；
-关闭后原生量化及合法ggml BF16／F32回退保留，安装消费与其它平台未测。
+历史ATen拆分的[本机ON／OFF有限检查](../evidence/correctness/inference-optional-aten-2026-10-28.json)保留原始事实。
+用户随后要求不提供能力裁剪开关，现已删除`--aten`／`--no-aten`和`HYLE_WITH_ATEN`公开选项；
+CPU／CUDA完整路线按产品依赖自动装配ATen，其它独立模块仍按实际闭包装配。初始化自动清理旧缓存项，
+不让使用者选择Provider；同轮复查初始化／构建／测试参数，修复TLS AUTO保持及测试不必要的编译环境前置。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；

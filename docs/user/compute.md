@@ -8,12 +8,10 @@ Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-comp
 [Vulkan](vulkan-compute.md) 还提供各自的原生 Program/Invocation，遵守对应资源与完成合同。
 构建后端的方法见[使用指南](usage-guide.md#开始使用-compute--graph)。
 
-ATen CPU/CUDA 数学适配器默认启用，可在初始化时传 `--no-aten`（CMake
-`HYLE_WITH_ATEN=OFF`）省去其 SDK；原生 kernel 和其它独立实现继续保留。
-关闭后部分 dtype、布局、独立制品解码及 CUDA 广域 BF16 融合 SDPA 可能不可用；没有其它合法
-实现时，冷准备返回 `Unimplemented`，不会隐式降低精度或更换设备。普通 BF16 attention
-仍可使用原 ggml F32 计算路径，可能物化 Q×KV 临时矩阵。CUDA MLX packed、GPTQ 解码、
-CT/GPTQ/NF4 融合线性及 stored-scale FP8 无需 ATen；细节见[初始化参数](../developer/setup/README.md#选择配置)。
+需要 ATen 的 CPU/CUDA 产品闭包会自动装配其数学适配器和 SDK，无需选择 ATen 开关。
+独立基础模块和不依赖 ATen 的其它后端不会额外引入该依赖。具体 dtype、布局和制品仍按真实
+实现冷准备；没有合法实现时返回 `Unimplemented`，不会隐式降低精度或更换设备。
+构建选择见[初始化参数](../developer/setup/README.md#选择配置)。
 
 建议按任务阅读：
 
@@ -1065,7 +1063,7 @@ Apple 的一般乘加收缩、typed embedding 两次独立舍入和跨后端逐 
 越界索引和分配失败通过 Completion 报错，已失败的执行槽需要重建；独立槽可以共享只读参数。该资格仍按真实packing/group/dtype和端口区分，
 不把一个文件名的“4-bit”当作所有张量格式，也不代签全部混合模型完整片段。
 
-CPU-only LibTorch启用时，`model_ops::causal_conv1d()`的F16/BF16输入现在由原ATen CPU程序承载。
+CPU Compute 的 `model_ops::causal_conv1d()` F16/BF16输入由自动装配的原ATen CPU程序承载。
 samples为`[B,W,C]`、weights为`[C,K]`，二者dtype相同；F32累加后一次回原output dtype。
 原`[C,1,K]`文件权重由调用方用View整理。该managed路径包含布局/精度转换、原库临时与结果copy，
 不能要求capture、零热分配或已知严格私有内存界；失败slot需要重建。F32继续走原ggml路径。

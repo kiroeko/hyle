@@ -4,6 +4,7 @@ from __future__ import annotations
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -14,6 +15,7 @@ from unittest.mock import patch
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts"))
 import hyle_support as support
+import hyle_environment as tools
 from hyle_environment import Environment, SetupError
 
 
@@ -33,6 +35,7 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.cache_dir = self.base / "shared source cache"
         for name, value in (("ROOT", self.root), ("_host", lambda: ("Linux", "x86_64")),
                             ("discover_environment", self.environment), ("_run", self.run_command),
+                            ("discover_test_environment", self.runtime_environment),
                             ("find_glslang", lambda environment: None)):
             active = patch.object(support, name, value)
             active.start()
@@ -54,6 +57,9 @@ class DevelopmentCommandsTest(unittest.TestCase):
             {"HYLE_DEP_SOURCE_CACHE": str(self.cache_dir)}, "Linux", "x86_64",
             "mock-cmake", "mock-ctest", cc, cxx,
             generator or cache.get("CMAKE_GENERATOR", "Ninja"), {})
+
+    def runtime_environment(self, cache, directory, configuration):
+        return self.environment(cache=cache)
 
     def write_cache(self, directory: Path, **values):
         cache = {
@@ -78,6 +84,9 @@ class DevelopmentCommandsTest(unittest.TestCase):
         if "-S" in command and "-B" in command:
             directory = Path(command[command.index("-B") + 1])
             values = support.read_cache(directory)
+            for index, argument in enumerate(command[:-1]):
+                if argument == "-U":
+                    values.pop(command[index + 1], None)
             values.update(part[2:].split("=", 1) for part in command if part.startswith("-D"))
             if "-G" in command:
                 values["CMAKE_GENERATOR"] = command[command.index("-G") + 1]
@@ -156,13 +165,43 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.succeeds("build", "--target", "hyle_engine")
         self.assertEqual(self.commands[-1][-2:], ["--target", "hyle_engine"])
 
-    def test_optional_aten_selection_is_cached_and_can_be_changed(self):
-        self.succeeds("init", "--name", "native", "--components", "compute,graph", "--no-aten")
-        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "OFF")
-        self.succeeds("init", "--name", "native")
-        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "OFF")
-        self.succeeds("init", "--name", "native", "--aten")
-        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "ON")
+    def test_required_providers_have_no_named_switch(self):
+        for option in ("--aten", "--no-aten"):
+            with self.subTest(option=option):
+                with self.assertRaises(SystemExit) as error:
+                    self.invoke("init", option)
+                self.assertEqual(error.exception.code, 2)
+        for value in ("ON", "OFF"):
+            with self.subTest(definition=value):
+                result, _, errors = self.invoke("init", "--dry-run", "-D", f"HYLE_WITH_ATEN={value}")
+                self.assertNotEqual(result, 0)
+                self.assertIn("Required providers are selected automatically", errors)
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
+
+    def test_reinitializing_old_provider_selection_preserves_the_configuration(self):
+        for value in ("ON", "OFF"):
+            with self.subTest(old_value=value):
+                name = "old-" + value.lower()
+                directory = self.root / ".scratch/build" / name
+                self.write_cache(directory, HYLE_COMPONENTS="compute;graph", HYLE_COMPUTE_ROUTES="cuda",
+                                 HYLE_WITH_ATEN=value, HYLE_BUILD_TESTS="ON", CMAKE_BUILD_TYPE="Debug")
+                before = (directory / "CMakeCache.txt").read_bytes()
+                attempted = len(self.commands)
+                for action in ("build", "test"):
+                    result, _, errors = self.invoke(action, "--name", name)
+                    self.assertNotEqual(result, 0)
+                    self.assertIn("python scripts/init.py --name " + name, errors)
+                self.assertEqual(len(self.commands), attempted)
+                self.assertEqual((directory / "CMakeCache.txt").read_bytes(), before)
+                self.succeeds("init", "--name", name)
+                cache = support.read_cache(directory)
+                self.assertNotIn("HYLE_WITH_ATEN", cache)
+                self.assertEqual(cache["HYLE_COMPONENTS"], "compute;graph")
+                self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
+                self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
+                self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
+                self.succeeds("build", "--name", name)
 
     def test_engine_prepares_selected_route_and_debug_test_configuration(self):
         self.succeeds("init", "--name", "engine-debug", "--backends", "vulkan",
@@ -247,6 +286,19 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.resources.reset_mock()
         self.succeeds("init")
         self.assertEqual(self.resources.call_args.args[0].definitions.get("HYLE_VULKAN_GLSLANG"), shader)
+
+    def test_reinitialization_preserves_tls_auto_until_explicitly_changed(self):
+        self.succeeds("init", "--name", "tls-auto", "--components", "io")
+        directory = self.selected()
+        cache = support.read_cache(directory)
+        self.write_cache(directory, **dict(cache, HYLE_IO_TLS="AUTO"))
+        with patch.object(support, "find_openssl", return_value={}):
+            self.succeeds("init", "--name", "tls-auto")
+        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "AUTO")
+        self.succeeds("init", "--name", "tls-auto", "--tls")
+        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "ON")
+        self.succeeds("init", "--name", "tls-auto", "--no-tls")
+        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "OFF")
 
     def test_custom_cuda_sdk_is_available_to_discovery_without_replacing_cached_compiler(self):
         toolkit = str(self.base / "custom CUDA SDK")
@@ -340,6 +392,52 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual(self.commands[0][0], "mock-ctest")
         self.assertIn("--no-tests=error", self.commands[0])
         self.assertIn("--show-only", self.commands[0])
+
+    def test_running_and_listing_tests_do_not_discover_compilers_or_prepare_resources(self):
+        self.succeeds("init", "--name", "built", "--backends", "cuda", "--tests")
+        self.commands.clear()
+        self.resources.reset_mock()
+        with patch.object(support, "discover_environment", side_effect=SetupError("compiler SDK is absent")) as discovery, \
+                patch.object(support, "discover_test_environment", wraps=self.runtime_environment) as runtime:
+            self.succeeds("test", "--name", "built", "--list")
+            self.succeeds("test", "--name", "built")
+        discovery.assert_not_called()
+        self.assertEqual(runtime.call_count, 2)
+        self.assertEqual([command[0] for command in self.commands], ["mock-ctest", "mock-ctest"])
+        self.assertIn("--show-only", self.commands[0])
+        self.assertNotIn("--show-only", self.commands[1])
+        self.resources.assert_not_called()
+
+    def test_test_environment_uses_existing_runtime_and_ctest_without_toolchain_probes(self):
+        directory = self.base / "built runtime"
+        runtime = directory / "bin/Debug"
+        runtime.mkdir(parents=True)
+        toolkit = self.base / "CUDA without nvcc"
+        cuda_runtime = toolkit / "bin/x64"
+        cuda_runtime.mkdir(parents=True)
+        ctest = self.base / "standalone CTest/ctest.exe"
+        ctest.parent.mkdir()
+        ctest.touch()
+        cache = {"CMAKE_CTEST_COMMAND": str(ctest), "CMAKE_CUDA_COMPILER": str(toolkit / "bin/nvcc.exe"),
+                 "CMAKE_CXX_COMPILER": str(self.base / "missing-cl.exe")}
+        with patch.object(tools.platform, "system", return_value="Windows"), \
+                patch.object(tools.platform, "machine", return_value="AMD64"), \
+                patch.dict(tools.os.environ, {"PATH": "", "RUNTIME_SENTINEL": "preserved"}, clear=True), \
+                patch.object(tools, "_which", return_value=None), \
+                patch.object(tools, "_run", return_value="ctest version 4.2.0") as run, \
+                patch.object(tools, "_restore_cached_compilers", side_effect=AssertionError("compiler metadata probe")), \
+                patch.object(tools, "_windows_compilers", side_effect=AssertionError("VS probe")), \
+                patch.object(tools, "_unix_compilers", side_effect=AssertionError("compiler probe")), \
+                patch.object(tools, "_cuda", side_effect=AssertionError("nvcc probe")), \
+                patch.object(tools, "_apple", side_effect=AssertionError("Metal compiler probe")):
+            environment = tools.discover_test_environment(cache, directory, "Debug")
+        self.assertEqual(environment.ctest, str(ctest.absolute()))
+        self.assertEqual(environment.env["RUNTIME_SENTINEL"], "preserved")
+        paths = environment.env["PATH"].split(os.pathsep)
+        self.assertEqual(paths[0], str(runtime))
+        self.assertIn(str(cuda_runtime), paths)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0], [str(ctest), "--version"])
 
     def test_test_exit_status_is_preserved_without_poisoning_configuration(self):
         self.succeeds("init", "--name", "work", "--components", "core", "--tests")

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.25)
 project(hyle_glslang_host LANGUAGES C CXX)
 
 if(NOT HYLE_SOURCE_DIR OR NOT HYLE_DEP_SOURCE_CACHE)

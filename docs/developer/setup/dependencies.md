@@ -2,8 +2,8 @@
 
 初始化参数只选择产品、后端与明确的可选能力。各算子由哪些 Provider 执行，以及需要接入哪些第三方实现，
 由 HYLE 内部装配；普通用户无需枚举 oneDNN、ggml、Torch 等开关。
-ATen tensor runtime 默认启用；需要缩减 SDK 体积时，可用统一的 `--no-aten`
-（`HYLE_WITH_ATEN=OFF`）省去其 CPU/CUDA SDK，保留独立原生实现。缺失能力与初始化参数
+需要 ATen 的 CPU/CUDA 产品闭包会自动装配匹配的 tensor runtime 和 SDK，不提供用户 ATen 开关。
+独立基础模块和不依赖 ATen 的其它后端不会额外引入该依赖。产品及后端选择
 见[环境与构建](README.md#选择配置)，不由用户逐算子选择替代 Provider。
 
 ## 三类依赖

@@ -5,7 +5,7 @@
 
 ## 已安装工具
 
-需要 Python 3.10+、CMake 3.26+、AppleClang/Clang 18+、匹配的 macOS SDK 和 Ninja 或 Make。
+需要 Python 3.10+、CMake（最低版本见[初始化说明](README.md)）、AppleClang/Clang 18+、匹配的 macOS SDK 和 Ninja 或 Make。
 Command Line Tools 的安装方式见 [Apple 官方说明](https://developer.apple.com/documentation/xcode/installing-the-command-line-tools/)，
 Python 和 CMake 可从[Python](https://www.python.org/downloads/macos/)与[CMake](https://cmake.org/download/)取得。
 初始化发现已有工具；不替换全局 developer directory 或修改 Shell 启动文件。

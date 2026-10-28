@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 LEGACY = ["HYLE_COMPUTE_" + item for item in
-          ("CPU", "CUDA", "APPLE", "VULKAN", "ONEDNN", "TORCH_CPU")]
+          ("CPU", "CUDA", "APPLE", "VULKAN", "ONEDNN", "TORCH_CPU")] + ["HYLE_WITH_ATEN"]
 NO_WINDOW = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
 
 
@@ -64,10 +64,11 @@ class ComputeRoutesTest(unittest.TestCase):
                 self.assertIn("HYLE_COMPUTE_ROUTES", message)
         for name in LEGACY:
             for kind in ("", ' CACHE STRING ""'):
-                with self.subTest(name=name, kind=kind):
-                    message = self.resolve(f'set({name} OFF{kind})\n'
-                                           'hyle_resolve_compute_product_routes("graph")', success=False)
-                    self.assertIn(name + " is no longer", message)
+                for value in (("ON", "OFF") if name == "HYLE_WITH_ATEN" else ("OFF",)):
+                    with self.subTest(name=name, kind=kind, value=value):
+                        message = self.resolve(f'set({name} {value}{kind})\n'
+                                               'hyle_resolve_compute_product_routes("graph")', success=False)
+                        self.assertIn(name + " is no longer", message)
 
     def test_apple_full_cpu_dependencies_and_platform_errors(self):
         self.assertEqual(self.resolve('set(HYLE_COMPUTE_ROUTES "apple;cpu")\n'
@@ -104,15 +105,6 @@ class ComputeRoutesTest(unittest.TestCase):
                     'hyle_resolve_compute_factor_routes()',
                     system=system, processor="aarch64"),
                     "cuda|OFF|ON|OFF|OFF")
-
-    def test_without_aten_native_routes_do_not_require_its_host_sdk(self):
-        for route, expected in (("cpu", "cpu|ON|OFF|OFF|OFF"),
-                                ("cuda", "cuda|OFF|ON|OFF|OFF")):
-            with self.subTest(route=route):
-                self.assertEqual(self.resolve(
-                    f'set(HYLE_WITH_ATEN OFF)\nset(HYLE_COMPUTE_ROUTES {route})\n'
-                    'hyle_resolve_compute_product_routes("graph")',
-                    system="Linux", processor="aarch64"), expected)
 
     def test_developer_factor_closure_and_platform_off_headers(self):
         body = ('set(HYLE_BUILD_COMPUTE_BACKEND_CPU ON)\n'

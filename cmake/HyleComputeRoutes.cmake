@@ -104,7 +104,7 @@ endfunction()
 # private availability from their actual DAG rather than offering a lite SKU.
 function(_hyle_reject_legacy_compute_options)
   foreach(_name IN ITEMS HYLE_COMPUTE_CPU HYLE_COMPUTE_CUDA HYLE_COMPUTE_APPLE
-      HYLE_COMPUTE_VULKAN HYLE_COMPUTE_ONEDNN HYLE_COMPUTE_TORCH_CPU)
+      HYLE_COMPUTE_VULKAN HYLE_COMPUTE_ONEDNN HYLE_COMPUTE_TORCH_CPU HYLE_WITH_ATEN)
     if(DEFINED ${_name})
       message(FATAL_ERROR
         "${_name} is no longer a public build option. Use "
@@ -143,13 +143,8 @@ function(_hyle_parse_compute_routes value output)
 endfunction()
 
 function(_hyle_check_compute_route_platform routes complete_math)
-  # Standalone metadata readers use the same default as the root option.
-  set(_with_aten ON)
-  if(DEFINED HYLE_WITH_ATEN)
-    set(_with_aten "${HYLE_WITH_ATEN}")
-  endif()
   foreach(_route IN LISTS routes)
-    if(_route STREQUAL "cpu" AND complete_math AND _with_aten)
+    if(_route STREQUAL "cpu" AND complete_math)
       _hyle_compute_cpu_provider_supported(torch_cpu _supported)
       if(NOT _supported)
         message(FATAL_ERROR
@@ -157,7 +152,7 @@ function(_hyle_check_compute_route_platform routes complete_math)
           "for its locked ATen SDK; '${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}' "
           "has no supported complete CPU recipe. Select another supported route.")
       endif()
-    elseif(_route STREQUAL "cuda" AND complete_math AND _with_aten)
+    elseif(_route STREQUAL "cuda" AND complete_math)
       # A complete CUDA product also carries the locked ATen CPU host runtime.
       # Exact backend factors retain their own, broader SDK platform checks.
       _hyle_compute_route_supported(cuda _supported)

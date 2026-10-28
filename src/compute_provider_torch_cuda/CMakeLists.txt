@@ -1,4 +1,4 @@
-if(NOT _HYLE_COMPUTE_HAVE_CUDA OR NOT HYLE_WITH_ATEN)
+if(NOT _HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(compute_provider_torch_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_torch_cuda PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()

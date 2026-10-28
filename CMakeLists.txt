@@ -78,7 +78,6 @@ include(HyleDependencyCache)
 # installation. Developer presets enable them; ordinary source consumers do
 # not acquire test fixtures merely by omitting a route whose default is cpu.
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" OFF)
-option(HYLE_WITH_ATEN "include the optional ATen tensor runtime for CPU/CUDA operations" ON)
 
 # Resolve platform capability before the component graph. Sched and its current
 # IO consumers require fcontext; the Compute and Graph runtime factors remain

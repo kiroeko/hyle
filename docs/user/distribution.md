@@ -13,7 +13,7 @@
 | 公开头 + 动态库 | 多个同工具链 C++ 程序共享库 | `find_package(Hyle ...)` |
 
 三种方式使用相同的 `hyle::<product>` target 和 C++23 API。静态 HYLE 不表示全部第三方运行库
-也静态链接；例如启用 ATen 的 CPU Compute 使用外部 shared CPU runtime。当前没有产品 C API 或跨语言 FFI。
+也静态链接；例如 CPU Compute 的 ATen 路径使用外部 shared CPU runtime。当前没有产品 C API 或跨语言 FFI。
 许可证和再分发权限按仓库法律文本与第三方 notice 处理。
 
 ## 源码嵌入
@@ -101,13 +101,13 @@ CMake 值为 `cpu`、`cuda`、`apple`、`vulkan`；CLI 的 `metal` 对应 `apple
 等内部 Provider，也不需要手写其存在性宏。CPU/GPU 混合 SDK 与混合图的实际执行策略分开：
 后者见 [Graph](graph.md#cpu-与-gpu-组合)。HIP/ROCm 当前没有产品配置项。
 
-可用 `--no-aten`（CMake `HYLE_WITH_ATEN=OFF`）省去可选 ATen CPU/CUDA SDK；
-独立原生算子和其它 Provider 继续保留。缺少的 dtype、布局或制品路径在冷准备时明确拒绝，
-不通过降低精度或隐式换设备补齐。范围见[初始化参数](../developer/setup/README.md#选择配置)。
+需要 ATen 的 CPU/CUDA 产品闭包会自动装配其 SDK，不提供用户 ATen 开关。
+独立模块和不依赖 ATen 的其它后端不会额外引入该依赖。缺少的 dtype、布局或制品路径在冷准备时
+明确拒绝，不通过降低精度或隐式换设备补齐。范围见[初始化参数](../developer/setup/README.md#选择配置)。
 
 | 后端 | 交付时需要注意 |
 |---|---|
-| CPU | 使用所选 CPU 数学依赖；启用 ATen 时，静态 HYLE 仍有外部 shared runtime，迁移时携带匹配的依赖资产 |
+| CPU | 自动装配所选产品闭包的数学依赖；ATen 使用外部 shared runtime，静态 HYLE 也须携带匹配的依赖资产 |
 | CUDA | 完整产品支持 Windows/Linux x86_64；制作与消费 SDK 都需要匹配的系统 CUDA Toolkit，运行需要驱动 |
 | Metal | macOS Apple Silicon；原生资源随 SDK 交付，具体布局与设备限制见 [Apple](apple-compute.md) |
 | Vulkan | 运行机器需要 loader 与适用设备；SDK 内带已编译 shader，二进制消费者不需要 glslang；见 [Vulkan](vulkan-compute.md) |

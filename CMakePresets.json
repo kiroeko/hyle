@@ -1,6 +1,5 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
   "configurePresets": [
     {
       "name": "hyle-dev",
@@ -159,11 +158,6 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     },
     {
-      "name": "win",
-      "displayName": "Windows Ninja development (compatibility alias)",
-      "inherits": "windows-ninja"
-    },
-    {
       "name": "wsl",
       "displayName": "Linux/WSL GCC 14 development",
       "description": "Convenience preset for machines that expose gcc-14/g++-14 by those names. Use the generic linux preset with CC/CXX for other supported toolchains.",
@@ -277,7 +271,6 @@
     { "name": "windows-clangcl", "configurePreset": "windows-clangcl", "configuration": "Release" },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release" },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release" },
-    { "name": "win", "configurePreset": "win", "configuration": "Release" },
     { "name": "wsl", "configurePreset": "wsl", "configuration": "Release" },
     { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo" },
     { "name": "package-feature-shared", "configurePreset": "package-feature-shared", "configuration": "Release" },
@@ -293,7 +286,6 @@
     { "name": "windows-clangcl", "configurePreset": "windows-clangcl", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
-    { "name": "win", "configurePreset": "win", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "wsl", "configurePreset": "wsl", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } }
   ],

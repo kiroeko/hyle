@@ -5,7 +5,7 @@ GCC/Clang，不把发行版默认的旧编译器自动当成合格环境，也�
 
 ## 已安装工具
 
-需要 Python 3.10+、CMake 3.26+、GCC 14+ 或 Clang 18+，以及 Ninja 或 Make 和系统汇编工具。
+需要 Python 3.10+、CMake（最低版本见[初始化说明](README.md)）、GCC 14+ 或 Clang 18+，以及 Ninja 或 Make 和系统汇编工具。
 按实际发行版的软件源安装；例如 Ubuntu 24.04 可以使用其 GCC 14 包。
 其他发行版应使用自己的包管理文档，不照搬不匹配的软件包命令。
 
