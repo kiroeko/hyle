@@ -8,10 +8,11 @@
 #include <vector>
 
 #include "hyle/core/assert.h"
-#include "program_carrier.h"
 #include "readback.h"
 
 namespace hyle::inference {
+
+template<class Scope> class ProgramCarrier;
 
 // Cold IO for one concrete program. Fixed views borrow their original cold
 // Tensor owners; dynamic bindings live only in Graph. Readbacks are the same
@@ -119,6 +120,15 @@ class ProgramIo final {
   Status seal() noexcept {
     HYLE_RETURN_IF_ERROR(registering());
     sealed_ = true;
+    return Status::Ok();
+  }
+
+  // Installation borrows this exact immutable program inventory. A sealed IO
+  // for a different child must not consume fixed writers on a new candidate.
+  Status check_program(const graph::CompiledGraph &compiled) const noexcept {
+    if (!sealed_) return Status::FailedPrecondition("program IO is not sealed for initialization");
+    if (compiled_ != &compiled)
+      return Status::FailedPrecondition("program IO belongs to a different prepared program");
     return Status::Ok();
   }
 

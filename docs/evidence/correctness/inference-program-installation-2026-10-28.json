@@ -1,0 +1,317 @@
+{
+  "schema": "hyle.correctness.program-installation.v1",
+  "date": "2026-10-28",
+  "status": "PASS_SIX_FINITE_CURRENT_MODEL_AND_CARRIER_CASES",
+  "change": "Use one typed ProgramInitialization recipe for original ProgramCarrier/ProgramIo installation; check exact expectation, progress, fixed IO, slots and publish only the fully installed original Invocation.",
+  "counts": {
+    "CXX": 1,
+    "links": 1,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "inputs": 228,
+    "retained_inputs": 227,
+    "native_processes": 6,
+    "downloads": 0,
+    "carrier_processes": 2,
+    "model_processes": 4
+  },
+  "build": {
+    "compile_process": {
+      "pid": 2204,
+      "exit": 0,
+      "started": 1793200326.674605,
+      "seconds": 59.67310976982117,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "link_process": {
+      "pid": 36588,
+      "exit": 0,
+      "started": 1793200444.97141,
+      "seconds": 1.8280589580535889,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 7268,
+      "sha256": "7e3dda5dff91cfd44ccd2783ee4c48c8d8b7c722e41726282bf3f3e453e228aa"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\bin\\installation.exe",
+      "bytes": 144128000,
+      "sha256": "137eba792f9db1efc31d2acaae7f58938dd6c7f9523fdf1289dcb9086008d087"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\source-freeze.json",
+      "bytes": 1000,
+      "sha256": "06117137c7795d0d7f24eea25c665361ed6041adf26d3409220babc8ac1b3e60"
+    },
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\compile\\compiled.json",
+      "bytes": 46336,
+      "sha256": "ccafdfa45a5a3692754747fe5e34a479df6ce32bd0e4248983be4b9da6e899b8"
+    },
+    "retained_base": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\ready-normal.json",
+      "bytes": 20528,
+      "sha256": "5e29ec3d9476d5dffc9646b6e2032fa6f52bb64ffe9d1074c8caa8227df3d5db"
+    },
+    "unchanged_SDK_weights_inputs": 227
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_carrier.h",
+      "bytes": 9579,
+      "sha256": "7111a38ae50c5feae62cb96a5f62d5a3230bbcec3a57f730685697acd47def69"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\program_io.h",
+      "bytes": 11178,
+      "sha256": "792c5155be18e0900a13fc6f10fc1d038466d300070df66b7230150c54fc04c1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 597941,
+      "sha256": "e8d6229a3f1dfe470ef34c64a5fcb1602e50da74148421d8a7c30c60b6c7d5b8"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_program_carrier_case.h",
+      "bytes": 11785,
+      "sha256": "cb68d8147b2f52314b73ea0d56580f3b0b86e36ac7071f388ad0ef0d0c6b134c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 7268,
+      "sha256": "7e3dda5dff91cfd44ccd2783ee4c48c8d8b7c722e41726282bf3f3e453e228aa"
+    }
+  ],
+  "cases": [
+    {
+      "name": "carrier-cpu",
+      "backend": "cpu",
+      "flag": "--program-carrier",
+      "process": {
+        "pid": 40344,
+        "exit": 0,
+        "started": 1793200463.9234495,
+        "seconds": 0.7562079429626465,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\carrier-cpu\\report.json",
+        "bytes": 699,
+        "sha256": "df60a6589cf0413d4a8ced86b295822cd3502ee53f3dab43c7c7a2ecea713d3f"
+      },
+      "numerical": {
+        "state_checks": 0,
+        "byte_exact_state_checks": 0,
+        "maximum_GDN_absolute_difference": 0
+      }
+    },
+    {
+      "name": "carrier-cuda",
+      "backend": "cuda",
+      "flag": "--program-carrier",
+      "process": {
+        "pid": 46556,
+        "exit": 0,
+        "started": 1793200465.1485925,
+        "seconds": 0.5143928527832031,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\carrier-cuda\\report.json",
+        "bytes": 700,
+        "sha256": "8f66872dc620bf1fbd6353e81cca813b1a63fa36a079cbee354c72e6cf58d550"
+      },
+      "numerical": {
+        "state_checks": 0,
+        "byte_exact_state_checks": 0,
+        "maximum_GDN_absolute_difference": 0
+      }
+    },
+    {
+      "name": "ordinary-cpu",
+      "backend": "cpu",
+      "flag": "--sampling-policies",
+      "process": {
+        "pid": 45284,
+        "exit": 0,
+        "started": 1793200477.418037,
+        "seconds": 0.4866611957550049,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\ordinary-cpu\\report.json",
+        "bytes": 240,
+        "sha256": "e44a09266bdee1c6125a28f2b643335b8a948ebbd7e970d69f2bb0383054cf37"
+      },
+      "numerical": {
+        "state_checks": 0,
+        "byte_exact_state_checks": 0,
+        "maximum_GDN_absolute_difference": 0
+      }
+    },
+    {
+      "name": "ordinary-cuda",
+      "backend": "cuda",
+      "flag": "--sampling-policies",
+      "process": {
+        "pid": 40928,
+        "exit": 0,
+        "started": 1793200495.853387,
+        "seconds": 0.8780672550201416,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\ordinary-cuda\\report.json",
+        "bytes": 240,
+        "sha256": "e44a09266bdee1c6125a28f2b643335b8a948ebbd7e970d69f2bb0383054cf37"
+      },
+      "numerical": {
+        "state_checks": 0,
+        "byte_exact_state_checks": 0,
+        "maximum_GDN_absolute_difference": 0
+      }
+    },
+    {
+      "name": "mtp-sampling-cpu",
+      "backend": "cpu",
+      "flag": "--mtp-sampling",
+      "process": {
+        "pid": 60008,
+        "exit": 0,
+        "started": 1793200497.2138422,
+        "seconds": 0.7225711345672607,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\mtp-sampling-cpu\\report.json",
+        "bytes": 53278,
+        "sha256": "685f524263edec4ce876a6f5c4b9a3d3ce0ce7a5fcb4500e3dbba80658e88aac"
+      },
+      "numerical": {
+        "state_checks": 17,
+        "byte_exact_state_checks": 17,
+        "maximum_GDN_absolute_difference": 0
+      }
+    },
+    {
+      "name": "mtp-logits-cuda",
+      "backend": "cuda",
+      "flag": "--mtp-logits",
+      "process": {
+        "pid": 3936,
+        "exit": 0,
+        "started": 1793200498.441377,
+        "seconds": 1.0571751594543457,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\runs\\mtp-logits-cuda\\report.json",
+        "bytes": 4264,
+        "sha256": "358e0008b6e28fbc0f1d3ef2716c456c56224fb6b384e099128392f623039a88"
+      },
+      "numerical": {
+        "state_checks": 10,
+        "byte_exact_state_checks": 10,
+        "maximum_GDN_absolute_difference": 0
+      }
+    }
+  ],
+  "carrier_ownership": [
+    {
+      "case": "carrier-cpu",
+      "caller_writer_tested": true,
+      "caller_writer_recovered": true,
+      "native_owned_not_applicable": false
+    },
+    {
+      "case": "carrier-cuda",
+      "caller_writer_tested": true,
+      "caller_writer_recovered": true,
+      "native_owned_not_applicable": false
+    }
+  ],
+  "installation_scope": "Finite current include-main consumer journeys cover ordinary Phase, NextN draft, private prefix sampling and frontier auxiliary installation with their original Graph/Compute owners. This is a shared installation boundary, not extraction of the complete execution engine.",
+  "numerical": {
+    "state_checks": 27,
+    "byte_exact_state_checks": 27,
+    "maximum_GDN_absolute_difference": 0,
+    "policy": "Original sampler byte-equality checks and modifier finite GDN 3e-6 budget are unchanged; no new tolerance."
+  },
+  "limitations": [
+    "Synthetic untrained GA/H64/V64/C16 fixture; no trained-model quality or performance conclusion.",
+    "Ordinary sampling uses Commands replay with R2; it does not certify D2 overlap or a real Qwen BF16 benchmark.",
+    "Two direct carrier cases each retain exactly two native submissions. Failed cold install, IO/exact rejection and partial writer recovery add no native submission. Caller/native ownership is reported separately; null means inapplicable.",
+    "Invalid metadata/numerical payloads are finite failures, not injected device failure or proof of unknown native retirement.",
+    "CPU/CUDA only and only these six consumers were run; no Apple/Vulkan, complete orchestration or exhaustive platform claim.",
+    "No SDK/NVCC recompilation or downloads. No executable, object, DLL, weights, tensor bodies or process environment values in the archive."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-installation-2026-10-28.zip",
+    "bytes": 271212,
+    "sha256": "893324a6d2a564887b3e54819012261d07deab3af987b46f3835df9f570f0ab2",
+    "members": 56,
+    "manifest_sha256": "eb523d29265bfdcf33a66ad22d763458ab9b0c42be8ae531412a124d965e39cd",
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  },
+  "post_package_cleanup": {
+    "method": "Repository test.ps1 verified exact paths and hashes, then removed only task-local .exe/.exp/.lib.",
+    "plan": {
+      "allowed_roots": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\bin"
+      ],
+      "archive": {
+        "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-installation-2026-10-28.zip",
+        "bytes": 271212,
+        "sha256": "893324a6d2a564887b3e54819012261d07deab3af987b46f3835df9f570f0ab2"
+      },
+      "files": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\bin\\installation.exe",
+          "bytes": 144128000,
+          "sha256": "137eba792f9db1efc31d2acaae7f58938dd6c7f9523fdf1289dcb9086008d087"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\bin\\installation.exp",
+          "bytes": 24997,
+          "sha256": "9aa22a7e0a832f00e82e5f62dc182d20045096864da727087fab0fe5e90e2011"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\bin\\installation.lib",
+          "bytes": 42166,
+          "sha256": "443314e86ec93aa5490aa6c42654901f16efaca2eb33313d95023697d6f5253b"
+        }
+      ],
+      "retained": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-installation-20261028\\compile\\unit.obj",
+          "bytes": 44654316,
+          "sha256": "830a1a65157f3232bd777b75ed22ea72ef3273ae98418f2b400ab01ffabbb165"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-slot-cohort-refinement-20261028\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        }
+      ],
+      "total_bytes": 144195163
+    },
+    "result": {
+      "deleted_files": 3,
+      "deleted_bytes": 144195163,
+      "archive_sha256": "893324a6d2a564887b3e54819012261d07deab3af987b46f3835df9f570f0ab2",
+      "sdk_and_model_data_deleted": false
+    },
+    "retained": "Current Tiny OBJ, existing SDK objects, cached model inputs and original native DLL remain; ZIP has no binary bodies."
+  }
+}

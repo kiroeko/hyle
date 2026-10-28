@@ -52,6 +52,9 @@ CPU／CUDA完整路线按产品依赖自动装配ATen，其它独立模块仍按
 后续[脚本与开关复查](../evidence/correctness/inference-initialization-followup-2026-10-28.json)补齐产品缩减时的休眠协议配置、
 完整CPU平台前置检查、已有自定义配置、内部无效选择和显式CUDA工具链约束；75项轻量检查及2项本机预览通过，
 未下载依赖或重编SDK，剩余推理架构与性能范围不变。
+随后[共同载体安装](../evidence/correctness/inference-program-installation-2026-10-28.json)移除Phase／NextN／prefix／frontier的重复安装回调，
+统一exact、进度、固定IO及Store准备，保留各自原复用和事务退休政策。1次CXX、1次链接及6个CPU／CUDA有限检查通过，
+包含实际部分安装writer回收与重试；没有新的性能结论。Source cohort准备／导出及完整模型编排仍待继续收敛。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；

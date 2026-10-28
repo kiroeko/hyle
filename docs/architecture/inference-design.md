@@ -1401,6 +1401,13 @@ Counted 累加、Possible 将下界提高到一，保留原记录顺序；重建
 Store／Append先取回原交易、再撤动态IO的顺序保持。数学、状态、Shape及发布仍归模型，完整核心未抽完。
 普通Phase的四个readback只保留一份原owner，通过校验handle借用原facts／pool；固定可写输出显式登记原`TensorView`，
 不会误作只读输入，也不另建池。冷安装仍按原valid／accept、next-id、draft-id次序，普通路径不新增热withdraw协议。
+`ProgramInitialization`只同步借用这份已封存IO、可选exact要求、进度服务和Store准备事实；共同载体统一执行
+“未发布Invocation→exact子集核对→进度→固定IO→可选Store→成功发布”，不再由四个模型回调重复组合。
+IO必须属于同一稳定CompiledGraph；Store准备由显式存在决定，空sources不代表无需准备。
+安装失败由原Graph析构归还已消费writer。prefix成功继续保热、frontier继续fresh，普通／NextN仍先取回原事务再重置；
+该安装流程不接管这些复用政策，也不保存recipe或新增资源owner。
+[CPU／CUDA六个有限检查](../evidence/correctness/inference-program-installation-2026-10-28.json)保留原两载体提交与持权断言，
+实际检查部分安装后原caller writer归还及重试；普通多请求和MTP保留原完整状态检查，不代签D2流水或完整编排。
 
 共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
 Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；

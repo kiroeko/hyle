@@ -1,15 +1,46 @@
 #pragma once
 
+#include <cstddef>
 #include <expected>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 
+#include "hyle/graph/progress.h"
+#include "hyle/graph/slots.h"
 #include "execution_resources.h"
 #include "prepared_output.h"
+#include "program_io.h"
 #include "retirement_observation.h"
 
 namespace hyle::inference {
+
+// Synchronous, borrowed installation recipe for one selected program. The
+// original IO, logical Graph and progress runtimes keep their existing owners;
+// no part of this recipe is retained after initialize(). Slot presence is
+// explicit because a destination-only Store can have no paired sources.
+struct ProgramInitialization final {
+  struct Progress final {
+    sched::Scheduler *scheduler = nullptr;
+    sched::BlockingPool *workers = nullptr;
+  };
+  struct Slots final {
+    const hyle::graph::Graph &graph;
+    std::span<const hyle::graph::slots::SourceBinding> sources;
+    hyle::graph::slots::PrepareOptions options{};
+  };
+  struct Exact final {
+    std::size_t variant_index;
+    std::span<const graph::ShapeBinding> bindings;
+  };
+
+  ProgramIo &io;
+  graph::InvocationOptions invocation{};
+  Progress progress{};
+  std::optional<Slots> slots{};
+  std::optional<Exact> exact{};
+};
 
 // The original accepted Completion owns the one retention attachment. Submit
 // is a statically dispatched call to Graph (including its Source-bundle form),
@@ -57,19 +88,47 @@ public:
   bool pending() const noexcept { return retirement_.pending(); }
   std::span<const graph::QueueBinding> queues() const noexcept { return queue_span(queues_); }
 
-  // Cold, direct-call installation of progress and fixed IO. A partial bind
-  // never publishes a truthy half-initialized run. Original Graph destruction
-  // returns any fixed writer consumed by the unsuccessful local candidate.
-  template<class BindFixed>
-  Status initialize(graph::InvocationOptions options, BindFixed &&bind_fixed) {
+  // The complete installation order is shared by target, draft and private
+  // programs. A partial bind never publishes a half-initialized run. Original
+  // Graph destruction returns any fixed writer consumed by a failed candidate.
+  Status initialize(const ProgramInitialization &installation) {
     if (handed_off_ || !compiled_)
       return Status::FailedPrecondition("program carrier has no prepared program");
     if (pending() || run_.in_flight())
       return Status::Unavailable("program carrier has not actually retired");
     if (closing_ || run_)
       return Status::FailedPrecondition("program carrier needs its original retired reset before initialization");
-    HYLE_ASSIGN_OR_RETURN(auto candidate, compiled_->executable.create_invocation(options));
-    HYLE_RETURN_IF_ERROR(std::forward<BindFixed>(bind_fixed)(candidate));
+    HYLE_RETURN_IF_ERROR(installation.io.check_program(*compiled_));
+    const auto &progress = installation.progress;
+    if ((progress.scheduler == nullptr) != (progress.workers == nullptr))
+      return Status::InvalidArgument("program progress requires both original host runtimes");
+    HYLE_ASSIGN_OR_RETURN(auto candidate, compiled_->executable.create_invocation(installation.invocation));
+    if (installation.exact) {
+      const auto &expected = *installation.exact;
+      if (candidate.exact_variant_index() != expected.variant_index)
+        return Status::FailedPrecondition("program carrier selected an unexpected exact child");
+      const auto signature = candidate.specialization();
+      for (const auto required : expected.bindings) {
+        bool found = false;
+        for (std::size_t index = 0; index < signature.binding_count(); ++index) {
+          HYLE_ASSIGN_OR_RETURN(const auto actual, signature.binding(index));
+          if (actual.dimension != required.dimension) continue;
+          if (actual.value != required.value)
+            return Status::FailedPrecondition("program carrier exact signature differs from required bindings");
+          found = true;
+          break;
+        }
+        if (!found)
+          return Status::FailedPrecondition("program carrier exact signature is missing a required binding");
+      }
+    }
+    if (progress.scheduler)
+      HYLE_RETURN_IF_ERROR(graph::prepare_progress(candidate, *progress.scheduler, *progress.workers));
+    HYLE_RETURN_IF_ERROR(installation.io.bind_fixed(candidate));
+    if (installation.slots) {
+      const auto &slots = *installation.slots;
+      HYLE_RETURN_IF_ERROR(graph::slots::prepare(candidate, slots.graph, queues(), slots.sources, slots.options));
+    }
     run_ = std::move(candidate);
     return Status::Ok();
   }

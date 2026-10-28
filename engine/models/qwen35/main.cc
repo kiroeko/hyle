@@ -2936,18 +2936,15 @@ public:
   }
 
   void initialize_draft_program(DraftProgram &program) {
-    check(program.carrier.initialize(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
-        [&](g::Invocation &run) -> hyle::Status {
-          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(program.io.bind_fixed(run));
-          if (program.head) {
-            const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
-            HYLE_RETURN_IF_ERROR(g::slots::prepare(run, program.graph, program.carrier.queues(), sources,
-                {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
-          }
-          return hyle::Status::Ok();
-        }));
+    const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
+    inference::ProgramInitialization initialization{
+        .io = program.io,
+        .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        .progress = {scheduler.get(), workers.get()}};
+    if (program.head) initialization.slots.emplace(inference::ProgramInitialization::Slots{
+        program.graph, sources,
+        {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
+    check(program.carrier.initialize(initialization));
   }
 
   // The shared carrier observes its original native owner. The original Step
@@ -3207,13 +3204,10 @@ public:
   }
 
   void initialize_prefix_sampling(PrefixSamplingProgram &program) {
-    check(program.carrier.initialize(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
-        [&](g::Invocation &run) -> hyle::Status {
-          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(program.io.bind_fixed(run));
-          return hyle::Status::Ok();
-        }));
+    check(program.carrier.initialize({
+        .io = program.io,
+        .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        .progress = {scheduler.get(), workers.get()}}));
   }
 
   // Pure private consumers have no append/Store transaction to recover. A
@@ -3421,13 +3415,10 @@ public:
     recover_private_carrier(frontier.carrier);
     // This is the same Graph execution API/runtime as target/draft. Keep the
     // original fresh-run frontier policy, with atomic fixed-IO installation.
-    check(frontier.carrier.initialize(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
-        [&](g::Invocation &candidate) -> hyle::Status {
-          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(candidate, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(frontier.io.bind_fixed(candidate));
-          return hyle::Status::Ok();
-        }));
+    check(frontier.carrier.initialize({
+        .io = frontier.io,
+        .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        .progress = {scheduler.get(), workers.get()}}));
     auto &run = *take(frontier.carrier.borrow());
     try {
       if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
@@ -3635,29 +3626,17 @@ public:
     if (carrier.initialized()) return;
     auto &io = phase.io[slot];
     const auto &definition = *phase.family;
-    check(carrier.initialize(
-        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
-        [&](g::Invocation &run) -> hyle::Status {
-          // The parent create(shape) selects this same exact child. Creating
-          // it directly needs no shape argument; preserve both original facts.
-          if (run.exact_variant_index() != phase.variant_index)
-            return hyle::Status::FailedPrecondition("finite family selected an unexpected exact child");
-          const auto signature = run.specialization();
-          bool matches_rows = false;
-          for (std::size_t i = 0; i < signature.binding_count(); ++i) {
-            const auto binding = take(signature.binding(i));
-            if (binding.dimension != definition.last_row) continue;
-            matches_rows = binding.value == static_cast<std::int64_t>(phase.query_rows - 1);
-          }
-          if (!matches_rows)
-            return hyle::Status::FailedPrecondition("finite child signature differs from its planned query rows");
-          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(io.bindings.bind_fixed(run));
-          if (phase.state_transactions[slot].size())
-            HYLE_RETURN_IF_ERROR(g::slots::prepare(run, phase.state_graph(), carrier.queues(), phase.state_sources,
-                {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
-          return hyle::Status::Ok();
-        }));
+    // Preserve the selected exact child and the original query-row binding.
+    const std::array bindings{g::ShapeBinding{definition.last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
+    inference::ProgramInitialization initialization{
+        .io = io.bindings,
+        .invocation = {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        .progress = {scheduler.get(), workers.get()},
+        .exact = inference::ProgramInitialization::Exact{phase.variant_index, bindings}};
+    if (phase.state_transactions[slot].size()) initialization.slots.emplace(inference::ProgramInitialization::Slots{
+        phase.state_graph(), phase.state_sources,
+        {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}});
+    check(carrier.initialize(initialization));
     phase.preparation_uses[slot] = 0;
   }
 
