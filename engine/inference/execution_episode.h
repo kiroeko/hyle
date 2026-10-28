@@ -11,7 +11,7 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/core/assert.h"
 #include "hyle/graph/batch.h"
-#include "hyle/graph/detail/output_source.h"
+#include "submission_views.h"
 #include "append_transactions.h"
 #include "program_carrier.h"
 #include "slot_transactions.h"

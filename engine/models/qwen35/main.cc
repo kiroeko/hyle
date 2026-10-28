@@ -1084,16 +1084,12 @@ struct StepMember final {
 // Typed views of one original Graph submission. They contain no executor,
 // model-state snapshot or observer independent of the original proxy. A
 // successor may keep these views after its producer's host episode retires.
-struct StepSources final {
+struct StepSources final : inference::SubmissionViews {
   struct Boundary final {
     std::weak_ptr<Session> session;
     const cache::State *candidate = nullptr;
     std::uint64_t epoch = 0;
   };
-  g::detail::SubmissionSource submission;
-  g::detail::OutputSource token;
-  std::vector<g::detail::StoreSource> states;
-  std::vector<g::batch::detail::PagedAppendSource> pages;
   std::vector<Boundary> boundaries;
   std::vector<c::ReadLease> published_states;
 };
@@ -4724,20 +4720,14 @@ public:
         !take(phase.io[step.state_slot].bindings.readback(phase.io[step.state_slot].next_id))->pool().valid())
       throw std::runtime_error("submission views require the original owned shared Queue and full token writer");
     auto sources = std::make_shared<StepSources>();
-    sources->states.reserve(phase.state_sources.size());
-    sources->pages.reserve(draft_bank);
     sources->boundaries.reserve(step.members.size());
     sources->published_states.resize(phase.state_sources.size() * step.members.size());
     for (const auto &member : step.members) {
       if (member.base_epoch == UINT64_MAX) throw std::overflow_error("source candidate epoch exhausted");
       sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1});
     }
-    for (const auto &state : phase.state_sources)
-      sources->states.push_back(take(g::detail::StoreSource::prepare(*step.execution.run,
-          state.store, storage, {.resource_budget = execution_budget})));
-    for (std::size_t bank = 0; bank < draft_bank; ++bank)
-      sources->pages.push_back(take(g::batch::detail::PagedAppendSource::prepare(
-          *step.execution.run, step.execution.nodes[bank], storage, {.resource_budget = execution_budget})));
+    check(sources->prepare(*step.execution.run, phase.state_sources,
+        std::span<const g::NodeId>(step.execution.nodes.data(), draft_bank), storage, execution_budget));
     step.execution.sources = sources;
     return sources;
   }
@@ -4757,22 +4747,10 @@ public:
     step.start = Clock::now(); step.submitted = true;
     check(step.execution.submit(resources_));
     if (step.execution.sources) {
-      auto &sources = *step.execution.sources;
-      auto exported = g::detail::SubmissionSource::create(
-          *step.execution.run, std::move(step.execution.completion), execution.storage_owner());
-      if (!exported && optional_sources && !exported.error().has_native_error() &&
-          (exported.error().IsUnimplemented() || exported.error().IsUnavailable())) {
-        // create transfers the original Completion only on success. A legal
-        // command route can finish normally without opting into device relay.
-        step.execution.sources.reset();
-      } else {
-        sources.submission = take(std::move(exported));
-        sources.token = take(g::detail::OutputSource::create(sources.submission,
-            step.phase->id_port, execution.storage_owner(),
-            take(step.phase->io[step.state_slot].bindings.readback(step.phase->io[step.state_slot].next_id))->pool()));
-        for (auto &state : sources.states) check(state.capture(sources.submission));
-        for (auto &pages : sources.pages) check(pages.capture(sources.submission));
-      }
+      const auto captured = take(step.execution.sources->capture(*step.execution.run, step.execution.completion,
+          step.phase->id_port, execution.storage_owner(),
+          take(step.phase->io[step.state_slot].bindings.readback(step.phase->io[step.state_slot].next_id))->pool(), optional_sources));
+      if (!captured) step.execution.sources.reset();
     }
     step.submit_seconds = std::chrono::duration<double>(Clock::now() - step.start).count();
   }

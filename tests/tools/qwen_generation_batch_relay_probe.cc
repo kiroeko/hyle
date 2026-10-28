@@ -13,6 +13,21 @@ using qwen_generation_state_case::state_bytes;
 constexpr std::size_t kOutputs = 14;
 enum class Mode { kNormal, kMemberCredit, kCancel, kModelEos, kColdTuple };
 
+void check_captured_sources(const q::Model &model, const q::StepState &step) {
+  if (!step.execution.sources) return; // The existing legal non-Source route.
+  const auto &sources = *step.execution.sources;
+  require(step.submitted && !step.execution.completion.valid() && step.execution.has_completion() &&
+      sources.submission.valid() && sources.token.valid() && step.phase &&
+      sources.states.size() == step.phase->state_sources.size() &&
+      sources.pages.size() == model.draft_bank,
+      "Source cohort lost its sole original completion, token or prepared bank");
+  for (const auto &state : sources.states)
+    require(state.valid() && state.destination_count() == step.members.size(),
+        "Source cohort did not capture every original Store destination");
+  for (const auto &pages : sources.pages)
+    require(pages.valid(), "Source cohort did not capture every original KV append");
+}
+
 struct BatchCopy final {
   std::vector<i::RequestKey> keys;
   std::vector<q::EvaluationDisposition> dispositions;
@@ -180,11 +195,13 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
       ++result.submits;
       require(model.active_step && model.active_step->submitted && model.active_step->execution.has_completion(),
           "R2 AfterSubmit did not follow an original accepted target");
+      check_captured_sources(model, *model.active_step);
       if (model.active_step->phase->imported_sources &&
           model.active_step->capture_recorded + model.active_step->capture_reused > 0)
         imported_captures[model.active_step->state_slot] = true;
       const bool successor = model.successor_step && model.successor_step->submitted;
       if (successor) {
+        check_captured_sources(model, *model.successor_step);
         require(model.successor_step->members.size() == active.size(), "R2 successor silently changed cohort width");
         if (!result.first_successor_before) result.first_successor_before = before;
         if (mode == Mode::kModelEos) {
@@ -333,6 +350,189 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
   return result;
 }
 
+struct SourceFailureArm final {
+  std::array<std::int32_t, 2> ids{};
+  std::array<StateBytes, 2> states;
+  std::vector<q::GenerationCommitRecord> records;
+  std::size_t submissions = 0, captured_stores = 0, prepared_pages = 0;
+};
+
+SourceFailureArm source_failure_arm(q::Model &model, bool fail_capture) {
+  require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live,
+      "Source failure arm retained a preceding episode or published version");
+  static constexpr std::array<std::int32_t, 3> prompt{1, 2, 3};
+  const std::array chunks{prompt.size(), std::size_t{1}};
+  auto session = model.create_session(chunks);
+  q::GenerationLedger ledger(2, 1);
+  std::shared_ptr<q::StepSources> sources;
+  hyle::util::ScopeGuard cleanup{[&]() noexcept {
+    if (sources && sources->submission.valid()) sources->submission.wait().IgnoreError();
+    sources.reset(); (void)model.abort_episode();
+    if (session) {
+      session->stop().IgnoreError(); (void)session->drain(); (void)session->try_retire(); session.reset();
+    }
+  }};
+  SourceFailureArm result;
+  const auto finish = [&](const char *name) {
+    return q::finish_evaluation(model, *session, name, {}, false,
+        nullptr, nullptr, nullptr, nullptr, {}, &ledger);
+  };
+  q::prepare_generation_record(ledger, *session, q::GraphRole::kText, prompt, false, 1, 0);
+  model.prepare_evaluation(*session, prompt, nullptr);
+  model.submit_evaluations(); ++result.submissions;
+  result.ids[0] = finish("source-failure-prefill");
+  result.states[0] = state_bytes(model, *session->head);
+  auto checkpoint = session->checkpoint();
+  const auto *head = session->head.get();
+  const auto epoch = session->head.epoch();
+  const auto boundary = q::generation_boundary(*session->head);
+  const auto free_pages = model.page_inventory.free_ids.size();
+  const auto page_owners = model.page_inventory.owners;
+  const auto live_versions = model.snapshot_versions.live;
+  const auto pending = session->head->next_id;
+  const auto unchanged_head = [&] {
+    require(session->head.get() == head && session->head.epoch() == epoch &&
+        q::generation_boundary(*session->head) == boundary &&
+        state_bytes(model, *session->head) == result.states[0] &&
+        state_bytes(model, *checkpoint) == result.states[0],
+        "Source capture failure changed a committed complete head, checkpoint, epoch or RNG");
+  };
+  if (fail_capture) {
+    q::prepare_generation_record(ledger, *session, q::GraphRole::kText, std::span(&pending, 1), true, 1, 0);
+    const auto before_records = ledger.records;
+    const auto before_commits = ledger.committed_count;
+    const auto unchanged_ledger = [&] {
+      require(ledger.committed_count == before_commits && ledger.records.size() == before_records.size(),
+          "Source capture failure published or resized the original ledger");
+      for (std::size_t index = 0; index < before_records.size(); ++index) {
+        const auto &before = before_records[index]; const auto &after = ledger.records[index];
+        require(after.same_result(before) && after.committed == before.committed &&
+            after.user_output == before.user_output && after.imported == before.imported && after.turn == before.turn &&
+            after.input_owner == before.input_owner && std::ranges::equal(after.ids(), before.ids()) &&
+            after.step_seconds == before.step_seconds && after.endpoint == before.endpoint,
+            "Source capture failure changed an original committed or prepared ledger record");
+      }
+    };
+    model.prepare_evaluation(*session, std::span(&pending, 1), nullptr);
+    auto *const failed_step = model.active_step.get();
+    require(failed_step && failed_step->prepared && !failed_step->submitted &&
+        failed_step->execution.state_transactions && failed_step->execution.state_transactions->bound(),
+        "Source failure did not use the original prepared Store/Append episode");
+    auto *const transactions = failed_step->execution.state_transactions;
+    sources = model.prepare_submission_sources(*failed_step);
+    const auto stores = sources->states.size(); const auto pages = sources->pages.size();
+    require(stores == model.geometry.recurrent_layers() * 2 && stores &&
+        pages == model.geometry.attention_layers() * 2 && pages,
+        "Source failure omitted an actual recurrent or KV bank");
+    for (const auto &state : sources->states) require(state.prepared() && !state.valid(), "Store was not cold prepared");
+    for (const auto &page : sources->pages) require(page.prepared() && !page.valid(), "KV Source was not cold prepared");
+    // Deliberate invalid metadata at the end of the real Store cohort. The
+    // accepted target, original Completion and preceding captures are real.
+    // This is neither a native device fault nor a synthetic Completion.
+    sources->states.emplace_back();
+    bool rejected = false;
+    try { model.submit_evaluations(*failed_step, true); }
+    catch (const i::EvaluationFailure &failure) {
+      require(failure.status().IsFailedPrecondition() && !failure.status().has_native_error() &&
+          std::string_view(failure.what()).find("Store source requires cold preparation") != std::string_view::npos,
+          "Source failure did not come from the appended unprepared Store metadata");
+      rejected = true;
+    }
+    require(rejected && model.active_step.get() == failed_step && failed_step->submitted &&
+        failed_step->execution.sources == sources && !failed_step->execution.completion.valid() &&
+        failed_step->execution.has_completion() && sources->submission.valid() && sources->token.valid(),
+        "Optional Source export downgraded or lost an already accepted partial capture");
+    ++result.submissions;
+    for (std::size_t index = 0; index < stores; ++index)
+      require(sources->states[index].valid() && sources->states[index].destination_count() == 1,
+          "Source failure occurred before capturing the original valid Store prefix");
+    require(!sources->states.back().prepared() && !sources->states.back().valid(),
+        "Source failure silently prepared or captured the invalid trailing Store");
+    for (const auto &page : sources->pages)
+      require(page.prepared() && !page.valid(), "late Store rejection unexpectedly captured a later KV Source");
+    result.captured_stores = stores; result.prepared_pages = pages;
+    unchanged_head(); unchanged_ledger();
+    q::check(sources->submission.wait()); // Isolate the external-owner retirement gate from native progress.
+    const auto weak_sources = std::weak_ptr(sources);
+    const auto weak_step = std::weak_ptr(model.active_step);
+    const auto blocked = model.abort_episode(); q::check(blocked.status);
+    require(!blocked.retired && model.active_step.get() == failed_step && session->pending == failed_step &&
+        failed_step->execution.sources == sources && transactions->bound() && model.carrier_borrowed == 1 &&
+        model.snapshot_versions.live > live_versions,
+        "External Source ownership did not retain the original candidate and transactions after actual native retirement");
+    unchanged_head(); unchanged_ledger();
+    sources.reset();
+    const auto retired = model.abort_episode(); q::check(retired.status);
+    require(retired.retired && weak_sources.expired() && weak_step.expired() &&
+        !model.active_step && !model.successor_step && !model.carrier_borrowed && !session->pending &&
+        !transactions->bound() && model.snapshot_versions.live == live_versions &&
+        model.page_inventory.free_ids.size() == free_pages && model.page_inventory.owners == page_owners &&
+        !session->failed && !session->stopping && session->retirement_status.ok(),
+        "Dropping the final external Source did not recover the original Store/Append and candidate/page resources");
+    unchanged_head(); unchanged_ledger();
+  }
+  // Same original Session and committed pending token after the failed target;
+  // the ordinary owner reuses its still-uncommitted ledger slot for retry.
+  q::prepare_generation_record(ledger, *session, q::GraphRole::kText, std::span(&pending, 1), true, 1, 0);
+  model.prepare_evaluation(*session, std::span(&pending, 1), nullptr);
+  model.submit_evaluations(); ++result.submissions;
+  result.ids[1] = finish("source-failure-retry");
+  result.states[1] = state_bytes(model, *session->head);
+  require(ledger.committed_count == 2 && session->head.epoch() == epoch + 1 &&
+      state_bytes(model, *checkpoint) == result.states[0], "Source retry changed its old checkpoint or omitted the one real commit");
+  result.records.assign(ledger.records.begin(), ledger.records.begin() + ledger.committed_count);
+  checkpoint.reset();
+  q::check(session->stop());
+  const auto drained = session->drain(); q::check(drained.status);
+  const auto retired = session->try_retire(); q::check(retired.status);
+  require(retired.retired, "Source failure arm did not actually retire its original Session");
+  session.reset();
+  require(!model.active_step && !model.successor_step && !model.carrier_borrowed && !model.snapshot_versions.live &&
+      model.page_inventory.free_ids.size() == model.page_inventory.owners.size() &&
+      std::ranges::all_of(model.page_inventory.owners, [](auto owners) { return owners == 0; }),
+      "Source failure arm retained a published version, candidate or original KV page");
+  cleanup.dismiss();
+  return result;
+}
+
+int run_source_failure(const std::filesystem::path &input) {
+  auto source = q::prepare_weight_source(input / "weights.tsv", false);
+  const auto geometry = source.roles.geometry;
+  require(geometry.context_limit >= 16 && geometry.vocabulary > 3 &&
+      geometry.recurrent_layers() && geometry.attention_layers(), "Source failure requires the complete cached C16 GA fixture");
+  const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 3, 3,
+      q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 1, false, false);
+  q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kPreferCapture,
+      SIZE_MAX, {}, 0, {.primary = i::BackendKind::kCuda});
+  const std::array shapes{std::size_t{3}, std::size_t{1}};
+  model.prepare_family(shapes); model.plan_replay_uses(3, 1, 2); model.plan_replay_uses(1, 1, 3);
+  model.freeze_shape_plan(); model.prepare_execution(shapes);
+  const auto control = source_failure_arm(model, false);
+  const auto recovered = source_failure_arm(model, true);
+  require(control.ids == recovered.ids && control.states == recovered.states &&
+      control.records.size() == recovered.records.size(), "Source capture failure/retry changed complete serial results");
+  for (std::size_t index = 0; index < control.records.size(); ++index) {
+    const auto &before = control.records[index]; const auto &after = recovered.records[index];
+    require(before.same_result(after) && before.committed == after.committed &&
+        before.user_output == after.user_output && before.imported == after.imported && before.turn == after.turn &&
+        std::ranges::equal(before.ids(), after.ids()), "Source capture failure/retry changed a complete non-time serial ledger");
+  }
+  std::size_t compared_bytes = 0;
+  for (const auto &state : control.states) for (const auto &payload : state.payloads) compared_bytes += payload.size();
+  std::cout << "{\"status\":\"PASS\",\"backend\":\"cuda\",\"case\":\"source-post-submit-capture-failure\","
+      "\"native_submissions\":" << control.submissions + recovered.submissions
+      << ",\"control_submissions\":" << control.submissions << ",\"failure_and_retry_submissions\":" << recovered.submissions
+      << ",\"captured_original_stores\":" << recovered.captured_stores << ",\"prepared_uncaptured_pages\":" << recovered.prepared_pages
+      << ",\"complete_state_bytes_compared\":" << compared_bytes
+      << ",\"unprepared_trailing_store_rejected\":true,\"optional_export_did_not_downgrade\":true,"
+      "\"original_completion_transferred\":true,\"external_source_owner_blocks_recovery\":true,"
+      "\"source_release_recovers_store_append\":true,\"committed_head_checkpoint_epoch_rng_ledger_unchanged\":true,"
+      "\"same_session_retry_matches_serial\":true,\"all_source_session_page_owners_retired\":true,"
+      "\"final_live_versions\":0,\"metadata_capture_failure\":true,\"native_fault_injection\":false,"
+      "\"model_quality_claim\":false,\"performance_claim\":false}\n";
+  return 0;
+}
+
 int run(const std::filesystem::path &input, bool boundaries = false) {
   auto source = q::prepare_weight_source(input / "weights.tsv", false);
   const auto geometry = source.roles.geometry;
@@ -433,14 +633,15 @@ int main(int argc, char **argv) {
       std::cerr << "SKIP: pass --cuda-continuous CONTEXT32_TINY_INPUT\n"; return 77;
     }
     const bool continuous = argc == 3 && std::string_view(argv[1]) == "--cuda-continuous";
+    const bool source_failure = argc == 3 && std::string_view(argv[1]) == "--cuda-source-failure";
     const bool boundaries = argc == 4 && std::string_view(argv[1]) == "--cuda-boundaries";
-    if (!continuous && !boundaries && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
-      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-continuous CONTEXT32_TINY_INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR");
+    if (!continuous && !source_failure && !boundaries && (argc != 3 || std::string_view(argv[1]) != "--cuda"))
+      throw std::runtime_error("usage: qwen_generation_batch_relay_probe --cuda INPUT | --cuda-continuous CONTEXT32_TINY_INPUT | --cuda-source-failure INPUT | --cuda-boundaries TINY_INPUT NEW_OUTPUT_DIR");
     const auto compiled = q::Backend::compiled_backends();
     if (std::find(compiled.begin(), compiled.end(), q::BackendKind::kCuda) == compiled.end()) {
       std::cerr << "SKIP: CUDA route is not built\n"; return 77;
     }
-    return continuous ? qwen_continuous_generation_case::run(argv[2])
+    return source_failure ? run_source_failure(argv[2]) : continuous ? qwen_continuous_generation_case::run(argv[2])
         : boundaries ? run(qwen_generation_state_case::model_eos_fixture(argv[2], argv[3], 9), true)
         : run(argv[2]);
   } catch (const std::exception &error) { std::cerr << error.what() << '\n'; return 1; }

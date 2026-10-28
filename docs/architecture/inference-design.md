@@ -1422,6 +1422,14 @@ Store事务借用及候选额度借用。模型先声明参与者pins，再嵌�
 未知退休及尚在途的私有工作不由这一清理分支冒认完成。该修正不扩展generic异常分支，也不增加成功热路径复制或分配。
 [本片有限检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)覆盖CPU／CUDA NextN真实失败后重试、
 旧快照、R2取消后的幸存续算和在途前驱下后继拒绝；未注入未知退休故障，没有新的性能结论。
+原StepSources的资源部分由共同`SubmissionViews`承载：在原Invocation上准备Store与Append视图，
+再从同一次提交依次捕获submission、token、Store和Append。模型派生结构只保留Session边界、epoch及发布引用，
+继续使用原shared_ptr控制块和析构次序；共同组件不新增Completion、执行器或发布权限。
+Completion只以引用传入，只有SubmissionSource创建成功才转移。可选降级仅适用于该创建阶段的非原生
+Unimplemented／Unavailable；后段捕获失败必须保留原submission和已成功的视图，交原episode实际退休后恢复，
+不能用“流水不可用”抹去已提交事实。视图准备只接受尚未准备或捕获的原bundle，不在持有者存续时重复构造资源。
+[CUDA有限检查](../evidence/correctness/inference-submission-views-2026-10-28.json)覆盖原R2、连续流水及真实提交后的部分Store捕获失败，
+检查外部持有者阻止回收、释放后原事务恢复和同会话重试；这是元数据失败检查，不代表原生GPU故障注入或性能提升。
 共同准备协议现沿原顺序分步表达：`prepare_appends`准备batch metadata并绑定选定Append；
 `bind_consumers`先绑定真实incoming Source、成功才置原bound，再绑定已有Store cohort；
 `prepare_replay`按实际incoming选择原Source完整tuple门或普通replay，保留原mode／host-wait行为。
