@@ -44,6 +44,7 @@
 #include "mtp_graph.h"
 #include "block_graph.h"
 #include "../../inference/mtp_acceptance.h"
+#include "../../inference/mtp_acceptance_graph.h"
 #include "../../inference/sampling_graph.h"
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
@@ -1284,17 +1285,19 @@ struct PrefixSamplingProgram final {
   g::Graph graph;
   inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
-  V logits, identities, ids, bias, allowed, counts;
+  V logits, identities, ids, bias, allowed, counts, continuation, packet;
   std::vector<V> q, accepted, final_ids, valid;
-  Tensor identity_values, id_values;
+  Tensor identity_values, id_values, continuation_values;
+  std::vector<float> continuation_host;
+  std::vector<std::int32_t> packet_host;
   inference::ProgramIo io;
   inference::ProgramIo::Input logits_input, bias_input, allowed_input, counts_input;
   std::vector<inference::ProgramIo::Input> q_inputs;
-  std::vector<inference::ProgramIo::Readback> accepted_values, final_values, valid_values;
+  inference::ProgramIo::Readback packet_value;
 };
 struct PrefixSamplingResult final {
-  std::vector<std::uint8_t> accepted;
   std::vector<std::int32_t> final_ids;
+  inference::mtp::AcceptedPrefix prefix;
 };
 
 struct SamplingFrontier final {
@@ -3167,20 +3170,22 @@ public:
         const auto raw = r.copy(r.slice(program.logits, 0, f(static_cast<std::int64_t>(row)), f(1)));
         const auto selection = sampling::processed_selection(r,
             sampling::process_logits(r, raw, row_inputs, selected_sampler.modifiers.history), std::optional<V>{}, selected_sampler.policy);
-        program.final_ids.push_back(selection.id); program.valid.push_back(*selection.valid);
+        program.final_ids.push_back(r.reshape(selection.id, {f(1)})); program.valid.push_back(*selection.valid);
         if (!selected_sampler.modifiers.history.empty() && row < proposals)
           row_inputs.counts = sampling::advance_history_counts(r, *row_inputs.counts,
               r.copy(r.slice(program.ids, 0, f(static_cast<std::int64_t>(row)), f(1))));
       }
     }
-    for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
-      if (!program.accepted.empty()) {
-        program.accepted[row] = r.host_predicate(program.accepted[row]);
-        r.publish(program.accepted[row]);
-      }
-      program.valid[row] = r.host_predicate(program.valid[row]);
-      r.publish(program.final_ids[row]); r.publish(program.valid[row]);
+    if (selected_sampler.enabled) {
+      if (proposals) program.continuation = r.input(dense(Type::kFloat32,
+          {static_cast<std::int64_t>(proposals)}));
+      program.packet = inference::mtp::sampled_prefix_packet(r, program.ids, program.continuation,
+          std::span<const V>(program.accepted), std::span<const V>(program.final_ids), std::span<const V>(program.valid));
+    } else {
+      program.packet = inference::mtp::validated_ids_packet(r,
+          std::span<const V>(program.final_ids), std::span<const V>(program.valid));
     }
+    r.publish(program.packet);
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, 0}};
     const std::array variants{g::ExactShapeVariant{binding}};
@@ -3196,17 +3201,19 @@ public:
       input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
     }
     if (program.ids) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-    check(program.io.prepare(compiled_program, bool(program.identities) + bool(program.ids),
+    if (program.continuation) {
+      program.continuation_values = caller_tensor(execution.device(), dense(Type::kFloat32,
+          {static_cast<std::int64_t>(proposals)}));
+      program.continuation_host.resize(proposals);
+    }
+    program.packet_host.resize(selected_sampler.enabled ? proposals + 5 : proposals + 2);
+    check(program.io.prepare(compiled_program, bool(program.identities) + bool(program.ids) + bool(program.continuation),
         1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
-        program.accepted.size() + program.final_ids.size() + program.valid.size(), 0));
+        1, 0));
     if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
     if (program.ids) check(program.io.add_fixed(program.ids, program.id_values.read()));
-    const auto prepare = [&](const std::vector<V> &ports, std::vector<inference::ProgramIo::Readback> &values) {
-      values.reserve(ports.size());
-      for (const auto port : ports) values.push_back(take(program.io.add_readback(port, execution, allocation_budget)));
-    };
-    prepare(program.accepted, program.accepted_values);
-    prepare(program.final_ids, program.final_values); prepare(program.valid, program.valid_values);
+    if (program.continuation) check(program.io.add_fixed(program.continuation, program.continuation_values.read()));
+    program.packet_value = take(program.io.add_readback(program.packet, execution, allocation_budget));
     if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
     if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
     if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
@@ -3253,10 +3260,14 @@ public:
 
   PrefixSamplingResult sample_recursive_prefix(c::ConstTensorView logits,
       std::span<const std::int32_t> proposals, std::span<const c::ReadLease> q,
-      cache::SamplingCursor cursor, std::size_t sampling_index = 0, const LogitsInputs &inputs = {}) {
+      cache::SamplingCursor cursor, std::size_t quota, std::span<const std::int32_t> eos,
+      const inference::RequestStopPolicy *stop_policy, std::size_t sampling_index = 0, const LogitsInputs &inputs = {}) {
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     if ((selected_sampler.enabled ? proposals.size() != q.size() : !q.empty() || selected_sampler.modifiers.empty()))
       throw std::runtime_error("speculative sampling requires its actual proposal distributions or greedy modifiers");
+    if (!quota) throw std::runtime_error("speculative prefix requires a positive output quota");
+    inference::mtp::validate_token_ids(proposals, static_cast<std::int32_t>(vocabulary));
+    inference::request_stop_policy(stop_policy).validate(vocabulary);
     validate_logits_inputs(selected_sampler, inputs, vocabulary);
     auto found = prefix_sampling_programs.find({proposals.size(), sampling_index});
     if (found == prefix_sampling_programs.end()) throw std::runtime_error("speculative-sampling width was not cold prepared");
@@ -3276,6 +3287,12 @@ public:
       program.identity_values.write<std::uint32_t>(identities);
     }
     if (program.ids) program.id_values.write<std::int32_t>(proposals);
+    if (program.continuation) {
+      for (std::size_t row = 0; row < count; ++row)
+        program.continuation_host[row] = row < quota - 1 &&
+            !inference::request_token_stopped(proposals[row], eos, stop_policy) ? 1.F : 0.F;
+      program.continuation_values.write<float>(program.continuation_host);
+    }
     try {
       check(program.io.bind(run, program.logits_input, logits));
       if (program.bias_input) check(program.io.bind(run, program.bias_input, inputs.bias.description, inputs.bias.lease));
@@ -3287,14 +3304,29 @@ public:
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(program.carrier.submit(resources_)); check(done.wait());
       ++prefix_decision_graph_calls;
-      PrefixSamplingResult result; result.accepted.resize(program.accepted.size()); result.final_ids.resize(program.final_ids.size());
-      for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
-        const auto valid = take(program.io.predicate(execution, run, program.valid_values[row]));
-        if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
-            "recursive target/q/residual distribution is invalid; no head or RNG was published"));
-        if (valid != 1) throw std::runtime_error("recursive target validity is outside its predicate encoding");
-        if (!result.accepted.empty()) result.accepted[row] = take(program.io.predicate(execution, run, program.accepted_values[row]));
-        check(program.io.read(execution, run, program.final_values[row], std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
+      check(program.io.read(execution, run, program.packet_value,
+          std::as_writable_bytes(std::span(program.packet_host))));
+      const auto words = std::span<const std::int32_t>(program.packet_host);
+      if (words[0] == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
+          "recursive target/q/residual distribution is invalid; no head or RNG was published"));
+      if (words[0] != 1) throw std::runtime_error("recursive target validity is outside its predicate encoding");
+      PrefixSamplingResult result;
+      if (selected_sampler.enabled) {
+        const auto consumed = words[1];
+        const auto emitted = words.subspan(4);
+        inference::mtp::validate_token_ids(emitted, static_cast<std::int32_t>(vocabulary));
+        if (consumed <= 0 || static_cast<std::size_t>(consumed) > (std::min)(quota, count + 1) ||
+            (words[3] != 0 && words[3] != 1) || words[2] != emitted[static_cast<std::size_t>(consumed) - 1])
+          throw std::runtime_error("device prefix result differs from its bounded emitted rows");
+        result.prefix = {.consumed = static_cast<std::size_t>(consumed),
+            .consumed_drafts = static_cast<std::size_t>(consumed) - 1, .next_id = words[2],
+            .first_agrees = words[3] != 0,
+            .stopped = inference::request_token_stopped(words[2], eos, stop_policy)};
+        result.final_ids.assign(emitted.begin(), emitted.begin() + consumed);
+      } else {
+        const auto ids = words.subspan(1);
+        inference::mtp::validate_token_ids(ids, static_cast<std::int32_t>(vocabulary));
+        result.final_ids.assign(ids.begin(), ids.end());
       }
       check(program.io.release_inputs(program.carrier));
       return result;
@@ -5402,7 +5434,8 @@ public:
           try {
             decision = sample_recursive_prefix(logits,
                 std::span<const std::int32_t>(member.verification_inputs).subspan(1),
-                selection.draft_log_probabilities, member.base->sampling, selected_sampling.index, member.logits);
+                selection.draft_log_probabilities, member.base->sampling, selection.output_quota,
+                eos, member.stop_policy, selected_sampling.index, member.logits);
           } catch (const inference::EvaluationFailure &failure) {
             // Exact private validation of this original submitted member's
             // target rows; neither a request bucket nor a q-pool index.
@@ -5413,8 +5446,8 @@ public:
             throw mapped;
           }
           if (selected_sampler.enabled) {
-            accepted = hyle::inference::mtp::select_sampled_prefix(member.verification_inputs, decision.accepted, decision.final_ids,
-                selection.output_quota, eos, static_cast<std::int32_t>(vocabulary), result.emitted, member.stop_policy);
+            accepted = decision.prefix;
+            result.emitted.assign(decision.final_ids.begin(), decision.final_ids.end());
             member.next->sampling = member.base->sampling.advanced(cache::add(cache::multiply(2, width - 1), 1));
             result.target_first = result.emitted.front();
             result.target_second = result.emitted.size() > 1 ? result.emitted[1] : -1;

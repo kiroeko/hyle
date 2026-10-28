@@ -197,6 +197,12 @@ MTP本窗接受与实际工作相同；两版decode变化约0%～2%，仍需后�
 多配置生成器的Debug缓存选择已修正，脚本／元数据及无下载依赖边界检查见[本片记录](../evidence/correctness/inference-automatic-io-2026-10-29.json)；
 其范围不代替完整协议库重编或package安装检查。
 
+递归采样前缀新增共同设备折叠与单I32结果包，完整valid、真实quota／stop、pending及RNG规则保留；
+greedy modifier同步合包，但原精确主机比较保留。CPU／CUDA独立输入图与组件状态／失败恢复检查通过，
+详见[本片依据](../evidence/correctness/inference-mtp-device-packet-2026-10-29.json)。尚非设备KV或连续后继，不声明速度提升。
+下一步先沿现有精确Source／Append接只在全前缀接受后发布的K1投机后继；
+不为这条已有可表达路径预先增加通用设备动态KV机制，任意接受长度的设备续算仍保留在整体范围内。
+
 ## 当前实现概况
 
 以下区分底层功能、共享架构和性能，不用某项功能通过代替三者全部完成：

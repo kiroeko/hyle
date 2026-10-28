@@ -35,12 +35,12 @@ struct AcceptedPrefix final {
   std::int32_t next_id = -1;
   bool first_agrees = false, stopped = false;
 };
-namespace detail {
-inline void token_ids(std::span<const std::int32_t> ids, std::int32_t vocabulary) {
+inline void validate_token_ids(std::span<const std::int32_t> ids, std::int32_t vocabulary) {
   if (vocabulary <= 0 || std::ranges::any_of(ids,
       [vocabulary](auto id) { return id < 0 || id >= vocabulary; }))
     throw std::runtime_error("MTP prefix contains an invalid token ID or vocabulary");
 }
+namespace detail {
 inline void prepare_emitted(std::vector<std::int32_t> &emitted, std::size_t count) {
   emitted.clear(); emitted.reserve(count);
 }
@@ -87,7 +87,7 @@ inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
     std::span<const std::int32_t> eos, std::int32_t vocabulary,
     std::vector<std::int32_t> &emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() != target_ids.size()) throw std::runtime_error("MTP greedy target rows differ from verifier inputs");
-  detail::token_ids(inputs, vocabulary); detail::token_ids(target_ids, vocabulary);
+  validate_token_ids(inputs, vocabulary); validate_token_ids(target_ids, vocabulary);
   request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return inputs[row + 1] == target_ids[row]; },
@@ -103,7 +103,7 @@ inline AcceptedPrefix select_greedy_prefix(std::span<const std::int32_t> inputs,
     std::span<const std::int32_t> eos, std::int32_t vocabulary,
     std::span<std::int32_t> emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() != target_ids.size()) throw std::runtime_error("MTP greedy target rows differ from verifier inputs");
-  detail::token_ids(inputs, vocabulary); detail::token_ids(target_ids, vocabulary);
+  validate_token_ids(inputs, vocabulary); validate_token_ids(target_ids, vocabulary);
   request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return inputs[row + 1] == target_ids[row]; },
@@ -118,7 +118,7 @@ inline AcceptedPrefix select_sampled_prefix(std::span<const std::int32_t> inputs
     std::size_t quota, std::span<const std::int32_t> eos, std::int32_t vocabulary,
     std::vector<std::int32_t> &emitted, const RequestStopPolicy *stop_policy = nullptr) {
   if (inputs.size() == 1 && accepts.empty() && final_ids.size() == 1) {
-    detail::token_ids(inputs, vocabulary); detail::token_ids(final_ids, vocabulary);
+    validate_token_ids(inputs, vocabulary); validate_token_ids(final_ids, vocabulary);
     request_stop_policy(stop_policy).validate(vocabulary);
     return detail::choose_prefix(inputs, quota, eos, emitted,
         [](auto) { return false; }, [&](auto) { return final_ids[0]; }, stop_policy);
@@ -126,7 +126,7 @@ inline AcceptedPrefix select_sampled_prefix(std::span<const std::int32_t> inputs
   if (inputs.size() < 2 || accepts.size() != inputs.size() - 1 || final_ids.size() != accepts.size() ||
       std::ranges::any_of(accepts, [](auto value) { return value > 1; }))
     throw std::runtime_error("MTP sampled prefix needs one valid decision per proposal");
-  detail::token_ids(inputs, vocabulary); detail::token_ids(final_ids, vocabulary);
+  validate_token_ids(inputs, vocabulary); validate_token_ids(final_ids, vocabulary);
   request_stop_policy(stop_policy).validate(vocabulary);
   return detail::choose_prefix(inputs, quota, eos, emitted,
       [&](auto row) { return accepts[row] != 0; },

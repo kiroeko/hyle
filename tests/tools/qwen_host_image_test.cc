@@ -17,6 +17,7 @@
 #include "qwen_history_replay_case.h"
 #include "qwen_history_control_case.h"
 #include "inference_program_carrier_case.h"
+#include "inference_mtp_packet_case.h"
 #include "qwen_generation_wave_case.h"
 #include "qwen_sampling_policy_case.h"
 #include "qwen_mtp_group_return_case.h"
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
     const bool mtp_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-logits";
     const bool mtp_e4 = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-e4";
     const bool program_carrier = argc >= 3 && std::string_view(argv[argc - 1]) == "--program-carrier";
+    const bool mtp_packet = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-packet";
     const bool history_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-logits";
     const bool history_ordinary = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-ordinary";
     const bool history_replay = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-replay";
@@ -51,9 +53,9 @@ int main(int argc, char **argv) {
     const bool mtp_mixed_lag = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-mixed-lag";
     const bool mtp_varlen_verify = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-varlen-verify";
     const bool cold_demand = argc >= 3 && std::string_view(argv[argc - 1]) == "--cold-demand";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || cold_demand);
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || mtp_packet || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || mtp_mixed_lag || mtp_varlen_verify || cold_demand);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--cold-demand]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--mtp-packet|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--mtp-mixed-lag|--mtp-varlen-verify|--cold-demand]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -66,6 +68,7 @@ int main(int argc, char **argv) {
       std::cerr << "SKIP: selected route is not built\n"; return 77;
     }
     if (program_carrier) return inference_program_carrier_case::run(backend);
+    if (mtp_packet) return inference_mtp_packet_case::run(backend);
     if (cold_demand) return inference_cold_demand_case::run();
     std::string input;
     if (input_argc == 3) input = argv[2];

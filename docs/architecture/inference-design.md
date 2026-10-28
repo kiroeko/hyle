@@ -453,6 +453,18 @@ MTP设备后继尚未实现。K1的候选边界必须同时包含target的两行
 其它结果只退休并丢弃B，A仍按真实接受前缀发布。完整输出Source已可承载浮点hidden；
 bonus须由图产生独立完整输出，Store接受子集仍需精确目的票据及真实IDs载体，不能放宽完整范围或伪造连续索引。
 这条路径先限定R1／K1／greedy／同一CUDA Queue；随机采样、递归宽度和多成员必须另核实际接受／修复依赖。
+这条只在完整接受时发布的投机路径可沿原精确布局准备，不以通用设备动态KV机制为前置：
+A完整候选的target为L+2，draft实际前沿为L+1，B的两份布局可在主机确定。
+须接独立bonus与draft-token完整输出、两份hidden及draft的两个AppendSource；A仍保留所有实际前缀的发布权。
+任意接受长度均不经主机选择而继续，是更强的后续范围，才需要有界设备KV控制，不能将两者混为一项。
+
+递归随机前缀的首拒／quota／已知proposal停止边界现由共同`mtp_acceptance_graph`在原私有图内静态Select折叠。
+所有真实条件行的valid仍完整合取；最后输出保持pending，RNG仍按实际草稿数推进，而非按接受数推进。
+图只接收由请求政策形成的精确0/1继续门，不持有Session、额度、状态或执行器。token及结果包保持I32，不借浮点比较ID。
+每次前缀结果经原ProgramIo一次读取I32包；greedy modifier只合包处理后的目标ID，仍用原精确主机接受比较。
+[本片CPU／CUDA检查](../evidence/correctness/inference-mtp-device-packet-2026-10-29.json)包括大I32 ID、停止／quota、后段无效行及真实模型组件失败恢复。
+它未合并target／prefix episode、迁移KV或主机head／ledger发布，也未改变Categorical的capture资格，不代表MTP连续后继或吞吐完成。
+
 
 索引GDN／conv状态池保持稳定物理池与版本化旧／新槽，不把旧Snapshot变成可变视图。
 它与已撤回的固定IO复制方案不同：引擎已接原池及统一Store事务，CUDA tiny普通／MTP通过有限检查；

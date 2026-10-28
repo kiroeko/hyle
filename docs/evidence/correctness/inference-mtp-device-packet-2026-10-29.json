@@ -1,0 +1,610 @@
+{
+  "schema": "hyle.correctness.mtp-device-packet.v1",
+  "date": "2026-10-29",
+  "status": "PASS_SIX_FINITE_CASES_ACROSS_TWO_IMAGES",
+  "change": "Existing private sampled-prefix Graph folds accepted/quota/stop gates and returns one exact I32 decision packet; modifier profiles return one validated-ID packet.",
+  "counts": {
+    "CXX_attempts": 2,
+    "successful_CXX": 2,
+    "successful_links": 2,
+    "native_attempts": 8,
+    "successful_native": 6,
+    "failed_native": 2,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "inherited_SDK_inputs": 227,
+    "inputs_per_image": 228,
+    "project_sources_per_image": 224
+  },
+  "builds": [
+    {
+      "stage": "initial",
+      "compile": {
+        "pid": 57648,
+        "exit": 0,
+        "started": 1793212521.5577343,
+        "seconds": 65.09913611412048,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 56408,
+        "exit": 0,
+        "started": 1793212609.939629,
+        "seconds": 1.8370954990386963,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "0e0566486f9afd14175ea8fa23eae211b098eef74e769c84db0209bf61619219"
+      },
+      "main": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 610533,
+        "sha256": "fa7d96a43232313ef35642570fb00947ce1e63f862a85e54b56bd47a303c7b23"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\source-freeze.json",
+        "bytes": 44718,
+        "sha256": "26a8ffb9a7ec212a5a684fb5ae23c8dee4e26eb9351e8c90e26e252d8764a45a"
+      },
+      "actual_sources_archive_member": "source/initial-224-members.json"
+    },
+    {
+      "stage": "refinement",
+      "compile": {
+        "pid": 59156,
+        "exit": 0,
+        "started": 1793212746.4055386,
+        "seconds": 64.00065851211548,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 37660,
+        "exit": 0,
+        "started": 1793212825.2152927,
+        "seconds": 1.8332974910736084,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "068b04be2558ed3fc7cd76d718fcfeabc7fcf0b7a2d0aa71db08b0c1f05d8063"
+      },
+      "main": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 610552,
+        "sha256": "f412ea20ffa1d998af90d8888234fcffda865a11a75ae66fff118f0fe94f6abb"
+      },
+      "source_freeze": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\source-freeze.json",
+        "bytes": 44718,
+        "sha256": "fd35231d93751d247372ec718975960ca60afed17dbbe997380e0992f3c7c678"
+      },
+      "actual_sources_archive_member": "source/refinement-224-members.json"
+    }
+  ],
+  "refinement": {
+    "changed_sources": [
+      "engine\\models\\qwen35\\main.cc",
+      "tests\\tools\\inference_mtp_packet_case.h"
+    ],
+    "reason": "Bind the packet test Recipe independent dimension to exact zero; reshape greedy modifier TopK [1,1] IDs to the packet scalar [1] contract.",
+    "initial_passes_not_rerun": [
+      "varlen-cpu",
+      "varlen-cuda"
+    ],
+    "single_current_image_six_pass_claim": false
+  },
+  "checks": {
+    "complete_state_comparisons": 32,
+    "payload_byte_exact": 20,
+    "comparisons_with_GDN_rounding": 12,
+    "GDN_absolute_budget": 3e-06,
+    "maximum_observed_GDN_absolute_difference": 3.72529e-09,
+    "pure_packet_graph_submissions": 28,
+    "pure_packet_readbacks": 28
+  },
+  "cases": [
+    {
+      "ordinal": 2,
+      "stage": "initial",
+      "name": "varlen-cpu",
+      "process": {
+        "pid": 15256,
+        "exit": 0,
+        "started": 1793212666.8869457,
+        "seconds": 0.458202600479126,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "0e0566486f9afd14175ea8fa23eae211b098eef74e769c84db0209bf61619219"
+      },
+      "state_comparisons": 6,
+      "facts": {
+        "status": "PASS",
+        "mode": "mtp_varlen_verify",
+        "backend": "cpu",
+        "models": 1,
+        "requests": 2,
+        "physical_rows_per_member": 3,
+        "active_rows": 4,
+        "physical_rows": 6,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "accepted_prefixes_1_2_3": true,
+        "fixed_carrier_reused": true,
+        "engine_unequal_lengths_one_submission": true,
+        "original_q_identity_and_release": true,
+        "natural_R1_results_equal": true,
+        "full_request_history_import_coverage": false,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\runs\\varlen-cpu\\report.json",
+        "bytes": 5090,
+        "sha256": "4911d411654916b30cc23111ae0f5a07fd5cec9fbc9d416ff07e5394e3bf33eb"
+      }
+    },
+    {
+      "ordinal": 3,
+      "stage": "initial",
+      "name": "varlen-cuda",
+      "process": {
+        "pid": 46436,
+        "exit": 0,
+        "started": 1793212674.7446532,
+        "seconds": 0.8150389194488525,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "0e0566486f9afd14175ea8fa23eae211b098eef74e769c84db0209bf61619219"
+      },
+      "state_comparisons": 6,
+      "facts": {
+        "status": "PASS",
+        "mode": "mtp_varlen_verify",
+        "backend": "cuda",
+        "models": 1,
+        "requests": 2,
+        "physical_rows_per_member": 3,
+        "active_rows": 4,
+        "physical_rows": 6,
+        "target_submissions": 11,
+        "bounded_target_submissions": 3,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "accepted_prefixes_1_2_3": true,
+        "fixed_carrier_reused": true,
+        "engine_unequal_lengths_one_submission": true,
+        "original_q_identity_and_release": true,
+        "natural_R1_results_equal": true,
+        "full_request_history_import_coverage": false,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\runs\\varlen-cuda\\report.json",
+        "bytes": 5082,
+        "sha256": "c969972fb0b45371cbf99b6bfa712a1e1f2e98bc2de4cf03528885b7f26f308a"
+      }
+    },
+    {
+      "ordinal": 5,
+      "stage": "refinement",
+      "name": "packet-cpu",
+      "process": {
+        "pid": 32736,
+        "exit": 0,
+        "started": 1793212833.61328,
+        "seconds": 0.7914321422576904,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "068b04be2558ed3fc7cd76d718fcfeabc7fcf0b7a2d0aa71db08b0c1f05d8063"
+      },
+      "state_comparisons": 0,
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-packet",
+        "backend": "cpu",
+        "models": 0,
+        "graphs": 3,
+        "native_submissions": 14,
+        "packet_readbacks": 14,
+        "host_oracle_exact": true,
+        "all_fixed_fields_checked": true,
+        "validated_ids_checked": true,
+        "quota_and_stop_checked": true,
+        "ignore_eos_and_extra_stop_checked": true,
+        "invalid_later_not_hidden": true,
+        "large_i32_ids_exact": true,
+        "real_retirement_checked": true,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\packet-cpu\\report.json",
+        "bytes": 505,
+        "sha256": "ed94fdbe3c43da80e410c4933a91f96609616cc3e2e0a088671a9d48ebc2dec4"
+      }
+    },
+    {
+      "ordinal": 6,
+      "stage": "refinement",
+      "name": "packet-cuda",
+      "process": {
+        "pid": 40260,
+        "exit": 0,
+        "started": 1793212844.7408588,
+        "seconds": 0.5133049488067627,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "068b04be2558ed3fc7cd76d718fcfeabc7fcf0b7a2d0aa71db08b0c1f05d8063"
+      },
+      "state_comparisons": 0,
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-packet",
+        "backend": "cuda",
+        "models": 0,
+        "graphs": 3,
+        "native_submissions": 14,
+        "packet_readbacks": 14,
+        "host_oracle_exact": true,
+        "all_fixed_fields_checked": true,
+        "validated_ids_checked": true,
+        "quota_and_stop_checked": true,
+        "ignore_eos_and_extra_stop_checked": true,
+        "invalid_later_not_hidden": true,
+        "large_i32_ids_exact": true,
+        "real_retirement_checked": true,
+        "quality_claim": false,
+        "performance_claim": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\packet-cuda\\report.json",
+        "bytes": 506,
+        "sha256": "859bee9862bd074de4d0f20069c9705415063f1a774f54f03c90d138c64445a7"
+      }
+    },
+    {
+      "ordinal": 7,
+      "stage": "refinement",
+      "name": "logits-cpu",
+      "process": {
+        "pid": 37924,
+        "exit": 0,
+        "started": 1793212852.2708397,
+        "seconds": 0.5563476085662842,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "068b04be2558ed3fc7cd76d718fcfeabc7fcf0b7a2d0aa71db08b0c1f05d8063"
+      },
+      "state_comparisons": 10,
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-logits-modifiers",
+        "backend": "cpu",
+        "models": 1,
+        "configurations": 2,
+        "K1_greedy_random": true,
+        "recursive_greedy_random": true,
+        "finite_math_branches": 2,
+        "already_normalized_q_not_reprocessed": true,
+        "original_B2_snapshots": true,
+        "StateOnly_no_input_or_draw": true,
+        "partial_HostImage": true,
+        "prefix_frontier_numeric_failure": true,
+        "new_prefix_policy_payload": true,
+        "strict_modifier_replay_rejected": true,
+        "historical_StateOnly_rebuild": true,
+        "known_key_metadata_zero_native": true,
+        "numeric_q_failures": 2,
+        "target_terminal_numeric_failure": true,
+        "target_terminal_retired_without_publish": true,
+        "target_terminal_resources_returned": true,
+        "same_key_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\logits-cpu\\report.json",
+        "bytes": 4265,
+        "sha256": "ee873349246d8f40c2cb15922fedc4fdccc8c94213ded47cbefb3090df1c34b8"
+      }
+    },
+    {
+      "ordinal": 8,
+      "stage": "refinement",
+      "name": "logits-cuda",
+      "process": {
+        "pid": 37156,
+        "exit": 0,
+        "started": 1793212853.422688,
+        "seconds": 1.0638611316680908,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "068b04be2558ed3fc7cd76d718fcfeabc7fcf0b7a2d0aa71db08b0c1f05d8063"
+      },
+      "state_comparisons": 10,
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-logits-modifiers",
+        "backend": "cuda",
+        "models": 1,
+        "configurations": 2,
+        "K1_greedy_random": true,
+        "recursive_greedy_random": true,
+        "finite_math_branches": 2,
+        "already_normalized_q_not_reprocessed": true,
+        "original_B2_snapshots": true,
+        "StateOnly_no_input_or_draw": true,
+        "partial_HostImage": true,
+        "prefix_frontier_numeric_failure": true,
+        "new_prefix_policy_payload": true,
+        "strict_modifier_replay_rejected": true,
+        "historical_StateOnly_rebuild": true,
+        "known_key_metadata_zero_native": true,
+        "numeric_q_failures": 2,
+        "target_terminal_numeric_failure": true,
+        "target_terminal_retired_without_publish": true,
+        "target_terminal_resources_returned": true,
+        "same_key_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\refinement\\runs\\logits-cuda\\report.json",
+        "bytes": 4264,
+        "sha256": "358e0008b6e28fbc0f1d3ef2716c456c56224fb6b384e099128392f623039a88"
+      }
+    }
+  ],
+  "failures": [
+    {
+      "ordinal": 1,
+      "stage": "initial",
+      "name": "packet-cpu",
+      "process": {
+        "pid": 48512,
+        "exit": 1,
+        "started": 1793212618.0545475,
+        "seconds": 0.6959526538848877,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "diagnostic": "shape requires exactly one binding for every independent graph dimension",
+      "outcome": "FAILED_NOT_PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "0e0566486f9afd14175ea8fa23eae211b098eef74e769c84db0209bf61619219"
+      }
+    },
+    {
+      "ordinal": 4,
+      "stage": "initial",
+      "name": "logits-cpu",
+      "process": {
+        "pid": 20624,
+        "exit": 1,
+        "started": 1793212676.1301246,
+        "seconds": 0.43707752227783203,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "diagnostic": "MTP packet port has a different dtype or finite row extent",
+      "outcome": "FAILED_NOT_PASS",
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-device-packet-20261029\\bin\\tiny.exe",
+        "bytes": 144516608,
+        "sha256": "0e0566486f9afd14175ea8fa23eae211b098eef74e769c84db0209bf61619219"
+      }
+    }
+  ],
+  "recorded_processes": [
+    {
+      "record": "logs/compile-tiny",
+      "process": {
+        "pid": 57648,
+        "exit": 0,
+        "started": 1793212521.5577343,
+        "seconds": 65.09913611412048,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "logs/link-tiny",
+      "process": {
+        "pid": 56408,
+        "exit": 0,
+        "started": 1793212609.939629,
+        "seconds": 1.8370954990386963,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/logs/compile-tiny",
+      "process": {
+        "pid": 59156,
+        "exit": 0,
+        "started": 1793212746.4055386,
+        "seconds": 64.00065851211548,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/logs/link-tiny",
+      "process": {
+        "pid": 37660,
+        "exit": 0,
+        "started": 1793212825.2152927,
+        "seconds": 1.8332974910736084,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs/packet-cpu",
+      "process": {
+        "pid": 48512,
+        "exit": 1,
+        "started": 1793212618.0545475,
+        "seconds": 0.6959526538848877,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs/varlen-cpu",
+      "process": {
+        "pid": 15256,
+        "exit": 0,
+        "started": 1793212666.8869457,
+        "seconds": 0.458202600479126,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs/varlen-cuda",
+      "process": {
+        "pid": 46436,
+        "exit": 0,
+        "started": 1793212674.7446532,
+        "seconds": 0.8150389194488525,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs/logits-cpu",
+      "process": {
+        "pid": 20624,
+        "exit": 1,
+        "started": 1793212676.1301246,
+        "seconds": 0.43707752227783203,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/runs/packet-cpu",
+      "process": {
+        "pid": 32736,
+        "exit": 0,
+        "started": 1793212833.61328,
+        "seconds": 0.7914321422576904,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/runs/packet-cuda",
+      "process": {
+        "pid": 40260,
+        "exit": 0,
+        "started": 1793212844.7408588,
+        "seconds": 0.5133049488067627,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/runs/logits-cpu",
+      "process": {
+        "pid": 37924,
+        "exit": 0,
+        "started": 1793212852.2708397,
+        "seconds": 0.5563476085662842,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "refinement/runs/logits-cuda",
+      "process": {
+        "pid": 37156,
+        "exit": 0,
+        "started": 1793212853.422688,
+        "seconds": 1.0638611316680908,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    }
+  ],
+  "inherited_SDK_evidence": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-varlen-verify-2026-10-29.json",
+    "bytes": 14986,
+    "sha256": "3bbbb876c764edc21aa61bec3d17184136f5a025adeec160f88ad401c269c0fc"
+  },
+  "limits": [
+    "Two actual images: initial varlen CPU/CUDA passed; corrected image packet CPU/CUDA and logits CPU/CUDA passed. Initial packet/logits CPU failures remain failed and are archived; this is not six passes on one current image.",
+    "All 224 actual project source bodies for each image are preserved through versioned source-member maps; 222 identical bodies are shared and the two changed bodies are stored for both versions. SDK identity/recipes are retained without copying SDK binaries.",
+    "Pure packet checks compare all I32 fields and actual consumed outputs with the original host oracle, including m0/m1/m2, quota/EOS/ignore-EOS/extra-stop, later invalidity and IDs above 2^24. They do not compute model distributions.",
+    "32 synthetic full-state comparisons use the unchanged GDN-only absolute 3e-6 budget; all other payload/boundary comparisons remain exact. Logits cases check real terminal failure, retirement, no publication, resource recovery and same-key retry.",
+    "This changes the existing private sampled-prefix decision fold/packet observation and modifier-profile packet, not ordinary greedy or K1 execution design. The private prefix episode and existing sampling/capture restrictions remain.",
+    "No device KV commit, continuous MTP successor, full RequestLoop, trained quality, cross-platform or throughput claim. No environment values, weights, tensor payloads or SDK/executable/object binaries are archived."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mtp-device-packet-2026-10-29.zip",
+    "bytes": 1242647,
+    "sha256": "dd995d5fce1e8cec0bc144d666bd790c5ecbea1196c3d73520afc65d343e0ae0",
+    "members": 317,
+    "manifest_sha256": "2f302650ab9145e75da140958ffddf1e3995b0f9daaa8a9d1fe054521bde82e7",
+    "CRC": "PASS",
+    "member_SHA256": "PASS"
+  },
+  "cleanup": {
+    "deleted_files": 8,
+    "deleted_bytes": 385879941,
+    "archive_sha256": "dd995d5fce1e8cec0bc144d666bd790c5ecbea1196c3d73520afc65d343e0ae0",
+    "sdk_and_model_data_deleted": false,
+    "retained_current_consumer_and_SDK_inputs": 228,
+    "model_data_deleted": false,
+    "note": "Archive readback passed before cleanup. Two tested images and superseded consumer objects are rebuildable; actual identities, source versions, commands and terminal results remain archived."
+  }
+}
