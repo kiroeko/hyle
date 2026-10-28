@@ -83,7 +83,16 @@ R2额度、接力、接受后取消与幸存者续算保持原完整状态、账
 共同Append现再统一NextN、图内draft和target KV的真实追加范围与多bank尾权预留：调用方元数据只作资格／容量提示，原`reserve_rows`仍是权限权威。
 晚Unavailable须全部原预留成功rollback才允许COW，rollback失败不伪装成功；draft按实际尾复用需要准备dirty元数据容量，失败回落才补足COW容量。
 三条真实路径已编译并由上述Model检查覆盖，原page／state owner保留；host Append 6项、普通CPU／CUDA各13项完整状态回归通过。不新增owner、Queue、权限表或热回调，不将代码减少视为性能收益。
-模型仍负责图数学、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
+共同`ProgramIo`已迁NextN、prefix sampler及frontier，收拢原冷IO、fixed bind、动态bind、read／retain及withdraw，
+以强类型O(1)handle访问，不新增提交、退休、池或热分配。
+独立参考已区分CPU 52bit CDF、CUDA／Apple F32 Gumbel及Vulkan F32尾部公式；先验margin只排除近边界地址，最终ID与数值门不变。
+本批CPU／CUDA／Vulkan各10项modifier、17项history、9项replay和2项control通过。
+Vulkan私有输出的旧总owner基线误拒绝已修，公共旧reader的3项回归通过。
+Apple普通checked Gather的原生引用分类已修，modifier／replay／control共21项状态检查通过；
+history的独立有限图仍在MLX冷编译时报映射缺失，不能计为完成。验证缓存的提交ABI已局部刷新，另有两处等价测试初始化修正。
+本片没有新性能结论，不以原生平台的局部通过代替全部组合完成。
+合同和实际边界见[设计说明](../architecture/inference-design.md)及[本轮记录](../evidence/correctness/inference-program-io-native-2026-10-28.json)。
+模型仍负责图数学、状态、Shape、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
 继续抽离共同执行编排并核实剩余边界；不以本轮有限检查代替完整执行核心或性能结论。
 
 ## 当前实现概况

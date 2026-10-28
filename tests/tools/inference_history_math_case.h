@@ -107,10 +107,14 @@ inline void conditional_math(q::Model &model, q::BackendKind kind) {
     bool found_accept = false, found_final = false;
     for (std::uint32_t at = 0; at != 4096 && (!found_accept || !found_final); ++at) {
       const sampling_test::Words address{0x243f6a88U, 0x85a308d3U, at, 0};
-      if (!found_accept && m::draw(std::array{ratio, 1 - ratio}, address, kind) == (branch ? 0 : 1)) {
+      if (!found_accept && m::separated_draw(std::array{ratio, 1 - ratio}, address, kind) &&
+          m::draw(std::array{ratio, 1 - ratio}, address, kind) == (branch ? 0 : 1)) {
         accepts[branch] = address; found_accept = true;
       }
-      if (!found_final && m::draw(branch ? target[2] : residual, address, kind) !=
+      if (!found_final && m::separated_draw(branch ? target[2] : residual, address, kind) &&
+          m::separated_draw(branch ? target[1] : wrong_residual, address, kind) &&
+          m::separated_draw(target[2], address, kind) &&
+          m::draw(branch ? target[2] : residual, address, kind) !=
           m::draw(branch ? target[1] : wrong_residual, address, kind)) {
         finals[branch] = address; found_final = true;
       }

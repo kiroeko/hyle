@@ -47,6 +47,7 @@
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/program_carrier.h"
+#include "../../inference/program_io.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
@@ -1385,16 +1386,19 @@ struct DraftProgram final {
   inference::ProgramCarrier<ColdResources> carrier;
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
   V bias, allowed, counts, next_counts;
-  std::vector<V> hidden_inputs, resource_ports;
+  std::vector<V> hidden_inputs;
+  std::vector<inference::ProgramIo::Input> hidden_bindings;
+  inference::ProgramIo::Input bias_input, allowed_input, counts_input;
   StatePorts hidden_state;
   inference::SlotTransactions hidden_transactions;
   StepState guard; // The same original episode, cold-prepared for recursive reuse.
   mtp::AppendNodes append;
   g::NodeId attention;
   Tensor token_values, position_values, identity_values;
-  PreparedReadback id_value, valid_value, probability_value;
+  inference::ProgramIo io;
+  inference::ProgramIo::Readback id_value, valid_value, probability_value;
   c::LeasePool probability_pool, next_counts_pool;
-  PreparedOutputFacts probabilities_output, next_counts_output;
+  inference::ProgramIo::Output probabilities_output, next_counts_output;
 };
 struct DraftWork final {
   cache::DraftState state;
@@ -1413,9 +1417,11 @@ struct PrefixSamplingProgram final {
   inference::ProgramCarrier<ColdResources> carrier;
   V logits, identities, ids, bias, allowed, counts;
   std::vector<V> q, accepted, final_ids, valid;
-  std::vector<V> resource_ports;
   Tensor identity_values, id_values;
-  std::vector<PreparedReadback> accepted_values, final_values, valid_values;
+  inference::ProgramIo io;
+  inference::ProgramIo::Input logits_input, bias_input, allowed_input, counts_input;
+  std::vector<inference::ProgramIo::Input> q_inputs;
+  std::vector<inference::ProgramIo::Readback> accepted_values, final_values, valid_values;
 };
 struct PrefixSamplingResult final {
   std::vector<std::uint8_t> accepted;
@@ -1430,7 +1436,9 @@ struct SamplingFrontier final {
   g::DimensionId last_row;
   V hidden_port, identity_port, id_port, valid_port, bias_port, allowed_port, counts_port;
   Tensor identity;
-  PreparedReadback id, valid;
+  inference::ProgramIo io;
+  inference::ProgramIo::Input hidden_input, bias_input, allowed_input, counts_input;
+  inference::ProgramIo::Readback id, valid;
 };
 
 struct PreparedSampling final {
@@ -2947,7 +2955,6 @@ public:
       // its original ready-leaf Commands path; no dummy Store or pool reader.
       for (std::size_t row = 0; row < rows; ++row) {
         program.hidden_inputs.push_back(r.input(dense(precision.activation_type(), {1, hidden})));
-        program.resource_ports.push_back(program.hidden_inputs.back());
       }
       shifted = r.concat(program.hidden_inputs, 0, r.dense_spec(precision.activation_type(), {count, f(hidden)}));
     }
@@ -2968,9 +2975,9 @@ public:
       program.append = result.append_nodes; program.attention = result.attention_node;
       program.hidden = result.selected_hidden;
       const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
-      if (inputs.bias) { program.bias = *inputs.bias; program.resource_ports.push_back(program.bias); }
-      if (inputs.allowed) { program.allowed = *inputs.allowed; program.resource_ports.push_back(program.allowed); }
-      if (inputs.counts) { program.counts = *inputs.counts; program.resource_ports.push_back(program.counts); }
+      if (inputs.bias) program.bias = *inputs.bias;
+      if (inputs.allowed) program.allowed = *inputs.allowed;
+      if (inputs.counts) program.counts = *inputs.counts;
       const auto processed = sampling::process_logits(r, result.logits, inputs, selected_sampler.modifiers.history);
       if (!selected_sampler.enabled) {
         if (selected_sampler.modifiers.empty()) program.id = r.op(c::Operation(c::TopK{.count = 1}), {result.logits},
@@ -3024,41 +3031,52 @@ public:
     program.literals = std::move(assembly.literals);
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
+    if (head && selected_sampler.enabled)
+      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
+    check(program.io.prepare(program.compiled, head && selected_sampler.enabled ? 3 : 2,
+        program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
+        head ? 1 + bool(program.valid) + (min_draft_probability() > 0) : 0,
+        head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
+    program.hidden_bindings.reserve(program.hidden_inputs.size());
+    for (const auto port : program.hidden_inputs) program.hidden_bindings.push_back(take(program.io.add_input(port)));
+    if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
+    if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
+    if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
     if (head) {
-      if (selected_sampler.enabled) program.probabilities_output =
-          take(inference::prepare_output(program.compiled, program.log_probabilities));
-      if (program.next_counts) program.next_counts_output =
-          take(inference::prepare_output(program.compiled, program.next_counts));
+      if (selected_sampler.enabled) program.probabilities_output = take(program.io.add_output(program.log_probabilities));
+      if (program.next_counts) program.next_counts_output = take(program.io.add_output(program.next_counts));
     }
     for (std::size_t output = 0; output < program.compiled.executable.output_count(); ++output) {
       if (take(program.compiled.executable.output_ownership(output)) != g::OutputOwnership::kCaller) continue;
       const auto port = take(program.compiled.executable.output_id(output));
       if (port == program.next_counts) {
-        program.resource_ports.push_back(port);
-        const auto bytes = take(program.next_counts_output.description.required_bytes());
+        const auto &facts = program.io.output_facts(program.next_counts_output);
+        const auto bytes = take(facts.description.required_bytes());
         program.next_counts_pool = take(c::LeasePool::create(
-            take(execution.resource_for(program.next_counts_output.storage)),
+            take(execution.resource_for(facts.storage)),
             cache::add(cache::multiply(cache::add(bytes, cache::state_pool_padding(bytes)), 2), 1),
             {.max_blocks = 2, .resource_budget = execution_budget}));
       } else if (port == program.log_probabilities) {
-        program.resource_ports.push_back(port);
         // One verifier cohort retains every member's q until target selection.
         // Keep the original per-member allowance within the existing budget.
         const auto blocks = cache::multiply(cache_plan.active_sequences, cache_plan.candidate_boundaries);
         if (blocks >= UINT32_MAX) throw std::overflow_error("NextN probability block capacity exceeds lease indexing");
         const auto bytes = cache::multiply(cache::multiply(static_cast<std::size_t>(vocabulary), sizeof(float)), blocks);
         program.probability_pool = take(c::LeasePool::create(
-            take(execution.resource_for(program.probabilities_output.storage)), cache::add(bytes, 1),
+            take(execution.resource_for(program.io.output_facts(program.probabilities_output).storage)), cache::add(bytes, 1),
             {.max_blocks = static_cast<std::uint32_t>(blocks), .resource_budget = execution_budget}));
       }
     }
+    check(program.io.add_fixed(program.tokens, program.token_values.read()));
+    check(program.io.add_fixed(program.positions, program.position_values.read()));
     if (head) {
-      program.id_value = take(PreparedReadback::prepare(program.compiled, program.id, execution, allocation_budget));
-      if (program.valid)
-        program.valid_value = take(PreparedReadback::prepare(program.compiled, program.valid, execution, allocation_budget));
+      program.id_value = take(program.io.add_readback(program.id, execution, allocation_budget));
+      if (selected_sampler.enabled) check(program.io.add_fixed(program.identity, program.identity_values.read()));
+      if (program.valid) program.valid_value = take(program.io.add_readback(program.valid, execution, allocation_budget));
       if (min_draft_probability() > 0)
-        program.probability_value = take(PreparedReadback::prepare(program.compiled, program.probability, execution, allocation_budget));
+        program.probability_value = take(program.io.add_readback(program.probability, execution, allocation_budget));
     }
+    check(program.io.seal());
     if (head) {
       const std::array specs{inference::SlotTransactionSpec{program.hidden_state.store,
           rows, 1, {.resource_budget = cache_budget}}};
@@ -3075,21 +3093,11 @@ public:
   }
 
   void initialize_draft_program(DraftProgram &program) {
-    const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
-    if (program.head && selected_sampler.enabled && !program.identity_values.caller_owned())
-      program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
     check(program.carrier.initialize(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         [&](g::Invocation &run) -> hyle::Status {
           if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(run.bind(program.tokens, program.token_values.read()));
-          HYLE_RETURN_IF_ERROR(run.bind(program.positions, program.position_values.read()));
-          if (program.head) HYLE_RETURN_IF_ERROR(program.id_value.bind(run));
-          if (program.head && selected_sampler.enabled)
-            HYLE_RETURN_IF_ERROR(run.bind(program.identity, program.identity_values.read()));
-          if (program.head && program.valid) HYLE_RETURN_IF_ERROR(program.valid_value.bind(run));
-          if (program.head && min_draft_probability() > 0)
-            HYLE_RETURN_IF_ERROR(program.probability_value.bind(run));
+          HYLE_RETURN_IF_ERROR(program.io.bind_fixed(run));
           if (program.head) {
             const std::array sources{g::slots::SourceBinding{program.hidden_state.store, program.hidden_state.gather}};
             HYLE_RETURN_IF_ERROR(g::slots::prepare(run, program.graph, program.carrier.queues(), sources,
@@ -3186,18 +3194,15 @@ public:
         transactions.writers(0)[0] = take(hidden_pool.allocate(geometry.hidden_bytes(), cache::state_pool_alignment));
         check(transactions.stage(0));
       } else for (std::size_t row = 0; row < ids.size(); ++row)
-        check(run.bind(program.hidden_inputs[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
-      if (program.bias) check(run.bind(program.bias, logits.bias.description, logits.bias.lease));
-      if (program.allowed) check(run.bind(program.allowed, logits.allowed.description, logits.allowed.lease));
-      if (program.counts) check(run.bind(program.counts, logits.counts.description, logits.counts.lease));
+        check(program.io.bind(run, program.hidden_bindings[row], dense(precision.activation_type(), {1, hidden}), shifted[row]));
+      if (program.bias_input) check(program.io.bind(run, program.bias_input, logits.bias.description, logits.bias.lease));
+      if (program.allowed_input) check(program.io.bind(run, program.allowed_input, logits.allowed.description, logits.allowed.lease));
+      if (program.counts_input) check(program.io.bind(run, program.counts_input, logits.counts.description, logits.counts.lease));
       if (head && selected_sampler.enabled) {
         program.identity_values.write<std::uint32_t>(identity);
-        if (program.probabilities_output.caller_owned()) check(run.bind(program.probabilities_output.value,
-            program.probabilities_output.description, take(program.probability_pool.allocate(vocabulary * sizeof(float)))));
+        check(program.io.bind_output(run, program.probabilities_output, program.probability_pool));
       }
-      if (program.next_counts && program.next_counts_output.caller_owned()) check(run.bind(program.next_counts,
-          program.next_counts_output.description, take(program.next_counts_pool.allocate(
-              take(program.next_counts_output.description.required_bytes())))));
+      if (program.next_counts) check(program.io.bind_output(run, program.next_counts_output, program.next_counts_pool));
       const std::array layouts{g::batch::NodeLayout{program.attention, layout}};
       const auto queues = program.carrier.queues();
       check(g::batch::prepare(run, queues, head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
@@ -3210,22 +3215,22 @@ public:
       ++draft_program_graph_calls;
       if (head) {
         if (program.valid) {
-          const auto flag = take(program.valid_value.predicate(execution, run));
+          const auto flag = take(program.io.predicate(execution, run, program.valid_value));
           if (flag == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
               "recursive draft distribution is invalid; no head or RNG was published"));
           if (flag != 1) throw std::runtime_error("recursive draft validity is outside its predicate encoding");
           if (selected_sampler.enabled) output.log_probabilities =
-              take(inference::retain_output(run, program.probabilities_output, execution_budget));
+              take(program.io.retain(run, program.probabilities_output, execution_budget));
           if (min_draft_probability() > 0) {
-            check(program.probability_value.read(execution, run, std::as_writable_bytes(std::span(&output.probability, 1))));
+            check(program.io.read(execution, run, program.probability_value, std::as_writable_bytes(std::span(&output.probability, 1))));
             if (!std::isfinite(output.probability) || output.probability < 0 || output.probability > 1)
               throw std::runtime_error("draft maximum probability is outside its declared probability domain");
           }
         }
-        check(program.id_value.read(execution, run, std::as_writable_bytes(std::span(&output.id, 1))));
+        check(program.io.read(execution, run, program.id_value, std::as_writable_bytes(std::span(&output.id, 1))));
         if (output.id < 0 || output.id >= vocabulary) throw std::runtime_error("NextN proposal is outside vocabulary");
         if (program.next_counts) output.next_counts =
-            take(inference::retain_output(run, program.next_counts_output, execution_budget));
+            take(program.io.retain(run, program.next_counts_output, execution_budget));
       }
       check(guard.append_transactions().subspan(draft_bank, 2).take(run));
       if (head) {
@@ -3245,7 +3250,7 @@ public:
           throw std::runtime_error("NextN append returned an invalid private tail");
         tails[bank - draft_bank] = std::move(tail);
       }
-      check(program.carrier.release_inputs(program.resource_ports));
+      check(program.io.release_inputs(program.carrier));
       check(work.state.key.validate_commit(key_commit));
       check(work.state.value.validate_commit(value_commit));
       next.key = std::move(work.state.key); next.value = std::move(work.state.value);
@@ -3292,9 +3297,9 @@ public:
     const auto count = f(static_cast<std::int64_t>(proposals + 1));
     program.logits = r.input(r.dense_spec(Type::kFloat32, {count, f(vocabulary)}));
     const auto inputs = prepare_logits_inputs(r, selected_sampler.modifiers);
-    if (inputs.bias) { program.bias = *inputs.bias; program.resource_ports.push_back(program.bias); }
-    if (inputs.allowed) { program.allowed = *inputs.allowed; program.resource_ports.push_back(program.allowed); }
-    if (inputs.counts) { program.counts = *inputs.counts; program.resource_ports.push_back(program.counts); }
+    if (inputs.bias) program.bias = *inputs.bias;
+    if (inputs.allowed) program.allowed = *inputs.allowed;
+    if (inputs.counts) program.counts = *inputs.counts;
     if (selected_sampler.enabled) {
       program.identities = r.input(r.dense_spec(Type::kUInt32, {count, f(4)}));
       if (proposals) program.ids = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
@@ -3342,14 +3347,24 @@ public:
       input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
     }
     if (program.ids) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-    const auto prepare = [&](const std::vector<V> &ports, std::vector<PreparedReadback> &values) {
+    check(program.io.prepare(program.compiled, bool(program.identities) + bool(program.ids),
+        1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
+        program.accepted.size() + program.final_ids.size() + program.valid.size(), 0));
+    if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
+    if (program.ids) check(program.io.add_fixed(program.ids, program.id_values.read()));
+    const auto prepare = [&](const std::vector<V> &ports, std::vector<inference::ProgramIo::Readback> &values) {
       values.reserve(ports.size());
-      for (const auto port : ports) values.push_back(take(PreparedReadback::prepare(program.compiled, port, execution, allocation_budget)));
+      for (const auto port : ports) values.push_back(take(program.io.add_readback(port, execution, allocation_budget)));
     };
     prepare(program.accepted, program.accepted_values);
     prepare(program.final_ids, program.final_values); prepare(program.valid, program.valid_values);
-    program.resource_ports.insert(program.resource_ports.end(), program.q.begin(), program.q.end());
-    program.resource_ports.push_back(program.logits);
+    if (program.bias) program.bias_input = take(program.io.add_input(program.bias));
+    if (program.allowed) program.allowed_input = take(program.io.add_input(program.allowed));
+    if (program.counts) program.counts_input = take(program.io.add_input(program.counts));
+    program.q_inputs.reserve(program.q.size());
+    for (const auto port : program.q) program.q_inputs.push_back(take(program.io.add_input(port)));
+    program.logits_input = take(program.io.add_input(program.logits));
+    check(program.io.seal());
     initialize_prefix_sampling(program);
     prefix_sampling_programs.emplace(key, std::move(prepared));
   }
@@ -3359,11 +3374,7 @@ public:
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         [&](g::Invocation &run) -> hyle::Status {
           if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          if (program.identities) HYLE_RETURN_IF_ERROR(run.bind(program.identities, program.identity_values.read()));
-          if (program.ids) HYLE_RETURN_IF_ERROR(run.bind(program.ids, program.id_values.read()));
-          for (auto &output : program.accepted_values) HYLE_RETURN_IF_ERROR(output.bind(run));
-          for (auto &output : program.final_values) HYLE_RETURN_IF_ERROR(output.bind(run));
-          for (auto &output : program.valid_values) HYLE_RETURN_IF_ERROR(output.bind(run));
+          HYLE_RETURN_IF_ERROR(program.io.bind_fixed(run));
           return hyle::Status::Ok();
         }));
   }
@@ -3420,26 +3431,26 @@ public:
     }
     if (program.ids) program.id_values.write<std::int32_t>(proposals);
     try {
-      check(run.bind(program.logits, logits));
-      if (program.bias) check(run.bind(program.bias, inputs.bias.description, inputs.bias.lease));
-      if (program.allowed) check(run.bind(program.allowed, inputs.allowed.description, inputs.allowed.lease));
-      if (program.counts) check(run.bind(program.counts, inputs.counts.description, inputs.counts.lease));
+      check(program.io.bind(run, program.logits_input, logits));
+      if (program.bias_input) check(program.io.bind(run, program.bias_input, inputs.bias.description, inputs.bias.lease));
+      if (program.allowed_input) check(program.io.bind(run, program.allowed_input, inputs.allowed.description, inputs.allowed.lease));
+      if (program.counts_input) check(program.io.bind(run, program.counts_input, inputs.counts.description, inputs.counts.lease));
       for (std::size_t row = 0; row < q.size(); ++row)
-        check(run.bind(program.q[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
+        check(program.io.bind(run, program.q_inputs[row], dense(Type::kFloat32, {1, vocabulary}), q[row]));
       const auto queues = program.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(program.carrier.submit(resources_)); check(done.wait());
       ++prefix_decision_graph_calls;
       PrefixSamplingResult result; result.accepted.resize(program.accepted.size()); result.final_ids.resize(program.final_ids.size());
       for (std::size_t row = 0; row < program.final_ids.size(); ++row) {
-        const auto valid = take(program.valid_values[row].predicate(execution, run));
+        const auto valid = take(program.io.predicate(execution, run, program.valid_values[row]));
         if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
             "recursive target/q/residual distribution is invalid; no head or RNG was published"));
         if (valid != 1) throw std::runtime_error("recursive target validity is outside its predicate encoding");
-        if (!result.accepted.empty()) result.accepted[row] = take(program.accepted_values[row].predicate(execution, run));
-        check(program.final_values[row].read(execution, run, std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
+        if (!result.accepted.empty()) result.accepted[row] = take(program.io.predicate(execution, run, program.accepted_values[row]));
+        check(program.io.read(execution, run, program.final_values[row], std::as_writable_bytes(std::span(&result.final_ids[row], 1))));
       }
-      check(program.carrier.release_inputs(program.resource_ports));
+      check(program.io.release_inputs(program.carrier));
       return result;
     } catch (inference::EvaluationFailure &failure) {
       const auto observed = program.carrier.retire(execution);
@@ -3545,8 +3556,17 @@ public:
         record_execution_plan(prepared->compiled.report, assembly.constants);
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-        prepared->id = take(PreparedReadback::prepare(prepared->compiled, prepared->id_port, execution, allocation_budget));
-        if (prepared->valid_port) prepared->valid = take(PreparedReadback::prepare(prepared->compiled, prepared->valid_port, execution, allocation_budget));
+        check(prepared->io.prepare(prepared->compiled, bool(prepared->identity_port),
+            1 + bool(prepared->bias_port) + bool(prepared->allowed_port) + bool(prepared->counts_port),
+            1 + bool(prepared->valid_port), 0));
+        if (prepared->identity_port) check(prepared->io.add_fixed(prepared->identity_port, prepared->identity.read()));
+        prepared->id = take(prepared->io.add_readback(prepared->id_port, execution, allocation_budget));
+        if (prepared->valid_port) prepared->valid = take(prepared->io.add_readback(prepared->valid_port, execution, allocation_budget));
+        prepared->hidden_input = take(prepared->io.add_input(prepared->hidden_port));
+        if (prepared->bias_port) prepared->bias_input = take(prepared->io.add_input(prepared->bias_port));
+        if (prepared->allowed_port) prepared->allowed_input = take(prepared->io.add_input(prepared->allowed_port));
+        if (prepared->counts_port) prepared->counts_input = take(prepared->io.add_input(prepared->counts_port));
+        check(prepared->io.seal());
         entry->frontier = std::move(prepared);
       }
     }
@@ -3569,25 +3589,23 @@ public:
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         [&](g::Invocation &candidate) -> hyle::Status {
           if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(candidate, *scheduler, *workers));
-          if (selected_sampler.enabled) HYLE_RETURN_IF_ERROR(candidate.bind(frontier.identity_port, frontier.identity.read()));
-          HYLE_RETURN_IF_ERROR(frontier.id.bind(candidate));
-          if (frontier.valid_port) HYLE_RETURN_IF_ERROR(frontier.valid.bind(candidate));
+          HYLE_RETURN_IF_ERROR(frontier.io.bind_fixed(candidate));
           return hyle::Status::Ok();
         }));
     auto &run = *take(frontier.carrier.borrow());
     try {
       if (selected_sampler.enabled) { const auto identity = cursor.identity(); frontier.identity.write<std::uint32_t>(identity); }
-      check(run.bind(frontier.hidden_port, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
-      if (frontier.bias_port) check(run.bind(frontier.bias_port, inputs.bias.description, inputs.bias.lease));
-      if (frontier.allowed_port) check(run.bind(frontier.allowed_port, inputs.allowed.description, inputs.allowed.lease));
-      if (frontier.counts_port) check(run.bind(frontier.counts_port, inputs.counts.description, inputs.counts.lease));
+      check(frontier.io.bind(run, frontier.hidden_input, dense(precision.activation_type(), {1, hidden}), base->carry_hidden));
+      if (frontier.bias_input) check(frontier.io.bind(run, frontier.bias_input, inputs.bias.description, inputs.bias.lease));
+      if (frontier.allowed_input) check(frontier.io.bind(run, frontier.allowed_input, inputs.allowed.description, inputs.allowed.lease));
+      if (frontier.counts_input) check(frontier.io.bind(run, frontier.counts_input, inputs.counts.description, inputs.counts.lease));
       const auto queues = frontier.carrier.queues();
       check(run.prepare_replay(queues, {.mode = g::ReplayMode::kCommands, .host_wait = g::HostWaitPolicy::kAllow}));
       auto done = take(frontier.carrier.submit(resources_)); check(done.wait());
       ++frontier_sampling_graph_calls;
-      const auto valid = frontier.valid_port ? take(frontier.valid.predicate(execution, run)) : std::uint8_t{1};
+      const auto valid = frontier.valid_port ? take(frontier.io.predicate(execution, run, frontier.valid)) : std::uint8_t{1};
       std::int32_t pending = -1;
-      check(frontier.id.read(execution, run, std::as_writable_bytes(std::span(&pending, 1))));
+      check(frontier.io.read(execution, run, frontier.id, std::as_writable_bytes(std::span(&pending, 1))));
       if (valid == 0) throw inference::EvaluationFailure(hyle::Status::InvalidArgument(
           "cached frontier sampling is invalid; no request RNG cursor was published"));
       if (valid != 1 || pending < 0 || pending >= vocabulary)

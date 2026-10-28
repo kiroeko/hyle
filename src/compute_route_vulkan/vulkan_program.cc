@@ -1151,7 +1151,15 @@ Status detail::PagedBatchAccess::can_detach_inputs(const Invocation &invocation,
     return Status::Unavailable("Vulkan native inputs are still in use");
   for (std::size_t i = 0; i < state->program->outputs.size(); ++i) {
     const auto output = state->program->outputs[i];
-    if (!state->output_epoch_pending && !state->output_rearm_required) {
+    const auto root = state->program->aliases[output].root;
+    // Other Graph slots can already have released private downstream imports.
+    // Their count delta is not an escaped-reader proof. The opt-in owned
+    // output below must pass owned_output_block and detach forces a new output
+    // epoch before submit; old readonly owners keep the old backing. Direct
+    // outputs and immutable constants retain their original exact count gate.
+    const bool rearm_owned = state->retained_output_reuse &&
+        !state->program->values[root].constant;
+    if (!state->output_epoch_pending && !state->output_rearm_required && !rearm_owned) {
       const auto count = run.retained_buffers[output].use_count();
       if (count < state->output_owner_counts[i])
         return Status::Unavailable("Vulkan native private output owners changed");

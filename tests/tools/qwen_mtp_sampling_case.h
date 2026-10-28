@@ -140,7 +140,7 @@ inline void batched(q::Model &model, const std::shared_ptr<i::HostStateStorage> 
             "sampled B2 verification did not retain a valid complete q row");
     }
     const auto &program = *model.draft_programs.at({1, true, 1});
-    if (program.probabilities_output.caller_owned()) {
+    if (program.io.output_facts(program.probabilities_output).caller_owned()) {
       const auto stats = program.probability_pool.stats();
       require(stats.live_blocks == 4 && stats.max_blocks == model.cache_plan.candidate_boundaries * model.cache_plan.active_sequences,
           "caller-owned B2 proposal pool did not cover its simultaneous original per-member allowance");
@@ -165,7 +165,7 @@ inline void batched(q::Model &model, const std::shared_ptr<i::HostStateStorage> 
     h::retire(request.session); window.release(request.request_key); checkpoints[member].reset();
   }
   const auto &program = *model.draft_programs.at({1, true, 1});
-  require((!program.probabilities_output.caller_owned() || !program.probability_pool.stats().live_blocks) &&
+  require((!program.io.output_facts(program.probabilities_output).caller_owned() || !program.probability_pool.stats().live_blocks) &&
       !model.snapshot_versions.live && !storage->live_images() && window.active().empty() && !window.waiting_front(),
       "sampled B2 cohort did not retire its original q/state/image/request owners");
   t::idle(model);
@@ -178,8 +178,8 @@ inline std::size_t manual(const std::filesystem::path &input, q::BackendKind kin
       "MTP sampler check requires the original cached C16 GA/H64/V64 fixture");
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 13, 3,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 2, 3, true, true);
-  const std::array additional{q::SamplingConfiguration{true, {.7F, 8, .9F}},
-      q::SamplingConfiguration{true, {1.3F, 16, .95F}}};
+  const std::array additional{q::SamplingConfiguration{true, {.7F, 8, .9F}, {}},
+      q::SamplingConfiguration{true, {1.3F, 16, .95F}, {}}};
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
       {.enabled = false, .policy = {}, .seed = 123}, 0, {.primary = kind}, additional);
   model.configure_draft_policy({.max_drafts = 2}); cold(model);
@@ -339,7 +339,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   auto source = q::prepare_weight_source(input / "weights.tsv", true); const auto geometry = source.roles.geometry;
   const auto plan = q::cache::plan(geometry, source.cache_row_bytes, 16, 6, 3,
       q::recurrent_bytes(q::state_schema_for(geometry, 16), geometry), 1, 3, true, true);
-  const std::array additional{q::SamplingConfiguration{false, {}}, q::SamplingConfiguration{true, {1.3F, 16, .95F}}};
+  const std::array additional{q::SamplingConfiguration{false, {}, {}}, q::SamplingConfiguration{true, {1.3F, 16, .95F}, {}}};
   q::Model model(std::move(source), geometry, 16, plan, {}, false, q::ReplayPolicy::kCommands, SIZE_MAX,
       {.enabled = true, .policy = {.7F, 8, .9F}, .seed = 123}, 0, {.primary = kind}, additional);
   model.configure_draft_policy({.max_drafts = 2});

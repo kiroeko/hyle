@@ -1,0 +1,627 @@
+{
+  "schema": 1,
+  "title": "ProgramIo native consumers and retained-output rearm",
+  "date": "2026-10-28",
+  "status": "PARTIAL_OR_FAILED",
+  "architecture": {
+    "migrated": [
+      "NextN fixed/dynamic IO and retained q/counts",
+      "prefix program IO",
+      "frontier IO"
+    ],
+    "carrier": "Original ProgramCarrier owns Invocation/queue bindings/retention; ProgramIo is cold immutable IO schema plus original PreparedReadback, not another executor or authority owner.",
+    "unchanged": "Original Graph bind/output permissions, pools/budgets, Completion, Step Store/Append, whole status, numeric validators and publication. Frontier fresh reset; prefix/NextN reuse."
+  },
+  "checked_scope": {
+    "fixture": "Cached small synthetic GA/H64/V64/C16",
+    "entry": "Original Model generation entry and RequestWindow consumers; not a new full RequestLoop service test",
+    "state_byte_checks": {
+      "cpu": 38,
+      "cuda": 38,
+      "vulkan": 38,
+      "apple": null
+    },
+    "verified_subtotal": {
+      "cpu": 38,
+      "cuda": 38,
+      "vulkan": 38,
+      "apple": 21
+    },
+    "verified_all_backend_subtotal": 135,
+    "reader": {
+      "pid": 49688,
+      "exit": 0,
+      "original_cases": 3,
+      "scope": "F32/BF16 escaped independent whole/slice readonly old bytes, budgets/retry, stale submit, bounded spare and IO ranges"
+    },
+    "quality_claim": false,
+    "performance_claim": false,
+    "all_platforms_claim": false,
+    "unknown_native_failure_pass_claim": false
+  },
+  "model_processes": [
+    {
+      "backend": "cpu",
+      "arm": "logits",
+      "pid": 39984,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 10,
+      "process": "cuda/runs/logits-cpu/process.json",
+      "stdout": "cuda/runs/logits-cpu/stdout.log",
+      "stderr": "cuda/runs/logits-cpu/stderr.log"
+    },
+    {
+      "backend": "cpu",
+      "arm": "history",
+      "pid": 41956,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 17,
+      "process": "cuda/runs/history-cpu/process.json",
+      "stdout": "cuda/runs/history-cpu/stdout.log",
+      "stderr": "cuda/runs/history-cpu/stderr.log"
+    },
+    {
+      "backend": "cpu",
+      "arm": "replay",
+      "pid": 10112,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 9,
+      "process": "cuda/runs/replay-cpu/process.json",
+      "stdout": "cuda/runs/replay-cpu/stdout.log",
+      "stderr": "cuda/runs/replay-cpu/stderr.log"
+    },
+    {
+      "backend": "cpu",
+      "arm": "control",
+      "pid": 57412,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 2,
+      "process": "cuda/runs/control-cpu/process.json",
+      "stdout": "cuda/runs/control-cpu/stdout.log",
+      "stderr": "cuda/runs/control-cpu/stderr.log"
+    },
+    {
+      "backend": "cuda",
+      "arm": "logits",
+      "pid": 19544,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 10,
+      "process": "cuda/runs/logits-cuda/process.json",
+      "stdout": "cuda/runs/logits-cuda/stdout.log",
+      "stderr": "cuda/runs/logits-cuda/stderr.log"
+    },
+    {
+      "backend": "cuda",
+      "arm": "history",
+      "pid": 30032,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 17,
+      "process": "cuda/runs/history-cuda/process.json",
+      "stdout": "cuda/runs/history-cuda/stdout.log",
+      "stderr": "cuda/runs/history-cuda/stderr.log"
+    },
+    {
+      "backend": "cuda",
+      "arm": "replay",
+      "pid": 33888,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 9,
+      "process": "cuda/runs/replay-cuda/process.json",
+      "stdout": "cuda/runs/replay-cuda/stdout.log",
+      "stderr": "cuda/runs/replay-cuda/stderr.log"
+    },
+    {
+      "backend": "cuda",
+      "arm": "control",
+      "pid": 56744,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 2,
+      "process": "cuda/runs/control-cuda/process.json",
+      "stdout": "cuda/runs/control-cuda/stdout.log",
+      "stderr": "cuda/runs/control-cuda/stderr.log"
+    },
+    {
+      "backend": "vulkan",
+      "arm": "logits",
+      "pid": 31956,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 10,
+      "process": "vulkan-current/runs/logits/process.json",
+      "stdout": "vulkan-current/runs/logits/stdout.log",
+      "stderr": "vulkan-current/runs/logits/stderr.log"
+    },
+    {
+      "backend": "vulkan",
+      "arm": "history",
+      "pid": 41652,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 17,
+      "process": "vulkan-current/runs/history/process.json",
+      "stdout": "vulkan-current/runs/history/stdout.log",
+      "stderr": "vulkan-current/runs/history/stderr.log"
+    },
+    {
+      "backend": "vulkan",
+      "arm": "replay",
+      "pid": 42372,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 9,
+      "process": "vulkan-current/runs/replay/process.json",
+      "stdout": "vulkan-current/runs/replay/stdout.log",
+      "stderr": "vulkan-current/runs/replay/stderr.log"
+    },
+    {
+      "backend": "vulkan",
+      "arm": "control",
+      "pid": 57744,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 2,
+      "process": "vulkan-current/runs/control/process.json",
+      "stdout": "vulkan-current/runs/control/stdout.log",
+      "stderr": "vulkan-current/runs/control/stderr.log"
+    },
+    {
+      "backend": "apple",
+      "arm": "logits",
+      "pid": 29351,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 10,
+      "process": "apple/refinement3/readback-final/records/runs/logits/process.json",
+      "stdout": "apple/refinement3/readback-final/records/runs/logits/stdout.log",
+      "stderr": "apple/refinement3/readback-final/records/runs/logits/stderr.log"
+    },
+    {
+      "backend": "apple",
+      "arm": "history",
+      "pid": 29362,
+      "exit": 1,
+      "status": "FAIL",
+      "complete_state_byte_checks": null,
+      "process": "apple/refinement3/readback-final/records/runs/history/process.json",
+      "stdout": "apple/refinement3/readback-final/records/runs/history/stdout.log",
+      "stderr": "apple/refinement3/readback-final/records/runs/history/stderr.log"
+    },
+    {
+      "backend": "apple",
+      "arm": "replay",
+      "pid": 29394,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 9,
+      "process": "apple/refinement3/readback-final/records/runs/replay/process.json",
+      "stdout": "apple/refinement3/readback-final/records/runs/replay/stdout.log",
+      "stderr": "apple/refinement3/readback-final/records/runs/replay/stderr.log"
+    },
+    {
+      "backend": "apple",
+      "arm": "control",
+      "pid": 29407,
+      "exit": 0,
+      "status": "PASS",
+      "complete_state_byte_checks": 2,
+      "process": "apple/refinement3/readback-final/records/runs/control/process.json",
+      "stdout": "apple/refinement3/readback-final/records/runs/control/stdout.log",
+      "stderr": "apple/refinement3/readback-final/records/runs/control/stderr.log"
+    }
+  ],
+  "prior_consumer_failures": [
+    {
+      "label": "original Vulkan Model consumer",
+      "pid": 25504,
+      "exit": 1,
+      "process": "runs/logits/process.json",
+      "stderr": "runs/logits/stderr.log"
+    },
+    {
+      "label": "diagnostic original Vulkan consumer",
+      "pid": 48700,
+      "exit": 1,
+      "process": "vulkan-diag/old-tiny/runs/logits/process.json",
+      "stderr": "vulkan-diag/old-tiny/runs/logits/stderr.log"
+    },
+    {
+      "label": "Apple prior backend Model consumer; see exact stage source/closure",
+      "pid": 29130,
+      "exit": 1,
+      "process": "apple/refinement1/readback-logits/records/runs/logits/process.json",
+      "stderr": "apple/refinement1/readback-logits/records/runs/logits/stderr.log"
+    },
+    {
+      "label": "Apple prior backend Model consumer; see exact stage source/closure",
+      "pid": 29252,
+      "exit": 1,
+      "process": "apple/refinement2/readback-logits/records/runs/logits/process.json",
+      "stderr": "apple/refinement2/readback-logits/records/runs/logits/stderr.log"
+    }
+  ],
+  "actual_compile_link_processes": [
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 48880,
+      "exit": 0,
+      "process": "logs/tiny/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 49520,
+      "exit": 0,
+      "process": "logs/weights/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 5704,
+      "exit": 0,
+      "process": "cuda/logs/tiny/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 53128,
+      "exit": 0,
+      "process": "vulkan-diag/logs/program/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 20068,
+      "exit": 2,
+      "process": "vulkan-diag/logs/tiny/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 59792,
+      "exit": 0,
+      "process": "vulkan-current/logs/program/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "CXX",
+      "pid": 16696,
+      "exit": 0,
+      "process": "vulkan-current/reader/logs/test/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "link",
+      "pid": 47260,
+      "exit": 0,
+      "process": "link/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "link",
+      "pid": 55376,
+      "exit": 0,
+      "process": "cuda/link/tiny/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "link",
+      "pid": 54636,
+      "exit": 0,
+      "process": "vulkan-diag/old-tiny/link/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "link",
+      "pid": 46096,
+      "exit": 0,
+      "process": "vulkan-current/link/process.json"
+    },
+    {
+      "platform": "Windows",
+      "kind": "link",
+      "pid": 11036,
+      "exit": 0,
+      "process": "vulkan-current/reader/link/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29059,
+      "exit": 1,
+      "process": "apple/readback-compile/records/compile/tiny/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29058,
+      "exit": 0,
+      "process": "apple/readback-compile/records/compile/weights/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29107,
+      "exit": 0,
+      "process": "apple/refinement1/readback-logits/records/compile/tiny/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "link",
+      "pid": 29119,
+      "exit": 0,
+      "process": "apple/refinement1/readback-logits/records/link/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29226,
+      "exit": 0,
+      "process": "apple/refinement2/readback-logits/records/compile/progress/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29227,
+      "exit": 0,
+      "process": "apple/refinement2/readback-logits/records/compile/submission/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "link",
+      "pid": 29245,
+      "exit": 0,
+      "process": "apple/refinement2/readback-logits/records/link/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "CXX",
+      "pid": 29306,
+      "exit": 0,
+      "process": "apple/refinement3/readback-compile/records/compile/region/logs/process.json"
+    },
+    {
+      "platform": "Mac",
+      "kind": "link",
+      "pid": 29338,
+      "exit": 0,
+      "process": "apple/refinement3/readback-final/records/link/logs/process.json"
+    }
+  ],
+  "operation_counts": {
+    "Windows": {
+      "CXX": {
+        "attempts": 7,
+        "passed": 6,
+        "failed": 1
+      },
+      "link": {
+        "attempts": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "archive": {
+        "attempts": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    },
+    "Mac": {
+      "CXX": {
+        "attempts": 6,
+        "passed": 5,
+        "failed": 1
+      },
+      "link": {
+        "attempts": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "archive": {
+        "attempts": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  },
+  "diagnostic": {
+    "process_pid": 48700,
+    "state": "000005F32015AA30",
+    "output": 35,
+    "alias_root": 35,
+    "series": [
+      {
+        "where": "create-baseline",
+        "record": 116,
+        "current": 13,
+        "baseline": 13,
+        "value_refs": 4,
+        "native_stage_refs": 2,
+        "managed_parent_binding_refs": 2
+      },
+      {
+        "where": "seal",
+        "record": 127,
+        "current": 18,
+        "baseline": 18,
+        "value_refs": 4,
+        "native_stage_refs": 2,
+        "managed_parent_binding_refs": 2
+      },
+      {
+        "where": "can-detach-private-decrease",
+        "record": 170,
+        "current": 15,
+        "baseline": 18,
+        "value_refs": 4,
+        "native_stage_refs": 2,
+        "managed_parent_binding_refs": 2
+      }
+    ],
+    "measured_local_refs_unchanged": true,
+    "opaque_managed_region_private_refs_measured": false,
+    "interpretation": "The old global shared-owner count fell after other retired regions detached; the visible own value/native/managed parent references stayed 4/2/2. This is the diagnosed old-count gate failure, not a new escaped writer permission."
+  },
+  "debugger_limitations": [
+    {
+      "kind": "noninteractive debugger permission denied",
+      "debugger_pid": 29421,
+      "exit": 1,
+      "target_launched": false,
+      "reported_target_pids": [],
+      "transport_wrapper_pid": 48540,
+      "counted_as_Model_or_CXX": false,
+      "raw_process": "apple/refinement3/diagnose-history-map/process.json",
+      "raw_stdout": "apple/refinement3/diagnose-history-map/stdout.log",
+      "raw_stderr": "apple/refinement3/diagnose-history-map/stderr.log",
+      "raw_command": "apple/refinement3/diagnose-history-map/command.json",
+      "interpretation": "No target was launched and no exception stack was obtained. This is a diagnostic permission limitation, not another history Model attempt or a native/CXX failure/pass."
+    }
+  ],
+  "provenance": {
+    "original_program_io_sources": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\source-freeze.json",
+      "bytes": 10815,
+      "sha256": "6e899f4b46632a7708dcd1c16928fb0990f4e920b6cfbb27f32adf243cb73c25"
+    },
+    "cpu_cuda_sources": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\cuda\\source-freeze.json",
+      "bytes": 10467,
+      "sha256": "d1dae676a996196333b1eb8b443387e6878c8369e01daff3b7d81ad19906999e"
+    },
+    "windows_consumers": "Historical successful Tiny/weights compilation receipts and frozen snapshots are retained; current equivalent portability header hashes are not written back into old compiled records.",
+    "mac_final_sources": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\apple\\refinement3\\readback-final\\records\\source-freeze.json",
+      "bytes": 23412,
+      "sha256": "80417b49d8857ed29369953ab80bad0778fce2caeec3fb5647d31188015580fc"
+    },
+    "apple_projected_bank_fix": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\apple\\refinement3\\source\\src\\graph_route_apple\\native_region.cc",
+      "bytes": 52624,
+      "sha256": "8a5ed5c2384ed8303a5dbb63f790c10d8234a3c4e6269372d0d31233bf586a4b"
+    },
+    "apple_projected_bank_fix_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\apple\\refinement3\\source-freeze.json",
+      "bytes": 23412,
+      "sha256": "80417b49d8857ed29369953ab80bad0778fce2caeec3fb5647d31188015580fc"
+    }
+  },
+  "vulkan_fix": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\vulkan-current\\source\\vulkan_program.cc",
+      "bytes": 72209,
+      "sha256": "d1e7bf77c7860fce3f75d974c605f255417d5e292bed526b35a3b5a93a7ce158"
+    },
+    "gate": "Only opt-in retained_output_reuse nonconstant owned output avoids the old shared-owner count proof. owned_output_block, input-alias refusal, actual retirement and forced new output epoch remain; direct/constant exact count gates remain.",
+    "diagnostic_printf_in_product": false
+  },
+  "refinements": [
+    {
+      "kind": "test portability only",
+      "fact": "Mac Tiny29059 failed strict Clang: split size_t/uint64 auto declaration, differences{} DMI and four explicit neutral modifiers{}; numerical assertions unchanged, successful weights retained."
+    },
+    {
+      "kind": "diagnostic-only CXX failure",
+      "fact": "Tiny20068 failed mixed copied/canonical pragma-once definitions. It was never linked; diagnostic48700 reused the original successful Tiny/weights with the successful diagnostic SDK TU. No product change came from this compiler failure."
+    },
+    {
+      "kind": "prelaunch helper fault",
+      "note": "cuda/prelaunch-note.json",
+      "fact": "Concurrent native hardlink FileExistsError occurred before Model PID/arm-directory creation. It is not a native model failure or an extra inference attempt; actual first CPU logits PID39984 passed. Successful CUDA was not rerun."
+    },
+    {
+      "kind": "link closure refinement",
+      "fact": "Remove independent CLI main supplied by the test: Vulkan170\u2192169 and Mac121\u2192120, not a CXX failure."
+    },
+    {
+      "kind": "Mac private ABI refresh",
+      "fact": "The two SDK ABI consumers were refreshed after the first Apple runtime failure. This alone is not a model PASS: the next actual consumer PID29252 failed the projected-bank storage gate."
+    },
+    {
+      "kind": "Apple projected-bank selection",
+      "fact": "Ordinary checked Gather may bind a lawful NativeRef. The frozen native_region.cc refinement distinguishes this from an address-only projected bank; final producer results determine the tested boundary."
+    },
+    {
+      "kind": "post-CXX metadata repair",
+      "fact": "Region CXX PID29306 exited0 once. Relative ../ actual-dependency paths initially failed wrapper metadata parsing, then the sidecar resolved paths and parsed the original successful object; no successful CXX was repeated."
+    },
+    {
+      "kind": "actual Mac provenance",
+      "fact": "Final Mac records and parse-compile sidecar/actual-dependencies receipts are authoritative. Only real producer compile/link/run PID/exit are counted; transports/fetch copies are not duplicate work."
+    }
+  ],
+  "closures": {
+    "cpu_cuda": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\cuda\\inputs-tiny.json",
+      "bytes": 58742,
+      "sha256": "0aa6deebc969fc60d1aa7e309714f4302d57007a2f43b7719d9b661bfe2df4f1"
+    },
+    "vulkan": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\vulkan-current\\inputs.json",
+      "bytes": 43401,
+      "sha256": "9ba1b1aa41723c733fb4dc1e653ff3e97fe864c62ed74091426f0d4fe21f7aec"
+    },
+    "reader": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\vulkan-current\\reader\\inputs.json",
+      "bytes": 43184,
+      "sha256": "a61c6275cee52810d550a9ae87fdadcee7898e48603f8fe891cffed5a788198e"
+    },
+    "apple": {
+      "records": "apple/refinement3/readback-final/records",
+      "input_count": 120,
+      "ready": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\apple\\refinement3\\readback-final\\records\\ready.json",
+        "bytes": 12327,
+        "sha256": "39f2b6295748cce960a6d365a745b171de82a813c432f2bec58fb9f9b570f382"
+      }
+    }
+  },
+  "limitations": [
+    "Finite synthetic functionality and complete-state bytes only; no trained quality, TPS, latency or memory-peak conclusion.",
+    "Default math/ports and existing policies are preserved; this is a bounded IO lifecycle migration, not complete engine extraction.",
+    "Apple history29362 remains a cold MLX compile unordered_map::at failure; LLDB29421 was denied noninteractive permission before any target launch, so its cause is not established by a captured stack.",
+    "No new downloads, SDK rebuild, NVCC, shader build or rerun is performed by this offline collector."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-io-native-2026-10-28.zip",
+    "bytes": 2205119,
+    "sha256": "e1f8b5b1a265dce9736e11f230e78cffcdac1f14f5ed8f338fad833b38d83354",
+    "members": 736,
+    "all_member_sha256_and_crc_readback": true,
+    "member_manifest": {
+      "name": "member-manifest.json",
+      "bytes": 152375,
+      "sha256": "7a56bb7c882f57d6e36a3ece5227e978b6777232476050e4fa57b1e38498e7ee",
+      "crc32": "a3fc824a"
+    },
+    "excludes": [
+      "EXE/OBJ/O/PDB/LIB/A/EXP/DLL",
+      "SDK/system/dependency payloads",
+      "model/weights/GGUF/fixture payloads",
+      "tar/sync payloads"
+    ]
+  },
+  "cleanup": {
+    "removed_files": 11,
+    "removed_bytes": 330308454,
+    "current_inputs_preserved": true,
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\cleanup-executed.json",
+      "bytes": 8561,
+      "sha256": "7771d95201d7bf55c3306fb347a42d27cd4a3590f0917dd24d79974c2c772656"
+    },
+    "script": {
+      "path": "C:\\public\\project-hyle\\hyle\\test.ps1",
+      "sha256": "9c7126aaa6d55c38d6270876a5a13dd5d315b6955bdb33393cf17a36a5a97a1f"
+    },
+    "scope": "Replaced private images, import/export tables and unused objects only; no SDK, DLL, weights, source, log or current actual link input removed. Original reusable Vulkan Tiny/weights objects retained. Immutable evidence ZIP unchanged."
+  }
+}

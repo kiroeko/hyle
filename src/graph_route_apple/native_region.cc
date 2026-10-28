@@ -309,9 +309,18 @@ Status bind(void *prepared, void *invocation, std::span<const RegionValue> input
           return Status::InvalidArgument("Apple row input differs from its exact pending frame");
       }
       auto &binding = slot.bindings[port];
-      const bool projected_bank = std::ranges::any_of(artifact.row_accesses,
-          [&](const auto &access) { return access.input_port == index; });
-      if (projected_bank) {
+      bool projected_bank = false, checked_gather_only = true;
+      for (const auto &access : artifact.row_accesses) {
+        if (access.input_port != index) continue;
+        projected_bank = true;
+        checked_gather_only = checked_gather_only && access.native.kind == an::RowCacheAccessKind::kCheckedGather;
+      }
+      // Row-access capability does not make every input an address-only bank:
+      // ordinary checked Gather may read an original native result. Real
+      // RowCache or pending banks still require their exact external storage.
+      const bool native_gather = projected_bank && input.reference.valid() && checked_gather_only &&
+          std::ranges::find(artifact.pending_ports, index) == artifact.pending_ports.end();
+      if (projected_bank && !native_gather) {
         if (input.reference.valid())
           return Status::InvalidArgument("Apple projected bank needs its exact external storage");
         // Addressable capacity is not a whole-bank ReadLease. The common

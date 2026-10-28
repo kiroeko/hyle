@@ -69,24 +69,89 @@ inline std::vector<double> normalized(std::span<const float> raw, std::span<cons
   for (auto &entry : result) entry /= mass;
   return result;
 }
-inline std::int32_t draw(std::span<const double> weights, sampling_test::Words identity, q::BackendKind kind) {
-  if (kind == q::BackendKind::kCuda) {
-    double maximum = -(std::numeric_limits<double>::infinity)(); std::int32_t selected = -1;
-    for (std::size_t at = 0; at != weights.size(); ++at) if (weights[at] > 0) {
-      const auto words = sampling_test::philox({static_cast<std::uint32_t>(at / 2), 0, identity[2], identity[3]}, {identity[0], identity[1]});
-      auto hi = words[(at % 2) * 2], lo = words[(at % 2) * 2 + 1]; const bool upper = (hi & 0x80000000u) != 0;
-      if (upper) { hi = ~hi; lo = ~lo; }
-      const double small = std::ldexp(double(hi), -32) + std::ldexp(double(lo) + .5, -64);
-      const double score = std::log(weights[at]) - std::log(upper ? -std::log1p(-small) : -std::log(small));
-      if (score > maximum) { maximum = score; selected = static_cast<std::int32_t>(at); }
+struct DrawReference final { std::int32_t selected = -1; double margin = 0; };
+
+// Independent host equations, not calls to a provider's sampling helper.
+// CUDA/Metal use F32 log1p; Vulkan's F32 upper half uses its eight-term
+// small-tail polynomial or corrected log(1-small). None uses the CPU CDF.
+inline float gumbel(std::uint32_t hi, std::uint32_t lo, q::BackendKind kind) {
+  const bool upper = (hi & 0x80000000u) != 0;
+  if (upper) { hi = ~hi; lo = ~lo; }
+  const float high = static_cast<float>(hi) * 0x1p-32F;
+  const float low = (static_cast<float>(lo) + .5F) * 0x1p-64F;
+  const float small = high + low;
+  float exponential;
+  if (!upper) exponential = -std::log(small);
+  else if (kind != q::BackendKind::kVulkan) exponential = -std::log1p(-small);
+  else if (small < .125F) {
+    // Evaluate the shader's positive terms in F32, without silently replacing
+    // its tail recipe by a double-precision CUDA/Gumbel model.
+    float series = .125F;
+    for (const float coefficient : {1.F / 7.F, 1.F / 6.F, .2F, .25F, 1.F / 3.F, .5F, 1.F}) {
+      const float product = small * series;
+      series = coefficient + product;
     }
-    require(selected >= 0, "independent Gumbel has no positive support"); return selected;
+    exponential = small * series;
+  } else {
+    const float complement = 1.F - small;
+    const float delta = complement - 1.F;
+    const float correction = std::log(complement) / delta;
+    exponential = small * correction;
   }
-  const auto words = sampling_test::philox({0, 0, identity[2], identity[3]}, {identity[0], identity[1]});
-  const double uniform = (double(words[0]) * 0x1p20 + double(words[1] >> 12) + .5) * 0x1p-52;
-  double mass = 0, cumulative = 0; for (double value : weights) mass += value;
-  for (std::size_t at = 0; at != weights.size(); ++at) { cumulative += weights[at]; if (cumulative > uniform * mass) return static_cast<std::int32_t>(at); }
-  throw std::runtime_error("independent categorical has no positive support");
+  return -std::log(exponential);
+}
+
+inline DrawReference draw_reference(std::span<const double> weights,
+    sampling_test::Words identity, q::BackendKind kind) {
+  require(kind == q::BackendKind::kCpu || kind == q::BackendKind::kCuda ||
+      kind == q::BackendKind::kApple || kind == q::BackendKind::kVulkan,
+      "categorical reference requires an explicit native backend");
+  double mass = 0;
+  float maximum = -(std::numeric_limits<float>::infinity)();
+  for (const double value : weights) {
+    require(value >= 0 && std::isfinite(value), "independent categorical has an invalid weight");
+    mass += value;
+    if (value > 0) maximum = (std::max)(maximum, static_cast<float>(std::log(value)));
+  }
+  require(mass > 0 && std::isfinite(mass) && std::isfinite(maximum),
+      "independent categorical has no positive finite support");
+  if (kind == q::BackendKind::kCpu) {
+    const auto words = sampling_test::philox({0, 0, identity[2], identity[3]}, {identity[0], identity[1]});
+    const double uniform = (double(words[0]) * 0x1p20 + double(words[1] >> 12) + .5) * 0x1p-52;
+    const double threshold = uniform * mass;
+    double cumulative = 0;
+    for (std::size_t at = 0; at != weights.size(); ++at) {
+      const double before = cumulative; cumulative += weights[at];
+      if (cumulative > threshold)
+        return {static_cast<std::int32_t>(at), (std::min)(threshold - before, cumulative - threshold) / mass};
+    }
+    throw std::runtime_error("independent CPU categorical has no selected support");
+  }
+  float best = -(std::numeric_limits<float>::infinity)(), runner = best;
+  std::int32_t selected = -1;
+  for (std::size_t at = 0; at != weights.size(); ++at) if (weights[at] > 0) {
+    const auto words = sampling_test::philox({static_cast<std::uint32_t>(at / 2), 0, identity[2], identity[3]}, {identity[0], identity[1]});
+    const float shifted = static_cast<float>(std::log(weights[at])) - maximum;
+    const float score = shifted + gumbel(words[(at % 2) * 2], words[(at % 2) * 2 + 1], kind);
+    require(std::isfinite(score), "independent native F32 Gumbel produced a nonfinite score");
+    // Native reductions resolve equal scores in favour of the lower column.
+    if (score > best) { runner = best; best = score; selected = static_cast<std::int32_t>(at); }
+    else runner = (std::max)(runner, score);
+  }
+  require(selected >= 0, "independent native F32 Gumbel has no selected support");
+  return {selected, double(best) - double(runner)};
+}
+inline std::int32_t draw(std::span<const double> weights, sampling_test::Words identity, q::BackendKind kind) {
+  return draw_reference(weights, identity, kind).selected;
+}
+inline bool separated_draw(std::span<const double> weights, sampling_test::Words identity, q::BackendKind kind) {
+  // Select addresses before executing the fixed corpus. These are exclusion
+  // margins, not output tolerances: all device IDs must still match exactly.
+  // The four-column corpus keeps >=1e-3 probability distance from CPU CDF
+  // edges, or >=.05 log-score distance between GPU winner and runner-up.
+  // This is well above the native endpoint gate (2e-5 absolute Gumbel error)
+  // and the corpus's F32 normalization/rounding, including small residuals.
+  return draw_reference(weights, identity, kind).margin >= (kind == q::BackendKind::kCpu ? .001 : .05);
 }
 
 inline void finite_math(q::Model &model, q::BackendKind kind) {
@@ -118,7 +183,9 @@ inline void finite_math(q::Model &model, q::BackendKind kind) {
     bool found = false;
     for (std::uint32_t address = 0; address != 128 && !found; ++address) {
       const sampling_test::Words key{0xb7e15162u, 0x8aed2a6bu, address, 0};
-      if (draw(branch ? expected[2] : residual, key, kind) != draw(branch ? double_bonus : wrong_residual, key, kind)) {
+      if (separated_draw(branch ? expected[2] : residual, key, kind) &&
+          separated_draw(branch ? double_bonus : wrong_residual, key, kind) &&
+          draw(branch ? expected[2] : residual, key, kind) != draw(branch ? double_bonus : wrong_residual, key, kind)) {
         finals[branch] = key; found = true;
       }
     }

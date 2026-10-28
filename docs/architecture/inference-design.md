@@ -1337,6 +1337,26 @@ Phase按原计划准备一个或三个固定地址载体，直接使用已选exa
 覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
 覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。
 
+NextN、prefix sampler和frontier的冷IO已迁入共同`ProgramIo`：按原顺序登记fixed bind、
+动态bind、read／retain及withdraw，以不可混用的强类型handle作O(1)索引。固定view借用原冷Tensor，
+读回及输出归属仍来自原编译报告；native-owned输出不作为caller端口解绑。
+它复用原`ProgramCarrier`、读回及池，不新增提交、退休、资源owner或热分配；
+Store／Append先取回原交易、再撤动态IO的顺序保持。数学、状态、Shape及发布仍归模型，完整核心未抽完。
+
+独立采样参考现分别表达CPU的52bit inverse-CDF、CUDA／Apple的F32 Gumbel和Vulkan的F32分段尾部公式。
+固定有限语料在执行前排除近决策边界的地址：CPU归一化CDF余量至少0.001，GPU胜出分数差至少0.05；
+最终设备ID、有效性、分布和完整状态的原检查门不变，不要求不同后端选出相同ID。
+[本轮检查](../evidence/correctness/inference-program-io-native-2026-10-28.json)中，CPU／CUDA／Vulkan
+各通过modifier 10项、history 17项、replay 9项及control 2项完整状态检查。
+Vulkan旧的总shared owner数量会随其它已退休区域撤销导入而下降，不能用作本程序私有输出的读者证明。
+仅retained-output-reuse的自有、非constant输出改走原detach／rearm流程；原设备、整块归属、别名、
+退休及直接输出检查保留，独立旧reader的3项回归通过。
+Apple把普通checked Gather的合法NativeRef误当作地址型RowCache bank；现仅对全checked-Gather且无pending资格的
+原生引用使用原native-output解析和保活。真实bank、混合用途及pending仍走原严格检查。
+Apple modifier、replay及control共通过21项完整状态检查；history独立有限图在MLX冷编译时失败，尚未通过。
+Mac缓存的32B／40B私有提交ABI混用已由两个相关SDK单元刷新消除，另外保留两处等价的测试初始化修正；
+这些验证环境问题不作为产品功能通过。此片不提供新的性能或训练模型质量结论。
+
 ## 实施包与收敛条件
 
 后端装配、真实资源域、输出读回、退休保活、版本接纳查询和有限分桶暂存已有共同机制。

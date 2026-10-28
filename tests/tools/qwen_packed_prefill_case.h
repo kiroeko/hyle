@@ -24,7 +24,7 @@ struct StepReport final {
   std::size_t sequence = 0, prefix = 0, active = 0, physical = 0, epoch = 0;
   std::int32_t exact_next = -1, bucket_next = -1;
   bool prefill = false, boundary_equal = false, payloads_equal = false, numerically_equivalent = false;
-  std::vector<PayloadDifference> differences;
+  std::vector<PayloadDifference> differences{};
 };
 
 inline q::Type payload_type(q::Model &model, const q::cache::HostPayloadDesc &part) {
@@ -167,7 +167,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   std::vector<StepReport> reports;
   const auto advance = [&](std::size_t sequence, std::span<const std::int32_t> ids, bool prefill) {
     auto &control = *a[sequence]; auto &candidate = *b[sequence];
-    const auto prefix = control.length(), old_epoch = control.head.epoch();
+    const auto prefix = control.length();
+    const auto old_epoch = control.head.epoch();
     require(candidate.length() == prefix && candidate.head.epoch() == old_epoch &&
         control.head->sampling == candidate.head->sampling, "prefill inputs do not share the same logical boundary");
     const auto cursor = control.head->sampling;
