@@ -286,6 +286,8 @@ auto decode三点单轮98.39～99.78／100.64～101.77，两轮100.58～101.07�
 
 RAM工作集／private commit与dedicated／shared显存是独立量，不能相加成物理RAM或VRAM；逻辑cache backing也不是全进程峰值。八个独立内存进程的ready基线均未知，未知值保留null；请求10ms采样，实际间隔及缺值保留，峰值只是采样下界。ready时间为原producer主机端点，未清OS缓存，不排名冷盘。三样本范围、shared显存、实际采样缺值、接受工作与完整原始报告见[本窗证据](../../evidence/performance/inference-main-peer-window-2026-10-28.json)。
 
+本窗八份ready缺样已离线核实：ready到首次prefill标记的接收间隔仅11.8～81.8µs，实际采样中位间隔约15ms；标记已收到，严格区间内确实没有样本。下一次独立内存测量须为真正的ready基线加入消费者取样握手；仅标记触发或提高轮询频率不能保证prefill前读完。读取起止跨阶段的值只能作为带时间偏差的近邻样本，不能回填为精确基线；该同步不得进入正式吞吐进程。
+
 **最新长输入：2026-10-27 22:23:44～22:27:18，Hyle默认auto `aa864724`，参考 `433e7051`。** N1／R1、纯CUDA、普通greedy，固定相同输入、容量及整段prefill；12个计时与4个独立内存进程全成功，无新编译、下载、重跑或带仪器测速。每臂3次的完整非时间报告与输出ID均稳定，原端点与PSAPI／PDH采样器沿用，首对暂停检查后只续未运行项。以下均为各臂中位数：
 
 | 输入／实际输出 | prefill Hyle／参考 | decode Hyle／参考 | 综合输出 Hyle／参考 | dedicated峰GiB Hyle／参考 |

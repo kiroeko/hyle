@@ -52,7 +52,12 @@ GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inferen
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；
 1次增量CXX、1次链接和CPU／CUDA六个现有消费者检查通过，原数值门不变。
 [本片记录](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)不代签完整编排抽离或性能提升；
-形状键、容量、接纳淘汰与完整模型编排仍待收敛，MTP设备后继和其它热点继续保留。
+模型形状资格、自然形状规划与完整编排仍待收敛，MTP设备后继和其它热点继续保留。
+随后使用计数、冻结上限和有界FIFO接纳政策已迁入共同`ColdShapePlan`，原数学资格及实际载体退休仍归模型。
+[3次增量编译／链接及六个有限进程](../evidence/correctness/inference-cold-shape-plan-2026-10-28.json)通过；
+主机退休／构造失败契约不代签原生故障，CPU／CUDA实际接纳尚未触发FIFO淘汰。
+下一片优先核对并共用MTP末端决策与读回：K1已有图内接受，多草稿仍有完成target后的辅助采样episode。
+先保原EOS／quota、RNG及完整head原子发布，再减少重复编排；固定有效行与设备后继仍需独立接线，不能直接删除状态权限检查。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。

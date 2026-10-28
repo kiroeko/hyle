@@ -175,11 +175,11 @@ inline int run(const std::filesystem::path &input) {
   const std::array<std::int32_t, 1> token{1};
   auto raw = model.create_session(rows, {}, q::GraphRole::kText, q::cache::SamplingCursor{123, 10, maximum});
   const auto *raw_head = raw->head.get(); const auto raw_boundary = q::generation_boundary(*raw->head);
-  const auto admissions = model.exact_admissions;
+  const auto admissions = model.shape_plan.admissions();
   exhausted([&] { model.prepare_evaluation(*raw, token); });
   require(!model.active_step && !model.carrier_borrowed && !raw->pending && raw->head.get() == raw_head &&
       q::generation_boundary(*raw->head) == raw_boundary && raw->retirement_status.ok() &&
-      model.exact_admissions == admissions, "raw exhausted draw mutated an actual episode or its head");
+      model.shape_plan.admissions() == admissions, "raw exhausted draw mutated an actual episode or its head");
   model.prepare_evaluation(*raw, token, nullptr, q::GraphRole::kText, q::TextCompletion::kStateOnly);
   model.submit_evaluation(*raw);
   (void)q::finish_evaluation(model, *raw, "max-state-only", {}, false);

@@ -50,6 +50,7 @@
 #include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
 #include "../../inference/prepared_program_family.h"
+#include "../../inference/cold_shape_plan.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
@@ -1508,13 +1509,10 @@ public:
   c::LeaseSlotLayout &hidden_layout;
   // Family/child owners are shared by sessions; no session addresses enter compile.
   std::map<FamilyKey, std::unique_ptr<Family>> &families, &probe_families;
-  std::vector<FamilyKey> admitted_exact_keys;
-  std::size_t exact_admissions = 0, exact_evictions = 0;
-  std::size_t exact_shape_capacity = 0;
+  inference::ColdShapePlan<ExecutionShape, FamilyKey, execution_slot_count> shape_plan;
   // One carrier per actually prepared finite shape. Serial admission borrows
   // its one slot and shared IO through native retirement and all result reads.
   std::map<ExecutionShape, std::unique_ptr<Phase>> &phases, &probe_phases;
-  std::map<ExecutionShape, std::array<std::size_t, execution_slot_count>> planned_slot_uses;
   std::map<std::tuple<std::size_t, bool, std::size_t>, std::unique_ptr<DraftProgram>> &draft_programs;
   std::map<std::pair<std::size_t, std::size_t>, std::unique_ptr<PrefixSamplingProgram>> &prefix_sampling_programs;
   std::size_t draft_program_graph_calls = 0, prefix_decision_graph_calls = 0;
@@ -1835,8 +1833,8 @@ public:
         << ",\"packed_prefill_calls\":" << packed_prefill_calls
         << ",\"packed_prefill_active_rows\":" << packed_prefill_active_rows
         << ",\"packed_prefill_physical_rows\":" << packed_prefill_physical_rows
-        << ",\"cold_exact_admissions\":" << exact_admissions
-        << ",\"cold_exact_evictions\":" << exact_evictions
+        << ",\"cold_exact_admissions\":" << shape_plan.admissions()
+        << ",\"cold_exact_evictions\":" << shape_plan.evictions()
         << ",\"cpu_ahead_prepared\":" << cpu_ahead_prepared
         << ",\"cpu_ahead_hits\":" << cpu_ahead_hits
         << ",\"cpu_ahead_discarded\":" << cpu_ahead_discarded
@@ -2730,7 +2728,7 @@ public:
   // actual batch still selects its exact width/capacity before taking a loan.
   bool planned_prefill_member(std::size_t rows, TextCompletion completion, std::size_t sampling_index,
       GraphRole role = GraphRole::kText) const {
-    for (const auto &[shape, uses] : planned_slot_uses) {
+    for (const auto &[shape, uses] : shape_plan.entries()) {
       if (!shape.packed_prefill || shape.role != role || shape.completion != completion ||
           shape.sampling_index != sampling_index || shape.tokens < rows ||
           std::ranges::none_of(uses, [](auto count) { return count != 0; })) continue;
@@ -2744,11 +2742,9 @@ public:
   // Family/Phase owners remain bounded by the frozen cold shape plan; decoded
   // hot-loop shapes stay in their original immutable finite families.
   void freeze_shape_plan() {
-    if (exact_shape_capacity) return;
-    if (!admitted_exact_keys.empty()) throw std::logic_error("freeze the original shape plan before dynamic admission");
-    exact_shape_capacity = (std::max)(std::size_t{1}, planned_slot_uses.size());
-    std::cerr << "cold_shape_plan planned_shapes=" << planned_slot_uses.size()
-              << " extra_capacity=" << exact_shape_capacity << '\n';
+    if (shape_plan.freeze())
+      std::cerr << "cold_shape_plan planned_shapes=" << shape_plan.size()
+                << " extra_capacity=" << shape_plan.capacity() << '\n';
   }
 
   void admit_exact_shape(std::size_t tokens, std::size_t requests, GraphRole role,
@@ -2762,42 +2758,38 @@ public:
     // Direct component consumers may not call the explicit startup boundary.
     // Freeze before the first extra shape can mutate the original inventory.
     freeze_shape_plan();
-    const auto limit = exact_shape_capacity;
-    if (admitted_exact_keys.capacity() < limit) admitted_exact_keys.reserve(limit);
-    if (admitted_exact_keys.size() == limit) {
-      const auto victim = admitted_exact_keys.front();
-      auto old = families.find(victim);
-      if (old == families.end() || !old->second->admitted_exact || old->second->chunks.size() != 1)
-        throw std::runtime_error("exact family inventory is inconsistent");
-      const ExecutionShape shape{victim.requests, old->second->chunks[0], victim.role, victim.completion, victim.sampling_index};
-      for (const bool imported : {false, true}) {
-        auto physical = shape; physical.imported_sources = imported;
-        if (auto phase = phases.find(physical); phase != phases.end()) {
-          for (auto &carrier : std::span(phase->second->carriers).first(phase->second->slot_count)) {
-            if (!carrier.initialized() && !carrier.pending()) continue;
-            const auto retired = carrier.retire(execution);
-            check(retired.status);
-            if (!retired.retired) throw std::runtime_error("exact family carrier has not actually retired");
-          }
-          phases.erase(phase);
-        }
-      }
-      planned_slot_uses.erase(shape); families.erase(old);
-      admitted_exact_keys.erase(admitted_exact_keys.begin()); ++exact_evictions;
-    }
     const auto key = FamilyKey::exact(requests, role, tokens, completion, sampling_index);
-    try {
-      const std::array chunk{tokens}; prepare_family(chunk, false, requests, role, true, completion, sampling_index);
-      planned_slot_uses[{requests, tokens, role, completion, sampling_index}].fill(1);
-      admitted_exact_keys.push_back(key); ++exact_admissions;
-      std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
-                << " role=" << static_cast<int>(role) << " retained=" << admitted_exact_keys.size()
-                << " limit=" << limit
-                << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
-    } catch (...) {
-      families.erase(key);
-      throw;
-    }
+    const ExecutionShape shape{requests, tokens, role, completion, sampling_index};
+    shape_plan.admit(shape, key,
+        [&](const FamilyKey &victim, const ExecutionShape &old_shape) {
+          auto old = families.find(victim);
+          if (old == families.end() || !old->second->admitted_exact || old->second->chunks.size() != 1 ||
+              old_shape != ExecutionShape{victim.requests, old->second->chunks[0], victim.role,
+                  victim.completion, victim.sampling_index})
+            throw std::runtime_error("exact family inventory is inconsistent");
+          for (const bool imported : {false, true}) {
+            auto physical = old_shape; physical.imported_sources = imported;
+            if (auto phase = phases.find(physical); phase != phases.end()) {
+              for (auto &carrier : std::span(phase->second->carriers).first(phase->second->slot_count)) {
+                if (!carrier.initialized() && !carrier.pending()) continue;
+                const auto retired = carrier.retire(execution);
+                check(retired.status);
+                if (!retired.retired) throw std::runtime_error("exact family carrier has not actually retired");
+              }
+              phases.erase(phase);
+            }
+          }
+          families.erase(old);
+        },
+        [&] {
+          const std::array chunk{tokens};
+          prepare_family(chunk, false, requests, role, true, completion, sampling_index);
+        },
+        [&]() noexcept { families.erase(key); });
+    std::cerr << "cold_exact_admission requests=" << requests << " T=" << tokens
+              << " role=" << static_cast<int>(role) << " retained=" << shape_plan.retained()
+              << " limit=" << shape_plan.capacity()
+              << " seconds=" << std::chrono::duration<double>(Clock::now() - admission_start).count() << '\n';
   }
 
   void prepare_draft_program(std::size_t rows, bool head, std::size_t sampling_index = 0) {
@@ -3514,8 +3506,7 @@ public:
     for (const auto tokens : calls) {
       if (!families.contains({requests, role, tokens, completion, sampling_index}) || std::find(families.at({requests, role, tokens, completion, sampling_index})->chunks.begin(), families.at({requests, role, tokens, completion, sampling_index})->chunks.end(), tokens) == families.at({requests, role, tokens, completion, sampling_index})->chunks.end())
         throw std::runtime_error("execution plan chunk is outside the shared finite family");
-      auto &uses = planned_slot_uses[{requests, tokens, role, completion, sampling_index}];
-      uses[slot_index] = cache::add(uses[slot_index], 1);
+      shape_plan.add_use({requests, tokens, role, completion, sampling_index}, slot_index);
     }
   }
 
@@ -3528,7 +3519,7 @@ public:
       throw std::runtime_error("execution use plans must precede carrier preparation");
     if (!find_family(requests, tokens, role, false, completion, sampling_index, packed_prefill))
       throw std::runtime_error("execution use shape is outside the shared finite family");
-    for (auto &uses : planned_slot_uses[{requests, tokens, role, completion, sampling_index, false, packed_prefill}]) uses = cache::add(uses, count);
+    shape_plan.add_uses({requests, tokens, role, completion, sampling_index, false, packed_prefill}, count);
   }
 
   std::shared_ptr<Session> create_session(std::span<const std::size_t> planned_chunks,
@@ -3575,7 +3566,7 @@ public:
           throw std::runtime_error("session chunk is outside the shared finite family");
       }
       total += tokens;
-      if (!planned_slot_uses.contains({1, tokens, role, completion, sampling_index}) &&
+      if (!shape_plan.contains({1, tokens, role, completion, sampling_index}) &&
           !((role == GraphRole::kText || is_mtp_prefill(role)) && planned_prefill_member(tokens, completion, sampling_index, role)))
         throw std::runtime_error("session chunk has no model execution use plan");
     }
@@ -3725,7 +3716,7 @@ public:
     phase.query_rows = tokens;
     static_cast<FamilyPorts &>(phase) = static_cast<const FamilyPorts &>(definition);
     if (imported_sources) for (auto &source : phase.state_sources) source.mode = g::slots::SourceMode::kImported;
-    phase.planned_slot_uses = planned_slot_uses.at({requests, tokens, role, completion, sampling_index, false, packed_prefill});
+    phase.planned_slot_uses = shape_plan.uses({requests, tokens, role, completion, sampling_index, false, packed_prefill});
     for (std::size_t slot = 0; slot < phase.slot_count; ++slot) {
       phase.replay_modes[slot] = !selected_sampler.modifiers.history.empty() ? g::ReplayMode::kCommands
           : imported_sources ? g::ReplayMode::kPreferCapture : select_replay_mode(
@@ -3971,7 +3962,7 @@ public:
     if (active_step || carrier_borrowed)
       throw std::runtime_error("cannot prepare planned shapes during an active episode");
     std::size_t count = 0;
-    for (const auto &[shape, uses] : planned_slot_uses) {
+    for (const auto &[shape, uses] : shape_plan.entries()) {
       if (std::ranges::none_of(uses, [](auto planned_uses) { return planned_uses != 0; })) continue;
       const std::array rows{shape.tokens};
       prepare_execution(rows, shape.requests, shape.role, shape.completion, shape.sampling_index, shape.packed_prefill);

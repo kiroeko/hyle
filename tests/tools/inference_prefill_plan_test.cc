@@ -1,6 +1,7 @@
 // Shared host input partition facts only. No model, device or test framework.
 #include "../../engine/inference/prefill_plan.h"
 #include "../../engine/inference/packed_rows.h"
+#include "../../engine/inference/cold_shape_plan.h"
 
 #include <array>
 #include <cstdio>
@@ -233,6 +234,111 @@ void packed_rows_preserve_exact_i32_position_limit() {
   require(offsets == previous_offsets && last == previous_last && positions == previous_positions,
       "invalid physical extent changed the previous metadata");
 }
+
+using ShapePlan = hyle::inference::ColdShapePlan<int, int, 3>;
+struct BuildFailure {};
+
+void cold_shape_counts_and_freeze() {
+  ShapePlan plan;
+  plan.add_uses(10, 2); plan.add_use(10, 1, 3); plan.add_uses(20, 1);
+  require(plan.uses(10) == ShapePlan::Uses{2, 5, 2} && plan.size() == 2,
+      "cold use plan lost a physical slot or shape");
+  require(plan.freeze() && !plan.freeze() && plan.capacity() == 2 && !plan.retained(),
+      "frozen capacity changed or included an unadmitted shape");
+  ShapePlan empty;
+  int hooks = 0;
+  rejects<std::logic_error>([&] {
+    empty.admit(1, 10, [&](int, int) { ++hooks; }, [&] { ++hooks; }, []() noexcept {});
+  });
+  require(!hooks && !empty.retained(), "unfrozen admission reached a resource hook");
+  require(empty.freeze() && empty.capacity() == 1, "empty plan lost its bounded suffix slot");
+}
+
+void cold_shape_rejects_overflow_without_partial_counts() {
+  ShapePlan plan;
+  plan.add_use(10, 1, max_size);
+  const auto before = plan.uses(10);
+  rejects<std::runtime_error>([&] { plan.add_uses(10, 1); });
+  require(plan.uses(10) == before, "overflow partially changed a physical slot's use count");
+  rejects<std::out_of_range>([&] { plan.add_use(20, 3, 1); });
+  require(!plan.contains(20), "invalid slot published a new shape");
+}
+
+void cold_shape_requires_retirement_before_eviction() {
+  ShapePlan plan; plan.freeze();
+  int resident = 0, builds = 0, retire_calls = 0;
+  bool retired = false;
+  const auto retire = [&](int key, int shape) {
+    ++retire_calls;
+    require(key == resident && shape == key / 10, "eviction named a foreign program");
+    if (!retired) throw BuildFailure{};
+    resident = 0;
+  };
+  plan.admit(1, 10, retire, [&] { resident = 10; ++builds; }, [&]() noexcept { resident = 0; });
+  rejects<BuildFailure>([&] {
+    plan.admit(2, 20, retire, [&] { resident = 20; ++builds; }, [&]() noexcept { resident = 0; });
+  });
+  require(resident == 10 && builds == 1 && plan.contains(1) && !plan.contains(2) &&
+      plan.retained() == 1 && plan.admissions() == 1 && plan.evictions() == 0,
+      "unretired victim was removed or a replacement was built");
+  retired = true;
+  plan.admit(2, 20, retire, [&] {
+    require(!resident && !plan.contains(1), "replacement preceded actual victim release");
+    resident = 20; ++builds;
+  }, [&]() noexcept { resident = 0; });
+  require(resident == 20 && builds == 2 && retire_calls == 2 && !plan.contains(1) &&
+      plan.uses(2) == ShapePlan::Uses{1, 1, 1} && plan.admissions() == 2 && plan.evictions() == 1,
+      "retired replacement lost its bounded admission facts");
+}
+
+void cold_shape_failed_build_preserves_fifo_and_existing_plan() {
+  ShapePlan plan;
+  plan.add_uses(90, 7); plan.add_uses(91, 9); plan.freeze();
+  int victim = 0, rollback = 0;
+  const auto retire = [&](int key, int) { victim = key; };
+  const auto clean = [&]() noexcept { ++rollback; };
+  plan.admit(1, 10, retire, [] {}, clean);
+  rejects<BuildFailure>([&] { plan.admit(2, 20, retire, [] { throw BuildFailure{}; }, clean); });
+  require(!victim && rollback == 1 && !plan.contains(2) && plan.retained() == 1 &&
+      plan.admissions() == 1 && plan.uses(90) == ShapePlan::Uses{7, 7, 7},
+      "failed build published use/FIFO metadata or changed the original plan");
+  plan.admit(2, 20, retire, [] {}, clean);
+  plan.admit(3, 30, retire, [] {}, clean);
+  require(victim == 10 && !plan.contains(1) && plan.contains(2) && plan.contains(3) &&
+      plan.retained() == 2 && plan.admissions() == 3 && plan.evictions() == 1,
+      "failed build changed the next successful eviction order");
+}
+
+void cold_shape_failed_replacement_leaves_no_unpublished_usage() {
+  ShapePlan plan; plan.freeze();
+  int resident = 0, rollback = 0;
+  const auto retire = [&](int, int) { resident = 0; };
+  const auto clean = [&]() noexcept { resident = 0; ++rollback; };
+  plan.admit(1, 10, retire, [&] { resident = 10; }, clean);
+  rejects<BuildFailure>([&] {
+    plan.admit(2, 20, retire, [&] { resident = 20; throw BuildFailure{}; }, clean);
+  });
+  require(!resident && rollback == 1 && !plan.retained() && !plan.contains(1) && !plan.contains(2) &&
+      plan.admissions() == 1 && plan.evictions() == 1, "failed replacement retained an unpublished program");
+  plan.admit(2, 20, retire, [&] { resident = 20; }, clean);
+  require(resident == 20 && plan.admissions() == 2 && plan.evictions() == 1,
+      "retry counted a second eviction for an already released victim");
+}
+
+void cold_shape_existing_counts_and_duplicate_admissions() {
+  ShapePlan plan; plan.add_uses(1, 6); plan.freeze();
+  int calls = 0;
+  const auto retire = [&](int, int) { ++calls; };
+  const auto clean = []() noexcept {};
+  rejects<BuildFailure>([&] { plan.admit(1, 10, retire, [] { throw BuildFailure{}; }, clean); });
+  require(plan.uses(1) == ShapePlan::Uses{6, 6, 6} && !plan.retained(),
+      "failed build overwrote the existing planned shape");
+  plan.admit(1, 10, retire, [&] { ++calls; }, clean);
+  const auto before = calls;
+  rejects<std::logic_error>([&] { plan.admit(1, 10, retire, [&] { ++calls; }, clean); });
+  require(calls == before && plan.admissions() == 1 && !plan.evictions() && plan.retained() == 1,
+      "duplicate admission executed native hooks or changed capacity accounting");
+}
 } // namespace
 
 int main() {
@@ -247,6 +353,13 @@ int main() {
     packed_rows_reject_before_writing_any_buffer();
     packed_rows_preserve_exact_i32_position_limit();
     std::puts("prefill plan: 9 host contract groups passed; no model/device loaded");
+    cold_shape_counts_and_freeze();
+    cold_shape_rejects_overflow_without_partial_counts();
+    cold_shape_requires_retirement_before_eviction();
+    cold_shape_failed_build_preserves_fifo_and_existing_plan();
+    cold_shape_failed_replacement_leaves_no_unpublished_usage();
+    cold_shape_existing_counts_and_duplicate_admissions();
+    std::puts("cold shape plan: 6 host contract groups passed; no model/device loaded");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "prefill plan: %s\n", error.what());

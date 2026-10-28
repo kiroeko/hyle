@@ -1359,6 +1359,13 @@ child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷�
 不能把这四处冷准备的共用视为执行引擎已经完全抽离。
 [CPU／CUDA有限检查](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)复用原logits、采样及MTP packed消费者，
 68项完整状态比较保留原数值预算；本片没有新的吞吐或训练模型质量结论。
+形状使用计数、冻结后的额外容量、FIFO及接纳／淘汰计数由`ColdShapePlan`共同持有，
+Shape／Key对该政策不透明；Model只核数学资格，并提供原载体真实退休、Family构造和清理步骤。
+元数据先预留、实际退休成功后才移除旧记录，新Family构造完成后才发布使用计数和FIFO；
+构造失败保留原异常、清理本次未发布Family，不回滚已经完成的淘汰，也不改既有计划计数。
+该算法仅在冷接纳执行，不为热查找增加FIFO扫描、分配或另一套资源owner。
+[本片有限检查](../evidence/correctness/inference-cold-shape-plan-2026-10-28.json)包含主机政策契约和CPU／CUDA实际接纳／预热复用；
+原生旅程未触发FIFO淘汰，主机异常钩子不代表设备故障注入。
 [CPU／CUDA载体合同检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)
 覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
 覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。

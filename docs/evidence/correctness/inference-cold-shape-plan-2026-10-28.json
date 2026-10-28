@@ -1,0 +1,522 @@
+{
+  "schema": "hyle.correctness.cold-shape-plan.v1",
+  "date": "2026-10-28",
+  "status": "PASS_HOST_POLICY_AND_FIVE_FINITE_MODEL_CASES",
+  "change": "Share checked cold usage counts, frozen extra-shape capacity, FIFO admission bookkeeping and rollback ordering in ColdShapePlan. Model retains actual native retirement/Family construction hooks.",
+  "counts": {
+    "CXX": 3,
+    "links": 3,
+    "host_processes": 1,
+    "model_processes": 5,
+    "total_native_processes": 6,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "native_retries": 0
+  },
+  "builds": [
+    {
+      "unit": "policy",
+      "compile_process": {
+        "pid": 45368,
+        "exit": 0,
+        "started": 1793177553.5990834,
+        "seconds": 0.7330551147460938,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link_process": {
+        "pid": 18920,
+        "exit": 0,
+        "started": 1793177564.5922053,
+        "seconds": 0.04915285110473633,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\bin\\policy.exe",
+        "bytes": 47104,
+        "sha256": "f30baca5e1d523a17dc8f31793401aeccd9fa9bc1f53b5c3305ddd45a1ecbcb0"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+        "bytes": 17553,
+        "sha256": "b1c1c24538e15af7c178bb5ed83dda9cd1c5b38186300d1662861eda6b130384"
+      },
+      "compiled": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+          "bytes": 17553,
+          "sha256": "b1c1c24538e15af7c178bb5ed83dda9cd1c5b38186300d1662861eda6b130384"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\policy\\unit.obj",
+          "bytes": 495095,
+          "sha256": "da445fcc6be23e0cf48f3e586262f8e653e29d9977fc48eee3ec3f47d2b12118"
+        },
+        "process": {
+          "pid": 45368,
+          "exit": 0,
+          "started": 1793177553.5990834,
+          "seconds": 0.7330551147460938,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\logs\\policy\\command.json",
+          "bytes": 1058,
+          "sha256": "86317d631731b5ef10b81ff0ecaa85d9d98cf1eadfa6d7f5c2e0f63c1b9a14d4"
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\policy\\dependencies.json",
+          "bytes": 12716,
+          "sha256": "d1ba87535644c588c90c681aeca7aba52ad7c1cd3db36cc5d2545bd35f815dc8"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\policy\\actual-dependencies.json",
+          "bytes": 24571,
+          "sha256": "92add75e8e9e67d093240f3788cb3a911e0e127a39a88e5184c9240f5eb49012"
+        }
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\inputs-policy.json",
+        "bytes": 252,
+        "sha256": "adf41ae1993f7589687536c9d7a5f22c781a82f5b75a0ae5c6ad297cf8bba2c5"
+      },
+      "input_count": 1,
+      "scope": "One actual host policy object plus implicit CRT; no SDK input."
+    },
+    {
+      "unit": "tiny",
+      "compile_process": {
+        "pid": 33892,
+        "exit": 0,
+        "started": 1793177572.174805,
+        "seconds": 61.99136185646057,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link_process": {
+        "pid": 37456,
+        "exit": 0,
+        "started": 1793177644.338582,
+        "seconds": 1.8603062629699707,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\bin\\tiny.exe",
+        "bytes": 143948288,
+        "sha256": "885d7f2519baa0d856c0c0ea286c10515b5b40d0dfeb616535d9995066963ec7"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+        "bytes": 6253,
+        "sha256": "82042e2e6a71a1acb4c71a4f76be0fd04b693ec3504db5078ced098bcc08b41e"
+      },
+      "compiled": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+          "bytes": 6253,
+          "sha256": "82042e2e6a71a1acb4c71a4f76be0fd04b693ec3504db5078ced098bcc08b41e"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\tiny\\unit.obj",
+          "bytes": 40638853,
+          "sha256": "b113157620ed35dad72fe28c321c9875f04c68e4b6b024b5ecd41750f913b766"
+        },
+        "process": {
+          "pid": 33892,
+          "exit": 0,
+          "started": 1793177572.174805,
+          "seconds": 61.99136185646057,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\logs\\tiny\\command.json",
+          "bytes": 3516,
+          "sha256": "321e53bf29fcb7ae0b1ebbcb815b77214059f67f31702ea36f24e018ed38d2ab"
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\tiny\\dependencies.json",
+          "bytes": 42710,
+          "sha256": "3fa22a735db781aed4fcf560dcb6e004e9fc00230d909f11247c5f320e1ff7f2"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\tiny\\actual-dependencies.json",
+          "bytes": 87524,
+          "sha256": "05989b432dcf774189d73ce14cdb94f723f9c87b93eb22fcbfc8c025b492dae1"
+        }
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\inputs-tiny.json",
+        "bytes": 58516,
+        "sha256": "74f8b44dbe93e581ae5646117de1fa86556284f24ed354b0f3d30eb2ad15f36b"
+      },
+      "input_count": 228,
+      "scope": "ON227 SDK/weights retained, one consumer object; no SDK recompilation."
+    },
+    {
+      "unit": "cases",
+      "compile_process": {
+        "pid": 61788,
+        "exit": 0,
+        "started": 1793177572.174805,
+        "seconds": 39.24599885940552,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link_process": {
+        "pid": 55756,
+        "exit": 0,
+        "started": 1793177644.3264377,
+        "seconds": 1.7808382511138916,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\bin\\cases.exe",
+        "bytes": 142437376,
+        "sha256": "94163ac0518a5fa6ef5cf5a6cc1570f3c2e7320f00aa0b0199e68e8ae3531ea4"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\cold_cases.cc",
+        "bytes": 887,
+        "sha256": "63e0327bd4768d185d1dc578880a3c8b7f735e356d2d5c19d87a6c78af906f58"
+      },
+      "compiled": {
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\cold_cases.cc",
+          "bytes": 887,
+          "sha256": "63e0327bd4768d185d1dc578880a3c8b7f735e356d2d5c19d87a6c78af906f58"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\cases\\unit.obj",
+          "bytes": 20221954,
+          "sha256": "68557e601870bc4101da8817e09e003ad4a4242c4fa58f3450b33a563aaa0d75"
+        },
+        "process": {
+          "pid": 61788,
+          "exit": 0,
+          "started": 1793177572.174805,
+          "seconds": 39.24599885940552,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "command": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\logs\\cases\\command.json",
+          "bytes": 3553,
+          "sha256": "706fa0b71cafdb2611266265d57a7015c2c23286373d9985ba84789a7fb48257"
+        },
+        "dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\cases\\dependencies.json",
+          "bytes": 40769,
+          "sha256": "4e231bf4b21c2538dcf7bb7ebd6f0ad90efab10e1d1f946721e465f24f40edc8"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\compile\\cases\\actual-dependencies.json",
+          "bytes": 83081,
+          "sha256": "32752ec2fa8fc396a942918d42916b1de5a5beabfcc0eedf55ee68d0e5d7f9ad"
+        }
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\inputs-cases.json",
+        "bytes": 58517,
+        "sha256": "48d6f0c134cc0512625bef50a1aca6fec6b4bf8c94e65537d0c954358a7dfbac"
+      },
+      "input_count": 228,
+      "scope": "ON227 SDK/weights retained, one consumer object; no SDK recompilation."
+    }
+  ],
+  "cases": [
+    {
+      "name": "policy",
+      "backend": "host",
+      "process": {
+        "pid": 52844,
+        "exit": 0,
+        "started": 1793177731.3545449,
+        "seconds": 0.04428863525390625,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\policy\\report.json",
+        "bytes": 261,
+        "sha256": "692f3cbc24a4ec6bccfd7d683050ede63f6cf6701159cdce6d9801fe5589a374"
+      }
+    },
+    {
+      "name": "packed-cpu",
+      "backend": "cpu",
+      "process": {
+        "pid": 35260,
+        "exit": 0,
+        "started": 1793177732.048846,
+        "seconds": 0.8746719360351562,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\packed-cpu\\report.json",
+        "bytes": 7398,
+        "sha256": "81b1246a207f0525041e19552a367792c4383f1b01826fd06301eda623e273db"
+      }
+    },
+    {
+      "name": "packed-cuda",
+      "backend": "cuda",
+      "process": {
+        "pid": 50360,
+        "exit": 0,
+        "started": 1793177733.5663981,
+        "seconds": 0.8785078525543213,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\packed-cuda\\report.json",
+        "bytes": 7390,
+        "sha256": "d85ca7a1a9e1fe53856f717da3abf824246651b44f45465042aa6f7586ab150f"
+      }
+    },
+    {
+      "name": "e4-cpu",
+      "backend": "cpu",
+      "process": {
+        "pid": 47760,
+        "exit": 0,
+        "started": 1793177735.0764604,
+        "seconds": 0.8137054443359375,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\e4-cpu\\report.json",
+        "bytes": 452,
+        "sha256": "05a162a6549ff1d0c82630555ae0336b70c4b26809bea4fa4e1349d8e3be7ea8"
+      }
+    },
+    {
+      "name": "e4-cuda",
+      "backend": "cuda",
+      "process": {
+        "pid": 27708,
+        "exit": 0,
+        "started": 1793177736.5344477,
+        "seconds": 0.8201110363006592,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\e4-cuda\\report.json",
+        "bytes": 453,
+        "sha256": "88005cabb32d4449b03b1df6e5c2c3d8fa6780ee76c2e2b9069aa239c9a4b041"
+      }
+    },
+    {
+      "name": "sampling-budget-cpu",
+      "backend": "cpu",
+      "process": {
+        "pid": 2844,
+        "exit": 0,
+        "started": 1793177738.0196843,
+        "seconds": 0.4429957866668701,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\runs\\sampling-budget-cpu\\report.json",
+        "bytes": 465,
+        "sha256": "9406dc3203af1e9372c38c471e1c3052c4908901e051b85678ba0c8fe71995ef"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "relative_path": "engine/models/qwen35/main.cc",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 602149,
+        "sha256": "e6edd4e58b6eb87fad61f99a84e340184ee6115fa46dfda32edeef9101fd59ca"
+      }
+    },
+    {
+      "relative_path": "engine/inference/cold_shape_plan.h",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\inference\\cold_shape_plan.h",
+        "bytes": 4983,
+        "sha256": "f340a695e6288b4be860ee85ac002ca71ae2da5e228539a214ccf32a32f25d12"
+      }
+    },
+    {
+      "relative_path": "tests/tools/inference_prefill_plan_test.cc",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\inference_prefill_plan_test.cc",
+        "bytes": 17553,
+        "sha256": "b1c1c24538e15af7c178bb5ed83dda9cd1c5b38186300d1662861eda6b130384"
+      }
+    },
+    {
+      "relative_path": "tests/tools/qwen_host_image_test.cc",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+        "bytes": 6253,
+        "sha256": "82042e2e6a71a1acb4c71a4f76be0fd04b693ec3504db5078ced098bcc08b41e"
+      }
+    },
+    {
+      "relative_path": "tests/tools/qwen_e4_cache_case.h",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_e4_cache_case.h",
+        "bytes": 14295,
+        "sha256": "4e2439a882710e1394f050b3177b7e9435ba24a7ff3be7fb73b4fc66f8e4f7d6"
+      }
+    },
+    {
+      "relative_path": "tests/tools/qwen_sampling_budget_case.h",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_sampling_budget_case.h",
+        "bytes": 14038,
+        "sha256": "f5ce68c4875bcd8bf5baee6b8650f13a500fd93ef4693cf89c78d8e88f5625ab"
+      }
+    },
+    {
+      "relative_path": ".scratch/inference-cold-shape-plan-20261028/validation/cold_cases.cc",
+      "identity": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\cold_cases.cc",
+        "bytes": 887,
+        "sha256": "63e0327bd4768d185d1dc578880a3c8b7f735e356d2d5c19d87a6c78af906f58"
+      }
+    }
+  ],
+  "product_diff": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\changes.patch",
+    "bytes": 19566,
+    "sha256": "f32d190501653c00bedba43158e9b6065510e65bbfc034444040c23dc553aa49"
+  },
+  "ggml_cuda_header": {
+    "identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\providers\\ggml_cuda.h",
+      "bytes": 1265,
+      "sha256": "d6e1bf73d4c11dcd2205dfc4c4a9be056543206f836d6f639ebf1825b294bef0"
+    },
+    "compiled_through_these_consumers": false,
+    "frozen_dependency_of_these_consumers": false,
+    "scope": "Static comment-only correction included as source body. Root checked the Git diff is comments only; this header is outside the actual canonical ColdShapePlan/Tiny include closure and was not compiled through these consumers."
+  },
+  "package_metadata_amendment": {
+    "original_exception": "KeyError: ggml_cuda.h absent from frozen project dependencies",
+    "preserved_helper": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cold-shape-plan-20261028\\validation\\package-attempt1.py",
+      "bytes": 12072,
+      "sha256": "8402f7881b19888f6375bb921d71119d9a703987b977f47d94ceb7bac6dd6d05"
+    },
+    "native_retries": 0,
+    "compiler_retries": 0,
+    "correction": "Remove false include-closure assertion; preserve original source freeze/build receipts and label the header static-only. First attempt failed before creating ZIP/JSON."
+  },
+  "host_policy": {
+    "original_prefill_groups": 9,
+    "new_cold_shape_groups": 6,
+    "scope": "Real host executable checks count/overflow/freeze/duplicate/FIFO and retire-before-erase/build rollback hooks. Hook exceptions are synthetic policy checks, not injected GPU retirement or native construction failures."
+  },
+  "native_E4": [
+    {
+      "case": "e4-cpu",
+      "freeze_records": [
+        {
+          "planned_shapes": 4,
+          "capacity": 4
+        }
+      ],
+      "successful_admission_records": [
+        {
+          "requests": 1,
+          "tokens": 3,
+          "role": 0,
+          "retained": 1,
+          "capacity": 4,
+          "seconds": 0.002456
+        },
+        {
+          "requests": 1,
+          "tokens": 5,
+          "role": 0,
+          "retained": 2,
+          "capacity": 4,
+          "seconds": 0.0018245
+        }
+      ],
+      "successful_admission_log_count": 2,
+      "last_retained": 2,
+      "last_capacity": 4,
+      "reached_extra_capacity": false,
+      "final_counters_directly_reported": false,
+      "scope": "Actual complete stderr records; report JSON does not expose final admission/eviction counters. No native eviction/fault claim is inferred from the host policy hooks.",
+      "native_FIFO_eviction_exercised": false,
+      "explanation": "Two successful extra admissions retained1 then2 below the frozen capacity; actual idle warmup/on-step admission/warm reuse ran, but not a full FIFO eviction."
+    },
+    {
+      "case": "e4-cuda",
+      "freeze_records": [
+        {
+          "planned_shapes": 4,
+          "capacity": 4
+        }
+      ],
+      "successful_admission_records": [
+        {
+          "requests": 1,
+          "tokens": 3,
+          "role": 0,
+          "retained": 1,
+          "capacity": 4,
+          "seconds": 0.0056047
+        },
+        {
+          "requests": 1,
+          "tokens": 5,
+          "role": 0,
+          "retained": 2,
+          "capacity": 4,
+          "seconds": 0.0046828
+        }
+      ],
+      "successful_admission_log_count": 2,
+      "last_retained": 2,
+      "last_capacity": 4,
+      "reached_extra_capacity": false,
+      "final_counters_directly_reported": false,
+      "scope": "Actual complete stderr records; report JSON does not expose final admission/eviction counters. No native eviction/fault claim is inferred from the host policy hooks.",
+      "native_FIFO_eviction_exercised": false,
+      "explanation": "Two successful extra admissions retained1 then2 below the frozen capacity; actual idle warmup/on-step admission/warm reuse ran, but not a full FIFO eviction."
+    }
+  ],
+  "numerical": {
+    "packed_state_checks": 14,
+    "packed_full_payload_byte_equal_checks": 0,
+    "original_GDN_absolute_budget": 3e-06,
+    "maximum_GDN_absolute_difference": 9.31323e-10,
+    "scope": "Original exact-versus-packed comparisons retain newly computed F32 GDN differences within3e-6; maximum9.31323e-10. Other original boundary/epoch/RNG/old-checkpoint assertions stay strict. No new tolerance."
+  },
+  "sampling_budget_scope": "Original CPU ordinary sampling cursor rejection/atomic retry/state-only/no-draw/greedy and pending-only cases, unchanged model oracle.",
+  "preparation_scope_amendment": "The build plan phrase no new test assertions refers only to existing model consumers. Host inference_prefill_plan_test.cc actually adds six policy groups, explicitly compiled and run here.",
+  "limitations": [
+    "Native E4 CPU/CUDA each successfully admitted T3 then T5, retained1 then2 below capacity4: idle warmup, in-step admission and warm reuse ran, but no native FIFO eviction was exercised. Final counters were not directly reported; raw admission logs are preserved.",
+    "Original mathematical recipes, actual native owners/retirement hooks and hot map lookup remain with their prior contracts. This evidence contains no throughput measurement or speedup conclusion.",
+    "Finite cached synthetic/calibration fixtures; no trained-model quality or exhaustive platform/function proof.",
+    "This slice shares a cold policy algorithm; it does not finish extraction of the complete Model/inference architecture.",
+    "Only required source/diff, metadata identities, actual recipes and raw six process results are archived; SDK, executable/object, model and tensor bodies are excluded."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-cold-shape-plan-2026-10-28.zip",
+    "bytes": 383338,
+    "sha256": "61b35b5c44768ad9dc133f3f96f6985bab4bed2530697d63387ac0690ca73901",
+    "members": 115,
+    "manifest_sha256": "8917e8fd0ab357f30404076f94586a0bb3d2962f906b9a9bac8683f9082b8dfc",
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  }
+}

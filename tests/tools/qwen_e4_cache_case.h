@@ -196,10 +196,10 @@ inline int run(const std::filesystem::path &input,
   partial_cancel(model);
   // Actual new exact-shape preparation belongs to an explicit idle boundary.
   // It must use the same family during execution rather than compile again.
-  const auto before_warmup = model.exact_admissions;
+  const auto before_warmup = model.shape_plan.admissions();
   const std::array warmup{std::size_t{3}};
   model.prepare_execution(warmup);
-  require(model.exact_admissions == before_warmup + 1 && !model.active_step && !model.carrier_borrowed,
+  require(model.shape_plan.admissions() == before_warmup + 1 && !model.active_step && !model.carrier_borrowed,
       "idle warmup did not admit the actual suffix without a Session loan");
   auto shaped = model.create_session(continuation);
   const std::array<std::int32_t, 5> unseen{1, 2, 3, 4, 5};
@@ -209,10 +209,10 @@ inline int run(const std::filesystem::path &input,
   require(admitted.shape_admission_seconds > 0 && admitted.step_seconds >= admitted.shape_admission_seconds,
       "completed step omitted synchronous exact-shape admission");
   const std::array<std::int32_t, 3> prepared{6, 7, 8};
-  const auto before_prepared = model.exact_admissions;
+  const auto before_prepared = model.shape_plan.admissions();
   (void)q::evaluate(model, *shaped, prepared, "shape-warmed", {}, false,
       nullptr, nullptr, &warmed);
-  require(model.exact_admissions == before_prepared && warmed.shape_admission_seconds == 0 && shaped->length() == 8,
+  require(model.shape_plan.admissions() == before_prepared && warmed.shape_admission_seconds == 0 && shaped->length() == 8,
       "warm suffix was recompiled or reported as a new admission");
   retire(shaped);
   require(!model.snapshot_versions.live && !model.active_step && !model.carrier_borrowed,
