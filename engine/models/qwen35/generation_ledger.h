@@ -14,6 +14,7 @@
 #include "execution_mode.h"
 #include "../../inference/request_stop_policy.h"
 #include "../../inference/sampling_cursor.h"
+#include "../../inference/history_counts.h"
 #include "hyle/container/small_vector.h"
 
 namespace qwen35 {
@@ -85,6 +86,7 @@ private:
   // This is copied only at initial cold binding, never per token/record.
   std::optional<hyle::inference::RequestStopPolicy> stop_policy_;
   std::optional<std::size_t> successor_ordinal_;
+  std::optional<hyle::inference::HistoryCounts> history_counts_;
 
   static void reset_record(GenerationCommitRecord &record) noexcept {
     auto emitted = std::move(record.emitted), accepted = std::move(record.accepted_inputs);
@@ -100,6 +102,22 @@ private:
     return records[committed_count];
   }
 public:
+  hyle::inference::HistoryCounts &history_counts(std::size_t vocabulary,
+      const hyle::compute::ResourceBudget &budget, hyle::mem::AllocatorRef allocator) {
+    if (!history_counts_) history_counts_.emplace(vocabulary, budget, allocator);
+    auto &cache = *history_counts_;
+    if (cache.vocabulary() != vocabulary || cache.ordinal() > committed_count || committed_count > records.size())
+      throw std::runtime_error("history count cache differs from its original committed ledger");
+    while (cache.ordinal() < committed_count) {
+      const auto &record = records[cache.ordinal()];
+      const auto ids = record.committed_ids();
+      if (!record.committed || ids.empty() || record.before.length != cache.consumed_length() ||
+          record.after.length < record.before.length || ids.size() != record.after.length - record.before.length)
+        throw std::runtime_error("history count source is not a continuous committed token prefix");
+      cache.append_committed(ids);
+    }
+    return cache;
+  }
   const hyle::inference::RequestStopPolicy &stop_policy() const noexcept {
     return stop_policy_ ? *stop_policy_ : hyle::inference::default_request_stop_policy;
   }

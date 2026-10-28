@@ -1,0 +1,594 @@
+{
+  "status": "PASS_BOUNDED_HISTORY_LOGITS",
+  "created_utc": "2026-10-28T01:22:26.023449+00:00",
+  "base": "64a02d87346ba14cc2b3c4ad0e3fdc5f53cfcfe5",
+  "implementation": [
+    "LogitsPolicy.history is the sole repetition/presence/frequency policy. Empty history preserves the original graph and creates no counts cache or snapshot pool.",
+    "Natural C0 derives from authoritative committed_ids plus the actual first conditional input. A metadata-budgeted ledger cache processes only newly committed records; temporary current-input increments roll back after the synchronous upload.",
+    "C0 is a readonly exact I32[1,V] lease from the original bounded active-cohort pool. Full prefix hits seed it before frontier sampling; StateOnly creates no history input or draw; completed calls release C0.",
+    "Existing checked Gather, exact I32 Scan+1 and Scatter Assign return a new hypothesis count row. Target prefixes advance original proposal IDs; normalized q inputs are never transformed twice. NextN keeps only current counts with two original output blocks for old-read/new-write overlap.",
+    "The shared update declares fixed logical output specs explicitly, so symbolic source views are specialized by the original exact child without a premature concrete-layout lookup."
+  ],
+  "counts": {
+    "actual_CXX": 6,
+    "successful_CXX": 4,
+    "failed_CXX": 2,
+    "actual_links": 4,
+    "successful_links": 4,
+    "actual_model_processes": 11,
+    "successful_final_processes": 6,
+    "prior_failed_model_processes": 5,
+    "final_failed_model_processes": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "automatic_reruns": 0
+  },
+  "build": {
+    "CXX": [
+      {
+        "label": "original",
+        "pid": 41832,
+        "exit": 2,
+        "started": 1793149487.883706,
+        "seconds": 6.7534849643707275,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "refinement",
+        "pid": 17616,
+        "exit": 0,
+        "started": 1793149635.0650883,
+        "seconds": 47.953418254852295,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "final",
+        "pid": 61344,
+        "exit": 0,
+        "started": 1793149862.166742,
+        "seconds": 47.57959342002869,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "checks",
+        "pid": 44912,
+        "exit": 2,
+        "started": 1793150136.9272223,
+        "seconds": 6.717472791671753,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "verified",
+        "pid": 61444,
+        "exit": 0,
+        "started": 1793150218.7102273,
+        "seconds": 48.088462591171265,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "math-retirement",
+        "pid": 12528,
+        "exit": 0,
+        "started": 1793150440.6938338,
+        "seconds": 47.58487796783447,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "links": [
+      {
+        "label": "refinement",
+        "pid": 49808,
+        "exit": 0,
+        "started": 1793149689.5987608,
+        "seconds": 1.8139395713806152,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "final",
+        "pid": 43692,
+        "exit": 0,
+        "started": 1793149919.042917,
+        "seconds": 1.780998706817627,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "verified",
+        "pid": 47480,
+        "exit": 0,
+        "started": 1793150272.8054702,
+        "seconds": 1.8117175102233887,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "label": "math-retirement",
+        "pid": 18356,
+        "exit": 0,
+        "started": 1793150498.8930387,
+        "seconds": 1.7982854843139648,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "actual_successful_consumer_images": {
+      "verified": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\bin\\tiny.exe",
+          "bytes": 143774208,
+          "sha256": "350a3700a0a84d1e7979f59c7fbf086c8a25ae39b4930f12a555eb9512c178ec"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\inputs-tiny.json",
+          "bytes": 58743,
+          "sha256": "442cf1873ec5459af0be05acef6780f7aaaf3605a685592a2be3441340f617cd"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\source-freeze.json",
+          "bytes": 4575,
+          "sha256": "409416ec5435d2bc930742c6c981c8e86fdb8250955b3ab39f487ab5012c2172"
+        }
+      },
+      "math-retirement": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\bin\\tiny.exe",
+          "bytes": 143774208,
+          "sha256": "eedd4da1f54056a51055c4bcf0811860b82dee89b012559a0b0d5624d2d69482"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\inputs-tiny.json",
+          "bytes": 58750,
+          "sha256": "64d821a8a3b704070c19398396144f961fe3e0d078204fc65edf26b44353824b"
+        },
+        "source_freeze": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\source-freeze.json",
+          "bytes": 4645,
+          "sha256": "d2191dcc06611b9e2cbc6df444938dd918f891d0e8a58697fcd889f1bea459d4"
+        }
+      }
+    },
+    "inputs_per_link": 228,
+    "replaced_private_objects_per_link": 1,
+    "retained_weights": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\weights\\unit.obj",
+      "bytes": 3468178,
+      "sha256": "4ea50f96ddfcf29097f3051b692ffdc6b74d1729d8ca64e321627b7d36cfd2be"
+    }
+  },
+  "prior_failures": [
+    {
+      "stage": "original CXX",
+      "pid": 41832,
+      "exit": 2,
+      "cause": "The finite test treated Backend::drain_retired(Invocation&) Status as a RetirementObservation and accessed .retired.",
+      "correction": "Test-only: check the original Status, then require !run.in_flight(). No product numeric or retirement contract changed.",
+      "native_processes": 0
+    },
+    {
+      "stage": "refinement cold construction",
+      "pid": 48268,
+      "exit": 1,
+      "cause": "The actual history CPU consumer stopped in cold K1 graph construction: an inferred view reached a concrete-layout shortcut before specialization. No consumer JSON was emitted.",
+      "correction": "Product shared graph builder: explicit logical output specs for the existing Gather/Concat/Scan/Scatter. Operators, integer update and penalty arithmetic are unchanged."
+    },
+    {
+      "stage": "final history CPU",
+      "pid": 54360,
+      "exit": 1,
+      "cause": "The intended INT32 overflow arrived synchronously as CPU submit OutOfRange; the finite test incorrectly required a Completion handle first.",
+      "correction": "Test-only: inspect the same original OutOfRange from either submit or Completion, retain unusable output, readonly input and true-retirement assertions."
+    },
+    {
+      "stage": "final ordinary-history CPU",
+      "pid": 42268,
+      "exit": 1,
+      "cause": "A reused MTP StateImage helper unconditionally read draft frames on the intentionally draft-free ordinary Model.",
+      "correction": "Test-only: collect complete target/state/hidden snapshot bytes according to the actual draft capability, without adding a draft bank or changing Model route gates."
+    },
+    {
+      "stage": "final neutral modifier CPU",
+      "pid": 56504,
+      "exit": 1,
+      "cause": "The original strict replay rejection test expected the word modifiers in its error text; the new diagnostic had removed that word.",
+      "correction": "Diagnostic-only product wording restores external logits modifiers. Rejection, mathematical policy, state and runtime behavior are unchanged."
+    },
+    {
+      "stage": "checks CXX",
+      "pid": 44912,
+      "exit": 2,
+      "cause": "The finite test conditional expression mixed Status and ResultError conversion routes and was ambiguous in MSVC.",
+      "correction": "Test-only: explicit hyle::Status and if/else retain the same submit-or-Completion OutOfRange observation. No link or consumer ran for this attempt.",
+      "native_processes": 0
+    },
+    {
+      "stage": "verified history CPU",
+      "pid": 40508,
+      "exit": 1,
+      "cause": "After the intended checked overflow, drain_retired returned the original terminal nonnative OutOfRange; the test incorrectly required a successful drain Status.",
+      "correction": "Test-only: accept that same expected nonnative OutOfRange during retirement while retaining the explicit !run.in_flight proof. The four already successful verified ordinary/modifier processes are reused, not rerun."
+    }
+  ],
+  "runs": [
+    {
+      "arm": "history-cpu",
+      "pid": 59516,
+      "exit": 0,
+      "seconds": 1.103595495223999,
+      "actual_image": "math-retirement",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": true,
+        "complete_initialized_state_checks": 17,
+        "all_payloads_byte_equal": true,
+        "derived_vs_manual_B2": true,
+        "partial_StateOnly_without_counts_or_draw": true,
+        "same_key_HostImage": true,
+        "full_hit_seed_before_frontier": true,
+        "K1_K2_greedy_random": true,
+        "final_versions": 0,
+        "finite_math": {
+          "original_Graph_submissions": 8,
+          "additional_Models": 0,
+          "neutral_nodes": 0,
+          "hand_rows": 4,
+          "duplicate_prefix_ids": 2,
+          "p_q_bonus": true,
+          "I32_above_2pow24_exact": true,
+          "I32_overflow_rejected": true,
+          "readonly_counts": true,
+          "normalized_q_unchanged": true
+        }
+      }
+    },
+    {
+      "arm": "history-cuda",
+      "pid": 44232,
+      "exit": 0,
+      "seconds": 1.0905747413635254,
+      "actual_image": "math-retirement",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": true,
+        "complete_initialized_state_checks": 17,
+        "all_payloads_byte_equal": true,
+        "derived_vs_manual_B2": true,
+        "partial_StateOnly_without_counts_or_draw": true,
+        "same_key_HostImage": true,
+        "full_hit_seed_before_frontier": true,
+        "K1_K2_greedy_random": true,
+        "final_versions": 0,
+        "finite_math": {
+          "original_Graph_submissions": 8,
+          "additional_Models": 0,
+          "neutral_nodes": 0,
+          "hand_rows": 4,
+          "duplicate_prefix_ids": 2,
+          "p_q_bonus": true,
+          "I32_above_2pow24_exact": true,
+          "I32_overflow_rejected": true,
+          "readonly_counts": true,
+          "normalized_q_unchanged": true
+        }
+      }
+    },
+    {
+      "arm": "ordinary-history-cpu",
+      "pid": 46760,
+      "exit": 0,
+      "seconds": 0.43460631370544434,
+      "actual_image": "verified",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": false,
+        "complete_initialized_state_checks": 13,
+        "all_payloads_byte_equal": true,
+        "derived_vs_manual_B2": true,
+        "partial_StateOnly_without_counts_or_draw": true,
+        "same_key_HostImage": true,
+        "full_hit_seed_before_frontier": true,
+        "K1_K2_greedy_random": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "ordinary-history-cuda",
+      "pid": 61532,
+      "exit": 0,
+      "seconds": 0.7634067535400391,
+      "actual_image": "verified",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": false,
+        "complete_initialized_state_checks": 13,
+        "all_payloads_byte_equal": true,
+        "derived_vs_manual_B2": true,
+        "partial_StateOnly_without_counts_or_draw": true,
+        "same_key_HostImage": true,
+        "full_hit_seed_before_frontier": true,
+        "K1_K2_greedy_random": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "logits-cpu",
+      "pid": 43452,
+      "exit": 0,
+      "seconds": 0.5461544990539551,
+      "actual_image": "verified",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": true,
+        "complete_initialized_state_checks": 10,
+        "all_payloads_byte_equal": true,
+        "neutral_history_original_modifiers_regression": true,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "logits-cuda",
+      "pid": 45712,
+      "exit": 0,
+      "seconds": 1.0387957096099854,
+      "actual_image": "verified",
+      "native_pass": true,
+      "parsed_pass": true,
+      "complete_byte_comparison_pass": true,
+      "facts": {
+        "draft": true,
+        "complete_initialized_state_checks": 10,
+        "all_payloads_byte_equal": true,
+        "neutral_history_original_modifiers_regression": true,
+        "final_versions": 0
+      }
+    }
+  ],
+  "source_pins": {
+    "engine/models/qwen35/main.cc": "79e2f70392eaa6931d27333730c6c6f0e044bf0491cfc107c34dc23422c77f83",
+    "engine/models/qwen35/generation_ledger.h": "efdd1c297e412ce32ed3ff9c6124e69dbd989fc3971142b8b1da99bc28eef0ee",
+    "engine/inference/history_counts.h": "04a8b96a73e891cb9c835326b67e1befe6571de5230160e994f6b99cb91a1ff6",
+    "engine/inference/sampling_graph.h": "b2ac86189b1cdee2248aa511e6bff1a6990eacaa12b36d8beb7de86e8ded6139",
+    "tests/tools/inference_history_math_case.h": "a3843380b482b280ba1c7e1f7c51d12d671efc67012c7c7bd83215e9da190d72",
+    "tests/tools/qwen_history_logits_case.h": "701ad4969893f42bd85d5bf45083e56204cec6b0364f624ba8109131117a5cff",
+    "tests/tools/qwen_host_image_test.cc": "6b7d30b94e764f49e02028ce30004044ed0d7618e1dea5001129809fa2b69c01"
+  },
+  "final_source_freeze": {
+    "path": ".scratch/inference-history-logits-20261028/math-retirement/source-freeze.json",
+    "bytes": 4645,
+    "sha256": "d2191dcc06611b9e2cbc6df444938dd918f891d0e8a58697fcd889f1bea459d4"
+  },
+  "actual_project_dependencies": {
+    "verified": {
+      "path": ".scratch/inference-history-logits-20261028/verified/compile/tiny/actual-project-dependencies.json",
+      "bytes": 40871,
+      "sha256": "c837d1f7feae9fafd417f488210adb8caaccff2650c1dcba8b425ab0c3c67380"
+    },
+    "math-retirement": {
+      "path": ".scratch/inference-history-logits-20261028/math-retirement/compile/tiny/actual-project-dependencies.json",
+      "bytes": 40871,
+      "sha256": "21378db4c0584a4db44248ce3f5ea2caac57120febc0106cfebab56f53fa8fa1"
+    }
+  },
+  "compiler_dependencies": {
+    "verified": {
+      "path": ".scratch/inference-history-logits-20261028/verified/compile/tiny/dependencies.json",
+      "bytes": 42186,
+      "sha256": "d65403e9e6beeface405a3cfd55d171f7cbbee29b9b03fded338d8be2c5c93cc"
+    },
+    "math-retirement": {
+      "path": ".scratch/inference-history-logits-20261028/math-retirement/compile/tiny/dependencies.json",
+      "bytes": 42186,
+      "sha256": "d65403e9e6beeface405a3cfd55d171f7cbbee29b9b03fded338d8be2c5c93cc"
+    }
+  },
+  "dependency_boundary": "One canonical include-Model Tiny TU per attempt; the actual Phase 228-input closure changes only that private object. Retain the original independent target/draft weights object and public SDK objects. Changed engine-private declarations compile inside Tiny. This is not a blanket ABI proof for every retained header.",
+  "limits": [
+    "Successful coverage combines four verified-image consumers with two math-retirement-image history consumers. Only an unused finite-math test retirement statement changes between those images; these are not six runs of a single new image.",
+    "CPU/CUDA cached synthetic GA/H64/V64/C16 consumers only; no trained-model quality, real model EOS, all-shape/dtype, other-native-platform or throughput claim.",
+    "History counts use the natural full consumed context plus actual conditioning input, not a claim of matching an output-only presence/frequency API scope.",
+    "The complete 4*V-byte C0 row is synchronously uploaded for each relevant output episode. No sparse-update or zero-transfer claim. History execution uses Commands; Managed Scan capture is not claimed.",
+    "I32 hypothesis updates are exact, including above 2^24 and checked INT32_MAX overflow. Penalty arithmetic still converts counts to original F32 logits arithmetic; it does not promise integer-exact frequency multiplication above 2^24.",
+    "History-only strict ledger replay is wired and statically reviewed but not exercised by these consumers. Same-key partial HostImage restoration and consumed-prefix/frontier behavior are exercised; bare HostImage cannot supply missing token IDs.",
+    "Native fault, unknown retirement, history-specific cancellation rollback, all-request eviction and all platform combinations were not injected or exhausted here. Per-process durations are provenance, not a speed measurement."
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/correctness/inference-phase-carrier-2026-10-28.json",
+      "bytes": 16351,
+      "sha256": "a254495689d6926ae03ef560d708a1d68260c11cfacb1f92e28bd0e68e98e81f"
+    },
+    {
+      "path": "docs/evidence/correctness/inference-phase-carrier-2026-10-28.zip",
+      "bytes": 416027,
+      "sha256": "0b0c60712678b3936f0e6531443fb1d815386a44173d551a402d26565133a693"
+    }
+  ],
+  "reproduction": {
+    "build": ".scratch/inference-history-logits-20261028/math-retirement/build.py",
+    "run": ".scratch/inference-history-logits-20261028/math-retirement/run.py",
+    "actions": [
+      "build.py prepare",
+      "build.py freeze",
+      "build.py compile",
+      "build.py link",
+      "run.py run ARM",
+      "run.py parse ARM"
+    ],
+    "new_arms": [
+      "history-cpu",
+      "history-cuda"
+    ],
+    "reused_verified_arms": [
+      "ordinary-history-cpu",
+      "ordinary-history-cuda",
+      "logits-cpu",
+      "logits-cuda"
+    ],
+    "note": "Original attempted paths are single-use. Four successful verified processes are kept; parse existing output offline rather than rerunning a successful native process."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-history-logits-2026-10-28.zip",
+    "bytes": 844359,
+    "sha256": "02a55a797b31386c732c34fa191590b35ad1709915db9033bbe22c1f7281cc56",
+    "files": 253,
+    "CRC_and_member_SHA256_verified": true
+  },
+  "cleanup": {
+    "status": "EXECUTED",
+    "utc": "2026-10-28T01:24:55.7369726Z",
+    "files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\refinement\\bin\\tiny.exe",
+        "bytes": 143770112,
+        "sha256": "8a5e797647929a1e7be77afe171b139e47b79519e3d86c6373984a2d0a062e26"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\refinement\\bin\\tiny.exp",
+        "bytes": 24986,
+        "sha256": "1b49c32f50264167824bdfec6a6c04fc18dd742c2f472b711471cea3d613964e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\refinement\\bin\\tiny.lib",
+        "bytes": 41384,
+        "sha256": "310514c31666bfa655d1aad270e1b24b62c5d7c92fecb2cef637f73ef2659841"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\refinement\\compile\\tiny\\unit.obj",
+        "bytes": 36781221,
+        "sha256": "fa9a8f3491d55c1662f96b579585d9df45fa34bdcedf27ae41295d3f27aac91a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\final\\bin\\tiny.exe",
+        "bytes": 143771648,
+        "sha256": "f711cf153a42925598e324143f21cb9ea7f1b84a7816d91648c3a60e887a43ae"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\final\\bin\\tiny.exp",
+        "bytes": 24981,
+        "sha256": "be5955d2f3138cdec49c55a0d9ae4dfe531777e5e5e5582156e53ba0ce859abc"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\final\\bin\\tiny.lib",
+        "bytes": 41384,
+        "sha256": "310514c31666bfa655d1aad270e1b24b62c5d7c92fecb2cef637f73ef2659841"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\final\\compile\\tiny\\unit.obj",
+        "bytes": 36789319,
+        "sha256": "46a58e69b32cfb93b079cc2ceab4df8d024a4f0439d61e9b4fce3f8117a49706"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\bin\\tiny.exe",
+        "bytes": 143774208,
+        "sha256": "350a3700a0a84d1e7979f59c7fbf086c8a25ae39b4930f12a555eb9512c178ec"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\bin\\tiny.exp",
+        "bytes": 24984,
+        "sha256": "80df1422202baa3c8fabbb997760d99be1199262b5083cdabff9ba19abb9ce14"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\bin\\tiny.lib",
+        "bytes": 41384,
+        "sha256": "310514c31666bfa655d1aad270e1b24b62c5d7c92fecb2cef637f73ef2659841"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\verified\\compile\\tiny\\unit.obj",
+        "bytes": 36797092,
+        "sha256": "bb1f8a457bd8f47d6fa98177bb7b83b9de64f5cbdd49d57b4bb70a107dac6595"
+      }
+    ],
+    "bytes": 541882703,
+    "script_sha256": "5cf8cb2baad1d186c77ea38f833b161ccbb94aae2ceedcd5b8231c17658c2eb0",
+    "protected_closures": [
+      {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\ready-host.json",
+          "bytes": 2990,
+          "sha256": "f805206e648495044bfcc1bce0f92a5f02727894042061dd2744632fcb499ede"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\inputs-host.json",
+          "bytes": 60898,
+          "sha256": "b0cc26f8182c0b7ecd10239570014167038cbb52ecfa66f0e0ad75cdccc1819d"
+        },
+        "input_count": 237
+      },
+      {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-policy-20261028\\ready-host.json",
+          "bytes": 2642,
+          "sha256": "b175f4ea16a34777e557aa4219920bd50017786402abbcd62088d53310962d5b"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-policy-20261028\\inputs-host.json",
+          "bytes": 60884,
+          "sha256": "b51820ad4846cf396f50c3bc25da0cda3cc06692e338165ec7c9632ff5a21257"
+        },
+        "input_count": 237
+      },
+      {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-hidden-indexed-refinement-20261028\\ready.json",
+          "bytes": 3258,
+          "sha256": "bea6106debe3052ed3b19c9ed5ce3259371568dd4609302167c1bbab41029848"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-hidden-indexed-refinement-20261028\\link-inputs.json",
+          "bytes": 58234,
+          "sha256": "349d295eda81ea396c36b0f688c1d7079c549976253164f729d3941b2dfb5a7f"
+        },
+        "input_count": 226
+      },
+      {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\ready-tiny.json",
+          "bytes": 2556,
+          "sha256": "83257cee5caeca0e225a58e8116b5cf93ba0ef26225ffaa1a2d4ce706a0ad576"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\inputs-tiny.json",
+          "bytes": 58732,
+          "sha256": "ee7008583a85a0599e83b6821e597edfc170ccc940aa0c3978ab2da50773c875"
+        },
+        "input_count": 228
+      },
+      {
+        "ready": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\ready-tiny.json",
+          "bytes": 2703,
+          "sha256": "f9fe93535d8820aa8d66d9e89e07debc9aca6d51c6d9dbf6e53dd9635843744c"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\inputs-tiny.json",
+          "bytes": 58750,
+          "sha256": "64d821a8a3b704070c19398396144f961fe3e0d078204fc65edf26b44353824b"
+        },
+        "input_count": 228
+      }
+    ],
+    "retained": "latest math-retirement image/object, Phase baseline, weights/SDK/DLL, source, logs, compact evidence; old ready metadata is historical",
+    "receipt": {
+      "path": ".scratch/inference-history-logits-20261028/cleanup-executed.json",
+      "sha256": "9f910eaac8a7a6835491c9b55954b33b19b85aab18a857273a76b65157b6752b"
+    }
+  }
+}

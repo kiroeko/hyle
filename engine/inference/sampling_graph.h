@@ -36,16 +36,32 @@ struct Policy final {
   float top_p = 1;
 };
 
+// Counts describe the caller's first logical conditional history, not KV
+// storage or a second token owner. Repetition also permits values below one;
+// negative finite presence/frequency coefficients boost previously seen IDs.
+struct HistoryPolicy final {
+  float repetition = 1, presence = 0, frequency = 0;
+  bool empty() const noexcept { return repetition == 1 && presence == 0 && frequency == 0; }
+  friend bool operator==(const HistoryPolicy &, const HistoryPolicy &) = default;
+};
+inline bool valid_history_policy(HistoryPolicy value) noexcept {
+  return std::isfinite(value.repetition) && value.repetition > 0 &&
+      std::isfinite(1.F / value.repetition) && std::isfinite(value.presence) &&
+      std::isfinite(value.frequency);
+}
+
 // Immutable cold port contract. Values are ordinary Graph constants or ready
 // per-episode inputs; neither their contents nor their lifetime belong to KV.
 struct LogitsPolicy final {
   bool bias = false, allowed = false;
-  bool empty() const noexcept { return !bias && !allowed; }
+  HistoryPolicy history{};
+  bool empty() const noexcept { return !bias && !allowed && history.empty(); }
   friend bool operator==(const LogitsPolicy &, const LogitsPolicy &) = default;
 };
 template<class Value> struct LogitsInputsFor final {
   std::optional<Value> bias;    // F32[1,V]; every value must be finite.
   std::optional<Value> allowed; // Bool[1,V]; false removes that token.
+  std::optional<Value> counts;  // Readonly I32[1,V], nonnegative logical counts.
 };
 template<class Value> struct ProcessedLogitsFor final {
   Value logits;
@@ -173,13 +189,19 @@ Value logits_row_valid(R &r, Value row, Value no, Value yes) {
 }
 } // namespace detail
 
-// Shared immutable per-episode logits processing. Empty inputs are an exact
-// identity with no Graph nodes, ports, validation or outputs added. Raw NaN/
-// +Inf must not disappear behind a mask; bias must be finite even in removed
-// columns. Apply this once to raw logits, never to supplied normalized q_i.
+// Shared immutable per-episode logits processing. No bias/mask and the default
+// history policy are an exact identity with no Graph nodes or outputs added.
+// Raw NaN/+Inf must not disappear behind penalties or a mask; bias must be
+// finite even in removed columns. Order: bias, signed repetition, frequency,
+// presence, allowed mask, then the separate temperature/filter/normalization.
+// Apply this once to raw logits, never to supplied normalized q_i. Counts stay
+// I32 through prefix updates; only penalty arithmetic converts them to F32.
 template<class R, class Value>
-ProcessedLogitsFor<Value> process_logits(R &r, Value raw, LogitsInputsFor<Value> inputs = {}) {
-  if (!inputs.bias && !inputs.allowed) return {raw, {}};
+ProcessedLogitsFor<Value> process_logits(R &r, Value raw, LogitsInputsFor<Value> inputs = {},
+    HistoryPolicy history = {}) {
+  if (!valid_history_policy(history))
+    throw std::runtime_error("history penalties require positive finite repetition and reciprocal, finite presence/frequency");
+  if (!inputs.bias && !inputs.allowed && history.empty()) return {raw, {}};
   const auto description = r.spec(raw);
   if (description.data_type() != Type::kFloat32 || description.rank() != 2 ||
       description.dimensions()[0] != fixed(1) || !description.dimensions()[1].is_fixed() ||
@@ -194,6 +216,10 @@ ProcessedLogitsFor<Value> process_logits(R &r, Value raw, LogitsInputsFor<Value>
   };
   if (inputs.bias) require_input(*inputs.bias, Type::kFloat32);
   if (inputs.allowed) require_input(*inputs.allowed, Type::kBool);
+  if (!history.empty()) {
+    if (!inputs.counts) throw std::runtime_error("history penalties require their original I32[1,V] counts");
+    require_input(*inputs.counts, Type::kInt32);
+  }
   const auto zero = r.scalar(0), one = r.scalar(1);
   const auto no = r.cast(zero, Type::kBool), yes = r.cast(one, Type::kBool);
   const auto select = [&](Value condition, Value a, Value b) {
@@ -213,9 +239,64 @@ ProcessedLogitsFor<Value> process_logits(R &r, Value raw, LogitsInputsFor<Value>
     valid = select(bad, no, valid);
     processed = r.binary(c::BinaryKind::kAdd, raw, *inputs.bias);
   }
+  if (!history.empty()) {
+    const auto counts = r.cast(*inputs.counts, Type::kFloat32);
+    // I32-to-F32 preserves sign across the complete I32 domain. Validate all
+    // columns before a mask can hide an invalid count; no counter is rounded
+    // back to I32 or changed by this fragment.
+    const auto negative = r.cast(reduce(c::ReductionKind::kMaximum,
+        r.unary(c::UnaryKind::kRelu, r.unary(c::UnaryKind::kNeg, counts))), Type::kBool);
+    valid = select(negative, no, valid);
+    const auto seen = r.cast(counts, Type::kBool);
+    if (history.repetition != 1.F) {
+      const auto positive = r.cast(r.unary(c::UnaryKind::kRelu, processed), Type::kBool);
+      const auto penalty = r.scalar(history.repetition);
+      processed = select(seen, select(positive,
+          r.binary(c::BinaryKind::kDivide, processed, penalty),
+          r.binary(c::BinaryKind::kMultiply, processed, penalty)), processed);
+    }
+    if (history.frequency != 0.F)
+      processed = r.binary(c::BinaryKind::kSubtract, processed,
+          r.binary(c::BinaryKind::kMultiply, counts, r.scalar(history.frequency)));
+    if (history.presence != 0.F)
+      processed = r.binary(c::BinaryKind::kSubtract, processed,
+          select(seen, r.scalar(history.presence), zero));
+  }
   if (inputs.allowed) processed = select(*inputs.allowed, processed,
       r.scalar(-(std::numeric_limits<float>::infinity)()));
   return {processed, valid};
+}
+
+// Append exactly one logical token to an ephemeral hypothesis history. The
+// caller's readonly counts remain untouched. The original checked Gather and
+// Scatter validate IDs; I32 Scan sums [old_count, 1] in its checked accumulator,
+// so INT32_MAX+1 fails before writing a new count. There is no F32 counter or
+// artificial context cap. CUDA's existing managed Scan may require Commands;
+// this cold fragment does not claim capture compatibility on its behalf.
+template<class R, class Value>
+Value advance_history_counts(R &r, Value counts, Value token) {
+  const auto shape = r.spec(counts), id = r.spec(token);
+  if (shape.data_type() != Type::kInt32 || shape.rank() != 2 ||
+      shape.dimensions()[0] != fixed(1) || !shape.dimensions()[1].is_fixed() ||
+      shape.dimensions()[1].fixed_value() <= 0 ||
+      shape.dimensions()[1].fixed_value() > (std::numeric_limits<std::int32_t>::max)() ||
+      id.data_type() != Type::kInt32 || id.rank() != 1 || id.dimensions()[0] != fixed(1))
+    throw std::runtime_error("history update requires I32[1,V] counts and one I32[1] token");
+  // Fixed logical sizes do not imply concrete strides: token can be a view
+  // of a symbolic model row. Declare each real output and let exact-child
+  // compilation infer/validate its physical layout.
+  const auto old = r.reshape(r.one(c::Gather{.axis = 1}, {counts, token},
+      r.dense_spec(Type::kInt32, {fixed(1), fixed(1)})), {fixed(1)});
+  const auto one_shape = c::TensorShape::create(std::array<std::int64_t, 1>{1});
+  if (!one_shape) throw std::runtime_error("history unit shape differs");
+  const auto one = r.one(c::Fill{.output_shape = *one_shape, .output_type = Type::kInt32,
+      .value = c::ScalarValue(std::int32_t{1})}, {});
+  const auto terms = r.one(c::Concat{.axis = 0}, {old, one},
+      r.dense_spec(Type::kInt32, {fixed(2)}));
+  const auto sum = r.one(c::Scan{.axis = 0}, {terms}, r.spec(terms));
+  const auto next = r.reshape(r.slice(sum, 0, fixed(1), fixed(1)), {fixed(1), fixed(1)});
+  return r.one(c::Scatter{.axis = 1}, {counts, token, next},
+      r.dense_spec(Type::kInt32, shape.dimensions()));
 }
 
 // Normalize one processed target/proposal row using the original policy. The
@@ -254,8 +335,8 @@ SelectionFor<Value> processed_selection(R &r, ProcessedLogitsFor<Value> processe
 // temperature/top-k/top-p nodes and output contract.
 template<class R, class Value>
 SelectionFor<Value> ordinary_selection(R &r, Value raw, std::optional<Value> identity,
-    Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
-  return processed_selection(r, process_logits(r, raw, inputs), identity, policy);
+    Policy policy = {}, LogitsInputsFor<Value> inputs = {}, HistoryPolicy history = {}) {
+  return processed_selection(r, process_logits(r, raw, inputs, history), identity, policy);
 }
 
 // log_p/log_q/log_bonus are F32[1,V], already normalized AFTER the caller's
@@ -386,7 +467,8 @@ using PrefixDecisions = PrefixDecisionsFor<g::ValueId>;
 
 template<class R, class Value>
 PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identities,
-                                  Value proposals, Policy policy = {}, LogitsInputsFor<Value> inputs = {}) {
+                                  Value proposals, Policy policy = {}, LogitsInputsFor<Value> inputs = {},
+                                  HistoryPolicy history = {}) {
   const auto shape = r.spec(logits), keys = r.spec(identities);
   if (shape.data_type() != Type::kFloat32 || shape.rank() != 2 ||
       !shape.dimensions()[0].is_fixed() || shape.dimensions()[0].fixed_value() <= 0 ||
@@ -403,9 +485,14 @@ PrefixDecisionsFor<Value> speculative_prefix(R &r, Value logits, Value identitie
   }
   PrefixDecisionsFor<Value> result;
   std::vector<DistributionFor<Value>> target;
-  for (std::size_t row = 0; row <= count; ++row)
+  auto row_inputs = inputs;
+  for (std::size_t row = 0; row <= count; ++row) {
     target.push_back(processed_distribution(r,process_logits(r,r.copy(r.slice(logits,0,
-        fixed(static_cast<std::int64_t>(row)),fixed(1))),inputs),policy));
+        fixed(static_cast<std::int64_t>(row)),fixed(1))),row_inputs,history),policy));
+    if (!history.empty() && row < count)
+      row_inputs.counts = advance_history_counts(r, *row_inputs.counts,
+          r.copy(r.slice(proposals, 0, fixed(static_cast<std::int64_t>(row)), fixed(1))));
+  }
   const auto final_identity = r.copy(r.slice(identities,0,fixed(static_cast<std::int64_t>(count)),fixed(1)));
   if (!count) {
     result.final_ids.push_back(r.one(c::sampling_ops::categorical(),{target[0].log_probabilities,final_identity}));

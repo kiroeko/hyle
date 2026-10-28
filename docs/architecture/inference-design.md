@@ -985,7 +985,7 @@ Session 借用一个稳定配置，Family／Phase 的身份包含该选择，兼
 普通与MTP沿同一冷配置身份工作；NextN head按实际行数与采样配置索引准备，接受前缀采样器按草稿数与配置索引准备。
 不采样的draft修复程序仍共用一份。K1及多草稿使用本请求的温度／过滤政策和原始q分布，RNG仍按实际保留地址推进，
 不按接受数量倒退。不同配置继续分组执行，不表示不同政策可以放进同一个物理batch；新增冷配置也会增加实际程序和临时空间。
-模型级汇总明确标记默认配置范围，各请求另报实际采样与接受政策。此项不开放MTP的bias／mask。
+模型级汇总明确标记默认配置范围，各请求另报实际采样与接受政策。本段有限证据只覆盖无modifier配置；bias／mask和history的合同另见下文。
 递归验证成功、原native工作及前缀读真实退休后，完成的调用记录释放已消费q租约；保留观测记录不继续占用下一episode的概率池。
 验证失败时仍保留原guard和读租约，沿原退休路径处理，不靠扩大池容量掩盖保活问题。
 同一配置的多个活动成员在验证前会同时持有各自的q；caller-owned概率池以配置的活动序列上限乘原每成员额度冷准备，
@@ -1169,15 +1169,48 @@ TopK、读回和发布属于各自调用者，不为合并几行装配增加地�
 每个episode借入只读F32／Bool[1,V]租约，所有假设行使用同一快照。准备完成后owner替换输入，
 不会改变本次调用；外部已归一化q直接进入接受／拒绝数学，不重复加bias或mask。
 空modifier分支不增加处理节点、端口或验证；默认批量greedy与读回保留原图。
-载荷不进入KV、快照或历史账簿，逐假设前缀动态语法／惩罚另需输入合同。
+外部bias／mask载荷不进入KV、快照或历史账簿；动态history罚分使用下述独立的真实消费计数合同，不把固定快照解释成逐行语法。
 
 原logits的NaN／正无穷、非有限bias及全mask在head／ledger／RNG发布前拒绝；
 原提交批次的确定坏行保留原成员身份。私有proposal或前沿采样没有虚构的target成员，
 只有实际观察到原工作退休后，明确的一请求边界才补充其完整RequestKey；该key不授予退休、释放或重试权限。
 StateOnly不读取modifier或消耗draw；历史重建恢复原pending／游标，不能用当前mask重采历史。
-严格决策回放因未保留历史载荷继续明确拒绝。原普通[有限请求流程](../evidence/correctness/inference-logits-modifiers-2026-10-25.json)
+含外部bias／mask的严格决策回放因未保留历史载荷继续明确拒绝。原普通[有限请求流程](../evidence/correctness/inference-logits-modifiers-2026-10-25.json)
 和本片[CPU／CUDA MTP检查](../evidence/correctness/inference-mtp-logits-2026-10-28.json)分别记录实际范围；
 后者覆盖K1／多草稿、greedy／随机、B2、StateOnly、前缀及失败后同key重试，未新增原生平台、任务质量或吞吐结论。
+
+动态history罚分复用唯一的`LogitsPolicy.history`值，类型为`HistoryPolicy{repetition=1,presence=0,frequency=0}`；
+不另设启用位或在采样配置中保存第二份系数。三个系数为中性值时，不新增counts端口、处理节点、主机计数缓存或设备池。
+非中性配置要求只读I32`[1,V]`的`counts`，在原raw有效性和有限bias检查之后，依次做有符号repetition、frequency、presence，
+再接mask与原温度／过滤／选择。repetition须正且自身与倒数有限，另两项须有限，允许负系数；负计数不构成有效分布。
+
+`C0`表示首个真实条件已经包含的完整消费历史。自然请求的`H`只来自原ledger中实际提交记录的`committed_ids()`，
+不来自emitted、generated、未提交草稿或主机观察计数。prefill输出时`C0=H+本块真实Li`；生成时为`H+pending x0`，
+不含物理填充，lag1的catchup已在H中，不能重复计入。K1和递归的`q_i`、`p_i`都使用`C0+draft[0..i)`，
+bonus使用最后一条假设之后的计数。原已规范化q直接参加接受／残差计算，不再重复罚分；拒绝的假设不写回提交历史。
+三个罚分统一使用这套含已消费prompt的范围。这不同于本地vLLM `276fbcff2717bd934cfa37c8a2e4c391f3e7237b`
+中`vllm/model_executor/layers/utils.py`及`vllm/v1/worker/gpu/sample/penalties.py`区分prompt和output、
+仅对output施加frequency／presence的语义，不能混称兼容政策。
+
+Ledger只派生保存I32`[V]`、已同步提交序号和消费长度，不另存token历史、Session或权限账簿。
+同步读取真实`committed_count`，每次只累计新增提交token，主机工作量为O(Δtokens)，缓存的4V字节经原execution metadata allocator／budget计费。
+当前实际输入仅临时计入，C0同步上传后回滚；上传失败也回滚。C0设备池属于原`ColdResources`，冷容量按实际活动序列上限，
+只在实际执行cohort取得快照，排队wave不提前占槽。外部保留旧只读别名时遵守原有界池拒绝，不能强夺writer或扩池。
+完成调用在原消费者实际退休后释放C0。caller-owned NextN计数输出池为双块，其它ownership仍由原Graph决定；一次更新同时持有旧current读和新输出写，
+成功后才替换current，不随所有q保留每个计数版本；原C0仍供target前缀使用。无采样的repair不建这些端口。
+
+完整前缀命中的新请求在frontier采样之前，按真实已消费key准备C0，不能等后续ledger导入或observer。
+StateOnly不读counts、不抽样，实际提交token在下次同步计入；同key暂停／HostImage恢复沿原ledger保留派生缓存。
+裸HostImage不含token IDs，不能仅凭长度猜历史；raw Evaluation须显式提供C0。metadata错误仍在原已知请求边界前置，
+数值／原生失败仍走原有效性和实际退休证明，不从请求key推测participant或释放权限。
+
+增量主机cache不消除每个采样episode全V的C0上传，NextN也仍产生全V计数输出。精确I32递增复用原Gather、Scan、ScatterAssign，
+计数更新不经F32往返，不另设2^24上限或新provider；罚分计算仍用原F32数学。CUDA现有Scan是Managed并有主机等待，history路线使用原Commands回落，不能宣称捕获或吞吐改善。
+history-only严格决策回放已接入按原已提交token重建C0的路径，但本片尚未实跑；含外部bias／mask仍拒绝严格回放。
+本片[有限检查](../evidence/correctness/inference-history-logits-2026-10-28.json)覆盖CPU／CUDA的普通双请求、K1／K2、
+greedy／随机、StateOnly、同key HostImage恢复及新key完整前缀重采样，并比较完整状态；独立数学检查核对p／q／bonus和I32边界。
+符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。未知原生故障、历史惩罚专属取消／淘汰及其它平台未由这些结果证明。
+以上为接线和资源合同，实际数学／Model检查结果另记，不代签逐步动态语法、全平台、质量或性能。
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。
 

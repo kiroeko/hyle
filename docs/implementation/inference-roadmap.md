@@ -47,9 +47,18 @@ CPU／CUDA三配置交错执行的各17项完整状态比较逐字节通过，�
 共用处理只作用于原logits，外部已归一化q不重复变换，p、q及bonus使用同一episode输入。
 CPU／CUDA各10项完整状态对照逐字节相同，独立有限分布、拒绝残差与bonus检查通过；
 元数据前置拒绝、私有q及前沿数值失败、同key重试、StateOnly和历史重建亦已检查。
-当前输入是单episode只读[1,V]，不表达逐假设前缀动态语法／惩罚；严格历史决策回放没有保留modifier载荷，继续明确拒绝。
+上述bias／mask输入是单episode只读[1,V]快照，不表达逐假设前缀动态语法；没有保留外部modifier载荷的严格决策回放继续拒绝。
 原生路线新增组合未运行，不从有限检查推导完整任务质量或速度。[本片记录](../evidence/correctness/inference-mtp-logits-2026-10-28.json)。
-逐假设前缀的动态logits输入仍待处理，不包含在上述固定输入通过结论中。
+动态history罚分已补产品接线，并完成CPU／CUDA有限检查。唯一`LogitsPolicy.history`保存repetition／presence／frequency，
+中性默认不建counts端口、节点、主机cache或设备池；非中性三项统一使用含已消费prompt的历史范围，不混称vLLM的prompt／output分域语义。
+首条件C0为ledger真实`committed_ids()`加本次实际Li或pending；q_i／p_i逐proposal推进，bonus含此前所有假设，lag1catchup不重复计数，q不二次变换。
+Ledger的4V主机派生cache由原metadata预算计费，仅按新增提交token同步；原ColdResources的有界C0池按实际cohort使用，NextN双块只保当前更新值。
+这不消除每episode全V上传或计数输出，CUDA精确I32 Scan沿原Managed／Commands路线并有等待成本；默认路径不引入这些工作。
+StateOnly、同key恢复和完整前缀先seed后采样沿原账簿／退休合同；history-only严格回放已接线但未实跑，外部bias／mask仍拒绝。
+CPU／CUDA各通过MTP 17项、普通13项完整状态对照，原modifier配置各10项回归通过；独立小图验证p／q／bonus、非有限输入、重复token和I32边界。
+首轮符号view接线错误、测试API和原终止错误观察错误均保留原收据；四个已成功进程未因后续测试修正而重跑。
+细节见[共同采样与history合同](../architecture/inference-design.md)及[本片记录](../evidence/correctness/inference-history-logits-2026-10-28.json)。
+逐前缀动态语法、历史惩罚的取消／淘汰、history-only严格回放和完整原生平台仍须后续检查，没有新性能或质量结论。
 E4目标KV＋原BF16 draft的MTP组合已接通：准备器提供两组实际行字节，容量按独立银行计费，
 沿原schema／COW／状态及HostImage执行。CPU／CUDA各11次完整状态字节比较、真实B2受控不同接受前缀、
 整episode取消后幸存请求续算及默认路径回归通过；元数据与独立容量检查通过。
@@ -69,7 +78,7 @@ Phase的一个或三个固定槽直接使用原exact child，Source提交沿同�
 R2额度、接力、接受后取消与幸存者续算保持原完整状态、账簿和RNG，解析条件首错只离线修正。
 [Phase记录](../evidence/correctness/inference-phase-carrier-2026-10-28.json)另列未编跑的probe和未验证边界，没有新速度结论。
 模型仍负责图数学、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
-下一步补逐假设前缀的动态logits输入，继续抽离共同执行编排。
+下一步核实动态history接线的实际消费者、失败与资源边界，继续抽离共同执行编排；不以接线完成代替检查或性能结论。
 
 ## 当前实现概况
 
