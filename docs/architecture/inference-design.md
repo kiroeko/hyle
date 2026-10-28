@@ -124,10 +124,17 @@ Provider身份可表达第三方实现来源；例如[DeepSeek来源接口](../.
 [FP4 grouped linear](../../src/compute_provider_cuda/deepseek_grouped_fp4_provider.cc)只核算子、格式及原生容量；
 [CUDA冷策略](../../src/compute_route_cuda/default_policy.cc)先由原Provider接纳，再按数学／dtype／layout排名。
 此处DeepSeek与ggml、SGLang、CCCL一样标识实现来源，名称本身不是模型白名单。
-CPU的`kWins`只在锁定的已测构建／硬件条件下调整合法候选的[冷偏好](../../src/compute_route_cpu/default_policy.cc)，
-未命中仍保留正常候选。完整CUDA组合仍自动携带ATen模块，覆盖稳定Softplus、BF16融合SDPA及部分制品解码；
-同一模块也承载原生packed路径，不能把移除模块等同于只去掉ATen调用。
-显式Provider组合控制数学候选，不表示完整CUDA安装闭包已可裁去ATen；当前保留该能力覆盖与依赖取舍。
+CPU的[冷偏好](../../src/compute_route_cpu/default_policy.cc)集中在默认facade，原Provider先核实际数学、格式和资源能力。
+旧41个尺寸采样规则及CPU型号、固定核心、编译器配方门已移除；专家Native只提供原能力，不带默认策略。
+普通单执行lane的plain dense F32 Exp按原扁平SIMD算法选择Native，不区分秩、模型宽度或长度；
+其它运算保留可见工程默认和实际失败后的候选，不能把有限本机计时写成全硬件性能胜域。
+完整Graph region继续先于单算子叶子，packed matvec原跨行复用偏好和selected-byte Gather原码路径保留。
+[有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖不同秩、IEEE、输入更新、默认路由和线程启动合同，
+明确保留1项可选模型fixture跳过；原实现的SIMD分派负责实际ISA检查，策略不引入热路径计时。
+ATen可选依赖正在拆分：不调用ATen的原生packed能力应留在原生CUDA，真正的ATen SDPA及制品解码按实际能力选择；
+关闭依赖后的能力与安装闭包仍待有限构建检查，不承诺所有BF16 attention／decoder覆盖不变。
+页工作帧及页追加program的公开头由既有`compute_batch`交付，与实现和导出宏一致；
+[配置检查](../evidence/correctness/inference-header-ownership-2026-10-28.json)保留首次误归compute的失败及修正后16项通过，不增加反向依赖。
 
 默认`--decode-overlap auto`自动选择可用的连续推进；`off`保留作诊断对照。普通B2参考也逐episode同步；单槽不是已证实的差距原因。
 只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，

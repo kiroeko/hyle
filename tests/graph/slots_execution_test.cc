@@ -527,7 +527,7 @@ void exercise_default_gather(c::DataType type, bool padded, bool graph) {
   const std::array inputs{c::ConstTensorView::create(source_desc, source.view()).value(),
       c::ConstTensorView::create(ids_desc, ids.view()).value()};
   auto output = c::TensorView::create(output_desc, destination.view()).value();
-  // Two native threads deliberately miss the sampled one-thread kWins. These
+  // Selected-byte Gather is independent of the native thread budget. These
   // ordinary factories choose from formats/algorithms, without an explicit
   // provider or a Store annotation.
   auto context = graph ? g::cpu::create_context({.native_threads = 2}).value()

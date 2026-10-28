@@ -26,7 +26,6 @@
 #if defined(HYLE_G10_TEST_VENDOR)
 #include <ATen/Functions.h>
 #include <ATen/Parallel.h>
-#include "../../src/compute_provider_native/default_rules.h"
 #endif
 
 namespace {
@@ -367,8 +366,9 @@ void foreign_runtime() {
   require_open();
   if (info().backend == cpu::RuntimeThreadBackend::kOpenMP) {
     check(cpu::configure_runtime_threads(2), "OpenMP startup configuration");
-    require(!c::native::internal::qualified_default_environment(),
-            "explicit non-one runtime must not inherit the old default recipe");
+    const auto configured = info();
+    require(configured.configured_intra_op_threads == 2 && configured.intra_op_limit == 2,
+            "startup configuration must report its real two-thread runtime limit");
     at::set_num_threads(1);
     const auto changed = info();
     require(changed.configured_intra_op_threads == 2 && changed.intra_op_limit == 1,
@@ -395,36 +395,34 @@ void foreign_runtime() {
     require(cpu::configure_runtime_threads(2).IsFailedPrecondition(),
             "partial setter failure must not reopen the configuration window");
   }
-  require(!c::native::internal::qualified_default_environment(),
-          "failed/drifted runtime must not qualify the old default recipe");
+  require(!info().configuration_open,
+          "foreign drift or a partial setter failure must not reopen startup configuration");
 }
 
-void qualified_drift(bool require_eligible) {
+void runtime_drift() {
   require_open();
   require(info().backend == cpu::RuntimeThreadBackend::kOpenMP,
-          "qualified drift requires the original OpenMP setting mechanism");
+          "runtime drift requires the original OpenMP setting mechanism");
   check(cpu::configure_runtime_threads(1), "one-thread configuration");
-  const bool eligible = c::native::internal::qualified_default_environment();
-  std::printf("initial_default_recipe_eligible=%u\n", static_cast<unsigned>(eligible));
-  require(!require_eligible || eligible,
-          "this host/placement must actually exercise the original qualified recipe");
+  const auto configured = info();
+  require(configured.configured_intra_op_threads == 1 && configured.intra_op_limit == 1,
+          "one-thread startup configuration must be observed before use");
   auto context = take(cpu::create_context());
   const auto desc = take(c::TensorDesc::dense(
-      c::DataType::kFloat32, std::array<std::int64_t, 2>{32, 2048}));
-  constexpr std::uint64_t recipe_namespace = 0x48594c4543505552ULL;
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{3, 37}));
   auto before = take(c::prepare(context, c::Binary{c::BinaryKind::kAdd}, desc, desc));
-  require(!eligible || (before.provider().id == c::native::kProviderId &&
-                           before.route_policy().namespace_id == recipe_namespace),
-          "qualified Context must first exercise a cached Native recipe");
+  require(before.route_policy().valid(), "ordinary preparation must report its engineering policy");
   at::set_num_threads(2);
   const auto value = info();
   require(value.configured_intra_op_threads == 1 && value.intra_op_limit == 2,
           "foreign drift must be detected before new preparation");
   auto after = take(c::prepare(context, c::Binary{c::BinaryKind::kAdd}, desc, desc));
-  require(after.route_policy().namespace_id != recipe_namespace,
-          "an existing Context must not publish a stale qualified recipe after drift");
-  check(context.close(), "qualified Context close");
-  check(context.drain(), "qualified Context drain");
+  require(after.route_policy().valid(), "foreign drift must not remove ordinary mathematical capability");
+  require(cpu::configure_runtime_threads(1).IsFailedPrecondition(),
+          "foreign drift must remain a startup-contract error instead of invoking a repair setter");
+  require(at::get_num_threads() == 2, "ordinary preparation must preserve the actual foreign runtime limit");
+  check(context.close(), "runtime drift Context close");
+  check(context.drain(), "runtime drift Context drain");
 }
 #endif
 } // namespace
@@ -442,14 +440,13 @@ int main(int argc, char **argv) {
     else if (mode == "--disabled") disabled();
 #if defined(HYLE_G10_TEST_VENDOR)
     else if (mode == "--foreign") foreign_runtime();
-    else if (mode == "--qualified-drift") {
+    else if (mode == "--runtime-drift") {
       if (info().backend != cpu::RuntimeThreadBackend::kOpenMP) {
         std::puts("NOT_APPLICABLE: foreign reconfiguration drift requires OpenMP; Native late-setter refusal has its own scenario");
         return 77;
       }
-      qualified_drift(false);
+      runtime_drift();
     }
-    else if (mode == "--qualified-drift-required") qualified_drift(true);
 #endif
     else throw std::runtime_error("unknown runtime consumer scenario");
     const auto value = info();

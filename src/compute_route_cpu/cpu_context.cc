@@ -1,7 +1,6 @@
 #include "hyle/compute/cpu.h"
 #include "default_policy.h"
 
-#include "../compute_provider_native/default_rules.h"
 #include "../compute_provider_native/torch_cpu_program.h"
 #include <array>
 
@@ -61,11 +60,11 @@ Result<Context> internal::create_context(DefaultContextOptions options,
   // A failed outer metadata allocation must not reopen the startup contract.
   if (scope == DefaultScope::kDirect)
     native::internal::mark_thread_runtime_used();
-  const bool single_thread = options.native_threads == 1 &&
+  const bool single_native_lane = options.native_threads == 1 &&
                              options.executor.concurrency() <= 1;
-  const auto configured = [single_thread, scope](Provider provider, DefaultProvider family) {
+  const auto configured = [single_native_lane, scope](Provider provider, DefaultProvider family) {
     return internal::with_defaults(std::move(provider), family,
-                                   scope, single_thread);
+                                   scope, single_native_lane);
   };
   std::array<ProviderBinding, 5> providers{};
   std::size_t count = 0;
@@ -82,13 +81,8 @@ Result<Context> internal::create_context(DefaultContextOptions options,
   if (aten.valid())
     providers[count++] = {configured(std::move(aten), DefaultProvider::kAten), 900};
   if (!native_provider.valid())
-    native_provider = native::internal::default_provider(
-           {.executor = options.executor},
-           scope == DefaultScope::kDirect
-               ? native::internal::DefaultRuleScope::kDirect
-               : native::internal::DefaultRuleScope::kGraph,
-           options.native_threads == 1);
-  providers[count++] = {std::move(native_provider), 1000};
+    native_provider = native::provider({.executor = options.executor});
+  providers[count++] = {configured(std::move(native_provider), DefaultProvider::kNative), 1000};
   return Context::create(device(),
                          {.metadata_allocator = options.metadata_allocator,
                           .providers = std::span(providers).first(count)});

@@ -23,6 +23,11 @@ ready内存基线未知；全部64输出、接受及完整非时间报告跨版�
 [功能检查](../../evidence/correctness/inference-store-cohort-2026-10-28.json)覆盖11项Graph测试及9个CPU／CUDA旅程，
 原权限、部分恢复、Imported Source及数值门保留。离线summary误取普通模式不存在的accepted_drafts已单独修正，成功模型未重跑。
 
+另有独立的[CPU路由一般化检查](../../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)：15个F32 Exp长度／秩的Native与ggml均接纳，原数值预算内相符；oneDNN／ATen明确拒绝。
+19进程（15对照＋4个Native A/A）的Native中位用时约为ggml的21%～40%，A/A中位比偏离最多约2.01%；外部调度未固定核心，未导出逐epoch样本，不能推广为全硬件胜域。
+本批据原扁平SIMD算法与实际接纳选择工程默认，删除41条旧尺寸规则、两个特例和资格配方；完整region、专家工厂和原线程合同保留。
+47项GTest、9个线程场景通过，1项可选模型fixture跳过。这是CPU叶子与默认接线证据，不更新CUDA吞吐或CPU整模型速度。
+
 当前[四份R1主机／GPU跟踪](../../evidence/performance/inference-current-host-profile-2026-10-28.json)使用`ab5f97554`的Model／头文件及原229项CLI闭包，
 Hyle和保留参考各运行一次普通／MTP；仅加NVTX，不改数学或原计时端点。B2未刷新，不从单次node-trace更新正式吞吐。
 普通排除首8根后，55个相同context窗口内的进程GPU活动空隙为5.086／51.996ms；这不是CPU自耗，也不是全设备空闲。

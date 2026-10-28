@@ -1189,13 +1189,4 @@ void mark_thread_runtime_used() noexcept {
 #endif
 }
 
-bool thread_runtime_allows_qualified_default() noexcept {
-#if defined(HYLE_COMPUTE_TORCH_CPU)
-  auto &state = thread_state();
-  std::lock_guard lock(state.mutex);
-  return !state.failed && (state.requested == 0 || state.requested == 1);
-#else
-  return true;
-#endif
-}
 } // namespace hyle::compute::native::internal

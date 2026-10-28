@@ -1,0 +1,47 @@
+{
+  "status": "CONFIGURATION_CONTRACTS_PASSED_AFTER_OWNERSHIP_FIX",
+  "base_commit": "e95436fcc8be7ab6837570c952fdc7202358fb45",
+  "fix": {
+    "owner": "compute_batch",
+    "headers": [
+      "hyle/compute/paged_frame.h",
+      "hyle/compute/detail/paged_append_program.h"
+    ],
+    "new_targets": 0,
+    "dependency_edges_changed": 0,
+    "CXX_sources_changed": 0
+  },
+  "first_attempt": {
+    "process": {
+      "pid": 54096,
+      "exit": 1,
+      "started": 1793169062.8307874,
+      "seconds": 10.420714616775513,
+      "state": "TERMINAL"
+    },
+    "tests": 16,
+    "failures": 13
+  },
+  "second_attempt": {
+    "process": {
+      "pid": 46824,
+      "exit": 0,
+      "started": 1793169339.7514083,
+      "seconds": 12.162064790725708,
+      "state": "TERMINAL"
+    },
+    "tests": 16,
+    "failures": 0
+  },
+  "patch_SHA256": "b3c35ba73da38760e24f99a0410a6edcff4922e9ad9ebf641f8f072c1f46b64c",
+  "limits": [
+    "Configuration/metadata tests only; not an SDK build or ATen OFF native capability proof.",
+    "Source snapshot contains concurrent optional ATen changes; the correction patch isolates the two public-header ownership entries."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-header-ownership-2026-10-28.zip",
+    "bytes": 22162,
+    "sha256": "fbf5a4e79f2a305cc84183a79aec7c8c908bf1db0576ce7929db2bdb70c9925e",
+    "members": 13
+  }
+}

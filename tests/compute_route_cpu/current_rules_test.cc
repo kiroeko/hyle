@@ -1,14 +1,20 @@
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
-#include <string_view>
+#include <cstdint>
+#include <initializer_list>
+#include <limits>
+#include <span>
 #include <vector>
 
-#include "../../src/compute_provider_native/default_rules.h"
+#include "../../src/compute_route_cpu/default_policy.h"
+#include "../../src/compute_packed_shared/artifact_packed_linear.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/prepared_operation.h"
-#include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/mem/buffer.h"
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 #include "hyle/graph/cpu.h"
@@ -16,6 +22,9 @@
 
 namespace {
 using namespace hyle::compute;
+constexpr std::uint64_t kEngineeringPolicy = 0x48594c4543505544ULL;
+constexpr std::uint64_t kStoragePolicy = 0x48594c4553544f52ULL;
+
 auto create_context(cpu::DefaultContextOptions options = {}) {
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
   return hyle::graph::cpu::create_context(options);
@@ -23,197 +32,160 @@ auto create_context(cpu::DefaultContextOptions options = {}) {
   return cpu::create_context(options);
 #endif
 }
-TensorDesc dense(DataType t, std::initializer_list<std::int64_t> dimensions) {
-  return TensorDesc::dense(t, {dimensions.begin(), dimensions.size()}).value();
+TensorDesc dense(DataType type, std::initializer_list<std::int64_t> dimensions) {
+  return TensorDesc::dense(type, {dimensions.begin(), dimensions.size()}).value();
 }
 
-TEST(CpuCurrentRules, ExactQualifiedRequestsAndNearbyMissesUseOrdinaryFactories) {
-  struct Case { const char *id; std::string_view family; int variant, type, rows, width, other; ProviderId winner; };
-  // Fixed independent expectation from the completed all-candidate evidence.
-  const Case cases[]{
-      {"binary-0-t6-r32-h2048-o6", "binary", 0, 6, 32, 2048, 6, native::kProviderId},
-      {"binary-1-t4-r32-h2048-o6", "binary", 1, 4, 32, 2048, 6, native::kProviderId},
-      {"binary-1-t6-r1-h2048-o6", "binary", 1, 6, 1, 2048, 6, native::kProviderId},
-      {"binary-3-t4-r1-h2048-o6", "binary", 3, 4, 1, 2048, 6, native::kProviderId},
-      {"binary-3-t4-r1-h4096-o6", "binary", 3, 4, 1, 4096, 6, native::kProviderId},
-      {"binary-3-t4-r32-h2048-o6", "binary", 3, 4, 32, 2048, 6, native::kProviderId},
-      {"binary-3-t6-r1-h4096-o6", "binary", 3, 6, 1, 4096, 6, native::kProviderId},
-      {"binary-4-t4-r1-h2048-o6", "binary", 4, 4, 1, 2048, 6, native::kProviderId},
-      {"cast-t2-r1-h4096-o4", "cast", 0, 2, 1, 4096, 4, native::kProviderId},
-      {"cast-t3-r1-h2048-o5", "cast", 0, 3, 1, 2048, 5, native::kProviderId},
-      {"cast-t3-r1-h4096-o3", "cast", 0, 3, 1, 4096, 3, native::kProviderId},
-      {"cast-t3-r32-h2048-o2", "cast", 0, 3, 32, 2048, 2, native::kProviderId},
-      {"fill-t6-r1-h2048-o6", "fill", 0, 6, 1, 2048, 6, native::kProviderId},
-      {"gather-t4-r1-h4096-o12", "gather", 0, 4, 1, 4096, 12, native::kProviderId},
-      {"gather-t4-r1-h4096-o14", "gather", 0, 4, 1, 4096, 14, native::kProviderId},
-      {"gather-t5-r1-h4096-o14", "gather", 0, 5, 1, 4096, 14, native::kProviderId},
-      {"gather-t6-r1-h2048-o12", "gather", 0, 6, 1, 2048, 12, native::kProviderId},
-      {"norm-0-t5-r1-h4096-o6", "norm", 0, 5, 1, 4096, 6, native::kProviderId},
-      {"reduce-2-t4-r32-h2048-o6", "reduce", 2, 4, 32, 2048, 6, native::kProviderId},
-      {"reduce-3-t4-r1-h2048-o6", "reduce", 3, 4, 1, 2048, 6, native::kProviderId},
-      {"reduce-3-t5-r1-h4096-o6", "reduce", 3, 5, 1, 4096, 6, native::kProviderId},
-      {"silu-gate-0-t4-r32-h2048-o6", "silu-gate", 0, 4, 32, 2048, 6, native::kProviderId},
-      {"softmax-2-t4-r1-h2048-o6", "softmax", 2, 4, 1, 2048, 6, native::kProviderId},
-      {"softmax-2-t4-r32-h2048-o6", "softmax", 2, 4, 32, 2048, 6, aten_cpu::kProviderId},
-      {"unary-1-t5-r1-h2048-o6", "unary", 1, 5, 1, 2048, 6, native::kProviderId},
-      {"unary-1-t5-r32-h2048-o6", "unary", 1, 5, 32, 2048, 6, native::kProviderId},
-      {"unary-11-t4-r32-h2048-o6", "unary", 11, 4, 32, 2048, 6, native::kProviderId},
-      {"unary-2-t4-r1-h2048-o6", "unary", 2, 4, 1, 2048, 6, native::kProviderId},
-      {"unary-2-t4-r32-h2048-o6", "unary", 2, 4, 32, 2048, 6, native::kProviderId},
-      {"unary-2-t5-r32-h2048-o6", "unary", 2, 5, 32, 2048, 6, native::kProviderId},
-      {"unary-2-t6-r1-h2048-o6", "unary", 2, 6, 1, 2048, 6, native::kProviderId},
-      {"unary-2-t6-r1-h4096-o6", "unary", 2, 6, 1, 4096, 6, native::kProviderId},
-      {"unary-2-t6-r32-h2048-o6", "unary", 2, 6, 32, 2048, 6, native::kProviderId},
-      {"unary-3-t4-r1-h2048-o6", "unary", 3, 4, 1, 2048, 6, native::kProviderId},
-      {"unary-4-t4-r1-h2048-o6", "unary", 4, 4, 1, 2048, 6, native::kProviderId},
-      {"unary-4-t5-r32-h2048-o6", "unary", 4, 5, 32, 2048, 6, native::kProviderId},
-      {"unary-5-t4-r1-h2048-o6", "unary", 5, 4, 1, 2048, 6, native::kProviderId},
-      {"unary-5-t4-r32-h2048-o6", "unary", 5, 4, 32, 2048, 6, native::kProviderId},
-      {"unary-5-t5-r32-h2048-o6", "unary", 5, 5, 32, 2048, 6, native::kProviderId},
-      {"unary-6-t4-r1-h4096-o6", "unary", 6, 4, 1, 4096, 6, native::kProviderId},
-      {"unary-8-t5-r1-h2048-o6", "unary", 8, 5, 1, 2048, 6, native::kProviderId},
-      {"unary-8-t5-r32-h2048-o6", "unary", 8, 5, 32, 2048, 6, native::kProviderId},
-  };
-  auto context_result = create_context();
-  ASSERT_TRUE(context_result) << context_result.error().message();
-  auto context = std::move(*context_result);
-  auto multiple_result = create_context({.native_threads = 2});
-  ASSERT_TRUE(multiple_result) << multiple_result.error().message();
-  auto multiple = std::move(*multiple_result);
-  const bool qualified = native::internal::qualified_default_environment();
-  ::testing::Test::RecordProperty("qualified_default_environment", qualified ? "1" : "0");
-  for (const auto &item : cases) {
-    SCOPED_TRACE(item.id);
-    const auto t = DataType(item.type);
-    const auto input = dense(t, {item.rows, item.width});
-    std::vector<TensorDesc> inputs{input};
-    Operation op;
-    if (item.family == "unary") op = Operation(Unary{UnaryKind(item.variant)});
-    else if (item.family == "binary") {
-      op = Operation(Binary{BinaryKind(item.variant)}); inputs.push_back(input);
-    } else if (item.family == "norm") {
-      op = Operation(RmsNorm{}); inputs.push_back(dense(t, {item.width}));
-    } else if (item.family == "reduce") {
-      op = Operation(Reduce{.kind = ReductionKind(item.variant),
-                  .axes = Axes::from(std::array<std::int32_t, 1>{1}).value(),
-                  .accumulation_type = DataType::kFloat32});
-    } else if (item.family == "softmax") {
-      op = Operation(Softmax{.mask = MaskKind::kBoolean});
-      inputs.push_back(dense(DataType::kBool, {item.rows, item.width}));
-    } else if (item.family == "silu-gate") {
-      op = Operation(GatedActivation{.inputs = GatedInputKind::kSeparate}); inputs.push_back(input);
-    } else if (item.family == "fill") {
-      op = Operation(Fill{.output_shape = TensorShape::create(std::array<std::int64_t, 2>{item.rows, item.width}).value(),
-                .output_type = t, .value = ScalarValue::from_bits(t, 0x3fa00000ULL)});
-      inputs.clear();
-    } else if (item.family == "gather") {
-      op = Operation(Gather{}); inputs = {dense(t, {64, item.width}), dense(DataType(item.other), {item.rows})};
-    } else if (item.family == "cast") op = Operation(Cast{DataType(item.other)});
-    const auto inferred = infer_single_output(op, inputs);
-    ASSERT_TRUE(inferred) << inferred.error().message();
-    const auto output = *inferred;
-    const auto outputs = std::span(&output, 1);
-    auto prepared = prepare(context, op, inputs, outputs, hyle::mem::system_resource());
-    ASSERT_TRUE(prepared) << prepared.error().message();
-    if (qualified) {
-      EXPECT_EQ(prepared->provider().id, item.winner);
-      EXPECT_EQ(prepared->route_policy().version, 3u);
-      EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543505552ULL);
-    } else {
-      EXPECT_NE(prepared->route_policy().namespace_id, 0x48594c4543505552ULL);
-    }
-    // This is a real public thread-policy miss; math stays available.
-    auto fallback = prepare(multiple, op, inputs, outputs, hyle::mem::system_resource());
-    ASSERT_TRUE(fallback) << fallback.error().message();
-    // Narrow Gather is now an ordinary byte-preserving storage choice, even
-    // outside the sampled one-thread environment; it is not a sampled WIN.
-    const bool storage_gather = item.family == "gather" &&
-        (t == DataType::kFloat16 || t == DataType::kBFloat16);
-    if (storage_gather)
-      EXPECT_EQ(fallback->provider().id, native::kProviderId);
-    else
-      EXPECT_NE(fallback->provider().id, native::kProviderId);
-    EXPECT_NE(fallback->route_policy().namespace_id, 0x48594c4543505552ULL);
-#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
-    // Exercise actual Graph lowering of the same leaf with regions explicitly
-    // disabled. Ordinary region planning is checked separately and keeps priority.
-    auto builder = hyle::graph::GraphBuilder::create().value();
-    std::vector<hyle::graph::ValueId> values;
-    for (const auto &description : inputs)
-      values.push_back(builder.input(description).value());
-    auto result = builder.result(builder.add_node(op, values).value()).value();
-    ASSERT_TRUE(builder.publish(result).ok());
-    auto graph = std::move(builder).finish().value();
-    auto compiled = hyle::graph::compile(
-        graph, context, {.region_selection = hyle::graph::RegionSelectionPolicy::kDisabled});
-    ASSERT_TRUE(compiled) << compiled.error().message();
-    EXPECT_EQ(compiled->report.step(0)->provider.id, prepared->provider().id);
-#endif
-  }
-  // Shape and attribute misses do not acquire a sampled WIN.
-  for (const auto width : {2047, 2049}) {
-    auto program = prepare(context, Unary{UnaryKind::kExp}, dense(DataType::kFloat32, {1, width}));
-    ASSERT_TRUE(program);
-    EXPECT_NE(program->provider().id, native::kProviderId);
-  }
-  const auto norm_input = dense(DataType::kBFloat16, {1, 4096});
-  const std::array norm_inputs{norm_input, dense(DataType::kBFloat16, {4096})};
-  auto epsilon_miss = prepare(context, Operation(RmsNorm{.epsilon = 2e-5F}), norm_inputs,
-                              std::span(&norm_input, 1), hyle::mem::system_resource());
-  ASSERT_TRUE(epsilon_miss);
-  EXPECT_NE(epsilon_miss->provider().id, native::kProviderId);
-}
-
-TEST(CpuCurrentRules, MatureProjectionWinnerAndPhysicalLayoutMissKeepPrecision) {
+TEST(CpuCurrentRules, FlatExpUsesTheSameEngineeringPolicyAcrossRanksAndSizes) {
   auto context = create_context().value();
-  auto weight = dense(DataType::kBFloat16, {6144, 2048});
-  auto left = dense(DataType::kBFloat16, {32, 2048});
-  auto program = prepare(context, MatMul{}, left, weight.transposed().value());
-  ASSERT_TRUE(program) << program.error().message();
-  EXPECT_EQ(program->provider().id, ggml_cpu::kProviderId);
-  EXPECT_EQ(program->output_description()->data_type(), DataType::kBFloat16);
-  if (native::internal::qualified_default_environment()) {
-    EXPECT_EQ(program->route_policy().version, 3u);
+  const std::array descriptions{
+      dense(DataType::kFloat32, {3072}),
+      dense(DataType::kFloat32, {3, 1024}),
+      dense(DataType::kFloat32, {2, 3, 512}),
+      dense(DataType::kFloat32, {17, 241}),
+      dense(DataType::kFloat32, {1, 2048}),
+      dense(DataType::kFloat32, {1, 4096}),
+      dense(DataType::kFloat32, {32, 2048})};
+  RoutePolicyId policy;
+  for (const auto &description : descriptions) {
+    auto prepared = prepare(context, Unary{UnaryKind::kExp}, description);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, native::kProviderId);
+    EXPECT_EQ(*prepared->output_description(), description);
+    EXPECT_EQ(prepared->route_policy().namespace_id, kEngineeringPolicy);
+    EXPECT_TRUE(prepared->route_policy().valid());
+    if (policy.empty()) policy = prepared->route_policy();
+    EXPECT_EQ(prepared->route_policy(), policy);
   }
-  auto layout_miss = prepare(context, MatMul{}, left, dense(DataType::kBFloat16, {2048, 6144}));
-  ASSERT_TRUE(layout_miss);
-  EXPECT_NE(layout_miss->route_policy().namespace_id, 0x48594c4543505552ULL);
+  // native_threads is ggml's independent team budget, not an ATen setter or
+  // a claim that Native's flat loop acquired two workers. Keep the other
+  // engineering baseline when this single-lane comparison no longer applies.
+  auto team = create_context({.native_threads = 2}).value();
+  auto prepared = prepare(team, Unary{UnaryKind::kExp}, descriptions.front());
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_NE(prepared->provider().id, native::kProviderId);
+  EXPECT_EQ(prepared->route_policy().namespace_id, kEngineeringPolicy);
+  EXPECT_NE(prepared->route_policy(), policy);
 }
 
-TEST(CpuCurrentRules, PreparedReplayKeepsTheSelectedProgramAndChangedInputs) {
-  const auto desc = dense(DataType::kFloat32, {1, 2048});
+TEST(CpuCurrentRules, OtherMathAttributesAndPhysicalLayoutsKeepVisibleDefaults) {
+  auto context = create_context().value();
+  const auto tensor = dense(DataType::kBFloat16, {3, 37});
+  const std::array inputs{tensor, dense(DataType::kBFloat16, {37})};
+  auto norm = prepare(context, Operation(RmsNorm{.epsilon = 2e-5F}), inputs,
+                      std::span(&tensor, 1), hyle::mem::system_resource());
+  ASSERT_TRUE(norm) << norm.error().message();
+  EXPECT_EQ(norm->route_policy().namespace_id, kEngineeringPolicy);
+  EXPECT_EQ(norm->output_description()->data_type(), DataType::kBFloat16);
+  const auto left = dense(DataType::kBFloat16, {5, 19});
+  const auto weight = dense(DataType::kBFloat16, {23, 19});
+  for (const auto &right : {weight.transposed().value(), dense(DataType::kBFloat16, {19, 23})}) {
+    auto program = prepare(context, MatMul{}, left, right);
+    ASSERT_TRUE(program) << program.error().message();
+    EXPECT_EQ(program->output_description()->data_type(), DataType::kBFloat16);
+    EXPECT_EQ(program->route_policy().namespace_id, kEngineeringPolicy);
+  }
+}
+
+TEST(CpuCurrentRules, SelectedByteGatherDoesNotDependOnBankModelOrThreadRecipe) {
+  for (auto threads : {1u, 2u}) {
+    auto context = create_context({.native_threads = threads}).value();
+    const std::array sources{
+        dense(DataType::kFloat16, {5, 7}),
+        dense(DataType::kBFloat16, {5, 7}),
+        TensorDesc::strided_bytes(DataType::kFloat32,
+            std::array<std::int64_t, 2>{5, 7},
+            std::array<std::int64_t, 2>{48, 4}).value()};
+    for (const auto &source : sources) {
+      for (const auto index_type : {DataType::kInt32, DataType::kInt64}) {
+        auto program = prepare(context, Gather{}, source, dense(index_type, {3}));
+        ASSERT_TRUE(program) << program.error().message();
+        EXPECT_EQ(program->provider().id, native::kProviderId);
+        EXPECT_EQ(program->route_policy().namespace_id, kStoragePolicy);
+        EXPECT_EQ(program->output_description()->data_type(), source.data_type());
+      }
+    }
+  }
+}
+
+TEST(CpuCurrentRules, ExpertNativeHasNoFacadePolicyAndPackedPriorityStaysOriginal) {
+  auto expert = Context::create(cpu::device(), native::provider()).value();
+  auto exp = prepare(expert, Unary{UnaryKind::kExp}, dense(DataType::kFloat32, {513}));
+  ASSERT_TRUE(exp) << exp.error().message();
+  EXPECT_TRUE(exp->route_policy().empty());
+  const auto operation = Operation::custom(packed::internal::ArtifactPackedLinear{});
+  const std::array inputs{dense(DataType::kBFloat16, {2, 32}),
+      dense(DataType::kInt32, {8, 4}), dense(DataType::kBFloat16, {8, 1})};
+  const auto output = infer_single_output(operation, inputs);
+  ASSERT_TRUE(output) << output.error().message();
+  // Direct uses this original native vtable. Graph's public factory instead
+  // owns its CT-region wrapper; do not ask a different vtable to inherit that
+  // already assembled facade's policy through the original identity guard.
+  auto provider = cpu::internal::with_defaults(native::provider(),
+      cpu::internal::DefaultProvider::kNative, cpu::internal::DefaultScope::kDirect, true);
+  auto context = Context::create(cpu::device(), provider).value();
+  auto program = prepare(context, operation, inputs, std::span(&*output, 1), hyle::mem::system_resource());
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->provider().id, native::kProviderId);
+  EXPECT_EQ(program->route_preference(), 1001u);
+  EXPECT_EQ(program->route_policy().namespace_id, kEngineeringPolicy);
+}
+
+TEST(CpuCurrentRules, PreparedExpReplayPreservesIeeeValuesAndReadsChangedInputs) {
   auto context = create_context().value();
   auto queue = context.create_queue().value();
-  auto program = prepare(context, Unary{UnaryKind::kExp}, desc).value();
-  auto input = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8192, 64).value();
-  auto output = hyle::mem::Buffer::create(hyle::mem::system_resource(), 8192, 64).value();
+  constexpr std::size_t count = 17;
+  const auto description = dense(DataType::kFloat32, {count});
+  auto program = prepare(context, Unary{UnaryKind::kExp}, description).value();
+  ASSERT_EQ(program.provider().id, native::kProviderId);
+  auto input = hyle::mem::Buffer::create(hyle::mem::system_resource(), count * sizeof(float), 64).value();
+  auto output = hyle::mem::Buffer::create(hyle::mem::system_resource(), count * sizeof(float), 64).value();
   auto invocation = program.create_invocation().value();
-  const std::array inputs{ConstTensorView::create(desc, input.view()).value()};
-  const std::array outputs{TensorView::create(desc, output.view()).value()};
-  std::vector<float> values(2048), actual(2048);
-  const auto provider = program.provider().id;
+  const std::array inputs{ConstTensorView::create(description, input.view()).value()};
+  const std::array outputs{TensorView::create(description, output.view()).value()};
+  std::array<float, count> values{std::numeric_limits<float>::quiet_NaN(),
+      std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
+      0.0F, -0.0F, -200.0F, 100.0F, -90.0F, -103.0F, 88.0F,
+      -1.0F, 1.0F, -0.5F, 0.25F, 2.0F, -2.0F, 0.75F};
+  std::array<float, count> actual{};
   const auto policy = program.route_policy();
-  for (float value : {0.25F, -0.5F}) {
-    std::fill(values.begin(), values.end(), value);
+  for (unsigned round = 0; round < 2; ++round) {
     ASSERT_TRUE(input.view().write(std::as_bytes(std::span(values))).ok());
-    auto completion = invocation.submit(queue, inputs, outputs);
-    ASSERT_TRUE(completion) << completion.error().message();
-    ASSERT_TRUE(completion->wait().ok());
-    EXPECT_FALSE(invocation.in_flight());
+    auto done = invocation.submit(queue, inputs, outputs);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
     ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(actual))).ok());
-    for (float result : actual)
-      EXPECT_NEAR(result, std::exp(value), 3e-5F);
-    EXPECT_EQ(program.provider().id, provider);
+    for (std::size_t i = 0; i < count; ++i) {
+      const double reference = std::exp(static_cast<double>(values[i]));
+      if (std::isnan(reference)) EXPECT_TRUE(std::isnan(actual[i])) << i;
+      else if (reference > std::numeric_limits<float>::max()) {
+        EXPECT_TRUE(std::isinf(actual[i]) && !std::signbit(actual[i])) << i;
+      } else {
+        const auto expected = static_cast<float>(reference);
+        if (expected == 0.0F || values[i] == 0.0F)
+          EXPECT_EQ(std::bit_cast<std::uint32_t>(actual[i]), std::bit_cast<std::uint32_t>(expected)) << i;
+        else {
+          EXPECT_GT(actual[i], 0.0F) << i;
+          // Same8e-7 relative budget as the existing SIMD math oracle; use a
+          // subnormal-ULP floor rather than an absolute1e-6 loophole near zero.
+          const double tolerance = std::abs(reference) * 8e-7 +
+              2.0 * std::numeric_limits<float>::denorm_min();
+          EXPECT_NEAR(static_cast<double>(actual[i]), reference, tolerance) << i;
+        }
+      }
+    }
     EXPECT_EQ(program.route_policy(), policy);
+    EXPECT_FALSE(invocation.in_flight());
+    for (std::size_t i = 0; i < count; ++i) values[i] = -0.5F + 0.0625F * static_cast<float>(i);
   }
 }
 
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
-TEST(CpuCurrentRules, OrdinaryGraphKeepsCompleteMatureRegionsBeforeLeafWins) {
+TEST(CpuCurrentRules, OrdinaryGraphKeepsCompleteMatureRegionsBeforeFlatLeaves) {
   auto context = create_context().value();
-  const auto desc = dense(DataType::kFloat32, {1, 2048});
+  const auto description = dense(DataType::kFloat32, {3, 37});
   auto builder = hyle::graph::GraphBuilder::create().value();
-  auto input = builder.input(desc).value();
+  auto input = builder.input(description).value();
   auto expanded = builder.add(Unary{UnaryKind::kExp}, input).value();
   auto output = builder.add(Binary{BinaryKind::kMultiply}, expanded, input).value();
   ASSERT_TRUE(builder.publish(output).ok());
@@ -222,7 +194,8 @@ TEST(CpuCurrentRules, OrdinaryGraphKeepsCompleteMatureRegionsBeforeLeafWins) {
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(compiled->report.region_count(), 1u);
   EXPECT_EQ(compiled->report.step_count(), 1u);
-  EXPECT_EQ(compiled->report.step(0)->provider.id, ggml_cpu::kProviderId);
+  // The complete region100 wins before Native's individual Graph leaf175.
+  EXPECT_NE(compiled->report.step(0)->provider.id, native::kProviderId);
 }
 #endif
 } // namespace

@@ -10,7 +10,6 @@ hyle_add_module(compute_provider_native SOURCES
   cast.cc
   ct_packed.cc
   static_fp8.cc
-  default_rules.cc
   ds4_quantization.cc
   elementwise.cc
   indexing.cc
@@ -23,17 +22,6 @@ hyle_add_module(compute_provider_native SOURCES
   sequence.cc
   transform.cc
   transformer.cc)
-# Current complete-candidate performance evidence is recipe/software-specific.
-include("${CMAKE_CURRENT_SOURCE_DIR}/default_rule_build.cmake")
-hyle_native_default_rule_recipe(_native_rule_recipe)
-if(_native_rule_recipe AND _HYLE_COMPUTE_HAVE_TORCH_CPU AND
-    HYLE_GGML_CPU_PEER_REVISION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab" AND
-    HYLE_GGML_CPU_PROVIDER_VERSION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-bdae1e43311ee486" AND
-    HYLE_DEP_ONEDNN_COMMIT STREQUAL "c531fe1a5cd631b7f60277cdf6675c588cadbc28")
-  target_compile_definitions(hyle_compute_provider_native PRIVATE
-    "$<$<CONFIG:Release>:HYLE_NATIVE_DEFAULT_PEER_F4=1>")
-endif()
-unset(_native_rule_recipe)
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
   "${HYLE_SOURCE_DIR}/third_party/ds4_quantization")

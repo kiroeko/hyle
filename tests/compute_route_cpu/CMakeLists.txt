@@ -61,9 +61,9 @@ if("torch_cpu" IN_LIST _hyle_native_capabilities)
     COMMAND hyle_compute_route_cpu_thread_runtime_vendor_test --foreign)
   set_tests_properties(compute_route_cpu_thread_runtime_foreign PROPERTIES
     LABELS "compute_route_cpu")
-  add_test(NAME compute_route_cpu_thread_runtime_qualified_drift
-    COMMAND hyle_compute_route_cpu_thread_runtime_vendor_test --qualified-drift)
-  set_tests_properties(compute_route_cpu_thread_runtime_qualified_drift PROPERTIES
+  add_test(NAME compute_route_cpu_thread_runtime_drift
+    COMMAND hyle_compute_route_cpu_thread_runtime_vendor_test --runtime-drift)
+  set_tests_properties(compute_route_cpu_thread_runtime_drift PROPERTIES
     LABELS "compute_route_cpu" SKIP_RETURN_CODE 77)
 else()
   set(_hyle_runtime_scenarios disabled)

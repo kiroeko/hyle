@@ -1,6 +1,6 @@
 #include "hyle/graph/cpu.h"
 #include "../compute_route_cpu/default_policy.h"
-#include "../compute_provider_native/default_rules.h"
+#include "hyle/compute/providers/native.h"
 #include "ct_packed_linear_region.h"
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
@@ -26,10 +26,8 @@ create_context(compute::cpu::DefaultContextOptions options) noexcept {
   return compute::cpu::internal::create_context(
       options, compute::cpu::internal::DefaultScope::kGraph,
       std::move(ggml), std::move(region),
-      internal::ct_packed_regions(compute::native::internal::default_provider(
-          {.executor = options.executor},
-          compute::native::internal::DefaultRuleScope::kGraph,
-          options.native_threads == 1)));
+      internal::ct_packed_regions(compute::native::provider(
+          {.executor = options.executor})));
 }
 
 } // namespace hyle::graph::cpu

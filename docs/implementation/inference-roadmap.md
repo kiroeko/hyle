@@ -42,6 +42,9 @@ MTP捕获数为2／5，旧重录次数不再代表当前瓶颈。仍有准备／
 当前源码[新40进程窗口](../evidence/performance/inference-review-current-window-2026-10-28.json)已完成普通／MTP单轮与两轮的速度、显存及RAM测量。
 同模式与上批bb0c的完整非时间差异0；单轮速度波动较大，两边跨窗绝对值均有变化，未证明架构迁移引起提速或回退。
 正式表与范围见[进度](../developer/inference-progress.md)，下一批继续处理MTP稳态主机工作和GPU候选。
+CPU默认路由已删除旧41点、两个特例和硬件／配方资格机制，由同一facade按原能力与算法选择；
+[有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖普通Compute／Graph、IEEE、线程及原码Gather，
+其它算子的成本覆盖和跨平台仍需继续，不从局部Exp结果推定完整推理加速。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。

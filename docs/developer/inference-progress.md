@@ -1,10 +1,10 @@
 # 推理底座进度
 
-更新：2026-10-28 14:07（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 14:38（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约86%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约87%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：普通固定IO已共用，Store改为cohort取回，有限功能检查和16进程直接A/B已完成。** 普通decode中位基本持平，MTP约＋1.62%，范围重叠，不签稳定收益。MTP设备后继、完整形状编排和CPU路由仍未完成；当前转入CPU路由的工作量域与provider接纳审查。
+**当前位置：CPU旧尺寸规则及资格机制已删除，默认策略统一到facade，相关有限检查已完成。** 新增ATen可选路径已接线，正核构建与依赖边界；两个公开头的归属漏项已修，原配置检查16项通过。MTP设备后继、完整模型编排和GPU热点仍未完成。
 
 ## 任务树
 
@@ -17,9 +17,9 @@
     - MTP逐episode bias／mask：100%（本片接线及CPU／CUDA有限检查完成）
     - 逐假设前缀动态logits输入：约98%（Apple原history编译失败已修并通过17项检查，其它组合继续复查）
     - E4目标KV与plain draft组合：100%（本片接线及CPU／CUDA有限检查完成）
-  - CPU路由覆盖与成本事实：约35%（已划分算法域并准备有限Exp对照，旧形状规则尚未替换）
-  - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
-  - 完整路由可选ATen：约35%（未完成）
+  - CPU路由覆盖与成本事实：约80%（旧41点及两个特例已移除，Exp一般域与相关有限检查完成；其它算子成本和跨平台仍待审查）
+  - Provider命名与SDK detail边界：约85%（原批次offset公开投影已接，公开头归属漏项已修）
+  - 完整路由可选ATen：约65%（依赖开关与原生packed迁移已接线，尚未构建检查）
   - 文档与简明执行合同：约70%（继续收敛）
 - 共同执行架构：约84%（进行中）
   - 请求、缓存、额度与退休合同：100%（本批完成）
@@ -55,16 +55,17 @@
 
 ## 正在做
 
-- **CPU路由的工作量事实与provider接纳**｜所属：功能与工程边界／CPU路由覆盖与成本事实｜约35%。先核plain dense F32 Exp的线性工作量，按元素／字节和真实线程事实准备当前provider对照；旧模型尺寸表尚未替换，不把预备测点当已测优胜范围。
+- **ATen可选与原生CUDA能力分离**｜所属：功能与工程边界／完整路由可选ATen｜约65%。不调用ATen的packed路径已迁至原生CUDA，既有Graph融合接线与统一依赖开关已调整；构建、关闭依赖后的能力和安装闭包仍未验证。
 
-刚完成：普通Phase与NextN复用既有ProgramIo，四个readback保留唯一owner；Graph Store批取回保留逐项owner／代际／退休检查。5次CXX、3次链接、10个功能进程均首次成功，含11项Graph检查、32项原预算状态比较及另20项logits精确比较。另1次CLI编译／链接后完成16进程A/B，跨版完整非时间事实差异0；原离线汇总字段错误已修，成功模型未重跑。
-结果：[本片功能](../evidence/correctness/inference-store-cohort-2026-10-28.json) · [本片直接A/B](../evidence/performance/inference-store-cohort-current-window-2026-10-28.json) · [此前跨引擎完整窗口](../evidence/performance/inference-review-current-window-2026-10-28.json) · [主机／GPU跟踪](../evidence/performance/inference-current-host-profile-2026-10-28.json)。
+刚完成：CPU默认facade统一Native，删除旧41点及两个特例、硬件／配方资格门；保留专家能力、完整Graph region优先、packed1001及原码Gather。10次CXX、3次链接首次成功；47项GTest及9个线程场景通过，1项既有D5模型fixture检查跳过。15种Exp接纳／数值核对和19进程叶子计时完成；首个bench宏／CRT设置失败及离线skip解析修正均保留，成功进程未重跑。
+另修正paged_frame及paged_append_program两个公开头的既有compute_batch归属，保留首次配置失败，随后原16项配置检查通过；[记录](../evidence/correctness/inference-header-ownership-2026-10-28.json)。未因此重编C++。
+结果：[CPU路由与有限计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)。局部Exp的Native用时为ggml的约21%～40%，不代表CPU整模型或CUDA提速；最近CUDA A/B与跨引擎完整表仍在下方。
 
 ## 接下来
 
-1. 沿原episode共用准备、提交及取消／失败后的真实回收，使用静态模型适配，保留原交易、Session发布和结果观察边界；完整Model核心尚未抽完。
-2. 处理真实载体、跨轮预热，补当前跟踪及A/A；再推进整模型GPU热点、MTP设备后继及词表候选。
-3. 本轮已刷新双引擎四项对照；下一批有实质热点改动后再测，不等待大goal全部完成，也不为追好看的数重复补样。
+1. 完成ATen可选路径的增量构建、原生packed回归及关闭依赖后的真实配置／安装闭包检查。
+2. 继续抽出形状准备和完整执行编排，收敛基础输出接口、稳态权限与跨轮预热。
+3. 推进整模型GPU热点和MTP设备后继；有实质热点改动并通过必要检查后，立即刷新完整四项性能，不等待大goal完成。
 
 ## 最新改动A/B
 

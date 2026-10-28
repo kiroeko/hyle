@@ -1,0 +1,609 @@
+{
+  "status": "FINITE_LEAF_AND_ACTUAL_CPU_VALIDATION",
+  "images": {
+    "leaf": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\bin\\bench.exe",
+      "bytes": 139678720,
+      "sha256": "cf25024273fce71bf440fa195bb3b933f33d78b9e08eb52bfba6c8d02cd8f4c0"
+    },
+    "validation": {
+      "direct": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\bin\\direct.exe",
+        "bytes": 140278784,
+        "sha256": "6d7c9e5505be8d05e65d4e046c5e0de98b99d74fafdf1a226fd4e303534273e3"
+      },
+      "graph": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\bin\\graph.exe",
+        "bytes": 140893696,
+        "sha256": "e29cf0a7d78be77ff110404d676b65ec8c185884cf95d56a9b0d5e35e950afd7"
+      },
+      "runtime": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\bin\\runtime.exe",
+        "bytes": 139656704,
+        "sha256": "ccb7d053a912994e36319bc5430a534a4195c2fe5b7546beeb8488b4bca09702"
+      }
+    },
+    "distinction": "Leaf uses original228 SDK math. New policy is checked by separate refreshed validation executables, not by a recompiled leaf or full inference image."
+  },
+  "leaf": {
+    "probe": {
+      "process": {
+        "pid": 36428,
+        "exit": 0,
+        "started": 1793168123.089472,
+        "seconds": 0.7623748779296875,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "cases": 15,
+      "admission_records": 60,
+      "numeric_pairs": 15,
+      "per_case": {
+        "accepted": [
+          "native",
+          "ggml"
+        ],
+        "declined": [
+          "onednn",
+          "aten"
+        ]
+      }
+    },
+    "measurements": {
+      "processes": 19,
+      "AB": 15,
+      "AA": 4,
+      "paired_rounds_per_process": 16,
+      "columns": [
+        "id",
+        "elements",
+        "native_ns",
+        "ggml_ns",
+        "ggml_over_native",
+        "native_MdAPE_pct",
+        "ggml_MdAPE_pct",
+        "paired_95CI_relative_peer_text"
+      ],
+      "table": [
+        [
+          "exp-f32-1x256",
+          256,
+          242.42000000000002,
+          612.44,
+          2.5263592112861977,
+          1.9,
+          0.2,
+          "38.8% .. 41.7%"
+        ],
+        [
+          "exp-f32-1x1024",
+          1024,
+          526.16,
+          1909.2900000000002,
+          3.628725102630379,
+          6.1,
+          0.4,
+          "25.9% .. 29.3%"
+        ],
+        [
+          "exp-f32-1x2047",
+          2047,
+          877.74,
+          3649.16,
+          4.157449814295805,
+          3.2,
+          0.8,
+          "23.3% .. 25.6%"
+        ],
+        [
+          "exp-f32-1x2048",
+          2048,
+          872.1900000000002,
+          3686.4100000000003,
+          4.226613467249108,
+          4.3,
+          1.2,
+          "22.1% .. 26.3%"
+        ],
+        [
+          "exp-f32-1x3072",
+          3072,
+          1252.02,
+          5421.060000000001,
+          4.3298509608472715,
+          4.9,
+          1.1,
+          "21.8% .. 24.0%"
+        ],
+        [
+          "exp-f32-1x4096",
+          4096,
+          1649.12,
+          7139.93,
+          4.329539390705346,
+          5.6,
+          0.9,
+          "21.3% .. 24.2%"
+        ],
+        [
+          "exp-f32-1x4097",
+          4097,
+          1635.6600000000003,
+          7249.760000000001,
+          4.432314784246115,
+          4.3,
+          1.8,
+          "21.6% .. 23.1%"
+        ],
+        [
+          "exp-f32-1x16384",
+          16384,
+          6010.96,
+          28021.920000000002,
+          4.661804437227997,
+          5.4,
+          1.1,
+          "20.4% .. 23.8%"
+        ],
+        [
+          "exp-f32-1x65536",
+          65536,
+          23507.890000000003,
+          110963.16000000002,
+          4.720251796311792,
+          4.9,
+          0.8,
+          "19.9% .. 22.4%"
+        ],
+        [
+          "exp-f32-1x262144",
+          262144,
+          97360.0,
+          441660.0,
+          4.536359901396878,
+          5.1,
+          0.5,
+          "20.2% .. 22.7%"
+        ],
+        [
+          "exp-f32-3072",
+          3072,
+          1292.66,
+          5407.7300000000005,
+          4.183412498259403,
+          6.4,
+          0.9,
+          "22.2% .. 27.1%"
+        ],
+        [
+          "exp-f32-3x1024",
+          3072,
+          1249.73,
+          5408.9400000000005,
+          4.328086866763221,
+          4.9,
+          0.9,
+          "22.1% .. 27.2%"
+        ],
+        [
+          "exp-f32-2x3x512",
+          3072,
+          1291.6900000000003,
+          5478.950000000001,
+          4.2416911178378705,
+          6.9,
+          1.2,
+          "22.0% .. 24.7%"
+        ],
+        [
+          "exp-f32-32x2048",
+          65536,
+          25228.95,
+          111310.53,
+          4.412015957857936,
+          11.8,
+          1.3,
+          "20.0% .. 24.3%"
+        ],
+        [
+          "exp-f32-8x8192",
+          65536,
+          23862.5,
+          111787.50000000001,
+          4.6846516500785755,
+          4.8,
+          1.0,
+          "20.3% .. 22.3%"
+        ]
+      ],
+      "AA_columns": [
+        "id",
+        "candidate_native_ns",
+        "peer_native_ns",
+        "peer_over_candidate",
+        "candidate_MdAPE_pct",
+        "peer_MdAPE_pct",
+        "paired_95CI_relative_peer_text"
+      ],
+      "AA_table": [
+        [
+          "exp-f32-1x256",
+          239.8,
+          240.58000000000004,
+          1.0032527105921603,
+          0.9,
+          0.9,
+          "98.8% .. 102.8%"
+        ],
+        [
+          "exp-f32-1x4097",
+          1589.0600000000002,
+          1575.2000000000003,
+          0.991277862384051,
+          2.0,
+          1.1,
+          "99.8% .. 102.1%"
+        ],
+        [
+          "exp-f32-1x65536",
+          22605.560000000005,
+          22767.780000000002,
+          1.0071761106559625,
+          1.1,
+          1.9,
+          "97.4% .. 107.8%"
+        ],
+        [
+          "exp-f32-1x262144",
+          91845.65000000001,
+          90034.78,
+          0.980283551806754,
+          2.5,
+          1.2,
+          "97.9% .. 105.2%"
+        ]
+      ],
+      "AA_max_abs_median_ratio_deviation_pct": 2.0113005218650004,
+      "sample_distribution": null,
+      "median_precision": "Original rounded stdout ns/op converted to seconds in raw summaries.",
+      "affinity_observations": [
+        {
+          "affinity_topology": "external",
+          "caller_cpu": "external",
+          "affinity_ok": "not-applicable"
+        }
+      ],
+      "affinity": "Original child telemetry and observed process mask preserved. Helper chose no P-core; external placement or inherited CPU requests do not establish controlled topology/absence of migration."
+    }
+  },
+  "validation": {
+    "CXX_processes": {
+      "native": {
+        "pid": 36888,
+        "exit": 0,
+        "started": 1793168884.1172192,
+        "seconds": 1.5396854877471924,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "aten": {
+        "pid": 13316,
+        "exit": 0,
+        "started": 1793168886.0880127,
+        "seconds": 6.790740251541138,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "compute-context": {
+        "pid": 43288,
+        "exit": 0,
+        "started": 1793168918.8774476,
+        "seconds": 0.9282951354980469,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "policy": {
+        "pid": 45024,
+        "exit": 0,
+        "started": 1793168920.2413108,
+        "seconds": 1.024904489517212,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph-context": {
+        "pid": 61188,
+        "exit": 0,
+        "started": 1793168921.6655753,
+        "seconds": 1.0432608127593994,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "direct": {
+        "pid": 3720,
+        "exit": 0,
+        "started": 1793168923.1459398,
+        "seconds": 2.0349221229553223,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph": {
+        "pid": 32992,
+        "exit": 0,
+        "started": 1793168925.6527128,
+        "seconds": 2.2571117877960205,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "runtime": {
+        "pid": 61132,
+        "exit": 0,
+        "started": 1793168928.4058383,
+        "seconds": 5.2156641483306885,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "direct-context": {
+        "pid": 29224,
+        "exit": 0,
+        "started": 1793168936.3741276,
+        "seconds": 3.537184715270996,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph-context-test": {
+        "pid": 8888,
+        "exit": 0,
+        "started": 1793168940.4352126,
+        "seconds": 3.423560380935669,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "links": {
+      "direct": {
+        "pid": 56984,
+        "exit": 0,
+        "started": 1793168944.4332814,
+        "seconds": 1.780806064605713,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph": {
+        "pid": 35940,
+        "exit": 0,
+        "started": 1793168946.5574415,
+        "seconds": 1.81492280960083,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "runtime": {
+        "pid": 19812,
+        "exit": 0,
+        "started": 1793168948.7039883,
+        "seconds": 1.7380359172821045,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "input_counts": {
+      "direct": 230,
+      "graph": 230,
+      "runtime": 227
+    },
+    "original_inputs": 228,
+    "retained_original": 221,
+    "replaced_SDK_objects": 5,
+    "removed_default_rules_object": 1,
+    "gtests": {
+      "direct": {
+        "pid": 49404,
+        "tests": 23,
+        "passed": 22,
+        "skipped": 1,
+        "status": "PASS_WITH_SKIPS",
+        "skip_details": [
+          {
+            "suite": "CpuDefaultContext",
+            "name": "D5RealQwenProjectionUsesExactProfileAndReplays",
+            "status": "SKIP",
+            "skip_reason": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\context_test.cc:709\nset HYLE_D5_QWEN35_FIXTURE to the prepared local fixture\n"
+          }
+        ]
+      },
+      "graph": {
+        "pid": 18296,
+        "tests": 25,
+        "passed": 25,
+        "skipped": 0,
+        "status": "PASS",
+        "skip_details": []
+      }
+    },
+    "runtime": [
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 4496,
+          "exit": 0,
+          "started": 1793169110.4606142,
+          "seconds": 0.40462732315063477,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "foreign",
+        "telemetry": "PASS CPU runtime --foreign backend=1 configured=2 observed=1 used=0"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 56528,
+          "exit": 0,
+          "started": 1793169107.6964195,
+          "seconds": 0.40083885192871094,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "late-aten",
+        "telemetry": "PASS CPU runtime --late-aten backend=1 configured=0 observed=24 used=1"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 8216,
+          "exit": 0,
+          "started": 1793169107.003139,
+          "seconds": 0.42491912841796875,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "late-native",
+        "telemetry": "PASS CPU runtime --late-native backend=1 configured=0 observed=24 used=1"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 34196,
+          "exit": 0,
+          "started": 1793169109.7593334,
+          "seconds": 0.42388105392456055,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "metadata-oom",
+        "telemetry": "PASS CPU runtime --metadata-oom backend=1 configured=0 observed=24 used=1"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 51492,
+          "exit": 0,
+          "started": 1793169106.2705417,
+          "seconds": 0.44884371757507324,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "query-first",
+        "telemetry": "PASS CPU runtime --query-first backend=1 configured=2 observed=2 used=0"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 56968,
+          "exit": 0,
+          "started": 1793169109.0773351,
+          "seconds": 0.4095032215118408,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "race-config",
+        "telemetry": "PASS CPU runtime --race-config backend=1 configured=2 observed=2 used=0"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 34472,
+          "exit": 0,
+          "started": 1793169108.3679147,
+          "seconds": 0.42542552947998047,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "race-use",
+        "telemetry": "PASS CPU runtime --race-use backend=1 configured=2 observed=2 used=1"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 35764,
+          "exit": 0,
+          "started": 1793169111.1644933,
+          "seconds": 0.3986225128173828,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "runtime-drift",
+        "telemetry": "PASS CPU runtime --runtime-drift backend=1 configured=1 observed=2 used=1"
+      },
+      {
+        "status": "PASS",
+        "process": {
+          "pid": 58628,
+          "exit": 0,
+          "started": 1793169105.1995065,
+          "seconds": 0.7979588508605957,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "scenario": "startup",
+        "telemetry": "PASS CPU runtime --startup backend=1 configured=2 observed=2 used=1"
+      }
+    ],
+    "unrun_runtime_modes": [
+      "disabled"
+    ],
+    "product_scope": "CPU facade owns all default ranking. Native original admission/execution and explicit packed priority remain; Exp plain-dense same-desc F32 single-native-lane engineering baseline, storage Gather original algorithm rule. No old sampled shape or hardware/recipe qualification.",
+    "public_ABI_changed": false,
+    "math_kernels_changed": false
+  },
+  "build_counts": {
+    "leaf_CXX": {
+      "actual": 2,
+      "success": 1,
+      "failed": 1
+    },
+    "leaf_links": 1,
+    "validation_CXX": {
+      "actual": 10,
+      "success": 10,
+      "failed": 0
+    },
+    "validation_links": 3,
+    "full_third_party_SDK_rebuild": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "retained_failure": {
+    "process": {
+      "pid": 11216,
+      "exit": 2,
+      "started": 1793168002.008775,
+      "seconds": 2.0448215007781982,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "reason": "Benchmark setup /WX: NOMINMAX redefinition and getenv C4996. Conditional macro guard plus original central benchmark CRT definition; no lowered warning level, math or budget change.",
+    "attempt2": {
+      "pid": 50576,
+      "exit": 0,
+      "started": 1793168107.6983485,
+      "seconds": 2.9099297523498535,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "link": {
+      "pid": 17928,
+      "exit": 0,
+      "started": 1793168116.2529492,
+      "seconds": 1.8347842693328857,
+      "state": "TERMINAL",
+      "timed_out": false
+    }
+  },
+  "limits": [
+    "Leaf speed ratios compare two admitted CPU Exp programs only; no CPU inference overall2–4x or GPU performance claim.",
+    "Single process per shape/control in one ordering stratum. Per-process paired CI is not a general shape/provider or cross-system winner proof.",
+    "Raw per-epoch samples were not exported by the unchanged binary; null is intentional.",
+    "Optional ATen/CUDA changes in the concurrent worktree are outside this patch, build and validation scope.",
+    "Only listed actual GTests/runtime scenarios are validated; no full-model/quality or new-platform performance result."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-cpu-workload-routing-2026-10-28.zip",
+    "bytes": 1097690,
+    "sha256": "1d9833b8ecd2b9c924affdc35cab4229ee44e505ec1de59e0fea2d2870ce0e56",
+    "members": 395,
+    "manifest_sha256": "1a63b2e5c360a4e1aac19e1e6b364b3d252250d166ebfa98746f419061683047",
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  },
+  "source_base_commit": "e95436fcc8be7ab6837570c952fdc7202358fb45"
+}

@@ -51,7 +51,7 @@ TensorDesc matrix(std::int64_t rows, std::int64_t columns) {
 TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
   auto context = create_context().value();
   const auto tensor = matrix(2, 64);
-  const auto prepared = prepare(context, Unary{UnaryKind::kExp}, tensor);
+  const auto prepared = prepare(context, Copy{}, tensor);
   ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
   EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543505544ULL);
@@ -61,7 +61,7 @@ TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
   // Expert factories keep their original capabilities and no ordinary-default
   // claim. The context-specific policy must not leak into the library factory.
   auto expert = Context::create(cpu::device(), ggml_cpu::provider()).value();
-  auto explicit_program = prepare(expert, Unary{UnaryKind::kExp}, tensor);
+  auto explicit_program = prepare(expert, Copy{}, tensor);
   ASSERT_TRUE(explicit_program.has_value());
   EXPECT_TRUE(explicit_program->route_policy().empty());
   EXPECT_EQ(prepared->runtime_properties().replay_class,
@@ -168,7 +168,10 @@ TEST(CpuDefaultContext, LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation) 
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 TEST(CpuDefaultContext, OneGgmlInstanceServesOrdinaryAndFusedGraphRoutes) {
   namespace graph = hyle::graph;
-  auto context = create_context().value();
+  // This case checks one mature ggml instance across leaf/region routes.
+  // A two-thread ggml budget explicitly selects that engineering domain;
+  // the separate single-lane Exp policy is tested in current_rules_test.cc.
+  auto context = graph::cpu::create_context({.native_threads = 2}).value();
   ProviderInstanceId instance;
   std::size_t ggml_count = 0;
   for (std::size_t index = 0; index < context.provider_count(); ++index) {

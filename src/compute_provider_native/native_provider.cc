@@ -14,7 +14,6 @@
 #include "../compute/operation_cold.h"
 #include "../compute_packed_shared/artifact_packed_linear.h"
 #include "../compute_packed_shared/static_fp8_linear.h"
-#include "default_rules.h"
 #include "torch_cpu_program.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/model_ops.h"
@@ -37,15 +36,8 @@ using internal::completed;
 using internal::NativePlan;
 using internal::preserve_first_error;
 
-struct Configuration final {
-  Options options{};
-  internal::DefaultRuleScope scope = internal::DefaultRuleScope::kExpert;
-  bool single_native_thread = true;
-};
 struct NativeContext final {
   ParallelExecutorRef executor{};
-  internal::DefaultRuleScope scope = internal::DefaultRuleScope::kExpert;
-  bool qualified_environment = false;
 };
 
 struct NativeInvocation final {
@@ -178,14 +170,10 @@ Status create_context(const Provider &provider_value, Device device, void *,
   if (storage == nullptr)
     return Status::ResourceExhausted(
         "native provider context allocation failed");
-  const Configuration config =
-      detail::ProviderAccess::payload<Configuration>(provider_value);
+  const Options options =
+      detail::ProviderAccess::payload<Options>(provider_value);
   *context_output = ::new (storage) NativeContext{
-      .executor = config.options.executor,
-      .scope = config.scope,
-      .qualified_environment = config.single_native_thread &&
-                               config.options.executor.concurrency() <= 1 &&
-                               internal::qualified_default_environment()};
+      .executor = options.executor};
   return Status::Ok();
 }
 
@@ -833,28 +821,6 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               static_cast<std::uint64_t>(operation.kind()) + 1 +
               (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };
-  if (request.shape.exact() &&
-      context->scope != internal::DefaultRuleScope::kExpert) {
-    const auto policy = internal::storage_gather_policy(operation, inputs, outputs);
-    if (policy.valid()) {
-      proposal->policy = policy;
-      // Prefer the existing selected-byte algorithm to whole-bank CONT or a
-      // half -> F32 -> half conversion. No model, CPU or thread-count gate.
-      proposal->preference =
-          context->scope == internal::DefaultRuleScope::kDirect ? 75 : 275;
-    }
-  }
-  if (request.shape.exact() && context->qualified_environment &&
-      internal::thread_runtime_allows_qualified_default() &&
-      context->scope != internal::DefaultRuleScope::kExpert) {
-    const auto policy =
-        internal::qualified_default_policy(operation, inputs, outputs);
-    if (policy.valid()) {
-      proposal->policy = policy;
-      proposal->preference =
-          context->scope == internal::DefaultRuleScope::kDirect ? 50 : 175;
-    }
-  }
   // This packed matvec route decodes W for each activation row. A matrix
   // workload has no cross-row weight reuse here, so let the ordinary dense
   // leaf compete first; keep the capability and its storage facts available.
@@ -978,15 +944,6 @@ const detail::ProviderVTable kProviderVTable{
 } // namespace
 
 Provider provider(Options options) noexcept {
-  return detail::ProviderAccess::make(&kProviderVTable,
-                                      Configuration{.options = options});
+  return detail::ProviderAccess::make(&kProviderVTable, options);
 }
-
-namespace internal {
-Provider default_provider(Options options, DefaultRuleScope scope,
-                          bool single_native_thread) noexcept {
-  return detail::ProviderAccess::make(
-      &kProviderVTable, Configuration{options, scope, single_native_thread});
-}
-} // namespace internal
 } // namespace hyle::compute::native
