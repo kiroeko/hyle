@@ -130,6 +130,11 @@ history的独立有限图原先在MLX冷编译时报映射缺失；随后定位�
 实际调用结果在成功、取消及异常后归还原记录，不以副本旧值决定发布。
 Qwen target／NextN 的相同 FFN 及 exact／packed GDN 尾部数学另合为单份冷构图方程。
 模型数学资格、真实 layout、图族、target／draft／repair 及联合发布仍归模型，完整核心尚未抽完。
+K>1实际缩宽分组现复用同一成员借用／归还机制，等宽不再建立分组表；早先组提交、后组失败的真实CPU／CUDA旅程已通过，
+包括原participant、q租约、退休及原key恢复重试。自然冷需求的成对库存也已合并，四个原入口的266条冷事实与前版相同。
+检查范围及两次测试计数误报的修正见[本片记录](../evidence/correctness/inference-selected-cold-demand-2026-10-28.json)，没有新吞吐结论。
+下一步优先核固定投影导致既有物理span缓存失效的真实链条及append各bank重复坐标证明，
+复用原Invocation／绑定与权限机制；[源码调查](../evidence/research/inference-steady-physical-work-review-2026-10-28.json)只是候选依据，未实现或测得收益。
 
 资源episode现从模型Step拆为共同`ExecutionEpisode`，普通／后继和NextN使用同一原载体提交、观察及失败回收顺序。
 模型先保活参与者，后嵌入原资源；前驱alias保留原Step。Append／Store、Source、页尾和额度仍以原权限及真实退休为准，

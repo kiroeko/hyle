@@ -1041,6 +1041,9 @@ TopK 仍按原 logits 排序，避免缩放使极小不同值变成并列。T≤
 选中的原调用移动到批次，缩尾、成功及异常都归还实际执行事实，避免取消只修改副本、发布仍读取旧结果。
 工作区不拥有 head、Completion、credit 或原生退休权限；跨 pump 的 episode 保留自己的调用事实，
 不能借用本波暂存。模型仍负责真实资格、容量、执行、错误归属及前缀发布。
+同一 `SelectedRequestCalls` 也用于 K>1 提案缩宽后的实际成员：等宽直接执行，异长仍按原行数升序分组。
+每组成功或异常都归还实际 Call，较早组的提交不回滚；错误的 child participant 仍映射回原桶成员，
+原 Status、native 和实际退休事实保留，guard 不替模型执行回滚或设备退休。
 按同一已准备模型、阶段、真实行数和状态合同分桶；MTP EOS 后按实际验证宽度拆组，
 不 padding 到最大 R／K，也不把 q／hidden 下载到 CPU 以统一格式。
 
@@ -1374,6 +1377,10 @@ Shape／Key对该政策不透明；Model只核数学资格，并提供原载体�
 该算法仅在冷接纳执行，不为热查找增加FIFO扫描、分配或另一套资源owner。
 [本片有限检查](../evidence/correctness/inference-cold-shape-plan-2026-10-28.json)包含主机政策契约和CPU／CUDA实际接纳／预热复用；
 原生旅程未触发FIFO淘汰，主机异常钩子不代表设备故障注入。
+自然日程的 exact／carrier 需求分别使用 `ColdDemandInventory`：同一条目保存使用提示与去重成员，
+Counted 累加、Possible 将下界提高到一，保留原记录顺序；重建库存可为零次且无成员。
+按行数累积匹配成员的并集由共同冷算法计算，采样资格、R1、role／lag、物理容量及 exact／packed 选择仍归模型。
+这些数值是日程的保守规划提示，不是已执行 Graph 次数；库存不留在热路径，也不拥有图或资源。
 [CPU／CUDA载体合同检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)
 覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
 覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。

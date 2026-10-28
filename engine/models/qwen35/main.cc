@@ -52,6 +52,7 @@
 #include "../../inference/program_io.h"
 #include "../../inference/prepared_program_family.h"
 #include "../../inference/cold_shape_plan.h"
+#include "../../inference/cold_demand.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
@@ -6979,15 +6980,17 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     }
     // Request stop tokens can shorten different requests to different exact widths. Preserve
     // real query geometry rather than padding or consuming a terminal token.
-    std::map<std::size_t, std::vector<std::size_t>> groups;
-    for (std::size_t i = 0; i < calls.size(); ++i) groups[calls[i].ids().size()].push_back(i);
-    if (groups.size() > 1) {
+    const auto uniform_rows = calls[0].ids().size();
+    if (std::ranges::any_of(calls, [&](const auto &call) { return call.ids().size() != uniform_rows; })) {
+      std::map<std::size_t, std::vector<std::size_t>> groups;
+      for (std::size_t i = 0; i < calls.size(); ++i) groups[calls[i].ids().size()].push_back(i);
       for (const auto &[rows, members] : groups) {
         (void)rows;
-        std::vector<PreparedGenerationCall> selected;
-        for (const auto index : members) selected.push_back(std::move(calls[index]));
+        hyle::container::SmallVector<PreparedGenerationCall, 2> selected;
+        if (!selected.try_reserve(members.size())) throw std::bad_alloc{};
+        inference::SelectedRequestCalls<PreparedGenerationCall, 2> borrowed(calls, members, selected);
         try {
-          execute_generation_calls(model, selected, trace_states, prefix, requests, after_submit, nullptr, batch_observer);
+          execute_generation_calls(model, borrowed.members(), trace_states, prefix, requests, after_submit, nullptr, batch_observer);
         } catch (const inference::EvaluationFailure &failure) {
           // A child index is not an index into the original request bucket.
           // Preserve the original error and actual retirement independently.
@@ -6997,7 +7000,6 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
           if (failure.retirement_observed()) mapped.observe_retirement(failure.retirement());
           throw mapped;
         }
-        for (std::size_t j = 0; j < members.size(); ++j) calls[members[j]] = std::move(selected[j]);
       }
       return;
     }
@@ -7549,24 +7551,16 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
   }
   const std::array pair{std::size_t{2}};
   using PromptKey = std::pair<GraphRole, TextCompletion>;
-  std::map<PromptKey, std::map<std::size_t, std::size_t>> prompt_uses;
-  std::map<PromptKey, std::map<std::size_t, std::vector<std::size_t>>> support;
-  std::map<PromptKey, std::map<std::size_t, std::size_t>> carrier_uses;
-  std::map<PromptKey, std::map<std::size_t, std::vector<std::size_t>>> carrier_support;
+  using Demands = inference::ColdDemandInventory<PromptKey>;
+  Demands prompt_demand, carrier_demand;
   const auto note_prompt = [&](GraphRole role, std::size_t tokens, std::size_t member,
                                TextCompletion completion = TextCompletion::kEmitNext, bool possible = false) {
-    const PromptKey key{role, completion};
-    auto &count = prompt_uses[key][tokens];
-    count = possible ? (std::max)(count, std::size_t{1}) : cache::add(count, 1);
-    auto &members = support[key][tokens];
-    if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
+    prompt_demand.note({role, completion}, tokens, member,
+        possible ? inference::ColdDemandKind::kPossible : inference::ColdDemandKind::kCounted);
   };
   const auto note_carrier = [&](GraphRole role, std::size_t rows, std::size_t member, TextCompletion completion, bool possible = false) {
-    const PromptKey key{role, completion};
-    auto &count = carrier_uses[key][rows];
-    count = possible ? (std::max)(count, std::size_t{1}) : cache::add(count, 1);
-    auto &members = carrier_support[key][rows];
-    if (std::find(members.begin(), members.end(), member) == members.end()) members.push_back(member);
+    carrier_demand.note({role, completion}, rows, member,
+        possible ? inference::ColdDemandKind::kPossible : inference::ColdDemandKind::kCounted);
   };
   const auto note_prefill = [&](std::size_t tokens, std::size_t member, bool lag = false) {
     for (std::size_t consumed = 0; consumed < tokens;) {
@@ -7624,21 +7618,21 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       GraphRole::kMtpSingle, GraphRole::kMtpCatchupSingle};
   // Normal rebuild preserves original committed chunks, not original proposals.
   // Every consumed verifier prefix can become a teacher-forced prefill chunk.
-  prompt_uses[{prompt_role(1), TextCompletion::kEmitNext}].try_emplace(1, 0);
+  prompt_demand.inventory({prompt_role(1), TextCompletion::kEmitNext}, 1);
   if constexpr (mtp) for (std::size_t rows = 2;
       rows <= (std::min)(model.cache_plan.candidate_boundaries, model.cache_plan.max_query_rows); ++rows)
-    prompt_uses[{GraphRole::kMtpPrefill, TextCompletion::kEmitNext}].try_emplace(rows, 0);
+    prompt_demand.inventory({GraphRole::kMtpPrefill, TextCompletion::kEmitNext}, rows);
   for (std::size_t sampling_index = 0; sampling_index < model.sampling_configuration_count(); ++sampling_index) {
     if (std::ranges::none_of(requests, [&](const auto &request) { return request.sampling_index == sampling_index; })) continue;
+    const auto matches_member = [&](std::size_t member) { return requests[member].sampling_index == sampling_index; };
     const auto policy_decoding_requests = static_cast<std::size_t>(std::count_if(requests.begin(), requests.end(), [&](const auto &request) {
       return request.sampling_index == sampling_index && std::ranges::any_of(request.progress.turns(), [](const auto &turn) { return turn.max_outputs > 1; });
     }));
   for (std::size_t width = 1; width <= model.cache_plan.active_sequences; ++width) {
     std::map<PromptKey, std::map<std::size_t, std::size_t>> shapes;
-    for (const auto &[key, tokens] : prompt_uses) for (const auto &[count, uses] : tokens) {
-      const auto found_role = support.find(key);
-      const auto eligible = found_role == support.end() || !found_role->second.contains(count) ? 0 : static_cast<std::size_t>(std::count_if(found_role->second.at(count).begin(), found_role->second.at(count).end(), [&](auto member) { return requests[member].sampling_index == sampling_index; }));
-      if (width == 1 || width <= eligible) shapes[key][count] = cache::add(uses, width == 1 ? restore_bound : 0);
+    for (const auto &[key, tokens] : prompt_demand.entries()) for (const auto &[count, demand] : tokens) {
+      const auto eligible = demand.eligible_count(matches_member);
+      if (width == 1 || width <= eligible) shapes[key][count] = cache::add(demand.uses, width == 1 ? restore_bound : 0);
     }
     if (decode_bound && width <= policy_decoding_requests) {
       if constexpr (mtp) for (auto role : roles) {
@@ -7659,35 +7653,28 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       for (const auto completion : {TextCompletion::kEmitNext, TextCompletion::kStateOnly})
         for (const auto role : {GraphRole::kMtpCatchupPrefill, GraphRole::kMtpCatchupSingle}) {
           const auto normalized = role == GraphRole::kMtpCatchupPrefill ? GraphRole::kMtpPrefill : GraphRole::kMtpSingle;
-          const auto found = prompt_uses.find({role, completion});
-          if (found != prompt_uses.end()) for (const auto &[tokens, uses] : found->second) {
-            (void)uses; shapes[{normalized, completion}].try_emplace(tokens, restore_bound);
-          }
+          if (const auto *found = prompt_demand.find({role, completion}))
+            for (const auto &[tokens, demand] : *found) {
+              (void)demand; shapes[{normalized, completion}].try_emplace(tokens, restore_bound);
+            }
         }
     if (width == 1 && !model.sampling_configuration(sampling_index).configuration.modifiers.empty()) {
       // A modifier history contains consumed IDs and the original pending/RNG,
       // not old bias/mask bytes. Prepare its state-only reconstruction before
       // storage freezes, including every bounded accepted verifier prefix.
-      for (const auto &[key, entries] : prompt_uses) {
+      for (const auto &[key, entries] : prompt_demand.entries()) {
         const auto original = key.first;
         const auto role = original == GraphRole::kMtpCatchupPrefill ? GraphRole::kMtpPrefill
             : original == GraphRole::kMtpCatchupSingle ? GraphRole::kMtpSingle : original;
         if (!supports_state_only(role)) continue;
-        for (const auto &[tokens, uses] : entries) {
-          (void)uses;
+        for (const auto &[tokens, demand] : entries) {
+          (void)demand;
           shapes[{role, TextCompletion::kStateOnly}].try_emplace(tokens, restore_bound);
         }
       }
     }
-    for (const auto &[key, controls] : carrier_support) {
-      std::set<std::size_t> eligible;
-      for (const auto &[rows, members] : controls) {
-        (void)rows;
-        for (auto member : members)
-          if (requests[member].sampling_index == sampling_index) eligible.insert(member);
-      }
-      if (width <= eligible.size()) shapes.try_emplace(key);
-    }
+    for (const auto &[key, controls] : carrier_demand.entries())
+      if (width <= Demands::eligible_members(controls, matches_member)) shapes.try_emplace(key);
     for (const auto &[key, entries] : shapes) {
       const auto [role, completion] = key;
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
@@ -7700,29 +7687,24 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       const bool variable_prefill = width > 1 || prefill.bounded() || prefix_enabled;
       if (variable_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) && model.layer0_probe.empty()) {
         std::vector<std::size_t> capacities;
-        const auto controls = carrier_support.find(key);
-        if (controls != carrier_support.end()) {
-          std::set<std::size_t> eligible;
-          for (const auto &[rows, members] : controls->second) {
-            for (auto member : members)
-              if (requests[member].sampling_index == sampling_index) eligible.insert(member);
-            const auto physical = is_mtp_prefill(role) ? cache::add(rows, draft_lag(role)) : rows;
-            if (width <= eligible.size() && physical <= model.cache_plan.max_query_rows / width)
-              capacities.push_back(rows);
-          }
-        }
+        if (const auto *controls = carrier_demand.find(key))
+          Demands::visit_support(*controls, matches_member,
+              [&](std::size_t rows, const Demands::Entry &, std::size_t eligible) {
+                const auto physical = is_mtp_prefill(role) ? cache::add(rows, draft_lag(role)) : rows;
+                if (width <= eligible && physical <= model.cache_plan.max_query_rows / width)
+                  capacities.push_back(rows);
+              });
         if (width == 1 && completion == TextCompletion::kStateOnly &&
             !model.sampling_configuration(sampling_index).configuration.modifiers.empty()) {
           // A dynamic prefix suffix may have used any real length within its
           // original EmitNext carrier. Rebuild can reuse that cold capacity
           // without retaining historical modifier values or admitting hot L.
-          for (const auto &[source_key, source_controls] : carrier_support) {
+          for (const auto &[source_key, source_controls] : carrier_demand.entries()) {
             const auto source_role = source_key.first == GraphRole::kMtpCatchupPrefill
                 ? GraphRole::kMtpPrefill : source_key.first;
             if (source_role != role) continue;
-            for (const auto &[rows, members] : source_controls)
-              if (rows <= model.cache_plan.max_query_rows && std::ranges::any_of(members,
-                  [&](auto member) { return requests[member].sampling_index == sampling_index; }))
+            for (const auto &[rows, demand] : source_controls)
+              if (rows <= model.cache_plan.max_query_rows && demand.supports(matches_member))
                 capacities.push_back(rows);
           }
           std::sort(capacities.begin(), capacities.end());
@@ -7731,12 +7713,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
         if (!capacities.empty()) packed = model.prepare_prefill_family(capacities, completion, sampling_index, width, role);
         if (packed) {
           for (const auto rows : capacities) {
-            std::size_t uses = 0;
-            const auto found = carrier_uses.find(key);
-            if (found != carrier_uses.end()) {
-              const auto count = found->second.find(rows);
-              if (count != found->second.end()) uses = count->second;
-            }
+            const auto uses = carrier_demand.uses(key, rows);
             model.plan_replay_uses(rows, width, cache::add(uses, width == 1 ? restore_bound : 0),
                 role, completion, sampling_index, true);
           }

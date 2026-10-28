@@ -1,0 +1,55 @@
+{
+  "schema": "hyle.research.steady_physical_work.v1",
+  "status": "SOURCE_REVIEW_ONLY_CANDIDATES_NOT_IMPLEMENTED",
+  "date": "2026-10-28",
+  "scope": "Current prepare_evaluations and original Graph binding contracts; no product edits, build, native execution, download or performance experiment.",
+  "sources": [
+    {"path": "src/graph/resources.cc", "sha256": "4b949d70d9661d0cac95b3fc62c5a81125578ba69863a42fd6566aff7bd55bfb", "bytes": 258471, "anchors": {"void remember_configuration_spans": [536], "void reset_configuration_bindings": [546], "Status RegionAccess::bind_configuration": [623], "Status RegionAccess::bind_projected_impl": [702], "Status RegionAccess::release_writer_preparation": [1302], "Status RegionAccess::release_written_projection": [1332], "Status RegionAccess::bind_read_projection": [1443]}},
+    {"path": "src/graph/executable.cc", "sha256": "f160c92d3d369de9b469b0976ae4a42a1928f6c4265f13345c2cbff1d1010e6f", "bytes": 498671, "anchors": {"void invalidate_binding_cache": [1072], "Status seal_invocation_bindings": [1329], "prepare_invocation_bindings(detail::InvocationState": [1469], "Status detail::RegionAccess::revoke_preparation": [9443], "Status detail::RegionAccess::reset_configuration": [9510], "state_->step_bindings[index].stable_binding_identity = stable_identity;": [10113]}},
+    {"path": "src/graph/slots_region.cc", "sha256": "fe942e0c810baf9d034b136fc6647c41bf7e993f43d758d85441d5ab891dcd80", "bytes": 80799, "anchors": {".permission_changes_preserve_commands = p.native.valid()": [526], "const bool preserve = s.facts.permission_changes_preserve_commands;": [1212], "HYLE_RETURN_IF_ERROR(invocation.bind(p.destination_indices": [1264], "HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_projected_writes": [1382]}},
+    {"path": "src/graph_batch/paged_append.cc", "sha256": "04445b9d89632c33ae03993f0af386c5688f6bb45e499b9ce44a2fe426328811", "bytes": 93201, "anchors": {"Result<PagedAppendPages> PagedAppendPages::create_impl": [306], "for(std::uint32_t logical=0;logical<pages;++logical)": [366], "paged append changed an untouched prefix page": [398], "HYLE_RETURN_IF_ERROR(gd::RegionAccess::bind_written_projection": [886, 928]}},
+    {"path": "src/graph/plan_state.h", "sha256": "bfe6e03d0defbd3cb8d8bc87f4aca3135706abbb7c58331de77234ce12978516", "bytes": 59579, "anchors": {"struct StepBindingState final": [1135], "std::uint64_t revision = 1;": [1139], "bool stable_binding_identity = false;": [1144]}},
+    {"path": "engine/models/qwen35/main.cc", "sha256": "2878c28574361686b2e35baddec11caf2e5d5f9d73567c889c9433a76ce7a298", "bytes": 599088, "anchors": {"void prepare_evaluations(std::span<const EvaluationRequest>": [4337], "step.execution.appends[layer * 2] = relay": [4631], "check(step.execution.prepare_appends": [4674], "check(step.execution.bind_consumers": [4695], "check(step.execution.prepare_replay": [4701]}}
+  ],
+  "profile_context": {"path": ".scratch/inference-current-host-profile-20261028/mtp-host-cost.json", "sha256": "ed7f34912493be22147e8a535f3b6ddfe601cc0effd455edafe4b11b0679a29e", "source_version": "ab5f97554 diagnostic snapshot; not the current product source", "MTP_nonrecording_episodes": 32, "replay_wall_ms": 5.227994, "prepare_excluding_replay_wall_ms": 18.704127, "prepare_excluding_replay_outside_CUDA_API_wall_ms": 10.976107, "boundary": "Existing single instrumented trace; predates later Store/IO changes. Enclosing wall buckets are not CPU busy time, candidate costs, recoverable time or current throughput."},
+  "existing_mechanisms": [
+    "permission_changes_preserve_commands is a selected reader/writer capability for retaining dormant commands across permission withdrawal. It is not full physical tuple equality or new-episode permission.",
+    "Store inspect sets that capability from p.native.valid(); projected reader bindings aggregate the supplied reader capabilities. The logical Gather read-projection binder does not assign it and therefore keeps the default false.",
+    "StepBindingState.stable_binding_identity is learned from the actual capture backend; it is not inferred from allocator tokens. Captured completion assigns it; a Queue owner change clears it.",
+    "StepBindingState already has revision/prepared_revision and native_inputs; submission_inputs/outputs already retain prior physical TensorViews. No additional revision, dirty flag or permission ledger is required for the proposed conservative first path.",
+    "Existing physical-span reuse skips whole-graph View/span reconstruction but still calls seal_invocation_bindings. Missing stable identity or a changed revision still invokes the original command-binding preparation.",
+    "A lease generation change must still be checked through the current permission contract. The two capability flags do not prove current ownership, readiness, retirement, source identity or mathematical equality."
+  ],
+  "complete_invalidation_chain": [
+    "Successful replay prepares bindings, but post-execution Page/Store take withdraws actual authorities before the next episode.",
+    "release_writer_preparation uses writer_preserves_commands: idle original Invocation, stable backend identity and the original provider preserves_commands hook. Success calls revoke_preparation; failure invalidates recording.",
+    "revoke_preparation calls invalidate_binding_cache(state,false): bindings_prepared becomes false although dormant physical commands may remain.",
+    "The following reset_configuration unconditionally seeds configuration_spans from bindings_prepared. A prior successful permission-only withdrawal can therefore lose the candidate before the projection scan.",
+    "reset_configuration_bindings further rejects input_sources, native_inputs, any projected/write-effect/projection binding and aliased configuration inputs; then clears the previous configuration authorities.",
+    "bind_projected_impl calls ordinary Invocation::bind, which discards configuration_spans. Store source/destination index ports also use ordinary bind. Merely changing the reset projection condition cannot retain the hint end to end.",
+    "bind_configuration already demonstrates safe physical hint restoration around a successful original bind: compare full description/resource/native_handle/offset/size at every original physical consumer, reject replicas and external aliases, and restore only the previously eligible candidate.",
+    "prepare_invocation_bindings chooses the existing reusable-spans path only when the hint survives. Otherwise it traverses all steps and resolves all Views and command spans; actual native hooks may already be cached independently."
+  ],
+  "next_candidates": [
+    {
+      "priority": 1,
+      "name": "Retain the existing physical-span hint across qualified fixed-pool permission episodes",
+      "owner": "Original InvocationState/ResourceEpisode and StepBindingState only; no second executor, permission ledger, revision or dirty field.",
+      "change": "Seed and carry the existing hint through actual permission-only take/revoke/reset. On each successful projection or fixed control rebind, compare complete physical tuples against existing submission spans, following bind_configuration. Keep actual per-episode reader/writer/source binding and final seal.",
+      "minimum_gate": "Previously prepared eligible spans; same immutable plan/artifact/Queue; every relevant reader and writer has the applicable preserves-commands qualification and stable backend identity; no native_inputs; all original consumer tuples unchanged.",
+      "fallback": "Any ordinary/opaque native replacement, changed tuple or Queue, failed preparation, unqualified artifact, external alias, replica or Imported Source uses the original full path. Do not promote logical Gather source eligibility from its Store writer flag.",
+      "measurement": "Source-proven redundant traversal candidate; no attributed cost or speedup has been measured."
+    },
+    {
+      "priority": 2,
+      "name": "Share immutable append coordinates across the real KV bank cohort",
+      "owner": "Exact old/new BatchLayoutVersion facts retained by the original append/layout owners; share only immutable host coordinate metadata, never page guards or write authority.",
+      "change": "Compute old/new logical-page correspondence, untouched-prefix equality and appended row coordinates once per exact layout pair, then reuse across banks instead of repeating create_impl page traversal. Retain each bank-specific arena/writer/appender/generation/prefix validation.",
+      "invalidation": "Different old/new version, schema/page size, page table, query offsets, active rows or COW target requires fresh coordinate validation. New length normally means a new pair; first benefit is within the same episode across banks, not skipping all future-token validation.",
+      "fallback": "Unsupported or unproven layout relations keep the current create_impl path and its original errors/retirement. Do not consume caller writers before all original fallible checks finish.",
+      "measurement": "Source-proven repeated work scales with logical pages and KV banks; no per-bank time or end-to-end benefit has been measured."
+    }
+  ],
+  "reproduce_source_lookup": "rg -n -F <anchor> <path>; line numbers refer only to each pinned source snapshot.",
+  "not_claimed": ["Current measured bottleneck attribution", "Recoverable time from enclosing profile buckets", "A product implementation or completed architecture", "Safety from capability flags without fresh permission and tuple checks"]
+}

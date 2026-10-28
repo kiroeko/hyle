@@ -19,6 +19,8 @@
 #include "inference_program_carrier_case.h"
 #include "qwen_generation_wave_case.h"
 #include "qwen_sampling_policy_case.h"
+#include "qwen_mtp_group_return_case.h"
+#include "inference_cold_demand_case.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
@@ -43,9 +45,11 @@ int main(int argc, char **argv) {
     const bool history_control = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-control";
     const bool generation_wave = argc >= 3 && std::string_view(argv[argc - 1]) == "--generation-wave";
     const bool sampling_policies = argc >= 3 && std::string_view(argv[argc - 1]) == "--sampling-policies";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies);
+    const bool mtp_group_return = argc >= 3 && std::string_view(argv[argc - 1]) == "--mtp-group-return";
+    const bool cold_demand = argc >= 3 && std::string_view(argv[argc - 1]) == "--cold-demand";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || history_logits || history_ordinary || history_replay || history_control || generation_wave || sampling_policies || mtp_group_return || cold_demand);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--history-logits|--history-ordinary|--history-replay|--history-control|--generation-wave|--sampling-policies|--mtp-group-return|--cold-demand]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -58,6 +62,7 @@ int main(int argc, char **argv) {
       std::cerr << "SKIP: selected route is not built\n"; return 77;
     }
     if (program_carrier) return inference_program_carrier_case::run(backend);
+    if (cold_demand) return inference_cold_demand_case::run();
     std::string input;
     if (input_argc == 3) input = argv[2];
     else {
@@ -74,7 +79,8 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return generation_wave ? qwen_generation_wave_case::run(input, backend)
+    return mtp_group_return ? qwen_mtp_group_return_case::run(input, backend)
+           : generation_wave ? qwen_generation_wave_case::run(input, backend)
            : sampling_policies ? qwen_sampling_policy_case::run(input, backend)
            : history_control ? qwen_history_control_case::run(input, backend)
            : history_replay ? qwen_history_replay_case::run(input, backend)

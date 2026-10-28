@@ -1,0 +1,574 @@
+{
+  "schema": "hyle.selected-calls-cold-demand.correctness.v1",
+  "status": "PASS_NINE_FINITE_CONSUMERS",
+  "successful_consumer_processes": 9,
+  "host_contract_processes": 1,
+  "native_model_successful_processes": 8,
+  "native_model_failed_processes": 2,
+  "total_native_or_host_attempts": 11,
+  "automatic_retries": 0,
+  "group_CPU_attempts": 3,
+  "group_CUDA_attempts": 1,
+  "unchanged_seven_consumers_run_once": true,
+  "structured_state_comparisons": 34,
+  "byte_exact_state_comparisons": 34,
+  "actual_build": {
+    "CXX_attempts": [
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\final\\logs\\tiny\\process.json",
+          "bytes": 150,
+          "sha256": "a65b9b382b04275551b5cd578e0fbceab032dcd1773e86509ac7ecea8ca66211"
+        },
+        "process": {
+          "pid": 58880,
+          "exit": 0,
+          "started": 1793186159.0131853,
+          "seconds": 58.44951033592224,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\logs\\tiny\\process.json",
+          "bytes": 148,
+          "sha256": "dbe0362f9c777f9fcb16bba081990424f8bd773766716b0eb4378df53ef8defd"
+        },
+        "process": {
+          "pid": 31284,
+          "exit": 0,
+          "started": 1793185340.91847,
+          "seconds": 57.93331503868103,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\refinement\\logs\\tiny\\process.json",
+          "bytes": 149,
+          "sha256": "9e0d2edc9e89a6b2b431c32d345191b3658b3d8443a5998c5ccb4c5507c26061"
+        },
+        "process": {
+          "pid": 53696,
+          "exit": 0,
+          "started": 1793185894.345115,
+          "seconds": 57.06341052055359,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      }
+    ],
+    "link_attempts": [
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\final\\links\\tiny\\process.json",
+          "bytes": 150,
+          "sha256": "5ef932ae8b132f8221792b25ed3e6cc36cdf88e0119ee9f0d0db4541c8d41847"
+        },
+        "process": {
+          "pid": 39324,
+          "exit": 0,
+          "started": 1793186326.3593087,
+          "seconds": 1.814432144165039,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\links\\tiny\\process.json",
+          "bytes": 151,
+          "sha256": "3c0d3ea0876f83aac5b8b91f3331ae75e202c8dd101a2f0557f9514eaef2dcb7"
+        },
+        "process": {
+          "pid": 48204,
+          "exit": 0,
+          "started": 1793185453.4098697,
+          "seconds": 1.8426179885864258,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      {
+        "receipt": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\refinement\\links\\tiny\\process.json",
+          "bytes": 151,
+          "sha256": "76052b286a2584bb3f8138268e7811ebdda70978c6e2bce49c08008bc1162317"
+        },
+        "process": {
+          "pid": 44416,
+          "exit": 0,
+          "started": 1793185977.8996687,
+          "seconds": 1.8083360195159912,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      }
+    ],
+    "source_images": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\final\\ready-tiny.json",
+        "bytes": 3085,
+        "sha256": "27984deed7e2d1cdb4cc3c3935bf1b48100a68f99ea2270e2059a843f7e9aeab"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\ready-tiny.json",
+        "bytes": 3021,
+        "sha256": "54413c639a52ce0a1c500b5fc91f3a670718c8c3a157781ad27d9419797a928e"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\refinement\\ready-tiny.json",
+        "bytes": 3130,
+        "sha256": "6029961bea871662773e59b0f08e13732404fd22aed0877a72183fa15275763a"
+      }
+    ],
+    "link_inputs_per_image": 228,
+    "retained_SDK_weights": 227,
+    "SDK_CXX": 0,
+    "NVCC": 0
+  },
+  "cases": [
+    {
+      "name": "cold-demand",
+      "backend": "host",
+      "status": "PASS",
+      "process": {
+        "pid": 40788,
+        "exit": 0,
+        "started": 1793185456.9536223,
+        "seconds": 0.6920380592346191,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "case": "cold-demand",
+        "models": 0,
+        "native_submissions": 0,
+        "inventory_zero_without_support": true,
+        "ordered_counted_possible": true,
+        "unique_members": true,
+        "cumulative_rows_policy_and_key_isolation": true,
+        "overflow_without_partial_note": true,
+        "use_hints_not_measured_native_calls": true,
+        "performance_claim": false
+      }
+    },
+    {
+      "name": "group-cpu",
+      "backend": "cpu",
+      "status": "PASS",
+      "process": {
+        "pid": 48968,
+        "exit": 0,
+        "started": 1793186329.8135483,
+        "seconds": 0.8502473831176758,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-group-return",
+        "backend": "cpu",
+        "models": 1,
+        "actual_active_sequences": 2,
+        "logical_requests": 3,
+        "submitted_widths": [
+          2,
+          3
+        ],
+        "actual_q_before_grouping": 5,
+        "actual_q_after_failure": 4,
+        "original_participant": 2,
+        "successful_peer_repairs": 1,
+        "no_proposal_regeneration": true,
+        "draft_program_calls_before_grouping": 5,
+        "draft_program_calls_after_failure": 6,
+        "original_calls_and_q_returned": true,
+        "earlier_group_commit_preserved": true,
+        "failed_heads_ledger_rng_unchanged": true,
+        "actual_retirement": true,
+        "same_key_host_restore_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "group-cuda",
+      "backend": "cuda",
+      "status": "PASS",
+      "process": {
+        "pid": 57472,
+        "exit": 0,
+        "started": 1793186339.6516092,
+        "seconds": 0.7781620025634766,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "case": "mtp-group-return",
+        "backend": "cuda",
+        "models": 1,
+        "actual_active_sequences": 2,
+        "logical_requests": 3,
+        "submitted_widths": [
+          2,
+          3
+        ],
+        "actual_q_before_grouping": 5,
+        "actual_q_after_failure": 4,
+        "original_participant": 2,
+        "successful_peer_repairs": 1,
+        "no_proposal_regeneration": true,
+        "draft_program_calls_before_grouping": 5,
+        "draft_program_calls_after_failure": 6,
+        "original_calls_and_q_returned": true,
+        "earlier_group_commit_preserved": true,
+        "failed_heads_ledger_rng_unchanged": true,
+        "actual_retirement": true,
+        "same_key_host_restore_retry": true,
+        "synthetic_untrained": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "wave-cpu",
+      "backend": "cpu",
+      "status": "PASS",
+      "process": {
+        "pid": 47136,
+        "exit": 0,
+        "started": 1793185539.2751296,
+        "seconds": 0.4107832908630371,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "case": "generation-wave",
+        "backend": "cpu",
+        "models": 1,
+        "native_submissions": 3,
+        "old_copy_component_failure_reproduced": true,
+        "cancelled_disposition_returned": true,
+        "whole_wave_prepare_before_publish": true,
+        "cancelled_heads_ledger_rng_unchanged": true,
+        "survivor_same_key_retry": true,
+        "prefix_unpublished_on_cancel": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "wave-cuda",
+      "backend": "cuda",
+      "status": "PASS",
+      "process": {
+        "pid": 49516,
+        "exit": 0,
+        "started": 1793185540.27174,
+        "seconds": 0.6983816623687744,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "case": "generation-wave",
+        "backend": "cuda",
+        "models": 1,
+        "native_submissions": 3,
+        "old_copy_component_failure_reproduced": true,
+        "cancelled_disposition_returned": true,
+        "whole_wave_prepare_before_publish": true,
+        "cancelled_heads_ledger_rng_unchanged": true,
+        "survivor_same_key_retry": true,
+        "prefix_unpublished_on_cancel": true,
+        "quality_claim": false,
+        "performance_claim": false,
+        "final_versions": 0
+      }
+    },
+    {
+      "name": "policies-cpu",
+      "backend": "cpu",
+      "status": "PASS",
+      "process": {
+        "pid": 22372,
+        "exit": 0,
+        "started": 1793185541.5476851,
+        "seconds": 0.506230354309082,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "final": {
+          "status": "PASS",
+          "case": "sampling-policies",
+          "ordinary": true,
+          "same_model": true,
+          "configurations": 4,
+          "requests": 6,
+          "turns": 12,
+          "N": 2,
+          "R": 2,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "endpoint": {
+          "sessions": 6,
+          "turns": 12,
+          "admitted": 6,
+          "retired": 6,
+          "prefix_entries": 1,
+          "live_versions": 1
+        }
+      }
+    },
+    {
+      "name": "policies-cuda",
+      "backend": "cuda",
+      "status": "PASS",
+      "process": {
+        "pid": 59448,
+        "exit": 0,
+        "started": 1793185542.6366227,
+        "seconds": 0.8436713218688965,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "final": {
+          "status": "PASS",
+          "case": "sampling-policies",
+          "ordinary": true,
+          "same_model": true,
+          "configurations": 4,
+          "requests": 6,
+          "turns": 12,
+          "N": 2,
+          "R": 2,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "endpoint": {
+          "sessions": 6,
+          "turns": 12,
+          "admitted": 6,
+          "retired": 6,
+          "prefix_entries": 1,
+          "live_versions": 1
+        }
+      }
+    },
+    {
+      "name": "sampler-cpu",
+      "backend": "cpu",
+      "status": "PASS",
+      "process": {
+        "pid": 57460,
+        "exit": 0,
+        "started": 1793185544.0603116,
+        "seconds": 0.6896200180053711,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "final": {
+          "status": "PASS",
+          "case": "mtp-sampling-policies",
+          "backend": "cpu",
+          "sequential_models": 2,
+          "manual_state_checks": 17,
+          "natural_requests": 3,
+          "natural_outputs_per_request": 4,
+          "natural_configurations": 3,
+          "natural_recursive_cold_plan": true,
+          "natural_default_random_extra_greedy": true,
+          "completed_q_released": true,
+          "actual_B2_simultaneous_q": 4,
+          "synthetic_untrained": true,
+          "final_versions": 0,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "manual_structured_state_checks": 17,
+        "all_manual_payloads_byte_equal": true
+      }
+    },
+    {
+      "name": "sampler-cuda",
+      "backend": "cuda",
+      "status": "PASS",
+      "process": {
+        "pid": 62268,
+        "exit": 0,
+        "started": 1793185545.3551767,
+        "seconds": 1.2841761112213135,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "final": {
+          "status": "PASS",
+          "case": "mtp-sampling-policies",
+          "backend": "cuda",
+          "sequential_models": 2,
+          "manual_state_checks": 17,
+          "natural_requests": 3,
+          "natural_outputs_per_request": 4,
+          "natural_configurations": 3,
+          "natural_recursive_cold_plan": true,
+          "natural_default_random_extra_greedy": true,
+          "completed_q_released": true,
+          "actual_B2_simultaneous_q": 4,
+          "synthetic_untrained": true,
+          "final_versions": 0,
+          "quality_claim": false,
+          "performance_claim": false
+        },
+        "manual_structured_state_checks": 17,
+        "all_manual_payloads_byte_equal": true
+      }
+    }
+  ],
+  "failed_attempts": [
+    {
+      "process": {
+        "pid": 34992,
+        "exit": 1,
+        "started": 1793185981.3544836,
+        "seconds": 0.8057370185852051,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "kind": "native_test_assertion_failure",
+      "explanation": "The test wrongly expected no additional draft-program call after its earlier successful B verifier. B actually performs one head=false repair; its original q is not regenerated. The first catch hid the error details; the second diagnostic confirmed InvalidArgument/participant2/retired OK, submitted [2,3], five-to-four live q and draft calls5-to6. Product and N6/q6 budgets were unchanged."
+    },
+    {
+      "process": {
+        "pid": 61532,
+        "exit": 1,
+        "started": 1793185458.2445092,
+        "seconds": 0.44649195671081543,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "kind": "native_test_assertion_failure",
+      "explanation": "The test wrongly expected no additional draft-program call after its earlier successful B verifier. B actually performs one head=false repair; its original q is not regenerated. The first catch hid the error details; the second diagnostic confirmed InvalidArgument/participant2/retired OK, submitted [2,3], five-to-four live q and draft calls5-to6. Product and N6/q6 budgets were unchanged."
+    }
+  ],
+  "product_dependencies": {
+    "product_SHA256_equal": true,
+    "product_files": 208,
+    "manifests": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\final\\frozen-project-dependencies.json",
+        "bytes": 46280,
+        "sha256": "39f43aaed9edcaf54c5bd6d8298d23b3b318edda75a054829358ba27d50e145a"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\frozen-project-dependencies.json",
+        "bytes": 46280,
+        "sha256": "05053dd23f4c09bc813e9a751c1b0622bbdc087c4ec530a60ffd289bed23b55c"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\refinement\\frozen-project-dependencies.json",
+        "bytes": 46280,
+        "sha256": "4c209e4068959bd16f1f8a7ee232aa049d41895fb47848e45283a10d8b66d381"
+      }
+    ],
+    "explanation": "Frozen actual project-dependency identities under engine/include/src are identical across all three images. Only the group test header was refined; the other seven successful consumers were retained without rerun."
+  },
+  "cold_fact_comparison": {
+    "all_match": true,
+    "scope": "Four retained prior processes are offline cold-fact references only, not new runs, pooled tests, performance samples or proof of complete generated-output mathematical equality.",
+    "total_current_lines": 266,
+    "cases": [
+      {
+        "case": "policies-cpu",
+        "status": "MATCH",
+        "current_lines": 40,
+        "previous_signature": "f78c86c7a5695279a1f20c9cebc7182e6505e86492e5379056b8b7053f36f618",
+        "current_signature": "f78c86c7a5695279a1f20c9cebc7182e6505e86492e5379056b8b7053f36f618",
+        "differing_lines": 0
+      },
+      {
+        "case": "policies-cuda",
+        "status": "MATCH",
+        "current_lines": 40,
+        "previous_signature": "e0e95043065da1f60f56fbe2a564b9c3a10b91e19b5cdbfcbd2302b1e187671b",
+        "current_signature": "e0e95043065da1f60f56fbe2a564b9c3a10b91e19b5cdbfcbd2302b1e187671b",
+        "differing_lines": 0
+      },
+      {
+        "case": "sampler-cpu",
+        "status": "MATCH",
+        "current_lines": 93,
+        "previous_signature": "2607705f1d0057857cde6449c76f45b20eba63c052816dfc421d42a6e6e5465e",
+        "current_signature": "2607705f1d0057857cde6449c76f45b20eba63c052816dfc421d42a6e6e5465e",
+        "differing_lines": 0
+      },
+      {
+        "case": "sampler-cuda",
+        "status": "MATCH",
+        "current_lines": 93,
+        "previous_signature": "329c45025fa22bd6eed14436ddc748de4e03988676291923923be53ae8c0ebde",
+        "current_signature": "329c45025fa22bd6eed14436ddc748de4e03988676291923923be53ae8c0ebde",
+        "differing_lines": 0
+      }
+    ]
+  },
+  "boundaries": {
+    "synthetic_cached_fixture": true,
+    "performance_claim": false,
+    "quality_claim": false,
+    "Apple_tested": false,
+    "Vulkan_tested": false,
+    "unknown_native_failure_claim": false,
+    "full_RequestLoop_service_claim": false,
+    "notes": [
+      "Only sampler17 structured full-state rows per backend are counted; group/host/wave/policy assertions are not invented state-check rows.",
+      "Group failure is a real submitted target/private terminal with actual retirement; it is a finite component regression, not a claim that a user workload failure was observed.",
+      "The previous old-copy witness remains a component recipe within a successful process, not execution of the old complete natural entry.",
+      "Ordinary natural endpoint retains one charged prefix/version; its original C++ case verifies zero versions after function return.",
+      "Cold demand counters are conservative scheduling hints, not measured native work. Mathematical/role eligibility and native resource/retirement authority remain with their original owners.",
+      "Seven original successful consumers were not rerun; the final group CPU/CUDA use the corrected test-only image. Two earlier real CPU assertion failures and all three frozen test identities remain archived."
+    ]
+  },
+  "parser": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\package.py",
+    "bytes": 17162,
+    "sha256": "58f944793e0d6f210f83737f32b6533ceef12a404db7a5aef17d3f3a09a83cef"
+  },
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-selected-cold-demand-2026-10-28.zip",
+    "bytes": 586972,
+    "sha256": "e9302a88437621ca5689b0166f1abf986d05f91562a08a98adf87c7bd84c92f6"
+  },
+  "archive_members": 173,
+  "archive_readback": {
+    "CRC": true,
+    "member_SHA256": true
+  },
+  "complete_analysis": {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\analysis.json",
+    "bytes": 478386,
+    "sha256": "75a2f863dd004a0af56cebf6337ad8545318e0b9e4feb775467bfbbcc2c13dd1"
+  },
+  "excludes": [
+    "OBJ",
+    "EXE",
+    "DLL",
+    "PDB",
+    "LIB",
+    "SDK/weight payloads"
+  ]
+}
