@@ -396,7 +396,8 @@ Result<PagedAppendPages> PagedAppendPages::create_impl(c::PagedArena arena,c::Ba
           if(index!=facts.size())return std::unexpected(Status::InvalidArgument("paged append dirty page has no appended rows"));
           const auto source_page=std::uint32_t(before.page_indices[std::size_t(before.kv_indptr[request])+logical]);
           if(source_page!=physical)return std::unexpected(Status::InvalidArgument("paged append changed an untouched prefix page"));
-          HYLE_ASSIGN_OR_RETURN(auto ordinal,old_page_index(source_page));(void)ordinal;
+          // This ID comes from old's immutable page table; retain_previous_pages
+          // already validated this bank's corresponding logical prefixes.
         }
       }
     }

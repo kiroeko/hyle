@@ -1,0 +1,803 @@
+{
+  "schema": "hyle.physical-spans.screen.v1",
+  "status": "COMPLETE16_TWO_GRAPH_OBJECT_SCREEN",
+  "scope": "Isolated resources/executable SDK changes in retained 4ca9 consumer, unchanged Model ff22; not current b1b engine or final four-metric milestone.",
+  "timing_processes": 16,
+  "memory_processes": 0,
+  "samples_per_arm": 2,
+  "processes": [
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "variant": "control",
+      "ordinal": 1,
+      "pid": 42240,
+      "exit": 0,
+      "seconds": 2.5259967,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-ordinary\\01-control\\result.json",
+        "bytes": 1353,
+        "sha256": "fcf7d6b6db4c658b57956caee88b2a58b9d2831b1eaac09d3008cf65d04b85a6"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "variant": "control",
+      "ordinal": 4,
+      "pid": 48472,
+      "exit": 0,
+      "seconds": 2.5243985,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-ordinary\\04-control\\result.json",
+        "bytes": 1353,
+        "sha256": "b47039845e4850db56155eadfd8c367cdd73e677998bdca8806a48dda83a97bd"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "variant": "candidate",
+      "ordinal": 2,
+      "pid": 48856,
+      "exit": 0,
+      "seconds": 2.9111975,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-ordinary\\02-candidate\\result.json",
+        "bytes": 1317,
+        "sha256": "6638364d4f6e6c5c1142552cceec41704f68739b0698ac26d93112c84caca170"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "variant": "candidate",
+      "ordinal": 3,
+      "pid": 54276,
+      "exit": 0,
+      "seconds": 2.5163741,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-ordinary\\03-candidate\\result.json",
+        "bytes": 1317,
+        "sha256": "6e7d499f1ccd24eab4666ef5cb7fe3968f5d1bef503346596d46d41165958007"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "variant": "control",
+      "ordinal": 5,
+      "pid": 35056,
+      "exit": 0,
+      "seconds": 2.8468643,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-mtp\\01-control\\result.json",
+        "bytes": 1385,
+        "sha256": "c80d26fea04bc46b7352f3885d8b62005f8a398f26c475e7ef55f328ed72f87a"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "variant": "control",
+      "ordinal": 8,
+      "pid": 16484,
+      "exit": 0,
+      "seconds": 2.8966712,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-mtp\\04-control\\result.json",
+        "bytes": 1385,
+        "sha256": "f091375cbab564bc60ba64888ef8befae7eb8f72d73c7e117dfd753495285c80"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "variant": "candidate",
+      "ordinal": 6,
+      "pid": 52488,
+      "exit": 0,
+      "seconds": 2.8526303,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-mtp\\02-candidate\\result.json",
+        "bytes": 1349,
+        "sha256": "851db19f9a261feecf993da544dbdb8d6feae28816776b7a0dd31e4ac926867a"
+      }
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "variant": "candidate",
+      "ordinal": 7,
+      "pid": 44052,
+      "exit": 0,
+      "seconds": 2.82977,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\single-mtp\\03-candidate\\result.json",
+        "bytes": 1347,
+        "sha256": "c8027f3f0195e6a6f1892e37afb52393515a7cb9d5aad118660ec10dbe61a3b2"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "variant": "control",
+      "ordinal": 9,
+      "pid": 15100,
+      "exit": 0,
+      "seconds": 3.2739363,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-ordinary\\01-control\\result.json",
+        "bytes": 1461,
+        "sha256": "a158e9f38ff103f6bcbdc69ef81b9fc9544e2380ab64b226ed94fed9b03ea919"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "variant": "control",
+      "ordinal": 12,
+      "pid": 14460,
+      "exit": 0,
+      "seconds": 3.2124378,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-ordinary\\04-control\\result.json",
+        "bytes": 1461,
+        "sha256": "07e2a4b9afd51c909b8672c1546b034941327efb3bd2577e9061d2338df34132"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "variant": "candidate",
+      "ordinal": 10,
+      "pid": 45204,
+      "exit": 0,
+      "seconds": 3.3073857,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-ordinary\\02-candidate\\result.json",
+        "bytes": 1425,
+        "sha256": "ccf3471b3bc5a76d56fcf86608bce427e728f78be4260e42accf4a74c227f2a4"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "variant": "candidate",
+      "ordinal": 11,
+      "pid": 56748,
+      "exit": 0,
+      "seconds": 3.1961532,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-ordinary\\03-candidate\\result.json",
+        "bytes": 1425,
+        "sha256": "6ec1a056fff229450268698fc2d25eb01e58feaebc6dd5a0293561c90bdce3d4"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "variant": "control",
+      "ordinal": 13,
+      "pid": 8432,
+      "exit": 0,
+      "seconds": 3.5361373,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-mtp\\01-control\\result.json",
+        "bytes": 1492,
+        "sha256": "ed19268b1c2a760955c42c3e6cf73176224b4bf90c3b1536a3afd0713b9e014e"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "variant": "control",
+      "ordinal": 16,
+      "pid": 17500,
+      "exit": 0,
+      "seconds": 3.5742245,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-mtp\\04-control\\result.json",
+        "bytes": 1493,
+        "sha256": "9bf6be6b88e7801f8d519c982ee68a7b2bd2699f0f6175d2bbb2117c17ac2b40"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "variant": "candidate",
+      "ordinal": 14,
+      "pid": 12424,
+      "exit": 0,
+      "seconds": 3.4934768,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-mtp\\02-candidate\\result.json",
+        "bytes": 1457,
+        "sha256": "5cb3d4c87ba173372715b6106187bc052b335d9cf06a9f3bbde9810864c12442"
+      }
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "variant": "candidate",
+      "ordinal": 15,
+      "pid": 37044,
+      "exit": 0,
+      "seconds": 3.5271396,
+      "receipt": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\runs\\two-turn-mtp\\03-candidate\\result.json",
+        "bytes": 1457,
+        "sha256": "685b0191fe3a68f0a02c8795dbc6c70ac406a6c2d980fa3206fa980bd74679b9"
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "scenario": "single",
+      "role": "ordinary",
+      "variants": {
+        "control": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2136.6908931763624,
+            "min": 2069.692180326635,
+            "max": 2203.6896060260897,
+            "samples": [
+              2069.692180326635,
+              2203.6896060260897
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 99.20987898684783,
+            "min": 99.03854014047754,
+            "max": 99.38121783321813,
+            "samples": [
+              99.03854014047754,
+              99.38121783321813
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 90.50434802837523,
+            "min": 90.0744690673014,
+            "max": 90.93422698944907,
+            "samples": [
+              90.0744690673014,
+              90.93422698944907
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 306.86630503370975,
+            "min": 305.40874668131875,
+            "max": 308.32386338610075,
+            "samples": [
+              305.40874668131875,
+              308.32386338610075
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2076.414680457639,
+            "min": 1936.0451375094915,
+            "max": 2216.7842234057866,
+            "samples": [
+              1936.0451375094915,
+              2216.7842234057866
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 98.15697936211879,
+            "min": 96.68073550406649,
+            "max": 99.63322322017109,
+            "samples": [
+              96.68073550406649,
+              99.63322322017109
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 89.36303609039838,
+            "min": 87.53059638835083,
+            "max": 91.19547579244593,
+            "samples": [
+              87.53059638835083,
+              91.19547579244593
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 302.99654424400705,
+            "min": 296.78342837925203,
+            "max": 309.209660108762,
+            "samples": [
+              296.78342837925203,
+              309.209660108762
+            ]
+          }
+        }
+      },
+      "descriptive_median_delta_percent": {
+        "prefill_tokens_per_second": -2.8210076109379534,
+        "full_decode_tokens_per_second": -1.0612850610054902,
+        "session_output_tokens_per_second": -1.261057576613911,
+        "session_processed_tokens_per_second": -1.2610575766138887
+      },
+      "complete_non_time_equal": true
+    },
+    {
+      "scenario": "single",
+      "role": "mtp",
+      "variants": {
+        "control": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2166.5948671330857,
+            "min": 2124.7123360246355,
+            "max": 2208.477398241536,
+            "samples": [
+              2124.7123360246355,
+              2208.477398241536
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 127.78667181014788,
+            "min": 127.38431078213155,
+            "max": 128.1890328381642,
+            "samples": [
+              128.1890328381642,
+              127.38431078213155
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 113.45107016736982,
+            "min": 113.41531252032394,
+            "max": 113.4868278144157,
+            "samples": [
+              113.4868278144157,
+              113.41531252032394
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 384.67003478623826,
+            "min": 384.54879401422335,
+            "max": 384.79127555825323,
+            "samples": [
+              384.79127555825323,
+              384.54879401422335
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2130.3564364858494,
+            "min": 2097.2354623450906,
+            "max": 2163.4774106266077,
+            "samples": [
+              2163.4774106266077,
+              2097.2354623450906
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 129.86216904705202,
+            "min": 129.66999808788208,
+            "max": 130.054340006222,
+            "samples": [
+              130.054340006222,
+              129.66999808788208
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 114.81250626447904,
+            "min": 114.4331082159932,
+            "max": 115.19190431296488,
+            "samples": [
+              115.19190431296488,
+              114.4331082159932
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 389.2861540529992,
+            "min": 387.99975754485195,
+            "max": 390.5725505611465,
+            "samples": [
+              390.5725505611465,
+              387.99975754485195
+            ]
+          }
+        }
+      },
+      "descriptive_median_delta_percent": {
+        "prefill_tokens_per_second": -1.6725983799263933,
+        "full_decode_tokens_per_second": 1.6241891329541014,
+        "session_output_tokens_per_second": 1.2000204979122353,
+        "session_processed_tokens_per_second": 1.2000204979122353
+      },
+      "complete_non_time_equal": true
+    },
+    {
+      "scenario": "two-turn",
+      "role": "ordinary",
+      "variants": {
+        "control": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2632.7074993436067,
+            "min": 2602.519474678496,
+            "max": 2662.8955240087175,
+            "samples": [
+              2602.519474678496,
+              2662.8955240087175
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 99.4274481894075,
+            "min": 97.71254164512406,
+            "max": 101.14235473369092,
+            "samples": [
+              97.71254164512406,
+              101.14235473369092
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 92.44353859768535,
+            "min": 90.894385127179,
+            "max": 93.9926920681917,
+            "samples": [
+              90.894385127179,
+              93.9926920681917
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 314.1635882030713,
+            "min": 308.8988869556474,
+            "max": 319.42828945049524,
+            "samples": [
+              308.8988869556474,
+              319.42828945049524
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2512.2459687215332,
+            "min": 2464.9876032662282,
+            "max": 2559.504334176838,
+            "samples": [
+              2464.9876032662282,
+              2559.504334176838
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 100.08538872986102,
+            "min": 99.08324407977614,
+            "max": 101.08753337994592,
+            "samples": [
+              99.08324407977614,
+              101.08753337994592
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 92.62400279995742,
+            "min": 91.62401854928255,
+            "max": 93.6239870506323,
+            "samples": [
+              91.62401854928255,
+              93.6239870506323
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 314.77688451548033,
+            "min": 311.37850053857744,
+            "max": 318.1752684923832,
+            "samples": [
+              311.37850053857744,
+              318.1752684923832
+            ]
+          }
+        }
+      },
+      "descriptive_median_delta_percent": {
+        "prefill_tokens_per_second": -4.575575929042907,
+        "full_decode_tokens_per_second": 0.6617292834471211,
+        "session_output_tokens_per_second": 0.19521559322546178,
+        "session_processed_tokens_per_second": 0.19521559322546178
+      },
+      "complete_non_time_equal": true
+    },
+    {
+      "scenario": "two-turn",
+      "role": "mtp",
+      "variants": {
+        "control": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2586.3331286984126,
+            "min": 2513.8424040468794,
+            "max": 2658.8238533499457,
+            "samples": [
+              2658.8238533499457,
+              2513.8424040468794
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 130.97494611226674,
+            "min": 128.21052901495852,
+            "max": 133.73936320957495,
+            "samples": [
+              133.73936320957495,
+              128.21052901495852
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 118.35465081250727,
+            "min": 115.76607294347903,
+            "max": 120.94322868153552,
+            "samples": [
+              120.94322868153552,
+              115.76607294347903
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 402.22088362063016,
+            "min": 393.4237635188545,
+            "max": 411.0180037224058,
+            "samples": [
+              411.0180037224058,
+              393.4237635188545
+            ]
+          }
+        },
+        "candidate": {
+          "prefill_tokens_per_second": {
+            "count": 2,
+            "median": 2620.124670571513,
+            "min": 2609.2529683419084,
+            "max": 2630.996372801117,
+            "samples": [
+              2630.996372801117,
+              2609.2529683419084
+            ]
+          },
+          "full_decode_tokens_per_second": {
+            "count": 2,
+            "median": 133.1240311916166,
+            "min": 130.64913645586842,
+            "max": 135.5989259273648,
+            "samples": [
+              135.5989259273648,
+              130.64913645586842
+            ]
+          },
+          "session_output_tokens_per_second": {
+            "count": 2,
+            "median": 120.25091636335975,
+            "min": 118.20769794386945,
+            "max": 122.29413478285005,
+            "samples": [
+              122.29413478285005,
+              118.20769794386945
+            ]
+          },
+          "session_processed_tokens_per_second": {
+            "count": 2,
+            "median": 408.6652235786054,
+            "min": 401.72147348111884,
+            "max": 415.608973676092,
+            "samples": [
+              415.608973676092,
+              401.72147348111884
+            ]
+          }
+        }
+      },
+      "descriptive_median_delta_percent": {
+        "prefill_tokens_per_second": 1.3065425137289255,
+        "full_decode_tokens_per_second": 1.6408367730938123,
+        "session_output_tokens_per_second": 1.6021892995624398,
+        "session_processed_tokens_per_second": 1.6021892995624398
+      },
+      "complete_non_time_equal": true
+    }
+  ],
+  "complete_non_time_equal": true,
+  "time_beijing": {
+    "started": "2026-10-28T20:42:19+08:00",
+    "finished": "2026-10-28T20:44:37+08:00"
+  },
+  "image_identity": {
+    "control": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-small-projection-20261028\\model-candidate\\attempt2\\bin\\hyle-ab-group-control.exe",
+      "bytes": 142753280,
+      "sha256": "0c6227e048997fbf9f830153664371558b40bf2fc011ff587772a525cf4b76d9"
+    },
+    "candidate": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\bin\\hyle-physical-spans.exe",
+      "bytes": 142754304,
+      "sha256": "fa7aa9c950e913249217a7d4371acbb47d3bc318c15a9549a6b3c467c3f7e9eb"
+    },
+    "model_source_sha256": "41199a68784ea521affc47542b62f01ba430faeaebc1d56e34ff6e403bc86a15",
+    "model_object_sha256": "ff22d11a294a5aa507034b09efeb475b1aedd514f473b974c970436f24f51e52"
+  },
+  "memory": {
+    "status": "NOT_MEASURED",
+    "ready_RAM": null,
+    "ready_VRAM": null,
+    "peak_RAM": null,
+    "peak_VRAM": null
+  },
+  "reachability": {
+    "before": [
+      {
+        "role": "ordinary",
+        "process": {
+          "pid": 52652,
+          "exit": 0,
+          "seconds": 2.8669635,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\reachability\\runs\\ordinary\\result.json",
+            "bytes": 1351,
+            "sha256": "35e9f201dd6f542c4585eef8b4bd1425cd02e9810d1dc911183fbf038f0ab35b"
+          }
+        },
+        "totals": {
+          "decisions": 64,
+          "reused": 0,
+          "full": 64,
+          "full_input_sources": 62
+        },
+        "overflow": {
+          "decisions": 0,
+          "reused": 0,
+          "full": 0,
+          "full_input_sources": 0
+        },
+        "complete_non_time_equal": true,
+        "analysis": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\reachability\\runs\\ordinary\\analysis.json",
+          "bytes": 3307,
+          "sha256": "aae5166f6a96d76395599dc78215259740afb605bd4381e74b850741ebfd20b9"
+        },
+        "performance_claim": false
+      },
+      {
+        "role": "mtp",
+        "process": {
+          "pid": 41800,
+          "exit": 0,
+          "seconds": 2.8542895,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\reachability\\runs\\mtp\\result.json",
+            "bytes": 1383,
+            "sha256": "5d48d5d80d5b6a51f9bcbbeed6281f1da2b601143c71ad274daf1bbe9966c789"
+          }
+        },
+        "totals": {
+          "decisions": 35,
+          "reused": 32,
+          "full": 3,
+          "full_input_sources": 0
+        },
+        "overflow": {
+          "decisions": 0,
+          "reused": 0,
+          "full": 0,
+          "full_input_sources": 0
+        },
+        "complete_non_time_equal": true,
+        "analysis": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\reachability\\runs\\mtp\\analysis.json",
+          "bytes": 3645,
+          "sha256": "3471b7794a7c72186d9df0ff8f646e46ba39bcb63d5e46e480e1a8716cbe90c8"
+        },
+        "performance_claim": false
+      }
+    ],
+    "after_source_change": [
+      {
+        "role": "ordinary",
+        "process": {
+          "pid": 53200,
+          "exit": 0,
+          "seconds": 3.0221014,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-spans-20261028\\performance\\diagnostic\\runs\\ordinary\\result.json",
+            "bytes": 1331,
+            "sha256": "bb7ee5e9e4d748d587f5b033d73b5d9764673542d15ba1fe36bc65132692e94f"
+          }
+        },
+        "totals": {
+          "decisions": 64,
+          "reused": 0,
+          "full": 64,
+          "full_input_sources": 62
+        },
+        "overflow": {
+          "decisions": 0,
+          "reused": 0,
+          "full": 0,
+          "full_input_sources": 0
+        },
+        "complete_non_time_equal": true,
+        "analysis": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-spans-20261028\\performance\\diagnostic\\runs\\ordinary\\analysis.json",
+          "bytes": 3303,
+          "sha256": "fea4cc7ebb390254e46f21c9f50fcda405ee9449c9e99f7b25d286e5bb06007f"
+        },
+        "performance_claim": false
+      },
+      {
+        "role": "mtp",
+        "process": {
+          "pid": 48672,
+          "exit": 0,
+          "seconds": 2.9940986,
+          "receipt": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-spans-20261028\\performance\\diagnostic\\runs\\mtp\\result.json",
+            "bytes": 1363,
+            "sha256": "14987149c3b756a0c3bba6b26e5930174d2d01a1e9121a16969bf2faca95a0d6"
+          }
+        },
+        "totals": {
+          "decisions": 35,
+          "reused": 32,
+          "full": 3,
+          "full_input_sources": 0
+        },
+        "overflow": {
+          "decisions": 0,
+          "reused": 0,
+          "full": 0,
+          "full_input_sources": 0
+        },
+        "complete_non_time_equal": true,
+        "analysis": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-spans-20261028\\performance\\diagnostic\\runs\\mtp\\analysis.json",
+          "bytes": 3641,
+          "sha256": "2878802d09a1094cedb9cb29f461daaab0514e340b52fb2173601f18c2fd40b8"
+        },
+        "performance_claim": false
+      }
+    ]
+  },
+  "source_change_timing": {
+    "planned": 8,
+    "actual": 0,
+    "status": "NOT_RUN"
+  },
+  "conclusion": "Two samples per arm are a descriptive screen, not significant improvement or a complete performance milestone. Source change has no timing evidence here.",
+  "limitations": [
+    "No memory processes; unknown baselines are not zero.",
+    "No diagnostic timing or elapsed process duration is used as TPS.",
+    "No causal performance attribution to Source or private View alias without separate evidence."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-source-spans-2026-10-28.zip",
+    "bytes": 2669216,
+    "sha256": "6b0fbde8b1732ed3a61df168ffa56395c88f1eee295e51f6e769b9723ace1be2",
+    "members": 491,
+    "manifest_sha256": "ead91acb31167080c9b7d2b37406bbe6a349125d1925170225725dcc03d93fb1",
+    "CRC_and_member_SHA_readback": "PASS"
+  }
+}

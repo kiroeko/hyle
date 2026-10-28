@@ -536,11 +536,12 @@ projected_input_consumers(const PlanState &plan, std::uint32_t value) noexcept {
 void remember_configuration_spans(InvocationState &state) noexcept {
   if (!state.resources) return;
   auto &spans = state.resources.get()->configuration_spans;
-  if (state.input_sources) { spans = false; return; }
   if (state.bindings_prepared) {
     // Seed once from complete physical spans, before a permission-only revoke.
     // Later revokes/resets retain that candidate but cannot revive a discarded
     // one. Opaque carriers still require their complete binding preparation.
+    // Source routes and readiness are prepared separately for each episode;
+    // retaining these spans grants neither producer identity nor permission.
     spans = true;
     for (std::size_t i = 0; i < state.step_bindings.size(); ++i)
       if (state.step_bindings[i].native_inputs || (state.plan->steps[i].region.valid() &&
@@ -550,7 +551,7 @@ void remember_configuration_spans(InvocationState &state) noexcept {
   }
 }
 bool reusable_configuration_spans(const InvocationState &state) noexcept {
-  return state.resources && !state.input_sources && state.resources.get()->configuration_spans;
+  return state.resources && state.resources.get()->configuration_spans;
 }
 void discard_configuration_spans(InvocationState &state) noexcept {
   if (state.resources) state.resources.get()->configuration_spans = false;
@@ -558,7 +559,7 @@ void discard_configuration_spans(InvocationState &state) noexcept {
 void reset_configuration_bindings(InvocationState &state) noexcept {
   if (state.resources) {
     auto &episode = *state.resources.get();
-    bool reusable = episode.configuration_spans && !state.input_sources;
+    bool reusable = episode.configuration_spans;
     for (const auto &binding : state.step_bindings)
       reusable = reusable && !binding.native_inputs;
     for (const auto &binding : episode.bindings) {

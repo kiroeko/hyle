@@ -19,6 +19,7 @@
 #include "hyle/graph/detail/store_source.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/detail/replay_access.h"
+#include "hyle/graph/detail/region_adapter.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/graph/slots.h"
 #include "hyle/graph/graph.h"
@@ -1395,7 +1396,23 @@ TEST(GraphOutputSourceCuda, HybridPendingTokenAndStoreReuseOnlyExistingRanges) {
       std::array{gathered, second_ids}).value();
   ASSERT_TRUE(second.publish(copied_token).ok());
   const auto second_graph = std::move(second).finish().value();
-  auto consumer_plan = g::cuda::compile(second_graph, context, storage);
+  // Keep a genuine prepared, non-capturable Store gap. The normal CUDA
+  // assembly now supplies an indexed-copy kernel that can capture this Store.
+  // This fixture selects the original Store's ordered-copy fallback instead;
+  // its native Context, Queue, permissions and math remain unchanged.
+  auto execution_source = g::ExecutionSource::acquire(context).value();
+  const std::array domains{g::StorageDomain{.resource = storage.ref(), .owner = storage}};
+  const std::array targets{g::ExecutionTarget{
+      .source = execution_source, .default_storage = g::StorageDomainId{0}}};
+  const auto *store_provider = g::slots::detail::store_provider();
+  auto region_source = gd::GraphRegionSource::shared_queue(execution_source, store_provider);
+  ASSERT_TRUE(region_source) << region_source.error().message();
+  g::slots::detail::StoreAdapter store_adapter{storage.ref(), context.device().device_class(), {}};
+  const std::array adapters{gd::RegionAdapter{
+      .source = std::move(*region_source), .provider_index = UINT32_MAX,
+      .target = g::ExecutionTargetId{0}, .interface = store_provider, .context = &store_adapter}};
+  auto consumer_plan = gd::compile_with_adapters(second_graph,
+      {.storage_domains = domains, .targets = targets}, {}, adapters);
   ASSERT_TRUE(consumer_plan) << consumer_plan.error().message();
   ASSERT_EQ(consumer_plan->report.segment_count(), 1u);
   bool captured_math = false, prepared_gap = false;

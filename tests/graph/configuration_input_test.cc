@@ -287,6 +287,64 @@ TEST(ConfigurationInput, IncompleteConfigurationCannotKeepThePhysicalShortcut) {
   EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
 }
 
+TEST(ConfigurationInput, SamePhysicalSourceReplacementRequalifiesItsCurrentProducer) {
+  Source original_producer, replacement_producer;
+  Fixture fixture(true);
+  const auto *state = gd::InvocationAccess::state(fixture.run);
+  ASSERT_TRUE(state->plan->external_input_aliases.empty());
+  auto original = gd::InputSource::acquire(&original_producer, &source_table,
+      &original_producer).value();
+  auto replacement = gd::InputSource::acquire(&replacement_producer, &source_table,
+      &replacement_producer).value();
+  ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, fixture.tensors.in, original).ok());
+  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  {
+    auto done = fixture.run.submit(fixture.queues).value();
+    const auto status = done.wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+  }
+  const auto old_routes = original_producer.routes;
+  const auto old_observations = original_producer.observations;
+  ASSERT_GT(old_routes, 0);
+  ASSERT_GT(old_observations, 0);
+  ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  EXPECT_FALSE(state->bindings_prepared);
+  EXPECT_EQ(original_producer.references, 2); // This handle and the retained binding.
+
+  // The physical argument is unchanged. Producer identity and readiness must
+  // still be prepared anew; the old Source is not authority for this episode.
+  ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, fixture.tensors.in, replacement).ok());
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  EXPECT_FALSE(state->replay_prepared);
+  EXPECT_FALSE(fixture.run.submit(fixture.queues));
+  EXPECT_EQ(original_producer.references, 1);
+  EXPECT_EQ(replacement_producer.references, 2);
+  EXPECT_EQ(replacement_producer.routes, 0);
+  EXPECT_EQ(replacement_producer.observations, 0);
+  ASSERT_TRUE(fixture.tensors.input.view().write(std::as_bytes(std::span(second))).ok());
+  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Preparation consumed the candidate.
+  EXPECT_EQ(replacement_producer.routes, 1);
+  auto report = fixture.run.input_source_report();
+  ASSERT_TRUE(report) << report.error().message();
+  EXPECT_EQ(report->source_count, 1u);
+  EXPECT_EQ(report->host_wait_count, 1u);
+  {
+    auto done = fixture.run.submit(fixture.queues).value();
+    const auto status = done.wait();
+    ASSERT_TRUE(status.ok()) << status.message();
+    EXPECT_GT(replacement_producer.observations, 0);
+    EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{11, 13, 15, 17}));
+  }
+  EXPECT_EQ(original_producer.routes, old_routes);
+  EXPECT_EQ(original_producer.observations, old_observations);
+  ASSERT_TRUE(fixture.run.reset().ok());
+  EXPECT_EQ(original_producer.references, 1);
+  EXPECT_EQ(replacement_producer.references, 1);
+}
+
 TEST(ConfigurationInput, CarrierQueryUsesOnlyThisPlansPrivateInput) {
   Fixture fixture;
   auto resource = gd::RegionAccess::input_resource(fixture.compiled.executable, fixture.input);
@@ -346,12 +404,14 @@ TEST(ConfigurationInput, LayoutResetPreservesCallerLeasesAndSourceButExpiresMeta
   ASSERT_TRUE(run.bind(outputs[2], c::TensorView::create(
       custom_test::description(), last_output.view()).value()).ok());
   ASSERT_TRUE(gd::RegionAccess::reserve_reads(run, 4, {}).ok());
+  ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+      state->plan->external_input_aliases.end(), inputs[0].ordinal()));
 
   int previous_routes = 0;
   for (int episode = 0; episode < 2; ++episode) {
     if (episode) {
       ASSERT_TRUE(gd::RegionAccess::reset_configuration(run).ok());
-      EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Source route is fresh.
+      EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Original configuration alias.
       // Binding and this local handle remain; old active/candidate preparation
       // must release their source owners and dependency decisions.
       EXPECT_EQ(producer.references, 2);
