@@ -82,8 +82,8 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
   bool submitted_successor_this_pump = false;
   std::size_t streak = 0;
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
-    if (model.successor_step && model.successor_step->has_completion()) model.successor_step->wait().IgnoreError();
-    if (model.active_step && model.active_step->has_completion()) model.active_step->wait().IgnoreError();
+    if (model.successor_step && model.successor_step->execution.has_completion()) model.successor_step->execution.wait().IgnoreError();
+    if (model.active_step && model.active_step->execution.has_completion()) model.active_step->execution.wait().IgnoreError();
     continuation.release_ready(); (void)model.abort_episode();
     for (auto &request : requests) if (request.session) {
       request.session->stop().IgnoreError(); (void)request.session->drain();
@@ -173,16 +173,16 @@ inline Result run_arm(q::Model &model, const std::array<std::vector<std::int32_t
   };
   const auto on_submit = [&] {
     ++result.submissions;
-    require(model.active_step && model.active_step->submitted && model.active_step->has_completion(),
+    require(model.active_step && model.active_step->submitted && model.active_step->execution.has_completion(),
         "continuous submit hook did not follow the original accepted native work");
-    if (model.active_step->sources) sources.push_back(model.active_step->sources);
+    if (model.active_step->execution.sources) sources.push_back(model.active_step->execution.sources);
     if (model.successor_step && model.successor_step->submitted) {
-      require(continuous && model.successor_step->has_completion() &&
+      require(continuous && model.successor_step->execution.has_completion() &&
           model.successor_step->members.size() == current_wave->keys.size(), "continuous successor changed its original cohort");
       for (auto key : current_wave->keys)
         require(requests[key.slot].ledger->committed_count == before_commits[key.slot],
             "successor was submitted only after its original predecessor was observed");
-      sources.push_back(model.successor_step->sources);
+      sources.push_back(model.successor_step->execution.sources);
       submitted_successor_this_pump = true; ++result.submit_before_observe;
       if (mode == Mode::kExtraStop && requests[0].progress.generated.size() == intervention) {
         require(model.successor_step->capture_reused > 0 && !model.successor_step->capture_recorded,

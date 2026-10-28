@@ -213,7 +213,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
           session->pending->members[0].next && session->pending->members[0].base == old_prefix.get(),
           "prepared candidate lost its original Model episode/base");
   auto *const shared_phase = session->pending->phase;
-  auto *const shared_run = session->pending->run;
+  auto *const shared_run = session->pending->execution.run;
   require(shared_phase && shared_run && shared_run->valid() &&
           shared_phase->slot_count == 1 && borrowed_slot == 0 &&
           shared_run == q::take(shared_phase->carriers[borrowed_slot].borrow()),
@@ -222,7 +222,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   const auto idle_retirement = idle->try_retire(); q::check(idle_retirement.status);
   require(idle_retirement.retired, "idle logical Session did not retire");
   idle.reset();
-  require(session->pending->phase == shared_phase && session->pending->run == shared_run &&
+  require(session->pending->phase == shared_phase && session->pending->execution.run == shared_run &&
           shared_run->valid() && model.carrier_borrowed,
           "stopping an idle Session disturbed another Session's shared execution loan");
   const auto *candidate_identity = session->pending->members[0].next.get();
@@ -253,7 +253,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
     require(rejected && !waiting->pending && !waiting->failed && !waiting->stopping &&
             waiting->head.get() == old_prefix.get() &&
             session->pending && session->pending == model.active_step.get() &&
-            session->pending->phase == shared_phase && session->pending->run == shared_run &&
+            session->pending->phase == shared_phase && session->pending->execution.run == shared_run &&
             model.carrier_borrowed,
             "another Session acquired or changed a native-pending shared execution loan");
     ++rejected_prepares;
@@ -281,10 +281,10 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
     return observed;
   };
   require(!collect().retired, "collect reclaimed a native-blocked owner");
-  const bool dropped_public_completion = session->pending->completion.valid();
+  const bool dropped_public_completion = session->pending->execution.completion.valid();
   // One externally serialized owner abandons the public observation. The
   // original Graph/native reaper must retain all actual resource uses.
-  session->pending->completion = {};
+  session->pending->execution.completion = {};
   expect_borrow_busy("dropped_completion_native_pending");
   require(!collect().retired, "dropping public Completion reclaimed native-blocked work");
   require(directory.retained_sessions() == 1 &&
@@ -337,7 +337,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   old_prefix.reset(); // N1 keeps only the new Session's original committed head.
   model.prepare_evaluation(*recovered, std::span(&tape[1], 1));
   require(recovered->pending && recovered->pending->phase == shared_phase &&
-          recovered->pending->run == shared_run && shared_run->valid(),
+          recovered->pending->execution.run == shared_run && shared_run->valid(),
           "the waiting Session did not rebuild the retired aborted slot in the original Model bundle");
   model.submit_evaluation(*recovered);
   const auto impossible_trace = inputs / "weights.tsv";
@@ -365,7 +365,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &tape_
   model.prepare_evaluation(*after_report, std::span(&tape[1], 1));
   require(after_report->pending && after_report->pending->phase == shared_phase &&
           shared_phase->slot_count == 1 && after_report_slot == 0 &&
-          after_report->pending->run == q::take(shared_phase->carriers[after_report_slot].borrow()),
+          after_report->pending->execution.run == q::take(shared_phase->carriers[after_report_slot].borrow()),
           "a different Session did not recover the original serial Model slot");
   model.submit_evaluation(*after_report);
   (void)q::finish_evaluation(model, *after_report, "retirement_after_report_error");
@@ -465,14 +465,14 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   const auto slot = model.slot_index;
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, catchup_role);
   auto *const phase = session->pending->phase;
-  auto *const run = session->pending->run;
+  auto *const run = session->pending->execution.run;
   require(phase && phase->slot_count == 1 && slot == 0 && run == q::take(phase->carriers[slot].borrow()) && run->valid() &&
           session->pending == model.active_step.get() && session->pending->members.size() == 1 &&
           session->pending->members[0].base == old_prefix.get(),
           "MTP catchup did not borrow its original Model carrier and complete base");
   const auto all_bound = [&] {
     return session && session->pending &&
-        std::count_if(session->pending->bound.begin(), session->pending->bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14;
+        std::count_if(session->pending->execution.bound.begin(), session->pending->execution.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14;
   };
   require(all_bound() && session->pending->members[0].next->length == 17 + verify_rows &&
           session->pending->members[0].next->draft->frontier == 18,
@@ -500,7 +500,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
     catch (const std::exception &) { rejected = true; }
     require(rejected && !waiting->pending && !waiting->failed && !waiting->stopping &&
             waiting->head.get() == old_prefix.get() && model.carrier_borrowed && all_bound() &&
-            session->pending->run == run,
+            session->pending->execution.run == run,
             "another MTP Session disturbed a native-pending shared loan");
     ++busy_rejections;
   };
@@ -526,8 +526,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   const auto collected_before_release = collect();
   std::cerr << "native_gate_probe stage=mtp_first_collect_done retired=" << collected_before_release.retired << '\n';
   require(!collected_before_release.retired, "MTP blocked work retired before its original native owner");
-  const bool dropped = session->pending->completion.valid();
-  session->pending->completion = {};
+  const bool dropped = session->pending->execution.completion.valid();
+  session->pending->execution.completion = {};
   busy();
   require(!collect().retired && session->head.get() == old_prefix.get() && all_bound() &&
           session->pending->members[0].next.get() == candidate_identity &&
@@ -557,8 +557,8 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   unchanged_mtp(*old_prefix, saved);
   auto recovered = std::move(waiting);
   model.prepare_evaluation(*recovered, std::span(&pending, 1), nullptr, catchup_role);
-  require(recovered->pending->phase == phase && recovered->pending->run == run && run->valid() &&
-          std::count_if(recovered->pending->bound.begin(), recovered->pending->bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
+  require(recovered->pending->phase == phase && recovered->pending->execution.run == run && run->valid() &&
+          std::count_if(recovered->pending->execution.bound.begin(), recovered->pending->execution.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
           "MTP retry did not rebuild its same retired slot and all14 bindings");
   model.submit_evaluation(*recovered);
   const auto retried = q::finish_mtp_round(model, *recovered, pending, verify_rows);
@@ -574,7 +574,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
   // before any of the 14 append outputs or the complete new head is published.
   auto policy_session = model.create_session(catchup_calls, old_prefix, catchup_role);
   model.prepare_evaluation(*policy_session, std::span(&pending, 1), nullptr, catchup_role);
-  auto *const policy_run = policy_session->pending->run;
+  auto *const policy_run = policy_session->pending->execution.run;
   const auto policy_target_page = policy_session->pending->members[0].next->pages.back().page();
   const auto policy_draft_page = policy_session->pending->members[0].next->draft->pages.back().page();
   require(policy_target_page != old_prefix->pages.back().page() &&
@@ -594,7 +594,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
       model.finish_selected_evaluations(outputs, std::span(&ignored, 1),
           [&](std::span<const std::int32_t> ids, q::StepState &step, std::span<std::int32_t>) {
             require(ids.size() == verify_rows && (verify_rows == 1 ? step.members[0].draft_token == -1 : step.members[0].draft_token >= 0) && step.members[0].base == old_prefix.get() &&
-                    std::count_if(step.bound.begin(), step.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
+                    std::count_if(step.execution.bound.begin(), step.execution.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
                     "host policy was not called after the actual complete MTP terminal");
             selector_called = true;
             throw std::logic_error("intentional host MTP accepted-boundary selector rejection");
@@ -622,7 +622,7 @@ void run_mtp(const std::filesystem::path &inputs, std::size_t verify_rows) {
     require(k.lease().valid() && v.lease().valid(), "selector rejection retained draft dirty permissions");
   }
   model.prepare_evaluation(*policy_session, std::span(&pending, 1), nullptr, catchup_role);
-  require(policy_session->pending->run == policy_run && policy_run->valid(), "host policy abort did not rebuild its original MTP slot");
+  require(policy_session->pending->execution.run == policy_run && policy_run->valid(), "host policy abort did not rebuild its original MTP slot");
   model.submit_evaluation(*policy_session);
   const auto final = q::finish_mtp_round(model, *policy_session, pending, verify_rows);
   complete_mtp(model, *policy_session); unchanged_mtp(*old_prefix, saved);

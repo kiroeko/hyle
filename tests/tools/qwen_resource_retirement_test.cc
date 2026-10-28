@@ -138,7 +138,7 @@ void model_retirement(bool retain_session) {
   std::weak_ptr<d::Runtime> runtime = original_runtime;
   model->submit_evaluation(*session);
   ASSERT_TRUE(model->active_step);
-  ASSERT_TRUE(model->active_step->run->in_flight());
+  ASSERT_TRUE(model->active_step->execution.run->in_flight());
   // The whole original Graph has actually been accepted. Withhold terminal
   // observations only now: Graph's internal dependency waits are not the
   // Model/destructor protocol under test, and receive no artificial fault.
@@ -146,7 +146,7 @@ void model_retirement(bool retain_session) {
   // Ensure an assertion failure does not leave the synthetic fault enabled
   // while host cleanup attempts its original native drain.
   struct AllowDrain final { NativeFailure &failure; ~AllowDrain() { failure.unknown_drain = false; } } allow{failure};
-  model->active_step->completion = {};
+  model->active_step->execution.completion = {};
   model.reset(); // Every host cleanup observes unknown; no infinite polling.
   EXPECT_GT(failure.drains, 0U);
   EXPECT_FALSE(scope.expired());

@@ -85,7 +85,7 @@ inline int run(const std::filesystem::path &input){try{
   model_b->prepare_evaluation(*b.session,b_call.ids());model_b->submit_evaluation(*b.session);
   require(model_a->active_step&&model_b->active_step&&model_a->active_step.get()!=model_b->active_step.get()&&
       a.session->pending==model_a->active_step.get()&&b.session->pending==model_b->active_step.get(),"two Models did not retain independent original episodes");
-  const bool a_inflight=model_a->active_step->run->in_flight(),b_inflight=model_b->active_step->run->in_flight();
+  const bool a_inflight=model_a->active_step->execution.run->in_flight(),b_inflight=model_b->active_step->execution.run->in_flight();
   auto *b_pending=b.session->pending;std::weak_ptr<q::ColdResources> a_resources=model_a->resources_;
   std::cerr<<"dual_model_stage=cancel_retire_destroy_A\n";
   const auto stop=a.session->stop();expected_cancel(stop);const auto abort=model_a->abort_episode();expected_cancel(abort.status);require(abort.retired,"A episode did not actually retire");

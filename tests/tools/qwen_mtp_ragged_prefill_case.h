@@ -261,7 +261,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         "ragged MTP retirement retained a version, episode or target/draft page permission");
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
-      require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
+      require(!program->guard.execution.has_completion() && !program->guard.execution.cleanup_pending &&
           !program->hidden_transactions.bound() && !program->carrier.pending(), "ragged MTP repair did not really retire");
     }
   }

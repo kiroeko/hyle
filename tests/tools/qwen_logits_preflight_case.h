@@ -118,7 +118,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           requests, loop.credit(key, request.progress.generated.size())));
     }
     const auto submitted = [&] {
-      require(model.active_step && model.active_step->submitted && model.active_step->completion.valid(),
+      require(model.active_step && model.active_step->submitted && model.active_step->execution.completion.valid(),
           "logits case did not observe the original native submission");
       require((submissions == 0 && model.active_step->members.size() == 2 &&
           model.active_step->members[0].session == a.session && model.active_step->members[1].session == b.session) ||

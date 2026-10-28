@@ -94,8 +94,8 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
     }
   } stop_view{requests};
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
-    if (model.successor_step && model.successor_step->has_completion()) model.successor_step->wait().IgnoreError();
-    if (model.active_step && model.active_step->has_completion()) model.active_step->wait().IgnoreError();
+    if (model.successor_step && model.successor_step->execution.has_completion()) model.successor_step->execution.wait().IgnoreError();
+    if (model.active_step && model.active_step->execution.has_completion()) model.active_step->execution.wait().IgnoreError();
     continuation.reset(); (void)model.abort_episode();
     for (auto &request : requests) if (request.session) {
       request.session->stop().IgnoreError(); (void)request.session->drain();
@@ -178,7 +178,7 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
     }
     const auto submitted = [&] {
       ++result.submits;
-      require(model.active_step && model.active_step->submitted && model.active_step->has_completion(),
+      require(model.active_step && model.active_step->submitted && model.active_step->execution.has_completion(),
           "R2 AfterSubmit did not follow an original accepted target");
       if (model.active_step->phase->imported_sources &&
           model.active_step->capture_recorded + model.active_step->capture_reused > 0)
@@ -188,17 +188,17 @@ ArmResult run_arm(q::Model &model, const std::array<std::vector<std::int32_t>, 2
         require(model.successor_step->members.size() == active.size(), "R2 successor silently changed cohort width");
         if (!result.first_successor_before) result.first_successor_before = before;
         if (mode == Mode::kModelEos) {
-          require(model.successor_step->has_completion() && model.successor_step->capture_reused > 0 &&
+          require(model.successor_step->execution.has_completion() && model.successor_step->capture_reused > 0 &&
               model.successor_step->capture_recorded == 0,
               "R2 model EOS did not observe a real accepted B reusing its existing capture");
           result.accepted_eos_successor = true;
         }
       }
-      if (model.active_step->sources) sources.push_back(model.active_step->sources);
-      if (successor && model.successor_step->sources) sources.push_back(model.successor_step->sources);
+      if (model.active_step->execution.sources) sources.push_back(model.active_step->execution.sources);
+      if (successor && model.successor_step->execution.sources) sources.push_back(model.successor_step->execution.sources);
       if (mode != Mode::kCancel || cancel_sent || !cancel_at || before != *cancel_at) return;
       if (relay && !successor) return;
-      require(active.size() == 2 && (!relay || model.successor_step->has_completion()),
+      require(active.size() == 2 && (!relay || model.successor_step->execution.has_completion()),
           "cancellation did not observe the original accepted R2 predecessor/successor");
       const std::array heads{q::generation_boundary(*requests[0].session->head),
           q::generation_boundary(*requests[1].session->head)};

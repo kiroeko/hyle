@@ -110,7 +110,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     if (cancel_first) {
       const auto stopped = b[order[0]]->stop();
       require(stopped.ok() || (stopped.IsCancelled() && !stopped.has_native_error()), "ragged member cancellation reported a native failure");
-      require(packed.active_step && packed.active_step->submitted && packed.active_step->has_completion() &&
+      require(packed.active_step && packed.active_step->submitted && packed.active_step->execution.has_completion() &&
           packed.active_step->discard_stopped_members && !packed.active_step->cancelled && !b[order[1]]->stopping,
           "single ragged cancellation stopped the original peer or replaced the episode owner");
       const auto pending = b[order[0]]->try_retire(); q::check(pending.status);

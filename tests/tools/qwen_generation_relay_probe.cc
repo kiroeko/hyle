@@ -108,10 +108,10 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
     }
   } stop_view{request};
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
-    if (model.successor_step && model.successor_step->has_completion())
-      model.successor_step->wait().IgnoreError();
-    if (model.active_step && model.active_step->has_completion())
-      model.active_step->wait().IgnoreError();
+    if (model.successor_step && model.successor_step->execution.has_completion())
+      model.successor_step->execution.wait().IgnoreError();
+    if (model.active_step && model.active_step->execution.has_completion())
+      model.active_step->execution.wait().IgnoreError();
     continuation.reset();
     (void)model.abort_episode();
     if (request.session) {
@@ -146,13 +146,13 @@ ArmResult run_arm(q::Model &model, std::span<const std::int32_t> prompt, Arm arm
           model.active_step->capture_recorded + model.active_step->capture_reused > 0)
         imported_captures[model.active_step->state_slot] = true;
       if (arm == Arm::kModelEos && model.successor_step && model.successor_step->submitted) {
-        require(model.active_step && model.active_step->has_completion() && model.successor_step->has_completion() &&
+        require(model.active_step && model.active_step->execution.has_completion() && model.successor_step->execution.has_completion() &&
             model.successor_step->capture_reused > 0 && model.successor_step->capture_recorded == 0,
             "model EOS fixture did not observe the original accepted A/B completions");
         result.accepted_eos_successor = true;
       }
       if (arm != Arm::kAfterSubmitCancel || result.cancel_after_submit || before_outputs < 8) return;
-      require(model.active_step && model.active_step->submitted && model.active_step->has_completion(),
+      require(model.active_step && model.active_step->submitted && model.active_step->execution.has_completion(),
           "cancellation did not observe an original accepted submission");
       cancelled_head = q::generation_boundary(*request.session->head);
       cancelled_commits = request.ledger->committed_count;

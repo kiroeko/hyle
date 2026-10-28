@@ -1343,6 +1343,20 @@ NextN、prefix sampler和frontier的冷IO已迁入共同`ProgramIo`：按原顺�
 它复用原`ProgramCarrier`、读回及池，不新增提交、退休、资源owner或热分配；
 Store／Append先取回原交易、再撤动态IO的顺序保持。数学、状态、Shape及发布仍归模型，完整核心未抽完。
 
+共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
+Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；
+后继以aliasing shared_ptr保留原Step，不新增owner、分配、权限表或执行器。提交始终经过原`ProgramCarrier`。
+回收依次保留前驱门、观察、Source撤回、真实Append／Store取回、输入解除、原载体reset、页尾回滚及页丢弃，
+最后才调用模型的noexcept候选回收并归还额度。未知退休保留原对象和剩余事实，不在析构里自动drain。
+普通与NextN共用这一顺序；NextN正常成功保留热carrier，只有失败且事务真实归还后才reset。
+`retire`仅观察原carrier；完整episode回收仍须`recover`。成功路径仍由模型核全体expected-base、
+接受和RNG后联合发布，输出观察结束才归还admission；模型数学、形状、状态和发布没有移入共同资源组件。
+[本片有限检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)覆盖CPU／CUDA NextN真实失败后重试、
+旧快照、R2取消后的幸存续算和在途前驱下后继拒绝；未注入未知退休故障，没有新的性能结论。
+下一片准备协议沿原顺序分步表达batch metadata／Append、消费者／Store绑定及replay。
+模型必须能在Append绑定后构造真实Source，并在Store绑定后取得packed offsets；不能用一个封闭回调抹去这些依赖。
+部分成功事实由同一episode回收；数学、shape、候选帧及全成员原子发布仍由模型负责。
+
 独立采样参考现分别表达CPU的52bit inverse-CDF、CUDA／Apple的F32 Gumbel和Vulkan的F32分段尾部公式。
 固定有限语料在执行前排除近决策边界的地址：CPU归一化CDF余量至少0.001，GPU胜出分数差至少0.05；
 最终设备ID、有效性、分布和完整状态的原检查门不变，不要求不同后端选出相同ID。
@@ -1353,7 +1367,9 @@ Vulkan旧的总shared owner数量会随其它已退休区域撤销导入而下�
 退休及直接输出检查保留，独立旧reader的3项回归通过。
 Apple把普通checked Gather的合法NativeRef误当作地址型RowCache bank；现仅对全checked-Gather且无pending资格的
 原生引用使用原native-output解析和保活。真实bank、混合用途及pending仍走原严格检查。
-Apple modifier、replay及control共通过21项完整状态检查；history独立有限图在MLX冷编译时失败，尚未通过。
+Apple modifier、replay及control共通过21项完整状态检查；history独立有限图原先在MLX冷编译时失败，
+后续从最终输出图重新排序融合后的实际依赖，保持输入边界、siblings及状态输出；
+[修复后原history的17项检查通过](../evidence/correctness/inference-apple-history-compile-2026-10-28.json)，前21项未在新镜像重跑。
 Mac缓存的32B／40B私有提交ABI混用已由两个相关SDK单元刷新消除，另外保留两处等价的测试初始化修正；
 这些验证环境问题不作为产品功能通过。此片不提供新的性能或训练模型质量结论。
 

@@ -210,16 +210,16 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   require(session->pending && model.active_step.get() == session->pending && model.carrier_borrowed,
           "pressure episode did not borrow the original Model carrier");
   auto *const phase = session->pending->phase;
-  auto *const invocation = session->pending->run;
+  auto *const invocation = session->pending->execution.run;
   const auto *const candidate = session->pending->members[0].next.get();
   const auto *const episode = session->pending;
   require(candidate && model.active_step.get() == episode && phase->slot_count == 1 && slot == 0 && invocation == q::take(phase->carriers[slot].borrow()) && model.snapshot_versions.live == 2 &&
-          std::count_if(session->pending->bound.begin(), session->pending->bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
+          std::count_if(session->pending->execution.bound.begin(), session->pending->execution.bound.end(), [](auto value) { return static_cast<bool>(value); }) == 14,
           "pressure episode did not retain its original slot/candidate/all14 append permissions");
   model.submit_evaluation(*session);
   // Prove native completion separately. The original finish still owns and
   // waits its same Completion, and performs all export/selection/publication.
-  q::check(session->pending->completion.wait());
+  q::check(session->pending->execution.completion.wait());
   require(model.active_step.get() == episode && session->pending == episode &&
           episode->members[0].next.get() == candidate && model.snapshot_versions.live == 2,
           "native completion discarded the original unpublished candidate before retention admission");
@@ -255,7 +255,7 @@ void run(const std::filesystem::path &inputs, const std::filesystem::path &outpu
   // prepares the retired failed Invocation in the existing Model slot.
   q::prepare_generation_record(ledger, *session, role, std::span(&pending, 1), true, 2, 0);
   model.prepare_evaluation(*session, std::span(&pending, 1), nullptr, role);
-  require(session->pending->phase == phase && session->pending->run == invocation && invocation->valid() &&
+  require(session->pending->phase == phase && session->pending->execution.run == invocation && invocation->valid() &&
           session->pending->members[0].base == old.get(),
           "unpressured retry did not rebuild the same slot against the original complete Snapshot");
   model.submit_evaluation(*session);

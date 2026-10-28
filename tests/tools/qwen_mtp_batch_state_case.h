@@ -69,7 +69,7 @@ struct Bank final {
 inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool recurrent,
     bool hidden = false) {
   require(step.members.size() == 2 && step.phase->prefix_rows == 3 && step.phase->state_transactions[step.state_slot].bound() &&
-      gd::RegionAccess::successful_outcome(*step.run), "B2 inspection requires its successful original K3 Graph");
+      gd::RegionAccess::successful_outcome(*step.execution.run), "B2 inspection requires its successful original K3 Graph");
   const auto &ports = hidden ? step.phase->hidden_state
       : recurrent ? step.phase->layers[layer].recurrent : step.phase->layers[layer].history;
   const auto item = hidden ? q::dense(model.precision.activation_type(), {1, model.hidden})
@@ -85,7 +85,7 @@ inline Bank inspect(q::Model &model, q::StepState &step, std::size_t layer, bool
     bool hidden = false;
     bool found = false;
   } visit{&model, &step, &ports, item, &bank, hidden};
-  q::check(gd::RegionAccess::visit_retired(*step.run, ports.store,
+  q::check(gd::RegionAccess::visit_retired(*step.execution.run, ports.store,
       +[](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
         auto &v = *static_cast<Visit *>(opaque);
         if (v.found || std::ranges::find(view.node_ordinals, v.ports->store.ordinal()) == view.node_ordinals.end() ||
@@ -238,7 +238,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     }
     require(rejected, "NextN checked embedding accepted a negative token ID");
     auto &program = *model.draft_programs.at({1, true, 0});
-    require(!program.guard.has_completion() && !program.guard.cleanup_pending &&
+    require(!program.guard.execution.has_completion() && !program.guard.execution.cleanup_pending &&
         !program.hidden_transactions.bound() && !program.carrier.pending(),
         "NextN checked failure did not really retire its original episode");
     require(work.state.frontier == frontier && frame(model, work.state.key, frontier) == old_key &&
@@ -251,8 +251,8 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     const std::array valid{original[0]->next_id};
     const auto proposal = model.execute_draft(work, valid, shifted, true, identity);
     require(proposal.id >= 0 && proposal.id < model.vocabulary && proposal.hidden.valid() &&
-        work.state.frontier == frontier + 1 && !program.guard.has_completion() &&
-        !program.guard.cleanup_pending && !program.hidden_transactions.bound() && !program.carrier.pending(),
+        work.state.frontier == frontier + 1 && !program.guard.execution.has_completion() &&
+        !program.guard.execution.cleanup_pending && !program.hidden_transactions.bound() && !program.carrier.pending(),
         "NextN original program did not recover for a valid one-row proposal");
     const auto new_key = frame(model, work.state.key, frontier + 1);
     const auto new_value = frame(model, work.state.value, frontier + 1);

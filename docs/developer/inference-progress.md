@@ -1,10 +1,10 @@
 # 推理底座进度
 
-更新：2026-10-28 12:39（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 13:03（北京时间）。百分比为工作量估计，不是测试通过率。
 
-**整体进度：约83%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+**整体进度：约84%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：均匀prefill冷选择修复已测完32进程。** 单轮普通／MTP prefill提高33.68%／31.63%，两轮观测提高约43%；decode变化小，尚无稳定提速结论。普通续文从索引18分叉，MTP本窗接受与实际工作相同；下方分别保留这些边界。Apple融合后的实际输出依赖重新排序已修，原失败history本次17项检查通过。跨引擎完整表仍对应此前8489基线，不拼接新A/B与旧参考。
+**当前位置：共同资源episode迁移已完成有限检查，继续抽离完整执行编排。** 普通、后继与NextN共用原资源、提交、观察和失败回收，模型保留数学、候选和原子发布。3次编译、3次链接及6个真实旅程通过，包含20项完整状态字节比较；本片未另测吞吐。最近性能仍为下方32进程A/B，跨引擎完整表仍对应8489基线。
 
 ## 任务树
 
@@ -21,11 +21,13 @@
   - Provider命名与SDK detail边界：约80%（原批次offset公开投影已接）
   - 完整路由可选ATen：约35%（未完成）
   - 文档与简明执行合同：约70%（继续收敛）
-- 共同执行架构：约78%（进行中）
+- 共同执行架构：约80%（进行中）
   - 请求、缓存、额度与退休合同：100%（本批完成）
-  - 模型无关执行编排与静态适配：约64%（载体、三条append协议及辅助程序I/O已共用，整体编排未抽完）
+  - 模型无关执行编排与静态适配：约70%（原资源episode已共用，整体编排未抽完）
+    - 原资源、提交、观察与失败回收：100%（本片普通／后继／NextN有限检查完成）
+    - 形状准备及完整模型编排：约50%（仍主要在模型，继续拆分边界）
   - 基础提交／取消／额度与输出接口：约35%（待收敛）
-  - 稳态准备、在途权限及普通／后继路径统一：约60%（原Store／Append事务及输入行准备共用，整体未完成）
+  - 稳态准备、在途权限及普通／后继路径统一：约65%（共同资源回收已接，准备及权限表达整体未完成）
   - MTP K1／多草稿共用流程：约40%（NextN原Step复用，整体未完成）
 - 普通连续流水：约80%（进行中）
   - CUDA R1／R2跨pump与控制边界：约90%（有限检查完成）
@@ -51,10 +53,10 @@
 
 ## 正在做
 
-- **共用执行编排职责复核**｜所属：共同执行架构／模型无关执行编排与静态适配｜约64%。继续核对原Step、carrier及普通／后继的退休交接，准备抽离共同协议；当前仍未完成Model核心迁移，不新增一套资源或权限权威。
+- **共同准备协议设计**｜所属：共同执行架构／模型无关执行编排与静态适配｜约70%。下一片收拢batch metadata、Append、消费者／Store绑定及replay；保留Append之后构造Source、Store之后取得packed offsets的必要间隔。数学、模型形状和联合发布仍归适配器。
 
-刚完成：同窗旧／新均匀prefill的32进程、共同前缀两次诊断、原exact／packed数学检查及三个真实packed政策用例。Apple只重编一个MLX文件并复用原消费者，history的17项完整状态检查通过；此前失败保留，不声称所有Apple用例都在新镜像重跑。
-结果：[prefill与四项A/B](../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json) · [Apple修复及17项检查](../evidence/correctness/inference-apple-history-compile-2026-10-28.json)。
+刚完成：共同`ExecutionEpisode`、移除Step上的资源转发入口及22个测试／probe的机械访问迁移。CPU／CUDA真实NextN失败后同program重试、旧快照保持、R2取消后的幸存R1，以及在途A下拒绝B的保护均通过；未注入未知退休故障，未重测Apple／Vulkan或性能。
+结果：[本片6旅程与20项字节检查](../evidence/correctness/inference-execution-episode-2026-10-28.json)。此前[prefill与四项A/B](../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json)及[Apple修复17项检查](../evidence/correctness/inference-apple-history-compile-2026-10-28.json)仍保留各自范围。
 
 ## 接下来
 

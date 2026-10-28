@@ -76,7 +76,7 @@ inline int run(const std::filesystem::path &input) {
     const auto submitted = [&] {
       if (!cancel_after_submit) return;
       require(active.size() == 2 && active[0] == a.request_key && active[1] == b.request_key &&
-          model.active_step && model.active_step->submitted && model.active_step->completion.valid(),
+          model.active_step && model.active_step->submitted && model.active_step->execution.completion.valid(),
           "control did not observe the original submitted R2 episode");
       const auto old = q::generation_boundary(*a.session->head);
       const auto epoch = a.session->head.epoch();

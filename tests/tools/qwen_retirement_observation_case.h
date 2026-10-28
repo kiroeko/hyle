@@ -55,7 +55,7 @@ inline int run(const std::filesystem::path &input_directory) {
     const auto before = q::generation_boundary(*head);
     session->retirement_status = first_error; // Synthetic host status only.
     model.prepare_evaluation(*session, one); // Prepared, deliberately not submitted.
-    model.active_step->terminal = later_error; // Synthetic host status only.
+    model.active_step->execution.terminal = later_error; // Synthetic host status only.
     const auto observed = session->drain();
     require(!observed.retired && observed.status == first_error &&
         session->retirement_status == first_error && !session->stopping &&
@@ -104,7 +104,7 @@ inline int run(const std::filesystem::path &input_directory) {
     require(model.active_step && !model.active_step->submitted &&
         a->pending == model.active_step.get() && b->pending == model.active_step.get(),
         "shared cancellation check did not prepare the actual original R2 episode");
-    model.active_step->terminal = hyle::Status::Cancelled("synthetic prepared episode cancellation");
+    model.active_step->execution.terminal = hyle::Status::Cancelled("synthetic prepared episode cancellation");
     q::check(a->stop());
     const auto observed = b->drain();
     require(!observed.retired && observed.status.IsCancelled() && !observed.status.has_native_error() &&

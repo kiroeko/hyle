@@ -232,7 +232,7 @@ void cancel_batch(Observation &observation, q::Model &model,
   auto *const episode = model.active_step.get();
   require(episode && episode->members.size() == 2 && a->pending == episode && b->pending == episode,
           "cancel case did not prepare one genuine two-member episode");
-  auto *const phase = episode->phase; auto *const run = episode->run;
+  auto *const phase = episode->phase; auto *const run = episode->execution.run;
   require(phase && phase->slot_count == 1 && slot == 0 && run &&
           run == q::take(phase->carriers[slot].borrow()) && run->valid(), "cancel case lost its original serial R2 carrier slot");
   const std::array candidate_ids{episode->members[0].next.get(), episode->members[1].next.get()};
@@ -252,9 +252,9 @@ void cancel_batch(Observation &observation, q::Model &model,
   q::check(a->stop());
   require(a->stopping && !b->stopping && !episode->cancelled && episode->discard_stopped_members,
           "one withdrawn ordinary participant aborted its surviving peer");
-  observation.dropped_live_completion = episode->completion.valid();
+  observation.dropped_live_completion = episode->execution.completion.valid();
   require(observation.dropped_live_completion, "batch had no original live public Completion to abandon");
-  episode->completion = {}; // Original Graph/native uses still own both candidates.
+  episode->execution.completion = {}; // Original Graph/native uses still own both candidates.
   const auto blocked_retirement = a->try_retire();
   if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
   require(!blocked_retirement.retired, "native-blocked batch retired after public Completion was dropped"); // Exactly one blocked check.
@@ -294,7 +294,7 @@ void cancel_batch(Observation &observation, q::Model &model,
   const std::array<std::size_t, 1> calls{1}; auto retry_a = model.create_session(calls, old_a.head);
   requests[0].session = retry_a;
   model.prepare_evaluations(requests);
-  require(model.active_step && model.active_step->phase == phase && model.active_step->run == run &&
+  require(model.active_step && model.active_step->phase == phase && model.active_step->execution.run == run &&
           run == q::take(phase->carriers[slot].borrow()) && run->valid(), "R2 retry did not rebuild the original aborted carrier slot");
   model.submit_evaluations();
   const std::array outputs_io{q::EvaluationIO{.name = "retired_retry_a"},

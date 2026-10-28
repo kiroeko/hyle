@@ -168,7 +168,7 @@ int main(int argc,char **argv){
   const std::array batch{q::EvaluationRequest{a.session,cancelled_a.ids()},q::EvaluationRequest{b.session,cancelled_b.ids()}};
   event("submit_R2_then_cancel_A");model.prepare_evaluations(batch,nullptr,q::GraphRole::kText);model.submit_evaluations();
   require(model.active_step && model.active_step->submitted && a.session->pending==b.session->pending && model.active_step->members.size()==2,"original submitted R2 episode was not shared");
-  const bool logical_inflight=model.active_step->run->in_flight();
+  const bool logical_inflight=model.active_step->execution.run->in_flight();
   const auto cancel_status=a.session->stop();
   std::cerr<<"live_owner_cancel_status stop_ok="<<cancel_status.ok()<<" stop_cancelled="<<cancel_status.IsCancelled()<<" message="<<cancel_status.message()<<'\n';
   if(!cancel_status.IsCancelled())q::check(cancel_status);

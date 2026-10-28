@@ -178,7 +178,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           request.warm_inputs[0], 0, cancelled.completion, cancelled.input_begin, cancelled.prefill_complete);
       chunk.prepare_evaluation(*request.session, cancelled.ids(), nullptr, cancelled.role, cancelled.completion);
       state_only_ports(*chunk.active_step->phase); chunk.submit_evaluation(*request.session);
-      cancelled_inflight = chunk.active_step->run->in_flight();
+      cancelled_inflight = chunk.active_step->execution.run->in_flight();
       const auto stopped = chunk.abort_episode();
       if (!stopped.status.IsCancelled() || stopped.status.has_native_error()) q::check(stopped.status);
       require(stopped.retired && !chunk.active_step && !chunk.carrier_borrowed && !request.session->pending &&
@@ -293,7 +293,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         "MTP chunked journeys retained a state version, target/draft page permission or native episode");
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
-      require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
+      require(!program->guard.execution.has_completion() && !program->guard.execution.cleanup_pending &&
           !program->hidden_transactions.bound() && !program->carrier.pending(), "MTP controlled repair did not retire");
     }
   }

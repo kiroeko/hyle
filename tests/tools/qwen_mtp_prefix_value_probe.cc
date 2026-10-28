@@ -17,12 +17,12 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
     std::size_t source_count = 1, const c::LeaseSlotLayout *expected_layout = nullptr) {
   namespace gd = hyle::graph::detail;
   namespace sd = hyle::graph::slots::detail;
-  require(step.run && step.phase && step.phase->state_transactions[step.state_slot].bound() && step.members.size() == 1 &&
+  require(step.execution.run && step.phase && step.phase->state_transactions[step.state_slot].bound() && step.members.size() == 1 &&
       prefix < step.phase->prefix_rows, "prefix state needs its original bound single-request episode");
   // finish_selected_evaluations observes successful completion before select.
   // The independent retired visitor also rejects native work/results/observers;
   // an invalid public Completion alone would not prove actual retirement.
-  require(gd::RegionAccess::successful_outcome(*step.run),
+  require(gd::RegionAccess::successful_outcome(*step.execution.run),
       "prefix state inspection requires the original successful Graph outcome");
   Bytes bytes(q::take(item.required_bytes()));
   struct Read final {
@@ -35,7 +35,7 @@ Bytes original_slot_result(q::Model &model, q::StepState &step,
     bool found = false;
   } observation{&model, &ports, item, prefix,
       q::cache::multiply(step.members.size(), step.phase->prefix_rows), source_count, expected_layout, bytes};
-  q::check(gd::RegionAccess::visit_retired(*step.run, ports.store,
+  q::check(gd::RegionAccess::visit_retired(*step.execution.run, ports.store,
       +[](void *opaque, const gd::RegionAccessView &view) noexcept -> hyle::Status {
         auto &request = *static_cast<Read *>(opaque);
         if (request.found || std::ranges::find(view.node_ordinals, request.ports->store.ordinal()) ==

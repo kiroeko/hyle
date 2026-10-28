@@ -47,6 +47,7 @@
 #include "../../inference/ct_block128_graph.h"
 #include "../../inference/execution_resources.h"
 #include "../../inference/program_carrier.h"
+#include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
@@ -1116,135 +1117,29 @@ struct StepSources final {
   std::vector<Boundary> boundaries;
   std::vector<c::ReadLease> published_states;
 };
-struct IncomingStepSources final {
-  std::shared_ptr<StepSources> owner;
-  std::vector<g::detail::OutputBinding> bindings;
-  std::vector<V> outside_inputs;
-  bool bound = false;
-};
+using IncomingStepSources = inference::IncomingExecutionSources<StepSources>;
 struct StepState final {
-  // Model owns the episode; these strong pins outlive all accepted native work.
-  // Session's pending link borrows this owner and never creates a cycle.
+  // Keep the model's original participant pins alive until after the common
+  // resource episode is destroyed. Session pending still borrows this Step.
   hyle::container::SmallVector<StepMember, 1> members;
-  hyle::container::SmallVector<std::vector<c::PagedPageWriter>, 34> dirty;
-  // One inherited partial page per request/bank. The common R1 case stays inline.
-  hyle::container::SmallVector<hyle::container::SmallVector<c::PagedPageAppender, 1>, 34> tails;
-  hyle::container::SmallVector<g::batch::PagedAppendPages, 34> appends;
-  hyle::container::SmallVector<g::NodeId, 34> nodes;
-  hyle::container::SmallVector<std::uint8_t, 34> bound;
-  void configure(std::size_t banks) {
-    if (!dirty.try_resize(banks) || !tails.try_resize(banks) || !appends.try_resize(banks) ||
-        !nodes.try_resize(banks) || !bound.try_resize(banks)) throw std::bad_alloc{};
-  }
-  inference::AppendTransactions append_transactions() noexcept {
-    return {{nodes.data(), nodes.size()}, {appends.data(), appends.size()}, {bound.data(), bound.size()}};
-  }
+  inference::ExecutionEpisode<ColdResources, StepSources, 34> execution;
   c::BatchLayoutVersion draft_layout;
-  g::Invocation *run = nullptr;
   Phase *phase = nullptr;
-  c::Completion completion;
-  std::shared_ptr<StepSources> sources;
-  std::unique_ptr<IncomingStepSources> incoming;
-  std::shared_ptr<StepState> predecessor_episode;
-  bool has_completion() const noexcept {
-    return completion.valid() || (sources && sources->submission.valid());
-  }
-  hyle::Result<c::CompletionPoll> poll() noexcept {
-    return sources && sources->submission.valid() ? sources->submission.poll() : completion.poll();
-  }
-  hyle::Status wait() noexcept {
-    return sources && sources->submission.valid() ? sources->submission.wait() : completion.wait();
-  }
-  hyle::Status request_cancel() noexcept {
-    return sources && sources->submission.valid() ? sources->submission.request_cancel() : completion.request_cancel();
-  }
-  hyle::Status terminal;
   Clock::time_point step_start{}, start{};
   double submit_seconds = 0, cold_batch_seconds = 0, shape_admission_seconds = 0;
-  // Maximum member width and true total rows are independent of carrier capacity.
   std::size_t input_tokens = 0, active_input_rows = 0, capture_recorded = 0, capture_reused = 0;
   g::ReplayRoute replay_route = g::ReplayRoute::kUnprepared;
   bool prepared = false, submitted = false, cancelled = false;
   std::size_t state_slot = 0;
-  inference::SlotTransactions *state_transactions = nullptr; // Original carrier's cold cohort.
-  bool cleanup_pending = false;
   bool discard_stopped_members = false;
-  // Model admission is serial even when a cancelled native episode has not
-  // retired. Return it only after publication and final result reads, or after
-  // complete abort cleanup.
-  std::size_t *candidate_admission = nullptr;
-  void release_admission() noexcept {
-    if (candidate_admission) {
-      auto *count = std::exchange(candidate_admission, nullptr);
-      HYLE_FATAL_ASSERT(*count); --*count;
-    }
-  }
 
   hyle::Result<bool> try_abort() noexcept {
-    // Even an unsubmitted carrier may own a capture/workspace whose native
-    // destruction synchronizes its context. Keep the rejected candidate
-    // intact until its actual predecessor retires; let the owner observe the
-    // original preparation error without waiting behind that predecessor.
-    if (cleanup_pending && predecessor_episode && predecessor_episode->run &&
-        predecessor_episode->run->in_flight()) return false;
-    if (has_completion()) {
-      auto observed = poll();
-      if (observed && *observed == c::CompletionPoll::kPending) return false;
-      if (!observed) inference::record_retirement_status(terminal, observed.error());
-      completion = {}; // Error/abandonment keeps actual native guards retained.
-    }
-    if (sources) {
-      if (sources->submission.valid() && sources.use_count() != 1) return false;
-      // Failed token views cannot publish/detach. Drop this host reference;
-      // an actual successor still owns its own view and prevents premature
-      // producer withdrawal until the successor's original reads retire.
-      sources->token = {};
-      if (sources->submission.valid()) {
-        const auto detached = sources->submission.detach();
-        if (detached.IsUnavailable() || detached.IsFailedPrecondition()) return false;
-        HYLE_RETURN_IF_ERROR(detached);
+    return execution.recover([&]() noexcept {
+      for (auto &member : members) {
+        member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
       }
-      sources.reset(); // Unescaped tickets must end before writer discard.
-    }
-    if (run) {
-      if (run->in_flight() || (phase && phase->carriers[state_slot].pending())) return false;
-      HYLE_ASSIGN_OR_RETURN(const bool appends_returned, append_transactions().recover(*run));
-      if (!appends_returned) return false;
-      // Only the original Graph's retired take can return a bank. The same
-      // cohort handles target ordinary/MTP, imported successors and NextN.
-      if (state_transactions) {
-        HYLE_ASSIGN_OR_RETURN(const bool recovered, state_transactions->recover(*run));
-        if (!recovered) return false;
-      }
-      if (incoming && incoming->bound) {
-        HYLE_RETURN_IF_ERROR(g::detail::release_outputs(*run, incoming->bindings));
-      }
-      incoming.reset(); predecessor_episode.reset();
-      if (phase) {
-        HYLE_RETURN_IF_ERROR(phase->carriers[state_slot].reset_retired());
-      } else *run = {}; // NextN's original guard precedes its carrier reset.
-    }
-    HYLE_ASSIGN_OR_RETURN(const bool appends_discarded, append_transactions().discard());
-    if (!appends_discarded) return false;
-    for (auto &bank : tails) for (auto &tail : bank) {
-      const auto rolled_back = inference::AppendTransactions::rollback_tail(tail);
-      if (rolled_back.IsUnavailable()) return false;
-      HYLE_RETURN_IF_ERROR(rolled_back);
-    }
-    for (auto &bank : dirty) for (auto &writer : bank) {
-      const auto recovered = inference::AppendTransactions::discard_page(writer);
-      if (recovered.IsUnavailable()) return false;
-      HYLE_RETURN_IF_ERROR(recovered);
-    }
-    for (auto &append : appends) append = {};
-    for (auto &bank : dirty) bank.clear();
-    for (auto &bank : tails) bank.clear();
-    for (auto &member : members) {
-      member.owner_state->recycle_candidate(std::move(member.next)); member.base = nullptr;
-    }
-    run = nullptr; phase = nullptr; state_transactions = nullptr;
-    release_admission();
-    return true;
+      phase = nullptr;
+    });
   }
 };
 
@@ -1530,7 +1425,7 @@ struct ColdResources final {
       }
     for (auto &[shape, program] : draft_programs) {
       (void)shape;
-      program->guard.completion = {}; program->guard.run = nullptr;
+      program->guard.execution.completion = {}; program->guard.execution.run = nullptr; program->guard.execution.carrier = nullptr;
       program->carrier.release_invocation_root();
     }
     for (auto &[width, program] : prefix_sampling_programs) { (void)width; program->carrier.release_invocation_root(); }
@@ -1871,13 +1766,13 @@ public:
       session->model_ = nullptr;
       session->stopping = true;
       session->pending = nullptr;
-      if (active_step) inference::record_retirement_status(session->retirement_status, active_step->terminal);
+      if (active_step) inference::record_retirement_status(session->retirement_status, active_step->execution.terminal);
     }
     resources_->release_invocation_roots();
     // Teardown never promotes an unpublished successor back into escaped
     // Sessions whose Model link has already been withdrawn above.
-    if (successor_step) successor_step->candidate_admission = nullptr;
-    if (active_step) active_step->candidate_admission = nullptr;
+    if (successor_step) successor_step->execution.candidate_admission = nullptr;
+    if (active_step) active_step->execution.candidate_admission = nullptr;
     successor_step.reset(); active_step.reset();
   }
 
@@ -3082,12 +2977,12 @@ public:
           rows, 1, {.resource_budget = cache_budget}}};
       check(program.hidden_transactions.prepare(specs));
     }
-    program.guard.configure(draft_bank + 2);
+    program.guard.execution.configure(draft_bank + 2);
     const auto dirty_bound = cache::add(rows, cache::Plan::page_rows - 2) / cache::Plan::page_rows + 1;
     for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-      program.guard.dirty[bank].reserve(dirty_bound);
-    program.guard.nodes[draft_bank] = program.append.key;
-    program.guard.nodes[draft_bank + 1] = program.append.value;
+      program.guard.execution.dirty[bank].reserve(dirty_bound);
+    program.guard.execution.nodes[draft_bank] = program.append.key;
+    program.guard.execution.nodes[draft_bank + 1] = program.append.value;
     initialize_draft_program(program);
     draft_programs.emplace(key, std::move(prepared));
   }
@@ -3111,13 +3006,9 @@ public:
   // alone can take back this NextN append/Store cohort before carrier reset.
   hyle::Result<bool> recover_draft_program(DraftProgram &program) noexcept {
     auto &guard = program.guard;
-    const auto observed = program.carrier.retire(execution);
-    inference::record_retirement_status(guard.terminal, observed.status);
+    const auto observed = guard.execution.retire(execution);
     if (!observed.retired) return false;
-    HYLE_ASSIGN_OR_RETURN(const bool recovered, guard.try_abort());
-    if (!recovered) return false;
-    HYLE_RETURN_IF_ERROR(program.carrier.reset_retired());
-    return true;
+    return guard.try_abort();
   }
 
   // Append to an unpublished draft only. The first append uses COW; later
@@ -3135,17 +3026,17 @@ public:
     const auto &selected_sampler = sampling_configuration(program.sampling_index).configuration;
     if (head) validate_logits_inputs(selected_sampler, logits, vocabulary);
     auto &guard = program.guard;
-    if (guard.cleanup_pending) {
+    if (guard.execution.cleanup_pending) {
       // Keep the same original failed episode and all its append/state facts
       // until real retirement; no new carrier can reuse these permissions.
       if (!take(recover_draft_program(program)))
         throw std::runtime_error("NextN original episode is still retiring");
-      guard.cleanup_pending = false; guard.terminal = {};
+      guard.execution.cleanup_pending = false; guard.execution.terminal = {};
     }
     if (!program.carrier.initialized()) initialize_draft_program(program);
     auto &run = *take(program.carrier.borrow());
-    guard.run = &run;
-    if (head) guard.state_transactions = &program.hidden_transactions;
+    guard.execution.run = &run; guard.execution.carrier = &program.carrier;
+    if (head) guard.execution.state_transactions = &program.hidden_transactions;
     cache::DraftState next;
     DraftProposal output;
     try {
@@ -3157,20 +3048,20 @@ public:
           work.state.pages.empty() ? 0 : work.state.pages.back().page(), extent, !work.state.pages.empty());
       next.pages.reserve(page_count);
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-        guard.dirty[bank].reserve(cache::add(guard.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
+        guard.execution.dirty[bank].reserve(cache::add(guard.execution.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
       if (reuse && !take(inference::reserve_tail(work.tails, extent))) {
         reuse = false;
         for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          guard.dirty[bank].reserve(cache::add(guard.dirty[bank].size(), dirty_count));
+          guard.execution.dirty[bank].reserve(cache::add(guard.execution.dirty[bank].size(), dirty_count));
       }
       for (std::size_t i = 0; i < prefix_pages; ++i) next.pages.push_back(work.state.pages.at(i));
       if (reuse) {
         next.pages.push_back(work.state.pages.back());
-        for (std::size_t bank = 0; bank < 2; ++bank) guard.tails[draft_bank + bank].push_back(std::move(work.tails[bank]));
+        for (std::size_t bank = 0; bank < 2; ++bank) guard.execution.tails[draft_bank + bank].push_back(std::move(work.tails[bank]));
       } else work.tails = {};
       for (std::size_t i = reuse ? 1 : 0; i < dirty_count; ++i) {
         auto page = take(draft_inventory.acquire()); next.pages.push_back(std::move(page.reference));
-        guard.dirty[draft_bank].push_back(std::move(page.keys[0])); guard.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
+        guard.execution.dirty[draft_bank].push_back(std::move(page.keys[0])); guard.execution.dirty[draft_bank + 1].push_back(std::move(page.values[0]));
       }
       std::vector<std::int32_t> page_ids, positions;
       for (const auto &page : next.pages) page_ids.push_back(static_cast<std::int32_t>(page.page()));
@@ -3183,8 +3074,8 @@ public:
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) {
         auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
         const auto &source = sources[bank - draft_bank];
-        guard.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout,
-            source.layout(), std::span(&source, 1), guard.dirty[bank], guard.tails[bank],
+        guard.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout,
+            source.layout(), std::span(&source, 1), guard.execution.dirty[bank], guard.execution.tails[bank],
             {.resource_budget = cache_budget}));
       }
       program.token_values.write<std::int32_t>(ids); program.position_values.write<std::int32_t>(positions);
@@ -3208,10 +3099,10 @@ public:
       check(g::batch::prepare(run, queues, head ? std::span<const g::batch::NodeLayout>(layouts) : std::span<const g::batch::NodeLayout>{},
           {.host_workspace = execution.staging()}));
       const std::array cache_inputs{head ? program.key : V{}, head ? program.value : V{}};
-      check(guard.append_transactions().subspan(draft_bank, 2).bind(run, program.graph, cache_inputs));
+      check(guard.execution.append_transactions().subspan(draft_bank, 2).bind(run, program.graph, cache_inputs));
       if (head) check(program.hidden_transactions.bind(run, program.graph));
       check(run.prepare_replay(queues, {.mode = program.replay_mode, .host_wait = g::HostWaitPolicy::kAllow}));
-      guard.completion = take(program.carrier.submit(resources_)); check(guard.completion.wait()); guard.completion = {};
+      check(guard.execution.submit(resources_)); check(guard.execution.wait_success());
       ++draft_program_graph_calls;
       if (head) {
         if (program.valid) {
@@ -3232,19 +3123,19 @@ public:
         if (program.next_counts) output.next_counts =
             take(program.io.retain(run, program.next_counts_output, execution_budget));
       }
-      check(guard.append_transactions().subspan(draft_bank, 2).take(run));
+      check(guard.execution.append_transactions().subspan(draft_bank, 2).take(run));
       if (head) {
         auto writers = take(program.hidden_transactions.take(run, 0));
         output.hidden = take(writers[0].publish());
         check(program.hidden_transactions.clear(0));
       }
-      auto key_delta = take(guard.appends[draft_bank].ready_delta(sources[0], layout));
-      auto value_delta = take(guard.appends[draft_bank + 1].ready_delta(sources[1], layout));
+      auto key_delta = take(guard.execution.appends[draft_bank].ready_delta(sources[0], layout));
+      auto value_delta = take(guard.execution.appends[draft_bank + 1].ready_delta(sources[1], layout));
       auto key_commit = take(work.state.key.prepare_commit(std::move(key_delta)));
       auto value_commit = take(work.state.value.prepare_commit(std::move(value_delta)));
       std::array<c::PagedPageAppender, 2> tails;
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) for (std::size_t i = 0; i < guard.appends[bank].appender_count(); ++i) {
-        auto &tail = take(guard.appends[bank].appender(i)); if (!tail.valid()) continue;
+      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) for (std::size_t i = 0; i < guard.execution.appends[bank].appender_count(); ++i) {
+        auto &tail = take(guard.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
         if (tail.page() != next.pages.back().page() || tail.reserved_rows() || tails[bank - draft_bank].valid() ||
             tail.initialized_rows() != next.frontier % cache::Plan::page_rows)
           throw std::runtime_error("NextN append returned an invalid private tail");
@@ -3258,25 +3149,25 @@ public:
       const auto value_status = next.value.commit(std::move(value_commit));
       HYLE_FATAL_ASSERT(key_status.ok() && value_status.ok());
       work.tails = std::move(tails); work.state = std::move(next);
-      for (auto &append : guard.appends) append = {};
-      for (auto &bank : guard.dirty) bank.clear();
-      for (auto &bank : guard.tails) bank.clear();
-      guard.run = nullptr; guard.state_transactions = nullptr;
+      for (auto &append : guard.execution.appends) append = {};
+      for (auto &bank : guard.execution.dirty) bank.clear();
+      for (auto &bank : guard.execution.tails) bank.clear();
+      guard.execution.run = nullptr; guard.execution.carrier = nullptr; guard.execution.state_transactions = nullptr;
       return output;
     } catch (inference::EvaluationFailure &failure) {
       // This validator has no target Step participant. Keep its original
       // private guard's actual retirement observation for a known caller key.
-      guard.cleanup_pending = true;
+      guard.execution.cleanup_pending = true;
       const auto recovered = recover_draft_program(program);
-      if (!recovered) inference::record_retirement_status(guard.terminal, recovered.error());
-      failure.observe_retirement({recovered && *recovered, guard.terminal});
-      if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
+      if (!recovered) inference::record_retirement_status(guard.execution.terminal, recovered.error());
+      failure.observe_retirement({recovered && *recovered, guard.execution.terminal});
+      if (recovered && *recovered) { guard.execution.cleanup_pending = false; guard.execution.terminal = {}; }
       throw;
     } catch (...) {
       // An unsuccessful private append is never a partially published head.
-      guard.cleanup_pending = true;
+      guard.execution.cleanup_pending = true;
       const auto recovered = recover_draft_program(program);
-      if (recovered && *recovered) { guard.cleanup_pending = false; guard.terminal = {}; }
+      if (recovered && *recovered) { guard.execution.cleanup_pending = false; guard.execution.terminal = {}; }
       // Otherwise the original cold guard/run retain the partial cleanup facts;
       // the next use must finish this same retirement before it can initialize.
       throw;
@@ -4099,9 +3990,9 @@ public:
 
   void detach_episode() noexcept {
     if (!active_step) return;
-    if (successor_step && successor_step->cleanup_pending) {
+    if (successor_step && successor_step->execution.cleanup_pending) {
       const auto cleanup = abort_successor_episode();
-      inference::record_retirement_status(active_step->terminal, cleanup.status);
+      inference::record_retirement_status(active_step->execution.terminal, cleanup.status);
       if (!cleanup.retired) {
         return; // Retain both owners for the original retirement retry.
       }
@@ -4111,10 +4002,10 @@ public:
     // poison its later retirement with a peer's normal Graph cancellation.
     // Preserve native and all other failures, and the cancelled owner's fact.
     const bool cancelled_episode = active_step->cancelled &&
-        active_step->terminal.IsCancelled() && !active_step->terminal.has_native_error();
+        active_step->execution.terminal.IsCancelled() && !active_step->execution.terminal.has_native_error();
     for (auto &member : active_step->members) {
       if (!cancelled_episode || member.session->stopping)
-        inference::record_retirement_status(member.session->retirement_status, active_step->terminal);
+        inference::record_retirement_status(member.session->retirement_status, active_step->execution.terminal);
       member.session->pending = successor_step && std::ranges::any_of(successor_step->members,
           [&](const auto &next) { return next.session == member.session; }) ? successor_step.get() : nullptr;
     }
@@ -4129,41 +4020,40 @@ public:
   inference::RetirementObservation try_retire_episode() noexcept {
     if (!active_step) return {true, {}};
     if (successor_step) {
-      inference::record_retirement_status(successor_step->terminal, execution.collect_retired());
+      inference::record_retirement_status(successor_step->execution.terminal, execution.collect_retired());
       const auto retired = successor_step->try_abort();
       if (!retired) return {false, retired.error()};
-      if (!*retired) return {false, successor_step->terminal};
+      if (!*retired) return {false, successor_step->execution.terminal};
       successor_step.reset();
     }
     // Dropping the public Completion does not remove original native work.
     // Drive its owning environment before checking the unchanged Graph/page
     // retirement gates; an observation error alone never proves retirement.
-    inference::record_retirement_status(active_step->terminal, execution.collect_retired());
+    inference::record_retirement_status(active_step->execution.terminal, execution.collect_retired());
     const auto retired = active_step->try_abort();
     if (!retired) {
-      inference::record_retirement_status(active_step->terminal, retired.error());
-      return {false, active_step->terminal};
+      inference::record_retirement_status(active_step->execution.terminal, retired.error());
+      return {false, active_step->execution.terminal};
     }
-    const auto terminal = active_step->terminal;
+    const auto terminal = active_step->execution.terminal;
     if (*retired) detach_episode();
     return {*retired, terminal};
   }
 
   inference::RetirementObservation abort_successor_episode() noexcept {
     if (!successor_step) return {true, {}};
-    if (!successor_step->submitted && successor_step->run && active_step &&
-        active_step->run && active_step->run->in_flight()) {
+    if (!successor_step->submitted && successor_step->execution.run && active_step &&
+        active_step->execution.run && active_step->execution.run->in_flight()) {
       successor_step->cancelled = true;
-      successor_step->cleanup_pending = true;
+      successor_step->execution.cleanup_pending = true;
       return {false, {}};
     }
-    if (successor_step->run && successor_step->phase) {
-      const auto observed = successor_step->phase->carriers[successor_step->state_slot].retire(execution);
-      inference::record_retirement_status(successor_step->terminal, observed.status);
+    if (successor_step->execution.run && successor_step->phase) {
+      (void)successor_step->execution.retire(execution);
     }
     const auto retired = successor_step->try_abort();
     if (!retired) return {false, retired.error()};
-    const auto status = successor_step->terminal;
+    const auto status = successor_step->execution.terminal;
     if (*retired) successor_step.reset();
     return {*retired, status};
   }
@@ -4171,24 +4061,22 @@ public:
   inference::RetirementObservation abort_episode() noexcept {
     discard_decode_ahead();
     if (!active_step) return {true, {}};
-    if (successor_step && successor_step->run && successor_step->phase) {
+    if (successor_step && successor_step->execution.run && successor_step->phase) {
       // Capture destruction for an unsubmitted B can synchronize its native
       // context. Keep the original predecessor gate before even draining B.
-      if (!successor_step->submitted && active_step->run && active_step->run->in_flight()) {
+      if (!successor_step->submitted && active_step->execution.run && active_step->execution.run->in_flight()) {
         successor_step->cancelled = true;
-        successor_step->cleanup_pending = true;
+        successor_step->execution.cleanup_pending = true;
       } else {
-        const auto observed = successor_step->phase->carriers[successor_step->state_slot].retire(execution);
-        inference::record_retirement_status(successor_step->terminal, observed.status);
+        (void)successor_step->execution.retire(execution);
       }
     }
     // Nonblocking collection cannot drain a partially accepted Vulkan prefix.
     // Hand off once to the original blocking owner, then check the unchanged
     // Graph/page gates. Unknown native failure keeps this candidate, Session
     // pins and admission intact for an explicit retry; it must not spin.
-    if (active_step->run && active_step->phase) {
-      const auto observed = active_step->phase->carriers[active_step->state_slot].retire(execution);
-      inference::record_retirement_status(active_step->terminal, observed.status);
+    if (active_step->execution.run && active_step->phase) {
+      (void)active_step->execution.retire(execution);
     }
     // Episode retirement alone does not release a Session's published head.
     return try_retire_episode();
@@ -4270,21 +4158,21 @@ public:
           extent, session.draft_tail_epoch == member.base_epoch && !old.pages.empty());
       next.pages.reserve(count);
       for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-        step.dirty[bank].reserve(cache::add(step.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
+        step.execution.dirty[bank].reserve(cache::add(step.execution.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
       if (reuse && !take(inference::reserve_tail(session.draft_tails, extent))) {
         reuse = false;
         for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          step.dirty[bank].reserve(cache::add(step.dirty[bank].size(), dirty_count));
+          step.execution.dirty[bank].reserve(cache::add(step.execution.dirty[bank].size(), dirty_count));
       }
       for (std::size_t page = 0; page < prefix_pages; ++page) next.pages.push_back(old.pages.at(page));
       if (reuse) {
         next.pages.push_back(old.pages.back());
-        for (std::size_t bank = 0; bank < 2; ++bank) step.tails[draft_bank + bank].push_back(std::move(session.draft_tails[bank]));
+        for (std::size_t bank = 0; bank < 2; ++bank) step.execution.tails[draft_bank + bank].push_back(std::move(session.draft_tails[bank]));
       } else session.draft_tails = {};
       session.draft_tail_epoch = 0;
       for (std::size_t page = reuse ? 1 : 0; page < dirty_count; ++page) {
         auto reservation = take(draft_inventory.acquire()); next.pages.push_back(std::move(reservation.reference));
-        step.dirty[draft_bank].push_back(std::move(reservation.keys[0])); step.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
+        step.execution.dirty[draft_bank].push_back(std::move(reservation.keys[0])); step.execution.dirty[draft_bank + 1].push_back(std::move(reservation.values[0]));
       }
       for (const auto &page : old.pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
       const auto begin = next_ids.size();
@@ -4308,8 +4196,8 @@ public:
       auto &arena = bank == draft_bank ? draft_inventory.keys[0] : draft_inventory.values[0];
       for (std::size_t j = 0; j < width; ++j) sources[j] = step.members[j].draft_source(bank == draft_bank);
       const auto previous = width == 1 ? sources[0].layout() : old_layout;
-      step.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
-          step.dirty[bank], step.tails[bank], {.resource_budget = cache_budget}));
+      step.execution.appends[bank] = take(g::batch::PagedAppendPages::create(arena, layout, previous, sources,
+          step.execution.dirty[bank], step.execution.tails[bank], {.resource_budget = cache_budget}));
     }
     io.draft_positions.write<std::int32_t>(positions);
     if (draft_lag(role)) io.catchup_token.write<std::int32_t>(catchups);
@@ -4510,7 +4398,7 @@ public:
         role != GraphRole::kText || completion != TextCompletion::kEmitNext || physical_slot >= execution_slot_count ||
         incoming->boundaries.size() != requests.size() || !incoming->submission.valid() || !incoming->token.valid() ||
         incoming->states.size() != geometry.recurrent_layers() * 2 || incoming->pages.size() != draft_bank ||
-        (predecessor && (predecessor->sources != incoming || predecessor->cancelled || !predecessor->submitted ||
+        (predecessor && (predecessor->execution.sources != incoming || predecessor->cancelled || !predecessor->submitted ||
             predecessor->members.size() != requests.size()))))
       throw std::runtime_error("decode successor requires one exact complete ordinary predecessor and independent carriers");
     if (!requests.front().session || requests.front().session->model_ != this)
@@ -4582,7 +4470,7 @@ public:
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
     const bool ahead = !relay && !packed_prefill && take_decode_ahead(requests, role, completion, sampling_index, tokens);
-    auto candidate = std::make_shared<StepState>(); candidate->configure(draft_bank + 2);
+    auto candidate = std::make_shared<StepState>(); candidate->execution.configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (std::size_t j = 0; j < requests.size(); ++j) {
       const auto &request = requests[j];
@@ -4597,13 +4485,13 @@ public:
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
     }
     if (relay) {
-      candidate->incoming = std::make_unique<IncomingStepSources>();
-      candidate->incoming->owner = std::move(incoming);
+      candidate->execution.incoming = std::make_unique<IncomingStepSources>();
+      candidate->execution.incoming->owner = std::move(incoming);
     }
     auto &step = *candidate;
     if (predecessor) successor_step = candidate; else active_step = candidate;
-    ++carrier_borrowed; step.candidate_admission = &carrier_borrowed;
-    step.predecessor_episode = predecessor;
+    ++carrier_borrowed; step.execution.candidate_admission = &carrier_borrowed;
+    if (predecessor) step.execution.predecessor_episode = {predecessor, &predecessor->execution};
     step.step_start = step_start; step.input_tokens = tokens;
     for (auto &member : step.members) {
       member.input_row_begin = step.active_input_rows;
@@ -4627,9 +4515,9 @@ public:
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
       initialize_slot(phase, slot);
       auto &run = *take(carrier.borrow());
-      step.phase = &phase; step.run = &run; step.state_slot = slot;
-      step.state_transactions = &phase.state_transactions[slot];
-      step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
+      step.phase = &phase; step.execution.run = &run; step.execution.carrier = &carrier; step.state_slot = slot;
+      step.execution.state_transactions = &phase.state_transactions[slot];
+      step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
       if (packed_prefill) {
         // The prior step has really retired. Release this exact mirror alias
         // before batch::prepare tries to refresh its original metadata writer.
@@ -4711,7 +4599,7 @@ public:
       if (width != 1 && !ahead) old_ids.reserve(old_refs);
       if (new_refs > new_ids.capacity())
         throw std::runtime_error("target page-index scratch exceeds prepared schema capacity");
-      for (auto &bank : step.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
+      for (auto &bank : step.execution.tails) if (!bank.try_reserve(width)) throw std::bad_alloc{};
       for (std::size_t j = 0; j < width; ++j) {
         auto &member = step.members[j]; auto &session = *member.session;
         const auto length = member.base->length;
@@ -4727,24 +4615,24 @@ public:
             member.base->pages.empty() ? 0 : member.base->pages.back().page(), extent,
             !relay && session.tail_epoch == member.base_epoch && !member.base->pages.empty());
         member.next->pages.reserve(page_count);
-        for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count - (reuse_tail ? 1 : 0)));
+        for (auto &bank : step.execution.dirty) bank.reserve(cache::add(bank.size(), dirty_count - (reuse_tail ? 1 : 0)));
         if (reuse_tail && !take(inference::reserve_tail({session.tails.data(), session.tails.size()}, extent))) {
           reuse_tail = false;
-          for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count));
+          for (auto &bank : step.execution.dirty) bank.reserve(cache::add(bank.size(), dirty_count));
         }
         for (std::size_t i = 0; i < full_prefix_pages; ++i) member.next->pages.push_back(member.base->pages.at(i));
         if (reuse_tail) {
           member.next->pages.push_back(member.base->pages.back());
           for (std::size_t bank = 0; bank < session.tails.size(); ++bank)
-            step.tails[bank].push_back(std::move(session.tails[bank]));
+            step.execution.tails[bank].push_back(std::move(session.tails[bank]));
         } else if (!relay) for (auto &tail : session.tails) tail = {};
         if (!relay) session.tail_epoch = 0;
         for (std::size_t page = reuse_tail ? 1 : 0; page < dirty_count; ++page) {
           auto reservation = take(page_inventory.acquire());
           member.next->pages.push_back(std::move(reservation.reference));
           for (std::size_t layer = 0; layer < reservation.keys.size(); ++layer) {
-            step.dirty[layer * 2].push_back(std::move(reservation.keys[layer]));
-            step.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
+            step.execution.dirty[layer * 2].push_back(std::move(reservation.keys[layer]));
+            step.execution.dirty[layer * 2 + 1].push_back(std::move(reservation.values[layer]));
           }
         }
         if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
@@ -4786,14 +4674,14 @@ public:
           return width == 1 ? sources[0].layout() : old_layout;
         };
         auto &key_arena = page_inventory.keys[layer]; auto &value_arena = page_inventory.values[layer];
-        step.appends[layer * 2] = relay ? take(g::batch::detail::make_append_from_source(key_arena, io.attention_layout,
-            step.incoming->owner->pages[layer * 2], step.dirty[layer * 2], {.resource_budget = cache_budget}))
+        step.execution.appends[layer * 2] = relay ? take(g::batch::detail::make_append_from_source(key_arena, io.attention_layout,
+            step.execution.incoming->owner->pages[layer * 2], step.execution.dirty[layer * 2], {.resource_budget = cache_budget}))
           : take(g::batch::PagedAppendPages::create(key_arena, io.attention_layout,
-            compose(true), sources, step.dirty[layer * 2], step.tails[layer * 2], {.resource_budget = cache_budget}));
-        step.appends[layer * 2 + 1] = relay ? take(g::batch::detail::make_append_from_source(value_arena, io.attention_layout,
-            step.incoming->owner->pages[layer * 2 + 1], step.dirty[layer * 2 + 1], {.resource_budget = cache_budget}))
+            compose(true), sources, step.execution.dirty[layer * 2], step.execution.tails[layer * 2], {.resource_budget = cache_budget}));
+        step.execution.appends[layer * 2 + 1] = relay ? take(g::batch::detail::make_append_from_source(value_arena, io.attention_layout,
+            step.execution.incoming->owner->pages[layer * 2 + 1], step.execution.dirty[layer * 2 + 1], {.resource_budget = cache_budget}))
           : take(g::batch::PagedAppendPages::create(value_arena, io.attention_layout,
-            compose(false), sources, step.dirty[layer * 2 + 1], step.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
+            compose(false), sources, step.execution.dirty[layer * 2 + 1], step.execution.tails[layer * 2 + 1], {.resource_budget = cache_budget}));
       }
       if (has_mtp(role)) prepare_draft_append(step, role);
       auto &transactions = phase.state_transactions[slot];
@@ -4831,10 +4719,10 @@ public:
       const auto batch_start = Clock::now();
       check(g::batch::prepare(run, queues, layouts, {.host_workspace = execution.staging()}));
       const auto append_banks = draft_bank + (has_mtp(role) ? 2u : 0u);
-      check(step.append_transactions().subspan(0, append_banks).bind(run, phase.family->graph,
+      check(step.execution.append_transactions().subspan(0, append_banks).bind(run, phase.family->graph,
           std::span<const V>(phase.append_cache_inputs).first(append_banks)));
       if (relay) {
-        auto &input = *step.incoming; auto &previous = *input.owner;
+        auto &input = *step.execution.incoming; auto &previous = *input.owner;
         input.bindings.reserve(1 + previous.states.size() + previous.pages.size());
         input.bindings.push_back({phase.token_port, &previous.token});
         const bool ready_states = previous.published_states.size() == previous.states.size() * width &&
@@ -4859,7 +4747,7 @@ public:
         check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
       const auto batch_end = Clock::now();
-      if (relay) check(g::detail::prepare_outputs(run, step.incoming->bindings, queues));
+      if (relay) check(g::detail::prepare_outputs(run, step.execution.incoming->bindings, queues));
       else check(run.prepare_replay(queues, {.mode = phase.replay_modes[slot], .host_wait = g::HostWaitPolicy::kAllow}));
       const auto replay_end = Clock::now();
       if (preparation) {
@@ -4897,7 +4785,7 @@ public:
   // the same original views for a successor; no candidate head is exported and
   // the ordinary API remains on its existing direct Completion path.
   std::shared_ptr<StepSources> prepare_submission_sources(StepState &step) {
-    if (!step.prepared || step.submitted || step.cancelled || step.sources || !step.phase ||
+    if (!step.prepared || step.submitted || step.cancelled || step.execution.sources || !step.phase ||
         step.phase->family->role != GraphRole::kText || cache_plan.draft_cache ||
         step.phase->family->completion != TextCompletion::kEmitNext || scheduler)
       throw std::runtime_error("submission views require one prepared direct ordinary episode");
@@ -4916,12 +4804,12 @@ public:
       sources->boundaries.push_back({member.session, member.next.get(), member.base_epoch + 1});
     }
     for (const auto &state : phase.state_sources)
-      sources->states.push_back(take(g::detail::StoreSource::prepare(*step.run,
+      sources->states.push_back(take(g::detail::StoreSource::prepare(*step.execution.run,
           state.store, storage, {.resource_budget = execution_budget})));
     for (std::size_t bank = 0; bank < draft_bank; ++bank)
       sources->pages.push_back(take(g::batch::detail::PagedAppendSource::prepare(
-          *step.run, step.nodes[bank], storage, {.resource_budget = execution_budget})));
-    step.sources = sources;
+          *step.execution.run, step.execution.nodes[bank], storage, {.resource_budget = execution_budget})));
+    step.execution.sources = sources;
     return sources;
   }
 
@@ -4932,25 +4820,22 @@ public:
 
   void submit_evaluations(StepState &step, bool optional_sources = false) {
     if ((active_step.get() != &step && successor_step.get() != &step) || !step.prepared ||
-        step.submitted || step.cancelled || !step.run)
+        step.submitted || step.cancelled || !step.execution.run)
       throw std::runtime_error("batch is not prepared or was already submitted/cancelled");
     for (const auto &member : step.members)
       if (member.session->stopping || member.session->failed)
         throw std::runtime_error("batch participant stopped before submission");
-    auto &carrier = step.phase->carriers[step.state_slot];
     step.start = Clock::now(); step.submitted = true;
-    step.completion = take(carrier.submit(resources_, [&](g::Invocation &run, std::span<const g::QueueBinding> queues) noexcept {
-      return step.incoming ? g::detail::submit_outputs(run, step.incoming->bindings, queues) : run.submit(queues);
-    }));
-    if (step.sources) {
-      auto &sources = *step.sources;
+    check(step.execution.submit(resources_));
+    if (step.execution.sources) {
+      auto &sources = *step.execution.sources;
       auto exported = g::detail::SubmissionSource::create(
-          *step.run, std::move(step.completion), execution.storage_owner());
+          *step.execution.run, std::move(step.execution.completion), execution.storage_owner());
       if (!exported && optional_sources && !exported.error().has_native_error() &&
           (exported.error().IsUnimplemented() || exported.error().IsUnavailable())) {
         // create transfers the original Completion only on success. A legal
         // command route can finish normally without opting into device relay.
-        step.sources.reset();
+        step.execution.sources.reset();
       } else {
         sources.submission = take(std::move(exported));
         sources.token = take(g::detail::OutputSource::create(sources.submission,
@@ -4977,7 +4862,7 @@ public:
   void finish_selected_evaluations(std::span<const EvaluationOutput> outputs,
                                   std::span<std::int32_t> next_ids, Select select, Complete complete, Observe observe) {
     if (!active_step || outputs.size() != active_step->members.size() || next_ids.size() != outputs.size() ||
-        active_step->cancelled || !active_step->submitted || !active_step->has_completion())
+        active_step->cancelled || !active_step->submitted || !active_step->execution.has_completion())
       throw std::runtime_error("finish requires its original complete noncancelled batch");
     for (std::size_t j = 0; j < outputs.size(); ++j) {
       if (outputs[j].session != active_step->members[j].session || outputs[j].session->failed ||
@@ -4985,7 +4870,7 @@ public:
         throw std::runtime_error("finish participant does not match the original active batch");
       if (outputs[j].disposition) *outputs[j].disposition = EvaluationDisposition::kNotPublished;
     }
-    auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.run;
+    auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.execution.run;
     auto &io = phase.io[step.state_slot];
     const auto step_start = step.step_start, start = step.start;
     const auto tokens = step.input_tokens;
@@ -5036,8 +4921,8 @@ public:
         } else if (outputs[j].expected_episode)
           throw std::runtime_error("expected episode record requires a fresh commit witness");
       }
-      check(step.wait()); step.completion = {};
-      if (step.sources) check(step.sources->token.detach());
+      check(step.execution.wait_success());
+      if (step.execution.sources) check(step.execution.sources->token.detach());
       // Trace storage must be pinned before take_append/unbind revoke Graph
       // output observation. Generated arrays keep their actual native owner.
       if (std::ranges::any_of(outputs, [](const auto &output) { return output.capture_tensors; })) {
@@ -5122,9 +5007,9 @@ public:
         }
       // Attest the original append success before any slot withdrawal revokes
       // Graph output-ready. Every ordinary output has already been retained.
-      if (step.sources) check(step.sources->submission.detach());
+      if (step.execution.sources) check(step.execution.sources->submission.detach());
       const auto append_banks = draft_bank + (has_mtp(phase.family->role) ? 2u : 0u);
-      check(step.append_transactions().subspan(0, append_banks).take(run));
+      check(step.execution.append_transactions().subspan(0, append_banks).take(run));
       // Slot take proves actual retirement, not success; the original whole
       // Graph completion above remains the success witness for every bank.
       auto &transactions = phase.state_transactions[step.state_slot];
@@ -5149,10 +5034,10 @@ public:
           }
           const auto prefix = verifies_prefix(phase.family->role) ? step.members[j].accepted_tokens - 1 : 0;
           const auto selected = j * phase.prefix_rows + prefix;
-          auto ready = step.sources ? take(step.sources->states[bank.source_index].publish(
+          auto ready = step.execution.sources ? take(step.execution.sources->states[bank.source_index].publish(
               selected, writers[selected]))
               : take(writers[selected].publish());
-          if (step.sources) step.sources->published_states[bank.source_index * outputs.size() + j] = ready;
+          if (step.execution.sources) step.execution.sources->published_states[bank.source_index * outputs.size() + j] = ready;
           auto &state = step.members[j].next->state[bank.layer];
           (bank.kind == StateBankKind::kRecurrent ? state.recurrent : state.history) = std::move(ready);
         }
@@ -5165,12 +5050,12 @@ public:
           auto &member = step.members[j];
           if (!member.key_updates.try_resize(page_inventory.keys.size()) ||
               !member.value_updates.try_resize(page_inventory.keys.size())) throw std::bad_alloc{};
-          auto key = step.sources ? take(step.sources->pages[layer * 2].ready_delta(
-              step.appends[layer * 2], take(member.frame(layer, true).view()), member.layout))
-              : take(step.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
-          auto value = step.sources ? take(step.sources->pages[layer * 2 + 1].ready_delta(
-              step.appends[layer * 2 + 1], take(member.frame(layer, false).view()), member.layout))
-              : take(step.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
+          auto key = step.execution.sources ? take(step.execution.sources->pages[layer * 2].ready_delta(
+              step.execution.appends[layer * 2], take(member.frame(layer, true).view()), member.layout))
+              : take(step.execution.appends[layer * 2].ready_delta(take(member.frame(layer, true).view()), member.layout));
+          auto value = step.execution.sources ? take(step.execution.sources->pages[layer * 2 + 1].ready_delta(
+              step.execution.appends[layer * 2 + 1], take(member.frame(layer, false).view()), member.layout))
+              : take(step.execution.appends[layer * 2 + 1].ready_delta(take(member.frame(layer, false).view()), member.layout));
           member.key_updates[layer] = take(member.frame(layer, true).prepare_commit(std::move(key)));
           member.value_updates[layer] = take(member.frame(layer, false).prepare_commit(std::move(value)));
         }
@@ -5179,16 +5064,16 @@ public:
         std::vector<std::pair<std::uint32_t, std::size_t>> owners; owners.reserve(outputs.size());
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j]; auto &draft = *member.next->draft;
-          auto key = take(step.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
-          auto value = take(step.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
+          auto key = take(step.execution.appends[draft_bank].ready_delta(take(member.draft_frame(true).view()), member.draft_layout));
+          auto value = take(step.execution.appends[draft_bank + 1].ready_delta(take(member.draft_frame(false).view()), member.draft_layout));
           member.draft_updates[0] = take(member.draft_frame(true).prepare_commit(std::move(key)));
           member.draft_updates[1] = take(member.draft_frame(false).prepare_commit(std::move(value)));
           owners.emplace_back(draft.pages.back().page(), j);
         }
         std::sort(owners.begin(), owners.end());
         for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
-          for (std::size_t i = 0; i < step.appends[bank].appender_count(); ++i) {
-            auto &tail = take(step.appends[bank].appender(i)); if (!tail.valid()) continue;
+          for (std::size_t i = 0; i < step.execution.appends[bank].appender_count(); ++i) {
+            auto &tail = take(step.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
             const auto found = std::lower_bound(owners.begin(), owners.end(), std::pair{tail.page(), std::size_t{0}});
             if (found == owners.end() || found->first != tail.page())
               throw std::runtime_error("draft append returned a tail outside all final pages");
@@ -5243,8 +5128,8 @@ public:
         tail_owners.emplace_back(step.members[j].verified_last_page, j);
       std::sort(tail_owners.begin(), tail_owners.end());
       for (std::size_t bank = 0; bank < draft_bank; ++bank)
-        for (std::size_t i = 0; i < step.appends[bank].appender_count(); ++i) {
-          auto &tail = take(step.appends[bank].appender(i)); if (!tail.valid()) continue;
+        for (std::size_t i = 0; i < step.execution.appends[bank].appender_count(); ++i) {
+          auto &tail = take(step.execution.appends[bank].appender(i)); if (!tail.valid()) continue;
           const auto found = std::lower_bound(tail_owners.begin(), tail_owners.end(), std::pair{tail.page(), std::size_t{0}});
           if (found == tail_owners.end() || found->first != tail.page())
             throw std::runtime_error("batch append returned a tail outside all final pages");
@@ -5257,10 +5142,10 @@ public:
             throw std::runtime_error("batch append returned an invalid committed tail");
           member.next_tails[bank] = std::move(tail);
         }
-      if (step.incoming) {
-        check(g::detail::release_outputs(run, step.incoming->bindings));
-        check(phase.carriers[step.state_slot].release_inputs(step.incoming->outside_inputs));
-        step.incoming.reset(); step.predecessor_episode.reset();
+      if (step.execution.incoming) {
+        check(g::detail::release_outputs(run, step.execution.incoming->bindings));
+        check(phase.carriers[step.state_slot].release_inputs(step.execution.incoming->outside_inputs));
+        step.execution.incoming.reset(); step.execution.predecessor_episode.reset();
       } else check(phase.carriers[step.state_slot].release_inputs(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
@@ -5271,7 +5156,7 @@ public:
       // Every delta owns its changed guards and every tail has transferred.
       // A successor still retains this original Step, but must not thereby
       // pin replaced input tails from its consumed returned append wrappers.
-      for (auto &append : step.appends) append = {};
+      for (auto &append : step.execution.appends) append = {};
       // All fallible native/export/metadata work is complete. The head swaps
       // below cannot throw. Stopped ordinary members discard their unpublished
       // candidate; every surviving member keeps this original successful work.
@@ -5314,7 +5199,7 @@ public:
         packed_prefill_physical_rows = cache::add(packed_prefill_physical_rows,
             cache::multiply(phase.query_rows, phase.family->requests));
       }
-      return_readback.admission = std::exchange(step.candidate_admission, nullptr);
+      return_readback.admission = std::exchange(step.execution.candidate_admission, nullptr);
       detach_episode(); // Old states/transactions retire inside the host endpoint.
     } catch (inference::EvaluationFailure &failure) {
       // A nested private validator can still own native work independently of
@@ -5477,7 +5362,7 @@ public:
         auto &logits = step.phase->io[step.state_slot].logits;
         if (logits.caller_owned()) logits_storage = logits.storage();
         else {
-          logits_owner = take(inference::retain_output(*step.run, *step.phase->logits_facts, allocation_budget));
+          logits_owner = take(inference::retain_output(*step.execution.run, *step.phase->logits_facts, allocation_budget));
           logits_storage = take(logits_owner.view());
         }
       }
@@ -5750,7 +5635,7 @@ hyle::Status Session::stop() noexcept {
   if (stopping) return retirement_status;
   stopping = true;
   if (pending) {
-    if (!pending->cancelled && pending->submitted && pending->has_completion() &&
+    if (!pending->cancelled && pending->submitted && pending->execution.has_completion() &&
         pending->phase && pending->phase->family->role == GraphRole::kText &&
         model_ && !model_->cache_plan.draft_cache && pending->members.size() > 1 &&
         std::ranges::any_of(pending->members, [](const auto &member) { return !member.session->stopping; })) {
@@ -5760,11 +5645,11 @@ hyle::Status Session::stop() noexcept {
       return retirement_status;
     }
     pending->cancelled = true;
-    if (pending->has_completion()) {
-      const auto cancelled = pending->request_cancel();
+    if (pending->execution.has_completion()) {
+      const auto cancelled = pending->execution.request_cancel();
       if (!cancelled.IsUnimplemented()) inference::record_retirement_status(retirement_status, cancelled);
     }
-    if (pending->run) pending->run->close().IgnoreError();
+    if (pending->execution.run) pending->execution.run->close().IgnoreError();
   }
   return retirement_status;
 }
@@ -6866,11 +6751,11 @@ bool execute_ordinary_continuation(Model &model, std::span<PreparedGenerationCal
         : imported ? model.prepare_relay_evaluations(std::span(relay.data(), relay.size()), continuation.ready, slot)
         : (model.prepare_evaluations(std::span(direct.data(), direct.size()), nullptr, GraphRole::kText), *model.active_step);
     first_start = a.step_start;
-    if (resumed) a_source = a.sources;
+    if (resumed) a_source = a.execution.sources;
     else {
       a_source = model.prepare_submission_sources(a);
       model.submit_evaluations(a, true);
-      if (!a.sources) a_source.reset();
+      if (!a.execution.sources) a_source.reset();
       notify();
     }
     const auto abort_a = [&] {

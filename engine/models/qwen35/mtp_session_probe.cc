@@ -466,15 +466,15 @@ void prefix_commit(q::Model &model, PrefixObservation &observation, std::size_t 
                    q::GraphRole role, bool natural, bool reference, q::g::Invocation *retry_slot = nullptr) {
   model.prepare_evaluation(*session, inputs, nullptr, role); observation.observe(model);
   auto *phase = session->pending->phase;
-  if (retry_slot) { observation.same_retry_slot = session->pending->run == retry_slot; require(observation.same_retry_slot, "teacher-forced retry replaced its carrier slot"); }
+  if (retry_slot) { observation.same_retry_slot = session->pending->execution.run == retry_slot; require(observation.same_retry_slot, "teacher-forced retry replaced its carrier slot"); }
   model.submit_evaluation(*session); ++observation.graph_calls;
   // Completion proves the original Graph results ready. Export only actual
   // generated owners before finish takes page transactions and unbinds ports;
   // no GraphOutput handle survives to pin the Invocation across that release.
-  q::check(session->pending->completion.wait());
+  q::check(session->pending->execution.completion.wait());
   const auto retain_output = [&](q::V port, q::Tensor &caller) -> c::ReadLease {
     if (caller.buffer) return {};
-    auto result = q::take(session->pending->run->result(port));
+    auto result = q::take(session->pending->execution.run->result(port));
     require(q::take(result.description()) == caller.description,
             "prefix generated output description differs from its compiled port");
     auto owner = q::take(result.storage_lease());
@@ -587,8 +587,8 @@ void run_prefix(const std::filesystem::path &inputs, const std::filesystem::path
         const auto target_owners = model.page_inventory.owners, draft_owners = model.draft_inventory.owners;
         observation.negative_versions_before = model.snapshot_versions.live;
         model.prepare_evaluation(*session,suffix1,nullptr,q::GraphRole::kMtpSingle); observation.observe(model);
-        retry_slot = session->pending->run; observation.negative_versions_pending = model.snapshot_versions.live;
-        observation.negative_bound_banks = static_cast<std::size_t>(std::count_if(session->pending->bound.begin(),session->pending->bound.end(),[](auto value) { return static_cast<bool>(value); }));
+        retry_slot = session->pending->execution.run; observation.negative_versions_pending = model.snapshot_versions.live;
+        observation.negative_bound_banks = static_cast<std::size_t>(std::count_if(session->pending->execution.bound.begin(),session->pending->execution.bound.end(),[](auto value) { return static_cast<bool>(value); }));
         require(observation.negative_bound_banks == 14, "teacher-forced test did not bind all14 original banks");
         model.submit_evaluation(*session); ++observation.graph_calls;
         try { (void)q::finish_mtp_round(model, *session,cached_next,2); }
@@ -750,7 +750,7 @@ void resume_commit(q::Model &model, ResumeObservation &observation, const std::s
                    bool generation, std::size_t quota, const std::string &name, const std::filesystem::path &trace = {}) {
   q::prepare_generation_record(ledger,*session,role,inputs,generation,quota,0);
   model.prepare_evaluation(*session,inputs,nullptr,role); observation.observe(model);
-  require(session->pending && std::count_if(session->pending->bound.begin(),session->pending->bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
+  require(session->pending && std::count_if(session->pending->execution.bound.begin(),session->pending->execution.bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
           "resume episode did not use the original14-bank transaction");
   model.submit_evaluation(*session); ++observation.graph_calls; ++observation.positive_graph_calls;
   hyle::inference::StepObservation step;
@@ -1069,11 +1069,11 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       q::prepare_generation_record(ledgers[j],*sessions[j],q::GraphRole::kMtpRound,requests[j].ids,true,j ? 1u : 2u,0);
     observation.versions_before_cancel = model.snapshot_versions.live;
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
-    auto *const episode = model.active_step.get(); auto *const phase = episode->phase; auto *const run = episode->run;
+    auto *const episode = model.active_step.get(); auto *const phase = episode->phase; auto *const run = episode->execution.run;
     const auto slot = model.slot_index;
     require(phase->slot_count == 1 && slot == 0 && run == q::take(phase->carriers[slot].borrow()) && run->valid() &&
             episode->members.size() == 2 && phase->family->requests == 2 && phase->io[slot].attention_layout.facts().requests == 2 &&
-            phase->io[slot].attention_layout.facts().query_rows == 4 && std::count_if(episode->bound.begin(),episode->bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
+            phase->io[slot].attention_layout.facts().query_rows == 4 && std::count_if(episode->execution.bound.begin(),episode->execution.bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
             "MTP batch did not prepare one real R2/T2 fourteen-bank Graph");
     const std::array candidate_ids{episode->members[0].next.get(),episode->members[1].next.get()};
     require(candidate_ids[0] && candidate_ids[1],"MTP batch did not retain both unique unpublished candidates");
@@ -1083,8 +1083,8 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       BatchNativeGate gate; BatchReleaseAndDrain release{gate,*q::take(model.execution.common_context())};
       auto blocked = q::take(c::cuda::submit(*q::take(model.execution.common_queue()),[&](cudaStream_t stream) noexcept { return cudaLaunchHostFunc(stream,&BatchNativeGate::wait,&gate); }));
       gate.wait_until_entered(); model.submit_evaluations(); ++observation.graph_calls;
-      q::check(sessions[0]->stop()); observation.dropped_completion = episode->completion.valid();
-      require(observation.dropped_completion,"MTP batch had no actual Completion to drop"); episode->completion = {};
+      q::check(sessions[0]->stop()); observation.dropped_completion = episode->execution.completion.valid();
+      require(observation.dropped_completion,"MTP batch had no actual Completion to drop"); episode->execution.completion = {};
       const auto blocked_retirement = sessions[0]->try_retire();
       if (!blocked_retirement.status.IsCancelled() || blocked_retirement.status.has_native_error()) q::check(blocked_retirement.status);
       require(!blocked_retirement.retired,"MTP batch retired while its native queue was blocked");
@@ -1114,7 +1114,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     for (std::size_t j = 0; j < 2; ++j)
       q::prepare_generation_record(ledgers[j],*sessions[j],q::GraphRole::kMtpRound,requests[j].ids,true,j ? 1u : 2u,0);
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
-    observation.same_slot_retry = model.active_step->phase == phase && model.active_step->run == run &&
+    observation.same_slot_retry = model.active_step->phase == phase && model.active_step->execution.run == run &&
         run == q::take(phase->carriers[slot].borrow()) && run->valid(); require(observation.same_slot_retry,"MTP retry replaced its original finite R2 carrier slot");
     const std::array selections{q::MtpGenerationSelection{sessions[0],pending[0],2},q::MtpGenerationSelection{sessions[1],pending[1],1}};
     const std::array outputs_io{q::EvaluationIO{.name = "batch_member0", .trace_states = false},

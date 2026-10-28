@@ -69,7 +69,7 @@ StateBytes state_bytes(q::Model &model, const q::cache::State &state) {
 // Read-only diagnostics of the exact original slot. This neither records a
 // range nor changes the provider/runtime qualification used by Source.create.
 void diagnose_replay(const q::StepState &episode, const char *point) {
-  const auto *state = g::detail::InvocationAccess::state(*episode.run);
+  const auto *state = g::detail::InvocationAccess::state(*episode.execution.run);
   if (!state || !state->plan) {
     std::cerr << "source_replay_diagnostic point=" << point << " missing_state=true\n";
     return;
@@ -195,9 +195,9 @@ Arm run_arm(q::Model &model, bool exported) {
         "decode did not use the original committed pending token");
     model.prepare_evaluation(*session, std::span(&input, 1), nullptr);
     auto &step = *model.active_step;
-    if (!decode_run) decode_run = step.run;
-    require(step.run == decode_run && step.state_slot == 0 && session->pending == &step &&
-        step.phase->state_sources.size() == expected_stores && step.nodes.size() >= expected_pages,
+    if (!decode_run) decode_run = step.execution.run;
+    require(step.execution.run == decode_run && step.state_slot == 0 && session->pending == &step &&
+        step.phase->state_sources.size() == expected_stores && step.execution.nodes.size() >= expected_pages,
         "ordinary decode changed the original slot or omitted a mathematical state bank");
     std::shared_ptr<q::StepSources> sources;
     std::weak_ptr<q::StepSources> source_lifetime;
@@ -220,7 +220,7 @@ Arm run_arm(q::Model &model, bool exported) {
       throw;
     }
     if (exported) {
-      require(!step.completion.valid() && sources->submission.valid() && sources->token.valid(),
+      require(!step.execution.completion.valid() && sources->submission.valid() && sources->token.valid(),
           "exported episode retained a second original Completion or omitted its token Source");
       for (const auto &source : sources->states)
         require(source.valid() && source.destination_count() == 1, "Store Source did not capture the actual K1 destination");
@@ -375,13 +375,13 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
   // only after their accepted work has retired, then use its normal abort.
   hyle::util::ScopeGuard cleanup{[&]() noexcept {
     predecessor_gate.release(); successor_gate.release();
-    if (model.successor_step && model.successor_step->has_completion()) {
-      model.successor_step->wait().IgnoreError();
-      if (model.successor_step->run) model.execution.drain_retired(*model.successor_step->run).IgnoreError();
+    if (model.successor_step && model.successor_step->execution.has_completion()) {
+      model.successor_step->execution.wait().IgnoreError();
+      if (model.successor_step->execution.run) model.execution.drain_retired(*model.successor_step->execution.run).IgnoreError();
     }
-    if (model.active_step && model.active_step->has_completion()) {
-      model.active_step->wait().IgnoreError();
-      if (model.active_step->run) model.execution.drain_retired(*model.active_step->run).IgnoreError();
+    if (model.active_step && model.active_step->execution.has_completion()) {
+      model.active_step->execution.wait().IgnoreError();
+      if (model.active_step->execution.run) model.execution.drain_retired(*model.active_step->execution.run).IgnoreError();
     }
     b_sources.reset(); a_sources.reset(); previous.reset();
     (void)model.abort_episode(); checkpoint.reset();
@@ -430,13 +430,13 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
   };
   const auto record_episode = [&](std::size_t round, const q::StepState &step, bool pending_input) {
     require(step.phase && step.state_slot == (relay ? round % 3 : 0) &&
-        step.phase->state_sources.size() == expected_stores && step.nodes.size() >= expected_pages,
+        step.phase->state_sources.size() == expected_stores && step.execution.nodes.size() >= expected_pages,
         "relay episode omitted a state bank or selected another physical carrier");
     if (relay) {
-      require(step.incoming && step.incoming->bound && step.incoming->owner &&
-          step.incoming->bindings.size() == 1 + expected_stores + expected_pages,
+      require(step.execution.incoming && step.execution.incoming->bound && step.execution.incoming->owner &&
+          step.execution.incoming->bindings.size() == 1 + expected_stores + expected_pages,
           "relay omitted its complete original token/Store/KV effect bundle");
-      const auto sources = q::take(step.run->input_source_report());
+      const auto sources = q::take(step.execution.run->input_source_report());
       require(sources.source_count == 1 && sources.device_wait_count == 1 && !sources.host_wait_count,
           "relay did not deduplicate the complete original submission dependency");
     }
@@ -487,7 +487,7 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
         // exact token/source tuple has never been recorded for slot 2.
         try { (void)model.prepare_relay_evaluations(requests, a_sources, (round + 2) % 3); }
         catch (const std::runtime_error &) { rejected = true; }
-        require(rejected && model.successor_step && model.successor_step->cleanup_pending &&
+        require(rejected && model.successor_step && model.successor_step->execution.cleanup_pending &&
             !model.successor_step->submitted && model.carrier_borrowed == 2 &&
             model.active_step.get() == &a && session->pending == &a &&
             !predecessor_gate.released.load(std::memory_order_acquire) &&

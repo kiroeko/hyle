@@ -204,7 +204,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         "MTP journey retained a state version, episode or target/draft page permission");
     for (const auto &[key, program] : model->draft_programs) {
       (void)key;
-      require(!program->guard.has_completion() && !program->guard.cleanup_pending &&
+      require(!program->guard.execution.has_completion() && !program->guard.execution.cleanup_pending &&
           !program->hidden_transactions.bound() && !program->carrier.pending(),
           "MTP repair retained a NextN completion or state transaction");
     }
