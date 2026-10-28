@@ -67,6 +67,11 @@ CPU／CUDA完整路线按产品依赖自动装配ATen，其它独立模块仍按
 模型删除两份独立计数，保留真实账簿、容量、采样和Session发布。12组主机合同与5个CPU／CUDA有限消费者通过，
 实际部分前缀命中分别核对记录数和token数；MTP、取消、midturn恢复与R2接力保留原状态检查。
 一次错夹具入口拒绝保留原记录，改用已有正确缓存后同镜像通过；共4次CXX／链接，未重编SDK或下载模型，没有新增吞吐结论。
+MTP固定形状的下一片先处理真实混合lag成员：K1 proposal的target均为两行，draft按每成员`1+lag`消费，
+已有Batch／Append支持compact实际前缀；需接真实末行selector，并使位置、hidden／token选择及Append使用同一坐标。
+保留均匀／R1的原快路，不无条件多算padding；新路径应与原分组逐成员结果和完整性能对照。
+这不代签多草稿Verify：PackedGDN多snapshot仍要求每个成员实际行数覆盖K，需要真实有效snapshot合同。
+也不代签MTP设备后继，接受前缀的Store／KV权限、pending及原RNG地址必须另行证明。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；
