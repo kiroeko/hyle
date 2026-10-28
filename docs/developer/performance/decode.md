@@ -12,17 +12,25 @@
 单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+最新[ProgramIo完整窗口](../../evidence/performance/inference-program-io-current-window-2026-10-28.json)于北京时间2026-10-28
+**11:44:43～11:47:40**完成40进程，镜像`8489d558`、Model `9b6be9e7`、229项CLI闭包，对照保留的`433e7051`参考，后者不是最新上游。
+普通auto相对同窗off的decode中位单轮＋3.84%、两轮＋4.96%；相对参考仍慢2.62%／1.29%，MTP慢8.05%／6.97%。
+prefill单轮auto／MTP领先5.22%／9.19%，两轮却落后25.10%／22.02%；该差距尚未归因。
+均匀R1无padding却使用packed数学，T154计划为1375步、workspace 37,964,416B；历史exact计划为1088步、30,056,192B。
+两者原本都走Commands，不能把执行模式本身当作新原因；下一步用当前镜像直接A/B核实冷选择与原融合的影响。
+四项表、ready与独立内存采样见[当前基线](#目标与当前基线)。各臂完整非计时报告稳定，全部进程首次成功；不与旧窗拼算代码收益，也不将三样本中位视为显著性证明。
+
 [有效长度底层检查](../../evidence/correctness/inference-packed-sequence-2026-10-28.json)补齐packed GDN／conv的
 CPU／CUDA三类浮点存储、逐序列状态和原Append A≤R能力。15个有限用例通过，包含原capture下改offset、
-非法offset禁止Store写入及失败后按原合同重建。尚未接入真实prefill，没有新模型进程或速度测量，
-下方完整性能表继续对应各自冻结镜像；不把组件能力换算为提速。
+非法offset禁止Store写入及失败后按原合同重建。该底层批次本身未接入真实prefill，也没有模型进程或速度测量；后续接线已进入上方新窗口。
+各性能表仍对应各自冻结镜像，不把组件能力换算为提速。
 
 [共同Store事务与公开arena查询](../../evidence/correctness/inference-slot-cohort-2026-10-28.json)已完成本批有限检查：
 普通／MTP与NextN共享原SlotBindings交接，冷期固定计数和布局；NextN复用原Step，失败保留原run／Completion至真实回收。
 4项共同事务和3项页权限组件检查、5个小模型及4个真实模型进程通过；包含CPU／CUDA非法token失败后
 旧完整状态、epoch、RNG与私有KV前缀不变，同program合法重试。没有模拟设备故障或证明所有未知退休分支。
 
-[本批同窗A/B](../../evidence/performance/inference-slot-cohort-current-window-2026-10-28.json)于北京时间2026-10-28
+[此前同窗A/B](../../evidence/performance/inference-slot-cohort-current-window-2026-10-28.json)于北京时间2026-10-28
 **02:05:35～02:08:10**完成12计时＋4独立内存进程，只比较旧b59与新d442；P154、R1单轮，普通auto与MTP K1。
 普通prefill／decode／综合由2241.87／94.53／87.06变为2177.13／94.57／86.85 tok/s；
 MTP由2146.34／121.11／107.68变为2100.99／119.99／106.96 tok/s。
@@ -32,7 +40,7 @@ decode中位＋0.04%／−0.92%，prefill−2.89%／−2.11%，三样本范围�
 
 [hidden索引接线与状态检查](../../evidence/correctness/inference-hidden-indexed-2026-10-28.json)已完成：carry／prior、接受前缀和递归NextN改用原固定池Gather／Store，删除独立hidden输出复制链。普通两轮、MTP单轮／两轮及当前K2完整非计时对照差异0；CPU／CUDA不同接受前缀、lag/catch-up和CPU主机恢复通过。单轮重录11→2，旧d9两轮15→2；两者历史基线不同，不能把计数换算为提速。保留首次冷图effect依赖失败及CPU DLL缺失，分别修正依赖链和原DLL同目录硬链接后检查通过。
 
-最新[hidden接线完整窗口](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)于北京时间2026-10-28 **01:10:56～01:14:13**完成40进程，固定`b59fe852`／`433e7051`、原五臂与端点。普通auto比本窗off的decode快2.64%／5.95%，比参考慢1.81%／0.59%；MTP比参考慢7.38%／5.48%，综合慢2.12%／3.72%。各臂完整非计时报告稳定；跨引擎续文第18位置的既存差异、实际接受与计算行数均保留，不称逐位相同算量或跨窗单项收益。
+此前[hidden接线完整窗口](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)于北京时间2026-10-28 **01:10:56～01:14:13**完成40进程，固定`b59fe852`／`433e7051`、原五臂与端点。普通auto比本窗off的decode快2.64%／5.95%，比参考慢1.81%／0.59%；MTP比参考慢7.38%／5.48%，综合慢2.12%／3.72%。各臂完整非计时报告稳定；跨引擎续文第18位置的既存差异、实际接受与计算行数均保留，不称逐位相同算量或跨窗单项收益。
 
 [a/b冷分组候选](../../evidence/performance/inference-small-projection-candidate-2026-10-28.json)用原权重128KiB通过M1／M2／T154及真实Cast／Sigmoid后缀的有限检查。
 随后[原Queue计时与Nsight跟踪](../../evidence/performance/inference-small-projection-timing-2026-10-28.json)各执行一次：
@@ -196,18 +204,27 @@ CPU另完成[AVX2公平短窗](../../evidence/performance/inference-cpu-avx2-win
 
 ## 目标与当前基线
 
-**最新短输入／多轮／MTP：2026-10-28 01:10:56～01:14:13，`b59fe852`／`433e7051`。** N1／R1、C1024、BF16、CUDA greedy、prefix off；单轮P154与两轮真实pending-flush配方保持原样，各格为Hyle／参考，速度为tok/s，显存为独立采样dedicated峰GiB。两轮不是B2多用户。
+**最新短输入／多轮／MTP：2026-10-28 11:44:43～11:47:40，`8489d558`／`433e7051`。** 当前Model `9b6be9e7`，229项CLI闭包复用已验证CUDA SDK／weights，仅编一个Model TU并链接真实CLI；参考为保留的本地版本，不是最新上游。N1／R1、C1024、BF16、CUDA greedy、prefix off，单轮P154与两轮真实pending-flush配方不变；两轮不是B2多用户。五臂各场景3次计时、1次独立内存，共40进程，均首次成功，无补样或带仪器测速。下表为中位数，各格Hyle／参考，速度tok/s，显存为dedicated采样峰GiB。
 
 | 工况 | prefill | decode | 综合输出 | dedicated峰GiB |
 |---|---:|---:|---:|---:|
-| 普通auto单轮 | 2182.57／1544.85 | 94.18／95.92 | 86.54／84.47 | 4.034／3.728 |
-| 普通auto两轮 | 2594.92／2519.85 | 96.17／96.74 | 89.84／89.54 | 4.165／3.728 |
-| MTP单轮 | 2085.45／1537.94 | 120.02／129.59 | 106.89／109.20 | 4.091／3.896 |
-| MTP两轮 | 2581.58／2297.29 | 125.17／132.43 | 113.49／117.87 | 4.226／3.896 |
+| 普通auto单轮 | 1585.55／1506.92 | 98.76／101.41 | 87.07／88.22 | 4.044／3.728 |
+| 普通auto两轮 | 1853.20／2474.10 | 100.75／102.06 | 90.31／94.30 | 4.185／3.728 |
+| MTP单轮 | 1651.88／1512.90 | 124.80／135.72 | 107.02／113.08 | 4.101／3.896 |
+| MTP两轮 | 1821.43／2335.80 | 130.59／140.37 | 112.83／124.28 | 4.245／3.896 |
 
-本窗口ordinary off的单轮／两轮decode为91.75／90.77、综合84.49／85.17tok/s；auto实际发布55／110个后继，无拒绝或丢弃。MTP的自然接受与验证行数按各引擎实际工作计入，未人为改为相同行数；其decode仍落后约7.38%／5.48%，hidden接线与原生索引Store已在镜像中。各臂完整报告稳定，跨引擎第18位置的续文分歧已存在于前一d9窗口；不据此签质量或逐位数学等价。共同执行资源层、跨turn预热、MTP设备后继及GPU热点均纳入[当前goal](../../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)，不以本批有限结果结束工作。
+普通auto／MTP的prefill相对各自参考，单轮＋5.22%／＋9.19%，两轮−25.10%／−22.02%；两轮prefill差距尚未定位，packed／Commands的实际准备与执行路径正在核对，不能据此签原因。普通auto的decode仍慢2.62%／1.29%，MTP慢8.05%／6.97%；综合输出分别慢1.31%／4.24%及5.36%／9.22%。同窗ordinary off单轮／两轮decode为95.11／95.99、综合84.86／86.34tok/s，auto的decode中位相对它快3.84%／4.96%，实际发布55／110个后继，无拒绝或丢弃。这些是本窗描述，三样本不签显著性，也不从旧窗绝对TPS变化归因任何单项代码收益。
 
-auto／参考WS峰为单轮1.143／4.072GiB、两轮1.174／4.075GiB，private commit为5.811／4.673及5.992／4.675GiB；各项不相加成物理RAM。十个独立内存进程的ready基线都未知，实际采样间隔中位约15.09～15.25ms（请求10ms），峰值是采样下界。auto／参考ready中位单轮1.2509／1.6656s、两轮1.3075／1.6552s；原始范围、shared、phase变化和完整端点见[完整证据](../../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)。未清OS缓存，不据此排名冷盘；不把减少捕获或跨窗TPS变化宣称为确定代码收益。
+各臂完整非计时报告稳定；首进程对照中，Hyle off／auto／MTP与参考普通的64／128个ID相同，但参考MTP在索引18开始分歧。MTP接受、target／draft计算行数均按真实工作保留，不称跨引擎逐位相同算量、隐藏态等价或训练质量通过。旧hidden窗口保留在上文，不能与本窗合样。共同执行资源层、MTP设备后继及GPU热点仍纳入[当前goal](../../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
+
+| 工况 | ready中位秒 Hyle／参考 | RAM工作集峰GiB Hyle／参考 | RAM private commit峰GiB Hyle／参考 |
+|---|---:|---:|---:|
+| 普通auto单轮 | 1.3544／1.6839 | 1.149／4.072 | 5.827／4.672 |
+| 普通auto两轮 | 1.3760／1.6707 | 1.184／4.076 | 6.035／4.676 |
+| MTP单轮 | 1.7764／1.7552 | 1.132／4.221 | 5.822／5.081 |
+| MTP两轮 | 1.9102／1.7346 | 1.177／4.225 | 6.043／5.086 |
+
+RAM工作集／private commit与dedicated／shared显存是独立量，不能相加成物理RAM或VRAM；逻辑cache backing也不是全进程峰值。十个独立内存进程的ready基线均未知，未知值保留null；请求10ms采样，实际间隔中位约15.02～15.25ms，峰值只是采样下界。ready时间为原producer主机端点，未清OS缓存，不排名冷盘。三样本范围、shared显存、实际采样缺值、接受工作与完整原始报告见[本窗证据](../../evidence/performance/inference-program-io-current-window-2026-10-28.json)。
 
 **最新长输入：2026-10-27 22:23:44～22:27:18，Hyle默认auto `aa864724`，参考 `433e7051`。** N1／R1、纯CUDA、普通greedy，固定相同输入、容量及整段prefill；12个计时与4个独立内存进程全成功，无新编译、下载、重跑或带仪器测速。每臂3次的完整非时间报告与输出ID均稳定，原端点与PSAPI／PDH采样器沿用，首对暂停检查后只续未运行项。以下均为各臂中位数：
 

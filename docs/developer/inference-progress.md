@@ -1,10 +1,10 @@
 # 推理底座进度
 
-更新：2026-10-28 11:31（北京时间）。百分比为工作量估计，不是测试通过率。
+更新：2026-10-28 11:57（北京时间）。百分比为工作量估计，不是测试通过率。
 
 **整体进度：约82%（进行中）。** 已纳入这几轮review的全部功能、架构、GPU优化和测量事项。范围见[当前goal](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对)。
 
-**当前位置：共同辅助程序I/O已在CPU／CUDA／Vulkan通过，Apple历史采样的有限图编译仍待修。** 三端各通过10／17／9／2项状态检查；Vulkan输出owner误拒绝已修，公共Graph reader的3项旧数据／复用回归通过。Apple验证缓存的提交ABI已刷新，普通Gather原生引用的误拒绝已修；modifier／replay／control共通过21项状态检查，history的独立有限图冷编译仍报MLX映射缺失。本批没有新测速，性能数字仍是下方原窗口。
+**当前位置：当前CUDA完整对照已完成，下一步优先定位prefill偏慢。** 40个进程首次成功，各臂完整报告稳定；普通decode仍慢参考2.62%／1.29%，MTP慢8.05%／6.97%。两轮prefill落后25.10%／22.02%，已纳入调查。源码与日志显示均匀R1也走packed计算，较历史exact图多287个执行步骤；是否主因仍须直接A/B。Apple历史采样的有限图编译及完整执行核心抽离尚未完成。
 
 ## 任务树
 
@@ -42,23 +42,24 @@
   - 同输入投影的整模型融合：约25%（待继续）
   - 模型内GEMM实际DRAM带宽：约15%（待当前跟踪）
   - norm、残差及concat等小kernel融合：约25%（待继续）
-- 测量与回归：约65%（进行中）
+- 测量与回归：约70%（进行中）
   - 当前R1／B2／MTP主机与GPU跟踪：约30%（尚未补齐）
   - schedule／steps交错A/A：0%（待执行）
-  - 完整四项性能与长输入对照：100%（已有40＋16进程窗口，版本与边界见下）
+  - 完整四项性能与长输入对照：100%（当前40进程完成，长输入仍对应原独立窗口）
+  - 均匀输入的packed prefill开销：约20%（新发现路径差异，归因与修复待直接A/B）
   - CPU／GPU／混合、MoE及跨平台：约45%（待继续）
 
 ## 正在做
 
+- **均匀prefill开销定位**｜所属：测量与回归／均匀输入的packed prefill开销｜约20%。当前R1无padding、只跑一次图，却选择packed计算且不能命中原indexed-state融合；保留真实ragged能力，准备对自然入口的冷选择做直接A/B，不把Commands本身当成新原因。
 - **原生采样检查与平台组合**｜所属：功能与工程边界／特性组合与分类错误｜约97%。15个消费者及Vulkan公共reader通过；剩Apple history已缩小到MLX冷编译中的映射查找，尚未确定具体位置，不更改数学或数值门来绕过失败。
-- **共同辅助程序I/O**｜所属：共同执行架构／模型无关执行编排与静态适配｜约95%。NextN、前缀验证与缓存前沿采样已迁移，CPU／CUDA／Vulkan及Apple三个组合检查通过；保留Apple history失败边界，不增加另一套提交或退休机制。
 
-刚完成：三条辅助程序共用冷I/O；修复Vulkan私有输出owner误拒绝和Apple普通Gather原生引用误分类。CPU／CUDA／Vulkan各38项、Apple三组21项，共135项完整状态字节检查通过，Vulkan公共reader另有3项回归通过；Apple history冷编译失败如实保留。此片是有限功能和架构检查，没有新吞吐或真实模型质量结论。[本批数据](../evidence/correctness/inference-program-io-native-2026-10-28.json)。前片正常MTP取消与共同append结果见[历史控制数据](../evidence/correctness/inference-history-controls-2026-10-28.json)。
+刚完成：只补编一个当前Model、链接229项真实CLI依赖；40个普通／MTP、单轮／两轮的计时及独立内存进程全部首次成功，无补样、无旧样本混入。新四项表见下。[本次性能数据](../evidence/performance/inference-program-io-current-window-2026-10-28.json)。前片共同I/O、两原生平台修复及135项状态检查见[功能数据](../evidence/correctness/inference-program-io-native-2026-10-28.json)，其中Apple history失败仍保留。
 
 ## 接下来
 
-1. 复审动态输入、取消／淘汰和其它原生平台组合边界；仅对真实缺项补实现与定向检查。
-2. 继续抽离模型无关的执行编排与接口，保留已有资源和结果观察边界。
+1. 直接A/B核实均匀R1的packed prefill开销，保留真实ragged／padding及有界块能力；继续Apple history有限图编译诊断。
+2. 沿原episode共用准备、提交及取消／失败后的真实回收，使用静态模型适配，保留原交易、Session发布和结果观察边界；完整Model核心尚未抽完。
 3. 处理真实载体、跨轮预热，补当前跟踪及A/A；再推进整模型GPU热点、MTP设备后继及词表候选。
 
 ## 最新改动A/B
@@ -74,15 +75,15 @@
 
 ## 最近跨引擎完整对照
 
-2026-10-28 **01:10:56～01:14:13**，单用户CUDA，普通为auto；各格为 **Hyle／llama.cpp**。速度单位tok/s，显存为独立采样峰GiB。每臂3次计时、1次内存，共40进程；两轮不是B2多用户。
+2026-10-28 **11:44:43～11:47:40**，单用户CUDA，普通为auto；各格为 **Hyle／llama.cpp**。速度单位tok/s，显存为独立采样峰GiB。每臂3次计时、1次内存，共40进程；两轮不是B2多用户。
 
 | CUDA 工况 | prefill | decode | 综合速度 | 显存峰 |
 |---|---:|---:|---:|---:|
-| 普通单轮 | 2182.57／1544.85 | 94.18／95.92 | 86.54／84.47 | 4.034／3.728 |
-| 普通两轮 | 2594.92／2519.85 | 96.17／96.74 | 89.84／89.54 | 4.165／3.728 |
-| MTP单轮 | 2085.45／1537.94 | 120.02／129.59 | 106.89／109.20 | 4.091／3.896 |
-| MTP两轮 | 2581.58／2297.29 | 125.17／132.43 | 113.49／117.87 | 4.226／3.896 |
+| 普通单轮 | 1585.55／1506.92 | 98.76／101.41 | 87.07／88.22 | 4.044／3.728 |
+| 普通两轮 | 1853.20／2474.10 | 100.75／102.06 | 90.31／94.30 | 4.185／3.728 |
+| MTP单轮 | 1651.88／1512.90 | 124.80／135.72 | 107.02／113.08 | 4.101／3.896 |
+| MTP两轮 | 1821.43／2335.80 | 130.59／140.37 | 112.83／124.28 | 4.245／3.896 |
 
-综合含prefill、不含加载；三样本不签显著性，峰值为采样下界。表固定于b59镜像与保留参考433e；auto比本窗off快2.64%／5.95%，普通decode仍慢1.81%／0.59%，MTP仍慢7.38%／5.48%。各臂报告稳定，跨引擎续文有既存差异；同任务／策略／预算不等于逐位相同算量，接受率与实际行数已保留。未混旧样本，也不从跨窗口差值推定单项代码收益。
+综合含prefill、不含加载；三样本不签显著性，峰值为采样下界。表固定于8489镜像（9ef8产品代码、229项CLI闭包）与保留参考433e，后者不是最新上游；auto比本窗off快3.84%／4.96%，普通decode仍慢2.62%／1.29%，MTP仍慢8.05%／6.97%。单轮prefill仍领先，两轮auto／MTP分别慢25.10%／22.02%。各臂报告稳定，跨引擎续文有既存差异；同任务／策略／预算不等于逐位相同算量，接受率与实际行数已保留。未混旧样本，也不从跨窗口差值推定单项代码收益。10个独立内存进程均未取得ready基线；完整RAM、加载、范围及采样间隔见数据。
 
-详情：[架构](../architecture/inference-design.md) · [全部goal范围](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对) · [性能与实验](performance/decode.md) · [本批状态检查](../evidence/correctness/inference-slot-cohort-2026-10-28.json) · [跨引擎对照](../evidence/performance/inference-hidden-state-current-window-2026-10-28.json)
+详情：[架构](../architecture/inference-design.md) · [全部goal范围](../implementation/inference-roadmap.md#当前-goal-范围全部-review-应对) · [性能与实验](performance/decode.md) · [本批状态检查](../evidence/correctness/inference-program-io-native-2026-10-28.json) · [跨引擎对照](../evidence/performance/inference-program-io-current-window-2026-10-28.json)

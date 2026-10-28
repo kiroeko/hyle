@@ -32,6 +32,10 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 推荐实施顺序：固定拓扑attention与MTP首端口诊断 → 跨轮预热、hidden索引与小投影 →
 共同稳态执行和特性组合收敛 → MTP固定形状／设备后继 → 更深GPU融合与带宽。
 独立事项可并行；功能与架构变更先做相关有限检查，再用完整消费者验证性能。
+2026-10-28的[当前完整窗口](../evidence/performance/inference-program-io-current-window-2026-10-28.json)
+新发现两轮prefill落后；均匀R1也选择packed数学，原indexed-state融合未命中。
+下一片先以当前镜像作控制核实自然入口的冷选择，保留真实ragged、padding、有界块及未知suffix能力；
+不因历史Commands路径相同就排除实际图差异，也不在直接A/B前宣称已找到性能主因。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。
