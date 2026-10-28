@@ -46,14 +46,16 @@ class SlotTransactions final {
     try {
       std::vector<Bank> banks(specs.size());
       std::vector<graph::slots::BindRequest> requests(specs.size());
+      std::vector<graph::slots::TakeRequest> returns(specs.size());
       for (std::size_t i = 0; i < specs.size(); ++i) {
         banks[i].store = specs[i].store;
         banks[i].options = specs[i].options;
         banks[i].sources.resize(specs[i].sources);
         banks[i].writers.resize(specs[i].destinations);
         requests[i] = {specs[i].store, &banks[i].transaction};
+        returns[i] = {specs[i].store, &banks[i].transaction};
       }
-      banks_.swap(banks); requests_.swap(requests);
+      banks_.swap(banks); requests_.swap(requests); returns_.swap(returns);
     } catch (...) {
       return Status::ResourceExhausted("slot transaction cold metadata allocation failed");
     }
@@ -121,6 +123,22 @@ class SlotTransactions final {
     return item.transaction.destinations();
   }
 
+  // Normal completion returns the whole original cohort once. Publication is
+  // still caller policy after observing the original Graph success witness.
+  Status take_all(graph::Invocation &run) noexcept {
+    if (remaining_ != banks_.size())
+      return Status::FailedPrecondition("original slot cohort is not fully Graph-owned");
+    HYLE_RETURN_IF_ERROR(graph::slots::take(run, returns_));
+    remaining_ = 0;
+    return Status::Ok();
+  }
+  Result<std::span<compute::WriteLease>> returned(std::size_t bank) noexcept {
+    if (bank >= banks_.size()) return std::unexpected(Status::OutOfRange("slot transaction bank is out of range"));
+    if (remaining_ || !banks_[bank].transaction.valid())
+      return std::unexpected(Status::FailedPrecondition("slot cohort has not returned from its original Graph"));
+    return banks_[bank].transaction.destinations();
+  }
+
   // Never release a Graph-owned transaction, even after an observed error.
   // A prior partial take is still caller-owned and may safely clear its pins.
   Status clear(std::size_t bank) noexcept {
@@ -163,6 +181,7 @@ class SlotTransactions final {
   };
   std::vector<Bank> banks_;
   std::vector<graph::slots::BindRequest> requests_;
+  std::vector<graph::slots::TakeRequest> returns_;
   // Replaces the consumer's old bound flag; one decrement per real return.
   // SlotBindings.valid already remembers partial returns, without per-bank
   // booleans, a second permission ledger or a scan after every take.

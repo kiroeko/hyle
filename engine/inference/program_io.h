@@ -4,6 +4,7 @@
 #include <limits>
 #include <span>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "hyle/core/assert.h"
@@ -43,16 +44,16 @@ class ProgramIo final {
 
   // Capacities are cold bounds. No registration or vector growth is allowed
   // after seal(); all runtime lookups use handles from this stable inventory.
-  Status prepare(const graph::CompiledGraph &compiled, std::size_t fixed_inputs,
+  Status prepare(const graph::CompiledGraph &compiled, std::size_t fixed_bindings,
       std::size_t inputs, std::size_t readbacks, std::size_t outputs) noexcept {
     if (compiled_) return Status::FailedPrecondition("program IO is already prepared");
     HYLE_RETURN_IF_ERROR(detail::check_output_route(compiled));
-    if (fixed_inputs > (std::numeric_limits<std::size_t>::max)() - readbacks ||
+    if (fixed_bindings > (std::numeric_limits<std::size_t>::max)() - readbacks ||
         inputs > (std::numeric_limits<std::size_t>::max)() - outputs)
       return Status::OutOfRange("program IO capacity overflows");
     try {
-      fixed_.reserve(fixed_inputs); inputs_.reserve(inputs); readbacks_.reserve(readbacks);
-      outputs_.reserve(outputs); installation_.reserve(fixed_inputs + readbacks);
+      fixed_.reserve(fixed_bindings); inputs_.reserve(inputs); readbacks_.reserve(readbacks);
+      outputs_.reserve(outputs); installation_.reserve(fixed_bindings + readbacks);
       withdrawals_.reserve(inputs + outputs);
     } catch (...) { return Status::ResourceExhausted("program IO cold metadata"); }
     compiled_ = &compiled;
@@ -64,6 +65,18 @@ class ProgramIo final {
     if (!value || !tensor.valid()) return Status::InvalidArgument("program fixed input is invalid");
     if (fixed_.size() == fixed_.capacity() || installation_.size() == installation_.capacity())
       return Status::ResourceExhausted("program fixed input exceeds its cold capacity");
+    installation_.push_back({false, fixed_.size()});
+    fixed_.push_back({value, tensor});
+    return Status::Ok();
+  }
+
+  // Borrow the original caller-owned mutable Tensor view. It is an output
+  // binding, not a read-only input or another readback/pool allocation.
+  Status add_fixed_output(graph::ValueId value, compute::TensorView tensor) noexcept {
+    HYLE_RETURN_IF_ERROR(registering());
+    if (!value || !tensor.valid()) return Status::InvalidArgument("program fixed output is invalid");
+    if (fixed_.size() == fixed_.capacity() || installation_.size() == installation_.capacity())
+      return Status::ResourceExhausted("program fixed output exceeds its cold capacity");
     installation_.push_back({false, fixed_.size()});
     fixed_.push_back({value, tensor});
     return Status::Ok();
@@ -117,7 +130,12 @@ class ProgramIo final {
     if (!sealed_) return Status::FailedPrecondition("program IO is not sealed");
     for (const auto action : installation_) {
       if (action.readback) HYLE_RETURN_IF_ERROR(readbacks_[action.index].bind(run));
-      else HYLE_RETURN_IF_ERROR(run.bind(fixed_[action.index].value, fixed_[action.index].tensor));
+      else {
+        const auto &binding = fixed_[action.index];
+        if (const auto *input = std::get_if<compute::ConstTensorView>(&binding.tensor))
+          HYLE_RETURN_IF_ERROR(run.bind(binding.value, *input));
+        else HYLE_RETURN_IF_ERROR(run.bind(binding.value, std::get<compute::TensorView>(binding.tensor)));
+      }
     }
     return Status::Ok();
   }
@@ -152,6 +170,17 @@ class ProgramIo final {
     HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
     return readbacks_[output.index_].predicate(backend, run);
   }
+
+  // Borrow the sole original owner for its facts, Source pool proof or explicit
+  // retired replacement. The handle grants no release permission beyond Graph.
+  Result<PreparedReadback *> readback(Readback output) noexcept {
+    HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
+    return &readbacks_[output.index_];
+  }
+  Result<const PreparedReadback *> readback(Readback output) const noexcept {
+    HYLE_RETURN_IF_ERROR(check(output, readbacks_.size()));
+    return &readbacks_[output.index_];
+  }
   Result<compute::ReadLease> retain(graph::Invocation &run, Output output,
       const compute::ResourceBudget &budget = {}) const noexcept {
     HYLE_RETURN_IF_ERROR(check(output, outputs_.size()));
@@ -182,7 +211,10 @@ class ProgramIo final {
       return Status::InvalidArgument("program IO handle does not belong to this sealed inventory");
     return Status::Ok();
   }
-  struct Fixed final { graph::ValueId value; compute::ConstTensorView tensor; };
+  struct Fixed final {
+    graph::ValueId value;
+    std::variant<compute::ConstTensorView, compute::TensorView> tensor;
+  };
   struct Installation final { bool readback; std::size_t index; };
   struct RetainedOutput final { PreparedOutputFacts facts; std::size_t bytes; };
   const graph::CompiledGraph *compiled_ = nullptr;

@@ -315,6 +315,10 @@ Status RegionAccess::release_read_projection(Invocation &invocation,
     ValueId value) noexcept {
   return withdraw_bindings_impl(invocation, std::span(&value, 1), true);
 }
+Status RegionAccess::release_read_projections(Invocation &invocation,
+    std::span<const ValueId> values) noexcept {
+  return withdraw_bindings_impl(invocation, values, true);
+}
 std::span<const ExternalInputConsumer>
 projected_input_consumers(const PlanState &, std::uint32_t) noexcept;
 Status RegionAccess::withdraw_bindings_impl(Invocation &invocation,

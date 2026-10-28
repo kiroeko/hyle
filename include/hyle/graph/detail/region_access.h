@@ -298,6 +298,8 @@ struct RegionAccess final {
   // pending/source controls and all other caller/configuration bindings stay.
   // Native input owners use the same qualified reverse release as unbind.
   HYLE_GRAPH_API static Status release_read_projection(Invocation&,ValueId) noexcept;
+  HYLE_GRAPH_API static Status release_read_projections(Invocation&,
+      std::span<const ValueId>) noexcept;
   // Cold fact query, separate from admission/retirement. False after the
   // original projection was reset/released; a different live scope or ready
   // footprint is an error. Rechecks the exact original guards, including

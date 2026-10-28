@@ -555,12 +555,17 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 [11项有限检查](../evidence/correctness/inference-projected-read-release-2026-10-27.json)覆盖两类投影、失败／关闭、alias、录制资格及原unbind合同。
 
 状态bank的交接由`engine/inference/SlotTransactions`复用原`SlotBindings`：冷期固定Store、源／目的数量，
-实际池发布后只设置一次布局；热期填原租约并stage，沿同一Graph整批bind、逐bank take和部分恢复。
+实际池发布后只设置一次布局；热期填原租约并stage，沿同一Graph整批bind，正常完成后整批take再逐bank选择发布。
 它不拥有Invocation、Queue、Completion、池或发布策略；模型保留bank类型、层号和接受前缀选择。
 未退休时不能清Graph拥有的事务，已取回部分不重复take。NextN复用冷期准备的原Step，失败后保留
 原run和Completion至真实回收；作用域移交同时释放应用Completion根，避免资源环。
 [有限检查](../evidence/correctness/inference-slot-cohort-2026-10-28.json)包含CPU／CUDA受检非法token失败后，
 旧完整状态不变及同program合法重试；不代签设备故障或未知退休分支。
+`slots::take`的cohort重载逐项核原Store、owner、writer／reader代际及空输出，全部合格才合并原权限撤回，最后移动原事务。
+无观察的Completion、结果或真实工作仍阻止取回；拒绝不移动任何事务。权限撤回中途失败时仍由原单项take／部分恢复根据实际has_*续收，
+不制造权限回滚或成功证明。Imported读权限保留在原Source；单项及子集取回继续合法，不强迫整control group同时取回。
+该合并减少重复的native依赖闭包与writer撤回，逐bank事实检查和部分guard扫描仍存在，不宣称全部取回已严格线性化。
+[11项Graph测试与9个CPU／CUDA旅程](../evidence/correctness/inference-store-cohort-2026-10-28.json)覆盖原所有权、结果保护、reset、重复／坏输出拒绝和有限完整状态。
 
 页追加的共同交接由`engine/inference/AppendTransactions`借用原nodes／transactions／bound三组等长span：
 普通、后继与NextN共用原顺序bind、原atomic take及部分失败恢复；同序cache-input端口在冷期固定，
@@ -1341,11 +1346,13 @@ Phase按原计划准备一个或三个固定地址载体，直接使用已选exa
 覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
 覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。
 
-NextN、prefix sampler和frontier的冷IO已迁入共同`ProgramIo`：按原顺序登记fixed bind、
+普通Phase、NextN、prefix sampler和frontier的冷IO已迁入共同`ProgramIo`：按原顺序登记fixed bind、
 动态bind、read／retain及withdraw，以不可混用的强类型handle作O(1)索引。固定view借用原冷Tensor，
 读回及输出归属仍来自原编译报告；native-owned输出不作为caller端口解绑。
 它复用原`ProgramCarrier`、读回及池，不新增提交、退休、资源owner或热分配；
 Store／Append先取回原交易、再撤动态IO的顺序保持。数学、状态、Shape及发布仍归模型，完整核心未抽完。
+普通Phase的四个readback只保留一份原owner，通过校验handle借用原facts／pool；固定可写输出显式登记原`TensorView`，
+不会误作只读输入，也不另建池。冷安装仍按原valid／accept、next-id、draft-id次序，普通路径不新增热withdraw协议。
 
 共同`ExecutionEpisode`承载一个原Graph episode的资源部分：原bank、Completion、Source／incoming、
 Store事务借用及候选额度借用。模型先声明参与者pins，再嵌入该组件，保证资源先于Session pins析构；

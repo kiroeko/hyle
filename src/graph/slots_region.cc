@@ -235,13 +235,17 @@ struct ControlBatch final : util::RefCounted<ControlBatch> {
   explicit ControlBatch(mem::AllocatorRef selected) noexcept
       : allocator(selected), groups(mem::StdAllocator<ControlGroup>{selected}),
         candidates(mem::StdAllocator<BindCandidate>{selected}),
-        transactions(mem::StdAllocator<SlotBindings *>{selected}) {}
+        transactions(mem::StdAllocator<SlotBindings *>{selected}),
+        release_readers(mem::StdAllocator<ValueId>{selected}),
+        release_writers(mem::StdAllocator<NodeId>{selected}) {}
   void destroy() noexcept { const auto selected = allocator; selected.destroy(this); }
   mem::AllocatorRef allocator;
   ResourceOptions options;
   std::vector<ControlGroup, mem::StdAllocator<ControlGroup>> groups;
   std::vector<BindCandidate, mem::StdAllocator<BindCandidate>> candidates;
   std::vector<SlotBindings *, mem::StdAllocator<SlotBindings *>> transactions;
+  std::vector<ValueId, mem::StdAllocator<ValueId>> release_readers;
+  std::vector<NodeId, mem::StdAllocator<NodeId>> release_writers;
 };
 } // namespace
 
@@ -1009,6 +1013,8 @@ Status prepare_impl(Invocation &invocation, const Graph *graph,
     controls->groups.reserve(pending.size());
     controls->candidates.resize(pending.size());
     controls->transactions.reserve(pending.size());
+    controls->release_readers.reserve(pending.size());
+    controls->release_writers.reserve(pending.size());
   } catch (...) { return Status::ResourceExhausted("slot carrier group metadata"); }
   for (std::size_t i = 0; i < pending.size(); ++i) {
     auto &item = pending[i];
@@ -1317,37 +1323,80 @@ Status bind(Invocation &invocation, const Graph &graph,
 }
 
 Result<SlotBindings> take(Invocation &invocation, NodeId node) noexcept {
-  Find found{node}; HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit_retired(invocation, node, &find, &found));
-  if (!found.binding || !found.binding->valid())
-    return std::unexpected(Status::InvalidArgument("Store has no retained original slot transaction"));
-  auto &s = *detail::StoreBindingAccess::get(*found.binding);
-  HYLE_ASSIGN_OR_RETURN(auto bound, gd::RegionAccess::has_write_effect(
-      s.owner, s.writer, s.writer_pointers));
-  bool source_bound = false;
-  if (s.facts.source.count && s.mode != SourceMode::kImported) {
-    HYLE_ASSIGN_OR_RETURN(source_bound, gd::RegionAccess::has_read_projection(
-        s.owner, s.facts.source.capacity, s.bindings.sources()));
+  SlotBindings result;
+  const std::array requests{TakeRequest{node, &result}};
+  HYLE_RETURN_IF_ERROR(take(invocation, requests));
+  return result;
+}
+
+Status take(Invocation &invocation, std::span<const TakeRequest> requests) noexcept {
+  if (requests.empty()) return Status::Ok();
+  Find first{requests.front().store};
+  HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit_retired(invocation, first.node, &find, &first));
+  if (!first.binding || !first.binding->valid())
+    return Status::InvalidArgument("Store has no retained original slot transaction");
+  auto controls = detail::StoreBindingAccess::get(*first.binding)->controls;
+  if (!controls) return Status::FailedPrecondition("slot take needs its original prepared control carrier");
+  if (requests.size() > controls->candidates.size())
+    return Status::InvalidArgument("slot take exceeds its original prepared Store count");
+  struct ScratchReset final {
+    ControlBatch &controls;
+    ~ScratchReset() {
+      for (auto &candidate : controls.candidates) candidate = {};
+      controls.transactions.clear(); controls.release_readers.clear(); controls.release_writers.clear();
+    }
+  } scratch_reset{*controls};
+  for (auto &candidate : controls->candidates) candidate = {};
+  controls->transactions.clear(); controls->release_readers.clear(); controls->release_writers.clear();
+  for (const auto &request : requests) {
+    if (!request.bindings || request.bindings->valid())
+      return Status::InvalidArgument("slot take requires empty caller destinations");
+    Find found{request.store};
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::visit_retired(invocation, request.store, &find, &found));
+    if (!found.binding || !found.binding->valid())
+      return Status::InvalidArgument("Store has no retained original slot transaction");
+    auto &s = *detail::StoreBindingAccess::get(*found.binding);
+    if (s.controls.get() != controls.get() || !s.bindings.valid())
+      return Status::InvalidArgument("slot take needs this preparation's untaken original transaction");
+    auto &candidate = controls->candidates[s.candidate];
+    if (candidate.bindings) return Status::InvalidArgument("slot take duplicates an original Store");
+    // Queries retain the exact old owner, writer pointers and read generations.
+    // Reset/closed recovery may have already withdrawn those permissions.
+    HYLE_ASSIGN_OR_RETURN(const bool bound, gd::RegionAccess::has_write_effect(
+        s.owner, s.writer, s.writer_pointers));
+    if (s.facts.source.count && s.mode != SourceMode::kImported) {
+      HYLE_ASSIGN_OR_RETURN(const bool source_bound, gd::RegionAccess::has_read_projection(
+          s.owner, s.facts.source.capacity, s.bindings.sources()));
+      if (source_bound) controls->release_readers.push_back(s.facts.source.capacity);
+    }
+    if (bound) controls->release_writers.push_back(request.store);
+    candidate.found = found; candidate.bindings = request.bindings;
+    controls->transactions.push_back(request.bindings);
   }
-  if (source_bound)
-    HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_read_projection(invocation, s.facts.source.capacity));
-  if (bound)
-    HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_write_effect(invocation, node));
-  // A reset/release may already have withdrawn this exact old effect. The
-  // retired visitor above still excludes native work/results/observations;
-  // returning the original owner neither reopens execution nor publishes it.
-  if (s.mode != SourceMode::kImported) {
-    found.interface->clear_configuration(found.prepared, found.invocation);
-    s.configuration = {};
+  std::sort(controls->transactions.begin(), controls->transactions.end(), std::less<SlotBindings *>{});
+  if (std::adjacent_find(controls->transactions.begin(), controls->transactions.end()) != controls->transactions.end())
+    return Status::InvalidArgument("slot take duplicates a caller destination");
+  if (!controls->release_readers.empty())
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_read_projections(invocation, controls->release_readers));
+  if (!controls->release_writers.empty())
+    HYLE_RETURN_IF_ERROR(gd::RegionAccess::release_projected_writes(invocation, controls->release_writers));
+  // No allocation, permission admission or rejecting check remains. A move
+  // returns the original owner; it neither attests success nor publishes it.
+  for (auto &candidate : controls->candidates) {
+    if (!candidate.bindings) continue;
+    auto &s = *detail::StoreBindingAccess::get(*candidate.found.binding);
+    if (s.mode != SourceMode::kImported) {
+      candidate.found.interface->clear_configuration(candidate.found.prepared, candidate.found.invocation);
+      s.configuration = {};
+    }
+    // Imported input owners stay with their original Source. Dormant physical
+    // arguments authorize no later submission without fresh complete binding.
+    s.owner = nullptr; s.writer = {};
+    auto &group = controls->groups[s.group];
+    HYLE_FATAL_ASSERT(group.outstanding != 0); --group.outstanding;
+    *candidate.bindings = std::move(s.bindings);
   }
-  // Imported input owners remain in their original Source bundle. Dormant
-  // physical arguments can survive taking this Store without authorizing a
-  // later submission: no local writer is retained and preparation must prove
-  // a freshly bound complete source plus destination transaction again.
-  s.owner = nullptr; s.writer = {};
-  auto &group = s.controls->groups[s.group];
-  HYLE_FATAL_ASSERT(group.outstanding != 0);
-  --group.outstanding;
-  return std::move(s.bindings);
+  return Status::Ok();
 }
 
 } // namespace hyle::graph::slots

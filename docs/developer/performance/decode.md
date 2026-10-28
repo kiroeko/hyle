@@ -12,6 +12,17 @@
 单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+最新[Store cohort与固定IO直接A/B](../../evidence/performance/inference-store-cohort-current-window-2026-10-28.json)于北京时间
+2026-10-28 **13:59:37～14:01:25**完成16进程，2c0f→dfa9；229项CLI只换Model、Graph resources及slots-region三个对象。
+普通auto的prefill／decode／综合中位为2121.42→2201.42／97.60→97.79／89.23→89.34tok/s；
+MTP K1为2136.00→2084.48／124.06→126.07／110.35→111.39。decode分别＋0.20%／＋1.62%，
+但三样本范围均重叠，MTP prefill中位−2.41%亦保留；不签稳定提速或回退。两版dedicated显存峰各为4.034／4.091GiB，
+ready内存基线未知；全部64输出、接受及完整非时间报告跨版相同。本窗没有参考／两轮，不能混旧peer重算差距。
+此前32个无录制MTP episode的postwait扣CUDA API后为0.367ms／episode，只是批取回所在桶的上界，
+不是已归因的CPU忙时或可省量；submit的大部分仍在原cudaGraphLaunch内。
+[功能检查](../../evidence/correctness/inference-store-cohort-2026-10-28.json)覆盖11项Graph测试及9个CPU／CUDA旅程，
+原权限、部分恢复、Imported Source及数值门保留。离线summary误取普通模式不存在的accepted_drafts已单独修正，成功模型未重跑。
+
 当前[四份R1主机／GPU跟踪](../../evidence/performance/inference-current-host-profile-2026-10-28.json)使用`ab5f97554`的Model／头文件及原229项CLI闭包，
 Hyle和保留参考各运行一次普通／MTP；仅加NVTX，不改数学或原计时端点。B2未刷新，不从单次node-trace更新正式吞吐。
 普通排除首8根后，55个相同context窗口内的进程GPU活动空隙为5.086／51.996ms；这不是CPU自耗，也不是全设备空闲。

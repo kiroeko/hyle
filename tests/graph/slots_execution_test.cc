@@ -845,4 +845,66 @@ TEST(GraphSlotsExecution, BatchedStoresLateReadPermissionFailureReturnsEveryOrig
   }
 }
 
+TEST(GraphSlotsExecution, CohortTakeRejectsWithoutMovingAndReturnsRetiredOriginalOwners) {
+  BatchedSourceProgram program;
+  std::array<BatchedSourceStorage, 2> storage{BatchedSourceStorage{0}, BatchedSourceStorage{100}};
+  const auto associations = program.associations();
+  ASSERT_TRUE(s::prepare(program.invocation, program.graph, program.queues, associations).ok());
+  std::array<s::SlotBindings, 2> transactions;
+  for (std::size_t i = 0; i < transactions.size(); ++i)
+    transactions[i] = s::SlotBindings::create(storage[i].layout, storage[i].sources, storage[i].destinations).value();
+  const std::array generations{transactions[0].destinations()[0].generation(), transactions[1].destinations()[0].generation()};
+  const std::array bindings{s::BindRequest{program.stores[0], &transactions[0]},
+      s::BindRequest{program.stores[1], &transactions[1]}};
+  const std::array returned{s::TakeRequest{program.stores[0], &transactions[0]},
+      s::TakeRequest{program.stores[1], &transactions[1]}};
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, bindings).ok());
+  ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+  auto done = program.invocation.submit(program.queues).value();
+  EXPECT_TRUE(s::take(program.invocation, returned).IsUnavailable());
+  ASSERT_TRUE(done.wait().ok()); done = {};
+  {
+    auto result = program.invocation.result(program.gathered[0]).value();
+    EXPECT_TRUE(s::take(program.invocation, returned).IsUnavailable());
+    EXPECT_FALSE(transactions[0].valid()); EXPECT_FALSE(transactions[1].valid());
+  }
+  const std::array duplicate_store{s::TakeRequest{program.stores[0], &transactions[0]},
+      s::TakeRequest{program.stores[0], &transactions[1]}};
+  EXPECT_TRUE(s::take(program.invocation, duplicate_store).IsInvalidArgument());
+  const std::array duplicate_output{s::TakeRequest{program.stores[0], &transactions[0]},
+      s::TakeRequest{program.stores[1], &transactions[0]}};
+  EXPECT_TRUE(s::take(program.invocation, duplicate_output).IsInvalidArgument());
+  const std::array bad_last{s::TakeRequest{program.stores[0], &transactions[0]},
+      s::TakeRequest{{}, &transactions[1]}};
+  EXPECT_TRUE(s::take(program.invocation, bad_last).IsInvalidArgument());
+  BatchedSourceStorage spare(200);
+  auto occupied = s::SlotBindings::create(spare.layout, spare.sources, spare.destinations).value();
+  const auto occupied_generation = occupied.destinations()[0].generation();
+  const std::array occupied_output{s::TakeRequest{program.stores[0], &transactions[0]},
+      s::TakeRequest{program.stores[1], &occupied}};
+  EXPECT_TRUE(s::take(program.invocation, occupied_output).IsInvalidArgument());
+  EXPECT_EQ(occupied.destinations()[0].generation(), occupied_generation);
+  EXPECT_FALSE(transactions[0].valid()); EXPECT_FALSE(transactions[1].valid());
+  ASSERT_TRUE(s::take(program.invocation, returned).ok());
+  for (std::size_t i = 0; i < transactions.size(); ++i) {
+    EXPECT_EQ(transactions[i].destinations()[0].generation(), generations[i]);
+    storage[i].expect_stored(transactions[i]);
+    auto repeated = s::take(program.invocation, program.stores[i]);
+    ASSERT_FALSE(repeated);
+    EXPECT_TRUE(repeated.error().IsInvalidArgument());
+  }
+  // Recovery after reset returns the same unpublished transactions without
+  // requiring a successful execution or disturbing the unrelated spare owner.
+  ASSERT_TRUE(s::bind(program.invocation, program.graph, bindings).ok());
+  ASSERT_TRUE(program.invocation.prepare_replay(program.queues).ok());
+  ASSERT_TRUE(program.invocation.reset().ok());
+  ASSERT_TRUE(s::take(program.invocation, returned).ok());
+  for (std::size_t i = 0; i < transactions.size(); ++i) {
+    EXPECT_EQ(transactions[i].destinations()[0].generation(), generations[i]);
+    storage[i].expect_stored(transactions[i]);
+  }
+  EXPECT_EQ(occupied.destinations()[0].generation(), occupied_generation);
+  spare.expect_storage();
+}
+
 } // namespace

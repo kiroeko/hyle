@@ -963,7 +963,8 @@ struct PhaseIo final {
   Tensor sampling_identities, draft_positions, catchup_token;
   Tensor draft_hidden_select, draft_token_select;
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
-  PreparedReadback next_id, draft_id, sampling_valid, sampling_accept;
+  inference::ProgramIo bindings;
+  inference::ProgramIo::Readback next_id, draft_id, sampling_valid, sampling_accept;
   std::vector<std::uint8_t> sampling_valid_values, sampling_accept_values;
   std::vector<float> sampling_scratch;
   std::vector<std::int32_t> draft_ids, prefix_candidates;
@@ -3690,7 +3691,6 @@ public:
     if (carrier.initialized()) return;
     auto &io = phase.io[slot];
     const auto &definition = *phase.family;
-    const auto &selected_sampler = definition.sampling->configuration;
     check(carrier.initialize(
         {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
         [&](g::Invocation &run) -> hyle::Status {
@@ -3708,32 +3708,7 @@ public:
           if (!matches_rows)
             return hyle::Status::FailedPrecondition("finite child signature differs from its planned query rows");
           if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
-          HYLE_RETURN_IF_ERROR(run.bind(phase.token_port, io.tokens.read()));
-          HYLE_RETURN_IF_ERROR(run.bind(phase.position_port, io.positions.read()));
-          if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify)
-            HYLE_RETURN_IF_ERROR(run.bind(phase.sampling_identity_port, io.sampling_identities.read()));
-          if (phase.sampling_valid_port) {
-            HYLE_RETURN_IF_ERROR(io.sampling_valid.bind(run));
-            if (phase.sampling_accept_port) HYLE_RETURN_IF_ERROR(io.sampling_accept.bind(run));
-          }
-          if ((definition.requests != 1 || definition.packed_prefill) && !verifies_prefix(definition.role))
-            HYLE_RETURN_IF_ERROR(run.bind(phase.last_ids_port, io.last_ids.read()));
-          if (definition.packed_prefill) HYLE_RETURN_IF_ERROR(run.bind(phase.history_select_port, io.history_select.read()));
-          if (io.logits.caller_owned()) HYLE_RETURN_IF_ERROR(run.bind(phase.logits_port, io.logits.view()));
-          if (definition.completion == TextCompletion::kEmitNext) HYLE_RETURN_IF_ERROR(io.next_id.bind(run));
-          if (io.final_hidden.caller_owned()) HYLE_RETURN_IF_ERROR(run.bind(phase.hidden_port, io.final_hidden.view()));
-          if (has_mtp(definition.role)) {
-            HYLE_RETURN_IF_ERROR(run.bind(phase.draft_position_port, io.draft_positions.read()));
-            if (draft_lag(definition.role)) HYLE_RETURN_IF_ERROR(run.bind(phase.catchup_token_port, io.catchup_token.read()));
-            if (definition.packed_prefill) {
-              HYLE_RETURN_IF_ERROR(run.bind(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
-              if (draft_lag(definition.role)) HYLE_RETURN_IF_ERROR(run.bind(phase.draft_token_select_port, io.draft_token_select.read()));
-            }
-            if (drafts_token(definition.role)) HYLE_RETURN_IF_ERROR(io.draft_id.bind(run));
-          }
-          if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
-            if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
-              HYLE_RETURN_IF_ERROR(run.bind(output->value, io.probe_outputs[i].view()));
+          HYLE_RETURN_IF_ERROR(io.bindings.bind_fixed(run));
           if (phase.state_transactions[slot].size())
             HYLE_RETURN_IF_ERROR(g::slots::prepare(run, phase.state_graph(), carrier.queues(), phase.state_sources,
                 {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
@@ -3824,13 +3799,11 @@ public:
             : dense(Type::kUInt32, {static_cast<std::int64_t>(requests), 3, 4}));
       }
       if (phase.sampling_valid_port) {
-        io.sampling_valid = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_valid_port, execution, allocation_budget));
         io.sampling_valid_values.resize(requests);
-        bool float_predicates = io.sampling_valid.facts.description.data_type() == Type::kFloat32;
+        bool float_predicates = phase.child->output(phase.sampling_valid_port).description.data_type() == Type::kFloat32;
         if (phase.sampling_accept_port) {
-          io.sampling_accept = take(PreparedReadback::prepare(phase.child->compiled, phase.sampling_accept_port, execution, allocation_budget));
           io.sampling_accept_values.resize(requests);
-          float_predicates = float_predicates || io.sampling_accept.facts.description.data_type() == Type::kFloat32;
+          float_predicates = float_predicates || phase.child->output(phase.sampling_accept_port).description.data_type() == Type::kFloat32;
         }
         if (float_predicates) io.sampling_scratch.resize(requests);
       }
@@ -3852,7 +3825,6 @@ public:
           }
         }
         if (drafts_token(role)) {
-          io.draft_id = take(PreparedReadback::prepare(phase.child->compiled, phase.draft_id_port, execution, allocation_budget));
           io.draft_ids.resize(requests);
         }
       }
@@ -3871,7 +3843,6 @@ public:
       if (completion == TextCompletion::kEmitNext) {
         io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
             phase.logits_facts->description, phase.logits_facts->caller_owned());
-        io.next_id = take(PreparedReadback::prepare(phase.child->compiled, phase.id_port, execution, allocation_budget));
       }
       if (verifies_prefix(role)) io.prefix_candidates.resize(cache::multiply(requests, phase.prefix_rows));
       io.final_hidden = caller_tensor(take(execution.resource_for(phase.hidden_facts->storage)),
@@ -3880,6 +3851,46 @@ public:
         const auto &output = *phase.probe_facts[i];
         io.probe_outputs[i] = caller_tensor(take(execution.resource_for(output.storage)), output.description, output.caller_owned());
       }
+      const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
+      const bool last_ids = (requests != 1 || definition.packed_prefill) && !verifies_prefix(role);
+      std::size_t fixed_count = 2 + sampling_identity + last_ids + definition.packed_prefill +
+          io.logits.caller_owned() + io.final_hidden.caller_owned();
+      if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
+          (definition.packed_prefill ? 1 + bool(draft_lag(role)) : 0);
+      if (diagnostic) for (const auto *output : phase.probe_facts)
+        fixed_count += output && output->caller_owned();
+      const auto readback_count = bool(phase.sampling_valid_port) + bool(phase.sampling_accept_port) +
+          (completion == TextCompletion::kEmitNext) + drafts_token(role);
+      check(io.bindings.prepare(phase.child->compiled, fixed_count, 0, readback_count, 0));
+      // Register once in the original cold installation order. Tensor owners
+      // stay here; each readback's only owner moves into the same shared IO.
+      check(io.bindings.add_fixed(phase.token_port, io.tokens.read()));
+      check(io.bindings.add_fixed(phase.position_port, io.positions.read()));
+      if (sampling_identity) check(io.bindings.add_fixed(phase.sampling_identity_port, io.sampling_identities.read()));
+      if (phase.sampling_valid_port) {
+        io.sampling_valid = take(io.bindings.add_readback(phase.sampling_valid_port, execution, allocation_budget));
+        if (phase.sampling_accept_port)
+          io.sampling_accept = take(io.bindings.add_readback(phase.sampling_accept_port, execution, allocation_budget));
+      }
+      if (last_ids) check(io.bindings.add_fixed(phase.last_ids_port, io.last_ids.read()));
+      if (definition.packed_prefill) check(io.bindings.add_fixed(phase.history_select_port, io.history_select.read()));
+      if (io.logits.caller_owned()) check(io.bindings.add_fixed_output(phase.logits_port, io.logits.view()));
+      if (completion == TextCompletion::kEmitNext)
+        io.next_id = take(io.bindings.add_readback(phase.id_port, execution, allocation_budget));
+      if (io.final_hidden.caller_owned()) check(io.bindings.add_fixed_output(phase.hidden_port, io.final_hidden.view()));
+      if (has_mtp(role)) {
+        check(io.bindings.add_fixed(phase.draft_position_port, io.draft_positions.read()));
+        if (draft_lag(role)) check(io.bindings.add_fixed(phase.catchup_token_port, io.catchup_token.read()));
+        if (definition.packed_prefill) {
+          check(io.bindings.add_fixed(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
+          if (draft_lag(role)) check(io.bindings.add_fixed(phase.draft_token_select_port, io.draft_token_select.read()));
+        }
+        if (drafts_token(role)) io.draft_id = take(io.bindings.add_readback(phase.draft_id_port, execution, allocation_budget));
+      }
+      if (diagnostic) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
+        if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
+          check(io.bindings.add_fixed_output(output->value, io.probe_outputs[i].view()));
+      check(io.bindings.seal());
     }
     const auto &route_directory = layer0_probe.empty() ? trace_routes : layer0_probe;
     if (!route_directory.empty()) {
@@ -4787,7 +4798,7 @@ public:
     auto &phase = *step.phase;
     const auto storage = execution.storage_owner();
     if (!storage || phase.carriers[step.state_slot].queues().size() != 1 ||
-        !phase.io[step.state_slot].next_id.pool().valid())
+        !take(phase.io[step.state_slot].bindings.readback(phase.io[step.state_slot].next_id))->pool().valid())
       throw std::runtime_error("submission views require the original owned shared Queue and full token writer");
     auto sources = std::make_shared<StepSources>();
     sources->states.reserve(phase.state_sources.size());
@@ -4834,7 +4845,8 @@ public:
       } else {
         sources.submission = take(std::move(exported));
         sources.token = take(g::detail::OutputSource::create(sources.submission,
-            step.phase->id_port, execution.storage_owner(), step.phase->io[step.state_slot].next_id.pool()));
+            step.phase->id_port, execution.storage_owner(),
+            take(step.phase->io[step.state_slot].bindings.readback(step.phase->io[step.state_slot].next_id))->pool()));
         for (auto &state : sources.states) check(state.capture(sources.submission));
         for (auto &pages : sources.pages) check(pages.capture(sources.submission));
       }
@@ -4925,11 +4937,11 @@ public:
         if (!io.final_hidden.caller_owned()) generated_hidden = take(inference::retain_output(run, *phase.hidden_facts, allocation_budget));
       }
       if (drafts_token(phase.family->role)) {
-        check(io.draft_id.read(execution, run, std::as_writable_bytes(std::span(io.draft_ids))));
+        check(io.bindings.read(execution, run, io.draft_id, std::as_writable_bytes(std::span(io.draft_ids))));
         for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].draft_token = io.draft_ids[j];
       }
       if (phase.sampling_valid_port && !state_only && phase.family->role != GraphRole::kVerify) {
-        check(io.sampling_valid.predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
+        check(take(io.bindings.readback(io.sampling_valid))->predicates(execution, run, io.sampling_valid_values, io.sampling_scratch));
         auto bad = std::ranges::find_if(io.sampling_valid_values, [](auto value) { return value != 1; });
         if (step.discard_stopped_members)
           while (bad != io.sampling_valid_values.end() &&
@@ -4949,20 +4961,20 @@ public:
               "sampling distribution or proposal is invalid; no session or RNG cursor was published"), participant);
         }
         if (phase.sampling_accept_port) {
-          check(io.sampling_accept.predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
+          check(take(io.bindings.readback(io.sampling_accept))->predicates(execution, run, io.sampling_accept_values, io.sampling_scratch));
           for (std::size_t j = 0; j < outputs.size(); ++j) step.members[j].sampled_accept = io.sampling_accept_values[j] != 0;
         }
       }
       // Selection observes only retired original Graph results. No head has
       // been published and all state/append guards still belong to this episode.
       if (verifies_prefix(phase.family->role)) {
-        check(io.next_id.read(execution, run, std::as_writable_bytes(std::span(io.prefix_candidates))));
+        check(io.bindings.read(execution, run, io.next_id, std::as_writable_bytes(std::span(io.prefix_candidates))));
         select(std::span<const std::int32_t>(io.prefix_candidates), step, next_ids);
       } else if (state_only) {
         std::ranges::fill(next_ids, -1);
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       } else {
-        check(io.next_id.read(execution, run, std::as_writable_bytes(next_ids)));
+        check(io.bindings.read(execution, run, io.next_id, std::as_writable_bytes(next_ids)));
         select(std::span<const std::int32_t>(next_ids), step, next_ids);
       }
       for (std::size_t j = 0; j < outputs.size(); ++j) {
@@ -5008,9 +5020,10 @@ public:
       // Slot take proves actual retirement, not success; the original whole
       // Graph completion above remains the success witness for every bank.
       auto &transactions = phase.state_transactions[step.state_slot];
+      check(transactions.take_all(run));
       for (std::size_t bank_index = 0; bank_index < phase.state_banks.size(); ++bank_index) {
         const auto &bank = phase.state_banks[bank_index];
-        auto writers = take(transactions.take(run, bank_index));
+        auto writers = take(transactions.returned(bank_index));
         for (std::size_t j = 0; j < outputs.size(); ++j) {
           auto &member = step.members[j];
           if (bank.kind == StateBankKind::kHidden) {

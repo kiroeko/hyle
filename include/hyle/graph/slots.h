@@ -187,5 +187,11 @@ HYLE_GRAPH_API Status bind(Invocation &, const Graph &,
 // Imported source permissions remain owned by their original Graph bundle.
 // Taking only preserves dormant physical configuration, never read permission.
 HYLE_GRAPH_API Result<SlotBindings> take(Invocation &, NodeId store) noexcept;
+// Return a retired cohort through the same original authority checks. Each
+// destination must be empty; duplicate Stores or destinations are rejected
+// before moving any transaction. Withdraw selected reader/writer permissions
+// together, without waiting, publishing, or changing unselected transactions.
+struct TakeRequest final { NodeId store; SlotBindings *bindings; };
+HYLE_GRAPH_API Status take(Invocation &, std::span<const TakeRequest>) noexcept;
 
 } // namespace hyle::graph::slots

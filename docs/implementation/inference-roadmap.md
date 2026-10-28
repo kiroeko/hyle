@@ -118,6 +118,9 @@ history的独立有限图原先在MLX冷编译时报映射缺失；随后定位�
 共同准备进一步接入普通／NextN的batch→Append→消费者／Store→replay流程，保留Source构造及packed offsets的原间隔。
 [2个消费者、7项有限旅程](../evidence/correctness/inference-execution-preparation-2026-10-28.json)通过，
 32项状态比较中2项字节相同，其余只对新F32 GDN沿原3e-6预算；旧状态、其它载荷、元数据和RNG仍保持精确检查。
+普通Phase的固定IO现也消费已有ProgramIo，四个readback保留唯一owner；正常Store完成沿原Graph整cohort取回，
+单项／部分失败恢复与Imported Source边界保留。[本片有限检查](../evidence/correctness/inference-store-cohort-2026-10-28.json)通过，
+单轮普通／MTP另完成16进程严格同事实A/B；中位小幅变化但范围重叠，不以此代签整Model抽离或稳定提速。
 
 自然prefill入口按真实需求冷选：已知整段单请求使用原exact图，多成员、有界块或未知prefix后缀保留packed能力。
 32进程直接A/B已完成，单轮prefill约提升32%～34%，两轮观测约43%；普通输出有既存数学路径差异，
