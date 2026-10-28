@@ -39,15 +39,17 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 随后[当前R1普通／MTP跟踪](../evidence/performance/inference-current-host-profile-2026-10-28.json)已完成四个诊断进程，
 MTP捕获数为2／5，旧重录次数不再代表当前瓶颈。仍有准备／提交与GPU活动空隙，实际接受及行数差异保留；
 继续做设备后继、小投影等候选，但不以单次Nsight或不同工作量替代完整端到端吞吐对照。
-当前源码[新40进程窗口](../evidence/performance/inference-review-current-window-2026-10-28.json)已完成普通／MTP单轮与两轮的速度、显存及RAM测量。
-同模式与上批bb0c的完整非时间差异0；单轮速度波动较大，两边跨窗绝对值均有变化，未证明架构迁移引起提速或回退。
-正式表与范围见[进度](../developer/inference-progress.md)，下一批继续处理MTP稳态主机工作和GPU候选。
+当前主线[新32进程窗口](../evidence/performance/inference-main-peer-window-2026-10-28.json)于15:52～15:59完成普通／MTP单轮与两轮四项及RAM测量。
+普通decode相对冻结参考落后2.83%／0.75%，MTP落后6.31%／5.26%；实际输出分叉、接受与行数保留，不能全归因于协议或从旧窗口推导代码收益。
+此前13:37的40进程窗口仍留原证据，当前正式表与范围见[进度](../developer/inference-progress.md)。
 CPU默认路由已删除旧41点、两个特例和硬件／配方资格机制，由同一facade按原能力与算法选择；
 [有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖普通Compute／Graph、IEEE、线程及原码Gather，
 其它算子的成本覆盖和跨平台仍需继续，不从局部Exp结果推定完整推理加速。
 统一ATen可选拆分的[本机ON／OFF有限检查](../evidence/correctness/inference-optional-aten-2026-10-28.json)已完成；
-关闭后原生量化及合法ggml BF16／F32回退保留，安装消费与其它平台未测。下一项先做GDN a/b小投影整模型候选，
-必要输出／状态核对后立即刷新四项性能，不把其它架构提取作为本次测速前置。
+关闭后原生量化及合法ggml BF16／F32回退保留，安装消费与其它平台未测。
+GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
+有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
+下一片先收敛普通／MTP／NextN共用的冷程序目录及执行边界，继续保留MTP设备后继和其它热点任务。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。
