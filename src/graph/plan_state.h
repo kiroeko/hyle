@@ -657,6 +657,13 @@ struct ExternalInputConsumer final {
   std::uint32_t step;
   std::uint32_t port;
 };
+
+// Final physical alias topology only. This is not an alias permission or a
+// prepared address: each use still proves the concrete full-span View tuple.
+struct ExternalInputAliasDescendant final {
+  std::uint32_t value = 0, instance = 0;
+  bool nonmaterializing_view = false;
+};
 struct StepInvocation final {
   compute::OperationInvocation operation{};
   RegionInvocation region{};
@@ -773,7 +780,8 @@ struct PlanState final : util::RefCounted<PlanState> {
         value_materialized(allocator_value), alias_sources(allocator_value),
         alias_offsets(allocator_value), binding_roles(allocator_value),
         external_input_aliases(allocator_value),
-        external_input_consumers(allocator_value) {}
+        external_input_consumers(allocator_value),
+        external_input_alias_descendants(allocator_value) {}
 
   void destroy() noexcept {
     const mem::AllocatorRef owner = allocator;
@@ -952,6 +960,8 @@ struct PlanState final : util::RefCounted<PlanState> {
       external_input_aliases;
   container::SmallVector<ExternalInputConsumer, 0, mem::AllocatorRef>
       external_input_consumers;
+  container::SmallVector<ExternalInputAliasDescendant, 0, mem::AllocatorRef>
+      external_input_alias_descendants;
 };
 
 inline void retain(PlanState *state) noexcept {

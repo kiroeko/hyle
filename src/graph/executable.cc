@@ -928,6 +928,41 @@ Status build_external_input_topology(detail::PlanState &plan) noexcept {
   if (!aliases.empty()) {
     std::sort(aliases.begin(), aliases.end());
     aliases.erase(std::unique(aliases.begin(), aliases.end()), aliases.end());
+    // Index every descendant, including destructive aliases. A hot full-View
+    // proof must reject a root with even one non-View descendant; the complete
+    // permission-facing aliases table above remains unchanged.
+    detail::BindingRoles view_outputs(plan.allocator);
+    if (!view_outputs.try_resize(plan.alias_sources.size()))
+      return plan_allocation_failure();
+    std::fill(view_outputs.begin(), view_outputs.end(), std::uint8_t{});
+    for (const auto &step : plan.steps) {
+      if (step.kind != detail::PlanStepKind::kView || step.materializes) continue;
+      for (std::size_t port = 0; port < step.output_count; ++port)
+        view_outputs[plan.node_outputs[step.output_begin + port]] = 1;
+    }
+    auto &descendants = plan.external_input_alias_descendants;
+    for (std::uint32_t instance = 0; instance < plan.alias_sources.size(); ++instance) {
+      const auto parent = plan.alias_sources[instance];
+      if (parent == detail::kNoInPlaceSource || parent == instance) continue;
+      // Placement/replicas need not number aliases after their parents. Only
+      // this cold bounded walk resolves roots; replay uses the sparse index.
+      auto root = parent;
+      for (std::size_t depth = 0;; ++depth) {
+        if (root >= plan.alias_sources.size() || depth >= plan.alias_sources.size())
+          return Status::Internal("graph physical alias topology is invalid");
+        const auto source = plan.alias_sources[root];
+        if (source == detail::kNoInPlaceSource || source == root) break;
+        root = source;
+      }
+      const auto value = plan.instance_values[root];
+      if ((plan.binding_roles[value] & detail::kExternalInput) != 0 &&
+          plan.external_instances[value] == root &&
+          !descendants.try_push_back({value, instance, view_outputs[instance] != 0}))
+        return plan_allocation_failure();
+    }
+    std::sort(descendants.begin(), descendants.end(), [](const auto &left, const auto &right) noexcept {
+      return left.value != right.value ? left.value < right.value : left.instance < right.instance;
+    });
   }
   for (std::size_t index = 0; index < plan.steps.size(); ++index) {
     const auto &step = plan.steps[index];
@@ -1113,13 +1148,21 @@ bool same_physical_tensor(const Tensor &left, const Tensor &right) noexcept {
          a.offset() == b.offset() && a.size() == b.size();
 }
 
+Result<bool> unchanged_prepared_full_views(const detail::InvocationState &,
+    std::size_t root, compute::ConstTensorView replacement) noexcept;
+
 bool same_prepared_input_spans(const detail::InvocationState &invocation,
     ValueId value, compute::ConstTensorView tensor) noexcept {
   if (!detail::reusable_configuration_spans(invocation)) return false;
   const auto &plan = *invocation.plan;
-  if (std::binary_search(plan.external_input_aliases.begin(),
-          plan.external_input_aliases.end(), value.ordinal())) return false;
   const auto physical = plan.external_instances[value.ordinal()];
+  bool full_views = false;
+  if (std::binary_search(plan.external_input_aliases.begin(),
+          plan.external_input_aliases.end(), value.ordinal())) {
+    const auto unchanged = unchanged_prepared_full_views(invocation, physical, tensor);
+    if (!unchanged || !*unchanged) return false;
+    full_views = true;
+  }
   if (plan.alias_sources[physical] != detail::kNoInPlaceSource &&
       plan.alias_sources[physical] != physical) return false;
   const auto &consumers = plan.external_input_consumers;
@@ -1129,9 +1172,15 @@ bool same_prepared_input_spans(const detail::InvocationState &invocation,
   for (auto next = first; next != consumers.end() && next->value == value.ordinal(); ++next) {
     const auto &step = plan.steps[next->step];
     if (next->instance != physical || invocation.step_bindings[next->step].native_inputs ||
-        (step.region.valid() && !detail::RegionAccess::borrows_tensor_views_only(step.region)) ||
-        !same_physical_tensor(invocation.submission_inputs[step.input_begin + next->port], tensor))
+        (step.region.valid() && !detail::RegionAccess::borrows_tensor_views_only(step.region)))
       return false;
+    if (step.kind == detail::PlanStepKind::kView && !step.materializes) {
+      // Nonmaterializing Views have no submission_inputs entry. Their actual
+      // prepared descendant tuples were all proved above, never inferred.
+      if (!full_views) return false;
+    } else if (!same_physical_tensor(invocation.submission_inputs[step.input_begin + next->port], tensor)) {
+      return false;
+    }
     consumed = true;
   }
   return consumed;
@@ -9610,29 +9659,19 @@ Result<bool> unchanged_prepared_full_views(
     compute::ConstTensorView replacement) noexcept {
   const auto &plan = *state.plan;
   const auto storage = replacement.storage();
+  if (root >= plan.instance_values.size()) return false;
+  const auto value = plan.instance_values[root];
+  if (value >= plan.external_instances.size() || plan.external_instances[value] != root)
+    return false;
+  const auto &descendants = plan.external_input_alias_descendants;
+  auto next = std::lower_bound(descendants.begin(), descendants.end(), value,
+      [](const auto &entry, std::uint32_t input) noexcept { return entry.value < input; });
   bool found = false;
-  for (std::size_t instance = 0; instance < plan.alias_sources.size(); ++instance) {
-    if (instance == root) continue;
-    auto source = instance;
-    std::size_t depth = 0;
-    while (source != root) {
-      if (source >= plan.alias_sources.size() || ++depth > plan.alias_sources.size())
-        return false;
-      const auto parent = plan.alias_sources[source];
-      if (parent == detail::kNoInPlaceSource) break;
-      source = parent;
-    }
-    if (source != root) continue;
-
+  for (; next != descendants.end() && next->value == value; ++next) {
+    const auto instance = next->instance;
     // Only already prepared, nonmaterializing Views prove an unchanged
     // external root. No replacement pointer or new alias is inferred here.
-    bool view = false;
-    for (const auto &step : plan.steps) {
-      if (step.kind != detail::PlanStepKind::kView || step.materializes) continue;
-      for (std::size_t port = 0; port < step.output_count; ++port)
-        if (plan.node_outputs[step.output_begin + port] == instance) view = true;
-    }
-    if (!view) return false;
+    if (!next->nonmaterializing_view) return false;
     HYLE_ASSIGN_OR_RETURN(const auto offset, bound_alias_offset(state, instance));
     // Every descendant is checked, so zero nonnegative edge offsets also
     // prove a zero accumulated offset all the way to this exact root.

@@ -1,0 +1,1111 @@
+{
+  "schema": "hyle.inference.readonly-full-view-spans.evidence.v1",
+  "status": "PASS_FINITE_CORRECTNESS_AND_REACHABILITY",
+  "date": "2026-10-28",
+  "baseline": "792ffb35a9c1c127c90c3ba0e8ad084a2d8dea63",
+  "scope": "A sparse cold alias-descendant topology and the existing unchanged-full-View proof. Preserve the complete alias permission set. No Source, Queue, capture, ownership or retirement protocol change.",
+  "sources": [
+    {
+      "path": "src/graph/plan_state.h",
+      "bytes": 60036,
+      "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 503569,
+      "sha256": "275b5b24d31161676a7bc872294340d2ca23cec33c4f3d7622997e0224d040a8"
+    },
+    {
+      "path": "tests/graph/configuration_input_test.cc",
+      "bytes": 30669,
+      "sha256": "69cf6e55b58c85957edb0ac51e9ca83c95ceabc019f01c2690fec0099379f371"
+    }
+  ],
+  "implementation": [
+    "Index every descendant of an external input primary physical root, including non-View/in-place entries that must reject the shortcut. Cold bounded parent walk supports arbitrary legal physical numbering.",
+    "Replace the old all-instances times all-steps proof with a lower_bound and only this root’s indexed descendants. Each still checks the current physical description and bound offset, required full bytes and the old prepared View complete resource/handle/offset/span.",
+    "Physical input binding can reuse only an existing candidate whose entire readonly View closure passes that proof. A nonmaterializing View has no submission_inputs entry; skip that empty slot only after the complete View proof. All actual command/ready-only/native/replica checks remain.",
+    "Keep external_input_aliases and projected bank/read qualification unchanged. resources.cc is not edited; noncaller configuration/projected alias reset retains its original conservative fallback."
+  ],
+  "prior_basis": {
+    "reference": "docs/evidence/correctness/inference-source-spans-2026-10-28.json",
+    "pin": {
+      "path": "docs/evidence/correctness/inference-source-spans-2026-10-28.json",
+      "bytes": 30404,
+      "sha256": "6532693b534cfce0aa9565b8dd28800c5e5d7c168629ba90eeeedbdb044a33dd"
+    },
+    "boundary": "Historical dependency/geometry separation and prior measurements only. Do not relabel or duplicate the old 16-process screen as this window."
+  },
+  "build": {
+    "CXX_processes": 11,
+    "SDK_CXX_processes": 9,
+    "test_CXX_processes": 1,
+    "diagnostic_CXX_processes": 1,
+    "link_processes": 3,
+    "NVCC_processes": 0,
+    "errors": 0,
+    "private_layout_closure": [
+      {
+        "unit": "executable",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+          "bytes": 503569,
+          "sha256": "275b5b24d31161676a7bc872294340d2ca23cec33c4f3d7622997e0224d040a8"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\executable\\unit.obj",
+          "bytes": 5267205,
+          "sha256": "8199cdcf68801effed711293aaf32e2e212cb6c5668f552bb8af837c01c102dc"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\executable\\actual-dependencies.json",
+          "bytes": 49166,
+          "sha256": "bbe9a6b76fca61458a7e77c615f5e03c8b9b9cb7308ecaea6f70f584cd7e0fcd"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "submission",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\submission.cc",
+          "bytes": 50928,
+          "sha256": "36d528f2f9ef9592ce6bbd0a3272d7659f17fbde28554682437853d9c1ed4298"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\submission\\unit.obj",
+          "bytes": 648072,
+          "sha256": "21caa66d6b7204bc724985460baf537b94b9ee9192c16c132bd4cbb9b4f37706"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\submission\\actual-dependencies.json",
+          "bytes": 47599,
+          "sha256": "5ced10002cddfd837dbca0bd7c388a2def56accc28b038206ac57a011e4e21ee"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "constant-artifact",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\constant_artifact.cc",
+          "bytes": 29692,
+          "sha256": "314d8cb679a21202e18707705314af52036b49f96ceb0e6d77e6790599be4361"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\constant-artifact\\unit.obj",
+          "bytes": 780715,
+          "sha256": "30c7bd1b6741121a9446c9304194ca866950a9295cdd922e0699073abd275cac"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\constant-artifact\\actual-dependencies.json",
+          "bytes": 45140,
+          "sha256": "0f55f4acad8f418ff4ea8941fd4636a4a64e8a7e6be2ef5d031da8793d4c8ac8"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "resources",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resources.cc",
+          "bytes": 259356,
+          "sha256": "58a0fa1525d3ab7e67c267bc3c53c85d454db98338f820aea5a1a71c8ba4b6eb"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\resources\\unit.obj",
+          "bytes": 3146388,
+          "sha256": "2da61eb2bcdb9ecf279684db58eab9fd12277ca666c876c3fa10273be64fea6d"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\resources\\actual-dependencies.json",
+          "bytes": 49840,
+          "sha256": "4595fa4097148f60e84858c1b1b0b65876e3d36229d95f488dac719df64f05ba"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "region-access",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\region_access.cc",
+          "bytes": 12864,
+          "sha256": "ac4853957e32bd479c37e01e2ce2b366a4632f729dc554869613f85ba9938fbb"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\region-access\\unit.obj",
+          "bytes": 101760,
+          "sha256": "125add74af2e324b3286c721efc1d292f8cee29013074f506fe4142c0da55a7b"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\region-access\\actual-dependencies.json",
+          "bytes": 45736,
+          "sha256": "a78001535bcda620259485f26b4f59f185415e62525342f098c8b3c9d003e47c"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "input-sources",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\input_sources.cc",
+          "bytes": 29656,
+          "sha256": "67055b4dd2be654aca361ef46f10cf349417faef68e251c1447eec3bac2276d2"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\input-sources\\unit.obj",
+          "bytes": 943941,
+          "sha256": "1e3abbb01724897622b5c3b8fbdba6d22c2eff7c0e7beeb26266ce3a1fb14aaa"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\input-sources\\actual-dependencies.json",
+          "bytes": 45930,
+          "sha256": "0eca963af1c5af8830f6d48cff4895ae32a5c86acd1681218e7df8f1a951c0a6"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "resource-report",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\resource_report.cc",
+          "bytes": 4553,
+          "sha256": "20783282921d71140259e3d8e1b6aab1479612df955af2213ba2162c40d57e6b"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\resource-report\\unit.obj",
+          "bytes": 174111,
+          "sha256": "06b37c2bb5212647d864242b2a1bf7db667d24ac20c36076c28cc28ebe3fa45b"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\resource-report\\actual-dependencies.json",
+          "bytes": 45137,
+          "sha256": "f84209be051676854fc0686559320cc23738196f59d589d6e02b75286f770101"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "progress",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph_progress\\progress.cc",
+          "bytes": 14994,
+          "sha256": "07d111f3fa19df6fc76ce28cfdd052c2b401c0ea9c80094bbf64bfa25744e7df"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\progress\\unit.obj",
+          "bytes": 551484,
+          "sha256": "c17ca341bf961ff5e963e81035e31ff6ed62b4b497f5f0983f96be2d123c308b"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\progress\\actual-dependencies.json",
+          "bytes": 59055,
+          "sha256": "878c17d6db2769e27059cc9c2e932916a06e79dab42e1507300c932c3c129754"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      },
+      {
+        "unit": "slots-region",
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\slots_region.cc",
+          "bytes": 80799,
+          "sha256": "fe942e0c810baf9d034b136fc6647c41bf7e993f43d758d85441d5ab891dcd80"
+        },
+        "object": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\slots-region\\unit.obj",
+          "bytes": 1583729,
+          "sha256": "a22d65c1e4c990845baa629f76eaad1523882e971de82bda776b1d1bca9dc325"
+        },
+        "actual_dependencies": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\compile\\slots-region\\actual-dependencies.json",
+          "bytes": 46323,
+          "sha256": "78271b79a6567dd12a839ced921bcb958f24e430908f726dadca1fe21683794a"
+        },
+        "private_header": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\plan_state.h",
+          "bytes": 60036,
+          "sha256": "a1c3de9066d43e236ab3b3909c6cfcc54a31aa0ac74e82fe045b5eede98498f6"
+        }
+      }
+    ],
+    "input_counts": {
+      "gtest": 232,
+      "normal": 229,
+      "diagnostic": 229
+    },
+    "compile_records": {
+      "executable": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\executable\\process.json",
+          "bytes": 151,
+          "sha256": "f2e67d96f8b0f923689c494f94933bade3b0d546d2b8438752d644a00c146797"
+        },
+        "pid": 12704,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196318.2867403,
+        "elapsed_seconds": 6.1282360553741455
+      },
+      "submission": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\submission\\process.json",
+          "bytes": 151,
+          "sha256": "53735bbb2d8aca4646a7d88221c6746a26f12a7995ec1cafda6759d7f27c7954"
+        },
+        "pid": 61900,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196318.2867403,
+        "elapsed_seconds": 1.9714035987854004
+      },
+      "constant-artifact": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\constant-artifact\\process.json",
+          "bytes": 150,
+          "sha256": "29b5288697d71828f55222ea412a1890432939bb5057f3b070777b137ffbaa0e"
+        },
+        "pid": 52756,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196333.213655,
+        "elapsed_seconds": 2.0912399291992188
+      },
+      "resources": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\resources\\process.json",
+          "bytes": 149,
+          "sha256": "eb3f730332272432b32846190f19b6b5ec0de9113f2abdb691d42ab445fde4a6"
+        },
+        "pid": 43444,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196333.212655,
+        "elapsed_seconds": 4.158938884735107
+      },
+      "region-access": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\region-access\\process.json",
+          "bytes": 150,
+          "sha256": "ac9ba8afb892ac37d4584f1b5600291286665276884cee04430cadc8462bc44c"
+        },
+        "pid": 59748,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196348.3396702,
+        "elapsed_seconds": 1.648977279663086
+      },
+      "input-sources": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\input-sources\\process.json",
+          "bytes": 151,
+          "sha256": "4c7b6f56e50a40347d42f675e22f2af7be85ef33ca0ae7bdb1f4e3dab4050666"
+        },
+        "pid": 55080,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196348.3396702,
+        "elapsed_seconds": 2.0959455966949463
+      },
+      "resource-report": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\resource-report\\process.json",
+          "bytes": 150,
+          "sha256": "5047eb85a1ffc276a8c9500e7c45aa925cbb34be97603c8a6ed241e44bd50878"
+        },
+        "pid": 33744,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196360.469499,
+        "elapsed_seconds": 1.6726512908935547
+      },
+      "progress": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\progress\\process.json",
+          "bytes": 150,
+          "sha256": "1b72fef7f1a7aee5043c2cbe1f518dd0460bcc116896a02bd1bb7fe7f6c4b9e4"
+        },
+        "pid": 54440,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196360.469499,
+        "elapsed_seconds": 2.2627789974212646
+      },
+      "slots-region": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\slots-region\\process.json",
+          "bytes": 151,
+          "sha256": "6f44997abe5f47fe4039f5992d14e36e47fe829b7d2224925a620ebe5afc3b1b"
+        },
+        "pid": 57284,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196372.2755487,
+        "elapsed_seconds": 2.9428977966308594
+      },
+      "configuration-test": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\configuration-test\\process.json",
+          "bytes": 150,
+          "sha256": "9901a99626b291b79b537af65b91eafc3968152f55109e1954ba06b753ee1764"
+        },
+        "pid": 55116,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196372.2725492,
+        "elapsed_seconds": 3.768885612487793
+      },
+      "diagnostic-executable": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\logs\\diagnostic-executable\\process.json",
+          "bytes": 150,
+          "sha256": "868bf470fdaab3d1ee28fb4acbf53b2beb42906c8a15af1b6541e35f53237069"
+        },
+        "pid": 55152,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196406.711635,
+        "elapsed_seconds": 6.1816325187683105
+      }
+    },
+    "link_records": {
+      "gtest": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\links\\gtest\\process.json",
+          "bytes": 151,
+          "sha256": "9bf9f4da5d69b9c364a17f1a7c482ec57fe376fa789889826378e76199c0b3ff"
+        },
+        "pid": 22936,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196384.0966394,
+        "elapsed_seconds": 1.7746663093566895
+      },
+      "normal": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\links\\normal\\process.json",
+          "bytes": 151,
+          "sha256": "5d53af2273b72651a79bf18ff039228edf31748cec6c06feb7c3338a23cb1140"
+        },
+        "pid": 62360,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196406.7507849,
+        "elapsed_seconds": 1.7589528560638428
+      },
+      "diagnostic": {
+        "status": "PASS",
+        "record": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\links\\diagnostic\\process.json",
+          "bytes": 149,
+          "sha256": "95aafdd8c89d263c56cf7bea4929a2e47a9132ba0f8dafe41d3e45595b303176"
+        },
+        "pid": 49200,
+        "exit": 0,
+        "timed_out": false,
+        "started_unix_ns": null,
+        "finished_unix_ns": null,
+        "started_unix_seconds": 1793196421.1429985,
+        "elapsed_seconds": 1.76570725440979
+      }
+    }
+  },
+  "provenance": {
+    "model": {
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+        "bytes": 603795,
+        "sha256": "41199a68784ea521affc47542b62f01ba430faeaebc1d56e34ff6e403bc86a15"
+      },
+      "snapshot": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\source\\engine\\models\\qwen35\\main.cc",
+        "bytes": 603795,
+        "sha256": "41199a68784ea521affc47542b62f01ba430faeaebc1d56e34ff6e403bc86a15"
+      },
+      "object": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\compile\\model\\unit.obj",
+        "bytes": 19609418,
+        "sha256": "ff22d11a294a5aa507034b09efeb475b1aedd514f473b974c970436f24f51e52"
+      },
+      "command": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\logs\\model\\command.json",
+        "bytes": 3799,
+        "sha256": "d5b3846c686586cc3488718d43b4ba7af55b720dad204994977483a89a4fef10"
+      },
+      "dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\compile\\model\\dependencies.json",
+        "bytes": 40354,
+        "sha256": "2a1608cf77063d1f3c46bca1ba9e1a4b45618b9379bd1daef152609b6d8232b1"
+      },
+      "actual_dependencies": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\cli\\compile\\model\\actual-dependencies.json",
+        "bytes": 82100,
+        "sha256": "d0e6e04c659e5a339be69d9db9b2228ae00f255396b6fe1e5f3ea7dead09aa46"
+      },
+      "process": {
+        "pid": 35144,
+        "exit": 0,
+        "started": 1793167132.7684817,
+        "seconds": 30.019810914993286,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "model_scope": "Retained 4ca9 Model source 41199a / object ff22; not the latest engine Model.",
+    "candidate_images": {
+      "gtest": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\bin\\view-spans-gtest.exe",
+        "bytes": 141563904,
+        "sha256": "f7f8c880a62fcc8d8b55a33c124b0cc1f54d74a6679f692b5aaa22dc012e659b"
+      },
+      "normal": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\bin\\view-spans-normal.exe",
+        "bytes": 142759936,
+        "sha256": "3ad26347d463879440c29550e47d812611ac79331cb4e23b7eadcf5e2975b836"
+      },
+      "diagnostic": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\bin\\view-spans-diagnostic.exe",
+        "bytes": 142761472,
+        "sha256": "4e9c07857f91c43c7ecffbfc7c329c36ac07acae889def431785b8d7e56ec894"
+      }
+    },
+    "control_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-source-spans-20261028\\performance\\bin\\hyle-source-spans-normal.exe",
+      "bytes": 142754816,
+      "sha256": "e8cc7388072ebc844bbaaed0139e8a6519fb463f272e03929283857d17482da9"
+    },
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\source-freeze.json",
+      "bytes": 8588,
+      "sha256": "6297c16653f1159a3da8a024ec66f4b703867322e7b19bb7a1be274ceabc9763"
+    },
+    "project_dependencies": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\project-dependencies.json",
+      "bytes": 26465,
+      "sha256": "4136a47bca84191db9eddf3826a660692fe07edb33c3b0516321b1ec68683f9a"
+    },
+    "runtime": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\runtime.json",
+      "bytes": 13140,
+      "sha256": "1a419ffff34549799ab76bd7c1a1ed4f600f8730880cd88a452549c7f4358032"
+    },
+    "environment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\environment.json",
+      "bytes": 14767,
+      "sha256": "ce96fa5d176982af464af848615033c9e2806e8dc986c219bacee3620444a78d"
+    },
+    "diagnostic_derivative": {
+      "original": {
+        "path": "C:\\public\\project-hyle\\hyle\\src\\graph\\executable.cc",
+        "bytes": 503569,
+        "sha256": "275b5b24d31161676a7bc872294340d2ca23cec33c4f3d7622997e0224d040a8"
+      },
+      "source": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\executable-reachability.cc",
+        "bytes": 506561,
+        "sha256": "d2958788df71bf3ea21fe3efeb34cadf303db5c05d271d56d4024cfd9f8e14e1"
+      },
+      "template": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\performance\\reachability\\executable-reachability.cc",
+        "bytes": 504061,
+        "sha256": "282774ab9900a990c54a67838b41c66b1ae1ca08b69ef399d42912d2fb2807a0"
+      },
+      "reconstruction": "Removing exactly the two includes, fixed 64-bucket block and one record call reproduces canonical source bytes."
+    }
+  },
+  "correctness": {
+    "native_processes": 1,
+    "passed_test_cases": 14,
+    "failed_test_cases": 0,
+    "skipped_test_cases": 0,
+    "gtest": {
+      "status": "PASS",
+      "record": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\run-gtest\\process.json",
+        "bytes": 151,
+        "sha256": "b3a09759d48b9479559f99cdbba804975dcf6d421be7fd28d7b8bd0b69049906"
+      },
+      "pid": 18716,
+      "exit": 0,
+      "timed_out": false,
+      "started_unix_ns": null,
+      "finished_unix_ns": null,
+      "started_unix_seconds": 1793196394.4127662,
+      "elapsed_seconds": 0.5613281726837158,
+      "xml": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-view-spans-20261028\\validation\\run-gtest\\results.xml",
+        "bytes": 4537,
+        "sha256": "9123887c86befc97907c797142a79e3b7b8527f4f53c4994d271e968ea0d648b"
+      },
+      "cases": [
+        {
+          "name": "ConfigurationInput.OrdinaryBindingsCannotReplacePreparedMetadata",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.FailedColdReplacementPreservesReplayAndResetUnlocksInput",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.RefreshedConfigurationUsesCurrentLeaseAndReplacementStorage",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.IncompleteConfigurationCannotKeepThePhysicalShortcut",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.SamePhysicalSourceReplacementRequalifiesItsCurrentProducer",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.PartialAndOffsetViewsDiscardTheGeometryCandidateOnRebind",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.ActualInPlaceMathAliasDoesNotBecomeAViewOnlyCandidate",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.CarrierQueryUsesOnlyThisPlansPrivateInput",
+          "status": "completed"
+        },
+        {
+          "name": "ConfigurationInput.LayoutResetPreservesCallerLeasesAndSourceButExpiresMetadata",
+          "status": "completed"
+        },
+        {
+          "name": "InputSourceBundle.InvalidLastTensorPreservesOriginalPreparedBindings",
+          "status": "completed"
+        },
+        {
+          "name": "InputSourceBundle.SameProducerReplacesBothInputsAndDeduplicatesReadiness",
+          "status": "completed"
+        },
+        {
+          "name": "GraphOutputSourceCuda.ProducerCheckedFailureRejectsConsumerPublicationAfterRetirement",
+          "status": "completed"
+        },
+        {
+          "name": "GraphOutputSourceCuda.PendingI32ReusesRealNativeRegionCaptureWithoutRecording",
+          "status": "completed"
+        },
+        {
+          "name": "GraphOutputSourceCuda.HybridPendingTokenAndStoreReuseOnlyExistingRanges",
+          "status": "completed"
+        }
+      ],
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0,
+      "expected_cases_equal": true
+    },
+    "scope": "Finite ConfigurationInput, InputSourceBundle and GraphOutputSourceCuda cases; full names and XML retained."
+  },
+  "reachability": {
+    "native_processes": 2,
+    "diagnostics": {
+      "ordinary": {
+        "pid": 56972,
+        "exit": 0,
+        "counts": {
+          "schema": 1,
+          "capacity": 64,
+          "totals": {
+            "decisions": 64,
+            "reused": 58,
+            "full": 6,
+            "full_input_sources": 4
+          },
+          "overflow": {
+            "decisions": 0,
+            "reused": 0,
+            "full": 0,
+            "full_input_sources": 0
+          },
+          "plans": [
+            {
+              "ordinal": 1,
+              "steps": 1088,
+              "inputs": 123,
+              "outputs": 3,
+              "commands": 575,
+              "counts": {
+                "decisions": 1,
+                "reused": 0,
+                "full": 1,
+                "full_input_sources": 0
+              }
+            },
+            {
+              "ordinal": 2,
+              "steps": 1022,
+              "inputs": 123,
+              "outputs": 3,
+              "commands": 509,
+              "counts": {
+                "decisions": 63,
+                "reused": 58,
+                "full": 5,
+                "full_input_sources": 4
+              }
+            }
+          ]
+        },
+        "full_non_time_difference_count": 0,
+        "performance_claim": false,
+        "started_unix_ns": 1793196592190824500,
+        "finished_unix_ns": 1793196595131661200
+      },
+      "mtp": {
+        "pid": 48652,
+        "exit": 0,
+        "counts": {
+          "schema": 1,
+          "capacity": 64,
+          "totals": {
+            "decisions": 35,
+            "reused": 32,
+            "full": 3,
+            "full_input_sources": 0
+          },
+          "overflow": {
+            "decisions": 0,
+            "reused": 0,
+            "full": 0,
+            "full_input_sources": 0
+          },
+          "plans": [
+            {
+              "ordinal": 1,
+              "steps": 1114,
+              "inputs": 127,
+              "outputs": 3,
+              "commands": 594,
+              "counts": {
+                "decisions": 1,
+                "reused": 0,
+                "full": 1,
+                "full_input_sources": 0
+              }
+            },
+            {
+              "ordinal": 2,
+              "steps": 1141,
+              "inputs": 130,
+              "outputs": 4,
+              "commands": 610,
+              "counts": {
+                "decisions": 6,
+                "reused": 5,
+                "full": 1,
+                "full_input_sources": 0
+              }
+            },
+            {
+              "ordinal": 3,
+              "steps": 1145,
+              "inputs": 131,
+              "outputs": 4,
+              "commands": 614,
+              "counts": {
+                "decisions": 28,
+                "reused": 27,
+                "full": 1,
+                "full_input_sources": 0
+              }
+            }
+          ]
+        },
+        "full_non_time_difference_count": 0,
+        "performance_claim": false,
+        "started_unix_ns": 1793196602853399000,
+        "finished_unix_ns": 1793196605787498400
+      }
+    },
+    "scope": "Counts the existing reuse_spans decision after completeness checks; early already-prepared seals and missing configurations excluded. Scratch counters only."
+  },
+  "screening": {
+    "status": "COMPLETE8_VIEW_SPAN_SCREEN",
+    "native_processes": 8,
+    "memory_processes": 0,
+    "MTP_timing_processes": 0,
+    "samples_each": 2,
+    "groups": [
+      {
+        "scenario": "single",
+        "role": "ordinary",
+        "order": [
+          "control",
+          "candidate",
+          "candidate",
+          "control"
+        ],
+        "complete_non_time_equal": true,
+        "within_variant_equal": true,
+        "metrics": {
+          "control": {
+            "prefill_tokens_per_second": {
+              "count": 2,
+              "median": 2117.5786712705394,
+              "min": 2035.8736806480954,
+              "max": 2199.2836618929837,
+              "samples": [
+                2035.8736806480954,
+                2199.2836618929837
+              ]
+            },
+            "full_decode_tokens_per_second": {
+              "count": 2,
+              "median": 94.57815151609844,
+              "min": 94.51350598000454,
+              "max": 94.64279705219234,
+              "samples": [
+                94.51350598000454,
+                94.64279705219234
+              ]
+            },
+            "session_output_tokens_per_second": {
+              "count": 2,
+              "median": 86.61117504920846,
+              "min": 86.22843042968975,
+              "max": 86.99391966872716,
+              "samples": [
+                86.22843042968975,
+                86.99391966872716
+              ]
+            },
+            "session_processed_tokens_per_second": {
+              "count": 2,
+              "median": 293.6660154012224,
+              "min": 292.3682719256668,
+              "max": 294.963758876778,
+              "samples": [
+                292.3682719256668,
+                294.963758876778
+              ]
+            }
+          },
+          "candidate": {
+            "prefill_tokens_per_second": {
+              "count": 2,
+              "median": 2151.0599589845133,
+              "min": 2100.4592367694936,
+              "max": 2201.6606811995334,
+              "samples": [
+                2100.4592367694936,
+                2201.6606811995334
+              ]
+            },
+            "full_decode_tokens_per_second": {
+              "count": 2,
+              "median": 94.98318897227426,
+              "min": 94.86180291632283,
+              "max": 95.10457502822568,
+              "samples": [
+                95.10457502822568,
+                94.86180291632283
+              ]
+            },
+            "session_output_tokens_per_second": {
+              "count": 2,
+              "median": 87.08577242930272,
+              "min": 86.9865415510244,
+              "max": 87.18500330758106,
+              "samples": [
+                86.9865415510244,
+                87.18500330758106
+              ]
+            },
+            "session_processed_tokens_per_second": {
+              "count": 2,
+              "median": 295.2751971431046,
+              "min": 294.9387424464421,
+              "max": 295.61165183976703,
+              "samples": [
+                294.9387424464421,
+                295.61165183976703
+              ]
+            }
+          }
+        },
+        "descriptive_median_delta_percent": {
+          "prefill_tokens_per_second": 1.5811118693354276,
+          "full_decode_tokens_per_second": 0.4282568962101996,
+          "session_output_tokens_per_second": 0.5479632158605696,
+          "session_processed_tokens_per_second": 0.5479632158605918
+        }
+      },
+      {
+        "scenario": "two-turn",
+        "role": "ordinary",
+        "order": [
+          "control",
+          "candidate",
+          "candidate",
+          "control"
+        ],
+        "complete_non_time_equal": true,
+        "within_variant_equal": true,
+        "metrics": {
+          "control": {
+            "prefill_tokens_per_second": {
+              "count": 2,
+              "median": 2552.3381472075744,
+              "min": 2533.4410114086836,
+              "max": 2571.2352830064647,
+              "samples": [
+                2571.2352830064647,
+                2533.4410114086836
+              ]
+            },
+            "full_decode_tokens_per_second": {
+              "count": 2,
+              "median": 96.53811024246144,
+              "min": 96.26276618087336,
+              "max": 96.81345430404954,
+              "samples": [
+                96.26276618087336,
+                96.81345430404954
+              ]
+            },
+            "session_output_tokens_per_second": {
+              "count": 2,
+              "median": 89.74513541047918,
+              "min": 89.56729897914272,
+              "max": 89.92297184181565,
+              "samples": [
+                89.56729897914272,
+                89.92297184181565
+              ]
+            },
+            "session_processed_tokens_per_second": {
+              "count": 2,
+              "median": 304.9932336215503,
+              "min": 304.3888676244303,
+              "max": 305.59759961867036,
+              "samples": [
+                304.3888676244303,
+                305.59759961867036
+              ]
+            }
+          },
+          "candidate": {
+            "prefill_tokens_per_second": {
+              "count": 2,
+              "median": 2552.248790180838,
+              "min": 2530.063955759089,
+              "max": 2574.4336246025873,
+              "samples": [
+                2530.063955759089,
+                2574.4336246025873
+              ]
+            },
+            "full_decode_tokens_per_second": {
+              "count": 2,
+              "median": 96.34599155370296,
+              "min": 96.15919566953932,
+              "max": 96.53278743786662,
+              "samples": [
+                96.15919566953932,
+                96.53278743786662
+              ]
+            },
+            "session_output_tokens_per_second": {
+              "count": 2,
+              "median": 89.58181729319634,
+              "min": 89.35687067771043,
+              "max": 89.80676390868224,
+              "samples": [
+                89.35687067771043,
+                89.80676390868224
+              ]
+            },
+            "session_processed_tokens_per_second": {
+              "count": 2,
+              "median": 304.4382072073469,
+              "min": 303.67374019378155,
+              "max": 305.2026742209123,
+              "samples": [
+                303.67374019378155,
+                305.2026742209123
+              ]
+            }
+          }
+        },
+        "descriptive_median_delta_percent": {
+          "prefill_tokens_per_second": -0.003500987000248923,
+          "full_decode_tokens_per_second": -0.1990081308573033,
+          "session_output_tokens_per_second": -0.18197991070585395,
+          "session_processed_tokens_per_second": -0.18197991070585395
+        }
+      }
+    ],
+    "processes": [
+      {
+        "variant": "control",
+        "ordinal": 1,
+        "pid": 54256,
+        "exit": 0,
+        "started_unix_ns": 1793196638277219100,
+        "finished_unix_ns": 1793196641188988100
+      },
+      {
+        "variant": "control",
+        "ordinal": 4,
+        "pid": 1040,
+        "exit": 0,
+        "started_unix_ns": 1793196646994503500,
+        "finished_unix_ns": 1793196649553714700
+      },
+      {
+        "variant": "candidate",
+        "ordinal": 2,
+        "pid": 4596,
+        "exit": 0,
+        "started_unix_ns": 1793196641295007700,
+        "finished_unix_ns": 1793196644201002500
+      },
+      {
+        "variant": "candidate",
+        "ordinal": 3,
+        "pid": 53336,
+        "exit": 0,
+        "started_unix_ns": 1793196644306521100,
+        "finished_unix_ns": 1793196646882499700
+      },
+      {
+        "variant": "control",
+        "ordinal": 5,
+        "pid": 49064,
+        "exit": 0,
+        "started_unix_ns": 1793196667104300800,
+        "finished_unix_ns": 1793196670383844300
+      },
+      {
+        "variant": "control",
+        "ordinal": 8,
+        "pid": 45776,
+        "exit": 0,
+        "started_unix_ns": 1793196677300620100,
+        "finished_unix_ns": 1793196680577892700
+      },
+      {
+        "variant": "candidate",
+        "ordinal": 6,
+        "pid": 53512,
+        "exit": 0,
+        "started_unix_ns": 1793196670489690300,
+        "finished_unix_ns": 1793196673785517600
+      },
+      {
+        "variant": "candidate",
+        "ordinal": 7,
+        "pid": 42012,
+        "exit": 0,
+        "started_unix_ns": 1793196673892678800,
+        "finished_unix_ns": 1793196677193161000
+      }
+    ],
+    "started_beijing": "2026-10-28T22:10:38.277+08:00",
+    "finished_beijing": "2026-10-28T22:11:20.577+08:00",
+    "full_non_time_equal": true,
+    "stable_net_speedup_established": false,
+    "interpretation": "Single decode +0.4283%, two-turn decode -0.1990%: descriptive small-sample screening, no stable net benefit. No memory arm or formal TPS/table update."
+  },
+  "totals": {
+    "compile_processes": 11,
+    "link_processes": 3,
+    "native_processes": 11,
+    "GTest_test_cases": 14,
+    "diagnostic_processes": 2,
+    "timing_processes": 8,
+    "native_failures": 0,
+    "native_retries": 0
+  },
+  "limits": [
+    "No candidate, missing old prepared View, partial/nonzero-offset slice, real in-place alias, changed physical tuple or actual symbolic description/offset must fall back.",
+    "No native/opaque/replica/Queue, seal, Source dependency/admission or actual-retirement relaxation.",
+    "No hot allocation, new owner, executor, provider list or user option.",
+    "This header changes private PlanState layout: all nine actual SDK consumers must refresh, not just executable.cc.",
+    "Normal/diagnostic consumers reuse retained Model ff22; no latest Model or trained-quality equivalence claim.",
+    "Do not infer physical span hits from TPS or capture_reused. The dedicated counter proves only its actual decision points.",
+    "Source route/identity/readiness/ordering and new-epoch seal still execute. Complete alias permission inventory remains intact.",
+    "No Apple/Vulkan, B2 performance, trained quality, unknown native failure, or across-window causal speedup claim.",
+    "The previous 16-process screen is historical motivation only, not pooled or duplicated here; no retained-peer performance table update."
+  ],
+  "trained_quality_claim": false,
+  "all_platforms_claim": false,
+  "archive": {
+    "path": "docs/evidence/correctness/inference-view-spans-2026-10-28.zip",
+    "bytes": 1808542,
+    "sha256": "47a672aeca83d0da2f6a1094bef860e279f133e603374cc88ae69194b01c33fe",
+    "members": 285,
+    "crc_readback": "PASS",
+    "member_sha256_readback": "PASS",
+    "member_manifest": "manifest.json"
+  }
+}

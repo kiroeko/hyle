@@ -59,20 +59,29 @@ struct Fixture final {
   c::Queue queue = cpu.create_queue().value();
   g::test::Environment environment{{&cpu, hyle::mem::system_resource()}};
   custom_test::Tensors tensors;
+  c::TensorDesc input_description = custom_test::description();
   g::Graph graph;
   g::ValueId input, output;
   g::CompiledGraph compiled;
   g::Invocation run;
   const std::array<g::QueueBinding, 1> queues{{{environment.lane(0), &queue}}};
 
-  explicit Fixture(bool copy_input = false) : cpu(context(probe, copy_input)) {
+  explicit Fixture(bool copy_input = false, bool token_view = false)
+      : cpu(context(probe, copy_input)) {
     EXPECT_TRUE(tensors.fill().ok());
     auto builder = g::GraphBuilder::create().value();
-    input = builder.input(custom_test::description()).value();
-    // Copy has the existing exact/no-alias contract. Its private materialized
-    // result keeps the positive fixture's external configuration off the
-    // optional alias chain without changing the original affine math/output.
-    const auto affine_input = copy_input ? builder.add(c::Copy{}, input).value() : input;
+    if (token_view)
+      input_description = c::TensorDesc::dense(c::DataType::kFloat32,
+          std::array<std::int64_t, 2>{2, 2}).value();
+    input = builder.input(input_description).value();
+    auto affine_input = input;
+    if (token_view)
+      affine_input = builder.add(c::View::reshape(c::TensorShape::create(
+          std::array<std::int64_t, 1>{4}).value()).value(), affine_input).value();
+    // Copy keeps Affine's optional writable alias off the external root.
+    // Readonly token Views before Copy still belong to the complete alias
+    // table; the original affine math and output remain unchanged.
+    if (copy_input) affine_input = builder.add(c::Copy{}, affine_input).value();
     output = builder.add(c::Operation::custom(custom_test::Affine{1}), affine_input).value();
     EXPECT_TRUE(builder.publish(output).ok());
     graph = std::move(builder).finish().value();
@@ -288,61 +297,186 @@ TEST(ConfigurationInput, IncompleteConfigurationCannotKeepThePhysicalShortcut) {
 }
 
 TEST(ConfigurationInput, SamePhysicalSourceReplacementRequalifiesItsCurrentProducer) {
-  Source original_producer, replacement_producer;
-  Fixture fixture(true);
-  const auto *state = gd::InvocationAccess::state(fixture.run);
-  ASSERT_TRUE(state->plan->external_input_aliases.empty());
-  auto original = gd::InputSource::acquire(&original_producer, &source_table,
-      &original_producer).value();
-  auto replacement = gd::InputSource::acquire(&replacement_producer, &source_table,
-      &replacement_producer).value();
-  ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, fixture.tensors.in, original).ok());
-  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
-  {
-    auto done = fixture.run.submit(fixture.queues).value();
-    const auto status = done.wait();
-    ASSERT_TRUE(status.ok()) << status.message();
-    EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
-  }
-  const auto old_routes = original_producer.routes;
-  const auto old_observations = original_producer.observations;
-  ASSERT_GT(old_routes, 0);
-  ASSERT_GT(old_observations, 0);
-  ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
-  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
-  EXPECT_FALSE(state->bindings_prepared);
-  EXPECT_EQ(original_producer.references, 2); // This handle and the retained binding.
+  for (const bool token_view : {false, true}) {
+    SCOPED_TRACE(token_view ? "two-dimensional token flatten" : "original no-alias input");
+    Source original_producer, replacement_producer;
+    c::ReadLease moved_input;
+    Fixture fixture(true, token_view);
+    const auto *state = gd::InvocationAccess::state(fixture.run);
+    if (token_view) {
+      ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+          state->plan->external_input_aliases.end(), fixture.input.ordinal()));
+      const auto step = state->plan->node_steps[fixture.graph.node_id(0)->ordinal()];
+      ASSERT_LT(step, state->plan->steps.size());
+      EXPECT_EQ(state->plan->steps[step].kind, gd::PlanStepKind::kView);
+      EXPECT_FALSE(state->plan->steps[step].materializes);
+    } else ASSERT_TRUE(state->plan->external_input_aliases.empty());
+    const auto tensor = c::ConstTensorView::create(fixture.input_description,
+        fixture.tensors.input.view()).value();
+    auto original = gd::InputSource::acquire(&original_producer, &source_table,
+        &original_producer).value();
+    auto replacement = gd::InputSource::acquire(&replacement_producer, &source_table,
+        &replacement_producer).value();
+    ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, tensor, original).ok());
+    ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+    {
+      auto done = fixture.run.submit(fixture.queues).value();
+      const auto status = done.wait();
+      ASSERT_TRUE(status.ok()) << status.message();
+      EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+    }
+    const auto old_routes = original_producer.routes;
+    const auto old_observations = original_producer.observations;
+    ASSERT_GT(old_routes, 0);
+    ASSERT_GT(old_observations, 0);
+    ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+    ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+    EXPECT_FALSE(state->bindings_prepared);
+    EXPECT_EQ(original_producer.references, 2); // This handle and the retained binding.
 
-  // The physical argument is unchanged. Producer identity and readiness must
-  // still be prepared anew; the old Source is not authority for this episode.
-  ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, fixture.tensors.in, replacement).ok());
-  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
-  EXPECT_FALSE(state->replay_prepared);
-  EXPECT_FALSE(fixture.run.submit(fixture.queues));
-  EXPECT_EQ(original_producer.references, 1);
-  EXPECT_EQ(replacement_producer.references, 2);
-  EXPECT_EQ(replacement_producer.routes, 0);
-  EXPECT_EQ(replacement_producer.observations, 0);
-  ASSERT_TRUE(fixture.tensors.input.view().write(std::as_bytes(std::span(second))).ok());
-  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
-  EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Preparation consumed the candidate.
-  EXPECT_EQ(replacement_producer.routes, 1);
-  auto report = fixture.run.input_source_report();
-  ASSERT_TRUE(report) << report.error().message();
-  EXPECT_EQ(report->source_count, 1u);
-  EXPECT_EQ(report->host_wait_count, 1u);
-  {
+    // The physical argument is unchanged. Producer identity and readiness must
+    // still be prepared anew; the old Source is not authority for this episode.
+    ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, tensor, replacement).ok());
+    ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+    EXPECT_FALSE(state->replay_prepared);
+    EXPECT_FALSE(fixture.run.submit(fixture.queues));
+    EXPECT_EQ(original_producer.references, 1);
+    EXPECT_EQ(replacement_producer.references, 2);
+    EXPECT_EQ(replacement_producer.routes, 0);
+    EXPECT_EQ(replacement_producer.observations, 0);
+    ASSERT_TRUE(fixture.tensors.input.view().write(std::as_bytes(std::span(second))).ok());
+    ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+    EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Preparation consumed the candidate.
+    EXPECT_EQ(replacement_producer.routes, 1);
+    auto report = fixture.run.input_source_report();
+    ASSERT_TRUE(report) << report.error().message();
+    EXPECT_EQ(report->source_count, 1u);
+    EXPECT_EQ(report->host_wait_count, 1u);
+    {
+      auto done = fixture.run.submit(fixture.queues).value();
+      const auto status = done.wait();
+      ASSERT_TRUE(status.ok()) << status.message();
+      EXPECT_GT(replacement_producer.observations, 0);
+      EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{11, 13, 15, 17}));
+    }
+    EXPECT_EQ(original_producer.routes, old_routes);
+    EXPECT_EQ(original_producer.observations, old_observations);
+    if (token_view) {
+      ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+      ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+      moved_input = input_lease(first);
+      const auto storage = moved_input.view().value();
+      ASSERT_NE(storage.native_handle(), tensor.storage().native_handle());
+      const auto moved_tensor = c::ConstTensorView::create(fixture.input_description, storage).value();
+      const auto routes = replacement_producer.routes;
+      const auto observations = replacement_producer.observations;
+      ASSERT_TRUE(gd::InputAccess::bind(fixture.run, fixture.input, moved_tensor, replacement).ok());
+      EXPECT_FALSE(gd::reusable_configuration_spans(*state));
+      EXPECT_FALSE(state->replay_prepared);
+      EXPECT_FALSE(fixture.run.submit(fixture.queues));
+      ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+      EXPECT_EQ(replacement_producer.routes, routes + 1);
+      {
+        auto done = fixture.run.submit(fixture.queues).value();
+        const auto status = done.wait();
+        ASSERT_TRUE(status.ok()) << status.message();
+        EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
+      }
+      EXPECT_GT(replacement_producer.observations, observations);
+      EXPECT_EQ(original_producer.routes, old_routes);
+      EXPECT_EQ(original_producer.observations, old_observations);
+    }
+    ASSERT_TRUE(fixture.run.reset().ok());
+    EXPECT_EQ(original_producer.references, 1);
+    EXPECT_EQ(replacement_producer.references, 1);
+  }
+}
+
+TEST(ConfigurationInput, PartialAndOffsetViewsDiscardTheGeometryCandidateOnRebind) {
+  for (const std::int64_t start : {0, 1}) {
+    SCOPED_TRACE(start);
+    Source producer;
+    custom_test::Probe probe;
+    auto cpu = context(probe, true);
+    auto queue = cpu.create_queue().value();
+    g::test::Environment environment{{&cpu, hyle::mem::system_resource()}};
+    const std::array queues{g::QueueBinding{environment.lane(0), &queue}};
+    custom_test::Tensors tensors;
+    ASSERT_TRUE(tensors.fill().ok());
+    const std::array<float, 6> values{1, 2, 3, 4, 5, 6};
+    auto input = hyle::mem::Buffer::create(hyle::mem::system_resource(),
+        sizeof(values), 64).value();
+    ASSERT_TRUE(input.view().write(std::as_bytes(std::span(values))).ok());
+    const auto description = c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 1>{6}).value();
+    const auto tensor = c::ConstTensorView::create(description, input.view()).value();
+    auto builder = g::GraphBuilder::create().value();
+    const auto root = builder.input(description).value();
+    const auto view = builder.add(c::View::slice(0, start, 4).value(), root).value();
+    const auto copied = builder.add(c::Copy{}, view).value();
+    const auto output = builder.add(c::Operation::custom(custom_test::Affine{1}), copied).value();
+    ASSERT_TRUE(builder.publish(output).ok());
+    auto graph = std::move(builder).finish().value();
+    auto compiled = g::compile(graph, environment.environment(),
+        {.region_selection = g::RegionSelectionPolicy::kDisabled}).value();
+    auto run = compiled.executable.create_invocation({.resources = g::ResourceOptions{}}).value();
+    const auto *state = gd::InvocationAccess::state(run);
+    ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+        state->plan->external_input_aliases.end(), root.ordinal()));
+    auto source = gd::InputSource::acquire(&producer, &source_table, &producer).value();
+    ASSERT_TRUE(run.bind(output, tensors.out).ok());
+    std::array<float, 4> expected;
+    for (std::size_t i = 0; i < expected.size(); ++i)
+      expected[i] = values[static_cast<std::size_t>(start) + i] * 2 + 1;
+    for (int episode = 0; episode < 2; ++episode) {
+      if (episode) ASSERT_TRUE(gd::RegionAccess::reset_configuration(run).ok());
+      ASSERT_TRUE(gd::InputAccess::bind(run, root, tensor, source).ok());
+      if (episode) EXPECT_FALSE(gd::reusable_configuration_spans(*state));
+      EXPECT_FALSE(state->replay_prepared);
+      ASSERT_TRUE(run.prepare_replay(queues).ok());
+      EXPECT_EQ(producer.routes, episode + 1);
+      auto done = run.submit(queues).value();
+      const auto status = done.wait();
+      ASSERT_TRUE(status.ok()) << status.message();
+      EXPECT_EQ(tensors.read(), expected);
+    }
+    ASSERT_TRUE(run.reset().ok());
+    EXPECT_EQ(producer.references, 1);
+  }
+}
+
+TEST(ConfigurationInput, ActualInPlaceMathAliasDoesNotBecomeAViewOnlyCandidate) {
+  Fixture fixture;
+  const auto *state = gd::InvocationAccess::state(fixture.run);
+  ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+      state->plan->external_input_aliases.end(), fixture.input.ordinal()));
+  const auto tensor = c::TensorView::create(custom_test::description(),
+      fixture.tensors.input.view()).value();
+  ASSERT_TRUE(fixture.run.bind(fixture.input, tensor.as_const()).ok());
+  ASSERT_TRUE(fixture.run.bind(fixture.output, tensor).ok());
+  const auto input_instance = state->plan->external_instances[fixture.input.ordinal()];
+  const auto output_instance = state->plan->external_instances[fixture.output.ordinal()];
+  EXPECT_EQ(state->readable[input_instance].storage().native_handle(),
+      state->writable[output_instance].storage().native_handle());
+  EXPECT_EQ(state->readable[input_instance].storage().offset(),
+      state->writable[output_instance].storage().offset());
+  EXPECT_EQ(state->readable[input_instance].storage().size(),
+      state->writable[output_instance].storage().size());
+  for (int episode = 0; episode < 2; ++episode) {
+    if (episode) {
+      ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+      ASSERT_TRUE(fixture.tensors.input.view().write(std::as_bytes(std::span(first))).ok());
+      ASSERT_TRUE(fixture.run.bind(fixture.input, tensor.as_const()).ok());
+      EXPECT_FALSE(gd::reusable_configuration_spans(*state));
+    }
+    ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
     auto done = fixture.run.submit(fixture.queues).value();
     const auto status = done.wait();
     ASSERT_TRUE(status.ok()) << status.message();
-    EXPECT_GT(replacement_producer.observations, 0);
-    EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{11, 13, 15, 17}));
+    std::array<float, 4> actual;
+    ASSERT_TRUE(fixture.tensors.input.view().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, (std::array<float, 4>{3, 5, 7, 9}));
   }
-  EXPECT_EQ(original_producer.routes, old_routes);
-  EXPECT_EQ(original_producer.observations, old_observations);
-  ASSERT_TRUE(fixture.run.reset().ok());
-  EXPECT_EQ(original_producer.references, 1);
-  EXPECT_EQ(replacement_producer.references, 1);
 }
 
 TEST(ConfigurationInput, CarrierQueryUsesOnlyThisPlansPrivateInput) {
