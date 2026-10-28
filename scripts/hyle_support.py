@@ -193,15 +193,16 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
         raise SetupError("--components must be product names separated by commas, or all.")
     if "all" in products and products != ["all"]:
         raise SetupError("Use --components all alone, or list the products you need.")
+    aten = cache.get("HYLE_WITH_ATEN", "ON").upper() in _BOOL_TRUE if args.aten is None else args.aten
     routes = parse_backends(backend_value, system, arch,
-                            complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))
+                            complete_math=aten and bool({"engine", "all", "compute", "graph"}.intersection(products)))
     if not _uses_compute(products):
         routes = ()
     configuration = args.config or cache.get("CMAKE_BUILD_TYPE") or saved_config or "Release"
     if configuration not in CONFIGURATIONS:
         # Existing multi-config/custom CMake trees remain consumable by build/test.
         raise SetupError(f"Unsupported initialization configuration '{configuration}'. Use {', '.join(CONFIGURATIONS)}.")
-    selected = {"routes": routes, "config": configuration,
+    selected = {"routes": routes, "config": configuration, "aten": aten,
                 "components": tuple(dict.fromkeys(products)),
                 "sanitizer": args.sanitizer or cache.get("HYLE_SANITIZER", "off")}
     for name, key in (("tests", "HYLE_BUILD_TESTS"), ("static", "HYLE_STATIC"),
@@ -215,7 +216,7 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
 
 def _definitions(values: list[str]) -> dict[str, str]:
     result = {}
-    managed = {"HYLE_COMPONENTS", "HYLE_COMPUTE_ROUTES", "HYLE_STATIC", "HYLE_BUILD_TESTS",
+    managed = {"HYLE_COMPONENTS", "HYLE_COMPUTE_ROUTES", "HYLE_STATIC", "HYLE_BUILD_TESTS", "HYLE_WITH_ATEN",
                "HYLE_INSTALL", "HYLE_SANITIZER", "HYLE_IO_TLS", "HYLE_IO_HTTP2", "HYLE_TRACE",
                "HYLE_DEP_SOURCE_CACHE", "HYLE_DEP_BUILD_DIR", "CMAKE_BUILD_TYPE",
                "CMAKE_C_COMPILER", "CMAKE_CXX_COMPILER", "CMAKE_GENERATOR", "CMAKE_HOME_DIRECTORY",
@@ -263,7 +264,8 @@ def _display(directory: Path, selected: dict, environment: Environment, cache_di
     routes = ",".join("metal" if route == "apple" else route for route in selected["routes"])
     print(f"Hyle: {environment.system}/{environment.arch}; components={','.join(selected['components'])}; "
           f"backends={routes or 'not requested'}; {selected['config']}; "
-          f"{'static' if selected['static'] else 'shared'}; tests={'ON' if selected['tests'] else 'OFF'}")
+          f"{'static' if selected['static'] else 'shared'}; tests={'ON' if selected['tests'] else 'OFF'}; "
+          f"ATen={'ON' if selected['aten'] else 'OFF'}")
     print(f"Compiler: {environment.cxx}\nBuild directory: {directory}\nShared dependency cache: {cache_dir}")
 
 
@@ -272,7 +274,7 @@ def initialize(args: argparse.Namespace) -> int:
     # Repeating init without choices reuses the last directory. Explicit choices
     # without --name get their own deterministic tree, leaving older modes reusable.
     choices = ("backends", "components", "config", "compiler", "generator", "tests", "static",
-               "sanitizer", "tls", "http2", "trace", "offline", "cache_dir")
+               "sanitizer", "tls", "http2", "trace", "offline", "cache_dir", "aten")
     if directory is None and not args.define and not any(getattr(args, key) is not None for key in choices):
         if _current().is_file():
             previous = _previous_initialization()
@@ -335,6 +337,7 @@ def initialize(args: argparse.Namespace) -> int:
         definitions["CMAKE_BUILD_TYPE"] = selected["config"]
     if _uses_compute(selected["components"]):
         definitions["HYLE_COMPUTE_ROUTES"] = ";".join(selected["routes"])
+        definitions["HYLE_WITH_ATEN"] = "ON" if selected["aten"] else "OFF"
     if {"all", "io"}.intersection(selected["components"]):
         definitions["HYLE_IO_TLS"] = "ON" if selected["tls"] else "OFF"
         definitions["HYLE_IO_HTTP2"] = "ON" if selected["http2"] else "OFF"
@@ -474,6 +477,7 @@ def parser(action: str) -> argparse.ArgumentParser:
         result.add_argument("--generator", help="advanced: CMake generator; defaults to available Ninja or platform make")
         result.add_argument("--cache-dir", type=Path, help="advanced: reuse a shared Hyle dependency source/SDK cache")
         for name, help_text in (("tests", "prepare test dependencies and build targets"),
+                                ("aten", "include optional ATen CPU/CUDA operations (default: enabled)"),
                                 ("static", "build static libraries (default: shared)"),
                                 ("tls", "enable TLS with an installed OpenSSL 3 SDK"),
                                 ("http2", "enable HTTP/2 (locked nghttp2 is prepared automatically)"),

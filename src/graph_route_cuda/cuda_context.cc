@@ -7,7 +7,6 @@
 #include "default_context.h"
 #include "hyle/graph/batch.h"
 #include "dense_bfloat_scores_region.h"
-#include "ct_packed_linear_region.h"
 #include "fp8_shared_prologue_region.h"
 
 namespace hyle::graph::cuda {
@@ -16,7 +15,7 @@ Result<compute::Context>
 create_context(compute::cuda::DefaultContextOptions options) noexcept {
   return compute::cuda::internal::create_context(options, ggml_cuda::provider(),
       compute::cuda::internal::DefaultScope::kGraph,
-      internal::dense_bfloat_scores_provider(), internal::ct_packed_linear_provider(),
+      internal::dense_bfloat_scores_provider(), {},
       internal::fp8_shared_prologue_provider());
 }
 

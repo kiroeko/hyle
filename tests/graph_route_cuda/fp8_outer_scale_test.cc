@@ -2,7 +2,7 @@
 #include "../../src/graph/static_fp8_region.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/compute/providers/cuda.h"
 
 #include <sstream>
 
@@ -69,7 +69,7 @@ template<class Run> void run_cuda(Run run, bool contracted, bool pattern_only=fa
               std::string(observed.error().status().message()));
           ++default_ordinal;
         } // Release the probe artifact before the actual selected compile.
-        const std::array providers{f::c::torch_cuda::kProviderId};
+        const std::array providers{f::c::cuda_native::kProviderId};
         if (contracted) options.allowed_providers = providers;
         std::vector<f::g::NodeProviderConstraint> required;
         if (pattern_only) {
@@ -80,7 +80,7 @@ template<class Run> void run_cuda(Run run, bool contracted, bool pattern_only=fa
             if (!Rule::pattern(graph, f::take(graph.node_id(i), "static FP8 terminal"), pattern)) continue;
             ++matches;
             for (const auto node : pattern.span())
-              required.push_back({node, f::c::torch_cuda::kProviderId, {}});
+              required.push_back({node, f::c::cuda_native::kProviderId, {}});
           }
           EXPECT_EQ(matches, std::size_t{1});
           EXPECT_EQ(required.size(), Rule::kMaxNodes);

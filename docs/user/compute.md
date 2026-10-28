@@ -8,6 +8,13 @@ Context、Queue、PreparedOperation 和 OperationInvocation；[Apple](apple-comp
 [Vulkan](vulkan-compute.md) 还提供各自的原生 Program/Invocation，遵守对应资源与完成合同。
 构建后端的方法见[使用指南](usage-guide.md#开始使用-compute--graph)。
 
+ATen CPU/CUDA 数学适配器默认启用，可在初始化时传 `--no-aten`（CMake
+`HYLE_WITH_ATEN=OFF`）省去其 SDK；原生 kernel 和其它独立实现继续保留。
+关闭后部分 dtype、布局、独立制品解码及 CUDA 广域 BF16 融合 SDPA 可能不可用；没有其它合法
+实现时，冷准备返回 `Unimplemented`，不会隐式降低精度或更换设备。普通 BF16 attention
+仍可使用原 ggml F32 计算路径，可能物化 Q×KV 临时矩阵。CUDA MLX packed、GPTQ 解码、
+CT/GPTQ/NF4 融合线性及 stored-scale FP8 无需 ATen；细节见[初始化参数](../developer/setup/README.md#选择配置)。
+
 建议按任务阅读：
 
 - 首次接入：下面的 Direct 例子，再看 [tensor/storage](#普通block-与-opaque-storage) 与

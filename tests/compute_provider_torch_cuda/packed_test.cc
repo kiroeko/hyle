@@ -16,7 +16,7 @@
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
-#include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/compute/providers/cuda.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -32,7 +32,7 @@ struct InputSet {
   // The kernel unit tests need only its real public Provider. Natural default
   // Direct/Graph selection is exercised by the full-width N2 model fixtures.
   c::Context context = [] {
-    const std::array providers{c::ProviderBinding{c::torch_cuda::provider(),0}};
+    const std::array providers{c::ProviderBinding{c::cuda_native::provider(),0}};
     return c::Context::create(c::cuda::device(0).value(),{.providers=providers}).value();
   }();
   c::cuda::MemoryResource resource = c::cuda::MemoryResource::create(context,
@@ -87,7 +87,7 @@ TEST(CudaPackedWeights, Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTempo
   // unpack/index_select/matmul even when the finite numerical answer matches.
   NoTorchAllocation no_torch;
   auto prepared=c::prepare(data.context,op,data.descriptions,output_desc,data.resource.ref()).value();
-  ASSERT_EQ(prepared.provider().id,c::torch_cuda::kProviderId);
+  ASSERT_EQ(prepared.provider().id,c::cuda_native::kProviderId);
   EXPECT_FALSE(prepared.runtime_properties().blocks_host);
   auto first=prepared.create_invocation().value(),second=prepared.create_invocation().value();
   std::vector<mem::Buffer> outputs;
@@ -295,7 +295,7 @@ TEST(CudaPackedWeights, AffineWidthsKeepCrossWordCodesGroupsAndCheckedSlotRecove
     auto prepared_result=c::prepare(data.context,operation,data.descriptions,desc,data.resource.ref());
     ASSERT_TRUE(prepared_result)<<prepared_result.error().message();
     auto prepared=std::move(*prepared_result);
-    ASSERT_EQ(prepared.provider().id,c::torch_cuda::kProviderId);
+    ASSERT_EQ(prepared.provider().id,c::cuda_native::kProviderId);
     routes[domain]=prepared.implementation();
     for(std::size_t prior=0;prior<domain;++prior)EXPECT_NE(routes[domain],routes[prior]);
     ++domain;

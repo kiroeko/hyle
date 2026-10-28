@@ -1,7 +1,7 @@
 #include "../compute_models/static_fp8_reference_fixture.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/graph/cuda.h"
-#include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/compute/providers/cuda.h"
 
 namespace {
 template<class Run> void run_cuda(Run run, bool contracted) {
@@ -15,7 +15,7 @@ template<class Run> void run_cuda(Run run, bool contracted) {
   const std::array queues{f::g::QueueBinding{f::g::ExecutionLaneId{0}, &queue}};
   run(owner.ref(), queues,
       [&](const f::g::Graph &graph, f::g::CompileOptions options) {
-        const std::array providers{f::c::torch_cuda::kProviderId};
+        const std::array providers{f::c::cuda_native::kProviderId};
         if (contracted) options.allowed_providers = providers;
         return f::g::cuda::compile(graph, context, owner, options);
       },

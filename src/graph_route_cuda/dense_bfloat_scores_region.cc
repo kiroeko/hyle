@@ -1,4 +1,5 @@
 #include "dense_bfloat_scores_region.h"
+#include "ct_packed_linear_region.h"
 #include "../graph/mapped_native_region.h"
 
 #include "hyle/compute/providers/cuda.h"
@@ -19,6 +20,8 @@ namespace native = compute::cuda_native::internal;
 using c::detail::ProviderAccess;
 inline constexpr c::RoutePolicyId kPolicy{0x48594c454e445343ULL, 1, 1};
 inline constexpr std::size_t kMaxNodes = 7;
+// The existing packed recipes use private region routes 1 and 2.
+inline constexpr std::uint64_t kDenseScoreRoute = 3;
 
 const c::detail::ProviderVTable &original() noexcept {
   // The factory has one fixed implementation. Retain the original table, not
@@ -239,6 +242,7 @@ Status native_proposal(void *context, const Graph &graph, const Pattern &p,
 
 Status propose(void *context, const RegionDiscoveryRequest &request,
     mem::AllocatorRef allocator, RegionProposalWriter &writer) noexcept {
+  HYLE_RETURN_IF_ERROR(ct_packed_linear_regions().propose(context, request, allocator, writer));
   const auto &graph = request.graph;
   if (!request.allowed_nodes.empty() && request.allowed_nodes.size()!=graph.node_count())
     return Status::InvalidArgument("dense score allowed-node count differs");
@@ -260,7 +264,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
         if (status.IsUnimplemented() || status.IsInvalidArgument()) return true;
         return std::unexpected(status);
       }
-      return writer.try_add({.nodes=p.span(),.cost=proposal.cost,.route=1,
+      return writer.try_add({.nodes=p.span(),.cost=proposal.cost,.route=kDenseScoreRoute,
           .replay_class=proposal.runtime.replay_class,
           .implementation=c::ProviderImplementationId{1},.policy=kPolicy,.preference=200});
     };
@@ -284,7 +288,7 @@ Status propose(void *context, const RegionDiscoveryRequest &request,
 // repeated here: Graph's exact boundary exposes every escaping intermediate,
 // and contraction has already validated original data/control ordering.
 Status qualify(const RegionCompileRequest &request, Pattern &result) noexcept {
-  if (!request.graph || request.route != 1 || request.outputs.size()!=1 ||
+  if (!request.graph || request.route != kDenseScoreRoute || request.outputs.size()!=1 ||
       request.nodes.size()<4 || request.nodes.size()>kMaxNodes ||
       request.has_unknown_effects || !request.effect_accesses.empty())
     return Status::Unimplemented("dense score region boundary differs");
@@ -330,9 +334,11 @@ Status qualify(const RegionCompileRequest &request, Pattern &result) noexcept {
   return Status::Unimplemented("dense score region does not preserve the exact public recipe");
 }
 
-Status resources(void *context, const RegionCompileRequest &request, mem::AllocatorRef,
+Status resources(void *context, const RegionCompileRequest &request, mem::AllocatorRef allocator,
     std::span<RegionInputRequirement> inputs, std::span<RegionOutputRequirement> outputs,
     RegionResourceProposal *result) noexcept {
+  if (request.route != kDenseScoreRoute)
+    return ct_packed_linear_regions().propose_resources(context, request, allocator, inputs, outputs, result);
   *result={}; Pattern p; HYLE_RETURN_IF_ERROR(qualify(request,p));
   if (inputs.size()!=p.input_count || outputs.size()!=1)
     return Status::InvalidArgument("dense score resource count differs");
@@ -355,6 +361,8 @@ Status resources(void *context, const RegionCompileRequest &request, mem::Alloca
 
 c::ProviderPrepareOutcome compile(void *context,const RegionCompileRequest &request,
     mem::AllocatorRef allocator,ProviderRegionPrepared *result) noexcept {
+  if (request.route != kDenseScoreRoute)
+    return ct_packed_linear_regions().compile(context, request, allocator, result);
   *result={};Pattern p;
   const auto qualification=qualify(request,p);
   if (!qualification.ok()) return c::ProviderPrepareOutcome::unsupported(qualification);

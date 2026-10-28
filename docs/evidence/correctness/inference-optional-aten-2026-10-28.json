@@ -1,0 +1,1616 @@
+{
+  "status": "DEFAULT_ON_AND_OFF_FINITE_COMPONENTS_PASSED",
+  "totals": {
+    "CXX": {
+      "actual": 30,
+      "passed": 30
+    },
+    "NVCC": {
+      "actual": 1,
+      "passed": 1
+    },
+    "links": 10,
+    "native_processes": 10,
+    "native_success": 8,
+    "native_failed": 2,
+    "configure_attempts": 4,
+    "configure_failures": 2
+  },
+  "default_ON": {
+    "CXX": {
+      "actual": 16,
+      "passed": 16
+    },
+    "NVCC": {
+      "actual": 1,
+      "passed": 1
+    },
+    "links": {
+      "resident-direct": {
+        "pid": 43484,
+        "exit": 0,
+        "started": 1793170038.6085484,
+        "seconds": 1.6980905532836914,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "resident-graph": {
+        "pid": 9440,
+        "exit": 0,
+        "started": 1793170041.0119853,
+        "seconds": 1.6929244995117188,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct": {
+        "pid": 34784,
+        "exit": 0,
+        "started": 1793170043.5182004,
+        "seconds": 1.7260594367980957,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "torch": {
+        "pid": 33240,
+        "exit": 0,
+        "started": 1793170045.624689,
+        "seconds": 1.729656457901001,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "input_counts": {
+      "resident-direct": 228,
+      "resident-graph": 228,
+      "ct": 234,
+      "torch": 231
+    },
+    "base_SDK": 226,
+    "new_SDK": 227,
+    "replaced_original_objects": 7,
+    "new_native_adapter_objects": 1,
+    "compile_processes": {
+      "native-artifact": {
+        "pid": 19096,
+        "exit": 0,
+        "started": 1793169913.1771603,
+        "seconds": 1.4566128253936768,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "cuda-provider": {
+        "pid": 12092,
+        "exit": 0,
+        "started": 1793169915.1292522,
+        "seconds": 1.4676017761230469,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "cuda-policy": {
+        "pid": 35236,
+        "exit": 0,
+        "started": 1793169917.1160843,
+        "seconds": 1.2359490394592285,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph-packed": {
+        "pid": 45840,
+        "exit": 0,
+        "started": 1793169918.8223622,
+        "seconds": 2.044480800628662,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph-dense": {
+        "pid": 58188,
+        "exit": 0,
+        "started": 1793169921.3762336,
+        "seconds": 1.9252519607543945,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "graph-context": {
+        "pid": 45956,
+        "exit": 0,
+        "started": 1793169923.8046389,
+        "seconds": 1.1642823219299316,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "torch-artifact": {
+        "pid": 57720,
+        "exit": 0,
+        "started": 1793169925.4740398,
+        "seconds": 6.853298187255859,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "native-kernel": {
+        "pid": 54880,
+        "exit": 0,
+        "started": 1793169957.9697027,
+        "seconds": 4.056647777557373,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "resident-direct": {
+        "pid": 51452,
+        "exit": 0,
+        "started": 1793169962.6454532,
+        "seconds": 1.5016241073608398,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "resident-graph": {
+        "pid": 14584,
+        "exit": 0,
+        "started": 1793169964.6167946,
+        "seconds": 1.9255263805389404,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct-grouped": {
+        "pid": 61612,
+        "exit": 0,
+        "started": 1793169967.039405,
+        "seconds": 2.9144647121429443,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct-linear": {
+        "pid": 18352,
+        "exit": 0,
+        "started": 1793169970.5177019,
+        "seconds": 3.246217966079712,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct-gptq": {
+        "pid": 16576,
+        "exit": 0,
+        "started": 1793169974.3356845,
+        "seconds": 2.968226671218872,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct-fp8": {
+        "pid": 45244,
+        "exit": 0,
+        "started": 1793169977.873862,
+        "seconds": 2.839855194091797,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct-scalar": {
+        "pid": 33096,
+        "exit": 0,
+        "started": 1793169981.279004,
+        "seconds": 2.3063905239105225,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "torch-packed": {
+        "pid": 45456,
+        "exit": 0,
+        "started": 1793169984.1417754,
+        "seconds": 3.560941457748413,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "torch-precision": {
+        "pid": 61188,
+        "exit": 0,
+        "started": 1793169988.3456516,
+        "seconds": 4.005289554595947,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "run_processes": {
+      "resident-direct": {
+        "pid": 42136,
+        "exit": 0,
+        "started": 1793170079.9538708,
+        "seconds": 0.8872113227844238,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "resident-graph": {
+        "pid": 60360,
+        "exit": 0,
+        "started": 1793170081.160382,
+        "seconds": 1.0081310272216797,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "ct": {
+        "pid": 55164,
+        "exit": 0,
+        "started": 1793170082.4986348,
+        "seconds": 1.303274393081665,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "torch": {
+        "pid": 51488,
+        "exit": 0,
+        "started": 1793170084.1327488,
+        "seconds": 0.682196855545044,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    "resident_direct": {
+      "status": "PASS",
+      "process": {
+        "pid": 42136,
+        "exit": 0,
+        "started": 1793170079.9538708,
+        "seconds": 0.8872113227844238,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "original_report": "PASS CUDA public resident packed consumer: 64 steps, two slots, retained output",
+      "models": 0,
+      "scope": "One public native affine4/group64 geometry;64steps/two slots/retained caller output."
+    },
+    "resident_graph": {
+      "status": "PASS",
+      "process": {
+        "pid": 60360,
+        "exit": 0,
+        "started": 1793170081.160382,
+        "seconds": 1.0081310272216797,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "original_reports": [
+        "PASS CUDA Graph packed M=1 bits=4 group=32:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+        "PASS CUDA Graph packed M=17 bits=5 group=64:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+        "PASS CUDA Graph packed M=1 bits=6 group=128:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+        "PASS CUDA Graph packed M=64 bits=8 group=32:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs"
+      ],
+      "models": 0,
+      "capture_test": false,
+      "scope": "Original Commands replay:4 geometries/65steps each/two queues+slots/concurrency/device IDs/checked failure/new-slot recovery/retained outputs. CT target separately tests capture."
+    },
+    "original_GTest_cases": {
+      "CT": 16,
+      "Torch": 25,
+      "total": 41
+    },
+    "GTests": {
+      "ct": {
+        "passed": 16,
+        "failed": 0,
+        "skipped": 0,
+        "cases": [
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "OriginalBanksKeepRoundingStridesSlotsAndResults",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "CompleteIdsValidateBeforeSelectedBankAccess",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "PublishedDecodeRetainsTheOriginalGraph",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "PublicChainsKeepSourceRoundsAndTypedCastWitnesses",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "PublishedViewAndControlEscapesExecuteTheOriginalDecomposition",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "Nf4SourceHalfRoundsAndMutableNestedOffset",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "MultiplyKeepsSubnormalBeforeAndAfterBfloatCast",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "ScalarLeftDivideKeepsSubnormalBeforeBfloatCast",
+            "status": "PASS",
+            "skip_reason": null
+          }
+        ]
+      },
+      "torch": {
+        "passed": 25,
+        "failed": 0,
+        "skipped": 0,
+        "cases": [
+          {
+            "suite": "CudaPackedWeights",
+            "name": "Grouped64StepsObserveChangedWordsAndIdsWithoutTorchTemporaries",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaPackedWeights",
+            "name": "Mxfp8CoversAllCodesWithIndependentScalarOracle",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaPackedWeights",
+            "name": "EmbeddingPreservesStorageRoundingBeforeBiasAndCheckedOutput",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaPackedWeights",
+            "name": "MixedAffinePromotesWithoutRoundingDecodedWeights",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaPackedWeights",
+            "name": "AffineWidthsKeepCrossWordCodesGroupsAndCheckedSlotRecovery",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaMlxMoeGraph",
+            "name": "MixedBitMoeKeepsTypedMetadataAndIndependentSlots",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaMlxSharedActivation",
+            "name": "OriginalPayloadStridesAndCheckedIdsSurviveReuse",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/0",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/1",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/2",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/3",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/4",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/5",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/6",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/7",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/8",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/9",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/10",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/11",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/12",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/13",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/14",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/15",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/16",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "OriginalDtypes/CudaMlxPrecision",
+            "name": "SourceF32EquationAndGroupScaleArePreservedUnderForeignTf32Policy/17",
+            "status": "PASS",
+            "skip_reason": null
+          }
+        ]
+      }
+    },
+    "images": {
+      "resident-direct": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\bin\\resident-direct.exe",
+        "bytes": 139634688,
+        "sha256": "f31a3df4bdac5591c3ce7da37e81bbe38574506ef2416437a194770da7897d6b"
+      },
+      "resident-graph": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\bin\\resident-graph.exe",
+        "bytes": 140314624,
+        "sha256": "ca39a9796badf4c9a9e9df5d0f86726339ae3a7d5f06840d97cfd1b460ab55bd"
+      },
+      "ct": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\bin\\ct.exe",
+        "bytes": 140955648,
+        "sha256": "425088ee72f39d910bdb0da664052fb562ef065095c6f277baaab976d65f470c"
+      },
+      "torch": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\bin\\torch.exe",
+        "bytes": 140821504,
+        "sha256": "f672e7df277af0415b86bdf507e0206ba80081b84aba435c6ac96487b30ba47d"
+      }
+    },
+    "models": 0,
+    "performance_claim": false
+  },
+  "OFF": {
+    "scope": "One actual CPU+CUDA HYLE_WITH_ATEN=OFF CMake configuration plus separate bounded actual OFF CXX/link/native consumers.",
+    "status": "PASS_OFF_GENERATED_DEPENDENCY_CLOSURE_ONLY",
+    "review_identity": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-generated-review-v4.json",
+      "bytes": 43821,
+      "sha256": "51b36db993cbf99c84dd247f51b63bb34942d42e6bb8db6308f13b74659cd605"
+    },
+    "configure_process": {
+      "pid": 47136,
+      "exit": 0,
+      "started": 1793171949.9895158,
+      "seconds": 96.14867663383484,
+      "timed_out": false,
+      "state": "TERMINAL"
+    },
+    "mode": {
+      "routes": "cpu;cuda",
+      "ATen": "OFF",
+      "offline": "ON",
+      "static": "ON"
+    },
+    "generated_compile_commands": 863,
+    "generated_exports": 73,
+    "ATen_absence": {
+      "aten_implementation_sources": 0,
+      "aten_compile_capabilities": 0,
+      "aten_sdk_includes": 0,
+      "aten_generated_vendor_links": 0,
+      "aten_export_sdk_dependencies": 0
+    },
+    "native_codec_license_assets": true,
+    "compiler_facts": {
+      "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "CMAKE_CXX_COMPILER_VERSION": "19.50.35728.0",
+      "CMAKE_CUDA_COMPILER": "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/bin/nvcc.exe",
+      "CMAKE_CUDA_HOST_COMPILER": "",
+      "CMAKE_CUDA_COMPILER_VERSION": "13.3.73",
+      "CMAKE_CUDA_HOST_COMPILER_VERSION": "19.50.35728.0"
+    },
+    "observed_host_version_equal": true,
+    "configure_attempts": [
+      {
+        "label": "configure-off-run",
+        "process": {
+          "pid": 45324,
+          "exit": 1,
+          "started": 1793169770.9108636,
+          "seconds": 78.29359173774719,
+          "timed_out": false,
+          "state": "TERMINAL"
+        }
+      },
+      {
+        "label": "configure-off-attempt2-run",
+        "process": {
+          "pid": 44288,
+          "exit": 1,
+          "started": 1793170115.047518,
+          "seconds": 32.01927208900452,
+          "timed_out": false,
+          "state": "TERMINAL"
+        }
+      },
+      {
+        "label": "configure-off-attempt3-run",
+        "process": {
+          "pid": 35548,
+          "exit": 0,
+          "started": 1793170363.777551,
+          "seconds": 27.293173789978027,
+          "timed_out": false,
+          "state": "TERMINAL"
+        }
+      },
+      {
+        "label": "configure-off-attempt4-run",
+        "process": {
+          "pid": 47136,
+          "exit": 0,
+          "started": 1793171949.9895158,
+          "seconds": 96.14867663383484,
+          "timed_out": false,
+          "state": "TERMINAL"
+        }
+      }
+    ],
+    "actual_validation": {
+      "CXX": {
+        "actual": 14,
+        "passed": 14,
+        "SDK": 3,
+        "consumers": 11
+      },
+      "NVCC": 0,
+      "compile_processes": {
+        "native": {
+          "pid": 43508,
+          "exit": 0,
+          "started": 1793171369.4081087,
+          "seconds": 1.6627020835876465,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "aten-stub": {
+          "pid": 29616,
+          "exit": 0,
+          "started": 1793171372.077302,
+          "seconds": 1.1485271453857422,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "cuda-context": {
+          "pid": 14228,
+          "exit": 0,
+          "started": 1793171373.6730967,
+          "seconds": 0.48522233963012695,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "resident-direct": {
+          "pid": 19708,
+          "exit": 0,
+          "started": 1793171374.57794,
+          "seconds": 1.4792191982269287,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "resident-graph": {
+          "pid": 55864,
+          "exit": 0,
+          "started": 1793171376.4514194,
+          "seconds": 1.8983230590820312,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct-grouped": {
+          "pid": 37708,
+          "exit": 0,
+          "started": 1793171378.7480557,
+          "seconds": 2.89981746673584,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct-linear": {
+          "pid": 54396,
+          "exit": 0,
+          "started": 1793171382.3994322,
+          "seconds": 3.204653024673462,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct-gptq": {
+          "pid": 58188,
+          "exit": 0,
+          "started": 1793171386.0893476,
+          "seconds": 2.928532600402832,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct-fp8": {
+          "pid": 61612,
+          "exit": 0,
+          "started": 1793171389.4873424,
+          "seconds": 2.8387908935546875,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct-scalar": {
+          "pid": 44012,
+          "exit": 0,
+          "started": 1793171392.789647,
+          "seconds": 2.32331919670105,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "attention": {
+          "pid": 21528,
+          "exit": 0,
+          "started": 1793171395.5751357,
+          "seconds": 2.465562105178833,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "runtime-disabled": {
+          "pid": 14808,
+          "exit": 0,
+          "started": 1793171398.562297,
+          "seconds": 1.476628065109253,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      "links": {
+        "resident-direct": {
+          "pid": 55428,
+          "exit": 0,
+          "started": 1793171442.0788493,
+          "seconds": 1.6592214107513428,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "resident-graph": {
+          "pid": 17352,
+          "exit": 0,
+          "started": 1793171444.3034222,
+          "seconds": 1.654104232788086,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct": {
+          "pid": 52196,
+          "exit": 0,
+          "started": 1793171446.6253695,
+          "seconds": 1.7157838344573975,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "runtime-disabled": {
+          "pid": 54956,
+          "exit": 0,
+          "started": 1793171448.5832028,
+          "seconds": 1.6423115730285645,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      "input_counts": {
+        "resident-direct": 221,
+        "resident-graph": 221,
+        "ct": 228,
+        "runtime-disabled": 221
+      },
+      "SDK_inputs": 220,
+      "removed_original_ON_inputs": [
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-closure-20261026\\headers79\\compute_provider_native--torch_cpu_program_cc\\unit.obj",
+          "bytes": 1932042,
+          "sha256": "25fde4e43c412a04e6527a58a361240d67165efa3852ebb8e8688258f80ddcc3"
+        },
+        {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\torch-artifact\\unit.obj",
+          "bytes": 1346875,
+          "sha256": "0a5ea633c721109033e1595875b7b6c48c348210fb41b5b8c0586a22a3c35b9d"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch.lib",
+          "bytes": 1832,
+          "sha256": "a31e4708d2727f3fd81be6957fe8fa6158719d3a03a22cb38c9fa1ad68766daa"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\c10_cuda.lib",
+          "bytes": 65860,
+          "sha256": "deece15705cbade7f41d14736283de25150ea20cbb398c726a959ee00aa609e1"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\torch_cpu.lib",
+          "bytes": 29046564,
+          "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1"
+        },
+        {
+          "path": "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib\\c10.lib",
+          "bytes": 778152,
+          "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba"
+        },
+        {
+          "path": "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib\\torch_cuda.lib",
+          "bytes": 1774574,
+          "sha256": "bf0759f648f84b2ffd1ca75842249b0d8b1dea469bc92167434c5e1af9fea3f4"
+        }
+      ],
+      "recompiled_flag_sensitive_sources": [
+        "src/compute_provider_native/native_provider.cc",
+        "src/compute_provider_native/aten_cpu_provider.cc",
+        "src/compute_route_cuda/cuda_context.cc"
+      ],
+      "retained_common_native": {
+        "native-artifact": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-artifact\\compiled.json",
+            "bytes": 1503,
+            "sha256": "47c6504fd980a330a240d4a055807e58c726d30beb792d7753a8ae92eb3a491c"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-artifact\\unit.obj",
+            "bytes": 629490,
+            "sha256": "0ad36f4c537bfd5424fda2f7a45d60079e472d8d7de08978655fbb95796142bb"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-artifact\\actual-dependencies.json",
+            "bytes": 38996,
+            "sha256": "6a0285a3aa6571225fe5fc14782c4d06dad593221ab920cef28d5a36641f798f"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "cuda-provider": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-provider\\compiled.json",
+            "bytes": 1491,
+            "sha256": "7a8cf6fafda8c8a04d38c0460f2cdd5c975589f3fca0a155fd0ea722ddbb6bef"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-provider\\unit.obj",
+            "bytes": 724995,
+            "sha256": "de5f893fdbd33ef6a82f88e4e1c1157a04661bc64b20a734c994ecd189014f9c"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-provider\\actual-dependencies.json",
+            "bytes": 43946,
+            "sha256": "89609a9c12e4794ffb65c29a07539cd51a7500b434a0040debe126f90681b6ba"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "cuda-policy": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-policy\\compiled.json",
+            "bytes": 1480,
+            "sha256": "c15c4ea9d4a093dc8d576e1a83662b9c2ccc429fdf5568d80434c6c1d3aa857d"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-policy\\unit.obj",
+            "bytes": 645307,
+            "sha256": "71b107ddeca47bcb9aeb30c180ce7bc71ca6d0f1238ae1dba089becaa824d21e"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\cuda-policy\\actual-dependencies.json",
+            "bytes": 35358,
+            "sha256": "ccbd4999f0bb85ea4b35d89fe12f5ebb596c7a3e0884910df369fd97f318f27d"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "graph-packed": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-packed\\compiled.json",
+            "bytes": 1490,
+            "sha256": "d7bc027a87142a59153717f2a7a865420e0e9c1e5aae1245840bae93a3db881e"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-packed\\unit.obj",
+            "bytes": 1126417,
+            "sha256": "c96405b8ce844c7b89d5fb133254ae0a4ac30cf1f7eaac104036a932381e6043"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-packed\\actual-dependencies.json",
+            "bytes": 40824,
+            "sha256": "507c892529a9498da5a1a36abd5ef8f388580200b7438381087dfb71f5cdc7f3"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "graph-dense": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-dense\\compiled.json",
+            "bytes": 1491,
+            "sha256": "0a900d5135882d83dd071f34a218f90db92cce193ab768d4156dc309f0ad8eb1"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-dense\\unit.obj",
+            "bytes": 954080,
+            "sha256": "8b2f921b5ce3715e5707eddb248cc3ceaa364dc99704215b2578b4dc74760454"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-dense\\actual-dependencies.json",
+            "bytes": 39651,
+            "sha256": "039782110866460ee87372cec675ebf2bb63be596b63bc2f485a1bae4f0e6119"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "graph-context": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-context\\compiled.json",
+            "bytes": 1483,
+            "sha256": "8cf6724094923decbfa0a06ae68521f408423f5892f6eb078e382482475b0c04"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-context\\unit.obj",
+            "bytes": 73950,
+            "sha256": "8a4f1ab430b1c507ab23e7b7b467e80868721fdc63fcb121aec3c80f87dedb18"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\graph-context\\actual-dependencies.json",
+            "bytes": 41210,
+            "sha256": "08746768a8bda70a1d53f1d10afbcc548a1e4ce74f23a6c75f29a3e86d8e4128"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        },
+        "native-kernel": {
+          "compiled": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-kernel\\compiled.json",
+            "bytes": 1490,
+            "sha256": "0a03649b18aa72ee3759826833d00f7f4210029ed8f859d105cd29376f602ad9"
+          },
+          "object": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-kernel\\unit.obj",
+            "bytes": 1019913,
+            "sha256": "322a97740cb33d38f1bfe1d4b9087d829891f30dd683b6f223d1e8900a4b397c"
+          },
+          "actual_dependencies": {
+            "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\compile\\native-kernel\\actual-dependencies.json",
+            "bytes": 27310,
+            "sha256": "8907963863e492d7b19959bd6631000a12f933959d526a4baa54602c4bcab872"
+          },
+          "basis": "Current source contains no Torch feature branch. Actual ON dependencies contain no Torch SDK. Reuse unchanged object; kernel not recompiled."
+        }
+      },
+      "run_processes": {
+        "resident-direct": {
+          "pid": 48540,
+          "exit": 0,
+          "started": 1793171456.7867022,
+          "seconds": 0.5786261558532715,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "resident-graph": {
+          "pid": 37872,
+          "exit": 0,
+          "started": 1793171467.8370957,
+          "seconds": 0.7165813446044922,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "ct": {
+          "pid": 48304,
+          "exit": 0,
+          "started": 1793171943.8004405,
+          "seconds": 0.7350106239318848,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "runtime-disabled": {
+          "pid": 9032,
+          "exit": 0,
+          "started": 1793171598.8289928,
+          "seconds": 0.49573802947998047,
+          "state": "TERMINAL",
+          "timed_out": false
+        }
+      },
+      "resident_direct": {
+        "status": "PASS",
+        "process": {
+          "pid": 48540,
+          "exit": 0,
+          "started": 1793171456.7867022,
+          "seconds": 0.5786261558532715,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "report": "PASS CUDA public resident packed consumer: 64 steps, two slots, retained output",
+        "mode": "ATen_OFF",
+        "models": 0
+      },
+      "resident_graph": {
+        "status": "PASS",
+        "process": {
+          "pid": 37872,
+          "exit": 0,
+          "started": 1793171467.8370957,
+          "seconds": 0.7165813446044922,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "reports": [
+          "PASS CUDA Graph packed M=1 bits=4 group=32:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+          "PASS CUDA Graph packed M=17 bits=5 group=64:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+          "PASS CUDA Graph packed M=1 bits=6 group=128:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs",
+          "PASS CUDA Graph packed M=64 bits=8 group=32:65 steps/two slots/shared backing/device IDs/checked failure/new-slot recovery/retained outputs"
+        ],
+        "mode": "ATen_OFF",
+        "models": 0,
+        "capture_test": false,
+        "scope": "Original Commands replay. CT target separately checks capture."
+      },
+      "GTests": {
+        "status": "PASS",
+        "process": {
+          "pid": 48304,
+          "exit": 0,
+          "started": 1793171943.8004405,
+          "seconds": 0.7350106239318848,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "mode": "ATen_OFF",
+        "models": 0,
+        "tests": 16,
+        "passed": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "cases": [
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "OriginalBanksKeepRoundingStridesSlotsAndResults",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "CompleteIdsValidateBeforeSelectedBankAccess",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "MissingIndependentDecoderRejectsPublishedViewAndControlEscapes",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "Nf4SourceHalfRoundsAndMutableNestedOffset",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "MultiplyKeepsSubnormalBeforeAndAfterBfloatCast",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "ScalarLeftDivideKeepsSubnormalBeforeBfloatCast",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "MaturePrefillDecodeThroughNormalEntries",
+            "status": "PASS",
+            "skip_reason": null
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "BroadBf16AttentionKeepsOriginalF32FallbackWithoutAten",
+            "status": "PASS",
+            "skip_reason": null
+          }
+        ],
+        "refinement": "One attention test CXX; unchanged product. Existing legal ggml BF16/F32 managed fallback is checked numerically, not removed.",
+        "BF16_fallback": {
+          "provider": "ggml_cuda",
+          "replay_class": "Managed",
+          "capture_compatibility_asserted": false,
+          "Direct_and_Graph": true,
+          "seeds": [
+            0,
+            3,
+            9
+          ],
+          "last_query_scale": 1048576,
+          "original_tolerance": 0.01
+        }
+      },
+      "thread_runtime_disabled": {
+        "status": "PASS",
+        "process": {
+          "pid": 9032,
+          "exit": 0,
+          "started": 1793171598.8289928,
+          "seconds": 0.49573802947998047,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "report": "PASS CPU runtime --disabled backend=0 configured=0 observed=0 used=0",
+        "mode": "ATen_OFF",
+        "models": 0,
+        "scope": "Unavailable thread-runtime metadata/configure refusal; original ggml Abs native-thread budget and numerical replay."
+      },
+      "original_CT_failure": {
+        "process": {
+          "pid": 51512,
+          "exit": 1,
+          "started": 1793171475.5133872,
+          "seconds": 0.6877622604370117,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "tests": 16,
+        "passed": 15,
+        "failed": 1,
+        "cases": [
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "OriginalBanksKeepRoundingStridesSlotsAndResults",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "CompleteIdsValidateBeforeSelectedBankAccess",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "MissingIndependentDecoderRejectsPublishedViewAndControlEscapes",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "Nf4SourceHalfRoundsAndMutableNestedOffset",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "MultiplyKeepsSubnormalBeforeAndAfterBfloatCast",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "ScalarLeftDivideKeepsSubnormalBeforeBfloatCast",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "MaturePrefillDecodeThroughNormalEntries",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "MissingBroadBf16AttentionDoesNotChangePrecisionOrMaterializeScores",
+            "status": "FAIL",
+            "failures": [
+              {
+                "message": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc:120\nValue of: prepared\n  Actual: true\nExpected: false\n",
+                "text": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc:120\nValue of: prepared\n  Actual: true\nExpected: false\n"
+              }
+            ]
+          }
+        ],
+        "classification": "Test expectation error: legal existing ggml BF16 attention uses F32 Q/K/V/scores/softmax/PV and final BF16 output. Product/math unchanged.",
+        "test_assertion_owner": "root",
+        "provider_or_math_changed": false,
+        "retained_original": true,
+        "successful_other_OFF_arms_not_rerun": true
+      },
+      "second_CT_failure": {
+        "process": {
+          "pid": 56040,
+          "exit": 1,
+          "started": 1793171799.7736418,
+          "seconds": 0.7130661010742188,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "tests": 16,
+        "passed": 15,
+        "failed": 1,
+        "cases": [
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "OriginalBanksKeepRoundingStridesSlotsAndResults",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedGrouped",
+            "name": "CompleteIdsValidateBeforeSelectedBankAccess",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "CapturedDynamicInputsRebindAcrossOwnedSlotsAndRetainResults",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "MissingIndependentDecoderRejectsPublishedViewAndControlEscapes",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "OriginalPackedConstantsDoNotRetainOrWorkspaceADenseWeightBank",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaCtPackedLinear",
+            "name": "Nf4SourceHalfRoundsAndMutableNestedOffset",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "OriginalPackedBanksKeepSourceRoundsSlotsAndIndexUpdates",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "CompleteIndexValidationPrecedesSelectedScaleAndZeroAccess",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaGptqReferenceGraph",
+            "name": "PublishedDecodedWeightsKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "StoredCodesScalesAndCodeDotSurviveSlotsAndUpdates",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "IeeeScalarUpdatesKeepReciprocalAndSeparateScaleRounds",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaStaticFp8ReferenceGraph",
+            "name": "PublishedCodeValuesKeepTheOriginalCapturedDecomposition",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "MultiplyKeepsSubnormalBeforeAndAfterBfloatCast",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaScalarFloatGraph",
+            "name": "ScalarLeftDivideKeepsSubnormalBeforeBfloatCast",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "MaturePrefillDecodeThroughNormalEntries",
+            "status": "PASS",
+            "failures": []
+          },
+          {
+            "suite": "CudaDefaultGraph",
+            "name": "BroadBf16AttentionKeepsOriginalF32FallbackWithoutAten",
+            "status": "FAIL",
+            "failures": [
+              {
+                "message": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc:126\nValue of: prepared->runtime_properties().capture_compatible\n  Actual: true\nExpected: false\n",
+                "text": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc:126\nValue of: prepared->runtime_properties().capture_compatible\n  Actual: true\nExpected: false\n"
+              }
+            ]
+          }
+        ],
+        "CXX": {
+          "pid": 39340,
+          "exit": 0,
+          "started": 1793171783.2315478,
+          "seconds": 2.526456832885742,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "link": {
+          "pid": 48540,
+          "exit": 0,
+          "started": 1793171792.7720401,
+          "seconds": 1.7299282550811768,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "classification": "Test expectation error: original lowered bridge::record_compatible reports true; the added capture_compatible=false assertion was unproved. Numerical three-seed/large-BF16 checks reported no other failure. Product/math unchanged.",
+        "test_assertion_owner": "root",
+        "provider_or_math_changed": false,
+        "retained_original": true,
+        "successful_other_OFF_arms_not_rerun": true
+      },
+      "attention_oracle_refinement": {
+        "CXX": {
+          "pid": 43228,
+          "exit": 0,
+          "started": 1793171925.079825,
+          "seconds": 2.499786615371704,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "link": {
+          "pid": 55388,
+          "exit": 0,
+          "started": 1793171935.272962,
+          "seconds": 1.7125513553619385,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\graph_route_cuda\\attention_test.cc",
+          "bytes": 9201,
+          "sha256": "042303b88b88d21bb8f95ac713cf52152d4ed701ce0589390fcf61753308dbb6"
+        },
+        "previous_source": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\source\\tests\\graph_route_cuda\\attention_test.cc",
+          "bytes": 6684,
+          "sha256": "de73d76429ead2bf6ebb33afdc12ae0d5eefbd4d19e59b828420aaa07c1f611b"
+        },
+        "patch": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\attempt3\\attention-oracle.diff",
+          "bytes": 5605,
+          "sha256": "3cff5f22b5dc29d52fefd70e8e26183f37599da4f5b92b09cd226c66c76412d0"
+        },
+        "ON_attention_dependency": false,
+        "product_CXX_changed": false,
+        "scope": "Each correction rebuilt only one attention test TU and its CT image. Other three OFF successful native workflows preserved. Final test retains original actual capture compatibility without asserting false."
+      },
+      "images": {
+        "resident-direct": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\bin\\resident-direct.exe",
+          "bytes": 139378688,
+          "sha256": "0b37043ec94cfc31b68f4dfee05c6742e0b6ad879786af9b9d35822fb47154b1"
+        },
+        "resident-graph": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\bin\\resident-graph.exe",
+          "bytes": 140058112,
+          "sha256": "1aad97f969b93b3639565082ea4c17bf704f764041222eac795ecf9604b3de09"
+        },
+        "ct": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\attempt3\\bin\\ct.exe",
+          "bytes": 140737536,
+          "sha256": "a0b7ed3214e995905ea9ee7853795efa2d6af91fe76e87277318f17bc8d29f3d"
+        },
+        "runtime-disabled": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\bin\\runtime-disabled.exe",
+          "bytes": 139398144,
+          "sha256": "1da7492d42f009c764397f247390569ed1d8e5b720c8b87e04147a6928e7c734"
+        }
+      },
+      "runtime": {
+        "PATH": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\off-validation\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\validation\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-routing-20261028\\validation\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-cohort-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-preparation-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-execution-episode-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-program-io-20261028\\cuda\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-logits-20261028\\refinement\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-sampling-20261028\\refinement-v4\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-refinement-20261028\\final\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-stop-policy-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-logits-preflight-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-store-20261028\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\followup-budget\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-stable-attention-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-recovery-final-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-continuous-wave-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-wave-ownership-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-store-source-range-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-generic-output-source-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-identical-capture-inputs-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-continuation-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-ahead-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-alias-role-filter-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-batch-facts-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-successor-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-model-submission-source-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-metadata-queue-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-relay-carriers-20261027\\attempt2\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-engine-slot-state-20261027\\formal-cuda2;C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin2;C:\\public\\project-hyle\\hyle\\.scratch\\inference-batched-slot-controls-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link2;C:\\public\\project-hyle\\hyle\\.scratch\\inference-indexed-conv-20261027\\link;C:\\public\\project-hyle\\hyle\\.scratch\\inference-cpu-storage-gather-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-native-slot-store-20261027\\windows-shared\\attempt2\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-paged-frame-20261026\\engine\\cuda\\link;C:\\public\\project-hyle\\hyle\\.scratch\\inference-synchronous-step-report-20261025\\cuda\\link;C:\\public\\project-hyle\\hyle\\.scratch\\mtp-fixed-hidden-output-20261025\\integrated\\link;C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-cuda-20261025\\link;C:\\public\\project-hyle\\hyle\\.scratch\\qwen35-unsloth-mtp-20261024\\engine-check\\native-current;C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\engine-check\\native-current;C:\\public\\project-hyle\\hyle\\.scratch\\mtp-full-quant-20261024\\engine-check;C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-budget-fix1\\engine-link;C:\\public\\project-hyle\\hyle\\.scratch\\engine-product-20261024\\cpu-build5\\link;C:\\public\\project-hyle\\hyle\\.scratch\\qwen-mtp-quality-20261022\\current-refresh-20261024\\hyle-link2;C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\orin-proposal\\mmq-query-proposal\\focused-link2;C:\\public\\project-hyle\\hyle\\.scratch\\mtp-packed-head-20261024\\parity-current-integration\\current-link1;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-final-mixed-probe\\ggml\\src;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\lib\\x64;C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cuda-final-u3-delivery\\reference-windows\\lib;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\x64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\Llvm\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8 Tools\\x64\\;C:\\Program Files (x86)\\HTML Help Workshop;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\FSharp\\Tools;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\Tools\\;C:\\Program Files\\PowerShell\\7;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0Ie9odC;C:\\Program Files\\nvm\\v24.12.0\\node_modules\\@openai\\codex\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin\\x64;C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v13.3\\bin;C:\\Program Files\\Python312\\Scripts;C:\\Program Files\\Python312;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files (x86)\\Common Files\\Intel\\Shared Libraries\\redist\\intel64\\compiler;C:\\Program Files (x86)\\Razer Chroma SDK\\bin;C:\\Program Files\\Razer Chroma SDK\\bin;C:\\Program Files (x86)\\Razer\\ChromaBroadcast\\bin;C:\\Program Files\\Razer\\ChromaBroadcast\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Windows\\System32\\OpenSSH;C:\\Program Files\\dotnet;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn;C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files (x86)\\NVIDIA Corporation\\PhysX\\Common;C:\\Program Files\\PuTTY;C:\\Program Files\\Git LFS;C:\\Windows\\system32\\config\\systemprofile\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\NvDLISR;C:\\public\\tools\\glslang;C:\\Program Files (x86)\\Incredibuild;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit;C:\\Program Files\\Tailscale;C:\\Program Files\\Sunshine;C:\\Program Files\\Sunshine\\tools;C:\\public\\tools\\cmd;C:\\Program Files\\cursor\\resources\\app\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\TortoiseGit\\bin;C:\\Program Files\\nvm;C:\\Program Files\\nodejs;C:\\Users\\kiro\\.local;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2025.1.1;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn;C:\\Program Files\\GitHub CLI;C:\\public\\tools\\axiomate;C:\\Program Files\\NVIDIA Corporation\\Nsight Compute 2026.2.1\\;C:\\Program Files\\dotnet\\;C:\\Program Files\\CMake\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files (x86)\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files (x86)\\Windows Kits\\8.1\\Windows Performance Toolkit\\;C:\\Users\\kiro\\AppData\\Local\\Programs\\OpenAI\\Codex\\bin;C:\\Users\\kiro\\.grok\\bin;C:\\Users\\kiro\\.cargo\\bin;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\kiro\\.dotnet\\tools;C:\\Program Files\\OpenCppCoverage;C:\\Users\\kiro\\.local\\bin;C:\\Users\\kiro\\.bun\\bin;C:\\Users\\kiro\\AppData\\Local\\Microsoft\\WinGet\\Links;C:\\Program Files\\NVIDIA\\CUDNN\\v9.24\\bin\\13.3\\x64;C:\\public\\TensorRT-11.1.0.106\\bin;C:\\Program Files\\lceda-pro;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Users\\kiro\\.espressif\\eim_gui;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\vcpkg;C:\\public\\project-hyle\\hyle\\.scratch\\qwen-cpu-vulkan-20261024\\smoke-attempt6;C:\\public\\project-hyle\\hyle\\.scratch\\gdn-vulkan-output-scale-20261024\\link1;C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src;C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\src\\compute_ggml_runtime\\vendor\\src\\ggml-vulkan;C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\_deps\\iv\\build\\runtime\\src\\iree\\runtime;C:\\public\\project-hyle\\hyle\\.scratch\\bench-api-runtime\\vulkan\\build\\native\\hyle\\_deps\\iv\\build\\build_tools\\third_party\\flatcc;C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\lib;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0OLGnVV;C:\\Users\\kiro\\.codex\\packages\\standalone\\releases\\0.163.0-x86_64-pc-windows-msvc\\codex-path;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\kiro\\AppData\\Local\\Author Software\\nvm;C:\\Users\\kiro\\AppData\\Local\\Author Software\\nvm\\.nodejs;C:\\Users\\kiro\\.codex\\tmp\\arg0-windows\\codex-arg0wPJt2u;C:\\public\\project-hyle\\hyle\\.scratch\\inference-generation-continuation-20261027\\component-written-prefix\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-deferred-source-bind-20261027\\attempt-final\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-deferred-source-bind-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-submission-source-20261027\\bin2;C:\\public\\project-hyle\\hyle\\.scratch\\inference-submission-source-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-capture-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-region-20261027\\bin2;C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-region-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-detach-20261027\\bin;C:\\public\\project-hyle\\hyle\\.scratch\\inference-graph-output-source-20261027\\bin",
+        "native": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-slot-cohort-refinement-20261028\\bin\\hyle_ggml_cpu_gdn_scale_v3.dll",
+          "bytes": 1206784,
+          "sha256": "6652209e40620d8fd4281df984f543e03736661fd0f2a403e62b323e4057fe1f"
+        },
+        "removed_environment_directories": {
+          "PATH": [
+            "C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sdks\\torch-cpu\\Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d\\libtorch\\lib",
+            "C:\\public\\tools\\hyle-dependencies\\v1\\sdks\\torch-cuda-leaf\\Windows-2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d\\torch\\lib"
+          ],
+          "INCLUDE": [],
+          "LIB": [],
+          "LIBPATH": []
+        },
+        "note": "Runtime inherits normal environment but explicit Torch SDK search directories are removed; GGML CPU DLL is a same-file hardlink. No model/performance claim."
+      },
+      "consumer_recipe_boundary": "Tests were disabled in the real OFF configure. Nine consumers explicitly adapt actual OFF native/Graph compiler flags; only six GTest sources add original GTest includes.",
+      "OFF_CXX_or_native_validation_claim": true
+    }
+  },
+  "post_ON_metadata_amendment": {
+    "receipt": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\verification-amendment.json",
+      "bytes": 3317,
+      "sha256": "9ba4c531c3b6967bf5d987495325b7dd8568ecada77f2599306f870cf1bc2f03"
+    },
+    "original_handoff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\handoff.json",
+      "bytes": 34266,
+      "sha256": "a559bec39298fa365ff59b54377771a7f12c0d5b1e72aaca54832d9ee33d25c7"
+    },
+    "current_handoff": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\handoff.json",
+      "bytes": 35403,
+      "sha256": "43aba71fd1eab4f9b0826e505c8f116d916a8ad45e77c5ad90db4dc5b096073d"
+    },
+    "original_handoff_bytes_retained": false,
+    "source_and_header_pins_verified": 148,
+    "source_snapshots_verified": 20,
+    "meaning": "License registry duplication fixed in CMake metadata after ON validation; original plan/freeze pin stays historical. No CXX source/header change, rebuild or successful-native rerun."
+  },
+  "final_native_codec_owner": {
+    "amendment": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-optional-aten-20261028\\native-codec-owner-amendment.json",
+      "bytes": 3612,
+      "sha256": "492a20e61ff9b1d4e2e5707c3200ff87523c9b1189975e54aacea55a2c0c1a03"
+    },
+    "meaning": "After the historical foundation ownership correction, the codec registry was moved to its sole actual consumer compute_provider_cuda. Final same-cache fourth configure/generated review verifies this CMake-only change; prior CXX/native results are not rerun."
+  },
+  "dependency_lock_correction": {
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+      "bytes": 77554,
+      "sha256": "78aaaf9acba4a4f88f992689ceeb49e3fb2e12f315f14b135242ab49ffa2acc3"
+    },
+    "dependency": "sglang_activation",
+    "old_line": "        \"tree_sha256\": \"56a90e3b035652699746d3deba35bc7305160a375aa242ec681945500b19ae7d\"",
+    "new_line": "        \"tree_sha256\": \"4b4cff74b5e167e4a56e3be07a7f9420a1559f35b40b201471586cf71c630414\"",
+    "scope": "Single tree_sha256 lock string matches the existing vendored content. First configure expected/actual mismatch is preserved; no source download or codec CXX change."
+  },
+  "tooling": [
+    {
+      "label": "compute_routes_test",
+      "process": {
+        "pid": 54096,
+        "exit": 1,
+        "started": 1793169062.8307874,
+        "seconds": 10.420714616775513,
+        "state": "TERMINAL"
+      }
+    },
+    {
+      "label": "compute_routes_test-attempt2",
+      "process": {
+        "pid": 46824,
+        "exit": 0,
+        "started": 1793169339.7514083,
+        "seconds": 12.162064790725708,
+        "state": "TERMINAL"
+      }
+    },
+    {
+      "label": "development_scripts_test",
+      "process": {
+        "pid": 25364,
+        "exit": 0,
+        "started": 1793169061.945569,
+        "seconds": 0.8767132759094238,
+        "state": "TERMINAL"
+      }
+    }
+  ],
+  "limits": [
+    "DefaultON and OFF use distinct binaries/feature flags and finite component batches; neither is a whole SDK rebuild/install-consumer validation.",
+    "Two resident workflows plus41 original GTests, not43 interchangeable test cases. Graph resident uses Commands; originalCT cases cover capture.",
+    "OFF has two resident workflows, the actual CT5+attention XML cases and one CPU --disabled process; ON optional decoder/TF32/allocator coverage is not claimed for OFF.",
+    "Both initial OFF CT failures are preserved as15PASS/1FAIL. Final corrected CT numerical oracle is a distinct one-test-TU image; not all OFF workflows rerun on that image.",
+    "No full-model inference, throughput, trained quality or new-platform runtime claim.",
+    "Old handoff JSON bytes were not saved by its author; the original historical identity remains in recipes/plan/freeze and the amendment states that limit.",
+    "Source/kernel snapshots, exact17recipes/actualdeps and unchanged148project pins preserve ON compiler inputs despite metadata handoff update."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-optional-aten-2026-10-28.zip",
+    "bytes": 1911444,
+    "sha256": "f22b19ed2003df675bfcb9df914bbddba3e8b45ea1292e24b57efb61dcc060c9",
+    "members": 663,
+    "manifest_sha256": "13d00ce0b049d767682054e226816f5d6fc99e0d0bb4df99634e2ed60ce296b1",
+    "CRC": "PASS",
+    "all_member_SHA256": "PASS"
+  }
+}

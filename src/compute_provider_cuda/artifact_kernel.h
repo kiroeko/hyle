@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cuda_runtime_api.h>
 
-namespace hyle::compute::torch_cuda::native {
+namespace hyle::compute::cuda_native::artifact::native {
 enum class MlxFormat { kAffine, kMxfp4, kMxfp8 };
 enum class MlxKind { kLinear, kGrouped, kEmbedding };
 enum class MlxOrientation { kTransposeWeight, kWeightAsStored };
@@ -52,4 +52,4 @@ cudaError_t artifact_packed_linear_launch(const ArtifactPacked &program,
 cudaError_t gptq_decode_launch(const ArtifactPacked &program,
     const void *const *inputs, void *output, unsigned *status,
     cudaStream_t stream) noexcept;
-} // namespace hyle::compute::torch_cuda::native
+} // namespace hyle::compute::cuda_native::artifact::native

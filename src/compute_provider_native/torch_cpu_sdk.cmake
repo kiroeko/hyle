@@ -1,8 +1,11 @@
 include_guard(GLOBAL)
 
-# Complete CPU products require this SDK; exact factors derive private
-# availability from their selected DAG. There is no public Provider option.
+# The optional tensor runtime is shared by CPU/CUDA dependency selection.
+# Exact factors still derive their native availability from the selected DAG.
 set(_HYLE_COMPUTE_HAVE_TORCH_CPU OFF)
+if(NOT HYLE_WITH_ATEN)
+  return()
+endif()
 if(DEFINED _HYLE_COMPUTE_REQUEST_CPU AND NOT _HYLE_COMPUTE_REQUEST_CPU)
   return()
 endif()

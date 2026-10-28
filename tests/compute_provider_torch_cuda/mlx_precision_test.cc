@@ -18,7 +18,7 @@
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
-#include "hyle/compute/providers/torch_cuda.h"
+#include "hyle/compute/providers/cuda.h"
 #include "hyle/graph/cuda.h"
 #include "../compute_models/mlx_moe_fixture.h"
 
@@ -105,7 +105,7 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
   auto prepared_result=c::prepare(context,operation,descriptors,descriptions,resource.ref());
   ASSERT_TRUE(prepared_result)<<prepared_result.error().message();
   auto prepared=std::move(*prepared_result);
-  EXPECT_EQ(prepared.provider().id,c::torch_cuda::kProviderId);
+  EXPECT_EQ(prepared.provider().id,c::cuda_native::kProviderId);
   auto invocation=prepared.create_invocation().value();
   auto output=mem::Buffer::create(resource.ref(),descriptions[0].required_bytes().value(),256).value();
   const std::array destinations{c::TensorView::create(descriptions[0],output.view()).value()};

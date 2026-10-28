@@ -7,6 +7,7 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
   hyle_add_module(compute_provider_cuda SOURCES
     collectives_provider.cc collectives.cu sampling_provider.cc sampling_kernel.cu
     cuda_provider.cc native_kernel.cu sglang_kernel.cu sglang_norm_kernel.cu
+    artifact_provider.cc artifact_kernel.cu
     router_provider.cc sglang_router_kernel.cu fp8_provider.cc grouped_fp8_provider.cc
     deepseek_fp8_provider.cc deepseek_grouped_fp4_provider.cc grouped_fp4_f32_kernel.cu
     tensor_provider.cc tensor_kernel.cu norm_provider.cc norm_kernel.cu
@@ -98,6 +99,14 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-LICENSE"
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/TILELANG-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-TILELANG-LICENSE"
       "${PROJECT_SOURCE_DIR}/third_party/deepseek_quantization/CUTLASS-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|deepseek-quantization-CUTLASS-LICENSE")
+  # Only the native packed kernels use this codec; the optional ATen adapter
+  # has no codec dependency. Keep its original installed license filenames.
+  hyle_register_package_dependency(
+    NAME mlx_cuda_quant OWNER compute_provider_cuda
+    LOCKED_DEPENDENCIES mlx_cuda_quant
+    RUNTIME_FILE_SPECS
+      "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx_cuda_quant-LICENSE"
+      "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx_cuda_quant-NOTICE.md")
 else()
   hyle_add_module(compute_provider_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_cuda PROPERTY

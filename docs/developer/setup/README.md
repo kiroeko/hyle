@@ -63,6 +63,7 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 | `--config Debug` | `Release`、`Debug`、`RelWithDebInfo` 或 `MinSizeRel` |
 | `--compiler clang` | `auto`、`gcc`、`clang`、`msvc` 或 `clang-cl` |
 | `--tests`、`--static` | 开启测试、选择静态库；均有对应 `--no-...` 形式 |
+| `--aten`、`--no-aten` | 默认启用可选 ATen CPU/CUDA 数学实现；关闭时省去 ATen SDK，保留独立原生实现，具体能力边界见下文 |
 | `--sanitizer asan` | `off`、`asan`、`tsan` 或 `ubsan`，受平台支持范围约束 |
 | `--tls`、`--http2`、`--trace` | 开启所需协议或诊断能力 |
 | `--name <label>` | 为常用配置设置简短标签 |
@@ -74,6 +75,16 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对应 Apple MLX/Metal 实现。
 这些参数选择编译进库的可用能力；引擎运行时使用 CPU、GPU 或混合执行，由具体 Context 和引擎策略决定。
 请求能力缺少系统 SDK 时明确失败，不静默裁剪。
+
+`--no-aten` 对应 CMake `HYLE_WITH_ATEN=OFF`，同时控制 CPU 和 CUDA 的 ATen 适配器；
+不会取得、链接或安装 ATen SDK。CPU/CUDA 的原生 kernel、ggml、cuBLAS、FlashInfer 及其它
+独立实现仍按所选后端装配；CUDA 的 MLX packed、GPTQ 解码、CT/GPTQ/NF4 融合线性和
+stored-scale FP8 不依赖 ATen。关闭后不承诺原 ATen 的全部 dtype、布局和制品解码范围：
+例如 CUDA 广域 BF16 融合 SDPA、NF4/AWQ/CT 独立解码，以及部分 CPU 数学/制品路径可能
+没有实现；没有其它合法实现时，冷准备返回 `Unimplemented`，不会改精度或转到 CPU。
+普通 BF16 attention 仍可使用原 ggml F32 计算路径；它可能物化随 Q×KV 增长的临时矩阵，
+属于 managed 执行，不能当作不分配 scores 的融合 SDPA。应检查实际 Provider 和资源需求。
+Metal/Vulkan 的原生实现不受此开关影响。
 
 完整参数及默认值以各脚本 `--help` 为准。`build.py --target <name>` 可重复；
 `test.py --filter <regex>` 使用 CTest 名称过滤，`--list` 只列出测试。

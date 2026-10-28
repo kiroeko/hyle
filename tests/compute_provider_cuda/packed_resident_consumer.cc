@@ -12,7 +12,7 @@
 #include <hyle/compute/cuda.h>
 #include <hyle/compute/model_ops.h>
 #include <hyle/compute/prepared_operation.h>
-#include <hyle/compute/providers/torch_cuda.h>
+#include <hyle/compute/providers/cuda.h>
 #include <hyle/mem/buffer.h>
 
 namespace {

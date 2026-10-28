@@ -13,7 +13,7 @@
 
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/compute/model_ops.h>
-#include <hyle/compute/providers/torch_cuda.h>
+#include <hyle/compute/providers/cuda.h>
 #include <hyle/graph/cuda.h>
 #include <hyle/mem/buffer.h>
 
@@ -103,7 +103,7 @@ void run(std::int64_t rows, unsigned bits, unsigned group) {
     std::size_t packed_steps = 0;
     for (std::size_t i = 0; i < compiled.report.step_count(); ++i) {
       const auto step = take(compiled.report.step(i));
-      if (step.provider.id == c::torch_cuda::kProviderId) {
+      if (step.provider.id == c::cuda_native::kProviderId) {
         ++packed_steps;
         check(!step.runtime.blocks_host, "Graph selected a host-blocking packed implementation");
       }

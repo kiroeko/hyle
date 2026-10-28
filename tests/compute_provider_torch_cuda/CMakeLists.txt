@@ -1,6 +1,6 @@
 hyle_add_header_self_contained_test(compute_provider_torch_cuda
   HEADER_DIR compute/providers HEADERS torch_cuda.h)
-if(_HYLE_COMPUTE_HAVE_CUDA)
+if(_HYLE_COMPUTE_HAVE_CUDA AND HYLE_WITH_ATEN)
   hyle_add_test(compute_provider_torch_cuda SOURCES failure_test.cc mlx_precision_test.cc packed_test.cc
     DEPS hyle_compute_route_cuda hyle_graph_route_cuda hyle_compute_backend_cuda)
   get_target_property(_cuda_leaf hyle_vendor_c10_cuda IMPORTED_LOCATION)
@@ -26,7 +26,4 @@ if(_HYLE_COMPUTE_HAVE_CUDA)
     target_compile_options(hyle_compute_provider_torch_cuda_attention_test PRIVATE ${_torch_flags})
   endif()
   hyle_stage_runtime(hyle_compute_provider_torch_cuda_attention_test)
-  hyle_add_test(compute_provider_torch_cuda NAME packed_consumer
-    SOURCES packed_resident_consumer.cc DEPS hyle_compute_backend_cuda hyle_compute_route_cuda)
-  hyle_stage_runtime(hyle_compute_provider_torch_cuda_packed_consumer_test)
 endif()

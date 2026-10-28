@@ -12,6 +12,9 @@
 单会话普通／MTP的最近跨引擎完整表见[目标与当前基线](#目标与当前基线)；
 下面的B2、CPU和局部候选属于不同窗口，各自保留版本与测量边界。
 
+下一轮优先测GDN a/b合并投影的整模型候选；先核输出／状态与实际路由，再做普通／MTP完整四项对照。
+既有叶子实验M2更快、M1更慢，不能直接采用或用叶子收益代签整模型。当前CPU路由与ATen可选拆分的有限检查不更新CUDA吞吐表。
+
 最新[Store cohort与固定IO直接A/B](../../evidence/performance/inference-store-cohort-current-window-2026-10-28.json)于北京时间
 2026-10-28 **13:59:37～14:01:25**完成16进程，2c0f→dfa9；229项CLI只换Model、Graph resources及slots-region三个对象。
 普通auto的prefill／decode／综合中位为2121.42→2201.42／97.60→97.79／89.23→89.34tok/s；

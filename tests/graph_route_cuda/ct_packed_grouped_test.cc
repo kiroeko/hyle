@@ -34,5 +34,8 @@ void exercise(unsigned journey) {
 }
 TEST(CudaCtPackedGrouped, OriginalBanksKeepRoundingStridesSlotsAndResults) { exercise(0); }
 TEST(CudaCtPackedGrouped, CompleteIdsValidateBeforeSelectedBankAccess) { exercise(1); }
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+// An escaping decoded bank requires the independent optional ATen decoder.
 TEST(CudaCtPackedGrouped, PublishedDecodeRetainsTheOriginalGraph) { exercise(2); }
+#endif
 } // namespace

@@ -131,8 +131,11 @@ CPU的[冷偏好](../../src/compute_route_cpu/default_policy.cc)集中在默认f
 完整Graph region继续先于单算子叶子，packed matvec原跨行复用偏好和selected-byte Gather原码路径保留。
 [有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖不同秩、IEEE、输入更新、默认路由和线程启动合同，
 明确保留1项可选模型fixture跳过；原实现的SIMD分派负责实际ISA检查，策略不引入热路径计时。
-ATen可选依赖正在拆分：不调用ATen的原生packed能力应留在原生CUDA，真正的ATen SDPA及制品解码按实际能力选择；
-关闭依赖后的能力与安装闭包仍待有限构建检查，不承诺所有BF16 attention／decoder覆盖不变。
+ATen由默认ON的`HYLE_WITH_ATEN`统一控制；不调用ATen的MLX／packed／GPTQ／stored-scale FP8能力归原生CUDA，
+真正的ATen SDPA及制品解码保留可选适配器。原生Graph region在同一个Native Provider上合并发现，避免重复身份。
+[ON／OFF有限检查](../evidence/correctness/inference-optional-aten-2026-10-28.json)及真实OFF生成闭包已完成，安装消费与其它平台未测。
+关闭ATen不等于拒绝全部BF16 attention：原ggml F32计算仍合法，可能物化scores，实际capture能力由lowered程序证明；
+不能把它描述为不分配scores的融合SDPA，也不承诺原ATen decoder覆盖不变。
 页工作帧及页追加program的公开头由既有`compute_batch`交付，与实现和导出宏一致；
 [配置检查](../evidence/correctness/inference-header-ownership-2026-10-28.json)保留首次误归compute的失败及修正后16项通过，不增加反向依赖。
 

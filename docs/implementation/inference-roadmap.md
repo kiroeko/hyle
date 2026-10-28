@@ -45,6 +45,9 @@ MTP捕获数为2／5，旧重录次数不再代表当前瓶颈。仍有准备／
 CPU默认路由已删除旧41点、两个特例和硬件／配方资格机制，由同一facade按原能力与算法选择；
 [有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖普通Compute／Graph、IEEE、线程及原码Gather，
 其它算子的成本覆盖和跨平台仍需继续，不从局部Exp结果推定完整推理加速。
+统一ATen可选拆分的[本机ON／OFF有限检查](../evidence/correctness/inference-optional-aten-2026-10-28.json)已完成；
+关闭后原生量化及合法ggml BF16／F32回退保留，安装消费与其它平台未测。下一项先做GDN a/b小投影整模型候选，
+必要输出／状态核对后立即刷新四项性能，不把其它架构提取作为本次测速前置。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。

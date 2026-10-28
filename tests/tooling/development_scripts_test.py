@@ -156,6 +156,14 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.succeeds("build", "--target", "hyle_engine")
         self.assertEqual(self.commands[-1][-2:], ["--target", "hyle_engine"])
 
+    def test_optional_aten_selection_is_cached_and_can_be_changed(self):
+        self.succeeds("init", "--name", "native", "--components", "compute,graph", "--no-aten")
+        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "OFF")
+        self.succeeds("init", "--name", "native")
+        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "OFF")
+        self.succeeds("init", "--name", "native", "--aten")
+        self.assertEqual(support.read_cache(self.selected())["HYLE_WITH_ATEN"], "ON")
+
     def test_engine_prepares_selected_route_and_debug_test_configuration(self):
         self.succeeds("init", "--name", "engine-debug", "--backends", "vulkan",
                       "--config", "Debug", "--tests")

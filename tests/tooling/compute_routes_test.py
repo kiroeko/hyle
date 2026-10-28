@@ -105,6 +105,15 @@ class ComputeRoutesTest(unittest.TestCase):
                     system=system, processor="aarch64"),
                     "cuda|OFF|ON|OFF|OFF")
 
+    def test_without_aten_native_routes_do_not_require_its_host_sdk(self):
+        for route, expected in (("cpu", "cpu|ON|OFF|OFF|OFF"),
+                                ("cuda", "cuda|OFF|ON|OFF|OFF")):
+            with self.subTest(route=route):
+                self.assertEqual(self.resolve(
+                    f'set(HYLE_WITH_ATEN OFF)\nset(HYLE_COMPUTE_ROUTES {route})\n'
+                    'hyle_resolve_compute_product_routes("graph")',
+                    system="Linux", processor="aarch64"), expected)
+
     def test_developer_factor_closure_and_platform_off_headers(self):
         body = ('set(HYLE_BUILD_COMPUTE_BACKEND_CPU ON)\n'
                 'set(HYLE_BUILD_COMPUTE_BACKEND_CUDA ON)\n'

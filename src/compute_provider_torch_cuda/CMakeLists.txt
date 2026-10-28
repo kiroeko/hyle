@@ -1,4 +1,4 @@
-if(NOT _HYLE_COMPUTE_HAVE_CUDA)
+if(NOT _HYLE_COMPUTE_HAVE_CUDA OR NOT HYLE_WITH_ATEN)
   hyle_add_module(compute_provider_torch_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_torch_cuda PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
@@ -15,30 +15,14 @@ endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_fetch.cmake")
 hyle_resolve_torch_cuda_leaf("${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json" _cuda_root)
 hyle_import_torch_cuda_leaf("${_cuda_root}" "${_cpu_root}" GLOBAL)
-hyle_audit_in_tree_dependencies(bitsandbytes_cuda awq_cuda compressed_tensors_cuda mlx_cuda_quant)
-enable_language(CUDA)
-hyle_add_module(compute_provider_torch_cuda SOURCES artifact_provider.cc mlx_packed_kernel.cu)
-set_target_properties(hyle_compute_provider_torch_cuda PROPERTIES
-  CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
-target_compile_options(hyle_compute_provider_torch_cuda PRIVATE
-  "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
-if(NOT MSVC AND NOT HYLE_SANITIZER STREQUAL "off")
-  target_compile_options(hyle_compute_provider_torch_cuda PRIVATE
-    "$<$<COMPILE_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
-  target_link_options(hyle_compute_provider_torch_cuda PRIVATE
-    "$<$<LINK_LANGUAGE:CUDA>:--forward-unknown-to-host-compiler>")
-endif()
-if(MSVC)
-  target_compile_options(hyle_compute_provider_torch_cuda PRIVATE
-    "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8,/wd4211>")
-endif()
+hyle_audit_in_tree_dependencies(bitsandbytes_cuda awq_cuda compressed_tensors_cuda)
+hyle_add_module(compute_provider_torch_cuda SOURCES artifact_provider.cc)
 hyle_target_compute_capability(hyle_compute_provider_torch_cuda torch_cuda)
 target_include_directories(hyle_compute_provider_torch_cuda PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute" "${HYLE_SOURCE_DIR}/src/compute_backend_cuda"
   "${HYLE_SOURCE_DIR}/third_party/bitsandbytes_cuda"
   "${HYLE_SOURCE_DIR}/third_party/awq_cuda"
-  "${HYLE_SOURCE_DIR}/third_party/compressed_tensors_cuda"
-  "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant")
+  "${HYLE_SOURCE_DIR}/third_party/compressed_tensors_cuda")
 target_include_directories(hyle_compute_provider_torch_cuda SYSTEM PRIVATE
   "${_cpu_root}/include" "${_cpu_root}/include/torch/csrc/api/include" "${_cuda_root}/include")
 target_link_libraries(hyle_compute_provider_torch_cuda PRIVATE

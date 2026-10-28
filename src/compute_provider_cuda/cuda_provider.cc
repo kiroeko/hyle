@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "concat_provider.h"
+#include "artifact_provider.h"
 #include "causal_conv_provider.h"
 #include "blockwise_w4a8_provider.h"
 #include "fp8_provider.h"
@@ -169,6 +170,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
       return normalization::sglang_propose(request, inputs, outputs, proposal);
   }
   if constexpr (!Sglang) {
+    if (artifact::handles(request.operation))
+      return artifact::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
         request.operation.custom_as<sequence_ops::PackedCausalConv1d>())
       return sequence::propose(request, inputs, outputs, proposal);
@@ -346,6 +349,8 @@ ProviderPrepareOutcome prepare(void *state,
       return normalization::sglang_prepare(state, request, allocator, output);
   }
   if constexpr (!Sglang) {
+    if (artifact::handles(request.operation))
+      return artifact::prepare(state, request, allocator, output);
     if (request.route == sequence::kRoute)
       return sequence::prepare(state, request, allocator, output);
     if (request.route == causal_conv::kRoute)
@@ -506,7 +511,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-block128-aot" : "v12-dense-retirement"},
+                 .version = Sglang ? "06992c92-block128-aot" : "v13-native-packed"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

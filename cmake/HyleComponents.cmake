@@ -434,7 +434,7 @@ _hyle_declare_component(compute_route_cuda
   PUBLIC_DEPS core compute compute_backend_cuda compute_provider_flashinfer mem
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h hyle/compute/cuda_weights.h)
 _hyle_declare_component(graph_route_cuda
-  PRIVATE_DEPS compute compute_backend_cuda compute_provider_cuda compute_provider_torch_cuda container graph_provider_ggml_cuda graph_batch
+  PRIVATE_DEPS compute compute_backend_cuda compute_provider_cuda container graph_provider_ggml_cuda graph_batch
   PUBLIC_DEPS core compute_route_cuda graph
   SPLIT_PUBLIC_HEADERS hyle/graph/cuda.h)
 
@@ -503,7 +503,7 @@ _hyle_declare_component(compute_provider_ggml_metal
 _hyle_declare_component(compute_provider_iree_vulkan
   PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
-# Original CUDA ATen artifact and fused BF16 attention carrier.
+# Optional original CUDA ATen decoding and fused BF16 attention carrier.
 _hyle_declare_component(compute_provider_torch_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute

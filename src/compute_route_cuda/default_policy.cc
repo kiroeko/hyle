@@ -74,9 +74,10 @@ Family baseline(const ProviderOperationRequest &request) noexcept {
   case OperationKind::kScaledDotProductAttention: return Family::kFlashInfer;
   default: break;
   }
-  if (operation.custom_as<model_ops::ArtifactWeightDecode>() ||
-      operation.custom_as<model_ops::MlxQuantized>())
-    return Family::kTorch;
+  if (operation.custom_as<model_ops::MlxQuantized>()) return Family::kNative;
+  if (const auto artifact = operation.custom_as<model_ops::ArtifactWeightDecode>())
+    return artifact->format == model_ops::WeightArtifactFormat::kGptqV1Int4
+        ? Family::kNative : Family::kTorch;
   if (operation.custom_as<model_ops::SqrtSoftplusRouting>())
     return Family::kSglang;
   // Original DeepSeek admits its own exact custom program before ranking.
@@ -90,7 +91,7 @@ std::uint32_t rank(Family family, Family primary,
   if (family == primary)
     return 100;
   // Admission stays with the provider: its fused BF16 attention precedes
-  // ggml's materialized score graph, while admitted FlashInfer stays first.
+  // other legal candidates, while admitted FlashInfer stays first.
   if (family == Family::kTorch &&
       request.operation.kind() == OperationKind::kScaledDotProductAttention &&
       !request.inputs.empty() &&

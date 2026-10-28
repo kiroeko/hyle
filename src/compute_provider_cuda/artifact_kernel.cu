@@ -1,13 +1,13 @@
-#include "mlx_packed_kernel.h"
+#include "artifact_kernel.h"
 
 #include "device_status_kernel.h"
 #include "mlx_cuda_quant.h"
-#include "../compute_provider_cuda/packed_rows.cuh"
+#include "packed_rows.cuh"
 
 #include <cmath>
 #include <type_traits>
 
-namespace hyle::compute::torch_cuda::native {
+namespace hyle::compute::cuda_native::artifact::native {
 namespace {
 namespace q = borrowed::mlx_cuda_quant;
 using Format = MlxFormat;
@@ -511,4 +511,4 @@ cudaError_t artifact_packed_prepare(const ArtifactPacked &p, bool decode_only) n
   }
 }
 
-} // namespace hyle::compute::torch_cuda::native
+} // namespace hyle::compute::cuda_native::artifact::native

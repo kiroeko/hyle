@@ -1,11 +1,10 @@
 #pragma once
 
-#include "hyle/compute/provider.h"
+#include "hyle/graph/region_provider.h"
 
 namespace hyle::graph::cuda::internal {
 
-// Same original artifact Provider, with a private Graph contraction capability.
-// Configuration ownership and all non-region hooks remain with that Provider.
-compute::Provider ct_packed_linear_provider() noexcept;
+// Cold packed recipes share the existing native CUDA provider and its context.
+const RegionProviderVTable &ct_packed_linear_regions() noexcept;
 
 } // namespace hyle::graph::cuda::internal

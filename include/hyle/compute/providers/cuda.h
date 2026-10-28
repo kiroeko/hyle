@@ -54,6 +54,14 @@ inline constexpr ProviderId kDeepSeekProviderId{0x48594c4500000001ULL,
 // workspace. Payload owners must cover the real Completion.
 // Kernel/configuration binding is cold; the shared CUDA stream also permits
 // native Graph capture.
+//
+// Native MLX packed equations retain F32 accumulation, original group-scale
+// order and device-checked IDs without an unpacked bank or host IDs check.
+// Checked GPTQ-v1 decode and contracted CT/GPTQ/NF4 linear graphs also support
+// capture; stored-scale FP8 graphs use caller-owned activation-code workspace.
+// These contracted carriers implement ordinary graphs, not new public operations.
+// They remain available with HYLE_WITH_ATEN=OFF. Borrowed payloads and workspace
+// must cover the real Completion, including a failed command prefix.
 #if defined(HYLE_COMPUTE_CUDA)
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider provider() noexcept;
 

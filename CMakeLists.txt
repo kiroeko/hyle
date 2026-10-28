@@ -78,6 +78,7 @@ include(HyleDependencyCache)
 # installation. Developer presets enable them; ordinary source consumers do
 # not acquire test fixtures merely by omitting a route whose default is cpu.
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" OFF)
+option(HYLE_WITH_ATEN "include the optional ATen tensor runtime for CPU/CUDA operations" ON)
 
 # Resolve platform capability before the component graph. Sched and its current
 # IO consumers require fcontext; the Compute and Graph runtime factors remain
@@ -426,17 +427,6 @@ if(HYLE_BUILD_COMPUTE_BACKEND_CUDA)
   hyle_configure_cuda_dependency()
 else()
   set(_HYLE_COMPUTE_HAVE_CUDA OFF)
-endif()
-if(_HYLE_COMPUTE_HAVE_CUDA AND
-   (HYLE_BUILD_COMPUTE_PROVIDER_CUDA OR HYLE_BUILD_COMPUTE_PROVIDER_TORCH_CUDA))
-  # Both packed CUDA families use this original codec. Its license has one
-  # package owner, selected whenever either implementation enters the product.
-  hyle_register_package_dependency(
-    NAME mlx_cuda_quant OWNER foundation
-    CONSUMER_COMPONENTS compute_provider_cuda compute_provider_torch_cuda
-    LOCKED_DEPENDENCIES mlx_cuda_quant RUNTIME_FILE_SPECS
-      "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx_cuda_quant-LICENSE"
-      "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mlx_cuda_quant-NOTICE.md")
 endif()
 if(HYLE_BUILD_COMPUTE_ROUTE_APPLE OR HYLE_BUILD_COMPUTE_PROVIDER_GGML_METAL)
   include(HyleAppleDependencies)
