@@ -149,7 +149,7 @@ inline void partial_request(q::Model &model, const std::shared_ptr<i::HostStateS
     q::publish_generation_prompt(model, calls[0], &prefix);
     const auto next = c::raw(model, control, std::span(prompt).subspan(row, 1), q::GraphRole::kMtpSingle, completion);
     require(request.request_key == key && window.matches(key) && request.ledger->committed_count == row + 1 &&
-        request.progress.observed_commits() == row + 1 && request.turn_input_consumed == row + 1 &&
+        request.progress.observed_commits() == row + 1 && request.progress.input_consumed() == row + 1 &&
         request.session->head->next_id == next && request.session->head.epoch() == epoch_before + 1,
         "E4 chunk changed its original request/ledger/input/epoch boundary");
     same(p::capture(model, *control, storage), p::capture(model, *request.session, storage), checks);

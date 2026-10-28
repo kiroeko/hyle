@@ -72,7 +72,7 @@ inline int run(const std::filesystem::path &input) {
   exhausted([&] { (void)q::prepare_generation_call(model, initial, 2, nullptr, {}, 1, 1); });
   require(!initial.progress.turn_started() && initial.progress.generated.empty() &&
       !initial.progress.observed_commits() && !initial.progress.prefilled && !initial.progress.turn_done &&
-      initial.input_turn == SIZE_MAX && !initial.turn_input_consumed && !initial.session &&
+      initial.progress.input_turn() == SIZE_MAX && !initial.progress.input_consumed() && !initial.session &&
       !initial.ledger->committed_count && !initial.ledger->sampling && !model.active_step &&
       !model.carrier_borrowed && !model.snapshot_versions.live,
       "exhausted whole turn changed progress, ledger, input, Session or carrier");
@@ -80,7 +80,7 @@ inline int run(const std::filesystem::path &input) {
   execute(initial, nullptr, 1);
   require(initial.session->length() == 1 && initial.session->head->sampling.draw == maximum - 2 &&
       initial.session->head->next_id == -1 && initial.progress.generated.empty() &&
-      initial.ledger->committed_count == 1 && initial.turn_input_consumed == 1,
+      initial.ledger->committed_count == 1 && initial.progress.input_consumed() == 1,
       "state-only chunk spent a random address or produced a pending output");
   retire(initial);
   q::restore_generation_session(model, initial, nullptr, false);
@@ -116,7 +116,7 @@ inline int run(const std::filesystem::path &input) {
   exhausted([&] { (void)q::prepare_generation_call(model, hit, 2, &prefix, {}); });
   require(!hit.session && !hit.progress.turn_started() && !hit.ledger->committed_count &&
       !hit.ledger->sampling && !hit.prefix_hits && !hit.prefix_misses && !hit.prefix_full_hits &&
-      hit.input_turn == SIZE_MAX && prefix.size() == 1 && model.snapshot_versions.live == retained,
+      hit.progress.input_turn() == SIZE_MAX && prefix.size() == 1 && model.snapshot_versions.live == retained,
       "full-hit address rejection changed lookup/import or request admission");
   hit.progress.initial_sampling.draw = maximum - 2;
   execute(hit, &prefix);
@@ -145,7 +145,7 @@ inline int run(const std::filesystem::path &input) {
   exhausted([&] { q::preflight_generation_sampling(model, later); });
   require(later.session->head.get() == head && q::generation_boundary(*later.session->head) == boundary &&
       !later.progress.turn_started() && later.progress.turn_index == 1 && later.progress.generated.size() == 1 &&
-      later.ledger->committed_count == 1 && later.input_turn == 0 && !model.active_step,
+      later.ledger->committed_count == 1 && later.progress.input_turn() == 0 && !model.active_step,
       "later-turn address rejection changed its published boundary or host turn");
   retire(later);
   exhausted([&] { q::restore_generation_session(model, later, nullptr, false); });

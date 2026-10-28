@@ -44,7 +44,7 @@ inline void unchanged_committed(q::Model &model, q::GenerationRequest &request, 
   require(request.session && request.session->head.get() == before.head && request.session->head.epoch() == before.epoch &&
       request.progress.generated == before.generated && request.progress.prefilled && !request.progress.turn_done &&
       request.progress.observed_commits() == before.observed && request.ledger->committed_count == before.commits &&
-      request.turn_input_consumed == before.consumed && request.input_turn == before.input_turn &&
+      request.progress.input_consumed() == before.consumed && request.progress.input_turn() == before.input_turn &&
       request.history.get() == before.history && (!request.history || request.history->length == before.history_length) &&
       request.ledger->sampling == before.sampling && !request.ledger->successor_ordinal() &&
       request.ledger->records.size() == before.records.size(),

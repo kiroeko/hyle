@@ -69,7 +69,7 @@ inline int run(const std::filesystem::path &input_directory) {
   require(!oversized.session && !oversized.ledger->committed_count && !oversized.ledger->sampling &&
       oversized.progress.generated.empty() && !oversized.progress.observed_commits() &&
       !oversized.progress.prefilled && !oversized.progress.turn_done &&
-      oversized.input_turn == SIZE_MAX && !oversized.turn_input_consumed &&
+      oversized.progress.input_turn() == SIZE_MAX && !oversized.progress.input_consumed() &&
       !model.active_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "context refusal published Session, input admission, ledger, output or model state");
 

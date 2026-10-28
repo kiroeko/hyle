@@ -63,6 +63,10 @@ CPU／CUDA完整路线按产品依赖自动装配ATen，其它独立模块仍按
 资源图、输出事实及child签名对应一起成功才发布；普通／MTP target和NextN借同一child资源图，Model删除平行数组。
 2次增量CXX、2次链接及5个CPU／CUDA有限检查通过，原packed数值门不变，未全部逐字节相同；
 此片不增加执行器或热路径扫描，也不代签完整编排、其它平台或吞吐提升。
+随后[共同输入与提交推进](../evidence/correctness/inference-input-progress-2026-10-29.json)将原输入绑定、分块、前缀导入偏移和连续提交核对并入RequestProgress，
+模型删除两份独立计数，保留真实账簿、容量、采样和Session发布。12组主机合同与5个CPU／CUDA有限消费者通过，
+实际部分前缀命中分别核对记录数和token数；MTP、取消、midturn恢复与R2接力保留原状态检查。
+一次错夹具入口拒绝保留原记录，改用已有正确缓存后同镜像通过；共4次CXX／链接，未重编SDK或下载模型，没有新增吞吐结论。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
 普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；

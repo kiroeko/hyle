@@ -130,7 +130,7 @@ inline int run(const std::filesystem::path &input) {
       "exact complete checkpoint did not preserve the original request's boundary");
   delivery.acknowledge_prefix(a.progress.generated.size(), 1);
   a.progress.advance_turn(); begin_if_needed(a); window.admitted(key_a); execute(0);
-  require(a.turn_input_consumed == 2 && !a.progress.prefilled && a.session->head->next_id == -1 &&
+  require(a.progress.input_consumed() == 2 && !a.progress.prefilled && a.session->head->next_id == -1 &&
       a.session->head->sampling.draw == 1 && a.progress.generated.size() == 1,
       "intermediate chunk emitted a token or advanced the RNG");
   const auto partial = q::generation_boundary(*a.session->head);
@@ -140,17 +140,17 @@ inline int run(const std::filesystem::path &input) {
   run_waiter(1);
   resume_a();
   require(a.request_key == key_a && q::generation_boundary(*a.session->head) == partial &&
-      a.turn_input_consumed == 2 && a.input_turn == 1 && a.prompt.data() == turn_data &&
+      a.progress.input_consumed() == 2 && a.progress.input_turn() == 1 && a.prompt.data() == turn_data &&
       a.progress.turn_started() && !a.progress.prefilled && a.progress.turn_output_begin == 1 &&
       a.ledger->committed_count == partial_commits && a.progress.observed_commits() == partial_commits &&
       a.progress.generated.size() == 1 && delivery.acknowledged() == 1 &&
       a.restore_count == 1 && a.checkpoint_resume_misses == 1,
       "state-only wake reused an obsolete checkpoint or restarted/reobserved its turn");
   execute(0);
-  require(a.turn_input_consumed == 4 && a.session->head->sampling.draw == 1 && a.progress.generated.size() == 1,
+  require(a.progress.input_consumed() == 4 && a.session->head->sampling.draw == 1 && a.progress.generated.size() == 1,
       "resumed intermediate chunk duplicated input/output or RNG");
   window.requeue(key_a); window.admitted(key_a); execute(0);
-  require(a.turn_input_consumed == 6 && a.progress.prefilled && a.progress.generated.size() == 2 &&
+  require(a.progress.input_consumed() == 6 && a.progress.prefilled && a.progress.generated.size() == 2 &&
       a.session->head->sampling.draw == 2 && !a.progress.turn_done && !delivery.available(2),
       "final chunk did not emit exactly one credit-bounded output");
   const auto emitted_boundary = q::generation_boundary(*a.session->head);
@@ -162,7 +162,7 @@ inline int run(const std::filesystem::path &input) {
   resume_a();
   require(q::generation_boundary(*a.session->head) == emitted_boundary &&
       a.progress.generated == emitted && a.progress.observed_commits() == emitted_commits &&
-      a.turn_input_consumed == 6 && a.progress.prefilled && delivery.acknowledged() == 2 &&
+      a.progress.input_consumed() == 6 && a.progress.prefilled && delivery.acknowledged() == 2 &&
       a.restore_count == 2 && a.checkpoint_resume_misses == 2,
       "credit-paused wake duplicated delivered output, pending input or random draws");
   execute(0);

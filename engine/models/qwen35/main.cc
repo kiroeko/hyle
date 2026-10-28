@@ -5626,7 +5626,6 @@ struct GenerationRequest {
   std::size_t last_idle = 0;
   const std::size_t sampling_index;
   LogitsInputs logits; // One [1,V] snapshot for every conditional row in an output episode.
-  std::size_t input_turn = SIZE_MAX, turn_input_consumed = 0;
   Clock::time_point admission_start{};
   GenerationRestoreStats restored;
   std::size_t restore_count = 0, idle_evictions = 0;
@@ -5741,14 +5740,11 @@ void observe_generation_commits(GenerationRequest &request) {
       throw std::runtime_error("committed output count exceeds its original record storage");
     const auto emitted = std::span(record.emitted).first(record.emitted_count);
     const bool prefill_complete = !record.generation && !record.imported && record.prefill_complete;
-    if (!record.generation && !record.imported &&
-        (record.turn != request.progress.turn_index || request.turn_input_consumed > request.prompt.size() || record.input_begin != request.turn_input_consumed ||
-         record.ids().size() > request.prompt.size() - request.turn_input_consumed ||
-         record.ids().data() != request.prompt.data() + request.turn_input_consumed ||
-         record.prefill_complete != (record.ids().size() == request.prompt.size() - request.turn_input_consumed)))
-      throw std::runtime_error("committed prefill input is not the next actual turn slice");
+    const auto input = !record.generation && !record.imported
+        ? std::optional<inference::RequestInputCommit>{{record.turn, record.input_begin, record.ids()}}
+        : std::nullopt;
     const bool stopped = record.completion == TextCompletion::kEmitNext && record.stopped;
-    if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped))
+    if (!request.progress.preflight_commit(ordinal, emitted, record.user_output, prefill_complete, stopped, input))
       continue;
     if (record.user_output && record.generation &&
         (request.rounds.size() == request.rounds.capacity() || request.rounds.size() >= request.round_emitted.size() ||
@@ -5797,8 +5793,7 @@ void observe_generation_commits(GenerationRequest &request) {
       turn.context_after = request.visible_tokens;
     }
     // No fallible family bookkeeping follows the one host observation mark.
-    (void)request.progress.observe_commit(ordinal, emitted, record.user_output, prefill_complete, stopped);
-    if (!record.generation && !record.imported) request.turn_input_consumed += record.ids().size();
+    (void)request.progress.observe_commit(ordinal, emitted, record.user_output, prefill_complete, stopped, input);
   }
 }
 
@@ -6286,7 +6281,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   if (!sampler.modifiers.empty()) {
     bool emits = request.progress.prefilled;
     if (!emits) {
-      auto consumed = request.input_turn == request.progress.turn_index ? request.turn_input_consumed : 0;
+      auto consumed = request.progress.input_consumed();
       if (consumed > request.prompt.size()) throw std::runtime_error("prefill offset exceeds its turn input");
       if (prefix && request.progress.turn_index == 0 && !request.session) {
         if (!request.input) throw std::runtime_error("prefix admission requires its complete token plan");
@@ -6310,7 +6305,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
   PreparedGenerationCall call; call.request = &request; call.steps = steps; call.logits = request.logits;
   call.generation = request.progress.prefilled;
   if (!call.generation) {
-    if (request.input_turn != request.progress.turn_index) {
+    if (!request.progress.input_admitted()) {
       const auto before = request.session ? request.session->length() : 0;
       if (before > model.capacity || request.prompt.empty() || request.prompt.size() > model.capacity - before)
         throw std::runtime_error("complete turn input exceeds the remaining context");
@@ -6321,11 +6316,11 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         throw std::runtime_error("complete turn input and output quota exceed the remaining context");
       for (auto id : request.prompt) if (id < 0 || id >= model.vocabulary)
         throw std::runtime_error("token ID outside vocabulary");
-      request.input_turn = request.progress.turn_index; request.turn_input_consumed = 0;
+      request.progress.bind_input(request.prompt);
     }
     request.ledger->validate_sampling(prepared_sampling, model.resources_);
     std::cerr << "memory_phase=" << request.memory_name << "_prefill_begin\n";
-    if (!request.turn_input_consumed) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
+    if (!request.progress.input_consumed()) request.prefill_start = request.admission_start == Clock::time_point{} ? Clock::now()
         : std::exchange(request.admission_start, Clock::time_point{});
     call.initial_prefix = prefix && request.progress.turn_index == 0;
     if (call.initial_prefix && !request.session) {
@@ -6338,7 +6333,7 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         const bool full_hit = reused_tokens == request.prompt.size();
         auto history = cache::copy_history(hit.payload.replay, model.capacity);
         preflight_generation_prompt_ledger(*request.ledger, hit.payload.replay);
-        request.progress.preflight_adopt_committed_history();
+        request.progress.preflight_adopt_committed_history(reused_tokens);
         const auto suffix_part = prefill.next(request.prompt.size(), reused_tokens);
         const auto suffix = request.prompt.size() - suffix_part.begin;
         const auto suffix_rows = suffix_part.rows;
@@ -6392,12 +6387,11 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
               last.after.next_id, model_eos_tokens, &request.stop_policy);
         }
         request.ledger->bind_sampling(prepared_sampling, model.resources_);
-        request.progress.adopt_committed_history(request.ledger->committed_count);
+        request.progress.adopt_committed_history(request.ledger->committed_count, reused_tokens);
         request.history = std::move(history);
         request.session = std::move(adopted);
         request.reused_tokens = reused_tokens; request.prefix_hits = 1;
         request.prefix_full_hits = full_hit ? 1 : 0;
-        request.turn_input_consumed = reused_tokens;
         call.name = std::move(hit_name);
         if (sampler.enabled || !sampler.modifiers.empty() || model.sampling_configuration_count() > 1) {
           request.prefix_sampling_calls = suffix == 0 ? 1 : 0;
@@ -6406,11 +6400,11 @@ PreparedGenerationCall prepare_generation_call(Model &model, GenerationRequest &
         hit.reset();
       } else { request.prefix_misses = 1; request.history = std::make_shared<cache::ReplayHistory>(model.capacity); }
     }
-    call.input_begin = request.turn_input_consumed;
-    const auto part = prefill.next(request.prompt.size(), call.input_begin);
+    const auto part = request.progress.next_input(prefill);
+    call.input_begin = part.begin;
     call.prefill_complete = part.complete;
     call.completion = call.prefill_complete ? TextCompletion::kEmitNext : TextCompletion::kStateOnly;
-    call.prompt = request.prompt.subspan(part.begin, part.rows);
+    call.prompt = part.ids;
     const auto lag = request.session && request.session->head->draft ? request.session->head->draft->lag : 0;
     call.role = !model.cache_plan.draft_cache ? GraphRole::kText
         : call.prompt.size() == 1 ? (lag ? GraphRole::kMtpCatchupSingle : GraphRole::kMtpSingle)

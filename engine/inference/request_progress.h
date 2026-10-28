@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "prefill_plan.h"
 #include "sampling_cursor.h"
 
 namespace hyle::inference {
@@ -22,6 +23,17 @@ struct GenerationTurn final {
 struct GenerationSessionSchedule final {
   std::string id;
   std::vector<GenerationTurn> turns;
+};
+
+struct RequestInputCommit final {
+  std::size_t turn = 0, begin = 0;
+  std::span<const std::int32_t> ids{};
+};
+
+struct RequestInputPart final {
+  std::size_t begin = 0;
+  std::span<const std::int32_t> ids{};
+  bool complete = false;
 };
 
 // Host progress only. The schedule owner outlives this borrowed turn span.
@@ -104,6 +116,39 @@ struct RequestProgress final {
   std::size_t maximum_outputs() const noexcept { return maximum_outputs_; }
   bool turn_started() const noexcept { return started_; }
 
+  // The model admits context and token IDs before binding this original
+  // owner-backed span, whose storage survives this turn. Rebinding the same
+  // input never rewinds its commits; no token owner is retained here.
+  bool input_admitted() const noexcept {
+    return input_turn_ != (std::numeric_limits<std::size_t>::max)() && input_turn_ == turn_index;
+  }
+  std::size_t input_turn() const noexcept { return input_turn_; }
+  std::size_t input_consumed() const noexcept { return input_admitted() ? input_consumed_ : 0; }
+  std::span<const std::int32_t> input() const noexcept {
+    return input_admitted() ? input_ : std::span<const std::int32_t>{};
+  }
+  void bind_input(std::span<const std::int32_t> actual) {
+    if (!started_) throw std::logic_error("request input requires an admitted turn");
+    if (input_admitted()) {
+      if (actual.data() != input_.data() || actual.size() != input_.size())
+        throw std::invalid_argument("request turn input cannot change after admission");
+      return;
+    }
+    if (prefilled || turn_done)
+      throw std::logic_error("request input must be bound before observing this turn's outputs");
+    input_ = actual; input_turn_ = turn_index; input_consumed_ = 0;
+  }
+  std::span<const std::int32_t> remaining_input() const {
+    if (!input_admitted() || input_consumed_ > input_.size())
+      throw std::logic_error("request has no current admitted input extent");
+    return input_.subspan(input_consumed_);
+  }
+  RequestInputPart next_input(const PrefillPolicy &policy) const {
+    (void)remaining_input();
+    const auto part = policy.next(input_.size(), input_consumed_);
+    return {part.begin, input_.subspan(part.begin, part.rows), part.complete};
+  }
+
   // This borrows caller-owned, cold-prepared storage; it never creates token
   // ownership. Validate the full extent/suffix/pending before writing slot 0.
   // A no-schedule request is one turn with its constructor's actual limit.
@@ -153,20 +198,27 @@ struct RequestProgress final {
   void advance_turn() {
     if (!started_ || !turn_done || !more_turns())
       throw std::logic_error("request can advance only an observed complete turn with a successor");
-    ++turn_index; started_ = false;
+    // Keep the last admitted turn identity until the new input is admitted.
+    ++turn_index; started_ = false; input_ = {};
   }
 
   std::size_t observed_commits() const noexcept { return observed_commits_; }
 
   // Adopt only initial, already committed input history. Its old outputs do
   // not belong to the new request; a full hit applies its new pending below.
-  void preflight_adopt_committed_history() const {
+  // The imported ordinal count and consumed token prefix are independent;
+  // neither adoption alone establishes completion of this request's prefill.
+  void preflight_adopt_committed_history(std::size_t consumed_input = 0) const {
     if (history_adopted_ || observed_commits_ || !generated.empty() || turn_index || prefilled || turn_done)
       throw std::logic_error("request can adopt committed history only before its first output");
+    if ((consumed_input && !input_admitted()) ||
+        (input_admitted() && (input_consumed_ || consumed_input > input_.size())))
+      throw std::out_of_range("imported request input exceeds its original admitted prefix");
   }
-  void adopt_committed_history(std::size_t count) {
-    preflight_adopt_committed_history();
+  void adopt_committed_history(std::size_t count, std::size_t consumed_input = 0) {
+    preflight_adopt_committed_history(consumed_input);
     observed_commits_ = count; history_adopted_ = true;
+    if (input_admitted()) input_consumed_ = consumed_input;
   }
 
   void preflight_outputs(std::span<const std::int32_t> emitted, bool user_output,
@@ -203,23 +255,42 @@ struct RequestProgress final {
   // A duplicate is a no-op, including its payload. Gaps and bounds fail before
   // any host mutation. The model's authoritative commit/RNG is never advanced.
   bool preflight_commit(std::size_t ordinal, std::span<const std::int32_t> emitted,
-                        bool user_output, bool prefill_complete, bool stopped) const {
+                        bool user_output, bool prefill_complete, bool stopped,
+                        std::optional<RequestInputCommit> consumed_input = {}) const {
     if (ordinal < observed_commits_) return false;
     if (ordinal != observed_commits_ || observed_commits_ == (std::numeric_limits<std::size_t>::max)())
       throw std::out_of_range("request commit observations must be contiguous and bounded");
     preflight_outputs(emitted, user_output, prefill_complete, stopped);
+    if (consumed_input) preflight_input_commit(*consumed_input, prefill_complete);
     return true;
   }
 
   bool observe_commit(std::size_t ordinal, std::span<const std::int32_t> emitted,
-                      bool user_output, bool prefill_complete, bool stopped) {
-    if (!preflight_commit(ordinal, emitted, user_output, prefill_complete, stopped)) return false;
+                      bool user_output, bool prefill_complete, bool stopped,
+                      std::optional<RequestInputCommit> consumed_input = {}) {
+    if (!preflight_commit(ordinal, emitted, user_output, prefill_complete, stopped, consumed_input)) return false;
     apply_outputs(emitted, user_output, prefill_complete, stopped);
+    if (consumed_input) input_consumed_ += consumed_input->ids.size();
     ++observed_commits_;
     return true;
   }
 
 private:
+  void preflight_input_commit(const RequestInputCommit &consumed, bool prefill_complete) const {
+    if (consumed.ids.empty())
+      throw std::invalid_argument("committed request input must contain actual teacher rows");
+    if (!input_admitted() || consumed.turn != turn_index)
+      throw std::logic_error("committed input does not belong to the current admitted turn");
+    if (input_consumed_ > input_.size() || consumed.begin != input_consumed_ ||
+        consumed.ids.size() > input_.size() - input_consumed_)
+      throw std::out_of_range("committed input is not the next admitted turn slice");
+    const auto *expected = input_.data();
+    if (input_consumed_) expected += input_consumed_;
+    if (consumed.ids.data() != expected ||
+        prefill_complete != (consumed.ids.size() == input_.size() - input_consumed_))
+      throw std::invalid_argument("committed input span or completion differs from the actual turn slice");
+  }
+
   void validate_turn_tail(std::span<const GenerationTurn> tail, std::size_t maximum_prompt_tokens,
                           std::size_t &outputs, std::size_t &prompts) const {
     for (const auto &turn : tail) {
@@ -231,6 +302,8 @@ private:
     }
   }
   std::span<const GenerationTurn> turns_{};
+  std::span<const std::int32_t> input_{};
+  std::size_t input_turn_ = (std::numeric_limits<std::size_t>::max)(), input_consumed_ = 0;
   std::size_t maximum_outputs_ = 0, observed_commits_ = 0;
   std::size_t maximum_turns_ = 0, maximum_prompt_tokens_ = 0;
   // Outputs are delivered tokens plus remaining known-turn quota; a real early

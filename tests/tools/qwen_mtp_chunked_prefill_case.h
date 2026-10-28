@@ -168,7 +168,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
           "MTP StateOnly sampled, emitted or published an incomplete prompt");
     };
     execute(); execute();
-    require(request.turn_input_consumed == 2 && request.ledger->committed_count == 2 && request.progress.observed_commits() == 2,
+    require(request.progress.input_consumed() == 2 && request.ledger->committed_count == 2 && request.progress.observed_commits() == 2,
         "two real StateOnly chunks did not advance their original input cursor/ledger exactly once");
     const auto old = request.session->checkpoint(); const auto before = s::image(chunk, *old);
     const auto boundary = q::generation_boundary(*request.session->head);
@@ -183,7 +183,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       if (!stopped.status.IsCancelled() || stopped.status.has_native_error()) q::check(stopped.status);
       require(stopped.retired && !chunk.active_step && !chunk.carrier_borrowed && !request.session->pending &&
           q::generation_boundary(*request.session->head) == boundary && s::image(chunk, *request.session->head) == before &&
-          request.turn_input_consumed == 2 && request.ledger->committed_count == 2 && !request.ledger->records[2].committed &&
+          request.progress.input_consumed() == 2 && request.ledger->committed_count == 2 && !request.ledger->records[2].committed &&
           request.progress.observed_commits() == 2 && request.progress.generated.empty() && !prefix.size(),
           "cancelled StateOnly chunk published state/output or advanced original input/ledger facts");
     }
@@ -191,12 +191,12 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     rebuild_rows = request.restored.target_rows; rebuild_calls = request.restored.graph_calls;
     require(rebuild_rows == 2 && rebuild_calls == 2 && request.restored.draft_rows == 2 &&
         q::generation_boundary(*request.session->head) == boundary && s::image(chunk, *request.session->head) == before &&
-        request.request_key == key && request.turn_input_consumed == 2 && request.progress.observed_commits() == 2 &&
+        request.request_key == key && request.progress.input_consumed() == 2 && request.progress.observed_commits() == 2 &&
         request.progress.generated.empty() && !prefix.size(),
         "partial MTP StateOnly ledger reconstruction replayed output/RNG or changed complete state and request progress");
     execute(); execute();
     require(request.progress.request_done() && request.progress.prefilled && request.progress.generated.size() == 1 &&
-        request.turn_input_consumed == 4 && request.ledger->committed_count == 4 && request.session->length() == 4 &&
+        request.progress.input_consumed() == 4 && request.ledger->committed_count == 4 && request.session->length() == 4 &&
         request.session->head->draft->frontier == 4 && request.session->head->draft->lag == 0 && request.session->head->sampling.draw == 1 &&
         s::image(chunk, *old) == before && prefix.size() == 1, "final Single failed to emit and publish the complete prompt exactly once");
     auto hit = prefix.lookup(*request.input, 4, 4, &chunk, chunk.math_identity());

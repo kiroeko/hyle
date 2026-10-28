@@ -843,8 +843,8 @@ R2仍是同图真实批处理，不表示两个多成员Invocation同时执行�
 不能直接修改会话字段，也不为这一合同在每 token 路径增加锁。
 
 请求控制读取已提交边界，不再保存一份可独立推进的 pending／RNG。`RequestProgress`
-只持有主机进度与新请求的初始采样身份；实际游标、已消费输入和 pending 必须由模型的
-同一发布事务推进。模型程序和权重跨会话共享，状态写权限、取消及输出观察按实际参与者区分。
+只持有主机进度与新请求的初始采样身份；设备已消费边界、pending及RNG由模型的
+同一发布事务推进，主机输入游标只观察该事务的真实提交事实。模型程序和权重跨会话共享，状态写权限、取消及输出观察按实际参与者区分。
 
 请求的 turn 合同借自冷准备的不可变输入，最大输出量独立于 vector capacity。共享进度只借
 原输入缓冲，将真实已提交 pending 放入下一 turn 的唯一首槽；剩余用户 suffix 不另复制。
@@ -861,9 +861,19 @@ Qwen 的自然 `GenerationRequest` 统一要求冷准备原提交账簿，已删
 
 自然请求在首次接纳一个 turn 时，由模型根据实际 head 长度检查完整输入及该 turn 剩余额度减一能否放入上下文。
 输入已包含应消费的历史 pending；末枚输出仍是 pending，不额外占一行。此检查先于 Session／前缀导入，
-分块输入只检查整轮一次，不能在中间块提交后再次扣除原完整输入。共同 `RequestProgress` 仍只管理主机额度与观察。
+分块输入只检查整轮一次，不能在中间块提交后再次扣除原完整输入。共同 `RequestProgress` 管理已提交输入的主机观察、额度和输出，不决定模型上下文容量。
 [有限 CPU 对照](../evidence/correctness/inference-turn-context-admission-2026-10-25.json)复现旧路径的部分提交后晚拒绝，
 覆盖新提前拒绝、恰好满上下文及仅 pending 的末行续轮；满前缀、分块及极大整数边界本轮仅源码复核。
+
+模型完成整轮资格检查后，`RequestProgress::bind_input`只借用原owner的实际输入span；同一span重绑不重置消费位置。
+`next_input`复用原PrefillPolicy分块，模型仍决定实际GraphRole、状态与采样。新teacher提交提供
+`RequestInputCommit`的turn、起点及原物理span，统一核对连续序号、输出额度、输入范围和末块事实，
+通过后一次推进输入消费及观察序号；StateOnly也消费输入，但不输出token或推进RNG。重复提交先返回，不再次核其payload或消费。
+导入历史的记录数与复用token数分别推进序号和输入位置，不以旧前缀的完成标记认定新prompt已prefilled；
+full hit仍须观察新的frontier输出，不造空teacher提交。后续turn借用包含原pending的新span，真实恢复Session不清请求游标。
+这些机制没有新增token或资源owner，也不接管账簿、head或失败退休。纯输出消费者可不提供输入提交事实。
+[本片有限检查](../evidence/correctness/inference-input-progress-2026-10-29.json)覆盖12组主机合同和5个真实CPU／CUDA消费者，
+包括自然部分前缀命中、MTP完整状态、取消重试、midturn恢复与R2接力；一项错夹具入口拒绝另行保留，未提供性能或质量结论。
 
 前缀命中的历史、已消费偏移和 Session 只在实际资源接纳及 frontier 成功后一起发布；
 先预检原账簿与进度，再局部准备，最后写入原预留记录。提交前资源拒绝后可重试同一请求，

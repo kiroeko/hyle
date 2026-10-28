@@ -382,8 +382,8 @@ inline void unchanged(q::Model &model, q::GenerationRequest &request, const e::S
     const std::shared_ptr<i::HostStateStorage> &storage) {
   require(request.session->head.get() == before.head && request.session->head.epoch() == before.epoch &&
       request.progress.generated == before.generated && request.progress.observed_commits() == before.observed &&
-      request.ledger->committed_count == before.commits && request.turn_input_consumed == before.consumed &&
-      request.input_turn == before.input_turn && request.history.get() == before.history &&
+      request.ledger->committed_count == before.commits && request.progress.input_consumed() == before.consumed &&
+      request.progress.input_turn() == before.input_turn && request.history.get() == before.history &&
       (!request.history || request.history->length == before.history_length) && request.ledger->sampling == before.sampling &&
       request.ledger->records.size() == before.records.size(), "modifier failure changed the original head/RNG/progress/ledger");
   for (std::size_t at = 0; at != before.records.size(); ++at)
@@ -398,8 +398,8 @@ inline void terminal_failure_unchanged(q::Model &model, q::GenerationRequest &re
     const std::shared_ptr<i::HostStateStorage> &storage) {
   require(request.session->head.get() == before.head && request.session->head.epoch() == before.epoch &&
       request.progress.generated == before.generated && request.progress.observed_commits() == before.observed &&
-      request.ledger->committed_count == before.commits && request.turn_input_consumed == before.consumed &&
-      request.input_turn == before.input_turn && request.history.get() == before.history &&
+      request.ledger->committed_count == before.commits && request.progress.input_consumed() == before.consumed &&
+      request.progress.input_turn() == before.input_turn && request.history.get() == before.history &&
       (!request.history || request.history->length == before.history_length) && request.ledger->sampling == before.sampling &&
       !request.ledger->successor_ordinal() && request.ledger->records.size() == before.records.size(),
       "terminal failure changed the committed head/RNG/progress/ledger or retained a successor reservation");

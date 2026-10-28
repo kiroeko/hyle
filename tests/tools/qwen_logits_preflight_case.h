@@ -46,7 +46,7 @@ inline SavedRequest save(q::Model &model, q::GenerationRequest &request,
   result.epoch = request.session->head.epoch(); result.image = p::capture(model, *request.session, storage);
   result.records = request.ledger->records; result.generated = request.progress.generated;
   result.commits = request.ledger->committed_count; result.observed = request.progress.observed_commits();
-  result.consumed = request.turn_input_consumed; result.input_turn = request.input_turn;
+  result.consumed = request.progress.input_consumed(); result.input_turn = request.progress.input_turn();
   result.history = request.history.get(); result.history_length = request.history ? request.history->length : 0;
   result.sampling = request.ledger->sampling;
   return result;
@@ -58,7 +58,7 @@ inline void unchanged(q::Model &model, q::GenerationRequest &request, const Save
       request.session->head.epoch() == before.epoch &&
       request.progress.generated == before.generated && request.progress.prefilled && !request.progress.turn_done &&
       request.progress.observed_commits() == before.observed && request.ledger->committed_count == before.commits &&
-      request.turn_input_consumed == before.consumed && request.input_turn == before.input_turn &&
+      request.progress.input_consumed() == before.consumed && request.progress.input_turn() == before.input_turn &&
       request.history.get() == before.history && (!request.history || request.history->length == before.history_length) &&
       request.ledger->sampling == before.sampling && !request.ledger->successor_ordinal() &&
       request.ledger->records.size() == before.records.size(),

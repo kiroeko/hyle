@@ -63,7 +63,7 @@ inline int run(const std::filesystem::path &input) {
   try{(void)q::prepare_generation_call(model,invalid,2,nullptr,requests);}
   catch(const std::out_of_range &){invalid_refused=true;}
   require(invalid_refused && !invalid.session && !invalid.progress.turn_started() &&
-      !invalid.ledger->committed_count && invalid.input_turn==SIZE_MAX && !model.active_step &&
+      !invalid.ledger->committed_count && invalid.progress.input_turn()==SIZE_MAX && !model.active_step &&
       !model.snapshot_versions.live,"invalid stop ID changed high-level admission facts");
   const auto begin=[](q::GenerationRequest &request) {
     if(!request.progress.turn_started())request.prompt=request.progress.begin_turn(
@@ -111,13 +111,13 @@ inline int run(const std::filesystem::path &input) {
       b.progress.remaining_outputs()==2 && b.session->length()==8,
       "actual nonterminal suffix did not reach the expected immutable stop boundary");
   const auto boundary=q::generation_boundary(*b.session->head);const auto observed=b.progress.observed_commits();
-  const auto output=b.progress.generated;const auto consumed=b.turn_input_consumed;
+  const auto output=b.progress.generated;const auto consumed=b.progress.input_consumed();
   b.last_idle=window.pause(key_b);retire(b);
   require(window.matches(key_b) && !b.session && delivery.acknowledged()==1,
       "pause/retirement released the logical request or pending delivery");
   q::restore_generation_session(model,b,&prefix,false,requests);
   require(q::generation_boundary(*b.session->head)==boundary && b.progress.generated==output &&
-      b.progress.observed_commits()==observed && b.turn_input_consumed==consumed &&
+      b.progress.observed_commits()==observed && b.progress.input_consumed()==consumed &&
       b.ledger->stop_policy()==b.stop_policy && b.restore_count==1 && b.checkpoint_resume_misses==1 &&
       b.progress.turn_started(),"rebuild changed policy/progress/input/pending before reinstall");
   delivery.acknowledge_prefix(b.progress.generated.size(),2);window.wake(key_b);window.admitted(key_b);

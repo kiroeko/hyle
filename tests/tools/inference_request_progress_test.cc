@@ -33,6 +33,7 @@ void operator delete[](void *memory, std::size_t) noexcept { free_test_allocatio
 namespace {
 using hyle::inference::GenerationTurn;
 using hyle::inference::RequestProgress;
+using hyle::inference::RequestInputCommit;
 using hyle::inference::RequestWindow;
 static_assert(!std::is_copy_constructible_v<RequestProgress> && !std::is_copy_assignable_v<RequestProgress>);
 static_assert(std::is_nothrow_move_constructible_v<RequestProgress> && std::is_nothrow_move_assignable_v<RequestProgress>);
@@ -131,6 +132,121 @@ void prefix_output_is_not_another_model_commit() {
   rejects([&] { progress.adopt_committed_history(8); });
   require(progress.observed_commits() == 5 && progress.generated.back() == 13,
       "history adoption overwrote an active output stream");
+}
+
+void committed_chunks_and_prefixes_consume_only_the_original_input() {
+  const std::array turns{GenerationTurn{{1, 2, 3, 4, 5, 6, 7}, 2}};
+  std::array<std::int32_t, 7> input{1, 2, 3, 4, 5, 6, 7};
+  const std::array<std::int32_t, 1> seven{7}, eight{8};
+  const hyle::inference::PrefillPolicy policy(2);
+  RequestProgress progress(2); progress.bind_turns(turns); progress.begin_turn(input); progress.bind_input(input);
+  rejects([&] { progress.adopt_committed_history(1, 8); });
+  require(!progress.observed_commits() && !progress.input_consumed() && progress.generated.empty(),
+      "invalid prefix extent partially adopted committed history or consumed input");
+  progress.adopt_committed_history(1, 2); // One source prefill commit covers two actual input tokens.
+  require(progress.observed_commits() == 1 && progress.input_consumed() == 2 && !progress.prefilled && progress.generated.empty(),
+      "prefix commit count was confused with newly consumed user input or output");
+  for (const auto begin : {std::size_t{2}, std::size_t{4}}) {
+    const auto part = progress.next_input(policy);
+    require(part.begin == begin && part.ids.data() == input.data() + begin && part.ids.size() == 2 && !part.complete,
+        "chunk planning lost its exact original physical input slice");
+    require(progress.observe_commit(progress.observed_commits(), {}, false, part.complete, false,
+        RequestInputCommit{0, part.begin, part.ids}), "StateOnly chunk was not observed");
+    progress.bind_input(input); // Idempotent admission must not restart a committed chunk.
+    require(progress.input_consumed() == begin + 2 && !progress.prefilled && progress.generated.empty(),
+        "StateOnly or repeated input admission emitted output or reset consumption");
+  }
+  const auto last = progress.next_input(policy);
+  require(last.begin == 6 && last.ids.data() == input.data() + 6 && last.ids.size() == 1 && last.complete,
+      "final short chunk was padded or detached from its original input");
+  progress.observe_commit(3, seven, true, true, false, RequestInputCommit{0, last.begin, last.ids});
+  progress.observe_commit(4, eight, true, false, false); // Decode/imported facts supply no new user-input slice.
+  require(progress.input_consumed() == input.size() && progress.remaining_input().empty() &&
+      progress.observed_commits() == 5 && progress.generated == std::vector<std::int32_t>({7, 8}) && progress.request_done(),
+      "ordinary output repeated prefill consumption or lost an authoritative ordinal");
+  RequestProgress full(2); full.bind_turns(turns); full.begin_turn(input); full.bind_input(input);
+  full.adopt_committed_history(2, input.size());
+  const auto hit = full.next_input(policy);
+  require(hit.begin == input.size() && hit.ids.empty() && hit.complete && !full.prefilled,
+      "full prefix hit invented another input chunk or a delivered output");
+  full.apply_outputs(seven, true, true, false);
+  require(full.observed_commits() == 2 && full.input_consumed() == input.size() && full.generated.size() == 1 && full.prefilled,
+      "cache-hit pending output invented a commit or consumed its imported input twice");
+}
+
+void rejected_input_facts_leave_input_and_output_progress_atomic() {
+  const std::array turns{GenerationTurn{{1, 2, 3, 4}, 2}};
+  std::array<std::int32_t, 6> storage{1, 2, 3, 4, 5, 6};
+  const auto input = std::span(storage).first(4);
+  const auto other = storage;
+  RequestProgress progress(2); progress.bind_turns(turns); progress.begin_turn(input); progress.bind_input(input);
+  const auto unchanged = [&] {
+    require(progress.turn_index == 0 && progress.turn_output_begin == 0 && progress.turn_started() &&
+        !progress.prefilled && !progress.turn_done && progress.generated.empty() && !progress.observed_commits() &&
+        progress.input_admitted() && progress.input_turn() == 0 && !progress.input_consumed() &&
+        progress.input().data() == input.data() && progress.input().size() == input.size() &&
+        progress.remaining_input().data() == input.data() && progress.remaining_input().size() == input.size() &&
+        storage == other, "rejected input/commit facts changed original input, cursor, ordinal or output progress");
+  };
+  const std::array invalid{
+      RequestInputCommit{1, 0, input.first(2)}, RequestInputCommit{0, 1, input.subspan(1, 2)},
+      RequestInputCommit{0, 0, std::span(other).first(2)}, RequestInputCommit{0, 0, input.subspan(1, 2)},
+      RequestInputCommit{0, 0, std::span(storage).first(5)}, RequestInputCommit{0, 0, input.first(0)},
+      RequestInputCommit{0, (std::numeric_limits<std::size_t>::max)(), input.first(2)}};
+  for (const auto &facts : invalid) {
+    rejects([&] { progress.observe_commit(0, {}, false, false, false, facts); }); unchanged();
+  }
+  const RequestInputCommit first{0, 0, input.first(2)}, whole{0, 0, input};
+  rejects([&] { progress.observe_commit(1, {}, false, false, false, first); }); unchanged();
+  rejects([&] { progress.observe_commit(0, {}, false, true, false, first); }); unchanged();
+  rejects([&] { progress.observe_commit(0, {}, false, false, false, whole); }); unchanged();
+  const std::array<std::int32_t, 3> excess{7, 8, 9};
+  rejects([&] { progress.observe_commit(0, excess, true, true, false, whole); }); unchanged();
+  rejects([&] { progress.bind_input(std::span(other).first(4)); }); unchanged();
+  progress.observe_commit(0, {}, false, false, false, first);
+  require(!progress.observe_commit(0, excess, true, true, true, invalid.back()) &&
+      progress.observed_commits() == 1 && progress.input_consumed() == 2 && progress.generated.empty() && !progress.prefilled,
+      "duplicate commit reinterpreted obsolete invalid input/output facts or consumed another chunk");
+  rejects([&] { progress.observe_commit(1, {}, false, false, false, first); });
+  require(progress.input_consumed() == 2 && progress.observed_commits() == 1 && progress.generated.empty() && !progress.prefilled,
+      "stale chunk changed the already observed partial input prefix");
+  const std::array<std::int32_t, 1> seven{7};
+  progress.observe_commit(1, seven, true, true, false, RequestInputCommit{0, 2, input.last(2)});
+  require(progress.input_consumed() == 4 && progress.observed_commits() == 2 && progress.prefilled && progress.generated.back() == 7,
+      "valid chunk retry could not continue the original input and commit boundary");
+}
+
+void open_turn_input_pending_is_consumed_once_without_allocating() {
+  const std::array turns{GenerationTurn{{1, 2}, 1}, GenerationTurn{{3, 4}, 1}, GenerationTurn{{}, 1}};
+  RequestProgress progress(3); const auto *output_storage = progress.generated.data();
+  std::array<std::int32_t, 2> first{1, 2};
+  std::array<std::int32_t, 3> second{-1, 3, 4};
+  std::array<std::int32_t, 1> third{-1};
+  const std::array<std::int32_t, 1> seven{7}, eight{8}, nine{9};
+  const hyle::inference::PrefillPolicy policy(1);
+  allocation_count = 0; track_allocations = true;
+  progress.bind_open_turns(std::span(turns).first(1), 3, 4); progress.begin_turn(first); progress.bind_input(first);
+  const auto part = progress.next_input(policy);
+  progress.observe_commit(0, {}, false, false, false, RequestInputCommit{0, part.begin, part.ids});
+  progress.extend_turns(std::span(turns).first(2)); progress.bind_input(first);
+  require(progress.input_consumed() == 1 && progress.remaining_input().data() == first.data() + 1,
+      "active input extension or same-span admission restarted an already consumed chunk");
+  progress.observe_commit(1, seven, true, true, false, RequestInputCommit{0, 1, std::span(first).last(1)});
+  progress.advance_turn();
+  require(!progress.input_admitted() && progress.input_turn() == 0 && !progress.input_consumed() && progress.input().empty(),
+      "turn handoff reused the preceding input span or lost its historical input-turn fact");
+  progress.begin_turn(second, 7); progress.bind_input(second);
+  progress.observe_commit(2, {}, false, false, false, RequestInputCommit{1, 0, std::span(second).first(1)});
+  progress.observe_commit(3, eight, true, true, false, RequestInputCommit{1, 1, std::span(second).last(2)});
+  require(second[0] == 7 && progress.input_consumed() == 3 && progress.waiting_for_input(),
+      "later input omitted or repeated its pending token before the original user suffix");
+  progress.extend_turns(turns); progress.advance_turn(); progress.begin_turn(third, 8); progress.bind_input(third);
+  progress.close_input(); progress.observe_commit(4, nine, true, true, false, RequestInputCommit{2, 0, third});
+  track_allocations = false;
+  require(allocation_count == 0 && progress.generated.data() == output_storage &&
+      third[0] == 8 && progress.input_turn() == 2 && progress.input_consumed() == 1 && progress.remaining_input().empty() &&
+      progress.request_done() && progress.observed_commits() == 5 && progress.generated == std::vector<std::int32_t>({7, 8, 9}),
+      "open input/pending-only continuation allocated, repeated consumption or lost original commits");
 }
 
 void finite_fifo_hot_transitions_allocate_nothing() {
@@ -340,6 +456,12 @@ int main() {
     std::puts("PASS gap/duplicate/quota/begin failures and side-effect-free retry");
     prefix_output_is_not_another_model_commit();
     std::puts("PASS imported history, no-Graph output and authoritative commit counts");
+    committed_chunks_and_prefixes_consume_only_the_original_input();
+    std::puts("PASS partial/full prefix input, committed StateOnly chunks and decode-only output observations");
+    rejected_input_facts_leave_input_and_output_progress_atomic();
+    std::puts("PASS exact input span/turn/extent/completion rejection atomicity, duplicate no-op and chunk retry");
+    open_turn_input_pending_is_consumed_once_without_allocating();
+    std::puts("PASS allocation-free open turn input, pending-once chunking and historical input-turn handoff");
     finite_fifo_hot_transitions_allocate_nothing();
     std::puts("PASS mixed two-user FIFO turns and allocation-free prepared transitions");
     open_input_appends_without_restarting_progress_or_allocating();

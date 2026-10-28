@@ -67,7 +67,7 @@ inline void duplicate_session_before_admission(q::Model &model) {
   const auto boundary = q::generation_boundary(*head);
   const auto ledger_record = a.ledger->records[0];
   const auto generated = a.progress.generated;
-  const auto input_turn = a.input_turn, input_consumed = a.turn_input_consumed;
+  const auto input_turn = a.progress.input_turn(), input_consumed = a.progress.input_consumed();
   const auto turn_index = a.progress.turn_index, output_begin = a.progress.turn_output_begin;
   const auto prefix_size = prefix.size(), evictions = prefix.evictions();
   const auto live = model.snapshot_versions.live;
@@ -95,7 +95,7 @@ inline void duplicate_session_before_admission(q::Model &model) {
       a.progress.generated == generated && !a.progress.observed_commits() &&
       a.progress.turn_started() && !a.progress.prefilled && !a.progress.turn_done &&
       a.progress.turn_index == turn_index && a.progress.turn_output_begin == output_begin &&
-      a.progress.remaining_outputs() == 1 && a.input_turn == input_turn && a.turn_input_consumed == input_consumed &&
+      a.progress.remaining_outputs() == 1 && a.progress.input_turn() == input_turn && a.progress.input_consumed() == input_consumed &&
       !model.active_step && !model.carrier_borrowed,
       "duplicate rejection evicted B or changed A head/RNG/ledger/turn outputs");
   require(rejection == "generation batch requires distinct Session owners",
@@ -142,7 +142,7 @@ inline int run(const std::filesystem::path &input) {
   q::GenerationRequest missing("missing-ledger", prompt, {}, 2);
   missing_ledger([&] { (void)q::prepare_generation_call(model, missing, 2, nullptr, {}); });
   require(!missing.session && !missing.progress.turn_started() && missing.progress.generated.empty() &&
-      !missing.progress.observed_commits() && missing.input_turn == SIZE_MAX && !missing.turn_input_consumed &&
+      !missing.progress.observed_commits() && missing.progress.input_turn() == SIZE_MAX && !missing.progress.input_consumed() &&
       !model.active_step && !model.carrier_borrowed && !model.snapshot_versions.live,
       "missing ledger preparation changed a request or Model admission");
 
@@ -192,7 +192,7 @@ inline int run(const std::filesystem::path &input) {
         request.progress.generated.size() == 1 && request.progress.prefilled && !request.progress.turn_done &&
         request.progress.generated[0] == request.session->head->next_id &&
         request.fresh_next_id == record.after.next_id && q::generation_boundary(*request.session->head) == record.after && record.after.sampling.draw == 1 &&
-        request.turn_input_consumed == 2 && !request.session->pending && !request.session->failed &&
+        request.progress.input_consumed() == 2 && !request.session->pending && !request.session->failed &&
         !request.session->stopping && request.session->retirement_status.ok(),
         "late IO lost a member's committed output, state, ledger or request observation");
     q::observe_generation_commits(request);

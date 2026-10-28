@@ -25,7 +25,7 @@ inline void unchanged(q::Model &model, const q::GenerationRequest &request, cons
       s::image(model, *request.session->head) == before.image &&
       request.ledger && !request.ledger->committed_count && !request.progress.observed_commits() &&
       request.progress.generated.empty() && !request.progress.prefilled &&
-      !request.turn_input_consumed && request.history && !request.history->length,
+      !request.progress.input_consumed() && request.history && !request.history->length,
       "cancelled generation wave changed head, state bytes, pending/RNG, key, committed ledger or prompt history");
   const auto &next = request.ledger->next();
   require(!next.committed && !next.accepted && !next.emitted_count && !next.quota &&

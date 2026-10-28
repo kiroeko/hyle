@@ -36,7 +36,7 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
   auto original = request.session->checkpoint(); const auto *canonical = original->state_identity();
   const auto producer_id = original->next_id; const auto producer_cursor = original->sampling;
   const auto empty = std::span<const std::size_t>{}; const std::array one{std::size_t{1}};
-  std::int32_t greedy = -1;
+  std::int32_t greedy = -1, greedy_suffix = -1;
   {
     auto selected = model.create_session(empty, original, q::GraphRole::kText, q::cache::SamplingCursor{}, true, q::TextCompletion::kEmitNext, 0);
     greedy = selected->head->next_id;
@@ -54,9 +54,50 @@ void boundaries(q::Model &model, std::span<const std::int32_t> prompt, std::int3
     require(selected->head->sampling == q::cache::SamplingCursor{} && selected->head->next_id == -1,
         "new greedy partial hit inherited random producer pending or cursor");
     const std::array suffix{suffix_id}; model.prepare_evaluation(*selected, suffix); model.submit_evaluation(*selected);
-    (void)q::finish_evaluation(model, *selected, "greedy-policy-suffix", {}, false);
+    greedy_suffix = q::finish_evaluation(model, *selected, "greedy-policy-suffix", {}, false);
     require(selected->length() == prompt.size() + 1 && selected->head->sampling == q::cache::SamplingCursor{},
         "greedy partial suffix sampled or lost context");
+  }
+  {
+    q::cache::PrefixCache prefix(1);
+    const std::array chunks{q::cache::ConsumedChunk{prompt, producer_id, false}};
+    const auto checkpoint = q::cache::consumed_checkpoint(chunks, *original, model.capacity);
+    require(prefix.publish(checkpoint.input, original, checkpoint.replay),
+        "partial request did not publish its actual consumed prefix");
+    auto extended = std::make_shared<std::vector<std::int32_t>>(prompt.begin(), prompt.end());
+    extended->push_back(suffix_id);
+    q::GenerationRequest partial("policy-partial-prefix", *extended, {}, 1, 0);
+    partial.warm_inputs.push_back(extended);
+    partial.input = q::cache::token_plan(*extended, model.capacity);
+    partial.ledger = std::make_unique<q::GenerationLedger>(2, 1);
+    const std::span requests(&partial, 1);
+    std::array partial_calls{q::prepare_generation_call(model, partial, 1, &prefix, requests)};
+    const auto &call = partial_calls[0];
+    require(partial.prefix_hits == 1 && !partial.prefix_full_hits && !call.full_hit && !call.generation &&
+        partial.progress.input_admitted() && partial.progress.input_turn() == 0 &&
+        partial.progress.input_consumed() == prompt.size() && partial.progress.observed_commits() == 1 &&
+        partial.ledger->committed_count == 1 && partial.ledger->records[0].imported &&
+        !partial.progress.prefilled && partial.progress.generated.empty() &&
+        call.input_begin == prompt.size() && call.ids().size() == 1 && call.ids()[0] == suffix_id &&
+        call.ids().data() == extended->data() + prompt.size() && call.prefill_complete,
+        "partial prefix import confused consumed input, commit ordinal or new output");
+    q::execute_generation_calls(model, partial_calls, false, &prefix, requests);
+    require(partial.progress.input_consumed() == extended->size() &&
+        partial.progress.observed_commits() == 2 && partial.ledger->committed_count == 2 &&
+        partial.progress.prefilled && partial.progress.request_done() &&
+        partial.progress.generated.size() == 1 && partial.progress.generated[0] == greedy_suffix &&
+        partial.session->length() == extended->size() &&
+        partial.session->head->sampling == q::cache::SamplingCursor{} &&
+        original->state_identity() == canonical && original->next_id == producer_id &&
+        original->sampling == producer_cursor,
+        "partial prefix suffix changed its output, cursor, ordinal or producer boundary");
+    const auto retired = q::retire_generation_request(partial);
+    q::check(retired.status);
+    require(retired.retired, "partial-prefix request did not actually retire");
+    partial.session.reset();
+    require(prefix.evict_one() && !prefix.size() && model.snapshot_versions.live == 1 &&
+        !model.active_step && !model.carrier_borrowed,
+        "partial-prefix request retained a carrier or an independent live version");
   }
   const auto historical = static_cast<std::int32_t>((static_cast<std::int64_t>(producer_id) + 1) % model.vocabulary);
   model.restore_pending_boundary(*request.session, producer_cursor, historical);
@@ -148,7 +189,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind = q::Back
       << batched_families << " phases=" << flat_identity_phases << '\n';
   preflight(model); boundaries(model, prompt, suffix);
   std::cout << "{\"status\":\"PASS\",\"case\":\"sampling-policies\",\"ordinary\":true,\"same_model\":true,"
-      "\"configurations\":4,\"requests\":6,\"turns\":12,\"N\":2,\"R\":2,\"quality_claim\":false,\"performance_claim\":false}\n";
+      "\"configurations\":4,\"requests\":6,\"turns\":12,\"N\":2,\"R\":2,\"partial_prefix_input_cursor\":true,\"quality_claim\":false,\"performance_claim\":false}\n";
   return 0;
 }
 } // namespace qwen_sampling_policy_case
