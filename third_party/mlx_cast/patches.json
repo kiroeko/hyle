@@ -54,11 +54,15 @@
     {
       "path": "mlx/compile.cpp",
       "before_sha256": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
-      "after_sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c",
+      "after_sha256": "595297078c0e98046d45a3506d5fdcd9b26674a04a3aeaae7270de539af65ad5",
       "edits": [
         {
           "before": "          a.primitive().stream() != s || !is_fusable(a.primitive()) ||\n",
           "after": "          a.primitive().stream() != s || !is_fusable(a.primitive()) ||\n          (typeid(a.primitive()) == typeid(AsType) &&\n           a.dtype() == bfloat16 && a.inputs()[0].dtype() == float32) ||\n"
+        },
+        {
+          "before": "  // Replace output with potentially compiled output\n  for (auto& o : outputs) {\n    o = output_map.at(o.id());\n  }\n}",
+          "after": "  // Replace output with potentially compiled output\n  for (auto& o : outputs) {\n    o = output_map.at(o.id());\n  }\n\n  // Fusion rewrites shared dependencies. Derive the execution order from the\n  // final output graph, retaining every reachable data and status dependency.\n  std::vector<array> linearized;\n  linearized.reserve(tape.size());\n  std::unordered_set<uintptr_t> visited;\n  for (const auto& input : inputs) {\n    visited.insert(input.id());\n  }\n  std::function<void(const array&)> visit;\n  visit = [&](const array& a) {\n    if (visited.find(a.id()) != visited.end()) {\n      return;\n    }\n    for (const auto& input : a.inputs()) {\n      visit(input);\n    }\n    visited.insert(a.id());\n    for (const auto& sibling : a.siblings()) {\n      visited.insert(sibling.id());\n    }\n    linearized.push_back(a);\n  };\n  for (const auto& output : outputs) {\n    visit(output);\n  }\n  tape = std::move(linearized);\n}"
         }
       ]
     },

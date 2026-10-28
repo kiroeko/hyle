@@ -7182,7 +7182,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     const auto &call = calls[j];
     observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
   };
-  if (!generation) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+  if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
   else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
   model.submit_evaluations();
   const auto input_rows = model.active_step->input_tokens;
@@ -7845,7 +7845,12 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       std::vector<std::size_t> chunks; chunks.reserve(entries.size());
       for (const auto &[tokens, uses] : entries) { (void)uses; chunks.push_back(tokens); }
       bool packed = false;
-      if ((role == GraphRole::kText || is_mtp_prefill(role)) && model.layer0_probe.empty()) {
+      // Known whole turns of one request already have exact cold variants.
+      // Length-aware carriers are needed for batching, bounded chunks or an
+      // unknown prefix suffix; do not replace uniform math merely because the
+      // more general carrier is available.
+      const bool variable_prefill = width > 1 || prefill.bounded() || prefix_enabled;
+      if (variable_prefill && (role == GraphRole::kText || is_mtp_prefill(role)) && model.layer0_probe.empty()) {
         std::vector<std::size_t> capacities;
         const auto controls = carrier_support.find(key);
         if (controls != carrier_support.end()) {

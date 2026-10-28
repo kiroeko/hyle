@@ -36,6 +36,13 @@ all other operations remain eligible for upstream fusion. There is no host
 payload transfer, new HYLE kernel or new conversion algorithm. The source and
 cost change is explicitly part of the owning Apple route's validation scope.
 
+After fusion, the compiler rebuilds its execution tape from the final output
+graph, including checked status dependencies. Trace inputs remain boundaries;
+sibling results share one scheduled primitive. This cold traversal keeps the
+existing fused primitives and output order without evaluating or deep-copying
+the graph. Cold traversal cost and any repeated pure computation require
+validation; this change does not claim a performance improvement.
+
 The owning Apple CMake authenticates this manifest and upstream source before
 using the existing exact-patch materializer on a build-local copy. Shared cache
 originals are never changed. Edited files carry before/after hashes;

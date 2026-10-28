@@ -1,0 +1,200 @@
+{
+  "schema": 1,
+  "title": "Apple history: fusion output-DAG tape reconstruction",
+  "date": "2026-10-28",
+  "status": "PASS_BOUNDED",
+  "result": "The same frozen Apple history consumer passes after a clean one-TU MLX compiler fix.",
+  "actual_counts": {
+    "MLX_CXX": 4,
+    "CXX_passed": 4,
+    "links": 4,
+    "links_passed": 4,
+    "model_processes": 4,
+    "diagnostic_exit1": 3,
+    "fixed_exit0": 1,
+    "other_consumer_or_SDK_TUs_recompiled": 0,
+    "isolated_archive_copies": 1
+  },
+  "attempts": [
+    {
+      "attempt": "first",
+      "CXX_pid": 29486,
+      "link_pid": 29512,
+      "model_pid": 29519,
+      "model_exit": 1,
+      "source_sha256": "3b95c9a087f88512d1c1ecc919f54bf98a3c8a9cd8acb7ccf3700558b433f44b",
+      "image_sha256": "d570838609abb28890090be777773dbf73017c2f5a2344a31618d3dbb21574f0"
+    },
+    {
+      "attempt": "details",
+      "CXX_pid": 30393,
+      "link_pid": 30416,
+      "model_pid": 30423,
+      "model_exit": 1,
+      "source_sha256": "72aba228fe396530ea5714a41853d26ec2294c0e4200d68b75b05490c3e2ca0e",
+      "image_sha256": "098133fcec1744aee83fe8a7cdedee82fc7d0b98defc439c4c4989be6557cca9"
+    },
+    {
+      "attempt": "stages",
+      "CXX_pid": 30465,
+      "link_pid": 30491,
+      "model_pid": 30498,
+      "model_exit": 1,
+      "source_sha256": "cb035007f2798589ec06e4a0953e453d0e44e8d63cede4c6432fdbec111e6eac",
+      "image_sha256": "b192dd7416cbc9b4cc5f54845eb59cfade542b860488880cffa957cd56b7136f"
+    },
+    {
+      "attempt": "fixed",
+      "CXX_pid": 30530,
+      "link_pid": 30556,
+      "model_pid": 30563,
+      "model_exit": 0,
+      "source_sha256": "595297078c0e98046d45a3506d5fdcd9b26674a04a3aeaae7270de539af65ad5",
+      "image_sha256": "3e543f917cda81013dd37add189da81727955782d1517100617e610cc006ed87"
+    }
+  ],
+  "diagnosis": {
+    "confirmed": "compile_replace lacked Squeeze -> LogicalOr input after fusion; DFS and simplify tape checks were closed.",
+    "bounds_mask": "Less + GreaterEqual matches a checked index-bound predicate, not the Scan overflow predicate.",
+    "exact_local_parent_map_fault_identified": false,
+    "live_vs_dead_Squeeze_separately_proven": false,
+    "unrelated_sibling_order_change": false
+  },
+  "fix": {
+    "added_cpp_lines": 27,
+    "raw_source_before": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
+    "cast_patched_source": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c",
+    "clean_fixed_source": "595297078c0e98046d45a3506d5fdcd9b26674a04a3aeaae7270de539af65ad5",
+    "product_files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cast\\patches.json",
+        "bytes": 377104,
+        "sha256": "b32d561bfd9dfcd819685a2211baabc8136bc548ee9f5ce1ce8c80784afebfdf"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\third_party\\mlx_cast\\NOTICE.md",
+        "bytes": 11401,
+        "sha256": "30d4af5df8d13d67df32c786a90da448661321190661e3abf4cdf1758c26442f"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleDependencyLock.json",
+        "bytes": 77554,
+        "sha256": "47dafc4a2fe1f9034d9371c16417831d29ae48ad47d7a450b74f0db224d0841a"
+      }
+    ],
+    "contract": "After output rewriting, schedule the final outer DAG in postorder; trace-input boundaries, sibling deduplication, all status outputs/order retained. No evaluation, deep-copy, fusion disable or new executor.",
+    "dependency_lock": "hyle-apple-native-patches-v7; vendored tree 4fbeeba0f2a94d88fb610f27e2966da7741564ba93c2fdd8134edf8b5fa816b3"
+  },
+  "fixed_history": {
+    "pid": 30563,
+    "models": 1,
+    "configurations": 2,
+    "state_checks": 17,
+    "all_payloads_byte_equal": true,
+    "groups": [
+      {
+        "checks": 4,
+        "coverage": "Raw K1 and recursive K2 controls for greedy and random history policies"
+      },
+      {
+        "checks": 4,
+        "coverage": "Same-key partial StateOnly HostImage restore, two members in derived/manual journeys"
+      },
+      {
+        "checks": 8,
+        "coverage": "B2 derived C0 versus explicit manual counts over three Q1 chunks and a real generation round"
+      },
+      {
+        "checks": 1,
+        "coverage": "Full-prefix hit seeds history before frontier sampling versus explicit C0"
+      }
+    ],
+    "finite": {
+      "hand_rows": 4,
+      "duplicate_prefix_ids": 2,
+      "neutral_nodes": 0,
+      "checked_true": [
+        "p_q_bonus",
+        "negative_counts_rejected",
+        "masked_raw_nan_rejected",
+        "masked_raw_inf_rejected",
+        "masked_bias_nan_rejected",
+        "readonly_counts",
+        "normalized_q_unchanged",
+        "count_above_2pow24_exact",
+        "int32_overflow_rejected",
+        "managed_commands"
+      ]
+    },
+    "final_versions": 0
+  },
+  "prior_Apple_results": [
+    {
+      "arm": "logits",
+      "pid": 29351,
+      "state_checks": 10,
+      "rerun_with_fixed_MLX": false
+    },
+    {
+      "arm": "replay",
+      "pid": 29394,
+      "state_checks": 9,
+      "rerun_with_fixed_MLX": false
+    },
+    {
+      "arm": "control",
+      "pid": 29407,
+      "state_checks": 2,
+      "rerun_with_fixed_MLX": false
+    }
+  ],
+  "cumulative_Apple_state_checks": {
+    "prior_image": 21,
+    "fixed_image_new_history": 17,
+    "total_across_two_images": 38,
+    "all_38_rerun_on_fixed_image": false
+  },
+  "provenance": {
+    "prior_evidence_summary": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-io-native-2026-10-28.json",
+      "bytes": 21946,
+      "sha256": "c1775efff7bec68cfb7eb48e8be0bc891684ddcf463a291c3d2c06a4a3a81d5f"
+    },
+    "prior_evidence_zip": {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-program-io-native-2026-10-28.zip",
+      "bytes": 2205119,
+      "sha256": "e1f8b5b1a265dce9736e11f230e78cffcdac1f14f5ed8f338fad833b38d83354"
+    },
+    "fixed_image": {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/inference-apple-history-compile-20261028/fixed/bin/tiny",
+      "bytes": 24847176,
+      "sha256": "3e543f917cda81013dd37add189da81727955782d1517100617e610cc006ed87"
+    },
+    "link_inputs": 120,
+    "retained_inputs": 119,
+    "runtime": {
+      "MLX_METAL_PATH": "/Users/kiro/hyle-scratch/compute-unified/qwen-k1-functional-20261024/attempt1/mlx.metallib",
+      "OMP_NUM_THREADS": "4",
+      "VECLIB_MAXIMUM_THREADS": "4"
+    },
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+    "consumer": "Original frozen R3 Tiny/weights/SDK closure; only libmlx compile.cpp member changed. Current unrelated engine changes are not represented."
+  },
+  "limits": [
+    "Finite cached synthetic input, one Apple M4 host; no trained quality or new native platform claim.",
+    "No TPS, latency, peak-memory or cross-window performance claim; functional durations remain raw only.",
+    "A still-live old pure branch may be scheduled separately from a fused kernel. Performance impact was not measured.",
+    "The prior evidence remains partial as run. Its 21 passing checks are reused, not rerun with the fixed MLX image.",
+    "Prior LLDB permission denial launched no target; it is recorded by the referenced prior evidence, outside these four model processes.",
+    "No download, complete SDK rebuild, shader build, weights copy or new consumer compilation occurred in this batch."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-apple-history-compile-2026-10-28.zip",
+    "bytes": 346309,
+    "sha256": "d229d28c9c5bb7a70c396899014613078047c1f00064277cfb8f92ab34030a05",
+    "members": 313,
+    "member_manifest_sha256": "fdc7e07700b9ebc702538b517b5a8c07bf4fdbe59e65143419f7a4718066e207",
+    "all_member_SHA256_and_CRC_readback": true,
+    "excludes": "Binaries, object/archive payloads, SDK/weights/fixtures; prior complete evidence referenced by identity"
+  }
+}

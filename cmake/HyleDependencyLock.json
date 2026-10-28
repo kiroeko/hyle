@@ -1027,10 +1027,10 @@
         "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/1f8e74e3f12f31365464a6867c6579f0e9b29d85",
         "sha256": "cb988a5bdc38c798918d042b9b1c6edda3ccc5f23a2155138d3aa5c1b2acc301"
       },
-      "version": "hyle-apple-native-patches-v6",
+      "version": "hyle-apple-native-patches-v7",
       "vendored": {
         "path": "third_party/mlx_cast",
-        "tree_sha256": "91aee008db1a55281dcdae9cfb9db4a129ab310129ae91e30ca05508bd3c02df"
+        "tree_sha256": "4fbeeba0f2a94d88fb610f27e2966da7741564ba93c2fdd8134edf8b5fa816b3"
       },
       "license": {
         "expression": "MIT AND Apache-2.0",
@@ -1043,7 +1043,7 @@
           {
             "root": "hyle",
             "path": "third_party/mlx_cast/NOTICE.md",
-            "sha256": "90d9c17ed528ac5c27103ed569df25e4ea4b3c71cb92b75d67f6b3b078692136"
+            "sha256": "30d4af5df8d13d67df32c786a90da448661321190661e3abf4cdf1758c26442f"
           },
           {
             "root": "hyle",
