@@ -1,0 +1,336 @@
+{
+  "status": "PASS_BOUNDED_HISTORY_CONTROLS",
+  "created_utc": "2026-10-28T01:55:39.623153+00:00",
+  "counts": {
+    "actual_CXX": 2,
+    "successful_CXX": 2,
+    "failed_CXX": 0,
+    "actual_links": 2,
+    "successful_links": 2,
+    "actual_model_processes": 6,
+    "successful_model_processes": 6,
+    "actual_host_processes": 1,
+    "host_tests": 6,
+    "successful_host_tests": 6,
+    "actual_runtime_failures": 0,
+    "complete_initialized_state_checks": 48,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0,
+    "automatic_reruns": 0
+  },
+  "implementation": [
+    "History-only strict ledger replay preserves sampling identity, same-key HostImage continuation and explicit C0 on full prefix hits. K1/K2 continuation is compared against the same Model with complete initialized state bytes.",
+    "A stopped member after real B2/K2 submission causes normal whole-episode retirement without publication. Committed state, ledger, epoch and RNG stay unchanged; the peer continues under its original key. Unknown or erroneous retirement still follows the original error gate.",
+    "Escaped readonly C0 aliases occupy the original bounded pool. Refusal preserves conditional counts; releasing aliases permits retry. Checkpoint pins are released before a real zero-resident HostImage park and restore.",
+    "Target append, MTP draft append and NextN now share checked append_extent, readonly tail_compatible and original SDK reserve_tail with late-Unavailable rollback. Actual writer authority and retirement remain with the original resources.",
+    "Callers reserve dirty capacity after readonly tail reuse eligibility, retaining the target fast path and avoiding unused draft reserve capacity. NextN prepares caller vector capacity before native tail reservation. This is a source-level allocation change, not a measured performance result."
+  ],
+  "model_runs": [
+    {
+      "arm": "replay-cpu",
+      "pid": 13588,
+      "exit": 0,
+      "seconds": 0.9425365924835205,
+      "status": "PASS",
+      "complete_initialized_state_checks": 9,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    },
+    {
+      "arm": "replay-cuda",
+      "pid": 11032,
+      "exit": 0,
+      "seconds": 1.0816359519958496,
+      "status": "PASS",
+      "complete_initialized_state_checks": 9,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    },
+    {
+      "arm": "control-cpu",
+      "pid": 59988,
+      "exit": 0,
+      "seconds": 0.44965362548828125,
+      "status": "PASS",
+      "complete_initialized_state_checks": 2,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    },
+    {
+      "arm": "control-cuda",
+      "pid": 51084,
+      "exit": 0,
+      "seconds": 0.7818071842193604,
+      "status": "PASS",
+      "complete_initialized_state_checks": 2,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    },
+    {
+      "arm": "ordinary-cpu",
+      "pid": 16936,
+      "exit": 0,
+      "seconds": 0.4312703609466553,
+      "status": "PASS",
+      "complete_initialized_state_checks": 13,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    },
+    {
+      "arm": "ordinary-cuda",
+      "pid": 52548,
+      "exit": 0,
+      "seconds": 0.7738196849822998,
+      "status": "PASS",
+      "complete_initialized_state_checks": 13,
+      "all_payloads_byte_equal": true,
+      "final_versions": 0
+    }
+  ],
+  "host": {
+    "process": {
+      "pid": 55068,
+      "exit": 0,
+      "started": 1793152154.5278902,
+      "seconds": 0.4203650951385498,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "status": "PASS",
+    "tests": [
+      "LateBindFailureRemembersActualTransferredPrefix",
+      "WholeFailureReturnsReservationsWithoutReadyAuthority",
+      "AppendExtentChecksPageBoundariesAndOverflow",
+      "TailCohortReservesOriginalBanksWithoutWideningOldReaders",
+      "LateTailUnavailableRollsBackEarlierBankBeforeCow",
+      "LateTailErrorReturnsOriginalStatusAfterEarlierRollback"
+    ]
+  },
+  "builds": [
+    {
+      "unit": "tiny",
+      "CXX": {
+        "pid": 3508,
+        "exit": 0,
+        "started": 1793152018.2584507,
+        "seconds": 51.524176836013794,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 53312,
+        "exit": 0,
+        "started": 1793152145.1194887,
+        "seconds": 1.8226318359375,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "inputs": 228
+    },
+    {
+      "unit": "append",
+      "CXX": {
+        "pid": 46232,
+        "exit": 0,
+        "started": 1793152018.2687116,
+        "seconds": 2.5744431018829346,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "link": {
+        "pid": 14952,
+        "exit": 0,
+        "started": 1793152145.1004875,
+        "seconds": 1.6851253509521484,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "inputs": 230
+    }
+  ],
+  "actual_images": {
+    "tiny": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\bin\\tiny.exe",
+        "bytes": 143902208,
+        "sha256": "1e55885aa4202ad67910e4536b9f01fafcdc8044a6e53c13ce6bd9abfb7aedea"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\inputs-tiny.json",
+        "bytes": 58735,
+        "sha256": "ade49f3b8e34f6f211c8cf5d98922eea5bb2cc5c396ca675e2ef779846ad0e81"
+      },
+      "ready": {
+        "path": ".scratch/inference-history-controls-20261028/ready-tiny.json",
+        "bytes": 2580,
+        "sha256": "92380873f0aa4b891e0321ea40281e57c0e2066b3dd8caa70a99f6eb6c7faf4a"
+      },
+      "actual_dependencies": {
+        "path": ".scratch/inference-history-controls-20261028/compile/tiny/dependencies.json",
+        "bytes": 42365,
+        "sha256": "2f9f2079d35d4e79dcc095fe3f55785de2a28a5ea4908ec2def2878a33b47bcb"
+      },
+      "actual_project_dependencies": {
+        "path": ".scratch/inference-history-controls-20261028/compile/tiny/actual-project-dependencies.json",
+        "bytes": 41278,
+        "sha256": "090c9631b2a529eb99a73f79e783b671a03f9c45df1cd96f139750a47c4bce07"
+      }
+    },
+    "append": {
+      "image": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\bin\\append.exe",
+        "bytes": 140993536,
+        "sha256": "81347f612311f801e8e6be934300162f3a8d71a9b447c81d5ce3adbb36dbbcb3"
+      },
+      "inputs": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\inputs-append.json",
+        "bytes": 59160,
+        "sha256": "6e6a81b98a6ebc8151162edc2b0bb4bac91a208c42b0f56e16cd72d9b1e2e961"
+      },
+      "ready": {
+        "path": ".scratch/inference-history-controls-20261028/ready-append.json",
+        "bytes": 2617,
+        "sha256": "05c7546f13ad6e114c2839554f0339fcb734a9013a1f01051318f8529a1e5bc0"
+      },
+      "actual_dependencies": {
+        "path": ".scratch/inference-history-controls-20261028/compile/append/dependencies.json",
+        "bytes": 30804,
+        "sha256": "7fc736745a2b6d41587e7222c441ac661aba1069f9653483afd9a4bf060a896b"
+      },
+      "actual_project_dependencies": {
+        "path": ".scratch/inference-history-controls-20261028/compile/append/actual-project-dependencies.json",
+        "bytes": 11848,
+        "sha256": "ed97b74ee39e8babad25a15ab5c8cf98657388a8b43f00e4a0b1d510513d004a"
+      }
+    }
+  },
+  "source_pins": {
+    "engine/models/qwen35/main.cc": "8dde3dc343372cd4ce78e3e146bc724a104c9945b6241f0543fb801f99d1b27c",
+    "engine/inference/append_transactions.h": "124c3dece0d5a90909092e0c5966d9f377806ced43613a547953a34a090be7d1",
+    "tests/tools/inference_append_transactions_test.cc": "42becebff2a6c1afb0a375ae66161b6c7924426ea3ca22c5825ae4432430e440",
+    "tests/tools/qwen_history_replay_case.h": "59f7229022d5a0fc51ce74d42740bfd6f741c5e73506b289433476205ef509d1",
+    "tests/tools/qwen_history_control_case.h": "f9cab64778e3aec1e8ded75ac42ce89659ffcf9ab2aa7824bf74b38aec82988f",
+    "tests/tools/qwen_host_image_test.cc": "82042e2e6a71a1acb4c71a4f76be0fd04b693ec3504db5078ced098bcc08b41e",
+    "engine/inference/sampling_graph.h": "b2ac86189b1cdee2248aa511e6bff1a6990eacaa12b36d8beb7de86e8ded6139",
+    "engine/inference/history_counts.h": "04a8b96a73e891cb9c835326b67e1befe6571de5230160e994f6b99cb91a1ff6",
+    "engine/models/qwen35/generation_ledger.h": "efdd1c297e412ce32ed3ff9c6124e69dbd989fc3971142b8b1da99bc28eef0ee",
+    "tests/tools/inference_history_math_case.h": "a3843380b482b280ba1c7e1f7c51d12d671efc67012c7c7bd83215e9da190d72",
+    "tests/tools/qwen_history_logits_case.h": "701ad4969893f42bd85d5bf45083e56204cec6b0364f624ba8109131117a5cff"
+  },
+  "source_freeze": {
+    "path": ".scratch/inference-history-controls-20261028/source-freeze.json",
+    "bytes": 6673,
+    "sha256": "6cf0be110811eede846b746af2f34327873967db6cc0e68189921c15531e201f"
+  },
+  "dependency_boundary": {
+    "baseline": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\ready-tiny.json",
+      "bytes": 2703,
+      "sha256": "f9fe93535d8820aa8d66d9e89e07debc9aca6d51c6d9dbf6e53dd9635843744c"
+    },
+    "baseline_inputs": 228,
+    "retained_objects": 227,
+    "Tiny_inputs": 228,
+    "append_host_inputs": 230,
+    "private_objects_replaced_per_link": 1,
+    "retained_weights": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\weights\\unit.obj",
+      "bytes": 3468178,
+      "sha256": "4ea50f96ddfcf29097f3051b692ffdc6b74d1729d8ca64e321627b7d36cfd2be"
+    },
+    "scope": "Engine-private inline/declaration changes compile in each actual consumer TU. The public SDK and PreparedWeightSource ABI are unchanged; this is not a blanket compatibility proof for every retained header."
+  },
+  "preparation_notes": [
+    "The initial runtime-plan retained four planned consumers. The separate pinned run-plan expands the executed scope to six Model consumers plus one host process; the initial preparation receipt is preserved unchanged.",
+    "Three test API/oracle/lifetime issues were corrected during static review before the first actual build. They are not failed CXX or failed native processes."
+  ],
+  "limits": [
+    "Cached synthetic GA/H64/V64/C16 CPU and CUDA consumers only. No trained-model quality, real model EOS, throughput, other-native-platform, all-shape or all-dtype conclusion.",
+    "All 48 complete state comparisons are byte equal. Replay/control/ordinary counts are respectively 9/2/13 per backend. These finite journeys do not exhaust every request cancellation, restore or alias pattern.",
+    "Normal requested cancellation and real retirement are exercised. Native fault and unknown retirement are not injected; unchanged source gates are not runtime fault coverage.",
+    "History uses Commands with the original full 4*V-byte C0 upload. No graph-capture, sparse-transfer, no-copy or measured allocation/TPS gain is claimed.",
+    "Tail compatibility is readonly metadata, not a permission grant. The host late-Unavailable test uses a real unsubmitted read admission; it does not claim an accepted asynchronous native submission.",
+    "Durations are process provenance only. No performance window, statistical significance or cross-engine comparison is added."
+  ],
+  "references": [
+    {
+      "path": "docs/evidence/correctness/inference-history-logits-2026-10-28.json",
+      "bytes": 25884,
+      "sha256": "f40582607fd4203451d9069d354e01b8c1c09d6e952520e739418837c61436ee"
+    },
+    {
+      "path": "docs/evidence/correctness/inference-history-logits-2026-10-28.zip",
+      "bytes": 844359,
+      "sha256": "02a55a797b31386c732c34fa191590b35ad1709915db9033bbe22c1f7281cc56"
+    }
+  ],
+  "reproduction": {
+    "build": "python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\build.py compile; python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\build.py link",
+    "host": "python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\host.py compile; python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\host.py link; python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\run.py host",
+    "model": "python -B C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-controls-20261028\\run.py run ARM",
+    "arms": [
+      "replay-cpu",
+      "replay-cuda",
+      "control-cpu",
+      "control-cuda",
+      "ordinary-cpu",
+      "ordinary-cuda"
+    ],
+    "note": "Actual output paths are single-use. Reparse existing raw output offline rather than rerunning a successful process."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-history-controls-2026-10-28.zip",
+    "bytes": 390234,
+    "sha256": "da8d2c1d03cde60cb6ad0a1d976097fbd7544f09e77ae91dfa291cd0088a7003",
+    "files": 123,
+    "CRC_and_member_SHA256_verified": true
+  },
+  "cleanup": {
+    "status": "EXECUTED",
+    "removed_files": [
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\bin\\tiny.exe",
+        "bytes": 143774208,
+        "sha256": "eedd4da1f54056a51055c4bcf0811860b82dee89b012559a0b0d5624d2d69482"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\bin\\tiny.exp",
+        "bytes": 24991,
+        "sha256": "a008e7085109d3d696d3872ab369aee99c2f3e41ffbc213af9495fb5a34a2406"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\bin\\tiny.lib",
+        "bytes": 41384,
+        "sha256": "310514c31666bfa655d1aad270e1b24b62c5d7c92fecb2cef637f73ef2659841"
+      },
+      {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-history-logits-20261028\\math-retirement\\compile\\tiny\\unit.obj",
+        "bytes": 36797451,
+        "sha256": "71a169ad1d4fd21b9b5eac87440236c8105a8048d2108e661ddc04535220e06d"
+      }
+    ],
+    "removed_bytes": 180638034,
+    "receipt": {
+      "path": ".scratch/inference-history-controls-20261028/cleanup-executed.json",
+      "bytes": 6710,
+      "sha256": "b3c952e52d6c32daacc98e19ba6baa11e7be92677c5b9049bb5cece71f3babbe"
+    },
+    "script": {
+      "path": "test.ps1",
+      "bytes": 9112,
+      "sha256": "44a5681f5e5fa9181e4ab4c33cea60abe4ab9dc0168dcc51110d3329b6c54c98"
+    },
+    "protected_closures": [
+      "history-controls-tiny",
+      "history-controls-append",
+      "e4-host",
+      "stop-policy-host",
+      "b59-performance",
+      "phase-tiny"
+    ],
+    "retained": "Current Tiny/Append, Phase, E4/stop host, b59 performance closures; weights, SDK, DLLs, source, commands, logs, evidence and historical ready metadata",
+    "note": "Only the superseded math-retirement private image/object/link sidecars were removed after archive verification. Its ready metadata remains historical; current Tiny and append actual link inputs remain present. Cleanup receipt was added after the immutable runtime archive."
+  }
+}

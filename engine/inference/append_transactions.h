@@ -9,6 +9,65 @@
 
 namespace hyle::inference {
 
+struct AppendExtent final {
+  std::size_t after_rows = 0, prefix_pages = 0, page_count = 0, dirty_count = 0;
+  std::uint32_t tail_rows = 0, tail_append_rows = 0;
+};
+
+// Actual logical input rows only; physical query padding is not an append.
+// Division/remainder avoids an overflowing ceil numerator at SIZE_MAX.
+inline Result<AppendExtent> append_extent(std::size_t before_rows,
+    std::size_t append_rows, std::size_t capacity_rows, std::uint32_t page_rows) noexcept {
+  if (!page_rows || !append_rows)
+    return std::unexpected(Status::InvalidArgument("append extent requires nonempty rows and a positive page size"));
+  if (before_rows > capacity_rows || append_rows > capacity_rows - before_rows)
+    return std::unexpected(Status::OutOfRange("append extent exceeds its original logical capacity"));
+  AppendExtent result;
+  result.after_rows = before_rows + append_rows;
+  result.prefix_pages = before_rows / page_rows;
+  result.page_count = result.after_rows / page_rows + (result.after_rows % page_rows != 0);
+  result.dirty_count = result.page_count - result.prefix_pages;
+  result.tail_rows = static_cast<std::uint32_t>(before_rows % page_rows);
+  if (result.tail_rows) {
+    const auto available = page_rows - result.tail_rows;
+    result.tail_append_rows = append_rows < available ? static_cast<std::uint32_t>(append_rows) : available;
+  }
+  return result;
+}
+
+// A read-only sizing hint for the caller's original dirty/tail storage. The
+// caller still supplies its epoch/relay/private-work eligibility. Matching
+// metadata is not append permission: reserve_tail calls the actual SDK gate.
+inline bool tail_compatible(std::span<const compute::PagedPageAppender> tails,
+    std::uint32_t last_page, const AppendExtent &extent, bool allowed) noexcept {
+  if (!allowed || !extent.tail_rows || !extent.tail_append_rows) return false;
+  for (const auto &tail : tails)
+    if (!tail.valid() || tail.reserved_rows() || tail.page() != last_page ||
+        tail.initialized_rows() != extent.tail_rows) return false;
+  return true;
+}
+
+// Borrow the original appender cohort after its read-only compatibility check
+// and caller-owned capacity preparation. No owner, ticket or allocation is
+// created here. An empty bank cohort keeps the original vacuous loop result.
+// A late Unavailable permits COW only after earlier reservations roll back.
+// Other failures retain their exact Status and remaining facts in the actual
+// appenders; a rollback failure never becomes a successful COW decision.
+inline Result<bool> reserve_tail(std::span<compute::PagedPageAppender> tails,
+    const AppendExtent &extent) noexcept {
+  if (!extent.tail_append_rows)
+    return std::unexpected(Status::InvalidArgument("append extent has no original partial tail to reserve"));
+  for (std::size_t reserved = 0; reserved != tails.size(); ++reserved) {
+    const auto status = tails[reserved].reserve_rows(extent.tail_append_rows);
+    if (status.ok()) continue;
+    for (std::size_t i = 0; i != reserved; ++i)
+      HYLE_RETURN_IF_ERROR(tails[i].rollback());
+    if (status.IsUnavailable()) return false;
+    return std::unexpected(status);
+  }
+  return true;
+}
+
 // Borrow an original episode's already reserved storage. No transaction,
 // Invocation, permission, completion or retirement status is owned here.
 // The caller keeps these spans stable throughout each synchronous call.

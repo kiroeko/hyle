@@ -14,6 +14,8 @@
 #include "qwen_mtp_e4_case.h"
 #include "inference_history_math_case.h"
 #include "qwen_history_logits_case.h"
+#include "qwen_history_replay_case.h"
+#include "qwen_history_control_case.h"
 #include "inference_program_carrier_case.h"
 #include <cstdlib>
 
@@ -35,9 +37,11 @@ int main(int argc, char **argv) {
     const bool program_carrier = argc >= 3 && std::string_view(argv[argc - 1]) == "--program-carrier";
     const bool history_logits = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-logits";
     const bool history_ordinary = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-ordinary";
-    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || history_logits || history_ordinary);
+    const bool history_replay = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-replay";
+    const bool history_control = argc >= 3 && std::string_view(argv[argc - 1]) == "--history-control";
+    const auto input_argc = argc - static_cast<int>(lagged || state_reuse || mtp_batch_state || packed_prefill || ragged_prefill || mtp_packed_prefill || mtp_ragged_prefill || mtp_chunked_prefill || logits_preflight || mtp_stop || mtp_sampling || mtp_logits || mtp_e4 || program_carrier || history_logits || history_ordinary || history_replay || history_control);
     if (input_argc < 2 || input_argc > 3)
-      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--history-logits|--history-ordinary]");
+      throw std::runtime_error("usage: qwen_host_image_test --cpu|--cuda|--apple|--vulkan [prepared_input_directory] [--mtp-lag1|--state-reuse|--mtp-batch-state|--packed-prefill|--ragged-prefill|--mtp-packed-prefill|--mtp-ragged-prefill|--mtp-chunked-prefill|--logits-preflight|--mtp-stop|--mtp-sampling|--mtp-logits|--mtp-e4|--program-carrier|--history-logits|--history-ordinary|--history-replay|--history-control]");
     const std::string_view selected(argv[1]);
     auto backend = qwen35::BackendKind::kDefault;
     if (selected == "--cpu") backend = qwen35::BackendKind::kCpu;
@@ -66,7 +70,9 @@ int main(int argc, char **argv) {
     if (input.empty()) {
       std::cerr << "SKIP: pass prepared inputs or set HYLE_QWEN_HOST_IMAGE_INPUTS\n"; return 77;
     }
-    return history_ordinary ? qwen_history_logits_case::run(input, backend, false)
+    return history_control ? qwen_history_control_case::run(input, backend)
+           : history_replay ? qwen_history_replay_case::run(input, backend)
+           : history_ordinary ? qwen_history_logits_case::run(input, backend, false)
            : history_logits ? qwen_history_logits_case::run(input, backend)
            : mtp_e4 ? qwen_mtp_e4_case::run(input, backend)
            : mtp_logits ? qwen_mtp_logits_case::run(input, backend)

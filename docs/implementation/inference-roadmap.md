@@ -54,11 +54,14 @@ CPU／CUDA各10项完整状态对照逐字节相同，独立有限分布、拒�
 首条件C0为ledger真实`committed_ids()`加本次实际Li或pending；q_i／p_i逐proposal推进，bonus含此前所有假设，lag1catchup不重复计数，q不二次变换。
 Ledger的4V主机派生cache由原metadata预算计费，仅按新增提交token同步；原ColdResources的有界C0池按实际cohort使用，NextN双块只保当前更新值。
 这不消除每episode全V上传或计数输出，CUDA精确I32 Scan沿原Managed／Commands路线并有等待成本；默认路径不引入这些工作。
-StateOnly、同key恢复和完整前缀先seed后采样沿原账簿／退休合同；history-only严格回放已接线但未实跑，外部bias／mask仍拒绝。
+StateOnly、同key恢复和完整前缀先seed后采样沿原账簿／退休合同；history-only严格回放已有下述CPU／CUDA有限实测，外部bias／mask仍拒绝严格回放。
 CPU／CUDA各通过MTP 17项、普通13项完整状态对照，原modifier配置各10项回归通过；独立小图验证p／q／bonus、非有限输入、重复token和I32边界。
 首轮符号view接线错误、测试API和原终止错误观察错误均保留原收据；四个已成功进程未因后续测试修正而重跑。
 细节见[共同采样与history合同](../architecture/inference-design.md)及[本片记录](../evidence/correctness/inference-history-logits-2026-10-28.json)。
-逐前缀动态语法、历史惩罚的取消／淘汰、history-only严格回放和完整原生平台仍须后续检查，没有新性能或质量结论。
+本轮history-only R1严格回放与K1／K2续算在CPU／CUDA各通过9项完整状态逐字节对照；control各2项，并实际核只读C0别名容量拒绝／释放重试和同key HostImage换出恢复。
+MTP生成入口也接入提交后正常取消：原Step确因成员停止而cancelled，须先由原abort证明实际退休，才撤未提交账簿、释放q／C0并标整cohort Cancelled；
+CPU／CUDA均已检查真实B2 K2提交后stop A正常返回和原生退休：head／ledger／RNG／pending不发布，peer原key继续。未知／未退、native或其它错误仍带原Status和退休事实抛出，不影响普通多成员幸存者发布合同。
+这些检查使用小型合成制品和原generation入口＋RequestWindow，不是新增完整RequestLoop／服务层验证；逐前缀动态语法、其它平台和未知native故障未由此证明，没有trained quality或性能结论。[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
 E4目标KV＋原BF16 draft的MTP组合已接通：准备器提供两组实际行字节，容量按独立银行计费，
 沿原schema／COW／状态及HostImage执行。CPU／CUDA各11次完整状态字节比较、真实B2受控不同接受前缀、
 整episode取消后幸存请求续算及默认路径回归通过；元数据与独立容量检查通过。
@@ -77,8 +80,11 @@ Phase的一个或三个固定槽直接使用原exact child，Source提交沿同�
 非阻塞退休查询及结果观察后才归还IO的时点，成功不逐步重建。两次CXX、两次链接和五个有限进程通过；
 R2额度、接力、接受后取消与幸存者续算保持原完整状态、账簿和RNG，解析条件首错只离线修正。
 [Phase记录](../evidence/correctness/inference-phase-carrier-2026-10-28.json)另列未编跑的probe和未验证边界，没有新速度结论。
+共同Append现再统一NextN、图内draft和target KV的真实追加范围与多bank尾权预留：调用方元数据只作资格／容量提示，原`reserve_rows`仍是权限权威。
+晚Unavailable须全部原预留成功rollback才允许COW，rollback失败不伪装成功；draft按实际尾复用需要准备dirty元数据容量，失败回落才补足COW容量。
+三条真实路径已编译并由上述Model检查覆盖，原page／state owner保留；host Append 6项、普通CPU／CUDA各13项完整状态回归通过。不新增owner、Queue、权限表或热回调，不将代码减少视为性能收益。
 模型仍负责图数学、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
-下一步核实动态history接线的实际消费者、失败与资源边界，继续抽离共同执行编排；不以接线完成代替检查或性能结论。
+继续抽离共同执行编排并核实剩余边界；不以本轮有限检查代替完整执行核心或性能结论。
 
 ## 当前实现概况
 

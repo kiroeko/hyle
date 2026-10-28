@@ -3142,28 +3142,19 @@ public:
     DraftProposal output;
     try {
       const auto length = work.state.frontier;
-      next.frontier = cache::add(length, ids.size());
-      const auto prefix_pages = length / cache::Plan::page_rows;
-      const auto page_count = (next.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
-      const auto dirty_count = page_count - prefix_pages;
-      const auto tail_rows = length % cache::Plan::page_rows;
-      bool reuse = tail_rows && !work.state.pages.empty();
-      if (reuse) for (const auto &tail : work.tails)
-        reuse = reuse && tail.valid() && !tail.reserved_rows() && tail.initialized_rows() == tail_rows &&
-            tail.page() == work.state.pages.back().page();
-      if (reuse) {
-        const auto rows = static_cast<std::uint32_t>((std::min)(ids.size(), cache::Plan::page_rows - tail_rows));
-        std::size_t reserved = 0; hyle::Status status;
-        for (; reserved < work.tails.size(); ++reserved) {
-          status = work.tails[reserved].reserve_rows(rows); if (!status.ok()) break;
-        }
-        if (!status.ok()) {
-          for (std::size_t i = 0; i < reserved; ++i) check(work.tails[i].rollback());
-          if (!status.IsUnavailable()) check(status);
-          reuse = false;
-        }
-      }
+      const auto extent = take(inference::append_extent(length, ids.size(), capacity, cache::Plan::page_rows));
+      next.frontier = extent.after_rows;
+      const auto prefix_pages = extent.prefix_pages, page_count = extent.page_count, dirty_count = extent.dirty_count;
+      bool reuse = inference::tail_compatible(work.tails,
+          work.state.pages.empty() ? 0 : work.state.pages.back().page(), extent, !work.state.pages.empty());
       next.pages.reserve(page_count);
+      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+        guard.dirty[bank].reserve(cache::add(guard.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
+      if (reuse && !take(inference::reserve_tail(work.tails, extent))) {
+        reuse = false;
+        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+          guard.dirty[bank].reserve(cache::add(guard.dirty[bank].size(), dirty_count));
+      }
       for (std::size_t i = 0; i < prefix_pages; ++i) next.pages.push_back(work.state.pages.at(i));
       if (reuse) {
         next.pages.push_back(work.state.pages.back());
@@ -4254,28 +4245,18 @@ public:
       const auto &old = *member.base->draft;
       const auto rows = row_inputs[j].rows;
       member.next->draft.emplace(); auto &next = *member.next->draft;
-      next.frontier = cache::add(old.frontier, rows);
-      if (next.frontier > capacity) throw std::runtime_error("draft cache exceeds context capacity");
-      const auto prefix_pages = old.frontier / cache::Plan::page_rows;
-      const auto count = (next.frontier + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
-      const auto dirty_count = count - prefix_pages, old_tail = old.frontier % cache::Plan::page_rows;
-      bool reuse = old_tail && session.draft_tail_epoch == member.base_epoch && !old.pages.empty();
-      if (reuse) for (const auto &tail : session.draft_tails)
-        reuse = reuse && tail.valid() && !tail.reserved_rows() &&
-            tail.page() == old.pages.back().page() && tail.initialized_rows() == old_tail;
+      const auto extent = take(inference::append_extent(old.frontier, rows, capacity, cache::Plan::page_rows));
+      next.frontier = extent.after_rows;
+      const auto prefix_pages = extent.prefix_pages, count = extent.page_count, dirty_count = extent.dirty_count;
+      bool reuse = inference::tail_compatible(session.draft_tails, old.pages.empty() ? 0 : old.pages.back().page(),
+          extent, session.draft_tail_epoch == member.base_epoch && !old.pages.empty());
       next.pages.reserve(count);
-      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank) step.dirty[bank].reserve(cache::add(step.dirty[bank].size(), dirty_count));
-      if (reuse) {
-        const auto added = static_cast<std::uint32_t>((std::min)(rows, cache::Plan::page_rows - old_tail));
-        std::size_t reserved = 0; hyle::Status status;
-        for (; reserved < session.draft_tails.size(); ++reserved) {
-          status = session.draft_tails[reserved].reserve_rows(added); if (!status.ok()) break;
-        }
-        if (!status.ok()) {
-          for (std::size_t i = 0; i < reserved; ++i) check(session.draft_tails[i].rollback());
-          if (!status.IsUnavailable()) check(status);
-          reuse = false;
-        }
+      for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+        step.dirty[bank].reserve(cache::add(step.dirty[bank].size(), dirty_count - (reuse ? 1 : 0)));
+      if (reuse && !take(inference::reserve_tail(session.draft_tails, extent))) {
+        reuse = false;
+        for (std::size_t bank = draft_bank; bank < draft_bank + 2; ++bank)
+          step.dirty[bank].reserve(cache::add(step.dirty[bank].size(), dirty_count));
       }
       for (std::size_t page = 0; page < prefix_pages; ++page) next.pages.push_back(old.pages.at(page));
       if (reuse) {
@@ -4719,31 +4700,19 @@ public:
         const auto member_tokens = member.input_tokens;
         member.next = reserve_state(session.head);
         if (!member.next_tails.try_resize(draft_bank)) throw std::bad_alloc{};
-        member.next->length = length + member_tokens;
+        const auto extent = take(inference::append_extent(length, member_tokens, capacity, cache::Plan::page_rows));
+        member.next->length = extent.after_rows;
         member.next->sampling = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify ? member.base->sampling.advanced(drafts_token(role) ? 3 : 1)
             : member.base->sampling;
-        const auto full_prefix_pages = length / cache::Plan::page_rows;
-        const auto page_count = (member.next->length + cache::Plan::page_rows - 1) / cache::Plan::page_rows;
-        const auto dirty_count = page_count - full_prefix_pages;
-        const auto tail_rows = length % cache::Plan::page_rows;
-        bool reuse_tail = !relay && tail_rows && session.tail_epoch == member.base_epoch && !member.base->pages.empty();
-        if (reuse_tail) for (const auto &tail : session.tails)
-          reuse_tail = reuse_tail && tail.valid() && !tail.reserved_rows() &&
-              tail.page() == member.base->pages.back().page() && tail.initialized_rows() == tail_rows;
+        const auto full_prefix_pages = extent.prefix_pages, page_count = extent.page_count, dirty_count = extent.dirty_count;
+        bool reuse_tail = inference::tail_compatible({session.tails.data(), session.tails.size()},
+            member.base->pages.empty() ? 0 : member.base->pages.back().page(), extent,
+            !relay && session.tail_epoch == member.base_epoch && !member.base->pages.empty());
         member.next->pages.reserve(page_count);
         for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count - (reuse_tail ? 1 : 0)));
-        if (reuse_tail) {
-          const auto rows = static_cast<std::uint32_t>((std::min)(member_tokens, cache::Plan::page_rows - tail_rows));
-          std::size_t reserved = 0; hyle::Status status;
-          for (; reserved < session.tails.size(); ++reserved) {
-            status = session.tails[reserved].reserve_rows(rows); if (!status.ok()) break;
-          }
-          if (!status.ok()) {
-            for (std::size_t i = 0; i < reserved; ++i) check(session.tails[i].rollback());
-            if (!status.IsUnavailable()) check(status);
-            reuse_tail = false;
-            for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count));
-          }
+        if (reuse_tail && !take(inference::reserve_tail({session.tails.data(), session.tails.size()}, extent))) {
+          reuse_tail = false;
+          for (auto &bank : step.dirty) bank.reserve(cache::add(bank.size(), dirty_count));
         }
         for (std::size_t i = 0; i < full_prefix_pages; ++i) member.next->pages.push_back(member.base->pages.at(i));
         if (reuse_tail) {
@@ -7210,6 +7179,35 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         failure.observe_retirement(model.abort_episode()); throw;
       }
       catch (...) { (void)model.abort_episode(); throw; }
+    }
+    if (model.active_step && model.active_step->cancelled) {
+      // MTP stops cancel their one original shared episode. Its unchanged
+      // peer can retry only after actual retirement returns every transaction.
+      const bool requested = std::ranges::any_of(model.active_step->members,
+          [](const auto &member) { return member.session->stopping; });
+      auto retired = model.abort_episode();
+      for (const auto &call : calls) if (call.request->session->stopping)
+        inference::record_retirement_status(retired.status, call.request->session->retirement_status);
+      if (!requested || !retired.retired || (!retired.status.ok() &&
+          (!retired.status.IsCancelled() || retired.status.has_native_error()))) {
+        auto status = retired.status;
+        if (status.ok()) status = retired.retired
+            ? hyle::Status::FailedPrecondition("cancelled generation episode has no stopped member")
+            : hyle::Status::Unavailable("cancelled generation episode is still retiring");
+        inference::EvaluationFailure failure(std::move(status));
+        failure.observe_retirement(retired); throw failure;
+      }
+      const auto seconds = std::chrono::duration<double>(Clock::now() - episode_start).count();
+      double proposal_seconds = 0;
+      for (auto &call : calls) {
+        call.request->ledger->discard_uncommitted();
+        call.draft_log_probabilities.clear(); call.logits.counts = {};
+        call.disposition = EvaluationDisposition::kCancelled;
+        call.step_seconds = seconds + call.proposal_seconds;
+        proposal_seconds += call.proposal_seconds;
+      }
+      observe_generation_batch(batch_observer, calls, input_rows, seconds + proposal_seconds, active_rows, physical_rows);
+      return;
     }
     // Controls retain their original post-submit ordering. Optional CPU-only
     // work follows them, and never turns its own allocation failure into a

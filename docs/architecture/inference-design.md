@@ -94,6 +94,12 @@ Qwen特殊token集中在模型自己的`generation_tokens.h`，请求额外停�
 同步调用省略时不引入回调表。高层生成读取真实`EvaluationDisposition`，取消成员不发布token、ledger或prompt history。
 原生退休与输出排空分别判断；只有无native错误的预期取消可作为正常取消结果，真实设备错误继续保留。
 
+MTP生成入口在原提交后若看到Step已cancelled，且确有原成员stopping，先沿原abort／Append／Store恢复证明实际退休。
+只有退休完成且终结为OK或无native错误的预期Cancelled，才正常返回整cohort取消：所有调用标记Cancelled，
+撤销原未提交账簿槽并释放q／C0；各成员已提交head、pending、RNG和账簿不变，未停止的peer可用原key重新准备。
+未知／未退休、设备或其它终结错误仍以`EvaluationFailure`携原Status和真实退休观察传播，不制造participant，也不提前清权限。
+普通多成员的“停止一人、幸存者正常发布”分支保持原合同。CPU／CUDA均已实跑真实B2 K2提交后stop A的正常返回与原生退休，取消cohort不发布head／ledger／RNG／pending，幸存者按原key续算，见[本轮有限记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
+
 当前控制由单owner串行驱动；这与设备执行并发是两个维度。未来应用可向owner投递请求、取消和输出额度，
 观察有序事件，不能直接并发改Session。已有错误事实包括底层`Status`和带成员／退休信息的`EvaluationFailure`，
 尚未统一全部引擎异常。后续API需同时保留错误类别、影响范围（成员／批次／模型）和真实原生退休事实；
@@ -558,6 +564,13 @@ history接线保留CastF32之前原精度samples的逐前缀窗口；它与F32 G
 晚bind拒绝保留已成功转交的bound前缀，只有真实take返回后才清标记；部分take不重复取已返回项。
 未返回时不discard，尾页rollback与新页discard只操作调用方实际持有的原对象。
 该借用不增加分配、Queue、Completion、权限、状态owner或发布策略；whole状态及数学／Source／Frame提交留在模型层。
+
+同一设施现扩展到NextN私有draft、target图内draft及target KV三条准备路径的逻辑追加范围和多bank尾权预留。
+`append_extent`只计真实输入行，draft计实际Li+lag，物理padding不追加；页数取整避免溢出的ceil分子。
+`tail_compatible`只是调用方原epoch／relay／私有工作资格下的只读容量提示，元数据匹配不授予追加权；真正权限仍由各原appender的`reserve_rows`接纳。
+晚bank的Unavailable只有在已成功bank全部rollback成功后才返回“改走COW”；rollback错误保留原对象和失败状态，不能伪装成可COW。
+NextN和图内draft先按尾复用实际需要预留dirty元数据，原SDK拒绝复用并成功回滚后才补COW容量，不再先要求未必使用的COW页对应的dirty元数据容量。
+模型仍决定epoch资格、页池取得、候选prefix和Frame提交，保留原page／state owner，没有新增清理账簿或运行期回调。三条真实路径已编译并由本轮有限Model检查覆盖；host Append 6项通过，普通CPU／CUDA回归各13项完整状态对照通过，见[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
 [有限检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)覆盖晚bank拒绝及真实CPU Graph追加后确定性拒绝，
 核原页、回收和失败不产生ready；原读取fixture失败及修正保留。真实2B普通有7次后继发布，K2有9次NextN调用，
 另有CPU／CUDA的单行lag1 StateOnly及B2 MTP状态回归；不据共同代码抽离宣称性能提升。
@@ -1206,10 +1219,15 @@ StateOnly不读counts、不抽样，实际提交token在下次同步计入；同
 
 增量主机cache不消除每个采样episode全V的C0上传，NextN也仍产生全V计数输出。精确I32递增复用原Gather、Scan、ScatterAssign，
 计数更新不经F32往返，不另设2^24上限或新provider；罚分计算仍用原F32数学。CUDA现有Scan是Managed并有主机等待，history路线使用原Commands回落，不能宣称捕获或吞吐改善。
-history-only严格决策回放已接入按原已提交token重建C0的路径，但本片尚未实跑；含外部bias／mask仍拒绝严格回放。
+history-only严格决策回放按原已提交token重建C0，保留记录的角色、实际宽度、配置与消费前缀；含外部bias／mask仍拒绝严格回放。
+history-only R1严格回放的CPU／CUDA检查各通过9项完整状态逐字节对照，覆盖greedy／随机、StateOnly、K1／K2原记录回放及继续执行，ledger和RNG一致；没有放宽字节比较或修正sampling wrapper来掩盖不同合同。
+control的CPU／CUDA检查各通过2项完整状态逐字节对照，另核真实B2 K2提交后stop A正常返回、原生退休及零head／ledger／RNG／pending发布，幸存者保原key继续。
+同一旅程实际保留只读C0别名令原池容量拒绝，释放后合法重试，并经HostImage换出恢复继续R1 K2；见[本轮记录](../evidence/correctness/inference-history-controls-2026-10-28.json)。
+取消或池拒绝不推进主机提交计数；原别名仍持读权时即使native已退休也不能抢回writer。HostImage只从空闲live Session导出，
+停止成员的旧状态通过其已证明相同的checkpoint活reader核查，不放宽stopping导出门或把stop当退休。
 本片[有限检查](../evidence/correctness/inference-history-logits-2026-10-28.json)覆盖CPU／CUDA的普通双请求、K1／K2、
 greedy／随机、StateOnly、同key HostImage恢复及新key完整前缀重采样，并比较完整状态；独立数学检查核对p／q／bonus和I32边界。
-符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。未知原生故障、历史惩罚专属取消／淘汰及其它平台未由这些结果证明。
+符号view的计数更新声明真实逻辑输出规格，交原exact child处理布局；不提前要求物理描述。上述新增结果使用小型合成制品，覆盖原generation入口与RequestWindow，并非新增完整RequestLoop或服务层验证；未知native故障及其它平台未由这些旅程证明。
 以上为接线和资源合同，实际数学／Model检查结果另记，不代签逐步动态语法、全平台、质量或性能。
 
 CT BF16 block128的[共同冷图片段](../evidence/correctness/ct-block128-supplied-graph-2026-10-25.json)接收实际Value／TensorSpec及原租约绑定，固定形状和symbolic token行共用同体，按真实几何追加既有Graph数学；原fixture复用同体。它不拥有存储、调度或源格式注册表；BF16 block QDQ、channel／token与F32-scale code-dot仍由制品策略明确区分，不能仅按SF形状猜数学。[普通引擎冷入口](../evidence/correctness/ct-block128-model-binding-2026-10-25.json)由源配置选择reader、角色保留原W／SF及local FP4舍入，Recipe将片段生成的真实NodeId交回原GraphAssembly记录placement；后端继续消费同一Graph，不增加运行时路由。

@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "../../engine/inference/append_transactions.h"
 #include "hyle/compute/backends/cpu.h"
@@ -200,5 +203,129 @@ TEST(InferenceAppendTransactions, WholeFailureReturnsReservationsWithoutReadyAut
   ASSERT_TRUE(*recovered); EXPECT_EQ(p.bound, (std::array<std::uint8_t, 2>{0, 0}));
   EXPECT_FALSE(p.appends[0].ready()); EXPECT_FALSE(p.appends[1].ready());
   p.discard_and_reacquire();
+}
+
+struct TailPair final {
+  static constexpr std::uint32_t page_rows = 4;
+  c::BatchSchema schema;
+  std::array<c::PagedArena, 2> arenas;
+  std::array<c::ReadLease, 2> prefixes;
+  std::array<c::PagedPageAppender, 2> tails;
+  std::array<std::vector<std::byte>, 2> before;
+  std::size_t row_bytes = 0;
+
+  TailPair() {
+    const auto plain = take(c::CacheStorage::plain(c::DataType::kBFloat16));
+    schema = take(c::BatchSchema::create({.query_type = c::DataType::kBFloat16, .output_type = c::DataType::kBFloat16,
+        .key_storage = plain, .value_storage = plain, .max_requests = 1, .max_query_rows = 1, .max_kv_rows = 8,
+        .max_pages = 2, .max_page_refs = 2, .query_heads = 1, .kv_heads = 1, .qk_head_dim = 64,
+        .value_head_dim = 64, .page_size = page_rows}));
+    for (std::size_t bank = 0; bank != arenas.size(); ++bank) {
+      arenas[bank] = take(c::PagedArena::create(schema, bank ? c::BatchCacheRole::kValue : c::BatchCacheRole::kKey,
+          m::system_resource(), {.max_backing_bytes = 4096}));
+      auto writer = take(arenas[bank].acquire(0));
+      row_bytes = arenas[bank].page_bytes() / page_rows;
+      check(take(writer.lease().view()).fill(std::byte{0x6d}));
+      check(take(take(writer.lease().view()).subview(0, row_bytes)).fill(static_cast<std::byte>(0x20 + bank)));
+      auto page = take(writer.publish_appendable(1));
+      prefixes[bank] = std::move(page.prefix); tails[bank] = std::move(page.appender);
+      before[bank].resize(row_bytes);
+      check(take(prefixes[bank].view()).read(before[bank]));
+    }
+  }
+
+  void old_unchanged() {
+    for (std::size_t bank = 0; bank != prefixes.size(); ++bank) {
+      std::vector<std::byte> actual(row_bytes);
+      check(take(prefixes[bank].view()).read(actual));
+      EXPECT_EQ(actual, before[bank]);
+      EXPECT_EQ(prefixes[bank].size(), row_bytes);
+      EXPECT_FALSE(prefixes[bank].subview(0, row_bytes * 2));
+    }
+  }
+};
+
+TEST(InferenceAppendTransactions, AppendExtentChecksPageBoundariesAndOverflow) {
+  struct Case { std::size_t before, added, after, prefix, pages, dirty; std::uint32_t tail, reserved; };
+  const std::array cases{Case{0, 1, 1, 0, 1, 1, 0, 0}, Case{15, 1, 16, 0, 1, 1, 15, 1},
+      Case{16, 1, 17, 1, 2, 1, 0, 0}, Case{17, 32, 49, 1, 4, 3, 1, 15}};
+  for (const auto &test : cases) {
+    const auto result = i::append_extent(test.before, test.added, 64, 16);
+    ASSERT_TRUE(result) << result.error().message();
+    EXPECT_EQ(result->after_rows, test.after); EXPECT_EQ(result->prefix_pages, test.prefix);
+    EXPECT_EQ(result->page_count, test.pages); EXPECT_EQ(result->dirty_count, test.dirty);
+    EXPECT_EQ(result->tail_rows, test.tail); EXPECT_EQ(result->tail_append_rows, test.reserved);
+  }
+  const auto maximum = (std::numeric_limits<std::size_t>::max)();
+  const auto exact = i::append_extent(maximum - 1, 1, maximum, 1);
+  ASSERT_TRUE(exact) << exact.error().message();
+  EXPECT_EQ(exact->after_rows, maximum); EXPECT_EQ(exact->page_count, maximum); EXPECT_EQ(exact->dirty_count, 1u);
+  const auto overflow = i::append_extent(maximum, 1, maximum, 16);
+  ASSERT_FALSE(overflow); EXPECT_TRUE(overflow.error().IsOutOfRange());
+  const auto over_capacity = i::append_extent(7, 2, 8, 4);
+  ASSERT_FALSE(over_capacity); EXPECT_TRUE(over_capacity.error().IsOutOfRange());
+  const auto invalid_base = i::append_extent(9, 1, 8, 4);
+  ASSERT_FALSE(invalid_base); EXPECT_TRUE(invalid_base.error().IsOutOfRange());
+  const auto no_page = i::append_extent(0, 1, 8, 0), no_rows = i::append_extent(0, 0, 8, 4);
+  ASSERT_FALSE(no_page); EXPECT_TRUE(no_page.error().IsInvalidArgument());
+  ASSERT_FALSE(no_rows); EXPECT_TRUE(no_rows.error().IsInvalidArgument());
+}
+
+TEST(InferenceAppendTransactions, TailCohortReservesOriginalBanksWithoutWideningOldReaders) {
+  TailPair pair;
+  const auto extent = take(i::append_extent(1, 2, 8, TailPair::page_rows));
+  EXPECT_FALSE(i::tail_compatible(pair.tails, 0, extent, false));
+  EXPECT_FALSE(i::tail_compatible(pair.tails, 1, extent, true));
+  EXPECT_FALSE(i::tail_compatible(pair.tails, 0, take(i::append_extent(2, 1, 8, TailPair::page_rows)), true));
+  ASSERT_TRUE(i::tail_compatible(pair.tails, 0, extent, true));
+  for (const auto &tail : pair.tails) EXPECT_EQ(tail.reserved_rows(), 0u); // Compatibility is read-only.
+  const auto reserved = i::reserve_tail(pair.tails, extent);
+  ASSERT_TRUE(reserved) << reserved.error().message(); ASSERT_TRUE(*reserved);
+  for (std::size_t bank = 0; bank != pair.tails.size(); ++bank) {
+    EXPECT_EQ(pair.tails[bank].reserved_rows(), 2u);
+    check(take(pair.tails[bank].view()).fill(std::byte{0x55}));
+    const auto ready = take(pair.tails[bank].publish());
+    EXPECT_EQ(ready.size(), pair.row_bytes * 3);
+    EXPECT_EQ(ready.generation(), pair.prefixes[bank].generation());
+    EXPECT_EQ(pair.tails[bank].initialized_rows(), 3u);
+    std::vector<std::byte> actual(ready.size()), expected(pair.row_bytes * 3, std::byte{0x55});
+    std::copy(pair.before[bank].begin(), pair.before[bank].end(), expected.begin());
+    check(take(ready.view()).read(actual)); EXPECT_EQ(actual, expected);
+  }
+  pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, LateTailUnavailableRollsBackEarlierBankBeforeCow) {
+  TailPair pair;
+  const auto extent = take(i::append_extent(1, 2, 8, TailPair::page_rows));
+  auto uses = take(c::LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}));
+  auto second_bank = take(uses.begin());
+  check(second_bank.read(pair.prefixes[1]));
+  // A real SDK admission holds the second block. It is not accepted native
+  // work or a mocked Completion; dropping this unsubmitted use returns it.
+  ASSERT_TRUE(i::tail_compatible(pair.tails, 0, extent, true));
+  const auto refused = i::reserve_tail(pair.tails, extent);
+  ASSERT_TRUE(refused) << refused.error().message(); EXPECT_FALSE(*refused);
+  EXPECT_EQ(pair.tails[0].reserved_rows(), 0u); EXPECT_EQ(pair.tails[1].reserved_rows(), 0u);
+  pair.old_unchanged();
+  second_bank = {};
+  const auto retry = i::reserve_tail(pair.tails, extent);
+  ASSERT_TRUE(retry) << retry.error().message(); ASSERT_TRUE(*retry);
+  for (auto &tail : pair.tails) check(tail.rollback());
+  pair.old_unchanged();
+}
+
+TEST(InferenceAppendTransactions, LateTailErrorReturnsOriginalStatusAfterEarlierRollback) {
+  TailPair pair;
+  const auto extent = take(i::append_extent(1, 1, 8, TailPair::page_rows));
+  check(pair.arenas[1].close());
+  ASSERT_TRUE(i::tail_compatible(pair.tails, 0, extent, true));
+  const auto original = pair.tails[1].reserve_rows(extent.tail_append_rows);
+  ASSERT_TRUE(original.IsFailedPrecondition());
+  const auto refused = i::reserve_tail(pair.tails, extent);
+  ASSERT_FALSE(refused);
+  EXPECT_TRUE(refused.error().IsFailedPrecondition()); EXPECT_EQ(refused.error().message(), original.message());
+  EXPECT_EQ(pair.tails[0].reserved_rows(), 0u); EXPECT_EQ(pair.tails[1].reserved_rows(), 0u);
+  pair.old_unchanged();
 }
 } // namespace
