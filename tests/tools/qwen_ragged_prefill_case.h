@@ -46,7 +46,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   for (const auto completion : {q::TextCompletion::kStateOnly, q::TextCompletion::kEmitNext}) {
     require(packed.prepare_prefill_family(capacities, completion, 0, 2),
         "selected route did not prepare its real B2 packed family");
-    packed.plan_replay_uses(8, 2, 8, q::GraphRole::kText, completion, 0, true);
+    packed.plan_replay_uses(8, 2, 8, q::GraphRole::kText, completion, 0, q::RowPacking::kPrefill);
   }
   exact.prepare_execution(exact_rows);
   exact.prepare_execution(state_rows, 1, q::GraphRole::kText, q::TextCompletion::kStateOnly);
@@ -97,7 +97,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     packed.prepare_prefill_evaluations(requests, nullptr, q::GraphRole::kText, completion);
     require(packed.active_step && packed.active_step->members.size() == 2 &&
         packed.active_step->phase->query_rows == 8 && packed.active_step->phase->family->requests == 2 &&
-        packed.active_step->phase->family->packed_prefill && packed.active_step->active_input_rows == report.active,
+        q::packs_prefill(packed.active_step->phase->family->packing) && packed.active_step->active_input_rows == report.active,
         "ragged prefill did not submit its original B2/C8 carrier with the true sum of Li");
     const auto signature = report.state_only ? 0u : 1u;
     if (carriers[signature]) require(carriers[signature] == packed.active_step->phase,

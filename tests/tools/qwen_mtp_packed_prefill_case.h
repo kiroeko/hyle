@@ -45,7 +45,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kMtpCatchupPrefill}) {
     require(packed.prepare_prefill_family(carrier, q::TextCompletion::kEmitNext, 0, 1, role),
         "selected route did not prepare its real packed MTP prefill family");
-    packed.plan_replay_uses(4, 1, 4, role, q::TextCompletion::kEmitNext, 0, true);
+    packed.plan_replay_uses(4, 1, 4, role, q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
   }
   for (auto *model : {&exact, &packed}) {
     model->prepare_family(verify, false, 1, q::GraphRole::kVerify);
@@ -118,7 +118,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
         }
       }
       if (candidate && prefill) {
-        require(step.phase->query_rows == 4 && step.phase->family->packed_prefill &&
+        require(step.phase->query_rows == 4 && q::packs_prefill(step.phase->family->packing) &&
             step.phase->family->role == role && step.active_input_rows == rows,
             "MTP prefill did not use the original packed R4 target carrier");
         const auto slot = q::draft_lag(role);

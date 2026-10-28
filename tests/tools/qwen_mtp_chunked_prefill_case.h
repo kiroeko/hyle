@@ -27,14 +27,14 @@ inline std::int32_t raw(q::Model &model, const std::shared_ptr<q::Session> &sess
   if (packed_prefill) {
     const std::array requests{q::EvaluationRequest{session, ids}};
     model.prepare_prefill_evaluations(requests, nullptr, role, completion);
-    require(model.active_step->phase->family->packed_prefill && model.active_step->phase->query_rows == 4,
+    require(q::packs_prefill(model.active_step->phase->family->packing) && model.active_step->phase->query_rows == 4,
         "state-only MTP prefill did not retain its real packed R4 carrier");
   } else model.prepare_evaluation(*session, ids, nullptr, role, completion);
   if (completion == q::TextCompletion::kStateOnly) state_only_ports(*model.active_step->phase);
   if (role == q::GraphRole::kMtpCatchupSingle && completion == q::TextCompletion::kStateOnly) {
     const auto &step = *model.active_step;
     require(ids.size() == 1 && step.input_tokens == 1 && step.phase->query_rows == 1 &&
-        !step.phase->family->packed_prefill && step.members.size() == 1 &&
+        !q::packs_prefill(step.phase->family->packing) && step.members.size() == 1 &&
         step.members[0].layout.facts().query_rows == 1 && step.members[0].draft_layout.facts().query_rows == 2 &&
         step.members[0].next->length == session->length() + 1 &&
         step.members[0].next->draft->frontier == session->head->draft->frontier + 2,
@@ -105,7 +105,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   for (const auto role : {q::GraphRole::kMtpPrefill, q::GraphRole::kMtpCatchupPrefill}) {
     require(chunk.prepare_prefill_family(carrier, q::TextCompletion::kStateOnly, 0, 1, role),
         "selected route did not prepare its real state-only MTP prefill carrier");
-    chunk.plan_replay_uses(4, 1, 2, role, q::TextCompletion::kStateOnly, 0, true);
+    chunk.plan_replay_uses(4, 1, 2, role, q::TextCompletion::kStateOnly, 0, q::RowPacking::kPrefill);
   }
   for (auto *model : {&exact, &chunk}) {
     model->prepare_family(seed, false, 1, q::GraphRole::kVerify);
@@ -154,7 +154,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       std::array calls{std::move(call)};
       q::execute_generation_calls(chunk, calls, false, &prefix, requests, [&] {
         require(chunk.active_step && chunk.active_step->submitted && chunk.active_step->input_tokens == 1 &&
-            chunk.active_step->phase->query_rows == 1 && !chunk.active_step->phase->family->packed_prefill,
+            chunk.active_step->phase->query_rows == 1 && !q::packs_prefill(chunk.active_step->phase->family->packing),
             "Q1 request did not submit the original exact Single episode");
         if (state_only) state_only_ports(*chunk.active_step->phase);
       });

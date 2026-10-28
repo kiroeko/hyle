@@ -1,0 +1,355 @@
+{
+  "schema": "hyle.correctness.mixed-lag.v1",
+  "date": "2026-10-29",
+  "status": "PASS_FOUR_FINITE_CASES",
+  "change": "Compact mixed-lag B2 K1 draft uses three actual rows in a four-row physical carrier; target remains two rows per member.",
+  "counts": {
+    "successful_CXX": 1,
+    "successful_links": 1,
+    "successful_finite_processes": 4,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "build": {
+    "compile_process": {
+      "pid": 58072,
+      "exit": 0,
+      "started": 1793206767.1361382,
+      "seconds": 59.302807092666626,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "link_process": {
+      "pid": 43788,
+      "exit": 0,
+      "started": 1793206903.2884803,
+      "seconds": 1.8398334980010986,
+      "state": "TERMINAL",
+      "timed_out": false
+    },
+    "source": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 7511,
+      "sha256": "8a7f792fb4f6d0e4f8c3cab8ce40fe28ea657221b3a0b693195b60eedd72ea30"
+    },
+    "image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\bin\\tiny.exe",
+      "bytes": 144269824,
+      "sha256": "71235988fd0b8113dd586de8a381c1bf02c320186da6714553d57e69f9963894"
+    },
+    "inherited_inputs": 227,
+    "source_freeze": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\source-freeze.json",
+      "bytes": 44098,
+      "sha256": "4f9efda550cdcf4329b98100f08f1ac6ec01322810ab55df11c5d9ee94d73828"
+    }
+  },
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 601136,
+      "sha256": "9b18ed5af9fab9e6e19b791c222322d1b3e8a6ef2f95da3115a42422708b6cf7"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\execution_mode.h",
+      "bytes": 2217,
+      "sha256": "aa05dea4b8d39044a6ee44ecc93b6529712d9a11883f3c6125e88610fade55c9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\mtp_graph.h",
+      "bytes": 20945,
+      "sha256": "e32b90099c0dad232aa01446bc7b3b1b0e83b49ad86cac923f9a2f74a75e930d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_chunked_prefill_case.h",
+      "bytes": 14038,
+      "sha256": "b45abccc59606d111a36c779641dd2bb32c1c72c1edc7ad44ede4ca8912b4292"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_packed_prefill_case.h",
+      "bytes": 15026,
+      "sha256": "da5f226b8c704f9c39878fe5f457ec05af317982ccbadd8fbb3ac03c4e62fcff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_ragged_prefill_case.h",
+      "bytes": 15035,
+      "sha256": "0b934c5103250b87e56592ca2dcdc47e2474f504f3a0d58d504f0751ec5593cf"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_chunked_prefill_case.h",
+      "bytes": 25281,
+      "sha256": "77b606efe5512d18e59e1c3e007face607c75b133021f226f309b756ea786656"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_packed_prefill_case.h",
+      "bytes": 15740,
+      "sha256": "c2d55972680959362c599bf011f4dc8213c59e46c826ea4d749cd27e49873689"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_ragged_prefill_case.h",
+      "bytes": 21868,
+      "sha256": "adcef083009929f6d44df101683235fc4e0245a35e62cd41dcdf67fdf979a90b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_mtp_mixed_lag_case.h",
+      "bytes": 23653,
+      "sha256": "3ad38dedef3301fbd530a5c9df27acfd5711d74bf81c45a337c464a823ba08ff"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_host_image_test.cc",
+      "bytes": 7511,
+      "sha256": "8a7f792fb4f6d0e4f8c3cab8ce40fe28ea657221b3a0b693195b60eedd72ea30"
+    }
+  ],
+  "snapshot_only_sources": [
+    "C:\\public\\project-hyle\\hyle\\tests\\tools\\qwen_chunked_prefill_case.h"
+  ],
+  "cases": [
+    {
+      "name": "mixed-cpu",
+      "process": {
+        "pid": 40496,
+        "exit": 0,
+        "started": 1793206912.7597475,
+        "seconds": 0.833176851272583,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cpu",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "mixed_target_submissions": 2,
+        "target_submissions": 13,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false,
+        "state_check_records": 6
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\runs\\mixed-cpu\\report.json",
+        "bytes": 3096,
+        "sha256": "1b7d65193e116197257ec7c29cce93cd3832339cfa844431716b03217d6efcd7"
+      }
+    },
+    {
+      "name": "mixed-cuda",
+      "process": {
+        "pid": 52784,
+        "exit": 0,
+        "started": 1793206919.5837247,
+        "seconds": 0.8635377883911133,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "status": "PASS",
+        "backend": "cuda",
+        "mode": "mtp_mixed_lag",
+        "synthetic_untrained": true,
+        "requests": 2,
+        "mixed_target_submissions": 2,
+        "target_submissions": 13,
+        "target_rows_per_member": 2,
+        "actual_draft_rows": 3,
+        "physical_draft_rows": 4,
+        "payloads_byte_equal": true,
+        "numerically_equivalent": true,
+        "old_checkpoints_unchanged": true,
+        "StateOnly_no_pending_or_draw": true,
+        "natural_R1_results_equal": true,
+        "mixed_engine_single_submission": true,
+        "original_member_roles_committed": true,
+        "retired_head_rejected_before_prepare": true,
+        "full_request_history_import_coverage": false,
+        "final_versions": 0,
+        "natural_acceptance_quality_claim": false,
+        "performance_claim": false,
+        "state_check_records": 6
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\runs\\mixed-cuda\\report.json",
+        "bytes": 3095,
+        "sha256": "b14b62d6fb704287136cadb8858462cb0fb36847e8e00c858006f67d08b659d8"
+      }
+    },
+    {
+      "name": "ragged-cuda",
+      "process": {
+        "pid": 58732,
+        "exit": 0,
+        "started": 1793206928.3150034,
+        "seconds": 0.8695566654205322,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "backend": "cuda",
+        "mode": "mtp_ragged_prefill",
+        "synthetic_untrained": true,
+        "width": 2,
+        "target_capacity": 8,
+        "lag1_draft_capacity": 10,
+        "actual_target_rows": 36,
+        "physical_target_rows": 46,
+        "committed_target_rows": 32,
+        "actual_draft_rows": 32,
+        "physical_draft_rows": 42,
+        "controlled_verify_width": 3,
+        "controlled_accepted_rows": 2,
+        "discarded_target_rows": 4,
+        "actual_i32_selectors_checked": true,
+        "old_checkpoints_byte_unchanged": true,
+        "rng_and_epochs_equal": true,
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "gdn_state_absolute_budget": 3e-06,
+        "natural_acceptance_claim": false,
+        "performance_claim": false,
+        "status": "PASS"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\runs\\ragged-cuda\\report.json",
+        "bytes": 17592,
+        "sha256": "b1453296473670a34a81fc8fb9d605c6d974c20c4556cebc591831ed69cf4b77"
+      }
+    },
+    {
+      "name": "chunked-cpu",
+      "process": {
+        "pid": 22352,
+        "exit": 0,
+        "started": 1793206937.3167229,
+        "seconds": 0.45751261711120605,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "facts": {
+        "backend": "cpu",
+        "mode": "mtp_chunked_prefill",
+        "synthetic_untrained": true,
+        "old_checkpoints_byte_unchanged": true,
+        "partial_restore_byte_equal": true,
+        "same_owner_commit_epoch_increment": 1,
+        "restored_epoch_scope": "new_session_owner",
+        "state_only_score_sampler_id_ports_absent": true,
+        "final_versions": 0,
+        "final_images": 0,
+        "final_native_episodes": 0,
+        "payloads_byte_equal": false,
+        "numerically_equivalent": true,
+        "gdn_state_absolute_budget": 3e-06,
+        "natural_acceptance_claim": false,
+        "performance_claim": false,
+        "status": "PASS"
+      },
+      "report": {
+        "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mixed-lag-20261029\\runs\\chunked-cpu\\report.json",
+        "bytes": 2892,
+        "sha256": "00c8276d8a9e052afab63a453eea29454e8b2cfdcc6144834510b21a7701acfc"
+      }
+    }
+  ],
+  "recorded_processes": [
+    {
+      "record": "logs\\compile-tiny\\process.json",
+      "process": {
+        "pid": 58072,
+        "exit": 0,
+        "started": 1793206767.1361382,
+        "seconds": 59.302807092666626,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "logs\\link-tiny\\process.json",
+      "process": {
+        "pid": 43788,
+        "exit": 0,
+        "started": 1793206903.2884803,
+        "seconds": 1.8398334980010986,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs\\chunked-cpu\\process.json",
+      "process": {
+        "pid": 22352,
+        "exit": 0,
+        "started": 1793206937.3167229,
+        "seconds": 0.45751261711120605,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs\\mixed-cpu\\process.json",
+      "process": {
+        "pid": 40496,
+        "exit": 0,
+        "started": 1793206912.7597475,
+        "seconds": 0.833176851272583,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs\\mixed-cuda\\process.json",
+      "process": {
+        "pid": 52784,
+        "exit": 0,
+        "started": 1793206919.5837247,
+        "seconds": 0.8635377883911133,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    },
+    {
+      "record": "runs\\ragged-cuda\\process.json",
+      "process": {
+        "pid": 58732,
+        "exit": 0,
+        "started": 1793206928.3150034,
+        "seconds": 0.8695566654205322,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    }
+  ],
+  "prior_failed_or_incomplete_processes": [],
+  "limits": [
+    "CPU/CUDA synthetic GA C16 finite dispatch only: mixed generation plus ragged/chunked regressions.",
+    "The frozen run.py parsers retain original per-case state checks and GDN 3e-6 budget; complete reports are in the archive.",
+    "No complete RequestLoop regrouping/history-import, quality, performance, cross-platform or device D2 claim.",
+    "SDK/weights are inherited; only actual dependency metadata and the eleven explicit source files are archived."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-mixed-lag-2026-10-29.zip",
+    "bytes": 285011,
+    "sha256": "6d206f33f9473edca3b799cdb4dbdea82303c17c49ca7d36aa02d94e2b68401f",
+    "members": 56,
+    "manifest_sha256": "e49cd0d4e92a2fef017fd22a1d05d8d5cc4318f0f597a6d7faa5bff9861fd8e7",
+    "CRC": "PASS",
+    "member_SHA256": "PASS"
+  }
+}

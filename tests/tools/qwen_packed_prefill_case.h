@@ -153,7 +153,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
   exact.prepare_family(exact_chunks);
   require(bucket.prepare_prefill_family(bucket_chunks), "selected CPU/CUDA route did not prepare its packed prefill math");
   for (const auto rows : exact_chunks) exact.plan_replay_uses(rows, 1, 8);
-  bucket.plan_replay_uses(8, 1, 8, q::GraphRole::kText, q::TextCompletion::kEmitNext, 0, true);
+  bucket.plan_replay_uses(8, 1, 8, q::GraphRole::kText, q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
   exact.prepare_execution(exact_chunks); bucket.prepare_prefill_execution(bucket_chunks);
   auto exact_storage = q::take(hyle::inference::HostStateStorage::create(exact.execution, 1, 4u << 20));
   auto bucket_storage = q::take(hyle::inference::HostStateStorage::create(bucket.execution, 1, 4u << 20));
@@ -181,7 +181,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       const std::array request{q::EvaluationRequest{b[sequence], ids}};
       bucket.prepare_prefill_evaluations(request);
       require(bucket.active_step && bucket.active_step->input_tokens == ids.size() &&
-          bucket.active_step->phase->query_rows == 8 && bucket.active_step->phase->family->packed_prefill,
+          bucket.active_step->phase->query_rows == 8 && q::packs_prefill(bucket.active_step->phase->family->packing),
           "packed prefill did not retain L rows in the original packed R8 carrier");
       if (carrier) require(carrier == bucket.active_step->phase, "packed prefill silently compiled an L-specific carrier");
       else carrier = bucket.active_step->phase;

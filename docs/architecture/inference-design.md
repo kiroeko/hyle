@@ -1209,6 +1209,13 @@ q、状态、输出租约及历史报告按各自寿命保留。
 
 ## 尊重平台、精度与状态差异
 
+行布局与数学角色分开表达。K1混合lag批次的target保持每成员两行，draft物理容量为`2R`，
+实际Append按每成员`1+lag`计量；位置、hidden／token选择和最终head行都来自同一compact偏移。
+lag0的占位prior借用有效carry，padding只使用合法索引，不写入KV，也不推进状态。
+冷family可共用CatchupRound的容量，提交账簿仍保留每成员原Round／CatchupRound角色与真实草稿行数。
+均匀／R1继续使用原数学和快路；冷能力缺失时按原兼容组缩批，不把执行失败当回退。
+这不代签多草稿有效snapshot、设备接受或在途后继权限，它们仍须分别满足原状态与退休合同。
+
 Backend 在冷期选择实际编入的端点，编入能力不代表设备可用；失败不暗中回退。
 `has_cpu_assist()` 只表示 GPU 主端点附带 CPU 辅助；纯 CPU 主端点由 `host_only()` 表达。
 CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定某平台的搬运、Queue 或执行包装。

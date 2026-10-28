@@ -67,9 +67,11 @@ CPU／CUDA完整路线按产品依赖自动装配ATen，其它独立模块仍按
 模型删除两份独立计数，保留真实账簿、容量、采样和Session发布。12组主机合同与5个CPU／CUDA有限消费者通过，
 实际部分前缀命中分别核对记录数和token数；MTP、取消、midturn恢复与R2接力保留原状态检查。
 一次错夹具入口拒绝保留原记录，改用已有正确缓存后同镜像通过；共4次CXX／链接，未重编SDK或下载模型，没有新增吞吐结论。
-MTP固定形状的下一片先处理真实混合lag成员：K1 proposal的target均为两行，draft按每成员`1+lag`消费，
-已有Batch／Append支持compact实际前缀；需接真实末行selector，并使位置、hidden／token选择及Append使用同一坐标。
-保留均匀／R1的原快路，不无条件多算padding；新路径应与原分组逐成员结果和完整性能对照。
+[混合lag K1](../evidence/correctness/inference-mixed-lag-2026-10-29.json)已接同一物理draft family，
+target均为两行，draft按每成员`1+lag`消费；末行、位置、hidden／token选择及Append使用同一compact坐标。
+均匀／R1保留原快路，冷能力不足按原组缩批；实际生成提交保留每成员真实角色与消费行数。
+1次CXX／链接和4个CPU／CUDA有限进程通过：混合路径12项完整状态逐字节相同，原ragged／分块17项在既有GDN预算内；
+退休Session扫描前拒绝也有实际见证。未实跑完整RequestLoop混合重组，没有新增吞吐、质量或跨平台结论。
 这不代签多草稿Verify：PackedGDN多snapshot仍要求每个成员实际行数覆盖K，需要真实有效snapshot合同。
 也不代签MTP设备后继，接受前缀的Store／KV权限、pending及原RNG地址必须另行证明。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，

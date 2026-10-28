@@ -293,13 +293,18 @@ AppendNodes append_kv(R &r, const compute::BatchSchema &schema, const KeyValue &
 template<class R>
 Head full_head(R &r, const Projection &projection, const KeyValue &kv,
                Value positions, Value frequencies, const PagedInputs &paged,
-               Dimension last_row, const Geometry &shape) {
+               Dimension last_row, const Geometry &shape, Value last_indices = {}) {
   detail::coordinates(r, shape, positions, frequencies);
-  if (projection.rows != shape.packed_rows || kv.rows != projection.rows || (last_row.is_fixed() &&
+  if (projection.rows != shape.packed_rows || kv.rows != projection.rows || (!last_indices && last_row.is_fixed() &&
       (last_row.fixed_value() < 0 || (shape.sequence_rows.is_fixed() &&
        last_row.fixed_value() >= shape.sequence_rows.fixed_value()))))
     throw std::runtime_error("MTP selected row is outside its actual input rows");
   const auto batch = fixed(static_cast<std::int64_t>(shape.requests));
+  if (last_indices) {
+    const auto indices = r.spec(last_indices);
+    if (indices.data_type() != Type::kInt32 || indices.rank() != 1 || indices.dimensions()[0] != batch)
+      throw std::runtime_error("MTP last-row selection requires one I32 packed row index per request");
+  }
   const auto nodes = append_kv(r, paged.schema, kv);
   auto projected = r.reshape(detail::linear_absolute(r, projection.normalized,
       "mtp.layers.0.self_attn.q_proj.weight"), {batch, shape.sequence_rows, fixed(r.geometry.query_heads), fixed(r.geometry.key_depth + r.geometry.value_depth)});
@@ -325,7 +330,12 @@ Head full_head(R &r, const Projection &projection, const KeyValue &kv,
       detail::linear_absolute(r, gated, "mtp.layers.0.self_attn.o_proj.weight"));
   x = block_graph::emit_ffn(r, x, "mtp.layers.0.");
   const auto hidden_rows = detail::norm_absolute(r, x, "mtp.norm.weight");
-  const auto selected = shape.requests == 1
+  // Compact members name their actual final packed row; the caller derives
+  // these indices from the same layout that bounds the original KV appends.
+  const auto selected = last_indices
+      ? r.one(compute::Gather{.axis = 0, .bounds = compute::IndexBoundsPolicy::kChecked},
+          {hidden_rows, last_indices}, r.dense_spec(r.activation_type(), {batch, fixed(r.geometry.hidden)}))
+      : shape.requests == 1
       ? r.copy(r.slice(hidden_rows, 0, last_row, fixed(1)))
       : r.reshape(r.copy(r.slice(r.reshape(hidden_rows, {batch, shape.sequence_rows, fixed(r.geometry.hidden)}),
           1, last_row, fixed(1))), {batch, fixed(r.geometry.hidden)});

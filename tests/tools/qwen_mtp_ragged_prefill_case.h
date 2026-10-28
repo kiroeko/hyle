@@ -64,7 +64,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
     for (const auto rows : exact_rows) exact.plan_replay_uses(rows, 1, 4, role);
     require(packed.prepare_prefill_family(carrier, q::TextCompletion::kEmitNext, 0, 2, role),
         "selected route did not prepare its original B2 packed MTP family");
-    packed.plan_replay_uses(4, 2, 4, role, q::TextCompletion::kEmitNext, 0, true);
+    packed.plan_replay_uses(4, 2, 4, role, q::TextCompletion::kEmitNext, 0, q::RowPacking::kPrefill);
   }
   for (const auto &[model, width] : {std::pair{&exact, std::size_t{1}}, std::pair{&packed, std::size_t{2}}}) {
     model->prepare_family(verify, false, width, q::GraphRole::kVerify);
@@ -160,7 +160,7 @@ inline int run(const std::filesystem::path &input, q::BackendKind kind) {
       }
     }
     if (prefill) {
-      require(step.phase->family->packed_prefill, "ragged MTP prefill silently used an exact tail family");
+      require(q::packs_prefill(step.phase->family->packing), "ragged MTP prefill silently used an exact tail family");
       if (carriers[lag]) require(carriers[lag] == step.phase, "ragged MTP compiled a new carrier for Li or member order");
       else carriers[lag] = step.phase;
       auto &carrier_io = step.phase->io[step.state_slot];

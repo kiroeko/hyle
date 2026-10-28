@@ -44,11 +44,11 @@ inline int run(const std::filesystem::path &input){try{
   model.prepare_family(emit_shapes);
   require(model.prepare_prefill_family(state_shapes,q::TextCompletion::kStateOnly)&&model.prepare_prefill_family(state_shapes),"real CUDA consumer did not prepare packed state/emit prefill");
   for(auto rows:emit_shapes)model.plan_replay_uses(rows,1,16);
-  for(auto rows:state_shapes)for(auto completion:{q::TextCompletion::kStateOnly,q::TextCompletion::kEmitNext})model.plan_replay_uses(rows,1,16,q::GraphRole::kText,completion,0,true);
+  for(auto rows:state_shapes)for(auto completion:{q::TextCompletion::kStateOnly,q::TextCompletion::kEmitNext})model.plan_replay_uses(rows,1,16,q::GraphRole::kText,completion,0,q::RowPacking::kPrefill);
   model.prepare_execution(emit_shapes);
   model.prepare_prefill_execution(state_shapes,q::TextCompletion::kStateOnly);model.prepare_prefill_execution(state_shapes);
   for(auto rows:state_shapes){
-    const auto *state_family=model.find_family(1,rows,q::GraphRole::kText,false,q::TextCompletion::kStateOnly,0,true);
+    const auto *state_family=model.find_family(1,rows,q::GraphRole::kText,false,q::TextCompletion::kStateOnly,0,q::RowPacking::kPrefill);
     require(state_family&&!state_family->logits_port&&!state_family->id_port&&!state_family->sampling_identity_port&&!state_family->sampling_valid_port,"state-only graph has a score/sampler/ID port");
   }
   std::vector<i::GenerationTurn> turns_a{{prompt,1},{std::vector<std::int32_t>(prompt.begin(),prompt.begin()+130),1},{{},1}};
@@ -73,7 +73,7 @@ inline int run(const std::filesystem::path &input){try{
   const auto execute=[&](std::size_t index){
     auto call=prepare(index);require(call.planned_rows()<=64,"token quantum exceeded");const auto rows=call.ids().size();
     const auto prefill=!call.generation;
-    const auto observed=[&]{require(model.active_step&&model.active_step->input_tokens==rows,"submitted episode lost actual input rows");const auto carrier=model.active_step->phase->query_rows;require(carrier>=rows&&(!prefill||(carrier==64&&model.active_step->phase->family->packed_prefill)),"physical carrier does not use its actual cold packed prefill");physical_rows+=carrier;physical_dispatch.push_back(carrier);};
+    const auto observed=[&]{require(model.active_step&&model.active_step->input_tokens==rows,"submitted episode lost actual input rows");const auto carrier=model.active_step->phase->query_rows;require(carrier>=rows&&(!prefill||(carrier==64&&q::packs_prefill(model.active_step->phase->family->packing))),"physical carrier does not use its actual cold packed prefill");physical_rows+=carrier;physical_dispatch.push_back(carrier);};
     std::array calls{std::move(call)};q::execute_generation_calls(model,calls,false,nullptr,requests,observed);
     token_rows+=rows;dispatch.push_back(requests[index].id+":"+std::to_string(rows));
   };
@@ -86,7 +86,7 @@ inline int run(const std::filesystem::path &input){try{
   require(q::generation_boundary(*a.session->head)==first_boundary&&full_state_bytes(model,*a.session->head)==first_bytes&&restored.target_rows==64&&a.progress.input_consumed()==64&&a.progress.generated.empty(),"partial state-only rebuild changed full state/KV/cursor/offset");
   const auto *cancel_base=a.session->head.get();const auto before_b=q::generation_boundary(*b.session->head);auto cancelled=prepare(0);
   q::prepare_generation_record(*a.ledger,*a.session,cancelled.role,cancelled.ids(),false,0,0,a.warm_inputs[0],0,cancelled.completion,cancelled.input_begin,cancelled.prefill_complete);
-  const std::array inputs{q::EvaluationRequest{a.session,cancelled.ids()}};model.prepare_prefill_evaluations(inputs,nullptr,q::GraphRole::kText,cancelled.completion);require(model.active_step->phase->family->packed_prefill&&model.active_step->phase->query_rows==64,"cancel arm did not submit the real packed prefill carrier");model.submit_evaluations();
+  const std::array inputs{q::EvaluationRequest{a.session,cancelled.ids()}};model.prepare_prefill_evaluations(inputs,nullptr,q::GraphRole::kText,cancelled.completion);require(q::packs_prefill(model.active_step->phase->family->packing)&&model.active_step->phase->query_rows==64,"cancel arm did not submit the real packed prefill carrier");model.submit_evaluations();
   const auto cancelled_physical=model.active_step->phase->query_rows;
   const bool submitted_inflight=model.active_step->execution.run->in_flight();const auto abort=model.abort_episode();if(!abort.status.IsCancelled()||abort.status.has_native_error())q::check(abort.status);require(abort.retired,"cancelled chunk did not actually retire");
   require(!model.active_step&&!model.carrier_borrowed&&!a.session->pending&&a.session->head.get()==cancel_base&&a.progress.input_consumed()==64&&a.ledger->committed_count==1&&a.session->head->sampling.draw==0&&q::generation_boundary(*b.session->head)==before_b,"cancelled chunk published or advanced input");
