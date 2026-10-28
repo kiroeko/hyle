@@ -1,0 +1,251 @@
+{
+  "schema": "hyle.inference.current-host-profile.v1",
+  "status": "FOUR_R1_DIAGNOSTIC_TRACES_VERIFIED",
+  "scope": "Frozen current execution-preparation Model2434c27c with NVTX-only scratch delta, successful latest229 CUDA CLI closure; retained433e native peer core via its89e7 NVTX-only consumer. Not latest upstream.",
+  "workload": "One natural P154 turn,greedy,64 outputs,C1024,R1,prefix off. Hyle ordinary auto and MTP K1; peer ordinary and MTP K1. No artificial warmup.",
+  "counts": {
+    "Model_CXX": 1,
+    "links": 1,
+    "SDK_builds": 0,
+    "NVCC": 0,
+    "native_consumers": 4,
+    "profiler_controllers": 4,
+    "native_failures": 0,
+    "native_reruns": 0,
+    "offline_parser_failures": 1,
+    "pre_CXX_preparation_metadata_failures": 1
+  },
+  "identities": {
+    "canonical_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\engine\\models\\qwen35\\main.cc",
+      "bytes": 603013,
+      "sha256": "2434c27c9c49f34bcf73269b831b610af9c396ffc8f1c5d9951f04e010742f5b"
+    },
+    "NVTX_main": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-host-profile-20261028\\source\\engine\\models\\qwen35\\main.cc",
+      "bytes": 604412,
+      "sha256": "a0ca106af79f8073112b2f244560ea7270fe63d56f4c5303bf1ac6ced73db7d7"
+    },
+    "Hyle_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-current-host-profile-20261028\\bin\\hyle-current.exe",
+      "bytes": 142781440,
+      "sha256": "f2087d53fbc3f3857f241b415ee593f5d66c4d29525a1aab022ea5387ad851ad"
+    },
+    "peer_image": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-cuda-current-attribution-20261026\\peer\\link\\consumer.exe",
+      "bytes": 35832832,
+      "sha256": "89e7f9f71e9bcada232c2e935f621ec879f6c7bac7301d813c0c67c155cb896f"
+    },
+    "profiler": {
+      "path": "C:\\Program Files\\NVIDIA Corporation\\Nsight Systems 2026.1.3\\target-windows-x64\\nsys.exe",
+      "bytes": 65146496,
+      "sha256": "a54d5e465086380373adc7b4cfeab771ed6f7cca98caa45b6393ed676dbb56ec"
+    },
+    "closure_inputs": 229,
+    "only_Model_object_replaced": true,
+    "retained_peer_native_inputs": 8
+  },
+  "profiles": {
+    "r1-auto": {
+      "consumer_pid": 18972,
+      "nsys_controller_pid": 53804,
+      "exit": 0,
+      "roots": 64,
+      "decode_roots": 63,
+      "decode_cycles": 63,
+      "generated_outputs": 64,
+      "root_scoped_begin_capture": 5,
+      "root_scoped_record_API_counts": {
+        "cudaStreamBeginCapture_v10000": 5,
+        "cudaStreamEndCapture_v10000": 5,
+        "cudaGraphInstantiateWithFlags_v11040": 4,
+        "cudaGraphExecUpdate_v10020": 1
+      },
+      "retained_full_non_time_differences": 0,
+      "decode_envelope_ms": 670.154063,
+      "decode_root_union_ms": 669.610385,
+      "decode_assigned_GPU_union_ms": 612.917066,
+      "decode_physical_process_GPU_union_ms": 612.917066,
+      "decode_process_GPU_idle_ms": 57.236997,
+      "decode_graph_launches": 63,
+      "actual_work": {
+        "actual_target_rows": 217,
+        "verified_target_rows": 63
+      }
+    },
+    "r1-peer": {
+      "consumer_pid": 60072,
+      "nsys_controller_pid": 7152,
+      "exit": 0,
+      "roots": 64,
+      "decode_roots": 63,
+      "decode_cycles": 63,
+      "generated_outputs": 64,
+      "root_scoped_begin_capture": 1,
+      "root_scoped_record_API_counts": {
+        "cudaStreamBeginCapture_v10000": 1,
+        "cudaStreamEndCapture_v10000": 1,
+        "cudaGraphInstantiate_v12000": 1,
+        "cudaGraphExecUpdate_v10020": 1
+      },
+      "retained_full_non_time_differences": 0,
+      "decode_envelope_ms": 744.923163,
+      "decode_root_union_ms": 742.25047,
+      "decode_assigned_GPU_union_ms": 677.802631,
+      "decode_physical_process_GPU_union_ms": 677.802631,
+      "decode_process_GPU_idle_ms": 67.120532,
+      "decode_graph_launches": 62,
+      "actual_work": {
+        "actual_target_rows": 217,
+        "verified_target_rows": 63
+      }
+    },
+    "mtp-hyle": {
+      "consumer_pid": 55816,
+      "nsys_controller_pid": 10292,
+      "exit": 0,
+      "roots": 35,
+      "decode_roots": 34,
+      "decode_cycles": 34,
+      "generated_outputs": 64,
+      "root_scoped_begin_capture": 2,
+      "root_scoped_record_API_counts": {
+        "cudaStreamBeginCapture_v10000": 2,
+        "cudaStreamEndCapture_v10000": 2,
+        "cudaGraphInstantiateWithFlags_v11040": 2
+      },
+      "retained_full_non_time_differences": 0,
+      "decode_envelope_ms": 603.276903,
+      "decode_root_union_ms": 601.29158,
+      "decode_assigned_GPU_union_ms": 495.762043,
+      "decode_physical_process_GPU_union_ms": 495.762043,
+      "decode_process_GPU_idle_ms": 107.51486,
+      "decode_graph_launches": 34,
+      "actual_work": {
+        "generated_tokens": 64,
+        "generated_decode_tokens": 63,
+        "actual_target_rows": 222,
+        "actual_draft_rows": 216,
+        "verified_target_rows": 68,
+        "agreements": 29,
+        "consumed_drafts": 29
+      }
+    },
+    "mtp-peer": {
+      "consumer_pid": 24864,
+      "nsys_controller_pid": 38556,
+      "exit": 0,
+      "roots": 68,
+      "decode_roots": 66,
+      "decode_cycles": 33,
+      "generated_outputs": 64,
+      "root_scoped_begin_capture": 5,
+      "root_scoped_record_API_counts": {
+        "cudaStreamBeginCapture_v10000": 5,
+        "cudaStreamEndCapture_v10000": 5,
+        "cudaGraphInstantiate_v12000": 2,
+        "cudaGraphExecUpdate_v10020": 5
+      },
+      "retained_full_non_time_differences": 0,
+      "decode_envelope_ms": 543.151448,
+      "decode_root_union_ms": 540.625254,
+      "decode_assigned_GPU_union_ms": 479.908144,
+      "decode_physical_process_GPU_union_ms": 479.908144,
+      "decode_process_GPU_idle_ms": 63.243304,
+      "decode_graph_launches": 57,
+      "actual_work": {
+        "generated_tokens": 64,
+        "generated_decode_tokens": 63,
+        "actual_target_rows": 220,
+        "actual_draft_rows": 216,
+        "verified_target_rows": 66,
+        "agreements": 30,
+        "accepted_drafts": 30,
+        "target_decode_calls": 33,
+        "draft_decode_calls": 33,
+        "proposals": 33
+      }
+    }
+  },
+  "cross_engine_output_ID_observation": {
+    "ordinary": {
+      "equal": false,
+      "first_difference_index": 18
+    },
+    "MTP": {
+      "equal": false,
+      "first_difference_index": 18
+    }
+  },
+  "ordinary_common_after_first8": {
+    "context_before_range": [
+      162,
+      216
+    ],
+    "arms": {
+      "r1-auto": {
+        "roots": 55,
+        "envelope_ms": 548.726384,
+        "root_wall_union_ms": 548.726384,
+        "gpu_union_ms": 534.667165,
+        "physical_gpu_union_in_envelope_ms": 543.640749,
+        "physical_gpu_idle_in_envelope_ms": 5.085635,
+        "nonselected_or_unmapped_process_GPU_in_window": {
+          "count": 611,
+          "bytes": 77832,
+          "by_kind": {
+            "KERNEL": 590,
+            "MEMCPY": 21
+          },
+          "clipped_union_ms": 8.983248
+        },
+        "unmapped_process_GPU_in_window": {
+          "count": 0,
+          "bytes": 0,
+          "by_kind": {},
+          "clipped_union_ms": 0.0
+        }
+      },
+      "r1-peer": {
+        "roots": 55,
+        "envelope_ms": 640.108161,
+        "root_wall_union_ms": 637.815511,
+        "gpu_union_ms": 588.111953,
+        "physical_gpu_union_in_envelope_ms": 588.111953,
+        "physical_gpu_idle_in_envelope_ms": 51.996208,
+        "nonselected_or_unmapped_process_GPU_in_window": {
+          "count": 0,
+          "bytes": 0,
+          "by_kind": {},
+          "clipped_union_ms": 0.0
+        },
+        "unmapped_process_GPU_in_window": {
+          "count": 0,
+          "bytes": 0,
+          "by_kind": {},
+          "clipped_union_ms": 0.0
+        }
+      }
+    }
+  },
+  "parser_amendment": "Initial aggregate KeyError generated_ids happened after successful nsys/SQLite. Original parser and plan retained; parser-only second plan normalizes complete sole-session result, preserving aggregate fields and raw reports. All four full non-time historical diffs0.",
+  "boundaries": [
+    "One profile per arm is attribution evidence, not a new TPS benchmark, significance test or across-version code gain; formal TPS unchanged.",
+    "Ordinary roots overlap; root/step sums cannot be wall or throughput. Warm-window physical GPU includes the excluded predecessor; assigned GPU remains separate.",
+    "Physical GPU means all traced-process KERNEL/MEMCPY/MEMSET clipped to envelope. Its idle complement is not CPU busy/self-time or device-wide idle; inclusive host buckets are nested and not additive.",
+    "Hyle MTP34 combined decode episodes versus peer33 cycles/66 calls have different accepted drafts29/30 and verified target rows68/66. No one-to-one MTP roots or equal-math-work comparison.",
+    "Current root-scoped MTP capture2/5 is not the historical27/7. Generic kernel names/grid/block do not uniquely identify N16 mathematical nodes.",
+    "Four complete same-mode historical non-time reports match; cross-engine continuations are not asserted identical. B2,trained quality,other platforms and new memory peaks are not covered."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\performance\\inference-current-host-profile-2026-10-28.zip",
+    "bytes": 5605717,
+    "sha256": "220a437e1249001724c5279668b77ab3c8b0a11c34009b57b745d1a110c73c4c",
+    "members": 188,
+    "sqlite_bytes": 19185664,
+    "uncompressed_input_bytes": 23278952,
+    "manifest_sha256": "5da64c58ffd092f191373fbd4e76bf6736d67c871079fa70e264b4a2717e1d2f",
+    "CRC_and_every_member_SHA256_verified": true,
+    "Nsight_reports_retained_in_scratch": true
+  }
+}

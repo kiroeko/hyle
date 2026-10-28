@@ -32,10 +32,16 @@ HYLE 的产品目标是完整推理引擎；Compute、Graph、内存、调度、
 推荐实施顺序：固定拓扑attention与MTP首端口诊断 → 跨轮预热、hidden索引与小投影 →
 共同稳态执行和特性组合收敛 → MTP固定形状／设备后继 → 更深GPU融合与带宽。
 独立事项可并行；功能与架构变更先做相关有限检查，再用完整消费者验证性能。
-2026-10-28的[当前完整窗口](../evidence/performance/inference-program-io-current-window-2026-10-28.json)
+2026-10-28的[ProgramIo完整窗口](../evidence/performance/inference-program-io-current-window-2026-10-28.json)
 新发现两轮prefill落后；均匀R1也选择packed数学，原indexed-state融合未命中。
 均匀R1的冷选择直接A/B与数值核对已完成，保留真实ragged、padding、有界块及未知suffix能力，
 结果见下方prefill记录；此后的资源与准备协议迁移不改变数学，也不冒充已测吞吐收益。
+随后[当前R1普通／MTP跟踪](../evidence/performance/inference-current-host-profile-2026-10-28.json)已完成四个诊断进程，
+MTP捕获数为2／5，旧重录次数不再代表当前瓶颈。仍有准备／提交与GPU活动空隙，实际接受及行数差异保留；
+继续做设备后继、小投影等候选，但不以单次Nsight或不同工作量替代完整端到端吞吐对照。
+当前源码[新40进程窗口](../evidence/performance/inference-review-current-window-2026-10-28.json)已完成普通／MTP单轮与两轮的速度、显存及RAM测量。
+同模式与上批bb0c的完整非时间差异0；单轮速度波动较大，两边跨窗绝对值均有变化，未证明架构迁移引起提速或回退。
+正式表与范围见[进度](../developer/inference-progress.md)，下一批继续处理MTP稳态主机工作和GPU候选。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。
