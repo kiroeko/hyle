@@ -122,6 +122,8 @@ class DevelopmentCommandsTest(unittest.TestCase):
     def test_invalid_and_unavailable_backend_requests_fail(self):
         for value, system, arch in (("cuda", "Darwin", "aarch64"),
                                     ("cuda", "Linux", "aarch64"),
+                                    ("cpu", "Linux", "aarch64"),
+                                    ("cpu", "Darwin", "x86_64"),
                                     ("metal", "Windows", "x86_64"),
                                     ("unknown", "Linux", "x86_64"),
                                     ("", "Linux", "x86_64"),
@@ -136,11 +138,24 @@ class DevelopmentCommandsTest(unittest.TestCase):
 
     def test_file_service_passes_its_backend_without_full_math_restrictions(self):
         with patch.object(support, "_host", return_value=("Linux", "aarch64")):
+            self.succeeds("init", "--components", "compute_stream", "--backends", "cpu")
+            self.assertEqual(support.read_cache(self.selected())["HYLE_COMPUTE_ROUTES"], "cpu")
             self.succeeds("init", "--components", "compute_stream", "--backends", "cuda")
             cache = support.read_cache(self.selected())
             self.assertEqual(cache["HYLE_COMPONENTS"], "compute_stream")
             self.assertEqual(cache["HYLE_COMPUTE_ROUTES"], "cuda")
             self.assertNotEqual(self.invoke("init", "--components", "compute", "--backends", "cuda")[0], 0)
+
+    def test_complete_cpu_host_rejection_precedes_tool_discovery(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            for host in (("Linux", "aarch64"), ("Darwin", "x86_64")):
+                with self.subTest(host=host), patch.object(support, "_host", return_value=host):
+                    result, _, errors = self.invoke("init", "--backends", "cpu", "--dry-run")
+                    self.assertNotEqual(result, 0)
+                    self.assertIn("complete CPU backend", errors)
+            discovery.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
 
     def test_default_cpu_shared_configuration_reuses_its_directory(self):
         for _ in range(2):
@@ -171,11 +186,19 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 with self.assertRaises(SystemExit) as error:
                     self.invoke("init", option)
                 self.assertEqual(error.exception.code, 2)
-        for value in ("ON", "OFF"):
-            with self.subTest(definition=value):
-                result, _, errors = self.invoke("init", "--dry-run", "-D", f"HYLE_WITH_ATEN={value}")
-                self.assertNotEqual(result, 0)
-                self.assertIn("Required providers are selected automatically", errors)
+        definitions = ["HYLE_WITH_ATEN=ON", "HYLE_WITH_ATEN=OFF", "HYLE_DEV_FACTORS=compute_backend_cpu"]
+        definitions += [key + "=OFF" for key in (
+            "HYLE_COMPUTE_CPU", "HYLE_COMPUTE_CUDA", "HYLE_COMPUTE_APPLE", "HYLE_COMPUTE_VULKAN",
+            "HYLE_COMPUTE_ONEDNN", "HYLE_COMPUTE_TORCH_CPU", "_HYLE_COMPUTE_HAVE_CUDA",
+            "HYLE_BUILD_COMPUTE_PROVIDER_NATIVE", "HYLE_BUILD_ENGINE")]
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            for definition in definitions:
+                with self.subTest(definition=definition):
+                    result, _, errors = self.invoke("init", "--backends", "vulkan", "--dry-run", "-D", definition)
+                    self.assertNotEqual(result, 0)
+                    self.assertIn("Required providers are selected automatically", errors)
+                    self.assertIn("--components and --backends", errors)
+            discovery.assert_not_called()
         self.assertEqual(self.commands, [])
         self.resources.assert_not_called()
 
@@ -236,6 +259,22 @@ class DevelopmentCommandsTest(unittest.TestCase):
             self.resources.assert_not_called()
             self.assertEqual(support.read_cache(directory)["HYLE_COMPONENTS"], "util")
 
+    def test_unused_routes_do_not_restrict_foundation_products_on_other_hosts(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            for system, arch in (("Linux", "aarch64"), ("Darwin", "x86_64")):
+                for previous_routes in (None, "cuda;apple"):
+                    with self.subTest(host=(system, arch), cached_routes=previous_routes), \
+                            patch.object(support, "_host", return_value=(system, arch)):
+                        name = f"util-{system}-{'old' if previous_routes else 'new'}"
+                        directory = self.root / ".scratch/build" / name
+                        if previous_routes:
+                            self.write_cache(directory, HYLE_COMPONENTS="compute;graph",
+                                             HYLE_COMPUTE_ROUTES=previous_routes)
+                        self.succeeds("init", "--name", name, "--components", "util")
+                        self.assertEqual(discovery.call_args.kwargs["backends"], ())
+                        self.assertEqual(support.read_cache(directory)["HYLE_COMPONENTS"], "util")
+        self.resources.assert_not_called()
+
     def test_named_configurations_remain_independently_selectable(self):
         self.succeeds("init", "--name", "debug", "--components", "core", "--config", "Debug", "--tests")
         self.succeeds("init", "--name", "release", "--components", "core", "--no-tests")
@@ -270,6 +309,28 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 command = self.commands[-1]
                 self.assertEqual(command[command.index("--config") + 1], "Debug")
 
+    def test_build_and_test_accept_only_available_custom_configurations(self):
+        for name, settings in (("custom-single", {"CMAKE_BUILD_TYPE": "Profile"}),
+                               ("custom-multi", {"CMAKE_GENERATOR": "Ninja Multi-Config", "CMAKE_BUILD_TYPE": "",
+                                                 "CMAKE_CONFIGURATION_TYPES": "Debug;Profile"})):
+            with self.subTest(name=name):
+                directory = self.root / ".scratch/build" / name
+                self.write_cache(directory, HYLE_BUILD_TESTS="ON", **settings)
+                for action in ("build", "test"):
+                    self.succeeds(action, "--build-dir", str(directory), "--config", "Profile")
+                    command = self.commands[-1]
+                    option = "--config" if action == "build" else "-C"
+                    self.assertEqual(command[command.index(option) + 1], "Profile")
+                    attempted = len(self.commands)
+                    self.assertNotEqual(self.invoke(action, "--build-dir", str(directory),
+                                                    "--config", "Missing")[0], 0)
+                    self.assertEqual(len(self.commands), attempted)
+                self.assertFalse((directory / "hyle-init.json").exists())
+        with self.assertRaises(SystemExit) as error:
+            self.invoke("init", "--config", "Profile", "--dry-run")
+        self.assertEqual(error.exception.code, 2)
+        self.resources.assert_not_called()
+
     def test_explicit_and_cached_sdk_paths_override_automatic_discovery(self):
         custom = str(self.base / "custom OpenSSL SDK")
         automatic = str(self.base / "default OpenSSL SDK")
@@ -299,6 +360,34 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "ON")
         self.succeeds("init", "--name", "tls-auto", "--no-tls")
         self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "OFF")
+
+    def test_dormant_protocol_cache_does_not_block_narrower_products(self):
+        with patch.object(support, "find_openssl", side_effect=AssertionError("unused TLS discovery")):
+            for tls in ("ON", "AUTO"):
+                for product in ("util", "engine"):
+                    with self.subTest(tls=tls, product=product):
+                        name = f"narrow-{tls.lower()}-{product}"
+                        directory = self.root / ".scratch/build" / name
+                        self.write_cache(directory, HYLE_COMPONENTS="all", HYLE_IO_TLS=tls, HYLE_IO_HTTP2="ON")
+                        self.succeeds("init", "--name", name, "--components", product)
+                        cache = support.read_cache(directory)
+                        self.assertEqual(cache["HYLE_COMPONENTS"], product)
+                        self.assertEqual(cache["HYLE_IO_TLS"], tls)
+                        self.assertEqual(cache["HYLE_IO_HTTP2"], "ON")
+                        self.assertFalse(any(part.startswith(("-DHYLE_IO_TLS=", "-DHYLE_IO_HTTP2="))
+                                             for part in self.commands[-1]))
+
+    def test_explicit_protocol_enable_without_io_fails_before_discovery(self):
+        with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
+            for option in ("--tls", "--http2"):
+                with self.subTest(option=option):
+                    result, _, errors = self.invoke("init", "--components", "engine", "--backends", "vulkan",
+                                                    option, "--dry-run")
+                    self.assertNotEqual(result, 0)
+                    self.assertIn("require the io product", errors)
+            discovery.assert_not_called()
+        self.assertEqual(self.commands, [])
+        self.resources.assert_not_called()
 
     def test_custom_cuda_sdk_is_available_to_discovery_without_replacing_cached_compiler(self):
         toolkit = str(self.base / "custom CUDA SDK")
@@ -493,9 +582,12 @@ class DevelopmentCommandsTest(unittest.TestCase):
     def test_spaces_and_semicolons_remain_single_child_arguments(self):
         directory = self.root / ".scratch/build/space label"
         definition = "CMAKE_PREFIX_PATH=first SDK path;second SDK path"
+        source_override = "FETCHCONTENT_SOURCE_DIR_NGHTTP2=" + str(self.base / "cached nghttp2 source")
         self.succeeds("init", "--build-dir", str(directory), "--components", "core", "--tests",
-                      "--cache-dir", str(self.cache_dir), "-D", definition, "-D", "HYLE_BUILD_BENCH=ON")
+                      "--cache-dir", str(self.cache_dir), "-D", definition, "-D", "HYLE_BUILD_BENCH=ON",
+                      "-D", source_override)
         self.assertIn("-D" + definition, self.commands[-1])
+        self.assertIn("-D" + source_override, self.commands[-1])
         self.assertIn("-DCMAKE_CXX_COMPILER=" + self.compiler, self.commands[-1])
         self.assertIn("-DHYLE_DEP_SOURCE_CACHE=" + str(self.cache_dir), self.commands[-1])
         self.assertEqual(support.read_cache(directory)["HYLE_BUILD_BENCH"], "ON")

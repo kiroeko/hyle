@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "captured_utc": "2026-10-28T14:57:32.977250+00:00",
+  "base_revision": "894a153b9eca595173d18a4d32e110d6f67e37c7",
+  "scope": "Initialization/build/test switches and automatic provider assembly; no inference runtime change.",
+  "changes": [
+    "Ignore dormant cached TLS/HTTP2 for products without io; explicit enabling still requires io.",
+    "Check complete CPU host support before tool discovery while unrelated foundation products ignore unused routes.",
+    "Allow actual custom CMake configurations for build/test; initialization retains standard choices.",
+    "Reject legacy provider and internal derived selectors before dependency preparation; keep valid SDK/source overrides.",
+    "Explicit CUDA compiler/root is authoritative and must match; cached toolchain overrides later shell defaults.",
+    "Installed SDK rejects obsolete HYLE_WITH_ATEN for both ON/OFF; current architecture and setup docs agree."
+  ],
+  "checks": [
+    {
+      "command": "python tests/tooling/compute_routes_test.py",
+      "exit_code": 0,
+      "tests": 15,
+      "seconds": 15.799,
+      "kind": "CMake script and LANGUAGES NONE package metadata; no native build"
+    },
+    {
+      "command": "python -B tests/tooling/development_scripts_test.py",
+      "exit_code": 0,
+      "tests": 33,
+      "seconds": 0.868,
+      "kind": "Mocked tool discovery/configure/build/test; no downloads or compiler execution"
+    },
+    {
+      "command": "python -B tests/tooling/bootstrap_environment_test.py",
+      "exit_code": 0,
+      "tests": 22,
+      "seconds": 0.108,
+      "kind": "Mocked tool discovery and CUDA selection"
+    },
+    {
+      "command": "python -B tests/tooling/bootstrap_resources_test.py",
+      "exit_code": 0,
+      "tests": 5,
+      "seconds": 0.064,
+      "kind": "Mocked Vulkan host tool bootstrap"
+    },
+    {
+      "command": "python -B scripts/init.py --components util --offline --dry-run",
+      "exit_code": 0,
+      "kind": "Actual Windows installed-tool discovery and command preview only"
+    },
+    {
+      "command": "python -B scripts/init.py --components compute,graph --backends cuda --offline --dry-run",
+      "exit_code": 0,
+      "kind": "Actual Windows MSVC/CUDA discovery and command preview only"
+    },
+    {
+      "command": "python -B scripts/{init,build,test}.py --help",
+      "exit_code": 0,
+      "kind": "Three separate help commands; brace notation is shorthand only"
+    }
+  ],
+  "tests_passed": 75,
+  "host": {
+    "system": "Windows",
+    "machine": "AMD64",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]"
+  },
+  "limits": [
+    "No CXX/NVCC compilation or model run; no throughput/memory claim.",
+    "No fresh dependency acquisition, full SDK rebuild/install or fresh-system setup.",
+    "Linux/macOS host behavior covered by mocked platform checks, not native remote initialization in this slice.",
+    "Existing broad inference goal and its architecture/performance work remain incomplete."
+  ],
+  "sources": [
+    {
+      "path": "scripts/hyle_support.py",
+      "bytes": 32249,
+      "sha256": "d8d47d7c5a73f584a59c219b6220656d88085cdc311f76c8e5fdacec2f31cbe7"
+    },
+    {
+      "path": "scripts/hyle_environment.py",
+      "bytes": 30657,
+      "sha256": "be4357b992de60dddaa6d4d26006583bca3ca0139188e8a3043d5ec5b15e44ac"
+    },
+    {
+      "path": "tests/tooling/development_scripts_test.py",
+      "bytes": 35496,
+      "sha256": "b5892cc23eae8246235acfcbd1d59865acaa2d6e6161197916e38da708edea81"
+    },
+    {
+      "path": "tests/tooling/bootstrap_environment_test.py",
+      "bytes": 22733,
+      "sha256": "b9bde45df87c0abcc806a345c985b0b5d67131d63de05996515f7028fa6b83d6"
+    },
+    {
+      "path": "tests/tooling/compute_routes_test.py",
+      "bytes": 22401,
+      "sha256": "42b148f8f3a349f06800e4a9a7b5b4268b48040a60d995cebd5ecc0b40752f2e"
+    },
+    {
+      "path": "cmake/HyleConfig.cmake.in",
+      "bytes": 9039,
+      "sha256": "39c8badf298db8282bdc41a8f88a33aeee567dff906034c8bf3be906b8bcc3b0"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "bytes": 53001,
+      "sha256": "16c503c2f07640f4e95567a10deda81d5792c7e148422f754244a2fc846a71d1"
+    }
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-initialization-followup-2026-10-28.zip",
+    "bytes": 5091,
+    "sha256": "7a9f07056db3658a5bc04053be00e798e60820988fd026e867dbc9a2e868c7a0",
+    "crc_verified": true,
+    "members": [
+      {
+        "name": "bootstrap-environment.log",
+        "bytes": 126,
+        "sha256": "1576d535d8a0f05aac6867bb634ced240101be8edcae63f99b189b3f7aca1eee"
+      },
+      {
+        "name": "bootstrap-resources.log",
+        "bytes": 5271,
+        "sha256": "b8695672ac914a140c4713b3034f9caa91b971e18e0ded12754775f80279df17"
+      },
+      {
+        "name": "build-help.log",
+        "bytes": 1207,
+        "sha256": "5c6c5bacad0244118acc249e77d838b2284e2191ce1c68a891cf7311f6f20f33"
+      },
+      {
+        "name": "compute-routes.log",
+        "bytes": 120,
+        "sha256": "394e8f9c387670022c5ec6d448cb13c1a46c8a9b71a3befe38fb9741e4a60ba7"
+      },
+      {
+        "name": "cuda-preview.log",
+        "bytes": 1599,
+        "sha256": "8007647ea0a4c702197910434123f1c53cd26d6de9d215d57e335c34a8cb794e"
+      },
+      {
+        "name": "development-scripts.log",
+        "bytes": 137,
+        "sha256": "fa770f4773452d875222f0d24ef921bf7c5f3d5d9faec085df08abf71ae4e734"
+      },
+      {
+        "name": "init-help.log",
+        "bytes": 3028,
+        "sha256": "66a2b23a0f606796aae2a0e493a78c1f3966a1aaee4e6ec656c1ae7ab4098d77"
+      },
+      {
+        "name": "test-help.log",
+        "bytes": 1108,
+        "sha256": "8e1cd1757d0bdc11981872cd4b50de9d663870288b04d32c7dab8b272adb738a"
+      },
+      {
+        "name": "utility-preview.log",
+        "bytes": 1397,
+        "sha256": "20ca20cf39b7101f084a00a6da71c6feeddd479a52c9b9fe774c421c9f476ef0"
+      }
+    ]
+  }
+}

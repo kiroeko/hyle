@@ -144,6 +144,11 @@ def parse_backends(value: str, system: str, arch: str, *, complete_math: bool = 
     unknown = set(requested) - {"cpu", "cuda", "apple", "vulkan"}
     if unknown:
         raise SetupError(f"Unknown backend(s): {', '.join(sorted(unknown))}. Use cpu,cuda,metal,vulkan or all.")
+    if "cpu" in requested and complete_math and not (
+            (system in {"Windows", "Linux"} and arch == "x86_64") or
+            (system == "Darwin" and arch == "aarch64")):
+        raise SetupError("The complete CPU backend supports Windows/Linux x86_64 or macOS Apple Silicon. "
+                         "Use Vulkan on this target.")
     if "cuda" in requested:
         if system not in {"Windows", "Linux"}:
             raise SetupError("The CUDA backend requires Windows or Linux.")
@@ -206,10 +211,10 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
         raise SetupError("--components must be product names separated by commas, or all.")
     if "all" in products and products != ["all"]:
         raise SetupError("Use --components all alone, or list the products you need.")
-    routes = parse_backends(backend_value, system, arch,
-                            complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))
-    if not _uses_compute(products):
-        routes = ()
+    # An unused cached route does not constrain a foundation-only product.
+    routes = (parse_backends(backend_value, system, arch,
+                             complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))
+              if _uses_compute(products) else ())
     configuration = args.config or cache.get("CMAKE_BUILD_TYPE") or saved_config or "Release"
     if configuration not in CONFIGURATIONS:
         # Existing multi-config/custom CMake trees remain consumable by build/test.
@@ -218,12 +223,15 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
                 "components": tuple(dict.fromkeys(products)),
                 "sanitizer": args.sanitizer or cache.get("HYLE_SANITIZER", "off")}
     for name, key in (("tests", "HYLE_BUILD_TESTS"), ("static", "HYLE_STATIC"),
-                      ("http2", "HYLE_IO_HTTP2"),
                       ("trace", "HYLE_TRACE"), ("offline", "FETCHCONTENT_FULLY_DISCONNECTED")):
         selected[name] = _boolean(args, name, cache, key)
-    selected["tls"] = _tls_setting(args, cache)
-    if (selected["tls"] != "OFF" or selected["http2"]) and not {"all", "io"}.intersection(products):
+    io_selected = bool({"all", "io"}.intersection(products))
+    if not io_selected and (args.tls or args.http2):
         raise SetupError("TLS and HTTP/2 require the io product. Include io in --components, or omit that subset.")
+    # Keep unrelated protocol cache entries dormant; initialize() writes them
+    # only when io is selected, so narrowing products does not erase a choice.
+    selected["tls"] = _tls_setting(args, cache) if io_selected else "OFF"
+    selected["http2"] = _boolean(args, "http2", cache, "HYLE_IO_HTTP2") if io_selected else False
     return selected
 
 
@@ -238,11 +246,15 @@ def _definitions(values: list[str]) -> dict[str, str]:
         key, separator, data = value.partition("=")
         if not separator or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
             raise SetupError("-D/--define expects NAME=VALUE, for example -DCMAKE_POSITION_INDEPENDENT_CODE=ON.")
-        if key == "HYLE_WITH_ATEN":
-            raise SetupError("HYLE_WITH_ATEN is no longer a build option. Required providers are selected "
-                             "automatically by --components and --backends.")
         if key in managed:
             raise SetupError(f"{key} is managed by the script's named options; use those instead of -D.")
+        if (key in {"HYLE_DEV_FACTORS", "HYLE_COMPUTE_CPU", "HYLE_COMPUTE_CUDA", "HYLE_COMPUTE_APPLE",
+                    "HYLE_COMPUTE_VULKAN", "HYLE_COMPUTE_ONEDNN", "HYLE_COMPUTE_TORCH_CPU", "HYLE_WITH_ATEN"}
+                or key.startswith("_HYLE_")
+                or (key.startswith("HYLE_BUILD_") and key != "HYLE_BUILD_BENCH")):
+            raise SetupError(f"{key} is not a supported initialization selector. Required providers are selected "
+                             "automatically by --components and --backends; use those product/backend selectors. "
+                             "Internal factor maintenance uses CMake directly.")
         result[key] = data
     return result
 
@@ -488,7 +500,8 @@ def parser(action: str) -> argparse.ArgumentParser:
     selector = result.add_mutually_exclusive_group()
     selector.add_argument("--name", type=_name, help="short configuration name under .scratch/build")
     selector.add_argument("--build-dir", type=Path, help="advanced: use a specific existing or new build directory")
-    result.add_argument("--config", choices=CONFIGURATIONS, help="build configuration (new builds: Release)")
+    result.add_argument("--config", choices=CONFIGURATIONS if action == "init" else None,
+                        help="build configuration (new builds: Release; existing builds: a configured name)")
     result.add_argument("--jobs", "-j", type=_positive, default=2, help="parallel jobs (default: 2)")
     result.add_argument("--dry-run", action="store_true", help="discover tools and print commands without configuring/building/testing")
     result.add_argument("--verbose", action="store_true", help="also print complete CMake commands")

@@ -297,7 +297,9 @@ endif()
                  (["-DHYLE_COMPUTE_ROUTES=cpu;cuda"], False),
                  (["-DHYLE_COMPUTE_ROUTES="], False),
                  (["-DHYLE_COMPUTE_ROUTES=cpu;;cpu"], False),
-                 (["-DHYLE_COMPUTE_TORCH_CPU=OFF"], False)]
+                 (["-DHYLE_COMPUTE_TORCH_CPU=OFF"], False),
+                 (["-DHYLE_WITH_ATEN=ON"], False),
+                 (["-DHYLE_WITH_ATEN=OFF"], False)]
         for ordinal, (args, expected) in enumerate(cases):
             result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / str(ordinal)),
                                      "-DHyle_DIR=" + str(sdk), *args], capture_output=True,

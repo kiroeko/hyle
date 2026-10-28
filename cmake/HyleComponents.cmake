@@ -503,7 +503,7 @@ _hyle_declare_component(compute_provider_ggml_metal
 _hyle_declare_component(compute_provider_iree_vulkan
   PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
-# Optional original CUDA ATen decoding and fused BF16 attention carrier.
+# Original CUDA ATen decoding and fused BF16 attention carrier.
 _hyle_declare_component(compute_provider_torch_cuda
   PRIVATE_DEPS compute_backend_cuda compute_ops error mem
   PUBLIC_DEPS core compute

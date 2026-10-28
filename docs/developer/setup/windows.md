@@ -33,7 +33,7 @@ Vulkan 源码构建需要宿主 shader 编译器；缺少时初始化可从中�
 
 TLS 需要与 MSVC ABI 匹配的 OpenSSL 3 开发包；可按组织既有方式安装，例如
 [vcpkg](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-msbuild)。
-`init.py --tls` 会自动查找常见安装位置；非标准位置可用高级参数
+`init.py --components io --tls` 会自动查找常见安装位置；非标准位置可用高级参数
 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
 不要使用 Git for Windows 附带的 MinGW OpenSSL 代替 MSVC 开发库。
 

@@ -50,6 +50,8 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 `.scratch/build/` 中与实际配置匹配的目录；相同配置复用已有目录和共享依赖，
 不兼容的工具链不会混进原 cache。并行会话应选择不同的 `--name` 或 `--build-dir`。
 同一标签重配测试开关时可用 `--tests` / `--no-tests`。初始化失败不冒充新的可用配置。
+缩小产品集合时，只准备新集合实际需要的依赖；例如从 `all` 切到 `util`，旧 TLS／HTTP/2 设置
+不会要求继续构建协议模块。显式请求 `--tls`／`--http2` 时应同时选择 `io`。
 
 ## 选择配置
 
@@ -82,11 +84,15 @@ CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对�
 
 完整参数及默认值以各脚本 `--help` 为准。`build.py --target <name>` 可重复；
 `test.py --filter <regex>` 使用 CTest 名称过滤，`--list` 只列出测试。
+`init.py --config` 使用表中的四种标准配置；消费已有 CMake 构建树时，build/test 也接受该树
+实际提供的自定义配置名称，不会把单配置构建树切成另一种配置。
 `build.py --install` 未指定 prefix 时写入 `.scratch/install/<build-name>`；
 安装会构建完整的所选产品，不能与 `--target` 混用；选择引擎时还安装 `bin/hyle`（Windows 为 `hyle.exe`）。
 构建树内程序位于 `<build-dir>/bin/`，多配置生成器位于 `bin/<config>/`。
 引擎的模型输入准备和当前运行限制见[引擎指南](../../user/inference.md)。高级的额外 CMake 输入使用
 `init.py -D NAME=VALUE`，可重复；脚本已有的选项使用对应参数。
+产品与后端参数已经决定 Provider，旧 Provider 开关和内部 factor 选择不属于这个入口。
+显式指定的 CUDA 编译器或 Toolkit 路径不可用时会报告错误；只有未指定时才自动寻找已安装版本。
 普通日志保留 CMake 输出，`--verbose` 补充完整命令。安装入口使用标准 CMake 导出，
 不修改系统 PATH、Shell 配置或用户的 CMake 搜索环境。
 依赖 cache 与离线介质见[依赖说明](dependencies.md)和[离线构建](offline.md)。

@@ -170,12 +170,13 @@ class EnvironmentTests(unittest.TestCase):
             setup.assert_not_called()
 
     def test_linux_rejects_windows_nvcc(self):
-        with patch.object(tools.glob, "glob", return_value=[]), \
-                patch.object(tools, "_which", return_value="C:/CUDA/bin/nvcc.exe"), \
-                patch.object(tools, "_run") as run:
-            with self.assertRaisesRegex(tools.SetupError, "WSL requires Linux nvcc"):
-                tools._cuda({}, {}, "Linux")
-        run.assert_not_called()
+        for env in ({}, {"CUDACXX": "nvcc"}):
+            with self.subTest(env=env), patch.object(tools.glob, "glob", return_value=[]), \
+                    patch.object(tools, "_which", return_value="C:/CUDA/bin/nvcc.exe"), \
+                    patch.object(tools, "_run") as run:
+                with self.assertRaisesRegex(tools.SetupError, "WSL requires Linux nvcc"):
+                    tools._cuda(env, {}, "Linux")
+            run.assert_not_called()
 
     def test_cached_cuda_does_not_fall_back_to_newer_sdk(self):
         with patch.object(tools.glob, "glob") as glob, patch.object(tools, "_run") as run:
@@ -184,6 +185,88 @@ class EnvironmentTests(unittest.TestCase):
                             {"CMAKE_CUDA_COMPILER": str(self.root / "missing-nvcc")}, "Linux")
         glob.assert_not_called()
         run.assert_not_called()
+
+    def test_explicit_cuda_compiler_does_not_fall_back(self):
+        compiler = self.root / "selected CUDA/bin/nvcc.exe"
+        compiler.parent.mkdir(parents=True)
+        for exists in (False, True):
+            if exists:
+                compiler.touch()
+            with self.subTest(exists=exists), \
+                    patch.object(tools.glob, "glob", side_effect=AssertionError("no automatic toolkit search")), \
+                    patch.object(tools, "_which", side_effect=AssertionError("no PATH compiler fallback")), \
+                    patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.2") as run:
+                with self.assertRaisesRegex(tools.SetupError, "selected by CUDACXX"):
+                    tools._cuda({"CUDACXX": str(compiler)}, {}, "Windows")
+                self.assertEqual(run.call_count, int(exists))
+                if exists:
+                    self.assertEqual(run.call_args.args[0], [str(compiler.resolve()), "--version"])
+
+    def test_explicit_cuda_root_does_not_fall_back(self):
+        for source in ("cache", "environment"):
+            toolkit = self.root / ("selected root " + source)
+            compiler = toolkit / "bin/nvcc.exe"
+            compiler.parent.mkdir(parents=True)
+            for exists in (False, True):
+                if exists:
+                    compiler.touch()
+                env = {"CUDATOOLKIT_ROOT": str(toolkit)} if source == "environment" else {}
+                cache = {"CUDAToolkit_ROOT": str(toolkit)} if source == "cache" else {}
+                with self.subTest(source=source, exists=exists), \
+                        patch.object(tools.glob, "glob", side_effect=AssertionError("no automatic toolkit search")), \
+                        patch.object(tools, "_which", side_effect=AssertionError("no PATH compiler fallback")), \
+                        patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.2") as run:
+                    with self.assertRaisesRegex(tools.SetupError, "CUDAToolkit_ROOT does not contain"):
+                        tools._cuda(env, cache, "Windows")
+                    self.assertEqual(run.call_count, int(exists))
+
+    def test_explicit_cuda_compiler_and_root_must_match(self):
+        first, second = self.root / "first CUDA", self.root / "second CUDA"
+        compiler = first / "bin/nvcc.exe"
+        compiler.parent.mkdir(parents=True); compiler.touch()
+        second.mkdir()
+        selections = (
+            ({}, {"CMAKE_CUDA_COMPILER": str(compiler), "CUDAToolkit_ROOT": str(second)}),
+            ({"CUDACXX": str(compiler), "CUDATOOLKIT_ROOT": str(second)}, {}),
+            ({"CUDACXX": str(compiler)}, {"CUDAToolkit_ROOT": str(second)}),
+        )
+        for env, cache in selections:
+            with self.subTest(env=env, cache=cache), \
+                    patch.object(tools.glob, "glob", side_effect=AssertionError("no automatic toolkit search")), \
+                    patch.object(tools, "_run", side_effect=AssertionError("mismatch is known before nvcc executes")):
+                with self.assertRaisesRegex(tools.SetupError, "same installation"):
+                    tools._cuda(env, cache, "Windows")
+
+    def test_cuda_keeps_cached_compiler_and_automatic_discovery(self):
+        selected, other = self.root / "cached CUDA", self.root / "other CUDA"
+        for toolkit in (selected, other):
+            compiler = toolkit / "bin/nvcc.exe"
+            compiler.parent.mkdir(parents=True); compiler.touch()
+        compiler = selected / "bin/nvcc.exe"
+        for cached_root in (False, True):
+            cache = {"CMAKE_CUDA_COMPILER": str(compiler)}
+            if cached_root:
+                cache["CUDAToolkit_ROOT"] = str(selected)
+            with self.subTest(cached_root=cached_root), \
+                    patch.object(tools.glob, "glob", side_effect=AssertionError("cached compiler is authoritative")), \
+                    patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.3") as run:
+                result = tools._cuda({"CUDACXX": str(other / "bin/nvcc.exe"), "CUDATOOLKIT_ROOT": str(other)},
+                                     cache, "Windows")
+            self.assertEqual(run.call_args.args[0], [str(compiler.resolve()), "--version"])
+            self.assertEqual(result["CUDAToolkit_ROOT"], str(selected.resolve()))
+        with patch.object(tools.glob, "glob", return_value=[str(other)]) as search, \
+                patch.object(tools, "_which", return_value=None), \
+                patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.3"):
+            result = tools._cuda({}, {}, "Windows")
+        search.assert_called_once()
+        self.assertEqual(result["CMAKE_CUDA_COMPILER"], str((other / "bin/nvcc.exe").resolve()))
+        with patch.object(tools.glob, "glob", side_effect=AssertionError("explicit name is not automatic discovery")), \
+                patch.object(tools, "_which", return_value=str(compiler)) as which, \
+                patch.object(tools, "_run", return_value="Cuda compilation tools, release 13.3"):
+            result = tools._cuda({"CUDACXX": "nvcc.exe"}, {}, "Windows")
+        which.assert_called_once()
+        self.assertEqual(which.call_args.args[0], "nvcc.exe")
+        self.assertEqual(result["CMAKE_CUDA_COMPILER"], str(compiler.resolve()))
 
     def test_windows_cuda_child_path_includes_split_runtime_directory(self):
         for nested in (False, True):

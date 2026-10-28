@@ -340,12 +340,22 @@ def _cuda(env: dict[str, str], cache: dict[str, str], system: str) -> dict[str, 
         raise SetupError("CUDA requires Windows or Linux; on Apple Silicon choose the apple backend.")
     suffix = "nvcc.exe" if system == "Windows" else "nvcc"
     cached = cache.get("CMAKE_CUDA_COMPILER")
-    candidates = [cached] if cached else []
-    if not cached:
-        candidates += [env["CUDACXX"]] if env.get("CUDACXX") else []
+    selected_compiler = cached or env.get("CUDACXX")
+    selected_root = cache.get("CUDAToolkit_ROOT")
+    if not selected_root and not cached:
+        selected_root = env.get("CUDAToolkit_ROOT") or env.get("CUDATOOLKIT_ROOT")
+    explicit_root = Path(selected_root).resolve() if selected_root else None
+    # Explicit compiler/toolkit choices are requirements, not discovery hints.
+    # In particular, init subsequently preserves an explicit -D toolkit root;
+    # silently selecting another nvcc here would mix two installations.
+    if selected_compiler:
+        candidates = [selected_compiler]
+    elif explicit_root:
+        candidates = [str(explicit_root / "bin" / suffix)]
+    else:
+        candidates = []
         candidates += [str(Path(root) / "bin" / suffix) for root in
-                       (cache.get("CUDAToolkit_ROOT"), env.get("CUDAToolkit_ROOT"),
-                        env.get("CUDATOOLKIT_ROOT"), env.get("CUDA_PATH"), env.get("CUDA_HOME")) if root]
+                       (env.get("CUDA_PATH"), env.get("CUDA_HOME")) if root]
         if system == "Windows":
             roots = glob.glob(str(Path(env.get("PROGRAMFILES", "C:/Program Files")) /
                                   "NVIDIA GPU Computing Toolkit/CUDA/v*"))
@@ -354,11 +364,24 @@ def _cuda(env: dict[str, str], cache: dict[str, str], system: str) -> dict[str, 
         candidates += [str(Path(root) / "bin" / suffix) for root in sorted(roots, reverse=True)]
         candidates += [_which(suffix, env)]
     for candidate in candidates:
-        if not candidate or (system == "Linux" and (candidate.lower().endswith(".exe") or "\\" in candidate)):
+        if not candidate:
+            continue
+        # CUDACXX may name a program on PATH. Resolve that exact name, without
+        # treating an invalid explicit path as permission to try other SDKs.
+        if selected_compiler and "/" not in candidate and "\\" not in candidate:
+            candidate = _which(candidate, env)
+            if not candidate:
+                continue
+        if system == "Linux" and (candidate.lower().endswith(".exe") or "\\" in candidate):
             continue
         path = Path(candidate).resolve()
         if not path.is_file():
             continue
+        toolkit = path.parent.parent
+        if explicit_root and os.path.normcase(str(toolkit)) != os.path.normcase(str(explicit_root)):
+            raise SetupError(f"CUDA compiler {path} belongs to {toolkit}, but CUDAToolkit_ROOT selects "
+                             f"{explicit_root}. Select the compiler and toolkit from the same installation; "
+                             "restore an existing build's original toolkit or choose another --name/--build-dir.")
         try:
             match = re.search(r"release\s+(\d+)\.(\d+)", _run([str(path), "--version"], env))
         except SetupError:
@@ -371,8 +394,17 @@ def _cuda(env: dict[str, str], cache: dict[str, str], system: str) -> dict[str, 
             if system == "Windows":
                 directories.append(path.parent / "x64")
             _prepend(env, directories)
-            return {"CMAKE_CUDA_COMPILER": str(path), "CUDAToolkit_ROOT": str(path.parent.parent)}
-    message = "Cached CUDA compiler is missing or unsupported; restore that toolkit" if cached else "Install the host's CUDA Toolkit 13.3+"
+            return {"CMAKE_CUDA_COMPILER": str(path), "CUDAToolkit_ROOT": str(toolkit)}
+    if cached:
+        message = "Cached CUDA compiler is missing or unsupported; restore that toolkit"
+    elif selected_compiler:
+        message = ("CUDA compiler selected by CUDACXX is missing or unsupported; restore it or unset "
+                   "CUDACXX to use automatic discovery")
+    elif explicit_root:
+        message = ("CUDAToolkit_ROOT does not contain a usable CUDA Toolkit 13.3+ nvcc; correct the root "
+                   "or remove that explicit selection to use automatic discovery")
+    else:
+        message = "Install the host's CUDA Toolkit 13.3+"
     raise SetupError(message + ". WSL requires Linux nvcc, not nvcc.exe. See docs/developer/setup/README.md.")
 
 
