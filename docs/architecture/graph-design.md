@@ -114,6 +114,11 @@ prefill、续算和decode改变的是输入、合法形状及状态，不另造�
 布局重准备只撤销旧配置、准确页权限和来源准备信息，保留普通调用者绑定及其lease／InputSource owner；
 显式`Invocation::reset`仍清空全部绑定。同一metadata端口必须使用同一owned版本，上传复用原Source与实际
 输入storage，不在各后端再建一份公共metadata owner。Q/K/V仍可来自普通Graph节点。
+已退休的固定投影可保留原物理span候选；重新绑定须逐端口核对完整TensorView和storage身份。
+物理span不携带租约、代际、命令或Queue资格，每次准备仍核新权限并封存当前槽。
+Commands失效也可保留上述几何事实，不能以没有capture身份为由重复构造整图View；
+Source、别名、跨存储副本、原生私有载体及实际Queue更换保留完整准备路径。
+无别名投影使用编译时消费者索引核查实际读者和所选实现，页范围与权限仍逐次验证。
 跨资源的原生数学镜像仍由实际provider保留；只在真实resource相同时共享镜像，逻辑输入使用一个
 canonical只读绑定。CPU搬运按资源声明的稳定主机地址事实证明别名，不按内置resource身份放行。
 容量型原生页节点编译时没有owned schema，保留不可变capacity／数学／端口事实；第一次NodeLayout准备

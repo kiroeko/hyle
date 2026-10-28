@@ -15,6 +15,7 @@
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/graph.h"
 #include "hyle/graph/slots.h"
+#include "../../src/graph/plan_state.h"
 
 namespace {
 namespace c = hyle::compute;
@@ -61,6 +62,7 @@ TEST(GraphSlotsCudaExecution, DeviceStoreUpdatesPrivateIndicesOnTheOriginalQueue
   auto compiled = g::cuda::compile(graph, context, memory.ref());
   ASSERT_TRUE(compiled) << compiled.error().message();
   auto invocation = compiled->executable.create_invocation().value();
+  const auto *state = g::detail::InvocationAccess::state(invocation);
   const std::array queues{g::QueueBinding{g::ExecutionLaneId{0}, &queue}};
   auto input = hyle::mem::Buffer::create(memory.ref(), 2 * item_bytes, 256).value();
   ASSERT_TRUE(invocation.bind(rows, c::ConstTensorView::create(rows_description,
@@ -81,7 +83,14 @@ TEST(GraphSlotsCudaExecution, DeviceStoreUpdatesPrivateIndicesOnTheOriginalQueue
     ASSERT_TRUE(input.view().write(std::as_bytes(std::span(incoming[turn]))).ok());
     auto bindings = s::SlotBindings::create(layout, {}, destinations).value();
     ASSERT_TRUE(s::bind(invocation, graph, store, std::move(bindings)).ok());
+    // The second real Store transaction has fresh writer generations and
+    // reversed indices, but exactly the same physical capacity/control tuple.
+    // This is only a span candidate: the next original prepare must seal the
+    // current transaction before any native command can run.
+    if (turn) ASSERT_TRUE(g::detail::reusable_configuration_spans(*state));
+    EXPECT_FALSE(state->bindings_prepared);
     ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    EXPECT_FALSE(g::detail::reusable_configuration_spans(*state)); // Hint consumed.
     c::ConstTensorView current_ids;
     ASSERT_TRUE(g::detail::RegionAccess::visit_bound(invocation,
         +[](void *opaque, const g::detail::RegionAccessView &view) noexcept -> hyle::Status {

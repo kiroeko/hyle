@@ -1,0 +1,452 @@
+{
+  "status": "FINITE_COMPONENTS_PASSED_NO_SPEED_CLAIM",
+  "date": "2026-10-28",
+  "scope": "Reuse original Graph physical spans for qualified fixed projections and existing compiled consumer index; original per-episode permissions, generation, seal, command identity, source and retirement contracts remain.",
+  "changes": [
+    "Existing physical span candidate survives permission-only revoke and complete same-tuple read rebind. No new cache owner or flag.",
+    "Retired idle non-preparing command invalidation seeds geometry independently of actual capture qualification. Queue replacement during preparation cannot revive the hint.",
+    "Alias-free projected reader validation uses existing compiled consumer index rather than two whole-plan scans. Selected reader implementation and each current page range remain checked.",
+    "Test fixtures distinguish optional external alias fallback from a real no-alias materialized Copy input; native mathematical range excludes padding while full owner/lease remains intact.",
+    "A true same-pool reallocation, rather than try_write permission conversion, checks new allocation generation at the same physical tuple."
+  ],
+  "sources": [
+    {
+      "path": "src/graph/resources.cc",
+      "bytes": 259303,
+      "sha256": "a5a5763a5558b7bf5ed6cd056cde2496bb38c1cba60ae7ccd486429665902301"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "bytes": 501069,
+      "sha256": "fb2c2394a5e241a5b6643aa5a4bc9f6551cd2c984a52c6a8dc5041c0b3000bc9"
+    },
+    {
+      "path": "tests/graph/configuration_input_test.cc",
+      "bytes": 20087,
+      "sha256": "eb789124459f85e74cef6668122ea10aeb19c99dd64a2f8f7488d89df23cf930"
+    },
+    {
+      "path": "tests/graph/slots_cuda_execution_test.cc",
+      "bytes": 29592,
+      "sha256": "b832d08e4be85f70a169789e00f45ddb2e9bf25a2c57fd71f2da08dace62fc07"
+    },
+    {
+      "path": "tests/graph/region_provider_test.cc",
+      "bytes": 656438,
+      "sha256": "262da1394d78a917e83b1cb71bf804b2acf998f61fa154674622bf4c0380512c"
+    }
+  ],
+  "patch": {
+    "path": ".scratch/inference-physical-spans-20261028/product.patch",
+    "bytes": 32924,
+    "sha256": "e02dd6b1bb53ca41b76a82a2176634860e2ade02376f0a06c2b432034a65f369"
+  },
+  "build": {
+    "CXX": {
+      "actual": 8,
+      "passed": 8,
+      "SDK": 3,
+      "test": 5
+    },
+    "NVCC": 0,
+    "Model_CXX": 0,
+    "full_SDK_rebuilds": 0,
+    "links": {
+      "actual": 6,
+      "passed": 6
+    },
+    "downloads": 0,
+    "compile_processes": [
+      {
+        "pid": 27220,
+        "exit": 0,
+        "started": 1793187934.291924,
+        "seconds": 4.29812216758728,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/logs/resources/process.json"
+      },
+      {
+        "pid": 61704,
+        "exit": 0,
+        "started": 1793187944.472981,
+        "seconds": 6.074648857116699,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/logs/executable/process.json"
+      },
+      {
+        "pid": 42812,
+        "exit": 0,
+        "started": 1793187959.0747766,
+        "seconds": 3.2777929306030273,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/logs/configuration-test/process.json"
+      },
+      {
+        "pid": 512,
+        "exit": 0,
+        "started": 1793187963.436443,
+        "seconds": 3.858096122741699,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/logs/cuda-test/process.json"
+      },
+      {
+        "pid": 42864,
+        "exit": 0,
+        "started": 1793188815.9825704,
+        "seconds": 6.28464412689209,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/logs/executable/process.json"
+      },
+      {
+        "pid": 43788,
+        "exit": 0,
+        "started": 1793188830.3899012,
+        "seconds": 3.3475918769836426,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/logs/configuration-test/process.json"
+      },
+      {
+        "pid": 57840,
+        "exit": 0,
+        "started": 1793188834.5587769,
+        "seconds": 13.15881896018982,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/logs/region-test/process.json"
+      },
+      {
+        "pid": 62056,
+        "exit": 0,
+        "started": 1793189358.8975163,
+        "seconds": 3.3090946674346924,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/generation-fix/logs/compile/process.json"
+      }
+    ],
+    "link_processes": [
+      {
+        "pid": 25312,
+        "exit": 0,
+        "started": 1793187978.2314525,
+        "seconds": 1.8274955749511719,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/links/tiny/process.json"
+      },
+      {
+        "pid": 14292,
+        "exit": 0,
+        "started": 1793187975.7714229,
+        "seconds": 1.7840213775634766,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/links/gtest/process.json"
+      },
+      {
+        "pid": 40508,
+        "exit": 0,
+        "started": 1793188084.7197545,
+        "seconds": 1.8425517082214355,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/links/gtest-baseline/process.json"
+      },
+      {
+        "pid": 18372,
+        "exit": 0,
+        "started": 1793188867.3276143,
+        "seconds": 1.9318158626556396,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/links/tiny/process.json"
+      },
+      {
+        "pid": 48016,
+        "exit": 0,
+        "started": 1793188864.8441792,
+        "seconds": 1.857374906539917,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/links/gtest/process.json"
+      },
+      {
+        "pid": 41712,
+        "exit": 0,
+        "started": 1793189380.0242915,
+        "seconds": 1.8272180557250977,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/generation-fix/logs/link/process.json"
+      }
+    ]
+  },
+  "actual_GTest_attempts": [
+    {
+      "label": "first-actual",
+      "tests": 12,
+      "failures": 4,
+      "disabled": 0,
+      "skipped": 0,
+      "process": {
+        "pid": 16192,
+        "exit": 1,
+        "started": 1793187981.8628762,
+        "seconds": 0.5616958141326904,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/runs/gtest/process.json"
+      }
+    },
+    {
+      "label": "old-sdk-diagnostic",
+      "tests": 1,
+      "failures": 1,
+      "disabled": 0,
+      "skipped": 0,
+      "process": {
+        "pid": 57296,
+        "exit": 1,
+        "started": 1793188087.1596365,
+        "seconds": 0.41385698318481445,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/runs/gtest-baseline/process.json"
+      }
+    },
+    {
+      "label": "refined-actual",
+      "tests": 12,
+      "failures": 1,
+      "disabled": 0,
+      "skipped": 0,
+      "process": {
+        "pid": 61180,
+        "exit": 1,
+        "started": 1793188870.952407,
+        "seconds": 0.6389725208282471,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/gtest/process.json"
+      }
+    },
+    {
+      "label": "allocation-generation-fix-only",
+      "tests": 1,
+      "failures": 0,
+      "disabled": 0,
+      "skipped": 0,
+      "process": {
+        "pid": 59040,
+        "exit": 0,
+        "started": 1793189382.4934254,
+        "seconds": 0.4219379425048828,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/generation-fix/run/process.json"
+      }
+    }
+  ],
+  "failure_explanations": [
+    "First metadata prepare counted 92 headers as all project files, omitting the TU; corrected to 93 distinct. Zero compiler/native work at that failure.",
+    "First GTest: two new positive assertions used an optional-alias Affine graph; full fallback was correct. Positive cases now use existing no-alias Copy, while original Affine explicitly retains alias fallback.",
+    "First GTest: actual CUDA Commands Store dropped physical geometry when command stability was absent. SDK central invalidation now records only retired idle, non-preparing geometry; command invalidation is unchanged.",
+    "OwnedNative first phase failed in both candidate and isolated original-two-SDK baseline: old fixture mapped a broad 64-byte initialized permission as a 32-byte logical tensor. Only fixture math mapping narrowed; full native owner/permission and original strict expected values remain.",
+    "Refined GTest: try_write preserves allocation generation; the test incorrectly expected increment. Final source actually frees and reallocates the same one-block pool, preserving generation inequality and physical tuple equality assertions. Only this failed case was rerun; previous 11 passing cases were not repeated."
+  ],
+  "final_GTest_coverage": {
+    "distinct_passed": 12,
+    "refinement_passed": 11,
+    "final_test_only_passed": 1,
+    "real_CUDA_Store_same_tuple_candidate_observed": true,
+    "CPU_same_tuple_new_allocation_generation_observed": true,
+    "scope": "Finite configuration, Source, alias, Queue/context, unknown/private/native capture qualification and actual CUDA Store. Not all combinations/platforms."
+  },
+  "model_consumers": [
+    {
+      "case": "policies-cpu",
+      "process": {
+        "pid": 20656,
+        "exit": 0,
+        "started": 1793188975.745184,
+        "seconds": 0.9618608951568604,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/policies-cpu/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/policies-cpu/as-run.json",
+        "bytes": 2093,
+        "sha256": "ae185cfc31f8c76cc30dd426e7f8c2a850b083182d81a610c5b1a4ba36e2b826"
+      }
+    },
+    {
+      "case": "policies-cuda",
+      "process": {
+        "pid": 34896,
+        "exit": 0,
+        "started": 1793188977.2391398,
+        "seconds": 0.8801805973052979,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/policies-cuda/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/policies-cuda/as-run.json",
+        "bytes": 2094,
+        "sha256": "1787062994bde7fd278fbed991f130caf4e8dd5acd478e83d7fac7142fe68434"
+      }
+    },
+    {
+      "case": "sampling-cpu",
+      "process": {
+        "pid": 16808,
+        "exit": 0,
+        "started": 1793189013.7178118,
+        "seconds": 0.6862211227416992,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/sampling-cpu/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/sampling-cpu/as-run.json",
+        "bytes": 2094,
+        "sha256": "435e1838769ba9e513e4c7fd3788f36300d47cc72ec1f6353374f067023c7d56"
+      }
+    },
+    {
+      "case": "sampling-cuda",
+      "process": {
+        "pid": 37700,
+        "exit": 0,
+        "started": 1793189014.913784,
+        "seconds": 1.3680388927459717,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/sampling-cuda/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/sampling-cuda/as-run.json",
+        "bytes": 2093,
+        "sha256": "19864f7a5dc5cf755bd830a3302a66745a0aedb08f9ae01305d1ac651f984f3a"
+      }
+    },
+    {
+      "case": "wave-cpu",
+      "process": {
+        "pid": 49176,
+        "exit": 0,
+        "started": 1793189016.7737167,
+        "seconds": 0.42307424545288086,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/wave-cpu/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/wave-cpu/as-run.json",
+        "bytes": 2095,
+        "sha256": "080324c3e08ec823bbf48863d0a727476f04bf890052be00c853a5874cb0b72a"
+      }
+    },
+    {
+      "case": "wave-cuda",
+      "process": {
+        "pid": 51752,
+        "exit": 0,
+        "started": 1793189017.6934314,
+        "seconds": 0.7457022666931152,
+        "state": "TERMINAL",
+        "timed_out": false,
+        "record": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/wave-cuda/process.json"
+      },
+      "as_run": {
+        "path": ".scratch/inference-physical-spans-20261028/validation/refinement/runs/wave-cuda/as-run.json",
+        "bytes": 2094,
+        "sha256": "900328f9cf04d6a1335352c032a922170abca36654f65ef000a576b82e8e4e9c"
+      }
+    }
+  ],
+  "non_time_comparison": {
+    "rule": "Only seconds, *_seconds and *_tokens_per_second removed recursively. target_second token IDs retained.",
+    "cases": [
+      {
+        "case": "policies-cpu",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\policies-cpu\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\policies-cpu\\stdout.log",
+        "reports": 2,
+        "non_time_equal": true,
+        "differences": []
+      },
+      {
+        "case": "policies-cuda",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\policies-cuda\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\policies-cuda\\stdout.log",
+        "reports": 2,
+        "non_time_equal": true,
+        "differences": []
+      },
+      {
+        "case": "sampling-cpu",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\sampler-cpu\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\sampling-cpu\\stdout.log",
+        "reports": 3,
+        "non_time_equal": true,
+        "differences": []
+      },
+      {
+        "case": "sampling-cuda",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\sampler-cuda\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\sampling-cuda\\stdout.log",
+        "reports": 3,
+        "non_time_equal": true,
+        "differences": []
+      },
+      {
+        "case": "wave-cpu",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\wave-cpu\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\wave-cpu\\stdout.log",
+        "reports": 1,
+        "non_time_equal": true,
+        "differences": []
+      },
+      {
+        "case": "wave-cuda",
+        "prior": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-selected-cold-demand-20261028\\validation\\runs\\wave-cuda\\stdout.log",
+        "current": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-physical-spans-20261028\\validation\\refinement\\runs\\wave-cuda\\stdout.log",
+        "reports": 1,
+        "non_time_equal": true,
+        "differences": []
+      }
+    ]
+  },
+  "boundary": [
+    "No full model speed/quality comparison in this batch. No inferred tok/s improvement.",
+    "Six existing small model consumers check ordinary policies, MTP sampling and request-wave state; they do not exhaust model/quantization/platform combinations.",
+    "All 12 structured JSON reports equal the prior consumer reports after removing only measured seconds and throughput. Token target_second is retained.",
+    "No Apple/Vulkan/Linux native run, full CLI cache hit-rate or host-latency measurement in this batch. Existing complete performance window is unchanged."
+  ],
+  "archive": {
+    "path": "docs/evidence/correctness/inference-physical-spans-2026-10-28.zip",
+    "bytes": 1223810,
+    "sha256": "9347f72a049277ae80e659c231254d58ee8d3a799124318e0e6056535589f661",
+    "members": 220,
+    "excluded": "Build objects, executables, native libraries, environments and model data are not duplicated."
+  },
+  "cleanup": {
+    "deleted_files": 21,
+    "deleted_bytes": 873376032,
+    "archive_sha256": "9347f72a049277ae80e659c231254d58ee8d3a799124318e0e6056535589f661",
+    "sdk_and_model_data_deleted": false,
+    "receipt": {
+      "path": ".scratch/inference-physical-spans-20261028/cleanup/result.json",
+      "bytes": 204,
+      "sha256": "9d0b430a672999c73ffd3c3737e0a9a49b07fa71cd5266566d9c838746b32a77"
+    }
+  }
+}

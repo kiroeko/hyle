@@ -534,11 +534,23 @@ projected_input_consumers(const PlanState &plan, std::uint32_t value) noexcept {
   return {first, static_cast<std::size_t>(last - first)};
 }
 void remember_configuration_spans(InvocationState &state) noexcept {
-  if (state.resources)
-    state.resources.get()->configuration_spans = state.bindings_prepared;
+  if (!state.resources) return;
+  auto &spans = state.resources.get()->configuration_spans;
+  if (state.input_sources) { spans = false; return; }
+  if (state.bindings_prepared) {
+    // Seed once from complete physical spans, before a permission-only revoke.
+    // Later revokes/resets retain that candidate but cannot revive a discarded
+    // one. Opaque carriers still require their complete binding preparation.
+    spans = true;
+    for (std::size_t i = 0; i < state.step_bindings.size(); ++i)
+      if (state.step_bindings[i].native_inputs || (state.plan->steps[i].region.valid() &&
+          !RegionAccess::borrows_tensor_views_only(state.plan->steps[i].region))) {
+        spans = false; break;
+      }
+  }
 }
 bool reusable_configuration_spans(const InvocationState &state) noexcept {
-  return state.resources && state.resources.get()->configuration_spans;
+  return state.resources && !state.input_sources && state.resources.get()->configuration_spans;
 }
 void discard_configuration_spans(InvocationState &state) noexcept {
   if (state.resources) state.resources.get()->configuration_spans = false;
@@ -550,9 +562,10 @@ void reset_configuration_bindings(InvocationState &state) noexcept {
     for (const auto &binding : state.step_bindings)
       reusable = reusable && !binding.native_inputs;
     for (const auto &binding : episode.bindings) {
-      if (binding.scope == BindingScope::kProjected || binding.scope == BindingScope::kWriteEffect ||
-          binding.projection.valid()) reusable = false;
-      if (binding.scope == BindingScope::kConfiguration &&
+      // Fixed projected capacities can keep only their old physical spans.
+      // Fresh binds still validate every current page/writer and compare the
+      // complete replacement tuple before that candidate can be used.
+      if (binding.value.valid() && binding.scope != BindingScope::kCaller &&
           std::binary_search(state.plan->external_input_aliases.begin(),
               state.plan->external_input_aliases.end(), binding.value.ordinal()))
         reusable = false;
@@ -631,26 +644,6 @@ Status RegionAccess::bind_configuration(Invocation &invocation, ValueId value,
   HYLE_ASSIGN_OR_RETURN(auto storage, lease.view());
   HYLE_ASSIGN_OR_RETURN(auto tensor,
       compute::ConstTensorView::from_initialized_storage(description, storage));
-  bool same_spans = episode->configuration_spans;
-  if (same_spans) {
-    bool consumed = false;
-    const auto physical = state->plan->external_instances[value.ordinal()];
-    for (const auto &consumer : projected_input_consumers(*state->plan, value.ordinal())) {
-      // Other-storage replicas retain the original complete path. Their input
-      // spans name workspace rather than this external configuration tensor.
-      if (consumer.instance != physical) { same_spans = false; break; }
-      const auto &step = state->plan->steps[consumer.step];
-      const auto &prior = state->submission_inputs[step.input_begin + consumer.port];
-      const auto before = prior.storage(), after = tensor.storage();
-      same_spans = same_spans && prior.valid() && prior.description() == tensor.description() &&
-          before.resource() == after.resource() && before.native_handle() == after.native_handle() &&
-          before.offset() == after.offset() && before.size() == after.size();
-      consumed = true;
-    }
-    same_spans = same_spans && consumed &&
-        !std::binary_search(state->plan->external_input_aliases.begin(),
-            state->plan->external_input_aliases.end(), value.ordinal());
-  }
   // Reuse the original binding validation/commit. Only this synchronized cold
   // call suspends the replacement guard; a rejecting bind has not invalidated
   // replay or released the old resource owner.
@@ -664,10 +657,8 @@ Status RegionAccess::bind_configuration(Invocation &invocation, ValueId value,
   binding->read = std::move(lease); binding->description = description;
   binding->exclusive = false; binding->permissionless = false; binding->borrowed = false;
   binding->scope = BindingScope::kConfiguration;
-  // The original bind above revoked replay and validated the actual alias,
-  // resource and description. Only its previously eligible physical facts
-  // survive a same-span configuration replacement; no owner is cached here.
-  episode->configuration_spans = same_spans;
+  // The common read bind above kept only a previously eligible, unchanged
+  // physical tuple. This owner and its generation are still freshly installed.
   return Status::Ok();
 }
 
@@ -1452,6 +1443,14 @@ Status RegionAccess::bind_read_projection(Invocation&invocation,ReadProjection p
   if(binding->read.valid() || binding->write.valid() || binding->permissionless)
     return Status::FailedPrecondition("read projection needs reset before rebinding");
   const auto root=plan.external_instances[capacity.ordinal()];
+  const auto consumers=projected_input_consumers(plan,capacity.ordinal());
+  // The compiled index includes every physical consumer, including copies
+  // and other-storage replicas. With no alias descendant and no replica,
+  // these are exactly the roots visited by the general whole-plan checks.
+  const bool direct=projection.aliases.empty() &&
+      (plan.alias_sources[root]==kNoInPlaceSource || plan.alias_sources[root]==root) &&
+      !std::binary_search(plan.external_input_aliases.begin(),plan.external_input_aliases.end(),capacity.ordinal()) &&
+      std::all_of(consumers.begin(),consumers.end(),[&](const auto&entry){return entry.instance==root;});
   const auto allowed=[&](std::uint32_t value)noexcept{
     return value==capacity.ordinal() || std::ranges::any_of(projection.aliases,[&](ValueId alias){return alias.ordinal()==value;});
   };
@@ -1465,7 +1464,11 @@ Status RegionAccess::bind_read_projection(Invocation&invocation,ReadProjection p
     for(std::size_t j=0;j<i;++j)if(alias==projection.aliases[j])return Status::InvalidArgument("read projection alias is duplicated");
   }
   if(plan.binding_roles[capacity.ordinal()]&kExternalOutput)return Status::InvalidArgument("projected capacity is published");
-  for(std::size_t i=0;i<plan.alias_sources.size();++i){
+  if(direct){
+    HYLE_ASSIGN_OR_RETURN(auto bytes,plan.instance_descriptions[root].required_bytes());
+    if(bytes>tensor.storage().size())return Status::InvalidArgument("projected alias bytes exceed the original capacity");
+  }
+  if(!direct)for(std::size_t i=0;i<plan.alias_sources.size();++i){
     if(origin(std::uint32_t(i))!=root)continue;
     if(!allowed(plan.instance_values[i]))return Status::InvalidArgument("projected capacity has an undeclared physical alias");
     std::size_t offset=0;auto current=std::uint32_t(i);
@@ -1486,8 +1489,32 @@ Status RegionAccess::bind_read_projection(Invocation&invocation,ReadProjection p
     if(!reads)return Status::InvalidArgument("projected reader does not consume this physical root");
     for(std::size_t j=0;j<i;++j)if(reader==projection.readers[j])return Status::InvalidArgument("projected reader is duplicated");
   }
+  const auto inspect=[&](std::size_t i,std::uint32_t port)noexcept->Status{
+    const auto&step=plan.steps[i];
+    compute::detail::OperationPreparedAccess access;
+    if(step.kind==PlanStepKind::kOperation){
+      HYLE_ASSIGN_OR_RETURN(access,compute::detail::OperationPreparationAccess::inspect_access(step.operation,compute::detail::kProjectedInputReadExtensionId));
+    }else if(step.kind==PlanStepKind::kRegion){
+      const auto&prepared=step.region.prepared_;
+      const auto*interface=prepared.vtable->query_extension ?
+          static_cast<const RegionProjectedReadVTable*>(prepared.vtable->query_extension(
+              prepared.state,kRegionProjectedReadExtensionId)) : nullptr;
+      if(!interface || !interface->inspect)
+        return Status::Unimplemented("selected region has no projected input inspector");
+      HYLE_RETURN_IF_ERROR(interface->inspect(prepared,
+          state->invocations[i].region.state_,port,&access));
+    }else return Status::InvalidArgument("projected root has a materializing/copy consumer");
+    if(access.projected_input!=port)return Status::Unimplemented("selected implementation does not project this physical input port");
+    return Status::Ok();
+  };
   bool consumed=false;
-  for(std::size_t i=0;i<plan.steps.size();++i){const auto&step=plan.steps[i];
+  if(direct){
+    for(const auto&consumer:consumers){
+      if(std::ranges::none_of(projection.readers,[&](NodeId reader){return plan.node_steps[reader.ordinal()]==consumer.step;}))
+        return Status::InvalidArgument("projected root has an unqualified physical consumer");
+      HYLE_RETURN_IF_ERROR(inspect(consumer.step,consumer.port));consumed=true;
+    }
+  }else for(std::size_t i=0;i<plan.steps.size();++i){const auto&step=plan.steps[i];
     const bool declared=std::ranges::any_of(projection.readers,[&](NodeId reader){return plan.node_steps[reader.ordinal()]==i;});
     for(std::size_t port=0;port<step.input_count;++port){const auto input=plan.node_inputs[step.input_begin+port];if(origin(input)!=root)continue;
       if(!allowed(plan.instance_values[input]))return Status::InvalidArgument("projection physical input is not a declared alias");
@@ -1497,20 +1524,7 @@ Status RegionAccess::bind_read_projection(Invocation&invocation,ReadProjection p
         continue;
       }
       if(!declared)return Status::InvalidArgument("projected root has an unqualified physical consumer");
-      compute::detail::OperationPreparedAccess access;
-      if(step.kind==PlanStepKind::kOperation){
-        HYLE_ASSIGN_OR_RETURN(access,compute::detail::OperationPreparationAccess::inspect_access(step.operation,compute::detail::kProjectedInputReadExtensionId));
-      }else if(step.kind==PlanStepKind::kRegion){
-        const auto&prepared=step.region.prepared_;
-        const auto*interface=prepared.vtable->query_extension ?
-            static_cast<const RegionProjectedReadVTable*>(prepared.vtable->query_extension(
-                prepared.state,kRegionProjectedReadExtensionId)) : nullptr;
-        if(!interface || !interface->inspect)
-          return Status::Unimplemented("selected region has no projected input inspector");
-        HYLE_RETURN_IF_ERROR(interface->inspect(prepared,
-            state->invocations[i].region.state_,std::uint32_t(port),&access));
-      }else return Status::InvalidArgument("projected root has a materializing/copy consumer");
-      if(access.projected_input!=port)return Status::Unimplemented("selected implementation does not project this physical input port");
+      HYLE_RETURN_IF_ERROR(inspect(i,std::uint32_t(port)));
       consumed=true;
     }
   }

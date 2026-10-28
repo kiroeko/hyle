@@ -1006,11 +1006,22 @@ Status execute_region(void *prepared, void *invocation,
         !same(run.cold_output, outputs[0].storage()))
       return Status::Internal("ordinary submit did not use its cold bindings");
   }
-  auto input_mapping = inputs[0].storage().map_host();
+  auto input_storage = inputs[0].storage();
+  auto output_storage = outputs[0].storage();
+  if (!plan.bounded_unary) {
+    // Native inputs may retain a broader initialized lease than this logical
+    // tensor. Keep that original permission/observer tuple intact and map only
+    // the actual mathematical range; output padding is not part of the result.
+    HYLE_ASSIGN_OR_RETURN(const auto input_bytes, inputs[0].description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(const auto output_bytes, outputs[0].description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(input_storage, input_storage.subview(0, input_bytes));
+    HYLE_ASSIGN_OR_RETURN(output_storage, output_storage.subview(0, output_bytes));
+  }
+  auto input_mapping = input_storage.map_host();
   if (!input_mapping)
     return std::move(input_mapping).error();
   auto output_mapping =
-      outputs[0].storage().map_host(hyle::mem::HostAccess::kWrite);
+      output_storage.map_host(hyle::mem::HostAccess::kWrite);
   if (!output_mapping) {
     input_mapping->close().IgnoreError();
     return std::move(output_mapping).error();
@@ -12385,7 +12396,8 @@ TEST(GraphRegions, OwnedNativeInputsKeepFirstCoveringPermissionAcrossRetryAndReb
     }
     auto completion = run.submit(no_queues);
     ASSERT_TRUE(completion) << completion.error().message();
-    ASSERT_TRUE(completion->wait().ok());
+    const auto terminal = completion->wait();
+    ASSERT_TRUE(terminal.ok()) << terminal.message();
     for (std::size_t i = 0; i < outputs.size(); ++i) {
       auto result = run.result(outputs[i]);
       ASSERT_TRUE(result) << result.error().message();

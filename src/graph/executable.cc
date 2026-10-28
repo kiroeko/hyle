@@ -1113,6 +1113,30 @@ bool same_physical_tensor(const Tensor &left, const Tensor &right) noexcept {
          a.offset() == b.offset() && a.size() == b.size();
 }
 
+bool same_prepared_input_spans(const detail::InvocationState &invocation,
+    ValueId value, compute::ConstTensorView tensor) noexcept {
+  if (!detail::reusable_configuration_spans(invocation)) return false;
+  const auto &plan = *invocation.plan;
+  if (std::binary_search(plan.external_input_aliases.begin(),
+          plan.external_input_aliases.end(), value.ordinal())) return false;
+  const auto physical = plan.external_instances[value.ordinal()];
+  if (plan.alias_sources[physical] != detail::kNoInPlaceSource &&
+      plan.alias_sources[physical] != physical) return false;
+  const auto &consumers = plan.external_input_consumers;
+  const auto first = std::lower_bound(consumers.begin(), consumers.end(), value.ordinal(),
+      [](const auto &consumer, std::uint32_t logical) noexcept { return consumer.value < logical; });
+  bool consumed = false;
+  for (auto next = first; next != consumers.end() && next->value == value.ordinal(); ++next) {
+    const auto &step = plan.steps[next->step];
+    if (next->instance != physical || invocation.step_bindings[next->step].native_inputs ||
+        (step.region.valid() && !detail::RegionAccess::borrows_tensor_views_only(step.region)) ||
+        !same_physical_tensor(invocation.submission_inputs[step.input_begin + next->port], tensor))
+      return false;
+    consumed = true;
+  }
+  return consumed;
+}
+
 detail::CaptureRebuildRange *capture_storage(detail::InvocationState &invocation,
                                              std::uint32_t begin,
                                              std::uint32_t count) noexcept {
@@ -8147,6 +8171,12 @@ void invalidate_recording(detail::InvocationState &invocation,
                           std::uint32_t selected_step,
                           CaptureInvalidation mode) noexcept {
   HYLE_FATAL_ASSERT(selected_step < invocation.step_bindings.size());
+  // Retired TensorView geometry can survive ordinary command invalidation.
+  // Preparation (including a Queue change) must not revive a discarded hint.
+  if (!invocation.closed &&
+      invocation.phase.load(std::memory_order_acquire) == detail::InvocationPhase::kIdle &&
+      invocation.preparation_uses.load(std::memory_order_acquire) == 0)
+    detail::remember_configuration_spans(invocation);
   const bool recycle = mode == CaptureInvalidation::kStableBindings;
   const bool retain_rebuild_seed = mode == CaptureInvalidation::kNativeArguments ||
                                     mode == CaptureInvalidation::kKeepExistingSeed;
@@ -8230,7 +8260,13 @@ void invalidate_recording(detail::InvocationState &invocation,
   }
   for (auto &span : invocation.capture_spans)
     span = {};
-  invalidate_binding_cache(invocation);
+  // Command/private-argument changes still advance the original revision and
+  // run its binding hook again. They need not destroy already built physical
+  // spans when this exact artifact borrows only TensorViews. Opaque/native
+  // carriers keep the complete path.
+  const auto &planned = invocation.plan->steps[selected_step];
+  invalidate_binding_cache(invocation, binding.native_inputs ||
+      (planned.region.valid() && !detail::RegionAccess::borrows_tensor_views_only(planned.region)));
 }
 } // namespace
 
@@ -9348,8 +9384,9 @@ void detail::commit_read_binding(InvocationState &state, ValueId value,
     compute::ConstTensorView tensor) noexcept {
   const auto ordinal = value.ordinal();
   const auto instance = state.plan->external_instances[ordinal];
+  const bool same_spans = same_prepared_input_spans(state, value, tensor);
   invalidate_unproven_bindings(state);
-  invalidate_binding_cache(state);
+  invalidate_binding_cache(state, !same_spans);
   state.readable[instance] = tensor;
   state.bound[instance] = 1;
   commit_external_alias_binding(state, ordinal);
@@ -9443,6 +9480,7 @@ bool Invocation::in_flight() const noexcept {
 Status detail::RegionAccess::revoke_preparation(Invocation &invocation) noexcept {
   auto *state = detail::InvocationAccess::state(invocation);
   HYLE_RETURN_IF_ERROR(detail::resource_control_ready(state));
+  detail::remember_configuration_spans(*state);
   invalidate_unproven_bindings(*state);
   invalidate_binding_cache(*state, false);
   return Status::Ok();
@@ -9814,6 +9852,7 @@ Status prepare_replay_impl(detail::InvocationState *state_,
                     ExecutionLaneId{static_cast<std::uint32_t>(lane)}) ||
         state_->queues[lane].same_owner(state_->candidate_queues[lane]))
       continue;
+    detail::discard_configuration_spans(*state_);
     for (const auto &segment : state_->plan->segments) {
       if (segment.lane.ordinal() != lane)
         continue;

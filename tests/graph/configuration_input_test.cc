@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 
 #include "../compute/custom_kernel_fixture.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/graph/detail/input_source.h"
 #include "hyle/graph/detail/region_access.h"
 #include "hyle/graph/result.h"
+#include "../../src/graph/plan_state.h"
 #include "test_environment.h"
 
 namespace {
@@ -39,9 +42,11 @@ const gd::InputSourceVTable source_table{
     },
     [](void *) noexcept { return Status::Ok(); }};
 
-c::Context context(custom_test::Probe &probe) {
-  const std::array providers{c::ProviderBinding{custom_test::provider(probe).value()}};
-  return c::Context::create(c::cpu::device(), {.providers = providers}).value();
+c::Context context(custom_test::Probe &probe, bool copy_input = false) {
+  const std::array providers{c::ProviderBinding{custom_test::provider(probe).value()},
+      c::ProviderBinding{c::native::provider()}};
+  return c::Context::create(c::cpu::device(),
+      {.providers = std::span(providers).first(copy_input ? 2u : 1u)}).value();
 }
 c::ReadLease input_lease(const std::array<float, 4> &values) {
   auto backing = hyle::mem::Buffer::create(hyle::mem::system_resource(), 16, 64).value();
@@ -50,7 +55,7 @@ c::ReadLease input_lease(const std::array<float, 4> &values) {
 }
 struct Fixture final {
   custom_test::Probe probe;
-  c::Context cpu = context(probe);
+  c::Context cpu;
   c::Queue queue = cpu.create_queue().value();
   g::test::Environment environment{{&cpu, hyle::mem::system_resource()}};
   custom_test::Tensors tensors;
@@ -60,11 +65,15 @@ struct Fixture final {
   g::Invocation run;
   const std::array<g::QueueBinding, 1> queues{{{environment.lane(0), &queue}}};
 
-  Fixture() {
+  explicit Fixture(bool copy_input = false) : cpu(context(probe, copy_input)) {
     EXPECT_TRUE(tensors.fill().ok());
     auto builder = g::GraphBuilder::create().value();
     input = builder.input(custom_test::description()).value();
-    output = builder.add(c::Operation::custom(custom_test::Affine{1}), input).value();
+    // Copy has the existing exact/no-alias contract. Its private materialized
+    // result keeps the positive fixture's external configuration off the
+    // optional alias chain without changing the original affine math/output.
+    const auto affine_input = copy_input ? builder.add(c::Copy{}, input).value() : input;
+    output = builder.add(c::Operation::custom(custom_test::Affine{1}), affine_input).value();
     EXPECT_TRUE(builder.publish(output).ok());
     graph = std::move(builder).finish().value();
     compiled = g::compile(graph, environment.environment(),
@@ -118,12 +127,21 @@ TEST(ConfigurationInput, OrdinaryBindingsCannotReplacePreparedMetadata) {
 
 TEST(ConfigurationInput, FailedColdReplacementPreservesReplayAndResetUnlocksInput) {
   Fixture fixture;
+  const auto *state = gd::InvocationAccess::state(fixture.run);
   auto original = input_lease(first);
   auto replacement = input_lease(second);
   ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
       custom_test::description(), original).ok());
   ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
       custom_test::description(), replacement).ok());
+  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  ASSERT_TRUE(std::binary_search(state->plan->external_input_aliases.begin(),
+      state->plan->external_input_aliases.end(), fixture.input.ordinal()));
+  ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Original optional alias.
+  ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
+      custom_test::description(), replacement).ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state));
   ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
 
   const auto wrong = c::TensorDesc::dense(c::DataType::kFloat32,
@@ -150,12 +168,16 @@ TEST(ConfigurationInput, FailedColdReplacementPreservesReplayAndResetUnlocksInpu
 }
 
 TEST(ConfigurationInput, RefreshedConfigurationUsesCurrentLeaseAndReplacementStorage) {
-  Fixture fixture;
+  Fixture fixture(true);
+  const auto *state = gd::InvocationAccess::state(fixture.run);
+  ASSERT_TRUE(state->plan->external_input_aliases.empty());
   auto pool = c::LeasePool::create(hyle::mem::system_resource(), 256,
                                   {.max_blocks = 1}).value();
   auto writer = pool.allocate(16).value();
   ASSERT_TRUE(writer.view()->write(std::as_bytes(std::span(first))).ok());
   auto ready = writer.publish().value();
+  const auto generation = ready.generation();
+  const auto original_span = ready.view().value();
   ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
       custom_test::description(), ready).ok());
   ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
@@ -168,16 +190,35 @@ TEST(ConfigurationInput, RefreshedConfigurationUsesCurrentLeaseAndReplacementSto
     EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
   }
   ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
-  // Reacquire exclusive permission and publish a fresh read permission at the same
-  // allocation. The new episode must use its current read permission, while
-  // retained physical TensorView metadata may still describe this storage.
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  EXPECT_FALSE(state->bindings_prepared);
+  // try_write proves that the old read guard was released, but preserves the
+  // allocation generation. Actually free this block, then allocate again from
+  // the max-one-block pool to test a new generation at the same physical tuple.
   auto refreshed = ready.try_write();
   ASSERT_TRUE(refreshed) << refreshed.error().message();
-  ASSERT_TRUE(refreshed->view()->write(std::as_bytes(std::span(second))).ok());
-  ready = refreshed->publish().value();
+  EXPECT_EQ(refreshed->generation(), generation);
+  refreshed->reset();
+  ASSERT_EQ(pool.stats().live_blocks, 0u);
+  auto replacement_writer = pool.allocate(16);
+  ASSERT_TRUE(replacement_writer) << replacement_writer.error().message();
+  auto replacement_view = replacement_writer->view();
+  ASSERT_TRUE(replacement_view) << replacement_view.error().message();
+  ASSERT_TRUE(replacement_view->write(std::as_bytes(std::span(second))).ok());
+  ready = replacement_writer->publish().value();
+  EXPECT_NE(ready.generation(), generation);
+  const auto current_span = ready.view().value();
+  EXPECT_EQ(current_span.native_handle(), original_span.native_handle());
+  EXPECT_EQ(current_span.offset(), original_span.offset());
+  EXPECT_EQ(current_span.size(), original_span.size());
   ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
       custom_test::description(), ready).ok());
+  // Physical reuse does not preserve the previous read permission or replay.
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  EXPECT_FALSE(state->replay_prepared);
   ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Call-scoped hint.
+  EXPECT_FALSE(ready.try_write()); // The new generation is held by this run.
   const auto wrong = c::TensorDesc::dense(c::DataType::kFloat32,
                                          std::array<std::int64_t, 1>{2}).value();
   EXPECT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
@@ -192,8 +233,10 @@ TEST(ConfigurationInput, RefreshedConfigurationUsesCurrentLeaseAndReplacementSto
   auto replacement = input_lease(first);
   for (const auto *lease : {&replacement, &ready}) {
     ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+    ASSERT_TRUE(gd::reusable_configuration_spans(*state));
     ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
         custom_test::description(), *lease).ok());
+    EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Different owner/address.
     ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
     auto done = fixture.run.submit(fixture.queues).value();
     ASSERT_TRUE(done.wait().ok());
@@ -201,9 +244,47 @@ TEST(ConfigurationInput, RefreshedConfigurationUsesCurrentLeaseAndReplacementSto
         ? (std::array<float, 4>{3, 5, 7, 9})
         : (std::array<float, 4>{11, 13, 15, 17}));
   }
+  // A different actual Queue still follows the original preparation/admission
+  // path, even though every physical TensorView is equal to the last episode.
+  auto another_queue = fixture.cpu.create_queue().value();
+  const std::array another_queues{g::QueueBinding{fixture.environment.lane(0), &another_queue}};
+  ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+  ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
+      custom_test::description(), ready).ok());
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  ASSERT_TRUE(fixture.run.prepare_replay(another_queues).ok());
+  {
+    auto done = fixture.run.submit(another_queues).value();
+    ASSERT_TRUE(done.wait().ok());
+    EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{11, 13, 15, 17}));
+  }
   ASSERT_TRUE(fixture.run.reset().ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state));
   EXPECT_TRUE(ready.try_write());
   EXPECT_FALSE(fixture.run.prepare_replay(fixture.queues).ok());
+}
+
+TEST(ConfigurationInput, IncompleteConfigurationCannotKeepThePhysicalShortcut) {
+  Fixture fixture(true);
+  const auto *state = gd::InvocationAccess::state(fixture.run);
+  ASSERT_TRUE(state->plan->external_input_aliases.empty());
+  const auto ready = input_lease(first);
+  ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
+      custom_test::description(), ready).ok());
+  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  ASSERT_TRUE(gd::RegionAccess::reset_configuration(fixture.run).ok());
+  ASSERT_TRUE(gd::reusable_configuration_spans(*state));
+  EXPECT_TRUE(fixture.run.prepare_replay(fixture.queues).IsFailedPrecondition());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state));
+  EXPECT_FALSE(state->bindings_prepared);
+  EXPECT_FALSE(fixture.run.submit(fixture.queues));
+  ASSERT_TRUE(gd::RegionAccess::bind_configuration(fixture.run, fixture.input,
+      custom_test::description(), ready).ok());
+  EXPECT_FALSE(gd::reusable_configuration_spans(*state));
+  ASSERT_TRUE(fixture.run.prepare_replay(fixture.queues).ok());
+  auto done = fixture.run.submit(fixture.queues).value();
+  ASSERT_TRUE(done.wait().ok());
+  EXPECT_EQ(fixture.tensors.read(), (std::array<float, 4>{3, 5, 7, 9}));
 }
 
 TEST(ConfigurationInput, CarrierQueryUsesOnlyThisPlansPrivateInput) {
@@ -247,6 +328,7 @@ TEST(ConfigurationInput, LayoutResetPreservesCallerLeasesAndSourceButExpiresMeta
   ASSERT_TRUE(prepared) << prepared.error().message();
   auto compiled = std::move(*prepared);
   auto run = compiled.executable.create_invocation({.resources = g::ResourceOptions{}}).value();
+  const auto *state = gd::InvocationAccess::state(run);
   const std::array queues{g::QueueBinding{environment.lane(0), &queue}};
   auto stable_pool = c::LeasePool::create(hyle::mem::system_resource(), 256,
                                          {.max_blocks = 1}).value();
@@ -269,6 +351,7 @@ TEST(ConfigurationInput, LayoutResetPreservesCallerLeasesAndSourceButExpiresMeta
   for (int episode = 0; episode < 2; ++episode) {
     if (episode) {
       ASSERT_TRUE(gd::RegionAccess::reset_configuration(run).ok());
+      EXPECT_FALSE(gd::reusable_configuration_spans(*state)); // Source route is fresh.
       // Binding and this local handle remain; old active/candidate preparation
       // must release their source owners and dependency decisions.
       EXPECT_EQ(producer.references, 2);
