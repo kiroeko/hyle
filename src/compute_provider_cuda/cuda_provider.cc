@@ -173,6 +173,7 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
     if (artifact::handles(request.operation))
       return artifact::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+        request.operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>() ||
         request.operation.custom_as<sequence_ops::PackedCausalConv1d>())
       return sequence::propose(request, inputs, outputs, proposal);
     if (request.operation.custom_as<model_ops::CausalConv1d>())

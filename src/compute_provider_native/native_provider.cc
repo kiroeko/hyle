@@ -443,6 +443,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   }
   case OperationKind::kCustom: {
     const bool sequence = operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+                          operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>() ||
                           operation.custom_as<sequence_ops::PackedCausalConv1d>();
     const bool sampling = operation.custom_as<sampling_ops::RandomBits>() ||
                           operation.custom_as<sampling_ops::Categorical>();
@@ -573,6 +574,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   case OperationKind::kCustom:
     if (operation.custom_as<sequence_ops::PackedGatedDeltaNet>() ||
+        operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>() ||
         operation.custom_as<sequence_ops::PackedCausalConv1d>() ||
         operation.custom_as<sampling_ops::RandomBits>() ||
         operation.custom_as<sampling_ops::Categorical>())

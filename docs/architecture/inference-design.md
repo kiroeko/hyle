@@ -1216,6 +1216,13 @@ lag0的占位prior借用有效carry，padding只使用合法索引，不写入KV
 均匀／R1继续使用原数学和快路；冷能力缺失时按原兼容组缩批，不把执行失败当回退。
 这不代签多草稿有效snapshot、设备接受或在途后继权限，它们仍须分别满足原状态与退休合同。
 
+PackedGDN的精确末K状态与固定容量的真实前缀是两种数学需求，分别由
+`packed_gated_delta_net(K)`和`packed_gated_delta_net_prefixes(K)`表达，共用递推实现。
+后者要求每个实际长度`Li<=K`，固定输出`[B,K,Hv,Dv,Dk]`，只有前`Li`槽表示`S1..SLi`；
+剩余槽逐位正零，不代表额外消费。有效数来自原offsets，空成员没有新前缀，初态仍在原输入。
+CPU／CUDA先全量校验再写任一输出，使用者仍须只发布真实接受位置的状态。
+当前仅底层原语及设备中间态续算已有有限检查；引擎Verify接线、设备后继和Apple／Vulkan的packed实现分别推进。
+
 Backend 在冷期选择实际编入的端点，编入能力不代表设备可用；失败不暗中回退。
 `has_cpu_assist()` 只表示 GPU 主端点附带 CPU 辅助；纯 CPU 主端点由 `host_only()` 表达。
 CPU＋GPU 通过冷放置和 Graph 的跨域边表达。模型方程不应决定某平台的搬运、Queue 或执行包装。

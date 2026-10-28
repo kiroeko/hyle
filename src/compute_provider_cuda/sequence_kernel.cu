@@ -24,7 +24,9 @@ __global__ void validate_offsets(const std::int32_t *offsets, unsigned *status,
     if ((b == 0 && first != 0) || first < 0 || last < first ||
         std::uint64_t(last) > layout.rows ||
         (layout.kind == SequenceKind::kGatedDeltaNet && layout.snapshots > 1 &&
-         std::uint64_t(last - first) < layout.snapshots))
+         std::uint64_t(last - first) < layout.snapshots) ||
+        (layout.kind == SequenceKind::kGatedDeltaNetPrefixes &&
+         std::uint64_t(last - first) > layout.snapshots))
       atomicCAS(status, 0U, static_cast<unsigned>(
           cuda::detail::DeviceStatusCode::kInvalidSequenceOffsets));
   }
@@ -42,7 +44,7 @@ __device__ float warp_sum(float value) {
   return __shfl_sync(0xffffffffU, value, 0);
 }
 
-template <class T>
+template <class T, bool Prefixes>
 __global__ void packed_gdn(SequenceBindings ports, const unsigned *status,
                            SequenceLayout layout) {
   // Validation is an earlier command on the original Queue. Check the whole
@@ -64,7 +66,18 @@ __global__ void packed_gdn(SequenceBindings ports, const unsigned *status,
     if (batch == 0 && lane == 0)
       for (auto row = std::uint64_t(offsets[layout.batches]); row < layout.rows; ++row)
         store<T>(ports.outputs[0], (row * layout.value_heads + head) * layout.value_depth + dv, 0.0F);
-    if (begin == end) {
+    if constexpr (Prefixes) {
+      // Only the real post-states are checkpoints. Unused capacity, including
+      // every slot of an empty sequence, is positive-zero storage, not S0.
+      auto *bits = reinterpret_cast<unsigned *>(states);
+      for (auto snapshot = end - begin; snapshot < layout.snapshots; ++snapshot)
+        for (auto key = std::uint64_t(lane); key < layout.key_depth; key += kWarp) {
+          const auto out = (((batch * layout.snapshots + snapshot) * layout.value_heads + head) *
+                            layout.value_depth + dv) * layout.key_depth + key;
+          bits[out] = 0U;
+        }
+      if (begin == end) continue;
+    } else if (begin == end) {
       // K1 only: no arithmetic, including for NaN payloads and signed zeros.
       const auto *source = reinterpret_cast<const unsigned *>(initial);
       auto *destination = reinterpret_cast<unsigned *>(states);
@@ -99,7 +112,12 @@ __global__ void packed_gdn(SequenceBindings ports, const unsigned *status,
         if (key < layout.key_depth) {
           state[part] = __fmaf_rn(delta, load<T>(ports.inputs[1], qk_base + key), state[part]);
           attended = __fmaf_rn(state[part], load<T>(ports.inputs[0], qk_base + key), attended);
-          if (row >= end - layout.snapshots) {
+          if constexpr (Prefixes) {
+            const auto snapshot = row - begin;
+            const auto out = (((batch * layout.snapshots + snapshot) * layout.value_heads + head) *
+                              layout.value_depth + dv) * layout.key_depth + key;
+            states[out] = state[part];
+          } else if (row >= end - layout.snapshots) {
             const auto snapshot = row - (end - layout.snapshots);
             const auto out = (((batch * layout.snapshots + snapshot) * layout.value_heads + head) *
                               layout.value_depth + dv) * layout.key_depth + key;
@@ -167,20 +185,24 @@ unsigned blocks(std::uint64_t work, unsigned threads) {
       (std::max)(std::uint64_t{1}, work / threads + (work % threads != 0))));
 }
 template <class T> const void *payload(SequenceKind kind) {
-  return kind == SequenceKind::kGatedDeltaNet
-      ? reinterpret_cast<const void *>(packed_gdn<T>)
-      : reinterpret_cast<const void *>(packed_conv<T>);
+  if (kind == SequenceKind::kGatedDeltaNet)
+    return reinterpret_cast<const void *>(packed_gdn<T, false>);
+  if (kind == SequenceKind::kGatedDeltaNetPrefixes)
+    return reinterpret_cast<const void *>(packed_gdn<T, true>);
+  return reinterpret_cast<const void *>(packed_conv<T>);
 }
 } // namespace
 
 cudaError_t sequence_prepare(ElementType type, const SequenceLayout &layout,
                              SequenceProgram *output) noexcept {
+  const bool gdn = layout.kind == SequenceKind::kGatedDeltaNet ||
+      layout.kind == SequenceKind::kGatedDeltaNetPrefixes;
   if (!output || !layout.batches || layout.rows > INT32_MAX ||
-      (layout.kind == SequenceKind::kGatedDeltaNet &&
+      (gdn &&
        (!layout.key_heads || !layout.value_heads || !layout.key_depth ||
         layout.key_depth > kVectorParts * kWarp || !layout.value_depth ||
         layout.value_heads % layout.key_heads || !layout.snapshots ||
-        (layout.snapshots > 1 && layout.snapshots > layout.rows) ||
+        (layout.kind == SequenceKind::kGatedDeltaNet && layout.snapshots > 1 && layout.snapshots > layout.rows) ||
         (layout.gate_width != 1 && layout.gate_width != layout.value_depth) || !std::isfinite(layout.scale))) ||
       (layout.kind == SequenceKind::kCausalConv && (!layout.channels || !layout.taps)))
     return cudaErrorInvalidValue;
@@ -198,11 +220,11 @@ cudaError_t sequence_prepare(ElementType type, const SequenceLayout &layout,
     if (status != cudaSuccess) return status;
     if (attributes.maxThreadsPerBlock < int(kThreads)) return cudaErrorNotSupported;
   }
-  const auto work = layout.kind == SequenceKind::kGatedDeltaNet
+  const auto work = gdn
       ? layout.batches * layout.value_heads * layout.value_depth
       : layout.rows * layout.channels + layout.batches * (layout.taps - 1) * layout.channels;
   *output = {validation, kernel, blocks(layout.batches, kThreads),
-      blocks(work, layout.kind == SequenceKind::kGatedDeltaNet ? kWarps : kThreads), layout};
+      blocks(work, gdn ? kWarps : kThreads), layout};
   return cudaSuccess;
 }
 
@@ -211,7 +233,9 @@ cudaError_t sequence_launch(const SequenceProgram &program, SequenceBindings bin
   if (!program.validate || !program.payload || !status ||
       !program.validation_blocks || !program.payload_blocks) return cudaErrorInvalidValue;
   auto layout = program.layout;
-  auto *offsets = bindings.inputs[layout.kind == SequenceKind::kGatedDeltaNet ? 6 : 3];
+  const bool gdn = layout.kind == SequenceKind::kGatedDeltaNet ||
+      layout.kind == SequenceKind::kGatedDeltaNetPrefixes;
+  auto *offsets = bindings.inputs[gdn ? 6 : 3];
   void *validate_args[]{&offsets, &status, &layout};
   auto result = cudaLaunchKernel(program.validate, dim3(program.validation_blocks),
       dim3(kThreads), validate_args, 0, stream);

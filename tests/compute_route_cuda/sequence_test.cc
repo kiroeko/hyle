@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../compute_models/packed_sequence_case.h"
+#include "../compute_models/packed_gdn_prefix_case.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/providers/cuda.h"
@@ -49,6 +50,63 @@ TEST(CudaPackedSequence, ConvFloatingTypesKeepRealHistory) {
 }
 TEST(CudaPackedSequence, WholeOffsetValidationPrecedesEitherOutput) {
   CudaCase test; p::invalid_offsets(test.context, test.memory.ref());
+}
+
+TEST(CudaPackedSequence, PrefixesMatchFp64AndContinueFromTheActualDeviceState) {
+  CudaCase test;
+  packed_gdn_prefix_test::math<float>(test.context,test.memory.ref(),true,std::nullopt);
+  packed_gdn_prefix_test::math<hyle::simd::float16_t>(test.context,test.memory.ref(),false);
+  packed_gdn_prefix_test::math<hyle::simd::bfloat16_t>(test.context,test.memory.ref(),false);
+}
+
+TEST(CudaPackedSequence, PrefixCapacityEmptyMembersAndFailureRemainAtomic) {
+  CudaCase test; packed_gdn_prefix_test::empty_and_failure(test.context,test.memory.ref());
+}
+
+TEST(CudaPackedSequence, PrefixCaptureReusesOffsetsAndRetiresAnInvalidLastMember) {
+  auto context = g::cuda::create_context().value();
+  auto memory = c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
+  auto queue = context.create_queue().value();
+  const packed_gdn_prefix_test::Fixture<float> fixture(true,37);
+  const auto operation = c::sequence_ops::packed_gated_delta_net_prefixes(fixture.prefixes,fixture.scale);
+  p::Case data(context,memory.ref(),operation,fixture.descriptions,fixture.data());
+  EXPECT_EQ(data.prepared.provider().id,c::cuda_native::kProviderId);
+  auto builder = g::GraphBuilder::create().value();
+  std::array<g::ValueId,7> inputs;
+  for (std::size_t port = 0; port < inputs.size(); ++port) inputs[port] = builder.input(fixture.descriptions[port]).value();
+  const auto node = builder.add_node(operation,inputs).value();
+  const std::array outputs{builder.result(node,0).value(),builder.result(node,1).value()};
+  for (const auto output : outputs) ASSERT_TRUE(builder.publish(output).ok());
+  const auto graph = std::move(builder).finish().value();
+  auto compiled = g::cuda::compile(graph,context,memory.ref()).value();
+  auto run = compiled.executable.create_invocation().value();
+  const auto bind = [&] {
+    for (std::size_t port = 0; port < inputs.size(); ++port) ASSERT_TRUE(run.bind(inputs[port],data.inputs[port]).ok());
+    for (std::size_t port = 0; port < outputs.size(); ++port) ASSERT_TRUE(run.bind(outputs[port],data.outputs[port]).ok());
+  };
+  bind();
+  const std::array queues{g::QueueBinding{g::ExecutionLaneId{0},&queue}};
+  constexpr std::array<std::array<std::int32_t,3>,4> offsets{{{0,1,4},{0,3,4},{0,1,5},{0,1,4}}};
+  for (std::size_t round = 0; round < offsets.size(); ++round) {
+    SCOPED_TRACE(round); data.offsets(offsets[round]); data.poison();
+    const auto prepared = run.prepare_replay(queues,
+        {.mode = g::ReplayMode::kRequireCapture,.host_wait = g::HostWaitPolicy::kReject});
+    ASSERT_TRUE(prepared.ok()) << prepared.message();
+    const auto replay = run.replay_report().value();
+    EXPECT_EQ(replay.route,g::ReplayRoute::kCaptured);
+    if (round == 1 || round == 2) {
+      EXPECT_EQ(replay.recorded_capture_range_count,0U); EXPECT_GE(replay.reused_capture_range_count,1U);
+    }
+    auto done = run.submit(queues); ASSERT_TRUE(done) << done.error().message();
+    const auto status = done->wait(); *done = {};
+    if (round == 2) {
+      EXPECT_TRUE(status.IsInvalidArgument()) << status.message(); data.expect_poison();
+      auto denied = run.submit(queues); ASSERT_FALSE(denied); EXPECT_TRUE(denied.error().IsFailedPrecondition());
+      run = compiled.executable.create_invocation().value(); bind();
+    } else {
+      ASSERT_TRUE(status.ok()) << status.message(); fixture.check(data,offsets[round]);
+    }
+  }
 }
 
 TEST(CudaPackedSequence, GdnCapturedGraphKeepsRealSnapshotsAndRetiresShortSequence) {

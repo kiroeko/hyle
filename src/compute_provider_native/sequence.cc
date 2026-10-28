@@ -65,6 +65,7 @@ std::size_t offset_at(const std::byte *offsets, std::size_t index) noexcept {
   return static_cast<std::size_t>(value);
 }
 
+template <bool Prefixes = false>
 Status validate_offsets(const std::byte *offsets, std::size_t batches,
                         std::size_t rows, std::size_t snapshots) noexcept {
   std::int32_t previous;
@@ -76,8 +77,13 @@ Status validate_offsets(const std::byte *offsets, std::size_t batches,
     std::memcpy(&next, offsets + i * sizeof(next), sizeof(next));
     if (next < previous || next < 0 || static_cast<std::size_t>(next) > rows)
       return Status::InvalidArgument("packed sequence offsets or per-sequence snapshot lengths are invalid");
-    if (snapshots > 1 && static_cast<std::size_t>(next - previous) < snapshots)
-      return Status::InvalidArgument("packed sequence offsets or per-sequence snapshot lengths are invalid");
+    if constexpr (Prefixes) {
+      if (static_cast<std::size_t>(next - previous) > snapshots)
+        return Status::InvalidArgument("packed GDN sequence length exceeds prefix capacity");
+    } else {
+      if (snapshots > 1 && static_cast<std::size_t>(next - previous) < snapshots)
+        return Status::InvalidArgument("packed sequence offsets or per-sequence snapshot lengths are invalid");
+    }
     previous = next;
   }
   return Status::Ok();
@@ -89,7 +95,7 @@ template <class Value> struct GdnEpisode final {
   std::size_t key_heads, value_heads, key_depth, value_depth, gate_depth;
 };
 
-template <class Value>
+template <class Value, bool Prefixes = false>
 void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noexcept {
   const auto &episode = *static_cast<GdnEpisode<Value> *>(context);
   const auto &maps = *episode.maps;
@@ -101,7 +107,12 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
     const auto batch = unit / (heads * dv), head = unit / dv % heads, channel = unit % dv;
     const auto first = offset_at(maps.source[6], batch), last = offset_at(maps.source[6], batch + 1);
     const auto length = last - first;
-    auto *state = state_output + (batch * snapshots + snapshots - 1) * state_stride +
+    if constexpr (Prefixes) {
+      // No valid prefix exists for an empty member; its slots remain +0.
+      if (length == 0) continue;
+    }
+    const auto live_snapshot = Prefixes ? length - 1 : snapshots - 1;
+    auto *state = state_output + (batch * snapshots + live_snapshot) * state_stride +
                   (head * dv + channel) * dk;
     std::memcpy(state, maps.source[5] + unit * dk * sizeof(float), dk * sizeof(float));
     for (auto row = first; row != last; ++row) {
@@ -126,19 +137,28 @@ void run_gdn(void *context, std::size_t, std::size_t begin, std::size_t end) noe
             (key_base + key) * sizeof(Value)), attended);
       }
       numeric::store<Value>(maps.target[0] + value_index * sizeof(Value), attended * episode.plan->scalar);
-      if (snapshots > 1 && row - first >= length - snapshots) {
-        const auto snapshot = row - first - (length - snapshots);
-        // The last slot remains the live recurrent state until the final token.
-        if (snapshot + 1 < snapshots)
+      if constexpr (Prefixes) {
+        const auto snapshot = row - first;
+        // The last valid prefix slot is the live state, not a padding slot.
+        if (snapshot + 1 < length)
           std::memcpy(state_output + (batch * snapshots + snapshot) * state_stride +
                           (head * dv + channel) * dk,
                       state, dk * sizeof(float));
+      } else {
+        if (snapshots > 1 && row - first >= length - snapshots) {
+          const auto snapshot = row - first - (length - snapshots);
+          // The last slot remains the live recurrent state until the final token.
+          if (snapshot + 1 < snapshots)
+            std::memcpy(state_output + (batch * snapshots + snapshot) * state_stride +
+                            (head * dv + channel) * dk,
+                        state, dk * sizeof(float));
+        }
       }
     }
   }
 }
 
-template <class Value>
+template <class Value, bool Prefixes = false>
 detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTensorView> inputs,
                                 std::span<const TensorView> outputs) noexcept {
   if (inputs.size() != 7 || outputs.size() != 2)
@@ -147,17 +167,21 @@ detail::EnqueueResult submit_gdn(const NativePlan &plan, std::span<const ConstTe
   auto status = maps.read(inputs);
   const auto state = inputs[5].description().dimensions();
   const auto rows = static_cast<std::size_t>(inputs[0].description().dimensions()[0]);
-  if (status.ok()) status = validate_offsets(maps.source[6], static_cast<std::size_t>(state[0]),
+  if (status.ok()) status = validate_offsets<Prefixes>(maps.source[6], static_cast<std::size_t>(state[0]),
                                             rows, static_cast<std::size_t>(plan.scalar_bits));
   if (status.ok()) status = maps.write(outputs);
   if (status.ok()) {
     if (plan.parameters[2] != 0)
       std::memset(maps.target[0], 0, plan.parameters[2]);
+    if constexpr (Prefixes) {
+      const auto state_bytes = *outputs[1].description().required_bytes();
+      if (state_bytes != 0) std::memset(maps.target[1], 0, state_bytes);
+    }
     GdnEpisode<Value> episode{&plan, &maps,
         static_cast<std::size_t>(inputs[0].description().dimensions()[1]),
         static_cast<std::size_t>(state[1]), static_cast<std::size_t>(state[3]),
         static_cast<std::size_t>(state[2]), static_cast<std::size_t>(inputs[3].description().dimensions()[2])};
-    parallel_for_ranges(plan, plan.parameters[0], &run_gdn<Value>, &episode);
+    parallel_for_ranges(plan, plan.parameters[0], &run_gdn<Value, Prefixes>, &episode);
   }
   return completed(maps.close(std::move(status), outputs));
 }
@@ -232,6 +256,14 @@ Status prepare_sequence(Operation operation, std::span<const TensorDesc> inputs,
     plan.scalar = gdn->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
     plan.submit_route = type == DataType::kFloat32 ? &submit_gdn<float>
         : type == DataType::kFloat16 ? &submit_gdn<simd::float16_t> : &submit_gdn<simd::bfloat16_t>;
+  } else if (const auto prefixes = operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>()) {
+    const auto state = inputs[5].dimensions();
+    plan.parameters = {*inputs[5].element_count() / static_cast<std::size_t>(state[3]),
+                        static_cast<std::size_t>(state[3]), *outputs[0].required_bytes()};
+    plan.scalar_bits = prefixes->max_prefixes;
+    plan.scalar = prefixes->output_scale.value_or(1.0F / std::sqrt(static_cast<float>(state[3])));
+    plan.submit_route = type == DataType::kFloat32 ? &submit_gdn<float, true>
+        : type == DataType::kFloat16 ? &submit_gdn<simd::float16_t, true> : &submit_gdn<simd::bfloat16_t, true>;
   } else if (operation.custom_as<sequence_ops::PackedCausalConv1d>()) {
     const auto history = inputs[2].dimensions();
     // A K=1 empty history still needs one independent work unit for every

@@ -5,7 +5,7 @@
 
 namespace hyle::compute::cuda_native::native {
 
-enum class SequenceKind { kGatedDeltaNet, kCausalConv };
+enum class SequenceKind { kGatedDeltaNet, kCausalConv, kGatedDeltaNetPrefixes };
 struct SequenceLayout final {
   SequenceKind kind = SequenceKind::kGatedDeltaNet;
   std::uint64_t rows = 0, batches = 0;

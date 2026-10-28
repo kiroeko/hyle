@@ -5,6 +5,7 @@
 #include <limits>
 
 #include "../compute_models/packed_sequence_case.h"
+#include "../compute_models/packed_gdn_prefix_case.h"
 #include "hyle/compute/cpu.h"
 
 namespace {
@@ -75,6 +76,19 @@ TEST(CpuPackedSequence, ConvolutionUsesOnlyRealRowsAndKeepsExactHistory) {
 TEST(CpuPackedSequence, WholeOffsetValidationPrecedesEitherOutput) {
   auto context = c::cpu::create_context().value();
   p::invalid_offsets(context,hyle::mem::system_resource());
+}
+
+TEST(CpuPackedSequence, PrefixesMatchFp64AndContinueFromTheActualDeviceState) {
+  auto context = c::cpu::create_context().value();
+  packed_gdn_prefix_test::math<float>(context,hyle::mem::system_resource(),true,std::nullopt);
+  packed_gdn_prefix_test::math<hyle::simd::float16_t>(context,hyle::mem::system_resource(),false);
+  packed_gdn_prefix_test::math<hyle::simd::bfloat16_t>(context,hyle::mem::system_resource(),false);
+}
+
+TEST(CpuPackedSequence, PrefixCapacityEmptyMembersAndFailureRemainAtomic) {
+  packed_gdn_prefix_test::schema();
+  auto context = c::cpu::create_context().value();
+  packed_gdn_prefix_test::empty_and_failure(context,hyle::mem::system_resource());
 }
 
 } // namespace

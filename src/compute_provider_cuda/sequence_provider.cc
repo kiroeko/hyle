@@ -35,17 +35,21 @@ Result<Selection> select(Operation operation, std::span<const TensorDesc> inputs
                           std::span<const TensorDesc> outputs) noexcept {
   std::array<TensorDesc, 2> inferred;
   Selection selected;
-  if (const auto gdn = operation.custom_as<sequence_ops::PackedGatedDeltaNet>()) {
-    HYLE_RETURN_IF_ERROR(gdn->infer_output_descriptions(inputs, inferred));
+  const auto gdn = operation.custom_as<sequence_ops::PackedGatedDeltaNet>();
+  const auto prefixes = operation.custom_as<sequence_ops::PackedGatedDeltaNetPrefixes>();
+  if (gdn || prefixes) {
+    HYLE_RETURN_IF_ERROR(gdn ? gdn->infer_output_descriptions(inputs, inferred)
+                            : prefixes->infer_output_descriptions(inputs, inferred));
     const auto q = inputs[0].dimensions(), v = inputs[2].dimensions();
     if (q[2] > 256) return std::unexpected(Status::Unimplemented(
         "CUDA packed GDN register tile supports key depth up to 256"));
-    selected.layout = {.kind = native::SequenceKind::kGatedDeltaNet,
+    const auto output_scale = gdn ? gdn->output_scale : prefixes->output_scale;
+    selected.layout = {.kind = gdn ? native::SequenceKind::kGatedDeltaNet : native::SequenceKind::kGatedDeltaNetPrefixes,
         .rows = std::uint64_t(q[0]), .batches = std::uint64_t(inputs[5].dimensions()[0]),
         .key_heads = std::uint64_t(q[1]), .key_depth = std::uint64_t(q[2]),
         .value_heads = std::uint64_t(v[1]), .value_depth = std::uint64_t(v[2]),
-        .gate_width = std::uint64_t(inputs[3].dimensions()[2]), .snapshots = gdn->snapshot_count,
-        .scale = gdn->output_scale.value_or(1.0F / std::sqrt(float(q[2])))};
+        .gate_width = std::uint64_t(inputs[3].dimensions()[2]), .snapshots = gdn ? gdn->snapshot_count : prefixes->max_prefixes,
+        .scale = output_scale.value_or(1.0F / std::sqrt(float(q[2])))};
   } else if (const auto conv = operation.custom_as<sequence_ops::PackedCausalConv1d>()) {
     HYLE_RETURN_IF_ERROR(conv->infer_output_descriptions(inputs, inferred));
     selected.layout = {.kind = native::SequenceKind::kCausalConv,

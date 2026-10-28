@@ -110,6 +110,45 @@ inline Operation packed_gated_delta_net(std::uint32_t snapshot_count = 1,
   return Operation::custom(PackedGatedDeltaNet{snapshot_count, output_scale});
 }
 
+// The same packed recurrence, with capacity for every real prefix instead of
+// the final K states. Inputs and y follow PackedGatedDeltaNet. Each actual
+// length Li must be <= max_prefixes; zero-length sequences are permitted.
+// States are always [B,max_prefixes,Hv,Dv,Dk], including capacity one:
+//   states[b,0:Li] = S1..S(Li), states[b,Li:max_prefixes] = positive zero.
+// Offsets are the sole source of validity. Unused slots are not additional
+// recurrence steps and must never be published as consumed prefixes. An empty
+// member has no valid prefix; its initial state remains available at input 5.
+// All offsets and length bounds are validated before either output is written.
+struct PackedGatedDeltaNetPrefixes final {
+  static constexpr OperationId operation_id{0x48594c4553455131ULL,
+                                             0x504b47444e000002ULL};
+  static constexpr std::string_view operation_name = "packed-gated-delta-net-prefixes";
+  std::uint32_t max_prefixes = 1;
+  std::optional<float> output_scale{};
+
+  constexpr OperationTraits operation_traits() const noexcept {
+    return PackedGatedDeltaNet{}.operation_traits();
+  }
+
+  Status infer_output_descriptions(std::span<const TensorDesc> inputs,
+                                   std::span<TensorDesc> outputs) const noexcept {
+    if (!max_prefixes || outputs.size() != 2)
+      return Status::InvalidArgument("PackedGatedDeltaNetPrefixes requires a positive prefix capacity and two outputs");
+    std::array<TensorDesc, 2> inferred;
+    HYLE_RETURN_IF_ERROR((PackedGatedDeltaNet{1, output_scale}.infer_output_descriptions(inputs, inferred)));
+    const auto state = inputs[5].dimensions();
+    HYLE_ASSIGN_OR_RETURN(auto prefixes, TensorDesc::dense(DataType::kFloat32,
+        std::array{state[0], std::int64_t(max_prefixes), state[1], state[2], state[3]}));
+    outputs[0] = inferred[0]; outputs[1] = std::move(prefixes);
+    return Status::Ok();
+  }
+};
+
+inline Operation packed_gated_delta_net_prefixes(std::uint32_t max_prefixes,
+                                                 std::optional<float> output_scale = {}) noexcept {
+  return Operation::custom(PackedGatedDeltaNetPrefixes{max_prefixes, output_scale});
+}
+
 // Packed depthwise causal convolution with an independent history per sequence.
 // Inputs: x [R,C], weights [C,K], history [B,K-1,C], I32 offsets [B+1].
 // The floating inputs share F16/BF16/F32. Outputs: y [R,C] and next_history

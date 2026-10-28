@@ -1,0 +1,617 @@
+{
+  "schema": "hyle.inference.packed-gdn-prefixes.evidence.v1",
+  "status": "PASS_FINITE_CPU_CUDA_PRIMITIVE",
+  "source_base_commit": "09bf7dc6a68c831b569eb8b6e0ee10d93a39694d",
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\include\\hyle\\compute\\sequence_ops.h",
+      "bytes": 9903,
+      "sha256": "142fb449a64d1cbcc48da728afa13fb6af0c9cf638295a674a38e24b2273f9ef"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\sequence.cc",
+      "bytes": 14385,
+      "sha256": "2a46ddba953d0ccf0b26e92bce8a4ef0cb3bf52f521340a444cc14d1699dc6ad"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+      "bytes": 40114,
+      "sha256": "8734be69bbc6db69055cfbb267b96ad178639a103200aeaf09c9a273a084b73c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\sequence_provider.cc",
+      "bytes": 10694,
+      "sha256": "841c73ba69fd88d8fb2fa0836073e430608386d58757ea662131e000a16f3ae0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+      "bytes": 25319,
+      "sha256": "d57cd1ab1f5b7c7663b9b0d21e81935ed98f0238b80b224ef9c643182b7da8b9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\sequence_kernel.h",
+      "bytes": 1152,
+      "sha256": "9b9ca89c0a03013011e3db232a8be4607354f3cece9c8a76fcdabdb5cfc21cd1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\sequence_kernel.cu",
+      "bytes": 12760,
+      "sha256": "c0d4e826aed371e9b1fa1592b7b088a316904191d671e99176e76421f0abe29e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\sequence_test.cc",
+      "bytes": 4644,
+      "sha256": "7ca3b7e03bedf06a57cfc7a5e872bb272ca26d23c534d25bb589e26c8f9b3bf0"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\sequence_test.cc",
+      "bytes": 16591,
+      "sha256": "69c7212f7f3522a60c1bfb5c353aecd7b9516529bccbe59a2737a6ea1afc5798"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\packed_gdn_prefix_case.h",
+      "bytes": 12861,
+      "sha256": "63437370d14e49daaf005260fac99fac14df81292dab743ef8e5c4b38595fc1c"
+    }
+  ],
+  "contract": {
+    "operation": "PackedGatedDeltaNetPrefixes",
+    "inputs": 7,
+    "outputs": 2,
+    "states": "[B,K,Hv,Dv,Dk], including K=1; valid slots S1..SLi, all remaining bits zero",
+    "validity": "offsets alone; 0<=Li<=K; all metadata checked before either output write",
+    "empty_members": "no valid prefix; zero state slots; initial state remains at its input",
+    "old_packed_gdn": "separate unchanged last-K contract and operation identity"
+  },
+  "counts": {
+    "SDK_CXX": 4,
+    "SDK_NVCC": 1,
+    "test_CXX": 4,
+    "total_CXX": 8,
+    "total_NVCC": 1,
+    "links": 2,
+    "native_processes": 2,
+    "native_test_attempts": 17,
+    "unique_tests_passed": 15,
+    "initial_passed": 13,
+    "initial_failed": 2,
+    "refinement_passed": 2,
+    "previous_successes_rerun": 0,
+    "downloads": 0
+  },
+  "executions": {
+    "compiles": [
+      {
+        "unit": "native-provider",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 54768,
+          "exit": 0,
+          "started": 1793208505.1194024,
+          "seconds": 1.6281700134277344,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\native_provider.cc",
+          "bytes": 40114,
+          "sha256": "8734be69bbc6db69055cfbb267b96ad178639a103200aeaf09c9a273a084b73c"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\native-provider\\unit.obj",
+          "bytes": 754566,
+          "sha256": "f820712ae927e1a05f468ac58d5875ef853e065def1f58097d645033e8c79966"
+        }
+      },
+      {
+        "unit": "cuda-provider",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 27220,
+          "exit": 0,
+          "started": 1793208514.2617555,
+          "seconds": 1.5066626071929932,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\cuda_provider.cc",
+          "bytes": 25319,
+          "sha256": "d57cd1ab1f5b7c7663b9b0d21e81935ed98f0238b80b224ef9c643182b7da8b9"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\cuda-provider\\unit.obj",
+          "bytes": 728202,
+          "sha256": "8dc0b8ed7c1d75667264ccb3f46ce67cf0a3e343cbb975210de02dcdcf1768d4"
+        }
+      },
+      {
+        "unit": "native-sequence",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 45480,
+          "exit": 0,
+          "started": 1793208514.2577546,
+          "seconds": 1.061556100845337,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_native\\sequence.cc",
+          "bytes": 14385,
+          "sha256": "2a46ddba953d0ccf0b26e92bce8a4ef0cb3bf52f521340a444cc14d1699dc6ad"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\native-sequence\\unit.obj",
+          "bytes": 272463,
+          "sha256": "8c1b511ba659e50f08b12e23631091778b8bbdd528ba5e58c14b9e7c3d54b9c7"
+        }
+      },
+      {
+        "unit": "cuda-sequence",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 48764,
+          "exit": 0,
+          "started": 1793208514.2587547,
+          "seconds": 1.1645491123199463,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\sequence_provider.cc",
+          "bytes": 10694,
+          "sha256": "841c73ba69fd88d8fb2fa0836073e430608386d58757ea662131e000a16f3ae0"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\cuda-sequence\\unit.obj",
+          "bytes": 634657,
+          "sha256": "6acaa4106bd579375f35fc6ca2d93a83918037af184df4f4ce7181cceb2c1918"
+        }
+      },
+      {
+        "unit": "sequence-kernel",
+        "attempt": "initial",
+        "kind": "NVCC",
+        "process": {
+          "pid": 52204,
+          "exit": 0,
+          "started": 1793208514.2607546,
+          "seconds": 3.9005234241485596,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\src\\compute_provider_cuda\\sequence_kernel.cu",
+          "bytes": 12760,
+          "sha256": "c0d4e826aed371e9b1fa1592b7b088a316904191d671e99176e76421f0abe29e"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\sequence-kernel\\unit.obj",
+          "bytes": 310444,
+          "sha256": "98c5a85b5fdc78a392673cef16635bdf6856114cc0d8453b9e6495d415bd1819"
+        }
+      },
+      {
+        "unit": "cpu-test",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 29180,
+          "exit": 0,
+          "started": 1793208514.259755,
+          "seconds": 3.2084872722625732,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\sequence_test.cc",
+          "bytes": 4644,
+          "sha256": "7ca3b7e03bedf06a57cfc7a5e872bb272ca26d23c534d25bb589e26c8f9b3bf0"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\cpu-test\\unit.obj",
+          "bytes": 2343546,
+          "sha256": "7c0634513298e5deb99fc656f1a18bfe5e594b46c4fa23c56855efc31f9e9a47"
+        }
+      },
+      {
+        "unit": "cuda-test",
+        "attempt": "initial",
+        "kind": "CXX",
+        "process": {
+          "pid": 18376,
+          "exit": 0,
+          "started": 1793208514.2667546,
+          "seconds": 4.217240333557129,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\sequence_test.cc",
+          "bytes": 16591,
+          "sha256": "69c7212f7f3522a60c1bfb5c353aecd7b9516529bccbe59a2737a6ea1afc5798"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\compile\\cuda-test\\unit.obj",
+          "bytes": 2748122,
+          "sha256": "ac6c76b9b764f76511ec4531c7405ee65ee67df360fb655030ba9bf69813dc20"
+        }
+      },
+      {
+        "unit": "cpu-test",
+        "attempt": "refinement",
+        "kind": "CXX",
+        "process": {
+          "pid": 35756,
+          "exit": 0,
+          "started": 1793208804.7618778,
+          "seconds": 2.999441146850586,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cpu\\sequence_test.cc",
+          "bytes": 4644,
+          "sha256": "7ca3b7e03bedf06a57cfc7a5e872bb272ca26d23c534d25bb589e26c8f9b3bf0"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\refinement\\compile\\cpu-test\\unit.obj",
+          "bytes": 2343551,
+          "sha256": "d79fe0b6e97b89fd98a05f6bd4862ccdc1cfe6e626fca77f13c2d78ef4402742"
+        }
+      },
+      {
+        "unit": "cuda-test",
+        "attempt": "refinement",
+        "kind": "CXX",
+        "process": {
+          "pid": 54300,
+          "exit": 0,
+          "started": 1793208804.7630506,
+          "seconds": 3.9881579875946045,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "source": {
+          "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_route_cuda\\sequence_test.cc",
+          "bytes": 16591,
+          "sha256": "69c7212f7f3522a60c1bfb5c353aecd7b9516529bccbe59a2737a6ea1afc5798"
+        },
+        "object_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\refinement\\compile\\cuda-test\\unit.obj",
+          "bytes": 2748127,
+          "sha256": "103dafb071d6a284032fd3a89a6783238216f72d5349e56c2543c9741eba7a84"
+        }
+      }
+    ],
+    "links": [
+      {
+        "attempt": "initial",
+        "process": {
+          "pid": 3816,
+          "exit": 0,
+          "started": 1793208529.8914938,
+          "seconds": 1.7771341800689697,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "image_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\bin\\packed-gdn-prefixes.exe",
+          "bytes": 141088768,
+          "sha256": "df7d5a62d7077499142261bde531b985a6ead15587b2150205a77175001f9080"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\inputs.json",
+          "bytes": 59210,
+          "sha256": "6187cdb9f42497dbb5bd9322bfce8cb158fcfb12ca82aace22d3c7650f147eba"
+        }
+      },
+      {
+        "attempt": "refinement",
+        "process": {
+          "pid": 908,
+          "exit": 0,
+          "started": 1793208818.445602,
+          "seconds": 1.7769179344177246,
+          "state": "TERMINAL",
+          "timed_out": false
+        },
+        "image_identity": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\refinement\\bin\\packed-gdn-prefixes.exe",
+          "bytes": 141088768,
+          "sha256": "5112994eace8fb9a0e042ce25e0dc797cec5f23f5cf21315dbbe84ef4afc7db6"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-packed-gdn-prefixes-20261029\\refinement\\inputs.json",
+          "bytes": 59234,
+          "sha256": "c9be7a5fafdde950907a0bbf7c24d72055a2c8350ac4da1f716a4ee5a26d1464"
+        }
+      }
+    ],
+    "initial": {
+      "process": {
+        "pid": 56356,
+        "exit": 1,
+        "started": 1793208539.4895542,
+        "seconds": 0.5624575614929199,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "cases": [
+        {
+          "name": "ComputeSequenceSchema.PackedDescriptionsRejectInvalidPortsAtomically",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.GdnPackedRowsAndPerChannelDecayMatchReference",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.GdnSnapshotsFollowEachRealSequenceAndRejectShortTail",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.EmptySequencesAndZeroPhysicalRowsKeepInitialStateBits",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.WholeOffsetValidationPrecedesEitherOutput",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.PrefixesMatchFp64AndContinueFromTheActualDeviceState",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CpuPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+          "passed": false,
+          "assertions_failed": 24,
+          "seconds": 0.0
+        },
+        {
+          "name": "CudaPackedSequence.GdnFloatingTypesAndRegisterTileMatchReference",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.092
+        },
+        {
+          "name": "CudaPackedSequence.GdnSnapshotsFollowRealSequenceLengths",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.003
+        },
+        {
+          "name": "CudaPackedSequence.EmptyAndZeroPhysicalRowsPreserveStateBits",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.003
+        },
+        {
+          "name": "CudaPackedSequence.WholeOffsetValidationPrecedesEitherOutput",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.003
+        },
+        {
+          "name": "CudaPackedSequence.PrefixesMatchFp64AndContinueFromTheActualDeviceState",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.004
+        },
+        {
+          "name": "CudaPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+          "passed": false,
+          "assertions_failed": 24,
+          "seconds": 0.004
+        },
+        {
+          "name": "CudaPackedSequence.PrefixCaptureReusesOffsetsAndRetiresAnInvalidLastMember",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.003
+        },
+        {
+          "name": "CudaPackedSequence.GdnCapturedGraphKeepsRealSnapshotsAndRetiresShortSequence",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.003
+        }
+      ]
+    },
+    "refinement": {
+      "process": {
+        "pid": 41676,
+        "exit": 0,
+        "started": 1793208820.858356,
+        "seconds": 0.523003339767456,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      "cases": [
+        {
+          "name": "CpuPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.0
+        },
+        {
+          "name": "CudaPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+          "passed": true,
+          "assertions_failed": 0,
+          "seconds": 0.083
+        }
+      ]
+    },
+    "combined": [
+      {
+        "name": "ComputeSequenceSchema.PackedDescriptionsRejectInvalidPortsAtomically",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.GdnPackedRowsAndPerChannelDecayMatchReference",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.GdnSnapshotsFollowEachRealSequenceAndRejectShortTail",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.EmptySequencesAndZeroPhysicalRowsKeepInitialStateBits",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.WholeOffsetValidationPrecedesEitherOutput",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.PrefixesMatchFp64AndContinueFromTheActualDeviceState",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.GdnFloatingTypesAndRegisterTileMatchReference",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.092,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.GdnSnapshotsFollowRealSequenceLengths",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.003,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.EmptyAndZeroPhysicalRowsPreserveStateBits",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.003,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.WholeOffsetValidationPrecedesEitherOutput",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.003,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.PrefixesMatchFp64AndContinueFromTheActualDeviceState",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.004,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.PrefixCaptureReusesOffsetsAndRetiresAnInvalidLastMember",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.003,
+        "execution": "original"
+      },
+      {
+        "name": "CudaPackedSequence.GdnCapturedGraphKeepsRealSnapshotsAndRetiresShortSequence",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.003,
+        "execution": "original"
+      },
+      {
+        "name": "CpuPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.0,
+        "execution": "fixture-scale-refinement"
+      },
+      {
+        "name": "CudaPackedSequence.PrefixCapacityEmptyMembersAndFailureRemainAtomic",
+        "passed": true,
+        "assertions_failed": 0,
+        "seconds": 0.083,
+        "execution": "fixture-scale-refinement"
+      }
+    ]
+  },
+  "failure": {
+    "kind": "test-fixture scale argument omitted",
+    "explanation": "Fixture reference used scale=1, while the operation defaulted to 1/sqrt(3); only the factory call gained fixture.scale.",
+    "original_shared_header": {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\compute_models\\packed_gdn_prefix_case.h",
+      "bytes": 12847,
+      "sha256": "e07550a582994a706c6add9ce7d10e206f4bd76fb41a9f812396ed1a225550cb"
+    },
+    "original_execution_preserved": true,
+    "product_recompiled_for_fix": false
+  },
+  "preparation_failure": {
+    "stage": "prepare",
+    "exit": 1,
+    "original_helper_sha256": "4ffcdddf01f1b9b94dc6efd07900edd6ce2c9830f377c1573ed2e00a59ebfb70",
+    "assertion": "input path count expected 228, observed suffix count 242",
+    "reason": "13 system-library names and /IMPLIB output flag are not concrete retained input paths",
+    "recipes_already_written": 7,
+    "CXX": 0,
+    "NVCC": 0,
+    "links": 0,
+    "native_tests": 0
+  },
+  "implementation_facts": {
+    "additional_recurrence_state_workspace": false,
+    "existing_structure_layouts_changed": false,
+    "note": "These are source-level facts; prefix output storage and execution costs are not zero and were not benchmarked."
+  },
+  "coverage": [
+    "CPU/CUDA F32/F16/BF16 finite prefix recurrence against FP64 reference",
+    "whole-offset and capacity rejection before output writes, empty members and positive-zero unused slots",
+    "continued recurrence from a selected real device prefix state",
+    "CUDA capture reuse, invalid last member retirement, and unchanged last-K regression"
+  ],
+  "limits": [
+    "Qwen fixed-width Verify integration, MTP device acceptance and successor wiring are not covered.",
+    "No Apple/Vulkan validation, model quality or speed claim."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-packed-gdn-prefixes-2026-10-29.zip",
+    "bytes": 237273,
+    "sha256": "3b34fe1271b1bf4f37953e02cb64a01a902aedfe909abbe75f99ebc4fb832fb3",
+    "members": 133,
+    "manifest_sha256": "fe4cd44ef364eeb8bebfe87ec2c407485608890ef4b000192b1340e9e4e07b89",
+    "crc_readback": true,
+    "every_member_sha256_readback": true
+  }
+}

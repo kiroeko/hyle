@@ -72,7 +72,12 @@ target均为两行，draft按每成员`1+lag`消费；末行、位置、hidden�
 均匀／R1保留原快路，冷能力不足按原组缩批；实际生成提交保留每成员真实角色与消费行数。
 1次CXX／链接和4个CPU／CUDA有限进程通过：混合路径12项完整状态逐字节相同，原ragged／分块17项在既有GDN预算内；
 退休Session扫描前拒绝也有实际见证。未实跑完整RequestLoop混合重组，没有新增吞吐、质量或跨平台结论。
-这不代签多草稿Verify：PackedGDN多snapshot仍要求每个成员实际行数覆盖K，需要真实有效snapshot合同。
+这不代签多草稿Verify：原PackedGDN的精确末K合同仍要求每成员实际行数覆盖K。
+随后[前缀容量原语](../evidence/correctness/inference-packed-gdn-prefixes-2026-10-29.json)为CPU／CUDA补齐
+固定K容量下的真实`S1..SLi`，有效数仅由offsets推导，空成员与剩余槽全正零，不冒充新前缀。
+原递推共用，未增加workspace／执行器；FP64、设备中间态继续计算、全量校验与捕获退休等15项有限检查通过。
+首轮夹具漏传scale的两项失败保留；修正单行传参后只重编两测试TU、重跑两项，13项既有成功不重复。
+引擎仍须接入真实conv history、hidden、逐成员logits及RNG边界，不能从底层通过推定Verify或设备后继已完成。
 也不代签MTP设备后继，接受前缀的Store／KV权限、pending及原RNG地址必须另行证明。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
