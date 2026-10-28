@@ -4,12 +4,18 @@
 
 namespace qwen35 {
 
-enum class RowPacking { kRectangular, kPrefill, kDraft };
+enum class RowPacking { kRectangular, kPrefill, kDraft, kVerify };
 constexpr bool packs_prefill(RowPacking packing) noexcept {
   return packing == RowPacking::kPrefill;
 }
 constexpr bool packs_draft(RowPacking packing) noexcept {
   return packing == RowPacking::kDraft;
+}
+constexpr bool packs_verify(RowPacking packing) noexcept {
+  return packing == RowPacking::kVerify;
+}
+constexpr bool packs_target(RowPacking packing) noexcept {
+  return packs_prefill(packing) || packs_verify(packing);
 }
 
 enum class GraphRole { kText, kVerify, kMtpPrefill, kMtpRound, kMtpCatchupRound,

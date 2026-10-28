@@ -188,6 +188,15 @@ MTP本窗接受与实际工作相同；两版decode变化约0%～2%，仍需后�
 真实有界普通／MTP和prefix scheduler仍走packed，原数学及预算有限检查完成；
 详见[本片A/B](../evidence/performance/inference-uniform-prefill-current-window-2026-10-28.json)。
 
+变长Verify已接原固定容量、前缀Store和NextN repair：不同Li共用真实目标批，按实际行取logits／候选及推进RNG，
+等宽／R1和冷能力缺失的原分组保留。K3的CPU／CUDA各6项完整状态比较通过，另有mixed-lag和ragged prefill回归；
+旧状态和非GDN载荷精确保持，新F32 GDN继续使用原3e-6预算。
+[实现与有限检查](../evidence/correctness/inference-varlen-verify-2026-10-29.json)不代表设备接受、MTP连续后继、完整RequestLoop重建或吞吐完成。
+
+初始化／构建选项复查已按同一产品闭包原则收敛：完整路线的必要Provider自动装配；完整io的协议能力不再另设关闭门。
+多配置生成器的Debug缓存选择已修正，脚本／元数据及无下载依赖边界检查见[本片记录](../evidence/correctness/inference-automatic-io-2026-10-29.json)；
+其范围不代替完整协议库重编或package安装检查。
+
 ## 当前实现概况
 
 以下区分底层功能、共享架构和性能，不用某项功能通过代替三者全部完成：

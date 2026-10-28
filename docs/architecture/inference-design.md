@@ -140,6 +140,8 @@ CPU的[冷偏好](../../src/compute_route_cpu/default_policy.cc)集中在默认f
 [有限检查与Exp计时](../evidence/performance/inference-cpu-workload-routing-2026-10-28.json)覆盖不同秩、IEEE、输入更新、默认路由和线程启动合同，
 明确保留1项可选模型fixture跳过；原实现的SIMD分派负责实际ISA检查，策略不引入热路径计时。
 完整CPU／CUDA产品路线自动装配所需ATen及匹配SDK，不提供Provider裁剪开关；独立基础产品和其它路线按实际依赖闭包装配。
+同样，所选io协议factor自动要求OpenSSL／nghttp2，不再提供TLS／HTTP2空壳开关；公开能力宏记录实际交付事实。
+不含这些factor的产品不探测协议依赖；依赖来源、工具链与离线控制继续保留。
 不调用ATen的MLX／packed／GPTQ／stored-scale FP8能力仍归原生CUDA，ATen SDPA及制品解码由所选完整路线接入。
 原生Graph region在同一个Native Provider上合并发现，避免重复身份。原ggml F32 attention与融合SDPA保留各自真实的
 资源、数值及capture能力，不能把可能物化scores的路径描述为不分配scores。
@@ -719,6 +721,14 @@ next为−1且不推进draw；末块才生成首token。catch-up只在首块按�
 此前记录未直接执行CatchupSingle StateOnly，现已在[共同事务检查](../evidence/correctness/inference-append-transactions-2026-10-28.json)
 中以真实lag1旧快照补齐：target1／draft2不采样，再Single Emit，完整状态与exact两行catch-up一致。
 其它平台、格式及组合按实际运行范围分别记录，旧平台结果不代签当前exact回落。
+变长Verify以同一`cu_seqlens`表达真实Li，冷载体容量固定K；GDN前缀、卷积history及carry hidden按`[B,K]`保槽，
+但候选ID和logits仍按compact真实行排列。无效槽只保持合法Gather索引，不可发布；接受上限、草稿q及RNG地址均按Li。
+`pack_sequence_prefixes`先完整检查再填写调用方冷缓冲，不新增状态owner；Verify不追加draft KV，仍由原repair按接受前缀恢复。
+自然异长批在已有冷能力下共用一次目标提交；等宽／R1保留exact，Provider缺少冷能力时保留原分组，不重试原生失败。
+零proposal不计尚未执行的draft catch-up；trace也按实际起点与Li取行。
+[CPU／CUDA有限检查](../evidence/correctness/inference-varlen-verify-2026-10-29.json)覆盖K3异长、三种接受长度、原快照、q及RNG；
+设备接受、连续后继和完整请求重建尚未由此完成，没有新性能结论。
+
 纯数学叶复用原Store，不据logical形状宣称已有原生融合。固定R也不保证attention plan不随A变化。
 已读本地参照为vLLM `276fbcff`的`model_executor/layers/mamba/ops/causal_conv1d.py`与
 `mamba/gdn/qwen_gdn_linear_attn.py`，SGLang `234ccba7`的`layers/attention/mamba/causal_conv1d.py`与

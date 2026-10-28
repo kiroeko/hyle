@@ -890,7 +890,7 @@ struct FamilyPorts {
   std::size_t prefix_rows = 1;
   V token_port, position_port, last_ids_port, metadata_port, logits_port, id_port, hidden_port;
   V sampling_identity_port, sampling_valid_port, sampling_accept_port;
-  V sequence_offsets_port, history_select_port;
+  V sequence_offsets_port, history_select_port, prefix_ids_port;
   bool batched_text_sampling = false; // Cold [R,4] identity-port contract.
   std::vector<V> logits_bias_ports, logits_allowed_ports, logits_counts_ports; // Cold per-member inputs only.
   std::vector<g::NodeId> attention_nodes, append_nodes;
@@ -933,8 +933,8 @@ struct StateBank final {
 // Sharing a finite child/Queue never grants another slot access to these bytes.
 struct PhaseIo final {
   c::BatchLayoutVersion attention_layout;
-  Tensor tokens, positions, last_ids, logits, final_hidden, history_select;
-  std::vector<std::int32_t> history_select_values, last_id_values;
+  Tensor tokens, positions, last_ids, logits, final_hidden, history_select, prefix_ids;
+  std::vector<std::int32_t> history_select_values, last_id_values, prefix_id_values;
   Tensor sampling_identities, draft_positions, catchup_token;
   Tensor draft_hidden_select, draft_token_select, draft_last_ids;
   std::vector<std::int32_t> draft_hidden_indices, draft_token_indices;
@@ -992,7 +992,7 @@ struct InputPreparationScratch final {
     row_inputs.reserve(phase.family->requests);
     query_indptr.reserve(phase.family->requests + 1);
     last_rows.reserve(phase.family->requests);
-    if (phase.family->requests > 1 || packs_prefill(phase.family->packing)) reserve(packed_ids, io.tokens);
+    if (phase.family->requests > 1 || packs_target(phase.family->packing)) reserve(packed_ids, io.tokens);
     reserve(positions, io.positions);
     if (io.sampling_identities.caller_owned()) reserve(sampling_identities, io.sampling_identities);
     if (io.draft_positions.caller_owned()) reserve(draft_positions, io.draft_positions);
@@ -1213,6 +1213,8 @@ struct CompletedEvaluationView final {
   inference::StepObservation &observation;
   const cache::State &head;
   std::size_t member_index = 0, requests = 1;
+  // Packed Verify exposes compact input rows; other outputs stay request-major.
+  std::size_t packed_input_begin = 0, packed_input_rows = 0;
   c::ConstTensorView logits{}, hidden{};
   std::span<const c::ConstTensorView> probes{};
 };
@@ -2049,6 +2051,7 @@ public:
                       RowPacking packing = RowPacking::kRectangular) {
     const bool packed_prefill = packs_prefill(packing);
     const bool compact_draft = packs_draft(packing);
+    const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
     const auto &prepared_sampling = sampling_configuration(sampling_index);
     const auto &selected_sampler = prepared_sampling.configuration;
     if (!supports_completion(role, completion))
@@ -2059,6 +2062,9 @@ public:
     if (compact_draft && (diagnostic || admitted_exact || requests < 2 ||
         role != GraphRole::kMtpCatchupRound || completion != TextCompletion::kEmitNext))
       throw std::runtime_error("compact draft requires a multi-member K1 round capacity");
+    if (packed_verify && (diagnostic || admitted_exact || role != GraphRole::kVerify ||
+        completion != TextCompletion::kEmitNext || planned_chunks.size() != 1 || !target_kv_layers))
+      throw std::runtime_error("packed verification requires one original cold prefix capacity and attention layout");
     preparation_started_ = true;
     if (state_storage_prepared && !admitted_exact)
       throw std::runtime_error("compile finite families before preparing their selected state storage");
@@ -2141,11 +2147,13 @@ public:
     definition.position_port = requests == 1 ? r.input(r.dense_spec(Type::kInt32, {t})) :
         r.input(r.dense_spec(Type::kInt32, {batch, t}));
     if ((requests != 1 || packed_prefill) && !verifies_prefix(role)) definition.last_ids_port = r.input(r.dense_spec(Type::kInt32, {batch}));
-    if (packed_prefill) {
+    if (packed_target) {
       definition.sequence_offsets_port = r.input(dense(Type::kInt32, {static_cast<std::int64_t>(requests + 1)}));
       definition.history_select_port = r.input(dense(Type::kInt32,
-          {static_cast<std::int64_t>(cache::multiply(requests, geometry.conv_kernel - 1))}));
+          {static_cast<std::int64_t>(cache::multiply(cache::multiply(requests, prefix_rows), geometry.conv_kernel - 1))}));
     }
+    if (packed_verify) definition.prefix_ids_port = r.input(dense(Type::kInt32,
+        {static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))}));
     definition.metadata_port = r.input(take(definition.attention_schema.metadata_description()));
     std::vector<float> frequency(static_cast<std::size_t>(geometry.rotary / 2));
     for (std::size_t i = 0; i < frequency.size(); ++i) frequency[i] = 1.F / std::pow(geometry.rope_theta, float(i) / static_cast<float>(frequency.size()));
@@ -2312,10 +2320,13 @@ public:
           prior_append = port.store; has_prior_append = true;
           definition.state_sources.push_back({port.store, port.gather});
         };
-        if (packed_prefill) {
+        if (packed_target) {
           const auto channels = f(geometry.gdn_qkv_width());
           const auto qkv = r.linear(normalized, prefix + "linear_attn.in_proj_qkv.weight");
           const auto history_count = f(static_cast<std::int64_t>(cache::multiply(requests, geometry.conv_kernel - 1)));
+          const auto candidate_count = f(static_cast<std::int64_t>(cache::multiply(requests, prefix_rows)));
+          const auto history_outputs = f(static_cast<std::int64_t>(cache::multiply(
+              cache::multiply(requests, prefix_rows), geometry.conv_kernel - 1)));
           const auto sample_count = D(take(r.builder.dimension_sum(history_count, packed)));
           const auto raw_samples = r.one(c::Concat{.axis = 0},
               {r.reshape(history, {history_count, channels}), qkv},
@@ -2325,9 +2336,9 @@ public:
           // a different storage type just to recover the true history tail.
           const auto next_history = r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
               {raw_samples, definition.history_select_port},
-              r.dense_spec(precision.activation_type(), {history_count, channels}));
+              r.dense_spec(precision.activation_type(), {history_outputs, channels}));
           store_state(ports.history, history_schema,
-              r.reshape(next_history, {batch, f(history_schema.item_elements())}));
+              r.reshape(next_history, {candidate_count, f(history_schema.item_elements())}));
           const auto convolution = r.op(c::sequence_ops::packed_causal_conv1d(),
               {r.cast(qkv, Type::kFloat32),
                r.cast(r.reshape(r.weight(prefix + "linear_attn.conv1d.weight"),
@@ -2356,16 +2367,19 @@ public:
           const auto g = r.binary(c::BinaryKind::kMultiply, decay,
               r.unary(c::UnaryKind::kSoftplus, r.binary(c::BinaryKind::kAdd, a, dt)));
           const auto beta = r.cast(r.unary(c::UnaryKind::kSigmoid, b), Type::kFloat32);
-          const auto recurrent = r.op(c::sequence_ops::packed_gated_delta_net(),
+          const auto recurrent = r.op(packed_verify ? c::sequence_ops::packed_gated_delta_net_prefixes(
+              static_cast<std::uint32_t>(prefix_rows)) : c::sequence_ops::packed_gated_delta_net(),
               {r.cast(r.reshape(q, {packed, r.spec(q).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
                r.cast(r.reshape(k, {packed, r.spec(k).dimensions()[2], f(geometry.gdn_key_depth)}), Type::kFloat32),
                r.cast(v, Type::kFloat32), g, beta,
                r.reshape(recurrent_rows, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)}),
                definition.sequence_offsets_port},
               {r.dense_spec(Type::kFloat32, {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}),
-               r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
+                packed_verify
+                    ? r.dense_spec(Type::kFloat32, {batch, f(static_cast<std::int64_t>(prefix_rows)), f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})
+                    : r.dense_spec(Type::kFloat32, {batch, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth), f(geometry.gdn_key_depth)})});
           store_state(ports.recurrent, recurrent_schema,
-              r.reshape(recurrent[1], {batch, f(recurrent_schema.item_elements())}));
+              r.reshape(recurrent[1], {candidate_count, f(recurrent_schema.item_elements())}));
           mixed = block_graph::emit_gdn_epilogue(r, recurrent[0], normalized,
               "model.language_model." + prefix,
               {packed, f(geometry.gdn_value_heads), f(geometry.gdn_value_depth)}, packed,
@@ -2501,8 +2515,13 @@ public:
       auto &port = definition.hidden_state;
       // Verifiers retain every target prefix; prefill/single retain only the
       // same final row per member as their existing complete boundary.
+      const auto retained = packed_verify
+          ? r.one(c::Gather{.axis = 0, .bounds = c::IndexBoundsPolicy::kChecked},
+              {normalized_last, definition.prefix_ids_port}, r.dense_spec(precision.activation_type(),
+                  {f(static_cast<std::int64_t>(cache::multiply(requests, prefix_rows))), f(hidden)}))
+          : verifies_prefix(role) ? normalized_last : last;
       r.op(c::Operation::custom(g::slots::Store{hidden_schema}),
-          {verifies_prefix(role) ? normalized_last : last, port.destination_ids}, {}, &port.store);
+          {retained, port.destination_ids}, {}, &port.store);
       if (has_prior_append) check(r.builder.depends_on(port.store, prior_append));
       if (has_mtp(role)) definition.state_sources.push_back({port.store, port.gather});
     }
@@ -2612,7 +2631,7 @@ public:
               << " max_placement_attempts=" << compile_options.max_placement_attempts << '\n';
     compile_options.resource_budget = execution_budget;
     auto compiled = execution.compile(definition.graph, assembly.constants, assembly.options(compile_options));
-    if (!compiled && (packed_prefill || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
+    if (!compiled && (packed_target || compact_draft) && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
       return false; // Cold capability only; no execution/device error is a fallback.
     auto compiled_family = take(std::move(compiled));
     const auto &family_report = compiled_family.report;
@@ -2674,6 +2693,17 @@ public:
     std::size_t selected = 0;
     for (const auto physical : found->second->chunks)
       if (physical >= rows && (!selected || physical < selected)) selected = physical;
+    return selected;
+  }
+
+  std::size_t verification_capacity(std::size_t rows, std::size_t requests = 1,
+                                    std::size_t sampling_index = 0) const {
+    std::size_t selected = 0;
+    for (const auto &[key, family] : families)
+      if (family && key.role == GraphRole::kVerify && key.requests == requests &&
+          key.completion == TextCompletion::kEmitNext && key.sampling_index == sampling_index && packs_verify(key.packing))
+        for (const auto extent : family->chunks)
+          if (rows <= extent && (!selected || extent < selected)) selected = extent;
     return selected;
   }
 
@@ -3214,7 +3244,7 @@ public:
     const auto &selected_sampler = sampling_configuration(sampling_index).configuration;
     for (std::size_t rows = 1; rows <= cache_plan.candidate_boundaries; ++rows) {
       prepare_draft_program(rows, false);
-      if ((selected_sampler.enabled || !selected_sampler.modifiers.empty()) && (rows > 1 || min_draft_probability() > 0))
+      if (selected_sampler.enabled || !selected_sampler.modifiers.empty())
         prepare_prefix_sampling(rows - 1, sampling_index);
     }
     prepare_draft_program(1, true, sampling_index);
@@ -3629,6 +3659,7 @@ public:
                        TextCompletion completion = TextCompletion::kEmitNext, std::size_t sampling_index = 0,
                        bool imported_sources = false, RowPacking packing = RowPacking::kRectangular) {
     const bool compact_draft = packs_draft(packing);
+    const bool packed_verify = packs_verify(packing), packed_target = packs_target(packing);
     auto &cache = diagnostic ? probe_phases : phases;
     const auto found = cache.find({requests, tokens, role, completion, sampling_index, imported_sources, packing});
     if (found != cache.end()) return *found->second;
@@ -3745,10 +3776,16 @@ public:
         io.last_ids.write<std::int32_t>(last_ids);
         if (packs_prefill(definition.packing)) io.last_id_values.resize(requests);
       }
-      if (packs_prefill(definition.packing)) {
-        const auto count = cache::multiply(requests, geometry.conv_kernel - 1);
+      if (packed_target) {
+        const auto count = cache::multiply(cache::multiply(requests, phase.prefix_rows), geometry.conv_kernel - 1);
         io.history_select = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(count)}));
         io.history_select_values.resize(count);
+        if (packed_verify) {
+          io.last_id_values.resize(requests);
+          const auto prefixes = cache::multiply(requests, phase.prefix_rows);
+          io.prefix_ids = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(prefixes)}));
+          io.prefix_id_values.resize(prefixes);
+        }
       }
       if (completion == TextCompletion::kEmitNext) {
         io.logits = caller_tensor(take(execution.resource_for(phase.logits_facts->storage)),
@@ -3763,7 +3800,7 @@ public:
       }
       const bool sampling_identity = selected_sampler.enabled && completion == TextCompletion::kEmitNext && role != GraphRole::kVerify;
       const bool last_ids = (requests != 1 || packs_prefill(definition.packing)) && !verifies_prefix(role);
-      std::size_t fixed_count = 2 + sampling_identity + last_ids + packs_prefill(definition.packing) +
+      std::size_t fixed_count = 2 + sampling_identity + last_ids + packed_target + packed_verify +
           io.logits.caller_owned() + io.final_hidden.caller_owned();
       if (has_mtp(role)) fixed_count += 1 + bool(draft_lag(role)) +
           ((packs_prefill(definition.packing) || compact_draft) ? 1 + bool(draft_lag(role)) : 0) + compact_draft;
@@ -3783,7 +3820,8 @@ public:
           io.sampling_accept = take(io.bindings.add_readback(phase.sampling_accept_port, execution, allocation_budget));
       }
       if (last_ids) check(io.bindings.add_fixed(phase.last_ids_port, io.last_ids.read()));
-      if (packs_prefill(definition.packing)) check(io.bindings.add_fixed(phase.history_select_port, io.history_select.read()));
+      if (packed_target) check(io.bindings.add_fixed(phase.history_select_port, io.history_select.read()));
+      if (packed_verify) check(io.bindings.add_fixed(phase.prefix_ids_port, io.prefix_ids.read()));
       if (io.logits.caller_owned()) check(io.bindings.add_fixed_output(phase.logits_port, io.logits.view()));
       if (completion == TextCompletion::kEmitNext)
         io.next_id = take(io.bindings.add_readback(phase.id_port, execution, allocation_budget));
@@ -4319,7 +4357,13 @@ public:
     const auto physical = !requests.empty() && requests[0].session &&
         (role == GraphRole::kText || is_mtp_prefill(role))
         ? prefill_capacity(maximum, completion, requests[0].session->sampling_configuration().index, requests.size(), role) : 0;
-    prepare_evaluations(requests, preparation, role, completion, {}, 0, physical);
+    prepare_evaluations(requests, preparation, role, completion, {}, 0, physical, RowPacking::kPrefill);
+  }
+
+  void prepare_verification_evaluations(std::span<const EvaluationRequest> requests,
+      std::size_t physical_rows, inference::PreparationObservation *preparation = nullptr) {
+    prepare_evaluations(requests, preparation, GraphRole::kVerify, TextCompletion::kEmitNext,
+        {}, 0, physical_rows, RowPacking::kVerify);
   }
 
   void prepare_evaluations(std::span<const EvaluationRequest> requests,
@@ -4327,7 +4371,7 @@ public:
                            GraphRole role = GraphRole::kText,
                            TextCompletion completion = TextCompletion::kEmitNext,
                            std::shared_ptr<StepSources> incoming = {}, std::size_t physical_slot = 0,
-                           std::size_t physical_prefill_rows = 0) {
+                            std::size_t physical_rows = 0, RowPacking packing = RowPacking::kRectangular) {
     const auto predecessor = incoming && active_step ? active_step : std::shared_ptr<StepState>{};
     const bool relay = bool(incoming);
     if (!supports_completion(role, completion))
@@ -4351,7 +4395,10 @@ public:
     const auto sampling_index = prepared_sampling.index;
     const auto &selected_sampler = prepared_sampling.configuration;
     const auto supplied_tokens = relay ? std::size_t{1} : requests.front().ids.size();
-    const bool packed_prefill = physical_prefill_rows != 0;
+    const bool packed_prefill = packs_prefill(packing), packed_verify = packs_verify(packing);
+    const bool packed_target = packs_target(packing);
+    if (packed_target != (physical_rows != 0) || (packed_verify && role != GraphRole::kVerify))
+      throw std::runtime_error("target row capacity differs from its declared packing");
     // Mixed K1 members share a fixed two-row draft carrier, but keep their
     // actual one/two-row append and original mathematical role in the ledger.
     const auto first_lag = drafts_token(role) && requests.size() > 1 && requests.front().session->head->draft
@@ -4364,17 +4411,19 @@ public:
     if (compact_draft && first_lag != draft_lag(role))
       throw std::runtime_error("MTP role differs from its first member snapshot");
     if (compact_draft) role = GraphRole::kMtpCatchupRound;
-    const auto packing = compact_draft ? RowPacking::kDraft
-        : packed_prefill ? RowPacking::kPrefill : RowPacking::kRectangular;
+    if (compact_draft) packing = RowPacking::kDraft;
     auto tokens = drafts_token(role) ? std::size_t{2} : supplied_tokens;
-    if (packed_prefill) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
-    const auto physical_tokens = packed_prefill ? physical_prefill_rows : tokens;
+    if (packed_target) for (const auto &request : requests) tokens = (std::max)(tokens, request.ids.size());
+    const auto physical_tokens = packed_target ? physical_rows : tokens;
     if (compact_draft && (completion != TextCompletion::kEmitNext ||
         !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
       throw std::runtime_error("mixed MTP draft rows require their original cold compact family");
     if (packed_prefill && (relay || (role != GraphRole::kText && !is_mtp_prefill(role)) ||
         physical_tokens < tokens || !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, RowPacking::kPrefill)))
       throw std::runtime_error("prefill extent is outside its original cold packed family");
+    if (packed_verify && (relay || physical_tokens < tokens || completion != TextCompletion::kEmitNext ||
+        !find_family(requests.size(), physical_tokens, role, false, completion, sampling_index, packing)))
+      throw std::runtime_error("verification extent is outside its original cold prefix capacity");
     if ((has_mtp(role) && !cache_plan.draft_cache) ||
         (cache_plan.draft_cache && role == GraphRole::kText))
       throw std::runtime_error("evaluation must use the configured complete target/draft state");
@@ -4401,8 +4450,8 @@ public:
             (!request.ids.empty() && (predecessor || request.ids.size() != 1 || request.ids[0] != base->next_id)))
           throw std::runtime_error("successor Source differs from its exact Session candidate and epoch");
       }
-      const auto member_tokens = packed_prefill ? request.ids.size() : tokens;
-      if (!member_tokens || (!packed_prefill && !relay && request.ids.size() != supplied_tokens) ||
+      const auto member_tokens = packed_target ? request.ids.size() : tokens;
+      if (!member_tokens || (!packed_target && !relay && request.ids.size() != supplied_tokens) ||
           member_tokens > capacity - base->length)
         throw std::runtime_error("batch requires valid nonempty chunks within each remaining context");
       validate_mtp_snapshot(*session.head);
@@ -4430,7 +4479,7 @@ public:
       admit_exact_shape(tokens, requests.size(), role, completion, sampling_index);
       shape_admission_seconds = std::chrono::duration<double>(Clock::now() - step_start).count();
     }
-    const bool ahead = !relay && !packed_prefill && take_decode_ahead(requests, role, completion, sampling_index, tokens);
+    const bool ahead = !relay && !packed_target && take_decode_ahead(requests, role, completion, sampling_index, tokens);
     auto candidate = std::make_shared<StepState>(); candidate->execution.configure(draft_bank + 2);
     if (!candidate->members.try_reserve(requests.size())) throw std::bad_alloc{};
     for (std::size_t j = 0; j < requests.size(); ++j) {
@@ -4440,7 +4489,7 @@ public:
           .base_epoch = request.session->head.epoch() + (predecessor ? 1u : 0u),
           .stop_policy = request.stop_policy,
           .logits = completion == TextCompletion::kEmitNext ? request.logits : LogitsInputs{},
-          .input_tokens = packed_prefill ? request.ids.size() : tokens});
+          .input_tokens = packed_target ? request.ids.size() : tokens});
       candidate->members.back().first_input = relay ? (predecessor ? -1 : request.session->head->next_id) : request.ids.front();
       if (role == GraphRole::kVerify)
         candidate->members.back().verification_inputs.assign(request.ids.begin(), request.ids.end());
@@ -4479,7 +4528,7 @@ public:
       step.phase = &phase; step.execution.run = &run; step.execution.carrier = &carrier; step.state_slot = slot;
       step.execution.state_transactions = &phase.state_transactions[slot];
       step.execution.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
-      if (packed_prefill) {
+      if (packed_target) {
         // The prior step has really retired. Release this exact mirror alias
         // before batch::prepare tries to refresh its original metadata writer.
         const std::array offset_input{phase.sequence_offsets_port};
@@ -4490,7 +4539,7 @@ public:
       for (std::size_t j = 0; j < width; ++j) {
         const auto &request = requests[j];
         if (!relay && width != 1) packed_ids.insert(packed_ids.end(), request.ids.begin(), request.ids.end());
-        if (!ahead && !packed_prefill) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
+        if (!ahead && !packed_target) for (std::size_t row = 0; row < step.members[j].input_tokens; ++row)
           positions.push_back(static_cast<std::int32_t>(step.members[j].base->length + row));
       }
       for (std::size_t j = 0; j < width; ++j) {
@@ -4498,21 +4547,25 @@ public:
         if (!phase.logits_allowed_ports.empty()) check(run.bind(phase.logits_allowed_ports[j], requests[j].logits.allowed.description, requests[j].logits.allowed.lease));
         if (!phase.logits_counts_ports.empty()) check(run.bind(phase.logits_counts_ports[j], requests[j].logits.counts.description, requests[j].logits.counts.lease));
       }
-      if (packed_prefill) {
+      if (packed_target) {
         if (width == 1) packed_ids.assign(requests[0].ids.begin(), requests[0].ids.end());
-        const auto physical_rows = cache::multiply(width, physical_tokens);
-        packed_ids.resize(physical_rows, 0); // Only the inactive carrier suffix is scratch.
-        positions.resize(physical_rows);
+        const auto carrier_rows = cache::multiply(width, physical_tokens);
+        packed_ids.resize(carrier_rows, 0); // Only the inactive carrier suffix is scratch.
+        positions.resize(carrier_rows);
         auto &row_inputs = input_scratch.row_inputs;
         auto &offsets = input_scratch.query_indptr;
         row_inputs.clear(); offsets.resize(width + 1);
         for (const auto &member : step.members) row_inputs.push_back({member.base->length, member.input_tokens});
-        const auto row_facts = inference::pack_sequence_rows(row_inputs, physical_rows, offsets, io.last_id_values, positions);
+        const auto row_facts = inference::pack_sequence_rows(row_inputs, carrier_rows, offsets, io.last_id_values, positions);
         if (row_facts.active_rows != step.active_input_rows || row_facts.max_member_rows != step.input_tokens)
           throw std::logic_error("packed target rows differ from the admitted episode");
         const auto history_rows = static_cast<std::size_t>(geometry.conv_kernel - 1);
         const auto history_count = cache::multiply(width, history_rows);
-        for (std::size_t j = 0; j < width; ++j) {
+        if (packed_verify) {
+          (void)inference::pack_sequence_prefixes(offsets, phase.prefix_rows, history_rows,
+              io.prefix_id_values, io.history_select_values);
+          io.prefix_ids.write<std::int32_t>(io.prefix_id_values);
+        } else for (std::size_t j = 0; j < width; ++j) {
           const auto begin = step.members[j].input_row_begin;
           const auto length = step.members[j].input_tokens;
           for (std::size_t row = 0; row < history_rows; ++row) {
@@ -4522,10 +4575,10 @@ public:
             io.history_select_values[j * history_rows + row] = static_cast<std::int32_t>(source);
           }
         }
-        io.last_ids.write<std::int32_t>(io.last_id_values);
+        if (packed_prefill) io.last_ids.write<std::int32_t>(io.last_id_values);
         io.history_select.write<std::int32_t>(io.history_select_values);
       }
-      if (!relay) io.tokens.write<std::int32_t>(packed_prefill || width != 1
+      if (!relay) io.tokens.write<std::int32_t>(packed_target || width != 1
           ? std::span<const std::int32_t>(packed_ids) : requests[0].ids);
       if (ahead) {
         io.positions.write<std::int32_t>({decode_ahead->positions.data(), decode_ahead->positions.size()});
@@ -4599,7 +4652,7 @@ public:
         if (width != 1 && !ahead) for (const auto &page : member.base->pages) old_ids.push_back(static_cast<std::int32_t>(page.page()));
         const auto begin = new_ids.size();
         for (const auto &page : member.next->pages) new_ids.push_back(static_cast<std::int32_t>(page.page()));
-        query_indptr.push_back(packed_prefill ? input_scratch.query_indptr[j + 1]
+        query_indptr.push_back(packed_target ? input_scratch.query_indptr[j + 1]
             : static_cast<std::int32_t>(cache::add(static_cast<std::size_t>(query_indptr.back()), member_tokens)));
         old_indptr.push_back(static_cast<std::int32_t>(old_ids.size()));
         new_indptr.push_back(static_cast<std::int32_t>(new_ids.size()));
@@ -4701,7 +4754,7 @@ public:
         }
       }
       check(step.execution.bind_consumers(phase.state_graph()));
-      if (packed_prefill) {
+      if (packed_target) {
         auto offsets = take(g::batch::query_offsets(run, phase.attention_nodes.front()));
         check(run.bind(phase.sequence_offsets_port, dense(Type::kInt32, {static_cast<std::int64_t>(width + 1)}), offsets));
       }
@@ -4814,7 +4867,6 @@ public:
     auto &step = *active_step; auto &phase = *step.phase; auto &run = *step.execution.run;
     auto &io = phase.io[step.state_slot];
     const auto step_start = step.step_start, start = step.start;
-    const auto tokens = step.input_tokens;
     hyle::container::SmallVector<std::size_t, 2> member_input_rows;
     const bool state_only = phase.family->completion == TextCompletion::kStateOnly;
     const auto submit_seconds = step.submit_seconds, cold_batch_seconds = step.cold_batch_seconds;
@@ -5042,7 +5094,8 @@ public:
             ? member.next->draft->frontier - member.base->draft->frontier : 0;
         if (phase.family->role == GraphRole::kVerify)
           record->draft_rows = cache::add(record->draft_rows,
-              tokens - 1 + member.base->draft->lag + member.discarded_draft_rows);
+              member.input_tokens - 1 + (member.input_tokens > 1 ? member.base->draft->lag : 0) +
+              member.discarded_draft_rows);
         record->after = generation_boundary(*member.next); record->after.next_id = next_ids[j];
         if (phase.family->role == GraphRole::kVerify)
           record->accepted_inputs.assign(member.verification_inputs.begin(),
@@ -5174,7 +5227,10 @@ public:
       record.endpoint = finished;
       record.step_seconds = std::chrono::duration<double>(finished - step_start).count();
     }
+    std::size_t compact_input_begin = 0;
     for (std::size_t j = 0; j < outputs.size(); ++j) {
+      const auto member_input_begin = compact_input_begin;
+      compact_input_begin = cache::add(compact_input_begin, member_input_rows[j]);
       if (!published_members.empty() && !published_members[j]) continue;
       const auto &output = outputs[j]; const auto &session = *output.session; const auto next = next_ids[j];
       if (output.complete_seconds) *output.complete_seconds = std::chrono::duration<double>(finished - step_start).count();
@@ -5200,7 +5256,9 @@ public:
       observation.capture_recorded = capture_recorded; observation.capture_reused = capture_reused;
       observation.scheduled_progress = static_cast<bool>(scheduler);
       CompletedEvaluationView completed{.observation = observation, .head = *session.head,
-          .member_index = j, .requests = outputs.size()};
+          .member_index = j, .requests = outputs.size(),
+          .packed_input_begin = packs_verify(phase.family->packing) ? member_input_begin : 0,
+          .packed_input_rows = packs_verify(phase.family->packing) ? member_input_rows[j] : 0};
       if (output.capture_tensors) {
         if (!state_only) completed.logits = io.logits.caller_owned() ? io.logits.view().as_const()
             : take(generated_logits.tensor(io.logits.description));
@@ -5326,8 +5384,8 @@ public:
         auto &member = step.members[j]; auto &result = results[j]; const auto &selection = selections[j];
         if (member.first_input != selection.expected_pending || selection.expected_pending != member.base->next_id)
           throw std::runtime_error("recursive verifier input differs from the emitted pending token");
-        const auto width = step.input_tokens;
-        const auto rows = candidates.subspan(j * width, width);
+         const auto width = member.input_tokens;
+         const auto rows = candidates.subspan(member.input_row_begin, width);
         result.pending = selection.expected_pending; result.proposal_count = width - 1; result.verified_rows = width;
         result.auxiliary_graph_calls = width + (selected_sampler.enabled || !selected_sampler.modifiers.empty() ? 1u : 0u);
         result.draft = width > 1 ? member.verification_inputs[1] : -1;
@@ -5338,7 +5396,8 @@ public:
             throw std::runtime_error("stochastic verification requires every actual q row");
           const auto bytes = cache::multiply(cache::multiply(width, vocabulary), sizeof(float));
           const auto logits = take(c::ConstTensorView::create(dense(Type::kFloat32,
-              {static_cast<std::int64_t>(width), vocabulary}), take(logits_storage.subview(j * bytes, bytes))));
+               {static_cast<std::int64_t>(width), vocabulary}), take(logits_storage.subview(
+                   cache::multiply(cache::multiply(member.input_row_begin, vocabulary), sizeof(float)), bytes))));
           PrefixSamplingResult decision;
           try {
             decision = sample_recursive_prefix(logits,
@@ -5376,8 +5435,11 @@ public:
         result.auxiliary_graph_calls += clipped ? 1u : 0u;
         result.accepted_draft = result.consumed_drafts != 0;
         result.processed_target = member.accepted_tokens;
-        result.processed_draft = width - 1 + 2 * member.base->draft->lag +
-            (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1) + member.discarded_draft_rows;
+        // Zero proposals never ran the draft head or its catch-up. A threshold-
+        // rejected first head is counted completely in discarded_draft_rows.
+        result.processed_draft = width - 1 + (width > 1 ? member.base->draft->lag : 0) +
+            member.base->draft->lag + (member.accepted_tokens == 1 ? 1 : member.accepted_tokens - 1) +
+            member.discarded_draft_rows;
         result.stopped = accepted.stopped;
         if (outputs[j].generation_ledger) {
           auto &record = outputs[j].generation_ledger->next();
@@ -5503,8 +5565,17 @@ void observe_completed_evaluation(Model &model, const EvaluationOutput &output,
   if (io.trace && !io.trace->empty()) {
     const auto directory = *io.trace / io.name; std::filesystem::create_directories(directory);
     const auto dump_row = [&](c::ConstTensorView tensor, const char *file) {
-      const auto bytes = take(tensor.description().required_bytes()) / completed.requests;
-      dump_bytes(take(tensor.storage().subview(completed.member_index * bytes, bytes)), directory / file);
+      if (completed.packed_input_rows) {
+        const auto &description = tensor.description();
+        if (!description.is_dense() || description.rank() != 2)
+          throw std::runtime_error("packed verification trace requires dense row outputs");
+        const auto row_bytes = take(description.required_bytes()) / static_cast<std::size_t>(description.dimensions()[0]);
+        dump_bytes(take(tensor.storage().subview(cache::multiply(completed.packed_input_begin, row_bytes),
+            cache::multiply(completed.packed_input_rows, row_bytes))), directory / file);
+      } else {
+        const auto bytes = take(tensor.description().required_bytes()) / completed.requests;
+        dump_bytes(take(tensor.storage().subview(completed.member_index * bytes, bytes)), directory / file);
+      }
     };
     if (completed.logits.valid()) dump_row(completed.logits, "logits.f32");
     dump_row(completed.hidden, model.precision.is_f16() ? "hidden.f16" : "hidden.bf16");
@@ -6227,6 +6298,18 @@ std::size_t generation_prefill_capacity(const Model &model, std::span<const Prep
   return model.prefill_capacity(rows, calls[0].completion, calls[0].request->sampling_index, calls.size(), calls[0].role);
 }
 
+std::size_t generation_verification_capacity(const Model &model, std::span<const PreparedGenerationCall> calls) {
+  if (calls.empty() || !calls[0].request || !calls[0].generation || calls[0].full_hit ||
+      calls[0].role != GraphRole::kVerify || calls[0].completion != TextCompletion::kEmitNext) return 0;
+  std::size_t rows = 0;
+  for (const auto &call : calls) {
+    if (!call.request || !call.generation || call.full_hit || call.role != GraphRole::kVerify ||
+        call.completion != calls[0].completion || call.request->sampling_index != calls[0].request->sampling_index) return 0;
+    rows = (std::max)(rows, call.verification_ids.empty() ? call.planned_rows() : call.ids().size());
+  }
+  return model.verification_capacity(rows, calls.size(), calls[0].request->sampling_index);
+}
+
 // One actually retired target batch, never a planned request bucket. Members
 // are borrowed synchronously; a report owner copies identities before return.
 // Episode durations can overlap and must not be added as a wall-time union.
@@ -6947,6 +7030,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     continuation->reset();
   }
   const auto &eos = model_eos_tokens;
+  std::size_t packed_verification_capacity = 0;
   if (calls[0].role == GraphRole::kVerify) {
     for (auto &call : calls) {
       if (!call.generation || call.role != GraphRole::kVerify)
@@ -6969,10 +7053,13 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
         call.proposal_seconds = std::chrono::duration<double>(Clock::now() - begin).count();
       }
     }
-    // Request stop tokens can shorten different requests to different exact widths. Preserve
-    // real query geometry rather than padding or consuming a terminal token.
+    // Keep exact R1/uniform graphs. Only an unequal cohort selects the cold
+    // capacity whose offsets express every member's real rows.
     const auto uniform_rows = calls[0].ids().size();
-    if (std::ranges::any_of(calls, [&](const auto &call) { return call.ids().size() != uniform_rows; })) {
+    const bool unequal = std::ranges::any_of(calls, [&](const auto &call) { return call.ids().size() != uniform_rows; });
+    if (unequal) packed_verification_capacity = generation_verification_capacity(model, calls);
+    // Missing provider capability keeps exact grouping, never retries native failure.
+    if (unequal && !packed_verification_capacity) {
       std::map<std::size_t, std::vector<std::size_t>> groups;
       for (std::size_t i = 0; i < calls.size(); ++i) groups[calls[i].ids().size()].push_back(i);
       for (const auto &[rows, members] : groups) {
@@ -7007,7 +7094,7 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
   for (auto &call : calls) {
     auto &request = *call.request;
     // Recursive proposals may have shortened since the initial metadata pass.
-    if (role == GraphRole::kVerify && call.ids().size() != calls[0].ids().size())
+    if (role == GraphRole::kVerify && !packed_verification_capacity && call.ids().size() != calls[0].ids().size())
       throw std::runtime_error("MTP batch requires equal role, kind and input rows without padding");
     prepare_generation_record(*request.ledger, *request.session, call.role,
         generation ? std::span<const std::int32_t>(&call.pending, 1) : call.ids(), generation,
@@ -7024,6 +7111,8 @@ void execute_generation_calls(Model &model, std::span<PreparedGenerationCall> ca
     observe_completed_evaluation(model, outputs[j], {call.name, &call.request->trace, trace_states}, view);
   };
   if (!generation && packed_prefill) model.prepare_prefill_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
+  else if (packed_verification_capacity)
+    model.prepare_verification_evaluations(std::span(inputs.data(), inputs.size()), packed_verification_capacity);
   else model.prepare_evaluations(std::span(inputs.data(), inputs.size()), nullptr, role, calls[0].completion);
   model.submit_evaluations();
   const auto input_rows = model.active_step->input_tokens;
@@ -7723,6 +7812,17 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
       }
     }
     if constexpr (mtp) if (decode_bound && width > 1 && width <= policy_decoding_requests &&
+        model.recursive_mtp() && model.target_kv_layers > 0) {
+      const auto capacity = static_cast<std::size_t>(model.cache_plan.candidate_boundaries);
+      const std::array capacities{capacity};
+      if (model.prepare_family(capacities, false, width, GraphRole::kVerify, false, TextCompletion::kEmitNext,
+          sampling_index, RowPacking::kVerify))
+        model.plan_replay_uses(capacity, width, decode_bound, GraphRole::kVerify,
+            TextCompletion::kEmitNext, sampling_index, RowPacking::kVerify);
+      else model.families.erase({width, GraphRole::kVerify, capacity,
+          TextCompletion::kEmitNext, sampling_index, RowPacking::kVerify});
+    }
+    if constexpr (mtp) if (decode_bound && width > 1 && width <= policy_decoding_requests &&
         model.max_drafts() == 1 && !model.recursive_mtp()) {
       constexpr auto role = GraphRole::kMtpCatchupRound;
       if (model.prepare_family(pair, false, width, role, false, TextCompletion::kEmitNext,
@@ -7870,6 +7970,9 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           (other.role == first.role || (first.generation && drafts_token(first.role) && drafts_token(other.role))) &&
           other.completion == first.completion &&
           (other.planned_rows() == first.planned_rows() ||
+            (!first.full_hit && first.generation && first.role == GraphRole::kVerify &&
+             model.verification_capacity((std::max)(other.planned_rows(), first.planned_rows()),
+                 2, first.request->sampling_index)) ||
            (!first.full_hit && !first.generation && (first.role == GraphRole::kText || is_mtp_prefill(first.role)) &&
             model.prefill_capacity((std::max)(other.planned_rows(), first.planned_rows()),
                 first.completion, first.request->sampling_index, 2, first.role)));
@@ -7882,7 +7985,7 @@ int run_generation_sessions(Model &model, std::span<const inference::GenerationS
           [&](const auto &call) { return call.role != members[0].role; });
       if (mixed_roles && !model.find_family(members.size(), 2, GraphRole::kMtpCatchupRound, false,
           members[0].completion, members[0].request->sampling_index, RowPacking::kDraft)) return false;
-      return (!unequal || generation_prefill_capacity(model, members)) &&
+      return (!unequal || generation_prefill_capacity(model, members) || generation_verification_capacity(model, members)) &&
           make_generation_batch_room(model, prefix.get(), members, requests);
     };
     const auto execute_batch = [&](std::span<PreparedGenerationCall> bucket, bool entire_wave) {
