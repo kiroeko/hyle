@@ -13,8 +13,9 @@ python scripts/test.py
 [Windows](windows.md)、[Linux / WSL](linux-wsl.md)、[macOS](macos.md)。
 初始化会发现已装工具、准备所选后端的依赖并运行 CMake；不会安装系统编译器、驱动或更改全局环境。
 
-新配置默认为 **CPU、Release、共享库、推理引擎及其依赖、tests OFF**，TLS、HTTP/2、trace 均关闭。
+新配置默认为 **CPU、Release、共享库、推理引擎及其依赖、tests OFF、trace OFF**。
 Provider 和第三方实现由 HYLE 自动装配，不需要用户选择。
+选择 `io` 产品时包含完整 TLS 与 HTTP/2 能力：需要已安装的 OpenSSL 3 开发包，nghttp2 按 lock 自动准备。
 已有配置保留其明确选择；只构建基础模块时传 `--components util` 或所需模块集合。
 
 ## 常见用法
@@ -50,8 +51,9 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 `.scratch/build/` 中与实际配置匹配的目录；相同配置复用已有目录和共享依赖，
 不兼容的工具链不会混进原 cache。并行会话应选择不同的 `--name` 或 `--build-dir`。
 同一标签重配测试开关时可用 `--tests` / `--no-tests`。初始化失败不冒充新的可用配置。
-缩小产品集合时，只准备新集合实际需要的依赖；例如从 `all` 切到 `util`，旧 TLS／HTTP/2 设置
-不会要求继续构建协议模块。显式请求 `--tls`／`--http2` 时应同时选择 `io`。
+缩小产品集合时，只准备新集合实际需要的依赖；例如从 `all` 切到 `util`，不会继续准备协议依赖。
+TLS 与 HTTP/2 不再有二次开关。旧配置先对同一 `--name` 或 `--build-dir` 运行 `init.py`，
+脚本会清理旧能力开关并保留其它配置，再用 `build.py` 更新产物；build/test 不会暗中重配旧构建。
 
 ## 选择配置
 
@@ -61,12 +63,13 @@ python scripts/build.py --name inference --install .scratch/install/hyle --jobs 
 | `--backends all` | 本平台支持的全部完整后端；所需系统 SDK 缺少时明确失败 |
 | `--components engine` | 默认选择引擎，自动带出所需基础模块；可构建 `hyle_engine`，输出 `hyle` |
 | `--components util` | 只选择既有工具模块及其依赖；也可传 `mem,container`、`compute,graph` 等产品集合 |
+| `--components io` | 包含 TLS、HTTP、HTTP/2、transfer、watch 和 WebSocket 及其依赖，无额外协议开关 |
 | `--components all` | 顶层完整项目，包含全部库与引擎 |
 | `--config Debug` | `Release`、`Debug`、`RelWithDebInfo` 或 `MinSizeRel` |
 | `--compiler clang` | `auto`、`gcc`、`clang`、`msvc` 或 `clang-cl` |
 | `--tests`、`--static` | 开启测试、选择静态库；均有对应 `--no-...` 形式 |
 | `--sanitizer asan` | `off`、`asan`、`tsan` 或 `ubsan`，受平台支持范围约束 |
-| `--tls`、`--http2`、`--trace` | 开启所需协议或诊断能力 |
+| `--trace` | 开启诊断跟踪；选择实际包含跟踪点的产品 |
 | `--name <label>` | 为常用配置设置简短标签 |
 | `--cache-dir <path>` | 高级：指定 checkout 外的共享源码 cache |
 | `--offline` | 禁止联网，使用已准备好的依赖与 SDK |
@@ -91,7 +94,9 @@ CPU、Metal、Vulkan。其它架构只接受实际支持的后端。`metal` 对�
 构建树内程序位于 `<build-dir>/bin/`，多配置生成器位于 `bin/<config>/`。
 引擎的模型输入准备和当前运行限制见[引擎指南](../../user/inference.md)。高级的额外 CMake 输入使用
 `init.py -D NAME=VALUE`，可重复；脚本已有的选项使用对应参数。
-产品与后端参数已经决定 Provider，旧 Provider 开关和内部 factor 选择不属于这个入口。
+产品与后端参数已经决定 Provider，`io` 产品也决定协议依赖；旧 Provider／协议开关和内部 factor 选择
+不属于这个入口。OpenSSL 位于非标准目录时仍可使用 `-D OPENSSL_ROOT_DIR=<prefix>`，
+锁定源码也保留标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 覆盖方式。
 显式指定的 CUDA 编译器或 Toolkit 路径不可用时会报告错误；只有未指定时才自动寻找已安装版本。
 普通日志保留 CMake 输出，`--verbose` 补充完整命令。安装入口使用标准 CMake 导出，
 不修改系统 PATH、Shell 配置或用户的 CMake 搜索环境。

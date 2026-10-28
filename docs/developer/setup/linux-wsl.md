@@ -32,7 +32,8 @@ Vulkan 缺少宿主 glslang 时，在线初始化可按中央 lock 准备它；�
 若运行时因高熵 ASLR 报 `unexpected memory mapping`，按实际内核及 sanitizer 文档诊断；
 需要关闭 ASLR 时可从 `setarch -R` 子进程运行测试。不要自动忽略新的 sanitizer 报告。
 
-TLS 需要 OpenSSL 3 开发包，再选择 `init.py --components io --tls`；HTTP/2 同样选择 `io`，
-源码由 `--http2` 按 lock 准备。需要引擎及协议库时可选择 `--components engine,io`。
+安装 OpenSSL 3 开发包后运行 `init.py --components io`，即包含 TLS 与 HTTP/2；nghttp2 源码按 lock
+自动准备，无额外协议开关。非标准 OpenSSL 路径可用 `-D OPENSSL_ROOT_DIR=<prefix>` 指定，
+缺少依赖时明确报错。需要引擎及协议库时可选择 `--components engine,io`。
 更多依赖角色见[依赖说明](dependencies.md)，断网介质见[离线构建](offline.md)。
 性能工具与比较方法见[性能比较](../performance/README.md)。

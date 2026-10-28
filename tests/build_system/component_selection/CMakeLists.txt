@@ -99,6 +99,37 @@ if("compute" IN_LIST HYLE_PRODUCTION_PRODUCT_LIST OR
   message(FATAL_ERROR "The streaming service manufactured an unrequested complete product")
 endif()
 
+# Complete IO selects both protocol capabilities; exact factors retain their
+# real dependency boundary without a second on/off selection.
+set(HYLE_COMPONENTS io)
+include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
+if(NOT HYLE_BUILD_IO_TLS OR NOT HYLE_BUILD_IO_HTTP2 OR
+   NOT HYLE_BUILD_PRODUCT_IO OR HYLE_BUILD_COMPUTE_BACKEND_CPU)
+  message(FATAL_ERROR "The IO product omitted a protocol or acquired a Compute route")
+endif()
+unset(HYLE_COMPONENTS)
+unset(HYLE_COMPONENTS CACHE)
+unset(HYLE_COMPUTE_ROUTES)
+unset(HYLE_COMPUTE_ROUTES CACHE)
+set(HYLE_DEV_FACTORS io_core)
+include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
+if(NOT HYLE_BUILD_IO_CORE OR HYLE_BUILD_IO_TLS OR HYLE_BUILD_IO_HTTP2)
+  message(FATAL_ERROR "The exact IO core factor acquired protocol dependencies")
+endif()
+set(HYLE_DEV_FACTORS io_tls)
+include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
+if(NOT HYLE_BUILD_IO_TLS OR HYLE_BUILD_IO_HTTP2 OR HYLE_BUILD_PRODUCT_IO)
+  message(FATAL_ERROR "The exact TLS factor changed its protocol boundary")
+endif()
+set(HYLE_DEV_FACTORS io_http2)
+include("${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake")
+if(NOT HYLE_BUILD_IO_HTTP2 OR NOT HYLE_BUILD_IO_HTTP OR NOT HYLE_BUILD_IO_TLS OR
+   HYLE_BUILD_PRODUCT_IO)
+  message(FATAL_ERROR "The exact HTTP/2 factor lost its real HTTP/TLS dependencies")
+endif()
+unset(HYLE_DEV_FACTORS)
+unset(HYLE_DEV_FACTORS CACHE)
+
 # A route/root change in the same configure must not inherit membership from
 # the previous traversal. Core also provides a dependency-free small case.
 set(HYLE_COMPONENTS core)

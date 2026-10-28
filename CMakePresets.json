@@ -182,7 +182,7 @@
     {
       "name": "package-feature-shared",
       "displayName": "Complete Hyle application and SDK (shared)",
-      "description": "Deterministic complete-project package: application and library SDK; tests/bench, trace, sanitizer, TLS, and exact-ISA specialization are explicitly OFF; HTTP/2 is explicitly ON.",
+      "description": "Deterministic complete-project package: application and library SDK with automatic protocol dependencies; tests/bench, trace, sanitizer and exact-ISA specialization are off.",
       "binaryDir": "${sourceDir}/build-package-feature-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -193,9 +193,7 @@
         "HYLE_STATIC": "OFF",
         "HYLE_SANITIZER": "off",
         "HYLE_TRACE": "OFF",
-        "HYLE_SIMD_EXACT_TARGET": "",
-        "HYLE_IO_TLS": "OFF",
-        "HYLE_IO_HTTP2": "ON"
+        "HYLE_SIMD_EXACT_TARGET": ""
       }
     },
     {
@@ -210,7 +208,7 @@
     {
       "name": "bench",
       "displayName": "Benchmarks (pinned SIMD vendors)",
-      "description": "Generator-independent isolated benchmark build. Fetch the pinned Highway/xsimd opponents first; enable CUDA/TLS explicitly only for a benchmark that needs them.",
+      "description": "Generator-independent isolated benchmark build. Fetch the pinned Highway/xsimd opponents first; select the required products and Compute routes.",
       "inherits": "hyle-dev",
       "binaryDir": "${sourceDir}/build-bench",
       "cacheVariables": {
@@ -250,9 +248,7 @@
         "HYLE_COMPONENTS": "core;error;platform;time;mem;container;math;simd;util;obs;sched;io;process",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "OFF",
-        "HYLE_WERROR": "ON",
-        "HYLE_IO_TLS": "OFF",
-        "HYLE_IO_HTTP2": "OFF"
+        "HYLE_WERROR": "ON"
       }
     }
   ],

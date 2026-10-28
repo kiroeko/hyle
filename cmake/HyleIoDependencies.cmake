@@ -1,19 +1,7 @@
 include_guard(GLOBAL)
 
-# This file is included only when a protocol factor belongs to the selected
-# closure, so protocol controls do not pollute an io_core-only maintainer cache.
-if(HYLE_BUILD_IO_TLS)
-  hyle_auto_feature_option(HYLE_IO_TLS
-    "Build the io TLS capability using OpenSSL" DEFAULT OFF)
-else()
-  set(HYLE_IO_TLS OFF)
-endif()
-if(HYLE_BUILD_IO_HTTP2)
-  option(HYLE_IO_HTTP2 "Build the io HTTP/2 capability using nghttp2" OFF)
-else()
-  set(HYLE_IO_HTTP2 OFF)
-endif()
-set(HYLE_IO_TLS_ENABLED OFF)
+# Protocol dependencies follow the selected factor closure. An io_core-only
+# build never enters this file; a selected protocol is a complete capability.
 
 function(hyle_configure_io_dependencies)
   # Protocol transports expose sched types and therefore require the existing
@@ -24,29 +12,16 @@ function(hyle_configure_io_dependencies)
       "proactor is not a separately deliverable component.")
   endif()
 
-  # AUTO preserves convenient source builds; ON makes TLS part of the requested
-  # product contract; OFF is deterministic and does not even probe OpenSSL.
-  set(_hyle_io_tls_enabled OFF)
-  if(HYLE_BUILD_IO_TLS AND NOT HYLE_IO_TLS STREQUAL "OFF")
-    find_package(OpenSSL 3.0 QUIET)
-    if(OpenSSL_FOUND)
-      set(_hyle_io_tls_enabled ON)
-      message(STATUS
-        "HYLE: io TLS ${HYLE_IO_TLS} -- enabled with OpenSSL ${OPENSSL_VERSION}")
-    elseif(HYLE_IO_TLS STREQUAL "ON")
-      message(FATAL_ERROR
-        "HYLE_IO_TLS=ON requires OpenSSL, but it was not found. Set OPENSSL_ROOT_DIR "
-        "or CMAKE_TOOLCHAIN_FILE, or select HYLE_IO_TLS=AUTO/OFF.")
-    else()
-      message(STATUS "HYLE: io TLS AUTO -- OpenSSL not found, capability disabled")
-    endif()
-  else()
-    message(STATUS "HYLE: io TLS OFF -- dependency probe skipped")
+  # Keep the standard SDK/root/toolchain search and fail if a selected TLS
+  # factor cannot be supplied, instead of publishing a feature-only shell.
+  if(HYLE_BUILD_IO_TLS)
+    find_package(OpenSSL 3.0 REQUIRED)
+    message(STATUS "HYLE: io TLS -- required OpenSSL ${OPENSSL_VERSION}")
   endif()
 
   # nghttp2 owns RFC 9113 framing, HPACK, stream state and flow control. HYLE
   # owns the coroutine transport and imports none of nghttp2's runtime policy.
-  if(HYLE_BUILD_IO_HTTP2 AND HYLE_IO_HTTP2)
+  if(HYLE_BUILD_IO_HTTP2)
     include(FetchContent)
     FetchContent_Declare(nghttp2
       URL      ${HYLE_DEP_NGHTTP2_ARCHIVE_URL}
@@ -109,6 +84,4 @@ function(hyle_configure_io_dependencies)
       "(${HYLE_DEP_NGHTTP2_COMMIT}) -- io-11 HTTP/2 enabled "
       "as a private static protocol core")
   endif()
-
-  set(HYLE_IO_TLS_ENABLED "${_hyle_io_tls_enabled}" PARENT_SCOPE)
 endfunction()

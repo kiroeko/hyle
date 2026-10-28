@@ -36,6 +36,7 @@ class DevelopmentCommandsTest(unittest.TestCase):
         for name, value in (("ROOT", self.root), ("_host", lambda: ("Linux", "x86_64")),
                             ("discover_environment", self.environment), ("_run", self.run_command),
                             ("discover_test_environment", self.runtime_environment),
+                            ("find_openssl", lambda environment: {}),
                             ("find_glslang", lambda environment: None)):
             active = patch.object(support, name, value)
             active.start()
@@ -309,6 +310,30 @@ class DevelopmentCommandsTest(unittest.TestCase):
                 command = self.commands[-1]
                 self.assertEqual(command[command.index("--config") + 1], "Debug")
 
+    def test_multiconfig_ignores_inherited_release_build_type(self):
+        for name, generator in (("visual-studio", "Visual Studio 17 2022"),
+                                ("ninja-multi", "Ninja Multi-Config")):
+            with self.subTest(generator=generator):
+                directory = self.root / ".scratch/build" / name
+                self.write_cache(directory, CMAKE_GENERATOR=generator, CMAKE_BUILD_TYPE="Release",
+                                 CMAKE_CONFIGURATION_TYPES="Debug;Release;RelWithDebInfo", HYLE_BUILD_TESTS="ON")
+                # Direct CMake/preset trees need no script metadata to select Debug.
+                for action, option in (("build", "--config"), ("test", "-C")):
+                    self.succeeds(action, "--name", name, "--config", "Debug")
+                    self.assertEqual(self.commands[-1][self.commands[-1].index(option) + 1], "Debug")
+                self.succeeds("init", "--name", name, "--config", "Debug")
+                for arguments in ((), ("--name", name)):
+                    self.succeeds("init", *arguments)
+                    for action, option in (("build", "--config"), ("test", "-C")):
+                        self.succeeds(action, "--name", name)
+                        self.assertEqual(self.commands[-1][self.commands[-1].index(option) + 1], "Debug")
+                self.assertEqual(support.read_cache(directory)["CMAKE_BUILD_TYPE"], "Release")
+                attempted = len(self.commands)
+                for action in ("build", "test"):
+                    self.assertNotEqual(self.invoke(action, "--name", name, "--config", "Missing")[0], 0)
+                self.assertEqual(len(self.commands), attempted)
+        self.resources.assert_not_called()
+
     def test_build_and_test_accept_only_available_custom_configurations(self):
         for name, settings in (("custom-single", {"CMAKE_BUILD_TYPE": "Profile"}),
                                ("custom-multi", {"CMAKE_GENERATOR": "Ninja Multi-Config", "CMAKE_BUILD_TYPE": "",
@@ -334,13 +359,14 @@ class DevelopmentCommandsTest(unittest.TestCase):
     def test_explicit_and_cached_sdk_paths_override_automatic_discovery(self):
         custom = str(self.base / "custom OpenSSL SDK")
         automatic = str(self.base / "default OpenSSL SDK")
-        with patch.object(support, "find_openssl", return_value={"OPENSSL_ROOT_DIR": automatic}):
-            self.succeeds("init", "--name", "tls", "--components", "io", "--tls",
+        with patch.object(support, "find_openssl", return_value={"OPENSSL_ROOT_DIR": automatic}) as discovery:
+            self.succeeds("init", "--name", "tls", "--components", "io",
                           "-D", "OPENSSL_ROOT_DIR=" + custom)
             directory = self.selected()
             self.assertEqual(support.read_cache(directory)["OPENSSL_ROOT_DIR"], custom)
             self.succeeds("init", "--name", "tls")
             self.assertEqual(support.read_cache(directory)["OPENSSL_ROOT_DIR"], custom)
+            discovery.assert_not_called()
         shader = str(self.base / "custom shader tools/glslang")
         self.succeeds("init", "--name", "shader", "--backends", "vulkan", "--components", "compute",
                       "-D", "HYLE_VULKAN_GLSLANG=" + shader)
@@ -348,20 +374,51 @@ class DevelopmentCommandsTest(unittest.TestCase):
         self.succeeds("init")
         self.assertEqual(self.resources.call_args.args[0].definitions.get("HYLE_VULKAN_GLSLANG"), shader)
 
-    def test_reinitialization_preserves_tls_auto_until_explicitly_changed(self):
-        self.succeeds("init", "--name", "tls-auto", "--components", "io")
-        directory = self.selected()
-        cache = support.read_cache(directory)
-        self.write_cache(directory, **dict(cache, HYLE_IO_TLS="AUTO"))
-        with patch.object(support, "find_openssl", return_value={}):
-            self.succeeds("init", "--name", "tls-auto")
-        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "AUTO")
-        self.succeeds("init", "--name", "tls-auto", "--tls")
-        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "ON")
-        self.succeeds("init", "--name", "tls-auto", "--no-tls")
-        self.assertEqual(support.read_cache(directory)["HYLE_IO_TLS"], "OFF")
+    def test_io_product_automatically_prepares_dependency_locations(self):
+        openssl = str(self.base / "installed OpenSSL SDK")
+        source = str(self.base / "cached nghttp2 source")
+        with patch.object(support, "find_openssl", return_value={"OPENSSL_ROOT_DIR": openssl}) as discovery:
+            for product in ("io", "all"):
+                with self.subTest(product=product):
+                    self.succeeds("init", "--name", product, "--components", product,
+                                  "--offline", "-D", "FETCHCONTENT_SOURCE_DIR_NGHTTP2=" + source)
+                    cache = support.read_cache(self.selected())
+                    self.assertEqual(cache["OPENSSL_ROOT_DIR"], openssl)
+                    self.assertEqual(cache["FETCHCONTENT_SOURCE_DIR_NGHTTP2"], source)
+                    self.assertEqual(cache["FETCHCONTENT_FULLY_DISCONNECTED"], "ON")
+                    self.assertNotIn("HYLE_IO_TLS", cache)
+                    self.assertNotIn("HYLE_IO_HTTP2", cache)
+                    self.assertFalse(any(arg.startswith(("-DHYLE_IO_TLS=", "-DHYLE_IO_HTTP2="))
+                                         for arg in self.commands[-1]))
+            self.assertEqual(discovery.call_count, 2)
 
-    def test_dormant_protocol_cache_does_not_block_narrower_products(self):
+    def test_reinitializing_old_protocol_selection_preserves_other_choices(self):
+        for tls, http2 in (("ON", "ON"), ("OFF", "OFF"), ("AUTO", "OFF")):
+            with self.subTest(tls=tls, http2=http2):
+                name = "old-protocol-" + tls.lower()
+                directory = self.root / ".scratch/build" / name
+                self.write_cache(directory, HYLE_COMPONENTS="io", HYLE_IO_TLS=tls, HYLE_IO_HTTP2=http2,
+                                 HYLE_STATIC="ON", HYLE_BUILD_TESTS="ON", CMAKE_BUILD_TYPE="Debug")
+                before = (directory / "CMakeCache.txt").read_bytes()
+                attempted = len(self.commands)
+                for action in ("build", "test"):
+                    result, _, errors = self.invoke(action, "--name", name)
+                    self.assertNotEqual(result, 0)
+                    self.assertIn("python scripts/init.py --name " + name, errors)
+                self.assertEqual(len(self.commands), attempted)
+                self.assertEqual((directory / "CMakeCache.txt").read_bytes(), before)
+                self.succeeds("init", "--name", name)
+                cache = support.read_cache(directory)
+                self.assertNotIn("HYLE_IO_TLS", cache)
+                self.assertNotIn("HYLE_IO_HTTP2", cache)
+                self.assertEqual(cache["HYLE_COMPONENTS"], "io")
+                self.assertEqual(cache["HYLE_STATIC"], "ON")
+                self.assertEqual(cache["HYLE_BUILD_TESTS"], "ON")
+                self.assertEqual(cache["CMAKE_BUILD_TYPE"], "Debug")
+                self.succeeds("build", "--name", name)
+                self.succeeds("test", "--name", name)
+
+    def test_old_protocol_cache_is_removed_when_narrowing_products(self):
         with patch.object(support, "find_openssl", side_effect=AssertionError("unused TLS discovery")):
             for tls in ("ON", "AUTO"):
                 for product in ("util", "engine"):
@@ -372,19 +429,25 @@ class DevelopmentCommandsTest(unittest.TestCase):
                         self.succeeds("init", "--name", name, "--components", product)
                         cache = support.read_cache(directory)
                         self.assertEqual(cache["HYLE_COMPONENTS"], product)
-                        self.assertEqual(cache["HYLE_IO_TLS"], tls)
-                        self.assertEqual(cache["HYLE_IO_HTTP2"], "ON")
+                        self.assertNotIn("HYLE_IO_TLS", cache)
+                        self.assertNotIn("HYLE_IO_HTTP2", cache)
                         self.assertFalse(any(part.startswith(("-DHYLE_IO_TLS=", "-DHYLE_IO_HTTP2="))
                                              for part in self.commands[-1]))
 
-    def test_explicit_protocol_enable_without_io_fails_before_discovery(self):
+    def test_io_capabilities_have_no_second_selector(self):
+        for option in ("--tls", "--no-tls", "--http2", "--no-http2"):
+            with self.subTest(option=option):
+                with self.assertRaises(SystemExit) as error:
+                    self.invoke("init", "--components", "io", option)
+                self.assertEqual(error.exception.code, 2)
         with patch.object(support, "discover_environment", wraps=self.environment) as discovery:
-            for option in ("--tls", "--http2"):
-                with self.subTest(option=option):
-                    result, _, errors = self.invoke("init", "--components", "engine", "--backends", "vulkan",
-                                                    option, "--dry-run")
+            for definition in ("HYLE_IO_TLS=ON", "HYLE_IO_TLS=OFF", "HYLE_IO_TLS=AUTO",
+                               "HYLE_IO_HTTP2=ON", "HYLE_IO_HTTP2=OFF"):
+                with self.subTest(definition=definition):
+                    result, _, errors = self.invoke("init", "--components", "io", "-D", definition, "--dry-run")
                     self.assertNotEqual(result, 0)
-                    self.assertIn("require the io product", errors)
+                    self.assertIn("automatically by the io product", errors)
+                    self.assertIn("--components io", errors)
             discovery.assert_not_called()
         self.assertEqual(self.commands, [])
         self.resources.assert_not_called()

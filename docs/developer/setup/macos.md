@@ -24,8 +24,9 @@ Apple 后端需要可执行的 `metal` 和 `metallib`。Command Line Tools 存�
 不把某台验证机的工具目录、签名组件或临时 shim 当成用户安装步骤。
 
 Vulkan 源码构建还需要宿主 shader 编译器；在线初始化可按 lock 准备缺少的 glslang。
-TLS 需要 OpenSSL 3 开发包；`init.py --components io --tls` 自动查找常见安装位置，
+`io` 产品包含 TLS 与 HTTP/2。`init.py --components io` 自动查找已安装的 OpenSSL 3 开发包，
 非标准位置可用高级参数 `-D OPENSSL_ROOT_DIR=<prefix>` 指定。
+nghttp2 按 lock 自动准备；缺少 OpenSSL 时明确报错，不裁剪 TLS 能力。
 非登录 SSH 中若找不到已安装的 Python/CMake，应使用实际可执行文件路径或临时进程 PATH。
 
 ## 验证副本与测量

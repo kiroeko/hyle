@@ -23,6 +23,7 @@ from hyle_resources import find_glslang, prepare_resources
 ROOT = Path(__file__).resolve().parents[1]
 CONFIGURATIONS = ("Release", "Debug", "RelWithDebInfo", "MinSizeRel")
 _BOOL_TRUE = {"1", "ON", "YES", "TRUE", "Y"}
+_REMOVED_CAPABILITY_OPTIONS = ("HYLE_WITH_ATEN", "HYLE_IO_TLS", "HYLE_IO_HTTP2")
 _VERBOSE = False
 
 
@@ -189,19 +190,6 @@ def _boolean(args: argparse.Namespace, name: str, cache: dict[str, str], key: st
     return cache.get(key, "OFF").upper() in _BOOL_TRUE if value is None else value
 
 
-def _tls_setting(args: argparse.Namespace, cache: dict[str, str]) -> str:
-    if args.tls is not None:
-        return "ON" if args.tls else "OFF"
-    value = cache.get("HYLE_IO_TLS", "OFF").strip().upper()
-    if value in _BOOL_TRUE:
-        return "ON"
-    if value in {"0", "OFF", "NO", "FALSE", "N", "IGNORE", "NOTFOUND"} or value.endswith("-NOTFOUND"):
-        return "OFF"
-    if value == "AUTO":
-        return value
-    raise SetupError(f"Cached HYLE_IO_TLS='{value}' is invalid. Reinitialize with --tls or --no-tls.")
-
-
 def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: str | None = None) -> dict:
     system, arch = _host()
     backend_value = args.backends if args.backends is not None else cache.get("HYLE_COMPUTE_ROUTES", "cpu")
@@ -215,7 +203,10 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
     routes = (parse_backends(backend_value, system, arch,
                              complete_math=bool({"engine", "all", "compute", "graph"}.intersection(products)))
               if _uses_compute(products) else ())
-    configuration = args.config or cache.get("CMAKE_BUILD_TYPE") or saved_config or "Release"
+    # Multi-config generators ignore CMAKE_BUILD_TYPE, including a Release
+    # value inherited from a shared preset. Preserve the admitted selection.
+    cached_config = None if cache.get("CMAKE_CONFIGURATION_TYPES") else cache.get("CMAKE_BUILD_TYPE")
+    configuration = args.config or cached_config or saved_config or "Release"
     if configuration not in CONFIGURATIONS:
         # Existing multi-config/custom CMake trees remain consumable by build/test.
         raise SetupError(f"Unsupported initialization configuration '{configuration}'. Use {', '.join(CONFIGURATIONS)}.")
@@ -225,20 +216,13 @@ def _selection(args: argparse.Namespace, cache: dict[str, str], saved_config: st
     for name, key in (("tests", "HYLE_BUILD_TESTS"), ("static", "HYLE_STATIC"),
                       ("trace", "HYLE_TRACE"), ("offline", "FETCHCONTENT_FULLY_DISCONNECTED")):
         selected[name] = _boolean(args, name, cache, key)
-    io_selected = bool({"all", "io"}.intersection(products))
-    if not io_selected and (args.tls or args.http2):
-        raise SetupError("TLS and HTTP/2 require the io product. Include io in --components, or omit that subset.")
-    # Keep unrelated protocol cache entries dormant; initialize() writes them
-    # only when io is selected, so narrowing products does not erase a choice.
-    selected["tls"] = _tls_setting(args, cache) if io_selected else "OFF"
-    selected["http2"] = _boolean(args, "http2", cache, "HYLE_IO_HTTP2") if io_selected else False
     return selected
 
 
 def _definitions(values: list[str]) -> dict[str, str]:
     result = {}
     managed = {"HYLE_COMPONENTS", "HYLE_COMPUTE_ROUTES", "HYLE_STATIC", "HYLE_BUILD_TESTS",
-               "HYLE_INSTALL", "HYLE_SANITIZER", "HYLE_IO_TLS", "HYLE_IO_HTTP2", "HYLE_TRACE",
+               "HYLE_INSTALL", "HYLE_SANITIZER", "HYLE_TRACE",
                "HYLE_DEP_SOURCE_CACHE", "HYLE_DEP_BUILD_DIR", "CMAKE_BUILD_TYPE",
                "CMAKE_C_COMPILER", "CMAKE_CXX_COMPILER", "CMAKE_GENERATOR", "CMAKE_HOME_DIRECTORY",
                "FETCHCONTENT_FULLY_DISCONNECTED", "FETCHCONTENT_UPDATES_DISCONNECTED"}
@@ -248,6 +232,10 @@ def _definitions(values: list[str]) -> dict[str, str]:
             raise SetupError("-D/--define expects NAME=VALUE, for example -DCMAKE_POSITION_INDEPENDENT_CODE=ON.")
         if key in managed:
             raise SetupError(f"{key} is managed by the script's named options; use those instead of -D.")
+        if key in {"HYLE_IO_TLS", "HYLE_IO_HTTP2"}:
+            raise SetupError(f"{key} is no longer an initialization option. TLS and HTTP/2 are included "
+                             "automatically by the io product; use --components io. "
+                             "Dependency locations can still use OPENSSL_ROOT_DIR or locked-source overrides.")
         if (key in {"HYLE_DEV_FACTORS", "HYLE_COMPUTE_CPU", "HYLE_COMPUTE_CUDA", "HYLE_COMPUTE_APPLE",
                     "HYLE_COMPUTE_VULKAN", "HYLE_COMPUTE_ONEDNN", "HYLE_COMPUTE_TORCH_CPU", "HYLE_WITH_ATEN"}
                 or key.startswith("_HYLE_")
@@ -301,7 +289,7 @@ def initialize(args: argparse.Namespace) -> int:
     # Repeating init without choices reuses the last directory. Explicit choices
     # without --name get their own deterministic tree, leaving older modes reusable.
     choices = ("backends", "components", "config", "compiler", "generator", "tests", "static",
-               "sanitizer", "tls", "http2", "trace", "offline", "cache_dir")
+               "sanitizer", "trace", "offline", "cache_dir")
     if directory is None and not args.define and not any(getattr(args, key) is not None for key in choices):
         if _current().is_file():
             previous = _previous_initialization()
@@ -328,7 +316,8 @@ def initialize(args: argparse.Namespace) -> int:
     if "vulkan" in selected["routes"] and cache.get("HYLE_VULKAN_GLSLANG"):
         environment.definitions["HYLE_VULKAN_GLSLANG"] = cache["HYLE_VULKAN_GLSLANG"]
     environment.definitions.update(extra)
-    if selected["tls"] != "OFF" and not (extra.get("OPENSSL_ROOT_DIR") or cache.get("OPENSSL_ROOT_DIR")):
+    if {"all", "io"}.intersection(selected["components"]) and not (
+            extra.get("OPENSSL_ROOT_DIR") or cache.get("OPENSSL_ROOT_DIR")):
         environment.definitions.update(find_openssl(environment))
     cache_dir = _cache_directory(args, cache, environment)
     if directory is None:
@@ -364,9 +353,6 @@ def initialize(args: argparse.Namespace) -> int:
         definitions["CMAKE_BUILD_TYPE"] = selected["config"]
     if _uses_compute(selected["components"]):
         definitions["HYLE_COMPUTE_ROUTES"] = ";".join(selected["routes"])
-    if {"all", "io"}.intersection(selected["components"]):
-        definitions["HYLE_IO_TLS"] = selected["tls"]
-        definitions["HYLE_IO_HTTP2"] = "ON" if selected["http2"] else "OFF"
     for option, key in (("tests", "HYLE_BUILD_TESTS"), ("static", "HYLE_STATIC"), ("trace", "HYLE_TRACE"),
                         ("offline", "FETCHCONTENT_FULLY_DISCONNECTED"),
                         ("offline", "FETCHCONTENT_UPDATES_DISCONNECTED")):
@@ -383,8 +369,9 @@ def initialize(args: argparse.Namespace) -> int:
         _write_json(_state_path(directory), {"ready": False, "source_dir": str(ROOT), "config": selected["config"]})
         if "vulkan" in selected["routes"]:
             definitions.update(prepare_resources(environment, cache_dir, selected["offline"], args.jobs))
-    command = [environment.cmake, "-S", str(ROOT), "-B", str(directory), "-G", environment.generator,
-               "-U", "HYLE_WITH_ATEN"]
+    command = [environment.cmake, "-S", str(ROOT), "-B", str(directory), "-G", environment.generator]
+    for key in _REMOVED_CAPABILITY_OPTIONS:
+        command += ["-U", key]
     command += [f"-D{key}={value}" for key, value in definitions.items()]
     if args.dry_run:
         print("+ " + _command(command))
@@ -401,19 +388,24 @@ def _configured(args: argparse.Namespace, *, for_tests: bool = False) -> tuple[P
     if not cache:
         raise SetupError(f"No configured build at {directory}. First run scripts/init.py for this --name or --build-dir.")
     _check_source(cache)
-    if "HYLE_WITH_ATEN" in cache:
+    removed = [key for key in _REMOVED_CAPABILITY_OPTIONS if key in cache]
+    if removed:
         selector = f"--name {args.name}" if args.name else f'--build-dir "{directory}"'
-        raise SetupError("This build needs automatic provider selection. Reinitialize the same configuration with: "
+        raise SetupError(f"This build has removed capability options ({', '.join(removed)}). "
+                         "Required providers and io protocols now follow the selected products automatically. "
+                         "Reinitialize the same configuration with: "
                          f"python scripts/init.py {selector}; then rerun this command.")
     state = _json(_state_path(directory)) if _state_path(directory).is_file() else {}
     if state and (not state.get("ready") or not _same_path(state.get("source_dir", ""), ROOT)):
         raise SetupError(f"Initialization did not finish for {directory}. Rerun scripts/init.py with this --name or --build-dir.")
-    configuration = args.config or state.get("config") or cache.get("CMAKE_BUILD_TYPE") or "Release"
+    multi_config = bool(cache.get("CMAKE_CONFIGURATION_TYPES"))
+    cached_config = None if multi_config else cache.get("CMAKE_BUILD_TYPE")
+    configuration = args.config or state.get("config") or cached_config or "Release"
     configurations = cache.get("CMAKE_CONFIGURATION_TYPES", "").split(";")
-    if cache.get("CMAKE_BUILD_TYPE") and configuration != cache["CMAKE_BUILD_TYPE"]:
+    if not multi_config and cached_config and configuration != cached_config:
         raise SetupError(f"This is a {cache['CMAKE_BUILD_TYPE']} single-config build. "
                          f"Run init.py --config {configuration} with another --name to preserve both builds.")
-    if cache.get("CMAKE_CONFIGURATION_TYPES") and configuration not in configurations:
+    if multi_config and configuration not in configurations:
         raise SetupError(f"Configuration '{configuration}' is unavailable; choose from {', '.join(configurations)}.")
     if for_tests:
         if cache.get("HYLE_BUILD_TESTS", "OFF").upper() not in _BOOL_TRUE:
@@ -513,8 +505,6 @@ def parser(action: str) -> argparse.ArgumentParser:
         result.add_argument("--cache-dir", type=Path, help="advanced: reuse a shared Hyle dependency source/SDK cache")
         for name, help_text in (("tests", "prepare test dependencies and build targets"),
                                 ("static", "build static libraries (default: shared)"),
-                                ("tls", "enable TLS with an installed OpenSSL 3 SDK"),
-                                ("http2", "enable HTTP/2 (locked nghttp2 is prepared automatically)"),
                                 ("trace", "enable tracing (locked Tracy is prepared automatically)"),
                                 ("offline", "use cached dependencies only; fail clearly if anything is missing")):
             result.add_argument("--" + name, action=argparse.BooleanOptionalAction, default=None, help=help_text)

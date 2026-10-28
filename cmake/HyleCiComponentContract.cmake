@@ -90,29 +90,22 @@ function(hyle_contract_require_direct_private_edge consumer dependency)
 endfunction()
 ]=])
 
-# A tri-state supplied by an embedding parent as a normal boolean variable must
-# be canonicalized in both the real directory scope and the displayed cache.
-set(_feature_normal_source
-  "${_hyle_contract_root}/feature-normal-source")
-file(MAKE_DIRECTORY "${_feature_normal_source}")
-file(WRITE "${_feature_normal_source}/CMakeLists.txt"
-"cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_feature_normal_contract LANGUAGES NONE)\n"
-"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
-"set(HYLE_CONTRACT_FEATURE TRUE)\n"
-"include(HyleFeatureOption)\n"
-"hyle_auto_feature_option(HYLE_CONTRACT_FEATURE \"contract\" DEFAULT OFF)\n"
-"if(NOT HYLE_CONTRACT_FEATURE STREQUAL \"ON\")\n"
-"  message(FATAL_ERROR \"normal value was not canonicalized: '\${HYLE_CONTRACT_FEATURE}'\")\n"
-"endif()\n"
-"get_property(_cached CACHE HYLE_CONTRACT_FEATURE PROPERTY VALUE)\n"
-"if(NOT _cached STREQUAL \"ON\")\n"
-"  message(FATAL_ERROR \"cache value was not canonicalized: '\${_cached}'\")\n"
-"endif()\n")
-_hyle_contract_run("normal-variable tri-state canonicalization" TRUE
-  "${CMAKE_COMMAND}" -S "${_feature_normal_source}"
-  -B "${_hyle_contract_root}/feature-normal-build"
-  ${_hyle_generator_args})
+# Protocol capabilities are selected by products/factors, never by a second
+# dependency switch. Even OFF must not look like an accepted minimal SDK SKU.
+foreach(_legacy IN ITEMS HYLE_IO_TLS HYLE_IO_HTTP2)
+  foreach(_value IN ITEMS ON OFF AUTO)
+    _hyle_contract_run("reject obsolete ${_legacy}=${_value}" FALSE
+      "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+      -B "${_hyle_contract_root}/legacy-${_legacy}-${_value}"
+      ${_hyle_generator_args}
+      -DHYLE_COMPONENTS=core
+      -D${_legacy}=${_value})
+    if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "${_legacy} is no longer a build option")
+      message(FATAL_ERROR
+        "obsolete protocol switch failed for the wrong reason:\n${HYLE_CONTRACT_LAST_OUTPUT}")
+    endif()
+  endforeach()
+endforeach()
 
 # An explicitly empty -D value is almost always a lost shell/CI variable.  The
 # ordinary standalone default is `engine`, but explicit empty must fail.
@@ -123,7 +116,7 @@ _hyle_contract_run("explicit-empty component selection" FALSE
   -DHYLE_COMPONENTS:STRING=
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
-  -DHYLE_IO_TLS=OFF)
+  )
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "HYLE_COMPONENTS is explicitly empty")
   message(FATAL_ERROR
     "explicit-empty selection failed for the wrong reason:\n"
@@ -230,7 +223,7 @@ _hyle_contract_run("Core rejects unconsumed trace feature" FALSE
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_INSTALL=ON
-  -DHYLE_IO_TLS=OFF)
+  )
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "selected component closure has no trace-aware")
   message(FATAL_ERROR
@@ -349,7 +342,7 @@ foreach(_core_linkage IN ITEMS shared static)
     -DHYLE_BUILD_BENCH=OFF
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_core_static}
-    -DHYLE_IO_TLS=OFF)
+    )
   _hyle_contract_run("install isolated ${_core_linkage} Core SDK" TRUE
     "${CMAKE_COMMAND}" --install "${_core_sdk_build}" --config Release)
   file(RENAME "${_core_sdk_staging_prefix}" "${_core_sdk_prefix}"
@@ -632,8 +625,7 @@ _hyle_contract_run("maintainer all selects every implemented IO factor" TRUE
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_INSTALL=OFF
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_IO_HTTP2=OFF)
+  )
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "resolved='[^']*io_tls[^']*io_http[^']*io_http2[^']*io_transfer")
   message(FATAL_ERROR
@@ -651,8 +643,6 @@ _hyle_contract_run("exact io_transfer factor is selectable" TRUE
   -DHYLE_DEV_FACTORS=io_transfer
   -DHYLE_BUILD_TESTS=ON
   -DHYLE_BUILD_BENCH=OFF
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_IO_HTTP2=OFF
   -DHYLE_INSTALL=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "resolved='[^']*io_core[^']*io_tls[^']*io_http[^']*io_transfer")
@@ -754,7 +744,6 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_COMPONENTS container)\n"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
-"set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_SANITIZER NONE)\n"
 "set(HYLE_DEP_SOURCE_CACHE \"${HYLE_SMOKE_ROOT}/shared-source-cache\")\n"
 "set(HYLE_DEP_BUILD_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
@@ -889,8 +878,6 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
-"set(HYLE_IO_TLS OFF)\n"
-"set(HYLE_IO_HTTP2 OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
 "get_directory_property(_hyle_fcontext_supported\n"
@@ -1004,8 +991,6 @@ file(WRITE "${_first_declare_parent}/CMakeLists.txt"
 "set(HYLE_BUILD_TESTS ON)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
-"set(HYLE_IO_TLS OFF)\n"
-"set(HYLE_IO_HTTP2 OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n")
 _hyle_contract_run("locked source overrides arbitrary first declaration" TRUE
   "${CMAKE_COMMAND}" -S "${_first_declare_parent}"

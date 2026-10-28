@@ -234,8 +234,8 @@ _hyle_declare_component(io_core
     hyle/io/tcp.h
     hyle/io/udp.h)
 # Protocol factors keep the public hyle::io namespace while owning precise
-# source, dependency and delivery boundaries. Optional provider gates make a
-# factor header inert; they never manufacture constant-failure operations.
+# source, dependency and delivery boundaries. Selecting a protocol factor
+# supplies its implementation and required dependencies as one capability.
 _hyle_declare_component(io_tls
   PUBLIC_DEPS core error io_core mem sched container_text util_core
   SPLIT_PUBLIC_HEADERS hyle/io/tls.h)

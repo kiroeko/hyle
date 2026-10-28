@@ -74,6 +74,17 @@ include(HyleTargetPlatform)
 include(HyleDependencyVersions)
 include(HyleDependencyCache)
 
+foreach(_hyle_legacy_protocol IN ITEMS HYLE_IO_TLS HYLE_IO_HTTP2)
+  if(DEFINED ${_hyle_legacy_protocol})
+    message(FATAL_ERROR
+      "${_hyle_legacy_protocol} is no longer a build option. Select HYLE_COMPONENTS=io "
+      "for the complete protocol library; selected protocol factors require their "
+      "dependencies automatically. Remove the old parent/preset setting or clear "
+      "its cached value with cmake -U ${_hyle_legacy_protocol}.")
+  endif()
+endforeach()
+unset(_hyle_legacy_protocol)
+
 # Tests are an explicit development choice, independent of product/routes and
 # installation. Developer presets enable them; ordinary source consumers do
 # not acquire test fixtures merely by omitting a route whose default is cpu.
@@ -101,7 +112,6 @@ if(HYLE_BUILD_SCHED AND NOT HYLE_FCONTEXT_SUPPORTED)
     "${CMAKE_CXX_COMPILER_ID}. Select a sched-free component root; splitting "
     "io/compute/graph into smaller product roots is a future module decision.")
 endif()
-include(HyleFeatureOption)
 
 # C is an internal implementation language, not a product surface. A selected
 # mem closure needs it for mimalloc (and every current C-backed protocol/kernel
@@ -358,8 +368,6 @@ set(FETCHCONTENT_BASE_DIR "${HYLE_DEP_BUILD_DIR}")
 if(HYLE_BUILD_IO_TLS OR HYLE_BUILD_IO_HTTP2)
   include(HyleIoDependencies)
   hyle_configure_io_dependencies()
-else()
-  set(HYLE_IO_TLS_ENABLED OFF)
 endif()
 if(HYLE_BUILD_SIMD OR HYLE_BUILD_CONTAINER)
   include(HyleSimdDependencies)

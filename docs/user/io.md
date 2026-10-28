@@ -493,7 +493,8 @@ read/write 重置预算。`close()` 幂等，在安全完成 TCP shutdown 或 TL
 close-notify 的正常 close。listener accept loop、路由、中间件、认证、模型 schema、
 handler admission/batching 与优雅排空策略属于应用 owner，HTTP 因子不偷偷选择。
 
-HTTP/2 需要配置 `HYLE_IO_HTTP2=ON`。h2c 只支持 prior knowledge；HTTPS 则让 client/server
+`io` 产品自动包含 TLS 和 HTTP/2，构建时需要 OpenSSL 3，nghttp2 按 lock 准备，
+无需额外协议开关。h2c 只支持 prior knowledge；HTTPS 则让 client/server
 TLS context 都使用 `tls_http2_protocols(false)`、设置 `require_alpn=true`，完成握手后再把
 `TlsStream` 移入 session。factory 会拒绝没有协商到 `h2` 的 TLS transport。nghttp2 是 private
 framing/HPACK 机制，用户不取得它的 session 或 callback：

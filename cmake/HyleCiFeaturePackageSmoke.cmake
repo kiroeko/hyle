@@ -1,6 +1,6 @@
-# Linux correctness + package/install/downstream smoke for locked optional
-# product sources. Unlike the cross-platform CPU package smoke, this enables
-# the private nghttp2 closure once per CI revision and exercises its real IO
+# Linux correctness + package/install/downstream smoke for selected protocol
+# and diagnostic sources. Unlike the cross-platform CPU package smoke, this
+# selects the complete IO closure once per CI revision and exercises its real IO
 # adapter before producing static/shared SDKs. A separate small
 # obs-only shape compiles and consumes the exact locked Tracy trace-on surface.
 # The ordinary shared-source resolver prepares every official archive and
@@ -87,8 +87,6 @@ function(_hyle_feature_smoke_correctness)
     -DHYLE_INSTALL=OFF
     -DHYLE_STATIC=OFF
     -DHYLE_WERROR=ON
-    -DHYLE_IO_TLS=OFF
-    -DHYLE_IO_HTTP2=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
     -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
     -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source}
@@ -121,8 +119,6 @@ function(_hyle_feature_smoke_shape shape is_static)
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${is_static}
     -DHYLE_WERROR=ON
-    -DHYLE_IO_TLS=OFF
-    -DHYLE_IO_HTTP2=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
     -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
     -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source})
@@ -168,7 +164,7 @@ function(_hyle_feature_smoke_shape shape is_static)
 "if(NOT Hyle_STATIC STREQUAL \"${is_static}\")\n"
 "  message(FATAL_ERROR \"installed linkage mismatch: Hyle_STATIC=\${Hyle_STATIC}\")\n"
 "endif()\n"
-"foreach(_feature IN ITEMS io_http2)\n"
+"foreach(_feature IN ITEMS io_tls io_http2)\n"
 "  if(NOT _feature IN_LIST Hyle_AVAILABLE_FEATURES)\n"
 "    message(FATAL_ERROR \"missing installed HYLE feature: \${_feature}\")\n"
 "  endif()\n"
@@ -193,11 +189,13 @@ function(_hyle_feature_smoke_shape shape is_static)
 "add_test(NAME hyle_locked_feature_consumer COMMAND hyle_locked_feature_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"
 "#include <hyle/io/http2.h>\n"
+"#include <hyle/io/tls.h>\n"
 "#include <hyle/mem/allocator.h>\n"
-"#if !defined(HYLE_IO_HTTP2)\n"
-"#error installed io_http2 feature did not propagate its public compile contract\n"
+"#if !defined(HYLE_IO_TLS) || !defined(HYLE_IO_HTTP2)\n"
+"#error installed IO protocols did not propagate their public compile contracts\n"
 "#endif\n"
 "int main() {\n"
+"  if (!hyle::io::tls_available() || !hyle::io::http2_available()) return 2;\n"
 "  auto client = hyle::io::Http2ClientSession::create(\n"
 "      hyle::mem::system_allocator(), hyle::io::TcpStream{});\n"
 "  if (client.has_value()) return 1;\n"
@@ -238,8 +236,7 @@ function(_hyle_feature_smoke_tracy shape is_static)
     -DHYLE_WERROR=ON
     -DHYLE_TRACE=ON
     -DHYLE_TRACY_DIR=${_tracy_source}
-    -DHYLE_IO_TLS=OFF
-    -DHYLE_IO_HTTP2=OFF)
+    )
   _hyle_feature_smoke_run("build locked Tracy ${shape} SDK"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
   _hyle_feature_smoke_run("install locked Tracy ${shape} SDK"

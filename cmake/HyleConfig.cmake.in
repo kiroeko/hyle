@@ -45,11 +45,12 @@ foreach(_Hyle_target IN LISTS _Hyle_origin_targets)
   endif()
 endforeach()
 foreach(_Hyle_legacy IN ITEMS HYLE_COMPUTE_CPU HYLE_COMPUTE_CUDA HYLE_COMPUTE_APPLE
-    HYLE_COMPUTE_VULKAN HYLE_COMPUTE_ONEDNN HYLE_COMPUTE_TORCH_CPU HYLE_WITH_ATEN)
+    HYLE_COMPUTE_VULKAN HYLE_COMPUTE_ONEDNN HYLE_COMPUTE_TORCH_CPU HYLE_WITH_ATEN
+    HYLE_IO_TLS HYLE_IO_HTTP2)
   if(DEFINED ${_Hyle_legacy})
     set(Hyle_FOUND FALSE)
     set(Hyle_NOT_FOUND_MESSAGE
-      "${_Hyle_legacy} is no longer a public build option; request HYLE_COMPUTE_ROUTES or read this SDK's capabilities")
+      "${_Hyle_legacy} is no longer a public build option; select the required products/routes or read this SDK's capabilities")
     return()
   endif()
 endforeach()

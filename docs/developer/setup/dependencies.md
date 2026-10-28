@@ -19,8 +19,9 @@
 Vulkan 缺少宿主 glslang 时，初始化可用同一 lock 准备宿主工具；该工具与目标设备 runtime 分开。
 宿主工具的构建保存在共享源码 cache 同级的 `tools-v1/`，按依赖身份、系统、架构与编译器隔离并复用。
 
-裸 CMake 的 tests/bench、TLS、HTTP/2、trace 默认关闭；`init.py --tests` 才准备测试依赖，
-`--tls` 自动查找已安装的 OpenSSL 3，`--http2`、`--trace` 分别取得所需锁定源码。
+tests/bench 和 trace 默认关闭；`init.py --tests` 才准备测试依赖，`--trace` 准备跟踪依赖。
+选择 `io` 产品时，其 TLS 与 HTTP/2 依赖自动启用：初始化寻找已安装的 OpenSSL 3，
+nghttp2 源码按 lock 准备。缺少系统 SDK 或离线 cache 资产时明确失败，不静默裁剪产品能力。
 `--backends all` 请求当前平台支持的全部完整后端，不因缺少某个系统 SDK 而静默裁剪能力。
 
 ## 源码与二进制状态分开
@@ -52,6 +53,10 @@ cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake
 
 `init.py --offline` 使用已取得的依赖和系统 SDK，缺少时明确失败，不退回联网。
 完整介质准备、宿主工具和测试示例见[离线构建](offline.md)。
+
+旧配置中的 `HYLE_IO_TLS`、`HYLE_IO_HTTP2` 不再是能力选择。
+统一入口对同一配置重新运行 `init.py` 会自动清理；直接维护 CMake 构建树时使用
+`cmake -S <源码目录> -B <原构建目录> -U HYLE_IO_TLS -U HYLE_IO_HTTP2` 清除旧键并按原产品选择重新配置。
 
 组织已有逐项来源审核的源码包时，可保留原生入口 `hyle-offline-deps.cmake`，
 将精确源码放在 `deps/<lock-name>/`。它验证中央 lock、展开内容和许可证后，

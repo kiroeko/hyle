@@ -1,0 +1,283 @@
+{
+  "schema": "hyle.automatic-product-dependencies.v1",
+  "date": "2026-10-29",
+  "status": "PASS_FINITE_CONFIGURATION_CHECKS",
+  "change": [
+    "Selected io protocol factors require their dependencies automatically; public TLS/HTTP2 toggles and AUTO helper removed.",
+    "The complete CPU/CUDA ATen dependency remains automatic; only real product/route/development choices remain.",
+    "Multi-config Debug ignores inherited CMAKE_BUILD_TYPE=Release; existing configurations and invalid selection checks remain."
+  ],
+  "script_checks": {
+    "command": "python -B tests/tooling/development_scripts_test.py",
+    "tests": 35,
+    "exit": 0,
+    "unittest_seconds": 0.998,
+    "scope": "Pure Python mocked child commands; no CMake/native/download/git."
+  },
+  "metadata_checks": {
+    "command": "python -B tests/tooling/compute_routes_test.py",
+    "tests": 15,
+    "exit": 0,
+    "seconds": 13.098,
+    "source": "root tool execution; includes real CMake script and SDK metadata fixtures, no native builds"
+  },
+  "product_closure": {
+    "command": "cmake -S tests/build_system/component_selection -B .scratch/inference-automatic-io-20261029/component-selection",
+    "exit": 0,
+    "language": "NONE",
+    "source": "root tool execution",
+    "cache": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-automatic-io-20261029\\component-selection\\CMakeCache.txt",
+      "bytes": 5265,
+      "sha256": "130610761bc839f5ba9c65ff3766dfe82e7a904520b373cf8596d2d252077aab"
+    }
+  },
+  "dependency_checks": [
+    {
+      "command": [
+        "cmake",
+        "-S",
+        ".scratch\\inference-automatic-io-20261029\\dependency-fixture",
+        "-B",
+        ".scratch\\inference-automatic-io-20261029\\dependency-none",
+        "-DPROTOCOL_CASE=none"
+      ],
+      "exit": 0,
+      "expected_success": true,
+      "seconds": 0.7507209777832031,
+      "native_compile": false,
+      "downloads": 0,
+      "mock_external_dependencies": true
+    },
+    {
+      "command": [
+        "cmake",
+        "-S",
+        ".scratch\\inference-automatic-io-20261029\\dependency-fixture",
+        "-B",
+        ".scratch\\inference-automatic-io-20261029\\dependency-tls",
+        "-DPROTOCOL_CASE=tls"
+      ],
+      "exit": 0,
+      "expected_success": true,
+      "seconds": 0.748427152633667,
+      "native_compile": false,
+      "downloads": 0,
+      "mock_external_dependencies": true
+    },
+    {
+      "command": [
+        "cmake",
+        "-S",
+        ".scratch\\inference-automatic-io-20261029\\dependency-fixture",
+        "-B",
+        ".scratch\\inference-automatic-io-20261029\\dependency-http2",
+        "-DPROTOCOL_CASE=http2"
+      ],
+      "exit": 0,
+      "expected_success": true,
+      "seconds": 0.7975425720214844,
+      "native_compile": false,
+      "downloads": 0,
+      "mock_external_dependencies": true
+    },
+    {
+      "command": [
+        "cmake",
+        "-S",
+        ".scratch\\inference-automatic-io-20261029\\dependency-fixture",
+        "-B",
+        ".scratch\\inference-automatic-io-20261029\\dependency-missing",
+        "-DPROTOCOL_CASE=tls",
+        "-DMISSING_OPENSSL=ON"
+      ],
+      "exit": 1,
+      "expected_success": false,
+      "seconds": 0.7054767608642578,
+      "native_compile": false,
+      "downloads": 0,
+      "mock_external_dependencies": true
+    }
+  ],
+  "entrypoints": [
+    {
+      "action": "init",
+      "exit": 0,
+      "removed_capability_flags_absent": true
+    },
+    {
+      "action": "build",
+      "exit": 0,
+      "removed_capability_flags_absent": true
+    },
+    {
+      "action": "test",
+      "exit": 0,
+      "removed_capability_flags_absent": true
+    },
+    {
+      "action": "util-dry-run",
+      "exit": 0,
+      "command": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "-B",
+        "scripts/init.py",
+        "--components",
+        "util",
+        "--name",
+        "option-review-util",
+        "--dry-run"
+      ],
+      "native_compile": false,
+      "download": false
+    }
+  ],
+  "sources": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\scripts\\hyle_support.py",
+      "bytes": 31794,
+      "sha256": "0a125c3001648478f58a72efc61b32b0a29dcad137dde0291ba88faba3e8bd3d"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tooling\\development_scripts_test.py",
+      "bytes": 39824,
+      "sha256": "2ee216bfda3544e83887dec855989111a05da1860b53e3e0b24c2fc6d0a314c6"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\setup\\README.md",
+      "bytes": 7517,
+      "sha256": "f29fa1361e42fa008b1b54c4898398be8058a17250788b9e5e59658b71eb2a53"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\setup\\windows.md",
+      "bytes": 2803,
+      "sha256": "3b415c88c2879b8128929bd758294ef52e9606761fb0d20e793ed5899f21852c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\setup\\macos.md",
+      "bytes": 2853,
+      "sha256": "52796931bebcfbbd5e4d380b1ef154354c45956a421c8fae17f8e6a5873ffb61"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\setup\\linux-wsl.md",
+      "bytes": 2654,
+      "sha256": "616a88f9a7a5c898350ed879ae23e2f720a5824413ad58eaa8877c11ced4edfb"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\developer\\setup\\dependencies.md",
+      "bytes": 4377,
+      "sha256": "716c6527e33af359ebcb417482574cb2e2c9a447cc39d5b1aaace8685e8925be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\docs\\user\\io.md",
+      "bytes": 40595,
+      "sha256": "f293852d38b7ccea191f77be62e8bafdf5a81025c68a1524223dead8131a0ee2"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\CMakeLists.txt",
+      "bytes": 23304,
+      "sha256": "31cea28ec45af979f313e0f9bc0efbd5839b61731602d99e3558b278496de0fe"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\CMakePresets.json",
+      "bytes": 15365,
+      "sha256": "05861c9bb6b375616d8e42fe746ec4dd163e420abffc68faf835f887da62377c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleIoDependencies.cmake",
+      "bytes": 3735,
+      "sha256": "d5958f57fe66e509ebded0d3807c83ea7fbfc79fc921d0242870c8e2d58d6283"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleComponents.cmake",
+      "bytes": 52998,
+      "sha256": "f3a2c61cce79c3b34197205c208030216cb8125ae25d39af277450f0d268da0e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleConfig.cmake.in",
+      "bytes": 9077,
+      "sha256": "d57d914048d8bf61c52e16b826b64829e2ec88e44fe53296f0aa027807e1ac50"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\io_tls\\CMakeLists.txt",
+      "bytes": 453,
+      "sha256": "72904774638e34d3a665c2cf13c5c2309591fb59d314e3e85645b536a1c1175c"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\src\\io_http2\\CMakeLists.txt",
+      "bytes": 383,
+      "sha256": "fe4f69fcdb1dda3daa239a8d5f940f1def0442015c20a12ad9641d3ca15a5d07"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\io_tls\\CMakeLists.txt",
+      "bytes": 667,
+      "sha256": "6c0507e7a0d0741bb9a9ce95f88ddd8cbd838199b465d421c89967bdb9379c08"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\io_http2\\CMakeLists.txt",
+      "bytes": 951,
+      "sha256": "a9e83269977e171f569c02f33ec00a94968e2e56cea0ce6eb87839967aecea2b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\bench\\io_tls\\CMakeLists.txt",
+      "bytes": 1248,
+      "sha256": "2519634cdf788e63ff0ded0b837639bd4178a679459195442de2a37e194fa0e9"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\bench\\io_http2\\CMakeLists.txt",
+      "bytes": 580,
+      "sha256": "f189c89cfa7553bbd40e9360ca35b72265cde4a1c9fd8d5b73921b0b0befe783"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\build_system\\component_selection\\CMakeLists.txt",
+      "bytes": 7111,
+      "sha256": "a4f8cae19c4932c6eaa818f282e768f1b39aaeff5f2751e073a71816961a599b"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\tests\\tooling\\compute_routes_test.py",
+      "bytes": 22603,
+      "sha256": "56b5472f646ad64f3b546a046aa4a04b1c9c6bcf074d7a58fb997ca523ca2a5f"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiComponentContract.cmake",
+      "bytes": 66700,
+      "sha256": "6b51957f99f60da71733f6600532389647c2163d2927d40002ad331cad5cc427"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiFeaturePackageSmoke.cmake",
+      "bytes": 13283,
+      "sha256": "0a0fd2348e48afba5ea90f8a966e5ee7cbbc9cb3f3e65365680edec26f3a29be"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiPackageSmoke.cmake",
+      "bytes": 7903,
+      "sha256": "96987b524ec13ad421b0a3e6e0d14cf4ae7c78e24be7879fc1bc624c73166b36"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiProductShapeSmoke.cmake",
+      "bytes": 2012,
+      "sha256": "807fcfa02650a5635ba5a4f92cd40eefaad053cbd93b9445f47e21d8799b610e"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiSourcePackageSmoke.cmake",
+      "bytes": 3992,
+      "sha256": "aac5ee56b6fff9678ac719eb7275a7b7f3ec3debf3c812468fb5799af00ef016"
+    }
+  ],
+  "removed": [
+    "cmake/HyleFeatureOption.cmake"
+  ],
+  "limits": [
+    "External OpenSSL discovery and locked nghttp2 materialization are mocked only in the isolated dependency fixture.",
+    "No fresh native protocol compilation, complete package smoke/install, network download, or cross-platform run.",
+    "Script unit results are the delegated run recorded in script-source-freeze.json; other checks were executed by the root agent."
+  ],
+  "archive": {
+    "path": "C:\\public\\project-hyle\\hyle\\docs\\evidence\\correctness\\inference-automatic-io-2026-10-29.zip",
+    "bytes": 127636,
+    "sha256": "62113748bd368d24ed003a74e7d5b622b77128316ca090d26cd848f97c3d34d2",
+    "members": 56,
+    "CRC": "PASS",
+    "member_SHA256": "PASS"
+  }
+}

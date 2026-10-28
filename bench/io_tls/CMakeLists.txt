@@ -1,4 +1,4 @@
-if(HYLE_IO_TLS_ENABLED)
+if(TARGET hyle_io_tls)
   # Same cipher, certificate and payload isolate the HYLE coroutine/memory-BIO
   # integration cost from OpenSSL's common crypto floor.
   add_executable(hyle_io_tls_bench tls_bench.cc)
