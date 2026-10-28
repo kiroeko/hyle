@@ -461,7 +461,7 @@ RelayArm run_relay_arm(q::Model &model, bool relay, bool reject_successor = fals
       std::cerr << "relay-stage A-prepared\n";
       a_sources = model.prepare_submission_sources(a); lifetimes[round + 1] = a_sources;
       record_episode(round, a, false);
-      const auto queues = q::inference::queue_span(a.phase->queues);
+      const auto queues = a.phase->carriers[a.state_slot].queues();
       require(queues.size() == 1 && queues[0].queue, "relay gate requires its original single compute Queue");
       const auto stream = q::take(c::cuda::stream(*queues[0].queue));
       predecessor_gate.enqueue(stream);

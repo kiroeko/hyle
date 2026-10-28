@@ -29,9 +29,10 @@ Result<compute::Completion> submit_retained(RetainedResources<Scope> &retention,
 }
 
 // One stable, embedded carrier for an already selected concrete Graph program.
-// The surrounding cold object owns the CompiledGraph and must declare it before
-// this carrier. Only the existing accepted retention node pins its Scope. This
-// object adds no payload owner, Completion, transaction or release permission.
+// Its borrowed CompiledGraph must outlive it: declare an owned program before
+// this member, or borrow a stable immutable child from the original inventory.
+// Only the existing accepted retention node pins its Scope. This object adds
+// no payload owner, Completion, transaction or release permission.
 template<class Scope> class ProgramCarrier final {
 public:
   ProgramCarrier() = default;
@@ -85,9 +86,20 @@ public:
   }
 
   Result<compute::Completion> submit(const std::shared_ptr<Scope> &scope) noexcept {
+    return submit(scope, [](graph::Invocation &run,
+        std::span<const graph::QueueBinding> queues) noexcept { return run.submit(queues); });
+  }
+
+  // Source-backed consumers use Graph's same submission API with their exact
+  // original bundle. This direct, statically dispatched action is not stored;
+  // reservation and attachment remain identical to an ordinary submission.
+  template<class Submit>
+  Result<compute::Completion> submit(const std::shared_ptr<Scope> &scope,
+      Submit &&submit_graph) noexcept {
     HYLE_ASSIGN_OR_RETURN(auto run, borrow());
+    static_assert(noexcept(std::forward<Submit>(submit_graph)(*run, queues())));
     return inference::submit_retained(retirement_, scope,
-        [&]() noexcept { return run->submit(queues()); });
+        [&]() noexcept { return std::forward<Submit>(submit_graph)(*run, queues()); });
   }
 
   Status release_inputs(std::span<const graph::ValueId> inputs) noexcept {
@@ -112,7 +124,7 @@ public:
   }
 
   // The caller first takes/recovers any original Graph-owned transactions.
-  // NextN retains its existing Step guard for that job. This check neither
+  // Target and NextN retain their original Step guards. This check neither
   // takes a transaction nor treats an error Status as permission to discard.
   Status reset_retired() noexcept {
     if (handed_off_)

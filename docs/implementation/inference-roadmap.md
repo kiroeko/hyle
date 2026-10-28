@@ -61,14 +61,15 @@ E4目标KV＋原BF16 draft的MTP组合已接通：准备器提供两组实际行
 提交、观察和退休机制，以不同在途深度表达；必要fallback保留，被替代的实验分支删除。
 内部强制off只供基准与诊断；“尚未接通”与“原理不适用”分开记录，不用模型名字维护排除名单。
 
-共同程序载体已接入prefix sampler、NextN及frontier，复用原Invocation、Queue与retention，
-固定绑定全部成功才发布；未知退休保留原handle，退出交接永久禁止复用。普通Phase的Source提交
-也复用相同静态保活算法。CPU／CUDA无模型生命周期检查、MTP modifier回归、CPU E4及普通错误归属检查通过；
-首轮两处测试适配编译错误已修正并保留原记录，本片没有速度结论。
-[本片记录](../evidence/correctness/inference-program-carrier-2026-10-28.json)。
-下一步迁移Phase的固定多槽，保留原Source、Store／Append恢复和结果观察后才归还IO的时点；
-模型继续保留图数学、family与采样键、实际layout、接受策略及Session提交。
-不能用三个辅助程序的共用代签完整执行核心。动态历史惩罚的输入合同随实际消费者继续补齐。
+共同程序载体已接入普通Phase、prefix sampler、NextN及frontier，复用原Invocation、Queue与retention，
+固定绑定全部成功才发布；未知退休保留原handle，退出交接永久禁止复用。
+[载体合同检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)保留CPU／CUDA原生提交与失败重试依据。
+Phase的一个或三个固定槽直接使用原exact child，Source提交沿同一静态保活算法；保留原交易恢复、
+非阻塞退休查询及结果观察后才归还IO的时点，成功不逐步重建。两次CXX、两次链接和五个有限进程通过；
+R2额度、接力、接受后取消与幸存者续算保持原完整状态、账簿和RNG，解析条件首错只离线修正。
+[Phase记录](../evidence/correctness/inference-phase-carrier-2026-10-28.json)另列未编跑的probe和未验证边界，没有新速度结论。
+模型仍负责图数学、family与采样键、实际layout、接受策略及Session提交；完整执行核心未抽完。
+下一步补逐假设前缀的动态logits输入，继续抽离共同执行编排。
 
 ## 当前实现概况
 

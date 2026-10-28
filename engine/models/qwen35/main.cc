@@ -940,7 +940,6 @@ struct Family final : FamilyPorts {
 // Physical IO/control carriers are independent of candidate depth. A reader
 // may still retain the preceding carrier after its producer publishes.
 constexpr std::size_t execution_slot_count = 3;
-using ResourceRetention = inference::RetainedResources<ColdResources>;
 enum class StateBankKind { kHistory, kRecurrent, kHidden };
 struct StateBank final {
   std::size_t layer = 0;
@@ -963,7 +962,6 @@ struct PhaseIo final {
   std::array<Tensor, 9> probe_outputs;
 };
 struct Phase final : FamilyPorts {
-  inference::QueueBindings queues;
   std::size_t query_rows = 0;
   c::BatchSchema attention_schema;
   // The selected child is shared immutable model data, not copied per session.
@@ -972,13 +970,12 @@ struct Phase final : FamilyPorts {
   std::size_t variant_index = 0;
   std::size_t slot_count = 1;
   bool imported_sources = false;
-  std::array<g::Invocation, execution_slot_count> slots;
+  std::array<inference::ProgramCarrier<ColdResources>, execution_slot_count> carriers;
   std::vector<StateBank> state_banks;
   std::array<inference::SlotTransactions, execution_slot_count> state_transactions;
   const g::Graph &state_graph() const noexcept {
     return child->state_graph.valid() ? child->state_graph : family->graph;
   }
-  std::array<ResourceRetention, execution_slot_count> retirement;
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
   std::array<g::ReplayMode, execution_slot_count> replay_modes{};
@@ -1203,7 +1200,7 @@ struct StepState final {
       sources.reset(); // Unescaped tickets must end before writer discard.
     }
     if (run) {
-      if (run->in_flight()) return false;
+      if (run->in_flight() || (phase && phase->carriers[state_slot].pending())) return false;
       HYLE_ASSIGN_OR_RETURN(const bool appends_returned, append_transactions().recover(*run));
       if (!appends_returned) return false;
       // Only the original Graph's retired take can return a bank. The same
@@ -1216,7 +1213,9 @@ struct StepState final {
         HYLE_RETURN_IF_ERROR(g::detail::release_outputs(*run, incoming->bindings));
       }
       incoming.reset(); predecessor_episode.reset();
-      *run = {}; // Release failed ordinary outputs and their original bindings.
+      if (phase) {
+        HYLE_RETURN_IF_ERROR(phase->carriers[state_slot].reset_retired());
+      } else *run = {}; // NextN's original guard precedes its carrier reset.
     }
     HYLE_ASSIGN_OR_RETURN(const bool appends_discarded, append_transactions().discard());
     if (!appends_discarded) return false;
@@ -1495,7 +1494,7 @@ struct ColdResources final {
     for (const auto *cache : {&phases, &probe_phases})
       for (const auto &[shape, phase] : *cache) {
         (void)shape;
-        for (const auto &pin : phase->retirement) if (pin.pending()) return true;
+        for (const auto &carrier : phase->carriers) if (carrier.pending()) return true;
       }
     for (const auto &[shape, program] : draft_programs) {
       (void)shape; if (program->carrier.pending()) return true;
@@ -1513,7 +1512,7 @@ struct ColdResources final {
     // Completion still retains its Graph until actual retirement.
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[shape, phase] : *cache) {
-        (void)shape; for (auto &run : phase->slots) run = {};
+        (void)shape; for (auto &carrier : phase->carriers) carrier.release_invocation_root();
       }
     for (auto &[shape, program] : draft_programs) {
       (void)shape;
@@ -1834,7 +1833,9 @@ public:
     for (auto *cache : {&phases, &probe_phases})
       for (auto &[tokens, phase] : *cache) {
         (void)tokens;
-        for (auto &run : phase->slots) execution.drain_retired(run).IgnoreError();
+        for (auto &carrier : phase->carriers) {
+          if (carrier.initialized() || carrier.pending()) (void)carrier.retire(execution);
+        }
       }
     if (workers) workers->shutdown();
     if (scheduler) scheduler->drain();
@@ -1855,13 +1856,6 @@ public:
     if (successor_step) successor_step->candidate_admission = nullptr;
     if (active_step) active_step->candidate_admission = nullptr;
     successor_step.reset(); active_step.reset();
-  }
-
-  c::Completion submit_retained(g::Invocation &run, std::span<const g::QueueBinding> queues,
-                                ResourceRetention &retention, IncomingStepSources *incoming = nullptr) {
-    return take(inference::submit_retained(retention, resources_, [&]() noexcept {
-      return incoming ? g::detail::submit_outputs(run, incoming->bindings, queues) : run.submit(queues);
-    }));
   }
 
   std::string_view score_precision_policy() const {
@@ -2843,7 +2837,12 @@ public:
       for (const bool imported : {false, true}) {
         auto physical = shape; physical.imported_sources = imported;
         if (auto phase = phases.find(physical); phase != phases.end()) {
-          for (auto &run : std::span(phase->second->slots).first(phase->second->slot_count)) check(run.drain());
+          for (auto &carrier : std::span(phase->second->carriers).first(phase->second->slot_count)) {
+            if (!carrier.initialized() && !carrier.pending()) continue;
+            const auto retired = carrier.retire(execution);
+            check(retired.status);
+            if (!retired.retired) throw std::runtime_error("exact family carrier has not actually retired");
+          }
           phases.erase(phase);
         }
       }
@@ -3710,49 +3709,59 @@ public:
 
   void initialize_slot(Phase &phase, std::size_t slot) {
     if (slot >= phase.slot_count) throw std::runtime_error("execution slot is outside its cold carrier plan");
+    auto &carrier = phase.carriers[slot];
+    if (carrier.initialized()) return;
     auto &io = phase.io[slot];
-    if (phase.slots[slot].valid()) return;
     const auto &definition = *phase.family;
     const auto &selected_sampler = definition.sampling->configuration;
-    const std::array shape{g::ShapeBinding{definition.last_row, static_cast<std::int64_t>(phase.query_rows - 1)}};
-    auto run = take(definition.compiled.executable.create_invocation(
-        {.shape = shape, .resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}}));
-    if (run.exact_variant_index() != phase.variant_index)
-      throw std::runtime_error("finite family selected an unexpected exact child");
-    if (scheduler) check(g::prepare_progress(run, *scheduler, *workers));
-    check(run.bind(phase.token_port, io.tokens.read()));
-    check(run.bind(phase.position_port, io.positions.read()));
-    if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify) {
-      check(run.bind(phase.sampling_identity_port, io.sampling_identities.read()));
-    }
-    if (phase.sampling_valid_port) {
-      check(io.sampling_valid.bind(run));
-      if (phase.sampling_accept_port) check(io.sampling_accept.bind(run));
-    }
-    if ((definition.requests != 1 || definition.packed_prefill) && !verifies_prefix(definition.role)) check(run.bind(phase.last_ids_port, io.last_ids.read()));
-    if (definition.packed_prefill) check(run.bind(phase.history_select_port, io.history_select.read()));
-    if (io.logits.caller_owned()) check(run.bind(phase.logits_port, io.logits.view()));
-    if (definition.completion == TextCompletion::kEmitNext) check(io.next_id.bind(run));
-    if (io.final_hidden.caller_owned()) check(run.bind(phase.hidden_port, io.final_hidden.view()));
-    if (has_mtp(definition.role)) {
-      check(run.bind(phase.draft_position_port, io.draft_positions.read()));
-      if (draft_lag(definition.role)) check(run.bind(phase.catchup_token_port, io.catchup_token.read()));
-      if (definition.packed_prefill) {
-        check(run.bind(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
-        if (draft_lag(definition.role)) check(run.bind(phase.draft_token_select_port, io.draft_token_select.read()));
-      }
-      if (drafts_token(definition.role)) check(io.draft_id.bind(run));
-    }
-    if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
-      if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
-        check(run.bind(output->value, io.probe_outputs[i].view()));
-    if (phase.state_transactions[slot].size())
-      check(g::slots::prepare(run, phase.state_graph(), inference::queue_span(phase.queues), phase.state_sources,
-          {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
-    // Cold preparation can also run without a pending StepState. Publish only
-    // the fully bound slot, so an allocation/binding failure cannot leave an
-    // apparently valid half-prepared Invocation in the reusable Model pool.
-    phase.slots[slot] = std::move(run);
+    check(carrier.initialize(
+        {.resources = g::ResourceOptions{.resource_budget = execution_budget ? execution_budget : cache_budget}},
+        [&](g::Invocation &run) -> hyle::Status {
+          // The parent create(shape) selects this same exact child. Creating
+          // it directly needs no shape argument; preserve both original facts.
+          if (run.exact_variant_index() != phase.variant_index)
+            return hyle::Status::FailedPrecondition("finite family selected an unexpected exact child");
+          const auto signature = run.specialization();
+          bool matches_rows = false;
+          for (std::size_t i = 0; i < signature.binding_count(); ++i) {
+            const auto binding = take(signature.binding(i));
+            if (binding.dimension != definition.last_row) continue;
+            matches_rows = binding.value == static_cast<std::int64_t>(phase.query_rows - 1);
+          }
+          if (!matches_rows)
+            return hyle::Status::FailedPrecondition("finite child signature differs from its planned query rows");
+          if (scheduler) HYLE_RETURN_IF_ERROR(g::prepare_progress(run, *scheduler, *workers));
+          HYLE_RETURN_IF_ERROR(run.bind(phase.token_port, io.tokens.read()));
+          HYLE_RETURN_IF_ERROR(run.bind(phase.position_port, io.positions.read()));
+          if (selected_sampler.enabled && definition.completion == TextCompletion::kEmitNext && definition.role != GraphRole::kVerify)
+            HYLE_RETURN_IF_ERROR(run.bind(phase.sampling_identity_port, io.sampling_identities.read()));
+          if (phase.sampling_valid_port) {
+            HYLE_RETURN_IF_ERROR(io.sampling_valid.bind(run));
+            if (phase.sampling_accept_port) HYLE_RETURN_IF_ERROR(io.sampling_accept.bind(run));
+          }
+          if ((definition.requests != 1 || definition.packed_prefill) && !verifies_prefix(definition.role))
+            HYLE_RETURN_IF_ERROR(run.bind(phase.last_ids_port, io.last_ids.read()));
+          if (definition.packed_prefill) HYLE_RETURN_IF_ERROR(run.bind(phase.history_select_port, io.history_select.read()));
+          if (io.logits.caller_owned()) HYLE_RETURN_IF_ERROR(run.bind(phase.logits_port, io.logits.view()));
+          if (definition.completion == TextCompletion::kEmitNext) HYLE_RETURN_IF_ERROR(io.next_id.bind(run));
+          if (io.final_hidden.caller_owned()) HYLE_RETURN_IF_ERROR(run.bind(phase.hidden_port, io.final_hidden.view()));
+          if (has_mtp(definition.role)) {
+            HYLE_RETURN_IF_ERROR(run.bind(phase.draft_position_port, io.draft_positions.read()));
+            if (draft_lag(definition.role)) HYLE_RETURN_IF_ERROR(run.bind(phase.catchup_token_port, io.catchup_token.read()));
+            if (definition.packed_prefill) {
+              HYLE_RETURN_IF_ERROR(run.bind(phase.draft_hidden_select_port, io.draft_hidden_select.read()));
+              if (draft_lag(definition.role)) HYLE_RETURN_IF_ERROR(run.bind(phase.draft_token_select_port, io.draft_token_select.read()));
+            }
+            if (drafts_token(definition.role)) HYLE_RETURN_IF_ERROR(io.draft_id.bind(run));
+          }
+          if (!layer0_probe.empty()) for (std::size_t i = 0; i < phase.probe_ports.size(); ++i)
+            if (const auto *output = phase.probe_facts[i]; output && output->caller_owned())
+              HYLE_RETURN_IF_ERROR(run.bind(output->value, io.probe_outputs[i].view()));
+          if (phase.state_transactions[slot].size())
+            HYLE_RETURN_IF_ERROR(g::slots::prepare(run, phase.state_graph(), carrier.queues(), phase.state_sources,
+                {.host_workspace = execution.staging(), .resource_budget = execution_budget ? execution_budget : cache_budget}));
+          return hyle::Status::Ok();
+        }));
     phase.preparation_uses[slot] = 0;
   }
 
@@ -3789,7 +3798,8 @@ public:
     }
     phase.attention_schema = definition.attention_schema;
     phase.child = definition.children.at(index).get();
-    phase.queues = take(inference::prepare_queue_bindings(execution.queue_bindings(), phase.child->compiled.report));
+    for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
+      check(phase.carriers[slot].prepare(phase.child->compiled, execution.queue_bindings()));
     phase.family = &definition; phase.variant_index = index;
     std::vector<inference::SlotTransactionSpec> transactions;
     phase.state_banks.reserve(phase.state_sources.size() + (phase.hidden_state.store.valid() ? 1u : 0u));
@@ -4059,8 +4069,10 @@ public:
       successor_step->cleanup_pending = true;
       return {false, {}};
     }
-    if (successor_step->run)
-      inference::record_retirement_status(successor_step->terminal, execution.drain_retired(*successor_step->run));
+    if (successor_step->run && successor_step->phase) {
+      const auto observed = successor_step->phase->carriers[successor_step->state_slot].retire(execution);
+      inference::record_retirement_status(successor_step->terminal, observed.status);
+    }
     const auto retired = successor_step->try_abort();
     if (!retired) return {false, retired.error()};
     const auto status = successor_step->terminal;
@@ -4071,14 +4083,25 @@ public:
   inference::RetirementObservation abort_episode() noexcept {
     discard_decode_ahead();
     if (!active_step) return {true, {}};
-    if (successor_step && successor_step->run)
-      inference::record_retirement_status(successor_step->terminal, execution.drain_retired(*successor_step->run));
+    if (successor_step && successor_step->run && successor_step->phase) {
+      // Capture destruction for an unsubmitted B can synchronize its native
+      // context. Keep the original predecessor gate before even draining B.
+      if (!successor_step->submitted && active_step->run && active_step->run->in_flight()) {
+        successor_step->cancelled = true;
+        successor_step->cleanup_pending = true;
+      } else {
+        const auto observed = successor_step->phase->carriers[successor_step->state_slot].retire(execution);
+        inference::record_retirement_status(successor_step->terminal, observed.status);
+      }
+    }
     // Nonblocking collection cannot drain a partially accepted Vulkan prefix.
     // Hand off once to the original blocking owner, then check the unchanged
     // Graph/page gates. Unknown native failure keeps this candidate, Session
     // pins and admission intact for an explicit retry; it must not spin.
-    if (active_step->run)
-      inference::record_retirement_status(active_step->terminal, execution.drain_retired(*active_step->run));
+    if (active_step->run && active_step->phase) {
+      const auto observed = active_step->phase->carriers[active_step->state_slot].retire(execution);
+      inference::record_retirement_status(active_step->terminal, observed.status);
+    }
     // Episode retirement alone does not release a Session's published head.
     return try_retire_episode();
   }
@@ -4515,19 +4538,20 @@ public:
       if (!layer0_probe.empty()) prepare_child(tokens, false, width, role, completion, sampling_index);
       if (predecessor) {
         const auto found = phases.find({width, tokens, role, completion, sampling_index, true});
-        if (found == phases.end() || !found->second->slots[slot].valid())
+        if (found == phases.end() || !found->second->carriers[slot].initialized())
           throw std::runtime_error("successor carrier must be cold-prepared before its predecessor submission");
       }
       auto &phase = prepare_child(physical_tokens, !layer0_probe.empty(), width, role, completion, sampling_index, relay, packed_prefill);
-      auto &run = phase.slots[slot];
+      auto &carrier = phase.carriers[slot];
       auto &io = phase.io[slot];
-      // A rejected successor never owns or clears its predecessor's run.
-      if (predecessor && predecessor->run == &run)
+      // A rejected successor never claims or clears its predecessor's run.
+      if (predecessor && predecessor->phase == &phase && predecessor->state_slot == slot)
         throw std::runtime_error("successor cannot reuse its live predecessor carrier");
+      initialize_slot(phase, slot);
+      auto &run = *take(carrier.borrow());
       step.phase = &phase; step.run = &run; step.state_slot = slot;
       step.state_transactions = &phase.state_transactions[slot];
       step.nodes.assign(phase.append_nodes.begin(), phase.append_nodes.end());
-      initialize_slot(phase, slot);
       if (packed_prefill) {
         // The prior step has really retired. Release this exact mirror alias
         // before batch::prepare tries to refresh its original metadata writer.
@@ -4735,7 +4759,7 @@ public:
       layouts.reserve(target_kv_layers + (drafts_token(role) ? 1 : 0));
       for (std::size_t i = 0; i < phase.attention_nodes.size(); ++i) layouts.push_back({phase.attention_nodes[i], io.attention_layout});
       if (drafts_token(role)) layouts.push_back({phase.draft_attention_node, step.draft_layout});
-      const auto queues = inference::queue_span(phase.queues);
+      const auto queues = carrier.queues();
       if (preparation) { preparation->slot = slot; preparation->phase_slot_prior_uses = phase.preparation_uses[slot]; }
       const auto batch_start = Clock::now();
       check(g::batch::prepare(run, queues, layouts, {.host_workspace = execution.staging()}));
@@ -4812,7 +4836,7 @@ public:
       throw std::runtime_error("submission views require one prepared direct ordinary episode");
     auto &phase = *step.phase;
     const auto storage = execution.storage_owner();
-    if (!storage || inference::queue_span(phase.queues).size() != 1 ||
+    if (!storage || phase.carriers[step.state_slot].queues().size() != 1 ||
         !phase.io[step.state_slot].next_id.pool().valid())
       throw std::runtime_error("submission views require the original owned shared Queue and full token writer");
     auto sources = std::make_shared<StepSources>();
@@ -4846,9 +4870,11 @@ public:
     for (const auto &member : step.members)
       if (member.session->stopping || member.session->failed)
         throw std::runtime_error("batch participant stopped before submission");
-    const auto queues = inference::queue_span(step.phase->queues);
+    auto &carrier = step.phase->carriers[step.state_slot];
     step.start = Clock::now(); step.submitted = true;
-    step.completion = submit_retained(*step.run, queues, step.phase->retirement[step.state_slot], step.incoming.get());
+    step.completion = take(carrier.submit(resources_, [&](g::Invocation &run, std::span<const g::QueueBinding> queues) noexcept {
+      return step.incoming ? g::detail::submit_outputs(run, step.incoming->bindings, queues) : run.submit(queues);
+    }));
     if (step.sources) {
       auto &sources = *step.sources;
       auto exported = g::detail::SubmissionSource::create(
@@ -5166,9 +5192,9 @@ public:
         }
       if (step.incoming) {
         check(g::detail::release_outputs(run, step.incoming->bindings));
-        check(run.unbind(step.incoming->outside_inputs));
+        check(phase.carriers[step.state_slot].release_inputs(step.incoming->outside_inputs));
         step.incoming.reset(); step.predecessor_episode.reset();
-      } else check(run.unbind(phase.state_resource_ports));
+      } else check(phase.carriers[step.state_slot].release_inputs(phase.state_resource_ports));
       for (const auto &member : step.members)
         if (member.session->head.get() != member.base || member.session->head.epoch() != member.base_epoch ||
             member.session->pending != &step ||

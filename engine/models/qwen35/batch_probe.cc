@@ -233,8 +233,8 @@ void cancel_batch(Observation &observation, q::Model &model,
   require(episode && episode->members.size() == 2 && a->pending == episode && b->pending == episode,
           "cancel case did not prepare one genuine two-member episode");
   auto *const phase = episode->phase; auto *const run = episode->run;
-  require(phase && phase->slots.size() == 1 && slot == 0 && run &&
-          run == &phase->slots[slot] && run->valid(), "cancel case lost its original serial R2 carrier slot");
+  require(phase && phase->slot_count == 1 && slot == 0 && run &&
+          run == q::take(phase->carriers[slot].borrow()) && run->valid(), "cancel case lost its original serial R2 carrier slot");
   const std::array candidate_ids{episode->members[0].next.get(), episode->members[1].next.get()};
   require(candidate_ids[0] && candidate_ids[1], "batch did not retain both unique unpublished candidates");
   observation.cancel_versions_blocked = model.snapshot_versions.live;
@@ -295,7 +295,7 @@ void cancel_batch(Observation &observation, q::Model &model,
   requests[0].session = retry_a;
   model.prepare_evaluations(requests);
   require(model.active_step && model.active_step->phase == phase && model.active_step->run == run &&
-          run == &phase->slots[slot] && run->valid(), "R2 retry did not rebuild the original aborted carrier slot");
+          run == q::take(phase->carriers[slot].borrow()) && run->valid(), "R2 retry did not rebuild the original aborted carrier slot");
   model.submit_evaluations();
   const std::array outputs_io{q::EvaluationIO{.name = "retired_retry_a"},
       q::EvaluationIO{.name = "retired_retry_b"}};

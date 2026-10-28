@@ -192,7 +192,10 @@ struct Probe final {
   }
   void report(std::string_view status, q::Model &model, std::string_view error = {}) {
     phases = model.phases.size(); slots = 0;
-    for (const auto &[key, phase] : model.phases) { (void)key; for (const auto &slot : phase->slots) slots += slot.valid(); }
+    for (const auto &[key, phase] : model.phases) {
+      (void)key;
+      for (std::size_t slot = 0; slot != phase->slot_count; ++slot) slots += phase->carriers[slot].initialized();
+    }
     std::ofstream out(output / "observation.json"); require(static_cast<bool>(out), "cannot write MTP Session observation");
     out << std::setprecision(17) << "{\"status\":" << quoted(status) << ",\"error\":" << quoted(error)
       << ",\"model_objects\":1,\"weight_tensors\":335,\"capacity\":64,\"resident_limit\":2,\"active_sequences\":1"
@@ -1068,7 +1071,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
     auto *const episode = model.active_step.get(); auto *const phase = episode->phase; auto *const run = episode->run;
     const auto slot = model.slot_index;
-    require(phase->slots.size() == 1 && slot == 0 && run == &phase->slots[slot] && run->valid() &&
+    require(phase->slot_count == 1 && slot == 0 && run == q::take(phase->carriers[slot].borrow()) && run->valid() &&
             episode->members.size() == 2 && phase->family->requests == 2 && phase->io[slot].attention_layout.facts().requests == 2 &&
             phase->io[slot].attention_layout.facts().query_rows == 4 && std::count_if(episode->bound.begin(),episode->bound.end(),[](auto value) { return static_cast<bool>(value); }) == 14,
             "MTP batch did not prepare one real R2/T2 fourteen-bank Graph");
@@ -1112,7 +1115,7 @@ void run_batch(const std::filesystem::path &inputs, const std::filesystem::path 
       q::prepare_generation_record(ledgers[j],*sessions[j],q::GraphRole::kMtpRound,requests[j].ids,true,j ? 1u : 2u,0);
     model.prepare_evaluations(requests,nullptr,q::GraphRole::kMtpRound); observation.observe(model);
     observation.same_slot_retry = model.active_step->phase == phase && model.active_step->run == run &&
-        run == &phase->slots[slot] && run->valid(); require(observation.same_slot_retry,"MTP retry replaced its original finite R2 carrier slot");
+        run == q::take(phase->carriers[slot].borrow()) && run->valid(); require(observation.same_slot_retry,"MTP retry replaced its original finite R2 carrier slot");
     const std::array selections{q::MtpGenerationSelection{sessions[0],pending[0],2},q::MtpGenerationSelection{sessions[1],pending[1],1}};
     const std::array outputs_io{q::EvaluationIO{.name = "batch_member0", .trace_states = false},
         q::EvaluationIO{.name = "batch_member1", .trace_states = false}};

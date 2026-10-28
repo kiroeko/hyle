@@ -1,0 +1,365 @@
+{
+  "status": "PASS_BOUNDED_PHASE_PROGRAM_CARRIER",
+  "created_utc": "2026-10-28T00:31:32.842004+00:00",
+  "base": "f1621372694fa3f4ad2fa5e5b6b46aa06cb6152f",
+  "implementation": [
+    "Phase uses three stable embedded ProgramCarrier objects in place of separate Invocation, retention and queue fields. Family/PhaseIo/transaction metadata remain model-owned.",
+    "The actual exact child is created directly, with original variant and last_row signature checks before fixed-binding publication. Source submission uses the same Graph API through a direct static action.",
+    "Original Source/Append/Store recovery precedes reset; unsubmitted B retains its predecessor gate. Nonblocking retirement remains collection plus original Step recovery, and successful finish keeps the existing run/readback return boundary.",
+    "Original native retirement and permanent teardown handoff govern eviction and scope root release; no new Queue, Completion, payload owner, permission table or executor."
+  ],
+  "counts": {
+    "actual_CXX": 2,
+    "successful_CXX": 2,
+    "actual_links": 2,
+    "successful_links": 2,
+    "actual_model_processes": 5,
+    "successful_native_processes": 5,
+    "failed_native_processes": 0,
+    "post_success_parser_failures": 1,
+    "offline_parser_corrections": 1,
+    "consumer_reruns": 0,
+    "SDK_CXX": 0,
+    "NVCC": 0,
+    "downloads": 0
+  },
+  "builds": {
+    "CXX": [
+      {
+        "unit": "tiny",
+        "pid": 6532,
+        "exit": 0,
+        "started": 1793147204.195922,
+        "seconds": 55.0535774230957,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "unit": "relay",
+        "pid": 47824,
+        "exit": 0,
+        "started": 1793147204.195922,
+        "seconds": 42.99960684776306,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "links": [
+      {
+        "image": "tiny",
+        "pid": 16484,
+        "exit": 0,
+        "started": 1793147267.0160258,
+        "seconds": 1.8162641525268555,
+        "state": "TERMINAL",
+        "timed_out": false
+      },
+      {
+        "image": "relay",
+        "pid": 13496,
+        "exit": 0,
+        "started": 1793147259.9026809,
+        "seconds": 1.7847037315368652,
+        "state": "TERMINAL",
+        "timed_out": false
+      }
+    ],
+    "images": {
+      "tiny": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin\\tiny.exe",
+          "bytes": 143597568,
+          "sha256": "b324438848af2dece2c6ea86d3e94680e270c9866fc7b0bcab1ced46bb2a3081"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\inputs-tiny.json",
+          "bytes": 58732,
+          "sha256": "ee7008583a85a0599e83b6821e597edfc170ccc940aa0c3978ab2da50773c875"
+        }
+      },
+      "relay": {
+        "image": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin\\relay.exe",
+          "bytes": 142662656,
+          "sha256": "affcc7076c21c731d834d91c42d1242f75717e6cadaecc01142bfe12646be2cc"
+        },
+        "inputs": {
+          "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\inputs-relay.json",
+          "bytes": 58733,
+          "sha256": "1a4c91a0820ba7ef7cffdd8cc66d419e7131a38067434b5b03bf8f4801b97f1b"
+        }
+      }
+    },
+    "link_inputs_per_image": 228,
+    "replaced_objects_per_link": 1,
+    "retained_weights_object": {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-mtp-e4-20261028\\validation\\compile\\weights\\unit.obj",
+      "bytes": 3468178,
+      "sha256": "4ea50f96ddfcf29097f3051b692ffdc6b74d1729d8ca64e321627b7d36cfd2be"
+    }
+  },
+  "runs": [
+    {
+      "arm": "logits-cpu",
+      "pid": 21752,
+      "exit": 0,
+      "seconds": 1.0071496963500977,
+      "facts": {
+        "models": 1,
+        "initialized_state_byte_equal_checks": 10,
+        "actual_differences": 0,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "logits-cuda",
+      "pid": 51424,
+      "exit": 0,
+      "seconds": 1.004115343093872,
+      "facts": {
+        "models": 1,
+        "initialized_state_byte_equal_checks": 10,
+        "actual_differences": 0,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "e4-cpu",
+      "pid": 53024,
+      "exit": 0,
+      "seconds": 0.5270371437072754,
+      "facts": {
+        "models": 1,
+        "initialized_state_byte_equal_checks": 11,
+        "target": "E4M3FN",
+        "draft": "BF16",
+        "cache_backing_bytes": 314119,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "preflight-cpu",
+      "pid": 53328,
+      "exit": 0,
+      "seconds": 0.446211576461792,
+      "facts": {
+        "models": 1,
+        "typed_original_key_rejection": true,
+        "rejected_native_submissions": 0,
+        "state_and_ledger_unchanged": true,
+        "peer_continued": true,
+        "final_versions": 0
+      }
+    },
+    {
+      "arm": "relay-cuda",
+      "pid": 57096,
+      "exit": 0,
+      "seconds": 1.2209622859954834,
+      "facts": {
+        "models": 1,
+        "requests": 2,
+        "serial_and_relay_arms": 6,
+        "outputs_per_live_member": 14,
+        "complete_state_ledger_and_RNG_equal": true,
+        "real_credit1_blocks_B": true,
+        "Source_expiry_asserted_by_original_native_probe": true,
+        "final_versions": 0,
+        "relay_order": [
+          "normal",
+          "member_credit",
+          "cancel"
+        ],
+        "relay": [
+          {
+            "waves": 12,
+            "actual_batches": 14,
+            "published_members": 28,
+            "successor_submissions": 2,
+            "successor_publications": 2,
+            "successor_discards": 0,
+            "successor_refusals": 0,
+            "survivor_r1": 0
+          },
+          {
+            "waves": 14,
+            "actual_batches": 14,
+            "published_members": 28,
+            "successor_submissions": 0,
+            "successor_publications": 0,
+            "successor_discards": 0,
+            "successor_refusals": 0,
+            "survivor_r1": 0
+          },
+          {
+            "waves": 14,
+            "actual_batches": 15,
+            "published_members": 22,
+            "successor_submissions": 1,
+            "successor_publications": 0,
+            "successor_discards": 1,
+            "successor_refusals": 0,
+            "survivor_r1": 5
+          }
+        ],
+        "credit_arm": {
+          "only_blocks_successor": true,
+          "actual_successor_submissions": 0
+        }
+      }
+    }
+  ],
+  "source_pins": {
+    "engine/inference/program_carrier.h": "90dd7335c5fcf1cf7e95d8f49308bda05de03fccb223c5986c6d481ade34bb9b",
+    "engine/models/qwen35/main.cc": "a8a4c05fad8aac750d014ad821451c31c6761d8248584a02fa63174ff423e9f5",
+    "tests/tools/qwen_generation_state_case.h": "1e9c9ff3d3686e61490add6eb6d80903bec685ffc3e3622e147ed616016afc70",
+    "tests/tools/qwen_submission_source_probe.cc": "215e4c81148d987c6cc784cf9ec215f24cb870bbaad7b09c3fb18f8da960afeb",
+    "engine/models/qwen35/retirement_probe.cc": "e5aed865382a3a07d9025d5ba5ddaaf85ec10b36858550129b5ed6edb87ef704",
+    "engine/models/qwen35/retained_budget_probe.cc": "1d62630ba76c91cfd4abab3cd8e1143893e4a7e00111c3de3e93b1d58a1a407a",
+    "engine/models/qwen35/batch_probe.cc": "7ae85bcb0ab56de889bc978cb1304978a8ca392a1ed42415ceba017e7db30b28",
+    "engine/models/qwen35/mtp_session_probe.cc": "051b00854fa497ccd9a07cac2d3123f98ce7072871e1a70db8ad3ab18704b813",
+    "tests/tools/qwen_generation_batch_relay_probe.cc": "b301f6e6636017dc7bc71b64643248ae7657e3e424cd66d73f1722890b050555",
+    "tests/tools/qwen_host_image_test.cc": "2da32258f88089fdc5b7e975349ee76db0753020e7110c9c4923742dc6ed7fc2"
+  },
+  "parser_correction": {
+    "receipt": {
+      "path": ".scratch/inference-phase-carrier-20261028/parser-amendment.json",
+      "bytes": 2503,
+      "sha256": "f601a4a59efc3456b4ab6e3c8d9e051132ac04aaa90949393325cab6016c6b21"
+    },
+    "native_process_pid": 57096,
+    "native_exit": 0,
+    "cause": "The initial Python parser additionally demanded successor_submissions>0 in the member-credit arm; the original compiled consumer never required that.",
+    "original_contract": "At the warmed real [credit1,credit2] boundary no new B may be accepted, and exactly one blocking check must occur. Normal and cancellation arms must still exercise real successors; complete state/ledger/RNG and Source retirement remain checked.",
+    "correction": "Only the Python parser was corrected; original parser/run-plan, assertion reproduction and raw native stdout are preserved. Existing PID 57096 stdout was parsed offline, without rebuilding or rerunning.",
+    "source_anchors": [
+      "qwen_generation_batch_relay_probe.cc:164-168",
+      "qwen_generation_batch_relay_probe.cc:231-233",
+      "qwen_generation_batch_relay_probe.cc:308",
+      "qwen_generation_batch_relay_probe.cc:329-331"
+    ],
+    "credit_zero_B": "Actual ACK pause/requeue changes the ordered cohort from [A,B] to [B,A]. The existing continuation selection resets warm hints, and fewer than six warm steps remain. Credit-arm zero B is compatible with the original policy, not a Source capability refusal."
+  },
+  "dependency_boundary": "Both current include-Model consumers use the current Tiny CPU/CUDA compiler flags and 228-input product closure. Only their private OBJ changes; the current independent target/draft weights ABI and all public SDK layouts remain unchanged. Old R2 recipe/dependencies are provenance only; old 223 product objects and copied header overlays are not linked.",
+  "actual_dependencies": {
+    "tiny": {
+      "path": ".scratch/inference-phase-carrier-20261028/compile/tiny/dependencies.json",
+      "bytes": 41921,
+      "sha256": "d97a4e381ae3f57860ee4543f8956c6718d1e19128b7f2ed6984631b96e27017"
+    },
+    "relay": {
+      "path": ".scratch/inference-phase-carrier-20261028/compile/relay/dependencies.json",
+      "bytes": 40419,
+      "sha256": "71dba2819d8381220e0f45f7fe9f9ea1f3a530ad83449f06eefba9fa463dd5c6"
+    }
+  },
+  "source_freeze": {
+    "path": ".scratch/inference-phase-carrier-20261028/source-freeze.json",
+    "bytes": 6133,
+    "sha256": "ce7f74fc3ee96840ddd53fc9d616df7de9863bb1454ba5175e78681692979fac"
+  },
+  "limits": [
+    "Finite CPU/CUDA functional consumers, not a throughput, quality, native-fault, true model EOS or other-platform proof.",
+    "Ten MTP logits initialized-state comparisons per backend and eleven E4 CPU comparisons were actually byte-exact. The inherited GDN numerical allowance was retained; this does not establish all shapes/dtypes or cross-backend identity.",
+    "The R2 test runs normal, member-credit and cancellation serial/control pairs only; the sixteen-arm continuous suite and generic zero-Model carrier case were not repeated.",
+    "retirement_probe.cc, retained_budget_probe.cc, batch_probe.cc, mtp_session_probe.cc and qwen_submission_source_probe.cc received frozen source-only adaptations, including the logical slot-count assertion correction, but were not compiled or run here.",
+    "Native fault/unknown retirement and partial failed exact-family eviction were reviewed statically, not fault-injected. A closed partially evicted carrier keeps refusing admission; no new recovery policy is claimed.",
+    "Recorded process durations are provenance. No new performance comparison or all-retained-header ABI audit is claimed."
+  ],
+  "reference": {
+    "path": "docs/evidence/correctness/inference-program-carrier-2026-10-28.json",
+    "bytes": 14849,
+    "sha256": "9404f6832c1ce2ce4e7a15c4d2596aa4e988b96e446ca2c128e6ce7793e91747"
+  },
+  "reproduction": {
+    "build": ".scratch/inference-phase-carrier-20261028/build.py",
+    "run": ".scratch/inference-phase-carrier-20261028/run.py",
+    "actions": [
+      "build.py prepare",
+      "build.py freeze",
+      "build.py compile tiny|relay",
+      "build.py link tiny|relay",
+      "run.py run logits-cpu|logits-cuda|e4-cpu|preflight-cpu|relay-cuda",
+      "run.py parse relay-cuda"
+    ],
+    "note": "Actual run-plan retains the original as-run parser pin; parser-amendment.json records the offline correction. No further native run is scheduled."
+  },
+  "raw_manifest": "manifest.json",
+  "archive": {
+    "path": "docs/evidence/correctness/inference-phase-carrier-2026-10-28.zip",
+    "bytes": 416027,
+    "sha256": "0b0c60712678b3936f0e6531443fb1d815386a44173d551a402d26565133a693",
+    "files": 111,
+    "CRC_and_member_SHA256_verified": true
+  },
+  "test_adaptations": [
+    "Source access and Invocation identity checks use the original carrier borrow/queues interface.",
+    "Four unexecuted engine probes also replace the obsolete physical array-size()==1 assertion with logical slot_count==1. The physical array has three entries; this corrects the stale capacity assertion and is not described as zero assertion changes.",
+    "The original R2 state/ledger/RNG, cancellation, credit and Source-expiry checks are retained; no consumer oracle was changed to repair the Python parse failure."
+  ],
+  "cleanup_executed": {
+    "receipt": {
+      "Count": 8,
+      "Protected": [
+        {
+          "Inputs": 228,
+          "Ready": ".scratch\\inference-phase-carrier-20261028\\ready-tiny.json"
+        },
+        {
+          "Inputs": 237,
+          "Ready": ".scratch\\inference-mtp-e4-20261028\\validation\\host-refinement\\ready-host.json"
+        },
+        {
+          "Inputs": 237,
+          "Ready": ".scratch\\inference-mtp-stop-policy-20261028\\ready-host.json"
+        },
+        {
+          "Inputs": 226,
+          "Ready": ".scratch\\inference-hidden-indexed-refinement-20261028\\ready.json"
+        }
+      ],
+      "Files": [
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\bin\\tiny.exe",
+          "Bytes": 143604224
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\bin\\tiny.exp",
+          "Bytes": 24987
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\bin\\tiny.lib",
+          "Bytes": 41384
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-program-carrier-20261028\\refinement\\compile\\tiny\\unit.obj",
+          "Bytes": 34375100
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin\\relay.exe",
+          "Bytes": 142662656
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin\\relay.exp",
+          "Bytes": 24975
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\bin\\relay.lib",
+          "Bytes": 41474
+        },
+        {
+          "Path": "C:\\public\\project-hyle\\hyle\\.scratch\\inference-phase-carrier-20261028\\compile\\relay\\unit.obj",
+          "Bytes": 22390776
+        }
+      ],
+      "Bytes": 343165576.0,
+      "Mode": "execute"
+    },
+    "receipt_path": ".scratch/inference-phase-carrier-20261028/cleanup-execute-20261028T0034588880652Z.json",
+    "script": "test.ps1",
+    "script_sha256": "ec1507d149ef2bb4f42e219733de1c22544076fbb8fcd2da01c13728f9d63ea7",
+    "method": "Root wrote eight exact private targets in test.ps1, checked preview, then executed file-only cleanup. No recursive delete or SDK/weights removal.",
+    "disposition": "Retain current Phase Tiny with its actual 228 inputs, two host closures, b59 performance baseline and all source/commands/logs/results/ready receipts. The old program-carrier Tiny and this one-time relay image/object are removed; their ready records are historical provenance, not available executable closures.",
+    "archive": "The unchanged compact archive predates cleanup; this inline receipt records the later deletion."
+  }
+}

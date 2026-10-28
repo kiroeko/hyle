@@ -1267,19 +1267,24 @@ Qwen 的整批预检／无抛发布与 StateHead 的单头原子发布保留各�
 状态池按实际对齐计入相邻 live 行间隙；有效 payload 不能直接当作多槽 backing 容量。
 已知缓存、workspace 和未知原生私有开销分别报告。
 
-NextN、接受前缀采样和缓存前沿采样的原Invocation、所需Queue绑定及资源保留节点，
-由共同`ProgramCarrier<Scope>`持有。载体嵌入稳定的冷对象、不可移动，并借用先于它声明的
-已选CompiledGraph；它不新增执行器、Completion所有者或资源权限。固定输入在局部Invocation上
+普通Phase、NextN、接受前缀采样和缓存前沿采样的原Invocation、所需Queue绑定及资源保留节点，
+由共同`ProgramCarrier<Scope>`持有。载体嵌入稳定的冷对象、不可移动，借用寿命覆盖它的
+已选CompiledGraph；Phase借原FamilyChild，其它程序的自有CompiledGraph声明在载体之前。
+它不新增执行器、Completion所有者或资源权限。固定输入在局部Invocation上
 全部绑定成功后才发布，防止中途失败留下看似已初始化的成员。动态layout、图数学、采样键、
 Store／Append事务及Session发布仍归原模型适配。
 
-提交以静态直接调用复用原Graph及retention；普通Phase的Source提交也使用相同算法。
-关闭和实际退休分别观察：未知退休时保留原handle，NextN先恢复原交易才重置；纯采样程序
+提交以静态直接调用复用原Graph及retention，普通Phase的Source提交保留原绑定bundle。
+关闭和实际退休分别观察：未知退休时保留原handle，target／NextN先恢复原交易才重置；纯采样程序
 没有状态交易，只在实际退休后重置。Graph的关闭handle仍可为truthy，不能据此重新接纳。
 Model最终退出时交接原Backend，再永久放弃应用根以断开作用域环，这不是可复用重置。
-Phase的多槽创建及完整执行编排尚待迁移，不能由三个辅助程序的共用代签完成。
-本片[CPU／CUDA有限生命周期及回归检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)
-覆盖原生提交、绑定失败后重试和输出引用保护；未知原生故障未注入，没有新增性能或质量结论。
+Phase按原计划准备一个或三个固定地址载体，直接使用已选exact child，保留variant与形状核对；
+成功步骤不重置载体，原Source及Store／Append交易归还后才释放动态输入。
+非阻塞退休查询只收集完成事实，显式abort／drain才等待设备；结果观察完成后才归还IO。
+完整执行编排仍待继续抽离，不能由程序载体的共用代签完成。
+[CPU／CUDA载体合同检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)
+覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
+覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。
 
 ## 实施包与收敛条件
 
