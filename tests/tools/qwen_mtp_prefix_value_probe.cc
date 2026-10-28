@@ -226,8 +226,8 @@ int main(int argc,char**argv) {
     // based on tensor geometry or on the later successful Session result.
     for (const auto &[key, family] : model.families) {
       (void)key;
-      for (std::size_t variant = 0; variant < family->children.size(); ++variant) {
-        const auto &report = family->children[variant]->compiled.report;
+      for (std::size_t variant = 0; variant < family->programs.size(); ++variant) {
+        const auto &report = family->programs.child(variant).compiled.report;
         std::size_t indexed_gdn = 0, indexed_conv = 0;
         for (std::size_t step = 0; step < report.step_count(); ++step) {
           const auto policy = q::take(report.step(step)).policy;

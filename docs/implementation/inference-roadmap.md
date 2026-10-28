@@ -49,7 +49,10 @@ CPU默认路由已删除旧41点、两个特例和硬件／配方资格机制，
 关闭后原生量化及合法ggml BF16／F32回退保留，安装消费与其它平台未测。
 GDN a/b N32候选已完成[32进程整模型A/B](../evidence/performance/inference-small-projection-model-window-2026-10-28.json)及266导出张量逐bit核对，
 有限样本未证明稳定净收益，不改默认。当前concat形状实验结束，后续原生paired／GEMV需避免额外冷银行与strided物化，不能直接挪用旧叶子收益。
-下一片先收敛普通／MTP／NextN共用的冷程序目录及执行边界，继续保留MTP设备后继和其它热点任务。
+普通／MTP／NextN及采样前沿的有限exact目录与输出事实已统一到共同冷程序准备；
+1次增量CXX、1次链接和CPU／CUDA六个现有消费者检查通过，原数值门不变。
+[本片记录](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)不代签完整编排抽离或性能提升；
+形状键、容量、接纳淘汰与完整模型编排仍待收敛，MTP设备后继和其它热点继续保留。
 具体候选允许因测量无净收益而不合入，但必须留下实测结论、适用边界或明确未解决项，不能默默移出任务。
 核实不成立的指控也要给结论：例如`deepseek_provider()`当前表示kernel来源与codec合同，路由并不要求
 ModelId，不能仅因名字含模型来源就判定存在模型白名单。基础执行接口收敛不以HTTP服务实现为前置。

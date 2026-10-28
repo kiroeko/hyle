@@ -142,7 +142,7 @@ ATen由默认ON的`HYLE_WITH_ATEN`统一控制；不调用ATen的MLX／packed／
 默认`--decode-overlap auto`自动选择可用的连续推进；`off`保留作诊断对照。普通B2参考也逐episode同步；单槽不是已证实的差距原因。
 只有CUDA普通greedy、caller-owned输出、无scheduler／Commands／完整张量trace，
 且存在输出上限至少10的turn，才准备D2；其它情况保持D1。D2使用三个物理IO载体、最多两个未发布候选，
-共用原FamilyChild、Queue、状态池与Graph提交；普通Phase仍只准备一个槽。
+共用同一个已选exact child、Queue、状态池与Graph提交；普通Phase仍只准备一个槽。
 显式缓存预算若连最低活动数的D2也容不下，先改用D1再执行原N选择；D1仍不足才报告容量错误，不为可选加速拒绝合法单步配置。
 自然请求的单一完整兼容cohort可在wave返回时保留一个已提交后继，下一pump复用该原active Step推进，
 不重做`prepare_generation_call`或再次提交它。非连续的组件消费者显式使用同步wave，仍由同一普通continuation实现完成有界量子。
@@ -1339,7 +1339,7 @@ Qwen 的整批预检／无抛发布与 StateHead 的单头原子发布保留各�
 
 普通Phase、NextN、接受前缀采样和缓存前沿采样的原Invocation、所需Queue绑定及资源保留节点，
 由共同`ProgramCarrier<Scope>`持有。载体嵌入稳定的冷对象、不可移动，借用寿命覆盖它的
-已选CompiledGraph；Phase借原FamilyChild，其它程序的自有CompiledGraph声明在载体之前。
+已选CompiledGraph；Phase借Family中的已准备程序，其它程序的冷程序目录声明在载体之前。
 它不新增执行器、Completion所有者或资源权限。固定输入在局部Invocation上
 全部绑定成功后才发布，防止中途失败留下看似已初始化的成员。动态layout、图数学、采样键、
 Store／Append事务及Session发布仍归原模型适配。
@@ -1352,6 +1352,13 @@ Phase按原计划准备一个或三个固定地址载体，直接使用已选exa
 成功步骤不重置载体，原Source及Store／Append交易归还后才释放动态输入。
 非阻塞退休查询只收集完成事实，显式abort／drain才等待设备；结果观察完成后才归还IO。
 完整执行编排仍待继续抽离，不能由程序载体的共用代签完成。
+普通Family、NextN、prefix sampler和frontier的有限exact目录统一由`PreparedProgramFamily`准备：
+同索引选取Executable与Report，冷存储发布输出事实及O(1)索引，全部成功后才发布目录。
+child地址固定并覆盖载体借用寿命；目录只持原Graph句柄和冷元数据，不增加原生资源owner或热查询。
+模型仍按同一variant保存自己的state graph，负责形状键、容量、接纳淘汰与完整编排；
+不能把这四处冷准备的共用视为执行引擎已经完全抽离。
+[CPU／CUDA有限检查](../evidence/correctness/inference-prepared-program-family-2026-10-28.json)复用原logits、采样及MTP packed消费者，
+68项完整状态比较保留原数值预算；本片没有新的吞吐或训练模型质量结论。
 [CPU／CUDA载体合同检查](../evidence/correctness/inference-program-carrier-2026-10-28.json)
 覆盖原生提交、绑定失败后重试和输出引用保护；[Phase有限回归](../evidence/correctness/inference-phase-carrier-2026-10-28.json)
 覆盖原R2接力、额度阻B、取消后的幸存R1及MTP状态比较。未知原生故障未注入，没有新增性能或质量结论。

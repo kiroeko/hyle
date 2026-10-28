@@ -49,6 +49,7 @@
 #include "../../inference/program_carrier.h"
 #include "../../inference/execution_episode.h"
 #include "../../inference/program_io.h"
+#include "../../inference/prepared_program_family.h"
 #include "../../inference/slot_transactions.h"
 #include "../../inference/append_transactions.h"
 #include "../../inference/retirement_observation.h"
@@ -913,22 +914,6 @@ struct FamilyPorts {
   std::array<V, 9> probe_ports;
   std::vector<Ports> layers;
 };
-struct FamilyChild final {
-  g::CompiledGraph compiled; // One immutable selected child shared by every session.
-  // Only needed when the original symbolic graph cannot describe a state row.
-  // This is cold metadata with the same IDs, never another executable.
-  g::Graph state_graph;
-  std::vector<PreparedOutputFacts> outputs;
-  std::vector<std::uint32_t> output_indices;
-  const PreparedOutputFacts &output(V value) const {
-    if (!value || value.ordinal() >= output_indices.size())
-      throw std::runtime_error("value is outside the prepared child output index");
-    const auto index = output_indices[value.ordinal()];
-    if (index >= outputs.size() || outputs[index].value != value)
-      throw std::runtime_error("value is not a prepared output of this exact child");
-    return outputs[index];
-  }
-};
 struct Family final : FamilyPorts {
   const PreparedSampling *sampling = nullptr;
   std::size_t requests = 1;
@@ -940,10 +925,12 @@ struct Family final : FamilyPorts {
   std::vector<g::TensorSpec> specs;
   c::BatchSchema attention_schema;
   g::Graph graph;
-  g::CompiledGraph compiled;
+  inference::PreparedProgramFamily programs;
   g::DimensionId last_row;
   std::vector<std::size_t> chunks;
-  std::vector<std::unique_ptr<FamilyChild>> children;
+  // Model-only cold state descriptions, indexed by the same exact variant.
+  // An empty entry uses graph directly; this is never another executable.
+  std::vector<g::Graph> state_graphs;
 };
 // Physical IO/control carriers are independent of candidate depth. A reader
 // may still retain the preceding carrier after its producer publishes.
@@ -974,7 +961,7 @@ struct Phase final : FamilyPorts {
   std::size_t query_rows = 0;
   c::BatchSchema attention_schema;
   // The selected child is shared immutable model data, not copied per session.
-  const FamilyChild *child = nullptr;
+  const inference::PreparedProgram *child = nullptr;
   const Family *family = nullptr;
   std::size_t variant_index = 0;
   std::size_t slot_count = 1;
@@ -983,7 +970,8 @@ struct Phase final : FamilyPorts {
   std::vector<StateBank> state_banks;
   std::array<inference::SlotTransactions, execution_slot_count> state_transactions;
   const g::Graph &state_graph() const noexcept {
-    return child->state_graph.valid() ? child->state_graph : family->graph;
+    const auto &specialized = family->state_graphs[variant_index];
+    return specialized.valid() ? specialized : family->graph;
   }
   std::array<std::size_t, execution_slot_count> planned_slot_uses{};
   std::array<std::size_t, execution_slot_count> preparation_uses{};
@@ -1278,7 +1266,7 @@ struct DraftProgram final {
   g::ReplayMode replay_mode = g::ReplayMode::kCommands;
   std::vector<Tensor> literals;
   g::Graph graph;
-  g::CompiledGraph compiled;
+  inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
   V tokens, positions, key, value, metadata, hidden, id, identity, log_probabilities, valid, probability;
   V bias, allowed, counts, next_counts;
@@ -1309,7 +1297,7 @@ struct PrefixSamplingProgram final {
   std::size_t proposals = 0, sampling_index = 0;
   std::vector<Tensor> literals;
   g::Graph graph;
-  g::CompiledGraph compiled;
+  inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
   V logits, identities, ids, bias, allowed, counts;
   std::vector<V> q, accepted, final_ids, valid;
@@ -1327,7 +1315,7 @@ struct PrefixSamplingResult final {
 struct SamplingFrontier final {
   std::vector<Tensor> literals;
   g::Graph graph;
-  g::CompiledGraph compiled;
+  inference::PreparedProgramFamily programs;
   inference::ProgramCarrier<ColdResources> carrier;
   g::DimensionId last_row;
   V hidden_port, identity_port, id_port, valid_port, bias_port, allowed_port, counts_port;
@@ -2650,27 +2638,25 @@ public:
     auto compiled = execution.compile(definition.graph, assembly.constants, assembly.options(compile_options));
     if (!compiled && packed_prefill && compiled.error().IsUnimplemented() && !compiled.error().has_native_error())
       return false; // Cold capability only; no execution/device error is a fallback.
-    definition.compiled = take(std::move(compiled));
-    const auto storage = definition.compiled.report.total_compiled_storage();
-    std::cerr << "compiled text finite family variants=" << definition.compiled.report.exact_variant_count()
+    auto compiled_family = take(std::move(compiled));
+    const auto &family_report = compiled_family.report;
+    const auto storage = family_report.total_compiled_storage();
+    std::cerr << "compiled text finite family variants=" << family_report.exact_variant_count()
               << " compiled_known_bytes=" << storage.known_bytes()
               << " compiled_unknown_providers=" << storage.unknown_provider_count
               << " max_operation_proposals=" << compile_options.max_operation_proposals
-              << " operation_proposals=" << definition.compiled.report.total_search().operation_proposals
+              << " operation_proposals=" << family_report.total_search().operation_proposals
               << " max_placement_attempts=" << compile_options.max_placement_attempts
-              << " placement_attempts=" << definition.compiled.report.total_search().placement_attempts
+              << " placement_attempts=" << family_report.total_search().placement_attempts
               << " cold_seconds=" << std::chrono::duration<double>(Clock::now() - start).count() << '\n';
-    definition.children.reserve(definition.chunks.size());
+    check(definition.programs.prepare(std::move(compiled_family), definition.graph.value_count(),
+        definition.chunks.size()));
+    definition.state_graphs.resize(definition.chunks.size());
     for (std::size_t index = 0; index < definition.chunks.size(); ++index) {
-      auto child = std::make_unique<FamilyChild>();
-      child->compiled.executable = take(definition.compiled.executable.exact_variant(index));
-      child->compiled.report = take(definition.compiled.report.exact_variant(index));
-      record_execution_plan(child->compiled.report, assembly.constants);
-      report_packed_projections(definition.graph, child->compiled.report, r.packed_projection_nodes,
-          child->compiled.executable.workspace_bytes());
-      child->outputs.resize(child->compiled.executable.output_count());
-      child->output_indices.resize(definition.specs.size());
-      check(inference::prepare_outputs(child->compiled, child->outputs, child->output_indices));
+      const auto &child = definition.programs.child(index);
+      record_execution_plan(child.compiled.report, assembly.constants);
+      report_packed_projections(definition.graph, child.compiled.report, r.packed_projection_nodes,
+          child.compiled.executable.workspace_bytes());
       bool concrete_states = true;
       for (const auto &association : definition.state_sources) {
         for (const auto value : {take(definition.graph.node_input(association.gather, 0)),
@@ -2693,11 +2679,10 @@ public:
       if (!concrete_states) {
         auto specialized = take(g::specialize_exact(definition.graph, bindings[index],
             take(execution_budget.metadata_allocator())));
-        if (specialized.signature != child->compiled.executable.specialization())
+        if (specialized.signature != child.compiled.executable.specialization())
           throw std::runtime_error("state graph specialization differs from its selected child");
-        child->state_graph = std::move(specialized.graph);
+        definition.state_graphs[index] = std::move(specialized.graph);
       }
-      definition.children.push_back(std::move(child));
     }
     selected = std::move(result);
     return true;
@@ -2917,19 +2902,18 @@ public:
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, static_cast<std::int64_t>(rows - 1)}};
     const std::array variants{g::ExactShapeVariant{binding}};
-    program.compiled = take(execution.compile(program.graph, assembly.constants,
+    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget})));
-    program.compiled.executable = take(program.compiled.executable.exact_variant(0));
-    program.compiled.report = take(program.compiled.report.exact_variant(0));
-    check(program.carrier.prepare(program.compiled, execution.queue_bindings()));
-    record_execution_plan(program.compiled.report, assembly.constants);
+         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph.value_count(), variants.size()));
+    const auto &compiled_program = program.programs.child(0).compiled;
+    check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
+    record_execution_plan(compiled_program.report, assembly.constants);
     program.literals = std::move(assembly.literals);
     program.token_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     program.position_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(rows)}));
     if (head && selected_sampler.enabled)
       program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-    check(program.io.prepare(program.compiled, head && selected_sampler.enabled ? 3 : 2,
+    check(program.io.prepare(compiled_program, head && selected_sampler.enabled ? 3 : 2,
         program.hidden_inputs.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
         head ? 1 + bool(program.valid) + (min_draft_probability() > 0) : 0,
         head ? bool(selected_sampler.enabled) + bool(program.next_counts) : 0));
@@ -2942,9 +2926,9 @@ public:
       if (selected_sampler.enabled) program.probabilities_output = take(program.io.add_output(program.log_probabilities));
       if (program.next_counts) program.next_counts_output = take(program.io.add_output(program.next_counts));
     }
-    for (std::size_t output = 0; output < program.compiled.executable.output_count(); ++output) {
-      if (take(program.compiled.executable.output_ownership(output)) != g::OutputOwnership::kCaller) continue;
-      const auto port = take(program.compiled.executable.output_id(output));
+    for (const auto &output : program.programs.child(0).outputs()) {
+      if (!output.caller_owned()) continue;
+      const auto port = output.value;
       if (port == program.next_counts) {
         const auto &facts = program.io.output_facts(program.next_counts_output);
         const auto bytes = take(facts.description.required_bytes());
@@ -3225,20 +3209,19 @@ public:
     program.graph = take(std::move(r.builder).finish());
     const std::array binding{g::ShapeBinding{r.last_row, 0}};
     const std::array variants{g::ExactShapeVariant{binding}};
-    program.compiled = take(execution.compile(program.graph, assembly.constants,
+    check(program.programs.prepare(take(execution.compile(program.graph, assembly.constants,
         assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-         .constants = assembly.constants, .resource_budget = execution_budget})));
-    program.compiled.executable = take(program.compiled.executable.exact_variant(0));
-    program.compiled.report = take(program.compiled.report.exact_variant(0));
-    check(program.carrier.prepare(program.compiled, execution.queue_bindings()));
-    record_execution_plan(program.compiled.report, assembly.constants);
+         .constants = assembly.constants, .resource_budget = execution_budget}))), program.graph.value_count(), variants.size()));
+    const auto &compiled_program = program.programs.child(0).compiled;
+    check(program.carrier.prepare(compiled_program, execution.queue_bindings()));
+    record_execution_plan(compiled_program.report, assembly.constants);
     program.literals = std::move(assembly.literals);
     if (program.identities) {
       program.identity_values = caller_tensor(execution.device(), dense(Type::kUInt32, {static_cast<std::int64_t>(proposals + 1), 4}));
       input_scratch.sampling_identities.reserve(take(program.identity_values.description.required_bytes()) / sizeof(std::uint32_t));
     }
     if (program.ids) program.id_values = caller_tensor(execution.device(), dense(Type::kInt32, {static_cast<std::int64_t>(proposals)}));
-    check(program.io.prepare(program.compiled, bool(program.identities) + bool(program.ids),
+    check(program.io.prepare(compiled_program, bool(program.identities) + bool(program.ids),
         1 + program.q.size() + bool(program.bias) + bool(program.allowed) + bool(program.counts),
         program.accepted.size() + program.final_ids.size() + program.valid.size(), 0));
     if (program.identities) check(program.io.add_fixed(program.identities, program.identity_values.read()));
@@ -3438,16 +3421,15 @@ public:
         // The frontier is a fixed [1,H] projection with no symbolic model rows.
         const std::array shape{g::ShapeBinding{r.last_row, 0}};
         const std::array variants{g::ExactShapeVariant{shape}};
-        prepared->compiled = take(execution.compile(prepared->graph, assembly.constants,
+        check(prepared->programs.prepare(take(execution.compile(prepared->graph, assembly.constants,
             assembly.options({.shape_policy = g::CompileShapePolicy::kFiniteExact, .exact_variants = variants,
-             .constants = assembly.constants, .resource_budget = execution_budget})));
-        prepared->compiled.executable = take(prepared->compiled.executable.exact_variant(0));
-        prepared->compiled.report = take(prepared->compiled.report.exact_variant(0));
-        check(prepared->carrier.prepare(prepared->compiled, execution.queue_bindings()));
-        record_execution_plan(prepared->compiled.report, assembly.constants);
+             .constants = assembly.constants, .resource_budget = execution_budget}))), prepared->graph.value_count(), variants.size()));
+        const auto &compiled_program = prepared->programs.child(0).compiled;
+        check(prepared->carrier.prepare(compiled_program, execution.queue_bindings()));
+        record_execution_plan(compiled_program.report, assembly.constants);
         prepared->literals = std::move(assembly.literals);
         if (selected_sampler.enabled) prepared->identity = caller_tensor(execution.device(), dense(Type::kUInt32, {1, 4}));
-        check(prepared->io.prepare(prepared->compiled, bool(prepared->identity_port),
+        check(prepared->io.prepare(compiled_program, bool(prepared->identity_port),
             1 + bool(prepared->bias_port) + bool(prepared->allowed_port) + bool(prepared->counts_port),
             1 + bool(prepared->valid_port), 0));
         if (prepared->identity_port) check(prepared->io.add_fixed(prepared->identity_port, prepared->identity.read()));
@@ -3750,7 +3732,7 @@ public:
           replay_policy, phase.planned_slot_uses[slot], selected_sampler.enabled);
     }
     phase.attention_schema = definition.attention_schema;
-    phase.child = definition.children.at(index).get();
+    phase.child = &definition.programs.child(index);
     for (std::size_t slot = 0; slot < phase.slot_count; ++slot)
       check(phase.carriers[slot].prepare(phase.child->compiled, execution.queue_bindings()));
     phase.family = &definition; phase.variant_index = index;
